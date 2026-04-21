@@ -1,13 +1,13 @@
 # Agent Harness Spec
 
-**Status:** Draft v0.2
-**Scope:** Design specification for a git-backed agent harness with branch-per-model-call context management.
+**Status:** Draft v0.3
+**Scope:** Design specification for a git-backed agent harness with branch-per-dispatch context management.
 
 ---
 
 ## 1. Overview
 
-This document specifies an agent harness in which conversational context is managed as a git repository. Each conversation is a standalone repo. Every model call is a branch. Branch completion is a merge. Subagent dispatches are sub-branches of the dispatching step's branch. All state lives on disk; all inter-component communication is mediated through the filesystem.
+This document specifies an agent harness in which conversational context is managed as a git repository. Each conversation is a standalone repo. Every dispatch is a branch. Branch completion is a merge. Within a branch, steps land as linear commits; a step that itself dispatches spawns a sub-branch off the commit where the dispatch landed. All state lives on disk; all inter-component communication is mediated through the filesystem.
 
 The architecture optimizes for three properties:
 
@@ -42,8 +42,8 @@ All terminology below is load-bearing and is used exclusively in the senses defi
 | **Model call** | One execution of a model to produce output. | Atomic. The defining event of a step; each step has exactly one. |
 | **Tool call** | The model's structured request to invoke a named tool. | Emitted by a model call; structural child of its emitting step (even if it resolves temporally during a later step). |
 | **API call** | One HTTP request to a provider endpoint. | Implementation detail of a model call (usually 1:1; streaming or retries may make it 1:many). |
-| **Dispatch** | The specific tool call that targets a subagent. | Creates an invocation. |
-| **Branch** | The git/worktree container for an exchange, invocation, or step. | Every model call creates a branch; the branch is merged back on termination. |
+| **Dispatch** | The event that spawns a branch with a goal. Two cases: a user message (spawns an exchange off `main`) and a tool call targeting a subagent (spawns an invocation off the commit where the dispatch landed on the parent branch). | Creates a branch. |
+| **Branch** | The git/worktree container for an exchange or an invocation. | Every dispatch creates a branch; the branch is merged back on termination. |
 | **Goal** | The stated objective handed to an agent at dispatch. | One per invocation (or exchange); not generally rewritten during execution. |
 
 **Banned usage:** "call" without a qualifier (use model call, tool call, or API call); "turn" (its vendor meanings are incompatible — see `docs/TAXONOMY.md` §1); "session" (underdefined — `docs/TAXONOMY.md` §3); "compression" (reserved for the model-weights sense — the harness operation is compaction).
@@ -87,25 +87,28 @@ Read-only from the user's perspective under normal operation. The harness is the
 
 A **branch** is the git/worktree container for a unit of work. The harness has one structural invariant:
 
-> **Every model call is a branch.** Spawn the branch, do the work (the model call plus the tool calls it emits), merge back to the parent. This pattern is uniform across every level of the tree.
+> **Every dispatch creates a branch.** Spawn the branch, do the work, compact, merge back. This pattern is uniform whether the dispatch is a user message (root case, off `main`) or a tool call targeting a subagent (nested case, off the commit on the parent branch where the dispatch landed).
 
-Three classes of branch, nested by the unit they contain:
+Two classes of branch, distinguished by the dispatch that spawned them:
 
-- **Exchange branch.** Off `main`. Contains one exchange — a user message down to the terminal assistant response. Named `ex/<ts>-<id>`.
-- **Step branch.** Off an exchange or invocation branch. Contains one step — one model call plus the tool calls it emits. Named `step/<parent-id>/<seq>`.
-- **Invocation branch.** Off the step branch whose model call emitted the dispatch. Contains the full internal execution of the dispatched agent. Named `inv/<parent-id>/<id>`.
+- **Exchange branch.** Off `main`. Spawned by a user message. Contains one exchange — the user message down to the terminal assistant response. Named `ex/<ts>-<id>`.
+- **Invocation branch.** Off the commit on the parent branch where a dispatch tool call landed. Spawned by that dispatch. Contains one invocation — the subagent's full internal execution. Named `inv/<parent-id>/<id>`.
+
+Within a branch, **steps are linear commits** — one commit per step, carrying that step's model call and the tool calls it emitted. Steps are not their own branches. New branches appear only at dispatch boundaries.
 
 The trunk is always `main`. Nothing ever commits directly to `main`. The only way data reaches `main` is via merge from a completed exchange branch.
 
-**Branch lifecycle** (identical at every level):
+**Branch lifecycle** (identical for both branch classes):
 
-1. **Spawn.** A new branch is created off the parent. A worktree is allocated. Branch name encodes provenance.
-2. **Work.** The agent executes: model call, tool calls, possibly dispatches. Every event is a commit.
-3. **Completion.** A terminal event is emitted — final response (for an exchange or invocation) or model call return (for a step).
-4. **Merge.** The compactor runs on the completed branch, producing a clean commit (or small set of commits) applied to the parent. Merge is no-fast-forward to preserve topology.
+1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A worktree is allocated. The goal is written. Branch name encodes provenance.
+2. **Work.** The agent runs its loop. Each step lands as a commit on the branch. A step that emits a subagent-targeting tool call spawns a sub-branch off that commit.
+3. **Completion.** A terminal event is emitted — the agent returns a final response or is stopped.
+4. **Merge.** The compactor produces a signal-preserving summary of the branch's work and applies it to the parent with `--no-ff`. Merge topology is preserved.
 5. **Cleanup.** The source branch is kept as a ref for a retention window, then GC'd. The worktree is removed on merge.
 
-Branching is cheap — local git operations on disk. Compaction at merge time is conditional and may be skipped for trivial step merges; see §2.7.
+Branching is cheap — local git operations on disk — but it is no longer per-step. A long exchange produces many commits on one branch and only spawns sub-branches when it actually dispatches.
+
+Compaction may also run *during* a branch's execution, not only at termination; see §2.7.
 
 ### 2.4 Exchanges
 
@@ -115,7 +118,7 @@ Multiple concurrent exchanges are supported: a user may send a second message be
 
 ### 2.5 Invocations and dispatch
 
-A **dispatch** is the tool call emitted by a model call that targets a subagent. An **invocation** is the resulting unit: the subagent's full internal execution, contained in its own branch. From the subagent's perspective, its parent is indistinguishable from a user.
+A **dispatch** (§2.1) is the event that spawns a branch with a goal. The tool-call form — a tool call targeting a subagent — spawns an **invocation**: the subagent's full internal execution, contained in its own branch off the commit where the dispatch landed on the parent branch. From the subagent's perspective, its parent is indistinguishable from a user; the user-message and tool-call forms of dispatch are the same primitive.
 
 This symmetry is load-bearing:
 
@@ -123,9 +126,9 @@ This symmetry is load-bearing:
 - Verifier agents, compactor agents, and adversarial critics are invocations with different goals.
 - Parallel exploration (N workers on the same task) is N parallel invocations dispatched from the same step.
 
-**Streaming reprompt.** A step may emit multiple tool calls. When each tool call returns, the emitting agent is reprompted — even while other tool calls from the same step are still outstanding. Each reprompt initiates a new step. A tool call's *structural parent* is the step whose model call emitted it; its *temporal resolution* may overlap with later steps. The two are distinct and both tracked.
+**Streaming reprompt.** A step may emit multiple tool calls. When each tool call returns, the emitting agent is reprompted — even while other tool calls from the same step are still outstanding. Each reprompt initiates a new step (a new commit on the parent branch). A tool call's *structural parent* is the step whose model call emitted it; its *temporal resolution* may overlap with later steps. The two are distinct and both tracked.
 
-Tool calls targeting non-subagent tools run inline (commits on the step branch). Dispatch tool calls create invocation sub-branches off the step branch. Parallel invocations from a single step spawn sibling branches off that step.
+Tool calls targeting non-subagent tools run inline: their records are committed on the branch as part of the emitting step. Dispatch tool calls spawn invocation branches off the commit where the dispatch landed. Parallel dispatches from a single step spawn N sibling invocation branches off that same commit.
 
 Invocations are expected to terminate and merge before their parent branch does.
 
@@ -143,7 +146,7 @@ Merges are always no-fast-forward and conflict-free by construction. The merge p
 
 ### 2.7 Compaction
 
-Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a completed branch's diff for merge back to the parent. A **compactor** is a subagent that performs compaction.
+Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a branch's work for consumption by the parent. A **compactor** is a subagent that performs compaction.
 
 Compactor constraints (v1):
 
@@ -151,7 +154,13 @@ Compactor constraints (v1):
 - **Scoped to the branch's diff.** It does not modify pre-existing parent state.
 - **Has access to the branch's goal.** The compactor decides relevance against the stated goal.
 
-Not every merge invokes a compactor. Exchange and invocation merges do. Step merges within a busy branch may not — a step that produced a small commit set may be merged directly. The workflow config decides.
+**Terminal compaction.** Every exchange and invocation is compacted at termination before the merge to its parent. The compacted summary is what the parent sees.
+
+**Intermediate compaction.** Compaction may also run at checkpoints during a branch's execution — not only at termination. At each checkpoint the compactor produces a current-state summary and merges only that summary to the parent, *replacing* the previous checkpoint's summary. The branch continues running afterward; the next checkpoint supersedes this one; the terminal compaction is the final checkpoint in the sequence.
+
+The discipline that parent branches see only compacted results — never raw internal state — is preserved. Intermediate compaction just makes the view progressively richer rather than all-or-nothing.
+
+Intermediate compaction triggers are declared in `workflow.yaml` (see §6): by commit count, by elapsed time, or by an explicit `flush` action the agent may call. A branch with no configured trigger compacts only at termination.
 
 Compaction failures (compactor produces garbage, times out, etc.) fall back to unmerged state and user review.
 
@@ -340,12 +349,19 @@ events:
     - merge
   verifier_reject:
     - dispatch(worker, with: verifier.feedback)
+  worker_flush:
+    - dispatch(compactor, mode: intermediate)
   branch_stopped:
     - mark_abandoned
     - notify_ui
+
+compaction:
+  intermediate:
+    trigger: every_n_commits   # or: every_t_seconds, on_flush
+    n: 10
 ```
 
-Actions are implemented in the harness; the workflow declares which run when. This is the primary surface for experimentation.
+Actions are implemented in the harness; the workflow declares which run when. The `flush` action emitted by a running agent triggers an intermediate compaction without terminating the branch (§2.7). This is the primary surface for experimentation.
 
 ---
 
@@ -458,7 +474,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.2 — Git tree
 
-**Success criterion:** An exchange is a branch, completion is a no-ff merge back to `main`, the repo layout matches §2.2. User message → exchange branch → step branch → model call → compactor (deletion-only, stub is fine) → merge. Unmerged branch count metric available.
+**Success criterion:** An exchange is a branch, completion is a no-ff merge back to `main`, the repo layout matches §2.2. User message → exchange branch → steps as linear commits → compactor (deletion-only, stub is fine) → merge. Unmerged branch count metric available.
 
 ### v0.3 — Tools
 

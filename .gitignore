@@ -2,3 +2,8 @@
 .balls-worktrees
 .balls/tasks
 .balls/worktree
+
+
+# Added by cargo
+
+/target

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Lernie pre-commit hook.
+#
+# Enforces:
+#   1. No direct commits to mainline (main/master). Squash-merges from `bl review`
+#      are permitted; detected via presence of MERGE_MSG or SQUASH_MSG.
+#   2. No source file over 300 lines (docs and config exempt).
+#   3. 100% test coverage (cargo tarpaulin --fail-under 100).
+#
+# Bypass is intentionally not supported. If something is broken, fix it.
+
+set -euo pipefail
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null || echo DETACHED)"
+git_dir="$(git rev-parse --git-dir)"
+
+case "$branch" in
+  main|master)
+    if [ ! -f "$git_dir/MERGE_MSG" ] && [ ! -f "$git_dir/SQUASH_MSG" ]; then
+      echo "error: direct commits to '$branch' are not permitted." >&2
+      echo "       use 'bl claim <task>' to work in a worktree, then 'bl review'." >&2
+      exit 1
+    fi
+    ;;
+esac
+
+exempt='\.(md|txt|toml|yaml|yml|json|lock)$|(^|/)(Makefile|LICENSE|\.gitignore|\.githooks/)'
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  [[ "$file" =~ $exempt ]] && continue
+  [ -f "$file" ] || continue
+  lines=$(wc -l < "$file")
+  if [ "$lines" -gt 300 ]; then
+    echo "error: $file has $lines lines (>300 limit for code files)." >&2
+    exit 1
+  fi
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ -f Cargo.toml ] && command -v cargo >/dev/null 2>&1; then
+  echo "pre-commit: running coverage check (cargo tarpaulin --fail-under 100)..." >&2
+  cargo tarpaulin --fail-under 100 --skip-clean --engine llvm --out Stdout >/dev/null
+fi

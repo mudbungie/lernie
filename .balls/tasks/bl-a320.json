@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T04:18:05.922052108Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "",
+  "external": {},
+  "id": "bl-a320",
+  "links": [],
+  "parent": "bl-fe61",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs — README reflects scaffold state",
+  "type": "task",
+  "updated_at": "2026-04-21T04:18:05.922052108Z"
+}

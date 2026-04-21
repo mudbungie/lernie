@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T18:45:46.161060580Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "ARCHITECTURE.md reflects any shape decisions made during implementation (e.g. models.yaml split vs. providers.yaml combined). Schema files under schemas/ are generated and committed.",
+  "external": {},
+  "id": "bl-4ac8",
+  "links": [],
+  "parent": "bl-5bbc",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (schemas)",
+  "type": "task",
+  "updated_at": "2026-04-21T18:45:46.161060580Z"
+}

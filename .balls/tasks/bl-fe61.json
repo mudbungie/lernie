@@ -9,12 +9,12 @@
   "description": "Initialize Rust crate, Makefile build targets, git precommit hooks enforcing 100% test coverage and blocking direct commits to main (bl worktree merges only).",
   "external": {},
   "id": "bl-fe61",
-  "links": [{"link_type":"gates","target":"bl-517d"}],
+  "links": [{"link_type":"gates","target":"bl-517d"},{"link_type":"gates","target":"bl-a320"}],
   "parent": null,
   "priority": 1,
   "status": "open",
   "tags": [],
   "title": "Rust repo scaffold with Makefile and precommit hooks",
   "type": "task",
-  "updated_at": "2026-04-21T04:18:05.955500215Z"
+  "updated_at": "2026-04-21T04:18:05.973809184Z"
 }

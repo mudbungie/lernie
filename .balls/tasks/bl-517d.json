@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T04:18:05.904966087Z",
-  "delivered_in": null,
+  "delivered_in": "a77303b1e13f399eef5e4f214bcca568049071de",
   "depends_on": [],
   "description": "",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-fe61",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate: tests — 100% coverage and all passing",
   "type": "task",
-  "updated_at": "2026-04-21T04:21:22.230938743Z"
+  "updated_at": "2026-04-21T04:21:33.200334999Z"
 }

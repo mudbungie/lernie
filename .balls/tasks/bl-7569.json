@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T19:56:39.933590852Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "grep 'step branch' → zero hits. Banned terms (bare call, turn, session, compression in context sense) still absent. All sub-branch uses are invocation-sub-branch.",
+  "external": {},
+  "id": "bl-7569",
+  "links": [],
+  "parent": "bl-32fd",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment with TAXONOMY.md (revision)",
+  "type": "task",
+  "updated_at": "2026-04-21T19:56:39.933590852Z"
+}

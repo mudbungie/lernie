@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T18:45:46.212864741Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Integration test creates a conversation from the template, validates all YAMLs against the schemas from bl-5bbc, asserts expected files exist, asserts .agent/goal.md is NOT present. 100% coverage on new code.",
+  "external": {},
+  "id": "bl-7847",
+  "links": [],
+  "parent": "bl-c91c",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (template)",
+  "type": "task",
+  "updated_at": "2026-04-21T18:45:46.212864741Z"
+}

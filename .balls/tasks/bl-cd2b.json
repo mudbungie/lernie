@@ -9,12 +9,12 @@
   "description": "Rewrite docs/ARCHITECTURE.md against the terms table agreed with user: conversation/exchange/invocation/step/model call/tool call/API call/branch/dispatch. Kill 'turn' throughout. Rename active_order -> goal. Rename compressor -> compactor. Fix tool-contract three-vs-four bug; split tools and skills as separate primitives; adopt progressive disclosure language. Disambiguate provider. Clean dispatcher/harness boundary. Set pass@1 with Wilson CI as primary metric. Every model call is a branch (invariant). Also amend AGENTS.md to ban terms of art not defined in docs/TAXONOMY.md without user approval.",
   "external": {},
   "id": "bl-cd2b",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-1110"}],
   "parent": null,
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "Align ARCHITECTURE.md to taxonomy + ban undefined terms in AGENTS.md",
   "type": "task",
-  "updated_at": "2026-04-21T17:00:50.203946106Z"
+  "updated_at": "2026-04-21T17:00:50.252932589Z"
 }

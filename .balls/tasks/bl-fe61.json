@@ -2,7 +2,7 @@
   "branch": "work/bl-fe61",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-21T04:21:35.501581954Z","id":"bl-517d","title":"Gate: tests — 100% coverage and all passing"}],
+  "closed_children": [{"closed_at":"2026-04-21T04:21:35.501581954Z","id":"bl-517d","title":"Gate: tests — 100% coverage and all passing"},{"closed_at":"2026-04-21T04:21:50.592000251Z","id":"bl-a320","title":"Gate: docs — README reflects scaffold state"}],
   "created_at": "2026-04-21T04:18:05.881017119Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Rust repo scaffold with Makefile and precommit hooks",
   "type": "task",
-  "updated_at": "2026-04-21T04:21:35.505112916Z"
+  "updated_at": "2026-04-21T04:21:50.595720210Z"
 }

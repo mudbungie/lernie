@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-cd2b",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T17:00:50.203946106Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-1110"},{"link_type":"gates","target":"bl-1b81"},{"link_type":"gates","target":"bl-7ac1"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Align ARCHITECTURE.md to taxonomy + ban undefined terms in AGENTS.md",
   "type": "task",
-  "updated_at": "2026-04-21T17:00:50.274155401Z"
+  "updated_at": "2026-04-21T17:00:53.012987797Z"
 }

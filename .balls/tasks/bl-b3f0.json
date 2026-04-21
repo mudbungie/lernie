@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T04:18:05.938517359Z",
-  "delivered_in": null,
+  "delivered_in": "a77303b1e13f399eef5e4f214bcca568049071de",
   "depends_on": [],
   "description": "",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-fe61",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate: alignment — consistent with docs/ARCHITECTURE.md and docs/TAXONOMY.md",
   "type": "task",
-  "updated_at": "2026-04-21T04:21:58.524458673Z"
+  "updated_at": "2026-04-21T04:21:58.575705670Z"
 }

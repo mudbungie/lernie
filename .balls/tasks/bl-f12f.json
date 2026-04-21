@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T18:45:46.224509411Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "ARCHITECTURE.md reflects any tooling choices (Makefile target vs. CLI subcommand), and any path/relativity decisions made during scaffolding. README.md mentions how to create a new conversation.",
+  "external": {},
+  "id": "bl-f12f",
+  "links": [],
+  "parent": "bl-c91c",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (template)",
+  "type": "task",
+  "updated_at": "2026-04-21T18:45:46.224509411Z"
+}

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-7ac1",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T17:00:50.242323647Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cd2b",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: alignment with TAXONOMY.md",
   "type": "task",
-  "updated_at": "2026-04-21T17:00:50.242323647Z"
+  "updated_at": "2026-04-21T17:12:46.661187476Z"
 }

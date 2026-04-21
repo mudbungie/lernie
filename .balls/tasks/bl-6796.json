@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T18:45:46.143736640Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "100% coverage on new code; all tests green; validation errors have informative messages (snapshot or substring tested).",
+  "external": {},
+  "id": "bl-6796",
+  "links": [],
+  "parent": "bl-5bbc",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (schemas)",
+  "type": "task",
+  "updated_at": "2026-04-21T18:45:46.143736640Z"
+}

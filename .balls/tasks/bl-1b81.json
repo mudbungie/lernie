@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T17:00:50.232652140Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "The change IS the docs update. Verify ARCHITECTURE.md and AGENTS.md are internally consistent and reflect the agreed terms table.",
+  "external": {},
+  "id": "bl-1b81",
+  "links": [],
+  "parent": "bl-cd2b",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date",
+  "type": "task",
+  "updated_at": "2026-04-21T17:00:50.232652140Z"
+}

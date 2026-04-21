@@ -1,6 +1,6 @@
 {
   "branch": null,
-  "claimed_by": null,
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T17:00:50.221699516Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cd2b",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: tests pass",
   "type": "task",
-  "updated_at": "2026-04-21T17:00:50.221699516Z"
+  "updated_at": "2026-04-21T17:11:28.972928405Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T19:56:39.922357778Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "The change IS the docs update. Verify ARCHITECTURE.md internally consistent after revision; terms table in §2.1 accurate; no dangling references to 'step branch'.",
+  "external": {},
+  "id": "bl-92f9",
+  "links": [],
+  "parent": "bl-32fd",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (revision)",
+  "type": "task",
+  "updated_at": "2026-04-21T19:56:39.922357778Z"
+}

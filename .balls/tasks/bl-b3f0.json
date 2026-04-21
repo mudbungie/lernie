@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T04:18:05.938517359Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "",
+  "external": {},
+  "id": "bl-b3f0",
+  "links": [],
+  "parent": "bl-fe61",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment — consistent with docs/ARCHITECTURE.md and docs/TAXONOMY.md",
+  "type": "task",
+  "updated_at": "2026-04-21T04:18:05.938517359Z"
+}

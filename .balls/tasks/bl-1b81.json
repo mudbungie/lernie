@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-1b81",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T17:00:50.232652140Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cd2b",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: docs up to date",
   "type": "task",
-  "updated_at": "2026-04-21T17:00:50.232652140Z"
+  "updated_at": "2026-04-21T17:12:15.999684343Z"
 }

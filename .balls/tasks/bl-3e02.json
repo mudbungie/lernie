@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T19:56:39.908120735Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Docs-only change. cargo test remains 1/1 green; tarpaulin 100% via pre-commit.",
+  "external": {},
+  "id": "bl-3e02",
+  "links": [],
+  "parent": "bl-32fd",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (revision)",
+  "type": "task",
+  "updated_at": "2026-04-21T19:56:39.908120735Z"
+}

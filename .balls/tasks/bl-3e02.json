@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-3e02",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T19:56:39.908120735Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-32fd",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: tests pass (revision)",
   "type": "task",
-  "updated_at": "2026-04-21T19:56:39.908120735Z"
+  "updated_at": "2026-04-21T19:59:29.770774406Z"
 }

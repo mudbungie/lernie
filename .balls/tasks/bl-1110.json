@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-21T17:00:50.221699516Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Docs-only change. Verify no tests were broken; run any existing test suite.",
+  "external": {},
+  "id": "bl-1110",
+  "links": [],
+  "parent": "bl-cd2b",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass",
+  "type": "task",
+  "updated_at": "2026-04-21T17:00:50.221699516Z"
+}

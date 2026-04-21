@@ -2,7 +2,7 @@
   "branch": "work/bl-32fd",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-21T19:59:30.000590275Z","id":"bl-3e02","title":"Gate: tests pass (revision)"}],
   "created_at": "2026-04-21T19:56:39.890629444Z",
   "delivered_in": "9a1f92c4729cea50d25ac5ef48b8709fbc8f6447",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["docs"],
   "title": "Revise branch invariant: dispatches branch, steps commit",
   "type": "task",
-  "updated_at": "2026-04-21T19:59:22.032256959Z"
+  "updated_at": "2026-04-21T19:59:30.004812769Z"
 }

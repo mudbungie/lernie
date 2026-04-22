@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:31.415026334Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Full repo-wide banned-term grep clean on v0.2 changes. Branch names, event names, field names conform to §2.1 / TAXONOMY.md. Merge topology matches §2.6; compactor shape matches §2.7; goal discipline matches §2.8.",
+  "external": {},
+  "id": "bl-5acb",
+  "links": [],
+  "parent": "bl-4772",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (v0.2 epic)",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:31.415026334Z"
+}

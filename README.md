@@ -57,3 +57,7 @@ See `bl skill` for the full guide.
 
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.
+
+## License
+
+MIT. See [`LICENSE`](LICENSE).

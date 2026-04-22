@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:31.045672188Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Compactor dispatch uses 'invocation' per §2.5 and 'compaction' not 'compression' per §2.1. Tool names (write_summary, mark_for_deletion) match §2.7. Merge topology matches §2.6 (rebase-then-no-ff). No banned terms.",
+  "external": {},
+  "id": "bl-e859",
+  "links": [],
+  "parent": "bl-8c66",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (compaction stub + merge)",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:31.045672188Z"
+}

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T18:45:46.171952148Z",
-  "delivered_in": null,
+  "delivered_in": "5e0124b30d757e5cf2c705c857d5b5bd37535bb3",
   "depends_on": [],
   "description": "Every schema field name, enum value, and example uses terms defined in ARCHITECTURE.md §2.1 or docs/TAXONOMY.md. No banned terms (turn, session, compression in context sense, bare call).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-5bbc",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate: alignment with TAXONOMY.md (schemas)",
   "type": "task",
-  "updated_at": "2026-04-22T05:53:23.695216875Z"
+  "updated_at": "2026-04-22T05:54:22.007736299Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T17:16:55.813870597Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Audit that PRINCIPLES.md catalog entry and ARCHITECTURE.md section agree; section numbering still sensible; no orphan forward-references.",
+  "external": {},
+  "id": "bl-42ea",
+  "links": [],
+  "parent": "bl-dfb7",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate(docs): PRINCIPLES + ARCHITECTURE consistent after edit",
+  "type": "task",
+  "updated_at": "2026-04-22T17:16:55.813870597Z"
+}

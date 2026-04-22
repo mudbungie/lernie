@@ -9,12 +9,12 @@
   "description": "Replace v0.1's direct-to-main exchange commit with an exchange branch.\n\n=== What to build ===\n1. On each 'lernie prompt' invocation, spawn branch ex/<ts>-<id> off main (§2.3).\n2. Allocate a worktree for the branch.\n3. Write .agent/goal.md at spawn time (§2.8) — goal = the user message for v0.2. Pin goal at head of the model-call context (context assembly is still minimal; manifest.yaml-driven v0.6).\n4. Within the branch, write the step's snapshot commit BEFORE issuing the model call (§2.10 — 'commit before model call' for replay/retry). Commit carries the request JSON or a pointer.\n5. Issue the model call via the provider adapter (unchanged from v0.1).\n6. Write the step's output (response, usage, stop_reason) onto the branch — either as a follow-up commit or by amending the snapshot commit's tree. Pick one and document.\n7. Do NOT merge back yet — that's task (2). Leave the branch open with branches.json reflecting it.\n\n=== Shape ===\n- One exchange = one step = one step commit (v0.2 has no tools, so the linear-commits property is trivially satisfied).\n- Step naming, commit message shape, and on-disk layout of the step output should be taxonomy-consistent (§2.1) and line up with what v0.3 will extend (tool calls added to the same commit / same dir).\n\n=== Out of scope ===\n- Compaction, merge (task 2).\n- branches.json updates are stubbed here; task (3) does the real tracking.\n- Tools (v0.3).\n\n=== Dependencies ===\n- None. Foundational for v0.2.\n\n=== Testing ===\n- Unit tests with injected git/adapter/clock stubs (same pattern as v0.1's prompt::tests).\n- Integration test: lernie new → lernie prompt against mock → assert the new branch exists, goal.md is on it, step commit is on the branch, main's HEAD is unchanged.\n- cargo test + tarpaulin --fail-under 100 green.",
   "external": {},
   "id": "bl-e7e1",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-bdd6"}],
   "parent": "bl-4772",
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "Exchange branch + step on branch",
   "type": "task",
-  "updated_at": "2026-04-22T21:34:30.857929596Z"
+  "updated_at": "2026-04-22T21:34:30.932927750Z"
 }

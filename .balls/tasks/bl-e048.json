@@ -9,12 +9,12 @@
   "description": "Wire the binary and the Anthropic client into an end-to-end exchange.\n\n=== What to build ===\n'lernie prompt <repo-path> <user-message>':\n1. Load <repo-path>/.agent/providers.yaml and <repo-path>/.agent/agents.yaml via the schemas from bl-5bbc.\n2. Resolve the 'worker' agent role → (provider, model_id, system_prompt_path).\n3. Read the worker system prompt from <repo-path>/.agent/system/prompts/.\n4. Send one non-streaming message request via the Anthropic client (bl-9600).\n5. Write the exchange to disk. Proposed shape (pick and document in the commit):\n     exchanges/<ts>-<short-id>.json\n   fields: user_message, assistant_response, model_id, provider, usage, stop_reason, started_at, ended_at.\n6. Commit to <repo-path>'s main branch directly. v0.1 explicitly bypasses the branch invariant (ARCH §2.3); flag this in the commit with a reference to ARCH §12.\n7. Print the new commit SHA to stdout.\n\n=== Out of scope ===\n- Exchange branches, merges, compaction (v0.2).\n- Tool calls in the response (v0.3).\n- Concurrent exchanges (v0.2+).\n- Event log / UI surface (v0.5).\n\n=== Testing ===\n- Integration test that chains: 'lernie new' → mock the Anthropic endpoint → 'lernie prompt' → assert the commit exists and its tree contains the expected exchanges/*.json with the mocked response text.\n\nDepends on bl-2904 and bl-9600.",
   "external": {},
   "id": "bl-e048",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-0647"}],
   "parent": "bl-2813",
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "lernie binary: 'prompt' subcommand — commit the exchange",
   "type": "task",
-  "updated_at": "2026-04-22T05:27:25.462928715Z"
+  "updated_at": "2026-04-22T05:27:44.704350918Z"
 }

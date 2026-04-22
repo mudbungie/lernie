@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:11:11.726148470Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "New text conforms to ARCHITECTURE.md §2.1 term discipline. No banned terms (turn, session, compression-as-context-mgmt, bare call). New primitives (handle, poll, await, pre_step, post_step, on_tool_return, mark_for_deletion, write_summary) either defined inline or absorbed into existing definitions.",
+  "external": {},
+  "id": "bl-1d37",
+  "links": [],
+  "parent": "bl-2736",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment with TAXONOMY.md (arch spec tighten)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:11:11.726148470Z"
+}

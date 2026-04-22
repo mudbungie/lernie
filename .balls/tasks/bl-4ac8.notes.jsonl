@@ -1,0 +1,1 @@
+{"ts":"2026-04-22T05:53:11.763836674Z","author":"orionriver","text":"verified: ARCH §4.2 records the providers.yaml combined-file decision; ARCH §6 documents the YAML-quoting requirement for actions with named args; schemas/*.json committed; README documents make schemas"}

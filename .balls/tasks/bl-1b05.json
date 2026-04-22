@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:26:47.225573640Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "All new identifiers, filenames, and commit messages conform to ARCH §2.1 term discipline. No banned terms (turn, session, compression-as-context-mgmt, bare call). Exchange-on-disk format uses taxonomy-consistent names (exchange, step, model call, etc.).",
+  "external": {},
+  "id": "bl-1b05",
+  "links": [],
+  "parent": "bl-2813",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment with TAXONOMY.md (v0.1 epic)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:26:47.225573640Z"
+}

@@ -9,12 +9,12 @@
   "description": "Add a new principle to docs/PRINCIPLES.md — 'Everyone uses the front door' — stating that the `lernie` CLI is the sole control plane: when one procedure invokes another, the invocation is a CLI call (exec'd subprocess), never an in-process sidechannel. Subagent dispatch is `exec(lernie dispatch ...)`. The harness is its own first-class consumer of the same CLI surface external callers use.\n\nAlso add a short section to docs/ARCHITECTURE.md under the dispatch/invocation material making the mechanical claim explicit and forbidding in-process sidechannels between procedures.\n\nThree named motivations:\n1. Integration testability — every inter-procedure edge is observable as a CLI call.\n2. Embeddability — lernie can be a component in other tools rather than a monolith.\n3. Clean architectural paths — operational atomicity, no back-channel inter-procedure communication.\n\nTerms: 'procedure' is already defined (ARCH §404 passage near workflow bindings). 'Control plane' used as borrowed term-of-art, not coined. Reject 'first tier interface' phrasing; drop 'front door' as load-bearing term (use it only as the principle's tagline).",
   "external": {},
   "id": "bl-dfb7",
-  "links": [{"link_type":"gates","target":"bl-0ff3"}],
+  "links": [{"link_type":"gates","target":"bl-0ff3"},{"link_type":"gates","target":"bl-42ea"}],
   "parent": null,
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "Codify 'Everyone uses the front door' principle",
   "type": "task",
-  "updated_at": "2026-04-22T17:16:55.837909760Z"
+  "updated_at": "2026-04-22T17:16:55.849023535Z"
 }

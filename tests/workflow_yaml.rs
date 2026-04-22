@@ -159,7 +159,7 @@ fn each_event_name_round_trips() {
 }
 
 // Exercises the per-event branches of the internal `event_name` map by
-// triggering an invalid-action error under each event in turn.
+// triggering an invalid-action error under every event.
 #[test]
 fn invalid_action_error_message_names_each_event() {
     for name in EVENT_NAMES {

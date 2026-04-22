@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:27:39.830404052Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "On-disk field names (exchange, user_message, assistant_response, model_id, stop_reason, usage) conform to ARCH §2.1 / TAXONOMY.md. No banned terms. Commit message for the exchange commit references ARCH §12 and notes the v0.1 branch-invariant exception.",
+  "external": {},
+  "id": "bl-abfb",
+  "links": [],
+  "parent": "bl-e048",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (prompt subcommand)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:27:39.830404052Z"
+}

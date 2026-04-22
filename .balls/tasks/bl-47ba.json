@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:31.284710329Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README Providers section and docs/ARCHITECTURE.md §4.4 document the chosen mechanism. §12 v0.1 exception note retired for (b).",
+  "external": {},
+  "id": "bl-47ba",
+  "links": [],
+  "parent": "bl-effb",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (retire --endpoint forwarding)",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:31.284710329Z"
+}

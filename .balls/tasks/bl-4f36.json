@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T17:41:56.152493634Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "cargo test + tarpaulin --fail-under 100 green after the Makefile change. Manual smoke: 'make install INSTALL_PREFIX=$(mktemp -d)' drops both binaries and they run (--version / --help).",
+  "external": {},
+  "id": "bl-4f36",
+  "links": [],
+  "parent": "bl-b64e",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (make install)",
+  "type": "task",
+  "updated_at": "2026-04-22T17:41:56.152493634Z"
+}

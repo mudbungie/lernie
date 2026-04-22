@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T17:41:56.165699297Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README documents 'make install' with the INSTALL_PREFIX knob and notes the ~/.local/bin default. Mentions that custom provider adapters drop into the same directory (or any PATH dir) with the 'lernie-provider-<name>' naming.",
+  "external": {},
+  "id": "bl-303f",
+  "links": [],
+  "parent": "bl-b64e",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (make install)",
+  "type": "task",
+  "updated_at": "2026-04-22T17:41:56.165699297Z"
+}

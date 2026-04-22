@@ -2,7 +2,7 @@
   "branch": "work/bl-7cfa",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-22T07:57:10.578471614Z","id":"bl-1c77","title":"Gate: tests pass (Anthropic adapter binary)"}],
   "created_at": "2026-04-22T07:44:35.768149947Z",
   "delivered_in": "1bbdeff8efadaddd8bbb25ea102042c8f6a1b45c",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Anthropic adapter: extract into lernie-provider-anthropic binary",
   "type": "task",
-  "updated_at": "2026-04-22T07:57:04.385204030Z"
+  "updated_at": "2026-04-22T07:57:10.578498725Z"
 }

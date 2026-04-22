@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:11:11.710008766Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "ARCHITECTURE.md reflects all five changes. Internal cross-references updated (e.g. any reference to 'streaming reprompt' elsewhere in the doc). README.md and TAXONOMY.md reviewed for consistency.",
+  "external": {},
+  "id": "bl-9421",
+  "links": [],
+  "parent": "bl-2736",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (arch spec tighten)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:11:11.710008766Z"
+}

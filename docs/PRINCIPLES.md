@@ -3,7 +3,7 @@
 Quick-reference catalog of the principles shaping this architecture. Canonical source is `docs/ARCHITECTURE.md`; this document is a distillation.
 
 ## Disk first
-System state — context, config, history, in-flight work, agent notes — lives on disk; processes hold none of it across restart. This is what makes git the substrate at all: history, branching, rollback, replay, and audit collapse to git operations on data that's already there. It is also what eliminates entire classes of bug — lost updates, stale caches, ghost state surviving a crash, in-memory views drifting from on-disk truth — because there is no in-memory truth to drift from. Every other principle below depends on this one.
+System state — context, messages while in flight, responses, tool calls — lives on disk; processes hold none of it across restart. This is what makes git the substrate at all: history, branching, rollback, replay, and audit collapse to git operations on data that's already there. It is also what eliminates entire classes of bug — lost updates, stale caches, ghost state surviving a crash, in-memory views drifting from on-disk truth — because there is no in-memory truth to drift from. Every other principle below depends on this one.
 
 ## Inspectability first
 Every point in a conversation's life is a git ref. Replay, counterfactual forks, and debugging are first-class because the state is on disk in an append-only, inspectable tree.

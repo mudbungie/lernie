@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:27:39.725076984Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Directory layout produced by 'lernie new' matches ARCH §2.2 exactly. Schema version in .agent/version matches ARCH §10. No banned taxonomy terms.",
+  "external": {},
+  "id": "bl-7d35",
+  "links": [],
+  "parent": "bl-2904",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (new subcommand)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:27:39.725076984Z"
+}

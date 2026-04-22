@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-22T05:27:11.844243428Z",
   "delivered_in": null,
-  "depends_on": [],
+  "depends_on": ["bl-5bbc"],
   "description": "Implement a minimal client for Anthropic's Messages API.\n\n=== What to build ===\n- Module (e.g. src/provider/anthropic.rs or src/providers/anthropic/) with:\n  - Request type: model_id, max_tokens, system prompt, messages (role + content).\n  - Response type: stop_reason, content blocks, usage (input/output tokens).\n  - Error type distinguishing: network failure, auth error, rate-limit (429), provider error (5xx), parse error.\n- HTTP via reqwest (blocking or tokio — pick one; v0.1 has no concurrency, blocking is cheapest). Justify in commit.\n- Auth: reads env var name declared in providers.yaml (§4.1) and sends as x-api-key header.\n- Anthropic-version header and content-type set per current API docs.\n\n=== Out of scope ===\n- Streaming (v0.1 non-goal; deferred to later milestone).\n- Tool use payloads (v0.3).\n- Prompt caching (deferred).\n- Other providers (bedrock etc. — one provider is enough for v0.1).\n\n=== Testing ===\n- Unit tests against a mocked HTTP server (wiremock or httpmock).\n- Cover: happy path, 401, 429, 500, malformed JSON.\n- No live API calls in tests.\n\nDepends on bl-5bbc (needs loadable providers.yaml to find the env var name).",
   "external": {},
   "id": "bl-9600",
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Anthropic messages-API client (non-streaming)",
   "type": "task",
-  "updated_at": "2026-04-22T05:27:11.844243428Z"
+  "updated_at": "2026-04-22T05:27:25.427379481Z"
 }

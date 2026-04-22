@@ -29,6 +29,9 @@ A step's snapshot commit is written before the model call is issued. Retry becom
 ## Tools return synchronously; async rides on handles
 Provider APIs require paired `tool_use`/`tool_result`, so every tool returns immediately. Long-running work surfaces as a handle and is retrieved later via `await(handle)`, preserving parallelism without breaking the wire protocol.
 
+## Integrations are external binaries
+Tools (§3.3) and provider adapters (§4.4) are separate executables the harness invokes as subprocesses, each with a narrow stdio contract — a handful of subcommands, JSON on stdin/stdout, env-var auth, SIGTERM cancellation. The harness owns orchestration and on-disk state; the binaries own wire protocols, vendor quirks, and credential handling. That is what lets external contributors extend the harness — a corporate SSO flow or a new model provider is a standalone binary, not a patch to the core — and is what keeps the core small enough to reason about.
+
 ## Compaction, never compression
 Summarizing a branch's work uses a subagent with a constrained toolset (`write_summary`, `mark_for_deletion`). "Deletion-only" is structural — no general filesystem write surface — so the worst case is lost information, never corrupted information.
 

@@ -216,7 +216,7 @@ Tool failures follow the same shape at the tool-executor level, surfaced to the 
 
 All components communicate through the filesystem. No shared memory, no direct function calls between components. This applies to:
 
-- Harness → provider endpoint (request written to disk, worker reads, response streamed to disk).
+- Harness → provider adapter (request mirrored to disk, adapter reads from stdin; response events mirrored back to disk from adapter stdout — see §4.4).
 - Harness → tool execution (tool call record written to disk, executor reads, output streamed to disk).
 - Harness → UI (events appended to `.agent/state/events.log`, UI tails).
 - UI → Harness (user actions written to an input directory, harness picks up).
@@ -233,11 +233,12 @@ Consequences:
 
 ### 3.2 Components
 
-- **Harness.** The single program that drives execution: watches for events, spawns branches, runs model calls via the provider layer, invokes the tool executor, triggers merges and compactions, updates state. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component.
+- **Harness.** The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component.
 - **Tool executor.** Runs tool subprocesses on behalf of the harness. Streams output to disk atomically (temp path + rename).
+- **Provider adapter.** External binary, one per named provider, that owns HTTP, auth, and transient-error retry. Invoked per model call over stdio; non-resident (process per model call, no long-lived state). Contract in §4.4.
 - **UI.** Tails event log and git history. Read-only view of live state plus write access to a well-defined input directory.
 
-The harness and the tool executor share the same disk contract. None share memory.
+The harness, the tool executor, and provider adapters share the same disk contract. None share memory.
 
 ### 3.3 Tools and skills
 
@@ -267,6 +268,8 @@ Tool output contract:
 
 The taxonomy (`docs/TAXONOMY.md` §2) flags "provider" as one of the field's most overloaded terms, naming three distinct roles: **model creator** (trains the weights), **inference provider** (serves the weights over an API), and **gateway** (unifies multiple inference providers behind one surface). This document uses **provider** in the *inference provider* sense throughout: an (endpoint, auth) pair.
 
+The harness does not speak provider wire protocols directly. Each provider is served by a **provider adapter** (§4.4) — a separate binary invoked as a subprocess per model call. That keeps the harness free of per-vendor HTTP quirks and lets external contributors (corporate users with bespoke SSO, custom retry logic, private model routers) ship adapters without modifying core code. In the vocabulary of this spec, "provider" names the `(endpoint, auth)` pair in config; "provider adapter" names the binary that implements one provider's protocol. They are distinct terms of art and not interchangeable.
+
 Provider config (`providers.yaml`):
 
 ```yaml
@@ -278,10 +281,13 @@ providers:
       env: ANTHROPIC_API_KEY
   bedrock:
     endpoint: https://bedrock-runtime.us-east-1.amazonaws.com
+    adapter: /opt/corp/lernie-provider-corp-bedrock
     auth:
       type: aws_sigv4
       profile: default
 ```
+
+The optional `adapter:` key names the binary to invoke; when absent, the harness looks up `lernie-provider-<name>` on `PATH`. The harness itself does not read `endpoint:` or `auth:` — those are the adapter's to interpret. The harness only needs the adapter binary and the env-var names returned by `describe` (§4.4).
 
 ### 4.2 Model abstraction
 
@@ -313,6 +319,47 @@ agents:
 ```
 
 `system_prompt` is a path relative to `.agent/system/`. Absolute paths and `..` traversals are rejected at load time.
+
+### 4.4 Provider adapters
+
+A **provider adapter** is a binary that implements one provider's wire protocol. The harness invokes the adapter per model call; the adapter owns the HTTP request, auth, and any transient-error retry loop. This makes the provider layer externally extensible — the same externalization pattern already used for tools (§3.3), now applied to the provider boundary.
+
+**Discovery.** By default, the harness looks up `lernie-provider-<name>` on `PATH`, where `<name>` is the provider key from `providers.yaml`. A provider entry may pin a specific binary with `adapter: /abs/path/to/binary`, which is used verbatim. The adapter is located once per model call — there is no long-lived adapter process.
+
+**Subcommands.** Every adapter supports exactly two subcommands:
+
+- `describe` — reads nothing from stdin; writes a single JSON object to stdout:
+  ```json
+  {
+    "name": "anthropic",
+    "schema_version": 1,
+    "capabilities": ["tool_use_native", "streaming", "prompt_caching"],
+    "models": ["claude-sonnet-4-7", "claude-haiku-4-5"],
+    "auth_env": ["ANTHROPIC_API_KEY"]
+  }
+  ```
+  `schema_version` is an integer. The harness rejects unknown major versions at load and refuses to use the adapter — no silent downgrade (see "Decline illegal operations" in PRINCIPLES.md).
+
+- `complete` — reads a JSON request on stdin (Anthropic Messages-API shape is the canonical form; adapters for other providers translate internally) and writes one of two forms to stdout:
+  - **Non-streaming:** a single JSON response object.
+  - **Streaming:** a JSON Lines event stream — one JSON event per line. Event types are block-oriented to mirror the content-block structure of assistant messages: `message_start`, `content_block_start`, `text_delta`, `tool_use_delta`, `content_block_stop`, `message_stop`. The terminal `message_stop` carries `usage` and `api_calls` (the count of HTTP requests the adapter made — see §2.1 for the model call / API call distinction; retries or streaming reconnects may make this greater than one).
+
+  Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
+
+**Errors.** Adapters report errors in-band, not by exiting non-zero:
+
+- Non-streaming: the top-level JSON object is `{ "type": "error", "kind": "retryable" | "fatal", "http_status": <int|null>, "message": "…", "retry_after_seconds": <int|null> }`.
+- Streaming: the terminal event has the same shape with `"type": "error"`.
+
+Exit code 0 means the adapter produced a valid output (including a `type: error` object). Non-zero exit means the adapter itself crashed — the harness treats that as a harness-level fault, not a provider failure, and flags it for operator attention per §2.10. The adapter owns transient-error retry; the harness treats one `complete` invocation as one model call regardless of how many API calls the adapter makes under the hood.
+
+**Cancellation.** The harness sends SIGTERM on stop (§2.9). The adapter must drop any in-flight HTTP request, flush partial state — for streaming, emit a final `message_stop` or `error` event — and exit within 5 seconds. SIGKILL follows if it does not.
+
+**Auth.** Auth lives entirely inside the adapter. The harness forwards the env vars named in `describe.auth_env` into the subprocess environment; everything else — refresh tokens, keychain access, `aws-sso login`, Okta CLI flows — is the adapter's concern. The harness never handles credentials directly and never prompts.
+
+**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes, but the harness mirrors both to disk under the framing step's commit (`invocations/<id>/request.json`, `invocations/<id>/events.jsonl` or `response.json`). Replay (§3.1, §2.10) works against those files, not against a live adapter process. The pipes are the wire; the disk is the record.
+
+**Schema versioning.** `describe.schema_version` is the adapter's self-declared contract version. The harness keeps a minimum-supported-version constant. A `schema_version` below that is rejected at load. A `schema_version` above that is accepted optimistically — the harness ignores unknown fields. This is the same forward-compatibility discipline used for `providers.yaml` capabilities (§4.2).
 
 ---
 

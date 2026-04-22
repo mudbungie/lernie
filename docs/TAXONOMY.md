@@ -141,6 +141,9 @@ A reference document for someone building an AI harness. It maps the terms used 
 
 **For your harness:** plan for the three-role split explicitly. Model identity (`creator/family`), inference provider (`groq`, `fireworks`, `bedrock`), and gateway (if any) are three independent axes.
 
+### Provider adapter (lernie-specific coinage)
+This repo uses **provider** strictly in the *inference provider* sense (an `(endpoint, auth)` pair — config). It also introduces **provider adapter**, a distinct term of art, for the *executable binary* that implements one provider's wire protocol. The two are not interchangeable: `providers.yaml` contains providers; `$PATH` contains adapters. The harness talks to the provider only through its adapter, giving the provider boundary the same externalization shape as the tool boundary (see `docs/ARCHITECTURE.md` §3.3 and §4.4). This coinage is lernie-specific — the field has no settled term for "the binary that owns one provider's protocol," and the adapter word is borrowed from the GoF pattern sense, not from any vendor's vocabulary.
+
 ### Model: foundation, base, instruct, reasoning
 A **foundation model**, in the Stanford Center for Research on Foundation Models (CRFM) sense, is a model "trained on broad data...that can be adapted to a wide range of downstream tasks." The term covers **base models** (raw next-token predictors) and their tuned descendants.
 

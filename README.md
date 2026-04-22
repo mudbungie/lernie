@@ -58,6 +58,12 @@ it to the destination, runs `git init -b main`, and lands a single
 or be an empty directory. `.agent/goal.md` is intentionally not in the
 template — it is written at dispatch time (ARCH §2.8).
 
+## Providers
+
+Model calls are intended to go through **provider adapters** — separate binaries the harness invokes over stdio, one per named provider (see [ARCH §4.4](docs/ARCHITECTURE.md#44-provider-adapters)). Auth, HTTP, and transient retry live inside the adapter; the harness only forwards the env vars the adapter declares. A new provider is a standalone executable, not a harness patch.
+
+The v0.1 Anthropic path is still in-process (see `src/provider/`); extracting it to the adapter contract is planned follow-up work.
+
 ## Workflow
 
 All changes land on `main` via `bl` squash-merges. Direct commits to `main` are

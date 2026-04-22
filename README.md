@@ -60,9 +60,32 @@ template — it is written at dispatch time (ARCH §2.8).
 
 ## Providers
 
-Model calls are intended to go through **provider adapters** — separate binaries the harness invokes over stdio, one per named provider (see [ARCH §4.4](docs/ARCHITECTURE.md#44-provider-adapters)). Auth, HTTP, and transient retry live inside the adapter; the harness only forwards the env vars the adapter declares. A new provider is a standalone executable, not a harness patch.
+Model calls go through **provider adapters** — separate binaries the harness
+invokes over stdio, one per named provider (see
+[ARCH §4.4](docs/ARCHITECTURE.md#44-provider-adapters)). Auth, HTTP, and
+transient retry live inside the adapter; the harness only forwards the env
+vars the adapter declares. A new provider is a standalone executable, not a
+harness patch.
 
-The v0.1 Anthropic path is still in-process (see `src/provider/`); extracting it to the adapter contract is planned follow-up work.
+The reference adapter is `lernie-provider-anthropic`, built alongside
+`lernie` by `cargo build`:
+
+```
+lernie-provider-anthropic describe
+ANTHROPIC_API_KEY=... lernie-provider-anthropic complete < request.json
+```
+
+`describe` prints the adapter's self-description JSON (name,
+`schema_version`, capabilities, models, `auth_env`). `complete` reads one
+Messages-API request on stdin and writes one JSON object on stdout —
+either the upstream response or an in-band error object (`{"type":"error",
+"kind":"retryable"|"fatal", ...}`). Exit code `0` covers both; non-zero is
+reserved for adapter-side crashes. The v0.1 adapter is non-streaming;
+streaming support is tracked separately (bl-d15d).
+
+Harness-side adapter discovery and invocation (§4.4 "Discovery") lands
+with the `lernie prompt` subcommand; until then the adapter is usable
+standalone as above.
 
 ## Workflow
 

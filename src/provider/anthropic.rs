@@ -57,17 +57,17 @@ pub struct Message {
 }
 
 /// Input to one model call.
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Request {
     pub model: String,
     pub max_tokens: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system: Option<String>,
     pub messages: Vec<Message>,
 }
 
 /// Usage accounting returned by the provider.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Usage {
     pub input_tokens: u32,
     pub output_tokens: u32,
@@ -76,13 +76,13 @@ pub struct Usage {
 /// One block of the model's output. v0.1 only produces `text`; unknown
 /// types surface as [`ContentBlock::Unknown`] so future provider-side
 /// additions do not fail parsing.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentBlock {
     Text {
         text: String,
     },
-    #[serde(other)]
+    #[serde(other, skip_serializing)]
     Unknown,
 }
 
@@ -90,7 +90,7 @@ pub enum ContentBlock {
 /// string (e.g. `"end_turn"`, `"max_tokens"`) rather than enumified here:
 /// see `docs/ARCHITECTURE.md` §2.1 — one of Anthropic's wire values uses a
 /// banned term, and the harness does not yet need to branch on it.
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Response {
     pub id: String,
     pub model: String,

@@ -7,3 +7,4 @@
 //! [`crate::config::providers`].
 
 pub mod anthropic;
+pub mod anthropic_adapter;

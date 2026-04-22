@@ -2,8 +2,11 @@
 
 Quick-reference catalog of the principles shaping this architecture. Canonical source is `docs/ARCHITECTURE.md`; this document is a distillation.
 
+## Disk first
+System state — context, config, history, in-flight work, agent notes — lives on disk; processes hold none of it across restart. This is what makes git the substrate at all: history, branching, rollback, replay, and audit collapse to git operations on data that's already there. It is also what eliminates entire classes of bug — lost updates, stale caches, ghost state surviving a crash, in-memory views drifting from on-disk truth — because there is no in-memory truth to drift from. Every other principle below depends on this one.
+
 ## Inspectability first
-Every point in a conversation's life is a git ref. Replay, counterfactual forks, and debugging become first-class operations because the state lives in an append-only, inspectable tree instead of ephemeral memory.
+Every point in a conversation's life is a git ref. Replay, counterfactual forks, and debugging are first-class because the state is on disk in an append-only, inspectable tree.
 
 ## Symmetry of dispatch
 User-to-agent, agent-to-subagent, verifier, and compactor all flow through one primitive: fork a branch, do work, merge back. No special code paths for user input, reviews, or summarization — everything is an invocation.
@@ -19,9 +22,6 @@ The trunk only advances via no-ff merges from completed exchange branches. Every
 
 ## Single author per file
 The harness assigns write paths per tool call and per invocation so sibling branches never target the same file. This turns "conflict-free merges" from a convention into a structural guarantee and keeps parallelism safe at scale.
-
-## Disk is the bus
-All inter-role communication — even between threads of the same process — flows through the filesystem. The latency cost buys inspectability, an audit trail, and the single-author discipline that keeps many concurrent workers from corrupting each other's state.
 
 ## Commit before model call
 A step's snapshot commit is written before the model call is issued. Retry becomes trivial, and every model call is bit-for-bit replayable from its commit.

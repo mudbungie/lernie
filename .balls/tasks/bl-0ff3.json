@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T17:16:55.803421221Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Audit the front-door principle doc change: every cross-reference resolves, no newly introduced terms of art lack a definition, no banned terms (bare 'call', 'turn', 'session', 'compression').",
+  "external": {},
+  "id": "bl-0ff3",
+  "links": [],
+  "parent": "bl-dfb7",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate(tests): verify no broken doc refs, terminology consistent",
+  "type": "task",
+  "updated_at": "2026-04-22T17:16:55.803421221Z"
+}

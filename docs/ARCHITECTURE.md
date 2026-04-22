@@ -66,6 +66,7 @@ Directory layout:
 │   ├── agents.yaml              # agent role definitions
 │   ├── providers.yaml           # endpoint/auth/model config
 │   ├── goal.md                  # branch goal, written at dispatch
+│   ├── compactions/             # per-branch intermediate+terminal summaries (§2.7)
 │   ├── system/                  # system prompts, tool and skill definitions
 │   │   ├── prompts/
 │   │   ├── skills/
@@ -126,43 +127,48 @@ This symmetry is load-bearing:
 - Verifier agents, compactor agents, and adversarial critics are invocations with different goals.
 - Parallel exploration (N workers on the same task) is N parallel invocations dispatched from the same step.
 
-**Streaming reprompt.** A step may emit multiple tool calls. When each tool call returns, the emitting agent is reprompted — even while other tool calls from the same step are still outstanding. Each reprompt initiates a new step (a new commit on the parent branch). A tool call's *structural parent* is the step whose model call emitted it; its *temporal resolution* may overlap with later steps. The two are distinct and both tracked.
+**Every tool returns synchronously.** Provider APIs (Anthropic Messages, OpenAI Responses, Gemini) require each `tool_use` block emitted by a step to be matched by a `tool_result` block in the immediately following user message. The harness honors that invariant: a step's next model call is issued only when every tool call it emitted has produced a `tool_result`. Partial-result reprompts are not attempted — they are rejected at the wire.
 
-Tool calls targeting non-subagent tools run inline: their records are committed on the branch as part of the emitting step. Dispatch tool calls spawn invocation branches off the commit where the dispatch landed. Parallel dispatches from a single step spawn N sibling invocation branches off that same commit.
+**Async work uses handles.** Long-running tools — including dispatch — return immediately with a handle (`{status: in_progress, handle: <id>}`) as their `tool_result`. The agent retrieves the actual outcome later via a separate `await(handle)` or `check(handle)` tool, whose return value is a `tool_result` on a later step. Parallelism is expressed by issuing several dispatches in one step and awaiting them in subsequent steps as results come in. The per-step "one result per tool_use" shape stays intact; the asynchrony rides on the handle. Dispatch is a tool like any other: this is how the symmetry between inline tool calls and invocations is preserved without inventing a second control path.
+
+Tool calls targeting non-subagent tools commit their records on the emitting branch as part of the step. Dispatch tool calls spawn invocation branches off the commit where the dispatch landed; the `tool_result` the parent step observes is the handle. When an invocation terminates and merges back, its compacted output is what `await(handle)` returns on the next step. Parallel dispatches from a single step spawn N sibling invocation branches off that same commit.
 
 Invocations are expected to terminate and merge before their parent branch does.
 
-By convention, invocations never write outside their own `invocations/<id>/` namespace or `artifacts/` (append-mostly). This makes merge conflicts structurally unlikely.
+The harness assigns write paths per tool call and per invocation, so two sibling branches never target the same file. This is a structural guarantee (enforced by the tool executor and the dispatch primitive), not a convention, which is what makes the merge protocol (§2.6) conflict-free by construction.
 
 ### 2.6 Merges
 
 Merges are always no-fast-forward and conflict-free by construction. The merge protocol:
 
 1. Child branch completes.
-2. Compactor runs on the child branch (if warranted — see §2.7), producing a compacted diff against the parent at fork time.
-3. Harness rebases the compacted diff onto the current parent tip (which may have advanced).
+2. Terminal compaction runs (if warranted — see §2.7): a compactor subagent is dispatched off the child's tip and merges back into the child, leaving the child's tree in compacted form.
+3. Harness rebases the child's compacted diff onto the current parent tip (which may have advanced).
 4. If rebase succeeds: merge with `--no-ff`.
-5. If rebase conflicts: the child branch is marked conflicted, left unmerged, flagged for user attention. This should be rare; it indicates two invocations modified the same path, which is a design smell.
+5. If rebase conflicts: the child branch is marked conflicted, left unmerged, flagged for operator attention. This indicates a harness defect — two branches were given overlapping write paths, violating the guarantee in §2.5 — and is tracked accordingly.
 
 ### 2.7 Compaction
 
-Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a branch's work for consumption by the parent. A **compactor** is a subagent that performs compaction.
+Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a branch's work for consumption by the parent. A **compactor** is a subagent that performs compaction. It has no privileged position in the architecture: compactors are dispatched like any other invocation, run on their own branches, and merge back through the normal protocol (§2.6). What distinguishes a compactor is its goal (produce a summary of the dispatching branch's work) and its toolset.
 
-Compactor constraints (v1):
+Compactor toolset (v1):
 
-- **Deletion-only.** The compactor can remove files and truncate file contents, but cannot rewrite content. Worst case is lost information, never corrupted information.
-- **Scoped to the branch's diff.** It does not modify pre-existing parent state.
-- **Has access to the branch's goal.** The compactor decides relevance against the stated goal.
+- **`write_summary(content)`** — writes the compacted summary file on the compactor branch.
+- **`mark_for_deletion(path)`** — nominates a file on the compactor branch for removal. The harness applies the deletions at commit time.
 
-**Terminal compaction.** Every exchange and invocation is compacted at termination before the merge to its parent. The compacted summary is what the parent sees.
+Giving the compactor no general filesystem write surface makes "deletion-only" structural rather than disciplinary: the worst case is lost information, never corrupted information. The compactor has access to the dispatching branch's goal, passed through as `parent_goal`, and decides relevance against it.
 
-**Intermediate compaction.** Compaction may also run at checkpoints during a branch's execution — not only at termination. At each checkpoint the compactor produces a current-state summary and merges only that summary to the parent, *replacing* the previous checkpoint's summary. The branch continues running afterward; the next checkpoint supersedes this one; the terminal compaction is the final checkpoint in the sequence.
+**Terminal compaction.** When a branch is ready to merge back to its parent, the harness dispatches a compactor off the branch's tip with a goal that instructs it to summarize the branch's work. The compactor writes the summary and marks superseded files for deletion, then merges back into the dispatching branch. The dispatching branch then merges to its parent (§2.6); the parent sees only the compacted tree.
+
+**Intermediate compaction.** Compaction may also run at checkpoints during a branch's execution — not only at termination. Each checkpoint is another compactor dispatch with the same shape: it writes a new numbered summary (`.agent/compactions/<seq>.md`), marks the previous summary for deletion, and merges back. The branch continues running afterward against its updated tree. Terminal compaction is the last checkpoint in the sequence.
 
 The discipline that parent branches see only compacted results — never raw internal state — is preserved. Intermediate compaction just makes the view progressively richer rather than all-or-nothing.
 
 Intermediate compaction triggers are declared in `workflow.yaml` (see §6): by commit count, by elapsed time, or by an explicit `flush` action the agent may call. A branch with no configured trigger compacts only at termination.
 
-Compaction failures (compactor produces garbage, times out, etc.) fall back to unmerged state and user review.
+While a compactor invocation is in flight, the branch that dispatched it is quiescent — it is awaiting the compactor's `tool_result`, same as any other dispatch. No special interlock is required.
+
+Compaction failures (compactor produces garbage, times out, etc.) fall back to unmerged state and user review, as with any invocation failure.
 
 ### 2.8 Goals
 
@@ -192,6 +198,16 @@ A stopped exchange is terminal: it does not merge back to `main`. The user may p
 
 Default retention: 30 days, then tarballed and GC'd.
 
+### 2.10 Retries and failures
+
+A step's commit is written *before* its model call is issued (§2.3). That commit is the exact snapshot the model call was derived from, which makes retry tractable: a failed model call can be reissued against the same state without drift.
+
+- **Retryable provider errors** (transient network failure, 429 rate limit, 5xx) are retried inline with backoff, bounded by a configurable attempt cap. Retries do not produce additional commits — the commit frames the model call, not the individual API call.
+- **Non-retryable errors** (400 validation failure, auth failure, impossible-to-satisfy schema) abort the step. The branch is left in the state it held before the model call and flagged for operator attention.
+- **Unknown or ambiguous failures** trigger a diagnostic dispatch: a subagent is dispatched off the branch's current commit with a goal describing the failure, access to the branch state and the raw error, and instructions to produce a recommended next action (retry, abort, modify config, escalate).
+
+Tool failures follow the same shape at the tool-executor level, surfaced to the emitting agent as the tool's `tool_result` content. The agent decides whether to retry, ignore, or escalate — this is an ordinary agent decision, not a harness one.
+
 ---
 
 ## 3. Component Architecture
@@ -205,11 +221,13 @@ All components communicate through the filesystem. No shared memory, no direct f
 - Harness → UI (events appended to `.agent/state/events.log`, UI tails).
 - UI → Harness (user actions written to an input directory, harness picks up).
 
+**Threads, not processes.** "Worker" and "executor" name roles that run as threads inside the single harness process; the disk contract is not an inter-process bus. Tool subprocesses invoked by the tool executor are genuinely separate processes. Routing inter-role communication through disk — even between threads in the same process — is load-bearing rather than ceremonial: it is what buys inspectability, audit trail, and the single-author-per-file discipline that keeps many concurrent workers from corrupting each other's state.
+
 Notification mechanism: inotify where available, with a polling fallback. Every event write updates a `last_event_ts` sentinel file as a sanity check for consumers to detect missed events.
 
 Consequences:
 
-- Every component is independently restartable.
+- Every component is independently restartable (threads respawn; subprocesses are relaunched from disk state).
 - Replay from any point is `git checkout <ref>` + re-tail the event log.
 - Latency is higher than in-memory IPC. Accepted and compensated by streaming-first UI design.
 
@@ -355,6 +373,14 @@ events:
     - mark_abandoned
     - notify_ui
 
+  # Per-step hooks, fire on every branch.
+  pre_step:
+    - <actions run before a step's model call is issued>
+  post_step:
+    - <actions run after the step's model call returns, before tool execution>
+  on_tool_return:
+    - <actions run each time a tool call resolves>
+
 compaction:
   intermediate:
     trigger: every_n_commits   # or: every_t_seconds, on_flush
@@ -362,6 +388,8 @@ compaction:
 ```
 
 Actions are implemented in the harness; the workflow declares which run when. The `flush` action emitted by a running agent triggers an intermediate compaction without terminating the branch (§2.7). This is the primary surface for experimentation.
+
+Per-step hooks (`pre_step`, `post_step`, `on_tool_return`) fire on every branch and are the primary extension points for cross-cutting behavior — observability, budget enforcement, cache maintenance, scheduled intermediate compaction triggers. Their handlers typically dispatch subagents or emit log entries rather than modifying the in-flight branch's tree directly; any write still goes through the harness-assigned write-path machinery (§2.5).
 
 ---
 
@@ -482,7 +510,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.4 — Invocations
 
-**Success criterion:** Agent can dispatch a subagent. Invocation runs in its own worktree and branch. Merge-back flow works end-to-end. Parallel invocations do not corrupt each other's state. Streaming reprompt works: each tool return initiates a new step while siblings may still be in flight.
+**Success criterion:** Agent can dispatch a subagent. Invocation runs in its own worktree and branch. Merge-back flow works end-to-end. Parallel invocations do not corrupt each other's state. Handle-based async works: a dispatch returns immediately with a handle, siblings can be in flight concurrently, and `await(handle)` retrieves the compacted result on a later step (§2.5).
 
 ### v0.5 — UI
 

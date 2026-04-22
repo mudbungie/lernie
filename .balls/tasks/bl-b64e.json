@@ -2,7 +2,7 @@
   "branch": "work/bl-b64e",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-22T17:44:59.137583069Z","id":"bl-4f36","title":"Gate: tests pass (make install)"},{"closed_at":"2026-04-22T17:45:01.816402260Z","id":"bl-303f","title":"Gate: docs up to date (make install)"}],
+  "closed_children": [{"closed_at":"2026-04-22T17:44:59.137583069Z","id":"bl-4f36","title":"Gate: tests pass (make install)"},{"closed_at":"2026-04-22T17:45:01.816402260Z","id":"bl-303f","title":"Gate: docs up to date (make install)"},{"closed_at":"2026-04-22T17:45:04.059840846Z","id":"bl-c425","title":"Gate: alignment (make install)"}],
   "created_at": "2026-04-22T17:41:56.132066714Z",
   "delivered_in": "824e45dbe02610ea8f115d4da4c44cf51e8a7417",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Makefile: install target to ~/.local/bin",
   "type": "task",
-  "updated_at": "2026-04-22T17:45:01.816434290Z"
+  "updated_at": "2026-04-22T17:45:04.059874399Z"
 }

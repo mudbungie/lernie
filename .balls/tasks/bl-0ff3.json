@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T17:16:55.803421221Z",
-  "delivered_in": null,
+  "delivered_in": "b7b9c17d1aab063156b43f2b2157978a2555b2c8",
   "depends_on": [],
   "description": "Audit the front-door principle doc change: every cross-reference resolves, no newly introduced terms of art lack a definition, no banned terms (bare 'call', 'turn', 'session', 'compression').",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-dfb7",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate(tests): verify no broken doc refs, terminology consistent",
   "type": "task",
-  "updated_at": "2026-04-22T17:22:03.337668788Z"
+  "updated_at": "2026-04-22T17:23:14.291072265Z"
 }

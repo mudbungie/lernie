@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-dfb7",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T17:16:55.780930350Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-0ff3"},{"link_type":"gates","target":"bl-42ea"},{"link_type":"gates","target":"bl-f951"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Codify 'Everyone uses the front door' principle",
   "type": "task",
-  "updated_at": "2026-04-22T17:16:55.859729508Z"
+  "updated_at": "2026-04-22T17:16:58.320462338Z"
 }

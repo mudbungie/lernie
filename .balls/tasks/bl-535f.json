@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:31.396922523Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README reflects the v0.2 end-to-end shape (replacing v0.1's direct-to-main explanation). docs/ARCHITECTURE.md §12 v0.1 exception notes both retired. branches.json schema documented.",
+  "external": {},
+  "id": "bl-535f",
+  "links": [],
+  "parent": "bl-4772",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (v0.2 epic)",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:31.396922523Z"
+}

@@ -2,7 +2,7 @@
   "branch": "work/bl-c91c",
   "claimed_by": "claude-opus",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-22T06:12:20.207948703Z","id":"bl-7847","title":"Gate: tests pass (template)"}],
   "created_at": "2026-04-21T18:45:31.612601665Z",
   "delivered_in": "35b38b5d1023870d107f2829e49b8149c1c1d11a",
   "depends_on": ["bl-5bbc"],
@@ -16,5 +16,5 @@
   "tags": ["template"],
   "title": "Conversation repo template under template/",
   "type": "task",
-  "updated_at": "2026-04-22T06:11:52.747335240Z"
+  "updated_at": "2026-04-22T06:12:20.208024053Z"
 }

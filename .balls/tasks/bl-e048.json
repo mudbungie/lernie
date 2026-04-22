@@ -2,7 +2,7 @@
   "branch": "work/bl-e048",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-22T17:29:23.196777009Z","id":"bl-0647","title":"Gate: tests pass (prompt subcommand)"}],
+  "closed_children": [{"closed_at":"2026-04-22T17:29:23.196777009Z","id":"bl-0647","title":"Gate: tests pass (prompt subcommand)"},{"closed_at":"2026-04-22T17:29:29.214157257Z","id":"bl-14b4","title":"Gate: docs up to date (prompt subcommand)"}],
   "created_at": "2026-04-22T05:27:22.724288250Z",
   "delivered_in": "a35327a7221d8588f78fc8f0f51f3fdd02e22ad2",
   "depends_on": ["bl-2904","bl-9600"],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "lernie binary: 'prompt' subcommand — commit the exchange",
   "type": "task",
-  "updated_at": "2026-04-22T17:29:23.196812127Z"
+  "updated_at": "2026-04-22T17:29:29.214188767Z"
 }

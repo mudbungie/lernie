@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:19:17.107959540Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "LICENSE path matches the exempt regex in .githooks/pre-commit; no taxonomy implications to verify.",
+  "external": {},
+  "id": "bl-e80c",
+  "links": [],
+  "parent": "bl-ffb8",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (license)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:19:17.107959540Z"
+}

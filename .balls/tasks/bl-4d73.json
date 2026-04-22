@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T06:10:19.737390339Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Rewrite 'Disk is the bus' as a tighter, broader 'Disk first' principle and move it to the top of docs/PRINCIPLES.md. Disk-first is foundational: it is what makes git the substrate at all (history, branching, rollback, replay are git operations on data already on disk) and what eliminates entire classes of ephemeral-state bug (lost updates, stale caches, in-memory views drifting from on-disk truth).",
+  "external": {},
+  "id": "bl-4d73",
+  "links": [],
+  "parent": null,
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "docs: promote and tighten the disk-first principle",
+  "type": "task",
+  "updated_at": "2026-04-22T06:10:19.737390339Z"
+}

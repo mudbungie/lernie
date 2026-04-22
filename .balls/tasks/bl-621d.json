@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-621d",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T07:25:07.183441529Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-905d"},{"link_type":"gates","target":"bl-d457"},{"link_type":"gates","target":"bl-efa7"}],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Salvage stray main-branch state into proper worktree flow",
   "type": "task",
-  "updated_at": "2026-04-22T07:25:07.292570689Z"
+  "updated_at": "2026-04-22T07:25:11.533781831Z"
 }

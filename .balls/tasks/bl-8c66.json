@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:30.990277662Z",
+  "delivered_in": null,
+  "depends_on": ["bl-e7e1"],
+  "description": "Add terminal compaction and the merge protocol so exchange branches land back on main.\n\n=== What to build ===\n1. Compactor subagent shape (§2.7). Stub is acceptable per §12 — it can produce a trivial summary (e.g. 'exchange <id>: <terminal response text>') written to .agent/compactions/<seq>.md, with no mark_for_deletion calls for v0.2. What matters is the DISPATCH shape exists.\n2. Compactor tool surface: write_summary(content), mark_for_deletion(path). Deletion-only write discipline (§2.7) — no general filesystem writes from the compactor. For v0.2, mark_for_deletion can be unimplemented (no-op) as long as the tool is callable without crash.\n3. At exchange-done, the harness dispatches the compactor off the exchange branch tip. Compactor runs on its own branch, writes the summary, merges back into the exchange branch. (v0.2 invocation is permitted here — §2.7 defines the compactor as a subagent.)\n4. Merge protocol (§2.6): exchange branch rebases onto main's current tip, --no-ff merges into main. Conflict path is a hard error marked 'conflicted' — v0.2 doesn't need graceful handling beyond a clear message.\n5. Cleanup: worktree removed on merge; branch ref retained for the retention window (§2.3, §2.9).\n\n=== Out of scope ===\n- Intermediate compaction (§2.7 'intermediate' trigger) — v0.2 is terminal-only.\n- Compactor quality improvements — literal stub is fine.\n- workflow.yaml-driven compaction triggers (v0.6).\n- Rich conflict recovery (mark conflicted and bail).\n\n=== Dependencies ===\n- Task A (exchange branch + step on branch).\n\n=== Testing ===\n- Unit: compactor dispatch + merge-back flow with injected git/adapter stubs.\n- Integration: lernie new → lernie prompt against mock → assert main's HEAD is a merge commit whose second parent is the exchange branch tip; exchange's compacted tree (summary file) is reachable via the merge.\n- tarpaulin --fail-under 100 green.",
+  "external": {},
+  "id": "bl-8c66",
+  "links": [],
+  "parent": "bl-4772",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Terminal compaction stub + no-ff merge back",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:30.990277662Z"
+}

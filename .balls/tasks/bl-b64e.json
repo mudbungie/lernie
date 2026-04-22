@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-b64e",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T17:41:56.132066714Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-4f36"},{"link_type":"gates","target":"bl-303f"},{"link_type":"gates","target":"bl-c425"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Makefile: install target to ~/.local/bin",
   "type": "task",
-  "updated_at": "2026-04-22T17:41:56.226586165Z"
+  "updated_at": "2026-04-22T17:41:59.130939496Z"
 }

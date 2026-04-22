@@ -9,12 +9,12 @@
   "description": "Pre-commit hook's exempt regex references LICENSE, but no LICENSE file exists in the repo. Add a standard MIT license at the project root. User confirmed MIT as the choice on 2026-04-21. Copyright holder: Mark (repo owner); year: 2026.",
   "external": {},
   "id": "bl-ffb8",
-  "links": [{"link_type":"gates","target":"bl-0aeb"},{"link_type":"gates","target":"bl-a67e"}],
+  "links": [{"link_type":"gates","target":"bl-0aeb"},{"link_type":"gates","target":"bl-a67e"},{"link_type":"gates","target":"bl-e80c"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": [],
   "title": "Add MIT LICENSE file",
   "type": "task",
-  "updated_at": "2026-04-22T05:19:20.232171046Z"
+  "updated_at": "2026-04-22T05:19:20.250343359Z"
 }

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-7cfa",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T07:44:35.768149947Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-1c77"},{"link_type":"gates","target":"bl-cd23"},{"link_type":"gates","target":"bl-6f26"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Anthropic adapter: extract into lernie-provider-anthropic binary",
   "type": "task",
-  "updated_at": "2026-04-22T07:44:50.184242915Z"
+  "updated_at": "2026-04-22T07:44:52.658073563Z"
 }

@@ -32,6 +32,9 @@ Provider APIs require paired `tool_use`/`tool_result`, so every tool returns imm
 ## Integrations are external binaries
 Tools (§3.3) and provider adapters (§4.4) are separate executables the harness invokes as subprocesses, each with a narrow stdio contract — a handful of subcommands, JSON on stdin/stdout, env-var auth, SIGTERM cancellation. The harness owns orchestration and on-disk state; the binaries own wire protocols, vendor quirks, and credential handling. That is what lets external contributors extend the harness — a corporate SSO flow or a new model provider is a standalone binary, not a patch to the core — and is what keeps the core small enough to reason about.
 
+## Everyone uses the front door
+The `lernie` CLI is the sole control plane: every procedure-to-procedure invocation — subagent dispatch, compaction, verification, any workflow-invoked procedure (§6) — goes through it. The harness is a first-class consumer of its own CLI, using the same command surface an external caller would. Disk-as-bus (§3.1) carries state between procedures; the CLI carries commands. Nothing else — no library API, no in-process sidechannel, no ad-hoc socket. Three payoffs: every inter-procedure edge is a capturable CLI call (integration testability); embedding lernie in another tool is `exec("lernie", ...)` rather than a library port (embeddability); and with only those two channels, back-channel communication has no place to go (operational atomicity as structure, not convention).
+
 ## Compaction, never compression
 Summarizing a branch's work uses a subagent with a constrained toolset (`write_summary`, `mark_for_deletion`). "Deletion-only" is structural — no general filesystem write surface — so the worst case is lost information, never corrupted information.
 

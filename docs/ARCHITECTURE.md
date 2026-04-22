@@ -260,6 +260,22 @@ Tool output contract:
 - Tools must handle SIGTERM cleanly; partial output is the harness's responsibility to clean up post-kill.
 - Tools exceeding a configurable output size threshold trigger automatic dispatch: the raw output is handed to an invocation for parsing, and only that invocation's compacted result reaches the parent step.
 
+### 3.4 CLI as control plane
+
+`lernie` is a single binary with subcommands. Every procedure the harness can start — subagent dispatch (§2.5), compaction (§2.7), verification, auto-dispatch on oversized tool output (§3.3), and any other workflow-invoked procedure (§6) — is reachable through a subcommand of that binary. The CLI is the sole entry point: a procedure invoking another procedure does so by going through the CLI dispatcher, never through in-process function calls, shared memory, or ad-hoc sockets. Subagent dispatch, the canonical case, is `lernie dispatch …`.
+
+This is the invocation counterpart to §3.1. **Disk-as-bus carries state; CLI-as-control-plane carries commands.** Between any two procedures, state flows through the filesystem (§3.1) and invocations flow through the CLI. There is no third channel — no library API surface, no sidechannel. An external caller embedding lernie in another tool uses exactly the same CLI surface the harness uses internally; that symmetry is what lets lernie be a component in another tool rather than a standalone monolith.
+
+Whether a given CLI invocation is dispatched as a subprocess `exec` or as an in-process re-entry into the same argument parser is an implementation detail chosen per-procedure (isolation needs, latency, resource cost). What is invariant is that the procedure's *interface* is the CLI: the same arguments, the same on-disk effects, whether exec'd or in-process. Internal procedures are not permitted to shortcut past the CLI dispatcher via a private function call.
+
+Three consequences fall out:
+
+- **Integration testability.** Every inter-procedure edge is an observable CLI invocation. A test captures the arguments and on-disk effects, asserts on their shape, and replays outputs from fixtures without needing to mock in-process interfaces.
+- **Embeddability.** Embedding lernie in another tool is `exec("lernie", args)` with env-var auth. No library port, no shared runtime, no plugin loader.
+- **No back-channels.** With disk for state and CLI for commands — and nothing else — operational atomicity is structural: a procedure has no surface with which to back-channel into another. The single-author-per-file discipline (§2.6) and the per-procedure commit boundaries that make replay work are consequences of this, not separate protections layered on top.
+
+"Procedure" here is the term from §6 (subordinate routines invoked by workflow), extended to cover the dispatch and compactor invocations already described in §2.5 and §2.7 — every named operation the harness can start.
+
 ---
 
 ## 4. Providers, Auth, and Models

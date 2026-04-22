@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T07:25:07.240023348Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Standard gate for parent bl-621d.",
+  "external": {},
+  "id": "bl-d457",
+  "links": [],
+  "parent": "bl-621d",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (salvage uncommitted main state)",
+  "type": "task",
+  "updated_at": "2026-04-22T07:25:07.240023348Z"
+}

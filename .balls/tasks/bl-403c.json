@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T07:00:12.210458420Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Module docstring covers the streaming API surface, event taxonomy, and any blocking-vs-async / commit-cadence decision made at claim time. README mention if user-visible. ARCH §4 updated if behavior adds fields or changes the provider contract.",
+  "external": {},
+  "id": "bl-403c",
+  "links": [],
+  "parent": "bl-d15d",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (streaming client)",
+  "type": "task",
+  "updated_at": "2026-04-22T07:00:12.210458420Z"
+}

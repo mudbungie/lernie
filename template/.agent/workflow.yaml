@@ -1,0 +1,10 @@
+events:
+  user_message:
+    - spawn_exchange
+    - dispatch(worker)
+  worker_return:
+    - dispatch(compactor)
+    - merge
+  branch_stopped:
+    - mark_abandoned
+    - notify_ui

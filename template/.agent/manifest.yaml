@@ -1,0 +1,10 @@
+context:
+  pinned:
+    - .agent/goal.md
+    - .agent/system/prompts/base.md
+  include:
+    - exchanges/**
+    - artifacts/**
+    - invocations/*/result.md
+  budget_tokens: 150000
+  overflow: drop_oldest_exchanges

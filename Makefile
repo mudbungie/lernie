@@ -1,4 +1,4 @@
-.PHONY: all build test coverage lint fmt fmt-check check schemas install-hooks ci clean
+.PHONY: all build test coverage lint fmt fmt-check check schemas new-conversation install-hooks ci clean
 
 all: check
 
@@ -13,6 +13,10 @@ coverage:
 
 schemas:
 	cargo run --quiet --bin gen-schemas -- schemas
+
+new-conversation:
+	@test -n "$(DEST)" || { echo "usage: make new-conversation DEST=<path>"; exit 1; }
+	@scripts/new-conversation.sh template "$(DEST)"
 
 lint:
 	cargo clippy --all-targets -- -D warnings

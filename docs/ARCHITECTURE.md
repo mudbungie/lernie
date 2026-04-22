@@ -312,6 +312,8 @@ agents:
     system_prompt: prompts/compactor.md
 ```
 
+`system_prompt` is a path relative to `.agent/system/`. Absolute paths and `..` traversals are rejected at load time.
+
 ---
 
 ## 5. Context Assembly

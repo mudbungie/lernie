@@ -1,0 +1,3 @@
+# Runtime state that the harness produces outside the tracked .agent/state/
+# tree. v0.1 writes nothing that needs to be ignored; entries will be added
+# here as later milestones introduce on-disk runtime artifacts.

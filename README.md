@@ -24,6 +24,7 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make fmt`            | `cargo fmt`                                           |
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
+| `make new-conversation DEST=<path>` | Scaffold a conversation repo from `template/` |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
@@ -34,6 +35,23 @@ JSON Schemas for the `.agent/*.yaml` config files (per
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2) are generated from the
 Rust types under `src/config/`. `make schemas` writes them to `schemas/` for
 editor integration and external validators.
+
+## Conversation repos
+
+Each conversation is a self-contained git repository copied from
+[`template/`](template/) — the versioned skeleton described in ARCH §2.2.
+Create one with:
+
+```
+make new-conversation DEST=/path/to/my-conversation
+```
+
+`scripts/new-conversation.sh` backs the target: it copies the template,
+runs `git init -b main`, and lands a single `init conversation repo`
+commit. The destination must not already exist. `.agent/goal.md` is
+intentionally not in the template — it is written at dispatch time
+(ARCH §2.8). A later milestone (bl-2904) will replace the shell tool with
+a `lernie new` subcommand on the harness binary.
 
 ## Workflow
 

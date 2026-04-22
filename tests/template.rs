@@ -1,11 +1,10 @@
-//! Integration test for the conversation repo template and its scaffolding
-//! script. Runs the shell tool end-to-end against a tempdir and validates
-//! the resulting repo against every config schema declared in
-//! `docs/ARCHITECTURE.md` §2.2.
+//! Integration test for the conversation repo template, exercised
+//! end-to-end through the `lernie new` subcommand.
 //!
-//! Any path from `manifest.yaml` that is written at dispatch time (§2.8)
-//! and is therefore legitimately absent from a freshly scaffolded repo
-//! is listed in [`WRITTEN_AT_DISPATCH`].
+//! Validates the resulting repo against every config schema declared in
+//! `docs/ARCHITECTURE.md` §2.2. Any pinned path from `manifest.yaml`
+//! that is written at dispatch time (§2.8) and therefore legitimately
+//! absent from a fresh scaffold is listed in [`WRITTEN_AT_DISPATCH`].
 
 use lernie::config::agents::Agents;
 use lernie::config::cross::{check_agents_against_providers, check_workflow_against_agents};
@@ -40,18 +39,15 @@ fn scrub_git_env(cmd: &mut Command) {
     }
 }
 
-fn workspace_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+fn lernie_bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_lernie"))
 }
 
 fn scaffold(dest: &Path) {
-    let ws = workspace_root();
-    let script = ws.join("scripts/new-conversation.sh");
-    let template = ws.join("template");
-    let mut cmd = Command::new(&script);
+    let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
-    let status = cmd
-        .arg(&template)
+    let out = cmd
+        .arg("new")
         .arg(dest)
         // Pin git identity so the initial commit does not depend on the
         // runner's global config.
@@ -59,9 +55,14 @@ fn scaffold(dest: &Path) {
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")
         .env("GIT_COMMITTER_EMAIL", "test@example.invalid")
-        .status()
-        .expect("invoke new-conversation.sh");
-    assert!(status.success(), "new-conversation.sh failed: {status}");
+        .output()
+        .expect("invoke lernie binary");
+    assert!(
+        out.status.success(),
+        "lernie new failed: {}\nstderr: {}",
+        out.status,
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 fn scaffolded() -> (TempDir, PathBuf) {
@@ -211,20 +212,29 @@ fn scaffolded_repo_has_one_commit() {
 }
 
 #[test]
-fn script_refuses_existing_destination() {
-    let ws = workspace_root();
-    let script = ws.join("scripts/new-conversation.sh");
-    let template = ws.join("template");
+fn binary_refuses_non_empty_destination() {
     let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("already-there");
+    let dest = holder.path().join("occupied");
     std::fs::create_dir(&dest).unwrap();
-    let mut cmd = Command::new(&script);
+    std::fs::write(dest.join("preexisting"), b"x").unwrap();
+    let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
-    let out = cmd.arg(&template).arg(&dest).output().unwrap();
-    assert!(!out.status.success(), "script should refuse existing dest");
-    let stderr = String::from_utf8_lossy(&out.stderr);
+    let out = cmd.arg("new").arg(&dest).output().unwrap();
     assert!(
-        stderr.contains("already exists"),
-        "unexpected stderr: {stderr}"
+        !out.status.success(),
+        "binary should refuse non-empty destination"
     );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("not empty"), "unexpected stderr: {stderr}");
+}
+
+#[test]
+fn binary_accepts_existing_empty_destination() {
+    // create_dir before running — task description says refuse only if
+    // the dest is non-empty, so a pre-created empty dir must work.
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("preexisting-empty");
+    std::fs::create_dir(&dest).unwrap();
+    scaffold(&dest);
+    assert!(dest.join(".agent/version").is_file());
 }

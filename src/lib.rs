@@ -1,6 +1,5 @@
-//! Lernie configuration parsing and validation.
-//!
-//! Parses and validates the on-disk configuration files described in
-//! `docs/ARCHITECTURE.md` §2.2. No runtime harness behavior.
+//! Lernie library: configuration parsing plus the conversation-repo
+//! scaffold used by the `lernie new` subcommand.
 
 pub mod config;
+pub mod template;

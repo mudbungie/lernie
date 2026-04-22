@@ -16,7 +16,7 @@ schemas:
 
 new-conversation:
 	@test -n "$(DEST)" || { echo "usage: make new-conversation DEST=<path>"; exit 1; }
-	@scripts/new-conversation.sh template "$(DEST)"
+	@cargo run --quiet --bin lernie -- new "$(DEST)"
 
 lint:
 	cargo clippy --all-targets -- -D warnings

@@ -40,18 +40,23 @@ editor integration and external validators.
 
 Each conversation is a self-contained git repository copied from
 [`template/`](template/) — the versioned skeleton described in ARCH §2.2.
-Create one with:
+Create one with the `lernie` binary:
+
+```
+lernie new /path/to/my-conversation
+```
+
+Or via the Makefile wrapper:
 
 ```
 make new-conversation DEST=/path/to/my-conversation
 ```
 
-`scripts/new-conversation.sh` backs the target: it copies the template,
-runs `git init -b main`, and lands a single `init conversation repo`
-commit. The destination must not already exist. `.agent/goal.md` is
-intentionally not in the template — it is written at dispatch time
-(ARCH §2.8). A later milestone (bl-2904) will replace the shell tool with
-a `lernie new` subcommand on the harness binary.
+The binary embeds `template/` at build time (via `include_dir`), copies
+it to the destination, runs `git init -b main`, and lands a single
+`init conversation repo` commit. The destination must either not exist
+or be an empty directory. `.agent/goal.md` is intentionally not in the
+template — it is written at dispatch time (ARCH §2.8).
 
 ## Workflow
 

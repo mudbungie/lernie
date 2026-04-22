@@ -18,6 +18,7 @@ does not track `.git/config`, so the hook is not active until installed.
 | Target                | What it does                                          |
 |-----------------------|-------------------------------------------------------|
 | `make build`          | `cargo build`                                         |
+| `make release`        | `cargo build --release`                               |
 | `make test`           | `cargo test`                                          |
 | `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine)      |
 | `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
@@ -28,6 +29,20 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
+| `make install` [`INSTALL_PREFIX=<p>`] | Release-build, then copy `lernie` and `lernie-provider-anthropic` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) |
+| `make uninstall` [`INSTALL_PREFIX=<p>`] | Remove the installed binaries from `$INSTALL_PREFIX/bin` |
+
+### Install
+
+```
+make install                          # -> ~/.local/bin/lernie, ~/.local/bin/lernie-provider-anthropic
+make install INSTALL_PREFIX=/usr/local # -> /usr/local/bin/...
+```
+
+`make install` runs a release build and copies the two v0.1 binaries
+into `$INSTALL_PREFIX/bin` with `install -m 0755` (atomic overwrite, no
+symlinks). Make sure that directory is on your `PATH`. Re-run after
+every rebuild to pick up changes. `make uninstall` removes them.
 
 ## Configuration schemas
 
@@ -113,6 +128,20 @@ above. The v0.1 invocation also passes `--endpoint <url>` from
 `providers.yaml`; that is a pragmatic simplification of §4.4's "harness
 does not read endpoint:" discipline and a v0.2 refinement can restore
 the strict reading (e.g. env-var handoff or describe-driven discovery).
+
+### Dropping in a custom adapter
+
+Adapters are discovered on `PATH` by name. To test a new one:
+
+1. Copy the binary into any `PATH` directory (e.g. `~/.local/bin/` —
+   the same location `make install` uses) with the name
+   `lernie-provider-<name>`.
+2. Add a provider entry in your conversation repo's
+   `.agent/providers.yaml` keyed by `<name>`, with the `endpoint:` and
+   `auth:` the adapter expects.
+3. Declare at least one `models:` entry whose `provider:` points at
+   that key, and point an agent role (`worker` for v0.1) at that model.
+4. Run `lernie prompt <repo> '...'`.
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-ffb8",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T05:19:11.068730896Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-0aeb"},{"link_type":"gates","target":"bl-a67e"},{"link_type":"gates","target":"bl-e80c"}],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Add MIT LICENSE file",
   "type": "task",
-  "updated_at": "2026-04-22T05:19:20.250343359Z"
+  "updated_at": "2026-04-22T05:19:22.739012318Z"
 }

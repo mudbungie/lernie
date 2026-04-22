@@ -9,12 +9,12 @@
   "description": "Milestone per ARCHITECTURE.md §12.\n\nSuccess criterion (quoted): An exchange is a branch, completion is a no-ff merge back to main, the repo layout matches §2.2. User message → exchange branch → steps as linear commits → compactor (deletion-only, stub is fine) → merge. Unmerged branch count metric available.\n\n=== Scope ===\n- ex/<ts>-<id> branches off main per exchange.\n- goal.md written at spawn (§2.8).\n- Step-as-linear-commit with commit-before-model-call (§2.3, §2.10). v0.2 has no tools, so one exchange = one step = one step commit.\n- Terminal compactor subagent; deletion-only; stub acceptable.\n- Merge protocol (§2.6): rebase onto parent tip, --no-ff merge.\n- branches.json kept honest; unmerged-count surface available.\n- v0.1 exceptions retired: direct-to-main commit (naturally falls out of the branch flow) and --endpoint forwarding (restore strict §4.4).\n\n=== Explicit non-goals ===\n- Tools (v0.3).\n- Invocations / subagent dispatch for worker (v0.4) — the compactor is the one permitted exception because §2.7 defines it as a subagent.\n- UI (v0.5).\n- workflow.yaml-driven flows (v0.6).\n\n=== Done-when ===\nEnd-to-end:\n  lernie new /tmp/c\n  lernie prompt /tmp/c 'hello'\nproduces: an ex/<ts>-<id> branch that compacts, no-ff merges to main, with the exchange visible in main's history as a merge commit. branches.json is empty again after merge.",
   "external": {},
   "id": "bl-4772",
-  "links": [{"link_type":"gates","target":"bl-4a6b"},{"link_type":"gates","target":"bl-535f"}],
+  "links": [{"link_type":"gates","target":"bl-4a6b"},{"link_type":"gates","target":"bl-535f"},{"link_type":"gates","target":"bl-5acb"}],
   "parent": null,
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "v0.2: git tree",
   "type": "epic",
-  "updated_at": "2026-04-22T21:34:31.450224555Z"
+  "updated_at": "2026-04-22T21:34:31.468348434Z"
 }

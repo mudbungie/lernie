@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T21:34:31.268104160Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "cargo test + tarpaulin --fail-under 100 green. Integration test's endpoint redirection still works via the chosen mechanism, with no '--endpoint' on the adapter argv.",
+  "external": {},
+  "id": "bl-2149",
+  "links": [],
+  "parent": "bl-effb",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (retire --endpoint forwarding)",
+  "type": "task",
+  "updated_at": "2026-04-22T21:34:31.268104160Z"
+}

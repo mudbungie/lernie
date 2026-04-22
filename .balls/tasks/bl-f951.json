@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-f951",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T17:16:55.826197528Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-dfb7",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate(alignment): coherent with existing Symmetry of dispatch and Integrations are external binaries",
   "type": "task",
-  "updated_at": "2026-04-22T17:16:55.826197528Z"
+  "updated_at": "2026-04-22T17:24:23.687115358Z"
 }

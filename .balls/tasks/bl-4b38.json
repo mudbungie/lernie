@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:27:39.708834182Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README documents 'lernie new <path>'; any flags or behaviors captured.",
+  "external": {},
+  "id": "bl-4b38",
+  "links": [],
+  "parent": "bl-2904",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (new subcommand)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:27:39.708834182Z"
+}

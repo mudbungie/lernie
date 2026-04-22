@@ -9,12 +9,12 @@
   "description": "Two uncommitted changes were sitting on main (workflow breach):\n\n1. docs/PRINCIPLES.md — 'Disk first' rewrite: replaces 'context, config, history, in-flight work, agent notes' with 'context, messages while in flight, responses, tool calls' in the state list.\n2. CLAUDE.md — new symlink -> AGENTS.md so Claude reads the repo-scoped AGENTS.md.\n\nBoth were reverted/unstaged on main. This task re-applies them through the correct worktree flow. Content preserved exactly as the user had it; this task is about workflow hygiene, not redesign.\n\nPatch for (1) saved at /tmp/principles-diskfirst.patch.",
   "external": {},
   "id": "bl-621d",
-  "links": [{"link_type":"gates","target":"bl-905d"}],
+  "links": [{"link_type":"gates","target":"bl-905d"},{"link_type":"gates","target":"bl-d457"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": [],
   "title": "Salvage stray main-branch state into proper worktree flow",
   "type": "task",
-  "updated_at": "2026-04-22T07:25:07.222690395Z"
+  "updated_at": "2026-04-22T07:25:07.258142262Z"
 }

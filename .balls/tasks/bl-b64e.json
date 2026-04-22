@@ -2,7 +2,7 @@
   "branch": "work/bl-b64e",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-22T17:44:59.137583069Z","id":"bl-4f36","title":"Gate: tests pass (make install)"}],
   "created_at": "2026-04-22T17:41:56.132066714Z",
   "delivered_in": "824e45dbe02610ea8f115d4da4c44cf51e8a7417",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Makefile: install target to ~/.local/bin",
   "type": "task",
-  "updated_at": "2026-04-22T17:44:52.810660051Z"
+  "updated_at": "2026-04-22T17:44:59.137617724Z"
 }

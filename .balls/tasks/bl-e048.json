@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-e048",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T05:27:22.724288250Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-0647"},{"link_type":"gates","target":"bl-14b4"},{"link_type":"gates","target":"bl-abfb"}],
   "parent": "bl-2813",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "lernie binary: 'prompt' subcommand — commit the exchange",
   "type": "task",
-  "updated_at": "2026-04-22T05:27:44.738920734Z"
+  "updated_at": "2026-04-22T16:58:55.818258342Z"
 }

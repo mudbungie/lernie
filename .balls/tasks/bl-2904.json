@@ -9,12 +9,12 @@
   "description": "Create the lernie binary and implement 'lernie new <path>'.\n\n=== What to build ===\n- Add src/main.rs declaring a [[bin]] or rely on default binary target with Cargo.toml; pick one and note in commit.\n- Argument parsing via clap (or argh / lexopt — pick one lightweight, justify in commit).\n- 'lernie new <path>':\n  1. Refuses if <path> exists and is non-empty.\n  2. Copies the template/ directory (from bl-c91c) to <path>.\n  3. Runs 'git init' in <path>.\n  4. Creates an initial commit 'init conversation repo' staging everything in the template.\n  5. Writes .agent/version contents matching ARCH §10 schema version.\n\n=== Out of scope ===\n- 'prompt' subcommand (separate subtask).\n- Validating the template against schemas (bl-5bbc covers load-and-validate; this task uses the template as-is).\n\n=== Testing ===\n- Integration test under tests/: invoke the binary against a tempdir, assert directory layout matches ARCH §2.2, assert git log has exactly one commit.\n\nDepends on bl-c91c.",
   "external": {},
   "id": "bl-2904",
-  "links": [{"link_type":"gates","target":"bl-6b3b"}],
+  "links": [{"link_type":"gates","target":"bl-6b3b"},{"link_type":"gates","target":"bl-4b38"}],
   "parent": "bl-2813",
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "lernie binary: 'new' subcommand",
   "type": "task",
-  "updated_at": "2026-04-22T05:27:44.592532078Z"
+  "updated_at": "2026-04-22T05:27:44.613113713Z"
 }

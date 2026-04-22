@@ -2,7 +2,7 @@
   "branch": "work/bl-9600",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-22T06:42:48.973020965Z","id":"bl-9a09","title":"Gate: tests pass (anthropic client)"}],
   "created_at": "2026-04-22T05:27:11.844243428Z",
   "delivered_in": null,
   "depends_on": ["bl-5bbc"],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Anthropic messages-API client (non-streaming)",
   "type": "task",
-  "updated_at": "2026-04-22T06:31:50.567036609Z"
+  "updated_at": "2026-04-22T06:42:48.973077280Z"
 }

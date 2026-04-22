@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T07:44:50.101455989Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README 'Providers' section updated to note that the Anthropic adapter now ships as lernie-provider-anthropic (no longer in-process). Makefile gains a build target or covers it via cargo build. ARCH §4.4 cross-references remain accurate.",
+  "external": {},
+  "id": "bl-cd23",
+  "links": [],
+  "parent": "bl-7cfa",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (Anthropic adapter binary)",
+  "type": "task",
+  "updated_at": "2026-04-22T07:44:50.101455989Z"
+}

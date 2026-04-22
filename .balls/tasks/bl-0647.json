@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T05:27:39.795186214Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "End-to-end integration test against mocked Anthropic endpoint passes. cargo test + tarpaulin --fail-under 100 green.",
+  "external": {},
+  "id": "bl-0647",
+  "links": [],
+  "parent": "bl-e048",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (prompt subcommand)",
+  "type": "task",
+  "updated_at": "2026-04-22T05:27:39.795186214Z"
+}

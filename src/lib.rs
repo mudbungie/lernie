@@ -1,14 +1,6 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+//! Lernie configuration parsing and validation.
+//!
+//! Parses and validates the on-disk configuration files described in
+//! `docs/ARCHITECTURE.md` §2.2. No runtime harness behavior.
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod config;

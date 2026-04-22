@@ -285,7 +285,7 @@ providers:
 
 ### 4.2 Model abstraction
 
-A **model** is (provider, model_id, capabilities). Model lists come from the provider's API where available. Capabilities is an extensible mapping declaring features the harness can rely on.
+A **model** is (provider, model_id, capabilities). Model lists come from the provider's API where available. Capabilities is an extensible mapping declaring features the harness can rely on. The `models:` block lives alongside `providers:` in `providers.yaml`, since each model is one key away from its (endpoint, auth) pair.
 
 ```yaml
 models:
@@ -296,7 +296,7 @@ models:
     context_window: 200000
 ```
 
-Capabilities are code-backed (each capability has a behavior implementation in the harness). Capabilities are extend-only: once declared, they are never removed from the registry, but the set on a given model may shrink if the provider removes support.
+Capabilities are code-backed (each capability has a behavior implementation in the harness). Capabilities are extend-only: once declared, they are never removed from the registry, but the set on a given model may shrink if the provider removes support. The loader seeds a known-name registry from the names that appear in this spec; an unknown name on load produces a warning, never an error, so a new provider may declare new capabilities without blocking parsing.
 
 ### 4.3 Role-based model assignment
 
@@ -366,9 +366,9 @@ events:
     - dispatch(compactor)
     - merge
   verifier_reject:
-    - dispatch(worker, with: verifier.feedback)
+    - "dispatch(worker, with: verifier.feedback)"
   worker_flush:
-    - dispatch(compactor, mode: intermediate)
+    - "dispatch(compactor, mode: intermediate)"
   branch_stopped:
     - mark_abandoned
     - notify_ui
@@ -386,6 +386,8 @@ compaction:
     trigger: every_n_commits   # or: every_t_seconds, on_flush
     n: 10
 ```
+
+Action strings that contain `: ` (named arguments) must be quoted, since YAML otherwise parses them as map entries. Bare actions (no named args) need no quotes.
 
 Actions are implemented in the harness; the workflow declares which run when. The `flush` action emitted by a running agent triggers an intermediate compaction without terminating the branch (§2.7). This is the primary surface for experimentation.
 

@@ -1,0 +1,11 @@
+# Repo-wide tarpaulin defaults: applied by every `cargo tarpaulin` run,
+# including the pre-commit hook.
+#
+# - `gen-schemas` is a thin wrapper over `lernie::config::schemas`
+#   (fully unit-tested). Excluding it keeps the 100% coverage floor
+#   meaningful without forcing a contrived test of `fn main()`.
+# - `ignore-panics` excludes branches that only fire on programmer-error
+#   panics (e.g. `.expect(...)` on infallible operations).
+[default]
+exclude-files = ["src/bin/*"]
+ignore-panics = true

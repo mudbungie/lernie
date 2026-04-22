@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workflow",
+  "description": "Top-level `workflow.yaml` shape.",
+  "type": "object",
+  "required": [
+    "events"
+  ],
+  "properties": {
+    "compaction": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CompactionConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "CompactionConfig": {
+      "description": "Optional `compaction:` block (ARCH §6).",
+      "type": "object",
+      "required": [
+        "intermediate"
+      ],
+      "properties": {
+        "intermediate": {
+          "$ref": "#/definitions/IntermediateCompaction"
+        }
+      }
+    },
+    "CompactionTrigger": {
+      "description": "Closed set of intermediate-compaction triggers (ARCH §6).",
+      "type": "string",
+      "enum": [
+        "every_n_commits",
+        "every_t_seconds",
+        "on_flush"
+      ]
+    },
+    "IntermediateCompaction": {
+      "description": "Configuration for intermediate compaction triggers.",
+      "type": "object",
+      "required": [
+        "trigger"
+      ],
+      "properties": {
+        "n": {
+          "description": "Required when `trigger == every_n_commits` (commit count) or `every_t_seconds` (seconds). Ignored for `on_flush`.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "trigger": {
+          "$ref": "#/definitions/CompactionTrigger"
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-.PHONY: all build test coverage lint fmt fmt-check check install-hooks ci clean
+.PHONY: all build test coverage lint fmt fmt-check check schemas install-hooks ci clean
 
 all: check
 
@@ -9,7 +9,10 @@ test:
 	cargo test
 
 coverage:
-	cargo tarpaulin --fail-under 100 --skip-clean --engine llvm --out Stdout
+	cargo tarpaulin --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*'
+
+schemas:
+	cargo run --quiet --bin gen-schemas -- schemas
 
 lint:
 	cargo clippy --all-targets -- -D warnings

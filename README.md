@@ -23,9 +23,17 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
 | `make fmt`            | `cargo fmt`                                           |
 | `make fmt-check`      | `cargo fmt --check`                                   |
+| `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
+
+## Configuration schemas
+
+JSON Schemas for the `.agent/*.yaml` config files (per
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2) are generated from the
+Rust types under `src/config/`. `make schemas` writes them to `schemas/` for
+editor integration and external validators.
 
 ## Workflow
 

@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Manifest",
+  "description": "Top-level `manifest.yaml` shape.",
+  "type": "object",
+  "required": [
+    "context"
+  ],
+  "properties": {
+    "context": {
+      "$ref": "#/definitions/ContextRules"
+    }
+  },
+  "definitions": {
+    "ContextRules": {
+      "description": "Rules that determine what files appear in the assembled context, in what order, with what budget, and what to do on overflow.",
+      "type": "object",
+      "required": [
+        "budget_tokens",
+        "overflow"
+      ],
+      "properties": {
+        "budget_tokens": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "include": {
+          "description": "Globs included in declared order, subject to budget.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "overflow": {
+          "$ref": "#/definitions/OverflowPolicy"
+        },
+        "pinned": {
+          "description": "Always included regardless of budget.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "OverflowPolicy": {
+      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.",
+      "type": "string",
+      "enum": [
+        "drop_oldest_exchanges",
+        "truncate_oldest",
+        "summarize",
+        "drop"
+      ]
+    }
+  }
+}

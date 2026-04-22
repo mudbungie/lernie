@@ -1,0 +1,1 @@
+{"ts":"2026-04-22T05:20:00.256501646Z","author":"mark","text":"Tighten arch spec: streaming, compaction, hooks, retry + principles\n\nRewrites five sections of docs/ARCHITECTURE.md based on a design-review\nwalkthrough, and extracts docs/PRINCIPLES.md as a quick-reference catalog.\nSee commit message for per-section detail."}

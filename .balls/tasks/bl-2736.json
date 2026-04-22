@@ -2,7 +2,7 @@
   "branch": "work/bl-2736",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-22T05:20:25.667229503Z","id":"bl-2027","title":"Gate: tests pass (arch spec tighten)"},{"closed_at":"2026-04-22T05:20:25.694561813Z","id":"bl-9421","title":"Gate: docs up to date (arch spec tighten)"}],
+  "closed_children": [{"closed_at":"2026-04-22T05:20:25.667229503Z","id":"bl-2027","title":"Gate: tests pass (arch spec tighten)"},{"closed_at":"2026-04-22T05:20:25.694561813Z","id":"bl-9421","title":"Gate: docs up to date (arch spec tighten)"},{"closed_at":"2026-04-22T05:20:25.714410947Z","id":"bl-1d37","title":"Gate: alignment with TAXONOMY.md (arch spec tighten)"}],
   "created_at": "2026-04-22T05:11:03.799242377Z",
   "delivered_in": "2d24ca7272a06bfc98317f4468b64d9b2a241199",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["docs"],
   "title": "Architecture spec: tighten streaming, compaction, hooks, retry",
   "type": "task",
-  "updated_at": "2026-04-22T05:20:25.694603232Z"
+  "updated_at": "2026-04-22T05:20:25.714461092Z"
 }

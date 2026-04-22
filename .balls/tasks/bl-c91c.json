@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-c91c",
+  "claimed_by": "claude-opus",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-21T18:45:31.612601665Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-7847"},{"link_type":"gates","target":"bl-f12f"},{"link_type":"gates","target":"bl-1190"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["template"],
   "title": "Conversation repo template under template/",
   "type": "task",
-  "updated_at": "2026-04-21T18:45:46.267020562Z"
+  "updated_at": "2026-04-22T05:59:44.815800729Z"
 }

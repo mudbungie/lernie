@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T06:04:31.991277781Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Amend the 'alignment' gate description in CLAUDE.md and AGENTS.md to direct agents to align against docs/ARCHITECTURE.md and docs/PRINCIPLES.md, not only docs/TAXONOMY.md.",
+  "external": {},
+  "id": "bl-90a9",
+  "links": [],
+  "parent": null,
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "docs: alignment gate covers ARCHITECTURE.md and PRINCIPLES.md",
+  "type": "task",
+  "updated_at": "2026-04-22T06:04:31.991277781Z"
+}

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T17:41:56.177388165Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Install target names are coherent with ARCH §3.2 (lernie is the harness binary; lernie-provider-anthropic is a provider adapter). No banned terms in Makefile recipe or README.",
+  "external": {},
+  "id": "bl-c425",
+  "links": [],
+  "parent": "bl-b64e",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (make install)",
+  "type": "task",
+  "updated_at": "2026-04-22T17:41:56.177388165Z"
+}

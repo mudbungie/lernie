@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4d73",
+  "claimed_by": "orionriver",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T06:10:19.737390339Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "docs: promote and tighten the disk-first principle",
   "type": "task",
-  "updated_at": "2026-04-22T06:10:19.737390339Z"
+  "updated_at": "2026-04-22T06:10:24.218299047Z"
 }

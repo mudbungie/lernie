@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-22T07:00:12.187355557Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Streaming client unit + integration tests green against mocked SSE source. Full cargo test + tarpaulin --fail-under 100. No live API calls.",
+  "external": {},
+  "id": "bl-4033",
+  "links": [],
+  "parent": "bl-d15d",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (streaming client)",
+  "type": "task",
+  "updated_at": "2026-04-22T07:00:12.187355557Z"
+}

@@ -2,7 +2,7 @@
   "branch": "work/bl-c91c",
   "claimed_by": "claude-opus",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-22T06:12:20.207948703Z","id":"bl-7847","title":"Gate: tests pass (template)"},{"closed_at":"2026-04-22T06:12:28.396073675Z","id":"bl-f12f","title":"Gate: docs up to date (template)"}],
+  "closed_children": [{"closed_at":"2026-04-22T06:12:20.207948703Z","id":"bl-7847","title":"Gate: tests pass (template)"},{"closed_at":"2026-04-22T06:12:28.396073675Z","id":"bl-f12f","title":"Gate: docs up to date (template)"},{"closed_at":"2026-04-22T06:12:35.381823124Z","id":"bl-1190","title":"Gate: alignment with TAXONOMY.md (template)"}],
   "created_at": "2026-04-21T18:45:31.612601665Z",
   "delivered_in": "35b38b5d1023870d107f2829e49b8149c1c1d11a",
   "depends_on": ["bl-5bbc"],
@@ -16,5 +16,5 @@
   "tags": ["template"],
   "title": "Conversation repo template under template/",
   "type": "task",
-  "updated_at": "2026-04-22T06:12:28.396137063Z"
+  "updated_at": "2026-04-22T06:12:35.381887173Z"
 }

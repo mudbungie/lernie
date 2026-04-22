@@ -7,5 +7,6 @@
 //! provider plus a model-call request into an API call, per §4.1.
 
 pub mod config;
+pub mod prompt;
 pub mod provider;
 pub mod template;

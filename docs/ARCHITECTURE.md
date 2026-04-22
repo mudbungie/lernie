@@ -99,6 +99,8 @@ Within a branch, **steps are linear commits** — one commit per step, carrying 
 
 The trunk is always `main`. Nothing ever commits directly to `main`. The only way data reaches `main` is via merge from a completed exchange branch.
 
+> **v0.1 exception.** The v0.1 milestone (§12) predates branching and explicitly commits one exchange directly on `main` per `lernie prompt` invocation. The invariant above is the v0.2 steady state.
+
 **Branch lifecycle** (identical for both branch classes):
 
 1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A worktree is allocated. The goal is written. Branch name encodes provenance.
@@ -566,6 +568,10 @@ Named explicitly so they are not rediscovered later:
 ### v0.1 — One model call
 
 **Success criterion:** A single prompt is sent to a provider endpoint, the response is written to disk, and is visible in the conversation repo as a commit. No git branching, no tools, no invocations.
+
+**Shipped shape.** `lernie new <path>` scaffolds a conversation repo from the embedded template; `lernie prompt <repo> <message>` loads `providers.yaml` + `agents.yaml`, resolves the `worker` role, invokes `lernie-provider-<name>` as a subprocess (§4.4), writes `exchanges/<ts>-<short-id>.json` with `user_message` / `assistant_response` / `model_id` / `provider` / `usage` / `stop_reason` / `started_at` / `ended_at`, and commits the file to `main`.
+
+**Exceptions to later invariants, scoped to v0.1 only.** (a) The commit lands directly on `main` rather than via an exchange branch merge (§2.3). (b) The harness forwards `providers.endpoint` to the adapter as `--endpoint` instead of leaving endpoint interpretation inside the adapter (§4.4 "the harness itself does not read `endpoint:` or `auth:`"); v0.2 can replace this with describe-driven discovery or an env-var handoff without reshaping the on-disk artifact.
 
 ### v0.2 — Git tree
 

@@ -58,6 +58,30 @@ it to the destination, runs `git init -b main`, and lands a single
 or be an empty directory. `.agent/goal.md` is intentionally not in the
 template — it is written at dispatch time (ARCH §2.8).
 
+## Sending a prompt (v0.1)
+
+```
+ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
+```
+
+`lernie prompt` is the v0.1 end-to-end path (ARCH §12 milestone):
+
+1. Load `<repo>/.agent/providers.yaml` and `<repo>/.agent/agents.yaml`;
+   cross-validate `agents.worker.model` against the declared models.
+2. Spawn the provider adapter `lernie-provider-<name>` (discovered on
+   `PATH`) with `complete --endpoint <url-from-providers.yaml>`, pipe the
+   Messages-API-shaped request to stdin, read one JSON document back
+   (§4.4). Credential env vars like `ANTHROPIC_API_KEY` propagate to the
+   adapter by normal process inheritance.
+3. Write the result to `<repo>/exchanges/<ts>-<short-id>.json` with the
+   fields `user_message`, `assistant_response`, `model_id`, `provider`,
+   `usage`, `stop_reason`, `started_at`, `ended_at`.
+4. Commit the file to `main` and print the commit SHA on stdout.
+
+v0.1 is the explicit exception to ARCH §2.3's branch invariant: the
+exchange commits directly on `main`. v0.2 replaces this flow with an
+exchange branch, steps-as-commits, compaction, and a no-ff merge.
+
 ## Providers
 
 Model calls go through **provider adapters** — separate binaries the harness
@@ -83,9 +107,12 @@ either the upstream response or an in-band error object (`{"type":"error",
 reserved for adapter-side crashes. The v0.1 adapter is non-streaming;
 streaming support is tracked separately (bl-d15d).
 
-Harness-side adapter discovery and invocation (§4.4 "Discovery") lands
-with the `lernie prompt` subcommand; until then the adapter is usable
-standalone as above.
+Harness-side adapter discovery and invocation (§4.4 "Discovery") is wired
+into the `lernie prompt` subcommand — see **Sending a prompt (v0.1)**
+above. The v0.1 invocation also passes `--endpoint <url>` from
+`providers.yaml`; that is a pragmatic simplification of §4.4's "harness
+does not read endpoint:" discipline and a v0.2 refinement can restore
+the strict reading (e.g. env-var handoff or describe-driven discovery).
 
 ## Workflow
 

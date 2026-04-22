@@ -9,12 +9,12 @@
   "description": "Add 'make install' that does a release build and drops the two v0.1 binaries (lernie, lernie-provider-anthropic) into $(INSTALL_PREFIX)/bin, defaulting to ~/.local/bin. Honors an INSTALL_PREFIX override for packagers. No symlinks — plain 'install -m 0755' copies so re-running make install after a rebuild gets a fresh binary atomically. Update README with the install instructions and point at the adapter-drop location.",
   "external": {},
   "id": "bl-b64e",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-4f36"}],
   "parent": null,
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "Makefile: install target to ~/.local/bin",
   "type": "task",
-  "updated_at": "2026-04-22T17:41:56.132066714Z"
+  "updated_at": "2026-04-22T17:41:56.204411851Z"
 }

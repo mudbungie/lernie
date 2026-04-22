@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [{"closed_at":"2026-04-22T06:42:48.973020965Z","id":"bl-9a09","title":"Gate: tests pass (anthropic client)"},{"closed_at":"2026-04-22T06:42:52.248852878Z","id":"bl-d12c","title":"Gate: docs up to date (anthropic client)"},{"closed_at":"2026-04-22T06:42:56.868915544Z","id":"bl-0b1c","title":"Gate: alignment (anthropic client)"}],
   "created_at": "2026-04-22T05:27:11.844243428Z",
-  "delivered_in": null,
+  "delivered_in": "740f61ab9d46bb452ede3ee76b3e65b625e19c68",
   "depends_on": ["bl-5bbc"],
   "description": "Implement a minimal client for Anthropic's Messages API.\n\n=== What to build ===\n- Module (e.g. src/provider/anthropic.rs or src/providers/anthropic/) with:\n  - Request type: model_id, max_tokens, system prompt, messages (role + content).\n  - Response type: stop_reason, content blocks, usage (input/output tokens).\n  - Error type distinguishing: network failure, auth error, rate-limit (429), provider error (5xx), parse error.\n- HTTP via reqwest (blocking or tokio — pick one; v0.1 has no concurrency, blocking is cheapest). Justify in commit.\n- Auth: reads env var name declared in providers.yaml (§4.1) and sends as x-api-key header.\n- Anthropic-version header and content-type set per current API docs.\n\n=== Out of scope ===\n- Streaming (v0.1 non-goal; deferred to later milestone).\n- Tool use payloads (v0.3).\n- Prompt caching (deferred).\n- Other providers (bedrock etc. — one provider is enough for v0.1).\n\n=== Testing ===\n- Unit tests against a mocked HTTP server (wiremock or httpmock).\n- Cover: happy path, 401, 429, 500, malformed JSON.\n- No live API calls in tests.\n\nDepends on bl-5bbc (needs loadable providers.yaml to find the env var name).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-9a09"},{"link_type":"gates","target":"bl-d12c"},{"link_type":"gates","target":"bl-0b1c"}],
   "parent": "bl-2813",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Anthropic messages-API client (non-streaming)",
   "type": "task",
-  "updated_at": "2026-04-22T06:42:56.868982288Z"
+  "updated_at": "2026-04-22T06:44:35.164491854Z"
 }

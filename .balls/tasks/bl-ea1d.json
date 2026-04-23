@@ -2,7 +2,7 @@
   "branch": "work/bl-ea1d",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T02:18:16.220688875Z","id":"bl-665f","title":"Gate: tests pass (fs watcher)"},{"closed_at":"2026-04-23T02:18:16.243989176Z","id":"bl-9fa9","title":"Gate: docs up to date (fs watcher)"}],
+  "closed_children": [{"closed_at":"2026-04-23T02:18:16.220688875Z","id":"bl-665f","title":"Gate: tests pass (fs watcher)"},{"closed_at":"2026-04-23T02:18:16.243989176Z","id":"bl-9fa9","title":"Gate: docs up to date (fs watcher)"},{"closed_at":"2026-04-23T02:18:16.266562592Z","id":"bl-626c","title":"Gate: alignment (fs watcher)"}],
   "created_at": "2026-04-23T01:28:05.986536685Z",
   "delivered_in": "f5967b4bfd7e0f0873cfd28760a47abe8425af11",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["ui","frontend"],
   "title": "UI: filesystem watcher module (inotify + polling fallback)",
   "type": "task",
-  "updated_at": "2026-04-23T02:18:16.245504590Z"
+  "updated_at": "2026-04-23T02:18:16.268197244Z"
 }

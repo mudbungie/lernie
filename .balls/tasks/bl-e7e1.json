@@ -2,7 +2,7 @@
   "branch": "work/bl-e7e1",
   "claimed_by": "opus-reviewer",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T01:25:28.394509151Z","id":"bl-bdd6","title":"Gate: tests pass (exchange branch + step)"}],
+  "closed_children": [{"closed_at":"2026-04-23T01:25:28.394509151Z","id":"bl-bdd6","title":"Gate: tests pass (exchange branch + step)"},{"closed_at":"2026-04-23T01:25:33.076549246Z","id":"bl-116b","title":"Gate: docs up to date (exchange branch + step)"}],
   "created_at": "2026-04-22T21:34:30.857929596Z",
   "delivered_in": "f339ccf0f9765b17fba1fb51e77eb43cfb527ed4",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Exchange branch + step on branch",
   "type": "task",
-  "updated_at": "2026-04-23T01:25:28.394571901Z"
+  "updated_at": "2026-04-23T01:25:33.076598664Z"
 }

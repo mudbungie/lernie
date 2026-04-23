@@ -82,19 +82,23 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-    // Git sequence: worktree add against repo root, then add+commit
-    // of the snapshot inside the worktree, then add+commit of the
-    // response inside the worktree. No mirror-file write — the git
-    // ref database is the single source of truth for branch state
-    // (PRINCIPLES.md "Single source of truth").
+    // Git sequence: 5 for the exchange branch (worktree add, snapshot
+    // add+commit, response add+commit), 6 for compaction (spawn cmp,
+    // add+commit summary, rebase-merge-remove back into ex), 3 for
+    // merge-to-main (rebase, merge, remove ex worktree) — 14 total.
+    // No sidecar-file write: the git ref database is the single
+    // source of truth for branch state (PRINCIPLES.md "Single source
+    // of truth").
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 5);
+    assert_eq!(runs.len(), 14);
+
+    // [0..5] exchange-branch setup (pre-compaction).
     let (dest0, args0) = &runs[0];
     assert_eq!(dest0, repo.path());
     assert_eq!(args0[..4], ["worktree", "add", "-b", "ex/ct-1-deadbeef"]);
     assert_eq!(args0[4], worktree.to_string_lossy().to_string());
     assert_eq!(args0[5], "main");
-    for (dest, _args) in &runs[1..] {
+    for (dest, _args) in &runs[1..5] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside worktree");
     }
     assert_eq!(runs[1].1[0], "add");
@@ -113,6 +117,54 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     );
     assert_eq!(runs[4].1[0], "commit");
     assert!(runs[4].1[2].contains("step 001: response"));
+
+    // [5] compactor branch spawned off the exchange tip.
+    let cmp_branch = "inv/ct-1-deadbeef/ct-2-deadbeef";
+    let cmp_worktree = repo
+        .path()
+        .join(".lernie/worktrees/inv/ct-1-deadbeef/ct-2-deadbeef");
+    assert_eq!(runs[5].0, repo.path());
+    assert_eq!(runs[5].1[..4], ["worktree", "add", "-b", cmp_branch]);
+    assert_eq!(runs[5].1[4], cmp_worktree.to_string_lossy().to_string());
+    assert_eq!(runs[5].1[5], "ex/ct-1-deadbeef");
+
+    // [6..8] compactor adds + commits the summary inside cmp wt.
+    assert_eq!(runs[6].0, cmp_worktree);
+    assert_eq!(runs[6].1[0], "add");
+    assert_eq!(runs[6].1[1], ".agent/compactions/001.md");
+    assert_eq!(runs[7].0, cmp_worktree);
+    assert_eq!(runs[7].1[0], "commit");
+    assert!(runs[7].1[2].contains("compaction: terminal summary"));
+
+    // [8] cmp rebases onto ex. [9] ex merges cmp with --no-ff. [10]
+    // cmp worktree removed.
+    assert_eq!(runs[8].0, cmp_worktree);
+    assert_eq!(runs[8].1, vec!["rebase", "ex/ct-1-deadbeef"]);
+    assert_eq!(runs[9].0, worktree);
+    assert_eq!(runs[9].1, vec!["merge", "--no-ff", cmp_branch]);
+    assert_eq!(runs[10].0, repo.path());
+    assert_eq!(runs[10].1[0], "worktree");
+    assert_eq!(runs[10].1[1], "remove");
+    assert_eq!(runs[10].1[2], cmp_worktree.to_string_lossy().to_string());
+
+    // [11..14] merge ex into main: rebase ex onto main (inside ex
+    // wt), merge --no-ff ex into main (inside repo root, which is
+    // main's worktree), remove ex worktree.
+    assert_eq!(runs[11].0, worktree);
+    assert_eq!(runs[11].1, vec!["rebase", "main"]);
+    assert_eq!(runs[12].0, repo.path());
+    assert_eq!(runs[12].1, vec!["merge", "--no-ff", "ex/ct-1-deadbeef"]);
+    assert_eq!(runs[13].0, repo.path());
+    assert_eq!(runs[13].1[0], "worktree");
+    assert_eq!(runs[13].1[1], "remove");
+    assert_eq!(runs[13].1[2], worktree.to_string_lossy().to_string());
+
+    // Compaction summary was written with the expected body.
+    let summary = std::fs::read_to_string(
+        cmp_worktree.join(".agent/compactions/001.md"),
+    )
+    .unwrap();
+    assert_eq!(summary, "exchange ct-1-deadbeef: hi there\n");
 }
 
 #[test]

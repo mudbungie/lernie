@@ -123,7 +123,7 @@ The rich per-step tree is branch-life state. On terminal compaction (§2.7) the 
 
 **Unmerged-branch tracking.** Git's ref database is the tracking. An unmerged exchange branch is a ref matching `ex/*`; `git branch --list ex/*` enumerates them, and the list's length is the §8 unmerged-branch-count health metric (PRINCIPLES.md "Single source of truth").
 
-> **v0.2 scope.** The branch/snapshot/response flow lands in v0.2; the merge-back protocol (§2.6) and terminal compaction are separate v0.2 steps. Until merge-back ships, `lernie prompt` spawns branches that stay open and show up under `git branch --list ex/*`.
+> **v0.2 scope.** The full branch lifecycle — spawn, snapshot, response, terminal compaction (§2.7), rebase-and-`--no-ff` merge-back (§2.6) — is in place. Compaction is a stub (no model call; `mark_for_deletion` is a no-op), so v0.2's main carries the full step tree alongside the compaction summary; prune semantics arrive with the real compactor in v0.3+.
 
 ### 2.4 Exchanges
 
@@ -140,6 +140,8 @@ This symmetry is load-bearing:
 - The same code path handles user-initiated exchanges and agent-initiated invocations.
 - Verifier agents, compactor agents, and adversarial critics are invocations with different goals.
 - Parallel exploration (N workers on the same task) is N parallel invocations dispatched from the same step.
+
+The unification is not ergonomic sugar; it falls out of the git-oriented architecture. Because state flows through branches and results land through merges (§2.6), any operation shaped as "spawn work with a goal, run, return a result" collapses to the same primitive. The harness does not ship a separate framework for compaction, verification, or auto-parsing of oversized tool output — each is a subagent with a different goal and toolset, dispatched the same way (§3.4's `lernie dispatch …`). A new procedure earns its place by collapsing onto this primitive or by introducing one that is genuinely new; it does not sit in parallel with something it almost is. This is the concrete instantiation of the "One obvious path" principle in `docs/PRINCIPLES.md`.
 
 **Every tool returns synchronously.** Provider APIs (Anthropic Messages, OpenAI Responses, Gemini) require each `tool_use` block emitted by a step to be matched by a `tool_result` block in the immediately following user message. The harness honors that invariant: a step's next model call is issued only when every tool call it emitted has produced a `tool_result`. Partial-result reprompts are not attempted — they are rejected at the wire.
 
@@ -599,7 +601,7 @@ Named explicitly so they are not rediscovered later:
 
 **Shipped shape.** `lernie new <path>` scaffolds a conversation repo from the embedded template; `lernie prompt <repo> <message>` loads `providers.yaml` + `agents.yaml`, resolves the `worker` role, invokes `lernie-provider-<name>` as a subprocess (§4.4), writes `exchanges/<ts>-<short-id>.json` with `user_message` / `assistant_response` / `model_id` / `provider` / `usage` / `stop_reason` / `started_at` / `ended_at`, and commits the file to `main`.
 
-**Exceptions to later invariants, historical.** v0.1 committed directly on `main` rather than via an exchange branch merge (§2.3); retired in v0.2, where `lernie prompt` spawns an `ex/<ts>-<id>` branch and commits the step snapshot before the model call (§2.10), with the response landing as a follow-up commit on the same branch. Merge-back (§2.6) arrives in a subsequent v0.2 step. The earlier `--endpoint` argv pragma was also retired in v0.2: endpoint forwarding now goes through `describe.endpoint_env` per §4.4.
+**Exceptions to later invariants, historical.** v0.1 committed directly on `main` rather than via an exchange branch merge (§2.3); retired in v0.2, where `lernie prompt` spawns an `ex/<ts>-<id>` branch, commits the step snapshot before the model call (§2.10), lands the response as a follow-up commit, dispatches the terminal compactor off the tip (§2.7, stub in v0.2), and `--no-ff` merges the compacted branch back into `main` (§2.6). The earlier `--endpoint` argv pragma was also retired in v0.2: endpoint forwarding now goes through `describe.endpoint_env` per §4.4.
 
 ### v0.2 — Git tree
 

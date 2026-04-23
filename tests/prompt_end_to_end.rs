@@ -4,16 +4,20 @@
 //! repo, then `lernie prompt` to drive one exchange — against a local
 //! `httpmock` server standing in for the Anthropic endpoint.
 //!
-//! The v0.2 contract is ARCH §2.3: an exchange is its own branch off
-//! `main`, with the snapshot commit before the model call and the
-//! response on a follow-up commit. The test asserts:
+//! The v0.2 contract is ARCH §2.3 + §2.6 + §2.7: an exchange is its
+//! own branch off `main`, with the snapshot commit before the model
+//! call, a response follow-up commit, terminal compaction, and a
+//! `--no-ff` merge back to `main`. The test asserts:
 //!
-//! - stdout is the branch name (`ex/<ts>-<short-id>`).
-//! - main's HEAD is unchanged by the prompt invocation.
-//! - The exchange branch exists and is two commits ahead of main.
-//! - `.agent/goal.md` is on the branch with the user message as body.
-//! - `exchanges/<id>/steps/001/{request,response}.json` are present on
-//!   the branch with the expected shape.
+//! - stdout is the exchange branch name (`ex/<ts>-<short-id>`).
+//! - main's HEAD advanced to a merge commit.
+//! - The merge commit's second parent is the compacted exchange tip.
+//! - `.agent/compactions/001.md` is reachable from main's HEAD and
+//!   carries the terminal response text.
+//! - `exchanges/<id>/steps/001/{request,response}.json` are reachable
+//!   from main's HEAD (the compactor is a stub — deletion of step
+//!   dirs is v0.3 work per ARCH §12).
+//! - The exchange worktree under `.lernie/worktrees/ex/…` is removed.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -99,8 +103,18 @@ fn scaffold_with_endpoint(dest: &Path, endpoint: &str) {
     );
 }
 
+fn git_capture(dest: &Path, args: &[&str]) -> String {
+    let out = git_command(dest, args).output().expect("spawn git");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout).unwrap().trim().to_string()
+}
+
 #[test]
-fn prompt_subcommand_spawns_exchange_branch_off_main() {
+fn prompt_subcommand_compacts_and_merges_exchange_to_main() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
@@ -115,15 +129,7 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
     let dest = holder.path().join("conv");
     scaffold_with_endpoint(&dest, &server.base_url());
 
-    let main_head_before = String::from_utf8(
-        git_command(&dest, &["rev-parse", "main"])
-            .output()
-            .expect("pre-invoke git rev-parse")
-            .stdout,
-    )
-    .unwrap()
-    .trim()
-    .to_string();
+    let main_head_before = git_capture(&dest, &["rev-parse", "main"]);
     assert!(!main_head_before.is_empty());
 
     let prompt_out = Command::new(lernie_bin())
@@ -149,41 +155,47 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
         branch.starts_with("ex/"),
         "expected ex/<ts>-<id> branch name, got {branch:?}"
     );
+    let exchange_id = branch.strip_prefix("ex/").unwrap().to_string();
 
-    // Main's HEAD is unchanged.
-    let main_head_after = String::from_utf8(
-        git_command(&dest, &["rev-parse", "main"])
-            .output()
-            .expect("post-invoke git rev-parse")
-            .stdout,
-    )
-    .unwrap()
-    .trim()
-    .to_string();
+    // Main advanced: HEAD is a merge commit. `git log -1 --pretty=%P
+    // main` returns two parent shas — that's the --no-ff shape.
+    let main_head_after = git_capture(&dest, &["rev-parse", "main"]);
+    assert_ne!(main_head_before, main_head_after, "main should advance");
+    let parents = git_capture(&dest, &["log", "-1", "--pretty=%P", "main"]);
+    let parent_shas: Vec<_> = parents.split_whitespace().collect();
     assert_eq!(
-        main_head_before, main_head_after,
-        "main advanced — v0.2 must leave it alone"
+        parent_shas.len(),
+        2,
+        "main HEAD should be a merge commit with two parents; got {parents:?}"
+    );
+    assert_eq!(
+        parent_shas[0], main_head_before,
+        "first parent should be the pre-prompt main"
+    );
+    // Second parent is the compacted exchange tip.
+    let ex_tip = git_capture(&dest, &["rev-parse", &branch]);
+    assert_eq!(
+        parent_shas[1], ex_tip,
+        "second parent should be the exchange branch's tip"
     );
 
-    // Exchange branch is exactly two commits ahead of main.
-    let rev_list = git_command(&dest, &["rev-list", "--count", &format!("main..{branch}")])
-        .output()
-        .expect("git rev-list");
-    let count = String::from_utf8(rev_list.stdout)
-        .unwrap()
-        .trim()
-        .to_string();
-    assert_eq!(count, "2", "expected snapshot + response commits");
+    // Compaction summary reachable from main's HEAD and carries the
+    // terminal response text.
+    let summary = git_capture(
+        &dest,
+        &["show", "main:.agent/compactions/001.md"],
+    );
+    assert_eq!(summary, format!("exchange {exchange_id}: pong"));
 
-    let exchange_id = branch.strip_prefix("ex/").unwrap();
-    let worktree = dest.join(".lernie/worktrees/ex").join(exchange_id);
-
-    let goal = fs::read_to_string(worktree.join(".agent/goal.md")).unwrap();
-    assert_eq!(goal, "ping");
-
-    let step_dir = worktree.join(format!("exchanges/{exchange_id}/steps/001"));
-    let request: serde_json::Value =
-        serde_json::from_slice(&fs::read(step_dir.join("request.json")).unwrap()).unwrap();
+    // Step artifacts reachable from main (v0.2 stub does not prune).
+    let request_blob = git_capture(
+        &dest,
+        &[
+            "show",
+            &format!("main:exchanges/{exchange_id}/steps/001/request.json"),
+        ],
+    );
+    let request: serde_json::Value = serde_json::from_str(&request_blob).unwrap();
     assert_eq!(request["messages"][0]["content"], "ping");
     assert!(
         request["system"]
@@ -192,28 +204,43 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
             .starts_with("<goal>\nping\n</goal>"),
         "goal not pinned at head of system"
     );
-    let response: serde_json::Value =
-        serde_json::from_slice(&fs::read(step_dir.join("response.json")).unwrap()).unwrap();
+    let response_blob = git_capture(
+        &dest,
+        &[
+            "show",
+            &format!("main:exchanges/{exchange_id}/steps/001/response.json"),
+        ],
+    );
+    let response: serde_json::Value = serde_json::from_str(&response_blob).unwrap();
     assert_eq!(response["assistant_response"], "pong");
     assert_eq!(response["provider"], "anthropic");
 
-    // Unmerged branches are enumerable via git refs directly.
-    let ex_branches = git_command(&dest, &["branch", "--list", "ex/*"])
-        .output()
-        .expect("git branch --list");
-    let listed = String::from_utf8(ex_branches.stdout).unwrap();
-    // `git branch` prefixes checked-out branches with `*` and
-    // worktree-checked-out branches with `+`. Strip both so the
-    // comparison is against bare branch names.
-    let names: Vec<&str> = listed
-        .lines()
-        .map(|line| line.trim_start_matches(['*', '+', ' ']).trim())
-        .filter(|s| !s.is_empty())
-        .collect();
-    assert_eq!(
-        names,
-        vec![branch.as_str()],
-        "exactly one open exchange branch"
+    // Exchange worktree has been removed after the merge; the branch
+    // ref survives for the retention window (§2.3).
+    let worktree = dest.join(".lernie/worktrees/ex").join(&exchange_id);
+    assert!(
+        !worktree.exists(),
+        "exchange worktree should be removed after merge"
+    );
+    let branches = git_capture(&dest, &["branch", "--list", &branch]);
+    assert!(
+        branches.contains(&branch),
+        "exchange branch ref should survive merge: {branches:?}"
+    );
+
+    // No unmerged exchange branches: the merge-back is the one that
+    // moves a branch from "unmerged" to "merged", so post-prompt
+    // `git branch --list ex/* --no-merged main` is empty. This is the
+    // unmerged-branch-count metric (§8) read directly from git refs —
+    // no sidecar JSON required (PRINCIPLES.md "Single source of
+    // truth").
+    let unmerged = git_capture(
+        &dest,
+        &["branch", "--list", "ex/*", "--no-merged", "main"],
+    );
+    assert!(
+        unmerged.is_empty(),
+        "no ex/* branches should remain unmerged; got {unmerged:?}"
     );
 }
 

@@ -1,4 +1,4 @@
-//! Exchange-branch orchestration (ARCH §2.3, §2.8, §2.10).
+//! Exchange-branch orchestration (ARCH §2.3, §2.6, §2.7, §2.8, §2.10).
 //!
 //! [`run_exchange`] executes a single exchange off `main`:
 //!
@@ -14,17 +14,30 @@
 //! 5. Write `exchanges/<id>/steps/001/response.json` and land it as a
 //!    follow-up commit on the same branch. Follow-up rather than amend
 //!    keeps the snapshot's tree intact for replay.
+//! 6. Dispatch the terminal compactor off the exchange tip (§2.7) —
+//!    the compactor is a subagent running on its own invocation
+//!    branch and merging back into the exchange with `--no-ff`.
+//! 7. Rebase the exchange onto the current `main` tip and `--no-ff`
+//!    merge it into `main` (§2.6). Remove the exchange worktree; the
+//!    branch ref stays for the retention window (§2.3).
 //!
-//! The exchange branch is left open at the end — merge-back is §2.6
-//! and lives in a separate task. Unmerged branches are enumerable
-//! via `git branch --list ex/*`.
+//! Unmerged branches are enumerable via `git branch --list ex/* inv/*
+//! --no-merged main` — no sidecar state, per PRINCIPLES.md's
+//! "Single source of truth".
 
+use super::compactor::{self, CompactorRequest};
+use super::merge::rebase_and_merge;
 use super::step::{REQUEST_FILE, RESPONSE_FILE, StepResponse, Usage, step_dir_rel};
 use super::{AGENT_DIR, Deps, Error, parse_adapter_stdout, parse_endpoint_env};
 use crate::config::Model;
 use crate::config::Provider as ProviderConfig;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+
+/// The trunk branch every exchange eventually merges into (ARCH §2.3).
+/// Named as a constant so the one-path merge protocol does not depend
+/// on a literal threaded through multiple call sites.
+const TRUNK_BRANCH: &str = "main";
 
 /// Per-request `max_tokens` cap. v0.2 is not opinionated about budget
 /// yet — this matches v0.1's default and moves to config when the
@@ -117,6 +130,27 @@ pub(super) fn run_exchange(
     };
     write_response(&worktree_path, &step_dir_rel_str, &step_response)?;
     commit_response(&worktree_path, &step_dir_rel_str, &exchange_id, deps)?;
+
+    // Terminal compaction (§2.7) + merge-back to main (§2.6). The
+    // compactor is a subagent dispatched off the exchange tip via the
+    // same primitive v0.4 will use generally — see ARCH §2.5 on why
+    // one dispatch primitive serves both.
+    let cmp_req = CompactorRequest {
+        repo,
+        parent_branch: &branch_name,
+        parent_worktree: &worktree_path,
+        exchange_id: &exchange_id,
+    };
+    compactor::run(&cmp_req, deps.git, deps.clock, deps.id_gen)?;
+
+    rebase_and_merge(
+        repo,
+        TRUNK_BRANCH,
+        repo,
+        &worktree_path,
+        &branch_name,
+        deps.git,
+    )?;
 
     Ok(branch_name)
 }

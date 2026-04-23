@@ -4,15 +4,19 @@
 //!
 //! - `new <path>` — scaffold a conversation repo from the embedded
 //!   template (ARCH §2.2).
-//! - `prompt <repo> <message>` — drive one exchange: spawn an
-//!   `ex/<ts>-<id>` branch off `main` with a worktree under
-//!   `<repo>/.lernie/worktrees/ex/…`, commit a step snapshot before the
-//!   model call, invoke the provider adapter, land the response as a
-//!   follow-up commit, and print the branch name. Merge-back (§2.6)
-//!   is a separate v0.2 task; `main`'s HEAD is untouched.
+//! - `prompt <repo> <message>` — drive one exchange end-to-end: spawn
+//!   an `ex/<ts>-<id>` branch off `main`, commit the snapshot before
+//!   the model call, land the response as a follow-up commit, dispatch
+//!   the terminal compactor off the branch tip (§2.7), and `--no-ff`
+//!   merge the result back to `main` (§2.6). Prints the exchange
+//!   branch name.
+//! - `dispatch compactor <repo> <branch>` — run the terminal
+//!   compactor against an already-spawned exchange branch. Same shape
+//!   `prompt` uses internally; exposed for external callers and future
+//!   non-exchange dispatch cases (verifier, adversary, v0.4+).
 
 use clap::{Parser, Subcommand};
-use lernie::prompt::{self, NanoIdGen, SpawnAdapter, SystemClock};
+use lernie::prompt::{self, CompactorRequest, NanoIdGen, SpawnAdapter, SystemClock};
 use lernie::template::{self, RealGit};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -39,6 +43,28 @@ enum Command {
         repo: PathBuf,
         /// The user message to send.
         message: String,
+    },
+    /// Dispatch a subagent. The v0.2 surface has one role
+    /// (`compactor`); v0.4+ adds verifier, worker, adversary, etc.
+    /// through the same primitive.
+    Dispatch {
+        #[command(subcommand)]
+        role: DispatchRole,
+    },
+}
+
+#[derive(Subcommand)]
+enum DispatchRole {
+    /// Run terminal compaction against an exchange branch: spawn an
+    /// invocation branch off its tip, write `.agent/compactions/<seq>.md`,
+    /// and `--no-ff` merge back into the exchange branch. Does not
+    /// merge the exchange into `main` — that is the caller's
+    /// responsibility (§2.6).
+    Compactor {
+        /// Path to the conversation repo.
+        repo: PathBuf,
+        /// Exchange branch to compact (`ex/<ts>-<short-id>`).
+        branch: String,
     },
 }
 
@@ -73,5 +99,43 @@ fn main() -> ExitCode {
                 }
             }
         }
+        Command::Dispatch {
+            role: DispatchRole::Compactor { repo, branch },
+        } => match run_compactor_cli(&repo, &branch) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("lernie dispatch compactor: {e}");
+                ExitCode::FAILURE
+            }
+        },
     }
+}
+
+/// CLI handler for `lernie dispatch compactor`. Builds a
+/// [`CompactorRequest`] from the repo + branch and runs the stub
+/// through the in-process entry point. §3.4 permits in-process
+/// re-entry; the invariant is that the interface is the CLI.
+fn run_compactor_cli(repo: &PathBuf, branch: &str) -> Result<(), prompt::Error> {
+    let Some(exchange_id) = branch.strip_prefix("ex/") else {
+        // Surface as an adapter-agnostic git-shaped error rather than
+        // coining a new variant — the failure mode is "wrong branch
+        // name", which the operator sees with the offending name in
+        // context via the stderr print in `main`.
+        return Err(prompt::Error::Git {
+            op: "dispatch compactor",
+            source: std::io::Error::other(format!(
+                "expected ex/<ts>-<short-id> branch name, got {branch:?}"
+            )),
+        });
+    };
+    let worktree = repo
+        .join(".lernie/worktrees/ex")
+        .join(exchange_id);
+    let req = CompactorRequest {
+        repo,
+        parent_branch: branch,
+        parent_worktree: &worktree,
+        exchange_id,
+    };
+    prompt::compactor::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)
 }

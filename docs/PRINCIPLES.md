@@ -14,6 +14,9 @@ Every point in a conversation's life is a git ref. Replay, counterfactual forks,
 ## Symmetry of dispatch
 User-to-agent, agent-to-subagent, verifier, and compactor all flow through one primitive: fork a branch, do work, merge back. No special code paths for user input, reviews, or summarization — everything is an invocation.
 
+## One obvious path
+There should be one — and ideally only one — correct way through the system for any given operation. When two procedures look similar, the discipline is to identify the core operation they share and unify them on *that* core, not to open a parallel path and not to broaden the abstraction past where the sharing actually holds. Compaction and verification are dispatches because the core — spawn a branch with a goal, do work, merge back — is identical; stopping the shared path at "dispatch" is deliberate, because the next layer up (what to do with the result) is where they genuinely diverge. Structurally identical operations share code; operations that merely rhyme stay apart. A new procedure earns its place by collapsing onto an existing primitive or by introducing one that is genuinely new, never by sitting in parallel with something it almost is.
+
 ## Testability via configuration
 Workflow, prompts, and assembly rules are configuration, not code. Experiments become config diffs measured against a task suite, so improvements can be validated without shipping new software.
 

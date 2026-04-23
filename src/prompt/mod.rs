@@ -3,8 +3,9 @@
 //! v0.2 realizes ARCH §2.3's branch invariant for the exchange case:
 //! each invocation spawns `ex/<ts>-<short-id>` off `main`, commits a
 //! snapshot (§2.10) before the model call, lands the response as a
-//! follow-up commit, and leaves the branch open. Merge-back (§2.6) is
-//! a separate task, so main's HEAD is unchanged by `lernie prompt`.
+//! follow-up commit, dispatches the terminal compactor off the tip
+//! (§2.7), and `--no-ff` merges the compacted branch back to `main`
+//! (§2.6). Main advances by one merge commit per `lernie prompt`.
 //!
 //! Provider plumbing follows ARCH §4.4 strictly: `describe` runs once
 //! per invocation to pick up the adapter's `endpoint_env` list, then
@@ -18,7 +19,9 @@
 
 pub mod adapter;
 pub mod clock;
+pub mod compactor;
 pub mod dispatch;
+pub mod merge;
 pub mod step;
 
 #[cfg(test)]
@@ -26,6 +29,7 @@ mod tests;
 
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
+pub use compactor::CompactorRequest;
 pub use step::{StepResponse, Usage};
 
 use crate::config::cross::check_agents_against_providers;

@@ -79,11 +79,11 @@ template — it is written at dispatch time (ARCH §2.8).
 ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
 ```
 
-`lernie prompt` is the v0.2 exchange-branch path (ARCH §2.3, §2.8,
-§2.10). Each invocation spawns its own branch off `main`, commits a
-snapshot before the model call, lands the response as a follow-up
-commit, and leaves the branch open. `main`'s HEAD is not touched —
-merge-back (§2.6) is a separate step:
+`lernie prompt` is the v0.2 exchange-branch path (ARCH §2.3, §2.6,
+§2.7, §2.8, §2.10). Each invocation spawns its own branch off `main`,
+commits a snapshot before the model call, lands the response as a
+follow-up commit, runs the terminal compactor off the tip, and
+`--no-ff` merges the compacted branch back into `main`:
 
 1. Load `<repo>/.agent/providers.yaml` and `<repo>/.agent/agents.yaml`;
    cross-validate `agents.worker.model` against the declared models.
@@ -107,29 +107,45 @@ merge-back (§2.6) is a separate step:
    a follow-up commit on the same branch. The snapshot commit's tree
    stays intact so replay and retry (§2.10) see exactly what the model
    saw.
-7. Print the branch name on stdout.
+7. Dispatch the terminal compactor (§2.7) off the exchange tip: spawn
+   branch `inv/<ex-id>/<cmp-id>`, write `.agent/compactions/001.md`
+   with the terminal-response summary, and `--no-ff` merge the
+   compactor branch back into the exchange branch. The v0.2 compactor
+   is a stub — it does not call a model, and `mark_for_deletion` is a
+   no-op; the shape exists so v0.3+ can layer real semantics without
+   moving call sites. Dispatched via `lernie dispatch compactor`
+   (reachable as a CLI subcommand, §3.4).
+8. Rebase the exchange onto the current `main` tip and `--no-ff` merge
+   it into `main` (§2.6). Remove the exchange worktree; the branch
+   ref stays for the retention window (§2.3).
+9. Print the exchange branch name on stdout.
 
-After the call, inspect the branch with standard git tooling:
+After `lernie prompt` returns, inspect the merge from the repo root:
 
 ```
-cd /path/to/my-conversation/.lernie/worktrees/ex/<ts>-<id>
-git log --oneline        # two commits ahead of main
-cat .agent/goal.md       # the user message
-cat exchanges/*/steps/001/response.json
+cd /path/to/my-conversation
+git log --oneline --decorate main -4
+git show --stat main              # the --no-ff merge commit
+cat .agent/compactions/001.md     # terminal summary
 ```
 
 The unmerged branch count health metric (ARCH §8) is read straight
-from git:
+from git refs — no sidecar file:
 
 ```
-git -C /path/to/my-conversation branch --list 'ex/*' | wc -l
+git -C /path/to/my-conversation branch --list 'ex/*' 'inv/*' --no-merged main | wc -l
 ```
 
 A ballooning count indicates a silent failure in the merge pipeline.
 
-Merge-back to `main` (§2.6) is tracked under a separate v0.2 task and
-not part of this command today; open exchange branches therefore show
-up in `git branch --list ex/*` until merge ships.
+## Dispatching the compactor directly
+
+`lernie dispatch compactor <repo> <exchange-branch>` runs the same
+terminal-compaction routine that `lernie prompt` triggers internally.
+Useful for re-compacting an exchange branch that still exists as a
+ref, or for testing the compactor path independently. The command
+only runs the compaction + inv→ex merge; merge into `main` is the
+caller's problem (§2.6).
 
 ## Providers
 

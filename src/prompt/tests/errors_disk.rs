@@ -154,3 +154,133 @@ fn run_surfaces_response_commit_failure() {
     let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));
 }
+
+#[test]
+fn run_surfaces_compactor_branch_spawn_failure() {
+    // index 5: worktree add -b inv/<ex-id>/<cmp-id>
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(5);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "worktree add",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn run_surfaces_compactor_summary_add_failure() {
+    // index 6: git add .agent/compactions/001.md in cmp wt
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(6);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "add", .. }));
+}
+
+#[test]
+fn run_surfaces_compactor_summary_commit_failure() {
+    // index 7: git commit of summary in cmp wt
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(7);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "commit", .. }));
+}
+
+#[test]
+fn run_surfaces_compactor_rebase_failure() {
+    // index 8: rebase cmp onto ex
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(8);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "rebase", .. }));
+}
+
+#[test]
+fn run_surfaces_compactor_merge_failure() {
+    // index 9: merge --no-ff cmp into ex (the abort from index 8 is
+    // not hit here because rebase ok; merge is the next call and ok
+    // too; the index shifts). Actually with failing_at(9), only call
+    // 9 fails, so rebase ok, merge fails.
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(9);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "merge", .. }));
+}
+
+#[test]
+fn run_surfaces_compactor_worktree_remove_failure() {
+    // index 10: worktree remove cmp
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(10);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "worktree remove",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn run_surfaces_merge_to_main_rebase_failure() {
+    // index 11: rebase ex onto main
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(11);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "rebase", .. }));
+}
+
+#[test]
+fn run_surfaces_merge_to_main_merge_failure() {
+    // index 12: merge --no-ff ex into main
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(12);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::Git { op: "merge", .. }));
+}
+
+#[test]
+fn run_surfaces_ex_worktree_remove_failure() {
+    // index 13: worktree remove ex
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let git = StubGit::failing_at(13);
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "worktree remove",
+            ..
+        }
+    ));
+}
+

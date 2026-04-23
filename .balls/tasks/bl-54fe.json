@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T02:21:35.784213665Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "No spec drift; purely removing negative assertions.",
+  "external": {},
+  "id": "bl-54fe",
+  "links": [],
+  "parent": "bl-574a",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (scrub nonexistence assertions)",
+  "type": "task",
+  "updated_at": "2026-04-23T02:21:35.784213665Z"
+}

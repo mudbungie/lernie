@@ -2,7 +2,7 @@
   "branch": "work/bl-a764",
   "claimed_by": "opus-reviewer",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T01:51:59.021118357Z","id":"bl-7557","title":"Gate: tests pass (branches.json tracking)"},{"closed_at":"2026-04-23T01:51:59.051537092Z","id":"bl-969f","title":"Gate: docs up to date (branches.json tracking)"}],
+  "closed_children": [{"closed_at":"2026-04-23T01:51:59.021118357Z","id":"bl-7557","title":"Gate: tests pass (branches.json tracking)"},{"closed_at":"2026-04-23T01:51:59.051537092Z","id":"bl-969f","title":"Gate: docs up to date (branches.json tracking)"},{"closed_at":"2026-04-23T01:51:59.073112334Z","id":"bl-8449","title":"Gate: alignment (branches.json tracking)"}],
   "created_at": "2026-04-22T21:34:31.121000755Z",
   "delivered_in": "057ccd967e116c8b74d42d7c4555e8c20775b59c",
   "depends_on": ["bl-e7e1"],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "branches.json: spawn/merge tracking + unmerged count",
   "type": "task",
-  "updated_at": "2026-04-23T01:51:59.051587359Z"
+  "updated_at": "2026-04-23T01:51:59.073158131Z"
 }

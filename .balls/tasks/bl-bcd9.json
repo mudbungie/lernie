@@ -2,7 +2,7 @@
   "branch": "work/bl-bcd9",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T01:20:18.634352406Z","id":"bl-4979","title":"Gate: tests pass (ARCH harness/UI revision)"},{"closed_at":"2026-04-23T01:20:18.657651417Z","id":"bl-f879","title":"Gate: docs up to date (ARCH harness/UI revision)"}],
+  "closed_children": [{"closed_at":"2026-04-23T01:20:18.634352406Z","id":"bl-4979","title":"Gate: tests pass (ARCH harness/UI revision)"},{"closed_at":"2026-04-23T01:20:18.657651417Z","id":"bl-f879","title":"Gate: docs up to date (ARCH harness/UI revision)"},{"closed_at":"2026-04-23T01:20:18.677569026Z","id":"bl-6acd","title":"Gate: alignment (ARCH harness/UI revision)"}],
   "created_at": "2026-04-23T01:13:29.656453249Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["docs","ui"],
   "title": "ARCH: harness/UI roles + filesystem-as-event-stream + pluggability",
   "type": "task",
-  "updated_at": "2026-04-23T01:20:18.657684201Z"
+  "updated_at": "2026-04-23T01:20:18.677611668Z"
 }

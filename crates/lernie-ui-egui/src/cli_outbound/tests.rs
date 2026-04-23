@@ -1,19 +1,29 @@
 use super::*;
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 use tempfile::tempdir;
 
 static ENV_LOCK: Mutex<()> = Mutex::new(());
 
-fn write_script(dir: &Path, name: &str, body: &str) -> PathBuf {
+// Serializes script-write-then-spawn pairs across tests. Without this, a
+// concurrent posix_spawn in another thread inherits the write fd held by
+// fs::write in this thread; that fd is CLOEXEC but only closes once the
+// peer's own exec completes. If this thread's exec on the script it just
+// wrote lands while the peer child still holds the inherited write fd,
+// Linux returns ETXTBSY. Holding the lock across write + Cli::run in
+// every test eliminates the overlap window.
+static SPAWN_LOCK: Mutex<()> = Mutex::new(());
+
+fn write_script(dir: &Path, name: &str, body: &str) -> (PathBuf, MutexGuard<'static, ()>) {
+    let guard = SPAWN_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     let path = dir.join(name);
     fs::write(&path, body).unwrap();
     let mut perms = fs::metadata(&path).unwrap().permissions();
     perms.set_mode(0o755);
     fs::set_permissions(&path, perms).unwrap();
-    path
+    (path, guard)
 }
 
 fn collect(stream: Stream) -> (Vec<u8>, Vec<u8>, ExitInfo) {
@@ -77,7 +87,7 @@ fn run_errors_on_missing_binary() {
 #[test]
 fn run_streams_stdout_and_reports_exit_zero() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
+    let (bin, _spawn_guard) = write_script(
         dir.path(),
         "fake_lernie",
         "#!/bin/sh\nprintf 'hello out\\n'\nexit 0\n",
@@ -93,7 +103,7 @@ fn run_streams_stdout_and_reports_exit_zero() {
 #[test]
 fn run_streams_stderr_and_propagates_nonzero_exit() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
+    let (bin, _spawn_guard) = write_script(
         dir.path(),
         "fake_lernie",
         "#!/bin/sh\nprintf 'boom\\n' 1>&2\nexit 7\n",
@@ -108,11 +118,7 @@ fn run_streams_stderr_and_propagates_nonzero_exit() {
 #[test]
 fn pid_is_available_while_running() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
-        dir.path(),
-        "fake_lernie",
-        "#!/bin/sh\nexit 0\n",
-    );
+    let (bin, _spawn_guard) = write_script(dir.path(), "fake_lernie", "#!/bin/sh\nexit 0\n");
     let cli = Cli::new(bin);
     let stream = cli.run(&[]).unwrap();
     let pid = stream.pid();
@@ -123,11 +129,7 @@ fn pid_is_available_while_running() {
 #[test]
 fn drop_terminates_long_running_child() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
-        dir.path(),
-        "fake_lernie",
-        "#!/bin/sh\nsleep 30\n",
-    );
+    let (bin, _spawn_guard) = write_script(dir.path(), "fake_lernie", "#!/bin/sh\nsleep 30\n");
     let cli = Cli::new(bin);
     let stream = cli.run(&[]).unwrap();
     let pid = stream.pid().unwrap();
@@ -146,7 +148,7 @@ fn drop_terminates_long_running_child() {
 fn drop_escalates_to_sigkill_if_sigterm_ignored() {
     let dir = tempdir().unwrap();
     // Trap SIGTERM to ignore it; only SIGKILL stops the process.
-    let bin = write_script(
+    let (bin, _spawn_guard) = write_script(
         dir.path(),
         "fake_lernie",
         "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 1; done\n",
@@ -168,7 +170,7 @@ fn drop_escalates_to_sigkill_if_sigterm_ignored() {
 #[test]
 fn exit_info_reports_signal_when_child_killed_mid_flight() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
+    let (bin, _spawn_guard) = write_script(
         dir.path(),
         "fake_lernie",
         "#!/bin/sh\nprintf 'hi\\n'\nkill -USR1 $$\nsleep 5\n",
@@ -185,14 +187,10 @@ fn exit_info_reports_signal_when_child_killed_mid_flight() {
 #[test]
 fn iterator_returns_none_after_exited() {
     let dir = tempdir().unwrap();
-    let bin = write_script(
-        dir.path(),
-        "fake_lernie",
-        "#!/bin/sh\nexit 0\n",
-    );
+    let (bin, _spawn_guard) = write_script(dir.path(), "fake_lernie", "#!/bin/sh\nexit 0\n");
     let cli = Cli::new(bin);
     let mut stream = cli.run(&[]).unwrap();
-    while let Some(chunk) = stream.next() {
+    for chunk in stream.by_ref() {
         if matches!(chunk, Chunk::Exited(_)) {
             break;
         }

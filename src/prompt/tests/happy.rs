@@ -160,10 +160,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(runs[13].1[2], worktree.to_string_lossy().to_string());
 
     // Compaction summary was written with the expected body.
-    let summary = std::fs::read_to_string(
-        cmp_worktree.join(".agent/compactions/001.md"),
-    )
-    .unwrap();
+    let summary = std::fs::read_to_string(cmp_worktree.join(".agent/compactions/001.md")).unwrap();
     assert_eq!(summary, "exchange ct-1-deadbeef: hi there\n");
 }
 

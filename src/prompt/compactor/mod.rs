@@ -70,10 +70,7 @@ pub fn run(
     id_gen: &dyn IdGen,
 ) -> Result<(), Error> {
     let cmp_id = format!("{}-{}", clock.now_compact(), id_gen.short());
-    let cmp_branch = format!(
-        "{INVOCATION_BRANCH_PREFIX}/{}/{cmp_id}",
-        req.exchange_id
-    );
+    let cmp_branch = format!("{INVOCATION_BRANCH_PREFIX}/{}/{cmp_id}", req.exchange_id);
     let cmp_worktree_rel = format!(
         "{WORKTREES_DIR}/{INVOCATION_BRANCH_PREFIX}/{}/{cmp_id}",
         req.exchange_id

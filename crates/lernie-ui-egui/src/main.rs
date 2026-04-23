@@ -7,7 +7,10 @@ fn main() -> eframe::Result<()> {
     let tree = match GitTree::from_repo(&state.repo) {
         Ok(t) => Some(t),
         Err(e) => {
-            eprintln!("lernie-ui-egui: could not read git tree at {:?}: {e}", state.repo);
+            eprintln!(
+                "lernie-ui-egui: could not read git tree at {:?}: {e}",
+                state.repo
+            );
             None
         }
     };

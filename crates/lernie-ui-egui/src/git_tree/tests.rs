@@ -22,7 +22,10 @@ impl Fixture {
 
     fn commit_exchange(&self, id: &str, user_message: &str) {
         let rel = format!("exchanges/{id}.json");
-        let json = format!(r#"{{"user_message":"{}"}}"#, user_message.replace('"', "\\\""));
+        let json = format!(
+            r#"{{"user_message":"{}"}}"#,
+            user_message.replace('"', "\\\"")
+        );
         fs::write(self.path.join(&rel), json).unwrap();
         run_git(&self.path, &["add", &rel]);
         run_git(&self.path, &["commit", "-q", "-m", &format!("ex {id}")]);
@@ -43,7 +46,24 @@ impl Fixture {
 }
 
 fn run_git(repo: &Path, args: &[&str]) {
-    let status = Command::new("git")
+    // GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE / GIT_OBJECT_DIRECTORY
+    // are set when tests run from a git-hook context (e.g. cargo
+    // tarpaulin invoked by pre-commit). Without scrubbing, `git -C <tmp>
+    // init` re-initializes the outer repo and subsequent `add`/`commit`
+    // mutate the outer index instead of the fixture.
+    let mut cmd = Command::new("git");
+    for var in [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_COMMON_DIR",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ] {
+        cmd.env_remove(var);
+    }
+    let status = cmd
         .arg("-C")
         .arg(repo)
         .args(args)
@@ -137,7 +157,9 @@ fn is_v01_exchange_path_accepts_top_level_json() {
 
 #[test]
 fn is_v01_exchange_path_rejects_nested_steps() {
-    assert!(!is_v01_exchange_path("exchanges/abc/steps/001/request.json"));
+    assert!(!is_v01_exchange_path(
+        "exchanges/abc/steps/001/request.json"
+    ));
 }
 
 #[test]

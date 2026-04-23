@@ -181,10 +181,7 @@ fn prompt_subcommand_compacts_and_merges_exchange_to_main() {
 
     // Compaction summary reachable from main's HEAD and carries the
     // terminal response text.
-    let summary = git_capture(
-        &dest,
-        &["show", "main:.agent/compactions/001.md"],
-    );
+    let summary = git_capture(&dest, &["show", "main:.agent/compactions/001.md"]);
     assert_eq!(summary, format!("exchange {exchange_id}: pong"));
 
     // Step artifacts reachable from main (v0.2 stub does not prune).
@@ -234,10 +231,7 @@ fn prompt_subcommand_compacts_and_merges_exchange_to_main() {
     // unmerged-branch-count metric (§8) read directly from git refs —
     // no sidecar JSON required (PRINCIPLES.md "Single source of
     // truth").
-    let unmerged = git_capture(
-        &dest,
-        &["branch", "--list", "ex/*", "--no-merged", "main"],
-    );
+    let unmerged = git_capture(&dest, &["branch", "--list", "ex/*", "--no-merged", "main"]);
     assert!(
         unmerged.is_empty(),
         "no ex/* branches should remain unmerged; got {unmerged:?}"

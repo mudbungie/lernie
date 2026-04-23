@@ -59,7 +59,23 @@ impl GitTree {
 }
 
 fn git(repo: &Path, args: &[&str]) -> Result<Vec<u8>, GitTreeError> {
-    let output = Command::new("git").arg("-C").arg(repo).args(args).output()?;
+    // If GIT_DIR / GIT_INDEX_FILE / GIT_WORK_TREE / GIT_OBJECT_DIRECTORY
+    // are set in the environment (e.g. UI launched from a git-hook
+    // context), the child `git` ignores `-C` and operates on the outer
+    // repo. Scrub them so we always read the explicit `repo` path.
+    let mut cmd = Command::new("git");
+    for var in [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_PREFIX",
+        "GIT_COMMON_DIR",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ] {
+        cmd.env_remove(var);
+    }
+    let output = cmd.arg("-C").arg(repo).args(args).output()?;
     if !output.status.success() {
         return Err(GitTreeError::Git {
             command: args.join(" "),
@@ -107,10 +123,7 @@ fn exchange_from_commit(
     oid: &str,
 ) -> Result<(Option<String>, Option<String>), GitTreeError> {
     let files = files_changed(repo, oid)?;
-    let Some(path) = files
-        .into_iter()
-        .find(|p| is_v01_exchange_path(p))
-    else {
+    let Some(path) = files.into_iter().find(|p| is_v01_exchange_path(p)) else {
         return Ok((None, None));
     };
     let id = exchange_id_from_path(&path);

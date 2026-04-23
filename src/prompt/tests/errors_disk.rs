@@ -283,4 +283,3 @@ fn run_surfaces_ex_worktree_remove_failure() {
         }
     ));
 }
-

@@ -128,9 +128,7 @@ fn run_compactor_cli(repo: &PathBuf, branch: &str) -> Result<(), prompt::Error> 
             )),
         });
     };
-    let worktree = repo
-        .join(".lernie/worktrees/ex")
-        .join(exchange_id);
+    let worktree = repo.join(".lernie/worktrees/ex").join(exchange_id);
     let req = CompactorRequest {
         repo,
         parent_branch: branch,

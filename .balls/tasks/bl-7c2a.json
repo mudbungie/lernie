@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T07:00:22.650464744Z",
+  "delivered_in": null,
+  "depends_on": ["bl-e2fb"],
+  "description": "Ship the real ToolExecutor behind the trait introduced in ball #3.\n\n=== Scope ===\n\n- Resolve tool name → built-in subcommand ('lernie tool <name>') or external binary ('lernie-tool-<name>' on PATH), per the ball-#1 pinned contract.\n- Invoke the tool per the pinned stdio contract (argv vs stdin payload; stdout capture; exit-code semantics).\n- Stream stdout to the temp path + atomic rename under steps/NNN/tool_calls/<tool-id>/, matching the ball-#1 commit shape.\n- Cascade SIGTERM on stop (§2.9) with the deadline pinned by ball #1; SIGKILL if the tool does not exit cleanly.\n- Surface the tool_result block for the loop (ball #3) to feed on the next step.\n- Tests exercise the executor against a fixture tool subcommand implemented inline in the test binary (no shelling out to a real 'lernie tool bash' yet — that lands in #6).\n\n=== Depends on ===\n\nbl-e2fb — stdio contract, commit shape, SIGTERM deadline, and executor responsibilities must be pinned before coding. Independent of ball #3: #3 ships a stub executor for its own tests; #4 drops the real one in for end-to-end integration.\n\n=== Out of scope ===\n\n- Oversized-output auto-dispatch (deferred per epic non-goals; §3.3 update in ball #1 must reflect this descope).\n- Actual tool implementations (#5, #6).",
+  "external": {},
+  "id": "bl-7c2a",
+  "links": [],
+  "parent": "bl-683c",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.3","tools"],
+  "title": "v0.3 tool executor (real ToolExecutor impl)",
+  "type": "task",
+  "updated_at": "2026-04-23T07:00:22.650464744Z"
+}

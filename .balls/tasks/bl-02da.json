@@ -2,7 +2,7 @@
   "branch": "work/bl-02da",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T02:26:20.469043889Z","id":"bl-9f91","title":"Gate: tests pass (CLI outbound)"}],
+  "closed_children": [{"closed_at":"2026-04-23T02:26:20.469043889Z","id":"bl-9f91","title":"Gate: tests pass (CLI outbound)"},{"closed_at":"2026-04-23T02:26:20.493654519Z","id":"bl-eb2e","title":"Gate: docs up to date (CLI outbound)"}],
   "created_at": "2026-04-23T01:28:06.010798672Z",
   "delivered_in": "b3d6b26ceed0c3c73fbbbf10dab3dc3809912c9b",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["ui","frontend"],
   "title": "UI: CLI outbound module (exec lernie subcommand)",
   "type": "task",
-  "updated_at": "2026-04-23T02:26:20.471051232Z"
+  "updated_at": "2026-04-23T02:26:20.495308408Z"
 }

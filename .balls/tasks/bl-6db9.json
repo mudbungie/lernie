@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:07:38.603717648Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Alignment gate for bl-2c54. Chosen response shape is coherent with ARCH §3.1 (disk-as-bus), §4.4 (adapter contract), and PRINCIPLES.md. Both in-tree adapters (lernie-provider-anthropic) and third-party ones (lernie-provider-claude-code-session) conform to one shape.",
+  "external": {},
+  "id": "bl-6db9",
+  "links": [],
+  "parent": null,
+  "priority": 3,
+  "status": "open",
+  "tags": ["gate","alignment"],
+  "title": "bl-2c54 gate: alignment",
+  "type": "task",
+  "updated_at": "2026-04-23T01:07:38.603717648Z"
+}

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-574a",
+  "claimed_by": "opus-reviewer",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T02:21:35.693815749Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-12dd"},{"link_type":"gates","target":"bl-1e37"},{"link_type":"gates","target":"bl-54fe"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Scrub branches.json non-existence assertions from tests",
   "type": "task",
-  "updated_at": "2026-04-23T02:21:35.802339299Z"
+  "updated_at": "2026-04-23T02:21:35.822424614Z"
 }

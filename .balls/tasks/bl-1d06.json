@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T02:01:35.999215865Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "cargo test + cargo tarpaulin --fail-under 100 green. Integration test asserts the exchange branch exists and is discoverable via git branch --list ex/* (not via a sidecar file).",
+  "external": {},
+  "id": "bl-1d06",
+  "links": [],
+  "parent": "bl-4652",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (retire branches.json)",
+  "type": "task",
+  "updated_at": "2026-04-23T02:01:35.999215865Z"
+}

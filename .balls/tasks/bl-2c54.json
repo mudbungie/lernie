@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-2c54",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:07:24.397225682Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-ff04"},{"link_type":"gates","target":"bl-73b2"},{"link_type":"gates","target":"bl-6db9"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["spec","adapter-contract"],
   "title": "ARCH §4.4: non-streaming response shape is underspecified",
   "type": "bug",
-  "updated_at": "2026-04-23T01:07:42.600969658Z"
+  "updated_at": "2026-04-23T05:01:58.449766207Z"
 }

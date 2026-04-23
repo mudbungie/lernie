@@ -392,6 +392,8 @@ A **provider adapter** is a binary that implements one provider's wire protocol.
 
   Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
 
+  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists so deterministic replay against the on-disk `invocations/<id>/request.json` (§2.10, §3.1) needs no shell redirect. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
+
 **Response shape (non-streaming).** The response object is the Anthropic Messages-API wire shape (the body of a `POST /v1/messages` response at <https://docs.anthropic.com/en/api/messages>). Non-Anthropic adapters translate their provider's native response into this shape before writing it. Required top-level fields:
 
 - `id` (string) — opaque message id. Adapters backing providers that do not mint one MUST synthesize a stable value.

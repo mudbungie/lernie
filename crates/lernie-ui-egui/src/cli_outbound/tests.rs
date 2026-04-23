@@ -147,15 +147,31 @@ fn drop_terminates_long_running_child() {
 #[test]
 fn drop_escalates_to_sigkill_if_sigterm_ignored() {
     let dir = tempdir().unwrap();
-    // Trap SIGTERM to ignore it; only SIGKILL stops the process.
+    // Trap SIGTERM to ignore it, THEN emit a readiness marker. Without the
+    // marker, the parent's `drop(stream)` can race the shell's startup and
+    // send SIGTERM before `trap '' TERM` is installed — which quietly kills
+    // the shell and leaves the SIGKILL-escalation branch in
+    // `Stream::drop` uncovered. Waiting for "ready\n" on stdout pins the
+    // ordering.
     let (bin, _spawn_guard) = write_script(
         dir.path(),
         "fake_lernie",
-        "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 1; done\n",
+        "#!/bin/sh\ntrap '' TERM\nprintf 'ready\\n'\nwhile :; do sleep 1; done\n",
     );
     let cli = Cli::new(bin);
-    let stream = cli.run(&[]).unwrap();
+    let mut stream = cli.run(&[]).unwrap();
     let pid = stream.pid().unwrap();
+    let ready_deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        if Instant::now() >= ready_deadline {
+            panic!("child pid {pid} did not signal ready before drop");
+        }
+        match stream.next() {
+            Some(Chunk::Stdout(b)) if b.starts_with(b"ready") => break,
+            Some(_) => continue,
+            None => panic!("child pid {pid} exited before signaling ready"),
+        }
+    }
     drop(stream);
     let deadline = Instant::now() + Duration::from_secs(3);
     while Instant::now() < deadline {

@@ -8,13 +8,15 @@
 //!
 //! Usage:
 //!   lernie-provider-anthropic describe
-//!   lernie-provider-anthropic complete
+//!   lernie-provider-anthropic complete [--request <path>]
 //!
 //! `describe` writes a single JSON object to stdout. `complete` reads one
-//! Anthropic Messages-API request from stdin and writes one JSON object
-//! (either the upstream response or an in-band error object per §4.4) to
-//! stdout. The process exits `0` in both cases; non-zero exit is reserved
-//! for adapter-side crashes.
+//! Anthropic Messages-API request and writes one JSON object (either the
+//! upstream response or an in-band error object per §4.4) to stdout. The
+//! request is read from stdin by default; `--request <path>` reads it from
+//! a file instead (semantics identical — additive per ARCH §4.4). The
+//! process exits `0` in both cases; non-zero exit is reserved for
+//! adapter-side crashes.
 //!
 //! The upstream endpoint comes from the env var named in
 //! `describe.endpoint_env` (currently `LERNIE_PROVIDER_ANTHROPIC_ENDPOINT`),
@@ -25,7 +27,9 @@ use clap::{Parser, Subcommand};
 use lernie::provider::anthropic_adapter::{
     DEFAULT_ENDPOINT, ENDPOINT_ENV, run_complete, run_describe,
 };
-use std::io::{self, Write};
+use std::fs::File;
+use std::io::{self, BufReader, Write};
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 #[derive(Parser)]
@@ -42,9 +46,14 @@ struct Cli {
 enum Command {
     /// Write the adapter's self-description JSON to stdout.
     Describe,
-    /// Read a Messages-API request on stdin, write one response or error
-    /// object on stdout.
-    Complete,
+    /// Read a Messages-API request, write one response or error object on
+    /// stdout. Reads from stdin by default; `--request <path>` reads from a
+    /// file instead (ARCH §4.4, additive).
+    Complete {
+        /// Read the request JSON from this file instead of stdin.
+        #[arg(long, value_name = "PATH")]
+        request: Option<PathBuf>,
+    },
 }
 
 /// Install a SIGTERM handler that exits the process cleanly.
@@ -77,13 +86,27 @@ fn main() -> ExitCode {
     let mut out = stdout.lock();
     let result = match cli.command {
         Command::Describe => run_describe(&mut out),
-        Command::Complete => {
-            let stdin = io::stdin();
-            let mut reader = stdin.lock();
+        Command::Complete { request } => {
             let api_key = std::env::var("ANTHROPIC_API_KEY").ok();
             let endpoint =
                 std::env::var(ENDPOINT_ENV[0]).unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
-            run_complete(&mut reader, &mut out, api_key.as_deref(), &endpoint)
+            match request {
+                Some(path) => match File::open(&path) {
+                    Ok(file) => {
+                        let mut reader = BufReader::new(file);
+                        run_complete(&mut reader, &mut out, api_key.as_deref(), &endpoint)
+                    }
+                    Err(e) => Err(io::Error::new(
+                        e.kind(),
+                        format!("--request {}: {e}", path.display()),
+                    )),
+                },
+                None => {
+                    let stdin = io::stdin();
+                    let mut reader = stdin.lock();
+                    run_complete(&mut reader, &mut out, api_key.as_deref(), &endpoint)
+                }
+            }
         }
     };
     match result {

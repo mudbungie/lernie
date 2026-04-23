@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:28:17.522524270Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Conforms to ARCH §3.5 (statelessness; filesystem reads + CLI out only, nothing else). No banned terms (§2.1). Module boundaries respected — no Dioxus deps in pure-logic modules. Matches the pluggability story: a future 'lernie-ui-web' could reuse pure-logic modules without modification.",
+  "external": {},
+  "id": "bl-37b6",
+  "links": [],
+  "parent": "bl-1013",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (UI skeleton)",
+  "type": "task",
+  "updated_at": "2026-04-23T01:28:17.522524270Z"
+}

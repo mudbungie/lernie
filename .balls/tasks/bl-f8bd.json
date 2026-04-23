@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T06:37:55.829638928Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Move src/provider/anthropic.rs + src/provider/anthropic_adapter.rs + src/bin/lernie_provider_anthropic.rs into a new workspace member crates/lernie-provider-anthropic/.\n\n=== Goals ===\n- crates/lernie-provider-anthropic/ compiles independently of the root lernie crate.\n- Drop the crate::config::{Auth, Provider} coupling: Client::from_provider is removed or moved to the binary layer. The adapter reads env vars directly per ARCH §4.4 (auth_env / endpoint_env); it does not parse lernie config.\n- Root lernie crate no longer ships lernie-provider-anthropic as a [[bin]]. The workspace builds both via cargo build --workspace.\n- Makefile INSTALL_BIN continues to install the binary (now from the subcrate's target).\n\n=== Non-goals ===\n- No streaming yet. This ball is a pure move + decouple; behavior identical.\n- No harness-side decoupling (src/prompt/mod.rs still imports Response from the provider module; ball #2 fixes that).",
+  "external": {},
+  "id": "bl-f8bd",
+  "links": [],
+  "parent": "bl-d15d",
+  "priority": 2,
+  "status": "open",
+  "tags": ["streaming","refactor"],
+  "title": "Extract lernie-provider-anthropic to workspace crate",
+  "type": "task",
+  "updated_at": "2026-04-23T06:37:55.829638928Z"
+}

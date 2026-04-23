@@ -2,7 +2,7 @@
   "branch": "work/bl-1013",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T01:56:09.840619822Z","id":"bl-1f49","title":"Gate: tests pass (UI skeleton)"}],
+  "closed_children": [{"closed_at":"2026-04-23T01:56:09.840619822Z","id":"bl-1f49","title":"Gate: tests pass (UI skeleton)"},{"closed_at":"2026-04-23T01:56:09.862288246Z","id":"bl-27c1","title":"Gate: docs up to date (UI skeleton)"}],
   "created_at": "2026-04-23T01:28:05.957725422Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["ui","frontend"],
   "title": "UI skeleton: lernie-ui-egui binary + Cargo wiring",
   "type": "task",
-  "updated_at": "2026-04-23T01:56:09.840667168Z"
+  "updated_at": "2026-04-23T01:56:09.862375191Z"
 }

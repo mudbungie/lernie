@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:13:39.214037273Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Internal consistency check. Terms of art per §2.1 / TAXONOMY.md: 'harness', 'UI', 'daemon' (new synonym), 'frontend' (new synonym). No banned terms. The pluggability contract statement is coherent with PRINCIPLES 'Disk first' and 'Everyone uses the front door' and §3.4 CLI-as-control-plane. No contradiction introduced.",
+  "external": {},
+  "id": "bl-6acd",
+  "links": [],
+  "parent": "bl-bcd9",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: alignment (ARCH harness/UI revision)",
+  "type": "task",
+  "updated_at": "2026-04-23T01:13:39.214037273Z"
+}

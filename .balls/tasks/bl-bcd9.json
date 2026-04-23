@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-bcd9",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:13:29.656453249Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-4979"},{"link_type":"gates","target":"bl-f879"},{"link_type":"gates","target":"bl-6acd"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["docs","ui"],
   "title": "ARCH: harness/UI roles + filesystem-as-event-stream + pluggability",
   "type": "task",
-  "updated_at": "2026-04-23T01:13:43.139416319Z"
+  "updated_at": "2026-04-23T01:14:48.116754010Z"
 }

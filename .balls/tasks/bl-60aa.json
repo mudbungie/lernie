@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T06:50:28.516739084Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README covers the v0.3 tool surface (what ships: bash + read_file; how to invoke). ARCHITECTURE.md §3.3 reflects the shipped tool contract (binary + schema + skill). Auto-dispatch on oversized tool output explicitly flagged as deferred post-v0.3 so doc and code agree. §12 v0.3 entry reflects the descoping. TAXONOMY/PRINCIPLES updated if any new terms of art are introduced.",
+  "external": {},
+  "id": "bl-60aa",
+  "links": [],
+  "parent": "bl-683c",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (v0.3 epic)",
+  "type": "task",
+  "updated_at": "2026-04-23T06:50:28.516739084Z"
+}

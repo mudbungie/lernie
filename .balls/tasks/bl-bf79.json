@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-bf79",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T06:38:04.709497715Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-d15d",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["streaming","refactor"],
   "title": "Harness neutral adapter-wire types",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:35.161835953Z"
+  "updated_at": "2026-04-23T07:14:44.465465103Z"
 }

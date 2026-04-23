@@ -387,10 +387,27 @@ A **provider adapter** is a binary that implements one provider's wire protocol.
   `schema_version` is an integer. The harness rejects unknown major versions at load and refuses to use the adapter — no silent downgrade (see "Decline illegal operations" in PRINCIPLES.md).
 
 - `complete` — reads a JSON request on stdin (Anthropic Messages-API shape is the canonical form; adapters for other providers translate internally) and writes one of two forms to stdout:
-  - **Non-streaming:** a single JSON response object.
-  - **Streaming:** a JSON Lines event stream — one JSON event per line. Event types are block-oriented to mirror the content-block structure of assistant messages: `message_start`, `content_block_start`, `text_delta`, `tool_use_delta`, `content_block_stop`, `message_stop`. The terminal `message_stop` carries `usage` and `api_calls` (the count of HTTP requests the adapter made — see §2.1 for the model call / API call distinction; retries or streaming reconnects may make this greater than one).
+  - **Non-streaming:** a single JSON response object. See **Response shape (non-streaming)** below.
+  - **Streaming:** a JSON Lines event stream — one JSON event per line. Event types are block-oriented to mirror the content-block structure of assistant messages: `message_start`, `content_block_start`, `text_delta`, `tool_use_delta`, `content_block_stop`, `message_stop`. The terminal `message_stop` carries `usage` and `api_calls` (the count of HTTP requests the adapter made — see §2.1 for the model call / API call distinction; retries or streaming reconnects may make this greater than one). See **Response shape (streaming)** below.
 
   Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
+
+**Response shape (non-streaming).** The response object is the Anthropic Messages-API wire shape (the body of a `POST /v1/messages` response at <https://docs.anthropic.com/en/api/messages>). Non-Anthropic adapters translate their provider's native response into this shape before writing it. Required top-level fields:
+
+- `id` (string) — opaque message id. Adapters backing providers that do not mint one MUST synthesize a stable value.
+- `model` (string) — the model that actually produced the response (may differ from the requested model if the provider routed).
+- `stop_reason` (string) — the Anthropic wire vocabulary for this field, round-tripped verbatim. Unknown values are accepted (forward-compat).
+- `content` (array of content blocks) — each block is `{"type": <str>, ...}`. Consumers at v0.1 handle the `text` block (`{"type":"text","text":<str>}`); other block types parse without error.
+- `usage` (object) — MUST include `input_tokens` (integer) and `output_tokens` (integer). Prompt-caching fields, when present, MUST use Anthropic's native names `cache_creation_input_tokens` and `cache_read_input_tokens`; adapters MUST NOT rename them (no `cache_write_tokens` / `cache_read_tokens`).
+
+`api_calls` is NOT a field of the non-streaming response object: the harness treats one `complete` invocation as one model call regardless of how many HTTP calls the adapter made internally. (The streaming `message_stop` does carry `api_calls` — see below — because the harness cannot otherwise observe retry fan-out mid-stream.)
+
+Unknown top-level fields are accepted and ignored (forward-compat, mirroring `describe.schema_version`). The top-level `type` field is reserved: `"error"` signals the in-band error object (see **Errors** below); any other value is undefined and MUST NOT be produced. In particular, there is no `"type": "message"` wrapper — the response object itself is the message.
+
+**Response shape (streaming).** Event names (`text_delta`, `tool_use_delta`, etc.) are an adapter-contract shape, not Anthropic's wire streaming shape — adapters translate. The terminal `message_stop`:
+
+- `usage` — same object shape as non-streaming (Anthropic-native field names, including cache fields when present).
+- `api_calls` (integer, ≥1) — REQUIRED. Count of HTTP requests the adapter made under this `complete` invocation; accounts for retries and streaming reconnects.
 
 **Errors.** Adapters report errors in-band, not by exiting non-zero:
 

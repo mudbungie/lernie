@@ -193,6 +193,7 @@ fn run_surfaces_response_shape_mismatch() {
     assert!(matches!(err, Error::AdapterJson(_)));
 }
 
+
 #[test]
 fn run_surfaces_in_band_error_with_default_fields() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));

@@ -13,9 +13,12 @@
 //!   in-band error object on stdout. The process exits `0` in both cases;
 //!   non-zero is reserved for adapter-side crashes (§4.4).
 //!
-//! The non-streaming response shape is the provider-adapter canonical v1:
-//! `{ "type": "message", ...Response }` so streaming (bl-d15d) can reuse the
-//! same dispatch tag without a breaking rename.
+//! The non-streaming response is the Anthropic Messages-API wire shape,
+//! passed through verbatim (ARCH §4.4 "Response shape (non-streaming)"):
+//! `{ id, model, stop_reason, content, usage }` at top level, with no
+//! `type` tag. Errors are distinguished by `{ "type": "error", ... }`; the
+//! reserved `type` field is the only way a consumer tells success from
+//! error on the same stream.
 //!
 //! Streaming, tool-use, and prompt caching are out of scope for v0.1; see
 //! the binary's `--help` and `docs/ARCHITECTURE.md` §12.

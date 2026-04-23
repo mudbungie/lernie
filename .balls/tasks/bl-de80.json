@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-23T06:38:31.509632963Z",
   "delivered_in": null,
-  "depends_on": ["bl-bf79"],
+  "depends_on": ["bl-bf79","bl-64cf"],
   "description": "Plumb streaming through the adapter-contract surface per ARCH §4.4. Builds on ball bl-64cf (raw client streaming) and bl-bf79 (harness wire types).\n\n=== Scope ===\n- Request gains stream: bool (defaults false). When true, run_complete emits a JSON-Lines event stream on stdout.\n- Events are the §4.4 normalized shape — NOT Anthropic's native SSE: message_start, content_block_start, text_delta, tool_use_delta, content_block_stop, message_stop. The adapter translates Anthropic's content_block_delta into text_delta / tool_use_delta based on block type.\n- Terminal message_stop carries usage (full Anthropic-native field names) and api_calls (integer ≥1 — count of HTTP requests the adapter made under this complete invocation; for this adapter always 1 unless retry lands later).\n- `ping` events from Anthropic are dropped (§4.4 doesn't define them in the normalized shape).\n- Errors: if streaming fails mid-flight, emit { \"type\": \"error\", \"kind\": \"retryable\"|\"fatal\", ... } as a final line and exit 0.\n- SIGTERM: drop in-flight HTTP, flush a final message_stop or error event, exit within 5s.\n- describe.capabilities += \"streaming\"; SCHEMA_VERSION stays on 2 (adding a request field is additive; streaming was always planned).\n- Harness-side wire types (src/provider/wire.rs) grow the event variants so src/prompt can parse a streaming response into its own typed events.\n\n=== Non-goals ===\n- UI consumption of the stream (v0.5 work).\n- Retry / reconnect (adapter owns retry per §4.4; for now one HTTP call per stream, api_calls=1 terminal).\n- Tool-use streaming event content is reserved (shape defined, fields empty until v0.3 adds tool use).\n\n=== Testing ===\nAdapter-level integration tests: feed a mocked Anthropic SSE stream through run_complete with stream: true, assert JSON-Lines normalized output. SIGTERM test: start a stream, signal, assert a terminal event and exit within timeout. 100% tarpaulin.",
   "external": {},
   "id": "bl-de80",
@@ -16,5 +16,5 @@
   "tags": ["streaming"],
   "title": "Adapter contract: streaming wire in run_complete",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:35.189387971Z"
+  "updated_at": "2026-04-23T06:38:35.200557458Z"
 }

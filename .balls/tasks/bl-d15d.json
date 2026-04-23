@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-d15d",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T07:00:01.879597172Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-4033"},{"link_type":"gates","target":"bl-403c"},{"link_type":"gates","target":"bl-48dd"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["streaming"],
   "title": "Anthropic client: streaming SSE support",
   "type": "task",
-  "updated_at": "2026-04-22T07:00:12.282654045Z"
+  "updated_at": "2026-04-23T05:40:37.988951034Z"
 }

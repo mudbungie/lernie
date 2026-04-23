@@ -54,15 +54,43 @@ fn git_command(dest: &Path, args: &[&str]) -> Command {
     cmd
 }
 
-fn adapter_bin_dir() -> &'static Path {
-    Path::new(env!("CARGO_BIN_EXE_lernie-provider-anthropic"))
-        .parent()
-        .expect("bin path has a parent")
+/// Build the sibling adapter binary (if not already built) and return the
+/// directory it lives in. The binary is in a separate workspace crate, so
+/// `CARGO_BIN_EXE_<name>` is not set for this test — we build it via cargo
+/// at test start and locate it via the workspace's `target/<profile>/`.
+fn adapter_bin_dir() -> std::path::PathBuf {
+    static BUILT: std::sync::Once = std::sync::Once::new();
+    BUILT.call_once(|| {
+        let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
+        let status = std::process::Command::new(cargo)
+            .args([
+                "build",
+                "--quiet",
+                "--package",
+                "lernie-provider-anthropic",
+                "--bin",
+                "lernie-provider-anthropic",
+            ])
+            .status()
+            .expect("spawn cargo build");
+        assert!(
+            status.success(),
+            "cargo build lernie-provider-anthropic failed"
+        );
+    });
+    let profile = if cfg!(debug_assertions) {
+        "debug"
+    } else {
+        "release"
+    };
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("target")
+        .join(profile)
 }
 
 fn path_env_with_adapter() -> std::ffi::OsString {
     let existing = std::env::var_os("PATH").unwrap_or_default();
-    let mut dirs = vec![adapter_bin_dir().to_path_buf()];
+    let mut dirs = vec![adapter_bin_dir()];
     dirs.extend(std::env::split_paths(&existing));
     std::env::join_paths(dirs).expect("PATH join")
 }

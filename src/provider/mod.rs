@@ -1,10 +1,8 @@
 //! Inference-provider runtime clients.
 //!
 //! Per `docs/ARCHITECTURE.md` §4.1, a provider is an (endpoint, auth) pair.
-//! The submodules here are the HTTP clients that realize a model call as an
-//! API call against a concrete provider: one HTTP request, one parsed
-//! response. Config-file parsing for the same concept lives in
-//! [`crate::config::providers`].
-
-pub mod anthropic;
-pub mod anthropic_adapter;
+//! The concrete HTTP clients and the adapter-contract implementations live
+//! in their own workspace crates (e.g. `crates/lernie-provider-anthropic`)
+//! so that each provider compiles independently — per
+//! `docs/PRINCIPLES.md` "Integrations are external binaries". Config-file
+//! parsing for the provider concept lives in [`crate::config::providers`].

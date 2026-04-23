@@ -4,13 +4,14 @@
 //! against `POST {endpoint}/v1/messages` (terms per `docs/ARCHITECTURE.md`
 //! §2.1). Streaming, tool-use payloads, prompt caching, and retries are
 //! out of scope for v0.1 (see `docs/ARCHITECTURE.md` §12 and the `v0.1`
-//! milestone).
+//! milestone). Streaming lands in a follow-up child under the bl-d15d
+//! epic.
 //!
 //! Blocking `reqwest` is chosen over async for v0.1: the harness has no
-//! concurrency yet (one exchange at a time, no subagents), so an async
-//! runtime would only add a dependency surface without any parallelism to
-//! exploit. The client can be replaced or wrapped when v0.4 introduces
-//! concurrent invocations.
+//! in-process concurrency (one adapter subprocess per model call — §4.4),
+//! so an async runtime would only add a dependency surface without any
+//! parallelism to exploit. Across model calls, concurrency is achieved by
+//! spawning multiple adapter subprocesses.
 //!
 //! # Error taxonomy
 //!
@@ -28,7 +29,6 @@
 //! - [`Error::Parse`] — the response body was not valid JSON of the shape
 //!   this client expects.
 
-use crate::config::{Auth, Provider};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use thiserror::Error;
@@ -113,8 +113,8 @@ impl Response {
     }
 }
 
-/// Errors surfaced by [`Client::send`] and [`Client::from_provider`]. See
-/// the module docstring for the full taxonomy.
+/// Errors surfaced by [`Client::send`]. See the module docstring for the
+/// full taxonomy.
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("anthropic: config: {0}")]
@@ -140,9 +140,7 @@ pub struct Client {
 }
 
 impl Client {
-    /// Build a client from an explicit endpoint and API key. Prefer
-    /// [`Client::from_provider`] when you already have a parsed
-    /// [`Provider`] and want env-var resolution.
+    /// Build a client from an explicit endpoint and API key.
     pub fn new(endpoint: impl Into<String>, api_key: impl Into<String>) -> Result<Self, Error> {
         let http = reqwest::blocking::Client::builder()
             .timeout(DEFAULT_TIMEOUT)
@@ -153,26 +151,6 @@ impl Client {
             endpoint: endpoint.into(),
             api_key: api_key.into(),
         })
-    }
-
-    /// Build a client from a parsed [`Provider`]. Requires
-    /// [`Auth::ApiKey`]; other auth types return [`Error::Config`]. The
-    /// named environment variable must be set.
-    pub fn from_provider(provider: &Provider) -> Result<Self, Error> {
-        let env_name = match &provider.auth {
-            Auth::ApiKey { env } => env,
-            Auth::AwsSigv4 { .. } => {
-                return Err(Error::Config(
-                    "anthropic client requires api_key auth; got aws_sigv4".into(),
-                ));
-            }
-        };
-        let api_key = std::env::var(env_name).map_err(|_| {
-            Error::Config(format!(
-                "env var {env_name:?} (declared in providers.yaml) is not set"
-            ))
-        })?;
-        Self::new(provider.endpoint.clone(), api_key)
     }
 
     /// Execute one model call: POST to `/v1/messages`, parse and classify
@@ -203,3 +181,6 @@ impl Client {
         })
     }
 }
+
+#[cfg(test)]
+mod tests;

@@ -1,13 +1,13 @@
 //! End-to-end subprocess test for `lernie-provider-anthropic`.
 //!
-//! Covers the wiring that the inline unit tests in
-//! `src/provider/anthropic_adapter.rs` cannot: argv parsing, stdin/stdout
-//! as real pipes, env-var injection, exit codes. One happy-path and one
-//! error-path case is enough — the adapter's branching logic has full
-//! coverage in the library tests.
+//! Covers the wiring that the inline unit tests in `src/adapter.rs`
+//! cannot: argv parsing, stdin/stdout as real pipes, env-var injection,
+//! exit codes. One happy-path and one error-path case is enough — the
+//! adapter's branching logic has full coverage in the library tests.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
+use serde_json::Value;
 use std::io::Write;
 use std::process::{Command, Stdio};
 use tempfile::NamedTempFile;
@@ -16,27 +16,35 @@ fn adapter_bin() -> &'static str {
     env!("CARGO_BIN_EXE_lernie-provider-anthropic")
 }
 
+fn spawn_and_capture(mut cmd: Command, stdin_bytes: Option<&[u8]>) -> (bool, Vec<u8>) {
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = cmd.spawn().expect("spawn adapter");
+    if let Some(bytes) = stdin_bytes {
+        child.stdin.as_mut().unwrap().write_all(bytes).unwrap();
+    }
+    drop(child.stdin.take());
+    let out = child.wait_with_output().expect("wait adapter");
+    (out.status.success(), out.stdout)
+}
+
 #[test]
 fn describe_subcommand_prints_contract_json() {
-    let out = Command::new(adapter_bin())
-        .arg("describe")
-        .output()
-        .expect("spawn adapter");
-    assert!(
-        out.status.success(),
-        "stderr: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let mut cmd = Command::new(adapter_bin());
+    cmd.arg("describe");
+    let (ok, stdout) = spawn_and_capture(cmd, None);
+    assert!(ok);
+    let v: Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(v["name"], "anthropic");
     assert_eq!(v["schema_version"], 2);
-    assert!(
-        v["auth_env"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|x| x == "ANTHROPIC_API_KEY")
-    );
+    let auth_env: Vec<&str> = v["auth_env"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|x| x.as_str().unwrap())
+        .collect();
+    assert!(auth_env.contains(&"ANTHROPIC_API_KEY"));
 }
 
 #[test]
@@ -59,31 +67,13 @@ fn complete_end_to_end_against_local_mock() {
         "messages": [{"role": "user", "content": "ping"}],
     });
 
-    let mut child = Command::new(adapter_bin())
-        .arg("complete")
+    let mut cmd = Command::new(adapter_bin());
+    cmd.arg("complete")
         .env("ANTHROPIC_API_KEY", "integration-key")
-        .env("LERNIE_PROVIDER_ANTHROPIC_ENDPOINT", server.base_url())
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("spawn adapter");
-
-    child
-        .stdin
-        .as_mut()
-        .unwrap()
-        .write_all(request.to_string().as_bytes())
-        .unwrap();
-    drop(child.stdin.take());
-
-    let out = child.wait_with_output().expect("wait adapter");
-    assert!(
-        out.status.success(),
-        "stderr: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+        .env("LERNIE_PROVIDER_ANTHROPIC_ENDPOINT", server.base_url());
+    let (ok, stdout) = spawn_and_capture(cmd, Some(request.to_string().as_bytes()));
+    assert!(ok);
+    let v: Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(v["id"], "msg_int");
     assert_eq!(v["content"][0]["text"], "pong");
 }
@@ -127,11 +117,7 @@ fn complete_request_flag_reads_from_file_matching_stdin_output() {
         .stderr(Stdio::piped())
         .output()
         .expect("spawn adapter (--request)");
-    assert!(
-        via_file.status.success(),
-        "stderr: {}",
-        String::from_utf8_lossy(&via_file.stderr)
-    );
+    assert!(via_file.status.success());
 
     let mut via_stdin = Command::new(adapter_bin())
         .arg("complete")
@@ -182,21 +168,13 @@ fn complete_request_flag_with_missing_file_exits_nonzero() {
 
 #[test]
 fn complete_without_api_key_emits_in_band_fatal_error_and_exits_zero() {
-    let mut child = Command::new(adapter_bin())
-        .arg("complete")
-        .env_remove("ANTHROPIC_API_KEY")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("spawn adapter");
-    drop(child.stdin.take());
-
-    let out = child.wait_with_output().expect("wait adapter");
+    let mut cmd = Command::new(adapter_bin());
+    cmd.arg("complete").env_remove("ANTHROPIC_API_KEY");
+    let (ok, stdout) = spawn_and_capture(cmd, None);
     // In-band errors are exit 0 per ARCH §4.4 — non-zero would tell the
     // harness the adapter itself crashed.
-    assert!(out.status.success());
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert!(ok);
+    let v: Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(v["type"], "error");
     assert_eq!(v["kind"], "fatal");
     assert!(v["message"].as_str().unwrap().contains("ANTHROPIC_API_KEY"));

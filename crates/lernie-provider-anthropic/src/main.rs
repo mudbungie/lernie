@@ -3,7 +3,7 @@
 //!
 //! This file is intentionally skeletal: argv parsing, a SIGTERM handler,
 //! stdin/stdout wiring. All logic lives in
-//! [`lernie::provider::anthropic_adapter`], where it is testable without a
+//! [`lernie_provider_anthropic::adapter`], where it is testable without a
 //! subprocess dance.
 //!
 //! Usage:
@@ -24,9 +24,7 @@
 //! interpretation to the adapter; the harness only forwards the value.
 
 use clap::{Parser, Subcommand};
-use lernie::provider::anthropic_adapter::{
-    DEFAULT_ENDPOINT, ENDPOINT_ENV, run_complete, run_describe,
-};
+use lernie_provider_anthropic::{DEFAULT_ENDPOINT, ENDPOINT_ENV, run_complete, run_describe};
 use std::fs::File;
 use std::io::{self, BufReader, Write};
 use std::path::PathBuf;
@@ -63,8 +61,8 @@ enum Command {
 /// adapter there is no partial state to flush, so a fast `_exit(0)` is the
 /// correct response: the operating system closes the HTTP socket as part
 /// of teardown, and we avoid the Rust runtime's atexit hooks (which are
-/// not async-signal-safe). The streaming adapter (bl-d15d) will need to
-/// emit a terminal `error` event before exiting.
+/// not async-signal-safe). The streaming branch of the bl-d15d epic will
+/// need to emit a terminal `error` event before exiting.
 fn install_sigterm_handler() {
     extern "C" fn on_sigterm(_signo: libc::c_int) {
         // `_exit` is async-signal-safe; `std::process::exit` is not.

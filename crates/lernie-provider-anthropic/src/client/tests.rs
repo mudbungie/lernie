@@ -1,15 +1,10 @@
-//! Integration tests for the Anthropic Messages API client.
-//!
-//! Drives [`lernie::provider::anthropic::Client`] against a locally-bound
-//! `httpmock` server so every HTTP branch in the error taxonomy is
-//! exercised without touching the real provider. No live API calls.
+//! Tests for [`super`]. Driven against a locally-bound `httpmock` server
+//! so every HTTP branch in the error taxonomy is exercised without
+//! touching the real provider. No live API calls.
 
+use super::*;
 use httpmock::Method::POST;
 use httpmock::MockServer;
-use lernie::config::{Auth, Provider};
-use lernie::provider::anthropic::{
-    ANTHROPIC_VERSION, Client, ContentBlock, Error, Message, Request, Response, Role, Usage,
-};
 
 fn request() -> Request {
     Request {
@@ -76,13 +71,11 @@ fn unauthorized_maps_to_auth_error() {
     });
 
     let err = client(&server).send(&request()).unwrap_err();
-    match err {
-        Error::Auth { status, body } => {
-            assert_eq!(status, 401);
-            assert!(body.contains("invalid x-api-key"));
-        }
-        other => panic!("expected Auth, got {other:?}"),
-    }
+    let Error::Auth { status, body } = err else {
+        panic!("expected Auth, got {err:?}")
+    };
+    assert_eq!(status, 401);
+    assert!(body.contains("invalid x-api-key"));
 }
 
 #[test]
@@ -94,13 +87,11 @@ fn rate_limited_maps_to_rate_limit_error() {
     });
 
     let err = client(&server).send(&request()).unwrap_err();
-    match err {
-        Error::RateLimit { status, body } => {
-            assert_eq!(status, 429);
-            assert!(body.contains("slow down"));
-        }
-        other => panic!("expected RateLimit, got {other:?}"),
-    }
+    let Error::RateLimit { status, body } = err else {
+        panic!("expected RateLimit, got {err:?}")
+    };
+    assert_eq!(status, 429);
+    assert!(body.contains("slow down"));
 }
 
 #[test]
@@ -112,13 +103,11 @@ fn server_error_maps_to_provider_error() {
     });
 
     let err = client(&server).send(&request()).unwrap_err();
-    match err {
-        Error::Provider { status, body } => {
-            assert_eq!(status, 500);
-            assert_eq!(body, "upstream boom");
-        }
-        other => panic!("expected Provider, got {other:?}"),
-    }
+    let Error::Provider { status, body } = err else {
+        panic!("expected Provider, got {err:?}")
+    };
+    assert_eq!(status, 500);
+    assert_eq!(body, "upstream boom");
 }
 
 #[test]
@@ -169,15 +158,15 @@ fn bad_request_without_rate_limit_status_is_provider_error() {
     });
 
     let err = client(&server).send(&request()).unwrap_err();
-    match err {
-        Error::Provider { status, .. } => assert_eq!(status, 400),
-        other => panic!("expected Provider, got {other:?}"),
-    }
+    let Error::Provider { status, .. } = err else {
+        panic!("expected Provider, got {err:?}")
+    };
+    assert_eq!(status, 400);
 }
 
 #[test]
 fn response_text_joins_text_blocks_in_order() {
-    let r = Response {
+    let text = Response {
         id: "msg_1".into(),
         model: "claude-sonnet-4-7".into(),
         stop_reason: "end_turn".into(),
@@ -194,13 +183,14 @@ fn response_text_joins_text_blocks_in_order() {
             input_tokens: 1,
             output_tokens: 2,
         },
-    };
-    assert_eq!(r.text(), "hello world");
+    }
+    .text();
+    assert_eq!(text, "hello world");
 }
 
 #[test]
 fn request_serializes_with_expected_fields() {
-    let req = Request {
+    let v: serde_json::Value = serde_json::to_value(&Request {
         model: "claude-sonnet-4-7".into(),
         max_tokens: 16,
         system: Some("be terse".into()),
@@ -208,8 +198,8 @@ fn request_serializes_with_expected_fields() {
             role: Role::User,
             content: "hi".into(),
         }],
-    };
-    let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+    })
+    .unwrap();
     assert_eq!(v["model"], "claude-sonnet-4-7");
     assert_eq!(v["max_tokens"], 16);
     assert_eq!(v["system"], "be terse");
@@ -219,13 +209,13 @@ fn request_serializes_with_expected_fields() {
 
 #[test]
 fn request_omits_system_when_absent() {
-    let req = Request {
+    let v: serde_json::Value = serde_json::to_value(&Request {
         model: "m".into(),
         max_tokens: 1,
         system: None,
         messages: vec![],
-    };
-    let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+    })
+    .unwrap();
     assert!(v.get("system").is_none());
 }
 
@@ -234,55 +224,4 @@ fn unknown_content_block_type_deserializes_to_unknown() {
     let json = r#"{"type":"something_new","foo":"bar"}"#;
     let block: ContentBlock = serde_json::from_str(json).unwrap();
     assert_eq!(block, ContentBlock::Unknown);
-}
-
-#[test]
-fn from_provider_rejects_aws_sigv4() {
-    let p = Provider {
-        endpoint: "https://example.com".into(),
-        auth: Auth::AwsSigv4 {
-            profile: "default".into(),
-        },
-    };
-    let err = Client::from_provider(&p).unwrap_err();
-    assert!(matches!(err, Error::Config(msg) if msg.contains("aws_sigv4")));
-}
-
-#[test]
-fn from_provider_errors_when_env_var_missing() {
-    let env = "LERNIE_TEST_UNSET_9b7e2a41";
-    // SAFETY: unique-by-name env var used only by this test.
-    unsafe { std::env::remove_var(env) };
-    let p = Provider {
-        endpoint: "https://example.com".into(),
-        auth: Auth::ApiKey { env: env.into() },
-    };
-    let err = Client::from_provider(&p).unwrap_err();
-    assert!(matches!(err, Error::Config(msg) if msg.contains(env)));
-}
-
-#[test]
-fn from_provider_builds_client_that_sends_the_configured_key() {
-    let server = MockServer::start();
-    let mock = server.mock(|when, then| {
-        when.method(POST)
-            .path("/v1/messages")
-            .header("x-api-key", "secret-from-env");
-        then.status(200).body(
-            r#"{"id":"x","model":"m","stop_reason":"end_turn",
-            "content":[],"usage":{"input_tokens":0,"output_tokens":0}}"#,
-        );
-    });
-    let env = "LERNIE_TEST_SET_7c4f8d90";
-    // SAFETY: unique-by-name env var used only by this test.
-    unsafe { std::env::set_var(env, "secret-from-env") };
-    let p = Provider {
-        endpoint: server.base_url(),
-        auth: Auth::ApiKey { env: env.into() },
-    };
-    let client = Client::from_provider(&p).unwrap();
-    client.send(&request()).unwrap();
-    // SAFETY: unique-by-name env var used only by this test.
-    unsafe { std::env::remove_var(env) };
-    mock.assert();
 }

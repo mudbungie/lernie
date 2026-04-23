@@ -1,8 +1,8 @@
 //! Subcommand backends for the `lernie-provider-anthropic` binary.
 //!
-//! The binary itself (`src/bin/lernie_provider_anthropic.rs`) is a thin
-//! wrapper — it parses argv, installs a signal handler, and delegates to the
-//! functions here. This module is the part with logic and tests.
+//! The binary itself (`src/main.rs`) is a thin wrapper — it parses argv,
+//! installs a signal handler, and delegates to the functions here. This
+//! module is the part with logic and tests.
 //!
 //! Wire shape matches the provider-adapter contract in
 //! `docs/ARCHITECTURE.md` §4.4:
@@ -23,7 +23,7 @@
 //! Streaming, tool-use, and prompt caching are out of scope for v0.1; see
 //! the binary's `--help` and `docs/ARCHITECTURE.md` §12.
 
-use crate::provider::anthropic::{self, Client, Request};
+use crate::client::{self, Client, Request};
 use serde::Serialize;
 use std::io::{Read, Write};
 
@@ -52,7 +52,8 @@ pub const AUTH_ENV: &[&str] = &["ANTHROPIC_API_KEY"];
 pub const ENDPOINT_ENV: &[&str] = &["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"];
 
 /// Capabilities advertised by this v0.1 non-streaming adapter. `streaming`
-/// is deliberately absent — that capability lands with bl-d15d.
+/// is deliberately absent — that capability lands with the streaming
+/// children of the bl-d15d epic.
 pub const CAPABILITIES: &[&str] = &["tool_use_native", "prompt_caching", "stop_sequences"];
 
 /// Model ids this adapter knows about. Informational: the harness may call
@@ -183,7 +184,7 @@ fn missing_key_message() -> String {
     )
 }
 
-/// Translate the transport-level [`anthropic::Error`] taxonomy into the
+/// Translate the transport-level [`client::Error`] taxonomy into the
 /// adapter-contract [`AdapterError`] taxonomy.
 ///
 /// The mapping reflects the contract's retry intent (ARCH §4.4): things the
@@ -191,21 +192,21 @@ fn missing_key_message() -> String {
 /// (`Fatal`). 5xx and 429 are retryable; 4xx (including auth) is fatal;
 /// network failures are retryable; parse errors are fatal because a
 /// malformed upstream response is not going to un-malform itself.
-fn map_error(e: &anthropic::Error) -> AdapterError {
+fn map_error(e: &client::Error) -> AdapterError {
     match e {
-        anthropic::Error::Config(msg) => AdapterError::fatal(format!("config: {msg}")),
-        anthropic::Error::Network(err) => AdapterError::retryable(format!("network: {err}")),
-        anthropic::Error::Auth { status, body } => {
+        client::Error::Config(msg) => AdapterError::fatal(format!("config: {msg}")),
+        client::Error::Network(err) => AdapterError::retryable(format!("network: {err}")),
+        client::Error::Auth { status, body } => {
             AdapterError::fatal(format!("auth: {body}")).with_status(*status)
         }
-        anthropic::Error::RateLimit { status, body } => AdapterError {
+        client::Error::RateLimit { status, body } => AdapterError {
             kind_tag: "error",
             kind: ErrorKind::Retryable,
             http_status: Some(*status),
             message: format!("rate-limited: {body}"),
             retry_after_seconds: parse_retry_after(body),
         },
-        anthropic::Error::Provider { status, body } => {
+        client::Error::Provider { status, body } => {
             let kind = if *status >= 500 {
                 ErrorKind::Retryable
             } else {
@@ -219,7 +220,7 @@ fn map_error(e: &anthropic::Error) -> AdapterError {
                 retry_after_seconds: None,
             }
         }
-        anthropic::Error::Parse(err) => AdapterError::fatal(format!("upstream JSON parse: {err}")),
+        client::Error::Parse(err) => AdapterError::fatal(format!("upstream JSON parse: {err}")),
     }
 }
 

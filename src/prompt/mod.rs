@@ -36,8 +36,8 @@ pub use step::{StepResponse, Usage};
 
 use crate::config::cross::check_agents_against_providers;
 use crate::config::{Agents, Providers};
-use crate::provider::anthropic::Response;
 use crate::template::GitRunner;
+use lernie_provider_anthropic::Response;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use thiserror::Error;

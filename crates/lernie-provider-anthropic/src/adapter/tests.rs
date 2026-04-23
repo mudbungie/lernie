@@ -1,8 +1,8 @@
-//! Tests for [`super`]. Split out so `anthropic_adapter.rs` stays under
-//! the repo's 300-line cap for code files.
+//! Tests for [`super`]. Split out so `adapter.rs` stays under the repo's
+//! 300-line cap for code files.
 
 use super::*;
-use crate::provider::anthropic::{ANTHROPIC_VERSION, Message, Role};
+use crate::client::{ANTHROPIC_VERSION, Message, Role};
 use httpmock::Method::POST;
 use httpmock::MockServer;
 use serde_json::Value;
@@ -63,7 +63,7 @@ fn describe_shape_matches_contract() {
     assert!(caps.contains(&"tool_use_native"));
     assert!(
         !caps.contains(&"streaming"),
-        "streaming capability belongs to bl-d15d, not v0.1"
+        "streaming capability lands with the streaming children of bl-d15d"
     );
     assert_eq!(v["auth_env"][0], "ANTHROPIC_API_KEY");
     assert_eq!(v["endpoint_env"][0], "LERNIE_PROVIDER_ANTHROPIC_ENDPOINT");
@@ -218,7 +218,7 @@ fn complete_malformed_upstream_json_is_fatal() {
 
 #[test]
 fn map_config_error_is_fatal() {
-    let mapped = map_error(&anthropic::Error::Config("nope".into()));
+    let mapped = map_error(&client::Error::Config("nope".into()));
     assert_eq!(mapped.kind, ErrorKind::Fatal);
     assert!(mapped.message.contains("config"));
 }

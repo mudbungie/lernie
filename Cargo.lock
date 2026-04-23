@@ -1940,12 +1940,25 @@ dependencies = [
  "clap",
  "httpmock",
  "include_dir",
- "libc",
- "reqwest",
+ "lernie-provider-anthropic",
  "schemars",
  "serde",
  "serde_json",
  "serde_yaml_ng",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "lernie-provider-anthropic"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "httpmock",
+ "libc",
+ "reqwest",
+ "serde",
+ "serde_json",
  "tempfile",
  "thiserror 2.0.18",
 ]

@@ -1,13 +1,15 @@
 //! The `lernie` harness binary.
 //!
-//! v0.1 surface:
+//! v0.2 surface:
 //!
-//! - `new <path>` — scaffold a conversation repo from the embedded template
-//!   (ARCH §2.2).
-//! - `prompt <repo> <message>` — drive one exchange: invoke the provider
-//!   adapter, write the result to `<repo>/exchanges/`, commit to `main`,
-//!   print the commit SHA. v0.1 is the branch-invariant exception per
-//!   ARCH §12; branching / merges arrive in v0.2.
+//! - `new <path>` — scaffold a conversation repo from the embedded
+//!   template (ARCH §2.2).
+//! - `prompt <repo> <message>` — drive one exchange: spawn an
+//!   `ex/<ts>-<id>` branch off `main` with a worktree under
+//!   `<repo>/.lernie/worktrees/ex/…`, commit a step snapshot before the
+//!   model call, invoke the provider adapter, land the response as a
+//!   follow-up commit, and print the branch name. Merge-back (§2.6)
+//!   is a separate v0.2 task; `main`'s HEAD is untouched.
 
 use clap::{Parser, Subcommand};
 use lernie::prompt::{self, NanoIdGen, SpawnAdapter, SystemClock};
@@ -30,8 +32,8 @@ enum Command {
         /// directory.
         path: PathBuf,
     },
-    /// Send one user message through the configured worker role and
-    /// commit the result to <repo>.
+    /// Send one user message through the configured worker role on a
+    /// fresh exchange branch. Prints the branch name on success.
     Prompt {
         /// Path to an existing conversation repo (created by `lernie new`).
         repo: PathBuf,
@@ -61,8 +63,8 @@ fn main() -> ExitCode {
                 id_gen: &NanoIdGen,
             };
             match prompt::run(&repo, &message, &deps) {
-                Ok(sha) => {
-                    println!("{sha}");
+                Ok(branch) => {
+                    println!("{branch}");
                     ExitCode::SUCCESS
                 }
                 Err(e) => {

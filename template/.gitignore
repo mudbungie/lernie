@@ -1,3 +1,8 @@
-# Runtime state that the harness produces outside the tracked .agent/state/
-# tree. v0.1 writes nothing that needs to be ignored; entries will be added
-# here as later milestones introduce on-disk runtime artifacts.
+# Runtime state that the harness produces outside the tracked
+# .agent/state/ tree.
+
+# Exchange/invocation branch worktrees (ARCH §2.3) — each `lernie
+# prompt` invocation allocates `.lernie/worktrees/<branch-path>/` for
+# its branch. Worktrees are cross-branch state and must not land on
+# `main`'s tree.
+.lernie/

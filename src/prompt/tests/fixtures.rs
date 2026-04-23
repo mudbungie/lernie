@@ -6,12 +6,12 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::ffi::OsString;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// Deterministic [`Clock`] — counts how many times each method was called
-/// and returns a formatted counter, so `started_at` / `ended_at` and the
-/// filename ts are all distinct and observable.
+/// Deterministic [`Clock`] — counts how many times each method was
+/// called and returns a formatted counter, so `started_at` /
+/// `ended_at` / ts are all distinct and observable.
 pub(super) struct FixedClock {
     iso_calls: RefCell<u32>,
     compact_calls: RefCell<u32>,
@@ -56,8 +56,8 @@ pub(super) enum AdapterReply {
 pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
 
 /// Canonical `describe` JSON the harness expects from the Anthropic
-/// adapter. Tests that vary the shape (e.g. missing `endpoint_env`) build
-/// their own bytes inline.
+/// adapter. Tests that vary the shape (e.g. missing `endpoint_env`)
+/// build their own bytes inline.
 pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "name":"anthropic","schema_version":2,
     "capabilities":["tool_use_native"],
@@ -66,17 +66,16 @@ pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
 }"#;
 
-/// Scripted [`AdapterRunner`] — replies are taken from a FIFO queue so a
-/// single test can script `describe` then `complete` independently. All
-/// invocations are recorded for later assertion.
+/// Scripted [`AdapterRunner`] — replies are taken from a FIFO queue
+/// so a single test can script `describe` then `complete`
+/// independently. All invocations are recorded for later assertion.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
 }
 
 impl StubAdapter {
-    /// Queue an explicit sequence of replies. Use for tests that need to
-    /// vary `describe` independently of `complete`.
+    /// Queue an explicit sequence of replies.
     pub(super) fn scripted<I>(replies: I) -> Self
     where
         I: IntoIterator<Item = AdapterReply>,
@@ -87,9 +86,8 @@ impl StubAdapter {
         }
     }
 
-    /// Common case: a successful `describe` followed by `complete_bytes`
-    /// from the next adapter call. Used by the happy path and by tests
-    /// that want a specific complete-stage stdout.
+    /// Common case: a successful `describe` followed by
+    /// `complete_bytes` from the next adapter call.
     pub(super) fn happy(complete_bytes: &[u8]) -> Self {
         Self::scripted([
             AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
@@ -111,8 +109,9 @@ impl StubAdapter {
         AdapterReply::Err(io::Error::new(kind, msg.to_string()))
     }
 
-    /// The most recent invocation — convenient for tests that only care
-    /// about the `complete` call (the second one, when describe succeeded).
+    /// The most recent invocation — convenient for tests that only
+    /// care about the `complete` call (the second one, when describe
+    /// succeeded).
     pub(super) fn last(&self) -> AdapterCall {
         self.observed.borrow().last().cloned().expect("no calls")
     }
@@ -142,12 +141,13 @@ impl AdapterRunner for StubAdapter {
     }
 }
 
-/// Scripted [`GitRunner`] — records calls, can fail at a chosen index, and
-/// returns canned stdout for `run_capture`.
+/// Scripted [`GitRunner`] — records both the `-C` destination and the
+/// args so tests can distinguish commands run in the repo root
+/// (`worktree add`) from commands run in the branch worktree (`add`,
+/// `commit`). Can be configured to fail at a specific call index.
 pub(super) struct StubGit {
-    pub(super) runs: RefCell<Vec<Vec<String>>>,
+    pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
     fail_at: Option<usize>,
-    capture_reply: String,
 }
 
 impl StubGit {
@@ -155,32 +155,36 @@ impl StubGit {
         Self {
             runs: RefCell::new(Vec::new()),
             fail_at: None,
-            capture_reply: "sha-123".into(),
         }
     }
     pub(super) fn failing_at(idx: usize) -> Self {
         Self {
             runs: RefCell::new(Vec::new()),
             fail_at: Some(idx),
-            capture_reply: "".into(),
         }
     }
 }
 
 impl GitRunner for StubGit {
-    fn run(&self, _dest: &Path, args: &[&str]) -> io::Result<()> {
+    fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
         let mut runs = self.runs.borrow_mut();
         let idx = runs.len();
-        runs.push(args.iter().map(|s| (*s).to_owned()).collect());
+        runs.push((
+            dest.to_path_buf(),
+            args.iter().map(|s| (*s).to_owned()).collect(),
+        ));
         if self.fail_at == Some(idx) {
             Err(io::Error::other(format!("stub git fail at {idx}")))
         } else {
             Ok(())
         }
     }
-    fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        self.run(dest, args)?;
-        Ok(self.capture_reply.clone())
+    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
+        // dispatch never calls run_capture on StubGit; guarding this
+        // with unreachable!() signals "no test should drive this" and
+        // keeps tarpaulin's ignore-panics from counting it as dead
+        // code.
+        unreachable!("StubGit::run_capture is not used by `prompt::dispatch`")
     }
 }
 
@@ -243,4 +247,18 @@ pub(super) fn valid_deps<'a>(
         clock,
         id_gen: id,
     }
+}
+
+/// An adapter the test does not expect to reach — scripted with no
+/// replies, so calling it panics and the failure is loud.
+pub(super) fn unreachable_adapter() -> StubAdapter {
+    StubAdapter::scripted([])
+}
+
+/// Deterministic worktree path for the standard fixtures — FixedClock
+/// returns `ct-1` on the first `now_compact` call, FixedIdGen always
+/// returns `deadbeef`. Tests pre-populate paths under this directory
+/// to force I/O failures.
+pub(super) fn worktree_path(repo: &Path) -> PathBuf {
+    repo.join(".lernie/worktrees/ex/ct-1-deadbeef")
 }

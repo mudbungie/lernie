@@ -113,6 +113,17 @@ Branching is cheap — local git operations on disk — but it is no longer per-
 
 Compaction may also run *during* a branch's execution, not only at termination; see §2.7.
 
+**Step on-disk layout.** Each step lives in its own directory under `exchanges/<exchange-id>/steps/<NNN>/` (for an exchange branch) or `invocations/<invocation-id>/steps/<NNN>/` (for an invocation branch, when v0.4 lands). `<NNN>` is zero-padded 3-digit and 1-indexed, so step dirs sort lexically. Two core files land per step:
+
+- `request.json` — the model call's input. Committed **before** the model call (§2.10), so the commit's tree is the exact state the model read from; retry replays this snapshot without drift.
+- `response.json` — the normalized model-call output (assistant text, `model_id`, `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`). Landed as a *follow-up commit* on the same branch — not an amend of the snapshot — so the snapshot's tree continues to reflect pre-model-call state.
+
+Tool calls emitted by a step (v0.3+) extend the step's dir with `tool_calls/<tool-id>/…` rather than creating new step dirs, preserving "one step = one model call" (§2.1). The branch's worktree is allocated at `<repo>/.lernie/worktrees/<branch-path>/`; `.lernie/` is gitignored so worktrees never land on `main`.
+
+The rich per-step tree is branch-life state. On terminal compaction (§2.7) the compactor writes a signal-preserving summary and marks the raw step dirs for deletion, leaving `main` with only the compacted history §2.2 describes.
+
+> **v0.2 scope.** The branch/snapshot/response flow lands in v0.2; the merge-back protocol (§2.6) and terminal compaction are separate v0.2 steps. Until merge-back ships, `lernie prompt` spawns branches that stay open.
+
 ### 2.4 Exchanges
 
 An exchange is initiated by a user message and ends with a terminal assistant response. Its branch is the root of a trace in the observability sense. An exchange that is interrupted before a terminal response is terminal by virtue of the stop itself: it does not merge back to `main`; it may be resumed by a new dispatch using the stopped branch as context (see §2.9).
@@ -587,7 +598,7 @@ Named explicitly so they are not rediscovered later:
 
 **Shipped shape.** `lernie new <path>` scaffolds a conversation repo from the embedded template; `lernie prompt <repo> <message>` loads `providers.yaml` + `agents.yaml`, resolves the `worker` role, invokes `lernie-provider-<name>` as a subprocess (§4.4), writes `exchanges/<ts>-<short-id>.json` with `user_message` / `assistant_response` / `model_id` / `provider` / `usage` / `stop_reason` / `started_at` / `ended_at`, and commits the file to `main`.
 
-**Exceptions to later invariants, scoped to v0.1 only.** The commit lands directly on `main` rather than via an exchange branch merge (§2.3). The earlier `--endpoint` argv pragma was retired in v0.2: endpoint forwarding now goes through `describe.endpoint_env` per §4.4.
+**Exceptions to later invariants, historical.** v0.1 committed directly on `main` rather than via an exchange branch merge (§2.3); retired in v0.2, where `lernie prompt` spawns an `ex/<ts>-<id>` branch and commits the step snapshot before the model call (§2.10), with the response landing as a follow-up commit on the same branch. Merge-back (§2.6) arrives in a subsequent v0.2 step. The earlier `--endpoint` argv pragma was also retired in v0.2: endpoint forwarding now goes through `describe.endpoint_env` per §4.4.
 
 ### v0.2 — Git tree
 

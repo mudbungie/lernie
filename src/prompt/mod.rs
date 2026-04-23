@@ -1,62 +1,55 @@
-//! `lernie prompt` — v0.1 one-exchange-per-invocation backend.
+//! `lernie prompt` — v0.2 exchange-branch backend.
 //!
-//! The success criterion for ARCH §12 v0.1: "A single prompt is sent to a
-//! provider endpoint, the response is written to disk, and is visible in
-//! the conversation repo as a commit. No git branching, no tools, no
-//! invocations." [`run`] is that path, orchestrated against injected
-//! [`AdapterRunner`], [`GitRunner`], [`Clock`], and [`IdGen`] so every
-//! branch is exercisable without a live provider or on-disk side effects.
+//! v0.2 realizes ARCH §2.3's branch invariant for the exchange case:
+//! each invocation spawns `ex/<ts>-<short-id>` off `main`, commits a
+//! snapshot (§2.10) before the model call, lands the response as a
+//! follow-up commit, and leaves the branch open. Merge-back (§2.6) is
+//! a separate task, so main's HEAD is unchanged by `lernie prompt`.
 //!
-//! v0.1 is the explicit exception to the branch invariant (ARCH §2.3): the
-//! exchange is written to `exchanges/<ts>-<short-id>.json` and committed
-//! directly on `main`. Branching, steps-as-commits, compaction, and merges
-//! land with v0.2.
+//! Provider plumbing follows ARCH §4.4 strictly: `describe` runs once
+//! per invocation to pick up the adapter's `endpoint_env` list, then
+//! each named env var is set to `providers.<name>.endpoint` before
+//! `complete`. The harness never reads or interprets the URL.
 //!
-//! Endpoint plumbing follows ARCH §4.4 strictly: the harness invokes
-//! `describe` once per [`run`] to pick up the adapter's `endpoint_env`
-//! list, then sets each named env var to `providers.<name>.endpoint`
-//! before invoking `complete`. The harness never reads or interprets the
-//! URL — only the adapter does.
+//! [`run`] is orchestrated against injected [`AdapterRunner`],
+//! [`GitRunner`], [`Clock`], and [`IdGen`] so every branch of the
+//! flow is exercisable without a live provider or on-disk side
+//! effects.
 
 pub mod adapter;
 pub mod clock;
-pub mod record;
+pub mod dispatch;
+pub mod step;
 
 #[cfg(test)]
 mod tests;
 
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
-pub use record::{ExchangeRecord, Usage};
+pub use step::{StepResponse, Usage};
 
 use crate::config::cross::check_agents_against_providers;
 use crate::config::{Agents, Providers};
 use crate::provider::anthropic::Response;
 use crate::template::GitRunner;
 use serde_json::Value;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-/// Role name resolved from `agents.yaml` to drive the exchange. v0.1 has
-/// one role; v0.4 introduces invocations.
+/// Role name resolved from `agents.yaml` to drive the exchange. v0.2
+/// has one role; v0.4 introduces invocations.
 const WORKER_ROLE: &str = "worker";
-const AGENT_DIR: &str = ".agent";
+pub(crate) const AGENT_DIR: &str = ".agent";
 const SYSTEM_DIR_IN_AGENT: &str = "system";
-const EXCHANGES_DIR: &str = "exchanges";
-/// Per-request `max_tokens` cap. v0.1 is not opinionated about budget —
-/// this is a defensible default the user can outgrow before we add a
-/// config surface for it.
-const DEFAULT_MAX_TOKENS: u32 = 4096;
 
-/// Every way [`run`] can fail. The taxonomy is intentionally narrower than
-/// the provider client's: step-level distinctions (network vs parse vs auth)
-/// are the adapter's, not the harness's.
+/// Every way [`run`] can fail. The taxonomy is intentionally narrower
+/// than the provider client's: step-level distinctions (network vs
+/// parse vs auth) are the adapter's, not the harness's.
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("config: {0}")]
     Config(#[from] crate::config::LoadError),
-    #[error("agents.yaml has no {0:?} role (required for v0.1)")]
+    #[error("agents.yaml has no {0:?} role (required for v0.2)")]
     RoleMissing(String),
     #[error("read system prompt {path}: {source}")]
     SystemPromptRead {
@@ -64,7 +57,7 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
-    #[error("i/o writing exchange record: {0}")]
+    #[error("i/o writing exchange artifact: {0}")]
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
     AdapterSpawn(#[source] std::io::Error),
@@ -84,8 +77,9 @@ pub enum Error {
     },
 }
 
-/// Dependencies [`run`] orchestrates over. Held as `&dyn` so the struct
-/// itself carries no generic parameters and tests can pass stubs inline.
+/// Dependencies [`run`] orchestrates over. Held as `&dyn` so the
+/// struct itself carries no generic parameters and tests can pass
+/// stubs inline.
 pub struct Deps<'a> {
     pub adapter: &'a dyn AdapterRunner,
     pub git: &'a dyn GitRunner,
@@ -93,8 +87,10 @@ pub struct Deps<'a> {
     pub id_gen: &'a dyn IdGen,
 }
 
-/// Drive one exchange against `repo`: load configs, invoke the provider
-/// adapter, persist the result as a commit. Returns the commit SHA.
+/// Drive one exchange against `repo`: load configs, spawn the
+/// exchange branch, commit the snapshot, invoke the provider adapter,
+/// commit the response. Returns the branch name (`ex/<ts>-<id>`) so
+/// callers can locate the two commits without a separate lookup.
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
     let agent_dir = repo.join(AGENT_DIR);
     let (providers, _warnings) = Providers::load(&agent_dir.join("providers.yaml"))?;
@@ -125,95 +121,21 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
             source,
         })?;
 
-    let request = serde_json::json!({
-        "model": model.model_id,
-        "max_tokens": DEFAULT_MAX_TOKENS,
-        "system": system_prompt,
-        "messages": [{"role": "user", "content": user_message}],
-    });
-    let request_bytes = serde_json::to_vec(&request).expect("Value is always serializable");
-
-    let binary: OsString = format!("lernie-provider-{provider_name}").into();
-
-    // Describe-driven endpoint discovery (ARCH §4.4): the adapter declares
-    // env vars it reads its endpoint from; the harness sets each to the
-    // value of `providers.<name>.endpoint` before invoking `complete`.
-    // The URL is opaque to the harness.
-    let describe_bytes = deps
-        .adapter
-        .run(&binary, &["describe"], &[], &[])
-        .map_err(Error::AdapterSpawn)?;
-    let endpoint_env_names = parse_endpoint_env(&describe_bytes)?;
-    let endpoint_envs: Vec<(&str, &str)> = endpoint_env_names
-        .iter()
-        .map(|name| (name.as_str(), provider.endpoint.as_str()))
-        .collect();
-
-    let started_at = deps.clock.now_iso8601();
-    let stdout_bytes = deps
-        .adapter
-        .run(&binary, &["complete"], &endpoint_envs, &request_bytes)
-        .map_err(Error::AdapterSpawn)?;
-    let ended_at = deps.clock.now_iso8601();
-
-    let response = parse_adapter_stdout(&stdout_bytes)?;
-
-    let short_id = deps.id_gen.short();
-    let filename = format!(
-        "{ts}-{id}.json",
-        ts = deps.clock.now_compact(),
-        id = short_id
-    );
-    let record = ExchangeRecord {
-        user_message: user_message.to_string(),
-        assistant_response: response.text(),
-        model_id: model.model_id.clone(),
-        provider: provider_name.clone(),
-        usage: Usage {
-            input_tokens: response.usage.input_tokens,
-            output_tokens: response.usage.output_tokens,
-        },
-        stop_reason: response.stop_reason.clone(),
-        started_at,
-        ended_at,
+    let resolved = dispatch::Resolved {
+        model,
+        provider_name,
+        provider,
+        system_prompt,
     };
-
-    let exchanges_dir = repo.join(EXCHANGES_DIR);
-    std::fs::create_dir_all(&exchanges_dir)?;
-    let record_bytes = serde_json::to_vec_pretty(&record).expect("record is always serializable");
-    std::fs::write(exchanges_dir.join(&filename), &record_bytes)?;
-
-    let rel_path = format!("{EXCHANGES_DIR}/{filename}");
-    deps.git
-        .run(repo, &["add", rel_path.as_str()])
-        .map_err(|source| Error::Git { op: "add", source })?;
-    // Commit message references ARCH §12 so the v0.1 exception is
-    // traceable in git history; v0.2's first commit drops it.
-    let msg = format!("exchange {short_id} [ARCH §12 v0.1]");
-    deps.git
-        .run(repo, &["commit", "-m", msg.as_str()])
-        .map_err(|source| Error::Git {
-            op: "commit",
-            source,
-        })?;
-    let sha = deps
-        .git
-        .run_capture(repo, &["rev-parse", "HEAD"])
-        .map_err(|source| Error::Git {
-            op: "rev-parse",
-            source,
-        })?;
-    Ok(sha)
+    dispatch::run_exchange(repo, user_message, &resolved, deps)
 }
 
-/// Parse the `endpoint_env` field out of the adapter's `describe` JSON.
-///
-/// Returns the list of env var names the harness should set to
-/// `providers.<name>.endpoint` before invoking `complete`. Missing field
-/// is treated as an empty list — an adapter that does not advertise
-/// `endpoint_env` is opting out of harness-set endpoints and will use its
-/// built-in default. Wrong-typed values surface as [`Error::AdapterJson`].
-fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
+/// Parse the `endpoint_env` field out of the adapter's `describe`
+/// JSON. Missing field is an empty list — an adapter that does not
+/// advertise `endpoint_env` opts out of harness-set endpoints and
+/// uses its built-in default. Wrong-typed values surface as
+/// [`Error::AdapterJson`].
+pub(super) fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
     let value: Value = serde_json::from_slice(bytes).map_err(Error::AdapterJson)?;
     let Some(field) = value.get("endpoint_env") else {
         return Ok(Vec::new());
@@ -221,11 +143,11 @@ fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
     serde_json::from_value(field.clone()).map_err(Error::AdapterJson)
 }
 
-/// Parse the adapter's stdout bytes into either a
-/// [`Response`] or the [`Error::AdapterError`] case. Per ARCH §4.4 the
-/// adapter distinguishes error from success by a top-level `{"type":
+/// Parse the adapter's stdout bytes into either a [`Response`] or the
+/// [`Error::AdapterError`] case. Per ARCH §4.4 the adapter
+/// distinguishes error from success by a top-level `{"type":
 /// "error"}` sentinel, not by exit code.
-fn parse_adapter_stdout(bytes: &[u8]) -> Result<Response, Error> {
+pub(super) fn parse_adapter_stdout(bytes: &[u8]) -> Result<Response, Error> {
     let value: Value = serde_json::from_slice(bytes).map_err(Error::AdapterJson)?;
     if value.get("type").and_then(Value::as_str) == Some("error") {
         return Err(Error::AdapterError {

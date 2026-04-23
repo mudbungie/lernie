@@ -1,16 +1,19 @@
-//! End-to-end subprocess test for `lernie prompt`.
+//! End-to-end subprocess test for `lernie prompt` (v0.2).
 //!
-//! Chains the two v0.1 binaries — `lernie new` to scaffold a conversation
+//! Chains the two binaries — `lernie new` to scaffold a conversation
 //! repo, then `lernie prompt` to drive one exchange — against a local
-//! `httpmock` server standing in for the Anthropic endpoint. Exercises the
-//! seams the in-process unit tests cannot reach: argv parsing, PATH lookup
-//! of `lernie-provider-anthropic`, subprocess stdin/stdout piping, env-var
-//! propagation, the on-disk layout produced by `lernie new`, and the real
-//! `git` binary landing the commit.
+//! `httpmock` server standing in for the Anthropic endpoint.
 //!
-//! The flow follows ARCH §12's success criterion: "A single prompt is sent
-//! to a provider endpoint, the response is written to disk, and is visible
-//! in the conversation repo as a commit."
+//! The v0.2 contract is ARCH §2.3: an exchange is its own branch off
+//! `main`, with the snapshot commit before the model call and the
+//! response on a follow-up commit. The test asserts:
+//!
+//! - stdout is the branch name (`ex/<ts>-<short-id>`).
+//! - main's HEAD is unchanged by the prompt invocation.
+//! - The exchange branch exists and is two commits ahead of main.
+//! - `.agent/goal.md` is on the branch with the user message as body.
+//! - `exchanges/<id>/steps/001/{request,response}.json` are present on
+//!   the branch with the expected shape.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -24,9 +27,10 @@ fn lernie_bin() -> &'static str {
 }
 
 /// Environment variables a `git` subprocess inherits from a pre-commit
-/// hook context. When they are set, they override `-C` and redirect the
-/// child `git` back to the outer repo — which breaks tests that create
-/// throwaway repos in temp dirs. Scrub them on every `git` spawn here.
+/// hook context. When they are set, they override `-C` and redirect
+/// the child `git` back to the outer repo — which breaks tests that
+/// create throwaway repos in temp dirs. Scrub them on every `git`
+/// spawn here.
 const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -47,9 +51,6 @@ fn git_command(dest: &Path, args: &[&str]) -> Command {
 }
 
 fn adapter_bin_dir() -> &'static Path {
-    // `env!("CARGO_BIN_EXE_lernie-provider-anthropic")` is an absolute path
-    // into the target directory; we want the containing dir so we can
-    // prepend it to PATH for the child `lernie` process's adapter lookup.
     Path::new(env!("CARGO_BIN_EXE_lernie-provider-anthropic"))
         .parent()
         .expect("bin path has a parent")
@@ -62,10 +63,11 @@ fn path_env_with_adapter() -> std::ffi::OsString {
     std::env::join_paths(dirs).expect("PATH join")
 }
 
-/// Scaffold a conversation repo at `dest` and rewrite its `providers.yaml`
-/// so the `anthropic` provider's `endpoint:` points at the local mock. The
-/// rewrite is committed on top of the scaffold's initial commit so the
-/// next `lernie prompt` invocation has a clean tree to extend.
+/// Scaffold a conversation repo at `dest` and rewrite its
+/// `providers.yaml` so the `anthropic` provider's `endpoint:` points
+/// at the local mock. The rewrite is committed on top of the
+/// scaffold's initial commit so the next `lernie prompt` invocation
+/// has a clean tree to extend.
 fn scaffold_with_endpoint(dest: &Path, endpoint: &str) {
     let out = Command::new(lernie_bin())
         .arg("new")
@@ -98,7 +100,7 @@ fn scaffold_with_endpoint(dest: &Path, endpoint: &str) {
 }
 
 #[test]
-fn prompt_subcommand_writes_exchange_and_commits() {
+fn prompt_subcommand_spawns_exchange_branch_off_main() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
@@ -113,7 +115,17 @@ fn prompt_subcommand_writes_exchange_and_commits() {
     let dest = holder.path().join("conv");
     scaffold_with_endpoint(&dest, &server.base_url());
 
-    // Run `lernie prompt` with PATH carrying the built adapter.
+    let main_head_before = String::from_utf8(
+        git_command(&dest, &["rev-parse", "main"])
+            .output()
+            .expect("pre-invoke git rev-parse")
+            .stdout,
+    )
+    .unwrap()
+    .trim()
+    .to_string();
+    assert!(!main_head_before.is_empty());
+
     let prompt_out = Command::new(lernie_bin())
         .arg("prompt")
         .arg(&dest)
@@ -129,47 +141,65 @@ fn prompt_subcommand_writes_exchange_and_commits() {
         String::from_utf8_lossy(&prompt_out.stderr)
     );
 
-    let sha = String::from_utf8(prompt_out.stdout)
+    let branch = String::from_utf8(prompt_out.stdout)
         .unwrap()
         .trim()
         .to_string();
-    assert!(!sha.is_empty(), "expected non-empty SHA on stdout");
-
-    // Exchange record on disk. Filter out the template's `.gitkeep`.
-    let entries: Vec<_> = fs::read_dir(dest.join("exchanges"))
-        .unwrap()
-        .filter_map(Result::ok)
-        .filter(|e| e.path().extension().is_some_and(|x| x == "json"))
-        .collect();
-    assert_eq!(entries.len(), 1, "expected exactly one exchange file");
-    let body: serde_json::Value =
-        serde_json::from_slice(&fs::read(entries[0].path()).unwrap()).unwrap();
-    assert_eq!(body["assistant_response"], "pong");
-    assert_eq!(body["user_message"], "ping");
-    assert_eq!(body["provider"], "anthropic");
-
-    // Commit exists with the printed SHA, and its tree contains the exchange.
-    let rev = git_command(&dest, &["rev-parse", "HEAD"])
-        .output()
-        .expect("git rev-parse");
-    assert_eq!(
-        String::from_utf8_lossy(&rev.stdout).trim(),
-        sha,
-        "HEAD SHA mismatch"
-    );
-    let show = git_command(&dest, &["show", "--name-only", "--pretty=format:", &sha])
-        .output()
-        .expect("git show");
-    let files = String::from_utf8_lossy(&show.stdout);
     assert!(
-        files.contains("exchanges/"),
-        "exchange file not in commit: {files}"
+        branch.starts_with("ex/"),
+        "expected ex/<ts>-<id> branch name, got {branch:?}"
     );
+
+    // Main's HEAD is unchanged.
+    let main_head_after = String::from_utf8(
+        git_command(&dest, &["rev-parse", "main"])
+            .output()
+            .expect("post-invoke git rev-parse")
+            .stdout,
+    )
+    .unwrap()
+    .trim()
+    .to_string();
+    assert_eq!(
+        main_head_before, main_head_after,
+        "main advanced — v0.2 must leave it alone"
+    );
+
+    // Exchange branch is exactly two commits ahead of main.
+    let rev_list = git_command(&dest, &["rev-list", "--count", &format!("main..{branch}")])
+        .output()
+        .expect("git rev-list");
+    let count = String::from_utf8(rev_list.stdout)
+        .unwrap()
+        .trim()
+        .to_string();
+    assert_eq!(count, "2", "expected snapshot + response commits");
+
+    let exchange_id = branch.strip_prefix("ex/").unwrap();
+    let worktree = dest.join(".lernie/worktrees/ex").join(exchange_id);
+
+    let goal = fs::read_to_string(worktree.join(".agent/goal.md")).unwrap();
+    assert_eq!(goal, "ping");
+
+    let step_dir = worktree.join(format!("exchanges/{exchange_id}/steps/001"));
+    let request: serde_json::Value =
+        serde_json::from_slice(&fs::read(step_dir.join("request.json")).unwrap()).unwrap();
+    assert_eq!(request["messages"][0]["content"], "ping");
+    assert!(
+        request["system"]
+            .as_str()
+            .unwrap()
+            .starts_with("<goal>\nping\n</goal>"),
+        "goal not pinned at head of system"
+    );
+    let response: serde_json::Value =
+        serde_json::from_slice(&fs::read(step_dir.join("response.json")).unwrap()).unwrap();
+    assert_eq!(response["assistant_response"], "pong");
+    assert_eq!(response["provider"], "anthropic");
 }
 
 #[test]
 fn prompt_subcommand_surfaces_missing_repo() {
-    // No scaffold → providers.yaml absent → prompt exits non-zero.
     let holder = TempDir::new().unwrap();
     let out = Command::new(lernie_bin())
         .arg("prompt")

@@ -73,31 +73,53 @@ it to the destination, runs `git init -b main`, and lands a single
 or be an empty directory. `.agent/goal.md` is intentionally not in the
 template — it is written at dispatch time (ARCH §2.8).
 
-## Sending a prompt (v0.1)
+## Sending a prompt (v0.2)
 
 ```
 ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
 ```
 
-`lernie prompt` is the v0.1 end-to-end path (ARCH §12 milestone):
+`lernie prompt` is the v0.2 exchange-branch path (ARCH §2.3, §2.8,
+§2.10). Each invocation spawns its own branch off `main`, commits a
+snapshot before the model call, lands the response as a follow-up
+commit, and leaves the branch open. `main`'s HEAD is not touched —
+merge-back (§2.6) is a separate step:
 
 1. Load `<repo>/.agent/providers.yaml` and `<repo>/.agent/agents.yaml`;
    cross-validate `agents.worker.model` against the declared models.
 2. Invoke `lernie-provider-<name> describe` (discovered on `PATH`) to
-   read the adapter's `endpoint_env` (§4.4). Then spawn the same binary
-   with `complete`, setting each env var named in `endpoint_env` to the
-   value of `providers.<name>.endpoint`, pipe the Messages-API-shaped
-   request to stdin, and read one JSON document back. Credential env
-   vars like `ANTHROPIC_API_KEY` propagate to the adapter by normal
+   read the adapter's `endpoint_env` (§4.4).
+3. Spawn branch `ex/<ts>-<short-id>` off `main` and allocate a
+   worktree at `<repo>/.lernie/worktrees/ex/<ts>-<short-id>/`.
+4. Write the branch goal to `.agent/goal.md` (§2.8) and the model
+   call's input to `exchanges/<ts>-<short-id>/steps/001/request.json`;
+   commit both on the branch. This is §2.10's "commit before model
+   call" — the tree the model reads is the tree of this snapshot
+   commit.
+5. Invoke `lernie-provider-<name> complete`, setting each env var
+   named in `endpoint_env` to `providers.<name>.endpoint`; pipe the
+   Messages-API-shaped request on stdin; read one JSON document back.
+   Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
    process inheritance.
-3. Write the result to `<repo>/exchanges/<ts>-<short-id>.json` with the
-   fields `user_message`, `assistant_response`, `model_id`, `provider`,
-   `usage`, `stop_reason`, `started_at`, `ended_at`.
-4. Commit the file to `main` and print the commit SHA on stdout.
+6. Write the normalized response (assistant text, `model_id`,
+   `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
+   `exchanges/<ts>-<short-id>/steps/001/response.json` and land it as
+   a follow-up commit on the same branch. The snapshot commit's tree
+   stays intact so replay and retry (§2.10) see exactly what the model
+   saw.
+7. Print the branch name on stdout.
 
-v0.1 is the explicit exception to ARCH §2.3's branch invariant: the
-exchange commits directly on `main`. v0.2 replaces this flow with an
-exchange branch, steps-as-commits, compaction, and a no-ff merge.
+After the call, inspect the branch with standard git tooling:
+
+```
+cd /path/to/my-conversation/.lernie/worktrees/ex/<ts>-<id>
+git log --oneline        # two commits ahead of main
+cat .agent/goal.md       # the user message
+cat exchanges/*/steps/001/response.json
+```
+
+Merge-back to `main` (§2.6) is tracked under a separate v0.2 task and
+not part of this command today.
 
 ## Providers
 

@@ -1,4 +1,10 @@
-//! Error-path coverage for [`crate::prompt::run`].
+//! Pre-branch and adapter error paths for [`crate::prompt::run`].
+//!
+//! Covers failures the harness surfaces before the branch is spawned
+//! (config, role, system prompt, describe) and after `complete`
+//! returns (adapter-reported errors and response-parsing failures).
+//! Disk/git failures during branch work live in
+//! [`super::errors_disk`].
 
 use super::fixtures::*;
 use crate::prompt::{Error, run};
@@ -6,13 +12,6 @@ use serde_json::Value;
 use std::io;
 use std::path::PathBuf;
 use tempfile::TempDir;
-
-/// Convenience: an adapter that the test does not expect to reach
-/// (pre-adapter failure paths). Scripted with no replies; calling it
-/// would panic the test, which is the desired signal.
-fn unreachable_adapter() -> StubAdapter {
-    StubAdapter::scripted([])
-}
 
 #[test]
 fn run_surfaces_providers_yaml_load_error() {
@@ -90,9 +89,9 @@ fn run_surfaces_missing_system_prompt() {
 
 #[test]
 fn run_surfaces_describe_spawn_failure() {
-    // First adapter call is `describe`; the spawn error surfaces as
-    // AdapterSpawn — same variant as a `complete`-stage spawn failure
-    // since the harness treats both as adapter-side faults.
+    // First adapter call is `describe`; failure here surfaces as
+    // AdapterSpawn and no branch is created (describe precedes
+    // worktree add, so an adapter fault leaves no stray ref).
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::failing(io::ErrorKind::NotFound, "no such binary");
     let git = StubGit::ok();
@@ -100,6 +99,10 @@ fn run_surfaces_describe_spawn_failure() {
     let id = FixedIdGen;
     let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
     assert!(matches!(err, Error::AdapterSpawn(_)));
+    assert!(
+        git.runs.borrow().is_empty(),
+        "git must not run if describe failed"
+    );
 }
 
 #[test]
@@ -115,10 +118,9 @@ fn run_surfaces_malformed_describe_json() {
 
 #[test]
 fn run_surfaces_describe_endpoint_env_wrong_type() {
-    // `endpoint_env` must be an array of strings. Anything else surfaces
-    // as a parse error, since accepting it would silently drop the
-    // adapter's declared config — the opposite of "decline illegal
-    // operations" (PRINCIPLES.md).
+    // `endpoint_env` must be an array of strings. Anything else
+    // surfaces as a parse error — accepting it would silently drop
+    // the adapter's declared config.
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let bad = br#"{"name":"x","schema_version":1,"capabilities":[],"models":[],
                    "auth_env":[],"endpoint_env":"NOT_AN_ARRAY"}"#;
@@ -132,7 +134,8 @@ fn run_surfaces_describe_endpoint_env_wrong_type() {
 
 #[test]
 fn run_surfaces_complete_spawn_failure() {
-    // describe succeeds, complete fails at spawn time.
+    // describe succeeds, snapshot commit succeeds, complete fails at
+    // spawn time.
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::scripted([
         StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
@@ -169,7 +172,7 @@ fn run_surfaces_adapter_returning_in_band_error() {
 }
 
 #[test]
-fn run_surfaces_malformed_adapter_json() {
+fn run_surfaces_malformed_complete_json() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::happy(b"{ not json");
     let git = StubGit::ok();
@@ -210,58 +213,6 @@ fn run_surfaces_in_band_error_with_default_fields() {
         }
         other => panic!("expected AdapterError, got {other:?}"),
     }
-}
-
-#[test]
-fn run_surfaces_git_add_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let git = StubGit::failing_at(0);
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "add", .. }));
-}
-
-#[test]
-fn run_surfaces_git_commit_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let git = StubGit::failing_at(1);
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "commit", .. }));
-}
-
-#[test]
-fn run_surfaces_git_rev_parse_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let git = StubGit::failing_at(2);
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::Git {
-            op: "rev-parse",
-            ..
-        }
-    ));
-}
-
-#[test]
-fn run_surfaces_exchanges_write_failure() {
-    // Pre-create `exchanges` as a regular file so create_dir_all fails.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    std::fs::write(repo.path().join("exchanges"), b"blocker").unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
-    assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
 
 #[test]

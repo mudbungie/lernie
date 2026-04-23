@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-becc",
+  "claimed_by": "opus",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T06:38:43.360067134Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["adapter"],
   "title": "Adapter contract: optional file-path input alongside stdin",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:43.360067134Z"
+  "updated_at": "2026-04-23T06:49:43.984898130Z"
 }

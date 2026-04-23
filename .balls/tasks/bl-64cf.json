@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T06:38:15.665851165Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Add streaming to the (now extracted) Anthropic Messages API client.\n\n=== Scope ===\n- Client::send_streaming(&self, &Request) -> Result<EventStream, Error> where EventStream: Iterator<Item = Result<Event, Error>>.\n- SSE parser over the reqwest::blocking::Response body (BufRead). Blocking stays; concurrency is across adapter subprocesses (per ARCH §4.4), not within one.\n- Typed Event enum covering Anthropic's native wire events: message_start, content_block_start, content_block_delta, content_block_stop, message_delta, message_stop, ping; plus Event::Unknown(serde_json::Value) catchall so future additions don't break the stream.\n- Anthropic-native `error` events surface as Err(Error::Provider{..}) — reuses the non-streaming error path.\n- accumulate(events: impl IntoIterator<Item = Result<Event, Error>>) -> Result<Response, Error> folds deltas back into the existing non-streaming Response shape.\n- New Error::Sse(String) variant for malformed frames and truncated streams.\n- anthropic-version stays \"2023-06-01\" (covers streaming).\n\n=== Scope: NOT the adapter contract ===\nThis is the raw Anthropic wire parser used inside lernie-provider-anthropic. Ball #4 (bl-xxxx) adapts these events to the §4.4 normalized shape (text_delta / tool_use_delta / etc) and emits them from run_complete.\n\n=== Testing ===\nhttpmock with text/event-stream body. Cases: well-formed text deltas; error event mid-flight; truncated stream (connection closed early); unknown event type; accumulator round-trips to a Response equal to the non-streaming parser's output. 100% tarpaulin on the new code.",
+  "external": {},
+  "id": "bl-64cf",
+  "links": [],
+  "parent": "bl-d15d",
+  "priority": 2,
+  "status": "open",
+  "tags": ["streaming"],
+  "title": "Anthropic client: SSE streaming (raw)",
+  "type": "task",
+  "updated_at": "2026-04-23T06:38:15.665851165Z"
+}

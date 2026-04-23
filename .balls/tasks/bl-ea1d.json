@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:28:05.986536685Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Module inside lernie-ui-dioxus that watches paths under a conversation repo and emits changes to a receiver. Per ARCH §3.1 / §3.5.\n\n=== What to build ===\n\n- Pure-Rust module, no Dioxus dependency (this is testable in isolation).\n- API: 'Watcher::new(repo_root: &Path) -> Result<Watcher, Error>' + an async/iter surface that yields change events.\n- Underlying impl: use the 'notify' crate for inotify + polling fallback (notify provides both with a uniform API).\n- Watched paths follow §3.5: the git tree (repo_root), '.agent/state/branches.json', '.agent/goal.md' (per branch, so under each worktree), 'exchanges/**', 'invocations/**', 'artifacts/**', 'tools/**', '.agent/compactions/**'.\n- Change coalescing: rapid sequential writes (e.g., inotify emits multiple events per atomic-rename) are coalesced to one event per file per tick.\n- No state mutation on the repo. Strict read-only observation.\n\n=== Out of scope ===\n\n- Any rendering logic. The module hands events to downstream consumers.\n- The view-model transformation (that's for the git-tree renderer task).\n- Watching files outside the repo.\n\n=== Dependencies ===\n\n- Blocks on 'UI skeleton' — needs the lernie-ui-dioxus crate to exist first.\n\n=== Testing ===\n\n- Unit tests against a tmpfs-backed tempdir: create a fixture repo layout, mutate files, assert events fire with expected paths + kinds.\n- Coalescing test: atomic-rename (temp + rename) emits one coalesced event, not two.\n- No live filesystem events outside the tempdir (tests must be isolated and parallel-safe).\n- 100% line coverage.",
+  "external": {},
+  "id": "bl-ea1d",
+  "links": [],
+  "parent": "bl-c0a5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["ui","frontend"],
+  "title": "UI: filesystem watcher module (inotify + polling fallback)",
+  "type": "task",
+  "updated_at": "2026-04-23T01:28:05.986536685Z"
+}

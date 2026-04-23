@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:28:05.957725422Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "First concrete step for the v0.5 UI epic. Lands the binary target, the Dioxus dependency, and a no-op render so subsequent subtasks (fs watcher, CLI outbound, git-tree renderer) have a crate to land in.\n\n=== What to build ===\n\n- New binary target named 'lernie-ui-dioxus'. Naming follows the 'lernie-provider-<name>' convention for pluggable integrations (ARCH §3.5): a future webclient would be 'lernie-ui-web', a TUI would be 'lernie-ui-tui', etc.\n- Dioxus dependency: dioxus + dioxus-desktop (pinned to a current stable release). Dioxus-desktop ships a webview via Tao/Wry; the programming model is pure Rust, the runtime is webview-based — documented in the epic and accepted.\n- Entry point opens a Dioxus-desktop window rendering a placeholder: 'lernie — no conversation loaded'.\n- CLI args: '--repo <path>' accepted but unused by this task (later tasks will use it for watching + rendering). Bare invocation with no --repo prints usage and exits non-zero so the binary is not silently broken.\n- Strict statelessness (§3.5): no disk or process-level persistent state. Any in-memory state is ephemeral UI state (window size, scroll) only.\n- Makefile: 'make build', 'make release', 'make install' all include the new binary. 'make install' copies it alongside lernie and lernie-provider-anthropic into \\$INSTALL_PREFIX/bin.\n\n=== Out of scope ===\n\n- Filesystem watching (bl: 'UI: filesystem watcher module').\n- CLI outbound / 'exec lernie ...' wrapper (bl: 'UI: CLI outbound module').\n- Any actual rendering of repo state (bl: 'UI: git-tree renderer for v0.1-shape repos').\n- Dioxus-web / WASM target — that's a future sibling binary.\n\n=== Design questions to resolve at claim time ===\n\n- Workspace vs multi-bin single-crate. Dioxus deps are substantial and shouldn't bloat the core harness. Lean: promote the repo to a Cargo workspace with members 'lernie' (existing) and 'lernie-ui-dioxus' (new). Cost: migrates Cargo.toml; all existing bin paths adjust. Alternative: keep single crate with two [[bin]] entries — cheaper migration, but every 'cargo build' pulls Dioxus.\n- Dioxus 0.5 vs 0.6 — pick the newer stable at claim time, but pin.\n\n=== Prereqs (Linux dev machine) ===\n\nDioxus-desktop needs a webkit2gtk dev library. On Ubuntu/Debian: 'libwebkit2gtk-4.1-dev' (or -4.0 on older distros). First thing at claim: confirm the build deps are installed, or document the required apt package.\n\n=== Testing ===\n\nPer repo discipline: cargo test + tarpaulin --fail-under 100. The trick on Dioxus components is keeping render functions thin enough that logic lives in pure view-model functions, which are unit-testable. For v0.5.a the render is a single placeholder — trivially covered. A smoke test that constructs a VirtualDom and asserts the rendered output contains the placeholder text is sufficient and does not require a live webview.\n\nNo live network or filesystem mutation.",
+  "external": {},
+  "id": "bl-1013",
+  "links": [],
+  "parent": "bl-c0a5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["ui","frontend"],
+  "title": "UI skeleton: lernie-ui-dioxus binary + Cargo wiring",
+  "type": "task",
+  "updated_at": "2026-04-23T01:28:05.957725422Z"
+}

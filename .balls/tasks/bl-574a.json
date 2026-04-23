@@ -2,7 +2,7 @@
   "branch": "work/bl-574a",
   "claimed_by": "opus-reviewer",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T02:29:01.294065575Z","id":"bl-12dd","title":"Gate: tests pass (scrub nonexistence assertions)"},{"closed_at":"2026-04-23T02:29:01.309475639Z","id":"bl-1e37","title":"Gate: docs up to date (scrub nonexistence assertions)"}],
+  "closed_children": [{"closed_at":"2026-04-23T02:29:01.294065575Z","id":"bl-12dd","title":"Gate: tests pass (scrub nonexistence assertions)"},{"closed_at":"2026-04-23T02:29:01.309475639Z","id":"bl-1e37","title":"Gate: docs up to date (scrub nonexistence assertions)"},{"closed_at":"2026-04-23T02:29:01.328511211Z","id":"bl-54fe","title":"Gate: alignment (scrub nonexistence assertions)"}],
   "created_at": "2026-04-23T02:21:35.693815749Z",
   "delivered_in": "cd5a7c9d7de5d020815690fded155652fd193551",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Scrub branches.json non-existence assertions from tests",
   "type": "task",
-  "updated_at": "2026-04-23T02:29:01.309502653Z"
+  "updated_at": "2026-04-23T02:29:01.328552101Z"
 }

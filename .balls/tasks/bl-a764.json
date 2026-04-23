@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-a764",
+  "claimed_by": "opus-reviewer",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T21:34:31.121000755Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-7557"},{"link_type":"gates","target":"bl-969f"},{"link_type":"gates","target":"bl-8449"}],
   "parent": "bl-4772",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "branches.json: spawn/merge tracking + unmerged count",
   "type": "task",
-  "updated_at": "2026-04-22T21:34:31.229507425Z"
+  "updated_at": "2026-04-23T01:27:47.570335540Z"
 }

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:28:05.986536685Z",
-  "delivered_in": null,
+  "delivered_in": "f5967b4bfd7e0f0873cfd28760a47abe8425af11",
   "depends_on": [],
   "description": "Module inside the lernie-ui-egui crate that watches paths under a conversation repo and emits changes to a receiver. Per ARCH §3.1 / §3.5.\n\n=== What to build ===\n\n- Pure-Rust module, no egui/eframe dependency (this is testable in isolation and reusable by a future 'lernie-ui-web' crate).\n- API: 'Watcher::new(repo_root: &Path) -> Result<Watcher, Error>' + an async/iter surface that yields change events.\n- Underlying impl: 'notify' crate for inotify + polling fallback (notify provides both with a uniform API).\n- Watched paths follow §3.5: the git tree (repo_root), '.agent/state/branches.json', '.agent/goal.md' (per branch), 'exchanges/**', 'invocations/**', 'artifacts/**', 'tools/**', '.agent/compactions/**'.\n- Change coalescing: rapid sequential writes (e.g. atomic-rename) are coalesced to one event per file per tick.\n- No state mutation on the repo. Strict read-only observation.\n\n=== Out of scope ===\n\n- Rendering logic. The module hands events to downstream consumers.\n- View-model transformation (that's for the git-tree renderer task).\n- Watching files outside the repo.\n\n=== Dependencies ===\n\n- Blocks on bl-1013 (UI skeleton) — needs the crate to exist.\n\n=== Testing ===\n\n- Unit tests against a tmpfs-backed tempdir: create a fixture repo layout, mutate files, assert events fire with expected paths + kinds.\n- Coalescing test: atomic-rename (temp + rename) emits one coalesced event, not two.\n- Tests isolated and parallel-safe (each test uses its own tempdir).\n- 100% line coverage.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-665f"},{"link_type":"gates","target":"bl-9fa9"},{"link_type":"gates","target":"bl-626c"}],
   "parent": "bl-c0a5",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["ui","frontend"],
   "title": "UI: filesystem watcher module (inotify + polling fallback)",
   "type": "task",
-  "updated_at": "2026-04-23T02:05:00.549788511Z"
+  "updated_at": "2026-04-23T02:18:04.781208231Z"
 }

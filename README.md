@@ -107,14 +107,19 @@ follow-up commit, runs the terminal compactor off the tip, and
    a follow-up commit on the same branch. The snapshot commit's tree
    stays intact so replay and retry (§2.10) see exactly what the model
    saw.
-7. Dispatch the terminal compactor (§2.7) off the exchange tip: spawn
-   branch `inv/<ex-id>/<cmp-id>`, write `.agent/compactions/001.md`
-   with the terminal-response summary, and `--no-ff` merge the
-   compactor branch back into the exchange branch. The v0.2 compactor
-   is a stub — it does not call a model, and `mark_for_deletion` is a
-   no-op; the shape exists so v0.3+ can layer real semantics without
-   moving call sites. Dispatched via `lernie dispatch compactor`
-   (reachable as a CLI subcommand, §3.4).
+7. Dispatch the terminal compactor (§2.7) off the exchange tip by
+   re-entering the binary as `lernie dispatch compactor <repo>
+   <exchange-branch>` (subprocess invocation per §3.4 — the harness
+   never shortcuts past the CLI for procedure-to-procedure calls).
+   The compactor spawns branch `inv/<ex-id>/<cmp-id>` off the exchange
+   tip, writes `.agent/goal.md` with the boilerplate compactor goal
+   and lands it as a dispatch commit (§2.8, §2.10), then writes
+   `.agent/compactions/001.md` with the terminal-response summary and
+   lands that as a follow-up commit, and `--no-ff` merges the compactor
+   branch back into the exchange branch. The v0.2 compactor is a stub
+   — it does not call a model, and `mark_for_deletion` is a no-op;
+   the shape exists so v0.3+ can layer real semantics without moving
+   call sites.
 8. Rebase the exchange onto the current `main` tip and `--no-ff` merge
    it into `main` (§2.6). Remove the exchange worktree; the branch
    ref stays for the retention window (§2.3).

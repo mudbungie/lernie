@@ -20,7 +20,7 @@ pub mod tools;
 
 use super::merge::rebase_and_merge;
 use super::step::{RESPONSE_FILE, StepResponse, step_dir_rel};
-use super::{Clock, Error, IdGen};
+use super::{AGENT_DIR, Clock, Error, IdGen};
 use crate::template::GitRunner;
 use std::path::Path;
 use tools::write_summary;
@@ -84,6 +84,14 @@ pub fn run(
     let summary = build_summary(req.parent_worktree, req.exchange_id)?;
 
     spawn_compactor_branch(req.repo, &cmp_worktree, &cmp_branch, req.parent_branch, git)?;
+
+    // Dispatch commit (§2.10): goal.md lands before any model call.
+    // v0.2 has no model call, but the shape is the load-bearing
+    // part — v0.3+ inherits the same dispatch surface for the real
+    // compactor agent.
+    write_goal(&cmp_worktree, req.parent_branch)?;
+    commit_goal(&cmp_worktree, req.exchange_id, git)?;
+
     let summary_rel = write_summary(&cmp_worktree, &summary)?;
     commit_summary(&cmp_worktree, &summary_rel, req.exchange_id, git)?;
 
@@ -97,6 +105,52 @@ pub fn run(
     )?;
 
     Ok(())
+}
+
+/// Boilerplate goal handed to the compactor at dispatch time. The
+/// branch name interpolates so the compactor knows which branch it is
+/// summarizing without a separate context handoff. v0.2 stub does not
+/// read the file (no model call); the text is here so v0.3+ inherits
+/// the dispatch shape unchanged.
+pub(crate) fn compactor_goal(parent_branch: &str) -> String {
+    format!(
+        "You are the terminal compactor for branch `{parent_branch}`.\n\
+         \n\
+         Read the branch's work and produce a signal-preserving summary using the\n\
+         `write_summary` tool. The harness writes it to the next\n\
+         `.agent/compactions/<NNN>.md` on this branch.\n\
+         \n\
+         Use `mark_for_deletion` to nominate superseded files (e.g. raw step dirs)\n\
+         for removal. Do not nominate the previous summary; the harness deletes it\n\
+         automatically before merging back.\n\
+         \n\
+         Decide relevance against the parent branch's goal at `.agent/goal.md`.\n"
+    )
+}
+
+/// Write `.agent/goal.md` to the compactor's worktree. Mirrors the
+/// exchange-side `write_snapshot`'s goal write (§2.8) — every
+/// non-root branch carries a goal.
+fn write_goal(cmp_worktree: &Path, parent_branch: &str) -> Result<(), Error> {
+    let agent_dir = cmp_worktree.join(AGENT_DIR);
+    std::fs::create_dir_all(&agent_dir)?;
+    std::fs::write(agent_dir.join("goal.md"), compactor_goal(parent_branch))?;
+    Ok(())
+}
+
+/// `git add` the goal then `git commit` the dispatch snapshot. Names
+/// the exchange in the message so history reads `compaction: dispatch
+/// [ex <id>]` analogously to the exchange's snapshot commit.
+fn commit_goal(cmp_worktree: &Path, exchange_id: &str, git: &dyn GitRunner) -> Result<(), Error> {
+    let goal_rel = format!("{AGENT_DIR}/goal.md");
+    git.run(cmp_worktree, &["add", goal_rel.as_str()])
+        .map_err(|source| Error::Git { op: "add", source })?;
+    let msg = format!("compaction: dispatch [ex {exchange_id}]");
+    git.run(cmp_worktree, &["commit", "-m", msg.as_str()])
+        .map_err(|source| Error::Git {
+            op: "commit",
+            source,
+        })
 }
 
 /// Build the stub summary body from the dispatching branch's terminal
@@ -154,54 +208,4 @@ fn commit_summary(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::prompt::step::Usage;
-
-    fn tmpdir() -> tempfile::TempDir {
-        tempfile::TempDir::new().unwrap()
-    }
-
-    #[test]
-    fn build_summary_happy_path_folds_response_text_with_id() {
-        let wt = tmpdir();
-        let step_dir = wt.path().join(step_dir_rel("ex1", TERMINAL_STEP_SEQ));
-        std::fs::create_dir_all(&step_dir).unwrap();
-        let response = StepResponse {
-            assistant_response: "pong".into(),
-            model_id: "m".into(),
-            provider: "p".into(),
-            usage: Usage {
-                input_tokens: 0,
-                output_tokens: 0,
-            },
-            stop_reason: "end_turn".into(),
-            started_at: "s".into(),
-            ended_at: "e".into(),
-        };
-        std::fs::write(
-            step_dir.join(RESPONSE_FILE),
-            serde_json::to_vec(&response).unwrap(),
-        )
-        .unwrap();
-        let summary = build_summary(wt.path(), "ex1").unwrap();
-        assert_eq!(summary, "exchange ex1: pong\n");
-    }
-
-    #[test]
-    fn build_summary_surfaces_missing_response_as_io() {
-        let wt = tmpdir();
-        let err = build_summary(wt.path(), "ex1").unwrap_err();
-        assert!(matches!(err, Error::Io(_)), "got {err:?}");
-    }
-
-    #[test]
-    fn build_summary_surfaces_malformed_response_as_adapter_json() {
-        let wt = tmpdir();
-        let step_dir = wt.path().join(step_dir_rel("ex1", TERMINAL_STEP_SEQ));
-        std::fs::create_dir_all(&step_dir).unwrap();
-        std::fs::write(step_dir.join(RESPONSE_FILE), b"{ not json").unwrap();
-        let err = build_summary(wt.path(), "ex1").unwrap_err();
-        assert!(matches!(err, Error::AdapterJson(_)), "got {err:?}");
-    }
-}
+mod tests;

@@ -1,6 +1,6 @@
 //! Shared stubs and fixtures for `prompt::tests::*`.
 
-use crate::prompt::{AdapterRunner, Clock, Deps, IdGen};
+use crate::prompt::{AdapterRunner, Clock, Deps, Dispatcher, IdGen};
 use crate::template::GitRunner;
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -9,21 +9,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// Deterministic [`Clock`] — counts how many times each method was
-/// called and returns a formatted counter, so `started_at` /
-/// `ended_at` / ts are all distinct and observable.
+/// Deterministic [`Clock`] — returns `iso-N`/`ct-N` counters so each
+/// `started_at` / `ended_at` / ts is distinct and observable.
+#[derive(Default)]
 pub(super) struct FixedClock {
     iso_calls: RefCell<u32>,
     compact_calls: RefCell<u32>,
-}
-
-impl FixedClock {
-    pub(super) fn new() -> Self {
-        Self {
-            iso_calls: RefCell::new(0),
-            compact_calls: RefCell::new(0),
-        }
-    }
 }
 
 impl Clock for FixedClock {
@@ -44,20 +35,17 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Scripted [`AdapterRunner`] reply — either canned stdout bytes or an
-/// I/O error.
+/// Scripted [`AdapterRunner`] reply: canned stdout bytes or an I/O
+/// error.
 pub(super) enum AdapterReply {
     Ok(Vec<u8>),
     Err(io::Error),
 }
 
-/// Snapshot of a single adapter invocation captured by [`StubAdapter`]:
-/// binary name, argv, environment overrides, and stdin bytes.
+/// Snapshot of one adapter invocation: (binary, argv, envs, stdin).
 pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
 
-/// Canonical `describe` JSON the harness expects from the Anthropic
-/// adapter. Tests that vary the shape (e.g. missing `endpoint_env`)
-/// build their own bytes inline.
+/// Canonical `describe` JSON. Tests varying the shape build inline.
 pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "name":"anthropic","schema_version":2,
     "capabilities":["tool_use_native"],
@@ -66,9 +54,9 @@ pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
 }"#;
 
-/// Scripted [`AdapterRunner`] — replies are taken from a FIFO queue
-/// so a single test can script `describe` then `complete`
-/// independently. All invocations are recorded for later assertion.
+/// Scripted [`AdapterRunner`] — replies pop from a FIFO queue (so a
+/// test can script `describe` then `complete` independently). All
+/// invocations are recorded.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
@@ -86,8 +74,7 @@ impl StubAdapter {
         }
     }
 
-    /// Common case: a successful `describe` followed by
-    /// `complete_bytes` from the next adapter call.
+    /// Successful `describe` then `complete_bytes` on the next call.
     pub(super) fn happy(complete_bytes: &[u8]) -> Self {
         Self::scripted([
             AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
@@ -95,13 +82,11 @@ impl StubAdapter {
         ])
     }
 
-    /// Single-call error reply — fires on the first adapter invocation
-    /// (which is `describe`). Used for the spawn-failure error path.
+    /// Single-call error reply — fires on the `describe` call.
     pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
         Self::scripted([AdapterReply::Err(io::Error::new(kind, msg.to_string()))])
     }
 
-    /// Helpers for building reply variants without exposing the enum.
     pub(super) fn reply_ok(bytes: &[u8]) -> AdapterReply {
         AdapterReply::Ok(bytes.to_vec())
     }
@@ -109,9 +94,7 @@ impl StubAdapter {
         AdapterReply::Err(io::Error::new(kind, msg.to_string()))
     }
 
-    /// The most recent invocation — convenient for tests that only
-    /// care about the `complete` call (the second one, when describe
-    /// succeeded).
+    /// Most recent invocation — for tests that only inspect `complete`.
     pub(super) fn last(&self) -> AdapterCall {
         self.observed.borrow().last().cloned().expect("no calls")
     }
@@ -141,10 +124,10 @@ impl AdapterRunner for StubAdapter {
     }
 }
 
-/// Scripted [`GitRunner`] — records both the `-C` destination and the
-/// args so tests can distinguish commands run in the repo root
-/// (`worktree add`) from commands run in the branch worktree (`add`,
-/// `commit`). Can be configured to fail at a specific call index.
+/// Scripted [`GitRunner`] — records (dest, args) so tests can tell
+/// which dir the command ran in. Optional fail_at index for error
+/// paths.
+#[derive(Default)]
 pub(super) struct StubGit {
     pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
     fail_at: Option<usize>,
@@ -152,15 +135,12 @@ pub(super) struct StubGit {
 
 impl StubGit {
     pub(super) fn ok() -> Self {
-        Self {
-            runs: RefCell::new(Vec::new()),
-            fail_at: None,
-        }
+        Self::default()
     }
     pub(super) fn failing_at(idx: usize) -> Self {
         Self {
-            runs: RefCell::new(Vec::new()),
             fail_at: Some(idx),
+            ..Self::default()
         }
     }
 }
@@ -180,10 +160,8 @@ impl GitRunner for StubGit {
         }
     }
     fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
-        // dispatch never calls run_capture — the single-source-of-truth
-        // principle routes branch queries through `git branch --list`,
-        // not harness-side captures. unreachable!() keeps tarpaulin's
-        // ignore-panics from counting this as dead code.
+        // Single-source-of-truth: branch queries go through `git
+        // branch --list`, not harness-side captures.
         unreachable!("StubGit::run_capture is not used by `prompt::dispatch`")
     }
 }
@@ -240,19 +218,70 @@ pub(super) fn valid_deps<'a>(
     git: &'a StubGit,
     clock: &'a FixedClock,
     id: &'a FixedIdGen,
+    dispatcher: &'a StubDispatcher,
 ) -> Deps<'a> {
     Deps {
         adapter,
         git,
         clock,
         id_gen: id,
+        dispatcher,
     }
 }
 
-/// An adapter the test does not expect to reach — scripted with no
-/// replies, so calling it panics and the failure is loud.
+/// Recording [`Dispatcher`] — captures every dispatch call as
+/// `(repo, branch)` so prompt-level tests can assert the compactor
+/// was dispatched without paying for a subprocess. `fail` is the
+/// optional error returned after recording.
+#[derive(Default)]
+pub(super) struct StubDispatcher {
+    pub(super) calls: RefCell<Vec<(PathBuf, String)>>,
+    fail: Option<io::Error>,
+}
+
+impl StubDispatcher {
+    pub(super) fn ok() -> Self {
+        Self::default()
+    }
+    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
+        Self {
+            fail: Some(io::Error::new(kind, msg.to_string())),
+            ..Self::default()
+        }
+    }
+}
+
+impl Dispatcher for StubDispatcher {
+    fn dispatch_compactor(&self, repo: &Path, branch: &str) -> io::Result<()> {
+        let entry = (repo.to_path_buf(), branch.to_owned());
+        self.calls.borrow_mut().push(entry);
+        match &self.fail {
+            None => Ok(()),
+            Some(e) => Err(io::Error::new(e.kind(), e.to_string())),
+        }
+    }
+}
+
+/// An adapter the test does not expect to reach.
 pub(super) fn unreachable_adapter() -> StubAdapter {
     StubAdapter::scripted([])
+}
+
+/// Drive [`crate::prompt::run`] with default stubs for clock, id, and
+/// dispatcher. Tests that need a non-ok dispatcher build [`Deps`]
+/// inline instead.
+pub(super) fn run_with_stubs(
+    repo: &Path,
+    msg: &str,
+    adapter: &StubAdapter,
+    git: &StubGit,
+) -> Result<String, crate::prompt::Error> {
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    crate::prompt::run(
+        repo,
+        msg,
+        &valid_deps(adapter, git, &clock, &id, &dispatcher),
+    )
 }
 
 /// Deterministic worktree path for the standard fixtures — FixedClock

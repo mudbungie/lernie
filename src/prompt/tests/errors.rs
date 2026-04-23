@@ -7,7 +7,7 @@
 //! [`super::errors_disk`].
 
 use super::fixtures::*;
-use crate::prompt::{Error, run};
+use crate::prompt::Error;
 use serde_json::Value;
 use std::io;
 use std::path::PathBuf;
@@ -17,11 +17,7 @@ use tempfile::TempDir;
 fn run_surfaces_providers_yaml_load_error() {
     let tmp = TempDir::new().unwrap();
     std::fs::create_dir_all(tmp.path().join(".agent")).unwrap();
-    let adapter = unreachable_adapter();
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(tmp.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(tmp.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Config(_)), "got {err:?}");
 }
 
@@ -31,11 +27,7 @@ fn run_surfaces_agents_yaml_load_error() {
     let agent = tmp.path().join(".agent");
     std::fs::create_dir_all(&agent).unwrap();
     std::fs::write(agent.join("providers.yaml"), VALID_PROVIDERS_YAML).unwrap();
-    let adapter = unreachable_adapter();
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(tmp.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(tmp.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Config(_)));
 }
 
@@ -48,11 +40,8 @@ agents:
     system_prompt: prompts/worker.md
 "#;
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, bad_agents, Some("body"));
-    let adapter = unreachable_adapter();
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err =
+        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Config(_)));
 }
 
@@ -65,11 +54,8 @@ agents:
     system_prompt: prompts/compactor.md
 "#;
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, no_worker, Some("body"));
-    let adapter = unreachable_adapter();
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err =
+        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
     match err {
         Error::RoleMissing(role) => assert_eq!(role, "worker"),
         other => panic!("expected RoleMissing, got {other:?}"),
@@ -79,11 +65,8 @@ agents:
 #[test]
 fn run_surfaces_missing_system_prompt() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, None);
-    let adapter = unreachable_adapter();
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err =
+        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::SystemPromptRead { .. }));
 }
 
@@ -95,9 +78,7 @@ fn run_surfaces_describe_spawn_failure() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::failing(io::ErrorKind::NotFound, "no such binary");
     let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &git).unwrap_err();
     assert!(matches!(err, Error::AdapterSpawn(_)));
     assert!(
         git.runs.borrow().is_empty(),
@@ -109,10 +90,7 @@ fn run_surfaces_describe_spawn_failure() {
 fn run_surfaces_malformed_describe_json() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(b"{ not json")]);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)), "got {err:?}");
 }
 
@@ -125,10 +103,7 @@ fn run_surfaces_describe_endpoint_env_wrong_type() {
     let bad = br#"{"name":"x","schema_version":1,"capabilities":[],"models":[],
                    "auth_env":[],"endpoint_env":"NOT_AN_ARRAY"}"#;
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(bad)]);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)), "got {err:?}");
 }
 
@@ -141,10 +116,7 @@ fn run_surfaces_complete_spawn_failure() {
         StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
         StubAdapter::reply_err(io::ErrorKind::BrokenPipe, "complete crashed"),
     ]);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterSpawn(_)));
 }
 
@@ -153,10 +125,7 @@ fn run_surfaces_adapter_returning_in_band_error() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let error_json = br#"{"type":"error","kind":"fatal","http_status":401,"message":"boom"}"#;
     let adapter = StubAdapter::happy(error_json);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     match err {
         Error::AdapterError {
             kind,
@@ -175,10 +144,7 @@ fn run_surfaces_adapter_returning_in_band_error() {
 fn run_surfaces_malformed_complete_json() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::happy(b"{ not json");
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)));
 }
 
@@ -186,22 +152,15 @@ fn run_surfaces_malformed_complete_json() {
 fn run_surfaces_response_shape_mismatch() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::happy(br#"{"unexpected":"shape"}"#);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)));
 }
-
 
 #[test]
 fn run_surfaces_in_band_error_with_default_fields() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::happy(br#"{"type":"error"}"#);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     match err {
         Error::AdapterError {
             kind,
@@ -235,6 +194,11 @@ fn error_display_includes_context() {
     let _: String = Error::AdapterJson(serde_json::from_str::<Value>("{").unwrap_err()).to_string();
     let _: String = Error::Git {
         op: "add",
+        source: io::Error::other("x"),
+    }
+    .to_string();
+    let _: String = Error::DispatchFailed {
+        role: "compactor",
         source: io::Error::other("x"),
     }
     .to_string();

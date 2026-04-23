@@ -16,7 +16,9 @@
 //!   non-exchange dispatch cases (verifier, adversary, v0.4+).
 
 use clap::{Parser, Subcommand};
-use lernie::prompt::{self, CompactorRequest, NanoIdGen, SpawnAdapter, SystemClock};
+use lernie::prompt::{
+    self, CompactorRequest, NanoIdGen, SpawnAdapter, SpawnDispatcher, SystemClock,
+};
 use lernie::template::{self, RealGit};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -82,11 +84,19 @@ fn main() -> ExitCode {
             }
         },
         Command::Prompt { repo, message } => {
+            let dispatcher = match SpawnDispatcher::new() {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("lernie prompt: cannot resolve current binary: {e}");
+                    return ExitCode::FAILURE;
+                }
+            };
             let deps = prompt::Deps {
                 adapter: &SpawnAdapter,
                 git: &RealGit::new(),
                 clock: &SystemClock,
                 id_gen: &NanoIdGen,
+                dispatcher: &dispatcher,
             };
             match prompt::run(&repo, &message, &deps) {
                 Ok(branch) => {

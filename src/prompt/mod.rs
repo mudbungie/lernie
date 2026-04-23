@@ -21,6 +21,7 @@ pub mod adapter;
 pub mod clock;
 pub mod compactor;
 pub mod dispatch;
+pub mod dispatcher;
 pub mod merge;
 pub mod step;
 
@@ -30,6 +31,7 @@ mod tests;
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
+pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use step::{StepResponse, Usage};
 
 use crate::config::cross::check_agents_against_providers;
@@ -65,6 +67,12 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
     AdapterSpawn(#[source] std::io::Error),
+    #[error("dispatch {role}: {source}")]
+    DispatchFailed {
+        role: &'static str,
+        #[source]
+        source: std::io::Error,
+    },
     #[error("adapter returned malformed JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
     #[error("adapter error ({kind}): {message}")]
@@ -89,6 +97,7 @@ pub struct Deps<'a> {
     pub git: &'a dyn GitRunner,
     pub clock: &'a dyn Clock,
     pub id_gen: &'a dyn IdGen,
+    pub dispatcher: &'a dyn Dispatcher,
 }
 
 /// Drive one exchange against `repo`: load configs, spawn the

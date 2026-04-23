@@ -25,7 +25,6 @@
 //! --no-merged main` — no sidecar state, per PRINCIPLES.md's
 //! "Single source of truth".
 
-use super::compactor::{self, CompactorRequest};
 use super::merge::rebase_and_merge;
 use super::step::{REQUEST_FILE, RESPONSE_FILE, StepResponse, Usage, step_dir_rel};
 use super::{AGENT_DIR, Deps, Error, parse_adapter_stdout, parse_endpoint_env};
@@ -134,14 +133,15 @@ pub(super) fn run_exchange(
     // Terminal compaction (§2.7) + merge-back to main (§2.6). The
     // compactor is a subagent dispatched off the exchange tip via the
     // same primitive v0.4 will use generally — see ARCH §2.5 on why
-    // one dispatch primitive serves both.
-    let cmp_req = CompactorRequest {
-        repo,
-        parent_branch: &branch_name,
-        parent_worktree: &worktree_path,
-        exchange_id: &exchange_id,
-    };
-    compactor::run(&cmp_req, deps.git, deps.clock, deps.id_gen)?;
+    // one dispatch primitive serves both. §3.4 puts the dispatch on
+    // the CLI: the harness re-enters `lernie dispatch compactor`
+    // rather than calling the compactor module directly.
+    deps.dispatcher
+        .dispatch_compactor(repo, &branch_name)
+        .map_err(|source| Error::DispatchFailed {
+            role: "compactor",
+            source,
+        })?;
 
     rebase_and_merge(
         repo,

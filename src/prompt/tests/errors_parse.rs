@@ -10,7 +10,7 @@
 //! find (and so that file stays under the repo's per-file line cap).
 
 use super::fixtures::*;
-use crate::prompt::{Error, run};
+use crate::prompt::Error;
 
 #[test]
 fn run_rejects_response_missing_required_fields() {
@@ -43,10 +43,7 @@ fn run_rejects_response_missing_required_fields() {
     for (label, body) in cases {
         let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
         let adapter = StubAdapter::happy(body);
-        let git = StubGit::ok();
-        let clock = FixedClock::new();
-        let id = FixedIdGen;
-        let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+        let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
         assert!(
             matches!(err, Error::AdapterJson(_)),
             "{label}: expected AdapterJson, got {err:?}"
@@ -71,9 +68,6 @@ fn run_accepts_response_with_anthropic_native_cache_fields() {
     }"#;
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let adapter = StubAdapter::happy(body);
-    let git = StubGit::ok();
-    let clock = FixedClock::new();
-    let id = FixedIdGen;
-    run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id))
+    run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok())
         .expect("native cache field names must parse");
 }

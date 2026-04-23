@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-effb",
+  "claimed_by": "worker",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T21:34:31.249619110Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-2149"},{"link_type":"gates","target":"bl-47ba"},{"link_type":"gates","target":"bl-46b3"}],
   "parent": "bl-4772",
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Retire --endpoint forwarding; restore strict §4.4",
   "type": "task",
-  "updated_at": "2026-04-22T21:34:31.357159248Z"
+  "updated_at": "2026-04-23T00:37:39.543578001Z"
 }

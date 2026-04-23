@@ -9,12 +9,12 @@
   "description": "Module inside lernie-ui-dioxus that executes 'lernie <subcommand>' as a subprocess and streams stdout/stderr. Per ARCH §3.4 / §3.5, this is the sole command path from frontend to harness.\n\n=== What to build ===\n\n- Pure-Rust module, no Dioxus dependency.\n- API: 'Cli::new(lernie_binary: PathBuf) -> Cli' and a method 'run(&self, args: &[&str]) -> impl Stream<Item = OutputChunk>' (or equivalent iter surface).\n- Binary resolution: default is 'lernie' on PATH; overridable via env var 'LERNIE_BINARY' or explicit arg. Document both.\n- stdout and stderr streamed chunked, tagged by stream.\n- Exit status reported as a terminal item in the stream.\n- Signal propagation: on drop, the child gets SIGTERM then SIGKILL after a short timeout (consistent with ARCH §2.9 'Stops are aggressive').\n\n=== Out of scope ===\n\n- Any knowledge of specific lernie subcommands (this is a generic exec wrapper).\n- UI wiring — just the exec primitive.\n\n=== Dependencies ===\n\n- Blocks on 'UI skeleton'.\n\n=== Testing ===\n\n- Against a shell stub: a 'fake_lernie' executable on PATH for tests that emits known stdout/stderr patterns and exit codes. Not a mock — a real binary.\n- Test signal-on-drop (spawn a long-running fake, drop the stream, assert the child is gone).\n- 100% line coverage.",
   "external": {},
   "id": "bl-02da",
-  "links": [{"link_type":"gates","target":"bl-9f91"},{"link_type":"gates","target":"bl-eb2e"}],
+  "links": [{"link_type":"gates","target":"bl-9f91"},{"link_type":"gates","target":"bl-eb2e"},{"link_type":"gates","target":"bl-2d0b"}],
   "parent": "bl-c0a5",
   "priority": 3,
   "status": "open",
   "tags": ["ui","frontend"],
   "title": "UI: CLI outbound module (exec lernie subcommand)",
   "type": "task",
-  "updated_at": "2026-04-23T01:28:17.784307715Z"
+  "updated_at": "2026-04-23T01:28:17.803165926Z"
 }

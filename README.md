@@ -29,18 +29,18 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>`] | Release-build, then copy `lernie` and `lernie-provider-anthropic` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) |
+| `make install` [`INSTALL_PREFIX=<p>`] | Release-build, then copy `lernie`, `lernie-provider-anthropic`, and `lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) |
 | `make uninstall` [`INSTALL_PREFIX=<p>`] | Remove the installed binaries from `$INSTALL_PREFIX/bin` |
 
 ### Install
 
 ```
-make install                          # -> ~/.local/bin/lernie, ~/.local/bin/lernie-provider-anthropic
+make install                          # -> ~/.local/bin/{lernie, lernie-provider-anthropic, lernie-ui-egui}
 make install INSTALL_PREFIX=/usr/local # -> /usr/local/bin/...
 ```
 
-`make install` runs a release build and copies the two v0.1 binaries
-into `$INSTALL_PREFIX/bin` with `install -m 0755` (atomic overwrite, no
+`make install` runs a release build and copies the binaries into
+`$INSTALL_PREFIX/bin` with `install -m 0755` (atomic overwrite, no
 symlinks). Make sure that directory is on your `PATH`. Re-run after
 every rebuild to pick up changes. `make uninstall` removes them.
 
@@ -176,6 +176,24 @@ Adapters are discovered on `PATH` by name. To test a new one:
 3. Declare at least one `models:` entry whose `provider:` points at
    that key, and point an agent role (`worker` for v0.1) at that model.
 4. Run `lernie prompt <repo> '...'`.
+
+## UI (v0.5, skeleton)
+
+`lernie-ui-egui` is the desktop frontend: an egui/eframe window that renders
+a conversation repo and issues user actions via `lernie <subcommand>`. Per
+[ARCH §3.5](docs/ARCHITECTURE.md), it is stateless — every render is a pure
+function of filesystem state — and one of potentially several frontends
+(a future `lernie-ui-web` would share the pure-Rust view-model layer).
+
+The skeleton only opens a placeholder window today; filesystem watching,
+CLI outbound, and git-tree rendering land in follow-up tasks.
+
+```
+lernie-ui-egui --repo /path/to/my-conversation
+```
+
+egui is winit-based; its only runtime deps are the X11/Wayland libs already
+present on any Linux desktop session. No `apt install` step is required.
 
 ## Workflow
 

@@ -1,3 +1,6 @@
+[workspace]
+members = [".", "crates/lernie-ui-egui"]
+
 [package]
 name = "lernie"
 version = "0.1.0"

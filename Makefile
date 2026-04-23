@@ -6,21 +6,21 @@
 INSTALL_PREFIX ?= $(HOME)/.local
 INSTALL_BIN    := $(INSTALL_PREFIX)/bin
 
-BINARIES := lernie lernie-provider-anthropic
+BINARIES := lernie lernie-provider-anthropic lernie-ui-egui
 
 all: check
 
 build:
-	cargo build
+	cargo build --workspace
 
 release:
-	cargo build --release
+	cargo build --workspace --release
 
 test:
-	cargo test
+	cargo test --workspace
 
 coverage:
-	cargo tarpaulin --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*'
+	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'crates/*/src/main.rs'
 
 schemas:
 	cargo run --quiet --bin gen-schemas -- schemas

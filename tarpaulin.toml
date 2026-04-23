@@ -7,5 +7,5 @@
 # - `ignore-panics` excludes branches that only fire on programmer-error
 #   panics (e.g. `.expect(...)` on infallible operations).
 [default]
-exclude-files = ["src/bin/*"]
+exclude-files = ["src/bin/*", "crates/*/src/main.rs"]
 ignore-panics = true

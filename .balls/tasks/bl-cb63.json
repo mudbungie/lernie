@@ -2,7 +2,7 @@
   "branch": "work/bl-cb63",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-23T16:17:09.157475640Z","id":"bl-44ac","title":"alignment: ARCH §1 + §6 headline edits"}],
   "created_at": "2026-04-23T09:11:05.191796950Z",
   "delivered_in": "d6dc52ceec65c47d82a1f43b33d7b6d0e22f2af0",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["docs"],
   "title": "ARCH: headline disk+CLI pairing, regenerability, and workflow interpreter shape",
   "type": "task",
-  "updated_at": "2026-04-23T16:16:01.196620653Z"
+  "updated_at": "2026-04-23T16:17:09.162599720Z"
 }

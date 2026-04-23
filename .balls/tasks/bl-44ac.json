@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T09:11:05.215591140Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Gate for bl task: verify the §1 Overview edits and §6 workflow-interpreter paragraph accurately reflect the architecture and do not contradict existing sections.\n\nChecks:\n- §1 Overview: 'CLI-as-control-plane' language is consistent with §3.4 'CLI as control plane' (same term of art).\n- §1 Overview: new 'Regenerability' property does not overlap Inspectability/Uniformity/Testability and is a genuine system-level property, not a component property.\n- §6: 'process chain is the interpreter' framing is consistent with §3.1 ('disk as bus') and §3.4 ('CLI as control plane'), does not invent new terms of art (TAXONOMY check), and does not imply 'lernie event <name>' subcommand exists today (it describes the intended shape).\n- TAXONOMY: no banned terms ('turn', 'session', bare 'call', 'compression') and no coinage of new terms of art without definition.\n- PRINCIPLES.md if edited: the new bullet is consistent with existing bullets and does not duplicate 'Disk first' or 'Everyone uses the front door'.",
+  "external": {},
+  "id": "bl-44ac",
+  "links": [],
+  "parent": "bl-cb63",
+  "priority": 2,
+  "status": "open",
+  "tags": ["alignment"],
+  "title": "alignment: ARCH §1 + §6 headline edits",
+  "type": "task",
+  "updated_at": "2026-04-23T09:11:05.215591140Z"
+}

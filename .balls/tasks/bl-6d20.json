@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T06:50:25.887729614Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "All subtask test gates closed. End-to-end demo from the epic description runs green: a prompt driving tool_use for bash + read_file resolves into tool_call commits under steps/NNN/tool_calls/, the exchange merges back to main, and unmerged branch count returns to zero. cargo test + tarpaulin --fail-under 100 green on the merged state.",
+  "external": {},
+  "id": "bl-6d20",
+  "links": [],
+  "parent": "bl-683c",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (v0.3 epic)",
+  "type": "task",
+  "updated_at": "2026-04-23T06:50:25.887729614Z"
+}

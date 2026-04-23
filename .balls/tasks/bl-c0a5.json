@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T01:56:28.283390090Z","id":"bl-1013","title":"UI skeleton: lernie-ui-egui binary + Cargo wiring"},{"closed_at":"2026-04-23T02:18:20.657390364Z","id":"bl-ea1d","title":"UI: filesystem watcher module (inotify + polling fallback)"}],
+  "closed_children": [{"closed_at":"2026-04-23T01:56:28.283390090Z","id":"bl-1013","title":"UI skeleton: lernie-ui-egui binary + Cargo wiring"},{"closed_at":"2026-04-23T02:18:20.657390364Z","id":"bl-ea1d","title":"UI: filesystem watcher module (inotify + polling fallback)"},{"closed_at":"2026-04-23T02:26:20.538762288Z","id":"bl-02da","title":"UI: CLI outbound module (exec lernie subcommand)"}],
   "created_at": "2026-04-23T01:14:19.302177662Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "v0.5: UI (Dioxus frontend)",
   "type": "epic",
-  "updated_at": "2026-04-23T02:18:21.470526534Z"
+  "updated_at": "2026-04-23T02:26:21.242838420Z"
 }

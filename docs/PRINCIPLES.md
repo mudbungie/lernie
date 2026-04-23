@@ -44,6 +44,9 @@ The `lernie` CLI is the sole control plane: every procedure-to-procedure invocat
 ## Frontends are stateless and pluggable
 The UI holds no persistent state; every render is a pure function of filesystem state at the current git ref. Its only interfaces to the harness are reading repo paths and issuing `lernie <subcommand>` invocations — no third channel. Two or more frontends (desktop GUI, webclient, TUI) can run against one repo simultaneously because none of them write repo state or share memory; they all observe the same on-disk truth and drive changes through the same CLI the harness itself uses. Pluggability is structural: a new frontend is a new consumer, not a new integration. Direct consequence of "Disk first" + "Everyone uses the front door".
 
+## Regenerability
+Any process can die at any time without losing state. Components (harness, tool subprocesses, provider adapters, frontends) restart independently because none hold state across their own termination, and `lernie resume <repo>` reconstructs where the workflow state machine left off by reading the repo plus `.agent/state/events.log`. The workflow interpreter itself is the currently-executing CLI subprocess (§6) — a baton passed forward by exec, not a daemon — so "resume" is just re-entering the chain at the right event, not reconstructing in-memory state that was never there. No process is load-bearing; disk is. Direct consequence of "Disk first" + "Everyone uses the front door": with no state off-disk and no commands off the CLI, a crashed process leaves nothing orphaned to reconstruct.
+
 ## Compaction, never compression
 Summarizing a branch's work uses a subagent with a constrained toolset (`write_summary`, `mark_for_deletion`). "Deletion-only" is structural — no general filesystem write surface — so the worst case is lost information, never corrupted information.
 

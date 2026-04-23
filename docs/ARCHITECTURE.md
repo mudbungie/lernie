@@ -7,13 +7,14 @@
 
 ## 1. Overview
 
-This document specifies an agent harness in which conversational context is managed as a git repository. Each conversation is a standalone repo. Every dispatch is a branch. Branch completion is a merge. Within a branch, steps land as linear commits; a step that itself dispatches spawns a sub-branch off the commit where the dispatch landed. All state lives on disk; all inter-component communication is mediated through the filesystem.
+This document specifies an agent harness in which conversational context is managed as a git repository. Each conversation is a standalone repo. Every dispatch is a branch. Branch completion is a merge. Within a branch, steps land as linear commits; a step that itself dispatches spawns a sub-branch off the commit where the dispatch landed. State flows between components through the filesystem (§3.1); procedure invocations flow through the `lernie` CLI (§3.4). There is no third channel — no library API, no in-process sidechannel, no resident broker — and no process holds state across its own termination.
 
-The architecture optimizes for three properties:
+The architecture optimizes for four properties:
 
 1. **Inspectability.** The complete state of any conversation, at any point in its history, is a git ref. Replay, debugging, and counterfactual forking are first-class operations.
 2. **Uniformity.** User-to-agent dispatch, agent-to-subagent dispatch, and agent self-reflection all use the same primitive: fork a branch, do work, merge back. There is no special path for user input.
 3. **Testability.** Workflow (prompts, sequencing, context assembly rules) is configuration, not code. Experiments are config diffs, measurable against a task suite.
+4. **Regenerability.** Any process can die at any time without losing state. Disk is durable; processes are disposable. Components — harness, tool subprocesses, provider adapters, frontends — restart independently because none hold state across their own termination; `lernie resume <repo>` re-enters the workflow state machine from what the repo records. No process is load-bearing; disk is.
 
 ### 1.1 Non-goals for v1
 
@@ -508,6 +509,8 @@ Action strings that contain `: ` (named arguments) must be quoted, since YAML ot
 Actions are implemented in the harness; the workflow declares which run when. The `flush` action emitted by a running agent triggers an intermediate compaction without terminating the branch (§2.7). This is the primary surface for experimentation.
 
 Per-step hooks (`pre_step`, `post_step`, `on_tool_return`) fire on every branch and are the primary extension points for cross-cutting behavior — observability, budget enforcement, cache maintenance, scheduled intermediate compaction triggers. Their handlers typically dispatch subagents or emit log entries rather than modifying the in-flight branch's tree directly; any write still goes through the harness-assigned write-path machinery (§2.5).
+
+**No resident interpreter.** Nothing parses `workflow.yaml` resident-style and drives the state machine from memory. Each event is a CLI subcommand (`lernie event <name> <repo> …`); the currently-executing subprocess *is* the interpreter while it runs. It reads the workflow, runs the event's action list by exec'ing the relevant procedures per §3.4 (`lernie dispatch <role>`, `lernie merge`, etc.), and before exiting emits the next event — itself another `lernie event` invocation. Procedures terminate by emitting their completion event. The chain ends at a terminal action (final merge, stop, error); there is no watcher noticing completions, each step hands off by exec. Combined with disk-as-bus (§3.1), this keeps the system stateless across process boundaries: a crashed subprocess leaves nothing in memory to reconstruct, and `lernie resume <repo>` re-enters the chain by reading the repo plus `.agent/state/events.log` and exec'ing the event the state machine is waiting on. This is the concrete mechanism behind §1's Regenerability property.
 
 ---
 

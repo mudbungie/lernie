@@ -121,7 +121,7 @@ Tool calls emitted by a step (v0.3+) extend the step's dir with `tool_calls/<too
 
 The rich per-step tree is branch-life state. On terminal compaction (§2.7) the compactor writes a signal-preserving summary and marks the raw step dirs for deletion, leaving `main` with only the compacted history §2.2 describes.
 
-**Unmerged-branch tracking.** Git's ref database is the tracking. An unmerged exchange branch is a ref matching `ex/*`; `git branch --list ex/*` enumerates them, and the list's length is the §8 unmerged-branch-count health metric. The harness does not mirror this into a sidecar JSON file — doing so would duplicate state git already owns (see PRINCIPLES.md "Single source of truth").
+**Unmerged-branch tracking.** Git's ref database is the tracking. An unmerged exchange branch is a ref matching `ex/*`; `git branch --list ex/*` enumerates them, and the list's length is the §8 unmerged-branch-count health metric (PRINCIPLES.md "Single source of truth").
 
 > **v0.2 scope.** The branch/snapshot/response flow lands in v0.2; the merge-back protocol (§2.6) and terminal compaction are separate v0.2 steps. Until merge-back ships, `lernie prompt` spawns branches that stay open and show up under `git branch --list ex/*`.
 
@@ -232,7 +232,7 @@ All components communicate through the filesystem. No shared memory, no direct f
 
 - Harness → provider adapter (request mirrored to disk, adapter reads from stdin; response events mirrored back to disk from adapter stdout — see §4.4).
 - Harness → tool execution (tool call record written to disk, executor reads, output streamed to disk).
-- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git tree, `branches.json`, tool outputs, invocation dirs, `goal.md`, compactions) and re-renders on change. Notification is inotify where available, polling otherwise. `.agent/state/events.log` is retained as an append-only harness-internal bookkeeping log — useful for replay and observability — but it is not the UI's primary read surface.
+- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git refs, tool outputs, invocation dirs, `goal.md`, compactions) and re-renders on change. Notification is inotify where available, polling otherwise. `.agent/state/events.log` is retained as an append-only harness-internal bookkeeping log — useful for replay and observability — but it is not the UI's primary read surface.
 - UI → Harness: user actions are issued as `lernie <subcommand>` invocations per §3.4. There is no input directory.
 
 **Threads, not processes.** "Worker" and "executor" name roles that run as threads inside the single harness process; the disk contract is not an inter-process bus. Tool subprocesses invoked by the tool executor are genuinely separate processes. Routing inter-role communication through disk — even between threads in the same process — is load-bearing rather than ceremonial: it is what buys inspectability, audit trail, and the single-author-per-file discipline that keeps many concurrent workers from corrupting each other's state.
@@ -296,7 +296,7 @@ A **UI** (or **frontend** — same role, §3.2) is any program that presents the
 
 The frontend surface is exactly two things, and nothing else:
 
-1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself, `.agent/state/branches.json`, `.agent/goal.md` per branch, `exchanges/`, `invocations/`, `artifacts/`, `tools/`, `.agent/compactions/`. Notification is inotify where available, polling otherwise (§3.1).
+1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3), `.agent/goal.md` per branch, `exchanges/`, `invocations/`, `artifacts/`, `tools/`, `.agent/compactions/`. Notification is inotify where available, polling otherwise (§3.1).
 2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, resume, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port.
 
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
@@ -521,7 +521,7 @@ First-class metrics, written to commit trailers and event log. All counts are re
 - Tokens per step, per invocation, per exchange, per conversation.
 - Model calls per step (always 1), tool calls per step, API calls per model call.
 - Cost per step, per invocation, per exchange, per conversation.
-- Unmerged branch count per conversation. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Directly computable from git refs (`git branch --list ex/* inv/* | wc -l`) — no mirror file (§2.3, PRINCIPLES.md "Single source of truth").
+- Unmerged branch count per conversation. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Directly computable from git refs (`git branch --list ex/* inv/* | wc -l`) per §2.3.
 - Step duration, tool call duration, compaction duration.
 - Compaction ratio (tokens before / tokens after).
 

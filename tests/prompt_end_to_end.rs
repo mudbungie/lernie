@@ -197,14 +197,7 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
     assert_eq!(response["assistant_response"], "pong");
     assert_eq!(response["provider"], "anthropic");
 
-    // No mirror-file for branch tracking — git's ref database is the
-    // single source of truth (PRINCIPLES.md "Single source of
-    // truth"). Unmerged branches are enumerable directly:
-    // `git branch --list ex/*` should list exactly this one.
-    assert!(
-        !dest.join(".agent/state/branches.json").exists(),
-        "no sidecar branches.json should be written"
-    );
+    // Unmerged branches are enumerable via git refs directly.
     let ex_branches = git_command(&dest, &["branch", "--list", "ex/*"])
         .output()
         .expect("git branch --list");

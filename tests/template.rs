@@ -162,18 +162,11 @@ fn goal_md_is_absent_from_freshly_scaffolded_repo() {
 
 #[test]
 fn state_files_are_present_and_empty_baseline() {
-    // events.log ships in the template as a bootstrap touch-point.
-    // There is no branches.json — git's ref database is the single
-    // source of truth for branch state (PRINCIPLES.md).
     let (_holder, repo) = scaffolded();
     let events = repo.join(".agent/state/events.log");
     assert!(events.is_file());
     let events_body = std::fs::read_to_string(&events).unwrap();
     assert!(events_body.is_empty());
-    assert!(
-        !repo.join(".agent/state/branches.json").exists(),
-        "no branches.json — git's refs are authoritative"
-    );
 }
 
 #[test]

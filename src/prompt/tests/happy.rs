@@ -113,13 +113,6 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     );
     assert_eq!(runs[4].1[0], "commit");
     assert!(runs[4].1[2].contains("step 001: response"));
-
-    // No sidecar branches.json is written — git's ref database is
-    // the source of truth.
-    assert!(
-        !repo.path().join(".agent/state/branches.json").exists(),
-        "no mirror file should be written"
-    );
 }
 
 #[test]

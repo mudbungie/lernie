@@ -118,10 +118,8 @@ cat .agent/goal.md       # the user message
 cat exchanges/*/steps/001/response.json
 ```
 
-Git's ref database is the single source of truth for branch state
-(see [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md) "Single source of
-truth"). The unmerged branch count health metric (ARCH §8) comes
-straight from git — no mirror file:
+The unmerged branch count health metric (ARCH §8) is read straight
+from git:
 
 ```
 git -C /path/to/my-conversation branch --list 'ex/*' | wc -l

@@ -22,8 +22,9 @@ use notify::{
 };
 
 /// Repo-relative paths (or prefixes) the UI watches, per ARCH §3.5.
+/// Branch existence is read from `.git/refs/` — no sidecar state
+/// file (PRINCIPLES.md "Single source of truth").
 const WATCHED_PREFIXES: &[&str] = &[
-    ".agent/state/branches.json",
     ".agent/goal.md",
     ".agent/compactions",
     "exchanges",

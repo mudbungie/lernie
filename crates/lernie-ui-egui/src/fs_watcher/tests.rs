@@ -110,20 +110,10 @@ fn coalesces_atomic_rename_to_destination() {
         "expected exactly one event for destination: {changes:?}"
     );
     assert_eq!(finals[0].kind, ChangeKind::Touched);
-    assert!(tmps.is_empty(), "rename source should not surface: {tmps:?}");
-}
-
-#[test]
-fn detects_branches_json_update() {
-    let root = tempdir().unwrap();
-    fs::create_dir_all(root.path().join(".agent/state")).unwrap();
-    let target = root.path().join(".agent/state/branches.json");
-    fs::write(&target, b"{}").unwrap();
-    let watcher = Watcher::new(root.path()).unwrap();
-    wait_quiet(&watcher);
-    fs::write(&target, b"{\"a\":1}").unwrap();
-    let changes = settle_and_tick(&watcher);
-    assert!(changes.iter().any(|e| e.path == target && e.kind == ChangeKind::Touched));
+    assert!(
+        tmps.is_empty(),
+        "rename source should not surface: {tmps:?}"
+    );
 }
 
 #[test]
@@ -135,7 +125,11 @@ fn detects_goal_md_update() {
     wait_quiet(&watcher);
     fs::write(&target, b"hi").unwrap();
     let changes = settle_and_tick(&watcher);
-    assert!(changes.iter().any(|e| e.path == target && e.kind == ChangeKind::Touched));
+    assert!(
+        changes
+            .iter()
+            .any(|e| e.path == target && e.kind == ChangeKind::Touched)
+    );
 }
 
 #[test]
@@ -186,7 +180,10 @@ fn coalesce_drops_prior_events_when_rename_from_arrives() {
     let repo = Path::new("/r");
     let p = PathBuf::from("/r/exchanges/a");
     let raw = vec![
-        (p.clone(), EventKind::Create(notify::event::CreateKind::File)),
+        (
+            p.clone(),
+            EventKind::Create(notify::event::CreateKind::File),
+        ),
         (
             p.clone(),
             EventKind::Modify(ModifyKind::Name(RenameMode::From)),

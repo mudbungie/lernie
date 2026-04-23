@@ -16,9 +16,8 @@
 //!    keeps the snapshot's tree intact for replay.
 //!
 //! The exchange branch is left open at the end — merge-back is §2.6
-//! and lives in a separate task. Unmerged branches are enumerable via
-//! `git branch --list ex/*` (see PRINCIPLES.md "Single source of
-//! truth" — no mirror file, git's ref database IS the tracking).
+//! and lives in a separate task. Unmerged branches are enumerable
+//! via `git branch --list ex/*`.
 
 use super::step::{REQUEST_FILE, RESPONSE_FILE, StepResponse, Usage, step_dir_rel};
 use super::{AGENT_DIR, Deps, Error, parse_adapter_stdout, parse_endpoint_env};
@@ -180,8 +179,8 @@ fn write_snapshot(
 }
 
 /// `git add` the goal + request then `git commit` the snapshot. The
-/// commit message names the step and exchange so history is readable
-/// without a separate branches.json lookup.
+/// commit message names the step and exchange so history stays
+/// legible to `git log` alone.
 fn commit_snapshot(
     worktree_path: &Path,
     step_dir_rel_str: &str,

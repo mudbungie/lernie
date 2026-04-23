@@ -2,7 +2,7 @@
   "branch": "work/bl-209e",
   "claimed_by": "claude",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-23T02:33:57.038723722Z","id":"bl-71c7","title":"Gate: tests pass (git-tree renderer)"}],
   "created_at": "2026-04-23T01:28:06.034704157Z",
   "delivered_in": "cc9d805dfabd5061fe640b47fd0708f948699c96",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["ui","frontend"],
   "title": "UI: git-tree renderer for v0.1-shape repos",
   "type": "task",
-  "updated_at": "2026-04-23T02:33:41.900587642Z"
+  "updated_at": "2026-04-23T02:33:57.040753290Z"
 }

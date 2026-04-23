@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T21:34:31.249619110Z",
-  "delivered_in": null,
+  "delivered_in": "8859e28ede525e416ad7792330995326ce0116dd",
   "depends_on": [],
   "description": "v0.1 passed 'providers.endpoint' from providers.yaml to the adapter as '--endpoint <url>'. ARCH §4.4 reserves endpoint interpretation to the adapter; §12 scopes this as a v0.1 simplification to retire.\n\n=== What to build ===\nPick one of (a) or (b) and document the choice in ARCH §4.4:\n\n(a) Env-var handoff. The harness forwards a well-known env var (LERNIE_PROVIDER_<NAME>_ENDPOINT or similar) to the adapter subprocess. The adapter reads it, falling back to its built-in default. providers.yaml's 'endpoint:' becomes adapter-readable but not harness-consumed — the harness just passes the value through without interpretation. This keeps the harness ignorant of adapter URL semantics.\n\n(b) Describe-driven discovery. The adapter's 'describe' output grows an 'endpoint_env' field naming which env vars the harness should forward. The harness calls 'describe' once at load, caches auth_env + endpoint_env, forwards both on every 'complete' invocation.\n\nEither way: the harness stops passing '--endpoint' on argv to the adapter. tests/prompt_end_to_end.rs is updated accordingly.\n\n=== Out of scope ===\n- Changes to providers.yaml schema semantics beyond the one field's interpretation.\n- Streaming (bl-d15d, separate backlog).\n\n=== Dependencies ===\n- None. Independent of tasks A-C. Could land first or last.\n\n=== Testing ===\n- Unit tests for whichever mechanism is chosen.\n- Integration test: mock endpoint is still redirectable for tests (via whichever mechanism), and the adapter still talks to it.\n- tarpaulin --fail-under 100 green.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-2149"},{"link_type":"gates","target":"bl-47ba"},{"link_type":"gates","target":"bl-46b3"}],
   "parent": "bl-4772",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Retire --endpoint forwarding; restore strict §4.4",
   "type": "task",
-  "updated_at": "2026-04-23T00:37:39.543578001Z"
+  "updated_at": "2026-04-23T00:52:58.860542992Z"
 }

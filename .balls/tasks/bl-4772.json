@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-4a6b"},{"link_type":"gates","target":"bl-535f"},{"link_type":"gates","target":"bl-5acb"}],
   "parent": null,
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "v0.2: git tree",
   "type": "epic",
-  "updated_at": "2026-04-23T06:47:27.221614544Z"
+  "updated_at": "2026-04-23T06:47:42.314081162Z"
 }

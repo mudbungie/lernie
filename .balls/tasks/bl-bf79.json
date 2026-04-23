@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-23T06:38:04.709497715Z",
   "delivered_in": null,
-  "depends_on": [],
+  "depends_on": ["bl-f8bd"],
   "description": "Decouple src/prompt/mod.rs from any provider-specific crate. Currently it imports provider::anthropic::Response directly; after extraction (ball bl-f8bd) that would be a cross-crate library dep, which breaks the \"out-of-tree adapters don't need lernie as a dep\" principle.\n\n=== Goals ===\n- New src/provider/wire.rs defines the adapter-contract non-streaming Response shape per ARCH §4.4: { id, model, stop_reason, content[], usage }.\n- src/prompt/mod.rs parses adapter stdout into src/provider/wire::Response (not provider::anthropic::Response).\n- lernie crate has zero library dependency on lernie-provider-anthropic. Only the invocation path (exec) connects them.\n- Tests confirm the wire shape in wire.rs and the parse path in prompt handle the adapter's JSON output end-to-end.\n\n=== Non-goals ===\n- Streaming event types live in a follow-up (ball #4 adds the streaming wire to adapter; harness wire types for streaming can be added there or here depending on ordering — prefer there).",
   "external": {},
   "id": "bl-bf79",
@@ -16,5 +16,5 @@
   "tags": ["streaming","refactor"],
   "title": "Harness neutral adapter-wire types",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:04.709497715Z"
+  "updated_at": "2026-04-23T06:38:35.161835953Z"
 }

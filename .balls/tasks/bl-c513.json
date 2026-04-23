@@ -9,12 +9,12 @@
   "description": "",
   "external": {},
   "id": "bl-c513",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-becc"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": ["gate","alignment"],
   "title": "Gate: alignment (file-path input)",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:54.435645594Z"
+  "updated_at": "2026-04-23T06:38:58.239826728Z"
 }

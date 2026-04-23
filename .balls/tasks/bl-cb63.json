@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-cb63",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T09:11:05.191796950Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-44ac"}],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["docs"],
   "title": "ARCH: headline disk+CLI pairing, regenerability, and workflow interpreter shape",
   "type": "task",
-  "updated_at": "2026-04-23T09:11:05.234655811Z"
+  "updated_at": "2026-04-23T09:11:08.231179655Z"
 }

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:28:06.034704157Z",
-  "delivered_in": null,
+  "delivered_in": "cc9d805dfabd5061fe640b47fd0708f948699c96",
   "depends_on": [],
   "description": "First rendering work: display the git history of a v0.1-shape conversation repo as a tree view. Per ARCH §7.1.\n\n=== What to build ===\n\n- Pure-Rust view-model module: 'GitTree::from_repo(repo_root: &Path) -> Result<GitTree, Error>'. Reads git history (via git2 / libgit2), produces a view-model describing commits, parents, branches, refs. Pure function of FS state at the current ref. No egui dependency.\n- egui widget that renders GitTree as a visual tree view. Thin — all logic in the view-model.\n- For v0.1-shape repos: the 'tree' is a linear sequence of commits on main, each with an exchanges/<ts>-<short-id>.json. Render each commit with its timestamp + exchange id + a truncated user-message preview read from the JSON.\n- Extends naturally to v0.2 (branches) and later without rewriting the view-model.\n\n=== Out of scope ===\n\n- Live updates — wired via fs watcher in a later task.\n- Click-to-focus navigation — deferred.\n- Streaming-text indicators — deferred.\n\n=== Dependencies ===\n\n- Blocks on bl-1013 (UI skeleton).\n- Soft-blocks on bl-ea1d (fs watcher) for live updates — initial version renders once at startup.\n\n=== Testing ===\n\n- Fixture repos under 'tests/fixtures/v01/' — small, hand-constructed real lernie repos (not mocks).\n- Test via 'GitTree::from_repo(fixture_path)' returning expected view-model.\n- egui render test: construct GitTree with known shape, run one frame in a headless egui::Context, assert output contains expected text.\n- 100% line coverage on view-model functions.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-71c7"},{"link_type":"gates","target":"bl-2ed1"},{"link_type":"gates","target":"bl-db44"}],
   "parent": "bl-c0a5",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["ui","frontend"],
   "title": "UI: git-tree renderer for v0.1-shape repos",
   "type": "task",
-  "updated_at": "2026-04-23T02:26:53.422201064Z"
+  "updated_at": "2026-04-23T02:33:41.900587642Z"
 }

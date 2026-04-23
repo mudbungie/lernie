@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4a6b",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T21:34:31.378719875Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-4772",
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: tests pass (v0.2 epic)",
   "type": "task",
-  "updated_at": "2026-04-22T21:34:31.378719875Z"
+  "updated_at": "2026-04-23T04:20:42.177499976Z"
 }

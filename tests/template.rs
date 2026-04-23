@@ -162,13 +162,18 @@ fn goal_md_is_absent_from_freshly_scaffolded_repo() {
 
 #[test]
 fn state_files_are_present_and_empty_baseline() {
+    // events.log ships in the template as a bootstrap touch-point.
+    // branches.json is runtime state — not tracked in git, not
+    // present until the first exchange spawn writes it. `.gitignore`
+    // excludes it from the branch trees.
     let (_holder, repo) = scaffolded();
     let branches = repo.join(".agent/state/branches.json");
     let events = repo.join(".agent/state/events.log");
-    assert!(branches.is_file());
+    assert!(
+        !branches.exists(),
+        "branches.json must be runtime state, not shipped in the template"
+    );
     assert!(events.is_file());
-    let branches_body = std::fs::read_to_string(&branches).unwrap();
-    assert_eq!(branches_body.trim(), "{}");
     let events_body = std::fs::read_to_string(&events).unwrap();
     assert!(events_body.is_empty());
 }

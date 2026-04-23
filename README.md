@@ -118,8 +118,18 @@ cat .agent/goal.md       # the user message
 cat exchanges/*/steps/001/response.json
 ```
 
+Each spawn also appends to `.agent/state/branches.json` (harness-
+managed runtime state, gitignored). The map's length is the unmerged
+branch count health metric (ARCH §8) — a ballooning count indicates
+a silent failure in the merge pipeline:
+
+```
+jq 'length' /path/to/my-conversation/.agent/state/branches.json
+```
+
 Merge-back to `main` (§2.6) is tracked under a separate v0.2 task and
-not part of this command today.
+not part of this command today; open exchange branches therefore show
+up in `branches.json` until merge ships.
 
 ## Providers
 

@@ -16,10 +16,12 @@
 //!    keeps the snapshot's tree intact for replay.
 //!
 //! The exchange branch is left open at the end — merge-back is §2.6
-//! and lives in a separate task. `branches.json` is not updated here;
-//! the branch ref in git is the source of truth until real tracking
-//! lands (v0.2 has a separate task for that surface).
+//! and lives in a separate task. Unmerged branches are tracked in
+//! `.agent/state/branches.json` (see `super::branches`) so the §8
+//! health metric (unmerged branch count) is always computable from
+//! disk. Merge-back, when it lands, removes the entry.
 
+use super::branches::{self, BranchKind};
 use super::step::{REQUEST_FILE, RESPONSE_FILE, StepResponse, Usage, step_dir_rel};
 use super::{AGENT_DIR, Deps, Error, parse_adapter_stdout, parse_endpoint_env};
 use crate::config::Model;
@@ -75,7 +77,27 @@ pub(super) fn run_exchange(
     let worktree_rel = format!("{WORKTREES_DIR}/{EXCHANGE_BRANCH_PREFIX}/{exchange_id}");
     let worktree_path = repo.join(worktree_rel);
 
+    // Capture main's HEAD before spawning so `base_sha` names exactly
+    // the commit the new branch was forked from (§2.3 "off `main`").
+    let base_sha = deps
+        .git
+        .run_capture(repo, &["rev-parse", "main"])
+        .map_err(|source| Error::Git {
+            op: "rev-parse",
+            source,
+        })?;
+    let spawned_at = deps.clock.now_iso8601();
+
     spawn_branch(repo, &worktree_path, &branch_name, deps)?;
+    // Register the unmerged entry right after the branch ref exists.
+    // Merge-back (§2.6, separate task) removes it.
+    branches::append_open(
+        repo,
+        &branch_name,
+        BranchKind::Exchange,
+        spawned_at,
+        base_sha,
+    )?;
 
     let goal_text = user_message;
     let system_with_goal = prepend_goal(goal_text, &resolved.system_prompt);

@@ -196,6 +196,21 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
         serde_json::from_slice(&fs::read(step_dir.join("response.json")).unwrap()).unwrap();
     assert_eq!(response["assistant_response"], "pong");
     assert_eq!(response["provider"], "anthropic");
+
+    // branches.json records the open exchange (ARCH §8 health
+    // metric). Runtime state on the main repo's disk — not
+    // git-tracked. Merge-back (separate task) will remove the entry;
+    // for this test there is exactly one open entry at the expected
+    // base_sha.
+    let branches: serde_json::Value =
+        serde_json::from_slice(&fs::read(dest.join(".agent/state/branches.json")).unwrap())
+            .unwrap();
+    let obj = branches.as_object().expect("branches.json is an object");
+    assert_eq!(obj.len(), 1, "exactly one open entry mid-exchange");
+    let entry = &obj[&branch];
+    assert_eq!(entry["kind"], "exchange");
+    assert_eq!(entry["status"], "open");
+    assert_eq!(entry["base_sha"], main_head_after);
 }
 
 #[test]

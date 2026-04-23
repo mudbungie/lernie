@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T04:44:17.063768286Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "cargo test + tarpaulin --fail-under 100 green on the merged state. All v0.2-shape fixtures pass; v0.1-shape tests still pass.",
+  "external": {},
+  "id": "bl-e135",
+  "links": [],
+  "parent": "bl-8af1",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "bl-8af1 gate: tests",
+  "type": "task",
+  "updated_at": "2026-04-23T04:44:17.063768286Z"
+}

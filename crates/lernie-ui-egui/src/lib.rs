@@ -11,6 +11,7 @@
 
 pub mod cli_outbound;
 pub mod fs_watcher;
+pub mod git_tree;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -44,6 +45,13 @@ pub fn render_placeholder(ui: &mut egui::Ui, state: &AppState) {
     });
 }
 
+pub fn render_app(ui: &mut egui::Ui, state: &AppState, tree: Option<&git_tree::GitTree>) {
+    match tree {
+        Some(tree) => git_tree::render(ui, tree),
+        None => render_placeholder(ui, state),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +83,33 @@ mod tests {
         let _ = ctx.run(Default::default(), |ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
                 render_placeholder(ui, &state);
+            });
+        });
+    }
+
+    #[test]
+    fn render_app_with_tree_uses_tree_view() {
+        let ctx = egui::Context::default();
+        let state = AppState {
+            repo: PathBuf::from("/tmp/z"),
+        };
+        let tree = git_tree::GitTree { commits: vec![] };
+        let _ = ctx.run(Default::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                render_app(ui, &state, Some(&tree));
+            });
+        });
+    }
+
+    #[test]
+    fn render_app_without_tree_falls_back_to_placeholder() {
+        let ctx = egui::Context::default();
+        let state = AppState {
+            repo: PathBuf::from("/tmp/z"),
+        };
+        let _ = ctx.run(Default::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                render_app(ui, &state, None);
             });
         });
     }

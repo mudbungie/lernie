@@ -185,19 +185,22 @@ a conversation repo and issues user actions via `lernie <subcommand>`. Per
 function of filesystem state — and one of potentially several frontends
 (a future `lernie-ui-web` would share the pure-Rust view-model layer).
 
-The skeleton only opens a placeholder window today. Two pure-Rust modules
-inside the crate (no egui dep, reusable by a future `lernie-ui-web`) are
-in place:
+On startup, the binary loads the current git history of the target repo
+and renders it as a linear commit list (v0.1-shape: one
+`exchanges/<ts>-<id>.json` per commit, with a truncated user-message
+preview). If the tree can't be read, a placeholder view is shown instead.
+Three pure-Rust modules inside the crate (no egui dep on the view-model
+side, reusable by a future `lernie-ui-web`) back the UI:
 
 - `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
-  change events.
+  change events. Live updates wire through here in a follow-up.
 - `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
   spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
   aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
   the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
-
-Git-tree rendering and the egui wiring that joins these modules land in
-follow-up tasks.
+- `git_tree` — walks the repo's linear commit history and produces a
+  view-model (`GitTree`) independent of egui. A thin egui widget in the
+  same module renders it.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

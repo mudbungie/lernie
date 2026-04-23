@@ -9,12 +9,12 @@
   "description": "First rendering work: display the git history of a v0.1-shape conversation repo as a tree view. Per ARCH §7.1.\n\n=== What to build ===\n\n- Pure-Rust view-model module: 'GitTree::from_repo(repo_root: &Path) -> Result<GitTree, Error>'. Reads the git history (via git2 or libgit2), produces a view-model describing commits, parents, branches, refs. Pure function of FS state at the current ref.\n- Dioxus component that renders GitTree as a visual tree view. Thin — all logic is in the view-model.\n- For v0.1-shape repos: the 'tree' is a linear sequence of commits on main, each with an exchanges/<ts>-<short-id>.json. Render each commit with its timestamp + exchange id + a truncated user-message preview read from the JSON.\n- As v0.2/v0.3/v0.4 land, the renderer naturally extends to show branches, sub-branches, merges. This task does NOT attempt to pre-implement those — it only handles the flat v0.1 shape, in a way that won't require rewriting when branches arrive.\n\n=== Out of scope ===\n\n- Live updates — that's wired via the filesystem watcher in a later task.\n- Navigation / click-to-focus — v0.5 epic success criterion but deferred to a follow-up.\n- Streaming-text indicators — same.\n\n=== Dependencies ===\n\n- Blocks on 'UI skeleton' (binary to hang the component off).\n- Soft-blocks on 'UI: filesystem watcher module' for live updates, but the initial version can render once at startup; live wiring is a later task.\n\n=== Testing ===\n\n- Fixture repos under 'tests/fixtures/v01/' — small, hand-constructed real lernie repos (not mocks) with known commit shapes. Test via 'GitTree::from_repo(fixture_path)' returning the expected view-model.\n- Dioxus render test: construct a GitTree with a known shape, render via VirtualDom, assert the output contains the expected text.\n- 100% line coverage on view-model functions.",
   "external": {},
   "id": "bl-209e",
-  "links": [{"link_type":"gates","target":"bl-71c7"}],
+  "links": [{"link_type":"gates","target":"bl-71c7"},{"link_type":"gates","target":"bl-2ed1"}],
   "parent": "bl-c0a5",
   "priority": 3,
   "status": "open",
   "tags": ["ui","frontend"],
   "title": "UI: git-tree renderer for v0.1-shape repos",
   "type": "task",
-  "updated_at": "2026-04-23T01:28:17.877540461Z"
+  "updated_at": "2026-04-23T01:28:17.898388445Z"
 }

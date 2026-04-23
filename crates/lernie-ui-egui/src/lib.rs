@@ -9,6 +9,8 @@
 //! view are wired up; filesystem watching, CLI outbound, and git-tree
 //! rendering land in subsequent tasks.
 
+pub mod fs_watcher;
+
 use clap::Parser;
 use std::path::PathBuf;
 

@@ -1,0 +1,208 @@
+use super::*;
+use std::fs;
+use std::time::Duration;
+use tempfile::tempdir;
+
+const SETTLE: Duration = Duration::from_millis(300);
+
+fn wait_quiet(watcher: &Watcher) {
+    std::thread::sleep(Duration::from_millis(100));
+    let _ = watcher.tick();
+}
+
+fn settle_and_tick(watcher: &Watcher) -> Vec<Change> {
+    std::thread::sleep(SETTLE);
+    watcher.tick()
+}
+
+#[test]
+fn new_errors_on_missing_repo() {
+    let root = tempdir().unwrap();
+    let missing = root.path().join("does-not-exist");
+    let err = match Watcher::new(&missing) {
+        Ok(_) => panic!("expected error"),
+        Err(e) => e,
+    };
+    assert!(err.to_string().contains("filesystem watcher"));
+}
+
+#[test]
+fn tick_is_empty_when_nothing_changed() {
+    let root = tempdir().unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    assert!(watcher.tick().is_empty());
+}
+
+#[test]
+fn detects_creation_under_exchanges() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join("exchanges")).unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    let target = root.path().join("exchanges/a.json");
+    fs::write(&target, b"{}").unwrap();
+    let changes = settle_and_tick(&watcher);
+    let hit = changes.iter().find(|c| c.path == target).expect("event");
+    assert_eq!(hit.kind, ChangeKind::Touched);
+}
+
+#[test]
+fn detects_removal() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join("artifacts")).unwrap();
+    let target = root.path().join("artifacts/note.md");
+    fs::write(&target, b"hi").unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    fs::remove_file(&target).unwrap();
+    let changes = settle_and_tick(&watcher);
+    let hit = changes.iter().find(|c| c.path == target).expect("event");
+    assert_eq!(hit.kind, ChangeKind::Removed);
+}
+
+#[test]
+fn ignores_paths_outside_allowlist() {
+    let root = tempdir().unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    fs::write(root.path().join("README.md"), b"x").unwrap();
+    fs::create_dir(root.path().join("random")).unwrap();
+    fs::write(root.path().join("random/x.txt"), b"x").unwrap();
+    std::thread::sleep(Duration::from_millis(200));
+    assert!(watcher.tick().is_empty());
+}
+
+#[test]
+fn coalesces_rapid_writes_to_one_event() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join("tools")).unwrap();
+    let target = root.path().join("tools/out.log");
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    for i in 0..5 {
+        fs::write(&target, format!("line {i}")).unwrap();
+    }
+    std::thread::sleep(Duration::from_millis(400));
+    let changes = watcher.tick();
+    let hits: Vec<_> = changes.iter().filter(|e| e.path == target).collect();
+    assert_eq!(hits.len(), 1, "got {changes:?}");
+    assert_eq!(hits[0].kind, ChangeKind::Touched);
+}
+
+#[test]
+fn coalesces_atomic_rename_to_destination() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join("exchanges")).unwrap();
+    let tmp = root.path().join("exchanges/a.json.tmp");
+    let final_path = root.path().join("exchanges/a.json");
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    fs::write(&tmp, b"{}").unwrap();
+    fs::rename(&tmp, &final_path).unwrap();
+    std::thread::sleep(Duration::from_millis(200));
+    let changes = watcher.tick();
+    let finals: Vec<_> = changes.iter().filter(|e| e.path == final_path).collect();
+    let tmps: Vec<_> = changes.iter().filter(|e| e.path == tmp).collect();
+    assert_eq!(
+        finals.len(),
+        1,
+        "expected exactly one event for destination: {changes:?}"
+    );
+    assert_eq!(finals[0].kind, ChangeKind::Touched);
+    assert!(tmps.is_empty(), "rename source should not surface: {tmps:?}");
+}
+
+#[test]
+fn detects_branches_json_update() {
+    let root = tempdir().unwrap();
+    fs::create_dir_all(root.path().join(".agent/state")).unwrap();
+    let target = root.path().join(".agent/state/branches.json");
+    fs::write(&target, b"{}").unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    fs::write(&target, b"{\"a\":1}").unwrap();
+    let changes = settle_and_tick(&watcher);
+    assert!(changes.iter().any(|e| e.path == target && e.kind == ChangeKind::Touched));
+}
+
+#[test]
+fn detects_goal_md_update() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join(".agent")).unwrap();
+    let target = root.path().join(".agent/goal.md");
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    fs::write(&target, b"hi").unwrap();
+    let changes = settle_and_tick(&watcher);
+    assert!(changes.iter().any(|e| e.path == target && e.kind == ChangeKind::Touched));
+}
+
+#[test]
+fn is_watched_covers_all_prefixes() {
+    let root = Path::new("/r");
+    for prefix in WATCHED_PREFIXES {
+        assert!(is_watched(root, &root.join(prefix)), "{prefix}");
+        assert!(
+            is_watched(root, &root.join(prefix).join("child")),
+            "{prefix}/child"
+        );
+    }
+    assert!(!is_watched(root, &root.join("README.md")));
+    assert!(!is_watched(root, Path::new("/other/exchanges/x")));
+}
+
+#[test]
+fn classify_removed_event_is_removed() {
+    use notify::event::RemoveKind;
+    let k = classify(EventKind::Remove(RemoveKind::File), Path::new("/nope/xyz"));
+    assert_eq!(k, ChangeKind::Removed);
+}
+
+#[test]
+fn ingest_splits_name_both_into_from_and_to() {
+    let mut raw = Vec::new();
+    ingest(
+        Event {
+            kind: EventKind::Modify(ModifyKind::Name(RenameMode::Both)),
+            paths: vec![PathBuf::from("/a"), PathBuf::from("/b")],
+            attrs: Default::default(),
+        },
+        &mut raw,
+    );
+    assert_eq!(raw.len(), 2);
+    assert!(matches!(
+        raw[0].1,
+        EventKind::Modify(ModifyKind::Name(RenameMode::From))
+    ));
+    assert!(matches!(
+        raw[1].1,
+        EventKind::Modify(ModifyKind::Name(RenameMode::To))
+    ));
+}
+
+#[test]
+fn coalesce_drops_prior_events_when_rename_from_arrives() {
+    let repo = Path::new("/r");
+    let p = PathBuf::from("/r/exchanges/a");
+    let raw = vec![
+        (p.clone(), EventKind::Create(notify::event::CreateKind::File)),
+        (
+            p.clone(),
+            EventKind::Modify(ModifyKind::Name(RenameMode::From)),
+        ),
+    ];
+    assert!(coalesce(repo, raw).is_empty());
+}
+
+#[test]
+fn classify_unknown_kind_uses_path_existence() {
+    let root = tempdir().unwrap();
+    let present = root.path().join("x");
+    fs::write(&present, b"").unwrap();
+    assert_eq!(classify(EventKind::Any, &present), ChangeKind::Touched);
+    assert_eq!(
+        classify(EventKind::Any, Path::new("/no/such/path")),
+        ChangeKind::Removed
+    );
+}

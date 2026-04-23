@@ -9,12 +9,12 @@
   "description": "",
   "external": {},
   "id": "bl-14f8",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-becc"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": ["gate","tests"],
   "title": "Gate: tests pass (file-path input)",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:54.407783368Z"
+  "updated_at": "2026-04-23T06:38:58.213063783Z"
 }

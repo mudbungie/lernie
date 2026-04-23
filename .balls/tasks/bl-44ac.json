@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-44ac",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T09:11:05.215591140Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cb63",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["alignment"],
   "title": "alignment: ARCH §1 + §6 headline edits",
   "type": "task",
-  "updated_at": "2026-04-23T09:11:05.215591140Z"
+  "updated_at": "2026-04-23T16:16:06.382095330Z"
 }

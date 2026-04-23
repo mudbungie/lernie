@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T09:11:05.191796950Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "ARCHITECTURE.md has the material but not the synthesis. Three targeted edits:\n\n1. §1 Overview: pair disk-as-bus with CLI-as-control-plane in the opening paragraph (currently only the filesystem half is stated; the CLI half is buried in §3.4). State that there is no third channel and no process holds state across its own termination.\n\n2. §1 Overview: add a fourth optimized-for property — Regenerability / Disk-sufficient recovery — alongside Inspectability, Uniformity, Testability. 'Stateless across restarts' is stated of components in §3.2 but the same guarantee at the system level deserves top billing. 'lernie resume <repo>' is the mechanical recovery; no process is load-bearing.\n\n3. §6 Workflow: name the interpreter. The section currently declares event-to-action bindings but never says who runs them. Add: the currently-executing CLI subprocess is the interpreter; there is no resident state machine; each event command reads workflow.yaml, runs its action list via exec'd procedures, and before exiting emits the next event by name. Procedures terminate by emitting their completion event. Combined with §3.1 disk-as-bus, crash-and-resume is 'lernie resume <repo>'.\n\nOptional: add a 'Regenerability' bullet to PRINCIPLES.md matching the new §1 property.\n\nSource of this work: architectural conversation 2026-04-23 where the baton-passing CLI chain model was articulated as the stateless workflow interpreter. The material was already derivable from the spec, but the headline synthesis was missing.\n\n=== Out of scope === Implementation of 'lernie event <name>' subcommand or 'lernie resume'. Those are code changes; this ball is pure doc synthesis of the existing architecture.",
+  "external": {},
+  "id": "bl-cb63",
+  "links": [],
+  "parent": null,
+  "priority": 2,
+  "status": "open",
+  "tags": ["docs"],
+  "title": "ARCH: headline disk+CLI pairing, regenerability, and workflow interpreter shape",
+  "type": "task",
+  "updated_at": "2026-04-23T09:11:05.191796950Z"
+}

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-8af1",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T04:44:13.384678531Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-e135"},{"link_type":"gates","target":"bl-b6d0"},{"link_type":"gates","target":"bl-ebad"}],
   "parent": "bl-c0a5",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "UI: git-tree renderer for v0.2-shape repos",
   "type": "task",
-  "updated_at": "2026-04-23T04:44:22.998005605Z"
+  "updated_at": "2026-04-23T04:44:23.500022390Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T06:59:45.371950299Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Spec-only ball. Pin the tool-contract gaps in ARCH §3.3 (and §3.2 for the 'tool executor' component) so implementation balls #2-#6 have an unambiguous shape to code against.\n\n=== Decisions to pin ===\n\n- CLI surface for tools. §3.3 says 'in-process tools are implemented as built-in subcommands invoked the same way as external tools' but doesn't name the shape. Decide: in-process → 'lernie tool <name>' subcommand; external → 'lernie-tool-<name>' on PATH (mirrors §4.4's provider adapters). Confirm or propose alternative.\n- Stdio contract for a tool invocation. JSON argument payload: argv vs stdin? Output: free-form bytes on stdout vs structured wrapper? Exit code semantics? SIGTERM deadline (mirror §4.4's 5s)?\n- Tool-call commit shape. ARCH §2.3 says the step dir is extended with 'tool_calls/<tool-id>/…' but does not pin: (a) one commit per tool_call or one batched commit for all tool_calls in a step; (b) which files land (input, stdout, stderr, exit, timing?); (c) whether the next step's request.json commit (§2.10) is the commit that frames the tool_result blocks, or whether tool_calls have their own structural role.\n- 'tools: [...]' request-field assembly. Where does the list of available tools come from in v0.3 (agents.yaml? a per-role field? an enumerated hardcode?), and how are schemas loaded from disk into the list the harness sends to the provider each step?\n- Tool executor responsibilities (§3.2 names the role but doesn't describe it). Pin: ownership of tool subprocess lifecycle; atomic stdout capture (temp + rename per §3.3); SIGTERM cascade; the fact that v0.3 does NOT implement oversized-output auto-dispatch (non-goal per this epic) and §3.3 must reflect that explicitly rather than quietly drop the bullet.\n\n=== Deliverable ===\n\nPR on an ex/... branch touching docs/ARCHITECTURE.md (§3.2, §3.3, §2.3, §12 v0.3) and TAXONOMY.md / PRINCIPLES.md as needed for any new terms of art (flag any before introducing). No code.\n\n=== Out of scope ===\n\n- Handle-based async dispatch (v0.4).\n- Oversized-output auto-dispatch (deferred from v0.3 per epic).\n- Sub-agent dispatch tool (v0.4).",
+  "external": {},
+  "id": "bl-e2fb",
+  "links": [],
+  "parent": "bl-683c",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.3","tools"],
+  "title": "v0.3 tool contract: pin ARCH §3.3 gaps",
+  "type": "task",
+  "updated_at": "2026-04-23T06:59:45.371950299Z"
+}

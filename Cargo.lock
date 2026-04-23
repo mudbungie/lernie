@@ -1957,6 +1957,7 @@ dependencies = [
  "clap",
  "eframe",
  "egui",
+ "libc",
  "notify",
  "tempfile",
  "thiserror 2.0.18",

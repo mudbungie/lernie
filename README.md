@@ -172,12 +172,12 @@ object (`{"type":"error", "kind":"retryable"|"fatal", ...}`). Exit code
 `0` covers both; non-zero is reserved for adapter-side crashes. The
 upstream URL is read from the env var named in `endpoint_env`
 (`LERNIE_PROVIDER_ANTHROPIC_ENDPOINT` for the reference adapter), with
-a built-in default if unset. The v0.1 adapter is non-streaming;
+a built-in default if unset. The adapter is non-streaming today;
 streaming support is tracked separately (bl-d15d).
 
 Harness-side adapter discovery and invocation (§4.4 "Discovery" /
 "Endpoint") is wired into the `lernie prompt` subcommand — see
-**Sending a prompt (v0.1)** above.
+**Sending a prompt (v0.2)** above.
 
 ### Dropping in a custom adapter
 
@@ -190,7 +190,8 @@ Adapters are discovered on `PATH` by name. To test a new one:
    `.agent/providers.yaml` keyed by `<name>`, with the `endpoint:` and
    `auth:` the adapter expects.
 3. Declare at least one `models:` entry whose `provider:` points at
-   that key, and point an agent role (`worker` for v0.1) at that model.
+   that key, and point an agent role (`worker` is the only role
+   through v0.2) at that model.
 4. Run `lernie prompt <repo> '...'`.
 
 ## UI (v0.5, skeleton)

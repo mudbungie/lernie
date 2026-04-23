@@ -98,7 +98,7 @@ Within a branch, **steps are linear commits** — one commit per step, carrying 
 
 The trunk is always `main`. Nothing ever commits directly to `main`. The only way data reaches `main` is via merge from a completed exchange branch.
 
-> **v0.1 exception.** The v0.1 milestone (§12) predates branching and explicitly commits one exchange directly on `main` per `lernie prompt` invocation. The invariant above is the v0.2 steady state.
+> **Historical.** The v0.1 milestone (§12) predated branching and committed one exchange directly on `main` per `lernie prompt` invocation. v0.2 retired that exception; the invariant above is the current steady state.
 
 **Branch lifecycle** (identical for both branch classes):
 
@@ -606,6 +606,8 @@ Named explicitly so they are not rediscovered later:
 ### v0.2 — Git tree
 
 **Success criterion:** An exchange is a branch, completion is a no-ff merge back to `main`, the repo layout matches §2.2. User message → exchange branch → steps as linear commits → compactor (deletion-only, stub is fine) → merge. Unmerged branch count metric available.
+
+**Shipped shape.** `lernie prompt <repo> <message>` spawns `ex/<ts>-<short-id>` off `main` in a dedicated worktree under `.lernie/worktrees/`, writes `.agent/goal.md` (§2.8) and `exchanges/<ts>-<short-id>/steps/001/request.json`, commits that snapshot before the model call (§2.10), invokes `lernie-provider-<name> complete`, lands the normalized response at `steps/001/response.json` as a follow-up commit, dispatches the terminal compactor off the exchange tip (§2.7; stub — writes `.agent/compactions/001.md` with no model call), `--no-ff` merges the compactor branch back into the exchange branch, rebases the exchange onto the current `main` tip, and `--no-ff` merges it into `main` (§2.6). The unmerged branch count metric is read directly from `git branch --list 'ex/*' 'inv/*' --no-merged main` — no sidecar file.
 
 ### v0.3 — Tools
 

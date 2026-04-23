@@ -35,6 +35,9 @@ Tools (§3.3) and provider adapters (§4.4) are separate executables the harness
 ## Everyone uses the front door
 The `lernie` CLI is the sole control plane: every procedure-to-procedure invocation — subagent dispatch, compaction, verification, any workflow-invoked procedure (§6) — goes through it. The harness is a first-class consumer of its own CLI, using the same command surface an external caller would. Disk-as-bus (§3.1) carries state between procedures; the CLI carries commands. Nothing else — no library API, no in-process sidechannel, no ad-hoc socket. Three payoffs: every inter-procedure edge is a capturable CLI call (integration testability); embedding lernie in another tool is `exec("lernie", ...)` rather than a library port (embeddability); and with only those two channels, back-channel communication has no place to go (operational atomicity as structure, not convention).
 
+## Frontends are stateless and pluggable
+The UI holds no persistent state; every render is a pure function of filesystem state at the current git ref. Its only interfaces to the harness are reading repo paths and issuing `lernie <subcommand>` invocations — no third channel. Two or more frontends (desktop GUI, webclient, TUI) can run against one repo simultaneously because none of them write repo state or share memory; they all observe the same on-disk truth and drive changes through the same CLI the harness itself uses. Pluggability is structural: a new frontend is a new consumer, not a new integration. Direct consequence of "Disk first" + "Everyone uses the front door".
+
 ## Compaction, never compression
 Summarizing a branch's work uses a subagent with a constrained toolset (`write_summary`, `mark_for_deletion`). "Deletion-only" is structural — no general filesystem write surface — so the worst case is lost information, never corrupted information.
 

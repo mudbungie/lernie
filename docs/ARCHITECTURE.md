@@ -220,8 +220,8 @@ All components communicate through the filesystem. No shared memory, no direct f
 
 - Harness → provider adapter (request mirrored to disk, adapter reads from stdin; response events mirrored back to disk from adapter stdout — see §4.4).
 - Harness → tool execution (tool call record written to disk, executor reads, output streamed to disk).
-- Harness → UI (events appended to `.agent/state/events.log`, UI tails).
-- UI → Harness (user actions written to an input directory, harness picks up).
+- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git tree, `branches.json`, tool outputs, invocation dirs, `goal.md`, compactions) and re-renders on change. Notification is inotify where available, polling otherwise. `.agent/state/events.log` is retained as an append-only harness-internal bookkeeping log — useful for replay and observability — but it is not the UI's primary read surface.
+- UI → Harness: user actions are issued as `lernie <subcommand>` invocations per §3.4. There is no input directory.
 
 **Threads, not processes.** "Worker" and "executor" name roles that run as threads inside the single harness process; the disk contract is not an inter-process bus. Tool subprocesses invoked by the tool executor are genuinely separate processes. Routing inter-role communication through disk — even between threads in the same process — is load-bearing rather than ceremonial: it is what buys inspectability, audit trail, and the single-author-per-file discipline that keeps many concurrent workers from corrupting each other's state.
 
@@ -235,12 +235,12 @@ Consequences:
 
 ### 3.2 Components
 
-- **Harness.** The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component.
+- **Harness** (permitted synonym: **daemon**). The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. It owns all external↔filesystem interaction on the repo — provider endpoints (via adapter subprocesses), tool subprocesses, git operations. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component. "Daemon" is allowed as a shorthand; both refer to the same role.
 - **Tool executor.** Runs tool subprocesses on behalf of the harness. Streams output to disk atomically (temp path + rename).
 - **Provider adapter.** External binary, one per named provider, that owns HTTP, auth, and transient-error retry. Invoked per model call over stdio; non-resident (process per model call, no long-lived state). Contract in §4.4.
-- **UI.** Tails event log and git history. Read-only view of live state plus write access to a well-defined input directory.
+- **UI** (permitted synonym: **frontend**). A stateless renderer over the conversation repo. Reads and watches filesystem paths in the repo; issues user actions exclusively as `lernie <subcommand>` invocations per §3.4. Holds no persistent state — every render is a pure function of filesystem state at the current git ref. The UI is pluggable: multiple frontends (desktop GUI, webclient, TUI) may run concurrently against one repo without coordination, because they share nothing but the filesystem and the CLI. Contract in §3.5. "Frontend" is allowed as a shorthand; both refer to the same role.
 
-The harness, the tool executor, and provider adapters share the same disk contract. None share memory.
+The harness, the tool executor, and provider adapters share the same disk contract. None share memory. The UI participates in the same disk contract as a read-only consumer.
 
 ### 3.3 Tools and skills
 
@@ -277,6 +277,19 @@ Three consequences fall out:
 - **No back-channels.** With disk for state and CLI for commands — and nothing else — operational atomicity is structural: a procedure has no surface with which to back-channel into another. The single-author-per-file discipline (§2.6) and the per-procedure commit boundaries that make replay work are consequences of this, not separate protections layered on top.
 
 "Procedure" here is the term from §6 (subordinate routines invoked by workflow), extended to cover the dispatch and compactor invocations already described in §2.5 and §2.7 — every named operation the harness can start.
+
+### 3.5 UI contract
+
+A **UI** (or **frontend** — same role, §3.2) is any program that presents the conversation repo to a user. The architecture admits multiple frontends concurrently against one repo — a desktop GUI and a webclient rendering the same conversation simultaneously is the default case, not a special one.
+
+The frontend surface is exactly two things, and nothing else:
+
+1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself, `.agent/state/branches.json`, `.agent/goal.md` per branch, `exchanges/`, `invocations/`, `artifacts/`, `tools/`, `.agent/compactions/`. Notification is inotify where available, polling otherwise (§3.1).
+2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, resume, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port.
+
+Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
+
+This discipline is what makes pluggability structural rather than aspirational. Two frontends running against one repo cannot corrupt each other because neither writes repo state; both observe the same on-disk ground truth, and both issue commands through the same CLI surface the harness itself uses. Swapping a frontend out is unplugging one reader; adding a second is adding another reader.
 
 ---
 
@@ -469,7 +482,7 @@ Per-step hooks (`pre_step`, `post_step`, `on_tool_return`) fire on every branch 
 
 ### 7.1 Live view
 
-The UI tails `.agent/state/events.log` and renders live state. Top of the interface shows a git tree view of the current conversation. Clicking a commit navigates to that point. Clicking a branch navigates to that agent.
+The UI watches the conversation repo filesystem (§3.5) and re-renders from what it observes. Top of the interface shows a git tree view of the current conversation. Clicking a commit navigates to that point. Clicking a branch navigates to that agent.
 
 Live indicators:
 
@@ -590,7 +603,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.5 — UI
 
-**Success criterion:** Git tree view, live streaming, pulsing tool indicators, branch-state indicators. Tailing the event log is the only read mechanism.
+**Success criterion:** Git tree view, live streaming, pulsing tool indicators, branch-state indicators. Watching the repo filesystem (§3.5) is the only read mechanism; user actions go out as `lernie <subcommand>` invocations.
 
 ### v0.6 — Workflow config
 

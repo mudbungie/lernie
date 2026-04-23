@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-5acb",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T21:34:31.415026334Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-4772",
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: alignment (v0.2 epic)",
   "type": "task",
-  "updated_at": "2026-04-22T21:34:31.415026334Z"
+  "updated_at": "2026-04-23T05:07:31.234155360Z"
 }

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T06:38:43.360067134Z",
-  "delivered_in": null,
+  "delivered_in": "dd71434c18b4929ad2d86310c41ef64f9204c21f",
   "depends_on": [],
   "description": "Optional enhancement to the adapter-contract I/O surface. Adapters MAY accept a --request <path> argv flag as an alternative to stdin for the complete subcommand. When --request is passed, the adapter reads the request JSON from that file; when absent, stdin is used (current behavior).\n\n=== Why ===\n- Replay: the harness already writes invocations/<id>/request.json per §2.3 / §2.10 / §4.4. Pointing the adapter at that file removes a shell-redirect hop and makes deterministic replay trivial.\n- Testability: integration tests can hand a file path instead of piping.\n\n=== Scope ===\n- Purely additive; stdin path unchanged.\n- lernie-provider-anthropic gains --request flag; documented in its --help.\n- ARCH §4.4 grows a sentence: \"adapters MAY accept --request <path>; invocation semantics identical to stdin\". It remains optional; adapters are not required to implement it.\n- Harness does NOT change behavior here — it keeps using stdin. Switching the harness to pass --request is a follow-up.\n\n=== Testing ===\nAdapter test with a tempfile request.json, assert output matches the stdin path's output for the same input. 100% tarpaulin.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["adapter"],
   "title": "Adapter contract: optional file-path input alongside stdin",
   "type": "task",
-  "updated_at": "2026-04-23T06:49:43.984898130Z"
+  "updated_at": "2026-04-23T07:04:31.063446586Z"
 }

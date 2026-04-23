@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:28:17.839554225Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Module-level docstring describes the surface; README mentions the new binary / module if user-visible; ARCH §3.5 referenced where appropriate. Any new dependency (notify, dioxus, git2) noted in the README build prereqs if platform-specific.",
+  "external": {},
+  "id": "bl-2ed1",
+  "links": [],
+  "parent": "bl-209e",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: docs up to date (git-tree renderer)",
+  "type": "task",
+  "updated_at": "2026-04-23T01:28:17.839554225Z"
+}

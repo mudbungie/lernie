@@ -93,7 +93,7 @@ mod tests {
         let state = AppState {
             repo: PathBuf::from("/tmp/z"),
         };
-        let tree = git_tree::GitTree { commits: vec![] };
+        let tree = git_tree::GitTree::default();
         let _ = ctx.run(Default::default(), |ctx| {
             egui::CentralPanel::default().show(ctx, |ui| {
                 render_app(ui, &state, Some(&tree));

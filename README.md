@@ -203,9 +203,13 @@ function of filesystem state — and one of potentially several frontends
 (a future `lernie-ui-web` would share the pure-Rust view-model layer).
 
 On startup, the binary loads the current git history of the target repo
-and renders it as a linear commit list (v0.1-shape: one
-`exchanges/<ts>-<id>.json` per commit, with a truncated user-message
-preview). If the tree can't be read, a placeholder view is shown instead.
+and renders a two-tier tree: `main`'s first-parent trunk, with each
+v0.2-shape `--no-ff` exchange merge showing its step commits indented
+beneath; any unmerged `ex/*` branches (in-flight exchanges) follow in
+their own section. v0.1-shape repos still render — flat linear history
+with one `exchanges/<ts>-<id>.json` per commit and a truncated
+user-message preview. If the tree can't be read, a placeholder view
+is shown instead.
 Three pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
@@ -215,9 +219,12 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
   aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
   the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
-- `git_tree` — walks the repo's linear commit history and produces a
-  view-model (`GitTree`) independent of egui. A thin egui widget in the
-  same module renders it.
+- `git_tree` — reads the repo's refs and commit tree and produces a
+  view-model (`GitTree`) independent of egui: `main`'s first-parent
+  trunk (including v0.2-shape merge nodes with their step commits) plus
+  the set of unmerged `ex/*` branches (`git branch --list ex/*
+  --no-merged main`, per PRINCIPLES.md single-source-of-truth). A thin
+  egui widget in the same module renders it.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-1013",
+  "claimed_by": "claude",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:28:05.957725422Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-1f49"},{"link_type":"gates","target":"bl-27c1"},{"link_type":"gates","target":"bl-37b6"}],
   "parent": "bl-c0a5",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["ui","frontend"],
   "title": "UI skeleton: lernie-ui-dioxus binary + Cargo wiring",
   "type": "task",
-  "updated_at": "2026-04-23T01:28:17.579592619Z"
+  "updated_at": "2026-04-23T01:28:21.752406107Z"
 }

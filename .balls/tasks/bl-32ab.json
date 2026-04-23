@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-32ab",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T19:46:48.275812689Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["docs","design"],
   "title": "Draft ARCH/TAXONOMY redesign: conversation as primitive, .agent/ split, worktree invariant",
   "type": "task",
-  "updated_at": "2026-04-23T19:46:48.275812689Z"
+  "updated_at": "2026-04-23T19:46:51.349460553Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:07:38.584958754Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Docs gate for bl-2c54. docs/ARCHITECTURE.md §4.4 explicitly defines the non-streaming response shape (required fields, usage subfields, api_calls policy) and the relationship to streaming's normalized events. Taxonomy entry if a new term of art lands.",
+  "external": {},
+  "id": "bl-73b2",
+  "links": [],
+  "parent": null,
+  "priority": 3,
+  "status": "open",
+  "tags": ["gate","docs"],
+  "title": "bl-2c54 gate: docs",
+  "type": "task",
+  "updated_at": "2026-04-23T01:07:38.584958754Z"
+}

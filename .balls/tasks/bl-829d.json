@@ -9,12 +9,12 @@
   "description": "",
   "external": {},
   "id": "bl-829d",
-  "links": [],
+  "links": [{"link_type":"gates","target":"bl-becc"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": ["gate","docs"],
   "title": "Gate: docs up to date (file-path input)",
   "type": "task",
-  "updated_at": "2026-04-23T06:38:54.424354408Z"
+  "updated_at": "2026-04-23T06:38:58.228750288Z"
 }

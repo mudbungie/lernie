@@ -11,6 +11,12 @@
 //! exchange is written to `exchanges/<ts>-<short-id>.json` and committed
 //! directly on `main`. Branching, steps-as-commits, compaction, and merges
 //! land with v0.2.
+//!
+//! Endpoint plumbing follows ARCH §4.4 strictly: the harness invokes
+//! `describe` once per [`run`] to pick up the adapter's `endpoint_env`
+//! list, then sets each named env var to `providers.<name>.endpoint`
+//! before invoking `complete`. The harness never reads or interprets the
+//! URL — only the adapter does.
 
 pub mod adapter;
 pub mod clock;
@@ -127,15 +133,26 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
     });
     let request_bytes = serde_json::to_vec(&request).expect("Value is always serializable");
 
-    let started_at = deps.clock.now_iso8601();
     let binary: OsString = format!("lernie-provider-{provider_name}").into();
-    // Pass endpoint via CLI — v0.1 pragma. ARCH §4.4 reserves endpoint
-    // interpretation to the adapter; a v0.2 refinement (e.g. env-var handoff
-    // or describe-driven discovery) can restore the strict reading.
-    let args = ["complete", "--endpoint", provider.endpoint.as_str()];
+
+    // Describe-driven endpoint discovery (ARCH §4.4): the adapter declares
+    // env vars it reads its endpoint from; the harness sets each to the
+    // value of `providers.<name>.endpoint` before invoking `complete`.
+    // The URL is opaque to the harness.
+    let describe_bytes = deps
+        .adapter
+        .run(&binary, &["describe"], &[], &[])
+        .map_err(Error::AdapterSpawn)?;
+    let endpoint_env_names = parse_endpoint_env(&describe_bytes)?;
+    let endpoint_envs: Vec<(&str, &str)> = endpoint_env_names
+        .iter()
+        .map(|name| (name.as_str(), provider.endpoint.as_str()))
+        .collect();
+
+    let started_at = deps.clock.now_iso8601();
     let stdout_bytes = deps
         .adapter
-        .run(&binary, &args, &request_bytes)
+        .run(&binary, &["complete"], &endpoint_envs, &request_bytes)
         .map_err(Error::AdapterSpawn)?;
     let ended_at = deps.clock.now_iso8601();
 
@@ -187,6 +204,21 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
             source,
         })?;
     Ok(sha)
+}
+
+/// Parse the `endpoint_env` field out of the adapter's `describe` JSON.
+///
+/// Returns the list of env var names the harness should set to
+/// `providers.<name>.endpoint` before invoking `complete`. Missing field
+/// is treated as an empty list — an adapter that does not advertise
+/// `endpoint_env` is opting out of harness-set endpoints and will use its
+/// built-in default. Wrong-typed values surface as [`Error::AdapterJson`].
+fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
+    let value: Value = serde_json::from_slice(bytes).map_err(Error::AdapterJson)?;
+    let Some(field) = value.get("endpoint_env") else {
+        return Ok(Vec::new());
+    };
+    serde_json::from_value(field.clone()).map_err(Error::AdapterJson)
 }
 
 /// Parse the adapter's stdout bytes into either a

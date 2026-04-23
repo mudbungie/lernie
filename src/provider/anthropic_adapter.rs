@@ -29,14 +29,24 @@ pub const ADAPTER_NAME: &str = "anthropic";
 
 /// `describe.schema_version`. Bumped on breaking changes to the adapter
 /// contract; the harness rejects unknown major versions at load (ARCH §4.4).
-pub const SCHEMA_VERSION: u32 = 1;
+///
+/// v2 — `complete` no longer accepts `--endpoint`; endpoint flows via the
+/// env var named in `describe.endpoint_env` instead. Adding `endpoint_env`
+/// to `describe` is additive, but removing the argv flag is breaking, so
+/// the contract version bumps.
+pub const SCHEMA_VERSION: u32 = 2;
 
-/// Default upstream endpoint when the binary is invoked without `--endpoint`.
+/// Default upstream endpoint when the binary's `endpoint_env` var is unset.
 pub const DEFAULT_ENDPOINT: &str = "https://api.anthropic.com";
 
 /// Env vars whose *values* the harness must forward to the adapter process
 /// (ARCH §4.4 "Auth"). Declared here so `describe` and the binary agree.
 pub const AUTH_ENV: &[&str] = &["ANTHROPIC_API_KEY"];
+
+/// Env vars the harness sets to `providers.<name>.endpoint` before invoking
+/// `complete` (ARCH §4.4 "Endpoint"). Symmetric with [`AUTH_ENV`]: the binary
+/// reads whichever of these is set; the harness needs only the name.
+pub const ENDPOINT_ENV: &[&str] = &["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"];
 
 /// Capabilities advertised by this v0.1 non-streaming adapter. `streaming`
 /// is deliberately absent — that capability lands with bl-d15d.
@@ -107,6 +117,7 @@ struct Describe<'a> {
     capabilities: &'a [&'a str],
     models: &'a [&'a str],
     auth_env: &'a [&'a str],
+    endpoint_env: &'a [&'a str],
 }
 
 /// Write the `describe` JSON to `out`. Never fails intrinsically — the only
@@ -118,6 +129,7 @@ pub fn run_describe<W: Write>(out: &mut W) -> std::io::Result<()> {
         capabilities: CAPABILITIES,
         models: MODELS,
         auth_env: AUTH_ENV,
+        endpoint_env: ENDPOINT_ENV,
     };
     serde_json::to_writer(&mut *out, &body).map_err(std::io::Error::other)?;
     out.write_all(b"\n")?;

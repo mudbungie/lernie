@@ -5,10 +5,11 @@
 //! document back on stdout. [`AdapterRunner`] is the trait [`super::run`]
 //! depends on; [`SpawnAdapter`] is the production implementation.
 //!
-//! Child env is inherited by default: credential env vars (e.g.
-//! `ANTHROPIC_API_KEY`) propagate without the harness having to read
-//! `providers.yaml`'s `auth:` block — aligning with §4.4 "auth lives
-//! entirely inside the adapter."
+//! Child env is inherited by default; the harness layers explicit
+//! key/value pairs on top via the `envs` argument. That covers the §4.4
+//! `endpoint_env` handoff (harness-set values from `providers.yaml`)
+//! while leaving credential vars (`auth_env`) to inherit naturally —
+//! aligning with §4.4 "auth lives entirely inside the adapter."
 
 use std::ffi::OsString;
 use std::io::{self, Write};
@@ -19,11 +20,17 @@ use std::process::{Command, Stdio};
 /// §4.4 reserves that for adapter-side crashes, not in-band provider
 /// failures.
 pub trait AdapterRunner {
-    /// Spawn `binary` with `args`, forward `stdin_bytes` to its stdin,
-    /// and return its stdout bytes on exit-zero. The caller is
-    /// responsible for parsing the bytes as either an upstream response
-    /// or an in-band adapter error (§4.4).
-    fn run(&self, binary: &OsString, args: &[&str], stdin_bytes: &[u8]) -> io::Result<Vec<u8>>;
+    /// Spawn `binary` with `args` and `envs` set on the child process,
+    /// forward `stdin_bytes` to its stdin, and return its stdout bytes on
+    /// exit-zero. The caller is responsible for parsing the bytes as
+    /// either an upstream response or an in-band adapter error (§4.4).
+    fn run(
+        &self,
+        binary: &OsString,
+        args: &[&str],
+        envs: &[(&str, &str)],
+        stdin_bytes: &[u8],
+    ) -> io::Result<Vec<u8>>;
 }
 
 /// Default [`AdapterRunner`]. Uses [`Command`] with PATH lookup.
@@ -31,9 +38,16 @@ pub trait AdapterRunner {
 pub struct SpawnAdapter;
 
 impl AdapterRunner for SpawnAdapter {
-    fn run(&self, binary: &OsString, args: &[&str], stdin_bytes: &[u8]) -> io::Result<Vec<u8>> {
+    fn run(
+        &self,
+        binary: &OsString,
+        args: &[&str],
+        envs: &[(&str, &str)],
+        stdin_bytes: &[u8],
+    ) -> io::Result<Vec<u8>> {
         let mut child = Command::new(binary)
             .args(args)
+            .envs(envs.iter().copied())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -65,14 +79,30 @@ mod tests {
         // adapter. Proves the happy path: args, stdin piping, stdout
         // capture, exit-zero.
         let bin = OsString::from("cat");
-        let out = SpawnAdapter.run(&bin, &[], b"hello\n").unwrap();
+        let out = SpawnAdapter.run(&bin, &[], &[], b"hello\n").unwrap();
         assert_eq!(out, b"hello\n");
+    }
+
+    #[test]
+    fn spawn_adapter_forwards_envs_to_child() {
+        // `env -0` prints the child env, NUL-terminated. We can scan for
+        // the var we set without picking up the inherited PATH/USER lines.
+        let bin = OsString::from("env");
+        let out = SpawnAdapter
+            .run(&bin, &["-0"], &[("LERNIE_TEST_VAR", "passthrough-ok")], b"")
+            .unwrap();
+        let text = String::from_utf8_lossy(&out);
+        assert!(
+            text.split('\0')
+                .any(|line| line == "LERNIE_TEST_VAR=passthrough-ok"),
+            "env not forwarded; got: {text}"
+        );
     }
 
     #[test]
     fn spawn_adapter_reports_spawn_failure() {
         let bin = OsString::from("/no/such/lernie-provider-nonesuch");
-        let err = SpawnAdapter.run(&bin, &[], b"").unwrap_err();
+        let err = SpawnAdapter.run(&bin, &[], &[], b"").unwrap_err();
         assert_eq!(err.kind(), io::ErrorKind::NotFound);
     }
 
@@ -80,7 +110,7 @@ mod tests {
     fn spawn_adapter_reports_nonzero_exit() {
         // `false` exits with status 1 on every POSIX system.
         let bin = OsString::from("false");
-        let err = SpawnAdapter.run(&bin, &[], b"").unwrap_err();
+        let err = SpawnAdapter.run(&bin, &[], &[], b"").unwrap_err();
         let msg = err.to_string();
         assert!(msg.contains("exited with"), "got: {msg}");
     }

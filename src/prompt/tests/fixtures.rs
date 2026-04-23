@@ -3,6 +3,7 @@
 use crate::prompt::{AdapterRunner, Clock, Deps, IdGen};
 use crate::template::GitRunner;
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::ffi::OsString;
 use std::io;
 use std::path::Path;
@@ -43,50 +44,100 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Scripted [`AdapterRunner`] — returns a canned stdout or an error.
-enum AdapterReply {
+/// Scripted [`AdapterRunner`] reply — either canned stdout bytes or an
+/// I/O error.
+pub(super) enum AdapterReply {
     Ok(Vec<u8>),
     Err(io::Error),
 }
 
-/// Snapshot of a single adapter invocation captured by [`StubAdapter`]: the
-/// binary name, argv, and stdin bytes.
-pub(super) type AdapterCall = (OsString, Vec<String>, Vec<u8>);
+/// Snapshot of a single adapter invocation captured by [`StubAdapter`]:
+/// binary name, argv, environment overrides, and stdin bytes.
+pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
 
+/// Canonical `describe` JSON the harness expects from the Anthropic
+/// adapter. Tests that vary the shape (e.g. missing `endpoint_env`) build
+/// their own bytes inline.
+pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
+    "name":"anthropic","schema_version":2,
+    "capabilities":["tool_use_native"],
+    "models":["claude-sonnet-4-7"],
+    "auth_env":["ANTHROPIC_API_KEY"],
+    "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
+}"#;
+
+/// Scripted [`AdapterRunner`] — replies are taken from a FIFO queue so a
+/// single test can script `describe` then `complete` independently. All
+/// invocations are recorded for later assertion.
 pub(super) struct StubAdapter {
-    reply: RefCell<Option<AdapterReply>>,
-    pub(super) observed: RefCell<Option<AdapterCall>>,
+    replies: RefCell<VecDeque<AdapterReply>>,
+    pub(super) observed: RefCell<Vec<AdapterCall>>,
 }
 
 impl StubAdapter {
-    pub(super) fn returning_ok(bytes: &[u8]) -> Self {
+    /// Queue an explicit sequence of replies. Use for tests that need to
+    /// vary `describe` independently of `complete`.
+    pub(super) fn scripted<I>(replies: I) -> Self
+    where
+        I: IntoIterator<Item = AdapterReply>,
+    {
         Self {
-            reply: RefCell::new(Some(AdapterReply::Ok(bytes.to_vec()))),
-            observed: RefCell::new(None),
+            replies: RefCell::new(replies.into_iter().collect()),
+            observed: RefCell::new(Vec::new()),
         }
     }
-    pub(super) fn returning_err(kind: io::ErrorKind, msg: &str) -> Self {
-        Self {
-            reply: RefCell::new(Some(AdapterReply::Err(io::Error::new(
-                kind,
-                msg.to_string(),
-            )))),
-            observed: RefCell::new(None),
-        }
+
+    /// Common case: a successful `describe` followed by `complete_bytes`
+    /// from the next adapter call. Used by the happy path and by tests
+    /// that want a specific complete-stage stdout.
+    pub(super) fn happy(complete_bytes: &[u8]) -> Self {
+        Self::scripted([
+            AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
+            AdapterReply::Ok(complete_bytes.to_vec()),
+        ])
+    }
+
+    /// Single-call error reply — fires on the first adapter invocation
+    /// (which is `describe`). Used for the spawn-failure error path.
+    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
+        Self::scripted([AdapterReply::Err(io::Error::new(kind, msg.to_string()))])
+    }
+
+    /// Helpers for building reply variants without exposing the enum.
+    pub(super) fn reply_ok(bytes: &[u8]) -> AdapterReply {
+        AdapterReply::Ok(bytes.to_vec())
+    }
+    pub(super) fn reply_err(kind: io::ErrorKind, msg: &str) -> AdapterReply {
+        AdapterReply::Err(io::Error::new(kind, msg.to_string()))
+    }
+
+    /// The most recent invocation — convenient for tests that only care
+    /// about the `complete` call (the second one, when describe succeeded).
+    pub(super) fn last(&self) -> AdapterCall {
+        self.observed.borrow().last().cloned().expect("no calls")
     }
 }
 
 impl AdapterRunner for StubAdapter {
-    fn run(&self, binary: &OsString, args: &[&str], stdin_bytes: &[u8]) -> io::Result<Vec<u8>> {
-        *self.observed.borrow_mut() = Some((
+    fn run(
+        &self,
+        binary: &OsString,
+        args: &[&str],
+        envs: &[(&str, &str)],
+        stdin_bytes: &[u8],
+    ) -> io::Result<Vec<u8>> {
+        self.observed.borrow_mut().push((
             binary.clone(),
             args.iter().map(|s| (*s).to_owned()).collect(),
+            envs.iter()
+                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+                .collect(),
             stdin_bytes.to_vec(),
         ));
-        match self.reply.borrow_mut().take() {
+        match self.replies.borrow_mut().pop_front() {
             Some(AdapterReply::Ok(b)) => Ok(b),
             Some(AdapterReply::Err(e)) => Err(e),
-            None => panic!("StubAdapter::run called twice"),
+            None => panic!("StubAdapter::run called more times than scripted"),
         }
     }
 }

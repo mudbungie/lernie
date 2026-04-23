@@ -350,10 +350,11 @@ A **provider adapter** is a binary that implements one provider's wire protocol.
   ```json
   {
     "name": "anthropic",
-    "schema_version": 1,
+    "schema_version": 2,
     "capabilities": ["tool_use_native", "streaming", "prompt_caching"],
     "models": ["claude-sonnet-4-7", "claude-haiku-4-5"],
-    "auth_env": ["ANTHROPIC_API_KEY"]
+    "auth_env": ["ANTHROPIC_API_KEY"],
+    "endpoint_env": ["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
   }
   ```
   `schema_version` is an integer. The harness rejects unknown major versions at load and refuses to use the adapter — no silent downgrade (see "Decline illegal operations" in PRINCIPLES.md).
@@ -374,6 +375,8 @@ Exit code 0 means the adapter produced a valid output (including a `type: error`
 **Cancellation.** The harness sends SIGTERM on stop (§2.9). The adapter must drop any in-flight HTTP request, flush partial state — for streaming, emit a final `message_stop` or `error` event — and exit within 5 seconds. SIGKILL follows if it does not.
 
 **Auth.** Auth lives entirely inside the adapter. The harness forwards the env vars named in `describe.auth_env` into the subprocess environment; everything else — refresh tokens, keychain access, `aws-sso login`, Okta CLI flows — is the adapter's concern. The harness never handles credentials directly and never prompts.
+
+**Endpoint.** Endpoint URLs are opaque to the harness. The adapter declares one or more env var names in `describe.endpoint_env`; the harness sets each to the value of `providers.<name>.endpoint` (verbatim, no parsing) before invoking `complete`. An adapter that omits `endpoint_env` opts out of harness-set endpoints and uses its built-in default. Symmetric in shape with `auth_env`, but `auth_env` propagates values from the harness's environment whereas `endpoint_env` carries values from `providers.yaml` — neither requires the harness to interpret the URL.
 
 **Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes, but the harness mirrors both to disk under the framing step's commit (`invocations/<id>/request.json`, `invocations/<id>/events.jsonl` or `response.json`). Replay (§3.1, §2.10) works against those files, not against a live adapter process. The pipes are the wire; the disk is the record.
 
@@ -571,7 +574,7 @@ Named explicitly so they are not rediscovered later:
 
 **Shipped shape.** `lernie new <path>` scaffolds a conversation repo from the embedded template; `lernie prompt <repo> <message>` loads `providers.yaml` + `agents.yaml`, resolves the `worker` role, invokes `lernie-provider-<name>` as a subprocess (§4.4), writes `exchanges/<ts>-<short-id>.json` with `user_message` / `assistant_response` / `model_id` / `provider` / `usage` / `stop_reason` / `started_at` / `ended_at`, and commits the file to `main`.
 
-**Exceptions to later invariants, scoped to v0.1 only.** (a) The commit lands directly on `main` rather than via an exchange branch merge (§2.3). (b) The harness forwards `providers.endpoint` to the adapter as `--endpoint` instead of leaving endpoint interpretation inside the adapter (§4.4 "the harness itself does not read `endpoint:` or `auth:`"); v0.2 can replace this with describe-driven discovery or an env-var handoff without reshaping the on-disk artifact.
+**Exceptions to later invariants, scoped to v0.1 only.** The commit lands directly on `main` rather than via an exchange branch merge (§2.3). The earlier `--endpoint` argv pragma was retired in v0.2: endpoint forwarding now goes through `describe.endpoint_env` per §4.4.
 
 ### v0.2 — Git tree
 

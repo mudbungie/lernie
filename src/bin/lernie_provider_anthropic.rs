@@ -8,16 +8,23 @@
 //!
 //! Usage:
 //!   lernie-provider-anthropic describe
-//!   lernie-provider-anthropic complete [--endpoint URL]
+//!   lernie-provider-anthropic complete
 //!
 //! `describe` writes a single JSON object to stdout. `complete` reads one
 //! Anthropic Messages-API request from stdin and writes one JSON object
 //! (either the upstream response or an in-band error object per §4.4) to
 //! stdout. The process exits `0` in both cases; non-zero exit is reserved
 //! for adapter-side crashes.
+//!
+//! The upstream endpoint comes from the env var named in
+//! `describe.endpoint_env` (currently `LERNIE_PROVIDER_ANTHROPIC_ENDPOINT`),
+//! falling back to [`DEFAULT_ENDPOINT`]. ARCH §4.4 reserves endpoint
+//! interpretation to the adapter; the harness only forwards the value.
 
 use clap::{Parser, Subcommand};
-use lernie::provider::anthropic_adapter::{DEFAULT_ENDPOINT, run_complete, run_describe};
+use lernie::provider::anthropic_adapter::{
+    DEFAULT_ENDPOINT, ENDPOINT_ENV, run_complete, run_describe,
+};
 use std::io::{self, Write};
 use std::process::ExitCode;
 
@@ -37,12 +44,7 @@ enum Command {
     Describe,
     /// Read a Messages-API request on stdin, write one response or error
     /// object on stdout.
-    Complete {
-        /// Upstream endpoint. Defaults to api.anthropic.com; tests and
-        /// private deployments can point this at a local mock.
-        #[arg(long, default_value = DEFAULT_ENDPOINT)]
-        endpoint: String,
-    },
+    Complete,
 }
 
 /// Install a SIGTERM handler that exits the process cleanly.
@@ -75,10 +77,12 @@ fn main() -> ExitCode {
     let mut out = stdout.lock();
     let result = match cli.command {
         Command::Describe => run_describe(&mut out),
-        Command::Complete { endpoint } => {
+        Command::Complete => {
             let stdin = io::stdin();
             let mut reader = stdin.lock();
             let api_key = std::env::var("ANTHROPIC_API_KEY").ok();
+            let endpoint =
+                std::env::var(ENDPOINT_ENV[0]).unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
             run_complete(&mut reader, &mut out, api_key.as_deref(), &endpoint)
         }
     };

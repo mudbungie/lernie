@@ -7,11 +7,18 @@ use std::io;
 use std::path::PathBuf;
 use tempfile::TempDir;
 
+/// Convenience: an adapter that the test does not expect to reach
+/// (pre-adapter failure paths). Scripted with no replies; calling it
+/// would panic the test, which is the desired signal.
+fn unreachable_adapter() -> StubAdapter {
+    StubAdapter::scripted([])
+}
+
 #[test]
 fn run_surfaces_providers_yaml_load_error() {
     let tmp = TempDir::new().unwrap();
     std::fs::create_dir_all(tmp.path().join(".agent")).unwrap();
-    let adapter = StubAdapter::returning_ok(b"");
+    let adapter = unreachable_adapter();
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -25,7 +32,7 @@ fn run_surfaces_agents_yaml_load_error() {
     let agent = tmp.path().join(".agent");
     std::fs::create_dir_all(&agent).unwrap();
     std::fs::write(agent.join("providers.yaml"), VALID_PROVIDERS_YAML).unwrap();
-    let adapter = StubAdapter::returning_ok(b"");
+    let adapter = unreachable_adapter();
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -42,7 +49,7 @@ agents:
     system_prompt: prompts/worker.md
 "#;
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, bad_agents, Some("body"));
-    let adapter = StubAdapter::returning_ok(b"");
+    let adapter = unreachable_adapter();
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -59,7 +66,7 @@ agents:
     system_prompt: prompts/compactor.md
 "#;
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, no_worker, Some("body"));
-    let adapter = StubAdapter::returning_ok(b"");
+    let adapter = unreachable_adapter();
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -73,7 +80,7 @@ agents:
 #[test]
 fn run_surfaces_missing_system_prompt() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, None);
-    let adapter = StubAdapter::returning_ok(b"");
+    let adapter = unreachable_adapter();
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -82,9 +89,55 @@ fn run_surfaces_missing_system_prompt() {
 }
 
 #[test]
-fn run_surfaces_adapter_spawn_failure() {
+fn run_surfaces_describe_spawn_failure() {
+    // First adapter call is `describe`; the spawn error surfaces as
+    // AdapterSpawn — same variant as a `complete`-stage spawn failure
+    // since the harness treats both as adapter-side faults.
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_err(io::ErrorKind::NotFound, "no such binary");
+    let adapter = StubAdapter::failing(io::ErrorKind::NotFound, "no such binary");
+    let git = StubGit::ok();
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::AdapterSpawn(_)));
+}
+
+#[test]
+fn run_surfaces_malformed_describe_json() {
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(b"{ not json")]);
+    let git = StubGit::ok();
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::AdapterJson(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_describe_endpoint_env_wrong_type() {
+    // `endpoint_env` must be an array of strings. Anything else surfaces
+    // as a parse error, since accepting it would silently drop the
+    // adapter's declared config — the opposite of "decline illegal
+    // operations" (PRINCIPLES.md).
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let bad = br#"{"name":"x","schema_version":1,"capabilities":[],"models":[],
+                   "auth_env":[],"endpoint_env":"NOT_AN_ARRAY"}"#;
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(bad)]);
+    let git = StubGit::ok();
+    let clock = FixedClock::new();
+    let id = FixedIdGen;
+    let err = run(repo.path(), "hi", &valid_deps(&adapter, &git, &clock, &id)).unwrap_err();
+    assert!(matches!(err, Error::AdapterJson(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_complete_spawn_failure() {
+    // describe succeeds, complete fails at spawn time.
+    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let adapter = StubAdapter::scripted([
+        StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
+        StubAdapter::reply_err(io::ErrorKind::BrokenPipe, "complete crashed"),
+    ]);
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -96,7 +149,7 @@ fn run_surfaces_adapter_spawn_failure() {
 fn run_surfaces_adapter_returning_in_band_error() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     let error_json = br#"{"type":"error","kind":"fatal","http_status":401,"message":"boom"}"#;
-    let adapter = StubAdapter::returning_ok(error_json);
+    let adapter = StubAdapter::happy(error_json);
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -118,7 +171,7 @@ fn run_surfaces_adapter_returning_in_band_error() {
 #[test]
 fn run_surfaces_malformed_adapter_json() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(b"{ not json");
+    let adapter = StubAdapter::happy(b"{ not json");
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -129,7 +182,7 @@ fn run_surfaces_malformed_adapter_json() {
 #[test]
 fn run_surfaces_response_shape_mismatch() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(br#"{"unexpected":"shape"}"#);
+    let adapter = StubAdapter::happy(br#"{"unexpected":"shape"}"#);
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -140,7 +193,7 @@ fn run_surfaces_response_shape_mismatch() {
 #[test]
 fn run_surfaces_in_band_error_with_default_fields() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(br#"{"type":"error"}"#);
+    let adapter = StubAdapter::happy(br#"{"type":"error"}"#);
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -162,7 +215,7 @@ fn run_surfaces_in_band_error_with_default_fields() {
 #[test]
 fn run_surfaces_git_add_failure() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let git = StubGit::failing_at(0);
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -173,7 +226,7 @@ fn run_surfaces_git_add_failure() {
 #[test]
 fn run_surfaces_git_commit_failure() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let git = StubGit::failing_at(1);
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -184,7 +237,7 @@ fn run_surfaces_git_commit_failure() {
 #[test]
 fn run_surfaces_git_rev_parse_failure() {
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
-    let adapter = StubAdapter::returning_ok(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let git = StubGit::failing_at(2);
     let clock = FixedClock::new();
     let id = FixedIdGen;
@@ -203,7 +256,7 @@ fn run_surfaces_exchanges_write_failure() {
     // Pre-create `exchanges` as a regular file so create_dir_all fails.
     let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
     std::fs::write(repo.path().join("exchanges"), b"blocker").unwrap();
-    let adapter = StubAdapter::returning_ok(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let git = StubGit::ok();
     let clock = FixedClock::new();
     let id = FixedIdGen;

@@ -83,11 +83,13 @@ ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
 
 1. Load `<repo>/.agent/providers.yaml` and `<repo>/.agent/agents.yaml`;
    cross-validate `agents.worker.model` against the declared models.
-2. Spawn the provider adapter `lernie-provider-<name>` (discovered on
-   `PATH`) with `complete --endpoint <url-from-providers.yaml>`, pipe the
-   Messages-API-shaped request to stdin, read one JSON document back
-   (§4.4). Credential env vars like `ANTHROPIC_API_KEY` propagate to the
-   adapter by normal process inheritance.
+2. Invoke `lernie-provider-<name> describe` (discovered on `PATH`) to
+   read the adapter's `endpoint_env` (§4.4). Then spawn the same binary
+   with `complete`, setting each env var named in `endpoint_env` to the
+   value of `providers.<name>.endpoint`, pipe the Messages-API-shaped
+   request to stdin, and read one JSON document back. Credential env
+   vars like `ANTHROPIC_API_KEY` propagate to the adapter by normal
+   process inheritance.
 3. Write the result to `<repo>/exchanges/<ts>-<short-id>.json` with the
    fields `user_message`, `assistant_response`, `model_id`, `provider`,
    `usage`, `stop_reason`, `started_at`, `ended_at`.
@@ -115,19 +117,19 @@ ANTHROPIC_API_KEY=... lernie-provider-anthropic complete < request.json
 ```
 
 `describe` prints the adapter's self-description JSON (name,
-`schema_version`, capabilities, models, `auth_env`). `complete` reads one
-Messages-API request on stdin and writes one JSON object on stdout —
-either the upstream response or an in-band error object (`{"type":"error",
-"kind":"retryable"|"fatal", ...}`). Exit code `0` covers both; non-zero is
-reserved for adapter-side crashes. The v0.1 adapter is non-streaming;
+`schema_version`, capabilities, models, `auth_env`, `endpoint_env`).
+`complete` reads one Messages-API request on stdin and writes one JSON
+object on stdout — either the upstream response or an in-band error
+object (`{"type":"error", "kind":"retryable"|"fatal", ...}`). Exit code
+`0` covers both; non-zero is reserved for adapter-side crashes. The
+upstream URL is read from the env var named in `endpoint_env`
+(`LERNIE_PROVIDER_ANTHROPIC_ENDPOINT` for the reference adapter), with
+a built-in default if unset. The v0.1 adapter is non-streaming;
 streaming support is tracked separately (bl-d15d).
 
-Harness-side adapter discovery and invocation (§4.4 "Discovery") is wired
-into the `lernie prompt` subcommand — see **Sending a prompt (v0.1)**
-above. The v0.1 invocation also passes `--endpoint <url>` from
-`providers.yaml`; that is a pragmatic simplification of §4.4's "harness
-does not read endpoint:" discipline and a v0.2 refinement can restore
-the strict reading (e.g. env-var handoff or describe-driven discovery).
+Harness-side adapter discovery and invocation (§4.4 "Discovery" /
+"Endpoint") is wired into the `lernie prompt` subcommand — see
+**Sending a prompt (v0.1)** above.
 
 ### Dropping in a custom adapter
 

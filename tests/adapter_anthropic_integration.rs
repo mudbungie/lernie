@@ -28,7 +28,7 @@ fn describe_subcommand_prints_contract_json() {
     );
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(v["name"], "anthropic");
-    assert_eq!(v["schema_version"], 1);
+    assert_eq!(v["schema_version"], 2);
     assert!(
         v["auth_env"]
             .as_array()
@@ -60,9 +60,8 @@ fn complete_end_to_end_against_local_mock() {
 
     let mut child = Command::new(adapter_bin())
         .arg("complete")
-        .arg("--endpoint")
-        .arg(server.base_url())
         .env("ANTHROPIC_API_KEY", "integration-key")
+        .env("LERNIE_PROVIDER_ANTHROPIC_ENDPOINT", server.base_url())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

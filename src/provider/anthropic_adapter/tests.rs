@@ -53,7 +53,7 @@ fn describe_shape_matches_contract() {
     run_describe(&mut buf).unwrap();
     let v = body_value(&buf);
     assert_eq!(v["name"], "anthropic");
-    assert_eq!(v["schema_version"], 1);
+    assert_eq!(v["schema_version"], 2);
     let caps: Vec<&str> = v["capabilities"]
         .as_array()
         .unwrap()
@@ -66,6 +66,7 @@ fn describe_shape_matches_contract() {
         "streaming capability belongs to bl-d15d, not v0.1"
     );
     assert_eq!(v["auth_env"][0], "ANTHROPIC_API_KEY");
+    assert_eq!(v["endpoint_env"][0], "LERNIE_PROVIDER_ANTHROPIC_ENDPOINT");
     assert!(!v["models"].as_array().unwrap().is_empty());
 }
 

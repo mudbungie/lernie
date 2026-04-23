@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T00:53:15.820977524Z","id":"bl-effb","title":"Retire --endpoint forwarding; restore strict §4.4"},{"closed_at":"2026-04-23T01:25:44.874250523Z","id":"bl-e7e1","title":"Exchange branch + step on branch"},{"closed_at":"2026-04-23T01:52:03.828859265Z","id":"bl-a764","title":"branches.json: spawn/merge tracking + unmerged count"},{"closed_at":"2026-04-23T02:38:22.978607110Z","id":"bl-8c66","title":"Terminal compaction stub + no-ff merge back"},{"closed_at":"2026-04-23T04:38:37.878864896Z","id":"bl-4a6b","title":"Gate: tests pass (v0.2 epic)"},{"closed_at":"2026-04-23T04:51:50.183868602Z","id":"bl-535f","title":"Gate: docs up to date (v0.2 epic)"}],
+  "closed_children": [{"closed_at":"2026-04-23T00:53:15.820977524Z","id":"bl-effb","title":"Retire --endpoint forwarding; restore strict §4.4"},{"closed_at":"2026-04-23T01:25:44.874250523Z","id":"bl-e7e1","title":"Exchange branch + step on branch"},{"closed_at":"2026-04-23T01:52:03.828859265Z","id":"bl-a764","title":"branches.json: spawn/merge tracking + unmerged count"},{"closed_at":"2026-04-23T02:38:22.978607110Z","id":"bl-8c66","title":"Terminal compaction stub + no-ff merge back"},{"closed_at":"2026-04-23T04:38:37.878864896Z","id":"bl-4a6b","title":"Gate: tests pass (v0.2 epic)"},{"closed_at":"2026-04-23T04:51:50.183868602Z","id":"bl-535f","title":"Gate: docs up to date (v0.2 epic)"},{"closed_at":"2026-04-23T06:07:23.412911483Z","id":"bl-5acb","title":"Gate: alignment (v0.2 epic)"}],
   "created_at": "2026-04-22T21:34:30.839786350Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "v0.2: git tree",
   "type": "epic",
-  "updated_at": "2026-04-23T04:51:50.536611102Z"
+  "updated_at": "2026-04-23T06:07:24.018100457Z"
 }

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4652",
+  "claimed_by": "opus-reviewer",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T02:01:35.982144977Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-1d06"},{"link_type":"gates","target":"bl-a049"},{"link_type":"gates","target":"bl-ebf3"}],
   "parent": null,
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Retire branches.json; add single-source-of-truth principle",
   "type": "task",
-  "updated_at": "2026-04-23T02:01:36.093289157Z"
+  "updated_at": "2026-04-23T02:01:39.226945838Z"
 }

@@ -2,7 +2,7 @@
   "branch": "work/bl-8c66",
   "claimed_by": "lernie",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T02:37:40.180319145Z","id":"bl-6dff","title":"Gate: tests pass (compaction stub + merge)"},{"closed_at":"2026-04-23T02:37:49.143848913Z","id":"bl-438e","title":"Gate: docs up to date (compaction stub + merge)"}],
+  "closed_children": [{"closed_at":"2026-04-23T02:37:40.180319145Z","id":"bl-6dff","title":"Gate: tests pass (compaction stub + merge)"},{"closed_at":"2026-04-23T02:37:49.143848913Z","id":"bl-438e","title":"Gate: docs up to date (compaction stub + merge)"},{"closed_at":"2026-04-23T02:37:57.153144984Z","id":"bl-e859","title":"Gate: alignment (compaction stub + merge)"}],
   "created_at": "2026-04-22T21:34:30.990277662Z",
   "delivered_in": null,
   "depends_on": ["bl-e7e1"],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Terminal compaction stub + no-ff merge back",
   "type": "task",
-  "updated_at": "2026-04-23T02:37:49.143910639Z"
+  "updated_at": "2026-04-23T02:37:57.153177Z"
 }

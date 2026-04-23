@@ -1940,7 +1940,6 @@ dependencies = [
  "clap",
  "httpmock",
  "include_dir",
- "lernie-provider-anthropic",
  "schemars",
  "serde",
  "serde_json",

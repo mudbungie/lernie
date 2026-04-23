@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-23T01:28:17.480024039Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "cargo test + tarpaulin --fail-under 100 green. No live network / no repo-mutation tests. Test suite for this module runs in isolation on a tempdir or with a stub binary where relevant.",
+  "external": {},
+  "id": "bl-1f49",
+  "links": [],
+  "parent": "bl-1013",
+  "priority": 3,
+  "status": "open",
+  "tags": [],
+  "title": "Gate: tests pass (UI skeleton)",
+  "type": "task",
+  "updated_at": "2026-04-23T01:28:17.480024039Z"
+}

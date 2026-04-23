@@ -258,6 +258,8 @@ OpenAI's Responses API also overloads "prompt" to mean a versioned behavioral pr
 
 LangGraph uses `thread_id` as the key for its checkpointer, which snapshots state at every super-step — distinct from OpenAI's deprecated `Thread` object despite the name overlap.
 
+**lernie's usage (lernie-specific stance):** lernie uses *conversation* as the **primitive** (`docs/ARCHITECTURE.md` §2.1) — a single dispatched execution with a goal, a step cycle, and a termination. The root conversation (initiated by a user message) and every subagent conversation (initiated by a dispatch tool call) share identical structural shape. The *conversation repo* is the git repository containing one root conversation and all its subagent descendants as sibling worktrees. lernie retires **invocation** as a structural term (previously used for subagent executions; now subsumed by "conversation") and demotes **exchange** to a UX label for a root conversation. Details and banned-usage rules in `docs/ARCHITECTURE.md` §2.1.
+
 ### Context engineering (who coined it)
 **Consensus:** Curating everything in the context window (system prompt, tools, retrieved docs, memory, history, compaction), not just writing a prompt. **No single coiner.** Popularized mid-2025 through Lütke → Karpathy → Willison → Anthropic.
 

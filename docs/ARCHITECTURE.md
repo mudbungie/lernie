@@ -7,12 +7,12 @@
 
 ## 1. Overview
 
-This document specifies an agent harness in which conversational context is managed as a git repository. Each conversation is a standalone repo. Every dispatch is a branch. Branch completion is a merge. Within a branch, steps land as linear commits; a step that itself dispatches spawns a sub-branch off the commit where the dispatch landed. State flows between components through the filesystem (§3.1); procedure invocations flow through the `lernie` CLI (§3.4). There is no third channel — no library API, no in-process sidechannel, no resident broker — and no process holds state across its own termination.
+This document specifies an agent harness in which conversational context is managed as a git repository. A conversation repo is one root conversation plus all its subagent descendants, materialized as worktrees within a single git repo. Every dispatch creates a branch. Subagent branches merge back on termination; root-conversation branches persist as refs and await a reprompt. Within a branch, steps land as linear commits; a step that itself dispatches spawns a sub-branch off the commit where the dispatch landed. State flows between components through the filesystem (§3.1); commands between procedures flow through the `lernie` CLI (§3.4). There is no third channel — no library API, no in-process sidechannel, no resident broker — and no process holds state across its own termination.
 
 The architecture optimizes for four properties:
 
 1. **Inspectability.** The complete state of any conversation, at any point in its history, is a git ref. Replay, debugging, and counterfactual forking are first-class operations.
-2. **Uniformity.** User-to-agent dispatch, agent-to-subagent dispatch, and agent self-reflection all use the same primitive: fork a branch, do work, merge back. There is no special path for user input.
+2. **Uniformity.** User-to-agent dispatch, agent-to-subagent dispatch, and agent self-reflection all use the same primitive: fork a branch, do work, merge back (or terminate to user, for root conversations). There is no special path for user input.
 3. **Testability.** Workflow (prompts, sequencing, context assembly rules) is configuration, not code. Experiments are config diffs, measurable against a task suite.
 4. **Regenerability.** Any process can die at any time without losing state. Disk is durable; processes are disposable. Components — harness, tool subprocesses, provider adapters, frontends — restart independently because none hold state across their own termination; `lernie resume <repo>` re-enters the workflow state machine from what the repo records. No process is load-bearing; disk is.
 
@@ -36,137 +36,168 @@ All terminology below is load-bearing and is used exclusively in the senses defi
 
 | Term | Meaning | Relationship |
 |---|---|---|
-| **Conversation** | The full lifecycle of exchanges between a user and the system, persisting across UI and process lifetimes. | Contains one or more exchanges; the outermost scope. One conversation = one repo. |
-| **Exchange** | One user message in, one final assistant response out. | Child of a conversation; root of a trace. |
-| **Invocation** | One entry into a named agent or subagent, containing its full internal execution. | Child of a step (when a tool call targets a subagent); contains its own nested steps and further invocations. |
-| **Step** | One model call and the tool calls it emits. | Child of an exchange or an invocation; structurally bounded by the model call, not by tool completion. |
+| **Conversation** | A single dispatched execution — a harness child that consumes a goal, runs a cycle of steps, and terminates. The *root* conversation is spawned by a user message and terminates to the user's next prompt; *subagent* conversations are spawned by tool-call dispatches from a parent branch and merge back to their parent. | The primitive. All conversations share structural shape (goal, soul, steps, summaries). |
+| **Conversation repo** | The git repository containing one root conversation and all its subagent descendants, materialized as sibling worktrees. | One user-facing unit. One repo per root conversation. |
+| **Exchange** | UX label for a root conversation — one initiated by a user message and terminating to user re-prompt. | Non-structural alias for the root case; the underlying primitive is a conversation. |
+| **Step** | One model call and the tool calls it emits. | Child of a conversation; structurally bounded by the model call, not by tool completion. Lands as linear commits within the conversation's branch. |
 | **Model call** | One execution of a model to produce output. | Atomic. The defining event of a step; each step has exactly one. |
 | **Tool call** | The model's structured request to invoke a named tool. | Emitted by a model call; structural child of its emitting step (even if it resolves temporally during a later step). |
 | **API call** | One HTTP request to a provider endpoint. | Implementation detail of a model call (usually 1:1; streaming or retries may make it 1:many). |
-| **Dispatch** | The event that spawns a branch with a goal. Two cases: a user message (spawns an exchange off `main`) and a tool call targeting a subagent (spawns an invocation off the commit where the dispatch landed on the parent branch). | Creates a branch. |
-| **Branch** | The git/worktree container for an exchange or an invocation. | Every dispatch creates a branch; the branch is merged back on termination. |
-| **Goal** | The stated objective handed to an agent at dispatch. | One per invocation (or exchange); not generally rewritten during execution. |
+| **Dispatch** | The event that spawns a child conversation with a goal. Two forms: a user message (spawns a root conversation) and a tool call targeting a subagent (spawns a subagent conversation off the commit where the dispatch landed on the parent branch). | Creates a branch. |
+| **Branch** | The git container for a conversation. | Every conversation has exactly one branch; every dispatch creates one. |
+| **Goal** | The stated objective handed to a conversation at dispatch. | One per conversation; not rewritten during execution; pinned at the head of context for every model call on the branch (§2.8). |
+| **Soul** | The system prompt handed to a conversation at dispatch, drawn from the conversation repo's `souls/<role>.md` and overwritten on the branch's dispatch commit. | One per conversation; composed into every model call on the branch as the system message. |
 
-**Banned usage:** "call" without a qualifier (use model call, tool call, or API call); "turn" (its vendor meanings are incompatible — see `docs/TAXONOMY.md` §1); "session" (underdefined — `docs/TAXONOMY.md` §3); "compression" (reserved for the model-weights sense — the harness operation is compaction).
+**Banned usage:** "call" without a qualifier (use model call, tool call, or API call); "turn" (incompatible vendor meanings — see `docs/TAXONOMY.md` §1); "session" (underdefined — `docs/TAXONOMY.md` §3); "compression" (reserved for model-weights quantization — the harness operation is compaction); **"invocation"** as a structural unit (retired in favor of "conversation"; general-field usage such as "model invocation" ≈ model call is acceptable informally, but not as a structural term of art in this spec); **"exchange"** as a structural term (demoted to UX label per the table above — structurally, an exchange is a root conversation).
 
 **Other terms of art not defined in this document or in `docs/TAXONOMY.md` require explicit definition or user approval before use.**
 
 ### 2.2 The Conversation Repo
 
-Each conversation is a self-contained git repository on local disk. Repos are created by copying a versioned template. Repos are never pushed to a remote. The complete state — exchanges, tool outputs, artifacts, agent notes, configuration — lives in the repo.
+A **conversation repo** is the on-disk materialization of one root conversation plus all its subagent descendants. It lives at `<harness-root>/conversations/<root-id>/`. The harness root defaults to `~/.lernie/` and is overridable via `LERNIE_HOME` (used for parallel testing, alternate installs, and sandboxed replay).
+
+The whole tree is one git repository. The root conversation occupies the primary checkout at `root/`; every subagent conversation occupies a linked worktree at a sibling directory whose name encodes its descent from the root. Repos are created by copying a versioned agent profile from `<harness-root>/agents/<profile>/`. Repos are never pushed to a remote.
 
 Directory layout:
 
 ```
-<conversation-repo>/
-├── .git/
-├── .agent/
-│   ├── version                  # schema version, integer
-│   ├── manifest.yaml            # context assembly rules
-│   ├── workflow.yaml            # event-to-action bindings
-│   ├── agents.yaml              # agent role definitions
-│   ├── providers.yaml           # endpoint/auth/model config
-│   ├── goal.md                  # branch goal, written at dispatch
-│   ├── compactions/             # per-branch intermediate+terminal summaries (§2.7)
-│   ├── system/                  # system prompts, tool and skill definitions
-│   │   ├── prompts/
-│   │   ├── skills/
-│   │   └── tools/
-│   └── state/                   # harness runtime state
-│       └── events.log           # append-only event log
-├── exchanges/                   # compacted exchange history (post-merge)
-├── artifacts/                   # agent-produced files (code, docs, outputs)
-├── invocations/                 # invocation working areas (ephemeral)
-└── tools/                       # tool call records for current and recent branches
+<harness-root>/conversations/<root-id>/
+├── manifest.yaml                 # context assembly rules (role-keyed)
+├── workflow.yaml                 # event → action bindings (frozen copy)
+├── providers.yaml                # role → (provider, model) mapping (frozen copy)
+├── version                       # schema version, integer
+├── souls/                        # system prompts by role (copied from the agent profile)
+│   ├── worker.md
+│   └── compactor.md
+├── root/                         # primary worktree; .git lives here
+│   ├── .git/
+│   ├── .gitattributes            # merge=ours rules for goal.md, soul.md, summary/**
+│   ├── goal.md                   # branch-scoped — this conversation's goal
+│   ├── soul.md                   # branch-scoped — this conversation's system prompt
+│   ├── summary/NNN.md            # branch-scoped — this conversation's compactions
+│   ├── descriptions/             # tool + skill descriptions (committed on main; inherited)
+│   ├── skills/                   # loaded skill content (branch-scoped; compactor may prune)
+│   └── steps/<conv-id>/NNN/
+│       ├── request.json
+│       ├── response.json
+│       └── tools/                # tool-call artifacts for this step
+├── <a>-<b>/                      # subagent conversation (linked worktree; .git is a pointer file)
+│   └── … same shape as root/ …
+├── <a>-<b>-<c>/                  # sub-subagent; hierarchy encoded in name, NOT in filesystem
+│   └── …
+└── …
 ```
 
-`goal.md` is branch-scoped: each branch's worktree has its own copy, set at dispatch time. The root conversation has no goal file; goals apply to exchanges and invocations.
+**Control plane vs data plane.** The files at the conversation-repo root (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`, `version`) are **control** — the harness reads them to decide what to do — and live outside every worktree. Everything inside a worktree is **data** — it is composed into that conversation's prompt at model-call time. This is load-bearing: context assembly has no exclusion list, because nothing that isn't context lives in a worktree.
+
+**Frozen-copy bootstrap.** Creating a repo is `cp -r <harness-root>/agents/<profile>/* <harness-root>/conversations/<root-id>/` plus `git init` plus the initial commit. All control files are frozen snapshots at that point. Subsequent changes to the global agent profile, to `<harness-root>/workflows/`, `<harness-root>/skills/`, or `<harness-root>/tools/` do not propagate into existing repos. Reproducibility and portability win over live update. (Auth credentials and endpoint URLs in `<harness-root>/providers.yaml` are *not* copied — those rotate, and the per-repo `providers.yaml` carries only the role → (provider name, model id) pointer; the harness resolves endpoint and auth against its global `providers.yaml` at call time.)
+
+**Sibling worktrees, not nested.** Subagent worktrees are named by their full hyphenated descent from the root (`<a>-<b>-<c>-…`) and live as *siblings* of `root/`, never as subdirectories of their parent's worktree. Git does not permit nested working trees; the sibling layout is how the primitive's uniformity survives contact with git mechanics.
+
+**Branch-scoped vs main-committed.** `goal.md`, `soul.md`, and `summary/` are written per-branch and pinned by `.gitattributes merge=ours` — on merge-back from a subagent, the parent's versions are retained verbatim, so a subagent's private goal can never clobber its parent's goal. `descriptions/` is committed once on `main` at conversation creation and inherited by every branch via git. `skills/` is branch-scoped (added as skills are loaded; removed by the compactor when no longer needed). `steps/` is branch-scoped but **namespaced by conversation id** — every conversation commits its steps under `steps/<conv-id>/NNN/`, so on merge-back the subagent's `steps/<sub-id>/` tree lands alongside the parent's `steps/<parent-id>/` tree with no filename collision.
 
 Read-only from the user's perspective under normal operation. The harness is the only writer. The user interacts via the UI, which produces events that the harness translates into commits.
 
 ### 2.3 Branches and the branch invariant
 
-A **branch** is the git/worktree container for a unit of work. The harness has one structural invariant:
+A **branch** is the git container for a single conversation. One invariant:
 
-> **Every dispatch creates a branch.** Spawn the branch, do the work, compact, merge back. This pattern is uniform whether the dispatch is a user message (root case, off `main`) or a tool call targeting a subagent (nested case, off the commit on the parent branch where the dispatch landed).
+> **Every dispatch creates a branch.** Spawn the branch, do the work, compact, merge back (or, in the root case, terminate to the user). This pattern is uniform whether the dispatch is a user message or a subagent-targeting tool call.
 
-Two classes of branch, distinguished by the dispatch that spawned them:
-
-- **Exchange branch.** Off `main`. Spawned by a user message. Contains one exchange — the user message down to the terminal assistant response. Named `ex/<ts>-<id>`.
-- **Invocation branch.** Off the commit on the parent branch where a dispatch tool call landed. Spawned by that dispatch. Contains one invocation — the subagent's full internal execution. Named `inv/<parent-id>/<id>`.
+Branch naming tracks the worktree directory. The root conversation runs on `main`; every subagent conversation's branch is its full hyphenated descent (`<a>-<b>`, `<a>-<b>-<c>`, etc.). There is no `ex/` or `inv/` prefix — the hierarchy in the name is self-describing.
 
 Within a branch, **steps are linear commits** — one commit per step, carrying that step's model call and the tool calls it emitted. Steps are not their own branches. New branches appear only at dispatch boundaries.
 
-The trunk is always `main`. Nothing ever commits directly to `main`. The only way data reaches `main` is via merge from a completed exchange branch.
+Nothing commits directly to `main` except the conversation-repo's initial snapshot (the frozen bootstrap, §2.2). All subsequent data on `main` arrives via merge from a completed root-conversation dispatch — i.e., a user-message exchange.
 
-> **Historical.** The v0.1 milestone (§12) predated branching and committed one exchange directly on `main` per `lernie prompt` invocation. v0.2 retired that exception; the invariant above is the current steady state.
+> **Historical.** v0.1 committed exchanges directly on `main` without branching; v0.2 introduced branching with separate `ex/*` (exchange) and `inv/*` (invocation) branch prefixes under an `.agent/`-rooted layout. v0.3 unifies both under the conversation primitive (§2.1): directory splits collapse, branch names drop their prefixes, and "invocation" retires as a structural term in favor of "conversation."
 
-**Branch lifecycle** (identical for both branch classes):
+**Branch lifecycle** (identical across root conversations and subagent conversations, up to the merge/terminate distinction at step 5):
 
-1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A worktree is allocated. The goal is written. Branch name encodes provenance.
-2. **Work.** The agent runs its loop. Each step lands as a commit on the branch. A step that emits a subagent-targeting tool call spawns a sub-branch off that commit.
-3. **Completion.** A terminal event is emitted — the agent returns a final response or is stopped.
-4. **Merge.** The compactor produces a signal-preserving summary of the branch's work and applies it to the parent with `--no-ff`. Merge topology is preserved.
-5. **Cleanup.** The source branch is kept as a ref for a retention window, then GC'd. The worktree is removed on merge.
+1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A linked worktree is allocated at `<conv-repo>/<full-hyphenated-descent>/`.
+2. **Dispatch commit.** The harness overwrites `goal.md` and `soul.md` in the worktree with this conversation's goal and the chosen role's soul from `<conv-repo>/souls/<role>.md`, then commits. This is the first commit on the new branch. The overwritten files are excluded from future merge-back via `.gitattributes` (§2.6).
+3. **Work.** The agent runs its loop. Each step commits under `steps/<this-conv-id>/NNN/`. A step that emits a subagent-targeting tool call spawns a sub-branch off that commit.
+4. **Completion.** A terminal event: final response, stop, timeout.
+5. **Merge (subagent) or terminate (root).**
+   - *Subagent:* the compactor produces a summary; the branch is rebased onto the current parent tip and merged `--no-ff`. `.gitattributes` retains the parent's `goal.md`, `soul.md`, and `summary/` tree; the subagent's `steps/<sub-id>/` and any explicit exports cross up.
+   - *Root:* no merge. The conversation's branch persists as a ref; the UI shows it. The user reprompts by issuing a new dispatch that consumes the branch's state as context.
+6. **Cleanup.** Completed branches are retained as refs for a retention window (default 30 days) and GC'd thereafter. Worktrees are torn down on completion.
 
-Branching is cheap — local git operations on disk — but it is no longer per-step. A long exchange produces many commits on one branch and only spawns sub-branches when it actually dispatches.
+Branching is cheap — local git operations on disk — but it is not per-step. A long conversation produces many commits on one branch and only spawns sub-branches when it actually dispatches.
 
 Compaction may also run *during* a branch's execution, not only at termination; see §2.7.
 
-**Step on-disk layout.** Each step lives in its own directory under `exchanges/<exchange-id>/steps/<NNN>/` (for an exchange branch) or `invocations/<invocation-id>/steps/<NNN>/` (for an invocation branch, when v0.4 lands). `<NNN>` is zero-padded 3-digit and 1-indexed, so step dirs sort lexically. Two core files land per step:
+**Step on-disk layout.** Each step lives in its own directory under `steps/<conv-id>/<NNN>/`. `<NNN>` is zero-padded 3-digit and 1-indexed, so step dirs sort lexically. `<conv-id>` is the owning conversation's id — namespacing steps this way is what lets a subagent's step tree merge into its parent's worktree without filename collision (§2.2).
+
+Two core files land per step:
 
 - `request.json` — the model call's input. Committed **before** the model call (§2.10), so the commit's tree is the exact state the model read from; retry replays this snapshot without drift.
 - `response.json` — the normalized model-call output (assistant text, `model_id`, `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`). Landed as a *follow-up commit* on the same branch — not an amend of the snapshot — so the snapshot's tree continues to reflect pre-model-call state.
 
-Tool calls emitted by a step (v0.3+) extend the step's dir with `tool_calls/<tool-id>/…` rather than creating new step dirs, preserving "one step = one model call" (§2.1). The branch's worktree is allocated at `<repo>/.lernie/worktrees/<branch-path>/`; `.lernie/` is gitignored so worktrees never land on `main`.
+Tool calls emitted by a step extend the step's dir with `tools/<tool-id>/…` rather than creating new step dirs, preserving "one step = one model call" (§2.1).
 
-The rich per-step tree is branch-life state. On terminal compaction (§2.7) the compactor writes a signal-preserving summary and marks the raw step dirs for deletion, leaving `main` with only the compacted history §2.2 describes.
+The rich per-step tree is branch-life state. Terminal compaction (§2.7) writes a signal-preserving summary and marks raw step dirs for deletion, leaving the parent's view (post-merge) minimal.
 
-**Unmerged-branch tracking.** Git's ref database is the tracking. An unmerged exchange branch is a ref matching `ex/*`; `git branch --list ex/*` enumerates them, and the list's length is the §8 unmerged-branch-count health metric (PRINCIPLES.md "Single source of truth").
-
-> **v0.2 scope.** The full branch lifecycle — spawn, snapshot, response, terminal compaction (§2.7), rebase-and-`--no-ff` merge-back (§2.6) — is in place. Compaction is a stub (no model call; `mark_for_deletion` is a no-op), so v0.2's main carries the full step tree alongside the compaction summary; prune semantics arrive with the real compactor in v0.3+.
+**Unmerged-branch tracking.** Git's ref database is the tracking. Subagent conversations that should have merged back but didn't are readily enumerable — any non-`main` ref that is not merged into its parent indicates a stalled or failed pipeline. The §8 unmerged-branch-count health metric is read directly from `git branch` (PRINCIPLES.md "Single source of truth"); see §8 for the specific form.
 
 ### 2.4 Exchanges
 
-An exchange is initiated by a user message and ends with a terminal assistant response. Its branch is the root of a trace in the observability sense. An exchange that is interrupted before a terminal response is terminal by virtue of the stop itself: it does not merge back to `main`; it may be resumed by a new dispatch using the stopped branch as context (see §2.9).
+An **exchange** is the UX label for a root conversation — one initiated by a user message. It is not a separate structural primitive; structurally, it is a conversation whose parent is the user rather than another conversation. The label survives because users think in exchanges ("the conversation I just had with the agent starts with my message and ends with the final response"), and the UI surfaces that framing. Every architectural property of a conversation applies equally to an exchange.
 
-Multiple concurrent exchanges are supported: a user may send a second message before the first resolves. Each is its own exchange branch off `main`, merging in completion order. No special mechanism beyond the branch invariant is required.
+An exchange that is interrupted before a terminal response is terminal by virtue of the stop itself: like any root conversation, it does not merge back to `main`; it may be resumed by a new dispatch using the stopped branch's state as context (see §2.9).
 
-### 2.5 Invocations and dispatch
+Multiple concurrent exchanges are supported: a user may send a second message before the first resolves. Each is its own root conversation, its own branch. No special mechanism beyond the branch invariant is required.
 
-A **dispatch** (§2.1) is the event that spawns a branch with a goal. The tool-call form — a tool call targeting a subagent — spawns an **invocation**: the subagent's full internal execution, contained in its own branch off the commit where the dispatch landed on the parent branch. From the subagent's perspective, its parent is indistinguishable from a user; the user-message and tool-call forms of dispatch are the same primitive.
+### 2.5 Dispatch
+
+A **dispatch** (§2.1) is the event that spawns a child conversation with a goal. Two forms:
+
+- **User-message dispatch.** A user sends a message to the root of a conversation repo. This spawns a root conversation — an exchange (§2.4) in UX terms.
+- **Tool-call dispatch.** A running conversation emits a tool call targeting a subagent. This spawns a subagent conversation off the commit where the dispatch landed on the parent branch. From the subagent's perspective, its parent is indistinguishable from a user; the user-message and tool-call forms are the same primitive.
 
 This symmetry is load-bearing:
 
-- The same code path handles user-initiated exchanges and agent-initiated invocations.
-- Verifier agents, compactor agents, and adversarial critics are invocations with different goals.
-- Parallel exploration (N workers on the same task) is N parallel invocations dispatched from the same step.
+- The same code path handles user-initiated and agent-initiated dispatches.
+- Verifier agents, compactor agents, and adversarial critics are subagent conversations with different goals.
+- Parallel exploration (N workers on the same task) is N parallel dispatches from the same step.
 
-The unification is not ergonomic sugar; it falls out of the git-oriented architecture. Because state flows through branches and results land through merges (§2.6), any operation shaped as "spawn work with a goal, run, return a result" collapses to the same primitive. The harness does not ship a separate framework for compaction, verification, or auto-parsing of oversized tool output — each is a subagent with a different goal and toolset, dispatched the same way (§3.4's `lernie dispatch …`). A new procedure earns its place by collapsing onto this primitive or by introducing one that is genuinely new; it does not sit in parallel with something it almost is. This is the concrete instantiation of the "One obvious path" principle in `docs/PRINCIPLES.md`.
+The unification is not ergonomic sugar; it falls out of the git-oriented architecture. Because state flows through branches and results land through merges (§2.6), any operation shaped as "spawn work with a goal, run, return a result" collapses to the same primitive. The harness does not ship a separate framework for compaction, verification, or auto-parsing of oversized tool output — each is a subagent conversation with a different goal and toolset, dispatched the same way (§3.4's `lernie dispatch …`). A new procedure earns its place by collapsing onto this primitive or by introducing one that is genuinely new; it does not sit in parallel with something it almost is. This is the concrete instantiation of the "One obvious path" principle in `docs/PRINCIPLES.md`.
 
 **Every tool returns synchronously.** Provider APIs (Anthropic Messages, OpenAI Responses, Gemini) require each `tool_use` block emitted by a step to be matched by a `tool_result` block in the immediately following user message. The harness honors that invariant: a step's next model call is issued only when every tool call it emitted has produced a `tool_result`. Partial-result reprompts are not attempted — they are rejected at the wire.
 
-**Async work uses handles.** Long-running tools — including dispatch — return immediately with a handle (`{status: in_progress, handle: <id>}`) as their `tool_result`. The agent retrieves the actual outcome later via a separate `await(handle)` or `check(handle)` tool, whose return value is a `tool_result` on a later step. Parallelism is expressed by issuing several dispatches in one step and awaiting them in subsequent steps as results come in. The per-step "one result per tool_use" shape stays intact; the asynchrony rides on the handle. Dispatch is a tool like any other: this is how the symmetry between inline tool calls and invocations is preserved without inventing a second control path.
+**Async work uses handles.** Long-running tools — including dispatch — return immediately with a handle (`{status: in_progress, handle: <id>}`) as their `tool_result`. The agent retrieves the actual outcome later via a separate `await(handle)` or `check(handle)` tool, whose return value is a `tool_result` on a later step. Parallelism is expressed by issuing several dispatches in one step and awaiting them in subsequent steps as results come in. The per-step "one result per tool_use" shape stays intact; the asynchrony rides on the handle. Dispatch is a tool like any other: this is how the symmetry between inline tool calls and subagent conversations is preserved without inventing a second control path.
 
-Tool calls targeting non-subagent tools commit their records on the emitting branch as part of the step. Dispatch tool calls spawn invocation branches off the commit where the dispatch landed; the `tool_result` the parent step observes is the handle. When an invocation terminates and merges back, its compacted output is what `await(handle)` returns on the next step. Parallel dispatches from a single step spawn N sibling invocation branches off that same commit.
+Tool calls targeting non-subagent tools commit their records on the emitting branch as part of the step. Dispatch tool calls spawn subagent-conversation branches off the commit where the dispatch landed; the `tool_result` the parent step observes is the handle. When the subagent terminates and merges back, its compacted output is what `await(handle)` returns on the next step. Parallel dispatches from a single step spawn N sibling subagent-conversation branches off that same commit.
 
-Invocations are expected to terminate and merge before their parent branch does.
+Subagent conversations are expected to terminate and merge before their parent branch does.
 
-The harness assigns write paths per tool call and per invocation, so two sibling branches never target the same file. This is a structural guarantee (enforced by the tool executor and the dispatch primitive), not a convention, which is what makes the merge protocol (§2.6) conflict-free by construction.
+The harness assigns write paths per tool call and per subagent conversation, so two sibling branches never target the same file. This is a structural guarantee (enforced by the tool executor and the dispatch primitive), not a convention, which is what makes the merge protocol (§2.6) conflict-free by construction.
 
 ### 2.6 Merges
 
-Merges are always no-fast-forward and conflict-free by construction. The merge protocol:
+Merges are always no-fast-forward and conflict-free by construction. Root conversations do not merge (§2.3 step 5); subagent conversations do. The merge protocol for a subagent:
 
-1. Child branch completes.
-2. Terminal compaction runs (if warranted — see §2.7): a compactor subagent is dispatched off the child's tip and merges back into the child, leaving the child's tree in compacted form.
-3. Harness rebases the child's compacted diff onto the current parent tip (which may have advanced).
+1. Subagent conversation completes.
+2. Terminal compaction runs (if warranted — see §2.7): a compactor subagent is dispatched off the subagent's tip and merges back into the subagent, leaving its tree in compacted form.
+3. Harness rebases the compacted diff onto the current parent tip (which may have advanced).
 4. If rebase succeeds: merge with `--no-ff`.
-5. If rebase conflicts: the child branch is marked conflicted, left unmerged, flagged for operator attention. This indicates a harness defect — two branches were given overlapping write paths, violating the guarantee in §2.5 — and is tracked accordingly.
+5. If rebase conflicts: the subagent branch is marked conflicted, left unmerged, flagged for operator attention. This indicates a harness defect — two branches were given overlapping write paths, violating the guarantee in §2.5 — and is tracked accordingly.
+
+**The `merge=ours` discipline.** Three categories of file are pinned to the parent on every merge-back via a `.gitattributes` file committed on `main`:
+
+```
+goal.md     merge=ours
+soul.md     merge=ours
+summary/**  merge=ours
+```
+
+These files are all branch-scoped: each conversation writes its own `goal.md` and `soul.md` on the dispatch commit (§2.3 step 2) and its own `summary/NNN.md` as compactions happen (§2.7). Without the `merge=ours` driver, every subagent merge-back would clobber the parent's goal, soul, and in-flight summaries with the subagent's — which is precisely wrong, since the parent resumes with *its* goal, not the subagent's. With it, the subagent's versions stay on the subagent branch (visible in history for provenance, not reflected in the parent's post-merge state).
+
+`steps/<sub-id>/` is *not* merge=ours — the subagent's step records do cross up into the parent, landing alongside the parent's `steps/<parent-id>/` tree. Namespacing by conversation id (§2.3) is what keeps this collision-free.
 
 ### 2.7 Compaction
 
-Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a branch's work for consumption by the parent. A **compactor** is a subagent that performs compaction. It has no privileged position in the architecture: compactors are dispatched like any other invocation, run on their own branches, and merge back through the normal protocol (§2.6). What distinguishes a compactor is its goal (produce a summary of the dispatching branch's work) and its toolset.
+Compaction (not compression — the term is reserved for model-weights quantization in the taxonomy) is the process of producing a signal-preserving, minimal version of a branch's work for consumption by the parent. A **compactor** is a subagent that performs compaction. It has no privileged position in the architecture: compactors are dispatched like any other subagent conversation, run on their own branches, and merge back through the normal protocol (§2.6). What distinguishes a compactor is its goal (produce a summary of the dispatching branch's work) and its toolset.
 
 Compactor toolset (v1):
 
@@ -175,29 +206,29 @@ Compactor toolset (v1):
 
 Giving the compactor no general filesystem write surface makes "deletion-only" structural rather than disciplinary: the worst case is lost information, never corrupted information. The compactor has access to the dispatching branch's goal, passed through as `parent_goal`, and decides relevance against it.
 
-**Terminal compaction.** When a branch is ready to merge back to its parent, the harness dispatches a compactor off the branch's tip with a goal that instructs it to summarize the branch's work. The compactor writes the summary and marks superseded files for deletion, then merges back into the dispatching branch. The dispatching branch then merges to its parent (§2.6); the parent sees only the compacted tree.
+**Terminal compaction.** When a branch is ready to merge back to its parent, the harness dispatches a compactor off the branch's tip with a goal that instructs it to summarize the branch's work. The compactor writes a final summary and marks superseded files for deletion, then merges back into the dispatching branch. The dispatching branch then merges to its parent (§2.6); the parent sees only the compacted tree.
 
-**Intermediate compaction.** Compaction may also run at checkpoints during a branch's execution — not only at termination. Each checkpoint is another compactor dispatch with the same shape: it writes a new numbered summary (`.agent/compactions/<seq>.md`), marks the previous summary for deletion, and merges back. The branch continues running afterward against its updated tree. Terminal compaction is the last checkpoint in the sequence.
+**Intermediate compaction.** Compaction may also run at checkpoints during a branch's execution — not only at termination. Each checkpoint is another compactor dispatch with the same shape: it writes a new numbered summary (`summary/<seq>.md` on the running branch) and the previous summary may be marked for deletion. The branch continues running afterward against its updated tree. Terminal compaction is the last checkpoint in the sequence.
 
-The discipline that parent branches see only compacted results — never raw internal state — is preserved. Intermediate compaction just makes the view progressively richer rather than all-or-nothing.
+Intermediate summaries are explicitly *not* propagated to the parent on merge-back — they exist to help the branch manage its own context window, not to produce parent-visible history. This is enforced by the `merge=ours` rule on `summary/**` (§2.6): a subagent's `summary/NNN.md` files stay on the subagent branch. What the parent receives from the subagent is whatever the subagent's terminal compactor wrote into the `tool_result` channel (via the handle-resolution path in §2.5), not the intermediate in-branch summaries. The discipline "parent branches see only compacted results, never raw internal state" (and now: never intermediate compacted state either) is preserved end to end.
 
-Intermediate compaction triggers are declared in `workflow.yaml` (see §6): by commit count, by elapsed time, or by an explicit `flush` action the agent may call. A branch with no configured trigger compacts only at termination.
+Intermediate compaction triggers are declared in `workflow.yaml` (§6): by commit count, by elapsed time, or by an explicit `flush` action the agent may call. A branch with no configured trigger compacts only at termination.
 
-While a compactor invocation is in flight, the branch that dispatched it is quiescent — it is awaiting the compactor's `tool_result`, same as any other dispatch. No special interlock is required.
+While a compactor is in flight, the branch that dispatched it is quiescent — it is awaiting the compactor's `tool_result`, same as any other dispatch. No special interlock is required.
 
-Compaction failures (compactor produces garbage, times out, etc.) fall back to unmerged state and user review, as with any invocation failure.
+Compaction failures (compactor produces garbage, times out, etc.) fall back to unmerged state and user review, as with any subagent failure.
 
 ### 2.8 Goals
 
-Each branch (other than the root conversation) has a **goal**: the stated objective it was dispatched with. The goal is written to `.agent/goal.md` in the branch's worktree at dispatch time and is pinned at the head of the context assembled for every model call on that branch, regardless of position in the message sequence.
+Every conversation has a **goal**: the stated objective it was dispatched with. The goal is written to `goal.md` at the root of the branch's worktree (alongside `soul.md`) on the dispatch commit (§2.3 step 2) and is pinned at the head of the context assembled for every model call on that branch, regardless of position in the message sequence. On merge-back, the `merge=ours` rule (§2.6) retains the parent's goal — a subagent's goal never overwrites its parent's.
 
 A goal is set at dispatch and is not rewritten during execution. If an agent determines its goal is wrong, the expected workflow is:
 
 1. Terminate the current branch (stopped or with an explanatory terminal response).
 2. Analyze the failure.
-3. Dispatch a new branch with a corrected goal and/or different prompts or workflow.
+3. Dispatch a new conversation with a corrected goal and/or different prompts or workflow.
 
-Rewriting a goal in place is not structurally forbidden but is not a core path — the expected unit of iteration is the branch, not the goal.
+Rewriting a goal in place is not structurally forbidden but is not a core path — the expected unit of iteration is the conversation, not the goal.
 
 The pinned goal resolves the recency-decay problem in deep agent trees where sequence-as-authority (last user message = current order) fails.
 
@@ -211,7 +242,7 @@ Stops are aggressive. When a stop is issued (by user, by timeout, by cascade fro
 4. Descendants' cancel markers are written, cascading.
 5. Branches are left unmerged and flagged `stopped`.
 
-A stopped exchange is terminal: it does not merge back to `main`. The user may purge it, ignore it, or *resume* it — resumption is a new dispatch using the stopped branch's state as context. The new exchange is a distinct branch with its own goal; the stopped branch remains as a ref for retention.
+A stopped root conversation is terminal: like any root conversation, it does not merge back to `main`. A stopped subagent conversation is also terminal: it does not merge back to its parent, and the parent's `await(handle)` resolves to a `stopped` status. The user may purge a stopped branch, ignore it, or *resume* it — resumption is a new dispatch using the stopped branch's state as context. The new conversation is a distinct branch with its own goal; the stopped branch remains as a ref for retention.
 
 Default retention: 30 days, then tarballed and GC'd.
 
@@ -221,7 +252,7 @@ A step's commit is written *before* its model call is issued (§2.3). That commi
 
 - **Retryable provider errors** (transient network failure, 429 rate limit, 5xx) are retried inline with backoff, bounded by a configurable attempt cap. Retries do not produce additional commits — the commit frames the model call, not the individual API call.
 - **Non-retryable errors** (400 validation failure, auth failure, impossible-to-satisfy schema) abort the step. The branch is left in the state it held before the model call and flagged for operator attention.
-- **Unknown or ambiguous failures** trigger a diagnostic dispatch: a subagent is dispatched off the branch's current commit with a goal describing the failure, access to the branch state and the raw error, and instructions to produce a recommended next action (retry, abort, modify config, escalate).
+- **Unknown or ambiguous failures** trigger a diagnostic dispatch: a subagent conversation is dispatched off the branch's current commit with a goal describing the failure, access to the branch state and the raw error, and instructions to produce a recommended next action (retry, abort, modify config, escalate).
 
 Tool failures follow the same shape at the tool-executor level, surfaced to the emitting agent as the tool's `tool_result` content. The agent decides whether to retry, ignore, or escalate — this is an ordinary agent decision, not a harness one.
 
@@ -235,7 +266,7 @@ All components communicate through the filesystem. No shared memory, no direct f
 
 - Harness → provider adapter (request mirrored to disk, adapter reads from stdin; response events mirrored back to disk from adapter stdout — see §4.4).
 - Harness → tool execution (tool call record written to disk, executor reads, output streamed to disk).
-- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git refs, tool outputs, invocation dirs, `goal.md`, compactions) and re-renders on change. Notification is inotify where available, polling otherwise. `.agent/state/events.log` is retained as an append-only harness-internal bookkeeping log — useful for replay and observability — but it is not the UI's primary read surface.
+- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git refs, worktree contents including `goal.md`, `soul.md`, `summary/`, `steps/`, and the conversation-repo root's control files) and re-renders on change. Notification is inotify where available, polling otherwise.
 - UI → Harness: user actions are issued as `lernie <subcommand>` invocations per §3.4. There is no input directory.
 
 **Threads, not processes.** "Worker" and "executor" name roles that run as threads inside the single harness process; the disk contract is not an inter-process bus. Tool subprocesses invoked by the tool executor are genuinely separate processes. Routing inter-role communication through disk — even between threads in the same process — is load-bearing rather than ceremonial: it is what buys inspectability, audit trail, and the single-author-per-file discipline that keeps many concurrent workers from corrupting each other's state.
@@ -261,21 +292,26 @@ The harness, the tool executor, and provider adapters share the same disk contra
 
 Tools and skills are separate primitives. Every tool has a skill; skills can exist without tools.
 
-**Skill.** A directory containing a `SKILL.md` with YAML frontmatter (`name`, `description`) plus markdown instructions, optionally with bundled scripts and reference files. The `description` is always present in agent context; the full `SKILL.md` body is loaded only when the agent elects to use the skill. This is the Anthropic progressive-disclosure convention (`docs/TAXONOMY.md` §4).
+**Skill.** A directory containing a `SKILL.md` with YAML frontmatter (`name`, `description`) plus markdown instructions, optionally with bundled scripts and reference files. Skill source directories live globally at `<harness-root>/skills/<name>/` and are referenced from the conversation repo by two mechanisms:
+
+- **Description-always.** Every available skill's `SKILL.md` frontmatter (name + description) is committed to the conversation repo's `main` at creation time under `descriptions/skills/`, where it is inherited by every branch via git and composed into the context on every model call. This is the Anthropic progressive-disclosure convention (`docs/TAXONOMY.md` §4).
+- **Body-on-demand.** When an agent elects to use a skill, the harness copies the skill directory into the current branch's worktree at `skills/<name>/`. From that point on, the skill body is part of the conversation's data and is composed into the context (§5.1). The compactor may `mark_for_deletion` a skill directory when it is no longer needed — next context assembly sees the branch without it.
+
+Copying (not symlinking) is deliberate. It is the same portability discipline as the rest of the repo (§2.2): a skill that lives in the worktree is self-contained and survives the global skill directory changing or disappearing. Disk cost is trivial.
 
 A standalone skill (no associated tool) exists to give an agent capability via prompt — recipes, conventions, workflows — without a callable binary.
 
 **Tool.** Composed of three required artifacts:
 
-1. **Binary.** An executable invoked by the harness. In-process tools (dispatch, git ops) are implemented as built-in subcommands invoked the same way as external tools.
-2. **JSON schema.** Declares tool call parameters, types, required fields. Required by provider APIs. Either generated from the binary's metadata or hand-authored.
-3. **Skill.** A `SKILL.md` describing when and how the tool should be used. Required for every tool.
+1. **Binary.** An executable invoked by the harness. In-process tools (dispatch, git ops) are implemented as built-in subcommands invoked the same way as external tools. Tool binaries live globally (at `<harness-root>/tools/` or on `PATH`); the harness executes them — they do not move into the conversation repo.
+2. **JSON schema.** Declares tool call parameters, types, required fields. Required by provider APIs. Either generated from the binary's metadata or hand-authored. Schemas are committed to the conversation repo under `descriptions/tools/` at creation time, inherited via git, and composed into the context.
+3. **Skill.** A `SKILL.md` describing when and how the tool should be used. Required for every tool; follows the skill lifecycle above.
 
 Tool output contract:
 
 - Tools write output to a temp path and atomic-rename on completion.
 - Tools must handle SIGTERM cleanly; partial output is the harness's responsibility to clean up post-kill.
-- Tools exceeding a configurable output size threshold trigger automatic dispatch: the raw output is handed to an invocation for parsing, and only that invocation's compacted result reaches the parent step.
+- Tools exceeding a configurable output size threshold trigger automatic dispatch: the raw output is handed to a subagent conversation for parsing, and only that subagent's compacted result reaches the parent step.
 
 ### 3.4 CLI as control plane
 
@@ -299,7 +335,7 @@ A **UI** (or **frontend** — same role, §3.2) is any program that presents the
 
 The frontend surface is exactly two things, and nothing else:
 
-1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3), `.agent/goal.md` per branch, `exchanges/`, `invocations/`, `artifacts/`, `tools/`, `.agent/compactions/`. Notification is inotify where available, polling otherwise (§3.1).
+1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3), the conversation-repo root's control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`), and each branch's worktree contents (`goal.md`, `soul.md`, `summary/`, `steps/`, `descriptions/`, `skills/`). Notification is inotify where available, polling otherwise (§3.1).
 2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, resume, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port.
 
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
@@ -316,7 +352,14 @@ The taxonomy (`docs/TAXONOMY.md` §2) flags "provider" as one of the field's mos
 
 The harness does not speak provider wire protocols directly. Each provider is served by a **provider adapter** (§4.4) — a separate binary invoked as a subprocess per model call. That keeps the harness free of per-vendor HTTP quirks and lets external contributors (corporate users with bespoke SSO, custom retry logic, private model routers) ship adapters without modifying core code. In the vocabulary of this spec, "provider" names the `(endpoint, auth)` pair in config; "provider adapter" names the binary that implements one provider's protocol. They are distinct terms of art and not interchangeable.
 
-Provider config (`providers.yaml`):
+**Two-file config split.** Provider configuration is split by lifetime and scope:
+
+- **Global** (`<harness-root>/providers.yaml`). Endpoint URLs, auth env var names, adapter binary overrides, retry knobs. Shared across all conversation repos; rotates with key rollover and infrastructure changes.
+- **Per-repo** (`<conv-repo>/providers.yaml`). Role → (provider-name, model-id) mapping only. Frozen at conversation creation (§2.2); governs which model this conversation's roles dispatch to for the rest of its life.
+
+This split is what makes frozen-bootstrap repos portable without also freezing credentials. A conversation repo references providers by name and picks up the current endpoint/auth at call time; rotating an API key in the global file immediately affects in-flight conversations (correctly).
+
+Global provider config shape:
 
 ```yaml
 providers:
@@ -333,11 +376,11 @@ providers:
       profile: default
 ```
 
-The optional `adapter:` key names the binary to invoke; when absent, the harness looks up `lernie-provider-<name>` on `PATH`. The harness itself does not read `endpoint:` or `auth:` — those are the adapter's to interpret. The harness only needs the adapter binary and the env-var names returned by `describe` (§4.4).
+The optional `adapter:` key names the binary to invoke; when absent, the harness looks up `lernie-provider-<name>` at `<harness-root>/adapters/` (installed by `make install`) before falling back to `PATH`. The harness itself does not read `endpoint:` or `auth:` — those are the adapter's to interpret. The harness only needs the adapter binary and the env-var names returned by `describe` (§4.4).
 
 ### 4.2 Model abstraction
 
-A **model** is (provider, model_id, capabilities). Model lists come from the provider's API where available. Capabilities is an extensible mapping declaring features the harness can rely on. The `models:` block lives alongside `providers:` in `providers.yaml`, since each model is one key away from its (endpoint, auth) pair.
+A **model** is (provider, model_id, capabilities). Model lists come from the provider's API where available. Capabilities is an extensible mapping declaring features the harness can rely on. The `models:` block lives alongside `providers:` in the global `<harness-root>/providers.yaml`, since each model is one key away from its (endpoint, auth) pair.
 
 ```yaml
 models:
@@ -352,19 +395,19 @@ Capabilities are code-backed (each capability has a behavior implementation in t
 
 ### 4.3 Role-based model assignment
 
-Agent roles specify which model to use. This allows cheap models for compaction and expensive models for the worker.
+Agent roles specify which model to use. This allows cheap models for compaction and expensive models for the worker. The role → model mapping lives in the conversation repo's `providers.yaml` (frozen at creation, §2.2):
 
 ```yaml
-agents:
+roles:
   worker:
+    provider: anthropic
     model: claude-sonnet-4-7
-    system_prompt: prompts/worker.md
   compactor:
+    provider: anthropic
     model: claude-haiku-4-5
-    system_prompt: prompts/compactor.md
 ```
 
-`system_prompt` is a path relative to `.agent/system/`. Absolute paths and `..` traversals are rejected at load time.
+Each role's system prompt is read from `<conv-repo>/souls/<role>.md` by convention — there is no per-role path override, and no freeform path field to validate. At dispatch time the harness copies the appropriate soul to the new branch's `soul.md` (§2.3 step 2). Provider endpoint and auth are resolved at call time against the global `<harness-root>/providers.yaml` — the per-repo file carries only the (provider-name, model-id) pointer.
 
 ### 4.4 Provider adapters
 
@@ -393,7 +436,7 @@ A **provider adapter** is a binary that implements one provider's wire protocol.
 
   Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
 
-  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists so deterministic replay against the on-disk `invocations/<id>/request.json` (§2.10, §3.1) needs no shell redirect. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
+  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists so deterministic replay against the on-disk `steps/<conv-id>/<NNN>/request.json` (§2.3, §2.10, §3.1) needs no shell redirect. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
 
 **Response shape (non-streaming).** The response object is the Anthropic Messages-API wire shape (the body of a `POST /v1/messages` response at <https://docs.anthropic.com/en/api/messages>). Non-Anthropic adapters translate their provider's native response into this shape before writing it. Required top-level fields:
 
@@ -425,7 +468,7 @@ Exit code 0 means the adapter produced a valid output (including a `type: error`
 
 **Endpoint.** Endpoint URLs are opaque to the harness. The adapter declares one or more env var names in `describe.endpoint_env`; the harness sets each to the value of `providers.<name>.endpoint` (verbatim, no parsing) before invoking `complete`. An adapter that omits `endpoint_env` opts out of harness-set endpoints and uses its built-in default. Symmetric in shape with `auth_env`, but `auth_env` propagates values from the harness's environment whereas `endpoint_env` carries values from `providers.yaml` — neither requires the harness to interpret the URL.
 
-**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes, but the harness mirrors both to disk under the framing step's commit (`invocations/<id>/request.json`, `invocations/<id>/events.jsonl` or `response.json`). Replay (§3.1, §2.10) works against those files, not against a live adapter process. The pipes are the wire; the disk is the record.
+**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes, but the harness mirrors both to disk under the framing step's commit (`steps/<conv-id>/<NNN>/request.json`, `steps/<conv-id>/<NNN>/events.jsonl` or `response.json`). Replay (§3.1, §2.10) works against those files, not against a live adapter process. The pipes are the wire; the disk is the record.
 
 **Schema versioning.** `describe.schema_version` is the adapter's self-declared contract version. The harness keeps a minimum-supported-version constant. A `schema_version` below that is rejected at load. A `schema_version` above that is accepted optimistically — the harness ignores unknown fields. This is the same forward-compatibility discipline used for `providers.yaml` capabilities (§4.2).
 
@@ -433,48 +476,66 @@ Exit code 0 means the adapter produced a valid output (including a `type: error`
 
 ## 5. Context Assembly
 
-### 5.1 Assembly rules
+### 5.1 The worktree invariant
 
-The context sent to the model is built deterministically from the repo state according to `manifest.yaml`. The manifest declares:
+**Everything inside a branch's worktree is composed into that conversation's prompt.** This is the load-bearing invariant of context assembly. There is no exclusion list, no filter, no "this path is for the harness only." Data lives in the worktree; control lives at the conversation-repo root (§2.2). The invariant is what lets `manifest.yaml` be a *sequencing and budget* file rather than an *inclusion* file — the question manifest answers is "in what order and under what budget," not "which things."
 
-- Inclusion globs and their order.
-- Pinned paths (always included, regardless of budget).
-- Token budget.
-- Overflow policy (truncate oldest, summarize, drop).
+Consequences:
+
+- Agents curate their own context by `rm` (§5.3). The primitive they need already exists in the filesystem.
+- The compactor's `mark_for_deletion` operates on worktree paths and takes effect on the next assembly.
+- Control-plane files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`, etc.) sit at the conversation-repo root — *outside* every worktree — and are never composed. This is structural, not disciplinary: the path is not under the worktree root, so it cannot be included.
+
+### 5.2 Assembly rules
+
+The manifest (`<conv-repo>/manifest.yaml`, role-keyed) declares ordering, pinning, budget, and overflow policy:
 
 ```yaml
-context:
-  pinned:
-    - .agent/goal.md
-    - .agent/system/prompts/base.md
-  include:
-    - exchanges/**
-    - artifacts/**
-    - invocations/*/result.md
-  budget_tokens: 150000
-  overflow: drop_oldest_exchanges
+roles:
+  worker:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - steps/**/request.json
+      - steps/**/response.json
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_steps
+  compactor:
+    pinned:
+      - goal.md
+      - soul.md
+    order:
+      - steps/**
+    budget_tokens: 50000
+    overflow: truncate
 ```
 
-This corresponds to the LangChain write/select/compress/isolate taxonomy (`docs/TAXONOMY.md` §3): **write** = commits; **select** = manifest inclusion; **compress** (here: compact) = compactor; **isolate** = invocation branches.
+Paths are interpreted relative to the branch's worktree. The manifest sees only worktree contents by construction (§5.1). Pinned paths are always included regardless of budget; `order` entries fill the remaining budget in declared order until overflow policy kicks in.
 
-### 5.2 File path as hint
+This corresponds to the LangChain write/select/compress/isolate taxonomy (`docs/TAXONOMY.md` §3): **write** = commits; **select** = manifest inclusion; **compress** (here: compact) = compactor; **isolate** = subagent-conversation branches.
 
-File paths are preserved in the assembled context as structural hints to the model. The path itself carries information (`exchanges/0042-user.json`, `invocations/a1b2/result.md`) that is cheaper than explicit metadata and often sufficient.
+### 5.3 File path as hint
 
-### 5.3 Removal by deletion
+File paths are preserved in the assembled context as structural hints to the model. The path itself carries information (`steps/<conv-id>/0042/request.json`, `summary/003.md`, `skills/git-ops/SKILL.md`) that is cheaper than explicit metadata and often sufficient.
 
-Agents reduce their own context by deleting files from the working directory. An agent that no longer needs a 5k-token file `rm`s it; the next context assembly excludes it naturally. Deleted files remain recoverable from git history until compaction squashes them.
+### 5.4 Removal by deletion
+
+Agents reduce their own context by deleting files from the worktree. An agent that no longer needs a 5k-token file `rm`s it; the next context assembly excludes it naturally (per §5.1 — if it's not in the worktree, it's not in the prompt). Deleted files remain recoverable from git history until compaction squashes them.
 
 ---
 
 ## 6. Workflow as Configuration
 
-Workflows are declared as event-to-action bindings in `workflow.yaml`. Changing workflow is a config edit, not a code change. "Workflow" here is the Anthropic sense (`docs/TAXONOMY.md` §1): predetermined code paths, as contrasted with LLM-driven agent control flow. Subordinate routines invoked by the workflow (compaction, verification, auto-dispatch on large tool output) are **procedures**.
+Workflows are declared as event-to-action bindings in `<conv-repo>/workflow.yaml` (a frozen copy at conversation creation, §2.2, from a named workflow template at `<harness-root>/workflows/<name>.yaml`). Changing the workflow for an in-flight conversation is a direct edit of the per-repo file, since global changes do not propagate. "Workflow" here is the Anthropic sense (`docs/TAXONOMY.md` §1): predetermined code paths, as contrasted with LLM-driven agent control flow. Subordinate routines invoked by the workflow (compaction, verification, auto-dispatch on large tool output) are **procedures**.
 
 ```yaml
 events:
   user_message:
-    - spawn_exchange
+    - spawn_root_conversation
     - dispatch(worker)
   worker_return:
     - dispatch(verifier)
@@ -510,7 +571,7 @@ Actions are implemented in the harness; the workflow declares which run when. Th
 
 Per-step hooks (`pre_step`, `post_step`, `on_tool_return`) fire on every branch and are the primary extension points for cross-cutting behavior — observability, budget enforcement, cache maintenance, scheduled intermediate compaction triggers. Their handlers typically dispatch subagents or emit log entries rather than modifying the in-flight branch's tree directly; any write still goes through the harness-assigned write-path machinery (§2.5).
 
-**No resident interpreter.** Nothing parses `workflow.yaml` resident-style and drives the state machine from memory. Each event is a CLI subcommand (`lernie event <name> <repo> …`); the currently-executing subprocess *is* the interpreter while it runs. It reads the workflow, runs the event's action list by exec'ing the relevant procedures per §3.4 (`lernie dispatch <role>`, `lernie merge`, etc.), and before exiting emits the next event — itself another `lernie event` invocation. Procedures terminate by emitting their completion event. The chain ends at a terminal action (final merge, stop, error); there is no watcher noticing completions, each step hands off by exec. Combined with disk-as-bus (§3.1), this keeps the system stateless across process boundaries: a crashed subprocess leaves nothing in memory to reconstruct, and `lernie resume <repo>` re-enters the chain by reading the repo plus `.agent/state/events.log` and exec'ing the event the state machine is waiting on. This is the concrete mechanism behind §1's Regenerability property.
+**No resident interpreter.** Nothing parses `workflow.yaml` resident-style and drives the state machine from memory. Each event is a CLI subcommand (`lernie event <name> <repo> …`); the currently-executing subprocess *is* the interpreter while it runs. It reads the workflow, runs the event's action list by exec'ing the relevant procedures per §3.4 (`lernie dispatch <role>`, `lernie merge`, etc.), and before exiting emits the next event — itself another `lernie event` invocation. Procedures terminate by emitting their completion event. The chain ends at a terminal action (final merge, stop, error); there is no watcher noticing completions, each step hands off by exec. Combined with disk-as-bus (§3.1), this keeps the system stateless across process boundaries: a crashed subprocess leaves nothing in memory to reconstruct, and `lernie resume <repo>` re-enters the chain by reading the repo and exec'ing the event the state machine is waiting on. This is the concrete mechanism behind §1's Regenerability property.
 
 ---
 
@@ -524,7 +585,7 @@ Live indicators:
 
 - Line-by-line streaming text for model responses in flight.
 - Pulsing indicators for tool calls.
-- Arrows to sub-branches for active invocations.
+- Arrows to sub-branches for active subagent conversations.
 - Distinct patterns for model call states: queued, in flight, streaming, terminal.
 - Branch termination markers (merged, stopped, conflicted).
 
@@ -534,18 +595,18 @@ Clicking an old commit is read-only by default. Forking from history (creating a
 
 ### 7.3 Concurrent exchanges
 
-Because every exchange is a fork-merge cycle and nothing touches `main` directly, the user may send a second message before the first resolves. Both are branches off the same base (or the first's parent if the user wants strict sequencing). Merges happen in completion order. This requires no special mechanism beyond the branch invariant.
+Because every exchange (root conversation) is its own branch and nothing else touches `main` directly, the user may send a second message before the first resolves. Both are root-conversation branches off `main` (or the first's tip, if the user wants strict sequencing). They run independently. No special mechanism is required beyond the branch invariant.
 
 ---
 
 ## 8. Metrics and Observability
 
-First-class metrics, written to commit trailers and event log. All counts are reported along four scope axes, which are not interchangeable:
+First-class metrics, written to commit trailers and event log. All counts are reported along three scope axes, which are not interchangeable:
 
-- Tokens per step, per invocation, per exchange, per conversation.
+- Tokens per step, per conversation, per conversation repo.
 - Model calls per step (always 1), tool calls per step, API calls per model call.
-- Cost per step, per invocation, per exchange, per conversation.
-- Unmerged branch count per conversation. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Directly computable from git refs (`git branch --list ex/* inv/* | wc -l`) per §2.3.
+- Cost per step, per conversation, per conversation repo.
+- Unmerged-subagent-branch count per conversation repo. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Subagent branches are those whose name contains a hyphen (root conversations live on `main`, §2.3); unmerged ones are enumerated by `git branch --list '*-*' --no-merged main | wc -l`. Root conversations are intentionally unmerged (§2.3 step 5) and are not counted here.
 - Step duration, tool call duration, compaction duration.
 - Compaction ratio (tokens before / tokens after).
 
@@ -597,7 +658,7 @@ An evaluation run is (experiment × suite × N), producing per-task pass@1 and p
 
 ## 10. Schema Versioning
 
-Every conversation repo declares its schema version in `.agent/version`. Old versions remain readable by the harness; migration code is written when a version bumps. Tarballed runs from any prior version must remain inspectable.
+Every conversation repo declares its schema version in `<conv-repo>/version` (at the conversation-repo root, alongside the other control files — §2.2). Old versions remain readable by the harness; migration code is written when a version bumps. Tarballed runs from any prior version must remain inspectable.
 
 ---
 
@@ -619,7 +680,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.1 — One model call
 
-**Success criterion:** A single prompt is sent to a provider endpoint, the response is written to disk, and is visible in the conversation repo as a commit. No git branching, no tools, no invocations.
+**Success criterion:** A single prompt is sent to a provider endpoint, the response is written to disk, and is visible in the conversation repo as a commit. No git branching, no tools, no subagent dispatches.
 
 **Shipped shape.** `lernie new <path>` scaffolds a conversation repo from the embedded template; `lernie prompt <repo> <message>` loads `providers.yaml` + `agents.yaml`, resolves the `worker` role, invokes `lernie-provider-<name>` as a subprocess (§4.4), writes `exchanges/<ts>-<short-id>.json` with `user_message` / `assistant_response` / `model_id` / `provider` / `usage` / `stop_reason` / `started_at` / `ended_at`, and commits the file to `main`.
 
@@ -633,11 +694,11 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.3 — Tools
 
-**Success criterion:** Agent can invoke at least two tools (bash, read_file). Tool calls are commits. Large tool outputs auto-dispatch to a parsing invocation. Tool contract (binary + schema + skill) documented.
+**Success criterion:** Agent can invoke at least two tools (bash, read_file). Tool calls are commits. Large tool outputs auto-dispatch to a parsing subagent conversation. Tool contract (binary + schema + skill) documented. Conversation-repo layout migrated from the v0.2 `.agent/`-rooted shape to the v0.3 layout described in §2.2 (control at conversation-repo root, worktrees as siblings, steps namespaced by conversation id, `merge=ours` on goal/soul/summary, "invocation" retired as a structural term).
 
-### v0.4 — Invocations
+### v0.4 — Subagent dispatch
 
-**Success criterion:** Agent can dispatch a subagent. Invocation runs in its own worktree and branch. Merge-back flow works end-to-end. Parallel invocations do not corrupt each other's state. Handle-based async works: a dispatch returns immediately with a handle, siblings can be in flight concurrently, and `await(handle)` retrieves the compacted result on a later step (§2.5).
+**Success criterion:** Agent can dispatch a subagent conversation. The subagent runs in its own worktree and branch. Merge-back flow works end-to-end (including the `merge=ours` discipline on `goal.md`/`soul.md`/`summary/**`, §2.6). Parallel subagent conversations do not corrupt each other's state. Handle-based async works: a dispatch returns immediately with a handle, siblings can be in flight concurrently, and `await(handle)` retrieves the compacted result on a later step (§2.5).
 
 ### v0.5 — UI
 

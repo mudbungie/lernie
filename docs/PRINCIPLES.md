@@ -6,13 +6,13 @@ Quick-reference catalog of the principles shaping this architecture. Canonical s
 System state — context, messages while in flight, responses, tool calls — lives on disk; processes hold none of it across restart. This is what makes git the substrate at all: history, branching, rollback, replay, and audit collapse to git operations on data that's already there. It is also what eliminates entire classes of bug — lost updates, stale caches, ghost state surviving a crash, in-memory views drifting from on-disk truth — because there is no in-memory truth to drift from. Every other principle below depends on this one.
 
 ## Single source of truth
-Every piece of data is recorded in at most one place. If git already carries it — branch existence (`git branch --list`), commit history (`git log`), tree contents (`git ls-tree`), the fork point of a branch — we don't also write it into a sidecar state file. If the filesystem already carries it — a file's presence, a directory's contents — we don't also record that in a manifest. Copy is the bug: two sources means a consistency protocol, and a consistency protocol means drift. When in doubt, derive don't mirror. The unmerged-branch-count health metric (§8), for instance, is `git branch --list ex/* inv/* | wc -l` — the refs are authoritative and free.
+Every piece of data is recorded in at most one place. If git already carries it — branch existence (`git branch --list`), commit history (`git log`), tree contents (`git ls-tree`), the fork point of a branch — we don't also write it into a sidecar state file. If the filesystem already carries it — a file's presence, a directory's contents — we don't also record that in a manifest. Copy is the bug: two sources means a consistency protocol, and a consistency protocol means drift. When in doubt, derive don't mirror. The unmerged-subagent-branch health metric (§8), for instance, is `git branch --list '*-*' --no-merged main | wc -l` — the refs are authoritative and free.
 
 ## Inspectability first
 Every point in a conversation's life is a git ref. Replay, counterfactual forks, and debugging are first-class because the state is on disk in an append-only, inspectable tree.
 
 ## Symmetry of dispatch
-User-to-agent, agent-to-subagent, verifier, and compactor all flow through one primitive: fork a branch, do work, merge back. No special code paths for user input, reviews, or summarization — everything is an invocation.
+User-to-agent, agent-to-subagent, verifier, and compactor all flow through one primitive: fork a branch, do work, merge back (or terminate to user, for the root case). No special code paths for user input, reviews, or summarization — everything is a conversation.
 
 ## One obvious path
 There should be one — and ideally only one — correct way through the system for any given operation. When two procedures look similar, the discipline is to identify the core operation they share and unify them on *that* core, not to open a parallel path and not to broaden the abstraction past where the sharing actually holds. Compaction and verification are dispatches because the core — spawn a branch with a goal, do work, merge back — is identical; stopping the shared path at "dispatch" is deliberate, because the next layer up (what to do with the result) is where they genuinely diverge. Structurally identical operations share code; operations that merely rhyme stay apart. A new procedure earns its place by collapsing onto an existing primitive or by introducing one that is genuinely new, never by sitting in parallel with something it almost is.
@@ -24,10 +24,10 @@ Workflow, prompts, and assembly rules are configuration, not code. Experiments b
 Conversations are repos, dispatches are branches, steps are commits, terminations are merges. Using git as the substrate gets history, branching, rollback, and replay for free.
 
 ## Nothing writes to main directly
-The trunk only advances via no-ff merges from completed exchange branches. Every commit on main is provenanced to a goal, keeping the user-facing view clean and traceable.
+The trunk only advances via no-ff merges from completed root-conversation (exchange) branches. Every commit on main is provenanced to a goal, keeping the user-facing view clean and traceable.
 
 ## Single author per file
-The harness assigns write paths per tool call and per invocation so sibling branches never target the same file. This turns "conflict-free merges" from a convention into a structural guarantee and keeps parallelism safe at scale.
+The harness assigns write paths per tool call and per subagent conversation so sibling branches never target the same file. This turns "conflict-free merges" from a convention into a structural guarantee and keeps parallelism safe at scale.
 
 ## Commit before model call
 A step's snapshot commit is written before the model call is issued. Retry becomes trivial, and every model call is bit-for-bit replayable from its commit.
@@ -45,7 +45,7 @@ The `lernie` CLI is the sole control plane: every procedure-to-procedure invocat
 The UI holds no persistent state; every render is a pure function of filesystem state at the current git ref. Its only interfaces to the harness are reading repo paths and issuing `lernie <subcommand>` invocations — no third channel. Two or more frontends (desktop GUI, webclient, TUI) can run against one repo simultaneously because none of them write repo state or share memory; they all observe the same on-disk truth and drive changes through the same CLI the harness itself uses. Pluggability is structural: a new frontend is a new consumer, not a new integration. Direct consequence of "Disk first" + "Everyone uses the front door".
 
 ## Regenerability
-Any process can die at any time without losing state. Components (harness, tool subprocesses, provider adapters, frontends) restart independently because none hold state across their own termination, and `lernie resume <repo>` reconstructs where the workflow state machine left off by reading the repo plus `.agent/state/events.log`. The workflow interpreter itself is the currently-executing CLI subprocess (§6) — a baton passed forward by exec, not a daemon — so "resume" is just re-entering the chain at the right event, not reconstructing in-memory state that was never there. No process is load-bearing; disk is. Direct consequence of "Disk first" + "Everyone uses the front door": with no state off-disk and no commands off the CLI, a crashed process leaves nothing orphaned to reconstruct.
+Any process can die at any time without losing state. Components (harness, tool subprocesses, provider adapters, frontends) restart independently because none hold state across their own termination, and `lernie resume <repo>` reconstructs where the workflow state machine left off by reading the repo. The workflow interpreter itself is the currently-executing CLI subprocess (§6) — a baton passed forward by exec, not a daemon — so "resume" is just re-entering the chain at the right event, not reconstructing in-memory state that was never there. No process is load-bearing; disk is. Direct consequence of "Disk first" + "Everyone uses the front door": with no state off-disk and no commands off the CLI, a crashed process leaves nothing orphaned to reconstruct.
 
 ## Compaction, never compression
 Summarizing a branch's work uses a subagent with a constrained toolset (`write_summary`, `mark_for_deletion`). "Deletion-only" is structural — no general filesystem write surface — so the worst case is lost information, never corrupted information.
@@ -63,7 +63,7 @@ What the model sees is a pure function of the repo state via `manifest.yaml`. Re
 An agent reduces its context by deleting files; the next assembly excludes them. Context hygiene is an agent-level decision expressed in the native language of the filesystem, not a bespoke API.
 
 ## File path as hint
-Paths like `invocations/a1b2/result.md` ride into context verbatim. Structure in the name is cheaper and usually sufficient compared to bolt-on metadata.
+Paths like `steps/<conv-id>/042/request.json` or `summary/003.md` ride into context verbatim. Structure in the name is cheaper and usually sufficient compared to bolt-on metadata.
 
 ## Decline illegal operations
 Capabilities are code-backed; a config selecting a capability the harness does not implement is rejected at load time. Silent degradation is never preferable to a loud refusal.

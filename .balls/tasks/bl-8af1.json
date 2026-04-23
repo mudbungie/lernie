@@ -9,12 +9,12 @@
   "description": "Extend the UI git-tree renderer (bl-209e) from v0.1-shape (flat linear\ncommits on main) to v0.2-shape (ex/<ts>-<id> branches with --no-ff merge\ncommits back to main, per ARCH §2.6).\n\n=== Context ===\nv0.2 functional body landed on main (bl-effb, bl-e7e1, bl-a764, bl-8c66);\nv0.2-shape repos exist now. The v0.5 epic description explicitly plans\nthis extension: \"Git tree renderer against v0.1-shape repos ... Extends\nnaturally when v0.2 adds branches.\"\n\n=== What to build ===\n- Renderer reads the current git state (main + any ex/ branches) and\n  produces a view model distinguishing:\n    - merged exchanges: main's merge commits with their second parent\n      pointing at an ex/ branch (now collapsed post-merge)\n    - in-flight exchanges: ex/ branches still pointing somewhere off main\n    - step commits inside an exchange (linear commits on the ex/ branch\n      before the merge)\n- View model stays a pure function of filesystem state (statelessness\n  per v0.5 epic alignment gate).\n- branches.json read to surface unmerged-count and in-flight branch\n  set (its shape is already stable per bl-a764).\n\n=== Explicit non-goals ===\n- Streaming text indicators (future v0.5 subtask).\n- Pulsing tool indicators (v0.3 + future v0.5 subtask).\n- Branch-state indicators for stopped/conflicted (future v0.5 subtask;\n  v0.2 only produces in-flight + merged).\n\n=== Testing ===\n- Unit tests over hand-built v0.2-shape fixtures (real tiny repos on a\n  tmpdir, not mocks — matches bl-209e's pattern).\n- Cover: single merged exchange, single in-flight exchange, multi-step\n  in-flight exchange, mixed main-only history (v0.1-shape still renders).\n- cargo test + tarpaulin --fail-under 100 green.\n\n=== Done-when ===\nRenderer handles v0.2-shape repos end-to-end; existing v0.1-shape tests\nstill green (backwards-compatible extension). Module docs updated.",
   "external": {},
   "id": "bl-8af1",
-  "links": [{"link_type":"gates","target":"bl-e135"}],
+  "links": [{"link_type":"gates","target":"bl-e135"},{"link_type":"gates","target":"bl-b6d0"}],
   "parent": "bl-c0a5",
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "UI: git-tree renderer for v0.2-shape repos",
   "type": "task",
-  "updated_at": "2026-04-23T04:44:22.970664950Z"
+  "updated_at": "2026-04-23T04:44:22.986484223Z"
 }

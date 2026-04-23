@@ -197,20 +197,31 @@ fn prompt_subcommand_spawns_exchange_branch_off_main() {
     assert_eq!(response["assistant_response"], "pong");
     assert_eq!(response["provider"], "anthropic");
 
-    // branches.json records the open exchange (ARCH §8 health
-    // metric). Runtime state on the main repo's disk — not
-    // git-tracked. Merge-back (separate task) will remove the entry;
-    // for this test there is exactly one open entry at the expected
-    // base_sha.
-    let branches: serde_json::Value =
-        serde_json::from_slice(&fs::read(dest.join(".agent/state/branches.json")).unwrap())
-            .unwrap();
-    let obj = branches.as_object().expect("branches.json is an object");
-    assert_eq!(obj.len(), 1, "exactly one open entry mid-exchange");
-    let entry = &obj[&branch];
-    assert_eq!(entry["kind"], "exchange");
-    assert_eq!(entry["status"], "open");
-    assert_eq!(entry["base_sha"], main_head_after);
+    // No mirror-file for branch tracking — git's ref database is the
+    // single source of truth (PRINCIPLES.md "Single source of
+    // truth"). Unmerged branches are enumerable directly:
+    // `git branch --list ex/*` should list exactly this one.
+    assert!(
+        !dest.join(".agent/state/branches.json").exists(),
+        "no sidecar branches.json should be written"
+    );
+    let ex_branches = git_command(&dest, &["branch", "--list", "ex/*"])
+        .output()
+        .expect("git branch --list");
+    let listed = String::from_utf8(ex_branches.stdout).unwrap();
+    // `git branch` prefixes checked-out branches with `*` and
+    // worktree-checked-out branches with `+`. Strip both so the
+    // comparison is against bare branch names.
+    let names: Vec<&str> = listed
+        .lines()
+        .map(|line| line.trim_start_matches(['*', '+', ' ']).trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+    assert_eq!(
+        names,
+        vec![branch.as_str()],
+        "exactly one open exchange branch"
+    );
 }
 
 #[test]

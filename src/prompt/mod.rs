@@ -17,7 +17,6 @@
 //! effects.
 
 pub mod adapter;
-pub mod branches;
 pub mod clock;
 pub mod dispatch;
 pub mod step;

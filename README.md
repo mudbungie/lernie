@@ -118,18 +118,20 @@ cat .agent/goal.md       # the user message
 cat exchanges/*/steps/001/response.json
 ```
 
-Each spawn also appends to `.agent/state/branches.json` (harness-
-managed runtime state, gitignored). The map's length is the unmerged
-branch count health metric (ARCH §8) — a ballooning count indicates
-a silent failure in the merge pipeline:
+Git's ref database is the single source of truth for branch state
+(see [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md) "Single source of
+truth"). The unmerged branch count health metric (ARCH §8) comes
+straight from git — no mirror file:
 
 ```
-jq 'length' /path/to/my-conversation/.agent/state/branches.json
+git -C /path/to/my-conversation branch --list 'ex/*' | wc -l
 ```
+
+A ballooning count indicates a silent failure in the merge pipeline.
 
 Merge-back to `main` (§2.6) is tracked under a separate v0.2 task and
 not part of this command today; open exchange branches therefore show
-up in `branches.json` until merge ships.
+up in `git branch --list ex/*` until merge ships.
 
 ## Providers
 

@@ -71,8 +71,7 @@ Directory layout:
 │   │   ├── prompts/
 │   │   ├── skills/
 │   │   └── tools/
-│   └── state/                   # harness runtime state (gitignored where noted)
-│       ├── branches.json        # unmerged branch tracking — runtime state, .gitignored
+│   └── state/                   # harness runtime state
 │       └── events.log           # append-only event log
 ├── exchanges/                   # compacted exchange history (post-merge)
 ├── artifacts/                   # agent-produced files (code, docs, outputs)
@@ -122,9 +121,9 @@ Tool calls emitted by a step (v0.3+) extend the step's dir with `tool_calls/<too
 
 The rich per-step tree is branch-life state. On terminal compaction (§2.7) the compactor writes a signal-preserving summary and marks the raw step dirs for deletion, leaving `main` with only the compacted history §2.2 describes.
 
-**Unmerged-branch tracking.** `.agent/state/branches.json` is a harness-managed JSON map keyed by branch name, written atomically on spawn and updated on merge/stop. Each entry carries `kind` (`exchange` | `invocation`), `spawned_at`, `base_sha` (the parent commit the branch was forked from), `status` (`open` | `stopped`), and an optional `stopped_at`. Merge removes the entry; the map's length is the unmerged-branch-count health metric (§8). The file is runtime state, not tracked in git — the template's `.gitignore` keeps per-branch trees from carrying stale snapshots. A missing file is treated as an empty map so the first spawn bootstraps it.
+**Unmerged-branch tracking.** Git's ref database is the tracking. An unmerged exchange branch is a ref matching `ex/*`; `git branch --list ex/*` enumerates them, and the list's length is the §8 unmerged-branch-count health metric. The harness does not mirror this into a sidecar JSON file — doing so would duplicate state git already owns (see PRINCIPLES.md "Single source of truth").
 
-> **v0.2 scope.** The branch/snapshot/response flow plus spawn-side `branches.json` tracking land in v0.2; the merge-back protocol (§2.6) and terminal compaction are separate v0.2 steps. Until merge-back ships, `lernie prompt` spawns branches that stay open, and each open branch has a live entry in `branches.json`.
+> **v0.2 scope.** The branch/snapshot/response flow lands in v0.2; the merge-back protocol (§2.6) and terminal compaction are separate v0.2 steps. Until merge-back ships, `lernie prompt` spawns branches that stay open and show up under `git branch --list ex/*`.
 
 ### 2.4 Exchanges
 
@@ -522,7 +521,7 @@ First-class metrics, written to commit trailers and event log. All counts are re
 - Tokens per step, per invocation, per exchange, per conversation.
 - Model calls per step (always 1), tool calls per step, API calls per model call.
 - Cost per step, per invocation, per exchange, per conversation.
-- Unmerged branch count per conversation. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Directly computable as the length of `.agent/state/branches.json` (§2.3).
+- Unmerged branch count per conversation. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Directly computable from git refs (`git branch --list ex/* inv/* | wc -l`) — no mirror file (§2.3, PRINCIPLES.md "Single source of truth").
 - Step duration, tool call duration, compaction duration.
 - Compaction ratio (tokens before / tokens after).
 

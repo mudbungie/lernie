@@ -6,8 +6,3 @@
 # its branch. Worktrees are cross-branch state and must not land on
 # `main`'s tree.
 .lernie/
-
-# Unmerged-branch tracking (ARCH §8 health metric). Harness-managed
-# runtime state rewritten atomically on spawn/merge; the per-branch
-# git tree should not carry a stale snapshot.
-.agent/state/branches.json

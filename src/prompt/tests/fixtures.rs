@@ -165,11 +165,6 @@ impl StubGit {
     }
 }
 
-/// Canned stdout the stub returns for any `run_capture`; a single
-/// reply slot is enough for v0.2 since the only capture is
-/// `git rev-parse main`.
-pub(super) const STUB_BASE_SHA: &str = "base-sha-cafe";
-
 impl GitRunner for StubGit {
     fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
         let mut runs = self.runs.borrow_mut();
@@ -184,9 +179,12 @@ impl GitRunner for StubGit {
             Ok(())
         }
     }
-    fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        self.run(dest, args)?;
-        Ok(STUB_BASE_SHA.into())
+    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
+        // dispatch never calls run_capture — the single-source-of-truth
+        // principle routes branch queries through `git branch --list`,
+        // not harness-side captures. unreachable!() keeps tarpaulin's
+        // ignore-panics from counting this as dead code.
+        unreachable!("StubGit::run_capture is not used by `prompt::dispatch`")
     }
 }
 

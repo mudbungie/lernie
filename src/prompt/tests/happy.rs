@@ -55,11 +55,9 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(response["stop_reason"], "end_turn");
     assert_eq!(response["usage"]["input_tokens"], 3);
     assert_eq!(response["usage"]["output_tokens"], 2);
-    // ISO clock is called three times total: spawned_at (before the
-    // branch is allocated), started_at (before complete), ended_at
-    // (after complete).
-    assert_eq!(response["started_at"], "iso-2");
-    assert_eq!(response["ended_at"], "iso-3");
+    // ISO clock is called once before adapter.complete, once after.
+    assert_eq!(response["started_at"], "iso-1");
+    assert_eq!(response["ended_at"], "iso-2");
 
     // Adapter was called twice: describe (no envs, no stdin) then
     // complete (endpoint env var set, request JSON on stdin).
@@ -84,49 +82,44 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-    // Git sequence: rev-parse main + worktree add against repo root,
-    // then add+commit of the snapshot inside the worktree, then
-    // add+commit of the response inside the worktree.
+    // Git sequence: worktree add against repo root, then add+commit
+    // of the snapshot inside the worktree, then add+commit of the
+    // response inside the worktree. No mirror-file write — the git
+    // ref database is the single source of truth for branch state
+    // (PRINCIPLES.md "Single source of truth").
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 6);
+    assert_eq!(runs.len(), 5);
     let (dest0, args0) = &runs[0];
     assert_eq!(dest0, repo.path());
-    assert_eq!(args0, &vec!["rev-parse".to_string(), "main".into()]);
-    let (dest1, args1) = &runs[1];
-    assert_eq!(dest1, repo.path());
-    assert_eq!(args1[..4], ["worktree", "add", "-b", "ex/ct-1-deadbeef"]);
-    assert_eq!(args1[4], worktree.to_string_lossy().to_string());
-    assert_eq!(args1[5], "main");
-    for (dest, _args) in &runs[2..] {
+    assert_eq!(args0[..4], ["worktree", "add", "-b", "ex/ct-1-deadbeef"]);
+    assert_eq!(args0[4], worktree.to_string_lossy().to_string());
+    assert_eq!(args0[5], "main");
+    for (dest, _args) in &runs[1..] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside worktree");
     }
-    assert_eq!(runs[2].1[0], "add");
-    assert_eq!(runs[2].1[1], ".agent/goal.md");
+    assert_eq!(runs[1].1[0], "add");
+    assert_eq!(runs[1].1[1], ".agent/goal.md");
     assert_eq!(
-        runs[2].1[2],
+        runs[1].1[2],
         "exchanges/ct-1-deadbeef/steps/001/request.json"
     );
-    assert_eq!(runs[3].1[0], "commit");
-    assert!(runs[3].1[2].contains("step 001: dispatch"));
-    assert!(runs[3].1[2].contains("ex ct-1-deadbeef"));
-    assert_eq!(runs[4].1[0], "add");
+    assert_eq!(runs[2].1[0], "commit");
+    assert!(runs[2].1[2].contains("step 001: dispatch"));
+    assert!(runs[2].1[2].contains("ex ct-1-deadbeef"));
+    assert_eq!(runs[3].1[0], "add");
     assert_eq!(
-        runs[4].1[1],
+        runs[3].1[1],
         "exchanges/ct-1-deadbeef/steps/001/response.json"
     );
-    assert_eq!(runs[5].1[0], "commit");
-    assert!(runs[5].1[2].contains("step 001: response"));
+    assert_eq!(runs[4].1[0], "commit");
+    assert!(runs[4].1[2].contains("step 001: response"));
 
-    // branches.json reflects the open exchange entry with base_sha
-    // from the rev-parse and spawned_at from the first clock tick.
-    let branches_path = repo.path().join(".agent/state/branches.json");
-    let branches: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(branches_path).unwrap()).unwrap();
-    let entry = &branches["ex/ct-1-deadbeef"];
-    assert_eq!(entry["kind"], "exchange");
-    assert_eq!(entry["status"], "open");
-    assert_eq!(entry["spawned_at"], "iso-1");
-    assert_eq!(entry["base_sha"], "base-sha-cafe");
+    // No sidecar branches.json is written — git's ref database is
+    // the source of truth.
+    assert!(
+        !repo.path().join(".agent/state/branches.json").exists(),
+        "no mirror file should be written"
+    );
 }
 
 #[test]

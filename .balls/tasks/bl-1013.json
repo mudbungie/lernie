@@ -14,7 +14,7 @@
   "priority": 2,
   "status": "in_progress",
   "tags": ["ui","frontend"],
-  "title": "UI skeleton: lernie-ui-dioxus binary + Cargo wiring",
+  "title": "UI skeleton: lernie-ui-egui binary + Cargo wiring",
   "type": "task",
-  "updated_at": "2026-04-23T01:28:21.752406107Z"
+  "updated_at": "2026-04-23T01:48:56.839361905Z"
 }

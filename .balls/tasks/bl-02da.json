@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:28:06.010798672Z",
-  "delivered_in": null,
+  "delivered_in": "b3d6b26ceed0c3c73fbbbf10dab3dc3809912c9b",
   "depends_on": [],
   "description": "Module inside the lernie-ui-egui crate that executes 'lernie <subcommand>' as a subprocess and streams stdout/stderr. Per ARCH §3.4 / §3.5, this is the sole command path from frontend to harness.\n\n=== What to build ===\n\n- Pure-Rust module, no egui/eframe dependency (reusable by future 'lernie-ui-web').\n- API: 'Cli::new(lernie_binary: PathBuf) -> Cli' and a method 'run(&self, args: &[&str]) -> impl Stream/Iter<Item = OutputChunk>'.\n- Binary resolution: default 'lernie' on PATH; overridable via env var 'LERNIE_BINARY' or explicit arg.\n- stdout and stderr streamed chunked, tagged by stream.\n- Exit status reported as terminal item in the stream.\n- Signal propagation: on drop, SIGTERM then SIGKILL after a short timeout (ARCH §2.9 'Stops are aggressive').\n\n=== Out of scope ===\n\n- Any knowledge of specific lernie subcommands — generic exec wrapper.\n- UI wiring.\n\n=== Dependencies ===\n\n- Blocks on bl-1013 (UI skeleton).\n\n=== Testing ===\n\n- Against a shell stub 'fake_lernie' executable on PATH that emits known stdout/stderr patterns and exit codes. Not a mock — a real binary.\n- Test signal-on-drop: spawn long-running fake, drop stream, assert child is gone.\n- 100% line coverage.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-9f91"},{"link_type":"gates","target":"bl-eb2e"},{"link_type":"gates","target":"bl-2d0b"}],
   "parent": "bl-c0a5",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["ui","frontend"],
   "title": "UI: CLI outbound module (exec lernie subcommand)",
   "type": "task",
-  "updated_at": "2026-04-23T02:18:32.177017873Z"
+  "updated_at": "2026-04-23T02:26:07.007560877Z"
 }

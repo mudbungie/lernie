@@ -2,7 +2,7 @@
   "branch": "work/bl-effb",
   "claimed_by": "worker",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-23T00:53:10.755072899Z","id":"bl-2149","title":"Gate: tests pass (retire --endpoint forwarding)"}],
   "created_at": "2026-04-22T21:34:31.249619110Z",
   "delivered_in": "8859e28ede525e416ad7792330995326ce0116dd",
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Retire --endpoint forwarding; restore strict §4.4",
   "type": "task",
-  "updated_at": "2026-04-23T00:52:58.860542992Z"
+  "updated_at": "2026-04-23T00:53:10.755131760Z"
 }

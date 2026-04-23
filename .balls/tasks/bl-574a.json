@@ -9,12 +9,12 @@
   "description": "Drop the negative 'assert !branches.json.exists()' checks from integration + happy + template tests. The principle (PRINCIPLES.md 'Single source of truth') is enough; we don't need to prove the mirror file doesn't exist on every run. Keep the positive assertions (git branch --list enumerates the exchange).",
   "external": {},
   "id": "bl-574a",
-  "links": [{"link_type":"gates","target":"bl-12dd"}],
+  "links": [{"link_type":"gates","target":"bl-12dd"},{"link_type":"gates","target":"bl-1e37"}],
   "parent": null,
   "priority": 2,
   "status": "open",
   "tags": [],
   "title": "Scrub branches.json non-existence assertions from tests",
   "type": "task",
-  "updated_at": "2026-04-23T02:21:35.727555680Z"
+  "updated_at": "2026-04-23T02:21:35.764397073Z"
 }

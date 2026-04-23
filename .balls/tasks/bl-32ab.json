@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T19:46:48.275812689Z",
-  "delivered_in": null,
+  "delivered_in": "abfe7135b392ea94696d085fc9d8c9c3e6bf9a54",
   "depends_on": [],
   "description": "Draft the ARCH.md + TAXONOMY.md edits captured in a design discussion on 2026-04-23. The design (converged with user) is a substantial restructuring of the conversation-repo model.\n\n=== Core decisions ===\n\n1. Terminology collapse. \"Invocation\" retires as a distinct term. \"Conversation\" becomes the primitive (every dispatch yields a conversation; the root conversation has no parent and terminates to user input rather than merging up). \"Exchange\" survives as a UX label for \"conversation initiated by a user message\" — non-structural.\n\n2. Control plane / data plane split. The conversation repo is data only. Control (workflows, tools, skills, adapters) lives at the harness root (~/.lernie/ by default, overridable). Per-conversation control files (manifest.yaml, workflow.yaml, providers.yaml role→model, souls/<role>.md) are frozen copies at the conversation root OUTSIDE the worktrees.\n\n3. Worktree invariant. Anything inside a worktree is composed into the prompt. No filter lists. Worktree contents: goal.md, soul.md (swapped in at dispatch), summary/NNN.md (branch-scoped), steps/<id>/NNN/{request.json, response.json, tools/}, descriptions/, skills/ (loaded content).\n\n4. Merge mechanics. .gitattributes with merge=ours for goal.md, soul.md, summary/** — parent keeps its own on merge-back from subagent. Steps namespaced by invocation id so they don't collide.\n\n5. Directory layout. ~/.lernie/conversations/<conv_id>/ with flat control files at root, 'root/' for primary worktree, sibling '<a>-<b>/' '<a>-<b>-<c>/' for subagent worktrees. Hierarchy in the name, not nesting (avoids git-in-git footgun).\n\n6. No <ts> prefix. Hierarchy in directory names; ordering from git/fs metadata.\n\n7. Skills copied (not symlinked) at load time. Descriptions inherited via git from main. Portability principle.\n\n=== Sections impacted ===\n\ndocs/ARCHITECTURE.md:\n- §1 Overview — mentions of exchanges/invocations as distinct\n- §2.1 Terms table — retire Invocation, redefine Conversation, demote Exchange to UX label\n- §2.2 The Conversation Repo — major rewrite of disk layout\n- §2.3 Branches and the branch invariant — collapse ex/*/inv/* split, new branch naming\n- §2.4 Exchanges — shrink to note on UX\n- §2.5 Invocations and dispatch — retitle + simplify\n- §2.6 Merges — add merge=ours note\n- §2.7 Compaction — note intermediate-summary containment\n- §3.1 Disk as Bus — update paths (no .agent/)\n- §3.5 UI contract — update paths\n- §5 Context Assembly — manifest.yaml role-keyed, make the worktree invariant explicit\n\ndocs/TAXONOMY.md:\n- Term entries for conversation, invocation, exchange\n\n=== Gates (per project AGENTS.md) ===\n- tests: no code touched; cargo test/coverage should pass trivially; verify at review.\n- docs: this task IS the docs update.\n- alignment: check coherence against PRINCIPLES.md and banned-term rule in ARCH §2.1.\n\n=== Out of scope ===\n- Code/implementation changes (separate downstream tasks).\n- Updating schemas/ or src/config/.\n- bl-e2fb tool contract work (separate ball, narrower focus).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["docs","design"],
   "title": "Draft ARCH/TAXONOMY redesign: conversation as primitive, .agent/ split, worktree invariant",
   "type": "task",
-  "updated_at": "2026-04-23T19:46:51.349460553Z"
+  "updated_at": "2026-04-23T20:03:27.378286669Z"
 }

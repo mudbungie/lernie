@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-c620",
+  "claimed_by": "opus",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T01:18:22.540352627Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.3","layout","gate"],
   "title": "Gate: docs up to date (v0.3 layout migration)",
   "type": "task",
-  "updated_at": "2026-04-25T01:18:22.540352627Z"
+  "updated_at": "2026-04-25T22:50:05.446655045Z"
 }

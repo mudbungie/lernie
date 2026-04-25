@@ -2,7 +2,7 @@
   "branch": "work/bl-e2fb",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-25T05:31:24.946300918Z","id":"bl-fdb9","title":"v0.3 tool contract: apply ARCH/PRINCIPLES doc edits"}],
   "created_at": "2026-04-23T06:59:45.371950299Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.3","tools"],
   "title": "v0.3 tool contract: pin ARCH §3.3 gaps",
   "type": "task",
-  "updated_at": "2026-04-25T05:23:01.486032830Z"
+  "updated_at": "2026-04-25T05:31:25.429289431Z"
 }

@@ -1,6 +1,6 @@
 {
-  "branch": "work/bl-e2fb",
-  "claimed_by": "mark",
+  "branch": null,
+  "claimed_by": null,
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T06:59:45.371950299Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-683c",
   "priority": 2,
-  "status": "in_progress",
+  "status": "open",
   "tags": ["v0.3","tools"],
   "title": "v0.3 tool contract: pin ARCH §3.3 gaps",
   "type": "task",
-  "updated_at": "2026-04-23T07:03:48.842055970Z"
+  "updated_at": "2026-04-25T01:36:53.853842391Z"
 }

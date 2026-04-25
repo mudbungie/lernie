@@ -1,10 +1,11 @@
-//! Conversation-repo scaffolding.
+//! Conversation-repo scaffolding (ARCH §2.2).
 //!
 //! Embeds the [`template/`] directory at build time via `include_dir`,
 //! so the `lernie` binary is self-contained — no runtime template
-//! lookup. [`scaffold`] extracts the embedded tree to a destination and
-//! initializes git via an injected [`GitRunner`], which makes the
-//! orchestration testable without a mock HTTP layer or PATH hacks.
+//! lookup. [`scaffold`] extracts the embedded tree to a destination,
+//! creates the `root/` worktree subdir with `.gitattributes` pinning
+//! `merge=ours` discipline, and initializes git inside `root/` via an
+//! injected [`GitRunner`].
 
 use include_dir::{Dir, include_dir};
 use std::fs;
@@ -12,8 +13,19 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// The embedded conversation-repo template (ARCH §2.2).
+/// The embedded conversation-repo template (ARCH §2.2). Holds only the
+/// control-plane files that live at the conv-repo root — `manifest.yaml`,
+/// `workflow.yaml`, `providers.yaml`, `version`, `souls/`. The `root/`
+/// worktree subdir and its `.gitattributes` are written by [`scaffold`]
+/// rather than embedded so the file shape stays inspectable.
 pub static TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/template");
+
+/// `merge=ours` pins committed on `main` inside `root/` at scaffold
+/// time (ARCH §2.6). Goal, soul, and the running summary are
+/// branch-scoped — without this driver, every subagent merge-back
+/// would clobber the parent's copies.
+pub const ROOT_GITATTRIBUTES: &str =
+    "goal.md     merge=ours\nsoul.md     merge=ours\nsummary/**  merge=ours\n";
 
 /// Errors [`scaffold`] can return.
 #[derive(Debug, thiserror::Error)]
@@ -99,22 +111,32 @@ const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
 ];
 
-/// Create a new conversation repo at `dest`:
+/// Subdir under the conv-repo where the primary worktree (and the only
+/// `.git`) lives (ARCH §2.2).
+pub const ROOT_WORKTREE: &str = "root";
+
+/// Create a new conversation repo at `dest` per ARCH §2.2:
 ///
 /// 1. Refuse if `dest` already exists and is non-empty.
-/// 2. Extract the embedded [`TEMPLATE`] tree into `dest`.
-/// 3. Run `git init -b main`, `git add -A`, and an initial
-///    `git commit -m "init conversation repo"` via the supplied
-///    [`GitRunner`].
-///
-/// The commit message is the v0.1 success-criterion string from ARCH §12.
+/// 2. Extract the embedded [`TEMPLATE`] tree to `dest/` (control-plane
+///    files at the conv-repo root, outside any worktree).
+/// 3. Create `dest/root/` and write `.gitattributes` pinning the
+///    `merge=ours` rules from ARCH §2.6.
+/// 4. Run `git init -b main`, `git add -A`, and an initial
+///    `git commit -m "init conversation repo"` *inside* `dest/root/`
+///    via the supplied [`GitRunner`]. The `.git` lives in `root/`; the
+///    control files at the conv-repo root are deliberately untracked.
 pub fn scaffold<G: GitRunner>(dest: &Path, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
+    fs::create_dir_all(dest).map_err(ScaffoldError::Io)?;
     TEMPLATE.extract(dest).map_err(ScaffoldError::Io)?;
-    git.run(dest, &["init", "-b", "main"])
+    let root = dest.join(ROOT_WORKTREE);
+    fs::create_dir_all(&root).map_err(ScaffoldError::Io)?;
+    fs::write(root.join(".gitattributes"), ROOT_GITATTRIBUTES).map_err(ScaffoldError::Io)?;
+    git.run(&root, &["init", "-b", "main"])
         .map_err(ScaffoldError::Git)?;
-    git.run(dest, &["add", "-A"]).map_err(ScaffoldError::Git)?;
-    git.run(dest, &["commit", "-m", "init conversation repo"])
+    git.run(&root, &["add", "-A"]).map_err(ScaffoldError::Git)?;
+    git.run(&root, &["commit", "-m", "init conversation repo"])
         .map_err(ScaffoldError::Git)?;
     Ok(())
 }

@@ -16,8 +16,9 @@
 //!   non-exchange dispatch cases (verifier, adversary, v0.4+).
 
 use clap::{Parser, Subcommand};
+use lernie::harness_root;
 use lernie::prompt::{
-    self, CompactorRequest, NanoIdGen, SpawnAdapter, SpawnDispatcher, SystemClock,
+    self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SystemClock,
 };
 use lernie::template::{self, RealGit};
 use std::path::PathBuf;
@@ -32,11 +33,14 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Create a new conversation repo at <path>.
+    /// Create a new conversation repo. With no argument, scaffolds at
+    /// `<harness-root>/conversations/<auto-id>/` (ARCH §2.2). With a
+    /// path argument, scaffolds there literally.
     New {
         /// Destination path. Must not already exist as a non-empty
-        /// directory.
-        path: PathBuf,
+        /// directory. Optional — when omitted, an auto-generated id
+        /// under the harness root is used.
+        path: Option<PathBuf>,
     },
     /// Send one user message through the configured worker role on a
     /// fresh exchange branch. Prints the branch name on success.
@@ -73,16 +77,28 @@ enum DispatchRole {
 fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
-        Command::New { path } => match template::scaffold(&path, &RealGit::new()) {
-            Ok(()) => {
-                println!("created {}", path.display());
-                ExitCode::SUCCESS
+        Command::New { path } => {
+            let dest = match path {
+                Some(p) => p,
+                None => match harness_root::resolve() {
+                    Ok(root) => root.join("conversations").join(NanoIdGen.short()),
+                    Err(e) => {
+                        eprintln!("lernie new: {e}");
+                        return ExitCode::FAILURE;
+                    }
+                },
+            };
+            match template::scaffold(&dest, &RealGit::new()) {
+                Ok(()) => {
+                    println!("{}", dest.display());
+                    ExitCode::SUCCESS
+                }
+                Err(e) => {
+                    eprintln!("lernie new: {e}");
+                    ExitCode::FAILURE
+                }
             }
-            Err(e) => {
-                eprintln!("lernie new: {e}");
-                ExitCode::FAILURE
-            }
-        },
+        }
         Command::Prompt { repo, message } => {
             let dispatcher = match SpawnDispatcher::new() {
                 Ok(d) => d,

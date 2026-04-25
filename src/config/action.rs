@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Action {
     SpawnExchange,
+    SpawnRootConversation,
     Dispatch {
         role: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -52,6 +53,9 @@ impl Action {
         let (name, args) = split_call(trimmed)?;
         match name {
             "spawn_exchange" => no_args(name, &args).map(|_| Action::SpawnExchange),
+            "spawn_root_conversation" => {
+                no_args(name, &args).map(|_| Action::SpawnRootConversation)
+            }
             "merge" => no_args(name, &args).map(|_| Action::Merge),
             "mark_abandoned" => no_args(name, &args).map(|_| Action::MarkAbandoned),
             "notify_ui" => no_args(name, &args).map(|_| Action::NotifyUi),

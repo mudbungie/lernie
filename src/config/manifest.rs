@@ -1,27 +1,32 @@
-//! `.agent/manifest.yaml` — context assembly rules per ARCH §5.1.
+//! `<conv-repo>/manifest.yaml` — context assembly rules per ARCH §5.2.
+//!
+//! Role-keyed since v0.3: each role declares its own pinned + ordered
+//! includes, budget, and overflow policy. Paths are relative to the
+//! branch's worktree (§5.1).
 
 use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
 /// Top-level `manifest.yaml` shape.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct Manifest {
-    pub context: ContextRules,
+    #[serde(default)]
+    pub roles: BTreeMap<String, RoleRules>,
 }
 
-/// Rules that determine what files appear in the assembled context, in what
-/// order, with what budget, and what to do on overflow.
+/// One role's context-assembly rules.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct ContextRules {
+pub struct RoleRules {
     /// Always included regardless of budget.
     #[serde(default)]
     pub pinned: Vec<String>,
     /// Globs included in declared order, subject to budget.
     #[serde(default)]
-    pub include: Vec<String>,
+    pub order: Vec<String>,
     pub budget_tokens: u32,
     pub overflow: OverflowPolicy,
 }
@@ -31,16 +36,17 @@ pub struct ContextRules {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum OverflowPolicy {
-    DropOldestExchanges,
-    TruncateOldest,
+    DropOldestSteps,
+    Truncate,
     Summarize,
     Drop,
 }
 
 impl Manifest {
     /// Read, parse, and shape-check `manifest.yaml` at `path`. Path
-    /// existence is intentionally not checked: pinned paths such as
-    /// `.agent/goal.md` are written at dispatch time (ARCH §2.8).
+    /// existence of pinned/ordered entries is intentionally not checked:
+    /// `goal.md`, `soul.md`, and `summary/**` are written at dispatch
+    /// time (ARCH §2.3, §2.7).
     pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),
@@ -55,18 +61,20 @@ impl Manifest {
     }
 
     fn validate(&self, path: &Path) -> Result<(), LoadError> {
-        for (i, p) in self.context.pinned.iter().enumerate() {
-            check_path_shape(path, &format!("context.pinned[{i}]"), p)?;
-        }
-        for (i, g) in self.context.include.iter().enumerate() {
-            check_path_shape(path, &format!("context.include[{i}]"), g)?;
-        }
-        if self.context.budget_tokens == 0 {
-            return Err(LoadError::Invalid {
-                path: path.to_path_buf(),
-                key: "context.budget_tokens".into(),
-                message: "must be positive".into(),
-            });
+        for (role, rules) in &self.roles {
+            for (i, p) in rules.pinned.iter().enumerate() {
+                check_path_shape(path, &format!("roles.{role}.pinned[{i}]"), p)?;
+            }
+            for (i, g) in rules.order.iter().enumerate() {
+                check_path_shape(path, &format!("roles.{role}.order[{i}]"), g)?;
+            }
+            if rules.budget_tokens == 0 {
+                return Err(LoadError::Invalid {
+                    path: path.to_path_buf(),
+                    key: format!("roles.{role}.budget_tokens"),
+                    message: "must be positive".into(),
+                });
+            }
         }
         Ok(())
     }
@@ -84,7 +92,7 @@ fn check_path_shape(file: &Path, key: &str, value: &str) -> Result<(), LoadError
         return Err(LoadError::Invalid {
             path: file.to_path_buf(),
             key: key.into(),
-            message: format!("must be relative to the conversation repo, got {value:?}"),
+            message: format!("must be relative to the branch worktree, got {value:?}"),
         });
     }
     if value.split('/').any(|seg| seg == "..") {
@@ -110,38 +118,48 @@ mod tests {
     }
 
     const ARCH_EXAMPLE: &str = r#"
-context:
-  pinned:
-    - .agent/goal.md
-    - .agent/system/prompts/base.md
-  include:
-    - exchanges/**
-    - artifacts/**
-    - invocations/*/result.md
-  budget_tokens: 150000
-  overflow: drop_oldest_exchanges
+roles:
+  worker:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - steps/**/request.json
+      - steps/**/response.json
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_steps
+  compactor:
+    pinned:
+      - goal.md
+      - soul.md
+    order:
+      - steps/**
+    budget_tokens: 50000
+    overflow: truncate
 "#;
 
     #[test]
     fn parses_arch_example() {
         let f = write_yaml(ARCH_EXAMPLE);
         let m = Manifest::load(f.path()).unwrap();
-        assert_eq!(m.context.budget_tokens, 150_000);
-        assert_eq!(m.context.overflow, OverflowPolicy::DropOldestExchanges);
-        assert_eq!(m.context.pinned.len(), 2);
-        assert_eq!(m.context.include.len(), 3);
+        assert_eq!(m.roles.len(), 2);
+        let worker = &m.roles["worker"];
+        assert_eq!(worker.budget_tokens, 150_000);
+        assert_eq!(worker.overflow, OverflowPolicy::DropOldestSteps);
+        assert_eq!(worker.pinned.len(), 3);
+        assert_eq!(worker.order.len(), 4);
+        let compactor = &m.roles["compactor"];
+        assert_eq!(compactor.overflow, OverflowPolicy::Truncate);
     }
 
     #[test]
     fn accepts_each_overflow_variant() {
-        for variant in [
-            "drop_oldest_exchanges",
-            "truncate_oldest",
-            "summarize",
-            "drop",
-        ] {
+        for variant in ["drop_oldest_steps", "truncate", "summarize", "drop"] {
             let yaml = format!(
-                "context:\n  pinned: []\n  include: []\n  budget_tokens: 1\n  overflow: {variant}\n"
+                "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: {variant}\n"
             );
             let f = write_yaml(&yaml);
             assert!(Manifest::load(f.path()).is_ok(), "variant {variant} failed");
@@ -149,26 +167,42 @@ context:
     }
 
     #[test]
+    fn empty_roles_section_is_ok() {
+        // An empty manifest is structurally valid; cross-checks elsewhere
+        // catch the (likely) real bug — no roles wired.
+        let f = write_yaml("roles: {}\n");
+        let m = Manifest::load(f.path()).unwrap();
+        assert!(m.roles.is_empty());
+    }
+
+    #[test]
+    fn missing_roles_section_loads_empty() {
+        let f = write_yaml("# nothing yet\n");
+        let m = Manifest::load(f.path()).unwrap();
+        assert!(m.roles.is_empty());
+    }
+
+    #[test]
     fn rejects_absolute_pinned_path() {
         let f = write_yaml(
-            "context:\n  pinned: [/etc/secret]\n  include: []\n  budget_tokens: 1\n  overflow: drop\n",
+            "roles:\n  r:\n    pinned: [/etc/secret]\n    order: []\n    budget_tokens: 1\n    overflow: drop\n",
         );
         let err = Manifest::load(f.path()).unwrap_err();
         match err {
-            LoadError::Invalid { key, .. } => assert_eq!(key, "context.pinned[0]"),
+            LoadError::Invalid { key, .. } => assert_eq!(key, "roles.r.pinned[0]"),
             other => panic!("expected Invalid, got {other:?}"),
         }
     }
 
     #[test]
-    fn rejects_parent_dir_in_include() {
+    fn rejects_parent_dir_in_order() {
         let f = write_yaml(
-            "context:\n  pinned: []\n  include: [\"../escape/**\"]\n  budget_tokens: 1\n  overflow: drop\n",
+            "roles:\n  r:\n    pinned: []\n    order: [\"../escape/**\"]\n    budget_tokens: 1\n    overflow: drop\n",
         );
         let err = Manifest::load(f.path()).unwrap_err();
         match err {
             LoadError::Invalid { key, message, .. } => {
-                assert_eq!(key, "context.include[0]");
+                assert_eq!(key, "roles.r.order[0]");
                 assert!(message.contains(".."));
             }
             other => panic!("expected Invalid, got {other:?}"),
@@ -178,7 +212,7 @@ context:
     #[test]
     fn rejects_empty_path() {
         let f = write_yaml(
-            "context:\n  pinned: [\"\"]\n  include: []\n  budget_tokens: 1\n  overflow: drop\n",
+            "roles:\n  r:\n    pinned: [\"\"]\n    order: []\n    budget_tokens: 1\n    overflow: drop\n",
         );
         let err = Manifest::load(f.path()).unwrap_err();
         assert!(matches!(err, LoadError::Invalid { .. }));
@@ -187,11 +221,11 @@ context:
     #[test]
     fn rejects_zero_budget() {
         let f = write_yaml(
-            "context:\n  pinned: []\n  include: []\n  budget_tokens: 0\n  overflow: drop\n",
+            "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 0\n    overflow: drop\n",
         );
         let err = Manifest::load(f.path()).unwrap_err();
         match err {
-            LoadError::Invalid { key, .. } => assert_eq!(key, "context.budget_tokens"),
+            LoadError::Invalid { key, .. } => assert_eq!(key, "roles.r.budget_tokens"),
             other => panic!("expected Invalid, got {other:?}"),
         }
     }

@@ -8,6 +8,10 @@ fn parses_zero_arg_actions() {
         Action::parse("spawn_exchange").unwrap(),
         Action::SpawnExchange
     );
+    assert_eq!(
+        Action::parse("spawn_root_conversation").unwrap(),
+        Action::SpawnRootConversation
+    );
     assert_eq!(Action::parse("merge").unwrap(), Action::Merge);
     assert_eq!(
         Action::parse("mark_abandoned").unwrap(),

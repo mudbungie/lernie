@@ -46,18 +46,19 @@ every rebuild to pick up changes. `make uninstall` removes them.
 
 ## Configuration schemas
 
-JSON Schemas for the `.agent/*.yaml` config files (per
+JSON Schemas for the conversation-repo config files (per
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2) are generated from the
 Rust types under `src/config/`. `make schemas` writes them to `schemas/` for
 editor integration and external validators.
 
 ## Conversation repos
 
-Each conversation is a self-contained git repository copied from
+Each conversation is a self-contained git repository scaffolded from
 [`template/`](template/) — the versioned skeleton described in ARCH §2.2.
 Create one with the `lernie` binary:
 
 ```
+lernie new                     # auto-id under <harness-root>/conversations/
 lernie new /path/to/my-conversation
 ```
 
@@ -67,11 +68,24 @@ Or via the Makefile wrapper:
 make new-conversation DEST=/path/to/my-conversation
 ```
 
-The binary embeds `template/` at build time (via `include_dir`), copies
-it to the destination, runs `git init -b main`, and lands a single
-`init conversation repo` commit. The destination must either not exist
-or be an empty directory. `.agent/goal.md` is intentionally not in the
-template — it is written at dispatch time (ARCH §2.8).
+The binary embeds `template/` at build time (via `include_dir`), extracts
+it to the destination, creates the `root/` worktree subdirectory with
+`.gitattributes` pinning the §2.6 `merge=ours` rules, runs `git init -b
+main` *inside* `root/`, and lands a single `init conversation repo`
+commit. The control-plane files (`manifest.yaml`, `workflow.yaml`,
+`providers.yaml`, `version`, `souls/`) sit at the conv-repo root —
+outside any worktree — and are deliberately untracked. The destination
+must either not exist or be an empty directory. With no path argument,
+the destination is `<LERNIE_HOME or ~/.lernie>/conversations/<auto-id>/`;
+the scaffolded path is printed on stdout. `goal.md` and `soul.md` inside
+`root/` are intentionally not in the template — they are written at
+dispatch time (ARCH §2.3, §2.8).
+
+> **v0.3 layout migration in progress.** Phase 2 (this commit) landed the
+> v0.3 conv-repo shape. The `lernie prompt` path documented below still
+> expects the v0.2 `.agent/`-rooted layout; Phase 3 (bl-7bca) re-wires it
+> against the new shape and re-enables the v0.2 end-to-end test that is
+> currently `#[ignore]`d.
 
 ## Sending a prompt (v0.2)
 

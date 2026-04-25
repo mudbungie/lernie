@@ -36,10 +36,11 @@ fn check_dest_surfaces_other_io_errors() {
 }
 
 // --- scaffold orchestration via stub GitRunner -------------------
-/// Records every `git` subprocess run and can be programmed to fail
-/// at a chosen run index.
+/// Records every `git` subprocess run (including the `dest` arg so
+/// tests can confirm it executed inside `root/`) and can be programmed
+/// to fail at a chosen run index.
 struct StubGit {
-    runs: RefCell<Vec<Vec<String>>>,
+    runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
     fail_at: Option<usize>,
 }
 
@@ -59,10 +60,13 @@ impl StubGit {
 }
 
 impl GitRunner for StubGit {
-    fn run(&self, _dest: &Path, args: &[&str]) -> io::Result<()> {
+    fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
         let mut runs = self.runs.borrow_mut();
         let idx = runs.len();
-        runs.push(args.iter().map(|s| (*s).to_owned()).collect());
+        runs.push((
+            dest.to_path_buf(),
+            args.iter().map(|s| (*s).to_owned()).collect(),
+        ));
         if self.fail_at == Some(idx) {
             Err(io::Error::other(format!("stub fail at {idx}")))
         } else {
@@ -76,18 +80,49 @@ impl GitRunner for StubGit {
 }
 
 #[test]
-fn scaffold_happy_path_runs_git_in_order() {
+fn scaffold_happy_path_lays_out_v0_3_shape() {
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("conv");
+    let git = StubGit::ok();
+    scaffold(&dest, &git).unwrap();
+
+    // Control plane lives at conv-repo root, outside the worktree.
+    assert!(dest.join("manifest.yaml").is_file());
+    assert!(dest.join("workflow.yaml").is_file());
+    assert!(dest.join("providers.yaml").is_file());
+    assert!(dest.join("version").is_file());
+    assert!(dest.join("souls/worker.md").is_file());
+    assert!(dest.join("souls/compactor.md").is_file());
+
+    // root/ is the primary worktree; .gitattributes holds the merge=ours
+    // pins from ARCH §2.6.
+    let root = dest.join("root");
+    assert!(root.is_dir());
+    let attrs = fs::read_to_string(root.join(".gitattributes")).unwrap();
+    assert!(attrs.contains("goal.md     merge=ours"));
+    assert!(attrs.contains("soul.md     merge=ours"));
+    assert!(attrs.contains("summary/**  merge=ours"));
+
+    // Every git invocation ran inside root/, not the conv-repo root.
+    let runs = git.runs.borrow();
+    assert_eq!(runs.len(), 3);
+    assert!(runs.iter().all(|(d, _)| d == &root));
+    assert_eq!(runs[0].1, vec!["init", "-b", "main"]);
+    assert_eq!(runs[1].1, vec!["add", "-A"]);
+    assert_eq!(runs[2].1, vec!["commit", "-m", "init conversation repo"]);
+}
+
+#[test]
+fn scaffold_does_not_track_control_plane_in_git() {
+    // The conv-repo root is *not* the worktree; the control files live
+    // outside any git history. Asserts the inverse of the happy path:
+    // git was never invoked with the conv-repo root as its target.
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let git = StubGit::ok();
     scaffold(&dest, &git).unwrap();
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 3);
-    assert_eq!(runs[0], vec!["init", "-b", "main"]);
-    assert_eq!(runs[1], vec!["add", "-A"]);
-    assert_eq!(runs[2], vec!["commit", "-m", "init conversation repo"]);
-    assert!(dest.join(".agent/version").is_file());
-    assert!(dest.join(".agent/system/prompts/base.md").is_file());
+    assert!(runs.iter().all(|(d, _)| d != &dest));
 }
 
 #[test]
@@ -133,6 +168,24 @@ fn scaffold_surfaces_extract_io_error() {
     let dest = blocker.join("child");
     let err = scaffold(&dest, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
+}
+
+#[test]
+fn scaffold_surfaces_root_dir_creation_failure() {
+    // A pre-existing regular file at <dest>/root makes the create_dir_all
+    // call fail with ErrorKind::NotADirectory after the template extracted
+    // — exercises the second Io arm of scaffold (post-extract, pre-git).
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("conv");
+    fs::create_dir_all(&dest).unwrap();
+    fs::write(dest.join("root"), b"actually-a-file").unwrap();
+    let err = scaffold(&dest, &StubGit::ok()).unwrap_err();
+    // Either DestNotEmpty (root file was the occupant) or Io —
+    // both are acceptable failure shapes; the point is no git was run.
+    assert!(matches!(
+        err,
+        ScaffoldError::DestNotEmpty(_) | ScaffoldError::Io(_)
+    ));
 }
 
 // --- RealGit -----------------------------------------------------

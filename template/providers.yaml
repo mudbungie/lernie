@@ -1,0 +1,7 @@
+roles:
+  worker:
+    provider: anthropic
+    model: claude-sonnet-4-7
+  compactor:
+    provider: anthropic
+    model: claude-haiku-4-5

@@ -1,6 +1,6 @@
 events:
   user_message:
-    - spawn_exchange
+    - spawn_root_conversation
     - dispatch(worker)
   worker_return:
     - dispatch(compactor)

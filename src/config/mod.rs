@@ -21,7 +21,7 @@ pub mod workflow;
 pub use action::{Action, DispatchMode};
 pub use agents::{AgentRole, Agents};
 pub use error::{LoadError, Warning};
-pub use manifest::{Manifest, OverflowPolicy};
+pub use manifest::{Manifest, OverflowPolicy, RoleRules};
 pub use per_repo_providers::{PerRepoProviders, RoleAssignment};
 pub use providers::{Auth, Capabilities, Model, Provider, Providers};
 pub use version::Version;

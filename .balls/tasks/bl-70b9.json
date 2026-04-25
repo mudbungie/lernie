@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T01:19:58.942073324Z",
-  "delivered_in": null,
+  "delivered_in": "4addbf158cfe59c16173ed5457a90ae395c58183",
   "depends_on": ["bl-7bca","bl-d7b1"],
   "description": "Fourth phase of bl-7c23. Make role -> soul + role -> model fully data-driven and remove the agents.yaml file/loader.\n\n=== Scope ===\n\n1. Per-repo providers.yaml 'roles:' section is now the single source of truth for role definitions. Phase 1 introduced the loader; this ball wires the dispatcher to use it for both model lookup AND soul lookup (souls/<role>.md by convention).\n2. Remove src/config/agents.rs entirely (or empty to a doc-comment redirect). Update src/config/mod.rs and src/config/cross.rs to drop agents-related plumbing.\n3. Remove agents.yaml from the embedded template (Phase 2 may have already done this — verify).\n4. Per-repo providers.yaml loader (Phase 1) escalates from warn to error if it sees 'providers:' or 'models:' blocks (those belong to harness-root global providers.yaml only).\n5. Soul write at dispatch (Phase 3) reads <conv-repo>/souls/<role>.md and copies it to the new branch's worktree root as soul.md on the dispatch commit. If souls/<role>.md is missing, hard error at dispatch.\n6. Update src/config/schemas.rs: schemars-derived JSON schema for the per-repo providers.yaml is the new shape (roles only). Run the schema regeneration in this ball or defer to Phase 6 — claimer's call, but if schemas regenerate here, also update schemas/agents.json (delete) and schemas/providers.json (replace).\n\n=== Constraints ===\n\n- The 'role' string set is open: a workflow can dispatch any role name as long as souls/<role>.md and an entry in providers.yaml roles: exist for it. The harness does NOT hardcode 'worker'/'compactor' anywhere — they are conventions in the embedded template only.\n\n=== Out of scope ===\n\n- Compactor migration (Phase 5).\n- Final schema regen sweep (Phase 6) unless the claimer rolls it in here.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout"],
   "title": "Phase 4: soul/role machinery + agents.yaml retirement",
   "type": "task",
-  "updated_at": "2026-04-25T05:51:21.837515637Z"
+  "updated_at": "2026-04-25T06:01:28.510699552Z"
 }

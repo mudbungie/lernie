@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:11:53.681345591Z",
+  "delivered_in": null,
+  "depends_on": ["bl-d5f6"],
+  "description": "Verify that two subagents dispatched from the same parent step run in parallel without corrupting each other's state, per ARCH §2.5 ('the harness assigns write paths per tool call and per subagent conversation, so two sibling branches never target the same file. This is a structural guarantee').\n\nScope:\n- Confirm the write-path discipline: each subagent's worktree path (<conv-repo>/<full-descent>/) is unique by hyphenated-descent construction; each tool-call's on-disk record path (steps/<conv-id>/<NNN>/tools/<tool-id>/) is unique by conv-id namespacing + per-step seq + per-call tool-id. No code change should be needed; v0.4 verifies and tests.\n- Add an integration test that emits two dispatch tool_use blocks in one parent step, both spawning worker subagents off the same commit. Both subagents run their own loops, both compact, both merge back. The parent's two await calls resolve in order.\n- Verify single-author-per-file: while both subagents are in flight, no shared file is written by both. The siblings touch only their own worktrees and their own steps/<sub-conv-id>/ subtree.\n- Verify the merge=ours alignment step survives sibling merge-backs: subagent A's merge does not pollute the parent's view of subagent B's not-yet-merged state.\n\nSubtle pieces:\n- The two dispatches share a tool-call-emitting commit on the parent. Both subagents start at that sha. No collision: their branch names differ (different sub-ids).\n- If the agent emits TWO awaits in one step, single-author-per-file requires they serialize their tool-call commits on the parent — already pinned by §3.3 'commit-per-tool-call' rule. Confirm the existing tool executor honors this serialization for await as well as for synchronous tools.\n\nOut of scope:\n- Stress / fuzzing of N≥3 parallel subagents — fixture-level coverage of N=2 is sufficient for the success criterion.\n- Oversized auto-dispatch (Phase 6).\n\nTests:\n- Two parallel dispatches end-to-end (real git, fake adapter): both subagents terminate, both summaries returned by their respective await calls, parent merges to main with both subagent's steps/<sub-id>/ subtrees present.\n- Negative test or property check that confirms no shared write target: a property test or fixture inspection asserting the two subagents' worktree paths and steps subtrees are disjoint.\n\nDone-when: integration test demonstrating two parallel subagent dispatches running and merging back without state corruption is green; merge=ours discipline holds across sibling merges; tarpaulin still 100%.",
+  "external": {},
+  "id": "bl-660f",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 5: parallel subagent fixture + write-path assignment",
+  "type": "task",
+  "updated_at": "2026-04-25T22:11:53.681345591Z"
+}

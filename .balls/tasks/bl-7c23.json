@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-25T02:21:10.210494852Z","id":"bl-d7b1","title":"Phase 1: harness root + global providers split"}],
   "created_at": "2026-04-25T01:18:01.588404552Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.3","layout"],
   "title": "v0.3 layout migration: implement the new conversation-repo shape",
   "type": "epic",
-  "updated_at": "2026-04-25T01:18:22.587655366Z"
+  "updated_at": "2026-04-25T02:21:10.708298421Z"
 }

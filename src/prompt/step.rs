@@ -1,8 +1,10 @@
 //! On-disk layout for a step (ARCH §2.3 and §2.10).
 //!
-//! Within an exchange branch, each step lives in its own directory under
-//! `exchanges/<exchange-id>/steps/<NNN>/`, zero-padded 3-digit and
-//! 1-indexed. Two files land per step in v0.2:
+//! Each step lives in its own directory under
+//! `steps/<conv-id>/<NNN>/`, zero-padded 3-digit and 1-indexed.
+//! Namespacing by conversation id (§2.2) is what lets a subagent's step
+//! tree merge into its parent's worktree without filename collision.
+//! Two files land per step in v0.3:
 //!
 //! - `request.json` — the model call's input, written and committed BEFORE
 //!   the model call. Per §2.10 ("commit before model call"), this
@@ -14,18 +16,14 @@
 //!   amending) is chosen so the snapshot commit's tree continues to
 //!   reflect pre-model-call state, preserving §2.10's replay property.
 //!
-//! v0.2 has exactly one step per exchange (no tools yet — §12). v0.3
-//! extends the step dir with `tool_calls/<tool-id>/…` without moving
+//! v0.3 has exactly one step per conversation (no tools yet — §12).
+//! v0.4+ extends the step dir with `tools/<tool-id>/…` without moving
 //! `request.json` / `response.json`, so this layout generalizes.
 
 use serde::{Deserialize, Serialize};
 
-/// Top-level directory holding per-exchange working areas on a branch
-/// and compacted summaries on `main` post-merge (ARCH §2.2).
-pub const EXCHANGES_DIR: &str = "exchanges";
-/// Sub-directory inside an exchange that holds each step's on-disk
-/// layout. The name is not a term of art — it mirrors §2.3's
-/// "steps are linear commits" phrasing.
+/// Top-level directory holding per-conversation step records on a branch
+/// (ARCH §2.2).
 pub const STEPS_DIR: &str = "steps";
 /// Model call input, committed BEFORE the model call (§2.10).
 pub const REQUEST_FILE: &str = "request.json";
@@ -33,16 +31,16 @@ pub const REQUEST_FILE: &str = "request.json";
 pub const RESPONSE_FILE: &str = "response.json";
 
 /// Width of the zero-padded step sequence in on-disk paths
-/// (`steps/001`, `steps/002`, ...). Three digits gives comfortable
-/// headroom for any realistic exchange while keeping directories
+/// (`steps/<conv-id>/001`, `…/002`, ...). Three digits gives comfortable
+/// headroom for any realistic conversation while keeping directories
 /// lexically sortable.
 const STEP_SEQ_WIDTH: usize = 3;
 
-/// The branch-relative directory for step `seq` within exchange
-/// `exchange_id`. `seq` is 1-indexed; v0.2 always passes `1`.
-pub fn step_dir_rel(exchange_id: &str, seq: u32) -> String {
+/// The branch-relative directory for step `seq` within conversation
+/// `conv_id`. `seq` is 1-indexed; v0.3 always passes `1`.
+pub fn step_dir_rel(conv_id: &str, seq: u32) -> String {
     format!(
-        "{EXCHANGES_DIR}/{exchange_id}/{STEPS_DIR}/{seq:0width$}",
+        "{STEPS_DIR}/{conv_id}/{seq:0width$}",
         width = STEP_SEQ_WIDTH
     )
 }
@@ -58,8 +56,7 @@ pub struct Usage {
 
 /// On-disk shape of `response.json`. Normalized to a harness-owned
 /// schema so provider-specific wire fields do not leak into the
-/// long-term record — the compactor (later v0.2 work) reads this as a
-/// stable contract.
+/// long-term record — the compactor reads this as a stable contract.
 ///
 /// `assistant_response` is the concatenated text of the response's text
 /// blocks; per ARCH §2.1 `stop_reason` stays as the raw provider wire
@@ -84,9 +81,9 @@ mod tests {
     fn step_dir_rel_zero_pads_seq() {
         assert_eq!(
             step_dir_rel("20260422T000000Z-deadbeef", 1),
-            "exchanges/20260422T000000Z-deadbeef/steps/001"
+            "steps/20260422T000000Z-deadbeef/001"
         );
-        assert_eq!(step_dir_rel("id", 42), "exchanges/id/steps/042");
+        assert_eq!(step_dir_rel("id", 42), "steps/id/042");
     }
 
     #[test]

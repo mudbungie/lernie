@@ -6,6 +6,11 @@
 #   meaningful without forcing a contrived test of `fn main()`.
 # - `ignore-panics` excludes branches that only fire on programmer-error
 #   panics (e.g. `.expect(...)` on infallible operations).
+# - `timeout` is bumped above tarpaulin's 60s default because the
+#   `prompt_end_to_end.rs` integration test chains two subprocess
+#   binaries (`lernie new` + `lernie prompt`) under instrumentation,
+#   which inflates wall-clock time well past the per-test default.
 [default]
 exclude-files = ["src/bin/*", "crates/*/src/main.rs"]
 ignore-panics = true
+timeout = "300s"

@@ -1,4 +1,4 @@
-//! `.agent/workflow.yaml` — event-to-action bindings per ARCH §6.
+//! `<conv-repo>/workflow.yaml` — event-to-action bindings per ARCH §6.
 //!
 //! Workflows are declarative: events are drawn from a closed set, actions
 //! are drawn from another closed set (defined in [`crate::config::action`]).

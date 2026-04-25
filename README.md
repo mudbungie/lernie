@@ -81,90 +81,95 @@ the scaffolded path is printed on stdout. `goal.md` and `soul.md` inside
 `root/` are intentionally not in the template — they are written at
 dispatch time (ARCH §2.3, §2.8).
 
-> **v0.3 layout migration in progress.** Phase 2 (this commit) landed the
-> v0.3 conv-repo shape. The `lernie prompt` path documented below still
-> expects the v0.2 `.agent/`-rooted layout; Phase 3 (bl-7bca) re-wires it
-> against the new shape and re-enables the v0.2 end-to-end test that is
-> currently `#[ignore]`d.
-
-## Sending a prompt (v0.2)
+## Sending a prompt (v0.3)
 
 ```
 ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
 ```
 
-`lernie prompt` is the v0.2 exchange-branch path (ARCH §2.3, §2.6,
+`lernie prompt` is the v0.3 root-conversation path (ARCH §2.3, §2.6,
 §2.7, §2.8, §2.10). Each invocation spawns its own branch off `main`,
 commits a snapshot before the model call, lands the response as a
 follow-up commit, runs the terminal compactor off the tip, and
 `--no-ff` merges the compacted branch back into `main`:
 
-1. Load `<repo>/.agent/providers.yaml` and `<repo>/.agent/agents.yaml`;
-   cross-validate `agents.worker.model` against the declared models.
-2. Invoke `lernie-provider-<name> describe` (discovered on `PATH`) to
+1. Resolve the harness root (`LERNIE_HOME` or `~/.lernie/`, ARCH
+   §2.2). Load `<harness-root>/providers.yaml` (endpoints, auth, model
+   capabilities — §4.1) and `<repo>/providers.yaml` (`roles:` block —
+   §4.3); cross-validate `roles.worker.{provider,model}` against the
+   global file.
+2. Read the worker soul from `<repo>/souls/worker.md` (§4.3 — by
+   convention, no per-role path override).
+3. Invoke `lernie-provider-<name> describe` (discovered on `PATH`) to
    read the adapter's `endpoint_env` (§4.4).
-3. Spawn branch `ex/<ts>-<short-id>` off `main` and allocate a
-   worktree at `<repo>/.lernie/worktrees/ex/<ts>-<short-id>/`.
-4. Write the branch goal to `.agent/goal.md` (§2.8) and the model
-   call's input to `exchanges/<ts>-<short-id>/steps/001/request.json`;
-   commit both on the branch. This is §2.10's "commit before model
-   call" — the tree the model reads is the tree of this snapshot
-   commit.
-5. Invoke `lernie-provider-<name> complete`, setting each env var
+4. Spawn branch `<conv-id>` (the bare hyphenated id — no `ex/`
+   prefix per §2.3) off `main` and allocate a sibling worktree at
+   `<repo>/<conv-id>/` (§2.2). The `git worktree add` runs inside
+   `<repo>/root/`, where the `.git` directory lives.
+5. Write the branch goal to `goal.md`, the role soul to `soul.md`,
+   and the model call's input to `steps/<conv-id>/001/request.json`
+   in the new worktree; commit all three on the branch as the
+   dispatch snapshot. This is §2.10's "commit before model call" —
+   the tree the model reads is the tree of this snapshot commit.
+6. Invoke `lernie-provider-<name> complete`, setting each env var
    named in `endpoint_env` to `providers.<name>.endpoint`; pipe the
    Messages-API-shaped request on stdin; read one JSON document back.
    Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
    process inheritance.
-6. Write the normalized response (assistant text, `model_id`,
+7. Write the normalized response (assistant text, `model_id`,
    `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
-   `exchanges/<ts>-<short-id>/steps/001/response.json` and land it as
-   a follow-up commit on the same branch. The snapshot commit's tree
-   stays intact so replay and retry (§2.10) see exactly what the model
-   saw.
-7. Dispatch the terminal compactor (§2.7) off the exchange tip by
-   re-entering the binary as `lernie dispatch compactor <repo>
-   <exchange-branch>` (subprocess invocation per §3.4 — the harness
-   never shortcuts past the CLI for procedure-to-procedure calls).
-   The compactor spawns branch `inv/<ex-id>/<cmp-id>` off the exchange
-   tip, writes `.agent/goal.md` with the boilerplate compactor goal
-   and lands it as a dispatch commit (§2.8, §2.10), then writes
-   `.agent/compactions/001.md` with the terminal-response summary and
-   lands that as a follow-up commit, and `--no-ff` merges the compactor
-   branch back into the exchange branch. The v0.2 compactor is a stub
-   — it does not call a model, and `mark_for_deletion` is a no-op;
-   the shape exists so v0.3+ can layer real semantics without moving
-   call sites.
-8. Rebase the exchange onto the current `main` tip and `--no-ff` merge
-   it into `main` (§2.6). Remove the exchange worktree; the branch
+   `steps/<conv-id>/001/response.json` and land it as a follow-up
+   commit on the same branch. The snapshot commit's tree stays
+   intact so replay and retry (§2.10) see exactly what the model saw.
+8. Dispatch the terminal compactor (§2.7) off the conversation tip
+   by re-entering the binary as `lernie dispatch compactor <repo>
+   <conv-id>` (subprocess invocation per §3.4 — the harness never
+   shortcuts past the CLI for procedure-to-procedure calls). The
+   compactor spawns branch `<conv-id>-<cmp-id>` (hyphenated descent
+   per §2.2) off the conversation tip in a sibling worktree at
+   `<repo>/<conv-id>-<cmp-id>/`, writes `goal.md` with the
+   boilerplate compactor goal and lands it as a dispatch commit
+   (§2.8, §2.10), then writes `summary/001.md` with the
+   terminal-response summary and lands that as a follow-up commit,
+   and `--no-ff` merges the compactor branch back into the
+   conversation branch. The v0.3 compactor is a stub — it does not
+   call a model, and `mark_for_deletion` is a no-op; the shape
+   exists so v0.4+ can layer real semantics without moving call
+   sites.
+9. Rebase the conversation branch onto the current `main` tip and
+   `--no-ff` merge it into `main` (§2.6), running the merge inside
+   `<repo>/root/`. Remove the conversation worktree; the branch
    ref stays for the retention window (§2.3).
-9. Print the exchange branch name on stdout.
+10. Print the conversation branch name on stdout.
 
-After `lernie prompt` returns, inspect the merge from the repo root:
+After `lernie prompt` returns, inspect the merge from the primary
+worktree (`root/` is where `main` is checked out):
 
 ```
-cd /path/to/my-conversation
+cd /path/to/my-conversation/root
 git log --oneline --decorate main -4
 git show --stat main              # the --no-ff merge commit
-cat .agent/compactions/001.md     # terminal summary
+cat summary/001.md                # terminal summary
 ```
 
 The unmerged branch count health metric (ARCH §8) is read straight
 from git refs — no sidecar file:
 
 ```
-git -C /path/to/my-conversation branch --list 'ex/*' 'inv/*' --no-merged main | wc -l
+git -C /path/to/my-conversation/root \
+    branch --list '*-*' --no-merged main | wc -l
 ```
 
 A ballooning count indicates a silent failure in the merge pipeline.
 
 ## Dispatching the compactor directly
 
-`lernie dispatch compactor <repo> <exchange-branch>` runs the same
+`lernie dispatch compactor <repo> <conv-id>` runs the same
 terminal-compaction routine that `lernie prompt` triggers internally.
-Useful for re-compacting an exchange branch that still exists as a
+Useful for re-compacting a conversation branch that still exists as a
 ref, or for testing the compactor path independently. The command
-only runs the compaction + inv→ex merge; merge into `main` is the
-caller's problem (§2.6).
+only runs the compaction + compactor→conversation merge; merge into
+`main` is the caller's problem (§2.6).
 
 ## Providers
 
@@ -212,12 +217,13 @@ Adapters are discovered on `PATH` by name. To test a new one:
 1. Copy the binary into any `PATH` directory (e.g. `~/.local/bin/` —
    the same location `make install` uses) with the name
    `lernie-provider-<name>`.
-2. Add a provider entry in your conversation repo's
-   `.agent/providers.yaml` keyed by `<name>`, with the `endpoint:` and
-   `auth:` the adapter expects.
-3. Declare at least one `models:` entry whose `provider:` points at
-   that key, and point an agent role (`worker` is the only role
-   through v0.2) at that model.
+2. Add a provider entry in `<harness-root>/providers.yaml` (ARCH
+   §4.1) keyed by `<name>`, with the `endpoint:` and `auth:` the
+   adapter expects, and a `models:` entry whose `provider:` points at
+   that key.
+3. In the conversation repo's `<repo>/providers.yaml` (`roles:`
+   block, ARCH §4.3), point the `worker` role at the new
+   provider/model pair.
 4. Run `lernie prompt <repo> '...'`.
 
 ## UI (v0.5, skeleton)
@@ -235,7 +241,9 @@ beneath; any unmerged `ex/*` branches (in-flight exchanges) follow in
 their own section. v0.1-shape repos still render — flat linear history
 with one `exchanges/<ts>-<id>.json` per commit and a truncated
 user-message preview. If the tree can't be read, a placeholder view
-is shown instead.
+is shown instead. (v0.3-shape detection — bare `<conv-id>` branches
+under `<repo>/<conv-id>/` and `steps/<conv-id>/<NNN>/` paths — is
+follow-on UI work.)
 Three pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
@@ -250,7 +258,9 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   trunk (including v0.2-shape merge nodes with their step commits) plus
   the set of unmerged `ex/*` branches (`git branch --list ex/*
   --no-merged main`, per PRINCIPLES.md single-source-of-truth). A thin
-  egui widget in the same module renders it.
+  egui widget in the same module renders it. v0.3-shape support
+  (bare `<conv-id>` branches and `steps/<conv-id>/<NNN>/` paths) is
+  follow-on UI work.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

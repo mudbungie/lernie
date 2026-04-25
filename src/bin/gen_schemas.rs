@@ -1,4 +1,5 @@
-//! Generate JSON Schemas for the .agent/* config files.
+//! Generate JSON Schemas for the v0.3 conversation-repo + harness-root
+//! config files.
 //!
 //! Usage: `cargo run --bin gen-schemas -- <out-dir>`
 //! (or via `make schemas`).

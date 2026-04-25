@@ -1,5 +1,5 @@
-//! `.agent/providers.yaml` — inference providers and the models served from
-//! them. Schema follows ARCH §4.1 and §4.2.
+//! `<harness-root>/providers.yaml` — inference providers and the
+//! models served from them. Schema follows ARCH §4.1 and §4.2.
 //!
 //! Decision: the arch examples did not commit on whether `models:` lives in
 //! its own file. We keep them together in `providers.yaml` so a model is one

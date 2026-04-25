@@ -41,7 +41,7 @@ fn run_rejects_response_missing_required_fields() {
         ),
     ];
     for (label, body) in cases {
-        let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+        let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
         let adapter = StubAdapter::happy(body);
         let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
         assert!(
@@ -66,7 +66,7 @@ fn run_accepts_response_with_anthropic_native_cache_fields() {
             "cache_creation_input_tokens":2,"cache_read_input_tokens":3
         }
     }"#;
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(body);
     run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok())
         .expect("native cache field names must parse");

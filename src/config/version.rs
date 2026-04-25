@@ -1,4 +1,4 @@
-//! `.agent/version` — the schema version of a conversation repo.
+//! `<conv-repo>/version` — the schema version of a conversation repo.
 //!
 //! Per ARCH §10, this is a bare integer. The file's content is the integer
 //! and nothing else (trailing whitespace tolerated).
@@ -15,7 +15,7 @@ use std::path::Path;
 pub struct Version(pub u32);
 
 impl Version {
-    /// Read and parse `.agent/version` at `path`.
+    /// Read and parse the conv-repo `version` file at `path`.
     pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),

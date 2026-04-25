@@ -1,10 +1,11 @@
 //! Wall-clock and short-id generation — behind traits so
 //! [`super::run`] is deterministic in tests.
 //!
-//! The two concerns travel together because a v0.1 exchange filename is
-//! `<ts>-<short-id>.json` (ARCH §12 plus the bl-e048 task spec): the ts is
-//! human-readable, the short-id breaks ties when two exchanges land in the
-//! same second.
+//! The two concerns travel together because a conversation id is
+//! `<ts>-<short-id>` (ARCH §2.3): the ts is human-readable, the
+//! short-id breaks ties when two conversations land in the same
+//! second. The conversation id doubles as the branch name and the
+//! sibling worktree's directory name (§2.2).
 
 use chrono::{DateTime, Utc};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -15,7 +16,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub trait Clock {
     /// ISO-8601 timestamp with second precision, UTC — e.g.
     /// `2026-04-22T06:54:32Z`. Used for `started_at` / `ended_at` fields
-    /// in the exchange record.
+    /// in the step record.
     fn now_iso8601(&self) -> String;
 
     /// Compact filename timestamp — e.g. `20260422T065432Z`. Sorted
@@ -23,13 +24,13 @@ pub trait Clock {
     fn now_compact(&self) -> String;
 }
 
-/// Short (hex) identifier for exchange filenames. The real impl derives
-/// entropy from the wall clock at nanosecond granularity, which is enough
-/// to prevent collisions between v0.1's single-threaded, human-paced
-/// `lernie prompt` invocations.
+/// Short (hex) identifier for the conv-id suffix. The real impl
+/// derives entropy from the wall clock at nanosecond granularity,
+/// which is enough to prevent collisions between v0.3's
+/// single-threaded, human-paced `lernie prompt` invocations.
 pub trait IdGen {
     /// Eight hex characters. The length is a format contract — the
-    /// filename convention uses it verbatim.
+    /// branch-name convention uses it verbatim.
     fn short(&self) -> String;
 }
 

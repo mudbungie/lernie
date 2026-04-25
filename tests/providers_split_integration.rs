@@ -1,12 +1,12 @@
 //! End-to-end integration: load both halves of the provider config —
 //! a scratch `<harness-root>/providers.yaml` and a scratch per-repo
-//! `providers.yaml` with a `roles:` section — and confirm the
-//! cross-validation lands.
+//! `<conv-repo>/providers.yaml` with a `roles:` section — and confirm
+//! the cross-validation lands.
 //!
-//! Phase 1 of the v0.3 layout migration (bl-d7b1, child of bl-7c23).
-//! The dispatch path is not yet wired through this loader; this test
-//! exists so the loader chain is exercised and regressions land
-//! visibly even before Phase 2 moves the per-repo file out of `.agent/`.
+//! Originated as Phase 1 of the v0.3 layout migration (bl-d7b1, child
+//! of bl-7c23); Phase 3 (bl-7bca) wired the prompt path through this
+//! loader. The test still exercises the loader independently of the
+//! dispatch path so regressions in cross-validation land visibly.
 
 use lernie::config::{LoadError, ProvidersConfig};
 use lernie::harness_root;

@@ -104,7 +104,7 @@ A **branch** is the git container for a single conversation. One invariant:
 
 > **Every dispatch creates a branch.** Spawn the branch, do the work, compact, merge back (or, in the root case, terminate to the user). This pattern is uniform whether the dispatch is a user message or a subagent-targeting tool call.
 
-Branch naming tracks the worktree directory. The root conversation runs on `main`; every subagent conversation's branch is its full hyphenated descent (`<a>-<b>`, `<a>-<b>-<c>`, etc.). There is no `ex/` or `inv/` prefix — the hierarchy in the name is self-describing.
+Branch naming tracks the worktree directory. The conversation-repo's `main` branch is the durable home of root-conversation history: each user-message dispatch spawns a `<conv-id>` branch off the current `main` tip, work happens in a sibling worktree at `<conv-repo>/<conv-id>/`, and the branch merges back to `main` on completion (paragraph 3 below is the load-bearing rule). Every subagent conversation's branch is its full hyphenated descent (`<a>-<b>`, `<a>-<b>-<c>`, etc.). There is no `ex/` or `inv/` prefix — the hierarchy in the name is self-describing.
 
 Within a branch, **steps are linear commits** — one commit per step, carrying that step's model call and the tool calls it emitted. Steps are not their own branches. New branches appear only at dispatch boundaries.
 

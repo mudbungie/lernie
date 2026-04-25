@@ -1,16 +1,24 @@
-//! `lernie prompt` — v0.2 exchange-branch backend.
+//! `lernie prompt` — v0.3 root-conversation backend.
 //!
-//! v0.2 realizes ARCH §2.3's branch invariant for the exchange case:
-//! each invocation spawns `ex/<ts>-<short-id>` off `main`, commits a
-//! snapshot (§2.10) before the model call, lands the response as a
-//! follow-up commit, dispatches the terminal compactor off the tip
-//! (§2.7), and `--no-ff` merges the compacted branch back to `main`
-//! (§2.6). Main advances by one merge commit per `lernie prompt`.
+//! v0.3 realizes ARCH §2.3's branch invariant for the root-conversation
+//! (user-message) case: each prompt spawns a `<conv-id>` branch off
+//! `main` (no `ex/` prefix — the hyphenated descent in the name is
+//! self-describing per §2.3), commits a snapshot (§2.10) before the
+//! model call, lands the response as a follow-up commit, dispatches the
+//! terminal compactor off the tip (§2.7), and `--no-ff` merges the
+//! compacted branch back to `main` (§2.6). Main advances by one merge
+//! commit per `lernie prompt`.
 //!
 //! Provider plumbing follows ARCH §4.4 strictly: `describe` runs once
 //! per invocation to pick up the adapter's `endpoint_env` list, then
 //! each named env var is set to `providers.<name>.endpoint` before
 //! `complete`. The harness never reads or interprets the URL.
+//!
+//! Configuration follows the v0.3 layout (ARCH §2.2, §4.1, §4.3): the
+//! per-repo `<conv-repo>/providers.yaml` carries the role → (provider,
+//! model) mapping; the global `<harness-root>/providers.yaml` carries
+//! endpoints, auth, and model capabilities. Souls live at
+//! `<conv-repo>/souls/<role>.md` (§4.3 — no per-role path override).
 //!
 //! [`run`] is orchestrated against injected [`AdapterRunner`],
 //! [`GitRunner`], [`Clock`], and [`IdGen`] so every branch of the
@@ -34,19 +42,29 @@ pub use compactor::CompactorRequest;
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use step::{StepResponse, Usage};
 
-use crate::config::cross::check_agents_against_providers;
-use crate::config::{Agents, Providers};
+use crate::config::ProvidersConfig;
 use crate::provider::wire::Response;
 use crate::template::GitRunner;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-/// Role name resolved from `agents.yaml` to drive the exchange. v0.2
-/// has one role; v0.4 introduces invocations.
+/// Role name resolved from per-repo `providers.yaml` (`roles:` block,
+/// ARCH §4.3) to drive the root conversation. v0.3 has one role; v0.4
+/// introduces subagent dispatch which uses the same lookup against
+/// other role names.
 const WORKER_ROLE: &str = "worker";
-pub(crate) const AGENT_DIR: &str = ".agent";
-const SYSTEM_DIR_IN_AGENT: &str = "system";
+/// Per-conv-repo directory holding the role souls (ARCH §4.3 — soul =
+/// `<conv-repo>/souls/<role>.md` by convention).
+const SOULS_DIR: &str = "souls";
+/// Per-conv-repo control file naming the role → (provider, model)
+/// assignments (ARCH §4.3). Lives at the conv-repo root, outside any
+/// worktree (§2.2 control vs data plane).
+const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
+/// Global control file naming endpoints, auth, and model capabilities
+/// (ARCH §4.1). Lives at the harness root and rotates independently of
+/// any conversation repo.
+const GLOBAL_PROVIDERS_FILE: &str = "providers.yaml";
 
 /// Every way [`run`] can fail. The taxonomy is intentionally narrower
 /// than the provider client's: step-level distinctions (network vs
@@ -55,15 +73,15 @@ const SYSTEM_DIR_IN_AGENT: &str = "system";
 pub enum Error {
     #[error("config: {0}")]
     Config(#[from] crate::config::LoadError),
-    #[error("agents.yaml has no {0:?} role (required for v0.2)")]
+    #[error("providers.yaml has no {0:?} role (required for v0.3)")]
     RoleMissing(String),
-    #[error("read system prompt {path}: {source}")]
-    SystemPromptRead {
+    #[error("read soul {path}: {source}")]
+    SoulRead {
         path: PathBuf,
         #[source]
         source: std::io::Error,
     },
-    #[error("i/o writing exchange artifact: {0}")]
+    #[error("i/o writing conversation artifact: {0}")]
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
     AdapterSpawn(#[source] std::io::Error),
@@ -91,54 +109,57 @@ pub enum Error {
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the
 /// struct itself carries no generic parameters and tests can pass
-/// stubs inline.
+/// stubs inline. `harness_root` resolves the global `providers.yaml`
+/// (ARCH §4.1); production passes [`crate::harness_root::resolve`]'s
+/// result, tests pass a temp dir.
 pub struct Deps<'a> {
     pub adapter: &'a dyn AdapterRunner,
     pub git: &'a dyn GitRunner,
     pub clock: &'a dyn Clock,
     pub id_gen: &'a dyn IdGen,
     pub dispatcher: &'a dyn Dispatcher,
+    pub harness_root: &'a Path,
 }
 
-/// Drive one exchange against `repo`: load configs, spawn the
-/// exchange branch, commit the snapshot, invoke the provider adapter,
-/// commit the response. Returns the branch name (`ex/<ts>-<id>`) so
-/// callers can locate the two commits without a separate lookup.
+/// Drive one root conversation against `repo`: load configs, spawn the
+/// conversation branch, commit the snapshot, invoke the provider
+/// adapter, commit the response. Returns the branch name (the bare
+/// `<conv-id>`, ARCH §2.3) so callers can locate the two commits
+/// without a separate lookup.
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
-    let agent_dir = repo.join(AGENT_DIR);
-    let (providers, _warnings) = Providers::load(&agent_dir.join("providers.yaml"))?;
-    let agents = Agents::load(&agent_dir.join("agents.yaml"))?;
-    check_agents_against_providers(&agents, &providers)?;
+    let global_path = deps.harness_root.join(GLOBAL_PROVIDERS_FILE);
+    let per_repo_path = repo.join(PER_REPO_PROVIDERS_FILE);
+    let (cfg, _warnings) = ProvidersConfig::load(&global_path, &per_repo_path)?;
 
-    let role = agents
-        .agents
+    let assignment = cfg
+        .per_repo
+        .roles
         .get(WORKER_ROLE)
         .ok_or_else(|| Error::RoleMissing(WORKER_ROLE.to_string()))?;
-    // Cross-check above guarantees both lookups resolve.
-    let model = providers
+    // Cross-check inside ProvidersConfig::load guarantees both lookups
+    // resolve.
+    let model = cfg
+        .global
         .models
-        .get(&role.model)
+        .get(&assignment.model)
         .expect("cross-check passed, so role.model is in providers.models");
-    let provider_name = &model.provider;
-    let provider = providers
+    let provider = cfg
+        .global
         .providers
-        .get(provider_name)
-        .expect("providers.yaml load validates model.provider exists");
+        .get(&assignment.provider)
+        .expect("cross-check passed, so role.provider is in providers.providers");
 
-    let system_prompt_path = agent_dir
-        .join(SYSTEM_DIR_IN_AGENT)
-        .join(&role.system_prompt);
-    let system_prompt =
-        std::fs::read_to_string(&system_prompt_path).map_err(|source| Error::SystemPromptRead {
-            path: system_prompt_path.clone(),
-            source,
-        })?;
+    let soul_path = repo.join(SOULS_DIR).join(format!("{WORKER_ROLE}.md"));
+    let soul = std::fs::read_to_string(&soul_path).map_err(|source| Error::SoulRead {
+        path: soul_path.clone(),
+        source,
+    })?;
 
     let resolved = dispatch::Resolved {
         model,
-        provider_name,
+        provider_name: &assignment.provider,
         provider,
-        system_prompt,
+        soul,
     };
     dispatch::run_exchange(repo, user_message, &resolved, deps)
 }

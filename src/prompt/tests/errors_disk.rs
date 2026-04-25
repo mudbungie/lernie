@@ -1,14 +1,15 @@
 //! Disk and git error paths for [`crate::prompt::run`].
 //!
 //! Covers the branch-life failures inside `prompt::run`: `git worktree
-//! add`, the four I/O writes (agent dir, goal, step dir, request,
-//! response), and each `git add` / `git commit` along the two-commit
-//! flow, plus the merge-back-to-main rebase/merge/remove. Compactor-
-//! internal failures (worktree add for `inv/`, summary write/commit,
-//! cmp rebase/merge/remove) live in `compactor::tests` — they sit
-//! behind the [`crate::prompt::Dispatcher`] boundary now, so are not
-//! reachable through `prompt::run` with a stub dispatcher. Config and
-//! adapter failure paths live in [`super::errors`].
+//! add`, the four I/O writes (worktree dir, goal, soul, step dir,
+//! request, response), and each `git add` / `git commit` along the
+//! two-commit flow, plus the merge-back-to-main rebase/merge/remove.
+//! Compactor-internal failures (worktree add for the compactor
+//! branch, summary write/commit, cmp rebase/merge/remove) live in
+//! `compactor::tests` — they sit behind the [`crate::prompt::Dispatcher`]
+//! boundary now, so are not reachable through `prompt::run` with a
+//! stub dispatcher. Config and adapter failure paths live in
+//! [`super::errors`].
 
 use super::fixtures::*;
 use crate::prompt::{Deps, Error, run};
@@ -16,7 +17,7 @@ use crate::prompt::{Deps, Error, run};
 #[test]
 fn run_surfaces_worktree_add_failure() {
     // describe succeeds; `git worktree add` fails (index 0).
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(0)).unwrap_err();
     assert!(
@@ -32,11 +33,11 @@ fn run_surfaces_worktree_add_failure() {
 }
 
 #[test]
-fn run_surfaces_agent_dir_create_failure() {
+fn run_surfaces_worktree_create_failure() {
     // Pre-create the worktree path as a regular file so
-    // `write_snapshot`'s create_dir_all fails on a file-not-dir
-    // component.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    // `write_snapshot`'s create_dir_all on the worktree fails on a
+    // file-not-dir component.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
     std::fs::create_dir_all(wt.parent().unwrap()).unwrap();
     std::fs::write(&wt, b"blocker").unwrap();
@@ -47,10 +48,21 @@ fn run_surfaces_agent_dir_create_failure() {
 
 #[test]
 fn run_surfaces_goal_write_failure() {
-    // Agent dir exists but goal.md is already a directory.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    // Worktree dir exists but goal.md is already a directory.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
-    std::fs::create_dir_all(wt.join(".agent/goal.md")).unwrap();
+    std::fs::create_dir_all(wt.join("goal.md")).unwrap();
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Io(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_soul_write_failure() {
+    // Worktree dir + goal.md writeable, but soul.md is a directory.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let wt = worktree_path(repo.path());
+    std::fs::create_dir_all(wt.join("soul.md")).unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
@@ -58,12 +70,12 @@ fn run_surfaces_goal_write_failure() {
 
 #[test]
 fn run_surfaces_step_dir_create_failure() {
-    // Agent dir + goal.md writeable, but the exchanges/ path
+    // Worktree dir + goal/soul writeable, but the steps/ path
     // component is a regular file so step_dir create_dir_all fails.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
-    std::fs::create_dir_all(wt.join(".agent")).unwrap();
-    std::fs::write(wt.join("exchanges"), b"blocker").unwrap();
+    std::fs::create_dir_all(&wt).unwrap();
+    std::fs::write(wt.join("steps"), b"blocker").unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
@@ -72,9 +84,9 @@ fn run_surfaces_step_dir_create_failure() {
 #[test]
 fn run_surfaces_request_write_failure() {
     // Pre-create request.json as a directory so the file write fails.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
-    let step_dir = wt.join("exchanges/ct-1-deadbeef/steps/001");
+    let step_dir = wt.join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("request.json")).unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
@@ -83,7 +95,7 @@ fn run_surfaces_request_write_failure() {
 
 #[test]
 fn run_surfaces_snapshot_add_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "add", .. }));
@@ -91,7 +103,7 @@ fn run_surfaces_snapshot_add_failure() {
 
 #[test]
 fn run_surfaces_snapshot_commit_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(2)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));
@@ -99,9 +111,9 @@ fn run_surfaces_snapshot_commit_failure() {
 
 #[test]
 fn run_surfaces_response_write_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
-    let step_dir = wt.join("exchanges/ct-1-deadbeef/steps/001");
+    let step_dir = wt.join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("response.json")).unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
@@ -110,7 +122,7 @@ fn run_surfaces_response_write_failure() {
 
 #[test]
 fn run_surfaces_response_add_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(3)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "add", .. }));
@@ -118,7 +130,7 @@ fn run_surfaces_response_add_failure() {
 
 #[test]
 fn run_surfaces_response_commit_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(4)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));
@@ -129,7 +141,8 @@ fn run_surfaces_dispatcher_failure() {
     // Dispatcher returns an error — surfaces as DispatchFailed and
     // skips the merge-to-main step. Built inline because the helper's
     // default dispatcher is always-ok.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let git = StubGit::ok();
     let clock = FixedClock::default();
@@ -141,6 +154,7 @@ fn run_surfaces_dispatcher_failure() {
         clock: &clock,
         id_gen: &id,
         dispatcher: &dispatcher,
+        harness_root: harness.path(),
     };
     let err = run(repo.path(), "hi", &deps).unwrap_err();
     assert!(
@@ -158,10 +172,10 @@ fn run_surfaces_dispatcher_failure() {
 
 #[test]
 fn run_surfaces_merge_to_main_rebase_failure() {
-    // Index 5: rebase ex onto main. Cmp internals are behind the
+    // Index 5: rebase conv onto main. Cmp internals are behind the
     // dispatcher boundary, so index 5 is the next git call after the
     // response commit.
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(5)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "rebase", .. }));
@@ -169,15 +183,15 @@ fn run_surfaces_merge_to_main_rebase_failure() {
 
 #[test]
 fn run_surfaces_merge_to_main_merge_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(6)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "merge", .. }));
 }
 
 #[test]
-fn run_surfaces_ex_worktree_remove_failure() {
-    let repo = scaffold_repo(VALID_PROVIDERS_YAML, VALID_AGENTS_YAML, Some("body"));
+fn run_surfaces_conv_worktree_remove_failure() {
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(7)).unwrap_err();
     assert!(

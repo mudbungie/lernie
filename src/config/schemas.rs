@@ -1,4 +1,5 @@
-//! JSON Schema generation for the `.agent/*` configuration files.
+//! JSON Schema generation for the v0.3 conversation-repo + harness-root
+//! configuration files (ARCH §2.2, §4.1).
 //!
 //! Used by the `gen-schemas` binary (and by tests) to produce
 //! `schemas/<name>.json` so external tooling (editors, the template task's

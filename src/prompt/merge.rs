@@ -1,19 +1,19 @@
 //! Rebase-then-no-ff merge protocol (ARCH §2.6).
 //!
-//! One shared routine for every parent/child merge-back in v0.2. The
+//! One shared routine for every parent/child merge-back in v0.3. The
 //! compactor merges back into its dispatching branch through it; the
-//! dispatching exchange then merges into `main` through it. A single
-//! path mirrors "One obvious path" (`docs/PRINCIPLES.md`): both merges
-//! share the same core operation — rebase child onto parent tip,
-//! `--no-ff` merge child into parent, remove the child's worktree —
-//! and differ only in which paths name parent and child.
+//! dispatching root conversation then merges into `main` through it.
+//! A single path mirrors "One obvious path" (`docs/PRINCIPLES.md`):
+//! both merges share the same core operation — rebase child onto
+//! parent tip, `--no-ff` merge child into parent, remove the child's
+//! worktree — and differ only in which paths name parent and child.
 //!
 //! §2.6 step 5 says a rebase that conflicts "indicates a harness
-//! defect — two branches were given overlapping write paths". v0.2
+//! defect — two branches were given overlapping write paths". v0.3
 //! does not have the single-author-per-file machinery in place yet,
-//! so in practice the conflict path is reached when concurrent
-//! exchanges overlap on e.g. `.agent/goal.md` — which v0.2 does not
-//! test. For v0.2 we surface conflicts as [`Error::Git`] with
+//! so in practice the conflict path is reached when concurrent root
+//! conversations overlap on e.g. `goal.md` — which v0.3 does not
+//! test. For v0.3 we surface conflicts as [`Error::Git`] with
 //! `op: "rebase"`, aborting the rebase so the worktree is left in a
 //! clean state (no mid-rebase garbage) and the operator can retry.
 
@@ -28,10 +28,10 @@ use std::path::Path;
 /// the retention window (§2.3); only the worktree checkout is cleaned
 /// up here.
 ///
-/// Rebase is unconditional — v0.2 does not try to detect when the
+/// Rebase is unconditional — v0.3 does not try to detect when the
 /// parent tip has not advanced. The one-path discipline costs a
-/// no-op rebase in the common case and is what makes concurrent
-/// exchanges (v0.5 UI scope) tractable without retrofitting state
+/// no-op rebase in the common case and is what makes concurrent root
+/// conversations (v0.5 UI scope) tractable without retrofitting state
 /// tracking now.
 pub(super) fn rebase_and_merge(
     repo: &Path,

@@ -71,8 +71,10 @@ make new-conversation DEST=/path/to/my-conversation
 The binary embeds `template/` at build time (via `include_dir`), extracts
 it to the destination, creates the `root/` worktree subdirectory with
 `.gitattributes` pinning the §2.6 `merge=ours` rules, runs `git init -b
-main` *inside* `root/`, and lands a single `init conversation repo`
-commit. The control-plane files (`manifest.yaml`, `workflow.yaml`,
+main` *inside* `root/`, registers the `merge.ours.driver` config so
+those rules are actually honored on hand-run merges (the harness's
+own merges enforce the discipline more strictly via the rebase-time
+alignment step), and lands a single `init conversation repo` commit. The control-plane files (`manifest.yaml`, `workflow.yaml`,
 `providers.yaml`, `version`, `souls/`) sit at the conv-repo root —
 outside any worktree — and are deliberately untracked. The destination
 must either not exist or be an empty directory. With no path argument,

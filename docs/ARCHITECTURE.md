@@ -115,11 +115,11 @@ Nothing commits directly to `main` except the conversation-repo's initial snapsh
 **Branch lifecycle** (identical across root conversations and subagent conversations, up to the merge/terminate distinction at step 5):
 
 1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A linked worktree is allocated at `<conv-repo>/<full-hyphenated-descent>/`.
-2. **Dispatch commit.** The harness overwrites `goal.md` and `soul.md` in the worktree with this conversation's goal and the chosen role's soul from `<conv-repo>/souls/<role>.md`, then commits. This is the first commit on the new branch. The overwritten files are excluded from future merge-back via `.gitattributes` (§2.6).
+2. **Dispatch commit.** The harness overwrites `goal.md` and `soul.md` in the worktree with this conversation's goal and the chosen role's soul from `<conv-repo>/souls/<role>.md`, then commits. This is the first commit on the new branch. The overwritten files are excluded from future merge-back by the merge=ours discipline (§2.6).
 3. **Work.** The agent runs its loop. Each step commits under `steps/<this-conv-id>/NNN/`. A step that emits a subagent-targeting tool call spawns a sub-branch off that commit.
 4. **Completion.** A terminal event: final response, stop, timeout.
 5. **Merge (subagent) or terminate (root).**
-   - *Subagent:* the compactor produces a summary; the branch is rebased onto the current parent tip and merged `--no-ff`. `.gitattributes` retains the parent's `goal.md`, `soul.md`, and `summary/` tree; the subagent's `steps/<sub-id>/` and any explicit exports cross up.
+   - *Subagent:* the compactor produces a summary; the branch is rebased onto the current parent tip, the merge=ours-disciplined paths are aligned to the parent's pre-merge state on the subagent's tip, and the result is merged `--no-ff`. The parent's `goal.md`, `soul.md`, and `summary/` tree carry through verbatim; the subagent's `steps/<sub-id>/` and any explicit exports cross up.
    - *Root:* no merge. The conversation's branch persists as a ref; the UI shows it. The user reprompts by issuing a new dispatch that consumes the branch's state as context.
 6. **Cleanup.** Completed branches are retained as refs for a retention window (default 30 days) and GC'd thereafter. Worktrees are torn down on completion.
 
@@ -180,10 +180,11 @@ Merges are always no-fast-forward and conflict-free by construction. Root conver
 1. Subagent conversation completes.
 2. Terminal compaction runs (if warranted — see §2.7): a compactor subagent is dispatched off the subagent's tip and merges back into the subagent, leaving its tree in compacted form.
 3. Harness rebases the compacted diff onto the current parent tip (which may have advanced).
-4. If rebase succeeds: merge with `--no-ff`.
-5. If rebase conflicts: the subagent branch is marked conflicted, left unmerged, flagged for operator attention. This indicates a harness defect — two branches were given overlapping write paths, violating the guarantee in §2.5 — and is tracked accordingly.
+4. **Alignment step.** While still on the subagent branch's tip, the harness pins the merge=ours-disciplined paths (`goal.md`, `soul.md`, `summary/`) to the parent's pre-merge versions: any version the subagent has at those paths is replaced with the parent's, or removed if the parent has nothing there. If anything changed, the harness commits the result as a "merge=ours alignment" commit on the subagent branch. This is the load-bearing enforcement of the discipline below; the `.gitattributes` driver alone is not sufficient (see "What `merge=ours` alone cannot do").
+5. Merge with `--no-ff` into the parent.
+6. If the rebase in step 3 conflicts: the subagent branch is marked conflicted, left unmerged, flagged for operator attention. This indicates a harness defect — two branches were given overlapping write paths, violating the guarantee in §2.5 — and is tracked accordingly.
 
-**The `merge=ours` discipline.** Three categories of file are pinned to the parent on every merge-back via a `.gitattributes` file committed on `main`:
+**The merge=ours discipline.** Three categories of file are pinned to the parent on every merge-back. The discipline is enforced by the alignment step above, with `.gitattributes` (committed on `main` inside `root/` at scaffold) as a backstop for any merge that bypasses the harness:
 
 ```
 goal.md     merge=ours
@@ -191,7 +192,15 @@ soul.md     merge=ours
 summary/**  merge=ours
 ```
 
-These files are all branch-scoped: each conversation writes its own `goal.md` and `soul.md` on the dispatch commit (§2.3 step 2) and its own `summary/NNN.md` as compactions happen (§2.7). Without the `merge=ours` driver, every subagent merge-back would clobber the parent's goal, soul, and in-flight summaries with the subagent's — which is precisely wrong, since the parent resumes with *its* goal, not the subagent's. With it, the subagent's versions stay on the subagent branch (visible in history for provenance, not reflected in the parent's post-merge state).
+These files are all branch-scoped: each conversation writes its own `goal.md` and `soul.md` on the dispatch commit (§2.3 step 2) and its own `summary/NNN.md` as compactions happen (§2.7). Without the discipline, every subagent merge-back would carry the subagent's versions of these files into the parent's tree — which is precisely wrong, since the parent resumes with *its* goal, not the subagent's. With it, the subagent's versions stay on the subagent branch (visible in history for provenance, not reflected in the parent's post-merge state).
+
+**What `merge=ours` alone cannot do.** A `.gitattributes` `merge=ours` attribute only resolves *conflicting* paths during a 3-way merge — both branches modified the same file (or both added it). Git's merge logic does not invoke per-file drivers when:
+
+- the path is added on theirs only and absent on ours (the file is just added — no conflict, no driver call);
+- the path is modified on theirs and unchanged on ours (the parent ref's tree is replaced with theirs — fast-forward direction, no driver call);
+- the custom `merge.ours.driver` is not registered in the repo's git config (the attribute is silently ignored).
+
+The first two are the common case for subagent merge-backs (the parent typically has *no* in-flight `summary/`, and after the alignment step the subagent's overrides match the parent's exactly), so a vanilla `.gitattributes` setup would let everything cross up regardless of intent. The harness sidesteps this by replacing-or-removing the disciplined paths *before* the merge sees them. Scaffold registers `merge.ours.driver true` so the attribute is at least active for any human-driven merge that bypasses the alignment step.
 
 `steps/<sub-id>/` is *not* merge=ours — the subagent's step records do cross up into the parent, landing alongside the parent's `steps/<parent-id>/` tree. Namespacing by conversation id (§2.3) is what keeps this collision-free.
 

@@ -182,10 +182,59 @@ fn run_surfaces_merge_to_main_rebase_failure() {
 }
 
 #[test]
-fn run_surfaces_merge_to_main_merge_failure() {
+fn run_surfaces_merge_ours_rm_failure() {
+    // Index 6 is the merge=ours rm: first call after the rebase
+    // succeeds. Surfaces the alignment-step error op label.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(6)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "merge=ours rm",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn run_surfaces_merge_ours_ls_tree_failure() {
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(7)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "merge=ours ls-tree",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn run_surfaces_merge_ours_diff_failure() {
+    // Index 8 is the diff --cached --name-only capture. With an empty
+    // ls-tree the conditional checkout is skipped, so diff is the
+    // next call after ls-tree.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(8)).unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "merge=ours diff",
+            ..
+        }
+    ));
+}
+
+#[test]
+fn run_surfaces_merge_to_main_merge_failure() {
+    // With both alignment captures returning empty (no checkout, no
+    // commit), index 9 is the merge --no-ff.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(9)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "merge", .. }));
 }
 
@@ -193,7 +242,7 @@ fn run_surfaces_merge_to_main_merge_failure() {
 fn run_surfaces_conv_worktree_remove_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(7)).unwrap_err();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(10)).unwrap_err();
     assert!(
         matches!(
             err,

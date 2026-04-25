@@ -9,8 +9,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// Deterministic [`Clock`] — returns `iso-N`/`ct-N` counters so each
-/// `started_at` / `ended_at` / ts is distinct and observable.
+/// Deterministic [`Clock`] returning monotonic `iso-N`/`ct-N` strings.
 #[derive(Default)]
 pub(super) struct FixedClock {
     iso_calls: RefCell<u32>,
@@ -35,8 +34,7 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Scripted [`AdapterRunner`] reply: canned stdout bytes or an I/O
-/// error.
+/// Canned [`AdapterRunner`] reply.
 pub(super) enum AdapterReply {
     Ok(Vec<u8>),
     Err(io::Error),
@@ -54,9 +52,7 @@ pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
 }"#;
 
-/// Scripted [`AdapterRunner`] — replies pop from a FIFO queue (so a
-/// test can script `describe` then `complete` independently). All
-/// invocations are recorded.
+/// Scripted [`AdapterRunner`] with FIFO replies and a recording log.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
@@ -94,7 +90,7 @@ impl StubAdapter {
         AdapterReply::Err(io::Error::new(kind, msg.to_string()))
     }
 
-    /// Most recent invocation — for tests that only inspect `complete`.
+    /// Most recent invocation.
     pub(super) fn last(&self) -> AdapterCall {
         self.observed.borrow().last().cloned().expect("no calls")
     }
@@ -124,9 +120,8 @@ impl AdapterRunner for StubAdapter {
     }
 }
 
-/// Scripted [`GitRunner`] — records (dest, args) so tests can tell
-/// which dir the command ran in. Optional fail_at index for error
-/// paths.
+/// Scripted [`GitRunner`] — records every (dest, args); optional
+/// fail_at index for error paths.
 #[derive(Default)]
 pub(super) struct StubGit {
     pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
@@ -159,18 +154,20 @@ impl GitRunner for StubGit {
             Ok(())
         }
     }
-    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
-        // Single-source-of-truth: branch queries go through `git
-        // branch --list`, not harness-side captures.
-        unreachable!("StubGit::run_capture is not used by `prompt::dispatch`")
+    fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
+        // Empty return is harmless: stub parent has no merge=ours
+        // paths and the alignment rm produced no staged delta, so
+        // neither the conditional checkout nor the alignment commit
+        // fires in the dispatch flow.
+        self.run(dest, args)?;
+        Ok(String::new())
     }
 }
 
 // --- Fixtures ---------------------------------------------------------
 
 /// Global `<harness-root>/providers.yaml` — endpoints, auth, model
-/// capabilities (ARCH §4.1). Per the v0.3 layout, the per-repo file
-/// only carries the role assignments.
+/// capabilities (ARCH §4.1).
 pub(super) const VALID_GLOBAL_PROVIDERS_YAML: &str = r#"
 providers:
   anthropic:
@@ -187,8 +184,7 @@ models:
 "#;
 
 /// Per-repo `<conv-repo>/providers.yaml` — `roles:` section only
-/// (ARCH §4.3). Endpoint and model capabilities live in the global
-/// file.
+/// (ARCH §4.3).
 pub(super) const VALID_PER_REPO_PROVIDERS_YAML: &str = r#"
 roles:
   worker:
@@ -203,9 +199,7 @@ pub(super) const HAPPY_RESPONSE_JSON: &str = r#"{
 }"#;
 
 /// Lay out a v0.3 conversation repo (ARCH §2.2): per-repo
-/// `providers.yaml` at the conv-repo root, optional `souls/worker.md`
-/// for the worker role's system prompt (§4.3). Returns the holding
-/// TempDir; `tmp.path()` is the conv-repo root passed to `prompt::run`.
+/// `providers.yaml` plus optional `souls/worker.md`.
 pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> TempDir {
     let tmp = TempDir::new().unwrap();
     std::fs::write(tmp.path().join("providers.yaml"), per_repo_yaml).unwrap();
@@ -218,8 +212,7 @@ pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> T
 }
 
 /// Lay out a temp harness root (ARCH §2.2) with a global
-/// `providers.yaml`. `prompt::run` reads it via `Deps::harness_root`;
-/// production passes [`crate::harness_root::resolve`]'s output.
+/// `providers.yaml`.
 pub(super) fn scaffold_harness_root() -> TempDir {
     let tmp = TempDir::new().unwrap();
     std::fs::write(
@@ -248,10 +241,8 @@ pub(super) fn valid_deps<'a>(
     }
 }
 
-/// Recording [`Dispatcher`] — captures every dispatch call as
-/// `(repo, branch)` so prompt-level tests can assert the compactor
-/// was dispatched without paying for a subprocess. `fail` is the
-/// optional error returned after recording.
+/// Recording [`Dispatcher`] — `fail` is an optional error returned
+/// after recording.
 #[derive(Default)]
 pub(super) struct StubDispatcher {
     pub(super) calls: RefCell<Vec<(PathBuf, String)>>,
@@ -281,15 +272,11 @@ impl Dispatcher for StubDispatcher {
     }
 }
 
-/// An adapter the test does not expect to reach.
 pub(super) fn unreachable_adapter() -> StubAdapter {
     StubAdapter::scripted([])
 }
 
-/// Drive [`crate::prompt::run`] with default stubs for clock, id,
-/// dispatcher, and a fresh harness root scaffolded with the canonical
-/// global providers.yaml. Tests that need a non-ok dispatcher or a
-/// custom harness root build [`Deps`] inline instead.
+/// Drive [`crate::prompt::run`] with default stubs.
 pub(super) fn run_with_stubs(
     repo: &Path,
     msg: &str,
@@ -305,11 +292,9 @@ pub(super) fn run_with_stubs(
     )
 }
 
-/// Deterministic worktree path for the standard fixtures — FixedClock
-/// returns `ct-1` on the first `now_compact` call, FixedIdGen always
-/// returns `deadbeef`. Worktree dir = bare conv-id, sibling of
-/// `root/` (ARCH §2.2). Tests pre-populate paths under this directory
-/// to force I/O failures.
+/// Deterministic worktree path for the standard fixtures: FixedClock
+/// gives `ct-1` and FixedIdGen `deadbeef`, so the conv worktree is
+/// `<repo>/ct-1-deadbeef/` (sibling of `root/`, ARCH §2.2).
 pub(super) fn worktree_path(repo: &Path) -> PathBuf {
     repo.join("ct-1-deadbeef")
 }

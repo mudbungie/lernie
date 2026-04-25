@@ -108,13 +108,15 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
 
     // Git sequence (cmp internals are now behind the dispatcher
     // boundary): 5 for the conversation branch (worktree add,
-    // snapshot add+commit, response add+commit), then 3 for
-    // merge-to-main (rebase, merge, remove conv worktree). No
-    // sidecar-file write: the git ref database is the single source
-    // of truth for branch state (PRINCIPLES.md "Single source of
-    // truth").
+    // snapshot add+commit, response add+commit), then 6 for
+    // merge-to-main (rebase, merge=ours rm + ls-tree + diff with the
+    // stub returning empty captures so neither the alignment
+    // checkout nor the alignment commit fires, then merge --no-ff
+    // and remove conv worktree). No sidecar-file write: the git ref
+    // database is the single source of truth for branch state
+    // (PRINCIPLES.md "Single source of truth").
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 8);
+    assert_eq!(runs.len(), 11);
 
     // [0..5] conversation-branch setup (pre-dispatch).
     // worktree add runs inside the primary worktree (root/), since
@@ -141,18 +143,26 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(runs[4].1[0], "commit");
     assert!(runs[4].1[2].contains("step 001: response"));
 
-    // [5..8] merge conv into main: rebase conv onto main (inside
-    // conv wt), merge --no-ff conv into main (inside primary
-    // worktree, which is where main is checked out), remove conv
-    // worktree.
+    // [5..11] merge conv into main: rebase conv onto main, then the
+    // merge=ours alignment (rm + ls-tree + diff — captures empty so
+    // the conditional checkout and alignment commit are skipped),
+    // then merge --no-ff and remove the conv worktree. The alignment
+    // runs in the conv worktree; the merge and worktree-remove run
+    // in the primary worktree, where main is checked out (§2.2).
     assert_eq!(runs[5].0, worktree);
     assert_eq!(runs[5].1, vec!["rebase", "main"]);
-    assert_eq!(runs[6].0, primary_worktree);
-    assert_eq!(runs[6].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
-    assert_eq!(runs[7].0, primary_worktree);
-    assert_eq!(runs[7].1[0], "worktree");
-    assert_eq!(runs[7].1[1], "remove");
-    assert_eq!(runs[7].1[2], worktree.to_string_lossy().to_string());
+    assert_eq!(runs[6].0, worktree);
+    assert_eq!(runs[6].1[0], "rm");
+    assert_eq!(runs[7].0, worktree);
+    assert_eq!(runs[7].1[0], "ls-tree");
+    assert_eq!(runs[8].0, worktree);
+    assert_eq!(runs[8].1, vec!["diff", "--cached", "--name-only"]);
+    assert_eq!(runs[9].0, primary_worktree);
+    assert_eq!(runs[9].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
+    assert_eq!(runs[10].0, primary_worktree);
+    assert_eq!(runs[10].1[0], "worktree");
+    assert_eq!(runs[10].1[1], "remove");
+    assert_eq!(runs[10].1[2], worktree.to_string_lossy().to_string());
 }
 
 #[test]

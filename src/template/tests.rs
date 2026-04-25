@@ -105,11 +105,14 @@ fn scaffold_happy_path_lays_out_v0_3_shape() {
 
     // Every git invocation ran inside root/, not the conv-repo root.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 3);
+    assert_eq!(runs.len(), 4);
     assert!(runs.iter().all(|(d, _)| d == &root));
     assert_eq!(runs[0].1, vec!["init", "-b", "main"]);
-    assert_eq!(runs[1].1, vec!["add", "-A"]);
-    assert_eq!(runs[2].1, vec!["commit", "-m", "init conversation repo"]);
+    // The custom merge driver registration (ARCH §2.6) lives here so
+    // the `.gitattributes` rules are honored on hand-run merges.
+    assert_eq!(runs[1].1, vec!["config", "merge.ours.driver", "true"]);
+    assert_eq!(runs[2].1, vec!["add", "-A"]);
+    assert_eq!(runs[3].1, vec!["commit", "-m", "init conversation repo"]);
 }
 
 #[test]
@@ -134,7 +137,7 @@ fn scaffold_propagates_init_failure() {
 }
 
 #[test]
-fn scaffold_propagates_add_failure() {
+fn scaffold_propagates_config_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let err = scaffold(&dest, &StubGit::failing_at(1)).unwrap_err();
@@ -142,10 +145,18 @@ fn scaffold_propagates_add_failure() {
 }
 
 #[test]
-fn scaffold_propagates_commit_failure() {
+fn scaffold_propagates_add_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let err = scaffold(&dest, &StubGit::failing_at(2)).unwrap_err();
+    assert!(matches!(err, ScaffoldError::Git(_)));
+}
+
+#[test]
+fn scaffold_propagates_commit_failure() {
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("conv");
+    let err = scaffold(&dest, &StubGit::failing_at(3)).unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)));
 }
 

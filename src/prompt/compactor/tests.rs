@@ -67,8 +67,15 @@ impl GitRunner for StubGit {
             Ok(())
         }
     }
-    fn run_capture(&self, _: &Path, _: &[&str]) -> std::io::Result<String> {
-        unreachable!("compactor never calls run_capture")
+    fn run_capture(&self, dest: &Path, args: &[&str]) -> std::io::Result<String> {
+        // Recorded so the run sequence assertions cover capture calls
+        // too (the merge=ours alignment in `prompt::merge` issues
+        // ls-tree and diff captures). Returning empty is the harmless
+        // default: the stub parent has nothing under the merge=ours
+        // pathspecs and the rm produced no staged delta, so neither
+        // the checkout nor the alignment commit fires.
+        self.run(dest, args)?;
+        Ok(String::new())
     }
 }
 
@@ -186,17 +193,25 @@ fn run_happy_path_writes_goal_summary_and_merges() {
     assert_eq!(runs[4].1[0], "commit");
     assert!(runs[4].1[2].contains("compaction: terminal summary"));
 
-    // 5..8: rebase + merge --no-ff + worktree remove (cmp into
+    // 5..10: rebase + merge=ours alignment (rm, ls-tree, diff —
+    // capture returns empty so neither checkout nor alignment
+    // commit fires) + merge --no-ff + worktree remove (cmp into
     // parent). `worktree remove` runs inside the parent worktree
     // (shared .git dir), since the conv-repo root itself is not a
     // git checkout in v0.3 (ARCH §2.2).
     assert_eq!(runs[5].0, cmp_worktree);
     assert_eq!(runs[5].1, vec!["rebase", "p1"]);
-    assert_eq!(runs[6].0, parent_wt);
-    assert_eq!(runs[6].1, vec!["merge", "--no-ff", cmp_branch]);
-    assert_eq!(runs[7].0, parent_wt);
-    assert_eq!(runs[7].1[..2], ["worktree", "remove"]);
-    assert_eq!(runs[7].1[2], cmp_worktree.to_string_lossy().to_string());
+    assert_eq!(runs[6].0, cmp_worktree);
+    assert_eq!(runs[6].1[0], "rm");
+    assert_eq!(runs[7].0, cmp_worktree);
+    assert_eq!(runs[7].1[0], "ls-tree");
+    assert_eq!(runs[8].0, cmp_worktree);
+    assert_eq!(runs[8].1, vec!["diff", "--cached", "--name-only"]);
+    assert_eq!(runs[9].0, parent_wt);
+    assert_eq!(runs[9].1, vec!["merge", "--no-ff", cmp_branch]);
+    assert_eq!(runs[10].0, parent_wt);
+    assert_eq!(runs[10].1[..2], ["worktree", "remove"]);
+    assert_eq!(runs[10].1[2], cmp_worktree.to_string_lossy().to_string());
 
     // Disk-side: goal.md and summary are present in the cmp wt tree
     // (they were physically written before each git add).
@@ -250,5 +265,12 @@ run_failing_at_test!(run_surfaces_goal_commit_failure, 2, "commit");
 run_failing_at_test!(run_surfaces_summary_add_failure, 3, "add");
 run_failing_at_test!(run_surfaces_summary_commit_failure, 4, "commit");
 run_failing_at_test!(run_surfaces_rebase_failure, 5, "rebase");
-run_failing_at_test!(run_surfaces_merge_failure, 6, "merge");
-run_failing_at_test!(run_surfaces_worktree_remove_failure, 7, "worktree remove");
+run_failing_at_test!(run_surfaces_merge_ours_rm_failure, 6, "merge=ours rm");
+run_failing_at_test!(
+    run_surfaces_merge_ours_ls_tree_failure,
+    7,
+    "merge=ours ls-tree"
+);
+run_failing_at_test!(run_surfaces_merge_ours_diff_failure, 8, "merge=ours diff");
+run_failing_at_test!(run_surfaces_merge_failure, 9, "merge");
+run_failing_at_test!(run_surfaces_worktree_remove_failure, 10, "worktree remove");

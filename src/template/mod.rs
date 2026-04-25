@@ -5,7 +5,12 @@
 //! lookup. [`scaffold`] extracts the embedded tree to a destination,
 //! creates the `root/` worktree subdir with `.gitattributes` pinning
 //! `merge=ours` discipline, and initializes git inside `root/` via an
-//! injected [`GitRunner`].
+//! injected [`GitRunner`]. The custom merge driver `merge.ours.driver`
+//! is registered via `git config` so the `merge=ours` attribute is
+//! actually honored on hand-run merges (the harness's own merges
+//! enforce the discipline more strictly via the rebase-time alignment
+//! step in [`crate::prompt::merge`], but the .gitattributes + driver
+//! pair is the backstop for any merge that bypasses the harness).
 
 use include_dir::{Dir, include_dir};
 use std::fs;
@@ -23,9 +28,17 @@ pub static TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/template");
 /// `merge=ours` pins committed on `main` inside `root/` at scaffold
 /// time (ARCH §2.6). Goal, soul, and the running summary are
 /// branch-scoped — without this driver, every subagent merge-back
-/// would clobber the parent's copies.
+/// would clobber the parent's copies on a both-modified merge.
 pub const ROOT_GITATTRIBUTES: &str =
     "goal.md     merge=ours\nsoul.md     merge=ours\nsummary/**  merge=ours\n";
+
+/// Pathspecs the merge=ours discipline (ARCH §2.6) applies to.
+/// Shared by [`ROOT_GITATTRIBUTES`] (which uses `summary/**` glob) and
+/// [`crate::prompt::merge`]'s rebase-time alignment (which treats
+/// `summary` as a directory pathspec for `git rm -r` /
+/// `git checkout`). Order is irrelevant; the harness applies all of
+/// them in one pass.
+pub const MERGE_OURS_PATHS: &[&str] = &["goal.md", "soul.md", "summary"];
 
 /// Errors [`scaffold`] can return.
 #[derive(Debug, thiserror::Error)]
@@ -122,10 +135,13 @@ pub const ROOT_WORKTREE: &str = "root";
 ///    files at the conv-repo root, outside any worktree).
 /// 3. Create `dest/root/` and write `.gitattributes` pinning the
 ///    `merge=ours` rules from ARCH §2.6.
-/// 4. Run `git init -b main`, `git add -A`, and an initial
-///    `git commit -m "init conversation repo"` *inside* `dest/root/`
-///    via the supplied [`GitRunner`]. The `.git` lives in `root/`; the
-///    control files at the conv-repo root are deliberately untracked.
+/// 4. Run `git init -b main`, register the `merge.ours.driver` config
+///    so the `.gitattributes` rules are actually honored (without it
+///    git silently ignores `merge=ours` on a hand-run merge), then
+///    `git add -A` + an initial `git commit -m "init conversation repo"`
+///    *inside* `dest/root/` via the supplied [`GitRunner`]. The `.git`
+///    lives in `root/`; the control files at the conv-repo root are
+///    deliberately untracked.
 pub fn scaffold<G: GitRunner>(dest: &Path, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
     fs::create_dir_all(dest).map_err(ScaffoldError::Io)?;
@@ -134,6 +150,14 @@ pub fn scaffold<G: GitRunner>(dest: &Path, git: &G) -> Result<(), ScaffoldError>
     fs::create_dir_all(&root).map_err(ScaffoldError::Io)?;
     fs::write(root.join(".gitattributes"), ROOT_GITATTRIBUTES).map_err(ScaffoldError::Io)?;
     git.run(&root, &["init", "-b", "main"])
+        .map_err(ScaffoldError::Git)?;
+    // `git config merge.ours.driver true`: registers a no-op driver
+    // (`true` exits 0) so the `merge=ours` attribute resolves to
+    // "keep ours" instead of being silently dropped. Per-repo config
+    // is shared across all worktrees of this `.git` dir, so a single
+    // registration at scaffold covers every subagent worktree the
+    // harness ever spawns (ARCH §2.2).
+    git.run(&root, &["config", "merge.ours.driver", "true"])
         .map_err(ScaffoldError::Git)?;
     git.run(&root, &["add", "-A"]).map_err(ScaffoldError::Git)?;
     git.run(&root, &["commit", "-m", "init conversation repo"])

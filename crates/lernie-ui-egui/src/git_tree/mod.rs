@@ -9,28 +9,34 @@
 //! Git access is via the `git` CLI (a hard dep of lernie itself, per
 //! ARCH §2.2) — no libgit2 native build step is required.
 //!
-//! # Shapes handled
+//! # v0.3 layout
 //!
-//! - **v0.1-shape** (ARCH §12 v0.1 exception): flat linear history on
-//!   `main` with one commit per exchange, each carrying a top-level
-//!   `exchanges/<id>.json` file. The preview comes from the file's
-//!   `user_message` key.
-//! - **v0.2-shape** (ARCH §2.3, §2.6): each exchange is an `ex/<ts>-<id>`
-//!   branch off `main` that merges back with `--no-ff`. The merge
-//!   commit lives on `main`'s trunk; its step commits (snapshot,
-//!   response, compactor merge) live on the exchange branch. Unmerged
-//!   exchange branches are enumerable via `git branch --list ex/*
-//!   --no-merged main` (PRINCIPLES.md single-source-of-truth).
+//! The conv-repo (ARCH §2.2) holds its `.git` inside the primary
+//! worktree at `<conv-repo>/root/`; control-plane files live at the
+//! conv-repo root, outside any worktree. Callers pass the conv-repo
+//! path; this module resolves the git working dir to `<conv-repo>/root/`
+//! before issuing any git command.
 //!
-//! The two shapes coexist — a repo migrated from v0.1 to v0.2 has both
-//! kinds of commits on `main`; the view-model handles each without the
-//! other's existence affecting it.
+//! Each user-message dispatch spawns a bare `<conv-id>` branch off
+//! `main` and merges back with `--no-ff` on completion (ARCH §2.3).
+//! The merge commit on `main`'s first-parent trunk introduces step
+//! files at `steps/<conv-id>/<NNN>/{request.json,response.json}`. The
+//! UI keys off that path to recognize a conversation merge and pull
+//! the user message from `request.json`'s `messages[0].content`.
+//! Subagent branches (named by full hyphenated descent) appear under
+//! the same enumeration when unmerged.
 
 mod cmd;
 mod detect;
 mod enumerate;
 
 use std::path::{Path, PathBuf};
+
+/// Subdir under the conv-repo where the primary worktree (and the
+/// only `.git`) lives (ARCH §2.2). Mirrors `src/template::ROOT_WORKTREE`
+/// in the harness; the duplicate constant keeps the UI crate free of a
+/// dep on the harness binary.
+const ROOT_WORKTREE: &str = "root";
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitTreeError {
@@ -48,16 +54,13 @@ pub enum GitTreeError {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct GitTree {
-    /// `main`'s first-parent trunk, oldest to newest. For v0.2 repos
-    /// this includes the `--no-ff` merge commits of completed
-    /// exchanges; for v0.1 repos it is a flat linear list of exchange
-    /// commits.
+    /// `main`'s first-parent trunk, oldest to newest. Includes the
+    /// `--no-ff` merge commits of completed root conversations.
     pub commits: Vec<CommitNode>,
-    /// Exchange branches not yet merged to `main` (`git branch --list
-    /// ex/* --no-merged main`). Empty in repos where every exchange
-    /// has merged back, which is the steady state after each
-    /// `lernie prompt` completes.
-    pub in_flight: Vec<ExchangeBranch>,
+    /// Conversation branches not yet merged to `main`, enumerated via
+    /// `git for-each-ref --no-merged=main refs/heads/`. Empty in the
+    /// steady state where every dispatch has merged back.
+    pub in_flight: Vec<ConversationBranch>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,15 +68,15 @@ pub struct CommitNode {
     pub oid: String,
     pub short_oid: String,
     pub timestamp_unix: i64,
-    /// The exchange id this commit represents, if any. Populated for
-    /// v0.1-shape exchange commits and for v0.2-shape `--no-ff` merge
-    /// commits; `None` for trunk commits that are neither (initial
-    /// commit, config tweaks, etc.).
-    pub exchange_id: Option<String>,
+    /// The conversation id this commit represents, if any. Populated
+    /// for `--no-ff` merge commits whose introduced files include
+    /// `steps/<conv-id>/<NNN>/...`; `None` for trunk commits that
+    /// are neither (initial scaffold commit, config tweaks, etc.).
+    pub conv_id: Option<String>,
     pub preview: Option<String>,
-    /// Step commits on the exchange branch this merge commit closes.
-    /// Empty unless this is a v0.2 merged-exchange commit. Ordered
-    /// oldest to newest (snapshot, response, compactor merge).
+    /// Step commits on the conversation branch this merge commit
+    /// closes. Empty unless this is a merged-conversation commit.
+    /// Ordered oldest to newest (dispatch, response, compactor merge).
     pub steps: Vec<StepCommit>,
 }
 
@@ -85,33 +88,36 @@ pub struct StepCommit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExchangeBranch {
+pub struct ConversationBranch {
+    /// Branch name; equal to `conv_id` in v0.3 (no prefix). Held
+    /// separately so the renderer can label rows without re-deriving.
     pub branch_name: String,
-    pub exchange_id: String,
+    pub conv_id: String,
     pub tip_oid: String,
     pub tip_short_oid: String,
     pub tip_timestamp_unix: i64,
     /// Commits on this branch not reachable from `main`, oldest to
-    /// newest. Same shape as merged exchanges' steps.
+    /// newest. Same shape as merged-conversation steps.
     pub steps: Vec<StepCommit>,
     pub preview: Option<String>,
 }
 
 impl GitTree {
-    pub fn from_repo(repo: &Path) -> Result<Self, GitTreeError> {
-        let log = cmd::git_log_first_parent(repo)?;
+    pub fn from_repo(conv_repo: &Path) -> Result<Self, GitTreeError> {
+        let git_dir = conv_repo.join(ROOT_WORKTREE);
+        let log = cmd::git_log_first_parent(&git_dir)?;
         let mut commits = Vec::with_capacity(log.len());
         for entry in log {
-            commits.push(enumerate::build_node(repo, entry)?);
+            commits.push(enumerate::build_node(&git_dir, entry)?);
         }
-        let in_flight = enumerate::enumerate_in_flight(repo)?;
+        let in_flight = enumerate::enumerate_in_flight(&git_dir)?;
         Ok(Self { commits, in_flight })
     }
 }
 
 /// egui widget that renders a `GitTree` as a vertical list. Main's
 /// trunk comes first (each merge node with its step commits indented
-/// beneath); any in-flight exchange branches follow in their own
+/// beneath); any in-flight conversation branches follow in their own
 /// section. Thin wrapper — all structure lives in the view-model.
 pub fn render(ui: &mut egui::Ui, tree: &GitTree) {
     if tree.commits.is_empty() && tree.in_flight.is_empty() {
@@ -126,7 +132,7 @@ pub fn render(ui: &mut egui::Ui, tree: &GitTree) {
     }
     if !tree.in_flight.is_empty() {
         ui.separator();
-        ui.label("in-flight exchanges");
+        ui.label("in-flight conversations");
         for branch in &tree.in_flight {
             render_in_flight(ui, branch);
             for step in &branch.steps {
@@ -140,7 +146,7 @@ fn render_commit(ui: &mut egui::Ui, commit: &CommitNode) {
     ui.horizontal(|ui| {
         ui.monospace(&commit.short_oid);
         ui.label(commit.timestamp_unix.to_string());
-        if let Some(id) = &commit.exchange_id {
+        if let Some(id) = &commit.conv_id {
             ui.label(id);
         }
         if let Some(preview) = &commit.preview {
@@ -157,7 +163,7 @@ fn render_step(ui: &mut egui::Ui, step: &StepCommit) {
     });
 }
 
-fn render_in_flight(ui: &mut egui::Ui, branch: &ExchangeBranch) {
+fn render_in_flight(ui: &mut egui::Ui, branch: &ConversationBranch) {
     ui.horizontal(|ui| {
         ui.monospace(&branch.tip_short_oid);
         ui.label(branch.tip_timestamp_unix.to_string());

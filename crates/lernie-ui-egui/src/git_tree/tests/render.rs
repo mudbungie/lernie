@@ -1,7 +1,7 @@
 //! egui rendering smoke tests — exercise the widget against both empty
 //! and populated view-models to guarantee it does not panic.
 
-use crate::git_tree::{CommitNode, ExchangeBranch, GitTree, StepCommit, render};
+use crate::git_tree::{CommitNode, ConversationBranch, GitTree, StepCommit, render};
 
 #[test]
 fn render_empty_tree_shows_placeholder() {
@@ -21,7 +21,7 @@ fn render_populated_tree_runs_without_panic() {
                 oid: "a".repeat(40),
                 short_oid: "aaaaaaaa".into(),
                 timestamp_unix: 1,
-                exchange_id: Some("ex1".into()),
+                conv_id: Some("20260422T120000Z-aaaa".into()),
                 preview: Some("hello".into()),
                 steps: vec![StepCommit {
                     oid: "c".repeat(40),
@@ -33,14 +33,14 @@ fn render_populated_tree_runs_without_panic() {
                 oid: "b".repeat(40),
                 short_oid: "bbbbbbbb".into(),
                 timestamp_unix: 3,
-                exchange_id: None,
+                conv_id: None,
                 preview: None,
                 steps: vec![],
             },
         ],
-        in_flight: vec![ExchangeBranch {
-            branch_name: "ex/wip".into(),
-            exchange_id: "wip".into(),
+        in_flight: vec![ConversationBranch {
+            branch_name: "20260422T130000Z-wwww".into(),
+            conv_id: "20260422T130000Z-wwww".into(),
             tip_oid: "d".repeat(40),
             tip_short_oid: "dddddddd".into(),
             tip_timestamp_unix: 4,
@@ -63,7 +63,7 @@ fn short_oid_falls_back_for_unexpectedly_short_hash() {
         oid: "abc".into(),
         short_oid: "abc".into(),
         timestamp_unix: 0,
-        exchange_id: None,
+        conv_id: None,
         preview: None,
         steps: vec![],
     };

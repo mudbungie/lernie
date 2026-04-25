@@ -263,33 +263,39 @@ a conversation repo and issues user actions via `lernie <subcommand>`. Per
 function of filesystem state — and one of potentially several frontends
 (a future `lernie-ui-web` would share the pure-Rust view-model layer).
 
-On startup, the binary loads the current git history of the target repo
-and renders a two-tier tree: `main`'s first-parent trunk, with each
-v0.2-shape `--no-ff` exchange merge showing its step commits indented
-beneath; any unmerged `ex/*` branches (in-flight exchanges) follow in
-their own section. v0.1-shape repos still render — flat linear history
-with one `exchanges/<ts>-<id>.json` per commit and a truncated
-user-message preview. If the tree can't be read, a placeholder view
-is shown instead. (v0.3-shape detection — bare `<conv-id>` branches
-under `<repo>/<conv-id>/` and `steps/<conv-id>/<NNN>/` paths — is
-follow-on UI work.)
+On startup, the binary loads the current git history of the target
+conv-repo (ARCH §2.2 — the dir with `manifest.yaml`, `root/`, and any
+sibling subagent worktrees) and renders a two-tier tree: `main`'s
+first-parent trunk, with each `--no-ff` conversation merge showing its
+step commits indented beneath; any unmerged conversation branches (root
+in-flight or subagent) follow in their own section. Each merge node is
+labeled with the conversation id and a truncated `messages[0].content`
+preview pulled from `steps/<conv-id>/001/request.json`. If the tree
+can't be read, a placeholder view is shown instead.
+
 Three pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
 - `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
-  change events. Live updates wire through here in a follow-up.
+  change events. The watched set covers conv-repo control files
+  (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `version`,
+  `souls/`), per-worktree contents under any subdir (`goal.md`,
+  `soul.md`, `summary/`, `steps/`, `descriptions/`, `skills/`,
+  `.gitattributes`), and the primary worktree's git refs
+  (`root/.git/HEAD`, `root/.git/refs/`). Live updates wire through here
+  in a follow-up.
 - `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
   spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
   aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
   the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
-- `git_tree` — reads the repo's refs and commit tree and produces a
-  view-model (`GitTree`) independent of egui: `main`'s first-parent
-  trunk (including v0.2-shape merge nodes with their step commits) plus
-  the set of unmerged `ex/*` branches (`git branch --list ex/*
-  --no-merged main`, per PRINCIPLES.md single-source-of-truth). A thin
-  egui widget in the same module renders it. v0.3-shape support
-  (bare `<conv-id>` branches and `steps/<conv-id>/<NNN>/` paths) is
-  follow-on UI work.
+- `git_tree` — resolves the conv-repo path to its `root/` worktree
+  (ARCH §2.2) and produces a view-model (`GitTree`) independent of
+  egui: `main`'s first-parent trunk (including conversation merge nodes
+  with their step commits) plus the set of unmerged conversation
+  branches (`git for-each-ref --no-merged=main refs/heads/`, per
+  PRINCIPLES.md single-source-of-truth). Conversation detection keys
+  off `steps/<conv-id>/<NNN>/...` paths introduced by each merge. A
+  thin egui widget in the same module renders it.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

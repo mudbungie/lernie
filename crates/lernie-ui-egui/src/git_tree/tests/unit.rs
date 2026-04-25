@@ -1,86 +1,56 @@
-//! Pure-function unit tests for the detect + cmd layers.
+//! Pure-function unit tests for the detect + cmd layers (v0.3).
 
 use crate::git_tree::GitTreeError;
 use crate::git_tree::cmd::{parse_log, parse_step_commits};
 use crate::git_tree::detect::{
-    PREVIEW_MAX, exchange_id_from_branch, exchange_id_from_v01_path, extract_v01_preview,
-    extract_v02_preview, is_v01_exchange_path, truncate_preview, v02_exchange_id_from_path,
+    PREVIEW_MAX, extract_request_preview, truncate_preview, v03_conv_id_from_path,
 };
 
 #[test]
-fn is_v01_exchange_path_accepts_top_level_json() {
-    assert!(is_v01_exchange_path("exchanges/abc.json"));
-}
-
-#[test]
-fn is_v01_exchange_path_rejects_nested_steps() {
-    assert!(!is_v01_exchange_path(
-        "exchanges/abc/steps/001/request.json"
-    ));
-}
-
-#[test]
-fn is_v01_exchange_path_rejects_non_json() {
-    assert!(!is_v01_exchange_path("exchanges/abc.txt"));
-}
-
-#[test]
-fn is_v01_exchange_path_rejects_outside_exchanges() {
-    assert!(!is_v01_exchange_path("artifacts/abc.json"));
-}
-
-#[test]
-fn v02_exchange_id_from_path_matches_request_json() {
+fn v03_conv_id_from_path_matches_request_json() {
     assert_eq!(
-        v02_exchange_id_from_path("exchanges/abc/steps/001/request.json"),
+        v03_conv_id_from_path("steps/abc/001/request.json"),
         Some("abc")
     );
 }
 
 #[test]
-fn v02_exchange_id_from_path_matches_response_json() {
+fn v03_conv_id_from_path_matches_response_json() {
     assert_eq!(
-        v02_exchange_id_from_path("exchanges/xyz/steps/002/response.json"),
+        v03_conv_id_from_path("steps/xyz/002/response.json"),
         Some("xyz")
     );
 }
 
 #[test]
-fn v02_exchange_id_from_path_rejects_v01_shape() {
-    assert_eq!(v02_exchange_id_from_path("exchanges/abc.json"), None);
-}
-
-#[test]
-fn v02_exchange_id_from_path_rejects_bare_steps_dir() {
-    assert_eq!(v02_exchange_id_from_path("exchanges/abc/steps/"), None);
-}
-
-#[test]
-fn v02_exchange_id_from_path_rejects_outside_exchanges() {
-    assert_eq!(v02_exchange_id_from_path("artifacts/abc/steps/001/x"), None);
-}
-
-#[test]
-fn exchange_id_from_v01_path_strips_dir_and_suffix() {
+fn v03_conv_id_from_path_matches_tools_subpath() {
     assert_eq!(
-        exchange_id_from_v01_path("exchanges/20260422T120000Z-aaaa.json"),
-        "20260422T120000Z-aaaa"
+        v03_conv_id_from_path("steps/abc/001/tools/toolu_01/input.json"),
+        Some("abc")
     );
 }
 
 #[test]
-fn exchange_id_from_v01_path_falls_back_for_unexpected_shape() {
-    assert_eq!(exchange_id_from_v01_path("weird"), "weird");
+fn v03_conv_id_from_path_handles_hyphenated_descent_id() {
+    assert_eq!(
+        v03_conv_id_from_path("steps/aa-bb-cc/001/request.json"),
+        Some("aa-bb-cc")
+    );
 }
 
 #[test]
-fn exchange_id_from_branch_strips_prefix() {
-    assert_eq!(exchange_id_from_branch("ex/abc-1"), "abc-1");
+fn v03_conv_id_from_path_rejects_bare_step_dir() {
+    assert_eq!(v03_conv_id_from_path("steps/abc/001"), None);
 }
 
 #[test]
-fn exchange_id_from_branch_falls_back_without_prefix() {
-    assert_eq!(exchange_id_from_branch("other"), "other");
+fn v03_conv_id_from_path_rejects_bare_id_dir() {
+    assert_eq!(v03_conv_id_from_path("steps/abc"), None);
+}
+
+#[test]
+fn v03_conv_id_from_path_rejects_outside_steps() {
+    assert_eq!(v03_conv_id_from_path("summary/001.md"), None);
 }
 
 #[test]
@@ -103,48 +73,30 @@ fn truncate_preview_cuts_long_input_with_ellipsis() {
 }
 
 #[test]
-fn extract_v01_preview_returns_none_on_bad_json() {
-    assert!(extract_v01_preview(b"not json").is_none());
+fn extract_request_preview_pulls_first_user_message_content() {
+    let json = br#"{"messages":[{"role":"user","content":"hi v03"}]}"#;
+    assert_eq!(extract_request_preview(json).as_deref(), Some("hi v03"));
 }
 
 #[test]
-fn extract_v01_preview_returns_none_when_user_message_not_string() {
-    assert!(extract_v01_preview(br#"{"user_message":42}"#).is_none());
+fn extract_request_preview_returns_none_on_bad_json() {
+    assert!(extract_request_preview(b"not json").is_none());
 }
 
 #[test]
-fn extract_v01_preview_returns_trimmed_text() {
-    assert_eq!(
-        extract_v01_preview(br#"{"user_message":"  hello  "}"#).as_deref(),
-        Some("hello")
-    );
+fn extract_request_preview_returns_none_without_messages() {
+    assert!(extract_request_preview(br#"{"model":"m"}"#).is_none());
 }
 
 #[test]
-fn extract_v02_preview_pulls_first_user_message_content() {
-    let json = br#"{"messages":[{"role":"user","content":"hi v02"}]}"#;
-    assert_eq!(extract_v02_preview(json).as_deref(), Some("hi v02"));
+fn extract_request_preview_returns_none_when_messages_empty() {
+    assert!(extract_request_preview(br#"{"messages":[]}"#).is_none());
 }
 
 #[test]
-fn extract_v02_preview_returns_none_on_bad_json() {
-    assert!(extract_v02_preview(b"not json").is_none());
-}
-
-#[test]
-fn extract_v02_preview_returns_none_without_messages() {
-    assert!(extract_v02_preview(br#"{"model":"m"}"#).is_none());
-}
-
-#[test]
-fn extract_v02_preview_returns_none_when_messages_empty() {
-    assert!(extract_v02_preview(br#"{"messages":[]}"#).is_none());
-}
-
-#[test]
-fn extract_v02_preview_returns_none_when_content_not_string() {
+fn extract_request_preview_returns_none_when_content_not_string() {
     let json = br#"{"messages":[{"role":"user","content":[]}]}"#;
-    assert!(extract_v02_preview(json).is_none());
+    assert!(extract_request_preview(json).is_none());
 }
 
 #[test]

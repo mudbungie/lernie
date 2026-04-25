@@ -51,9 +51,9 @@ pub(super) struct LogEntry {
 }
 
 pub(super) fn git_log_first_parent(repo: &Path) -> Result<Vec<LogEntry>, GitTreeError> {
-    // `--first-parent` keeps v0.2 exchange branches off the trunk log;
-    // step commits are rendered nested under their merge node instead.
-    // For v0.1-shape linear history it is a no-op.
+    // `--first-parent` keeps subagent/exchange branches off the trunk
+    // log; step commits are rendered nested under their merge node
+    // instead.
     let out = git(
         repo,
         &[
@@ -100,8 +100,8 @@ pub(super) fn parse_log(stdout: &[u8]) -> Result<Vec<LogEntry>, GitTreeError> {
 /// Files this commit introduces versus its first parent (or versus the
 /// empty tree, for a root commit). For a merge commit this is the set
 /// of paths that the merge brought in on top of `main`'s prior state,
-/// which is what we want for detecting the exchange files added by a
-/// `--no-ff` merge.
+/// which is what we want for detecting the step files added by a
+/// `--no-ff` merge of a completed conversation branch.
 pub(super) fn files_changed(
     repo: &Path,
     oid: &str,
@@ -139,11 +139,10 @@ pub(super) fn files_changed(
         .collect())
 }
 
-/// Commits on the exchange branch reachable from the merge's second
-/// parent but not from its first parent, along first-parent only —
-/// i.e. the snapshot commit, response commit, and compactor merge
-/// commit on the exchange branch itself, excluding the compactor
-/// invocation's internal commits.
+/// Commits on the conversation branch reachable from the merge's
+/// second parent but not from its first parent, along first-parent
+/// only — i.e., the dispatch commit, response commit(s), and any
+/// compactor merge commits on the conversation branch itself.
 pub(super) fn walk_merge_step_commits(
     repo: &Path,
     merge_oid: &str,
@@ -202,14 +201,18 @@ pub(super) fn parse_step_commits(stdout: &[u8]) -> Result<Vec<StepCommit>, GitTr
     Ok(result)
 }
 
-pub(super) fn for_each_ref_unmerged_ex(repo: &Path) -> Result<Vec<u8>, GitTreeError> {
+/// Unmerged conversation branches: every ref under `refs/heads/` not
+/// merged into `main`. v0.3 branches are bare conv-ids (root) or
+/// hyphenated descents (subagents) — there is no `ex/`/`inv/` prefix
+/// to filter on (ARCH §2.3).
+pub(super) fn for_each_ref_unmerged(repo: &Path) -> Result<Vec<u8>, GitTreeError> {
     git(
         repo,
         &[
             "for-each-ref",
             "--no-merged=main",
             "--format=%(refname:short) %(objectname) %(committerdate:unix)",
-            "refs/heads/ex/",
+            "refs/heads/",
         ],
     )
 }

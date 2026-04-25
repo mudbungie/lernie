@@ -15,6 +15,11 @@ fn settle_and_tick(watcher: &Watcher) -> Vec<Change> {
     watcher.tick()
 }
 
+/// Build the per-worktree subdir for the root conversation (ARCH §2.2).
+fn make_root_worktree(repo: &Path) {
+    fs::create_dir_all(repo.join("root")).unwrap();
+}
+
 #[test]
 fn new_errors_on_missing_repo() {
     let root = tempdir().unwrap();
@@ -35,12 +40,14 @@ fn tick_is_empty_when_nothing_changed() {
 }
 
 #[test]
-fn detects_creation_under_exchanges() {
+fn detects_step_request_creation_under_root_worktree() {
     let root = tempdir().unwrap();
-    fs::create_dir(root.path().join("exchanges")).unwrap();
+    make_root_worktree(root.path());
+    let step_dir = root.path().join("root/steps/abc-1/001");
+    fs::create_dir_all(&step_dir).unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
-    let target = root.path().join("exchanges/a.json");
+    let target = step_dir.join("request.json");
     fs::write(&target, b"{}").unwrap();
     let changes = settle_and_tick(&watcher);
     let hit = changes.iter().find(|c| c.path == target).expect("event");
@@ -48,10 +55,48 @@ fn detects_creation_under_exchanges() {
 }
 
 #[test]
-fn detects_removal() {
+fn detects_subagent_worktree_step_creation() {
     let root = tempdir().unwrap();
-    fs::create_dir(root.path().join("artifacts")).unwrap();
-    let target = root.path().join("artifacts/note.md");
+    let sub_step = root.path().join("aa-bb/steps/aa-bb/001");
+    fs::create_dir_all(&sub_step).unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    let target = sub_step.join("request.json");
+    fs::write(&target, b"{}").unwrap();
+    let changes = settle_and_tick(&watcher);
+    let hit = changes.iter().find(|c| c.path == target).expect("event");
+    assert_eq!(hit.kind, ChangeKind::Touched);
+}
+
+#[test]
+fn detects_root_control_file_writes() {
+    let root = tempdir().unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    let target = root.path().join("manifest.yaml");
+    fs::write(&target, b"x").unwrap();
+    let changes = settle_and_tick(&watcher);
+    let hit = changes.iter().find(|c| c.path == target).expect("event");
+    assert_eq!(hit.kind, ChangeKind::Touched);
+}
+
+#[test]
+fn detects_souls_subdir_writes() {
+    let root = tempdir().unwrap();
+    fs::create_dir(root.path().join("souls")).unwrap();
+    let watcher = Watcher::new(root.path()).unwrap();
+    wait_quiet(&watcher);
+    let target = root.path().join("souls/worker.md");
+    fs::write(&target, b"x").unwrap();
+    let changes = settle_and_tick(&watcher);
+    assert!(changes.iter().any(|e| e.path == target));
+}
+
+#[test]
+fn detects_removal_under_summary() {
+    let root = tempdir().unwrap();
+    fs::create_dir_all(root.path().join("root/summary")).unwrap();
+    let target = root.path().join("root/summary/001.md");
     fs::write(&target, b"hi").unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
@@ -67,8 +112,10 @@ fn ignores_paths_outside_allowlist() {
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     fs::write(root.path().join("README.md"), b"x").unwrap();
-    fs::create_dir(root.path().join("random")).unwrap();
+    fs::create_dir_all(root.path().join("random")).unwrap();
     fs::write(root.path().join("random/x.txt"), b"x").unwrap();
+    fs::create_dir_all(root.path().join("root/random")).unwrap();
+    fs::write(root.path().join("root/random/x.txt"), b"x").unwrap();
     std::thread::sleep(Duration::from_millis(200));
     assert!(watcher.tick().is_empty());
 }
@@ -76,8 +123,8 @@ fn ignores_paths_outside_allowlist() {
 #[test]
 fn coalesces_rapid_writes_to_one_event() {
     let root = tempdir().unwrap();
-    fs::create_dir(root.path().join("tools")).unwrap();
-    let target = root.path().join("tools/out.log");
+    fs::create_dir_all(root.path().join("root/steps")).unwrap();
+    let target = root.path().join("root/steps/out.log");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     for i in 0..5 {
@@ -93,9 +140,9 @@ fn coalesces_rapid_writes_to_one_event() {
 #[test]
 fn coalesces_atomic_rename_to_destination() {
     let root = tempdir().unwrap();
-    fs::create_dir(root.path().join("exchanges")).unwrap();
-    let tmp = root.path().join("exchanges/a.json.tmp");
-    let final_path = root.path().join("exchanges/a.json");
+    fs::create_dir_all(root.path().join("root/steps/abc/001")).unwrap();
+    let tmp = root.path().join("root/steps/abc/001/request.json.tmp");
+    let final_path = root.path().join("root/steps/abc/001/request.json");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     fs::write(&tmp, b"{}").unwrap();
@@ -117,10 +164,10 @@ fn coalesces_atomic_rename_to_destination() {
 }
 
 #[test]
-fn detects_goal_md_update() {
+fn detects_goal_md_update_in_root_worktree() {
     let root = tempdir().unwrap();
-    fs::create_dir(root.path().join(".agent")).unwrap();
-    let target = root.path().join(".agent/goal.md");
+    make_root_worktree(root.path());
+    let target = root.path().join("root/goal.md");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     fs::write(&target, b"hi").unwrap();
@@ -133,17 +180,53 @@ fn detects_goal_md_update() {
 }
 
 #[test]
-fn is_watched_covers_all_prefixes() {
-    let root = Path::new("/r");
-    for prefix in WATCHED_PREFIXES {
-        assert!(is_watched(root, &root.join(prefix)), "{prefix}");
+fn is_watched_admits_root_control_files() {
+    let r = Path::new("/r");
+    for prefix in ROOT_CONTROL_PREFIXES {
+        assert!(is_watched(r, &r.join(prefix)), "{prefix}");
         assert!(
-            is_watched(root, &root.join(prefix).join("child")),
+            is_watched(r, &r.join(prefix).join("child")),
             "{prefix}/child"
         );
     }
-    assert!(!is_watched(root, &root.join("README.md")));
-    assert!(!is_watched(root, Path::new("/other/exchanges/x")));
+}
+
+#[test]
+fn is_watched_admits_per_worktree_paths_under_any_workdir() {
+    let r = Path::new("/r");
+    for prefix in WORKTREE_PREFIXES {
+        for workdir in ["root", "aa-bb", "20260424T120000Z-deadbeef"] {
+            let path = r.join(workdir).join(prefix);
+            assert!(is_watched(r, &path), "{workdir}/{prefix}");
+            assert!(
+                is_watched(r, &path.join("child")),
+                "{workdir}/{prefix}/child"
+            );
+        }
+    }
+}
+
+#[test]
+fn is_watched_admits_refs_and_head() {
+    let r = Path::new("/r");
+    for prefix in REFS_PREFIXES {
+        assert!(is_watched(r, &r.join(prefix)), "{prefix}");
+    }
+    assert!(is_watched(r, &r.join("root/.git/refs/heads/main")));
+}
+
+#[test]
+fn is_watched_rejects_unrelated_top_level_files() {
+    let r = Path::new("/r");
+    assert!(!is_watched(r, &r.join("README.md")));
+    assert!(!is_watched(r, Path::new("/other/manifest.yaml")));
+}
+
+#[test]
+fn is_watched_rejects_arbitrary_subdir_files() {
+    let r = Path::new("/r");
+    assert!(!is_watched(r, &r.join("aa-bb/random.txt")));
+    assert!(!is_watched(r, &r.join("root/notes/x.md")));
 }
 
 #[test]
@@ -178,7 +261,7 @@ fn ingest_splits_name_both_into_from_and_to() {
 #[test]
 fn coalesce_drops_prior_events_when_rename_from_arrives() {
     let repo = Path::new("/r");
-    let p = PathBuf::from("/r/exchanges/a");
+    let p = PathBuf::from("/r/root/steps/abc/001/request.json");
     let raw = vec![
         (
             p.clone(),

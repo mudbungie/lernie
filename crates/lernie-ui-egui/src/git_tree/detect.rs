@@ -1,55 +1,28 @@
-//! Exchange-path detection and user-message preview extraction.
+//! Step-path detection and user-message preview extraction for v0.3.
 //!
-//! Two shapes coexist in repos that have been migrated from v0.1 to
-//! v0.2 (ARCH §12 v0.1 exception). Both live under `exchanges/` but
-//! have different internal structure:
-//!
-//! - v0.1: `exchanges/<id>.json` — flat per-exchange JSON with a
-//!   `user_message` string field.
-//! - v0.2: `exchanges/<id>/steps/<NNN>/{request,response}.json` — the
-//!   user message is `messages[0].content` in the request file.
+//! v0.3 commits land step records under `steps/<conv-id>/<NNN>/` (ARCH
+//! §2.3). The user message lives in `request.json` as
+//! `messages[0].content`. Branches are bare conv-ids — root
+//! conversations on `main`, subagents on their full hyphenated descent
+//! (ARCH §2.3) — so no branch-name unprefixing is needed.
 //!
 //! Preview strings cap at [`PREVIEW_MAX`] chars after whitespace
 //! normalization so the render layer can size them predictably.
 
 pub(super) const PREVIEW_MAX: usize = 80;
 
-/// `exchanges/<id>.json` at the top level — the v0.1 shape.
-pub(super) fn is_v01_exchange_path(path: &str) -> bool {
-    path.starts_with("exchanges/") && path.ends_with(".json") && !path[10..].contains('/')
-}
-
-/// `exchanges/<id>/steps/<NNN>/...` — the v0.2 shape. Returns the
-/// exchange id if the path matches, else `None`.
-pub(super) fn v02_exchange_id_from_path(path: &str) -> Option<&str> {
-    let rest = path.strip_prefix("exchanges/")?;
-    let (id, tail) = rest.split_once("/steps/")?;
-    // Ensure at least one more segment after steps/ — the step dir —
-    // so bare `exchanges/<id>/steps/` (no file) doesn't match.
+/// `steps/<conv-id>/<NNN>/<file>...` — the v0.3 shape. Returns the
+/// conv-id if the path matches, else `None`. Bare `steps/<id>/<NNN>/`
+/// (no file) does not match.
+pub(super) fn v03_conv_id_from_path(path: &str) -> Option<&str> {
+    let rest = path.strip_prefix("steps/")?;
+    let (id, tail) = rest.split_once('/')?;
+    // Tail is `<NNN>/<file>` at minimum; bare `<NNN>` (no slash) means
+    // the path stopped at the step dir, which is not a file commit.
     tail.split_once('/').map(|_| id)
 }
 
-pub(super) fn exchange_id_from_v01_path(path: &str) -> String {
-    path.strip_prefix("exchanges/")
-        .and_then(|s| s.strip_suffix(".json"))
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| path.to_string())
-}
-
-pub(super) fn exchange_id_from_branch(branch: &str) -> String {
-    branch
-        .strip_prefix("ex/")
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| branch.to_string())
-}
-
-pub(super) fn extract_v01_preview(json_bytes: &[u8]) -> Option<String> {
-    let value: serde_json::Value = serde_json::from_slice(json_bytes).ok()?;
-    let msg = value.get("user_message")?.as_str()?;
-    Some(truncate_preview(msg))
-}
-
-pub(super) fn extract_v02_preview(json_bytes: &[u8]) -> Option<String> {
+pub(super) fn extract_request_preview(json_bytes: &[u8]) -> Option<String> {
     let value: serde_json::Value = serde_json::from_slice(json_bytes).ok()?;
     let msg = value
         .get("messages")?

@@ -1,5 +1,6 @@
-//! Shared test fixture: a tempdir-backed git repo plus helpers for
-//! committing v0.1-shape and v0.2-shape exchanges.
+//! Shared test fixture: a tempdir-backed conv-repo (ARCH §2.2 layout)
+//! plus helpers for committing v0.3-shape conversations and dispatching
+//! in-flight subagent branches.
 //!
 //! Tests hit a real git binary rather than mocking; fixtures are cheap
 //! to spin up and the renderer's contract is explicitly with the CLI,
@@ -23,89 +24,92 @@ const INHERITED_GIT_ENV: &[&str] = &[
 
 pub(super) struct Fixture {
     _dir: TempDir,
+    /// Conv-repo root — the dir holding `root/`, control files, and
+    /// any subagent worktrees. This is what `GitTree::from_repo` is
+    /// passed in production (ARCH §2.2).
     pub(super) path: PathBuf,
+    /// Primary worktree path (`<conv-repo>/root/`). All git commands
+    /// in tests run from here, mirroring the harness.
+    pub(super) primary: PathBuf,
 }
 
 impl Fixture {
     pub(super) fn new() -> Self {
         let dir = tempdir().unwrap();
         let path = dir.path().to_path_buf();
-        run_git(&path, &["init", "-q", "-b", "main"]);
-        run_git(&path, &["config", "user.email", "t@t.local"]);
-        run_git(&path, &["config", "user.name", "Tester"]);
-        run_git(&path, &["config", "commit.gpgsign", "false"]);
-        fs::create_dir(path.join("exchanges")).unwrap();
-        Self { _dir: dir, path }
+        let primary = path.join("root");
+        fs::create_dir_all(&primary).unwrap();
+        run_git(&primary, &["init", "-q", "-b", "main"]);
+        run_git(&primary, &["config", "user.email", "t@t.local"]);
+        run_git(&primary, &["config", "user.name", "Tester"]);
+        run_git(&primary, &["config", "commit.gpgsign", "false"]);
+        Self {
+            _dir: dir,
+            path,
+            primary,
+        }
     }
 
-    pub(super) fn commit_v01_exchange(&self, id: &str, user_message: &str) {
-        let rel = format!("exchanges/{id}.json");
-        let json = format!(
-            r#"{{"user_message":"{}"}}"#,
-            user_message.replace('"', "\\\"")
-        );
-        fs::write(self.path.join(&rel), json).unwrap();
-        run_git(&self.path, &["add", &rel]);
-        run_git(&self.path, &["commit", "-q", "-m", &format!("ex {id}")]);
-    }
-
+    /// Land a non-conversation commit on `main` (e.g. README, scaffold
+    /// tweak). Used to populate the trunk with commits the renderer
+    /// must surface but not label as conversations.
     pub(super) fn commit_other(&self, file: &str, body: &str) {
-        fs::write(self.path.join(file), body).unwrap();
-        run_git(&self.path, &["add", file]);
-        run_git(&self.path, &["commit", "-q", "-m", &format!("add {file}")]);
-    }
-
-    pub(super) fn commit_malformed_v01_exchange(&self, id: &str) {
-        let rel = format!("exchanges/{id}.json");
-        fs::write(self.path.join(&rel), "{ not valid json").unwrap();
-        run_git(&self.path, &["add", &rel]);
-        run_git(&self.path, &["commit", "-q", "-m", &format!("bad {id}")]);
-    }
-
-    pub(super) fn commit_v02_merged_exchange(&self, id: &str, user_message: &str) {
-        self.build_v02_branch(id, user_message);
-        let branch = format!("ex/{id}");
-        run_git(&self.path, &["checkout", "-q", "main"]);
+        fs::write(self.primary.join(file), body).unwrap();
+        run_git(&self.primary, &["add", file]);
         run_git(
-            &self.path,
+            &self.primary,
+            &["commit", "-q", "-m", &format!("add {file}")],
+        );
+    }
+
+    /// Build a v0.3-shape conversation branch and merge it back to
+    /// `main` with `--no-ff`, mirroring the dispatch + response +
+    /// terminal-compaction sequence (ARCH §2.3, §2.6).
+    pub(super) fn commit_v03_merged_conversation(&self, conv_id: &str, user_message: &str) {
+        self.build_v03_branch(conv_id, user_message);
+        run_git(&self.primary, &["checkout", "-q", "main"]);
+        run_git(
+            &self.primary,
             &[
                 "merge",
                 "--no-ff",
                 "-q",
                 "-m",
-                &format!("merge {branch}"),
-                &branch,
+                &format!("merge {conv_id}"),
+                conv_id,
             ],
         );
     }
 
-    pub(super) fn build_v02_in_flight(&self, id: &str, user_message: &str) {
-        self.build_v02_branch(id, user_message);
-        run_git(&self.path, &["checkout", "-q", "main"]);
+    /// Build a v0.3-shape conversation branch and leave it unmerged
+    /// (the in-flight case the renderer surfaces under "in-flight
+    /// conversations").
+    pub(super) fn build_v03_in_flight(&self, conv_id: &str, user_message: &str) {
+        self.build_v03_branch(conv_id, user_message);
+        run_git(&self.primary, &["checkout", "-q", "main"]);
     }
 
-    fn build_v02_branch(&self, id: &str, user_message: &str) {
-        let branch = format!("ex/{id}");
-        run_git(&self.path, &["checkout", "-q", "-b", &branch, "main"]);
-        let step_dir = format!("exchanges/{id}/steps/001");
-        fs::create_dir_all(self.path.join(&step_dir)).unwrap();
+    fn build_v03_branch(&self, conv_id: &str, user_message: &str) {
+        run_git(&self.primary, &["checkout", "-q", "-b", conv_id, "main"]);
+        let step_dir = format!("steps/{conv_id}/001");
+        fs::create_dir_all(self.primary.join(&step_dir)).unwrap();
         let request_json = serde_json::json!({
             "model": "m",
             "messages": [{"role": "user", "content": user_message}],
         });
         fs::write(
-            self.path.join(format!("{step_dir}/request.json")),
+            self.primary.join(format!("{step_dir}/request.json")),
             serde_json::to_vec_pretty(&request_json).unwrap(),
         )
         .unwrap();
-        run_git(&self.path, &["add", &format!("{step_dir}/request.json")]);
+        run_git(&self.primary, &["add", &format!("{step_dir}/request.json")]);
         run_git(
-            &self.path,
+            &self.primary,
             &[
                 "commit",
                 "-q",
                 "-m",
-                &format!("step 001: dispatch [ex {id}]"),
+                &format!("step 001: dispatch [{conv_id}]"),
             ],
         );
         let response_json = serde_json::json!({
@@ -113,53 +117,61 @@ impl Fixture {
             "stop_reason": "end_turn"
         });
         fs::write(
-            self.path.join(format!("{step_dir}/response.json")),
+            self.primary.join(format!("{step_dir}/response.json")),
             serde_json::to_vec_pretty(&response_json).unwrap(),
         )
         .unwrap();
-        run_git(&self.path, &["add", &format!("{step_dir}/response.json")]);
         run_git(
-            &self.path,
+            &self.primary,
+            &["add", &format!("{step_dir}/response.json")],
+        );
+        run_git(
+            &self.primary,
             &[
                 "commit",
                 "-q",
                 "-m",
-                &format!("step 001: response [ex {id}]"),
+                &format!("step 001: response [{conv_id}]"),
             ],
         );
-        // Compactor sub-branch: one commit on inv/<id>/c, merged back
-        // --no-ff into the exchange branch. Mirrors the real shape.
-        let cmp_branch = format!("inv/{id}/c");
-        run_git(&self.path, &["checkout", "-q", "-b", &cmp_branch, &branch]);
-        fs::create_dir_all(self.path.join(".agent/compactions")).unwrap();
+        // Compactor sub-branch: hyphenated descent off the conversation
+        // branch (ARCH §2.3); one summary commit, merged --no-ff back
+        // into the conversation branch. Mirrors the real shape produced
+        // by `dispatch_compactor`.
+        let cmp_branch = format!("{conv_id}-c");
+        run_git(
+            &self.primary,
+            &["checkout", "-q", "-b", &cmp_branch, conv_id],
+        );
+        fs::create_dir_all(self.primary.join("summary")).unwrap();
         fs::write(
-            self.path.join(".agent/compactions/001.md"),
-            format!("exchange {id}: pong\n"),
+            self.primary.join("summary/001.md"),
+            format!("conversation {conv_id}: pong\n"),
         )
         .unwrap();
-        run_git(&self.path, &["add", ".agent/compactions/001.md"]);
+        run_git(&self.primary, &["add", "summary/001.md"]);
         run_git(
-            &self.path,
+            &self.primary,
             &[
                 "commit",
                 "-q",
                 "-m",
-                &format!("compaction: terminal summary [ex {id}]"),
+                &format!("compaction: terminal summary [{conv_id}]"),
             ],
         );
-        run_git(&self.path, &["checkout", "-q", &branch]);
+        run_git(&self.primary, &["checkout", "-q", conv_id]);
         run_git(
-            &self.path,
+            &self.primary,
             &[
                 "merge",
                 "--no-ff",
                 "-q",
                 "-m",
-                &format!("compactor merge [ex {id}]"),
+                &format!("compactor merge [{conv_id}]"),
                 &cmp_branch,
             ],
         );
-        run_git(&self.path, &["branch", "-q", "-D", &cmp_branch]);
+        run_git(&self.primary, &["branch", "-q", "-D", &cmp_branch]);
     }
 }
 

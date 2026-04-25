@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-25T02:21:10.210494852Z","id":"bl-d7b1","title":"Phase 1: harness root + global providers split"},{"closed_at":"2026-04-25T04:30:25.118746503Z","id":"bl-ecda","title":"Phase 2: template skeleton + scaffolding"},{"closed_at":"2026-04-25T05:19:37.946475084Z","id":"bl-7bca","title":"Phase 3: branch naming + step path migration"},{"closed_at":"2026-04-25T06:01:31.634310598Z","id":"bl-70b9","title":"Phase 4: soul/role machinery + agents.yaml retirement"},{"closed_at":"2026-04-25T06:26:24.743524108Z","id":"bl-d944","title":"Phase 5: compactor migration + .gitattributes"},{"closed_at":"2026-04-25T06:44:58.073440620Z","id":"bl-d135","title":"Phase 6: schema regen + final string sweep"}],
+  "closed_children": [{"closed_at":"2026-04-25T02:21:10.210494852Z","id":"bl-d7b1","title":"Phase 1: harness root + global providers split"},{"closed_at":"2026-04-25T04:30:25.118746503Z","id":"bl-ecda","title":"Phase 2: template skeleton + scaffolding"},{"closed_at":"2026-04-25T05:19:37.946475084Z","id":"bl-7bca","title":"Phase 3: branch naming + step path migration"},{"closed_at":"2026-04-25T06:01:31.634310598Z","id":"bl-70b9","title":"Phase 4: soul/role machinery + agents.yaml retirement"},{"closed_at":"2026-04-25T06:26:24.743524108Z","id":"bl-d944","title":"Phase 5: compactor migration + .gitattributes"},{"closed_at":"2026-04-25T06:44:58.073440620Z","id":"bl-d135","title":"Phase 6: schema regen + final string sweep"},{"closed_at":"2026-04-25T22:40:03.465649013Z","id":"bl-66da","title":"Phase 7: make install harness root scaffold"}],
   "created_at": "2026-04-25T01:18:01.588404552Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.3","layout"],
   "title": "v0.3 layout migration: implement the new conversation-repo shape",
   "type": "epic",
-  "updated_at": "2026-04-25T06:44:58.503658679Z"
+  "updated_at": "2026-04-25T22:40:04.140974201Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:11:33.676627921Z",
+  "delivered_in": null,
+  "depends_on": ["bl-829f"],
+  "description": "Make the subagent (the worker spawned by Phase 2's dispatch) actually run a multi-step loop, terminate, compact, and merge back into its parent branch (ARCH §2.3 step 5, §2.6, §2.7).\n\nThe Phase 1 spawn machinery just creates the branch + worktree + dispatch commit. Phase 4 wires the rest of the conversation lifecycle, mostly by reusing v0.3's existing root-conversation runner.\n\nScope:\n- The subagent process runs the same multi-step loop as the root conversation in src/prompt/dispatch/mod.rs::run_exchange — model call, tool calls, follow-up step, repeat until stop_reason != tool_use.\n- On termination, dispatch the terminal compactor off the subagent's tip (same as root conversation does today).\n- After compaction, rebase the subagent branch onto its PARENT'S current tip (NOT main), execute the merge=ours alignment step (§2.6 step 4), and --no-ff merge into the parent.\n- Recursive case: a subagent's worker can itself emit dispatch tool_use, spawning a sub-subagent at <a>-<b>-<c>. The hyphenated-descent extends naturally.\n\nSubtle pieces:\n- The merge target for a subagent is its parent branch, not main. The existing run_exchange merges to main via a TRUNK_BRANCH constant — refactor so subagents pass their parent branch instead.\n- The subagent's primary-worktree-context for git ops is its own worktree (sibling), not <conv-repo>/root/. The merge commit happens inside the parent's worktree because that's where the parent's checkout is.\n- Tools the subagent has access to are read from per-repo providers.yaml roles.<role>.tools (already plumbed for v0.3).\n\nOut of scope:\n- Parallel safety verification (Phase 5).\n- Oversized auto-dispatch (Phase 6).\n- Wiring dispatch+await into default worker tools (Phase 7).\n\nTests:\n- Single dispatch end-to-end: parent dispatches a worker subagent, the subagent runs at least one step (with a fake adapter producing end_turn), terminal compaction runs, merge-back succeeds, parent's await retrieves the summary.\n- Recursive dispatch: depth-3 (root → subagent → sub-subagent) runs and merges cleanly.\n- merge=ours: subagent's goal.md and soul.md do NOT appear in the parent's tree post-merge (already pinned by v0.3 alignment-step machinery; verify it generalizes to non-compactor case).\n\nDone-when: a worker subagent runs a complete conversation, compacts, merges back into its parent under the alignment discipline, and the parent's await returns the compacted summary.",
+  "external": {},
+  "id": "bl-d5f6",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 4: subagent multi-step loop end-to-end",
+  "type": "task",
+  "updated_at": "2026-04-25T22:11:33.676627921Z"
+}

@@ -31,9 +31,10 @@ use serde_json::Value;
 use std::io::Write;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Always 1 in v0.2: the adapter makes exactly one HTTP call per
-/// `complete` invocation (no retry yet). Retry/reconnect work in a
-/// later ball will increment this per HTTP attempt.
+/// Always 1 in v0.2: the adapter issues exactly one HTTP request (one
+/// API call per ARCH §2.1) per `complete` invocation — no retry yet.
+/// Retry/reconnect work in a later ball will increment this per
+/// attempt.
 const API_CALLS_V0_2: u32 = 1;
 
 /// Drive a streaming `complete`. Writes JSON Lines events to `out` and

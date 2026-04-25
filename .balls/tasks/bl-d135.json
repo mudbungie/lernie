@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T01:19:58.972186941Z",
+  "delivered_in": null,
+  "depends_on": ["bl-d944"],
+  "description": "Sixth phase of bl-7c23. Final cleanup pass.\n\n=== Scope ===\n\n1. Run 'make schemas' (or equivalent) and commit the regenerated schemas/*.json. Verify each matches the post-redesign config types: manifest.json, providers.json (per-repo shape with roles:), workflow.json, version.json. Delete schemas/agents.json. Add schemas/global-providers.json for the harness-root file if it isn't already there.\n2. grep -rn '\\.agent/\\|exchanges/\\|invocations/\\|ex/<\\|inv/<\\|agents\\.yaml' src/ crates/ template/ tests/ README.md AGENTS.md and clean up any current-state references. Historical references in ARCH §12 milestones (v0.1, v0.2 shipped shapes) stay; everything else goes.\n3. Update README.md: install instructions, quickstart now use the new layout. Show the harness root + conversation repo distinction.\n4. Update AGENTS.md (project-level) if any contributor flow changed.\n5. Run 'cargo clippy -D warnings' and 'cargo fmt --check' on the whole workspace; fix anything the redesign introduced.\n\n=== Constraints ===\n\n- This is intended to be a small-diff cleanup ball. If a sweep finds a real semantic gap (something the earlier phases missed), file a separate ball under the epic and continue with the strict cleanup work here.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-d135",
+  "links": [],
+  "parent": "bl-7c23",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.3","layout"],
+  "title": "Phase 6: schema regen + final string sweep",
+  "type": "task",
+  "updated_at": "2026-04-25T01:19:58.972186941Z"
+}

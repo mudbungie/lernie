@@ -60,10 +60,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(request["messages"][0]["content"], "hello");
 
     // Follow-up commit's artifact: response.json with normalized
-    // harness-owned fields (not the raw Anthropic response).
+    // harness-owned fields (not the raw Anthropic response). The
+    // assistant message is committed as structured content blocks
+    // (§3.3) — text + tool_use survive in `content`.
     let response: serde_json::Value =
         serde_json::from_slice(&std::fs::read(step_dir.join("response.json")).unwrap()).unwrap();
-    assert_eq!(response["assistant_response"], "hi there");
+    assert_eq!(response["content"][0]["type"], "text");
+    assert_eq!(response["content"][0]["text"], "hi there");
     assert_eq!(response["model_id"], "claude-sonnet-4-7");
     assert_eq!(response["provider"], "anthropic");
     assert_eq!(response["stop_reason"], "end_turn");

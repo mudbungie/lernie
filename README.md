@@ -116,7 +116,8 @@ follow-up commit, runs the terminal compactor off the tip, and
    Messages-API-shaped request on stdin; read one JSON document back.
    Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
    process inheritance.
-7. Write the normalized response (assistant text, `model_id`,
+7. Write the normalized response (the assistant's structured
+   `content` blocks — text + `tool_use` per §3.3 — plus `model_id`,
    `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
    `steps/<conv-id>/001/response.json` and land it as a follow-up
    commit on the same branch. The snapshot commit's tree stays

@@ -165,7 +165,7 @@ fn build_summary(parent_worktree: &Path, parent_conv_id: &str) -> Result<String,
     let response: StepResponse = serde_json::from_slice(&bytes).map_err(Error::AdapterJson)?;
     Ok(format!(
         "conversation {parent_conv_id}: {}\n",
-        response.assistant_response
+        response.text()
     ))
 }
 

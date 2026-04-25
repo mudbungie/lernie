@@ -284,7 +284,7 @@ fn sigterm_during_streaming_flushes_terminal_event_and_exits_within_5s() {
     let out = child.wait_with_output().expect("wait adapter");
     let elapsed = started.elapsed();
     #[rustfmt::skip]
-    let _ = assert!(elapsed < Duration::from_secs(5), "adapter took {elapsed:?} (>5s)");
+    assert!(elapsed < Duration::from_secs(5), "adapter took {elapsed:?} (>5s)");
     assert!(out.status.success(), "adapter exited non-zero on SIGTERM");
     let line = std::str::from_utf8(&out.stdout)
         .unwrap()

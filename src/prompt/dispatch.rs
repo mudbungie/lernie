@@ -130,14 +130,14 @@ pub(super) fn run_exchange(
 
     let response = parse_adapter_stdout(&complete_stdout)?;
     let step_response = StepResponse {
-        assistant_response: response.text(),
+        content: response.content,
         model_id: resolved.model.model_id.clone(),
         provider: resolved.provider_name.to_string(),
         usage: Usage {
             input_tokens: response.usage.input_tokens,
             output_tokens: response.usage.output_tokens,
         },
-        stop_reason: response.stop_reason.clone(),
+        stop_reason: response.stop_reason,
         started_at,
         ended_at,
     };

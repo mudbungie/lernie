@@ -1,28 +1,10 @@
-//! End-to-end subprocess test for `lernie prompt` (v0.3).
-//!
-//! Chains the two binaries — `lernie new` to scaffold a conversation
-//! repo, then `lernie prompt` to drive one root conversation —
-//! against a local `httpmock` server standing in for the Anthropic
-//! endpoint.
-//!
-//! The v0.3 contract is ARCH §2.3 + §2.6 + §2.7: a root conversation
-//! is its own bare-`<conv-id>` branch off `main` (no `ex/` prefix),
-//! with the snapshot commit before the model call, a response
-//! follow-up commit, terminal compaction, and a `--no-ff` merge back
-//! to `main`. The merge runs in the primary worktree at
-//! `<conv-repo>/root/`. The test asserts:
-//!
-//! - stdout is the conversation branch name (`<ts>-<short-id>`).
-//! - main's HEAD advanced to a merge commit.
-//! - The merge commit's second parent is the compacted conversation
-//!   tip.
-//! - `summary/001.md` is reachable from main's HEAD and carries the
-//!   terminal response text.
-//! - `steps/<conv-id>/001/{request,response}.json` are reachable from
-//!   main's HEAD (the compactor is a stub — deletion of step dirs is
-//!   v0.4 work per ARCH §12).
-//! - The conversation worktree at `<conv-repo>/<conv-id>/` is removed
-//!   after the merge.
+//! End-to-end subprocess test for `lernie prompt` (v0.3): chains
+//! `lernie new` (scaffold) and `lernie prompt` (one root conversation)
+//! against a local `httpmock` server. Asserts the v0.3 contract from
+//! ARCH §2.3 + §2.6 + §2.7 — bare-conv-id branch off `main`, snapshot
+//! commit before the model call, response follow-up, terminal
+//! compaction, and `--no-ff` merge back. The merge runs inside the
+//! primary worktree at `<conv-repo>/root/` (§2.2).
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -259,7 +241,7 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         &["show", &format!("main:steps/{conv_id}/001/response.json")],
     );
     let response: serde_json::Value = serde_json::from_str(&response_blob).unwrap();
-    assert_eq!(response["assistant_response"], "pong");
+    assert_eq!(response["content"][0]["text"], "pong");
     assert_eq!(response["provider"], "anthropic");
 
     // Conversation worktree has been removed after the merge; the

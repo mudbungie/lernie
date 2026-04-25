@@ -27,6 +27,7 @@ fn request() -> Request {
             role: Role::User,
             content: "hi".into(),
         }],
+        tools: None,
     }
 }
 

@@ -8,6 +8,7 @@
 
 use super::*;
 use crate::prompt::step::Usage;
+use crate::provider::wire::ContentBlock;
 use std::cell::RefCell;
 use std::path::PathBuf;
 
@@ -80,7 +81,7 @@ fn parent_with_response(parent_conv_id: &str, text: &str) -> (tempfile::TempDir,
     let step_dir = parent_wt.join(step_dir_rel(parent_conv_id, TERMINAL_STEP_SEQ));
     std::fs::create_dir_all(&step_dir).unwrap();
     let response = StepResponse {
-        assistant_response: text.into(),
+        content: vec![ContentBlock::Text { text: text.into() }],
         model_id: "m".into(),
         provider: "p".into(),
         usage: Usage {

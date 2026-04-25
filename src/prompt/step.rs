@@ -20,6 +20,7 @@
 //! v0.4+ extends the step dir with `tools/<tool-id>/…` without moving
 //! `request.json` / `response.json`, so this layout generalizes.
 
+use crate::provider::wire::ContentBlock;
 use serde::{Deserialize, Serialize};
 
 /// Top-level directory holding per-conversation step records on a branch
@@ -58,19 +59,40 @@ pub struct Usage {
 /// schema so provider-specific wire fields do not leak into the
 /// long-term record — the compactor reads this as a stable contract.
 ///
-/// `assistant_response` is the concatenated text of the response's text
-/// blocks; per ARCH §2.1 `stop_reason` stays as the raw provider wire
-/// string (one of Anthropic's values uses a banned term, and the
-/// harness does not yet branch on it).
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// `content` is the structured assistant message — text + `tool_use`
+/// blocks per ARCH §3.3. Storing it structurally (rather than
+/// concatenated text) is what lets the next step's request assembly
+/// surface tool-use emissions to the loop without re-deriving them
+/// from prose. Use [`StepResponse::text`] when only the prose is
+/// needed (e.g. the v0.3 stub compactor).
+///
+/// Per ARCH §2.1 `stop_reason` stays as the raw provider wire string
+/// (one of Anthropic's values uses a banned term, and the harness does
+/// not yet branch on it).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct StepResponse {
-    pub assistant_response: String,
+    pub content: Vec<ContentBlock>,
     pub model_id: String,
     pub provider: String,
     pub usage: Usage,
     pub stop_reason: String,
     pub started_at: String,
     pub ended_at: String,
+}
+
+impl StepResponse {
+    /// Concatenated text of the response's [`ContentBlock::Text`] blocks,
+    /// in order. Non-text blocks are skipped — `tool_use` survives in
+    /// `content` for the loop to inspect, but is not part of the prose.
+    pub fn text(&self) -> String {
+        let mut out = String::new();
+        for block in &self.content {
+            if let ContentBlock::Text { text } = block {
+                out.push_str(text);
+            }
+        }
+        out
+    }
 }
 
 #[cfg(test)]
@@ -89,14 +111,23 @@ mod tests {
     #[test]
     fn step_response_round_trips_and_publishes_stable_keys() {
         let rec = StepResponse {
-            assistant_response: "hello".into(),
+            content: vec![
+                ContentBlock::Text {
+                    text: "hello ".into(),
+                },
+                ContentBlock::ToolUse {
+                    id: "toolu_01".into(),
+                    name: "bash".into(),
+                    input: serde_json::json!({"cmd": "ls"}),
+                },
+            ],
             model_id: "claude-sonnet-4-7".into(),
             provider: "anthropic".into(),
             usage: Usage {
                 input_tokens: 3,
                 output_tokens: 2,
             },
-            stop_reason: "end_turn".into(),
+            stop_reason: "tool_use".into(),
             started_at: "2026-04-22T06:54:32Z".into(),
             ended_at: "2026-04-22T06:54:35Z".into(),
         };
@@ -106,7 +137,7 @@ mod tests {
         // Field names are the on-disk contract — assert they survive.
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         for key in [
-            "assistant_response",
+            "content",
             "model_id",
             "provider",
             "usage",
@@ -117,5 +148,11 @@ mod tests {
             assert!(v.get(key).is_some(), "missing key: {key}");
         }
         assert_eq!(v["usage"]["input_tokens"], 3);
+        // tool_use blocks survive structurally — the loop reads them
+        // from response.json without re-parsing prose.
+        assert_eq!(v["content"][1]["type"], "tool_use");
+        assert_eq!(v["content"][1]["name"], "bash");
+        // .text() folds over text blocks only.
+        assert_eq!(rec.text(), "hello ");
     }
 }

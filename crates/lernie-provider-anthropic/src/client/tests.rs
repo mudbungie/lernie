@@ -15,6 +15,7 @@ fn request() -> Request {
             role: Role::User,
             content: "hello".into(),
         }],
+        tools: None,
     }
 }
 
@@ -164,64 +165,5 @@ fn bad_request_without_rate_limit_status_is_provider_error() {
     assert_eq!(status, 400);
 }
 
-#[test]
-fn response_text_joins_text_blocks_in_order() {
-    let text = Response {
-        id: "msg_1".into(),
-        model: "claude-sonnet-4-7".into(),
-        stop_reason: "end_turn".into(),
-        content: vec![
-            ContentBlock::Text {
-                text: "hello ".into(),
-            },
-            ContentBlock::Unknown,
-            ContentBlock::Text {
-                text: "world".into(),
-            },
-        ],
-        usage: Usage {
-            input_tokens: 1,
-            output_tokens: 2,
-        },
-    }
-    .text();
-    assert_eq!(text, "hello world");
-}
-
-#[test]
-fn request_serializes_with_expected_fields() {
-    let v: serde_json::Value = serde_json::to_value(&Request {
-        model: "claude-sonnet-4-7".into(),
-        max_tokens: 16,
-        system: Some("be terse".into()),
-        messages: vec![Message {
-            role: Role::User,
-            content: "hi".into(),
-        }],
-    })
-    .unwrap();
-    assert_eq!(v["model"], "claude-sonnet-4-7");
-    assert_eq!(v["max_tokens"], 16);
-    assert_eq!(v["system"], "be terse");
-    assert_eq!(v["messages"][0]["role"], "user");
-    assert_eq!(v["messages"][0]["content"], "hi");
-}
-
-#[test]
-fn request_omits_system_when_absent() {
-    let v: serde_json::Value = serde_json::to_value(&Request {
-        model: "m".into(),
-        max_tokens: 1,
-        system: None,
-        messages: vec![],
-    })
-    .unwrap();
-    assert!(v.get("system").is_none());
-}
-
-#[test]
-fn unknown_content_block_type_deserializes_to_unknown() {
-    let json = r#"{"type":"something_new","foo":"bar"}"#;
-    let block: ContentBlock = serde_json::from_str(json).unwrap();
-    assert_eq!(block, ContentBlock::Unknown);
-}
+// Type-only tests live next to their module in `client::types::tests`
+// so HTTP-driven cases stay colocated here. See `client/types/tests.rs`.

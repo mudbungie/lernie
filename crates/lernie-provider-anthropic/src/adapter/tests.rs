@@ -20,6 +20,7 @@ fn sample_request_json() -> String {
             role: Role::User,
             content: "hello".into(),
         }],
+        tools: None,
     })
     .unwrap()
 }

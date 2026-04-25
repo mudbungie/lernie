@@ -33,8 +33,11 @@
 //!   connection closed mid-event.
 
 pub mod streaming;
+pub mod types;
 
-use serde::{Deserialize, Serialize};
+pub use types::{ContentBlock, Message, MessageContent, Request, Response, Role, ToolDecl, Usage};
+
+use serde::Serialize;
 use std::io::BufReader;
 use std::time::Duration;
 use thiserror::Error;
@@ -46,78 +49,6 @@ pub const ANTHROPIC_VERSION: &str = "2023-06-01";
 /// Default per-request timeout. Non-streaming message requests should
 /// resolve well inside this; exceeding it surfaces as [`Error::Network`].
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(120);
-
-/// Author of a [`Message`] in a request.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum Role {
-    User,
-    Assistant,
-}
-
-/// One message in the conversation history sent to the model.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Message {
-    pub role: Role,
-    pub content: String,
-}
-
-/// Input to one model call.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Request {
-    pub model: String,
-    pub max_tokens: u32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub system: Option<String>,
-    pub messages: Vec<Message>,
-}
-
-/// Usage accounting returned by the provider.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Usage {
-    pub input_tokens: u32,
-    pub output_tokens: u32,
-}
-
-/// One block of the model's output. v0.1 only produces `text`; unknown
-/// types surface as [`ContentBlock::Unknown`] so future provider-side
-/// additions do not fail parsing.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ContentBlock {
-    Text {
-        text: String,
-    },
-    #[serde(other, skip_serializing)]
-    Unknown,
-}
-
-/// Parsed Messages API response. `stop_reason` is kept as the raw wire
-/// string (e.g. `"end_turn"`, `"max_tokens"`) rather than enumified here:
-/// see `docs/ARCHITECTURE.md` §2.1 — one of Anthropic's wire values uses a
-/// banned term, and the harness does not yet need to branch on it.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Response {
-    pub id: String,
-    pub model: String,
-    pub stop_reason: String,
-    pub content: Vec<ContentBlock>,
-    pub usage: Usage,
-}
-
-impl Response {
-    /// Concatenated text from all [`ContentBlock::Text`] blocks, in order.
-    /// Non-text blocks are skipped.
-    pub fn text(&self) -> String {
-        let mut out = String::new();
-        for block in &self.content {
-            if let ContentBlock::Text { text } = block {
-                out.push_str(text);
-            }
-        }
-        out
-    }
-}
 
 /// Errors surfaced by [`Client::send`]. See the module docstring for the
 /// full taxonomy.

@@ -108,8 +108,10 @@ impl Fixture {
                 &format!("step 001: dispatch [ex {id}]"),
             ],
         );
-        let response_json =
-            serde_json::json!({"assistant_response": "pong", "stop_reason": "end_turn"});
+        let response_json = serde_json::json!({
+            "content": [{"type": "text", "text": "pong"}],
+            "stop_reason": "end_turn"
+        });
         fs::write(
             self.path.join(format!("{step_dir}/response.json")),
             serde_json::to_vec_pretty(&response_json).unwrap(),

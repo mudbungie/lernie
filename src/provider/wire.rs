@@ -27,17 +27,46 @@ pub use stream::StreamEvent;
 
 use serde::{Deserialize, Serialize};
 
-/// One block of the model's output. v0.1 only handles `text`; unknown
-/// block types parse into [`ContentBlock::Unknown`] so future provider
-/// additions (e.g. `tool_use`, `thinking`) do not break the parse path.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+/// One block of an assistant message or a user message's content. v0.3
+/// adds `tool_use` (model emission) and `tool_result` (next-step
+/// feedback) per ARCH §3.3; unknown block types parse into
+/// [`ContentBlock::Unknown`] so future provider additions do not break
+/// the parse path.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentBlock {
     Text {
         text: String,
     },
+    /// Model's request to invoke a tool (TAXONOMY.md §2 maps this term
+    /// to "tool call" in vendor-neutral prose). `id` is the wire id the
+    /// matching `tool_result` echoes back; `input` is held as
+    /// [`serde_json::Value`] so the harness does not interpret it.
+    ToolUse {
+        id: String,
+        name: String,
+        input: serde_json::Value,
+    },
+    /// User-side payload feeding tool output back to the model on the
+    /// next step. `tool_use_id` matches the emission's `id`. The
+    /// `content` field is a string in v0.3 (the harness wraps a tool's
+    /// stdout as a string per ARCH §3.3 stdio contract). `is_error`
+    /// defaults to `false` and projects the tool's exit code per ARCH
+    /// §3.3.
+    ToolResult {
+        tool_use_id: String,
+        content: String,
+        #[serde(default, skip_serializing_if = "is_false")]
+        is_error: bool,
+    },
     #[serde(other, skip_serializing)]
     Unknown,
+}
+
+/// `skip_serializing_if` predicate — keeps `is_error: false` off the
+/// wire so `tool_result` blocks default-clean on success.
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 /// Usage accounting on the non-streaming response. `input_tokens` and
@@ -56,7 +85,7 @@ pub struct Usage {
 /// the raw wire string (e.g. `"end_turn"`, `"max_tokens"`) — §2.1 lists
 /// some Anthropic wire values under a banned term, and the harness
 /// does not yet need to branch on them.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Response {
     pub id: String,
     pub model: String,
@@ -68,8 +97,9 @@ pub struct Response {
 impl Response {
     /// Concatenated text from all [`ContentBlock::Text`] blocks, in
     /// order. Non-text blocks are skipped. The harness uses this when
-    /// it wants the assistant's textual reply as a single string
-    /// (e.g. to write to `response.json`'s `assistant_response`).
+    /// it wants the assistant's textual reply as a single string —
+    /// `tool_use` / `tool_result` blocks are skipped, so this is the
+    /// model's prose output and nothing else.
     pub fn text(&self) -> String {
         let mut out = String::new();
         for block in &self.content {
@@ -109,14 +139,74 @@ mod tests {
             "id":"x","model":"m","stop_reason":"end_turn",
             "content":[
                 {"type":"text","text":"hello "},
-                {"type":"tool_use","id":"t1","name":"bash","input":{}},
+                {"type":"tool_use","id":"t1","name":"bash","input":{"cmd":"ls"}},
                 {"type":"text","text":"world"}
             ],
             "usage":{"input_tokens":1,"output_tokens":1}
         }"#;
         let r: Response = serde_json::from_str(body).unwrap();
+        // Tool-use blocks are skipped by `.text()` but preserved
+        // structurally (§3.3) so the next step can read them.
         assert_eq!(r.text(), "hello world");
-        assert!(matches!(r.content[1], ContentBlock::Unknown));
+        match &r.content[1] {
+            ContentBlock::ToolUse { id, name, input } => {
+                assert_eq!(id, "t1");
+                assert_eq!(name, "bash");
+                assert_eq!(input["cmd"], "ls");
+            }
+            other => panic!("expected ToolUse, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_tool_use_block_with_arbitrary_input() {
+        let body = r#"{"type":"tool_use","id":"toolu_01abc","name":"read_file",
+            "input":{"path":"/etc/hostname","limit":100}}"#;
+        let block: ContentBlock = serde_json::from_str(body).unwrap();
+        match block {
+            ContentBlock::ToolUse { id, name, input } => {
+                assert_eq!(id, "toolu_01abc");
+                assert_eq!(name, "read_file");
+                assert_eq!(input["path"], "/etc/hostname");
+                assert_eq!(input["limit"], 100);
+            }
+            other => panic!("expected ToolUse, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn tool_result_round_trips_with_and_without_is_error() {
+        // Default — `is_error: false` is omitted on the wire so a
+        // success result stays minimal.
+        let ok: ContentBlock =
+            serde_json::from_str(r#"{"type":"tool_result","tool_use_id":"t1","content":"ok"}"#)
+                .unwrap();
+        let bytes = serde_json::to_vec(&ok).unwrap();
+        let ok_back: ContentBlock = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(ok, ok_back);
+        let raw: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert!(raw.get("is_error").is_none(), "default false omitted");
+
+        // Explicit `is_error: true` survives the round-trip and stays
+        // on the wire so failure reaches the model.
+        let bad: ContentBlock = serde_json::from_str(
+            r#"{"type":"tool_result","tool_use_id":"t2","content":"boom","is_error":true}"#,
+        )
+        .unwrap();
+        let bytes = serde_json::to_vec(&bad).unwrap();
+        let raw: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(raw["is_error"], true);
+        assert_eq!(raw["tool_use_id"], "t2");
+        assert_eq!(raw["content"], "boom");
+    }
+
+    #[test]
+    fn unknown_block_type_still_falls_back_to_unknown() {
+        // Forward-compat: an unknown block type still parses as Unknown
+        // even though tool_use / tool_result are now first-class.
+        let body = r#"{"type":"thinking","content":"…"}"#;
+        let block: ContentBlock = serde_json::from_str(body).unwrap();
+        assert_eq!(block, ContentBlock::Unknown);
     }
 
     #[test]

@@ -50,7 +50,10 @@ fn run_emits_fatal_when_stream_truncates_without_terminator() {
     let last = events.last().unwrap();
     assert_eq!(last["type"], "error");
     assert_eq!(last["kind"], "fatal");
-    assert!(last["message"].as_str().unwrap().contains("message_stop"), "got: {last}");
+    assert!(
+        last["message"].as_str().unwrap().contains("message_stop"),
+        "got: {last}"
+    );
 }
 
 #[test]

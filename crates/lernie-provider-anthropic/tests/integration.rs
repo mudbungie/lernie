@@ -264,9 +264,17 @@ fn sigterm_during_streaming_flushes_terminal_event_and_exits_within_5s() {
         .arg("complete")
         .env("ANTHROPIC_API_KEY", "k")
         .env("LERNIE_PROVIDER_ANTHROPIC_ENDPOINT", server.base_url())
-        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped())
-        .spawn().expect("spawn adapter");
-    child.stdin.as_mut().unwrap().write_all(request.to_string().as_bytes()).unwrap();
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn adapter");
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(request.to_string().as_bytes())
+        .unwrap();
     drop(child.stdin.take());
     std::thread::sleep(Duration::from_millis(200));
     let started = Instant::now();
@@ -275,10 +283,14 @@ fn sigterm_during_streaming_flushes_terminal_event_and_exits_within_5s() {
     assert_eq!(rc, 0, "kill(SIGTERM) failed");
     let out = child.wait_with_output().expect("wait adapter");
     let elapsed = started.elapsed();
-    assert!(elapsed < Duration::from_secs(5), "adapter took {elapsed:?} (>5s)");
+    #[rustfmt::skip]
+    let _ = assert!(elapsed < Duration::from_secs(5), "adapter took {elapsed:?} (>5s)");
     assert!(out.status.success(), "adapter exited non-zero on SIGTERM");
-    let line = std::str::from_utf8(&out.stdout).unwrap()
-        .lines().find(|l| !l.is_empty()).expect("expected a terminal event line");
+    let line = std::str::from_utf8(&out.stdout)
+        .unwrap()
+        .lines()
+        .find(|l| !l.is_empty())
+        .expect("expected a terminal event line");
     let v: Value = serde_json::from_str(line).unwrap();
     assert_eq!(v["type"], "error");
     assert_eq!(v["kind"], "retryable");

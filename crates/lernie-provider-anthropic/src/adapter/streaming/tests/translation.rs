@@ -32,7 +32,11 @@ fn run_translates_native_sse_to_normalized_jsonl() {
     // v0.2 reserves the tool-use payload — the event arrives with just
     // its index, no `partial_json`. v0.3 will add the payload.
     assert_eq!(events[6]["index"], 1);
-    assert!(events[6].get("partial_json").is_none(), "v0.2 omits payload, got {}", events[6]);
+    assert!(
+        events[6].get("partial_json").is_none(),
+        "v0.2 omits payload, got {}",
+        events[6]
+    );
 
     let stop = events.last().unwrap();
     assert_eq!(stop["stop_reason"], "end_turn");
@@ -80,4 +84,29 @@ fn message_stop_preserves_non_object_usage_when_provider_misbehaves() {
     crate::adapter::streaming::handle(&mut out, &mut state, Event::MessageStop).unwrap();
     let v: Value = serde_json::from_slice(&out).unwrap();
     assert_eq!(v["usage"], "weird-string");
+}
+
+#[test]
+fn drain_emits_fatal_when_iterator_ends_without_message_stop() {
+    // §4.4 contract: the harness must always see a terminator. If the
+    // stream iterator drains without an explicit `message_stop`, drain
+    // synthesizes a fatal `error` event so a half-stream is visible
+    // rather than silently dropped.
+    use crate::client::streaming::Event;
+    let events: Vec<Result<Event, crate::client::Error>> = vec![Ok(Event::MessageStart {
+        message: serde_json::json!({"usage": {"input_tokens": 1}}),
+    })];
+    let mut out = Vec::new();
+    let stop = AtomicBool::new(false);
+    crate::adapter::streaming::drain(&mut out, events, &stop).unwrap();
+    let lines = parse_jsonl(&out);
+    let last = lines.last().expect("expected a terminator");
+    assert_eq!(last["type"], "error");
+    assert_eq!(last["kind"], "fatal");
+    assert!(
+        last["message"]
+            .as_str()
+            .unwrap()
+            .contains("stream ended without message_stop")
+    );
 }

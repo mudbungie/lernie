@@ -105,14 +105,20 @@ mod tests {
             other => panic!("got {other:?}"),
         }
         match serde_json::from_str(u_v0_2).unwrap() {
-            StreamEvent::ToolUseDelta { index, partial_json } => {
+            StreamEvent::ToolUseDelta {
+                index,
+                partial_json,
+            } => {
                 assert_eq!(index, 1);
                 assert!(partial_json.is_none(), "v0.2 omits the payload");
             }
             other => panic!("got {other:?}"),
         }
         match serde_json::from_str(u_v0_3).unwrap() {
-            StreamEvent::ToolUseDelta { index, partial_json } => {
+            StreamEvent::ToolUseDelta {
+                index,
+                partial_json,
+            } => {
                 assert_eq!(index, 2);
                 assert_eq!(partial_json.as_deref(), Some(r#"{"a":"#));
             }

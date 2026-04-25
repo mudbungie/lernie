@@ -77,7 +77,14 @@ where
     // Stream ended without `message_stop` and without an error. Per
     // §4.4 the harness must always see a terminator — emit a fatal
     // so a half-stream is visible rather than silently dropped.
-    write_json(out, &AdapterError::fatal("stream ended without message_stop"))
+    write_json(out, &half_stream_fatal())
+}
+
+/// Terminal `error` event for the "iterator drained without seeing
+/// `message_stop`" case. Split out so [`drain`] stays narrow and the
+/// path is reachable from a unit test that injects a custom iterator.
+fn half_stream_fatal() -> AdapterError {
+    AdapterError::fatal("stream ended without message_stop")
 }
 
 /// Per-stream accumulator. Holds the values folded from `message_start`
@@ -91,6 +98,7 @@ struct TerminalState {
     emitted_terminator: bool,
 }
 
+#[rustfmt::skip]
 fn handle<W: Write>(
     out: &mut W,
     state: &mut TerminalState,

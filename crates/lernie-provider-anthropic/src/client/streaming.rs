@@ -280,10 +280,10 @@ fn initial_block(payload: &Value) -> ContentBlock {
 
 fn apply_delta(block: &mut ContentBlock, delta: &Value) {
     let kind = delta.get("type").and_then(Value::as_str).unwrap_or("");
-    if let (ContentBlock::Text { text }, "text_delta") = (block, kind) {
-        if let Some(chunk) = delta.get("text").and_then(Value::as_str) {
-            text.push_str(chunk);
-        }
+    if let (ContentBlock::Text { text }, "text_delta") = (block, kind)
+        && let Some(chunk) = delta.get("text").and_then(Value::as_str)
+    {
+        text.push_str(chunk);
     }
 }
 

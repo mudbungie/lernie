@@ -29,8 +29,8 @@ struct FlipStopAfter<'a, I> {
     flip_after: usize,
 }
 
-impl<'a, I: Iterator<Item = Result<crate::client::streaming::Event, crate::client::Error>>>
-    Iterator for FlipStopAfter<'a, I>
+impl<'a, I: Iterator<Item = Result<crate::client::streaming::Event, crate::client::Error>>> Iterator
+    for FlipStopAfter<'a, I>
 {
     type Item = I::Item;
     fn next(&mut self) -> Option<Self::Item> {
@@ -63,7 +63,12 @@ fn drain_emits_interrupted_when_stop_flips_mid_iteration() {
     let parsed = parse_jsonl(&out);
     assert_eq!(parsed.first().unwrap()["type"], "message_start");
     assert_eq!(parsed.last().unwrap()["type"], "error");
-    assert!(parsed.last().unwrap()["message"].as_str().unwrap().contains("SIGTERM"));
+    assert!(
+        parsed.last().unwrap()["message"]
+            .as_str()
+            .unwrap()
+            .contains("SIGTERM")
+    );
 }
 
 #[test]
@@ -95,7 +100,12 @@ fn drain_observes_stop_before_iter_error_classifies_as_interrupted() {
     let parsed = parse_jsonl(&out);
     assert_eq!(parsed.first().unwrap()["type"], "message_start");
     assert_eq!(parsed.last().unwrap()["type"], "error");
-    assert!(parsed.last().unwrap()["message"].as_str().unwrap().contains("SIGTERM"));
+    assert!(
+        parsed.last().unwrap()["message"]
+            .as_str()
+            .unwrap()
+            .contains("SIGTERM")
+    );
 }
 
 #[test]

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T06:59:58.204219420Z",
-  "delivered_in": null,
+  "delivered_in": "3b1914ddac1009511b9a9a652c7a685d60b3e1e6",
   "depends_on": ["bl-e2fb"],
   "description": "Extend the provider-wire types so a step can carry a model's tool_use emissions and can feed tool_result blocks back on the next step.\n\n=== Scope ===\n\n- Extend ContentBlock (src/provider/anthropic.rs or its extracted-crate equivalent, whichever lands first — coordinate with bl-d15d epic): add ToolUse { id, name, input: serde_json::Value } and ToolResult { tool_use_id, content, is_error: bool }. Keep Unknown fallback for forward-compat (§4.4 shape).\n- Message content becomes polymorphic — a user message can now be an array of content blocks mixing Text + ToolResult. Provider Request 'messages' accepts both legacy string content and array content.\n- Add 'tools: Option<Vec<ToolDecl>>' to Request, matching Anthropic Messages API shape: { name, description, input_schema: json }.\n- Extend step::StepResponse (or introduce a sibling structured record) so the follow-up response.json commit preserves tool_use blocks structurally — not just the concatenated .text(). Ball #3 consumes this to decide whether to loop.\n- Pure wire/type ball: no loop changes, no tool executor. Tests exercise serde round-trips against synthetic payloads. No live API.\n\n=== Depends on ===\n\nbl-e2fb — must be closed before claiming; tool_call commit shape + tool_result framing decisions from that ball inform the StepResponse extension here.\n\n=== Out of scope ===\n\n- Request-time 'tools:' assembly from config (ball pinned by #1, implemented in #3 or later).\n- Tool executor (#4).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-683c",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","tools"],
   "title": "v0.3 wire types: tool_use / tool_result blocks + tools request field",
   "type": "task",
-  "updated_at": "2026-04-25T05:54:55.226557954Z"
+  "updated_at": "2026-04-25T06:22:17.286749208Z"
 }

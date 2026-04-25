@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-7bca",
+  "claimed_by": "orion",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T01:19:15.377175388Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.3","layout"],
   "title": "Phase 3: branch naming + step path migration",
   "type": "task",
-  "updated_at": "2026-04-25T01:19:15.377175388Z"
+  "updated_at": "2026-04-25T04:42:55.665997657Z"
 }

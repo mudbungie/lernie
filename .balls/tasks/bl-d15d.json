@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-4033"},{"link_type":"gates","target":"bl-403c"},{"link_type":"gates","target":"bl-48dd"}],
   "parent": null,
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["streaming"],
   "title": "Anthropic integration: extract to standalone crate + streaming end-to-end",
   "type": "epic",
-  "updated_at": "2026-04-25T05:11:18.587689030Z"
+  "updated_at": "2026-04-25T05:12:44.317207119Z"
 }

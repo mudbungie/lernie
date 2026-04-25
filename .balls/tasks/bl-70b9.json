@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-70b9",
+  "claimed_by": "quartz",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T01:19:58.942073324Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.3","layout"],
   "title": "Phase 4: soul/role machinery + agents.yaml retirement",
   "type": "task",
-  "updated_at": "2026-04-25T01:23:28.653245556Z"
+  "updated_at": "2026-04-25T05:51:21.837515637Z"
 }

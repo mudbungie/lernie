@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-fdb9",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T05:23:29.139450479Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-e2fb",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "v0.3 tool contract: apply ARCH/PRINCIPLES doc edits",
   "type": "task",
-  "updated_at": "2026-04-25T05:23:29.139450479Z"
+  "updated_at": "2026-04-25T05:23:33.677792712Z"
 }

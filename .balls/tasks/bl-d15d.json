@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-23T07:11:45.940925100Z","id":"bl-f8bd","title":"Extract lernie-provider-anthropic to workspace crate"},{"closed_at":"2026-04-23T07:23:15.108604366Z","id":"bl-bf79","title":"Harness neutral adapter-wire types"},{"closed_at":"2026-04-25T02:27:53.112120891Z","id":"bl-64cf","title":"Anthropic client: SSE streaming (raw)"},{"closed_at":"2026-04-25T04:46:22.810692103Z","id":"bl-de80","title":"Adapter contract: streaming wire in run_complete"},{"closed_at":"2026-04-25T05:03:42.129256472Z","id":"bl-4033","title":"Gate: tests pass (streaming client)"}],
+  "closed_children": [{"closed_at":"2026-04-23T07:11:45.940925100Z","id":"bl-f8bd","title":"Extract lernie-provider-anthropic to workspace crate"},{"closed_at":"2026-04-23T07:23:15.108604366Z","id":"bl-bf79","title":"Harness neutral adapter-wire types"},{"closed_at":"2026-04-25T02:27:53.112120891Z","id":"bl-64cf","title":"Anthropic client: SSE streaming (raw)"},{"closed_at":"2026-04-25T04:46:22.810692103Z","id":"bl-de80","title":"Adapter contract: streaming wire in run_complete"},{"closed_at":"2026-04-25T05:03:42.129256472Z","id":"bl-4033","title":"Gate: tests pass (streaming client)"},{"closed_at":"2026-04-25T05:07:27.569549393Z","id":"bl-403c","title":"Gate: docs up to date (streaming client)"}],
   "created_at": "2026-04-22T07:00:01.879597172Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["streaming"],
   "title": "Anthropic integration: extract to standalone crate + streaming end-to-end",
   "type": "epic",
-  "updated_at": "2026-04-25T05:03:42.636278272Z"
+  "updated_at": "2026-04-25T05:07:27.926267519Z"
 }

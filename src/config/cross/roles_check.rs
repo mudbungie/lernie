@@ -85,7 +85,7 @@ models:
     }
 
     fn per_repo(s: &str) -> PerRepoProviders {
-        PerRepoProviders::load(yaml(s).path()).unwrap().0
+        PerRepoProviders::load(yaml(s).path()).unwrap()
     }
 
     #[test]

@@ -77,19 +77,19 @@ fn loads_both_halves_and_cross_validates() {
 }
 
 #[test]
-fn legacy_blocks_in_per_repo_surface_as_warnings_not_errors() {
-    // The v0.2 template still ships a per-repo file with providers/
-    // models blocks; Phase 1 must keep loading such a file end-to-end
-    // and surface a warning, since Phase 2 is what removes the legacy
-    // blocks from the template.
+fn legacy_blocks_in_per_repo_are_a_load_error() {
+    // Phase 4 retired the warn-and-keep-going path from Phase 1: a
+    // v0.2-shaped per-repo file with providers:/models: blocks now
+    // hard-errors at load. The v0.2 template was already retired in
+    // Phase 2, so any caller carrying these blocks is structurally
+    // wrong against ARCH §4.1 rather than just stale.
     let per_repo_with_legacy = format!("{GLOBAL_PROVIDERS}\n{PER_REPO_ROLES}",);
     let s = scratch(GLOBAL_PROVIDERS, &per_repo_with_legacy);
-    let (cfg, warnings) = ProvidersConfig::load(&s.global_path, &s.per_repo_path).unwrap();
-    assert_eq!(cfg.per_repo.roles.len(), 2);
-    assert_eq!(warnings.len(), 2, "expected providers + models warnings");
-    let keys: Vec<&str> = warnings.iter().map(|w| w.key.as_str()).collect();
-    assert!(keys.contains(&"providers"));
-    assert!(keys.contains(&"models"));
+    let err = ProvidersConfig::load(&s.global_path, &s.per_repo_path).unwrap_err();
+    match err {
+        LoadError::Invalid { key, .. } => assert_eq!(key, "providers"),
+        other => panic!("expected Invalid, got {other:?}"),
+    }
 }
 
 #[test]

@@ -3,17 +3,28 @@
   "title": "Manifest",
   "description": "Top-level `manifest.yaml` shape.",
   "type": "object",
-  "required": [
-    "context"
-  ],
   "properties": {
-    "context": {
-      "$ref": "#/definitions/ContextRules"
+    "roles": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/RoleRules"
+      }
     }
   },
   "definitions": {
-    "ContextRules": {
-      "description": "Rules that determine what files appear in the assembled context, in what order, with what budget, and what to do on overflow.",
+    "OverflowPolicy": {
+      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.",
+      "type": "string",
+      "enum": [
+        "drop_oldest_steps",
+        "truncate",
+        "summarize",
+        "drop"
+      ]
+    },
+    "RoleRules": {
+      "description": "One role's context-assembly rules.",
       "type": "object",
       "required": [
         "budget_tokens",
@@ -25,7 +36,7 @@
           "format": "uint32",
           "minimum": 0.0
         },
-        "include": {
+        "order": {
           "description": "Globs included in declared order, subject to budget.",
           "default": [],
           "type": "array",
@@ -45,16 +56,6 @@
           }
         }
       }
-    },
-    "OverflowPolicy": {
-      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.",
-      "type": "string",
-      "enum": [
-        "drop_oldest_exchanges",
-        "truncate_oldest",
-        "summarize",
-        "drop"
-      ]
     }
   }
 }

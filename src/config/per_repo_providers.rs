@@ -7,12 +7,13 @@
 //! `<harness-root>/providers.yaml` and rotate independently (ARCH §4.1
 //! "Two-file config split").
 //!
-//! Phase 1 transitional behavior: if a per-repo file still carries
-//! legacy `providers:` or `models:` blocks (the v0.2 shape), the loader
-//! warns rather than rejecting — the v0.2 template is removed in Phase
-//! 2 and the warning becomes an error in Phase 4.
+//! A legacy `providers:` or `models:` block (the v0.2 shape) is a hard
+//! load error: those sections belong to the global file only, and a
+//! per-repo file carrying them is structurally wrong rather than just
+//! noisy. (Phase 1 of the v0.3 layout migration warned; Phase 4
+//! escalated to error once the v0.2 template was retired.)
 
-use crate::config::error::{LoadError, Warning};
+use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -43,10 +44,10 @@ impl PerRepoProviders {
     /// references are validated separately via
     /// [`crate::config::cross::check_roles_against_providers`].
     ///
-    /// Returns warnings for legacy `providers:` / `models:` blocks left
-    /// over from the v0.2 layout — they parse but are ignored at this
-    /// level since the global file owns those sections (ARCH §4.1).
-    pub fn load(path: &Path) -> Result<(Self, Vec<Warning>), LoadError> {
+    /// Hard-errors if the file carries legacy `providers:` or `models:`
+    /// blocks — those belong to the global `<harness-root>/providers.yaml`
+    /// only (ARCH §4.1).
+    pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),
             source,
@@ -57,19 +58,18 @@ impl PerRepoProviders {
                 source,
             })?;
 
-        let mut warnings = Vec::new();
         if let Some(map) = doc.as_mapping() {
             for legacy in LEGACY_KEYS {
                 if map.contains_key(*legacy) {
-                    warnings.push(Warning::new(
-                        path,
-                        (*legacy).to_string(),
-                        format!(
+                    return Err(LoadError::Invalid {
+                        path: path.to_path_buf(),
+                        key: (*legacy).to_string(),
+                        message: format!(
                             "{legacy:?} block belongs in the global \
-                             <harness-root>/providers.yaml; the per-repo file should \
+                             <harness-root>/providers.yaml; the per-repo file must \
                              only carry the 'roles:' section (ARCH §4.1)",
                         ),
-                    ));
+                    });
                 }
             }
         }
@@ -88,7 +88,7 @@ impl PerRepoProviders {
             })?
         };
 
-        Ok((Self { roles }, warnings))
+        Ok(Self { roles })
     }
 }
 
@@ -117,8 +117,7 @@ roles:
     #[test]
     fn parses_roles_only() {
         let f = write_yaml(ROLES_ONLY);
-        let (p, warnings) = PerRepoProviders::load(f.path()).unwrap();
-        assert!(warnings.is_empty());
+        let p = PerRepoProviders::load(f.path()).unwrap();
         assert_eq!(p.roles.len(), 2);
         assert_eq!(p.roles["worker"].provider, "anthropic");
         assert_eq!(p.roles["worker"].model, "claude-sonnet-4-7");
@@ -130,13 +129,12 @@ roles:
         // as an empty map. It is structurally valid and cross-validation
         // is what catches the (likely) real bug — no roles wired.
         let f = write_yaml("# nothing yet\n");
-        let (p, warnings) = PerRepoProviders::load(f.path()).unwrap();
+        let p = PerRepoProviders::load(f.path()).unwrap();
         assert!(p.roles.is_empty());
-        assert!(warnings.is_empty());
     }
 
     #[test]
-    fn warns_on_legacy_providers_block() {
+    fn rejects_legacy_providers_block() {
         let yaml = r#"
 providers:
   anthropic:
@@ -148,15 +146,18 @@ roles:
     model: claude-sonnet-4-7
 "#;
         let f = write_yaml(yaml);
-        let (p, warnings) = PerRepoProviders::load(f.path()).unwrap();
-        assert_eq!(p.roles.len(), 1);
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].key, "providers");
-        assert!(warnings[0].message.contains("harness-root"));
+        let err = PerRepoProviders::load(f.path()).unwrap_err();
+        match err {
+            LoadError::Invalid { key, message, .. } => {
+                assert_eq!(key, "providers");
+                assert!(message.contains("harness-root"));
+            }
+            other => panic!("expected Invalid, got {other:?}"),
+        }
     }
 
     #[test]
-    fn warns_on_legacy_models_block() {
+    fn rejects_legacy_models_block() {
         let yaml = r#"
 models:
   claude-sonnet-4-7:
@@ -166,16 +167,18 @@ models:
     context_window: 1000
 "#;
         let f = write_yaml(yaml);
-        let (p, warnings) = PerRepoProviders::load(f.path()).unwrap();
-        assert!(p.roles.is_empty());
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].key, "models");
+        let err = PerRepoProviders::load(f.path()).unwrap_err();
+        match err {
+            LoadError::Invalid { key, .. } => assert_eq!(key, "models"),
+            other => panic!("expected Invalid, got {other:?}"),
+        }
     }
 
     #[test]
-    fn warns_on_both_legacy_blocks() {
-        // Mirrors the v0.2 template shape verbatim; the loader is
-        // expected to surface both warnings in a stable order.
+    fn rejects_first_legacy_block_seen() {
+        // The legacy 'providers' key is checked before 'models', so a
+        // file carrying both fails on 'providers' rather than reporting
+        // both — one error is enough to send the user back to fix it.
         let yaml = r#"
 providers:
   anthropic:
@@ -186,10 +189,11 @@ models:
 roles: {}
 "#;
         let f = write_yaml(yaml);
-        let (_, warnings) = PerRepoProviders::load(f.path()).unwrap();
-        assert_eq!(warnings.len(), 2);
-        assert_eq!(warnings[0].key, "providers");
-        assert_eq!(warnings[1].key, "models");
+        let err = PerRepoProviders::load(f.path()).unwrap_err();
+        match err {
+            LoadError::Invalid { key, .. } => assert_eq!(key, "providers"),
+            other => panic!("expected Invalid, got {other:?}"),
+        }
     }
 
     #[test]
@@ -221,13 +225,12 @@ roles:
     }
 
     #[test]
-    fn top_level_non_mapping_is_ignored_for_legacy_warnings() {
+    fn top_level_non_mapping_loads_empty_roles() {
         // A scalar at the top level cannot have legacy keys; the loader
-        // skips warning collection gracefully and reports an empty
+        // skips the legacy-block check gracefully and reports an empty
         // roles map (since 'roles' is a missing field on a non-map).
         let f = write_yaml("\"a string\"\n");
-        let (p, warnings) = PerRepoProviders::load(f.path()).unwrap();
+        let p = PerRepoProviders::load(f.path()).unwrap();
         assert!(p.roles.is_empty());
-        assert!(warnings.is_empty());
     }
 }

@@ -5,8 +5,8 @@
 //! `schemas/<name>.json` so external tooling (editors, the template task's
 //! validation pass) can validate configuration without linking the crate.
 
-use crate::config::agents::Agents;
 use crate::config::manifest::Manifest;
+use crate::config::per_repo_providers::PerRepoProviders;
 use crate::config::providers::Providers;
 use crate::config::version::Version;
 use crate::config::workflow::Workflow;
@@ -26,7 +26,7 @@ pub fn all() -> Vec<SchemaFile> {
     vec![
         schema_file::<Version>("version.json"),
         schema_file::<Providers>("providers.json"),
-        schema_file::<Agents>("agents.json"),
+        schema_file::<PerRepoProviders>("per_repo_providers.json"),
         schema_file::<Manifest>("manifest.json"),
         schema_file::<Workflow>("workflow.json"),
     ]

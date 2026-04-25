@@ -76,11 +76,7 @@ fn version_file_is_one() {
 #[test]
 fn providers_yaml_is_roles_only_and_validates() {
     let (_holder, repo) = scaffolded();
-    let (per_repo, warnings) = PerRepoProviders::load(&repo.join("providers.yaml")).unwrap();
-    assert!(
-        warnings.is_empty(),
-        "template providers.yaml carries legacy blocks: {warnings:?}"
-    );
+    let per_repo = PerRepoProviders::load(&repo.join("providers.yaml")).unwrap();
     assert!(per_repo.roles.contains_key("worker"));
     assert!(per_repo.roles.contains_key("compactor"));
     assert_eq!(per_repo.roles["worker"].provider, "anthropic");

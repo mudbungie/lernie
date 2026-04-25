@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PerRepoProviders",
+  "description": "Top-level shape of the per-repo `providers.yaml`.",
+  "type": "object",
+  "properties": {
+    "roles": {
+      "default": {},
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/RoleAssignment"
+      }
+    }
+  },
+  "definitions": {
+    "RoleAssignment": {
+      "description": "One role's assignment: which provider (by name in the global `providers.yaml`) and which model (by id in that provider's model list). Both are validated cross-file in [`crate::config::cross::check_roles_against_providers`].",
+      "type": "object",
+      "required": [
+        "model",
+        "provider"
+      ],
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

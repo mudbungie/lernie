@@ -1,24 +1,31 @@
-//! `workflow.yaml` `dispatch(<role>)` actions against `agents.yaml`.
+//! `workflow.yaml` `dispatch(<role>)` actions against the per-repo
+//! `providers.yaml` `roles:` section (ARCH §4.3). v0.3 collapses the
+//! v0.2 split where role identity lived in `agents.yaml`: the
+//! per-repo `roles:` map is the single source of truth for which role
+//! names a workflow can dispatch.
 
 use crate::config::action::Action;
-use crate::config::agents::Agents;
 use crate::config::error::LoadError;
+use crate::config::per_repo_providers::PerRepoProviders;
 use crate::config::workflow::Workflow;
 
-/// Validate `dispatch(<role>)` actions in `workflow.yaml` against
-/// `agents.yaml`. Assumes `workflow` already passed `Workflow::load`.
-pub fn check_workflow_against_agents(
+/// Validate `dispatch(<role>)` actions in `workflow.yaml` against the
+/// per-repo `providers.yaml` `roles:` section. Assumes `workflow`
+/// already passed `Workflow::load`.
+pub fn check_workflow_against_roles(
     workflow: &Workflow,
-    agents: &Agents,
+    per_repo: &PerRepoProviders,
 ) -> Result<(), LoadError> {
     for (event, actions) in workflow.typed_events() {
         for (i, action) in actions.into_iter().enumerate() {
             if let Action::Dispatch { role, .. } = action
-                && !agents.agents.contains_key(&role)
+                && !per_repo.roles.contains_key(&role)
             {
                 return Err(LoadError::UnresolvedRef {
                     key: format!("events.{event:?}[{i}]"),
-                    message: format!("dispatch({role}) — role not declared in agents.yaml"),
+                    message: format!(
+                        "dispatch({role}) — role not declared in providers.yaml roles:"
+                    ),
                 });
             }
         }
@@ -29,6 +36,8 @@ pub fn check_workflow_against_agents(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::per_repo_providers::{PerRepoProviders, RoleAssignment};
+    use std::collections::BTreeMap;
     use std::io::Write;
     use tempfile::NamedTempFile;
 
@@ -38,20 +47,21 @@ mod tests {
         f
     }
 
-    const WORKER_AGENTS: &str = r#"
-agents:
-  worker:
-    model: m
-    system_prompt: prompts/w.md
-"#;
-
-    fn worker_agents() -> Agents {
-        Agents::load(yaml(WORKER_AGENTS).path()).unwrap()
+    fn worker_roles() -> PerRepoProviders {
+        let mut roles = BTreeMap::new();
+        roles.insert(
+            "worker".to_string(),
+            RoleAssignment {
+                provider: "anthropic".to_string(),
+                model: "claude-sonnet-4-7".to_string(),
+            },
+        );
+        PerRepoProviders { roles }
     }
 
     #[test]
     fn workflow_dispatch_role_resolves() {
-        let a = worker_agents();
+        let r = worker_roles();
         let w = Workflow::load(
             yaml(
                 r#"
@@ -63,12 +73,12 @@ events:
             .path(),
         )
         .unwrap();
-        assert!(check_workflow_against_agents(&w, &a).is_ok());
+        assert!(check_workflow_against_roles(&w, &r).is_ok());
     }
 
     #[test]
     fn workflow_dispatch_role_unresolved() {
-        let a = worker_agents();
+        let r = worker_roles();
         let w = Workflow::load(
             yaml(
                 r#"
@@ -80,10 +90,11 @@ events:
             .path(),
         )
         .unwrap();
-        let err = check_workflow_against_agents(&w, &a).unwrap_err();
+        let err = check_workflow_against_roles(&w, &r).unwrap_err();
         match err {
             LoadError::UnresolvedRef { message, .. } => {
                 assert!(message.contains("verifier"));
+                assert!(message.contains("providers.yaml"));
             }
             other => panic!("expected UnresolvedRef, got {other:?}"),
         }
@@ -91,7 +102,7 @@ events:
 
     #[test]
     fn non_dispatch_actions_are_ignored() {
-        let a = worker_agents();
+        let r = worker_roles();
         let w = Workflow::load(
             yaml(
                 r#"
@@ -107,6 +118,6 @@ events:
             .path(),
         )
         .unwrap();
-        assert!(check_workflow_against_agents(&w, &a).is_ok());
+        assert!(check_workflow_against_roles(&w, &r).is_ok());
     }
 }

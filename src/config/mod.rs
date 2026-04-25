@@ -2,13 +2,13 @@
 //!
 //! Each submodule owns one file per ARCH §2.2 — see [`version`],
 //! [`providers`] (global, at the harness root), [`per_repo_providers`]
-//! (per-repo `roles:` section), [`agents`], [`manifest`], [`workflow`].
-//! [`cross`] enforces references across files (e.g. `agents.*.model`
-//! must resolve to a defined model; `roles.*.model` must belong to the
-//! role's named provider).
+//! (per-repo `roles:` section), [`manifest`], [`workflow`]. [`cross`]
+//! enforces references across files: `roles.*.{provider,model}` must
+//! resolve against the global `providers.yaml`, and a workflow's
+//! `dispatch(<role>)` action must name a role declared in the
+//! per-repo `roles:` section.
 
 pub mod action;
-pub mod agents;
 pub mod cross;
 pub mod error;
 pub mod manifest;
@@ -19,7 +19,6 @@ pub mod version;
 pub mod workflow;
 
 pub use action::{Action, DispatchMode};
-pub use agents::{AgentRole, Agents};
 pub use error::{LoadError, Warning};
 pub use manifest::{Manifest, OverflowPolicy, RoleRules};
 pub use per_repo_providers::{PerRepoProviders, RoleAssignment};
@@ -43,15 +42,15 @@ pub struct ProvidersConfig {
 
 impl ProvidersConfig {
     /// Load both halves and cross-validate them in one call. Warnings
-    /// from each half are concatenated; capability warnings come first
-    /// (global), then legacy-block warnings (per-repo).
+    /// come from the global file (capability advice). The per-repo
+    /// file is hard-erroring: a legacy `providers:`/`models:` block
+    /// fails the load rather than warning.
     pub fn load(
         global_path: &Path,
         per_repo_path: &Path,
     ) -> Result<(Self, Vec<Warning>), LoadError> {
-        let (global, mut warnings) = Providers::load(global_path)?;
-        let (per_repo, more) = PerRepoProviders::load(per_repo_path)?;
-        warnings.extend(more);
+        let (global, warnings) = Providers::load(global_path)?;
+        let per_repo = PerRepoProviders::load(per_repo_path)?;
         cross::check_roles_against_providers(&per_repo, &global)?;
         Ok((Self { global, per_repo }, warnings))
     }

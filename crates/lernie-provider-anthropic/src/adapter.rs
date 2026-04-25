@@ -221,6 +221,7 @@ fn map_error(e: &client::Error) -> AdapterError {
             }
         }
         client::Error::Parse(err) => AdapterError::fatal(format!("upstream JSON parse: {err}")),
+        client::Error::Sse(msg) => AdapterError::fatal(format!("upstream SSE: {msg}")),
     }
 }
 

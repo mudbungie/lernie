@@ -222,3 +222,10 @@ fn map_config_error_is_fatal() {
     assert_eq!(mapped.kind, ErrorKind::Fatal);
     assert!(mapped.message.contains("config"));
 }
+
+#[test]
+fn map_sse_error_is_fatal() {
+    let mapped = map_error(&client::Error::Sse("malformed frame".into()));
+    assert_eq!(mapped.kind, ErrorKind::Fatal);
+    assert!(mapped.message.contains("SSE"));
+}

@@ -1,11 +1,12 @@
-//! Anthropic Messages API client — blocking, non-streaming.
+//! Anthropic Messages API client — blocking.
 //!
 //! One [`Client::send`] call realizes one model call as one HTTP API call
 //! against `POST {endpoint}/v1/messages` (terms per `docs/ARCHITECTURE.md`
-//! §2.1). Streaming, tool-use payloads, prompt caching, and retries are
-//! out of scope for v0.1 (see `docs/ARCHITECTURE.md` §12 and the `v0.1`
-//! milestone). Streaming lands in a follow-up child under the bl-d15d
-//! epic.
+//! §2.1). [`Client::send_streaming`] performs the same model call with
+//! `stream: true`, returning an [`streaming::EventStream`] over Anthropic's
+//! native SSE wire events. Tool-use payloads, prompt caching, and retries
+//! remain out of scope at this layer (see `docs/ARCHITECTURE.md` §12 and
+//! the `v0.1` milestone).
 //!
 //! Blocking `reqwest` is chosen over async for v0.1: the harness has no
 //! in-process concurrency (one adapter subprocess per model call — §4.4),
@@ -28,8 +29,13 @@
 //!   5xx server error).
 //! - [`Error::Parse`] — the response body was not valid JSON of the shape
 //!   this client expects.
+//! - [`Error::Sse`] — a streaming response had a malformed SSE frame or the
+//!   connection closed mid-event.
+
+pub mod streaming;
 
 use serde::{Deserialize, Serialize};
+use std::io::BufReader;
 use std::time::Duration;
 use thiserror::Error;
 
@@ -129,6 +135,8 @@ pub enum Error {
     Provider { status: u16, body: String },
     #[error("anthropic: parse: {0}")]
     Parse(#[from] serde_json::Error),
+    #[error("anthropic: sse: {0}")]
+    Sse(String),
 }
 
 /// Blocking HTTP client for one Anthropic provider config.
@@ -173,12 +181,55 @@ impl Client {
             return serde_json::from_str(&body).map_err(Error::Parse);
         }
 
-        let code = status.as_u16();
-        Err(match code {
-            401 | 403 => Error::Auth { status: code, body },
-            429 => Error::RateLimit { status: code, body },
-            _ => Error::Provider { status: code, body },
-        })
+        Err(map_status_error(status.as_u16(), body))
+    }
+
+    /// Streaming variant of [`Client::send`]. Posts the request with
+    /// `stream: true` and returns an iterator over Anthropic's native SSE
+    /// wire events; HTTP-status errors classify exactly as in [`send`]
+    /// before the iterator is constructed. Errors arriving as in-band SSE
+    /// `error` events surface as [`Error::Provider`] mid-iteration.
+    pub fn send_streaming(
+        &self,
+        request: &Request,
+    ) -> Result<streaming::EventStream<BufReader<reqwest::blocking::Response>>, Error> {
+        let url = format!("{}/v1/messages", self.endpoint.trim_end_matches('/'));
+        let body = StreamingRequest {
+            inner: request,
+            stream: true,
+        };
+        let http_response = self
+            .http
+            .post(&url)
+            .header("x-api-key", &self.api_key)
+            .header("anthropic-version", ANTHROPIC_VERSION)
+            .header("content-type", "application/json")
+            .header("accept", "text/event-stream")
+            .json(&body)
+            .send()?;
+
+        let status = http_response.status();
+        if !status.is_success() {
+            let code = status.as_u16();
+            let body = http_response.text()?;
+            return Err(map_status_error(code, body));
+        }
+        Ok(streaming::EventStream::new(BufReader::new(http_response)))
+    }
+}
+
+#[derive(Serialize)]
+struct StreamingRequest<'a> {
+    #[serde(flatten)]
+    inner: &'a Request,
+    stream: bool,
+}
+
+fn map_status_error(code: u16, body: String) -> Error {
+    match code {
+        401 | 403 => Error::Auth { status: code, body },
+        429 => Error::RateLimit { status: code, body },
+        _ => Error::Provider { status: code, body },
     }
 }
 

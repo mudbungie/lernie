@@ -1,0 +1,1 @@
+{"ts":"2026-04-25T01:38:42.340391396Z","author":"mark","text":"Description rewritten 2026-04-24 to align paths with abfe713 (steps/<conv-id>/<NNN>/tools/<tool-id>/, not exchanges/<id>/steps/.../tool_calls/<tool-id>/) and to drop 'exchange branch' as a structural term per TAXONOMY.md. bl-7c23 layout dependency made explicit."}

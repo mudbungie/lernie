@@ -134,7 +134,7 @@ Two core files land per step:
 - `request.json` — the model call's input. Committed **before** the model call (§2.10), so the commit's tree is the exact state the model read from; retry replays this snapshot without drift.
 - `response.json` — the normalized model-call output (assistant text, `model_id`, `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`). Landed as a *follow-up commit* on the same branch — not an amend of the snapshot — so the snapshot's tree continues to reflect pre-model-call state.
 
-Tool calls emitted by a step extend the step's dir with `tools/<tool-id>/…` rather than creating new step dirs, preserving "one step = one model call" (§2.1).
+Tool calls emitted by a step extend the step's dir with `tools/<tool-id>/` rather than creating new step dirs, preserving "one step = one model call" (§2.1). `<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`), giving the per-call dir wire-level traceability. Two files land per tool call — `input.json` (the `tool_use` block verbatim) and `output.json` (captured stdout, stderr, exit code, timing) — each as its own commit on the emitting branch. The wire-level `tool_result` blocks the agent reads on the next step are not a structural commit: the harness builds them at request-assembly time from the per-call `output.json` files. Full contract in §3.3.
 
 The rich per-step tree is branch-life state. Terminal compaction (§2.7) writes a signal-preserving summary and marks raw step dirs for deletion, leaving the parent's view (post-merge) minimal.
 
@@ -282,7 +282,7 @@ Consequences:
 ### 3.2 Components
 
 - **Harness** (permitted synonym: **daemon**). The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. It owns all external↔filesystem interaction on the repo — provider endpoints (via adapter subprocesses), tool subprocesses, git operations. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component. "Daemon" is allowed as a shorthand; both refer to the same role.
-- **Tool executor.** Runs tool subprocesses on behalf of the harness. Streams output to disk atomically (temp path + rename).
+- **Tool executor.** Runs tool subprocesses on behalf of the harness; contract in §3.3. Per tool call: assembles stdin from the `tool_use.input` the model emitted; invokes the tool binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external); captures stdout and stderr atomically (temp path + rename) into `steps/<conv-id>/<NNN>/tools/<tool-id>/output.json`; maps the exit code to the `is_error` flag on the `tool_result` block the harness builds when assembling the next step's request payload. Cascades SIGTERM on cancel (§2.9) with a 5s deadline before SIGKILL, mirroring §4.4. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10. Does not auto-dispatch on oversized tool output in v0.3 (§11).
 - **Provider adapter.** External binary, one per named provider, that owns HTTP, auth, and transient-error retry. Invoked per model call over stdio; non-resident (process per model call, no long-lived state). Contract in §4.4.
 - **UI** (permitted synonym: **frontend**). A stateless renderer over the conversation repo. Reads and watches filesystem paths in the repo; issues user actions exclusively as `lernie <subcommand>` invocations per §3.4. Holds no persistent state — every render is a pure function of filesystem state at the current git ref. The UI is pluggable: multiple frontends (desktop GUI, webclient, TUI) may run concurrently against one repo without coordination, because they share nothing but the filesystem and the CLI. Contract in §3.5. "Frontend" is allowed as a shorthand; both refer to the same role.
 
@@ -303,19 +303,36 @@ A standalone skill (no associated tool) exists to give an agent capability via p
 
 **Tool.** Composed of three required artifacts:
 
-1. **Binary.** An executable invoked by the harness. In-process tools (dispatch, git ops) are implemented as built-in subcommands invoked the same way as external tools. Tool binaries live globally (at `<harness-root>/tools/` or on `PATH`); the harness executes them — they do not move into the conversation repo.
-2. **JSON schema.** Declares tool call parameters, types, required fields. Required by provider APIs. Either generated from the binary's metadata or hand-authored. Schemas are committed to the conversation repo under `descriptions/tools/` at creation time, inherited via git, and composed into the context.
-3. **Skill.** A `SKILL.md` describing when and how the tool should be used. Required for every tool; follows the skill lifecycle above.
+1. **Binary.** An executable invoked by the harness. **In-process** tools are subcommands of the `lernie` binary, addressed as `lernie tool <name>` — the default for tools shipped with the harness (v0.3 ships `bash` and `read_file` here). **External** tools are standalone binaries named `lernie-tool-<name>`, mirroring the `lernie-provider-<name>` convention from §4.4 — the same externalization pattern that lets contributors ship adapters without patching the core. Discovery mirrors §4.4: the harness looks up `lernie-tool-<name>` at `<harness-root>/tools/` (installed by `make install`) before falling back to `PATH`. The choice of flavor is per-tool; the stdio contract below is identical.
+2. **JSON schema.** Declares the tool's `input` parameters at `<harness-root>/tools/<name>.json`. Required by provider APIs. Either generated from the binary's metadata or hand-authored. Sent verbatim as the `input_schema` of the tool's entry in the model call's `tools: [...]` array. The harness commits a copy under `descriptions/tools/` at conversation creation time, inherited by every branch via git, and composes it into the context.
+3. **Skill.** A `SKILL.md` describing when and how the tool should be used. Required for every tool; follows the skill lifecycle above. The frontmatter `description` becomes the `description` field of the tool's entry in the `tools: [...]` array.
 
-Tool output contract:
+**Tools-list assembly.** A role's enabled tools are declared in the per-repo `<conv-repo>/providers.yaml` `roles:` section under a `tools: [...]` field (see §4.3). Any on-disk triple (binary + schema + skill) is generally discoverable; role configs select from that pool.
 
-- Tools write output to a temp path and atomic-rename on completion.
-- Tools must handle SIGTERM cleanly; partial output is the harness's responsibility to clean up post-kill.
-- Tools exceeding a configurable output size threshold trigger automatic dispatch: the raw output is handed to a subagent conversation for parsing, and only that subagent's compacted result reaches the parent step.
+**Stdio contract.** Identical for in-process and external tools:
+
+- **Stdin.** The `tool_use.input` JSON object the model emitted, passed verbatim. The tool owns its own input-schema validation; the harness does not interpret the payload beyond extracting it from the `tool_use` block.
+- **Stdout.** Raw bytes. The harness wraps them as the `content` of the `tool_result` block returned to the agent on the next step. No JSON envelope around tool output — tools stay simple and the canonical `tool_result` shape is the harness's concern.
+- **Stderr.** Raw bytes. Captured to the on-disk record regardless of exit status; concatenated into `tool_result.content` after stdout when the tool exits non-zero so the agent sees the failure message.
+- **Exit code.** 0 → `tool_result.is_error = false`; non-zero → `tool_result.is_error = true`. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10 — the step aborts and the branch is flagged, not delivered to the model as a semantic error.
+- **SIGTERM and deadline.** The harness sends SIGTERM on cancel (§2.9); the tool has 5 seconds to flush and exit cleanly, after which SIGKILL follows. Same deadline as §4.4 — one cancellation protocol covers both externalization surfaces.
+
+**Disk record.** The tool executor (§3.2) lands two files per tool call under `steps/<conv-id>/<NNN>/tools/<tool-id>/`:
+
+- `input.json` — the `tool_use` block from the model verbatim (`id`, `name`, `input`).
+- `output.json` — `{stdout, stderr, exit_code, started_at, ended_at}`.
+
+`<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`). Writes use temp-path + atomic rename so partial captures never surface in `git status` (PRINCIPLES "Disk first").
+
+**Commit-per-tool-call.** Each tool call is its own commit on the emitting branch. Batching tool-call commits is forbidden — sibling tool calls running in parallel still serialize their commits, since a dirty worktree between siblings would violate "Single author per file" (§2.5, PRINCIPLES). When a step emits multiple tool calls, each finishes, captures its output, and lands its own commit before the next one's lands.
+
+**Wire `tool_result` framing is application-layer.** The wire-level `tool_result` blocks the agent reads on its next step are *not* a structural commit. The harness assembles them at request-assembly time by reading step N's per-call `output.json` files when constructing step N+1's request payload; the resulting payload lands inside step N+1's ordinary `request.json` snapshot (§2.10) — the snapshot records what the model saw, same as for any other request. The per-call `output.json` files are the single source of truth for tool output; the snapshot's `tool_result` blocks are derived. "Tool in progress" is derived state too — step N's `response.json` carries a `tool_use` block with no matching `output.json` yet — not a separate file.
+
+**Deferred to v0.4+ (see §11).** Oversized-output auto-dispatch — raw output handed to a parsing subagent, only the compacted result reaching the parent step — is not in v0.3. Oversized output reaches the agent unchanged.
 
 ### 3.4 CLI as control plane
 
-`lernie` is a single binary with subcommands. Every procedure the harness can start — subagent dispatch (§2.5), compaction (§2.7), verification, auto-dispatch on oversized tool output (§3.3), and any other workflow-invoked procedure (§6) — is reachable through a subcommand of that binary. The CLI is the sole entry point: a procedure invoking another procedure does so by going through the CLI dispatcher, never through in-process function calls, shared memory, or ad-hoc sockets. Subagent dispatch, the canonical case, is `lernie dispatch …`.
+`lernie` is a single binary with subcommands. Every procedure the harness can start — subagent dispatch (§2.5), compaction (§2.7), verification, and any other workflow-invoked procedure (§6) — is reachable through a subcommand of that binary. The CLI is the sole entry point: a procedure invoking another procedure does so by going through the CLI dispatcher, never through in-process function calls, shared memory, or ad-hoc sockets. Subagent dispatch, the canonical case, is `lernie dispatch …`.
 
 This is the invocation counterpart to §3.1. **Disk-as-bus carries state; CLI-as-control-plane carries commands.** Between any two procedures, state flows through the filesystem (§3.1) and invocations flow through the CLI. There is no third channel — no library API surface, no sidechannel. An external caller embedding lernie in another tool uses exactly the same CLI surface the harness uses internally; that symmetry is what lets lernie be a component in another tool rather than a standalone monolith.
 
@@ -402,12 +419,15 @@ roles:
   worker:
     provider: anthropic
     model: claude-sonnet-4-7
+    tools: [bash, read_file]
   compactor:
     provider: anthropic
     model: claude-haiku-4-5
 ```
 
 Each role's system prompt is read from `<conv-repo>/souls/<role>.md` by convention — there is no per-role path override, and no freeform path field to validate. At dispatch time the harness copies the appropriate soul to the new branch's `soul.md` (§2.3 step 2). Provider endpoint and auth are resolved at call time against the global `<harness-root>/providers.yaml` — the per-repo file carries only the (provider-name, model-id) pointer.
+
+The optional `tools:` field selects which tools the role's agent can call (see §3.3). Omitted or empty means none. The compactor's toolset (`write_summary`, `mark_for_deletion`) is built into the compactor primitive (§2.7), not declared here.
 
 ### 4.4 Provider adapters
 
@@ -673,6 +693,7 @@ Named explicitly so they are not rediscovered later:
 - Sophisticated compaction (rewriting compactors, semantic merging).
 - Adversarial compactor defense.
 - Cross-conversation memory / shared context.
+- Oversized tool-output auto-dispatch (§3.3) — raw output reaches the agent unchanged in v0.3; the parsing-subagent handoff lands alongside v0.4's subagent dispatch machinery.
 
 ---
 
@@ -694,7 +715,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.3 — Tools
 
-**Success criterion:** Agent can invoke at least two tools (bash, read_file). Tool calls are commits. Large tool outputs auto-dispatch to a parsing subagent conversation. Tool contract (binary + schema + skill) documented. Conversation-repo layout migrated from the v0.2 `.agent/`-rooted shape to the v0.3 layout described in §2.2 (control at conversation-repo root, worktrees as siblings, steps namespaced by conversation id, `merge=ours` on goal/soul/summary, "invocation" retired as a structural term).
+**Success criterion:** Agent can invoke at least two tools (`bash`, `read_file`). Tool calls land as commits on the emitting branch — one commit per tool call (§2.3, §3.3). Tool contract — binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external, mirroring §4.4 adapter discovery), JSON schema, `SKILL.md`, the stdio/exit-code shape, and the per-call disk record (`input.json`, `output.json` under `steps/<conv-id>/<NNN>/tools/<tool-id>/`) — pinned in §3.3. Oversized-output auto-dispatch deferred to v0.4+ (§11). Conversation-repo layout migrated from the v0.2 `.agent/`-rooted shape to the v0.3 layout described in §2.2 (control at conversation-repo root, worktrees as siblings, steps namespaced by conversation id, `merge=ours` on goal/soul/summary, "invocation" retired as a structural term).
 
 ### v0.4 — Subagent dispatch
 

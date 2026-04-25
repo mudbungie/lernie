@@ -260,8 +260,10 @@ v0.3 ships two built-ins:
   path. Rejects files larger than 1 MiB; v0.4+ adds the
   oversized-output auto-dispatch shim (ARCH §3.3 / §12). Try it
   directly: `echo '{"path":"README.md"}' | lernie tool read_file`.
-- **`bash`** — runs a shell command (sibling work in flight; lands
-  alongside `read_file` to complete the v0.3 toolset).
+- **`bash`** — runs a shell command via `sh -c` and returns its
+  stdout. The shell runs in its own process group so a SIGTERM the
+  harness sends is forwarded to the entire spawned tree (§2.9
+  cascade). Try it directly: `echo '{"command":"ls"}' | lernie tool bash`.
 
 ## Dispatching the compactor directly
 

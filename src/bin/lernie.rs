@@ -171,10 +171,15 @@ fn main() -> ExitCode {
         Command::Tool { name } => {
             let stdin = io::stdin();
             let stdout = io::stdout();
+            let stderr = io::stderr();
             let mut stdin = stdin.lock();
             let mut stdout = stdout.lock();
-            match builtin::run(&name, &mut stdin, &mut stdout) {
-                Ok(()) => ExitCode::SUCCESS,
+            let mut stderr = stderr.lock();
+            match builtin::run(&name, &mut stdin, &mut stdout, &mut stderr) {
+                // Tool exit codes ride within `u8` (POSIX 0..=255 plus
+                // 128+signo); `as u8` is a faithful narrowing because
+                // every legal value already fits.
+                Ok(code) => ExitCode::from(code as u8),
                 Err(e) => {
                     eprintln!("lernie tool {name}: {e}");
                     ExitCode::FAILURE

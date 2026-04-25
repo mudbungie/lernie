@@ -13,6 +13,7 @@
 use std::io::{Read, Write};
 use thiserror::Error;
 
+pub mod bash;
 pub mod read_file;
 
 /// Reasons [`run`] can fail. Each in-process tool surfaces its own
@@ -31,16 +32,38 @@ pub enum Error {
     /// so the message reaches the model verbatim.
     #[error(transparent)]
     ReadFile(#[from] read_file::Error),
+    /// `bash` failed at the harness layer (bad input JSON, spawn
+    /// failure, broken pipe, etc.). In-band shell failures — the
+    /// command ran and exited non-zero — are *not* this variant; they
+    /// flow through the returned exit code.
+    #[error(transparent)]
+    Bash(#[from] bash::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
 /// model spelled it (and as the harness passed via `lernie tool
 /// <name>`); `stdin` carries the `tool_use.input` JSON; `stdout`
-/// receives the raw bytes the executor will surface as
-/// `tool_result.content`.
-pub fn run<R: Read, W: Write>(name: &str, stdin: &mut R, stdout: &mut W) -> Result<(), Error> {
+/// receives the bytes the executor will surface as
+/// `tool_result.content` on success; `stderr` receives the bytes that
+/// — per §3.3 — concatenate after stdout when the exit code is
+/// non-zero. The returned `i32` is the desired process exit code:
+/// `read_file` always returns 0 on success and lets [`Error`] carry
+/// failure; `bash` propagates the shell's own exit code so a non-zero
+/// command can flow through without being misclassified as a harness
+/// fault.
+pub fn run<R: Read, W: Write, E: Write>(
+    name: &str,
+    stdin: &mut R,
+    stdout: &mut W,
+    stderr: &mut E,
+) -> Result<i32, Error> {
     if name == "read_file" {
-        return read_file::run(stdin, stdout).map_err(Error::ReadFile);
+        return read_file::run(stdin, stdout)
+            .map(|()| 0)
+            .map_err(Error::ReadFile);
+    }
+    if name == "bash" {
+        return bash::run(stdin, stdout, stderr).map_err(Error::Bash);
     }
     Err(Error::Unknown(name.to_string()))
 }
@@ -54,7 +77,8 @@ mod tests {
     fn unknown_tool_name_surfaces_unknown_variant() {
         let mut stdin = Cursor::new(Vec::<u8>::new());
         let mut stdout = Vec::new();
-        let err = run("not_a_tool", &mut stdin, &mut stdout).unwrap_err();
+        let mut stderr = Vec::new();
+        let err = run("not_a_tool", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
         let msg = err.to_string();
         assert!(msg.contains("not_a_tool"), "{msg}");
         assert!(msg.contains("unknown"), "{msg}");
@@ -69,7 +93,9 @@ mod tests {
         let input = serde_json::json!({ "path": tmp.path() }).to_string();
         let mut stdin = Cursor::new(input.into_bytes());
         let mut stdout = Vec::new();
-        run("read_file", &mut stdin, &mut stdout).unwrap();
+        let mut stderr = Vec::new();
+        let code = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap();
+        assert_eq!(code, 0);
         assert_eq!(stdout, b"hi");
     }
 
@@ -79,7 +105,31 @@ mod tests {
         // surface through the From conversion as Error::ReadFile.
         let mut stdin = Cursor::new(b"not json".to_vec());
         let mut stdout = Vec::new();
-        let err = run("read_file", &mut stdin, &mut stdout).unwrap_err();
+        let mut stderr = Vec::new();
+        let err = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
         assert!(matches!(err, Error::ReadFile(_)), "{err}");
+    }
+
+    #[test]
+    fn bash_routed_to_inner_module() {
+        // Drives the dispatch arm for bash through a trivial command.
+        let input = serde_json::json!({ "command": "printf hi" }).to_string();
+        let mut stdin = Cursor::new(input.into_bytes());
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let code = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap();
+        assert_eq!(code, 0);
+        assert_eq!(stdout, b"hi");
+    }
+
+    #[test]
+    fn bash_error_is_carried_through_dispatcher() {
+        // Bad JSON on stdin — bash::Error::InvalidJson — should
+        // surface through the From conversion as Error::Bash.
+        let mut stdin = Cursor::new(b"not json".to_vec());
+        let mut stdout = Vec::new();
+        let mut stderr = Vec::new();
+        let err = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
+        assert!(matches!(err, Error::Bash(_)), "{err}");
     }
 }

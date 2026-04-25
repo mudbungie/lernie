@@ -10,7 +10,14 @@
 #   `prompt_end_to_end.rs` integration test chains two subprocess
 #   binaries (`lernie new` + `lernie prompt`) under instrumentation,
 #   which inflates wall-clock time well past the per-test default.
+# - `args = ["--test-threads=1"]` pins serial test execution: the
+#   bash-tool cascade tests deliver SIGTERM/SIGKILL to spawned shell
+#   process groups, and tarpaulin's ptrace state machine races
+#   against parallel teardown of those groups (`Failed to find
+#   process for pid: …` → segfault). Serial execution sidesteps the
+#   race; the 100% workspace coverage floor stays the same.
 [default]
 exclude-files = ["src/bin/*", "crates/*/src/main.rs"]
 ignore-panics = true
 timeout = "300s"
+args = ["--test-threads=1"]

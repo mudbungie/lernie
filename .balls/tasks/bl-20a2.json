@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:12:25.332415598Z",
+  "delivered_in": null,
+  "depends_on": ["bl-00b2"],
+  "description": "Final wiring step: make the default conversation repo template surface dispatch + await as worker-callable tools, so a fresh 'lernie new' repo can dispatch subagents end-to-end without per-repo customization (ARCH §4.3 — roles.<role>.tools selects from the on-disk pool).\n\nScope:\n- Update template/providers.yaml roles.worker.tools to include dispatch and await alongside existing v0.3 entries (bash, read_file).\n- Verify the tools list is correctly surfaced into the model call's tools: [...] array via the existing v0.3 tool-list-assembly path. dispatch and await SKILL.md descriptions and JSON schemas (from Phases 2-3) get composed in.\n- Update template/souls/worker.md if a soul-level callout for dispatch/await is needed (subagent dispatch is a non-obvious capability; agents may need a hint).\n- A scaffold-then-prompt scratch run drives the worker to emit a dispatch tool_use, the subagent runs and merges, the worker then emits await, the parent terminates and merges to main.\n\nOut of scope:\n- Workflow.yaml event hooks (worker_return, etc) — v0.6.\n- A 'parser' role in the default template (folded into Phase 6 if that phase needed it).\n\nTests:\n- Template loader test asserts the worker tools list contains dispatch and await.\n- Integration end-to-end: lernie new + lernie prompt drives a dispatch with a fake adapter that emits the right tool_use sequence; subagent runs and merges; result returned to parent.\n\nDone-when: a fresh 'lernie new' repo produces a worker role that can dispatch subagents without further customization, demonstrated by the integration test.",
+  "external": {},
+  "id": "bl-20a2",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 7: default worker tools list includes dispatch + await",
+  "type": "task",
+  "updated_at": "2026-04-25T22:12:25.332415598Z"
+}

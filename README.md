@@ -147,10 +147,19 @@ follow-up commit, runs the terminal compactor off the tip, and
 7. Write the normalized response (the assistant's structured
    `content` blocks — text + `tool_use` per §3.3 — plus `model_id`,
    `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
-   `steps/<conv-id>/001/response.json` and land it as a follow-up
+   `steps/<conv-id>/<NNN>/response.json` and land it as a follow-up
    commit on the same branch. The snapshot commit's tree stays
    intact so replay and retry (§2.10) see exactly what the model saw.
-8. Dispatch the terminal compactor (§2.7) off the conversation tip
+8. **Step loop (§2.5).** If the response's `stop_reason` is
+   `tool_use`, run every emitted `tool_use` block through the
+   tool executor — ball #4 ships the real subprocess-driving impl
+   that lands per-call records under
+   `steps/<conv-id>/<NNN>/tools/<tool-id>/` per §3.3 — then assemble
+   step `<NNN+1>` whose user message carries one `tool_result` block
+   per emitted call. Steps 2+ commit only `request.json`
+   (goal/soul are step 1's job). Loop until `stop_reason` is
+   anything other than `tool_use`.
+9. Dispatch the terminal compactor (§2.7) off the conversation tip
    by re-entering the binary as `lernie dispatch compactor <repo>
    <conv-id>` (subprocess invocation per §3.4 — the harness never
    shortcuts past the CLI for procedure-to-procedure calls). The
@@ -165,11 +174,11 @@ follow-up commit, runs the terminal compactor off the tip, and
    call a model, and `mark_for_deletion` is a no-op; the shape
    exists so v0.4+ can layer real semantics without moving call
    sites.
-9. Rebase the conversation branch onto the current `main` tip and
-   `--no-ff` merge it into `main` (§2.6), running the merge inside
-   `<repo>/root/`. Remove the conversation worktree; the branch
-   ref stays for the retention window (§2.3).
-10. Print the conversation branch name on stdout.
+10. Rebase the conversation branch onto the current `main` tip and
+    `--no-ff` merge it into `main` (§2.6), running the merge inside
+    `<repo>/root/`. Remove the conversation worktree; the branch
+    ref stays for the retention window (§2.3).
+11. Print the conversation branch name on stdout.
 
 After `lernie prompt` returns, inspect the merge from the primary
 worktree (`root/` is where `main` is checked out):

@@ -148,12 +148,14 @@ fn run_surfaces_dispatcher_failure() {
     let clock = FixedClock::default();
     let id = FixedIdGen;
     let dispatcher = StubDispatcher::failing(std::io::ErrorKind::Other, "lernie binary missing");
+    let tool_executor = StubToolExecutor::ok();
     let deps = Deps {
         adapter: &adapter,
         git: &git,
         clock: &clock,
         id_gen: &id,
         dispatcher: &dispatcher,
+        tool_executor: &tool_executor,
         harness_root: harness.path(),
     };
     let err = run(repo.path(), "hi", &deps).unwrap_err();

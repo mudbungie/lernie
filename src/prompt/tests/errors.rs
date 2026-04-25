@@ -23,6 +23,7 @@ fn run_surfaces_global_providers_yaml_load_error() {
     let clock = FixedClock::default();
     let id = FixedIdGen;
     let dispatcher = StubDispatcher::ok();
+    let tool_executor = StubToolExecutor::ok();
     let err = crate::prompt::run(
         repo.path(),
         "hi",
@@ -32,6 +33,7 @@ fn run_surfaces_global_providers_yaml_load_error() {
             &clock,
             &id,
             &dispatcher,
+            &tool_executor,
             empty_harness.path(),
         ),
     )

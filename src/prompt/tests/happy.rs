@@ -21,11 +21,20 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let clock = FixedClock::default();
     let id = FixedIdGen;
     let dispatcher = StubDispatcher::ok();
+    let tool_executor = StubToolExecutor::ok();
 
     let branch = run(
         repo.path(),
         "hello",
-        &valid_deps(&adapter, &git, &clock, &id, &dispatcher, harness.path()),
+        &valid_deps(
+            &adapter,
+            &git,
+            &clock,
+            &id,
+            &dispatcher,
+            &tool_executor,
+            harness.path(),
+        ),
     )
     .unwrap();
     // Branch name is the bare conv-id — no `ex/` prefix in v0.3
@@ -182,11 +191,20 @@ fn run_describe_without_endpoint_env_field_forwards_no_envs() {
     let clock = FixedClock::default();
     let id = FixedIdGen;
     let dispatcher = StubDispatcher::ok();
+    let tool_executor = StubToolExecutor::ok();
 
     run(
         repo.path(),
         "hi",
-        &valid_deps(&adapter, &git, &clock, &id, &dispatcher, harness.path()),
+        &valid_deps(
+            &adapter,
+            &git,
+            &clock,
+            &id,
+            &dispatcher,
+            &tool_executor,
+            harness.path(),
+        ),
     )
     .unwrap();
 

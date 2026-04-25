@@ -79,13 +79,11 @@ impl GitRunner for StubGit {
     }
 }
 
-/// Lay out a parent worktree with one terminal-step response so
-/// `build_summary` succeeds. Returns (TempDir holding repo,
-/// parent_worktree_path).
-fn parent_with_response(parent_conv_id: &str, text: &str) -> (tempfile::TempDir, PathBuf) {
-    let repo = tmpdir();
-    let parent_wt = repo.path().join(parent_conv_id);
-    let step_dir = parent_wt.join(step_dir_rel(parent_conv_id, TERMINAL_STEP_SEQ));
+/// Land a `response.json` for `parent_conv_id` at step `seq` under
+/// `parent_wt`'s tree. Single source of step-response shape across
+/// the test setup helpers.
+fn write_step_response(parent_wt: &Path, parent_conv_id: &str, seq: u32, text: &str) {
+    let step_dir = parent_wt.join(step_dir_rel(parent_conv_id, seq));
     std::fs::create_dir_all(&step_dir).unwrap();
     let response = StepResponse {
         content: vec![ContentBlock::Text { text: text.into() }],
@@ -104,6 +102,15 @@ fn parent_with_response(parent_conv_id: &str, text: &str) -> (tempfile::TempDir,
         serde_json::to_vec(&response).unwrap(),
     )
     .unwrap();
+}
+
+/// Lay out a parent worktree with one terminal-step response so
+/// `build_summary` succeeds. Returns (TempDir holding repo,
+/// parent_worktree_path).
+fn parent_with_response(parent_conv_id: &str, text: &str) -> (tempfile::TempDir, PathBuf) {
+    let repo = tmpdir();
+    let parent_wt = repo.path().join(parent_conv_id);
+    write_step_response(&parent_wt, parent_conv_id, 1, text);
     (repo, parent_wt)
 }
 
@@ -123,6 +130,19 @@ fn build_summary_happy_path_folds_response_text_with_id() {
 }
 
 #[test]
+fn build_summary_picks_highest_step_seq_for_multi_step_exchanges() {
+    // ARCH §2.5 step loop: terminal step is the highest-numbered
+    // `steps/<conv-id>/<NNN>/`. The compactor must read that
+    // response, not step 001's intermediate one.
+    let (_repo, parent_wt) = parent_with_response("p1", "intermediate");
+    write_step_response(&parent_wt, "p1", 2, "final");
+    // Add a noise dir that is not a numeric seq — must be ignored.
+    std::fs::create_dir_all(parent_wt.join(STEPS_DIR).join("p1").join("notes")).unwrap();
+    let summary = build_summary(&parent_wt, "p1").unwrap();
+    assert_eq!(summary, "conversation p1: final\n");
+}
+
+#[test]
 fn build_summary_surfaces_missing_response_as_io() {
     let wt = tmpdir();
     let err = build_summary(wt.path(), "p1").unwrap_err();
@@ -132,7 +152,7 @@ fn build_summary_surfaces_missing_response_as_io() {
 #[test]
 fn build_summary_surfaces_malformed_response_as_adapter_json() {
     let wt = tmpdir();
-    let step_dir = wt.path().join(step_dir_rel("p1", TERMINAL_STEP_SEQ));
+    let step_dir = wt.path().join(step_dir_rel("p1", 1));
     std::fs::create_dir_all(&step_dir).unwrap();
     std::fs::write(step_dir.join(RESPONSE_FILE), b"{ not json").unwrap();
     let err = build_summary(wt.path(), "p1").unwrap_err();

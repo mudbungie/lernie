@@ -1,5 +1,7 @@
 //! Shared stubs and fixtures for `prompt::tests::*`.
 
+pub(super) use super::tool_stub::StubToolExecutor;
+
 use crate::prompt::{AdapterRunner, Clock, Deps, Dispatcher, IdGen};
 use crate::template::GitRunner;
 use std::cell::RefCell;
@@ -9,13 +11,12 @@ use std::io;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// Deterministic [`Clock`] returning monotonic `iso-N`/`ct-N` strings.
+/// Monotonic `iso-N`/`ct-N` [`Clock`].
 #[derive(Default)]
 pub(super) struct FixedClock {
     iso_calls: RefCell<u32>,
     compact_calls: RefCell<u32>,
 }
-
 impl Clock for FixedClock {
     fn now_iso8601(&self) -> String {
         *self.iso_calls.borrow_mut() += 1;
@@ -40,7 +41,7 @@ pub(super) enum AdapterReply {
     Err(io::Error),
 }
 
-/// Snapshot of one adapter invocation: (binary, argv, envs, stdin).
+/// One adapter invocation: (binary, argv, envs, stdin).
 pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
 
 /// Canonical `describe` JSON. Tests varying the shape build inline.
@@ -52,14 +53,13 @@ pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
     "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
 }"#;
 
-/// Scripted [`AdapterRunner`] with FIFO replies and a recording log.
+/// FIFO-replying [`AdapterRunner`] with a recording log.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
 }
 
 impl StubAdapter {
-    /// Queue an explicit sequence of replies.
     pub(super) fn scripted<I>(replies: I) -> Self
     where
         I: IntoIterator<Item = AdapterReply>,
@@ -70,7 +70,7 @@ impl StubAdapter {
         }
     }
 
-    /// Successful `describe` then `complete_bytes` on the next call.
+    /// `describe` ok then `complete_bytes` on the next call.
     pub(super) fn happy(complete_bytes: &[u8]) -> Self {
         Self::scripted([
             AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
@@ -78,7 +78,7 @@ impl StubAdapter {
         ])
     }
 
-    /// Single-call error reply — fires on the `describe` call.
+    /// One-shot error reply (fires on the `describe` call).
     pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
         Self::scripted([AdapterReply::Err(io::Error::new(kind, msg.to_string()))])
     }
@@ -90,7 +90,6 @@ impl StubAdapter {
         AdapterReply::Err(io::Error::new(kind, msg.to_string()))
     }
 
-    /// Most recent invocation.
     pub(super) fn last(&self) -> AdapterCall {
         self.observed.borrow().last().cloned().expect("no calls")
     }
@@ -120,8 +119,7 @@ impl AdapterRunner for StubAdapter {
     }
 }
 
-/// Scripted [`GitRunner`] — records every (dest, args); optional
-/// fail_at index for error paths.
+/// Recording [`GitRunner`] with optional `fail_at` index.
 #[derive(Default)]
 pub(super) struct StubGit {
     pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
@@ -155,19 +153,14 @@ impl GitRunner for StubGit {
         }
     }
     fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        // Empty return is harmless: stub parent has no merge=ours
-        // paths and the alignment rm produced no staged delta, so
-        // neither the conditional checkout nor the alignment commit
-        // fires in the dispatch flow.
+        // Empty return: alignment rm produces no staged delta in stub
+        // tests, so neither conditional checkout nor alignment commit fires.
         self.run(dest, args)?;
         Ok(String::new())
     }
 }
 
-// --- Fixtures ---------------------------------------------------------
-
-/// Global `<harness-root>/providers.yaml` — endpoints, auth, model
-/// capabilities (ARCH §4.1).
+/// Global `<harness-root>/providers.yaml` (ARCH §4.1).
 pub(super) const VALID_GLOBAL_PROVIDERS_YAML: &str = r#"
 providers:
   anthropic:
@@ -183,8 +176,7 @@ models:
     context_window: 200000
 "#;
 
-/// Per-repo `<conv-repo>/providers.yaml` — `roles:` section only
-/// (ARCH §4.3).
+/// Per-repo `<conv-repo>/providers.yaml` (ARCH §4.3).
 pub(super) const VALID_PER_REPO_PROVIDERS_YAML: &str = r#"
 roles:
   worker:
@@ -198,8 +190,8 @@ pub(super) const HAPPY_RESPONSE_JSON: &str = r#"{
     "usage":{"input_tokens":3,"output_tokens":2}
 }"#;
 
-/// Lay out a v0.3 conversation repo (ARCH §2.2): per-repo
-/// `providers.yaml` plus optional `souls/worker.md`.
+/// Lay out a v0.3 conv repo (§2.2): per-repo `providers.yaml` and
+/// optional `souls/worker.md`.
 pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> TempDir {
     let tmp = TempDir::new().unwrap();
     std::fs::write(tmp.path().join("providers.yaml"), per_repo_yaml).unwrap();
@@ -229,6 +221,7 @@ pub(super) fn valid_deps<'a>(
     clock: &'a FixedClock,
     id: &'a FixedIdGen,
     dispatcher: &'a StubDispatcher,
+    tool_executor: &'a StubToolExecutor,
     harness_root: &'a Path,
 ) -> Deps<'a> {
     Deps {
@@ -237,12 +230,11 @@ pub(super) fn valid_deps<'a>(
         clock,
         id_gen: id,
         dispatcher,
+        tool_executor,
         harness_root,
     }
 }
 
-/// Recording [`Dispatcher`] — `fail` is an optional error returned
-/// after recording.
 #[derive(Default)]
 pub(super) struct StubDispatcher {
     pub(super) calls: RefCell<Vec<(PathBuf, String)>>,
@@ -285,16 +277,24 @@ pub(super) fn run_with_stubs(
 ) -> Result<String, crate::prompt::Error> {
     let harness = scaffold_harness_root();
     let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let tool_executor = StubToolExecutor::ok();
     crate::prompt::run(
         repo,
         msg,
-        &valid_deps(adapter, git, &clock, &id, &dispatcher, harness.path()),
+        &valid_deps(
+            adapter,
+            git,
+            &clock,
+            &id,
+            &dispatcher,
+            &tool_executor,
+            harness.path(),
+        ),
     )
 }
 
-/// Deterministic worktree path for the standard fixtures: FixedClock
-/// gives `ct-1` and FixedIdGen `deadbeef`, so the conv worktree is
-/// `<repo>/ct-1-deadbeef/` (sibling of `root/`, ARCH §2.2).
+/// Conv worktree path for the standard fixtures (FixedClock=ct-1,
+/// FixedIdGen=deadbeef → `<repo>/ct-1-deadbeef/`, §2.2).
 pub(super) fn worktree_path(repo: &Path) -> PathBuf {
     repo.join("ct-1-deadbeef")
 }

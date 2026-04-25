@@ -19,7 +19,7 @@
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
 use lernie::prompt::{
-    self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SystemClock,
+    self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool, SystemClock,
 };
 use lernie::template::{self, RealGit};
 use std::path::PathBuf;
@@ -117,12 +117,14 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
+            let tool_executor = SpawnTool::new(&harness, &SystemClock);
             let deps = prompt::Deps {
                 adapter: &SpawnAdapter,
                 git: &RealGit::new(),
                 clock: &SystemClock,
                 id_gen: &NanoIdGen,
                 dispatcher: &dispatcher,
+                tool_executor: &tool_executor,
                 harness_root: &harness,
             };
             match prompt::run(&repo, &message, &deps) {

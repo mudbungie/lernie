@@ -19,15 +19,11 @@
 pub mod tools;
 
 use super::merge::rebase_and_merge;
-use super::step::{RESPONSE_FILE, StepResponse, step_dir_rel};
+use super::step::{RESPONSE_FILE, STEPS_DIR, StepResponse, step_dir_rel};
 use super::{Clock, Error, IdGen};
 use crate::template::GitRunner;
 use std::path::Path;
 use tools::write_summary;
-
-/// v0.3 has exactly one step per root conversation (§12). The
-/// compactor reads that one step's response to build its summary.
-const TERMINAL_STEP_SEQ: u32 = 1;
 
 /// Shape of the terminal-compaction dispatch. Kept as a struct so the
 /// CLI entry point (`lernie dispatch compactor`) and the in-process
@@ -157,9 +153,14 @@ fn commit_goal(
 }
 
 /// Build the stub summary body from the dispatching branch's terminal
-/// response.
+/// response. The terminal step is whichever `steps/<conv-id>/<NNN>/`
+/// has the highest numeric `NNN` — the loop in
+/// `super::dispatch::run_exchange` increments it until `stop_reason`
+/// is anything other than `tool_use` (§2.5), so the maximum seq is
+/// the one with the loop-terminating response.
 fn build_summary(parent_worktree: &Path, parent_conv_id: &str) -> Result<String, Error> {
-    let step_rel = step_dir_rel(parent_conv_id, TERMINAL_STEP_SEQ);
+    let terminal_seq = terminal_step_seq(parent_worktree, parent_conv_id)?;
+    let step_rel = step_dir_rel(parent_conv_id, terminal_seq);
     let response_path = parent_worktree.join(step_rel).join(RESPONSE_FILE);
     let bytes = std::fs::read(&response_path)?;
     let response: StepResponse = serde_json::from_slice(&bytes).map_err(Error::AdapterJson)?;
@@ -167,6 +168,27 @@ fn build_summary(parent_worktree: &Path, parent_conv_id: &str) -> Result<String,
         "conversation {parent_conv_id}: {}\n",
         response.text()
     ))
+}
+
+/// Scan `<parent_worktree>/steps/<parent_conv_id>/` and return the
+/// largest numeric subdir name (1-indexed, zero-padded 3-digit per
+/// §2.3). Single-source-of-truth: the on-disk step dirs are the
+/// authoritative count of steps the loop ran.
+fn terminal_step_seq(parent_worktree: &Path, parent_conv_id: &str) -> Result<u32, Error> {
+    let steps_dir = parent_worktree.join(STEPS_DIR).join(parent_conv_id);
+    let mut max_seq: u32 = 0;
+    for entry in std::fs::read_dir(&steps_dir)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        let Ok(seq) = name.parse::<u32>() else {
+            continue;
+        };
+        if seq > max_seq {
+            max_seq = seq;
+        }
+    }
+    Ok(max_seq)
 }
 
 /// `git worktree add -b <cmp_branch> <cmp_worktree> <parent_branch>`,

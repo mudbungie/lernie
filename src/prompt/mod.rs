@@ -87,6 +87,12 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
     AdapterSpawn(#[source] std::io::Error),
+    #[error("tool {tool}: {source}")]
+    ToolExec {
+        tool: String,
+        #[source]
+        source: ExecError,
+    },
     #[error("dispatch {role}: {source}")]
     DispatchFailed {
         role: &'static str,
@@ -120,6 +126,7 @@ pub struct Deps<'a> {
     pub clock: &'a dyn Clock,
     pub id_gen: &'a dyn IdGen,
     pub dispatcher: &'a dyn Dispatcher,
+    pub tool_executor: &'a dyn ToolExecutor,
     pub harness_root: &'a Path,
 }
 

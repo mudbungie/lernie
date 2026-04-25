@@ -16,9 +16,15 @@
 //!   amending) is chosen so the snapshot commit's tree continues to
 //!   reflect pre-model-call state, preserving §2.10's replay property.
 //!
-//! v0.3 has exactly one step per conversation (no tools yet — §12).
-//! v0.4+ extends the step dir with `tools/<tool-id>/…` without moving
-//! `request.json` / `response.json`, so this layout generalizes.
+//! v0.3 ball #3 turns the step seq from a constant 1 into a loop
+//! counter (§2.5): a step whose response carries `stop_reason:
+//! "tool_use"` is followed by another step on the same branch under
+//! `steps/<conv-id>/002/`, `…/003/`, etc. The loop terminates when
+//! `stop_reason` is anything else.
+//!
+//! v0.4+ extends each step dir with `tools/<tool-id>/…` for the
+//! per-call tool records (ball #4); the layout already accommodates
+//! this without moving `request.json` / `response.json`.
 
 use crate::provider::wire::ContentBlock;
 use serde::{Deserialize, Serialize};

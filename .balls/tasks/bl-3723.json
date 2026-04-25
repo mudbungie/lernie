@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:09:53.480717992Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-f1c5. After all phases merge, verify on main:\n- cargo test passes (workspace-wide).\n- cargo tarpaulin --fail-under 100 passes.\n- End-to-end demo from the epic Done-when runs green: a prompt that emits two parallel dispatch tool_use blocks produces two sibling subagent branches off the parent's tool-call commit, both subagents run their multi-step loops, both merge back, await(handle) retrieves their compacted summaries, parent merges to main.\n- Recursive case: a subagent that itself dispatches a sub-subagent (3 levels of hyphenated descent) runs and merges cleanly.\n- Stop case: a stopped subagent leaves the parent's await(handle) resolving to a stopped status, parent continues without hanging.\nClose when all four checks green.",
+  "external": {},
+  "id": "bl-3723",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: tests pass (v0.4 epic)",
+  "type": "task",
+  "updated_at": "2026-04-25T22:09:53.480717992Z"
+}

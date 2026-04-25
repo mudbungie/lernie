@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T01:18:22.540352627Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-7c23. After final phase merges, verify:\n- README.md describes the new install + scaffold flow accurately (no .agent/ examples).\n- AGENTS.md (project-level, not user-global) reflects any flow changes for contributors.\n- src/-internal doc-comments referencing .agent/, exchanges/, invocations/, ex/<ts>-<id>, inv/* are gone or marked historical.\n- ARCH/PRINCIPLES/TAXONOMY do not need to change again — they were updated in abfe713; flag if any drift was introduced by code changes.\nClose when grep -rn '\\.agent/\\|exchanges/\\|invocations/\\|ex/<\\|inv/<' src/ crates/ template/ README.md AGENTS.md returns no current-state references (historical mentions in §12 milestones excepted).",
+  "external": {},
+  "id": "bl-c620",
+  "links": [],
+  "parent": "bl-7c23",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.3","layout","gate"],
+  "title": "Gate: docs up to date (v0.3 layout migration)",
+  "type": "task",
+  "updated_at": "2026-04-25T01:18:22.540352627Z"
+}

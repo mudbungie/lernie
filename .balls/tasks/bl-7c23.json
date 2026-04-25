@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-6601"},{"link_type":"gates","target":"bl-c620"},{"link_type":"gates","target":"bl-80d6"}],
   "parent": null,
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout"],
   "title": "v0.3 layout migration: implement the new conversation-repo shape",
   "type": "epic",
-  "updated_at": "2026-04-25T22:42:37.361005762Z"
+  "updated_at": "2026-04-25T22:45:49.595018061Z"
 }

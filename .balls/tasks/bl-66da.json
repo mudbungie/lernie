@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T01:19:58.985516171Z",
+  "delivered_in": null,
+  "depends_on": ["bl-d135"],
+  "description": "Seventh phase of bl-7c23. Install-time scaffold for ~/.lernie/.\n\n=== Scope ===\n\n1. Makefile 'install' target lays down the harness root skeleton on first run:\n   - mkdir -p $(LERNIE_HOME:-~/.lernie)/{adapters,workflows,tools,skills,agents,conversations}\n   - install lernie-provider-anthropic to $(LERNIE_HOME)/adapters/\n   - install lernie binary to $(INSTALL_PREFIX)/bin/ (default ~/.local/bin/)\n   - install lernie-ui-egui binary to $(INSTALL_PREFIX)/bin/\n   - generate a default $(LERNIE_HOME)/providers.yaml if absent (don't clobber existing)\n   - copy default agent profile to $(LERNIE_HOME)/agents/default/ if absent\n2. README quickstart updated: 'make install' to lay everything down, 'lernie new' to scaffold a conversation, 'lernie prompt' to talk to it.\n3. Verification step at the end of install: lernie --version + lernie new <tmpdir>/test + cleanup.\n\n=== Constraints ===\n\n- 'install' must be idempotent — re-running it on an existing harness root must not clobber config files (use install -m or test -e guards).\n- LERNIE_HOME from the environment overrides the default at install time, matching runtime behavior.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-66da",
+  "links": [],
+  "parent": "bl-7c23",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.3","layout"],
+  "title": "Phase 7: make install harness root scaffold",
+  "type": "task",
+  "updated_at": "2026-04-25T01:19:58.985516171Z"
+}

@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-25T01:19:15.365520685Z",
   "delivered_in": null,
-  "depends_on": ["bl-d7b1"],
+  "depends_on": [],
   "description": "Second phase of bl-7c23. Replace the embedded conversation-repo template with the new shape.\n\n=== Scope ===\n\n1. Rewrite template/ source dir:\n   - Remove .agent/ subtree entirely.\n   - Add top-level files: manifest.yaml (role-keyed shape per ARCH §5.2), workflow.yaml (event bindings, with spawn_root_conversation), providers.yaml (roles: only — no providers/models), version.\n   - Add souls/ dir with worker.md and compactor.md (existing prompts, relocated).\n   - Add an empty root/ subdir convention placeholder (or have src/template/ create root/ at scaffold time with .git initialized inside).\n   - .gitattributes: pin goal.md, soul.md, summary/** to merge=ours. Committed as part of the initial scaffold commit on main, inside root/.\n2. Update src/template/mod.rs: scaffold creates <conv-repo>/ at <harness-root>/conversations/<root-id>/ (or path arg if explicit), copies template tree, runs git init inside root/, commits initial state.\n3. lernie new accepts an optional name; default to a generated id; emits the conv-repo path on stdout.\n4. src/template/tests.rs: assert the scaffolded shape end-to-end matches ARCH §2.2.\n\n=== Constraints ===\n\n- This phase BREAKS the existing prompt path (which still expects .agent/ paths). Do not merge to main alone — pair with Phase 3, OR ensure the prompt path is feature-flagged behind an old-vs-new template detector. Cleanest: pair with Phase 3 in one ball at review time.\n- A practical option: this phase lands the new template scaffold but keeps the prompt path on the v0.2 .agent/ layout via a 'compat' shim that reads from .agent/ if present, root/ otherwise; Phase 3 removes the shim. Up to the claimer.\n\n=== Out of scope ===\n\n- Branch/step path changes (Phase 3).\n- Compactor path migration (Phase 5).\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
   "id": "bl-ecda",
@@ -16,5 +16,5 @@
   "tags": ["v0.3","layout"],
   "title": "Phase 2: template skeleton + scaffolding",
   "type": "task",
-  "updated_at": "2026-04-25T01:19:15.365520685Z"
+  "updated_at": "2026-04-25T01:23:28.612531944Z"
 }

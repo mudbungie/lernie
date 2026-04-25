@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout","gate"],
   "title": "Gate: docs up to date (v0.3 layout migration)",
   "type": "task",
-  "updated_at": "2026-04-25T22:50:05.446655045Z"
+  "updated_at": "2026-04-25T22:50:28.337873934Z"
 }

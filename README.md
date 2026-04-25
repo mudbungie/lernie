@@ -29,20 +29,50 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>`] | Release-build, then copy `lernie`, `lernie-provider-anthropic`, and `lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) |
-| `make uninstall` [`INSTALL_PREFIX=<p>`] | Remove the installed binaries from `$INSTALL_PREFIX/bin` |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build, lay down the harness root (default: `~/.lernie/`), drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) and `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/` |
+| `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness root config in place |
+
+### Quickstart
+
+```
+make install              # lay down ~/.lernie/ + binaries on PATH
+lernie new ~/work/chat    # scaffold a conversation repo
+ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
+```
 
 ### Install
 
 ```
-make install                          # -> ~/.local/bin/{lernie, lernie-provider-anthropic, lernie-ui-egui}
-make install INSTALL_PREFIX=/usr/local # -> /usr/local/bin/...
+make install                                  # default: ~/.local/bin + ~/.lernie/
+make install INSTALL_PREFIX=/usr/local        # binaries -> /usr/local/bin/
+make install LERNIE_HOME=/opt/lernie          # harness root -> /opt/lernie/
 ```
 
-`make install` runs a release build and copies the binaries into
-`$INSTALL_PREFIX/bin` with `install -m 0755` (atomic overwrite, no
-symlinks). Make sure that directory is on your `PATH`. Re-run after
-every rebuild to pick up changes. `make uninstall` removes them.
+`make install` runs a release build and then:
+
+1. Lays down the harness root skeleton at `$LERNIE_HOME` (default
+   `~/.lernie/`) — `adapters/`, `workflows/`, `tools/`, `skills/`,
+   `agents/`, and `conversations/` (ARCH §2.2). Re-runs are idempotent:
+   directory creation uses `mkdir -p`; existing config files are kept.
+2. Installs `lernie` and `lernie-ui-egui` into `$INSTALL_PREFIX/bin`
+   with `install -m 0755` (atomic overwrite, no symlinks). Make sure
+   that directory is on your `PATH`.
+3. Installs `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/`
+   — the harness resolves `lernie-provider-<name>` there before
+   falling back to `PATH` (ARCH §4.4), so per-harness-root credential
+   isolation is preserved.
+4. Drops a default `$LERNIE_HOME/providers.yaml` (anthropic endpoint
+   + a couple of model rows) and a `$LERNIE_HOME/agents/default/`
+   skeleton copied from [`template/`](template/) — only when those
+   paths don't already exist, so rotated credentials and hand-edited
+   profiles survive a re-install.
+5. Smoke-tests the freshly installed binaries with `lernie --version`
+   and a throwaway `lernie new`. Failure aborts the install with a
+   non-zero exit.
+
+`make uninstall` removes the installed binaries; the harness root
+(config, conversations, custom adapters) stays put — clean it up
+manually if you want a true uninstall.
 
 ## Configuration schemas
 
@@ -128,8 +158,9 @@ follow-up commit, runs the terminal compactor off the tip, and
    global file.
 2. Read the worker soul from `<repo>/souls/worker.md` (§4.3 — by
    convention, no per-role path override).
-3. Invoke `lernie-provider-<name> describe` (discovered on `PATH`) to
-   read the adapter's `endpoint_env` (§4.4).
+3. Invoke `lernie-provider-<name> describe` (resolved at
+   `<harness-root>/adapters/`, then `PATH`, per §4.4) to read the
+   adapter's `endpoint_env`.
 4. Spawn branch `<conv-id>` (the bare hyphenated id — no `ex/`
    prefix per §2.3) off `main` and allocate a sibling worktree at
    `<repo>/<conv-id>/` (§2.2). The `git worktree add` runs inside
@@ -282,11 +313,15 @@ Harness-side adapter discovery and invocation (§4.4 "Discovery" /
 
 ### Dropping in a custom adapter
 
-Adapters are discovered on `PATH` by name. To test a new one:
+The harness resolves `lernie-provider-<name>` at
+`<harness-root>/adapters/` first, then falls back to `PATH` (ARCH
+§4.4). To test a new one:
 
-1. Copy the binary into any `PATH` directory (e.g. `~/.local/bin/` —
-   the same location `make install` uses) with the name
-   `lernie-provider-<name>`.
+1. Copy the binary into `$LERNIE_HOME/adapters/` (default
+   `~/.lernie/adapters/` — the same location `make install` uses for
+   the bundled anthropic adapter) with the name
+   `lernie-provider-<name>`. A `PATH` install also works for
+   experimentation but skips the per-harness-root isolation.
 2. Add a provider entry in `<harness-root>/providers.yaml` (ARCH
    §4.1) keyed by `<name>`, with the `endpoint:` and `auth:` the
    adapter expects, and a `models:` entry whose `provider:` points at

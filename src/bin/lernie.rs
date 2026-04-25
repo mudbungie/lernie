@@ -34,7 +34,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 #[derive(Parser)]
-#[command(name = "lernie", about = "Git-backed agent harness")]
+#[command(name = "lernie", about = "Git-backed agent harness", version)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

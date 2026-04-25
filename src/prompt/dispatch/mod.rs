@@ -40,6 +40,7 @@ mod step_commit;
 
 mod tool_step;
 
+use super::adapter;
 use super::merge::rebase_and_merge;
 use super::step::{StepResponse, Usage, step_dir_rel};
 use super::{Deps, Error, parse_adapter_stdout, parse_endpoint_env};
@@ -47,7 +48,6 @@ use crate::config::Model;
 use crate::config::Provider as ProviderConfig;
 use crate::template::ROOT_WORKTREE;
 use serde_json::{Value, json};
-use std::ffi::OsString;
 use std::path::Path;
 use step_commit::{commit_response, commit_snapshot, write_response, write_snapshot};
 use tool_step::run_tool_calls;
@@ -82,7 +82,7 @@ pub(super) fn run_exchange(
     resolved: &Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
-    let binary: OsString = format!("lernie-provider-{}", resolved.provider_name).into();
+    let binary = adapter::resolve_binary(deps.harness_root, resolved.provider_name);
 
     // Describe runs before any branch work so an adapter fault fails
     // fast and leaves no stray branch behind.

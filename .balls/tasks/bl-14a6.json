@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:10:17.879582108Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-f1c5. After all phases merge, audit shipped shape against:\n- ARCH §2.3 (branches, hyphenated descent, sibling worktrees).\n- ARCH §2.5 (dispatch primitive, every-tool-returns-synchronously, handle-based async).\n- ARCH §2.6 (merge protocol, alignment step, merge=ours discipline on goal/soul/summary).\n- ARCH §3.3 (tool contract — dispatch + await as in-process built-ins; binary + schema + skill triple).\n- ARCH §3.4 (CLI as control plane — lernie dispatch worker is a normal subcommand, not a back-channel).\n- ARCH §11 (oversized auto-dispatch, if shipped, no longer in deferred list).\n- PRINCIPLES.md (single source of truth — handle data is derivable from git refs, no sidecar tracking; one obvious path — dispatch is one primitive used uniformly).\n- TAXONOMY.md (banned terms — no 'invocation' as structural term in code or comments; check 'handle' usage is consistent).\n\nFor each section, sample two implementation points and confirm they match. Flag any drift as a follow-up ball under this epic; do not silently close over divergence.\nClose when audit notes posted and any drift balls filed.",
+  "external": {},
+  "id": "bl-14a6",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: alignment (v0.4 epic)",
+  "type": "task",
+  "updated_at": "2026-04-25T22:10:17.879582108Z"
+}

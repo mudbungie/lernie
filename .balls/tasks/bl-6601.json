@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T01:18:22.522430724Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-7c23. Verify on main after the final phase merges:\n- cargo test passes (workspace-wide).\n- cargo tarpaulin --fail-under 100 passes.\n- A scratch run of 'lernie new <repo>' + 'lernie prompt <repo> <message>' produces a conversation repo whose disk shape matches ARCH §2.2 (post-abfe713). Smoke-check goal.md, soul.md, summary/, steps/<conv-id>/NNN/ presence, no .agent/ anywhere, branch is main (root case).\nClose when all three checks green.",
+  "external": {},
+  "id": "bl-6601",
+  "links": [],
+  "parent": "bl-7c23",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.3","layout","gate"],
+  "title": "Gate: tests pass (v0.3 layout migration)",
+  "type": "task",
+  "updated_at": "2026-04-25T01:18:22.522430724Z"
+}

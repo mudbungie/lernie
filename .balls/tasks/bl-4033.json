@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4033",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-22T07:00:12.187355557Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-d15d",
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Gate: tests pass (streaming client)",
   "type": "task",
-  "updated_at": "2026-04-22T07:00:12.187355557Z"
+  "updated_at": "2026-04-25T04:55:32.070130117Z"
 }

@@ -62,8 +62,8 @@ fn describe_shape_matches_contract() {
         .collect();
     assert!(caps.contains(&"tool_use_native"));
     assert!(
-        !caps.contains(&"streaming"),
-        "streaming capability lands with the streaming children of bl-d15d"
+        caps.contains(&"streaming"),
+        "streaming capability lands with bl-de80; describe must advertise it"
     );
     assert_eq!(v["auth_env"][0], "ANTHROPIC_API_KEY");
     assert_eq!(v["endpoint_env"][0], "LERNIE_PROVIDER_ANTHROPIC_ENDPOINT");

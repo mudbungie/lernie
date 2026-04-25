@@ -20,12 +20,19 @@
 //! reserved `type` field is the only way a consumer tells success from
 //! error on the same stream.
 //!
-//! Streaming, tool-use, and prompt caching are out of scope for v0.1; see
-//! the binary's `--help` and `docs/ARCHITECTURE.md` §12.
+//! Streaming follows the same wire framing — one JSON object per line —
+//! and the same in-band-error rule. The translation between Anthropic's
+//! native SSE events and the §4.4 normalized event names lives in
+//! [`streaming`]; the entry point dispatches there based on the request's
+//! `stream` field. Tool-use and prompt caching are still out of scope at
+//! v0.2; see `docs/ARCHITECTURE.md` §12.
+
+pub mod streaming;
 
 use crate::client::{self, Client, Request};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Adapter name returned from `describe` and used in the binary name suffix.
 pub const ADAPTER_NAME: &str = "anthropic";
@@ -51,10 +58,16 @@ pub const AUTH_ENV: &[&str] = &["ANTHROPIC_API_KEY"];
 /// reads whichever of these is set; the harness needs only the name.
 pub const ENDPOINT_ENV: &[&str] = &["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"];
 
-/// Capabilities advertised by this v0.1 non-streaming adapter. `streaming`
-/// is deliberately absent — that capability lands with the streaming
-/// children of the bl-d15d epic.
-pub const CAPABILITIES: &[&str] = &["tool_use_native", "prompt_caching", "stop_sequences"];
+/// Capabilities advertised by this adapter. `streaming` lands with
+/// bl-de80 (the streaming-wire ball under the bl-d15d epic) and is
+/// chosen per request via the `stream: true` flag — the same binary
+/// serves both modes (ARCH §4.4).
+pub const CAPABILITIES: &[&str] = &[
+    "tool_use_native",
+    "prompt_caching",
+    "stop_sequences",
+    "streaming",
+];
 
 /// Model ids this adapter knows about. Informational: the harness may call
 /// `complete` with any model string; the upstream validates.
@@ -75,6 +88,8 @@ pub enum ErrorKind {
 
 /// In-band error object. This is what the binary writes to stdout when a
 /// `complete` invocation fails; the adapter still exits `0` (ARCH §4.4).
+/// In streaming mode this is also the terminal `error` event (one JSON
+/// Lines event with the same shape, in lieu of `message_stop`).
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct AdapterError {
     #[serde(rename = "type")]
@@ -86,7 +101,7 @@ pub struct AdapterError {
 }
 
 impl AdapterError {
-    fn fatal(message: impl Into<String>) -> Self {
+    pub(crate) fn fatal(message: impl Into<String>) -> Self {
         Self {
             kind_tag: "error",
             kind: ErrorKind::Fatal,
@@ -96,7 +111,7 @@ impl AdapterError {
         }
     }
 
-    fn retryable(message: impl Into<String>) -> Self {
+    pub(crate) fn retryable(message: impl Into<String>) -> Self {
         Self {
             kind_tag: "error",
             kind: ErrorKind::Retryable,
@@ -110,6 +125,29 @@ impl AdapterError {
         self.http_status = Some(status);
         self
     }
+}
+
+/// Process-global "stop requested" flag. Set by the binary's SIGTERM
+/// handler via [`set_stop`]; [`streaming::run`] polls it to emit a
+/// terminal `error` event and exit within the §4.4 cancellation budget.
+/// Atomic `bool` store/load is async-signal-safe on supported targets,
+/// so the handler needs no self-pipe trick.
+pub static STOP: AtomicBool = AtomicBool::new(false);
+
+/// Mark SIGTERM as received. Async-signal-safe atomic store; relies on
+/// the next blocking syscall returning `EINTR` to wake the iterator.
+pub fn set_stop() {
+    STOP.store(true, Ordering::Release);
+}
+
+/// Adapter-level request envelope. Wraps Messages-API [`Request`] with
+/// the optional `stream` flag (ARCH §4.4); defaults to `false`.
+#[derive(Debug, Deserialize)]
+pub(crate) struct AdapterRequest {
+    #[serde(default)]
+    pub(crate) stream: bool,
+    #[serde(flatten)]
+    pub(crate) inner: Request,
 }
 
 /// Self-description object written by `describe`. Matches the shape in
@@ -142,13 +180,27 @@ pub fn run_describe<W: Write>(out: &mut W) -> std::io::Result<()> {
 
 /// Read one Messages-API request from `stdin`, dispatch it, and write
 /// either the parsed response or an in-band [`AdapterError`] to `stdout`.
-/// Returns `Ok(())` whenever stdout was written successfully; the caller
-/// should exit `0`.
+/// Streaming vs non-streaming is selected by the request's `stream`
+/// field (ARCH §4.4); the same binary serves both modes. Returns
+/// `Ok(())` whenever stdout was written successfully; the caller should
+/// exit `0`.
 pub fn run_complete<R: Read, W: Write>(
     stdin: &mut R,
     stdout: &mut W,
     api_key: Option<&str>,
     endpoint: &str,
+) -> std::io::Result<()> {
+    run_complete_with_stop(stdin, stdout, api_key, endpoint, &STOP)
+}
+
+/// As [`run_complete`] but with an explicit stop flag so unit tests
+/// drive the SIGTERM path against a local [`AtomicBool`].
+pub(crate) fn run_complete_with_stop<R: Read, W: Write>(
+    stdin: &mut R,
+    stdout: &mut W,
+    api_key: Option<&str>,
+    endpoint: &str,
+    stop: &AtomicBool,
 ) -> std::io::Result<()> {
     let api_key = match api_key {
         Some(k) if !k.is_empty() => k,
@@ -157,7 +209,7 @@ pub fn run_complete<R: Read, W: Write>(
 
     let mut raw = String::new();
     stdin.read_to_string(&mut raw)?;
-    let request: Request = match serde_json::from_str(&raw) {
+    let request: AdapterRequest = match serde_json::from_str(&raw) {
         Ok(r) => r,
         Err(e) => {
             let err = AdapterError::fatal(format!("could not parse stdin JSON: {e}"));
@@ -171,7 +223,11 @@ pub fn run_complete<R: Read, W: Write>(
     // exactly how the contract treats non-zero exits (§4.4).
     let client = Client::new(endpoint, api_key).expect("reqwest blocking client builder failed");
 
-    match client.send(&request) {
+    if request.stream {
+        return streaming::run(stdout, &client, &request.inner, stop);
+    }
+
+    match client.send(&request.inner) {
         Ok(response) => write_json(stdout, &response),
         Err(e) => write_json(stdout, &map_error(&e)),
     }
@@ -192,7 +248,7 @@ fn missing_key_message() -> String {
 /// (`Fatal`). 5xx and 429 are retryable; 4xx (including auth) is fatal;
 /// network failures are retryable; parse errors are fatal because a
 /// malformed upstream response is not going to un-malform itself.
-fn map_error(e: &client::Error) -> AdapterError {
+pub(crate) fn map_error(e: &client::Error) -> AdapterError {
     match e {
         client::Error::Config(msg) => AdapterError::fatal(format!("config: {msg}")),
         client::Error::Network(err) => AdapterError::retryable(format!("network: {err}")),
@@ -233,7 +289,7 @@ fn parse_retry_after(body: &str) -> Option<u64> {
     v.get("retry_after").and_then(|n| n.as_u64())
 }
 
-fn write_json<W: Write, T: Serialize>(out: &mut W, value: &T) -> std::io::Result<()> {
+pub(crate) fn write_json<W: Write, T: Serialize>(out: &mut W, value: &T) -> std::io::Result<()> {
     serde_json::to_writer(&mut *out, value).map_err(std::io::Error::other)?;
     out.write_all(b"\n")?;
     Ok(())

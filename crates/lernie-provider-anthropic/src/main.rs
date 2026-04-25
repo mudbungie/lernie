@@ -24,6 +24,7 @@
 //! interpretation to the adapter; the harness only forwards the value.
 
 use clap::{Parser, Subcommand};
+use lernie_provider_anthropic::adapter::set_stop;
 use lernie_provider_anthropic::{DEFAULT_ENDPOINT, ENDPOINT_ENV, run_complete, run_describe};
 use std::fs::File;
 use std::io::{self, BufReader, Write};
@@ -54,23 +55,38 @@ enum Command {
     },
 }
 
-/// Install a SIGTERM handler that exits the process cleanly.
+/// Install a SIGTERM handler that flushes a terminal error event and
+/// fast-exits the process.
 ///
 /// Contract (ARCH §4.4): on SIGTERM the adapter must drop any in-flight
-/// HTTP request and exit within 5 seconds. For the non-streaming v0.1
-/// adapter there is no partial state to flush, so a fast `_exit(0)` is the
-/// correct response: the operating system closes the HTTP socket as part
-/// of teardown, and we avoid the Rust runtime's atexit hooks (which are
-/// not async-signal-safe). The streaming branch of the bl-d15d epic will
-/// need to emit a terminal `error` event before exiting.
+/// HTTP request, flush partial state — for streaming, emit a final
+/// `message_stop` or `error` event — and exit within 5 seconds.
+///
+/// `reqwest::blocking` runs the HTTP socket read inside its own tokio
+/// runtime which transparently restarts the syscall on `EINTR`, so a
+/// flag-only handler cannot wake the main thread. We therefore write
+/// the terminal `error` JSON line to stdout from the handler itself
+/// (via async-signal-safe `write(2)`) and call `_exit(0)`. The same
+/// terminal-error shape is legal in both non-streaming and streaming
+/// output (one trailing JSONL event), so a single handler serves both.
+/// We also flip the [`set_stop`] flag so [`adapter::streaming::drain`]
+/// short-circuits if it happens to observe it before the handler runs
+/// to completion (covered by the unit tests).
 fn install_sigterm_handler() {
     extern "C" fn on_sigterm(_signo: libc::c_int) {
-        // `_exit` is async-signal-safe; `std::process::exit` is not.
-        unsafe { libc::_exit(0) };
+        // Async-signal-safe primitives only past this point.
+        set_stop();
+        const MSG: &[u8] = b"{\"type\":\"error\",\"kind\":\"retryable\",\"http_status\":null,\"message\":\"interrupted by SIGTERM\",\"retry_after_seconds\":null}\n";
+        // SAFETY: `write(2)` and `_exit(2)` are explicitly listed as
+        // async-signal-safe by POSIX. fd 1 is the process's stdout.
+        unsafe {
+            let _ = libc::write(1, MSG.as_ptr() as *const _, MSG.len());
+            libc::_exit(0);
+        }
     }
-    // SAFETY: `on_sigterm` is a pure C-ABI function that only calls
-    // `_exit`, which is async-signal-safe. The registration itself is the
-    // documented way to install a signal handler on POSIX.
+    // SAFETY: `on_sigterm` only calls async-signal-safe functions. The
+    // registration itself is the documented way to install a signal
+    // handler on POSIX.
     unsafe {
         libc::signal(libc::SIGTERM, on_sigterm as *const () as libc::sighandler_t);
     }

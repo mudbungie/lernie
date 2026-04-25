@@ -185,14 +185,21 @@ ANTHROPIC_API_KEY=... lernie-provider-anthropic complete < request.json
 
 `describe` prints the adapter's self-description JSON (name,
 `schema_version`, capabilities, models, `auth_env`, `endpoint_env`).
-`complete` reads one Messages-API request on stdin and writes one JSON
-object on stdout — either the upstream response or an in-band error
-object (`{"type":"error", "kind":"retryable"|"fatal", ...}`). Exit code
-`0` covers both; non-zero is reserved for adapter-side crashes. The
-upstream URL is read from the env var named in `endpoint_env`
+`complete` reads one Messages-API request on stdin and writes either a
+single JSON response object or — when the request carries `stream:
+true` — a JSON Lines event stream of normalized §4.4 events
+(`message_start`, `content_block_start`, `text_delta`,
+`tool_use_delta`, `content_block_stop`, terminal `message_stop` with
+`usage` + `api_calls`). Errors land in-band as `{"type":"error",
+"kind":"retryable"|"fatal", ...}` in either mode; exit code `0` covers
+both, with non-zero reserved for adapter-side crashes. The upstream
+URL is read from the env var named in `endpoint_env`
 (`LERNIE_PROVIDER_ANTHROPIC_ENDPOINT` for the reference adapter), with
-a built-in default if unset. The adapter is non-streaming today;
-streaming support is tracked separately (bl-d15d).
+a built-in default if unset. SIGTERM cancels in-flight work and emits
+a terminal `error` event before exit (§4.4 "Cancellation"). The
+v0.2 adapter advertises `streaming` in `describe.capabilities`; the
+harness `lernie prompt` path stays non-streaming today (UI consumption
+of the stream is the v0.5 ball).
 
 Harness-side adapter discovery and invocation (§4.4 "Discovery" /
 "Endpoint") is wired into the `lernie prompt` subcommand — see

@@ -1,16 +1,29 @@
-//! Adapter-contract non-streaming response shape.
+//! Adapter-contract response shapes (non-streaming and streaming).
 //!
-//! Per `docs/ARCHITECTURE.md` §4.4 "Response shape (non-streaming)" the
-//! adapter writes one JSON object on stdout conforming to the Anthropic
-//! Messages-API wire shape: `{ id, model, stop_reason, content[], usage }`.
-//! This module pins the harness-side types used to parse that stdout,
-//! independent of any specific provider's client crate — so that the
-//! harness never takes a library dependency on a provider implementation
+//! Per `docs/ARCHITECTURE.md` §4.4 the adapter writes one of two shapes
+//! to stdout, chosen by the request's `stream` field:
+//!
+//! - **Non-streaming**: a single JSON object conforming to the Anthropic
+//!   Messages-API wire shape: `{ id, model, stop_reason, content[], usage }`.
+//!   See [`Response`].
+//! - **Streaming**: a JSON Lines event stream of normalized events
+//!   (`message_start`, `content_block_start`, `text_delta`,
+//!   `tool_use_delta`, `content_block_stop`, `message_stop`). See
+//!   [`StreamEvent`]. The terminal `message_stop` carries `usage` and
+//!   `api_calls`; an in-band `error` event closes a failed stream.
+//!
+//! These types are pinned on the harness side, independent of any
+//! specific provider's client crate — so the harness never takes a
+//! library dependency on a provider implementation
 //! (`docs/PRINCIPLES.md` "Integrations are external binaries").
 //!
-//! Non-Anthropic adapters translate their provider's native response into
-//! this shape before writing it; the harness does not care which provider
-//! produced the bytes.
+//! Non-Anthropic adapters translate their provider's native response
+//! into these shapes before writing; the harness does not care which
+//! provider produced the bytes.
+
+pub mod stream;
+
+pub use stream::StreamEvent;
 
 use serde::{Deserialize, Serialize};
 

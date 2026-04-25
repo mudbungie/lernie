@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:11:14.866200805Z",
+  "delivered_in": null,
+  "depends_on": ["bl-175a"],
+  "description": "Built-in tool that retrieves the result of an in-flight dispatch (ARCH §2.5). The other half of the dispatch/await pair.\n\nWire shape:\n- Tool name: await\n- Input schema: { handle: string (required) }. The handle is a sub-conv-id (i.e. a branch name).\n- Skill: <harness-root>/skills/await/SKILL.md.\n- Stdout (tool_result.content): JSON object. On successful subagent merge: {status: 'merged', summary: '<terminal-summary text>'}. The summary is the contents of summary/<NNN>.md from the subagent's terminal compactor (already produced in v0.3 via the existing compactor primitive). On stop: {status: 'stopped'}. On conflict: {status: 'conflicted'} (§2.6 step 6 — harness defect surface).\n- Exit 0 in all three terminal cases (the in-band status field communicates outcome to the agent — same pattern as adapter's in-band errors §4.4).\n\nBehavior:\n- Blocks the calling tool until the named subagent reaches a terminal state. Implementation: poll git refs / merge state. Per §2.5 every tool returns synchronously; await is no exception, it just returns synchronously after a wait.\n- Terminal detection: subagent branch is merged into its parent (status=merged), has the stopped marker in its state dir (status=stopped), or is flagged conflicted by the merge protocol (status=conflicted).\n- Tool-call commit on parent branch per §3.3: input.json + output.json under steps/<parent-conv-id>/<NNN>/tools/<tool-id>/.\n\nOut of scope:\n- check(handle) (non-blocking poll). Filed as a v0.5+ follow-on if needed.\n- Timeout knobs. Default behavior: block forever or until the harness terminates.\n- Workflow.yaml-driven 'on subagent termination' actions. v0.6.\n\nTests:\n- Happy path: dispatch a subagent (with a stub harness that writes a summary and merges back), await, get {status: merged, summary: '...'}.\n- Stop path: dispatch a subagent that gets stopped, await, get {status: stopped}.\n- Conflict path: simulate a conflicted merge, await, get {status: conflicted}.\n- Single-source-of-truth: no sidecar handle index — every state read is via git.\n\nDone-when: a step that emits tool_use {name: await, input: {handle: '<sub-conv-id>'}} produces a per-call commit on the parent branch, blocks until the subagent terminates, and returns the appropriate status object as tool_result.content.",
+  "external": {},
+  "id": "bl-829f",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 3: built-in tool — await",
+  "type": "task",
+  "updated_at": "2026-04-25T22:11:14.866200805Z"
+}

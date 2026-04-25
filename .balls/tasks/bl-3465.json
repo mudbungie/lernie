@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T06:37:03.596038416Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Surfaced during Phase 6 of the v0.3 layout migration (bl-d135). Two related\ngaps:\n\n1. crates/lernie-ui-egui/src/fs_watcher/mod.rs WATCHED_PREFIXES still lists\n   .agent/goal.md, .agent/compactions, exchanges, invocations — all v0.1/v0.2\n   paths. Per ARCH §3.5 the v0.3 watched set is: refs/heads/, the conv-repo\n   root control files (manifest.yaml, workflow.yaml, providers.yaml, souls/),\n   and per-branch worktree contents (goal.md, soul.md, summary/, steps/,\n   descriptions/, skills/). Add v0.3 prefixes (and decide whether v0.1/v0.2\n   prefixes stay alongside or get retired with the renderers).\n\n2. crates/lernie-ui-egui/src/git_tree/* renders v0.1-shape and v0.2-shape only.\n   v0.3-shape detection — bare <conv-id> branches under <repo>/<conv-id>/ and\n   steps/<conv-id>/<NNN>/ paths — is unimplemented. README §\"UI (v0.5,\n   skeleton)\" already flags this as follow-on UI work.\n\nBoth pieces should land together: a watcher that fires on v0.3 paths is only\nuseful if the renderer can paint them, and vice versa.\n\nOut of scope for bl-d135 because the strict-cleanup constraint there is\n\"small-diff string sweep\"; this is real new behavior.",
+  "external": {},
+  "id": "bl-3465",
+  "links": [],
+  "parent": "bl-c0a5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.5","ui"],
+  "title": "UI: v0.3-shape support (fs_watcher prefixes + git_tree renderer)",
+  "type": "task",
+  "updated_at": "2026-04-25T06:37:03.596038416Z"
+}

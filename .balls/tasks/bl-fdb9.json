@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T05:23:29.139450479Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Implement the doc edits pinned by bl-e2fb against the post-abfe713 ARCHITECTURE.md.\n\nTouches:\n- §2.3: brief reference to per-tool-call disk record (input.json + output.json) and a pointer to §3.3 for the contract.\n- §3.2 'Tool executor': replace one-line stub with full contract — assembles stdin from tool_use.input, invokes lernie tool <name> (in-process) or lernie-tool-<name> (external, mirrors §4.4 adapter discovery), captures stdout/stderr atomically (temp+rename) into steps/<conv-id>/<NNN>/tools/<tool-id>/output.json, maps exit code to is_error, SIGTERM → SIGKILL after 5s, signal-other-than-harness-SIGTERM = §2.10 fault.\n- §3.3 'Tools and skills' (the substantive edit): pin Tool's three artifacts with concrete shapes; state CLI surface (lernie tool <name> in-process, lernie-tool-<name> at <harness-root>/tools/ then PATH); pin stdio contract (stdin = tool_use.input verbatim; stdout = raw bytes wrapped as tool_result.content; stderr = captured always, concatenated on non-zero; exit code → is_error); pin SIGTERM cascade (5s deadline, mirrors §4.4); pin per-call disk record (input.json + output.json under steps/<conv-id>/<NNN>/tools/<tool-id>/, <tool-id> is the tool_use.id from the wire); pin commit-per-tool-call (no batched commits, single-author per file); state explicitly that wire tool_result framing is harness-side request-assembly work, not a structural commit; defer oversized-output auto-dispatch to v0.4+.\n- §3.4: drop the 'auto-dispatch on oversized tool output (§3.3)' bullet — feature is now deferred.\n- §4.3: extend the per-repo providers.yaml roles example to include a 'tools: [bash, read_file]' field, since the role config is the tools-list source.\n- §11: add 'Oversized tool-output auto-dispatch (§3.3)' to deferred list.\n- §12 v0.3: drop the 'Large tool outputs auto-dispatch...' line; restate success criterion against pinned §3.3.\n- TAXONOMY/PRINCIPLES: scan for any term-of-art coinage; avoid new terms unless unavoidable.\n\nFraming decision (resolved on parent bl-e2fb's notes): no structural commit frames the tool_result blocks. Application-layer concern, derived from on-disk tools/ records.\n\nOut of scope: any code/template changes, tools-list config schema changes (those are bl-683c's territory).",
+  "external": {},
+  "id": "bl-fdb9",
+  "links": [],
+  "parent": "bl-e2fb",
+  "priority": 2,
+  "status": "open",
+  "tags": [],
+  "title": "v0.3 tool contract: apply ARCH/PRINCIPLES doc edits",
+  "type": "task",
+  "updated_at": "2026-04-25T05:23:29.139450479Z"
+}

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:10:58.945261896Z",
+  "delivered_in": null,
+  "depends_on": ["bl-88f4"],
+  "description": "Built-in tool that the worker can call to spawn a subagent (ARCH §2.5, §3.3). One of the two new tools that v0.4's success criterion turns on.\n\nWire shape:\n- Tool name: dispatch\n- Input schema (input.json): { role: string (required), goal: string (required) }. role must resolve to <conv-repo>/souls/<role>.md and be present in the per-repo providers.yaml roles: block. Schema lands at <harness-root>/tools/dispatch.json.\n- Skill: <harness-root>/skills/dispatch/SKILL.md. Frontmatter description becomes the tools[].description on the model call.\n- Stdout (tool_result.content): JSON object {status: 'in_progress', handle: '<sub-conv-id>'}. The handle is the subagent's full hyphenated-descent branch name; per PRINCIPLES.md single-source-of-truth, no sidecar map is created — git's ref database is authoritative.\n- Exit 0 on successful spawn; non-zero on spawn failure (treated as is_error per §3.3).\n\nImplementation:\n- In-process built-in: lernie tool dispatch. Reads tool_use.input from stdin. Spawns the subagent via Phase 1's lernie dispatch worker subcommand (so it goes through §3.4's CLI control plane, not a private function call). Returns immediately — does NOT wait for the subagent to finish.\n- Tool-call commit lands on the parent branch per §3.3: input.json + output.json under steps/<conv-id>/<NNN>/tools/<tool-id>/.\n- Subagent branches off the commit where the tool-call landed (§2.5). Concretely: the dispatch tool runs after step N's tool_use commit lands; the subagent's spawn (Phase 1 lernie dispatch worker) takes that commit's sha as the branch-off point.\n\nOut of scope:\n- await (Phase 3).\n- Wiring the dispatch tool into the default worker tools list (Phase 7).\n- Recursive/parallel testing (Phase 5).\n\nTests:\n- Stdio contract: input parses, schema validates, output JSON-shape matches.\n- Spawn happens (subagent branch + worktree present after the tool returns).\n- Tool returns synchronously (does not block on subagent completion).\n- Failure paths: missing role in providers.yaml, missing soul file.\n\nDone-when: a step that emits tool_use {name: dispatch, input: {role: 'worker', goal: '...'}} produces a per-call commit on the parent branch, a subagent branch + sibling worktree exist, and the tool_result returned to the agent on the next step is {status: in_progress, handle: '<sub-conv-id>'}.",
+  "external": {},
+  "id": "bl-175a",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 2: built-in tool — dispatch",
+  "type": "task",
+  "updated_at": "2026-04-25T22:10:58.945261896Z"
+}

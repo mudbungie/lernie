@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T07:00:33.867769565Z",
-  "delivered_in": null,
+  "delivered_in": "5c6be1b3a96f9f11cdffe0944e26a7a69f288a46",
   "depends_on": ["bl-7c2a"],
   "description": "Ship the 'read_file' built-in tool: the simplest of the two v0.3 tools, landed first so it validates the ball-#1 contract end-to-end before bash lands.\n\n=== Scope ===\n\n- 'lernie tool read_file' subcommand on the lernie binary (per ball #1's pinned shape for in-process tools).\n- JSON input describing the path to read (exact argv/stdin shape pinned by ball #1).\n- JSON Schema at schemas/tools/read_file.json describing the input per the Anthropic tools contract — loaded by the harness when assembling 'tools: [...]' (v0.3 assembly may be hardcoded; broader surface arrives with workflow.yaml in v0.6).\n- SKILL.md under template/.agent/system/tools/read_file/SKILL.md per §3.3. Frontmatter { name, description } + body describing when to reach for it.\n- Integration test: end-to-end through the tool executor (ball #4), against a fixture conversation repo.\n\n=== Depends on ===\n\nbl-7c2a — the executor is the thing that invokes this tool.\n\n=== Out of scope ===\n\n- Binary-safe mode / partial-read offsets / line-range semantics. v0.3 reads the whole file and returns its content. If the file exceeds some sensible cap, the tool errors; oversized-output auto-dispatch that would otherwise handle this is deferred (epic non-goal).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-683c",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","tools"],
   "title": "v0.3 built-in tool: read_file",
   "type": "task",
-  "updated_at": "2026-04-25T06:53:39.841461943Z"
+  "updated_at": "2026-04-25T07:32:09.180627539Z"
 }

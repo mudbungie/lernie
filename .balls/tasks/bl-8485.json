@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:10:06.757256581Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-f1c5. After all phases merge, verify:\n- README documents the v0.4 surface: what dispatch and await do, how a worker emits dispatches, what handles look like.\n- ARCHITECTURE.md §2.5, §3.3, §3.4, §12 v0.4 reflect the shipped shape (handle format, await semantics, oversized auto-dispatch behavior, lernie dispatch worker subcommand).\n- §11 deferred-list updated: oversized-output auto-dispatch removed (now shipped) if it was on the v0.4-deferred list.\n- TAXONOMY/PRINCIPLES updated if any new terms of art are introduced (e.g. handle as a structural term).\n- Default template/providers.yaml roles.worker.tools list documented.\nClose when grep for retired/aspirational language is clean and §2.5 + §3.3 read as descriptive of shipped behavior, not speculative.",
+  "external": {},
+  "id": "bl-8485",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: docs up to date (v0.4 epic)",
+  "type": "task",
+  "updated_at": "2026-04-25T22:10:06.757256581Z"
+}

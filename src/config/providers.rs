@@ -12,7 +12,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-/// Top-level `providers.yaml` shape.
+/// Top-level shape of the harness-root `providers.yaml` (ARCH §4.1).
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct Providers {
     pub providers: BTreeMap<String, Provider>,

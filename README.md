@@ -46,16 +46,42 @@ every rebuild to pick up changes. `make uninstall` removes them.
 
 ## Configuration schemas
 
-JSON Schemas for the conversation-repo config files (per
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2) are generated from the
-Rust types under `src/config/`. `make schemas` writes them to `schemas/` for
-editor integration and external validators.
+JSON Schemas for the harness-root and conversation-repo config files (per
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2, §4.1) are generated
+from the Rust types under `src/config/`. `make schemas` writes them to
+`schemas/` for editor integration and external validators:
 
-## Conversation repos
+| File                          | Backed by Rust type                        | On-disk file                          |
+|-------------------------------|--------------------------------------------|---------------------------------------|
+| `schemas/version.json`        | `config::version::Version`                 | `<conv-repo>/version`                 |
+| `schemas/manifest.json`       | `config::manifest::Manifest`               | `<conv-repo>/manifest.yaml`           |
+| `schemas/workflow.json`       | `config::workflow::Workflow`               | `<conv-repo>/workflow.yaml`           |
+| `schemas/providers.json`      | `config::per_repo_providers::PerRepoProviders` | `<conv-repo>/providers.yaml` (`roles:`) |
+| `schemas/global-providers.json` | `config::providers::Providers`           | `<harness-root>/providers.yaml`       |
 
-Each conversation is a self-contained git repository scaffolded from
-[`template/`](template/) — the versioned skeleton described in ARCH §2.2.
-Create one with the `lernie` binary:
+## Layout: harness root and conversation repos
+
+There are two distinct on-disk locations (ARCH §2.2):
+
+- **Harness root** — installation-global, defaults to `~/.lernie/`,
+  overridable via `LERNIE_HOME`. Holds the global
+  [`providers.yaml`](docs/ARCHITECTURE.md#41-provider-abstraction)
+  (endpoints, auth, models — §4.1), `adapters/`, `workflows/`, `tools/`,
+  `skills/`, and `agents/<profile>/` per-profile skeletons. Shared across
+  every conversation; rotates with key rollover and infrastructure
+  changes.
+- **Conversation repo** — one self-contained git repository per root
+  conversation, at `<harness-root>/conversations/<root-id>/`. Carries the
+  per-repo `providers.yaml` (`roles:` only — §4.3), `manifest.yaml`,
+  `workflow.yaml`, `souls/`, and a `root/` worktree where `main` is
+  checked out. Subagent conversations are sibling worktrees of `root/`,
+  one per `<a>-<b>-…/` directory. Conversation repos are never pushed to
+  a remote.
+
+Each conversation repo is scaffolded from [`template/`](template/) — the
+versioned skeleton embedded into the `lernie` binary at build time, the
+v0.3-shape default profile in the absence of a custom
+`<harness-root>/agents/<profile>/`. Create one:
 
 ```
 lernie new                     # auto-id under <harness-root>/conversations/
@@ -211,7 +237,7 @@ of the stream is the v0.5 ball).
 
 Harness-side adapter discovery and invocation (§4.4 "Discovery" /
 "Endpoint") is wired into the `lernie prompt` subcommand — see
-**Sending a prompt (v0.2)** above.
+**Sending a prompt (v0.3)** above.
 
 ### Dropping in a custom adapter
 

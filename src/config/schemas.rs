@@ -22,11 +22,17 @@ pub struct SchemaFile {
 }
 
 /// Build all schema files in declaration order.
+///
+/// Both `providers.yaml` files (per-repo and harness-root) share a name on
+/// disk, so the schemas are split: `providers.json` is the per-repo shape
+/// (the conversation-repo file with only `roles:`), and
+/// `global-providers.json` is the harness-root shape (endpoints, auth,
+/// models). See ARCH §4.1 "Two-file config split".
 pub fn all() -> Vec<SchemaFile> {
     vec![
         schema_file::<Version>("version.json"),
-        schema_file::<Providers>("providers.json"),
-        schema_file::<PerRepoProviders>("per_repo_providers.json"),
+        schema_file::<PerRepoProviders>("providers.json"),
+        schema_file::<Providers>("global-providers.json"),
         schema_file::<Manifest>("manifest.json"),
         schema_file::<Workflow>("workflow.json"),
     ]

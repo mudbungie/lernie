@@ -1,109 +1,30 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Providers",
-  "description": "Top-level `providers.yaml` shape.",
+  "title": "PerRepoProviders",
+  "description": "Top-level shape of the per-repo `providers.yaml`.",
   "type": "object",
-  "required": [
-    "providers"
-  ],
   "properties": {
-    "models": {
+    "roles": {
       "default": {},
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/definitions/Model"
-      }
-    },
-    "providers": {
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/Provider"
+        "$ref": "#/definitions/RoleAssignment"
       }
     }
   },
   "definitions": {
-    "Auth": {
-      "description": "Auth strategy for a provider. The closed set tracks ARCH §4.1.",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "env",
-            "type"
-          ],
-          "properties": {
-            "env": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "api_key"
-              ]
-            }
-          }
-        },
-        {
-          "type": "object",
-          "required": [
-            "profile",
-            "type"
-          ],
-          "properties": {
-            "profile": {
-              "type": "string"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "aws_sigv4"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    "Model": {
-      "description": "One model declared by some provider.",
+    "RoleAssignment": {
+      "description": "One role's assignment: which provider (by name in the global `providers.yaml`) and which model (by id in that provider's model list). Both are validated cross-file in [`crate::config::cross::check_roles_against_providers`].",
       "type": "object",
       "required": [
-        "capabilities",
-        "context_window",
-        "model_id",
+        "model",
         "provider"
       ],
       "properties": {
-        "capabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "context_window": {
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
-        },
-        "model_id": {
+        "model": {
           "type": "string"
         },
         "provider": {
-          "type": "string"
-        }
-      }
-    },
-    "Provider": {
-      "description": "One inference provider: an (endpoint, auth) pair.",
-      "type": "object",
-      "required": [
-        "auth",
-        "endpoint"
-      ],
-      "properties": {
-        "auth": {
-          "$ref": "#/definitions/Auth"
-        },
-        "endpoint": {
           "type": "string"
         }
       }

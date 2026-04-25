@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T01:19:58.960306748Z",
-  "delivered_in": null,
+  "delivered_in": "7ff5baf40941de0cd001df1a4eb7aab59adf0ad3",
   "depends_on": ["bl-ecda"],
   "description": "Fifth phase of bl-7c23. Move the compactor's output and pin the merge=ours discipline.\n\n=== Scope ===\n\n1. src/prompt/compactor/tools.rs: write_summary path becomes summary/<NNN>.md (zero-padded 3-digit, 1-indexed) at the worktree root. Drop .agent/compactions/.\n2. src/prompt/compactor/* doc-comments and tests follow the path change.\n3. Verify .gitattributes (committed by Phase 2 scaffold) on main pins goal.md, soul.md, summary/** to merge=ours. Add an integration test:\n   - Scaffold a conv repo.\n   - Manually create a fake subagent branch '<root>-<sub>' off main.\n   - On the subagent branch, overwrite goal.md, soul.md, and write summary/001.md.\n   - On main, write a different goal.md.\n   - Merge --no-ff <root>-<sub> -> main.\n   - Assert: main's goal.md is the parent's version (merge=ours worked); subagent's goal.md is gone from main's tree; subagent's summary/001.md is also NOT on main; subagent's steps/<sub-id>/ tree IS on main.\n4. The compactor itself remains the deletion-only stub (no model call). Real compactor logic is later v0.3.x or v0.4 work.\n\n=== Constraints ===\n\n- The integration test in scope item 3 is the load-bearing alignment check between code and ARCH §2.6. It is not optional — without it, merge=ours can silently regress.\n\n=== Out of scope ===\n\n- Real LLM-driven compaction (deferred).\n- Subagent dispatch (v0.4).\n- Schema regen (Phase 6).\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-7c23",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout"],
   "title": "Phase 5: compactor migration + .gitattributes",
   "type": "task",
-  "updated_at": "2026-04-25T05:25:11.573043593Z"
+  "updated_at": "2026-04-25T06:26:19.667054290Z"
 }

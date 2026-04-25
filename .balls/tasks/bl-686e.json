@@ -6,7 +6,7 @@
   "created_at": "2026-04-23T01:14:32.002794157Z",
   "delivered_in": null,
   "depends_on": [],
-  "description": "README documents the frontend as a Dioxus app, how to run it, and the pluggability contract (watch paths + CLI invocations). ARCHITECTURE.md §7 reflects the shipped shape. Contract for alternate frontends (future webclient) explicitly stated.",
+  "description": "README documents the frontend as an egui/eframe app, how to run it, and the pluggability contract (watch paths + CLI invocations). ARCHITECTURE.md §7 reflects the shipped shape. Contract for alternate frontends (future webclient) explicitly stated.",
   "external": {},
   "id": "bl-686e",
   "links": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "Gate: docs up to date (v0.5 UI epic)",
   "type": "task",
-  "updated_at": "2026-04-23T01:14:32.002794157Z"
+  "updated_at": "2026-04-25T02:08:48.056080503Z"
 }

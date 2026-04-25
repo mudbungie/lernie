@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-25T22:12:12.100292126Z",
+  "delivered_in": null,
+  "depends_on": ["bl-660f"],
+  "description": "Implement the deferred-from-v0.3 auto-dispatch for oversized tool output (ARCH §3.3 last bullet, §11). Per §11 this lands 'alongside v0.4's subagent dispatch machinery' — Phase 6 because it depends on Phases 1-5 being green.\n\nScope:\n- Sizing heuristic: a tool_result whose stdout (per-call output.json's stdout field) exceeds a configurable byte threshold is oversized. Default threshold pinned in this phase; a workflow.yaml knob is v0.6 work.\n- Auto-dispatch: instead of feeding the raw oversized stdout to the parent step's next request, the harness automatically dispatches a parsing subagent (via Phase 2's primitive) with the raw output as its goal/input. Only the parsing subagent's compacted summary reaches the parent step as tool_result.content.\n- The parent step's tool_result block is constructed from the parsing subagent's summary, NOT from the raw output.json. Per §3.3 this is application-layer assembly so the change is local to the request-assembly path.\n\nSubtle pieces:\n- The parser is a subagent dispatched and awaited synchronously inside the tool executor (the parent step's next-step request is not assembled until the parse completes — same pattern as terminal compaction).\n- A new role is needed: 'parser' in souls/parser.md, declared in template/providers.yaml. Tools list for parser may be empty (it just consumes its goal text and returns a summary).\n- The single-author-per-file discipline still holds: the parser writes only to its own worktree.\n\nOut of scope:\n- Sophisticated parsing (model-driven structured extraction). v0.4 ships the plumbing; the parser's soul is a stub-quality summarizer.\n- User-configurable threshold (workflow.yaml integration is v0.6).\n- Adversarial parser defense (§11 deferred).\n\nTests:\n- A tool whose stdout exceeds the threshold triggers a parser subagent dispatch.\n- The parser's compacted summary is what lands in the parent step's tool_result.content; the raw oversized stdout does not.\n- An under-threshold tool result behaves identically to v0.3 (no auto-dispatch).\n- The parser case is observable on disk: parser branch + worktree exist, parser's summary/<NNN>.md is the source of the parent's tool_result.content.\n\nDone-when: oversized tool output automatically routes through a parser subagent; raw output never reaches the parent step when the threshold trips. §11 deferred-list updated by the docs gate to remove this entry.",
+  "external": {},
+  "id": "bl-00b2",
+  "links": [],
+  "parent": "bl-f1c5",
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.4"],
+  "title": "v0.4 Phase 6: oversized tool-output auto-dispatch",
+  "type": "task",
+  "updated_at": "2026-04-25T22:12:12.100292126Z"
+}

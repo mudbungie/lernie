@@ -14,6 +14,14 @@
 //! the same shape as the non-streaming error object — same kinds, same
 //! `http_status`, same `retry_after_seconds`. SIGTERM (signaled via the
 //! shared [`AtomicBool`]) flushes a retryable terminal `error` event.
+//!
+//! **Concurrency model.** Synchronous and blocking. Each event is
+//! written as it arrives, then the loop waits on the next iterator
+//! item; no async runtime, no buffering layer. The harness's
+//! consumption-side commit cadence is undecided at v0.2 — the harness
+//! does not yet read the streaming output (the v0.5 UI ball is the
+//! first consumer). This module emits one JSON line per event so any
+//! future commit-cadence policy lives wholly on the harness side.
 
 use super::{AdapterError, write_json};
 use crate::client::streaming::Event;

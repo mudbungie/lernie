@@ -25,6 +25,18 @@ use std::time::{Duration, Instant};
 /// nothing measurable.
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
+/// Maximum time to spend retrying past `ETXTBSY` before treating it
+/// as a real spawn failure. The race window between a sibling
+/// process forking with the binary still open for write and that
+/// child reaching `exec` is bounded by the kernel's exec
+/// transition; a few tens of milliseconds covers worst-case under
+/// heavy parallel-test load.
+const ETXTBSY_RETRY_BUDGET: Duration = Duration::from_millis(200);
+
+/// Backoff between `ETXTBSY` retries. Short enough that the race
+/// window closes quickly; not so short that we busy-spin the kernel.
+const ETXTBSY_RETRY_INTERVAL: Duration = Duration::from_millis(2);
+
 /// Captured tool stdio + final status.
 pub(super) struct Captured {
     pub(super) stdout: Vec<u8>,
@@ -44,16 +56,7 @@ pub(super) fn spawn_and_capture(
     deadline: Duration,
     tool_name: &str,
 ) -> Result<Captured, ExecError> {
-    let mut child = Command::new(binary)
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|source| ExecError::Spawn {
-            name: tool_name.to_string(),
-            source,
-        })?;
+    let mut child = spawn_with_etxtbsy_retry(binary, args, tool_name)?;
 
     let stdin_data = stdin_bytes.to_vec();
     let mut child_stdin = child.stdin.take().expect("stdin is piped");
@@ -85,6 +88,44 @@ pub(super) fn spawn_and_capture(
         stderr,
         status,
     })
+}
+
+/// `Command::spawn` with a bounded retry past `ETXTBSY` ("text file
+/// busy"). The race target is a sibling process holding the binary's
+/// write fd open across `fork`+`exec`: the parent has closed its fd,
+/// but a forked child has briefly inherited it and not yet reached
+/// `exec` to release it (CLOEXEC fires at exec, not fork). The kernel
+/// rejects the parallel exec until that child transitions, which is
+/// bounded by the kernel's own exec scheduling — typically
+/// sub-millisecond, occasionally tens of ms under load. A short retry
+/// budget keeps the harness robust without masking real spawn
+/// failures.
+fn spawn_with_etxtbsy_retry(
+    binary: &OsString,
+    args: &[OsString],
+    tool_name: &str,
+) -> Result<Child, ExecError> {
+    let deadline = Instant::now() + ETXTBSY_RETRY_BUDGET;
+    loop {
+        match Command::new(binary)
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+        {
+            Ok(child) => return Ok(child),
+            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && Instant::now() < deadline => {
+                thread::sleep(ETXTBSY_RETRY_INTERVAL);
+            }
+            Err(source) => {
+                return Err(ExecError::Spawn {
+                    name: tool_name.to_string(),
+                    source,
+                });
+            }
+        }
+    }
 }
 
 /// Poll `child` for completion. When `stop` flips, send SIGTERM, wait

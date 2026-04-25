@@ -22,6 +22,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 use thiserror::Error;
 
+pub mod builtin;
 pub mod spawn;
 mod subprocess;
 

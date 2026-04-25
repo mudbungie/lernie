@@ -15,13 +15,21 @@
 //!   shape `prompt` uses internally; exposed for external callers and
 //!   future non-root-conversation dispatch cases (verifier, adversary,
 //!   v0.4+).
+//! - `tool <name>` — in-process built-in tool entry (ARCH §3.3). The
+//!   tool executor's resolution order falls through to
+//!   `<lernie> tool <name>` after external lookups miss; the
+//!   subcommand reads the `tool_use.input` JSON from stdin, writes
+//!   bytes to stdout, and exits 0 on success (non-zero on failure)
+//!   per the §3.3 stdio contract.
 
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
 use lernie::prompt::{
-    self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool, SystemClock,
+    self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool,
+    SystemClock, tool::builtin,
 };
 use lernie::template::{self, RealGit};
+use std::io;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -58,6 +66,19 @@ enum Command {
     Dispatch {
         #[command(subcommand)]
         role: DispatchRole,
+    },
+    /// In-process built-in tool entry (ARCH §3.3). Reads
+    /// `tool_use.input` JSON from stdin, writes raw result bytes to
+    /// stdout, and exits 0 on success or non-zero on failure (the
+    /// stderr message is concatenated into `tool_result.content` by
+    /// the executor when `is_error` is set). The tool executor
+    /// resolves to this subcommand as the third hop of §3.3 lookup
+    /// (`<harness-root>/tools/lernie-tool-<name>` → PATH →
+    /// `<lernie> tool <name>`).
+    Tool {
+        /// Tool name as the model emitted it on the `tool_use` block
+        /// (e.g. `read_file`).
+        name: String,
     },
 }
 
@@ -147,6 +168,19 @@ fn main() -> ExitCode {
                 ExitCode::FAILURE
             }
         },
+        Command::Tool { name } => {
+            let stdin = io::stdin();
+            let stdout = io::stdout();
+            let mut stdin = stdin.lock();
+            let mut stdout = stdout.lock();
+            match builtin::run(&name, &mut stdin, &mut stdout) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(e) => {
+                    eprintln!("lernie tool {name}: {e}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
     }
 }
 

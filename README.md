@@ -200,6 +200,38 @@ git -C /path/to/my-conversation/root \
 
 A ballooning count indicates a silent failure in the merge pipeline.
 
+## Built-in tools (v0.3)
+
+The agent can call **built-in tools** that ship inside the `lernie`
+binary as `lernie tool <name>` subcommands (ARCH §3.3 / §12). The tool
+executor's resolution order — `<harness-root>/tools/lernie-tool-<name>`
+→ `PATH` → `lernie tool <name>` — falls through to this in-process
+route for tools not externalized.
+
+Each built-in is the triple §3.3 pins:
+
+- **Binary** — the `lernie tool <name>` subcommand. Reads
+  `tool_use.input` JSON from stdin, writes raw bytes to stdout, exits
+  0 on success or non-zero on failure (stderr is concatenated after
+  stdout into `tool_result.content` when `is_error` is set).
+- **JSON schema** — at [`schemas/tools/<name>.json`](schemas/tools/),
+  copied to `<harness-root>/tools/<name>.json` by `make install`. Sent
+  verbatim as the `input_schema` of the tool's entry in the model
+  call's `tools: [...]` array.
+- **Skill** — at [`skills/<name>/SKILL.md`](skills/), copied to
+  `<harness-root>/skills/<name>/`. The frontmatter `description` is
+  the tool's description in `tools: [...]`; the body explains when to
+  reach for it.
+
+v0.3 ships two built-ins:
+
+- **`read_file`** — read the entire contents of a file at a given
+  path. Rejects files larger than 1 MiB; v0.4+ adds the
+  oversized-output auto-dispatch shim (ARCH §3.3 / §12). Try it
+  directly: `echo '{"path":"README.md"}' | lernie tool read_file`.
+- **`bash`** — runs a shell command (sibling work in flight; lands
+  alongside `read_file` to complete the v0.3 toolset).
+
 ## Dispatching the compactor directly
 
 `lernie dispatch compactor <repo> <conv-id>` runs the same

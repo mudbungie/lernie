@@ -149,3 +149,95 @@ fn write_script_helper_is_round_tripped_by_the_fixture() {
     assert!(out.status.success());
     assert_eq!(out.stdout, b"hi\n");
 }
+
+#[test]
+fn spawn_retries_past_transient_etxtbsy() {
+    // A sibling thread holds the binary's write fd open briefly,
+    // blocking concurrent `exec` with ETXTBSY. The retry budget in
+    // `subprocess::spawn_with_etxtbsy_retry` is generous enough to
+    // outlive that hold; the tool exec eventually succeeds.
+    use std::fs::OpenOptions;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+    use std::time::Duration;
+
+    let root = HarnessRoot::new();
+    let installed = root.install("blocked", "echo unblocked");
+    let barrier = Arc::new(Barrier::new(2));
+    let path_clone = installed.clone();
+    let b2 = barrier.clone();
+    let holder = thread::spawn(move || {
+        let f = OpenOptions::new().write(true).open(&path_clone).unwrap();
+        b2.wait();
+        thread::sleep(Duration::from_millis(40));
+        drop(f);
+    });
+    barrier.wait();
+
+    let clock = FixedClock::default();
+    let step = StepDir::new();
+    let exec = SpawnTool::new(root.path(), &clock);
+    let outcome = exec
+        .execute(
+            ToolCall {
+                id: "tu_etx",
+                name: "blocked",
+                input: &json!({}),
+            },
+            &step.path,
+            &AtomicBool::new(false),
+        )
+        .expect("retry budget covers the ~40ms hold");
+    holder.join().unwrap();
+    assert!(!outcome.is_error);
+    assert_eq!(outcome.content, b"unblocked\n");
+}
+
+#[test]
+fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
+    // Same setup as the retry-success test, but the holder keeps the
+    // fd open longer than the retry budget. The executor surfaces
+    // `ExecError::Spawn` once retries time out.
+    use std::fs::OpenOptions;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+    use std::time::Duration;
+
+    let root = HarnessRoot::new();
+    let installed = root.install("forever-busy", "echo will-not-run");
+    let barrier = Arc::new(Barrier::new(2));
+    let stop_holder = Arc::new(AtomicBool::new(false));
+    let path_clone = installed.clone();
+    let b2 = barrier.clone();
+    let stop_clone = stop_holder.clone();
+    let holder = thread::spawn(move || {
+        let f = OpenOptions::new().write(true).open(&path_clone).unwrap();
+        b2.wait();
+        while !stop_clone.load(std::sync::atomic::Ordering::SeqCst) {
+            thread::sleep(Duration::from_millis(5));
+        }
+        drop(f);
+    });
+    barrier.wait();
+
+    let clock = FixedClock::default();
+    let step = StepDir::new();
+    let exec = SpawnTool::new(root.path(), &clock);
+    let err = exec
+        .execute(
+            ToolCall {
+                id: "tu_etx_x",
+                name: "forever-busy",
+                input: &json!({}),
+            },
+            &step.path,
+            &AtomicBool::new(false),
+        )
+        .expect_err("retry budget should expire before the holder releases");
+    stop_holder.store(true, std::sync::atomic::Ordering::SeqCst);
+    holder.join().unwrap();
+    match err {
+        ExecError::Spawn { name, .. } => assert_eq!(name, "forever-busy"),
+        other => panic!("expected Spawn, got {other:?}"),
+    }
+}

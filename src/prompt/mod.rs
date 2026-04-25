@@ -32,6 +32,7 @@ pub mod dispatch;
 pub mod dispatcher;
 pub mod merge;
 pub mod step;
+pub mod tool;
 
 #[cfg(test)]
 mod tests;
@@ -41,6 +42,7 @@ pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use step::{StepResponse, Usage};
+pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 
 use crate::config::ProvidersConfig;
 use crate::provider::wire::Response;

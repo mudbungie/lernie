@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-26T02:24:39.445985949Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Wire the existing cli_outbound module to UI controls so the frontend can issue user actions.\n\n=== Scope ===\n\nPer ARCH §3.4 / §3.5: user actions are exclusively 'lernie <subcommand>' invocations. cli_outbound (bl-02da) already exists; this task is the UI side that calls it.\n\nButtons:\n- New prompt: text input + submit, invokes 'lernie prompt --repo <path> -- <text>'. Exact subcommand surface is pinned by the lernie CLI; if a needed subcommand doesn't exist yet, surface that and either coordinate with the CLI owner or file a blocker.\n- Stop: targets a selected branch / in-flight step, invokes the corresponding lernie subcommand.\n- Resume: reciprocal of stop on a stopped branch.\n\nRules:\n- No persistent UI state (§3.5). Selection lives in memory; everything reproducible from filesystem.\n- All commands go through cli_outbound::run; no direct Command::new in the UI module.\n- Disabled-button states derive from view-model (e.g. Stop disabled when no in-flight branch selected).\n\n=== Tests ===\n\n- View-model unit: button enabled/disabled bits derive correctly from fixture repos.\n- Integration: a fake 'lernie' on PATH (shell stub, no mocking) records its argv; clicking each button produces the expected argv.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-163d",
+  "links": [],
+  "parent": "bl-c0a5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.5","ui"],
+  "title": "UI: user-action buttons wired through cli_outbound (new prompt / stop / resume)",
+  "type": "task",
+  "updated_at": "2026-04-26T02:24:39.445985949Z"
+}

@@ -9,12 +9,12 @@
   "description": "Wire UI controls that issue user actions exclusively as\nlernie <subcommand> invocations, per ARCH §3.5 / §3.4.\n\n=== Scope ===\n\n1. New-prompt input: a text field + button at the bottom of the\n   render. Submit exec's lernie prompt <repo> <message> via the\n   existing cli_outbound::Cli::run wrapper, with --stream when\n   Phase 7 lands so the streaming pane (also Phase 7) updates\n   live. The repo path comes from AppState.\n\n2. Stop button: while a prompt subprocess is running, render a\n   stop button. Click triggers cli_outbound's existing\n   SIGTERM-then-SIGKILL drop path explicitly (currently only fires\n   on the wrapper drop; expose a public stop() that does the same\n   work).\n\n3. Resume button: NOT in this phase. lernie resume <repo>\n   re-enters the workflow state machine per ARCH §1 / §6 / §603,\n   and the workflow state machine itself is v0.6 work. v0.5 lands\n   without a resume trigger; the v0.6 epic will add the subcommand\n   and the UI button together.\n\n=== Constraints ===\n\n- All commands go through cli_outbound. No direct std::process or\n  std::os::unix calls outside that module.\n- No persistent state — the action handlers read AppState (which\n  is itself derived from filesystem) and exec the right CLI.\n- 100% line coverage; cli_outbound tests cover the new stop()\n  surface.\n\n=== Dependencies ===\n\nHard: bl-51d9 (Phase 7) — the streaming pane needs lernie prompt\n--stream so the new-prompt action has something to render.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
   "id": "bl-1b27",
-  "links": [],
+  "links": [{"link_type":"duplicates","target":"bl-163d"}],
   "parent": "bl-c0a5",
   "priority": 2,
   "status": "open",
   "tags": ["v0.5","ui"],
   "title": "v0.5 Phase 9: user-action triggers (new prompt, stop)",
   "type": "task",
-  "updated_at": "2026-04-26T22:47:19.406968778Z"
+  "updated_at": "2026-04-26T22:48:31.506905830Z"
 }

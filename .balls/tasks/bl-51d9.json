@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-26T22:46:48.366412026Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Surface the adapter's streaming capability (already implemented per\nARCH §4.4 streaming response shape, and advertised in\nlernie-provider-anthropic's describe.capabilities) through the\nharness CLI, and consume it from the UI as a live-rendering text\npanel.\n\n=== Scope ===\n\n1. lernie prompt --stream flag (src/bin/lernie.rs): when set, the\n   harness invokes the adapter's complete with stream:true, reads\n   the JSONL event stream (message_start, content_block_start,\n   text_delta, tool_use_delta, content_block_stop, message_stop),\n   and emits the normalized §4.4 events on stdout one-per-line.\n   Non-stream default unchanged. The on-disk step record still\n   lands as before; --stream just adds a live stdout side-channel\n   for the frontend.\n\n2. lernie-ui-egui streaming response pane: a panel showing the\n   currently-active conversation branch's incremental text. Spawns\n   lernie prompt --stream via cli_outbound (which already\n   stream-chunks stdout/stderr line-by-line); a pure parser turns\n   §4.4 events into (text-so-far) and the egui side renders that\n   string. State lives in the streaming events themselves; nothing\n   persists across renders — matches §3.5 stateless-frontend.\n\n=== Constraints ===\n\n- The streaming side-channel is purely UI-visible. The on-disk\n  shape (steps/<conv-id>/<NNN>/{request,response}.json) does not\n  change — non-stream callers see identical behavior.\n- No new event types beyond what §4.4 already pins.\n- 100% line coverage on all new code; existing 100% floor stays.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-51d9",
+  "links": [],
+  "parent": "bl-c0a5",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.5","ui"],
+  "title": "v0.5 Phase 7: lernie prompt --stream + UI streaming response pane",
+  "type": "task",
+  "updated_at": "2026-04-26T22:46:48.366412026Z"
+}

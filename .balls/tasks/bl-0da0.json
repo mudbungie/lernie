@@ -9,12 +9,12 @@
   "description": "Replace the current 'in-flight conversations' bullet list with\nvisual badges per branch in the git_tree render, and add a pulsing\nindicator on steps whose tool calls are mid-flight.\n\n=== Scope ===\n\n1. Branch-state classifier (pure function over GitTree shape, no\n   egui dep): given a ConversationBranch, return one of {in_flight,\n   merged, stopped, conflicted}.\n   - merged: the conversation merge commit is on main's first-parent\n     trunk (already detected in git_tree).\n   - in_flight: unmerged ref under refs/heads/ AND its tip\n     timestamp is within a recent freshness window (default 60s,\n     configurable in tests).\n   - stopped: unmerged AND tip timestamp older than the freshness\n     window. No active lernie process touching it.\n   - conflicted: a worktree exists under <conv-repo>/<descent>/\n     with an unresolved merge state (.git/MERGE_HEAD or similar).\n     Detected via a lightweight git status --porcelain check.\n   Tests cover each classification against fixture repos.\n\n2. Tool-call pulse detection (pure function over fs state): a tool\n   call is in-flight when steps/<conv-id>/<NNN>/tools/<tool-id>/\n   has input.json but no output.json, per ARCH §3.3. The\n   classifier returns the set of in-flight (step, tool-id) pairs\n   for a given conv-repo.\n\n3. egui rendering of badges + pulse: state badges next to each\n   branch label, color-keyed. Pulse animation (egui's\n   ctx.request_repaint_after) on the step row matching an\n   in-flight tool call. The animation logic stays in the egui\n   widget; the classification stays pure.\n\n=== Constraints ===\n\n- Classification is pure (filesystem snapshot in, label out).\n  Pixel rendering is the only egui-dep code path.\n- Detection mechanism is filesystem state per ARCH §3.5; no\n  process-table polling, no sidecar marker files.\n- Stopped is provisional in v0.5 — a 'stopped' branch may resume\n  later. v0.6's workflow state machine (lernie resume) will pin\n  the real terminal vs paused distinction.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
   "id": "bl-0da0",
-  "links": [],
+  "links": [{"link_type":"duplicates","target":"bl-23d9"}],
   "parent": "bl-c0a5",
   "priority": 2,
   "status": "open",
   "tags": ["v0.5","ui"],
   "title": "v0.5 Phase 8: branch-state badges + tool-call pulse indicators",
   "type": "task",
-  "updated_at": "2026-04-26T22:47:05.440281043Z"
+  "updated_at": "2026-04-26T22:48:31.471840914Z"
 }

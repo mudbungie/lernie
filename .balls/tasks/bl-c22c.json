@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-27T20:45:07.061789708Z",
+  "delivered_in": null,
+  "depends_on": ["bl-10dd"],
+  "description": "Update the UI's data layer to the new step-record location and\nthe new conversation-detection signal. Frontend rendering of\nstreaming text (bl-0619) and pulse indicators (bl-23d9) layer on\ntop after this lands.\n\n=== Scope ===\n\n1. fs_watcher target update. The watcher already watches conv-repo\n   control-plane paths plus per-worktree contents; add\n   <conv-repo>/steps/<conv-id>/<NNN>/ to the watched set.\n   Drop the prior worktree-side steps/<conv-id>/ pattern.\n\n2. git_tree conversation detection. Currently keys off\n   'steps/<conv-id>/<NNN>/...' paths in --no-ff merge commit\n   diffs. After P2 those paths no longer appear in any commit.\n   Switch detection to the merged branch's name — it already\n   encodes the conv-id as a hyphenated descent (§2.3), and\n   'git log --no-ff --first-parent main' surfaces the merge\n   commits with their --no-ff branch labels.\n\n3. View-model updates. ConversationBranch + step enumeration read\n   the new path under <conv-repo>/steps/<conv-id>/. Rendering API\n   stays the same.\n\n4. Test fixtures. The hand-constructed conv-repo fixtures under\n   crates/lernie-ui-egui/src/git_tree/tests/ are rebuilt to the\n   new shape. Render and parse tests cover both merged-trunk and\n   in-flight enumeration paths.\n\n=== Out of scope ===\n\n- Streaming-text widget rendering — that's bl-0619 (UI live\n  streaming text), which gains a hard dep on this P4.\n- Pulse indicators — bl-23d9 gains a hard dep on this P4 since\n  pulse detection looks under tools/<tool-id>/ which moves.\n- Branch-state badges (bl-de6b) and user-action triggers\n  (bl-163d) don't directly depend on step paths.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-c22c",
+  "links": [],
+  "parent": "bl-cec0",
+  "priority": 1,
+  "status": "open",
+  "tags": ["v0.3","layout","bug","ui"],
+  "title": "v0.3.1 P4: UI fs_watcher target + git_tree conversation detection update",
+  "type": "task",
+  "updated_at": "2026-04-27T20:45:07.061789708Z"
+}

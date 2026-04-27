@@ -69,6 +69,11 @@ Directory layout:
 ├── souls/                        # system prompts by role (copied from the agent profile)
 │   ├── worker.md
 │   └── compactor.md
+├── steps/<conv-id>/NNN/          # diagnostic step records; outside every worktree (§2.3)
+│   ├── meta.json                 # {commit, started_at, …} — branch tip at step-start
+│   ├── request.json              # diagnostic; replay rebuilds the wire input from `commit`
+│   ├── response.json             # JSONL of §4.4 stream events
+│   └── tools/<tool-id>/          # input.json, output.json — runtime-read by harness
 ├── root/                         # primary worktree; .git lives here
 │   ├── .git/
 │   ├── .gitattributes            # merge=ours rules for goal.md, soul.md, summary/**
@@ -76,11 +81,7 @@ Directory layout:
 │   ├── soul.md                   # branch-scoped — this conversation's system prompt
 │   ├── summary/NNN.md            # branch-scoped — this conversation's compactions
 │   ├── descriptions/             # tool + skill descriptions (committed on main; inherited)
-│   ├── skills/                   # loaded skill content (branch-scoped; compactor may prune)
-│   └── steps/<conv-id>/NNN/
-│       ├── request.json
-│       ├── response.json
-│       └── tools/                # tool-call artifacts for this step
+│   └── skills/                   # loaded skill content (branch-scoped; compactor may prune)
 ├── <a>-<b>/                      # subagent conversation (linked worktree; .git is a pointer file)
 │   └── … same shape as root/ …
 ├── <a>-<b>-<c>/                  # sub-subagent; hierarchy encoded in name, NOT in filesystem
@@ -90,11 +91,13 @@ Directory layout:
 
 **Control plane vs data plane.** The files at the conversation-repo root (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`, `version`) are **control** — the harness reads them to decide what to do — and live outside every worktree. Everything inside a worktree is **data** — it is composed into that conversation's prompt at model-call time. This is load-bearing: context assembly has no exclusion list, because nothing that isn't context lives in a worktree.
 
+**Step records are not context.** A **step record** is the per-step on-disk directory at `<conv-repo>/steps/<conv-id>/<NNN>/`: `meta.json`, `request.json`, `response.json`, and any `tools/<tool-id>/` subdirectories the step emitted (full layout in §2.3). The whole `steps/` tree at the conversation-repo root holds these diagnostic / audit artifacts. It sits outside every worktree by construction, which means context assembly (§3.5, §5) is *physically incapable* of including it. The structural placement enforces the rule the worktree-as-context invariant (§5.1) implies: model conversations replay from in-memory message history while running, and from `commit` + context assembler at resume time — never from re-reading `request.json` / `response.json`. Per-tool `output.json` is the one runtime read in this tree (§3.3); see the diagnostic-only contract in §2.3 for the full split.
+
 **Frozen-copy bootstrap.** Creating a repo is `cp -r <harness-root>/agents/<profile>/* <harness-root>/conversations/<root-id>/` plus `git init` plus the initial commit. All control files are frozen snapshots at that point. Subsequent changes to the global agent profile, to `<harness-root>/workflows/`, `<harness-root>/skills/`, or `<harness-root>/tools/` do not propagate into existing repos. Reproducibility and portability win over live update. (Auth credentials and endpoint URLs in `<harness-root>/providers.yaml` are *not* copied — those rotate, and the per-repo `providers.yaml` carries only the role → (provider name, model id) pointer; the harness resolves endpoint and auth against its global `providers.yaml` at call time.)
 
 **Sibling worktrees, not nested.** Subagent worktrees are named by their full hyphenated descent from the root (`<a>-<b>-<c>-…`) and live as *siblings* of `root/`, never as subdirectories of their parent's worktree. Git does not permit nested working trees; the sibling layout is how the primitive's uniformity survives contact with git mechanics.
 
-**Branch-scoped vs main-committed.** `goal.md`, `soul.md`, and `summary/` are written per-branch and pinned by `.gitattributes merge=ours` — on merge-back from a subagent, the parent's versions are retained verbatim, so a subagent's private goal can never clobber its parent's goal. `descriptions/` is committed once on `main` at conversation creation and inherited by every branch via git. `skills/` is branch-scoped (added as skills are loaded; removed by the compactor when no longer needed). `steps/` is branch-scoped but **namespaced by conversation id** — every conversation commits its steps under `steps/<conv-id>/NNN/`, so on merge-back the subagent's `steps/<sub-id>/` tree lands alongside the parent's `steps/<parent-id>/` tree with no filename collision.
+**Branch-scoped vs main-committed.** `goal.md`, `soul.md`, and `summary/` are written per-branch and pinned by `.gitattributes merge=ours` — on merge-back from a subagent, the parent's versions are retained verbatim, so a subagent's private goal can never clobber its parent's goal. `descriptions/` is committed once on `main` at conversation creation and inherited by every branch via git. `skills/` is branch-scoped (added as skills are loaded; removed by the compactor when no longer needed). `steps/` is *not* branch-scoped — it lives at the conversation-repo root (above), shared across the whole conversation tree and namespaced by conversation id (`steps/<conv-id>/NNN/`). Subagent step records do not cross up via merge; they share the conv-repo's `steps/` tree from the moment they're written. See §2.3 (Step on-disk layout) for the rationale.
 
 Read-only from the user's perspective under normal operation. The harness is the only writer. The user interacts via the UI, which produces events that the harness translates into commits.
 
@@ -116,10 +119,10 @@ Nothing commits directly to `main` except the conversation-repo's initial snapsh
 
 1. **Spawn.** The dispatch creates a new branch off the parent's current commit. A linked worktree is allocated at `<conv-repo>/<full-hyphenated-descent>/`.
 2. **Dispatch commit.** The harness overwrites `goal.md` and `soul.md` in the worktree with this conversation's goal and the chosen role's soul from `<conv-repo>/souls/<role>.md`, then commits. This is the first commit on the new branch. The overwritten files are excluded from future merge-back by the merge=ours discipline (§2.6).
-3. **Work.** The agent runs its loop. Each step commits under `steps/<this-conv-id>/NNN/`. A step that emits a subagent-targeting tool call spawns a sub-branch off that commit.
+3. **Work.** The agent runs its loop. Each step's diagnostic record (§2.3 Step on-disk layout) lands at `<conv-repo>/steps/<this-conv-id>/NNN/`, outside the worktree. Worktree-modifying tool calls (e.g. `bash` editing files) commit those modifications on the branch; tool calls without worktree side effects produce no commit. A step that emits a subagent-targeting tool call spawns a sub-branch off the branch tip.
 4. **Completion.** A terminal event: final response, stop, timeout.
 5. **Merge (subagent) or terminate (root).**
-   - *Subagent:* the compactor produces a summary; the branch is rebased onto the current parent tip, the merge=ours-disciplined paths are aligned to the parent's pre-merge state on the subagent's tip, and the result is merged `--no-ff`. The parent's `goal.md`, `soul.md`, and `summary/` tree carry through verbatim; the subagent's `steps/<sub-id>/` and any explicit exports cross up.
+   - *Subagent:* the compactor produces a summary; the branch is rebased onto the current parent tip, the merge=ours-disciplined paths are aligned to the parent's pre-merge state on the subagent's tip, and the result is merged `--no-ff`. The parent's `goal.md`, `soul.md`, and `summary/` tree carry through verbatim; any explicit exports cross up. The subagent's step records are *not* part of the merge — they live at `<conv-repo>/steps/<sub-id>/` (§2.2), already shared with the parent before the merge starts.
    - *Root:* no merge. The conversation's branch persists as a ref; the UI shows it. The user reprompts by issuing a new dispatch that consumes the branch's state as context.
 6. **Cleanup.** Completed branches are retained as refs for a retention window (default 30 days) and GC'd thereafter. Worktrees are torn down on completion.
 
@@ -127,16 +130,27 @@ Branching is cheap — local git operations on disk — but it is not per-step. 
 
 Compaction may also run *during* a branch's execution, not only at termination; see §2.7.
 
-**Step on-disk layout.** Each step lives in its own directory under `steps/<conv-id>/<NNN>/`. `<NNN>` is zero-padded 3-digit and 1-indexed, so step dirs sort lexically. `<conv-id>` is the owning conversation's id — namespacing steps this way is what lets a subagent's step tree merge into its parent's worktree without filename collision (§2.2).
+**Step on-disk layout.** Each step lives in its own directory at `<conv-repo>/steps/<conv-id>/<NNN>/` — at the conversation-repo root, *outside every worktree* (§2.2). `<NNN>` is zero-padded 3-digit and 1-indexed, so step dirs sort lexically. `<conv-id>` is the owning conversation's id — namespacing this way is what lets every conversation in the tree (root + every subagent) write into a single shared `steps/` tree without filename collision; subagent step records do not need to cross up via merge because they were never below a worktree to begin with.
 
-Two core files land per step:
+Per-step files:
 
-- `request.json` — the model call's input. Committed **before** the model call (§2.10), so the commit's tree is the exact state the model read from; retry replays this snapshot without drift.
-- `response.json` — the normalized model-call output (assistant text, `model_id`, `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`). Landed as a *follow-up commit* on the same branch — not an amend of the snapshot — so the snapshot's tree continues to reflect pre-model-call state.
+- `meta.json` — `{commit, started_at, ended_at, …}`. The `commit` field is the sha of the branch tip at step-start; it is the **read state** for the step's model call. Replay reproduces the wire input by re-running the context assembler (§5) against this commit's tree — `request.json` is not the source of truth. Step 1's `commit` is the dispatch commit (§2.3 step 2). Step ≥2's `commit` is the prior step's tip, advanced by any worktree-modifying tool-call commits between them; the harness writes no pre-call commit for step ≥2 (§2.10).
+- `request.json` — diagnostic snapshot of the wire request the model saw. Written for audit and human inspection only (see Diagnostic-only contract below).
+- `response.json` — JSONL of §4.4 stream events (one event per line), regardless of whether the adapter ran in streaming or non-streaming mode; the wire-side shape distinction collapses on disk. See §4.4 for the on-disk shape and §3.5 for the live-streaming completion signal.
+- `tools/<tool-id>/` — per-tool-call records (`input.json`, `output.json`); `<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`). Full contract in §3.3.
 
-Tool calls emitted by a step extend the step's dir with `tools/<tool-id>/` rather than creating new step dirs, preserving "one step = one model call" (§2.1). `<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`), giving the per-call dir wire-level traceability. Two files land per tool call — `input.json` (the `tool_use` block verbatim) and `output.json` (captured stdout, stderr, exit code, timing) — each as its own commit on the emitting branch. The wire-level `tool_result` blocks the agent reads on the next step are not a structural commit: the harness builds them at request-assembly time from the per-call `output.json` files. Full contract in §3.3.
+**Diagnostic-only contract (request.json, response.json).** The harness writes `request.json` and `response.json` strictly as diagnostic / audit artifacts. They have **no runtime read integration anywhere in the harness**:
 
-The rich per-step tree is branch-life state. Terminal compaction (§2.7) writes a signal-preserving summary and marks raw step dirs for deletion, leaving the parent's view (post-merge) minimal.
+- Messages history during execution is assembled in-memory within a single process — the running step holds the prior steps' messages in RAM, not by re-reading disk.
+- Replay (§3.1, §2.10) re-runs the context assembler against `meta.json`'s `commit` tree, then re-invokes the adapter. It does not read `request.json`.
+- Resume (§1 #4, §6, "No resident interpreter") is scoped to workflow-event boundaries: a fresh subprocess re-enters the chain at the next event the state machine is waiting on (`lernie event …`), it does not pick up mid-conversation by reading `response.json`.
+- The frontend (§3.5) may read both files for user inspection; that is a read-only consumer, not harness state.
+
+This is structural, not advisory. The placement of these files at `<conv-repo>/steps/`, outside every worktree, makes context assembly (§3.5, §5) physically incapable of including them as model context, and harness implementations are required to honor the no-runtime-read rule directly: no harness code site reads `request.json` or `response.json` at runtime.
+
+**Tool records are exempt from the diagnostic-only rule.** `tools/<tool-id>/output.json` is read at runtime by the harness when assembling the next step's `tool_result` blocks (§3.3), because tool outputs are nondeterministic and cannot be reconstructed by replay. Tool records share the `<conv-repo>/steps/` location with `request.json` / `response.json`, but they are **runtime state**, not diagnostic. `input.json` is the `tool_use` block the model emitted, recorded for parity with `output.json`; the harness reads it only when reconstructing tool framing during replay.
+
+Step records are not committed to git. The conversation-repo's `.git` lives inside `root/`, and `<conv-repo>/steps/` sits above that — outside every worktree, untracked by git. Their durability is filesystem durability (atomic write via temp + rename, fsync as needed); their authority for replay is the `commit` sha each `meta.json` records, which *is* a real git commit.
 
 **Unmerged-branch tracking.** Git's ref database is the tracking. Subagent conversations that should have merged back but didn't are readily enumerable — any non-`main` ref that is not merged into its parent indicates a stalled or failed pipeline. The §8 unmerged-branch-count health metric is read directly from `git branch` (PRINCIPLES.md "Single source of truth"); see §8 for the specific form.
 
@@ -202,7 +216,7 @@ These files are all branch-scoped: each conversation writes its own `goal.md` an
 
 The first two are the common case for subagent merge-backs (the parent typically has *no* in-flight `summary/`, and after the alignment step the subagent's overrides match the parent's exactly), so a vanilla `.gitattributes` setup would let everything cross up regardless of intent. The harness sidesteps this by replacing-or-removing the disciplined paths *before* the merge sees them. Scaffold registers `merge.ours.driver true` so the attribute is at least active for any human-driven merge that bypasses the alignment step.
 
-`steps/<sub-id>/` is *not* merge=ours — the subagent's step records do cross up into the parent, landing alongside the parent's `steps/<parent-id>/` tree. Namespacing by conversation id (§2.3) is what keeps this collision-free.
+Step records do not pass through merge. They live at `<conv-repo>/steps/<conv-id>/NNN/` — outside every worktree, shared across the whole conversation tree from the moment they're written (§2.2, §2.3). Namespacing by conversation id is what keeps the parent's and subagent's records collision-free without any merge-time alignment.
 
 ### 2.7 Compaction
 
@@ -257,7 +271,7 @@ Default retention: 30 days, then tarballed and GC'd.
 
 ### 2.10 Retries and failures
 
-A step's commit is written *before* its model call is issued (§2.3). That commit is the exact snapshot the model call was derived from, which makes retry tractable: a failed model call can be reissued against the same state without drift.
+**Read state per step.** Step 1 commits the dispatch artifacts (`goal.md`, `soul.md` per §2.3 step 2) on the new branch *before* its model call; that commit is step 1's read state. Step ≥2 takes no pre-call commit — the prior step's tip (advanced by any worktree-modifying tool-call commits, §2.3) is its read state. The branch tip at step-start is recorded in `meta.json`'s `commit` field (§2.3) so retry and replay are tractable: a failed model call is reissued by re-running the context assembler (§5) against the recorded sha and re-invoking the adapter, with no drift from the original wire input. The on-disk `request.json` is diagnostic, not authoritative.
 
 - **Retryable provider errors** (transient network failure, 429 rate limit, 5xx) are retried inline with backoff, bounded by a configurable attempt cap. Retries do not produce additional commits — the commit frames the model call, not the individual API call.
 - **Non-retryable errors** (400 validation failure, auth failure, impossible-to-satisfy schema) abort the step. The branch is left in the state it held before the model call and flagged for operator attention.
@@ -275,7 +289,7 @@ All components communicate through the filesystem. No shared memory, no direct f
 
 - Harness → provider adapter (request mirrored to disk, adapter reads from stdin; response events mirrored back to disk from adapter stdout — see §4.4).
 - Harness → tool execution (tool call record written to disk, executor reads, output streamed to disk).
-- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git refs, worktree contents including `goal.md`, `soul.md`, `summary/`, `steps/`, and the conversation-repo root's control files) and re-renders on change. Notification is inotify where available, polling otherwise.
+- Harness → UI: the filesystem is the event stream. The UI watches paths in the conversation repo (git refs; worktree contents `goal.md`, `soul.md`, `summary/`, `descriptions/`, `skills/`; the conv-repo-root step records under `steps/<conv-id>/NNN/` per §2.2; and the conv-repo-root control files) and re-renders on change. Notification is inotify where available, polling otherwise.
 - UI → Harness: user actions are issued as `lernie <subcommand>` invocations per §3.4. There is no input directory.
 
 **Threads, not processes.** "Worker" and "executor" name roles that run as threads inside the single harness process; the disk contract is not an inter-process bus. Tool subprocesses invoked by the tool executor are genuinely separate processes. Routing inter-role communication through disk — even between threads in the same process — is load-bearing rather than ceremonial: it is what buys inspectability, audit trail, and the single-author-per-file discipline that keeps many concurrent workers from corrupting each other's state.
@@ -291,7 +305,7 @@ Consequences:
 ### 3.2 Components
 
 - **Harness** (permitted synonym: **daemon**). The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. It owns all external↔filesystem interaction on the repo — provider endpoints (via adapter subprocesses), tool subprocesses, git operations. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component. "Daemon" is allowed as a shorthand; both refer to the same role.
-- **Tool executor.** Runs tool subprocesses on behalf of the harness; contract in §3.3. Per tool call: assembles stdin from the `tool_use.input` the model emitted; invokes the tool binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external); captures stdout and stderr atomically (temp path + rename) into `steps/<conv-id>/<NNN>/tools/<tool-id>/output.json`; maps the exit code to the `is_error` flag on the `tool_result` block the harness builds when assembling the next step's request payload. Cascades SIGTERM on cancel (§2.9) with a 5s deadline before SIGKILL, mirroring §4.4. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10. Does not auto-dispatch on oversized tool output in v0.3 (§11).
+- **Tool executor.** Runs tool subprocesses on behalf of the harness; contract in §3.3. Per tool call: assembles stdin from the `tool_use.input` the model emitted; invokes the tool binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external); captures stdout and stderr atomically (temp path + rename) into `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/output.json` (out of every worktree, §2.2, §2.3); maps the exit code to the `is_error` flag on the `tool_result` block the harness builds when assembling the next step's request payload. Cascades SIGTERM on cancel (§2.9) with a 5s deadline before SIGKILL, mirroring §4.4. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10. Does not auto-dispatch on oversized tool output in v0.3 (§11).
 - **Provider adapter.** External binary, one per named provider, that owns HTTP, auth, and transient-error retry. Invoked per model call over stdio; non-resident (process per model call, no long-lived state). Contract in §4.4.
 - **UI** (permitted synonym: **frontend**). A stateless renderer over the conversation repo. Reads and watches filesystem paths in the repo; issues user actions exclusively as `lernie <subcommand>` invocations per §3.4. Holds no persistent state — every render is a pure function of filesystem state at the current git ref. The UI is pluggable: multiple frontends (desktop GUI, webclient, TUI) may run concurrently against one repo without coordination, because they share nothing but the filesystem and the CLI. Contract in §3.5. "Frontend" is allowed as a shorthand; both refer to the same role.
 
@@ -326,16 +340,16 @@ A standalone skill (no associated tool) exists to give an agent capability via p
 - **Exit code.** 0 → `tool_result.is_error = false`; non-zero → `tool_result.is_error = true`. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10 — the step aborts and the branch is flagged, not delivered to the model as a semantic error.
 - **SIGTERM and deadline.** The harness sends SIGTERM on cancel (§2.9); the tool has 5 seconds to flush and exit cleanly, after which SIGKILL follows. Same deadline as §4.4 — one cancellation protocol covers both externalization surfaces.
 
-**Disk record.** The tool executor (§3.2) lands two files per tool call under `steps/<conv-id>/<NNN>/tools/<tool-id>/`:
+**Disk record.** The tool executor (§3.2) lands two files per tool call under `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` — at the conv-repo root, outside every worktree (§2.2, §2.3):
 
 - `input.json` — the `tool_use` block from the model verbatim (`id`, `name`, `input`).
 - `output.json` — `{stdout, stderr, exit_code, started_at, ended_at}`.
 
-`<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`). Writes use temp-path + atomic rename so partial captures never surface in `git status` (PRINCIPLES "Disk first").
+`<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`). Writes use temp-path + atomic rename. These records are not git-tracked (the location is outside every worktree).
 
-**Commit-per-tool-call.** Each tool call is its own commit on the emitting branch. Batching tool-call commits is forbidden — sibling tool calls running in parallel still serialize their commits, since a dirty worktree between siblings would violate "Single author per file" (§2.5, PRINCIPLES). When a step emits multiple tool calls, each finishes, captures its output, and lands its own commit before the next one's lands.
+**Commit-per-side-effect, serialized.** A tool call's *diagnostic* record (above) is not a commit — it is an out-of-worktree plain file. A tool call's *worktree side effects* (e.g. `bash` editing files in the branch's worktree) are committed on the emitting branch by the harness before the next tool runs. Sibling tool calls running in parallel serialize their worktree commits, since a dirty worktree between siblings would violate "Single author per file" (§2.5, PRINCIPLES). Tools without worktree side effects (e.g. `read_file`) produce no commit; the per-call `output.json` outside the worktree is sufficient for downstream framing (next paragraph).
 
-**Wire `tool_result` framing is application-layer.** The wire-level `tool_result` blocks the agent reads on its next step are *not* a structural commit. The harness assembles them at request-assembly time by reading step N's per-call `output.json` files when constructing step N+1's request payload; the resulting payload lands inside step N+1's ordinary `request.json` snapshot (§2.10) — the snapshot records what the model saw, same as for any other request. The per-call `output.json` files are the single source of truth for tool output; the snapshot's `tool_result` blocks are derived. "Tool in progress" is derived state too — step N's `response.json` carries a `tool_use` block with no matching `output.json` yet — not a separate file.
+**Wire `tool_result` framing is application-layer.** The wire-level `tool_result` blocks the agent reads on its next step are *not* a structural commit. The harness assembles them at request-assembly time by reading step N's per-call `output.json` files when constructing step N+1's request payload; the resulting payload is captured in step N+1's diagnostic `request.json` (§2.3) — that file records what the model saw, but is itself diagnostic-only. The per-call `output.json` files are the single source of truth for tool output during execution and for assembler-driven replay (§5, §2.10); the next step's `tool_result` blocks are derived. "Tool in progress" is derived state too — step N's `response.json` carries a `tool_use` block with no matching `output.json` yet — not a separate file.
 
 **Deferred to v0.4+ (see §11).** Oversized-output auto-dispatch — raw output handed to a parsing subagent, only the compacted result reaching the parent step — is not in v0.3. Oversized output reaches the agent unchanged.
 
@@ -361,7 +375,9 @@ A **UI** (or **frontend** — same role, §3.2) is any program that presents the
 
 The frontend surface is exactly two things, and nothing else:
 
-1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3), the conversation-repo root's control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`), and each branch's worktree contents (`goal.md`, `soul.md`, `summary/`, `steps/`, `descriptions/`, `skills/`). Notification is inotify where available, polling otherwise (§3.1).
+1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3); the conv-repo-root control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`); the conv-repo-root step records under `steps/<conv-id>/NNN/` (§2.3); and each branch's worktree contents (`goal.md`, `soul.md`, `summary/`, `descriptions/`, `skills/`). Notification is inotify where available, polling otherwise (§3.1).
+
+   **Streaming text watch path.** Live model-call output is tailed at `<conv-repo>/steps/<conv-id>/<NNN>/response.json` — the JSONL stream (§4.4) is appended event-by-event as the adapter writes it. **Completion signal: writer closes the fd; inotify `IN_CLOSE_WRITE` marks the response complete.** The frontend tails the file (offset-tracking line read), and on `IN_CLOSE_WRITE` flips the response from "in flight" to "done" — no separate sentinel file, no out-of-band marker. This is the same fd-close convention used elsewhere in the architecture (e.g. atomic-rename writes, where `IN_CLOSE_WRITE` on the temp path precedes the rename); here the streaming append *is* the writer, so close-of-fd directly signals end-of-stream.
 2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, resume, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port.
 
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
@@ -465,7 +481,7 @@ A **provider adapter** is a binary that implements one provider's wire protocol.
 
   Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
 
-  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists so deterministic replay against the on-disk `steps/<conv-id>/<NNN>/request.json` (§2.3, §2.10, §3.1) needs no shell redirect. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
+  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists for human / external-tool use against the on-disk `<conv-repo>/steps/<conv-id>/<NNN>/request.json` (§2.3, §2.10, §3.1). Note that this on-disk file is diagnostic (§2.3): the harness's own replay path re-runs the context assembler against `meta.json`'s `commit` and feeds the rebuilt request to the adapter via stdin, not by pointing the adapter at the diagnostic file. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
 
 **Response shape (non-streaming).** The response object is the Anthropic Messages-API wire shape (the body of a `POST /v1/messages` response at <https://docs.anthropic.com/en/api/messages>). Non-Anthropic adapters translate their provider's native response into this shape before writing it. Required top-level fields:
 
@@ -497,7 +513,9 @@ Exit code 0 means the adapter produced a valid output (including a `type: error`
 
 **Endpoint.** Endpoint URLs are opaque to the harness. The adapter declares one or more env var names in `describe.endpoint_env`; the harness sets each to the value of `providers.<name>.endpoint` (verbatim, no parsing) before invoking `complete`. An adapter that omits `endpoint_env` opts out of harness-set endpoints and uses its built-in default. Symmetric in shape with `auth_env`, but `auth_env` propagates values from the harness's environment whereas `endpoint_env` carries values from `providers.yaml` — neither requires the harness to interpret the URL.
 
-**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes, but the harness mirrors both to disk under the framing step's commit (`steps/<conv-id>/<NNN>/request.json`, `steps/<conv-id>/<NNN>/events.jsonl` or `response.json`). Replay (§3.1, §2.10) works against those files, not against a live adapter process. The pipes are the wire; the disk is the record.
+**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes; the harness mirrors both to the conv-repo-root step record at `<conv-repo>/steps/<conv-id>/<NNN>/{request.json, response.json}` (§2.3) — outside every worktree, not git-tracked. Both files are diagnostic / audit artifacts (§2.3 Diagnostic-only contract); the harness does not read them at runtime. Replay (§2.10) re-runs the context assembler (§5) against `meta.json`'s `commit` and re-invokes the adapter — it does not read the diagnostic files. The pipes are the wire; the disk is the record.
+
+**On-disk response shape: JSONL of stream events, always.** Regardless of whether the adapter ran in streaming or non-streaming mode on the wire, the harness writes `response.json` as a JSONL stream of §4.4 events — one event per line. Streaming-mode adapters: the harness appends each event line as the adapter emits it. Non-streaming-mode adapters: the harness wraps the single response object as a synthetic event sequence — `message_start` (with the response's `id`, `model`), one or more `content_block_start` / block-delta / `content_block_stop` triples derived from the response's `content` blocks, and a terminal `message_stop` (with the response's `usage` and `stop_reason`; `api_calls = 1`). The wire-side streaming/non-streaming distinction collapses on disk: every consumer of `response.json` (the frontend's tail at §3.5, replay tooling, audit) sees the same JSONL shape. End-of-stream is signaled by writer-closes-fd (§3.5 IN_CLOSE_WRITE).
 
 **Schema versioning.** `describe.schema_version` is the adapter's self-declared contract version. The harness keeps a minimum-supported-version constant. A `schema_version` below that is rejected at load. A `schema_version` above that is accepted optimistically — the harness ignores unknown fields. This is the same forward-compatibility discipline used for `providers.yaml` capabilities (§4.2).
 
@@ -528,28 +546,30 @@ roles:
       - descriptions/**
     order:
       - summary/**
-      - steps/**/request.json
-      - steps/**/response.json
       - skills/**
     budget_tokens: 150000
-    overflow: drop_oldest_steps
+    overflow: drop_oldest_summaries
   compactor:
     pinned:
       - goal.md
       - soul.md
-    order:
-      - steps/**
+    # The compactor's view onto the parent's work is pinned in §2.7
+    # (and refined in v0.3.1+ as step records move out of every
+    # worktree, §2.3). The compactor's manifest sees only its own
+    # worktree, same as any other role.
     budget_tokens: 50000
     overflow: truncate
 ```
 
 Paths are interpreted relative to the branch's worktree. The manifest sees only worktree contents by construction (§5.1). Pinned paths are always included regardless of budget; `order` entries fill the remaining budget in declared order until overflow policy kicks in.
 
+**Step records are not context.** `worker.order` (and any other role's manifest entries) MUST NOT reference `steps/**` — step records live at `<conv-repo>/steps/<conv-id>/NNN/`, outside every worktree (§2.2, §2.3), and are diagnostic-only (§2.3 Diagnostic-only contract). They are physically excluded from context assembly by their location: a worktree-relative path cannot resolve to them. Examples in this doc and the shipped template manifest reflect that constraint.
+
 This corresponds to the LangChain write/select/compress/isolate taxonomy (`docs/TAXONOMY.md` §3): **write** = commits; **select** = manifest inclusion; **compress** (here: compact) = compactor; **isolate** = subagent-conversation branches.
 
 ### 5.3 File path as hint
 
-File paths are preserved in the assembled context as structural hints to the model. The path itself carries information (`steps/<conv-id>/0042/request.json`, `summary/003.md`, `skills/git-ops/SKILL.md`) that is cheaper than explicit metadata and often sufficient.
+File paths are preserved in the assembled context as structural hints to the model. The path itself carries information (`summary/003.md`, `skills/git-ops/SKILL.md`, `descriptions/tools/bash.json`) that is cheaper than explicit metadata and often sufficient.
 
 ### 5.4 Removal by deletion
 
@@ -724,7 +744,7 @@ Named explicitly so they are not rediscovered later:
 
 ### v0.3 — Tools
 
-**Success criterion:** Agent can invoke at least two tools (`bash`, `read_file`). Tool calls land as commits on the emitting branch — one commit per tool call (§2.3, §3.3). Tool contract — binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external, mirroring §4.4 adapter discovery), JSON schema, `SKILL.md`, the stdio/exit-code shape, and the per-call disk record (`input.json`, `output.json` under `steps/<conv-id>/<NNN>/tools/<tool-id>/`) — pinned in §3.3. Oversized-output auto-dispatch deferred to v0.4+ (§11). Conversation-repo layout migrated from the v0.2 `.agent/`-rooted shape to the v0.3 layout described in §2.2 (control at conversation-repo root, worktrees as siblings, steps namespaced by conversation id, `merge=ours` on goal/soul/summary, "invocation" retired as a structural term).
+**Success criterion:** Agent can invoke at least two tools (`bash`, `read_file`). Worktree-modifying tool calls land as commits on the emitting branch (§2.3, §3.3); read-only tool calls produce no commit. Tool contract — binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external, mirroring §4.4 adapter discovery), JSON schema, `SKILL.md`, the stdio/exit-code shape, and the per-call disk record (`input.json`, `output.json` under `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/`, outside every worktree) — pinned in §3.3. Oversized-output auto-dispatch deferred to v0.4+ (§11). Conversation-repo layout migrated from the v0.2 `.agent/`-rooted shape to the v0.3 layout described in §2.2 (control + step records at the conversation-repo root, worktrees as siblings, steps namespaced by conversation id, `merge=ours` on goal/soul/summary, "invocation" retired as a structural term). v0.3.1 follow-on tightens this with the diagnostic-only contract on `request.json` / `response.json` and relocates the step records out of every worktree (§2.3).
 
 ### v0.4 — Subagent dispatch
 

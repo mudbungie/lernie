@@ -29,8 +29,8 @@ The trunk only advances via no-ff merges from completed root-conversation (excha
 ## Single author per file
 The harness assigns write paths per tool call and per subagent conversation so sibling branches never target the same file. This turns "conflict-free merges" from a convention into a structural guarantee and keeps parallelism safe at scale.
 
-## Commit before model call
-A step's snapshot commit is written before the model call is issued. Retry becomes trivial, and every model call is bit-for-bit replayable from its commit.
+## Read state per step is a real git commit
+Step 1 commits the dispatch artifacts (goal.md + soul.md) before its model call; step ≥2 reads from the prior step's tip, advanced by any worktree-modifying tool-call commits. Either way, every step's read state is a real git commit, recorded in the step's `meta.json`. Replay re-runs the context assembler against that sha and reproduces the wire input bit-for-bit; the diagnostic `request.json` on disk is not authoritative.
 
 ## Tools return synchronously; async rides on handles
 Provider APIs require paired `tool_use`/`tool_result`, so every tool returns immediately. Long-running work surfaces as a handle and is retrieved later via `await(handle)`, preserving parallelism without breaking the wire protocol.
@@ -63,7 +63,7 @@ What the model sees is a pure function of the repo state via `manifest.yaml`. Re
 An agent reduces its context by deleting files; the next assembly excludes them. Context hygiene is an agent-level decision expressed in the native language of the filesystem, not a bespoke API.
 
 ## File path as hint
-Paths like `steps/<conv-id>/042/request.json` or `summary/003.md` ride into context verbatim. Structure in the name is cheaper and usually sufficient compared to bolt-on metadata.
+Paths like `summary/003.md` or `skills/git-ops/SKILL.md` ride into context verbatim. Structure in the name is cheaper and usually sufficient compared to bolt-on metadata. (Step records — `steps/<conv-id>/NNN/request.json` etc. — are not context; they live at the conv-repo root, outside every worktree, and are diagnostic-only — see ARCHITECTURE.md §2.3.)
 
 ## Decline illegal operations
 Capabilities are code-backed; a config selecting a capability the harness does not implement is rejected at load time. Silent degradation is never preferable to a loud refusal.

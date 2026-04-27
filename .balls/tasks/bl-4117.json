@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4117",
+  "claimed_by": "Reflex",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-27T20:42:37.998409825Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cec0",
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.3","layout","bug"],
   "title": "v0.3.1 P1: ARCH amendment for step records out of worktree",
   "type": "task",
-  "updated_at": "2026-04-27T20:44:18.120718766Z"
+  "updated_at": "2026-04-27T21:02:28.011873890Z"
 }

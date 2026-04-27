@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-27T20:42:37.998409825Z",
-  "delivered_in": null,
+  "delivered_in": "2da91cef00e768f2155de71bf3b8383c402b0105",
   "depends_on": [],
   "description": "Pin the new on-disk shape in ARCHITECTURE.md before any code change.\nImplementation phases reference these sections; coining in code first\nviolates the v0.3 layout migration's standing rule.\n\n=== Sections to amend ===\n\n§2.2 Conversation Repo: directory listing gains a steps/ subdir\nat the conv-repo root (alongside manifest.yaml, workflow.yaml,\nproviders.yaml, version, souls/). Worktree listings drop steps/\nfrom their per-worktree shape. Add a sentence: step records\nare diagnostic/audit, not context; the worktree-as-context\nprinciple (§3.5, §5) excludes them by structure.\n\n§2.3 Step on-disk: relocate the path from\n'<worktree>/steps/<conv-id>/<NNN>/' to\n'<conv-repo>/steps/<conv-id>/<NNN>/'. Add 'commit:' field to\nthe step record (branch tip at step-start). Note that\nrecoverability of the wire request rests on replaying the\nassembler against that commit; the on-disk request.json is\ndiagnostic.\n\n§2.10 Snapshot before model call: step 1 commits the dispatch\nartifacts (goal.md + soul.md) on the new branch; step ≥2 takes\nno pre-call commit (the prior step's tip is the read state).\nStrike the 'commit request.json before the model call' line.\n\n§3.5 UI contract: watch path for streaming text moves to\n'<conv-repo>/steps/<conv-id>/<NNN>/response.json'. Pin the\ntail-f-with-fd-close completion signal: writer closes the fd,\ninotify IN_CLOSE_WRITE marks the response complete.\n\n§4.4 Adapter response on disk: response.json is JSONL of §4.4\nstream events, regardless of whether the adapter ran in\nstreaming or non-streaming mode (non-streaming is a single\nmessage_start..message_stop sequence). Pin that this is the\non-disk shape; the wire-side shape distinction collapses on\ndisk.\n\n§5 Manifest scope: clarify that worker.order: never references\nthe steps/ tree — step records are not context. Update the\nexample/template manifest accordingly (the trim itself ships in P2).\n\n=== Constraints ===\n\n- Docs-only PR. No code change in this phase.\n- Cross-reference all amendments so §X.Y links resolve internally.\n- Update TAXONOMY.md only if a new term gets coined; otherwise no\n  change.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md (alignment for this phase is\na self-consistency read of the amended doc against PRINCIPLES.md\nand any unchanged sections).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cec0",
   "priority": 1,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout","bug"],
   "title": "v0.3.1 P1: ARCH amendment for step records out of worktree",
   "type": "task",
-  "updated_at": "2026-04-27T21:02:28.011873890Z"
+  "updated_at": "2026-04-27T21:18:53.814543664Z"
 }

@@ -1,0 +1,1 @@
+{"ts":"2026-04-27T20:45:31.169733123Z","author":"mark","text":"2026-04-27 (opus): Now blocked by bl-c22c (v0.3.1 P4). Reason: tool-call pulse detection reads tools/<tool-id>/{input,output}.json paths that relocate to <conv-repo>/steps/.../tools/ after epic bl-cec0 lands."}

@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-27T20:44:35.330989031Z",
-  "delivered_in": null,
+  "delivered_in": "51d114859bfe939e14097031593957e3e56e6f17",
   "depends_on": ["bl-4117"],
   "description": "Move step records out of the branch worktree to the conv-repo\nroot. Carries the structural enforcement of the diagnostic-only\nrule (P1, ARCH amendment): no harness code path may read\nrequest.json or response.json after this lands.\n\n=== Scope ===\n\n1. Path relocation. step_dir_rel and all writers (write_snapshot,\n   write_response, write_tool_records, etc.) target\n   <conv-repo>/steps/<conv-id>/<NNN>/{request.json, response.json,\n   tools/<tool-id>/{input,output}.json}. Worktree no longer\n   contains a steps/ tree.\n\n2. Snapshot-commit simplification per amended §2.10:\n   - Step 1 dispatch commit: goal.md + soul.md only. No\n     request.json in the tree.\n   - Step ≥2: no pre-call commit. The branch tip already\n     represents the model-read state.\n   - response.json is no longer committed at any step.\n\n3. Step record gains a 'commit:' field (string SHA). Writer\n   captures the branch tip at step start; readers (frontend,\n   diagnostics) use it to locate the tree state the request was\n   assembled against.\n\n4. Manifest scope trim. template/manifest.yaml worker.order: drops\n   'steps/**/request.json' and 'steps/**/response.json'. Other\n   patterns (summary/, descriptions/, skills/, goal.md, soul.md)\n   stay — those are real context.\n\n5. Diagnostic-only enforcement. After the relocation, grep the\n   workspace for any read of request.json or response.json from\n   harness code paths — must return zero hits. Tool input.json /\n   output.json reads are explicitly preserved (those have legit\n   runtime integration).\n\n6. Test rewrites. Existing tests under src/prompt/, tests/, and\n   the dispatch test fixtures point at the new path. Coverage\n   stays at 100%.\n\n=== Out of scope ===\n\n- Streaming JSONL response.json shape — that is P3.\n- UI watch-path updates — that is P4.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-cec0",
   "priority": 1,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.3","layout","bug"],
   "title": "v0.3.1 P2: harness step record relocation + snapshot simplification",
   "type": "task",
-  "updated_at": "2026-04-27T21:55:55.640683397Z"
+  "updated_at": "2026-04-27T22:33:58.780041230Z"
 }

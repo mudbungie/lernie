@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-27T17:53:34.564472129Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Issue: README.md's first runnable instruction is `make install-hooks` under '## Setup' (line 10). That hook is for *contributors*, not users — but a stranger landing on the repo will read top-to-bottom and assume hooks must be installed before `make install`.\n\nFix: restructure README so a public visitor sees:\n1. What lernie is (already fine, lines 1-5)\n2. **User quickstart** — `make install`, `lernie new`, `ANTHROPIC_API_KEY=... lernie prompt ...` (currently lines 35-41, hoist this above the build table)\n3. **Install** details (currently lines 43-75, keep)\n4. **Build / make targets** table (currently lines 16-33, move below user-facing content)\n5. **Contributing** section — `make install-hooks` lives HERE, with a one-line note that this is contributor-only and not needed to use lernie\n\nDon't restructure beyond what's needed for the user-vs-contributor split. Keep all existing content; just reorder and add the framing sentence per section.\n\nGates:\n- tests: N/A (docs-only); ensure any link references still resolve\n- docs: this *is* the docs change\n- alignment: doesn't introduce new terms of art; if it does, must land in TAXONOMY.md per CLAUDE.md",
+  "external": {},
+  "id": "bl-b8ec",
+  "links": [],
+  "parent": null,
+  "priority": 1,
+  "status": "open",
+  "tags": ["docs"],
+  "title": "README: split user quickstart from contributor setup",
+  "type": "task",
+  "updated_at": "2026-04-27T17:53:34.564472129Z"
+}

@@ -6,16 +6,13 @@ roles:
       - descriptions/**
     order:
       - summary/**
-      - steps/**/request.json
-      - steps/**/response.json
       - skills/**
     budget_tokens: 150000
-    overflow: drop_oldest_steps
+    overflow: drop_oldest_summaries
   compactor:
     pinned:
       - goal.md
       - soul.md
-    order:
-      - steps/**
+    order: []
     budget_tokens: 50000
     overflow: truncate

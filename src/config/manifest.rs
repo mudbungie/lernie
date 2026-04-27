@@ -33,10 +33,17 @@ pub struct RoleRules {
 
 /// Closed set of overflow strategies. Adding one is intentionally a code
 /// change.
+///
+/// `DropOldestSteps` is retained for backward compatibility with
+/// pre-v0.3.1 manifests; new manifests should prefer
+/// `DropOldestSummaries` since step records no longer appear in
+/// context-assembly order (ARCH §2.3 — they live outside every
+/// worktree).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum OverflowPolicy {
     DropOldestSteps,
+    DropOldestSummaries,
     Truncate,
     Summarize,
     Drop,
@@ -126,17 +133,14 @@ roles:
       - descriptions/**
     order:
       - summary/**
-      - steps/**/request.json
-      - steps/**/response.json
       - skills/**
     budget_tokens: 150000
-    overflow: drop_oldest_steps
+    overflow: drop_oldest_summaries
   compactor:
     pinned:
       - goal.md
       - soul.md
-    order:
-      - steps/**
+    order: []
     budget_tokens: 50000
     overflow: truncate
 "#;
@@ -148,16 +152,28 @@ roles:
         assert_eq!(m.roles.len(), 2);
         let worker = &m.roles["worker"];
         assert_eq!(worker.budget_tokens, 150_000);
-        assert_eq!(worker.overflow, OverflowPolicy::DropOldestSteps);
+        assert_eq!(worker.overflow, OverflowPolicy::DropOldestSummaries);
         assert_eq!(worker.pinned.len(), 3);
-        assert_eq!(worker.order.len(), 4);
+        // ARCH §5.2 amended (v0.3.1): step records are not context.
+        // `worker.order` lists only manifest-eligible paths (summary,
+        // skills) — `steps/**` MUST NOT appear, which the location
+        // physically enforces (steps/ is at the conv-repo root,
+        // outside every worktree, §2.2 / §2.3).
+        assert_eq!(worker.order, vec!["summary/**", "skills/**"]);
         let compactor = &m.roles["compactor"];
         assert_eq!(compactor.overflow, OverflowPolicy::Truncate);
+        assert!(compactor.order.is_empty());
     }
 
     #[test]
     fn accepts_each_overflow_variant() {
-        for variant in ["drop_oldest_steps", "truncate", "summarize", "drop"] {
+        for variant in [
+            "drop_oldest_steps",
+            "drop_oldest_summaries",
+            "truncate",
+            "summarize",
+            "drop",
+        ] {
             let yaml = format!(
                 "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: {variant}\n"
             );

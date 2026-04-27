@@ -93,7 +93,15 @@ fn manifest_yaml_is_role_keyed_per_arch_5_2() {
     assert!(worker.budget_tokens > 0);
     assert!(worker.pinned.iter().any(|p| p == "goal.md"));
     assert!(worker.pinned.iter().any(|p| p == "soul.md"));
-    assert_eq!(worker.overflow, OverflowPolicy::DropOldestSteps);
+    // ARCH §5.2 amended (v0.3.1): step records are not context, so
+    // `worker.order` carries no `steps/**` entries. The shipped
+    // template overflow policy switched to `drop_oldest_summaries`
+    // to reflect what the order actually contains.
+    assert!(
+        !worker.order.iter().any(|p| p.starts_with("steps/")),
+        "worker.order must not reference steps/** (§5.2 amended)"
+    );
+    assert_eq!(worker.overflow, OverflowPolicy::DropOldestSummaries);
     assert_eq!(
         manifest.roles["compactor"].overflow,
         OverflowPolicy::Truncate

@@ -1,18 +1,29 @@
 //! Disk and git error paths for [`crate::prompt::run`].
 //!
-//! Covers the branch-life failures inside `prompt::run`: `git worktree
-//! add`, the four I/O writes (worktree dir, goal, soul, step dir,
-//! request, response), and each `git add` / `git commit` along the
-//! two-commit flow, plus the merge-back-to-main rebase/merge/remove.
-//! Compactor-internal failures (worktree add for the compactor
-//! branch, summary write/commit, cmp rebase/merge/remove) live in
+//! Covers the branch-life failures inside `prompt::run`: `git
+//! worktree add`, the I/O writes for the dispatch (worktree dir,
+//! goal, soul) and for the diagnostic step record (request, response,
+//! meta), the dispatch commit's `git add` / `git commit`, the
+//! branch-tip capture (`git rev-parse`), and the merge-back-to-main
+//! rebase / merge / remove. Compactor-internal failures live in
 //! `compactor::tests` — they sit behind the [`crate::prompt::Dispatcher`]
-//! boundary now, so are not reachable through `prompt::run` with a
-//! stub dispatcher. Config and adapter failure paths live in
+//! boundary, so are not reachable through `prompt::run` with a stub
+//! dispatcher. Config and adapter failure paths live in
 //! [`super::errors`].
 
 use super::fixtures::*;
 use crate::prompt::{Deps, Error, run};
+
+/// Index of `git rev-parse HEAD` on the StubGit's run log: 0 worktree
+/// add, 1 dispatch add, 2 dispatch commit, 3 rev-parse. Pinned as a
+/// constant so the merge-back op-index labels stay readable.
+const REV_PARSE_INDEX: usize = 3;
+const REBASE_INDEX: usize = REV_PARSE_INDEX + 1;
+const MERGE_OURS_RM_INDEX: usize = REBASE_INDEX + 1;
+const MERGE_OURS_LS_TREE_INDEX: usize = MERGE_OURS_RM_INDEX + 1;
+const MERGE_OURS_DIFF_INDEX: usize = MERGE_OURS_LS_TREE_INDEX + 1;
+const MERGE_INDEX: usize = MERGE_OURS_DIFF_INDEX + 1;
+const WORKTREE_REMOVE_INDEX: usize = MERGE_INDEX + 1;
 
 #[test]
 fn run_surfaces_worktree_add_failure() {
@@ -35,8 +46,8 @@ fn run_surfaces_worktree_add_failure() {
 #[test]
 fn run_surfaces_worktree_create_failure() {
     // Pre-create the worktree path as a regular file so
-    // `write_snapshot`'s create_dir_all on the worktree fails on a
-    // file-not-dir component.
+    // `write_dispatch_files`'s create_dir_all on the worktree fails
+    // on a file-not-dir component.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
     std::fs::create_dir_all(wt.parent().unwrap()).unwrap();
@@ -69,32 +80,8 @@ fn run_surfaces_soul_write_failure() {
 }
 
 #[test]
-fn run_surfaces_step_dir_create_failure() {
-    // Worktree dir + goal/soul writeable, but the steps/ path
-    // component is a regular file so step_dir create_dir_all fails.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let wt = worktree_path(repo.path());
-    std::fs::create_dir_all(&wt).unwrap();
-    std::fs::write(wt.join("steps"), b"blocker").unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::Io(_)), "got {err:?}");
-}
-
-#[test]
-fn run_surfaces_request_write_failure() {
-    // Pre-create request.json as a directory so the file write fails.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let wt = worktree_path(repo.path());
-    let step_dir = wt.join("steps/ct-1-deadbeef/001");
-    std::fs::create_dir_all(step_dir.join("request.json")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::Io(_)), "got {err:?}");
-}
-
-#[test]
-fn run_surfaces_snapshot_add_failure() {
+fn run_surfaces_dispatch_add_failure() {
+    // git add for the dispatch commit fails (index 1).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
@@ -102,7 +89,7 @@ fn run_surfaces_snapshot_add_failure() {
 }
 
 #[test]
-fn run_surfaces_snapshot_commit_failure() {
+fn run_surfaces_dispatch_commit_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(2)).unwrap_err();
@@ -110,10 +97,60 @@ fn run_surfaces_snapshot_commit_failure() {
 }
 
 #[test]
+fn run_surfaces_rev_parse_failure() {
+    // Branch-tip capture for meta.json's `commit` field (§2.10) is
+    // index 3; failing it surfaces as Error::Git { op: "rev-parse" }.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(
+        repo.path(),
+        "hi",
+        &adapter,
+        &StubGit::failing_at(REV_PARSE_INDEX),
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            Error::Git {
+                op: "rev-parse",
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn run_surfaces_step_dir_create_failure() {
+    // Step records live at the conv-repo root (§2.2). Pre-create
+    // <repo>/steps as a regular file so write_request's
+    // create_dir_all on <repo>/steps/<conv-id>/<NNN>/ fails on a
+    // file-not-dir component.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    std::fs::write(repo.path().join("steps"), b"blocker").unwrap();
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Io(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_request_write_failure() {
+    // Pre-create request.json under the *conv-repo's* step dir as a
+    // directory so the file write fails (step records relocated out
+    // of the worktree per §2.3).
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
+    std::fs::create_dir_all(step_dir.join("request.json")).unwrap();
+    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Io(_)), "got {err:?}");
+}
+
+#[test]
 fn run_surfaces_response_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let wt = worktree_path(repo.path());
-    let step_dir = wt.join("steps/ct-1-deadbeef/001");
+    let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("response.json")).unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
@@ -121,19 +158,13 @@ fn run_surfaces_response_write_failure() {
 }
 
 #[test]
-fn run_surfaces_response_add_failure() {
+fn run_surfaces_meta_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
+    std::fs::create_dir_all(step_dir.join("meta.json")).unwrap();
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(3)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "add", .. }));
-}
-
-#[test]
-fn run_surfaces_response_commit_failure() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(4)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "commit", .. }));
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
 
 #[test]
@@ -169,90 +200,60 @@ fn run_surfaces_dispatcher_failure() {
         ),
         "got {err:?}"
     );
-    assert_eq!(git.runs.borrow().len(), 5, "merge-to-main never starts");
+    // Pre-dispatcher git op count: worktree add, dispatch add,
+    // dispatch commit, rev-parse for meta = 4.
+    assert_eq!(git.runs.borrow().len(), 4, "merge-to-main never starts");
 }
 
-#[test]
-fn run_surfaces_merge_to_main_rebase_failure() {
-    // Index 5: rebase conv onto main. Cmp internals are behind the
-    // dispatcher boundary, so index 5 is the next git call after the
-    // response commit.
+/// Failing the git call at `idx` surfaces as `Error::Git { op: $op,
+/// .. }`. Shared helper so each merge-back op-index test stays one
+/// line — the macro path tarpaulin trips on otherwise.
+fn assert_run_fails_with_git_op(idx: usize, expected_op: &'static str) {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(5)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "rebase", .. }));
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(idx)).unwrap_err();
+    match err {
+        Error::Git { op, .. } => assert_eq!(op, expected_op),
+        other => panic!("expected Error::Git op={expected_op}, got {other:?}"),
+    }
 }
 
-#[test]
-fn run_surfaces_merge_ours_rm_failure() {
-    // Index 6 is the merge=ours rm: first call after the rebase
-    // succeeds. Surfaces the alignment-step error op label.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(6)).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::Git {
-            op: "merge=ours rm",
-            ..
+macro_rules! merge_back_failure_test {
+    ($name:ident, $idx:expr, $op:literal) => {
+        #[test]
+        fn $name() {
+            assert_run_fails_with_git_op($idx, $op);
         }
-    ));
+    };
 }
 
-#[test]
-fn run_surfaces_merge_ours_ls_tree_failure() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(7)).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::Git {
-            op: "merge=ours ls-tree",
-            ..
-        }
-    ));
-}
-
-#[test]
-fn run_surfaces_merge_ours_diff_failure() {
-    // Index 8 is the diff --cached --name-only capture. With an empty
-    // ls-tree the conditional checkout is skipped, so diff is the
-    // next call after ls-tree.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(8)).unwrap_err();
-    assert!(matches!(
-        err,
-        Error::Git {
-            op: "merge=ours diff",
-            ..
-        }
-    ));
-}
-
-#[test]
-fn run_surfaces_merge_to_main_merge_failure() {
-    // With both alignment captures returning empty (no checkout, no
-    // commit), index 9 is the merge --no-ff.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(9)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "merge", .. }));
-}
-
-#[test]
-fn run_surfaces_conv_worktree_remove_failure() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(10)).unwrap_err();
-    assert!(
-        matches!(
-            err,
-            Error::Git {
-                op: "worktree remove",
-                ..
-            }
-        ),
-        "got {err:?}"
-    );
-}
+merge_back_failure_test!(
+    run_surfaces_merge_to_main_rebase_failure,
+    REBASE_INDEX,
+    "rebase"
+);
+merge_back_failure_test!(
+    run_surfaces_merge_ours_rm_failure,
+    MERGE_OURS_RM_INDEX,
+    "merge=ours rm"
+);
+merge_back_failure_test!(
+    run_surfaces_merge_ours_ls_tree_failure,
+    MERGE_OURS_LS_TREE_INDEX,
+    "merge=ours ls-tree"
+);
+merge_back_failure_test!(
+    run_surfaces_merge_ours_diff_failure,
+    MERGE_OURS_DIFF_INDEX,
+    "merge=ours diff"
+);
+merge_back_failure_test!(
+    run_surfaces_merge_to_main_merge_failure,
+    MERGE_INDEX,
+    "merge"
+);
+merge_back_failure_test!(
+    run_surfaces_conv_worktree_remove_failure,
+    WORKTREE_REMOVE_INDEX,
+    "worktree remove"
+);

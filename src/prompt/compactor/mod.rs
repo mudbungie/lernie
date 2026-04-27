@@ -11,15 +11,16 @@
 //! primitive in v0.4 reuses it verbatim; this is the "One obvious
 //! path" principle instantiated (see `docs/PRINCIPLES.md`).
 //!
-//! The stub reads the terminal [`StepResponse`] off the dispatching
-//! branch's tree, writes a one-line summary of the form
-//! `conversation <id>: <assistant-response text>`, and commits it on
-//! the compactor branch.
+//! The stub writes a placeholder one-line summary identifying the
+//! dispatching conversation. v0.3.1 dropped its previous read of
+//! `response.json` to honor §2.3's diagnostic-only contract — no
+//! harness code path may read `request.json` or `response.json` at
+//! runtime. The real model-driven summary lands in v0.4+ where
+//! input is delivered through the dispatch contract.
 
 pub mod tools;
 
 use super::merge::rebase_and_merge;
-use super::step::{RESPONSE_FILE, STEPS_DIR, StepResponse, step_dir_rel};
 use super::{Clock, Error, IdGen};
 use crate::template::GitRunner;
 use std::path::Path;
@@ -37,17 +38,18 @@ pub struct CompactorRequest<'a> {
     /// name (ARCH §2.3 — bare hyphenated descent, no prefix). The
     /// compactor spawns off this branch's tip and merges back into it.
     pub parent_conv_id: &'a str,
-    /// Path to the dispatching branch's worktree. The stub reads
-    /// `response.json` from this worktree (which is where it was just
-    /// committed). The final `--no-ff` merge runs here too, so the
-    /// parent branch's ref advances to the merge commit.
+    /// Path to the dispatching branch's worktree. The compactor
+    /// spawns its own branch off this worktree's `.git` (the
+    /// conv-repo's git dir lives in `root/`, §2.2) and the final
+    /// `--no-ff` merge runs here, advancing the parent branch's ref
+    /// to the merge commit.
     pub parent_worktree: &'a Path,
 }
 
 /// Run the terminal compactor against `req`. The stub writes a
-/// single-line summary for the dispatching branch and merges the
-/// result back into it; the caller is responsible for merging the
-/// dispatching branch onto its parent (§2.6).
+/// single-line placeholder summary for the dispatching branch and
+/// merges the result back into it; the caller is responsible for
+/// merging the dispatching branch onto its parent (§2.6).
 pub fn run(
     req: &CompactorRequest<'_>,
     git: &dyn GitRunner,
@@ -62,11 +64,10 @@ pub fn run(
     let cmp_branch = format!("{}-{cmp_id}", req.parent_conv_id);
     let cmp_worktree = req.repo.join(&cmp_branch);
 
-    // Read the terminal response off the parent worktree (where it
-    // was just committed). The compactor's input is the parent tip's
-    // tree; in v0.4+ that input will be delivered through the
-    // dispatch contract rather than a direct filesystem read.
-    let summary = build_summary(req.parent_worktree, req.parent_conv_id)?;
+    // Stub summary: just identifies the parent conversation. Reading
+    // `response.json` would violate §2.3's diagnostic-only contract;
+    // the real summary in v0.4+ comes through the dispatch contract.
+    let summary = build_summary(req.parent_conv_id);
 
     spawn_compactor_branch(
         req.parent_worktree,
@@ -126,7 +127,7 @@ pub(crate) fn compactor_goal(parent_branch: &str) -> String {
 }
 
 /// Write `goal.md` to the compactor's worktree. Mirrors the
-/// dispatch-side `write_snapshot`'s goal write (§2.8) — every
+/// dispatch-side `write_dispatch_files`'s goal write (§2.8) — every
 /// non-root branch carries a goal at the worktree root.
 fn write_goal(cmp_worktree: &Path, parent_branch: &str) -> Result<(), Error> {
     std::fs::create_dir_all(cmp_worktree)?;
@@ -136,7 +137,8 @@ fn write_goal(cmp_worktree: &Path, parent_branch: &str) -> Result<(), Error> {
 
 /// `git add` the goal then `git commit` the dispatch snapshot. Names
 /// the conversation in the message so history reads `compaction:
-/// dispatch [<conv-id>]` analogously to the snapshot commit.
+/// dispatch [<conv-id>]` analogously to the dispatch commit on the
+/// parent branch.
 fn commit_goal(
     cmp_worktree: &Path,
     parent_conv_id: &str,
@@ -152,43 +154,11 @@ fn commit_goal(
         })
 }
 
-/// Build the stub summary body from the dispatching branch's terminal
-/// response. The terminal step is whichever `steps/<conv-id>/<NNN>/`
-/// has the highest numeric `NNN` — the loop in
-/// `super::dispatch::run_exchange` increments it until `stop_reason`
-/// is anything other than `tool_use` (§2.5), so the maximum seq is
-/// the one with the loop-terminating response.
-fn build_summary(parent_worktree: &Path, parent_conv_id: &str) -> Result<String, Error> {
-    let terminal_seq = terminal_step_seq(parent_worktree, parent_conv_id)?;
-    let step_rel = step_dir_rel(parent_conv_id, terminal_seq);
-    let response_path = parent_worktree.join(step_rel).join(RESPONSE_FILE);
-    let bytes = std::fs::read(&response_path)?;
-    let response: StepResponse = serde_json::from_slice(&bytes).map_err(Error::AdapterJson)?;
-    Ok(format!(
-        "conversation {parent_conv_id}: {}\n",
-        response.text()
-    ))
-}
-
-/// Scan `<parent_worktree>/steps/<parent_conv_id>/` and return the
-/// largest numeric subdir name (1-indexed, zero-padded 3-digit per
-/// §2.3). Single-source-of-truth: the on-disk step dirs are the
-/// authoritative count of steps the loop ran.
-fn terminal_step_seq(parent_worktree: &Path, parent_conv_id: &str) -> Result<u32, Error> {
-    let steps_dir = parent_worktree.join(STEPS_DIR).join(parent_conv_id);
-    let mut max_seq: u32 = 0;
-    for entry in std::fs::read_dir(&steps_dir)? {
-        let entry = entry?;
-        let name = entry.file_name();
-        let Some(name) = name.to_str() else { continue };
-        let Ok(seq) = name.parse::<u32>() else {
-            continue;
-        };
-        if seq > max_seq {
-            max_seq = seq;
-        }
-    }
-    Ok(max_seq)
+/// Stub summary body. Identifies the dispatching conversation
+/// without reading any of its diagnostic step records (§2.3 — no
+/// runtime read of `request.json` / `response.json`).
+fn build_summary(parent_conv_id: &str) -> String {
+    format!("conversation {parent_conv_id}: terminal compaction\n")
 }
 
 /// `git worktree add -b <cmp_branch> <cmp_worktree> <parent_branch>`,

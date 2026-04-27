@@ -1,7 +1,7 @@
-//! v0.3 ball #3: multi-step exchange-loop tests. Drives the loop
-//! through [`StubToolExecutor`] to assert §2.5 pairing, per-step
-//! commit shape, and the `stop_reason != "tool_use"` termination
-//! rule. Ball #4 ships the real subprocess-driving executor.
+//! v0.3 ball #3 (with v0.3.1 layout): multi-step exchange-loop
+//! tests. Drives the loop through [`StubToolExecutor`] to assert
+//! §2.5 pairing, per-step on-disk shape, and the `stop_reason !=
+//! "tool_use"` termination rule.
 
 use super::fixtures::*;
 use crate::prompt::{Error, run};
@@ -58,23 +58,28 @@ fn loop_runs_two_steps_when_first_response_is_tool_use() {
 
     // Executor saw exactly one call in step 1 with the emitted
     // tool_use's id/name/input. The step_dir end-segment carries the
-    // step seq.
+    // step seq AND lives at the conv-repo root, outside any
+    // worktree (§2.2 / §2.3).
     let tool_calls = tool_executor.calls.borrow().clone();
     assert_eq!(tool_calls.len(), 1);
     let (step_dir, id, name, input) = &tool_calls[0];
-    assert_eq!(step_dir, &worktree.join("steps/ct-1-deadbeef/001"));
+    assert_eq!(step_dir, &repo.path().join("steps/ct-1-deadbeef/001"));
     assert_eq!(
         (id.as_str(), name.as_str(), &input["cmd"]),
         ("toolu_01", "bash", &serde_json::json!("ls"))
     );
 
-    // Step 1 request: bare user string. Step 2 request: §2.5 pairing
-    // — assistant tool_use + user tool_result.
-    let step2_dir = worktree.join("steps/ct-1-deadbeef/002");
-    let req1: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(worktree.join("steps/ct-1-deadbeef/001/request.json")).unwrap(),
-    )
-    .unwrap();
+    // Step records live at the conv-repo root (§2.2). Step 1 request:
+    // bare user string. Step 2 request: §2.5 pairing — assistant
+    // tool_use + user tool_result.
+    assert!(
+        !worktree.join("steps").exists(),
+        "step records must not land inside any worktree (§2.2)"
+    );
+    let step1_dir = repo.path().join("steps/ct-1-deadbeef/001");
+    let step2_dir = repo.path().join("steps/ct-1-deadbeef/002");
+    let req1: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(step1_dir.join("request.json")).unwrap()).unwrap();
     assert_eq!(req1["messages"].as_array().unwrap().len(), 1);
     assert_eq!(req1["messages"][0]["content"], "list files");
     let req2: serde_json::Value =
@@ -87,32 +92,30 @@ fn loop_runs_two_steps_when_first_response_is_tool_use() {
     assert_eq!(msgs[2]["content"][0]["tool_use_id"], "toolu_01");
     assert_eq!(msgs[2]["content"][0]["content"], "files: a b");
 
-    // Step 2 lays only request.json (goal/soul are step 1's job).
+    // Step 2 has no dispatch artifact — goal/soul live on the branch
+    // tip from step 1 (§2.10 — step ≥2 has no pre-call commit).
     assert!(worktree.join("goal.md").exists());
     let resp2: serde_json::Value =
         serde_json::from_slice(&std::fs::read(step2_dir.join("response.json")).unwrap()).unwrap();
     assert_eq!(resp2["stop_reason"], "end_turn");
     assert_eq!(dispatcher.calls.borrow().len(), 1);
 
-    // Git op log: 5 (step 1) + 2 (per-tool add+commit) + 4 (step 2
-    // add+commit x2) + 6 (merge-back) = 17.
+    // Git op log: 3 (step 1: worktree add + dispatch add + commit) +
+    // 2 (rev-parse per step, 2 steps) + 6 (merge-back) = 11. No
+    // per-step request/response commits, no per-tool-call commits —
+    // step records are diagnostic-only and live outside every
+    // worktree (§2.3, §3.3 amended).
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 17);
-    // Per-tool commit (§3.3 commit-per-tool-call) lands between the
-    // step-1 response commit and the step-2 snapshot.
-    assert_eq!(
-        runs[5].1,
-        vec!["add", "steps/ct-1-deadbeef/001/tools/toolu_01"]
-    );
-    assert!(runs[6].1[2].starts_with("tool bash"));
-    assert!(runs[6].1[2].contains("ct-1-deadbeef/toolu_01"));
-    // Step 2 snapshot stages only request.json.
-    assert_eq!(
-        runs[7].1,
-        vec!["add", "steps/ct-1-deadbeef/002/request.json"]
-    );
-    assert!(runs[8].1[2].contains("step 002: request"));
-    assert!(runs[10].1[2].contains("step 002: response"));
+    assert_eq!(runs.len(), 11);
+    // Step 1 ops: worktree add (0), dispatch add goal+soul (1),
+    // dispatch commit (2), rev-parse for step 1's meta (3).
+    assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
+    assert!(runs[2].1[2].contains("step 001: dispatch"));
+    assert_eq!(runs[3].1, vec!["rev-parse", "HEAD"]);
+    // Step 2: only rev-parse (no dispatch commit).
+    assert_eq!(runs[4].1, vec!["rev-parse", "HEAD"]);
+    // 5..11 are merge-back.
+    assert_eq!(runs[5].1, vec!["rebase", "main"]);
 }
 
 #[test]
@@ -150,10 +153,10 @@ fn loop_runs_three_steps_when_two_responses_in_a_row_are_tool_use() {
     )
     .unwrap();
 
-    let worktree = repo.path().join("ct-1-deadbeef");
-    let step3_resp = worktree.join("steps/ct-1-deadbeef/003/response.json");
+    // Step records sit at the conv-repo root (§2.2 / §2.3).
+    let step3_resp = repo.path().join("steps/ct-1-deadbeef/003/response.json");
     assert!(step3_resp.exists());
-    assert!(!worktree.join("steps/ct-1-deadbeef/004").exists());
+    assert!(!repo.path().join("steps/ct-1-deadbeef/004").exists());
 
     let calls = tool_executor.calls.borrow().clone();
     assert_eq!(calls.len(), 2);
@@ -206,9 +209,8 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
     assert_eq!(pair(&calls[0]), ("toolu_a".into(), "bash".into()));
     assert_eq!(pair(&calls[1]), ("toolu_b".into(), "read_file".into()));
 
-    let worktree = repo.path().join("ct-1-deadbeef");
     let req2: serde_json::Value = serde_json::from_slice(
-        &std::fs::read(worktree.join("steps/ct-1-deadbeef/002/request.json")).unwrap(),
+        &std::fs::read(repo.path().join("steps/ct-1-deadbeef/002/request.json")).unwrap(),
     )
     .unwrap();
     let user_blocks = req2["messages"][2]["content"].as_array().unwrap();

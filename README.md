@@ -141,31 +141,36 @@ follow-up commit, runs the terminal compactor off the tip, and
    prefix per §2.3) off `main` and allocate a sibling worktree at
    `<repo>/<conv-id>/` (§2.2). The `git worktree add` runs inside
    `<repo>/root/`, where the `.git` directory lives.
-5. Write the branch goal to `goal.md`, the role soul to `soul.md`,
-   and the model call's input to `steps/<conv-id>/001/request.json`
-   in the new worktree; commit all three on the branch as the
-   dispatch snapshot. This is §2.10's "commit before model call" —
-   the tree the model reads is the tree of this snapshot commit.
-6. Invoke `lernie-provider-<name> complete`, setting each env var
+5. Write the branch goal to `goal.md` and the role soul to `soul.md`
+   in the new worktree; commit them on the branch as the dispatch
+   snapshot. That commit's tree is step 1's read state (§2.10).
+   Capture the branch tip's sha for the step's `meta.json`.
+6. Write the model call's input to
+   `<conv-repo>/steps/<conv-id>/001/request.json` (at the conv-repo
+   root, *outside* the worktree, §2.2 / §2.3) — it's a diagnostic
+   artifact, not committed and never read at runtime by the harness.
+7. Invoke `lernie-provider-<name> complete`, setting each env var
    named in `endpoint_env` to `providers.<name>.endpoint`; pipe the
    Messages-API-shaped request on stdin; read one JSON document back.
    Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
    process inheritance.
-7. Write the normalized response (the assistant's structured
+8. Write the normalized response (the assistant's structured
    `content` blocks — text + `tool_use` per §3.3 — plus `model_id`,
    `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
-   `steps/<conv-id>/<NNN>/response.json` and land it as a follow-up
-   commit on the same branch. The snapshot commit's tree stays
-   intact so replay and retry (§2.10) see exactly what the model saw.
-8. **Step loop (§2.5).** If the response's `stop_reason` is
+   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` alongside the
+   `meta.json` carrying `{commit, started_at, ended_at}`. Both
+   files are diagnostic-only (§2.3) and not committed — replay
+   re-runs the context assembler against `meta.json`'s `commit`,
+   not by reading these files.
+9. **Step loop (§2.5).** If the response's `stop_reason` is
    `tool_use`, run every emitted `tool_use` block through the
-   tool executor — ball #4 ships the real subprocess-driving impl
-   that lands per-call records under
-   `steps/<conv-id>/<NNN>/tools/<tool-id>/` per §3.3 — then assemble
-   step `<NNN+1>` whose user message carries one `tool_result` block
-   per emitted call. Steps 2+ commit only `request.json`
-   (goal/soul are step 1's job). Loop until `stop_reason` is
-   anything other than `tool_use`.
+   tool executor — the per-call records land under
+   `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of
+   every worktree, §3.3) — then assemble step `<NNN+1>` whose user
+   message carries one `tool_result` block per emitted call. Step
+   ≥2 has no pre-call commit — the branch tip already reflects the
+   model-read state. Loop until `stop_reason` is anything other
+   than `tool_use`.
 9. Dispatch the terminal compactor (§2.7) off the conversation tip
    by re-entering the binary as `lernie dispatch compactor <repo>
    <conv-id>` (subprocess invocation per §3.4 — the harness never
@@ -174,13 +179,14 @@ follow-up commit, runs the terminal compactor off the tip, and
    per §2.2) off the conversation tip in a sibling worktree at
    `<repo>/<conv-id>-<cmp-id>/`, writes `goal.md` with the
    boilerplate compactor goal and lands it as a dispatch commit
-   (§2.8, §2.10), then writes `summary/001.md` with the
-   terminal-response summary and lands that as a follow-up commit,
-   and `--no-ff` merges the compactor branch back into the
-   conversation branch. The v0.3 compactor is a stub — it does not
-   call a model, and `mark_for_deletion` is a no-op; the shape
-   exists so v0.4+ can layer real semantics without moving call
-   sites.
+   (§2.8, §2.10), then writes a placeholder `summary/001.md`
+   (v0.3.1 stub — identifies the parent conversation but does not
+   read `response.json` per §2.3 diagnostic-only contract) and
+   lands that as a follow-up commit, and `--no-ff` merges the
+   compactor branch back into the conversation branch. The v0.3
+   compactor is a stub — it does not call a model, and
+   `mark_for_deletion` is a no-op; the shape exists so v0.4+ can
+   layer real semantics without moving call sites.
 10. Rebase the conversation branch onto the current `main` tip and
     `--no-ff` merge it into `main` (§2.6), running the merge inside
     `<repo>/root/`. Remove the conversation worktree; the branch
@@ -329,6 +335,14 @@ can't be read, a placeholder view is shown instead.
 
 Three pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
+
+> **v0.3.1 transitional note.** The harness now writes step records
+> to `<conv-repo>/steps/<conv-id>/<NNN>/` (outside every worktree,
+> ARCH §2.2 / §2.3). The UI's `fs_watcher` still scopes step paths
+> under `root/steps/...` and `git_tree` still keys conversation
+> detection off git-tracked `steps/<conv-id>/...` paths — both of
+> those will surface stale results until v0.3.1 P4 retargets them
+> to the conv-repo-root layout.
 
 - `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
   change events. The watched set covers conv-repo control files

@@ -14,10 +14,11 @@
   },
   "definitions": {
     "OverflowPolicy": {
-      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.",
+      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.\n\n`DropOldestSteps` is retained for backward compatibility with pre-v0.3.1 manifests; new manifests should prefer `DropOldestSummaries` since step records no longer appear in context-assembly order (ARCH §2.3 — they live outside every worktree).",
       "type": "string",
       "enum": [
         "drop_oldest_steps",
+        "drop_oldest_summaries",
         "truncate",
         "summarize",
         "drop"

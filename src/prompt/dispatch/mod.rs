@@ -7,26 +7,26 @@
 //!    prefix per §2.3 v0.3) off `main` and allocate a sibling worktree
 //!    at `<conv-repo>/<conv-id>/` (§2.2 — sibling of `root/`, never
 //!    nested).
-//! 2. Write `goal.md` and `soul.md` plus
-//!    `steps/<conv-id>/001/request.json`, then commit (§2.10's
-//!    "commit before model call"). On-disk landings live in
-//!    [`step_commit`].
-//! 3. Invoke `describe` then `complete` on the provider adapter
-//!    (§4.4). Describe is harness-wide adapter setup and happens before
-//!    branch work, so an adapter fault does not leave a stray branch.
-//! 4. Land `response.json` as a follow-up commit on the same branch —
-//!    follow-up rather than amend keeps the snapshot's tree intact for
-//!    replay (§2.10).
-//! 5. **Step loop (v0.3 ball #3).** If the response's `stop_reason` is
-//!    `tool_use`, the harness runs every emitted `tool_use` block
-//!    through [`crate::prompt::ToolExecutor`] (per-call records land
-//!    on disk and commit per §3.3 in ball #4's real impl), then
-//!    assembles a follow-up step whose user message carries one
-//!    `tool_result` block per emitted call (§2.5's pairing
-//!    invariant). The loop terminates when `stop_reason` is anything
-//!    else (`end_turn`, `max_tokens`, …).
-//! 6. Dispatch the terminal compactor off the branch tip (§2.7).
-//! 7. Rebase the conversation branch onto the current `main` tip and
+//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md` at the
+//!    worktree root and commit. That commit's tree *is* step 1's
+//!    read state (§2.10). Step ≥2 takes no pre-call commit — the
+//!    branch tip already reflects what the model reads.
+//! 3. For each step: capture the branch-tip sha (the read state),
+//!    write `request.json` + `meta.json` to
+//!    `<conv-repo>/steps/<conv-id>/<NNN>/` (outside every worktree,
+//!    §2.2 / §2.3), invoke `complete` on the provider adapter (§4.4),
+//!    and write `response.json` next to the request. None of these
+//!    artifacts is committed — they are diagnostic-only (§2.3).
+//! 4. **Step loop (§2.5).** If `stop_reason == "tool_use"`, the
+//!    harness runs every emitted `tool_use` block through
+//!    [`crate::prompt::ToolExecutor`] (per-call records land at
+//!    `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/`, also
+//!    outside every worktree per §3.3), then assembles a follow-up
+//!    step whose user message carries one `tool_result` block per
+//!    emitted call. The loop terminates when `stop_reason` is
+//!    anything else (`end_turn`, `max_tokens`, …).
+//! 5. Dispatch the terminal compactor off the branch tip (§2.7).
+//! 6. Rebase the conversation branch onto the current `main` tip and
 //!    `--no-ff` merge it into `main` (§2.6). The merge runs inside the
 //!    primary worktree at `<conv-repo>/root/` since that is where
 //!    `main` is checked out (§2.2). Remove the conversation worktree;
@@ -42,14 +42,17 @@ mod tool_step;
 
 use super::adapter;
 use super::merge::rebase_and_merge;
-use super::step::{StepResponse, Usage, step_dir_rel};
+use super::step::{StepMeta, StepResponse, Usage, step_dir_rel};
 use super::{Deps, Error, parse_adapter_stdout, parse_endpoint_env};
 use crate::config::Model;
 use crate::config::Provider as ProviderConfig;
 use crate::template::ROOT_WORKTREE;
 use serde_json::{Value, json};
 use std::path::Path;
-use step_commit::{commit_response, commit_snapshot, write_response, write_snapshot};
+use step_commit::{
+    commit_dispatch, read_branch_tip, write_dispatch_files, write_meta, write_request,
+    write_response,
+};
 use tool_step::run_tool_calls;
 
 /// The trunk branch every root conversation eventually merges into
@@ -113,18 +116,24 @@ pub(super) fn run_exchange(
 
     let mut step_seq: u32 = 1;
     loop {
+        // Step 1 lands its dispatch commit (goal.md + soul.md) before
+        // anything else; that commit's tree is step 1's read state
+        // (§2.10). Step ≥2 takes no pre-call commit — the branch tip
+        // already reflects what the model reads.
+        if step_seq == 1 {
+            write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
+            commit_dispatch(&worktree_path, &conv_id, deps)?;
+        }
+
+        // The branch-tip sha at step-start is the model's read state
+        // (§2.10). Recorded in meta.json so replay can re-run context
+        // assembly against it without reading the diagnostic
+        // request.json (§2.3).
+        let commit_sha = read_branch_tip(&worktree_path, deps)?;
+
         let request_value = build_request(&resolved.model.model_id, &system_with_goal, &messages);
         let step_dir_rel_str = step_dir_rel(&conv_id, step_seq);
-
-        write_snapshot(
-            &worktree_path,
-            user_message,
-            &resolved.soul,
-            &step_dir_rel_str,
-            &request_value,
-            step_seq,
-        )?;
-        commit_snapshot(&worktree_path, &step_dir_rel_str, &conv_id, step_seq, deps)?;
+        write_request(repo, &step_dir_rel_str, &request_value)?;
 
         let request_bytes =
             serde_json::to_vec(&request_value).expect("Value is always serializable");
@@ -145,11 +154,19 @@ pub(super) fn run_exchange(
                 output_tokens: response.usage.output_tokens,
             },
             stop_reason: response.stop_reason,
-            started_at,
-            ended_at,
+            started_at: started_at.clone(),
+            ended_at: ended_at.clone(),
         };
-        write_response(&worktree_path, &step_dir_rel_str, &step_response)?;
-        commit_response(&worktree_path, &step_dir_rel_str, &conv_id, step_seq, deps)?;
+        write_response(repo, &step_dir_rel_str, &step_response)?;
+        write_meta(
+            repo,
+            &step_dir_rel_str,
+            &StepMeta {
+                commit: commit_sha,
+                started_at,
+                ended_at,
+            },
+        )?;
 
         if step_response.stop_reason != STOP_REASON_TOOL_USE {
             break;
@@ -157,16 +174,10 @@ pub(super) fn run_exchange(
 
         // §2.5 pairing: every tool_use gets a matching tool_result on
         // the next user message. Run them in emission order so the
-        // commit history matches `response.content[]`.
+        // tool record sequence matches `response.content[]`.
         let assistant_blocks =
             serde_json::to_value(&step_response.content).expect("ContentBlock serializes");
-        let tool_results = run_tool_calls(
-            &worktree_path,
-            &step_dir_rel_str,
-            &conv_id,
-            &step_response.content,
-            deps,
-        )?;
+        let tool_results = run_tool_calls(repo, &step_dir_rel_str, &step_response.content, deps)?;
         messages.push(json!({"role": "assistant", "content": assistant_blocks}));
         messages.push(json!({"role": "user", "content": tool_results}));
         step_seq += 1;

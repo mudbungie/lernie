@@ -1,12 +1,12 @@
-//! End-to-end subprocess test for `lernie prompt` (v0.3): chains
-//! `lernie new` (scaffold) and `lernie prompt` (one root conversation)
-//! against a local `httpmock` server. Asserts the v0.3 contract from
-//! ARCH §2.3 + §2.6 + §2.7 — bare-conv-id branch off `main`, snapshot
-//! commit before the model call, response follow-up, terminal
-//! compaction, and `--no-ff` merge back to main. Also asserts the
-//! merge=ours discipline (§2.6) holds: subagent's `summary/` is
-//! scrubbed from main but reachable in compactor-branch history;
-//! `steps/<conv-id>/` crosses up into main as designed.
+//! End-to-end subprocess test for `lernie prompt`: chains `lernie
+//! new` (scaffold) and `lernie prompt` (one root conversation)
+//! against a local `httpmock` server. Asserts the v0.3.1 contract:
+//! bare-conv-id branch off `main`, dispatch commit (goal+soul only)
+//! before the model call, terminal compaction, `--no-ff` merge back
+//! to `main`, the merge=ours discipline (§2.6 — subagent's `summary/`
+//! scrubbed from main, reachable only in compactor-branch history),
+//! and the diagnostic-only step record at `<conv-repo>/steps/`
+//! outside every worktree (§2.3).
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -179,45 +179,24 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     assert_eq!(branch.len(), 25, "got {branch:?}");
     let conv_id = branch.clone();
 
-    // Main advanced: HEAD is a merge commit. `git log -1 --pretty=%P
-    // main` returns two parent shas — that's the --no-ff shape.
+    // Main advanced. `git log -1 --pretty=%P main` returns two parent
+    // shas (the --no-ff shape): pre-prompt main, then the compacted
+    // conversation tip.
     let main_head_after = git_capture(&primary, &["rev-parse", "main"]);
     assert_ne!(main_head_before, main_head_after, "main should advance");
     let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", "main"]);
     let parent_shas: Vec<_> = parents.split_whitespace().collect();
-    assert_eq!(
-        parent_shas.len(),
-        2,
-        "main HEAD should be a merge commit with two parents; got {parents:?}"
-    );
-    assert_eq!(
-        parent_shas[0], main_head_before,
-        "first parent should be the pre-prompt main"
-    );
-    // Second parent is the compacted conversation tip.
     let conv_tip = git_capture(&primary, &["rev-parse", &branch]);
-    assert_eq!(
-        parent_shas[1], conv_tip,
-        "second parent should be the conversation branch's tip"
-    );
+    assert_eq!(parent_shas, [&main_head_before[..], &conv_tip[..]]);
 
     // ARCH §2.6: summary/** is pinned to the parent's pre-merge
     // state via the alignment step in `rebase_and_merge`. Main and
     // the conv branch's tip are both clean of `summary/`; the
     // compactor sub-branch's history retains it for provenance.
-    let summary_on_main = Command::new("git")
-        .args([
-            "-C",
-            primary.to_str().unwrap(),
-            "show",
-            "main:summary/001.md",
-        ])
+    let summary_on_main = git_command(&primary, &["show", "main:summary/001.md"])
         .output()
         .expect("spawn git show");
-    assert!(
-        !summary_on_main.status.success(),
-        "summary/001.md must not be on main"
-    );
+    assert!(!summary_on_main.status.success(), "summary on main");
     let summary_commits = git_capture(
         &primary,
         &[
@@ -231,15 +210,21 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     );
     let first_sha = summary_commits.lines().next().expect("summary in history");
     let summary_blob = git_capture(&primary, &["show", &format!("{first_sha}:summary/001.md")]);
-    assert_eq!(summary_blob, format!("conversation {conv_id}: pong"));
-
-    // Step artifacts reachable from main (`steps/<sub-id>/` is not
-    // merge=ours per ARCH §2.6 — those records do cross up).
-    let request_blob = git_capture(
-        &primary,
-        &["show", &format!("main:steps/{conv_id}/001/request.json")],
+    // v0.3.1 stub summary identifies the parent conversation without
+    // reading `response.json` (§2.3 diagnostic-only contract).
+    assert_eq!(
+        summary_blob,
+        format!("conversation {conv_id}: terminal compaction")
     );
-    let request: serde_json::Value = serde_json::from_str(&request_blob).unwrap();
+
+    // Step records live at the conv-repo root, *outside* every
+    // worktree (ARCH §2.2 / §2.3). They are not git-tracked, so
+    // read them directly from the conv-repo's filesystem.
+    let step_dir = dest.join(format!("steps/{conv_id}/001"));
+    let read_json = |name: &str| -> serde_json::Value {
+        serde_json::from_slice(&fs::read(step_dir.join(name)).unwrap()).unwrap()
+    };
+    let request = read_json("request.json");
     assert_eq!(request["messages"][0]["content"], "ping");
     assert!(
         request["system"]
@@ -248,13 +233,21 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
             .starts_with("<goal>\nping\n</goal>"),
         "goal not pinned at head of system"
     );
-    let response_blob = git_capture(
-        &primary,
-        &["show", &format!("main:steps/{conv_id}/001/response.json")],
-    );
-    let response: serde_json::Value = serde_json::from_str(&response_blob).unwrap();
+    let response = read_json("response.json");
     assert_eq!(response["content"][0]["text"], "pong");
     assert_eq!(response["provider"], "anthropic");
+    // meta.json: `commit` is the branch tip at step-start (§2.10) — a
+    // 40-char hex sha from `git rev-parse HEAD`.
+    let commit = read_json("meta.json")["commit"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(commit.len(), 40, "meta.commit not full sha: {commit:?}");
+    assert!(commit.chars().all(|c| c.is_ascii_hexdigit()));
+
+    // Step records must not be git-tracked anywhere (§2.2).
+    let tracked_steps = git_capture(&primary, &["ls-files", "steps/"]);
+    assert!(tracked_steps.is_empty(), "got {tracked_steps:?}");
 
     // Worktree removed after merge; branch ref survives the
     // retention window (§2.3).

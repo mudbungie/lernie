@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-e99b",
+  "claimed_by": "opus",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-27T17:53:22.704820052Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["ci"],
   "title": "Add GitHub Actions CI workflow running make ci",
   "type": "task",
-  "updated_at": "2026-04-27T17:53:22.704820052Z"
+  "updated_at": "2026-04-27T17:58:32.486721300Z"
 }

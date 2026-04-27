@@ -1,6 +1,6 @@
 {
-  "branch": "work/bl-a44a",
-  "claimed_by": "mark",
+  "branch": null,
+  "claimed_by": null,
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-27T17:53:47.341731250Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "in_progress",
+  "status": "open",
   "tags": ["pre-public"],
   "title": "Rewrite git history: remap Tester <t@t.local> author to mudbungie <mudbungie@gmail.com>",
   "type": "task",
-  "updated_at": "2026-04-27T18:01:16.879551514Z"
+  "updated_at": "2026-04-27T18:02:38.637906602Z"
 }

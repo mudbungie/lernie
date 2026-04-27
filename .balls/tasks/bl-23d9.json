@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-26T02:24:10.725177913Z",
   "delivered_in": null,
-  "depends_on": [],
+  "depends_on": ["bl-c22c"],
   "description": "Render a pulsing indicator on tool-call nodes that are in-flight.\n\n=== Scope ===\n\nPer ARCH §12 v0.5 success criterion: \"pulsing tool indicators\". Per §3.3 tool calls land as commits with a per-call disk record under steps/<conv-id>/<NNN>/tools/<tool-id>/ holding input.json and output.json.\n\n- A tool call is in-flight when input.json exists but output.json does not (definition pinned by §3.3).\n- View-model: each tool-call node carries a state enum { in_flight, complete }. Derived purely from filesystem inspection — no separate state file.\n- Renderer: in-flight nodes pulse (egui's repaint_after / time-based opacity or radius). Complete nodes render statically.\n- Animation drives a repaint_after request so the egui app stays alive while pulsing without continuous repaint.\n\n=== Tests ===\n\n- Unit: from_repo on a fixture with input.json + no output.json yields a ToolCall with state=in_flight; with both files present yields state=complete.\n- Renderer test: in-flight node calls ctx.request_repaint_after(...); complete node does not.\n\n=== Non-goals ===\n\n- Distinct animations for different tool types.\n- Progress indicators based on tool-internal state.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
   "id": "bl-23d9",
@@ -16,5 +16,5 @@
   "tags": ["v0.5","ui"],
   "title": "UI: pulsing indicators for in-flight tool calls",
   "type": "task",
-  "updated_at": "2026-04-26T02:24:10.725177913Z"
+  "updated_at": "2026-04-27T20:45:31.136272834Z"
 }

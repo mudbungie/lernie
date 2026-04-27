@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-27T21:18:57.239176361Z","id":"bl-4117","title":"v0.3.1 P1: ARCH amendment for step records out of worktree"}],
+  "closed_children": [{"closed_at":"2026-04-27T21:18:57.239176361Z","id":"bl-4117","title":"v0.3.1 P1: ARCH amendment for step records out of worktree"},{"closed_at":"2026-04-27T22:34:01.993983337Z","id":"bl-10dd","title":"v0.3.1 P2: harness step record relocation + snapshot simplification"}],
   "created_at": "2026-04-27T20:42:19.829340686Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.3","layout","bug"],
   "title": "v0.3.1 contract regression: step records out of worktree",
   "type": "epic",
-  "updated_at": "2026-04-27T21:18:57.698958233Z"
+  "updated_at": "2026-04-27T22:34:02.659933529Z"
 }

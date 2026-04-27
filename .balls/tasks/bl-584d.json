@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-27T20:44:51.580507010Z",
+  "delivered_in": null,
+  "depends_on": ["bl-10dd"],
+  "description": "Switch response.json to JSONL of §4.4 stream events; the harness\nwrites events line-by-line during the model call; closing the\nwrite fd is the completion signal (inotify IN_CLOSE_WRITE).\n\n=== Scope ===\n\n1. Adapter integration. lernie-provider-anthropic already supports\n   streaming per §4.4 (advertised in describe.capabilities,\n   implemented in adapter/streaming.rs). The harness's run_exchange\n   path calls 'complete' with stream:true and reads the JSONL\n   event stream from the adapter's stdout.\n\n2. response.json write path. As each event arrives on the\n   adapter's stdout, the harness writes it as a single JSONL line\n   to <conv-repo>/steps/<conv-id>/<NNN>/response.json. File is\n   created at step start; closed (write fd dropped) at terminal\n   message_stop or terminal error event.\n\n3. Single shape on disk regardless of streaming-vs-non-streaming\n   adapter mode. Non-streaming collapses to a one-event-then-stop\n   sequence on disk. Per amended §4.4 (in P1), the wire-side mode\n   distinction does not propagate to the on-disk shape.\n\n4. In-memory messages assembly: the harness still parses the JSONL\n   events into a normalized response shape (assistant text +\n   tool_use blocks) for the next step's wire request. This is the\n   in-memory side; response.json on disk is never read back.\n\n5. lernie prompt --stream flag is NOT introduced — streaming is\n   always-on per the new contract. (If a downstream caller needs\n   non-streaming for some legacy path, file a follow-up; not in\n   v0.3.1 scope.)\n\n=== Constraints ===\n\n- response.json remains diagnostic-only on the harness side. P3\n  does not reintroduce a read site.\n- Adapter cancellation (SIGTERM, §4.4) still flushes a terminal\n  event before exit; harness writes that event before closing the\n  fd, so the closed-fd signal always coincides with a terminal\n  marker on disk.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
+  "external": {},
+  "id": "bl-584d",
+  "links": [],
+  "parent": "bl-cec0",
+  "priority": 1,
+  "status": "open",
+  "tags": ["v0.3","layout","bug"],
+  "title": "v0.3.1 P3: response.json as JSONL stream + writer-closes-fd completion",
+  "type": "task",
+  "updated_at": "2026-04-27T20:44:51.580507010Z"
+}

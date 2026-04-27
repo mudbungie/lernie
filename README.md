@@ -4,35 +4,7 @@ A git-backed agent harness. Design spec: [`docs/ARCHITECTURE.md`](docs/ARCHITECT
 Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 
-## Setup
-
-```
-make install-hooks
-```
-
-Sets `core.hooksPath` to `.githooks`. Required on every fresh clone — git
-does not track `.git/config`, so the hook is not active until installed.
-
-## Build
-
-| Target                | What it does                                          |
-|-----------------------|-------------------------------------------------------|
-| `make build`          | `cargo build`                                         |
-| `make release`        | `cargo build --release`                               |
-| `make test`           | `cargo test`                                          |
-| `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine)      |
-| `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
-| `make fmt`            | `cargo fmt`                                           |
-| `make fmt-check`      | `cargo fmt --check`                                   |
-| `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
-| `make new-conversation DEST=<path>` | Scaffold a conversation repo from `template/` |
-| `make check`          | `fmt-check` + `lint` + `coverage`                     |
-| `make ci`             | Alias for `check`                                     |
-| `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build, lay down the harness root (default: `~/.lernie/`), drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) and `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/` |
-| `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness root config in place |
-
-### Quickstart
+## Quickstart
 
 ```
 make install              # lay down ~/.lernie/ + binaries on PATH
@@ -40,7 +12,7 @@ lernie new ~/work/chat    # scaffold a conversation repo
 ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
 ```
 
-### Install
+## Install
 
 ```
 make install                                  # default: ~/.local/bin + ~/.lernie/
@@ -382,7 +354,41 @@ lernie-ui-egui --repo /path/to/my-conversation
 egui is winit-based; its only runtime deps are the X11/Wayland libs already
 present on any Linux desktop session. No `apt install` step is required.
 
-## Workflow
+## Contributing
+
+The instructions below are for contributors building lernie from source.
+Users installing a release don't need any of this — `make install` from
+**Quickstart** is the user-facing entry point.
+
+### Contributor setup
+
+```
+make install-hooks
+```
+
+Sets `core.hooksPath` to `.githooks`. Required on every fresh clone — git
+does not track `.git/config`, so the hook is not active until installed.
+
+### Build targets
+
+| Target                | What it does                                          |
+|-----------------------|-------------------------------------------------------|
+| `make build`          | `cargo build`                                         |
+| `make release`        | `cargo build --release`                               |
+| `make test`           | `cargo test`                                          |
+| `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine)      |
+| `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
+| `make fmt`            | `cargo fmt`                                           |
+| `make fmt-check`      | `cargo fmt --check`                                   |
+| `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
+| `make new-conversation DEST=<path>` | Scaffold a conversation repo from `template/` |
+| `make check`          | `fmt-check` + `lint` + `coverage`                     |
+| `make ci`             | Alias for `check`                                     |
+| `make install-hooks`  | Point git at `.githooks/`                             |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build, lay down the harness root (default: `~/.lernie/`), drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) and `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/` |
+| `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness root config in place |
+
+### Workflow
 
 All changes land on `main` via `bl` squash-merges. Direct commits to `main` are
 rejected by the pre-commit hook.
@@ -397,7 +403,7 @@ bl close  <task-id> -m "..."    # from the repo root
 
 See `bl skill` for the full guide.
 
-## Pre-commit hook
+### Pre-commit hook
 
 `.githooks/pre-commit` enforces three rules on every commit:
 

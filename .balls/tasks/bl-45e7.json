@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-28T00:40:09.380946086Z",
-  "delivered_in": null,
+  "delivered_in": "08163dbde4bcdd571f7f4b7c630b3abd1e0054a8",
   "depends_on": [],
   "description": "Symptom: workflow run 25019454000 on commit 608e799 — all 233 tests pass, then cargo-tarpaulin exits with `Error: \"Test failed during run\"` (exit 1), and `make coverage` fails with exit 2. CI badge is red.\n\nDiagnosis: the Makefile coverage target runs `cargo tarpaulin ... --engine llvm ...`. The llvm engine relies on Rust's source-based coverage (`-C instrument-coverage`), which needs the `llvm-tools-preview` rustup component to provide `llvm-profdata` / `llvm-cov`. The current workflow's `dtolnay/rust-toolchain@stable` step (.github/workflows/ci.yml line 14-18) only installs `rustfmt, clippy` — `llvm-tools-preview` is missing, so tarpaulin's llvm engine can't link the profiling runtime and bails despite all tests passing.\n\nFix: add `llvm-tools-preview` to the toolchain components list. Confirm by re-running the workflow and observing a green run. If still red, fall back to the ptrace engine (drop `--engine llvm` from the Makefile coverage target — but that path was deliberately chosen per tarpaulin.toml's notes about ptrace racing the bash-tool cascade tests, so prefer the toolchain fix).\n\nReproduce: `gh run view 25019454000 -R mudbungie/lernie --log-failed | tail -10` shows the failing tail.\n\nGates (per CLAUDE.md):\n- tests: workflow run on the merge commit must complete green\n- docs: no doc change needed unless engine choice changes\n- alignment: keep the 100% coverage gate intact; don't lower the floor as a workaround\n\nHand off to whoever owns CI (Reflex).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["ci"],
   "title": "CI: fix tarpaulin coverage failure on GitHub runner",
   "type": "bug",
-  "updated_at": "2026-04-28T00:45:43.760597830Z"
+  "updated_at": "2026-04-28T00:49:01.406146503Z"
 }

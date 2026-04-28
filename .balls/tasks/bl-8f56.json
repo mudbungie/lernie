@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-8f56",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-28T01:07:07.076625794Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["ci"],
   "title": "CI: configure git identity on GitHub runner so integration tests pass",
   "type": "bug",
-  "updated_at": "2026-04-28T01:07:07.076625794Z"
+  "updated_at": "2026-04-28T01:07:11.416808145Z"
 }

@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@lernie.local"
+          git config --global user.name "lernie CI"
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:

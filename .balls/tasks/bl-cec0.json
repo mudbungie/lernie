@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-27T21:18:57.239176361Z","id":"bl-4117","title":"v0.3.1 P1: ARCH amendment for step records out of worktree"},{"closed_at":"2026-04-27T22:34:01.993983337Z","id":"bl-10dd","title":"v0.3.1 P2: harness step record relocation + snapshot simplification"},{"closed_at":"2026-04-28T01:04:47.603115626Z","id":"bl-c22c","title":"v0.3.1 P4: UI fs_watcher target + git_tree conversation detection update"},{"closed_at":"2026-04-28T01:29:56.965017685Z","id":"bl-584d","title":"v0.3.1 P3: response.json as JSONL stream + writer-closes-fd completion"}],
+  "closed_children": [{"closed_at":"2026-04-27T21:18:57.239176361Z","id":"bl-4117","title":"v0.3.1 P1: ARCH amendment for step records out of worktree"},{"closed_at":"2026-04-27T22:34:01.993983337Z","id":"bl-10dd","title":"v0.3.1 P2: harness step record relocation + snapshot simplification"},{"closed_at":"2026-04-28T01:04:47.603115626Z","id":"bl-c22c","title":"v0.3.1 P4: UI fs_watcher target + git_tree conversation detection update"},{"closed_at":"2026-04-28T01:29:56.965017685Z","id":"bl-584d","title":"v0.3.1 P3: response.json as JSONL stream + writer-closes-fd completion"},{"closed_at":"2026-04-28T02:22:50.177786627Z","id":"bl-9436","title":"Gate: tests pass (v0.3.1 contract regression)"}],
   "created_at": "2026-04-27T20:42:19.829340686Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.3","layout","bug"],
   "title": "v0.3.1 contract regression: step records out of worktree",
   "type": "epic",
-  "updated_at": "2026-04-28T01:29:57.472645985Z"
+  "updated_at": "2026-04-28T02:22:50.767169526Z"
 }

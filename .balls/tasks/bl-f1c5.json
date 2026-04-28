@@ -2,7 +2,7 @@
   "branch": null,
   "claimed_by": null,
   "closed_at": null,
-  "closed_children": [],
+  "closed_children": [{"closed_at":"2026-04-28T21:06:31.482465839Z","id":"bl-88f4","title":"v0.4 Phase 1: generalize lernie dispatch CLI for arbitrary roles"}],
   "created_at": "2026-04-25T22:09:41.928469204Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": ["v0.4"],
   "title": "v0.4: subagent dispatch",
   "type": "epic",
-  "updated_at": "2026-04-25T22:10:21.830974717Z"
+  "updated_at": "2026-04-28T21:06:32.005756808Z"
 }

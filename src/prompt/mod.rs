@@ -41,11 +41,9 @@ pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
-pub use step::{StepResponse, Usage};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 
 use crate::config::ProvidersConfig;
-use crate::provider::wire::Response;
 use crate::template::GitRunner;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
@@ -184,31 +182,4 @@ pub(super) fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
         return Ok(Vec::new());
     };
     serde_json::from_value(field.clone()).map_err(Error::AdapterJson)
-}
-
-/// Parse the adapter's stdout bytes into either a [`Response`] or the
-/// [`Error::AdapterError`] case. Per ARCH §4.4 the adapter
-/// distinguishes error from success by a top-level `{"type":
-/// "error"}` sentinel, not by exit code.
-pub(super) fn parse_adapter_stdout(bytes: &[u8]) -> Result<Response, Error> {
-    let value: Value = serde_json::from_slice(bytes).map_err(Error::AdapterJson)?;
-    if value.get("type").and_then(Value::as_str) == Some("error") {
-        return Err(Error::AdapterError {
-            kind: value
-                .get("kind")
-                .and_then(Value::as_str)
-                .unwrap_or("unknown")
-                .to_string(),
-            message: value
-                .get("message")
-                .and_then(Value::as_str)
-                .unwrap_or("")
-                .to_string(),
-            http_status: value
-                .get("http_status")
-                .and_then(Value::as_u64)
-                .map(|n| n as u16),
-        });
-    }
-    serde_json::from_value(value).map_err(Error::AdapterJson)
 }

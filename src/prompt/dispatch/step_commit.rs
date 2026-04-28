@@ -19,7 +19,7 @@
 
 use crate::prompt::Deps;
 use crate::prompt::Error;
-use crate::prompt::step::{META_FILE, REQUEST_FILE, RESPONSE_FILE, StepMeta, StepResponse};
+use crate::prompt::step::{META_FILE, REQUEST_FILE, StepMeta};
 use serde_json::Value;
 use std::path::Path;
 
@@ -92,20 +92,6 @@ pub(super) fn write_request(
     std::fs::create_dir_all(&step_dir_abs)?;
     let bytes = serde_json::to_vec_pretty(request_value).expect("Value is always serializable");
     std::fs::write(step_dir_abs.join(REQUEST_FILE), bytes)?;
-    Ok(())
-}
-
-/// Land `response.json` under the conv-repo step dir. Diagnostic
-/// only — never read at runtime by the harness (§2.3).
-pub(super) fn write_response(
-    conv_repo: &Path,
-    step_dir_rel_str: &str,
-    step_response: &StepResponse,
-) -> Result<(), Error> {
-    let step_dir_abs = conv_repo.join(step_dir_rel_str);
-    let bytes =
-        serde_json::to_vec_pretty(step_response).expect("StepResponse is always serializable");
-    std::fs::write(step_dir_abs.join(RESPONSE_FILE), bytes)?;
     Ok(())
 }
 

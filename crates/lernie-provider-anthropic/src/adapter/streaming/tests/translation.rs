@@ -29,14 +29,10 @@ fn run_translates_native_sse_to_normalized_jsonl() {
     assert_eq!(events[0]["message"]["id"], "msg_X");
     assert_eq!(events[2]["text"], "Hi ");
     assert_eq!(events[2]["index"], 0);
-    // v0.2 reserves the tool-use payload — the event arrives with just
-    // its index, no `partial_json`. v0.3 will add the payload.
+    // tool_use_delta forwards the `partial_json` fragment so the harness
+    // can reconstruct `tool_use.input` (ARCH §4.4).
     assert_eq!(events[6]["index"], 1);
-    assert!(
-        events[6].get("partial_json").is_none(),
-        "v0.2 omits payload, got {}",
-        events[6]
-    );
+    assert_eq!(events[6]["partial_json"], "{\"a\":");
 
     let stop = events.last().unwrap();
     assert_eq!(stop["stop_reason"], "end_turn");

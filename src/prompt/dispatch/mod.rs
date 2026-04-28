@@ -14,9 +14,12 @@
 //! 3. For each step: capture the branch-tip sha (the read state),
 //!    write `request.json` + `meta.json` to
 //!    `<conv-repo>/steps/<conv-id>/<NNN>/` (outside every worktree,
-//!    §2.2 / §2.3), invoke `complete` on the provider adapter (§4.4),
-//!    and write `response.json` next to the request. None of these
-//!    artifacts is committed — they are diagnostic-only (§2.3).
+//!    §2.2 / §2.3), invoke `complete` with `stream: true` on the
+//!    provider adapter (§4.4), and tail its stdout into
+//!    `response.json` line-by-line as JSONL of §4.4 stream events.
+//!    Closing the response.json fd at terminal `message_stop` /
+//!    `error` is the §3.5 IN_CLOSE_WRITE completion signal. None of
+//!    these artifacts is committed — they are diagnostic-only (§2.3).
 //! 4. **Step loop (§2.5).** If `stop_reason == "tool_use"`, the
 //!    harness runs every emitted `tool_use` block through
 //!    [`crate::prompt::ToolExecutor`] (per-call records land at
@@ -36,14 +39,15 @@
 //! --no-merged main` (§8) — no sidecar state, per PRINCIPLES.md's
 //! "Single source of truth".
 
+mod assembler;
 mod step_commit;
-
+mod stream;
 mod tool_step;
 
 use super::adapter;
 use super::merge::rebase_and_merge;
-use super::step::{StepMeta, StepResponse, Usage, step_dir_rel};
-use super::{Deps, Error, parse_adapter_stdout, parse_endpoint_env};
+use super::step::{RESPONSE_FILE, StepMeta, step_dir_rel};
+use super::{Deps, Error, parse_endpoint_env};
 use crate::config::Model;
 use crate::config::Provider as ProviderConfig;
 use crate::template::ROOT_WORKTREE;
@@ -51,7 +55,6 @@ use serde_json::{Value, json};
 use std::path::Path;
 use step_commit::{
     commit_dispatch, read_branch_tip, write_dispatch_files, write_meta, write_request,
-    write_response,
 };
 use tool_step::run_tool_calls;
 
@@ -88,10 +91,18 @@ pub(super) fn run_exchange(
     let binary = adapter::resolve_binary(deps.harness_root, resolved.provider_name);
 
     // Describe runs before any branch work so an adapter fault fails
-    // fast and leaves no stray branch behind.
-    let describe_bytes = deps
-        .adapter
-        .run(&binary, &["describe"], &[], &[])
+    // fast and leaves no stray branch behind. `describe` writes one
+    // JSON line to stdout — collect that line through the same
+    // streaming runner the rest of the harness uses.
+    let mut describe_bytes: Vec<u8> = Vec::new();
+    deps.adapter
+        .run(&binary, &["describe"], &[], &[], &mut |line| {
+            if !describe_bytes.is_empty() {
+                describe_bytes.push(b'\n');
+            }
+            describe_bytes.extend_from_slice(line);
+            Ok(())
+        })
         .map_err(Error::AdapterSpawn)?;
     let endpoint_env_names = parse_endpoint_env(&describe_bytes)?;
 
@@ -131,33 +142,28 @@ pub(super) fn run_exchange(
         // request.json (§2.3).
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
-        let request_value = build_request(&resolved.model.model_id, &system_with_goal, &messages);
+        let request_value = stream::build_request(
+            &resolved.model.model_id,
+            &system_with_goal,
+            &messages,
+            DEFAULT_MAX_TOKENS,
+        );
         let step_dir_rel_str = step_dir_rel(&conv_id, step_seq);
         write_request(repo, &step_dir_rel_str, &request_value)?;
 
         let request_bytes =
             serde_json::to_vec(&request_value).expect("Value is always serializable");
         let started_at = deps.clock.now_iso8601();
-        let complete_stdout = deps
-            .adapter
-            .run(&binary, &["complete"], &endpoint_envs, &request_bytes)
-            .map_err(Error::AdapterSpawn)?;
+        let response_path = repo.join(&step_dir_rel_str).join(RESPONSE_FILE);
+        let completion = stream::run_complete(
+            deps.adapter,
+            &binary,
+            &endpoint_envs,
+            &request_bytes,
+            &response_path,
+        )?;
         let ended_at = deps.clock.now_iso8601();
 
-        let response = parse_adapter_stdout(&complete_stdout)?;
-        let step_response = StepResponse {
-            content: response.content,
-            model_id: resolved.model.model_id.clone(),
-            provider: resolved.provider_name.to_string(),
-            usage: Usage {
-                input_tokens: response.usage.input_tokens,
-                output_tokens: response.usage.output_tokens,
-            },
-            stop_reason: response.stop_reason,
-            started_at: started_at.clone(),
-            ended_at: ended_at.clone(),
-        };
-        write_response(repo, &step_dir_rel_str, &step_response)?;
         write_meta(
             repo,
             &step_dir_rel_str,
@@ -168,16 +174,16 @@ pub(super) fn run_exchange(
             },
         )?;
 
-        if step_response.stop_reason != STOP_REASON_TOOL_USE {
+        if completion.stop_reason != STOP_REASON_TOOL_USE {
             break;
         }
 
         // §2.5 pairing: every tool_use gets a matching tool_result on
         // the next user message. Run them in emission order so the
-        // tool record sequence matches `response.content[]`.
+        // tool record sequence matches `completion.content[]`.
         let assistant_blocks =
-            serde_json::to_value(&step_response.content).expect("ContentBlock serializes");
-        let tool_results = run_tool_calls(repo, &step_dir_rel_str, &step_response.content, deps)?;
+            serde_json::to_value(&completion.content).expect("ContentBlock serializes");
+        let tool_results = run_tool_calls(repo, &step_dir_rel_str, &completion.content, deps)?;
         messages.push(json!({"role": "assistant", "content": assistant_blocks}));
         messages.push(json!({"role": "user", "content": tool_results}));
         step_seq += 1;
@@ -206,18 +212,6 @@ pub(super) fn run_exchange(
     )?;
 
     Ok(branch_name)
-}
-
-/// Build the wire-shape request JSON for one step. Held as raw `Value`
-/// so the harness side does not couple to any provider crate; the
-/// Anthropic adapter parses it back into typed shapes (§4.4).
-fn build_request(model_id: &str, system_with_goal: &str, messages: &[Value]) -> Value {
-    json!({
-        "model": model_id,
-        "max_tokens": DEFAULT_MAX_TOKENS,
-        "system": system_with_goal,
-        "messages": messages,
-    })
 }
 
 /// `git worktree add -b <branch> <worktree_path> main` — creates the

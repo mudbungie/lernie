@@ -154,14 +154,16 @@ follow-up commit, runs the terminal compactor off the tip, and
    Messages-API-shaped request on stdin; read one JSON document back.
    Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
    process inheritance.
-8. Write the normalized response (the assistant's structured
-   `content` blocks — text + `tool_use` per §3.3 — plus `model_id`,
-   `provider`, `usage`, `stop_reason`, `started_at`, `ended_at`) to
-   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` alongside the
-   `meta.json` carrying `{commit, started_at, ended_at}`. Both
-   files are diagnostic-only (§2.3) and not committed — replay
-   re-runs the context assembler against `meta.json`'s `commit`,
-   not by reading these files.
+8. Drive `complete` with `stream: true` and tail the adapter's
+   stdout into
+   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` as JSONL of
+   §4.4 stream events (one event per line). The harness folds the
+   same events into an in-memory accumulator (assistant text +
+   `tool_use` blocks per §3.3) for the next step's wire request.
+   `meta.json` next to it carries `{commit, started_at, ended_at}`.
+   `response.json` is diagnostic-only (§2.3) — never read back at
+   runtime. Closing the response.json fd at terminal `message_stop`
+   / `error` is the §3.5 IN_CLOSE_WRITE completion signal.
 9. **Step loop (§2.5).** If the response's `stop_reason` is
    `tool_use`, run every emitted `tool_use` block through the
    tool executor — the per-call records land under
@@ -287,9 +289,10 @@ URL is read from the env var named in `endpoint_env`
 (`LERNIE_PROVIDER_ANTHROPIC_ENDPOINT` for the reference adapter), with
 a built-in default if unset. SIGTERM cancels in-flight work and emits
 a terminal `error` event before exit (§4.4 "Cancellation"). The
-v0.2 adapter advertises `streaming` in `describe.capabilities`; the
-harness `lernie prompt` path stays non-streaming today (UI consumption
-of the stream is the v0.5 ball).
+adapter advertises `streaming` in `describe.capabilities`; v0.3.1
+flips streaming on by default for `lernie prompt` so `response.json`
+is JSONL of §4.4 events end-to-end (§4.4 "On-disk response shape:
+JSONL of stream events, always.").
 
 Harness-side adapter discovery and invocation (§4.4 "Discovery" /
 "Endpoint") is wired into the `lernie prompt` subcommand — see

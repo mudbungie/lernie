@@ -4,10 +4,12 @@
 //! lays goal.md + soul.md (only — no `request.json` in the
 //! committed tree per amended §2.10), and the diagnostic step record
 //! (request.json, response.json, meta.json) lands at the conv-repo
-//! root outside the worktree (§2.2 / §2.3). Compaction itself is
-//! exercised by the compactor module's own tests; here we only
-//! assert the dispatcher was called with the right repo + branch
-//! (ARCH §3.4).
+//! root outside the worktree (§2.2 / §2.3). v0.3.1 P3: response.json
+//! is JSONL of §4.4 stream events, written event-by-event by the
+//! harness as the adapter emits them; the assertions below pin that
+//! shape. Compaction itself is exercised by the compactor module's
+//! own tests; here we only assert the dispatcher was called with the
+//! right repo + branch (ARCH §3.4).
 
 use super::fixtures::*;
 use crate::prompt::run;
@@ -19,7 +21,7 @@ use std::ffi::OsStr;
 fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("system body"));
     let harness = scaffold_harness_root();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let git = StubGit::ok();
     let clock = FixedClock::default();
     let id = FixedIdGen;
@@ -75,23 +77,24 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     );
     assert_eq!(request["messages"][0]["role"], "user");
     assert_eq!(request["messages"][0]["content"], "hello");
+    // Streaming-on by default per v0.3.1 P3 (§4.4 always-on contract).
+    assert_eq!(request["stream"], true);
 
-    // response.json lives next to request.json with the harness-owned
-    // normalized shape (not the raw Anthropic response). The
-    // assistant message is recorded as structured content blocks
-    // (§3.3) — text + tool_use survive in `content`.
-    let response: serde_json::Value =
-        serde_json::from_slice(&std::fs::read(step_dir.join("response.json")).unwrap()).unwrap();
-    assert_eq!(response["content"][0]["type"], "text");
-    assert_eq!(response["content"][0]["text"], "hi there");
-    assert_eq!(response["model_id"], "claude-sonnet-4-7");
-    assert_eq!(response["provider"], "anthropic");
-    assert_eq!(response["stop_reason"], "end_turn");
-    assert_eq!(response["usage"]["input_tokens"], 3);
-    assert_eq!(response["usage"]["output_tokens"], 2);
-    // ISO clock is called once before adapter.complete, once after.
-    assert_eq!(response["started_at"], "iso-1");
-    assert_eq!(response["ended_at"], "iso-2");
+    // response.json is JSONL of §4.4 stream events (one event per
+    // `\n`-terminated line), appended by the harness as the adapter
+    // emits them. Closing the write fd is the §3.5 IN_CLOSE_WRITE
+    // completion signal — the file's terminal line is `message_stop`.
+    let lines = parse_jsonl(&std::fs::read(step_dir.join("response.json")).unwrap());
+    assert!(lines.len() >= 2, "expected JSONL stream, got {lines:?}");
+    assert_eq!(lines.first().unwrap()["type"], "message_start");
+    let text_delta = lines
+        .iter()
+        .find(|e| e["type"] == "text_delta")
+        .expect("expected at least one text_delta");
+    assert_eq!(text_delta["text"], "hi there");
+    let stop = lines.last().unwrap();
+    assert_eq!(stop["type"], "message_stop");
+    assert_eq!(stop["stop_reason"], "end_turn");
 
     // meta.json carries the branch-tip sha at step-start (§2.10
     // replay state) plus matching timestamps. The stub git's
@@ -196,9 +199,10 @@ fn run_describe_without_endpoint_env_field_forwards_no_envs() {
                        "models":[],"auth_env":[]}"#;
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
+    let stream = happy_response_bytes();
     let adapter = StubAdapter::scripted([
         StubAdapter::reply_ok(describe),
-        StubAdapter::reply_ok(HAPPY_RESPONSE_JSON.as_bytes()),
+        StubAdapter::reply_ok(&stream),
     ]);
     let git = StubGit::ok();
     let clock = FixedClock::default();

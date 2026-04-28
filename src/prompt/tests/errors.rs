@@ -147,8 +147,12 @@ fn run_surfaces_complete_spawn_failure() {
 #[test]
 fn run_surfaces_adapter_returning_in_band_error() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let error_json = br#"{"type":"error","kind":"fatal","http_status":401,"message":"boom"}"#;
-    let adapter = StubAdapter::happy(error_json);
+    // §4.4 streaming error event: terminal `error` with kind/message
+    // (and optional http_status / retry_after_seconds). One JSONL
+    // line is enough — the assembler treats it as terminal.
+    let error_jsonl = br#"{"type":"error","kind":"fatal","http_status":401,"message":"boom"}
+"#;
+    let adapter = StubAdapter::happy(error_jsonl);
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     match err {
         Error::AdapterError {
@@ -164,40 +168,9 @@ fn run_surfaces_adapter_returning_in_band_error() {
     }
 }
 
-#[test]
-fn run_surfaces_malformed_complete_json() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(b"{ not json");
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::AdapterJson(_)));
-}
-
-#[test]
-fn run_surfaces_response_shape_mismatch() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(br#"{"unexpected":"shape"}"#);
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::AdapterJson(_)));
-}
-
-#[test]
-fn run_surfaces_in_band_error_with_default_fields() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(br#"{"type":"error"}"#);
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    match err {
-        Error::AdapterError {
-            kind,
-            message,
-            http_status,
-        } => {
-            assert_eq!(kind, "unknown");
-            assert_eq!(message, "");
-            assert_eq!(http_status, None);
-        }
-        other => panic!("expected AdapterError, got {other:?}"),
-    }
-}
+// Streaming-shape error paths (malformed JSONL, half-stream,
+// missing stop_reason, malformed tool_use input, post-terminal
+// strays) live in [`super::errors_stream`].
 
 #[test]
 fn error_display_includes_context() {

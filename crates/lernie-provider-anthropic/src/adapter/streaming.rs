@@ -143,6 +143,7 @@ fn handle<W: Write>(
 /// Translate Anthropic's `content_block_delta.delta` shape (`text_delta`
 /// or `input_json_delta`) into the §4.4 normalized top-level `text_delta`
 /// / `tool_use_delta` events. Unknown delta kinds are dropped.
+#[rustfmt::skip]
 fn emit_delta<W: Write>(out: &mut W, index: u32, delta: &Value) -> std::io::Result<()> {
     match delta.get("type").and_then(Value::as_str) {
         Some("text_delta") => {
@@ -150,10 +151,8 @@ fn emit_delta<W: Write>(out: &mut W, index: u32, delta: &Value) -> std::io::Resu
             write_json(out, &Wire::TextDelta { index, text })
         }
         Some("input_json_delta") => {
-            // v0.2 reserves the tool-use payload per the bl-de80 scope:
-            // emit the event so the harness sees the index but defer
-            // `partial_json` to v0.3 when tool use lands.
-            write_json(out, &Wire::ToolUseDelta { index })
+            let partial_json = delta.get("partial_json").and_then(Value::as_str);
+            write_json(out, &Wire::ToolUseDelta { index, partial_json })
         }
         _ => Ok(()),
     }
@@ -205,6 +204,8 @@ enum Wire<'a> {
     },
     ToolUseDelta {
         index: u32,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        partial_json: Option<&'a str>,
     },
     ContentBlockStop {
         index: u32,

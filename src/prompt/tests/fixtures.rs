@@ -1,13 +1,19 @@
-//! Shared stubs and fixtures for `prompt::tests::*`.
+//! Shared fixtures for `prompt::tests::*`.
+//!
+//! Stubs (`StubAdapter`, `StubGit`, `StubDispatcher`) live in
+//! [`super::stubs`]; §4.4 JSONL stream synthesis helpers
+//! (`streaming_response`, `happy_response_bytes`, `parse_jsonl`) live
+//! in [`super::streams`]. Both are re-exported here so test files keep
+//! the single `use super::fixtures::*;` import surface.
 
+pub(super) use super::streams::{happy_response_bytes, parse_jsonl, streaming_response};
+pub(super) use super::stubs::{
+    STUB_DESCRIBE_JSON, StubAdapter, StubDispatcher, StubGit, unreachable_adapter,
+};
 pub(super) use super::tool_stub::StubToolExecutor;
 
-use crate::prompt::{AdapterRunner, Clock, Deps, Dispatcher, IdGen};
-use crate::template::GitRunner;
+use crate::prompt::{Clock, Deps, IdGen};
 use std::cell::RefCell;
-use std::collections::VecDeque;
-use std::ffi::OsString;
-use std::io;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
@@ -35,131 +41,6 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Canned [`AdapterRunner`] reply.
-pub(super) enum AdapterReply {
-    Ok(Vec<u8>),
-    Err(io::Error),
-}
-
-/// One adapter invocation: (binary, argv, envs, stdin).
-pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
-
-/// Canonical `describe` JSON. Tests varying the shape build inline.
-pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
-    "name":"anthropic","schema_version":2,
-    "capabilities":["tool_use_native"],
-    "models":["claude-sonnet-4-7"],
-    "auth_env":["ANTHROPIC_API_KEY"],
-    "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
-}"#;
-
-/// FIFO-replying [`AdapterRunner`] with a recording log.
-pub(super) struct StubAdapter {
-    replies: RefCell<VecDeque<AdapterReply>>,
-    pub(super) observed: RefCell<Vec<AdapterCall>>,
-}
-
-impl StubAdapter {
-    pub(super) fn scripted<I>(replies: I) -> Self
-    where
-        I: IntoIterator<Item = AdapterReply>,
-    {
-        Self {
-            replies: RefCell::new(replies.into_iter().collect()),
-            observed: RefCell::new(Vec::new()),
-        }
-    }
-
-    /// `describe` ok then `complete_bytes` on the next call.
-    pub(super) fn happy(complete_bytes: &[u8]) -> Self {
-        Self::scripted([
-            AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
-            AdapterReply::Ok(complete_bytes.to_vec()),
-        ])
-    }
-
-    /// One-shot error reply (fires on the `describe` call).
-    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
-        Self::scripted([AdapterReply::Err(io::Error::new(kind, msg.to_string()))])
-    }
-
-    pub(super) fn reply_ok(bytes: &[u8]) -> AdapterReply {
-        AdapterReply::Ok(bytes.to_vec())
-    }
-    pub(super) fn reply_err(kind: io::ErrorKind, msg: &str) -> AdapterReply {
-        AdapterReply::Err(io::Error::new(kind, msg.to_string()))
-    }
-
-    pub(super) fn last(&self) -> AdapterCall {
-        self.observed.borrow().last().cloned().expect("no calls")
-    }
-}
-
-impl AdapterRunner for StubAdapter {
-    fn run(
-        &self,
-        binary: &OsString,
-        args: &[&str],
-        envs: &[(&str, &str)],
-        stdin_bytes: &[u8],
-    ) -> io::Result<Vec<u8>> {
-        self.observed.borrow_mut().push((
-            binary.clone(),
-            args.iter().map(|s| (*s).to_owned()).collect(),
-            envs.iter()
-                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-                .collect(),
-            stdin_bytes.to_vec(),
-        ));
-        match self.replies.borrow_mut().pop_front() {
-            Some(AdapterReply::Ok(b)) => Ok(b),
-            Some(AdapterReply::Err(e)) => Err(e),
-            None => panic!("StubAdapter::run called more times than scripted"),
-        }
-    }
-}
-
-/// Recording [`GitRunner`] with optional `fail_at` index.
-#[derive(Default)]
-pub(super) struct StubGit {
-    pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
-    fail_at: Option<usize>,
-}
-
-impl StubGit {
-    pub(super) fn ok() -> Self {
-        Self::default()
-    }
-    pub(super) fn failing_at(idx: usize) -> Self {
-        Self {
-            fail_at: Some(idx),
-            ..Self::default()
-        }
-    }
-}
-
-impl GitRunner for StubGit {
-    fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
-        let mut runs = self.runs.borrow_mut();
-        let idx = runs.len();
-        runs.push((
-            dest.to_path_buf(),
-            args.iter().map(|s| (*s).to_owned()).collect(),
-        ));
-        if self.fail_at == Some(idx) {
-            Err(io::Error::other(format!("stub git fail at {idx}")))
-        } else {
-            Ok(())
-        }
-    }
-    fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        // Empty return: alignment rm produces no staged delta in stub
-        // tests, so neither conditional checkout nor alignment commit fires.
-        self.run(dest, args)?;
-        Ok(String::new())
-    }
-}
-
 /// Global `<harness-root>/providers.yaml` (ARCH §4.1).
 pub(super) const VALID_GLOBAL_PROVIDERS_YAML: &str = r#"
 providers:
@@ -183,12 +64,6 @@ roles:
     provider: anthropic
     model: claude-sonnet-4-7
 "#;
-
-pub(super) const HAPPY_RESPONSE_JSON: &str = r#"{
-    "id":"msg_01","model":"claude-sonnet-4-7","stop_reason":"end_turn",
-    "content":[{"type":"text","text":"hi there"}],
-    "usage":{"input_tokens":3,"output_tokens":2}
-}"#;
 
 /// Lay out a v0.3 conv repo (§2.2): per-repo `providers.yaml` and
 /// optional `souls/worker.md`.
@@ -233,39 +108,6 @@ pub(super) fn valid_deps<'a>(
         tool_executor,
         harness_root,
     }
-}
-
-#[derive(Default)]
-pub(super) struct StubDispatcher {
-    pub(super) calls: RefCell<Vec<(PathBuf, String)>>,
-    fail: Option<io::Error>,
-}
-
-impl StubDispatcher {
-    pub(super) fn ok() -> Self {
-        Self::default()
-    }
-    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
-        Self {
-            fail: Some(io::Error::new(kind, msg.to_string())),
-            ..Self::default()
-        }
-    }
-}
-
-impl Dispatcher for StubDispatcher {
-    fn dispatch_compactor(&self, repo: &Path, branch: &str) -> io::Result<()> {
-        let entry = (repo.to_path_buf(), branch.to_owned());
-        self.calls.borrow_mut().push(entry);
-        match &self.fail {
-            None => Ok(()),
-            Some(e) => Err(io::Error::new(e.kind(), e.to_string())),
-        }
-    }
-}
-
-pub(super) fn unreachable_adapter() -> StubAdapter {
-    StubAdapter::scripted([])
 }
 
 /// Drive [`crate::prompt::run`] with default stubs.

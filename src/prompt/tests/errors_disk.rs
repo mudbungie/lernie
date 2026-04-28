@@ -29,7 +29,7 @@ const WORKTREE_REMOVE_INDEX: usize = MERGE_INDEX + 1;
 fn run_surfaces_worktree_add_failure() {
     // describe succeeds; `git worktree add` fails (index 0).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(0)).unwrap_err();
     assert!(
         matches!(
@@ -52,7 +52,7 @@ fn run_surfaces_worktree_create_failure() {
     let wt = worktree_path(repo.path());
     std::fs::create_dir_all(wt.parent().unwrap()).unwrap();
     std::fs::write(&wt, b"blocker").unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -63,7 +63,7 @@ fn run_surfaces_goal_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
     std::fs::create_dir_all(wt.join("goal.md")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -74,7 +74,7 @@ fn run_surfaces_soul_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let wt = worktree_path(repo.path());
     std::fs::create_dir_all(wt.join("soul.md")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -83,7 +83,7 @@ fn run_surfaces_soul_write_failure() {
 fn run_surfaces_dispatch_add_failure() {
     // git add for the dispatch commit fails (index 1).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "add", .. }));
 }
@@ -91,7 +91,7 @@ fn run_surfaces_dispatch_add_failure() {
 #[test]
 fn run_surfaces_dispatch_commit_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(2)).unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));
 }
@@ -101,7 +101,7 @@ fn run_surfaces_rev_parse_failure() {
     // Branch-tip capture for meta.json's `commit` field (§2.10) is
     // index 3; failing it surfaces as Error::Git { op: "rev-parse" }.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(
         repo.path(),
         "hi",
@@ -129,7 +129,7 @@ fn run_surfaces_step_dir_create_failure() {
     // file-not-dir component.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     std::fs::write(repo.path().join("steps"), b"blocker").unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -142,7 +142,7 @@ fn run_surfaces_request_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("request.json")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -152,7 +152,7 @@ fn run_surfaces_response_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("response.json")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -162,7 +162,7 @@ fn run_surfaces_meta_write_failure() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
     std::fs::create_dir_all(step_dir.join("meta.json")).unwrap();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
 }
@@ -174,7 +174,7 @@ fn run_surfaces_dispatcher_failure() {
     // default dispatcher is always-ok.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let git = StubGit::ok();
     let clock = FixedClock::default();
     let id = FixedIdGen;
@@ -210,7 +210,7 @@ fn run_surfaces_dispatcher_failure() {
 /// line — the macro path tarpaulin trips on otherwise.
 fn assert_run_fails_with_git_op(idx: usize, expected_op: &'static str) {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(HAPPY_RESPONSE_JSON.as_bytes());
+    let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(idx)).unwrap_err();
     match err {
         Error::Git { op, .. } => assert_eq!(op, expected_op),

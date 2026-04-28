@@ -1,7 +1,11 @@
 mod errors;
 mod errors_disk;
 mod errors_parse;
+mod errors_stream;
 mod fixtures;
 mod happy;
 mod multi_step;
+mod multi_step_terminal;
+mod streams;
+mod stubs;
 mod tool_stub;

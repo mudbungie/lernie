@@ -127,16 +127,30 @@ fn git_capture(dest: &Path, args: &[&str]) -> String {
     String::from_utf8(out.stdout).unwrap().trim().to_string()
 }
 
+/// Anthropic-native SSE happy stream; adapter translates to §4.4 JSONL.
+const HAPPY_SSE: &str = concat!(
+    "event: message_start\n",
+    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_e2e\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
+    "event: content_block_start\n",
+    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+    "event: content_block_delta\n",
+    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"pong\"}}\n\n",
+    "event: content_block_stop\n",
+    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+    "event: message_delta\n",
+    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":1}}\n\n",
+    "event: message_stop\n",
+    "data: {\"type\":\"message_stop\"}\n\n",
+);
+
 #[test]
 fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
-        then.status(200).body(
-            r#"{"id":"msg_e2e","model":"claude-sonnet-4-7","stop_reason":"end_turn",
-               "content":[{"type":"text","text":"pong"}],
-               "usage":{"input_tokens":2,"output_tokens":1}}"#,
-        );
+        then.status(200)
+            .header("content-type", "text/event-stream")
+            .body(HAPPY_SSE);
     });
 
     let holder = TempDir::new().unwrap();
@@ -146,9 +160,7 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
 
-    // Main is checked out inside `<conv-repo>/root/` per the v0.3
-    // layout (ARCH §2.2). The pre-prompt main HEAD is the scaffold's
-    // initial commit on that branch.
+    // Main is checked out inside `<conv-repo>/root/` (§2.2).
     let primary = dest.join("root");
     let main_head_before = git_capture(&primary, &["rev-parse", "main"]);
     assert!(!main_head_before.is_empty());
@@ -173,15 +185,12 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         .unwrap()
         .trim()
         .to_string();
-    // Bare conv-id `<ts>-<short-id>`: 16-char ts + `-` + 8 hex
-    // chars (ARCH §2.3). No `ex/` prefix.
+    // Bare conv-id `<ts>-<short-id>`, no `ex/` prefix (§2.3).
     assert!(!branch.contains('/'), "got {branch:?}");
     assert_eq!(branch.len(), 25, "got {branch:?}");
     let conv_id = branch.clone();
 
-    // Main advanced. `git log -1 --pretty=%P main` returns two parent
-    // shas (the --no-ff shape): pre-prompt main, then the compacted
-    // conversation tip.
+    // Main advanced via --no-ff merge (two parent shas).
     let main_head_after = git_capture(&primary, &["rev-parse", "main"]);
     assert_ne!(main_head_before, main_head_after, "main should advance");
     let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", "main"]);
@@ -189,10 +198,7 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     let conv_tip = git_capture(&primary, &["rev-parse", &branch]);
     assert_eq!(parent_shas, [&main_head_before[..], &conv_tip[..]]);
 
-    // ARCH §2.6: summary/** is pinned to the parent's pre-merge
-    // state via the alignment step in `rebase_and_merge`. Main and
-    // the conv branch's tip are both clean of `summary/`; the
-    // compactor sub-branch's history retains it for provenance.
+    // §2.6 alignment: summary/** stays on the compactor sub-branch.
     let summary_on_main = git_command(&primary, &["show", "main:summary/001.md"])
         .output()
         .expect("spawn git show");
@@ -210,16 +216,13 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     );
     let first_sha = summary_commits.lines().next().expect("summary in history");
     let summary_blob = git_capture(&primary, &["show", &format!("{first_sha}:summary/001.md")]);
-    // v0.3.1 stub summary identifies the parent conversation without
-    // reading `response.json` (§2.3 diagnostic-only contract).
     assert_eq!(
         summary_blob,
         format!("conversation {conv_id}: terminal compaction")
     );
 
-    // Step records live at the conv-repo root, *outside* every
-    // worktree (ARCH §2.2 / §2.3). They are not git-tracked, so
-    // read them directly from the conv-repo's filesystem.
+    // Step records live outside every worktree (§2.2 / §2.3); read
+    // them directly from the conv-repo's filesystem.
     let step_dir = dest.join(format!("steps/{conv_id}/001"));
     let read_json = |name: &str| -> serde_json::Value {
         serde_json::from_slice(&fs::read(step_dir.join(name)).unwrap()).unwrap()
@@ -233,11 +236,20 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
             .starts_with("<goal>\nping\n</goal>"),
         "goal not pinned at head of system"
     );
-    let response = read_json("response.json");
-    assert_eq!(response["content"][0]["text"], "pong");
-    assert_eq!(response["provider"], "anthropic");
-    // meta.json: `commit` is the branch tip at step-start (§2.10) — a
-    // 40-char hex sha from `git rev-parse HEAD`.
+    assert_eq!(request["stream"], true);
+    // response.json is JSONL of §4.4 events tail-appended event-by-
+    // event; closing the fd is the §3.5 IN_CLOSE_WRITE completion.
+    let lines: Vec<serde_json::Value> = fs::read(step_dir.join("response.json"))
+        .unwrap()
+        .split(|b| *b == b'\n')
+        .filter(|l| !l.is_empty())
+        .map(|l| serde_json::from_slice(l).expect("valid JSON line"))
+        .collect();
+    assert_eq!(lines.first().unwrap()["type"], "message_start");
+    assert_eq!(lines.last().unwrap()["type"], "message_stop");
+    let text = lines.iter().find(|e| e["type"] == "text_delta").unwrap();
+    assert_eq!(text["text"], "pong");
+    // meta.json `commit` is the branch tip at step-start (§2.10).
     let commit = read_json("meta.json")["commit"]
         .as_str()
         .unwrap()
@@ -249,8 +261,7 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     let tracked_steps = git_capture(&primary, &["ls-files", "steps/"]);
     assert!(tracked_steps.is_empty(), "got {tracked_steps:?}");
 
-    // Worktree removed after merge; branch ref survives the
-    // retention window (§2.3).
+    // Worktree removed; branch ref survives retention window (§2.3).
     let worktree = dest.join(&conv_id);
     assert!(!worktree.exists(), "conv worktree must be removed");
     let branches = git_capture(&primary, &["branch", "--list", &branch]);
@@ -259,9 +270,7 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         "conv ref must survive: {branches:?}"
     );
 
-    // Unmerged-branch metric (§8): post-prompt the conv branch has
-    // moved from unmerged → merged, so `git branch --no-merged main`
-    // is empty. Read directly from refs, no sidecar (PRINCIPLES.md).
+    // §8 unmerged-branch metric: empty post-merge, read from refs.
     let unmerged = git_capture(
         &primary,
         &["branch", "--list", "*-*", "--no-merged", "main"],

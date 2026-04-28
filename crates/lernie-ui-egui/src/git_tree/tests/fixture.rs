@@ -115,6 +115,28 @@ impl Fixture {
         .unwrap();
     }
 
+    /// Write a tool-call `input.json` (and optionally `output.json`)
+    /// under `<conv-repo>/steps/<conv-id>/<seq>/tools/<tool_id>/`. Mirrors
+    /// the executor's on-disk shape (ARCH §3.3): `input.json` lands first
+    /// at dispatch, `output.json` only after the tool exits. Pass `None`
+    /// for the in-flight case.
+    pub(super) fn write_tool_call(
+        &self,
+        conv_id: &str,
+        seq: u32,
+        tool_id: &str,
+        output: Option<&[u8]>,
+    ) {
+        let tool_dir = self
+            .path
+            .join(format!("steps/{conv_id}/{seq:03}/tools/{tool_id}",));
+        fs::create_dir_all(&tool_dir).unwrap();
+        fs::write(tool_dir.join("input.json"), b"{}").unwrap();
+        if let Some(out) = output {
+            fs::write(tool_dir.join("output.json"), out).unwrap();
+        }
+    }
+
     /// Write a partial `response.json` for `conv_id`'s `seq`-th step.
     /// Each `event` is a JSONL line (no trailing newline); they are
     /// joined with `\n` and a trailing `\n` is appended, mirroring the

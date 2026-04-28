@@ -33,6 +33,7 @@ mod cmd;
 mod detect;
 mod enumerate;
 mod streaming;
+mod tools;
 
 use std::path::{Path, PathBuf};
 
@@ -119,6 +120,35 @@ pub struct ConversationBranch {
     /// `None` when no `text_delta` events have landed yet (or the
     /// step's `response.json` is absent).
     pub streaming_text: Option<String>,
+    /// Tool calls under this branch's latest step's `tools/` directory
+    /// (ARCH §3.3). State is derived purely from the presence of
+    /// `input.json` / `output.json`: input only ⇒ in-flight, both ⇒
+    /// complete. The renderer pulses in-flight nodes and animates them
+    /// via `request_repaint_after`. Re-derived on every `from_repo` call
+    /// (§3.5).
+    pub tool_calls: Vec<ToolCall>,
+}
+
+/// A single tool call surfaced to the renderer. v0.5 scope is the
+/// pulsing in-flight indicator (bl-23d9); the disk records carry more
+/// metadata (timing, exit code, raw stdout) but the view-model only
+/// needs identity + state to drive the indicator.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ToolCall {
+    /// `tool_use.id` from the wire (e.g. `toolu_01abc…`); also the
+    /// `<tool-id>/` directory name under `<conv-repo>/steps/<conv-id>/<NNN>/tools/`.
+    pub tool_id: String,
+    pub state: ToolCallState,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ToolCallState {
+    /// `input.json` has landed but `output.json` has not — the tool
+    /// executor is still running. Renderer pulses this node.
+    InFlight,
+    /// Both `input.json` and `output.json` are present on disk. Renders
+    /// statically; no repaint scheduling.
+    Complete,
 }
 
 impl GitTree {
@@ -196,6 +226,40 @@ fn render_in_flight(ui: &mut egui::Ui, branch: &ConversationBranch) {
             ui.label(text);
         });
     }
+    for call in &branch.tool_calls {
+        render_tool_call(ui, call);
+    }
+}
+
+/// Repaint cadence for pulsing tool indicators. ~30 fps is smooth
+/// enough for the eye and cheap enough for an idle UI (egui's
+/// `request_repaint_after` is the standard knob for this; an in-flight
+/// node sets it on every render so the loop sustains itself, while a
+/// complete node leaves the default `Duration::MAX` in place and the
+/// app goes back to waiting on input).
+const PULSE_REPAINT_DELAY: std::time::Duration = std::time::Duration::from_millis(33);
+
+/// Pulse frequency in radians per second — ~0.6 Hz, slow enough to read
+/// as "alive" rather than "blinking error".
+const PULSE_RATE_RAD_PER_SEC: f64 = 4.0;
+
+fn render_tool_call(ui: &mut egui::Ui, call: &ToolCall) {
+    ui.horizontal(|ui| {
+        ui.label("    ⚙");
+        match call.state {
+            ToolCallState::InFlight => {
+                let time = ui.ctx().input(|i| i.time);
+                let alpha = (0.5 + 0.5 * (time * PULSE_RATE_RAD_PER_SEC).sin()).clamp(0.0, 1.0);
+                let color = egui::Color32::from_white_alpha((alpha * 255.0) as u8);
+                ui.colored_label(color, &call.tool_id);
+                ui.label("(in-flight)");
+                ui.ctx().request_repaint_after(PULSE_REPAINT_DELAY);
+            }
+            ToolCallState::Complete => {
+                ui.label(&call.tool_id);
+            }
+        }
+    });
 }
 
 #[cfg(test)]

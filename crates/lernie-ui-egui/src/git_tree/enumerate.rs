@@ -13,6 +13,7 @@
 use super::cmd::{LogEntry, for_each_ref_unmerged, walk_branch_steps, walk_merge_step_commits};
 use super::detect::{extract_request_preview, parse_merge_subject};
 use super::streaming::streaming_text_from_disk;
+use super::tools::tool_calls_from_disk;
 use super::{CommitNode, ConversationBranch, GitTreeError, STEPS_DIR};
 use std::path::Path;
 
@@ -85,6 +86,7 @@ pub(super) fn enumerate_in_flight(
         let steps = walk_branch_steps(git_dir, &branch_name)?;
         let preview = preview_from_disk(conv_repo, &conv_id);
         let streaming_text = streaming_text_from_disk(conv_repo, &conv_id);
+        let tool_calls = tool_calls_from_disk(conv_repo, &conv_id);
         branches.push(ConversationBranch {
             branch_name,
             conv_id,
@@ -94,6 +96,7 @@ pub(super) fn enumerate_in_flight(
             steps,
             preview,
             streaming_text,
+            tool_calls,
         });
     }
     Ok(branches)

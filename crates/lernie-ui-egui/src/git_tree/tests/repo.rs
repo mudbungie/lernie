@@ -2,7 +2,7 @@
 //! real commits, assertions on the resulting view-model.
 
 use super::fixture::{Fixture, run_git};
-use crate::git_tree::{GitTree, GitTreeError};
+use crate::git_tree::{GitTree, GitTreeError, ToolCallState};
 use std::fs;
 use tempfile::tempdir;
 
@@ -225,6 +225,36 @@ fn from_repo_in_flight_with_response_but_no_text_deltas_yet() {
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert!(tree.in_flight[0].streaming_text.is_none());
+}
+
+#[test]
+fn from_repo_in_flight_surfaces_in_flight_and_complete_tool_calls() {
+    // bl-23d9: pulsing tool indicators. Latest step's tools/<id>/ dir
+    // with input.json + no output.json is in-flight; both files present
+    // is complete. Detection is filesystem-only (ARCH §3.3, §3.5).
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.build_v03_in_flight("20260427T140000Z-tool", "run two tools");
+    fx.write_tool_call("20260427T140000Z-tool", 1, "toolu_done", Some(b"{}"));
+    fx.write_tool_call("20260427T140000Z-tool", 1, "toolu_live", None);
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    let calls = &tree.in_flight[0].tool_calls;
+    assert_eq!(calls.len(), 2);
+    // Sorted by tool_id: "toolu_done" < "toolu_live".
+    assert_eq!(calls[0].tool_id, "toolu_done");
+    assert_eq!(calls[0].state, ToolCallState::Complete);
+    assert_eq!(calls[1].tool_id, "toolu_live");
+    assert_eq!(calls[1].state, ToolCallState::InFlight);
+}
+
+#[test]
+fn from_repo_in_flight_without_tool_calls_yields_empty_vec() {
+    // No tools/ dir on disk — branch surfaces but tool_calls is empty.
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.build_v03_in_flight("20260427T140100Z-bare", "no tools yet");
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    assert!(tree.in_flight[0].tool_calls.is_empty());
 }
 
 #[test]

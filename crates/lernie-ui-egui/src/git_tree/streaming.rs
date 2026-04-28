@@ -47,7 +47,7 @@ pub(super) fn streaming_text_from_disk(conv_repo: &Path, conv_id: &str) -> Optio
 /// Entries that don't match the zero-padded step shape are ignored —
 /// `tools/` lives one level deeper, so it's structurally not at risk
 /// here, but staying strict keeps us robust to stray files.
-fn latest_step_dir(conv_steps: &Path) -> Option<std::path::PathBuf> {
+pub(super) fn latest_step_dir(conv_steps: &Path) -> Option<std::path::PathBuf> {
     let entries = std::fs::read_dir(conv_steps).ok()?;
     let mut best: Option<(u32, std::path::PathBuf)> = None;
     for entry in entries.flatten() {

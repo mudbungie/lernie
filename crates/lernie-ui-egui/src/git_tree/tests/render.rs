@@ -3,7 +3,9 @@
 //! shape-level assertions that user-visible text actually lands in the
 //! paint output (in particular, in-flight streaming text per bl-0619).
 
-use crate::git_tree::{CommitNode, ConversationBranch, GitTree, StepCommit, render};
+use crate::git_tree::{
+    CommitNode, ConversationBranch, GitTree, StepCommit, ToolCall, ToolCallState, render,
+};
 
 /// Run the renderer headlessly and concatenate every `Shape::Text`
 /// galley's text in paint order. Used by tests that assert specific
@@ -128,6 +130,7 @@ fn render_populated_tree_runs_without_panic() {
             }],
             preview: Some("wip".into()),
             streaming_text: None,
+            tool_calls: Vec::new(),
         }],
     };
     let _ = ctx.run(Default::default(), |ctx| {
@@ -148,6 +151,7 @@ fn render_in_flight_branch_paints_streaming_text() {
             steps: vec![],
             preview: Some("explain quicksort".into()),
             streaming_text: Some("Quicksort partitions around a pivot".into()),
+            tool_calls: Vec::new(),
         }],
     };
     let painted = rendered_text(&tree);
@@ -170,6 +174,7 @@ fn render_in_flight_branch_without_streaming_text_paints_no_body() {
             steps: vec![],
             preview: None,
             streaming_text: None,
+            tool_calls: Vec::new(),
         }],
     };
     // No assertion on absence (egui paints frame chrome around the
@@ -177,6 +182,97 @@ fn render_in_flight_branch_without_streaming_text_paints_no_body() {
     // Here we only verify the branch row itself still renders.
     let painted = rendered_text(&tree);
     assert!(painted.contains("20260427T120000Z-quiet"));
+}
+
+/// Run the renderer twice and return the second frame's
+/// `repaint_delay`. Egui returns 0 on the first frame regardless of the
+/// content (font cache + layout still warming up), so we have to settle
+/// to read the steady-state delay set by `request_repaint_after`. An
+/// in-flight tool keeps the delay short; a complete-only tree falls
+/// back to `Duration::MAX`.
+fn repaint_delay_for(tree: &GitTree) -> std::time::Duration {
+    let ctx = egui::Context::default();
+    for _ in 0..2 {
+        let _ = ctx.run(Default::default(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| render(ui, tree));
+        });
+    }
+    let output = ctx.run(Default::default(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, tree));
+    });
+    output
+        .viewport_output
+        .get(&egui::ViewportId::ROOT)
+        .expect("root viewport output present")
+        .repaint_delay
+}
+
+fn branch_with_tool(tool_id: &str, state: ToolCallState) -> ConversationBranch {
+    ConversationBranch {
+        branch_name: "20260427T140000Z-tool".into(),
+        conv_id: "20260427T140000Z-tool".into(),
+        tip_oid: "9".repeat(40),
+        tip_short_oid: "99999999".into(),
+        tip_timestamp_unix: 8,
+        steps: vec![],
+        preview: None,
+        streaming_text: None,
+        tool_calls: vec![ToolCall {
+            tool_id: tool_id.into(),
+            state,
+        }],
+    }
+}
+
+#[test]
+fn render_in_flight_tool_call_schedules_repaint_and_paints_id() {
+    let tree = GitTree {
+        commits: vec![],
+        in_flight: vec![branch_with_tool("toolu_pulse_a", ToolCallState::InFlight)],
+    };
+    assert!(
+        repaint_delay_for(&tree) < std::time::Duration::from_secs(1),
+        "in-flight tool must schedule a near-term repaint"
+    );
+    let painted = rendered_text(&tree);
+    assert!(
+        painted.contains("toolu_pulse_a"),
+        "tool id must reach the paint layer; got:\n{painted}"
+    );
+    assert!(painted.contains("(in-flight)"));
+}
+
+#[test]
+fn render_complete_tool_call_does_not_schedule_repaint() {
+    let tree = GitTree {
+        commits: vec![],
+        in_flight: vec![branch_with_tool("toolu_done_b", ToolCallState::Complete)],
+    };
+    assert_eq!(
+        repaint_delay_for(&tree),
+        std::time::Duration::MAX,
+        "complete tools must not pull repaints"
+    );
+    let painted = rendered_text(&tree);
+    assert!(painted.contains("toolu_done_b"));
+    assert!(!painted.contains("(in-flight)"));
+}
+
+#[test]
+fn render_mixed_tool_calls_schedules_repaint_when_any_in_flight() {
+    let mut branch = branch_with_tool("toolu_done_c", ToolCallState::Complete);
+    branch.tool_calls.push(ToolCall {
+        tool_id: "toolu_pulse_d".into(),
+        state: ToolCallState::InFlight,
+    });
+    let tree = GitTree {
+        commits: vec![],
+        in_flight: vec![branch],
+    };
+    assert!(repaint_delay_for(&tree) < std::time::Duration::from_secs(1));
+    let painted = rendered_text(&tree);
+    assert!(painted.contains("toolu_done_c"));
+    assert!(painted.contains("toolu_pulse_d"));
 }
 
 #[test]

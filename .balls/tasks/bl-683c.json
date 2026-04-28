@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-6d20"},{"link_type":"gates","target":"bl-60aa"},{"link_type":"gates","target":"bl-6bd1"}],
   "parent": null,
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "v0.3: tools",
   "type": "epic",
-  "updated_at": "2026-04-28T07:39:43.767308711Z"
+  "updated_at": "2026-04-28T07:40:02.422664064Z"
 }

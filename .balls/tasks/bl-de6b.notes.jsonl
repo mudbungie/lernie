@@ -1,0 +1,1 @@
+{"ts":"2026-04-28T07:45:15.568381361Z","author":"mark","text":"v0.5 UI: branch-state indicators (in_flight / stopped, derived) — amends ARCH §2.9 to drop the cancel marker, classifies via §4.4 terminal events, badges in the git tree"}

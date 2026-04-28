@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-683c",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate: tests pass (v0.3 epic)",
   "type": "task",
-  "updated_at": "2026-04-28T07:45:15.455896173Z"
+  "updated_at": "2026-04-28T07:45:20.349137363Z"
 }

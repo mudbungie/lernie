@@ -2,7 +2,7 @@
   "branch": "work/bl-683c",
   "claimed_by": "mark",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-25T05:31:29.915085490Z","id":"bl-e2fb","title":"v0.3 tool contract: pin ARCH §3.3 gaps"},{"closed_at":"2026-04-25T06:22:20.269219210Z","id":"bl-8be5","title":"v0.3 wire types: tool_use / tool_result blocks + tools request field"},{"closed_at":"2026-04-25T06:47:46.448856109Z","id":"bl-7c2a","title":"v0.3 tool executor (real ToolExecutor impl)"},{"closed_at":"2026-04-25T07:16:04.813380921Z","id":"bl-9221","title":"v0.3 multi-step exchange loop"},{"closed_at":"2026-04-25T07:32:12.351319241Z","id":"bl-a96a","title":"v0.3 built-in tool: read_file"},{"closed_at":"2026-04-25T22:58:29.388707697Z","id":"bl-ecf1","title":"v0.3 built-in tool: bash"},{"closed_at":"2026-04-28T07:45:23.948075543Z","id":"bl-6d20","title":"Gate: tests pass (v0.3 epic)"},{"closed_at":"2026-04-28T07:49:21.490637112Z","id":"bl-60aa","title":"Gate: docs up to date (v0.3 epic)"}],
+  "closed_children": [{"closed_at":"2026-04-25T05:31:29.915085490Z","id":"bl-e2fb","title":"v0.3 tool contract: pin ARCH §3.3 gaps"},{"closed_at":"2026-04-25T06:22:20.269219210Z","id":"bl-8be5","title":"v0.3 wire types: tool_use / tool_result blocks + tools request field"},{"closed_at":"2026-04-25T06:47:46.448856109Z","id":"bl-7c2a","title":"v0.3 tool executor (real ToolExecutor impl)"},{"closed_at":"2026-04-25T07:16:04.813380921Z","id":"bl-9221","title":"v0.3 multi-step exchange loop"},{"closed_at":"2026-04-25T07:32:12.351319241Z","id":"bl-a96a","title":"v0.3 built-in tool: read_file"},{"closed_at":"2026-04-25T22:58:29.388707697Z","id":"bl-ecf1","title":"v0.3 built-in tool: bash"},{"closed_at":"2026-04-28T07:45:23.948075543Z","id":"bl-6d20","title":"Gate: tests pass (v0.3 epic)"},{"closed_at":"2026-04-28T07:49:21.490637112Z","id":"bl-60aa","title":"Gate: docs up to date (v0.3 epic)"},{"closed_at":"2026-04-28T07:50:47.244460669Z","id":"bl-6bd1","title":"Gate: alignment (v0.3 epic)"}],
   "created_at": "2026-04-23T06:50:21.765880019Z",
   "delivered_in": null,
   "depends_on": [],
@@ -16,5 +16,5 @@
   "tags": [],
   "title": "v0.3: tools",
   "type": "epic",
-  "updated_at": "2026-04-28T07:49:21.862321882Z"
+  "updated_at": "2026-04-28T07:50:47.248946840Z"
 }

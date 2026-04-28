@@ -3,54 +3,43 @@
 use crate::git_tree::GitTreeError;
 use crate::git_tree::cmd::{parse_log, parse_step_commits};
 use crate::git_tree::detect::{
-    PREVIEW_MAX, extract_request_preview, truncate_preview, v03_conv_id_from_path,
+    PREVIEW_MAX, extract_request_preview, parse_merge_subject, truncate_preview,
 };
 
 #[test]
-fn v03_conv_id_from_path_matches_request_json() {
+fn parse_merge_subject_recovers_branch_name_from_default_subject() {
     assert_eq!(
-        v03_conv_id_from_path("steps/abc/001/request.json"),
-        Some("abc")
+        parse_merge_subject("Merge branch '20260422T120000Z-a001'"),
+        Some("20260422T120000Z-a001")
     );
 }
 
 #[test]
-fn v03_conv_id_from_path_matches_response_json() {
+fn parse_merge_subject_recovers_branch_name_with_into_tail() {
+    // Git appends ` into <target>` when the merge target isn't `main`.
     assert_eq!(
-        v03_conv_id_from_path("steps/xyz/002/response.json"),
-        Some("xyz")
-    );
-}
-
-#[test]
-fn v03_conv_id_from_path_matches_tools_subpath() {
-    assert_eq!(
-        v03_conv_id_from_path("steps/abc/001/tools/toolu_01/input.json"),
-        Some("abc")
-    );
-}
-
-#[test]
-fn v03_conv_id_from_path_handles_hyphenated_descent_id() {
-    assert_eq!(
-        v03_conv_id_from_path("steps/aa-bb-cc/001/request.json"),
+        parse_merge_subject("Merge branch 'aa-bb-cc' into aa-bb"),
         Some("aa-bb-cc")
     );
 }
 
 #[test]
-fn v03_conv_id_from_path_rejects_bare_step_dir() {
-    assert_eq!(v03_conv_id_from_path("steps/abc/001"), None);
+fn parse_merge_subject_handles_hyphenated_descent_id() {
+    assert_eq!(
+        parse_merge_subject("Merge branch 'aa-bb-cc'"),
+        Some("aa-bb-cc")
+    );
 }
 
 #[test]
-fn v03_conv_id_from_path_rejects_bare_id_dir() {
-    assert_eq!(v03_conv_id_from_path("steps/abc"), None);
+fn parse_merge_subject_rejects_non_merge_subject() {
+    assert_eq!(parse_merge_subject("dispatch [abc]"), None);
 }
 
 #[test]
-fn v03_conv_id_from_path_rejects_outside_steps() {
-    assert_eq!(v03_conv_id_from_path("summary/001.md"), None);
+fn parse_merge_subject_rejects_truncated_subject() {
+    // Missing closing quote — defensive against history rewrites.
+    assert_eq!(parse_merge_subject("Merge branch 'abc"), None);
 }
 
 #[test]
@@ -100,38 +89,49 @@ fn extract_request_preview_returns_none_when_content_not_string() {
 }
 
 #[test]
-fn parse_log_errors_on_line_missing_timestamp() {
+fn parse_log_errors_on_line_missing_subject_separator() {
+    // No `\x00` between the parent column and the subject — every log
+    // entry must include the merge subject for v0.3.1 detection.
     let err = parse_log(b"only-one-token\n").unwrap_err();
     assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
 }
 
 #[test]
+fn parse_log_errors_on_line_missing_timestamp() {
+    let err = parse_log(b"only-one-token\x00subject\n").unwrap_err();
+    assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
+}
+
+#[test]
 fn parse_log_errors_on_non_numeric_timestamp() {
-    let err = parse_log(b"abc notanumber\n").unwrap_err();
+    let err = parse_log(b"abc notanumber\x00subject\n").unwrap_err();
     assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
 }
 
 #[test]
 fn parse_log_parses_root_commit_with_no_parents() {
-    let out = parse_log(b"abc 100 \n").unwrap();
+    let out = parse_log(b"abc 100 \x00scaffold\n").unwrap();
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].oid, "abc");
     assert_eq!(out[0].timestamp, 100);
     assert_eq!(out[0].parent_count, 0);
+    assert_eq!(out[0].subject, "scaffold");
 }
 
 #[test]
 fn parse_log_parses_single_parent_commit() {
-    let out = parse_log(b"abc 100 def\n").unwrap();
+    let out = parse_log(b"abc 100 def\x00add README\n").unwrap();
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].parent_count, 1);
+    assert_eq!(out[0].subject, "add README");
 }
 
 #[test]
 fn parse_log_parses_merge_commit_with_two_parents() {
-    let out = parse_log(b"abc 100 def ghi\n").unwrap();
+    let out = parse_log(b"abc 100 def ghi\x00Merge branch 'foo'\n").unwrap();
     assert_eq!(out.len(), 1);
     assert_eq!(out[0].parent_count, 2);
+    assert_eq!(out[0].subject, "Merge branch 'foo'");
 }
 
 #[test]

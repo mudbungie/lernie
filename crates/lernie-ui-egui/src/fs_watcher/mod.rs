@@ -22,13 +22,16 @@ use notify::{
 };
 
 /// Conv-repo control-plane paths (ARCH §2.2, §3.5). These live at the
-/// conv-repo root, outside any worktree.
+/// conv-repo root, outside any worktree. `steps/` joined this set in
+/// v0.3.1 when step records relocated out of every worktree
+/// (ARCH §2.2 / §2.3 / §3.5).
 const ROOT_CONTROL_PREFIXES: &[&str] = &[
     "manifest.yaml",
     "workflow.yaml",
     "providers.yaml",
     "version",
     "souls",
+    "steps",
 ];
 
 /// Per-worktree paths (ARCH §2.2 layout). Each conversation occupies a
@@ -39,7 +42,6 @@ const WORKTREE_PREFIXES: &[&str] = &[
     "goal.md",
     "soul.md",
     "summary",
-    "steps",
     "descriptions",
     "skills",
     ".gitattributes",

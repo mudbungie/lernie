@@ -40,10 +40,11 @@ fn tick_is_empty_when_nothing_changed() {
 }
 
 #[test]
-fn detects_step_request_creation_under_root_worktree() {
+fn detects_step_request_creation_at_conv_repo_root() {
+    // v0.3.1: step records live at <conv-repo>/steps/<conv-id>/<NNN>/,
+    // outside every worktree (ARCH §2.2 / §2.3).
     let root = tempdir().unwrap();
-    make_root_worktree(root.path());
-    let step_dir = root.path().join("root/steps/abc-1/001");
+    let step_dir = root.path().join("steps/abc-1/001");
     fs::create_dir_all(&step_dir).unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
@@ -55,9 +56,13 @@ fn detects_step_request_creation_under_root_worktree() {
 }
 
 #[test]
-fn detects_subagent_worktree_step_creation() {
+fn detects_subagent_step_record_at_conv_repo_root() {
+    // Subagent step records share the same conv-repo-root `steps/`
+    // tree, namespaced by the subagent's hyphenated descent (§2.2 /
+    // §2.3). The watcher does not care whether the conv-id is a root
+    // or a subagent.
     let root = tempdir().unwrap();
-    let sub_step = root.path().join("aa-bb/steps/aa-bb/001");
+    let sub_step = root.path().join("steps/aa-bb/001");
     fs::create_dir_all(&sub_step).unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
@@ -123,8 +128,8 @@ fn ignores_paths_outside_allowlist() {
 #[test]
 fn coalesces_rapid_writes_to_one_event() {
     let root = tempdir().unwrap();
-    fs::create_dir_all(root.path().join("root/steps")).unwrap();
-    let target = root.path().join("root/steps/out.log");
+    fs::create_dir_all(root.path().join("steps")).unwrap();
+    let target = root.path().join("steps/out.log");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     for i in 0..5 {
@@ -140,9 +145,9 @@ fn coalesces_rapid_writes_to_one_event() {
 #[test]
 fn coalesces_atomic_rename_to_destination() {
     let root = tempdir().unwrap();
-    fs::create_dir_all(root.path().join("root/steps/abc/001")).unwrap();
-    let tmp = root.path().join("root/steps/abc/001/request.json.tmp");
-    let final_path = root.path().join("root/steps/abc/001/request.json");
+    fs::create_dir_all(root.path().join("steps/abc/001")).unwrap();
+    let tmp = root.path().join("steps/abc/001/request.json.tmp");
+    let final_path = root.path().join("steps/abc/001/request.json");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     fs::write(&tmp, b"{}").unwrap();
@@ -261,7 +266,7 @@ fn ingest_splits_name_both_into_from_and_to() {
 #[test]
 fn coalesce_drops_prior_events_when_rename_from_arrives() {
     let repo = Path::new("/r");
-    let p = PathBuf::from("/r/root/steps/abc/001/request.json");
+    let p = PathBuf::from("/r/steps/abc/001/request.json");
     let raw = vec![
         (
             p.clone(),

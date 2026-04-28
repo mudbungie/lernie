@@ -1,25 +1,32 @@
-//! Step-path detection and user-message preview extraction for v0.3.
+//! Conversation detection and user-message preview extraction for v0.3.
 //!
-//! v0.3 commits land step records under `steps/<conv-id>/<NNN>/` (ARCH
-//! §2.3). The user message lives in `request.json` as
-//! `messages[0].content`. Branches are bare conv-ids — root
-//! conversations on `main`, subagents on their full hyphenated descent
-//! (ARCH §2.3) — so no branch-name unprefixing is needed.
+//! v0.3.1 detects a conversation by the merged branch's name on the
+//! trunk's `--no-ff` merge subjects. With v0.3 dropping branch prefixes
+//! and v0.3.1 relocating step records out of every worktree (ARCH §2.3),
+//! the merge commit's tree no longer carries a `steps/<conv-id>/...`
+//! path that could be diffed for the conv-id — the diagnostic record is
+//! at `<conv-repo>/steps/<conv-id>/<NNN>/`, never committed (§2.3
+//! "Step records are not committed to git"). The branch name is the
+//! authoritative source instead, and `git merge --no-ff <branch>` (the
+//! shape used by `src/prompt/merge`) writes the default subject
+//! `Merge branch '<branch>'`, which is what we parse here.
 //!
-//! Preview strings cap at [`PREVIEW_MAX`] chars after whitespace
-//! normalization so the render layer can size them predictably.
+//! The user-message preview is read from disk at
+//! `<conv-repo>/steps/<conv-id>/001/request.json` — it is no longer in
+//! a git tree to `git show` against. Cap at [`PREVIEW_MAX`] chars after
+//! whitespace normalization so the render layer can size predictably.
 
 pub(super) const PREVIEW_MAX: usize = 80;
 
-/// `steps/<conv-id>/<NNN>/<file>...` — the v0.3 shape. Returns the
-/// conv-id if the path matches, else `None`. Bare `steps/<id>/<NNN>/`
-/// (no file) does not match.
-pub(super) fn v03_conv_id_from_path(path: &str) -> Option<&str> {
-    let rest = path.strip_prefix("steps/")?;
-    let (id, tail) = rest.split_once('/')?;
-    // Tail is `<NNN>/<file>` at minimum; bare `<NNN>` (no slash) means
-    // the path stopped at the step dir, which is not a file commit.
-    tail.split_once('/').map(|_| id)
+/// Extract the merged branch name from a `--no-ff` merge subject. Git's
+/// default subject for `git merge --no-ff <branch>` is
+/// `Merge branch '<branch>'`, with an optional ` into <target>` tail
+/// when the merge target isn't `main`. Returns `None` for any other
+/// subject shape (non-conversation merges, plain commits, etc.).
+pub(super) fn parse_merge_subject(subject: &str) -> Option<&str> {
+    let rest = subject.strip_prefix("Merge branch '")?;
+    let end = rest.find('\'')?;
+    Some(&rest[..end])
 }
 
 pub(super) fn extract_request_preview(json_bytes: &[u8]) -> Option<String> {

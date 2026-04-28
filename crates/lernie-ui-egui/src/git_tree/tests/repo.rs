@@ -53,6 +53,10 @@ fn from_repo_commit_without_conversation_has_no_preview() {
 
 #[test]
 fn from_repo_v03_merged_conversation_surfaces_merge_with_steps() {
+    // v0.3.1 conversation branch shape: dispatch commit + compactor
+    // merge commit on the conv branch → 2 step commits. Step records
+    // (request.json) sit on disk at <conv-repo>/steps/<conv-id>/001/,
+    // outside every worktree, sourcing the preview.
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.commit_v03_merged_conversation("20260422T120000Z-a001", "hello v03");
@@ -61,7 +65,7 @@ fn from_repo_v03_merged_conversation_surfaces_merge_with_steps() {
     let merge = &tree.commits[1];
     assert_eq!(merge.conv_id.as_deref(), Some("20260422T120000Z-a001"));
     assert_eq!(merge.preview.as_deref(), Some("hello v03"));
-    assert_eq!(merge.steps.len(), 3);
+    assert_eq!(merge.steps.len(), 2);
     assert!(tree.in_flight.is_empty());
     assert_eq!(merge.short_oid.len(), 8);
 }
@@ -79,7 +83,7 @@ fn from_repo_v03_in_flight_conversation_surfaces_branch_with_steps() {
     assert_eq!(branch.branch_name, "20260422T120500Z-b002");
     assert_eq!(branch.conv_id, "20260422T120500Z-b002");
     assert_eq!(branch.preview.as_deref(), Some("ping v03"));
-    assert_eq!(branch.steps.len(), 3);
+    assert_eq!(branch.steps.len(), 2);
     assert_eq!(branch.tip_short_oid.len(), 8);
 }
 
@@ -97,42 +101,39 @@ fn from_repo_multiple_merged_conversations_appear_in_order() {
         tree.commits[1].conv_id.as_deref(),
         Some("20260422T120000Z-old0")
     );
-    assert_eq!(tree.commits[1].steps.len(), 3);
+    assert_eq!(tree.commits[1].steps.len(), 2);
     assert_eq!(
         tree.commits[2].conv_id.as_deref(),
         Some("20260422T120500Z-new0")
     );
-    assert_eq!(tree.commits[2].steps.len(), 3);
+    assert_eq!(tree.commits[2].steps.len(), 2);
     assert_eq!(tree.in_flight.len(), 1);
     assert_eq!(tree.in_flight[0].conv_id, "20260422T121000Z-wip0");
 }
 
 #[test]
-fn from_repo_v03_shape_on_non_merge_commit_has_no_steps() {
-    // Edge case: a v0.3-shape path introduced by a plain single-parent
-    // commit (not a `--no-ff` merge) — e.g. imported state or a hand-
-    // edit. The conv id is still recognized, preview is pulled, but
-    // the steps list stays empty because there is no branch to walk.
+fn from_repo_merge_with_non_conversation_subject_has_no_conv_id() {
+    // Edge case: a `--no-ff` merge whose subject doesn't match
+    // `Merge branch 'X'` (e.g. a hand-rewritten message) is treated as
+    // a plain trunk commit, not a conversation. Branch-name detection
+    // is the only signal post-bl-c22c (ARCH §2.3).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
-    let step_dir = "steps/direct-commit-id/001";
-    fs::create_dir_all(fx.primary.join(step_dir)).unwrap();
-    let req = serde_json::json!({
-        "messages": [{"role": "user", "content": "direct"}],
-    });
-    fs::write(
-        fx.primary.join(format!("{step_dir}/request.json")),
-        serde_json::to_vec_pretty(&req).unwrap(),
-    )
-    .unwrap();
-    run_git(&fx.primary, &["add", &format!("{step_dir}/request.json")]);
-    run_git(&fx.primary, &["commit", "-q", "-m", "direct v03"]);
+    run_git(&fx.primary, &["checkout", "-q", "-b", "side", "main"]);
+    fs::write(fx.primary.join("a.txt"), "x").unwrap();
+    run_git(&fx.primary, &["add", "a.txt"]);
+    run_git(&fx.primary, &["commit", "-q", "-m", "side work"]);
+    run_git(&fx.primary, &["checkout", "-q", "main"]);
+    run_git(
+        &fx.primary,
+        &["merge", "--no-ff", "-q", "-m", "manual merge", "side"],
+    );
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert_eq!(tree.commits.len(), 2);
-    let node = &tree.commits[1];
-    assert_eq!(node.conv_id.as_deref(), Some("direct-commit-id"));
-    assert_eq!(node.preview.as_deref(), Some("direct"));
-    assert!(node.steps.is_empty());
+    let merge = &tree.commits[1];
+    assert!(merge.conv_id.is_none());
+    assert!(merge.preview.is_none());
+    assert!(merge.steps.is_empty());
 }
 
 #[test]

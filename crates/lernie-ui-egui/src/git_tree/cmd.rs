@@ -38,28 +38,33 @@ pub(super) fn git(repo: &Path, args: &[&str]) -> Result<Vec<u8>, GitTreeError> {
     Ok(output.stdout)
 }
 
-/// Raw `git log --format='%H %ct %P'` row, parsed.
+/// Raw `git log --format='%H %ct %P%x00%s'` row, parsed.
 ///
-/// Keeping the parent count here avoids a second `git log` per commit
-/// when we need to choose between root-diff and first-parent-diff in
-/// [`files_changed`].
+/// `parent_count` lets the caller branch on root vs single-parent vs
+/// merge without a second `git log`. `subject` carries git's default
+/// `--no-ff` merge subject (`Merge branch 'X'`) — the load-bearing
+/// signal for v0.3.1 conversation detection (ARCH §2.3, bl-c22c P4):
+/// the merged branch name *is* the conv-id (or hyphenated descent),
+/// since v0.3 dropped branch prefixes entirely.
 #[derive(Debug)]
 pub(super) struct LogEntry {
     pub(super) oid: String,
     pub(super) timestamp: i64,
     pub(super) parent_count: usize,
+    pub(super) subject: String,
 }
 
 pub(super) fn git_log_first_parent(repo: &Path) -> Result<Vec<LogEntry>, GitTreeError> {
-    // `--first-parent` keeps subagent/exchange branches off the trunk
-    // log; step commits are rendered nested under their merge node
-    // instead.
+    // `--first-parent` keeps conversation branches off the trunk log;
+    // step commits are rendered nested under their merge node instead.
+    // `\x00` separates the parent list from the subject so a subject
+    // containing spaces parses unambiguously.
     let out = git(
         repo,
         &[
             "log",
             "--first-parent",
-            "--format=%H %ct %P",
+            "--format=%H %ct %P%x00%s",
             "--reverse",
             "HEAD",
         ],
@@ -71,7 +76,10 @@ pub(super) fn parse_log(stdout: &[u8]) -> Result<Vec<LogEntry>, GitTreeError> {
     let text = String::from_utf8_lossy(stdout);
     let mut result = Vec::new();
     for line in text.lines() {
-        let mut parts = line.splitn(3, ' ');
+        let (head, subject) = line
+            .split_once('\x00')
+            .ok_or_else(|| GitTreeError::LogFormat(line.to_string()))?;
+        let mut parts = head.splitn(3, ' ');
         let oid = parts
             .next()
             .ok_or_else(|| GitTreeError::LogFormat(line.to_string()))?
@@ -92,51 +100,10 @@ pub(super) fn parse_log(stdout: &[u8]) -> Result<Vec<LogEntry>, GitTreeError> {
             oid,
             timestamp: ts,
             parent_count,
+            subject: subject.to_string(),
         });
     }
     Ok(result)
-}
-
-/// Files this commit introduces versus its first parent (or versus the
-/// empty tree, for a root commit). For a merge commit this is the set
-/// of paths that the merge brought in on top of `main`'s prior state,
-/// which is what we want for detecting the step files added by a
-/// `--no-ff` merge of a completed conversation branch.
-pub(super) fn files_changed(
-    repo: &Path,
-    oid: &str,
-    parent_count: usize,
-) -> Result<Vec<String>, GitTreeError> {
-    let out = if parent_count == 0 {
-        git(
-            repo,
-            &[
-                "diff-tree",
-                "--no-commit-id",
-                "--name-only",
-                "-r",
-                "--root",
-                oid,
-            ],
-        )?
-    } else {
-        let first_parent = format!("{oid}^1");
-        git(
-            repo,
-            &[
-                "diff-tree",
-                "--no-commit-id",
-                "--name-only",
-                "-r",
-                &first_parent,
-                oid,
-            ],
-        )?
-    };
-    Ok(String::from_utf8_lossy(&out)
-        .lines()
-        .map(|s| s.to_string())
-        .collect())
 }
 
 /// Commits on the conversation branch reachable from the merge's
@@ -215,8 +182,4 @@ pub(super) fn for_each_ref_unmerged(repo: &Path) -> Result<Vec<u8>, GitTreeError
             "refs/heads/",
         ],
     )
-}
-
-pub(super) fn show_blob(repo: &Path, oid: &str, path: &str) -> Result<Vec<u8>, GitTreeError> {
-    git(repo, &["show", &format!("{oid}:{path}")])
 }

@@ -1,10 +1,20 @@
 //! Shared test fixture: a tempdir-backed conv-repo (ARCH §2.2 layout)
-//! plus helpers for committing v0.3-shape conversations and dispatching
+//! plus helpers for committing v0.3.1 conversations and dispatching
 //! in-flight subagent branches.
 //!
 //! Tests hit a real git binary rather than mocking; fixtures are cheap
 //! to spin up and the renderer's contract is explicitly with the CLI,
 //! so mocking would mean testing our mock.
+//!
+//! Post-bl-c22c, the fixture follows the relocated step-record shape
+//! (ARCH §2.3): step records (`request.json` / `response.json`) live at
+//! `<conv-repo>/steps/<conv-id>/<NNN>/`, *outside* every worktree, and
+//! are not committed to git. The conversation branch carries a
+//! dispatch commit (`goal.md` + `soul.md`) and a compactor merge — the
+//! shape produced by `src/prompt/dispatch` + `src/prompt/compactor`.
+//! Conversation detection on the trunk keys off the default
+//! `Merge branch '<conv-id>'` subject, written by `git merge --no-ff`
+//! with no `-m` (mirroring `src/prompt/merge::rebase_and_merge`).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -24,9 +34,9 @@ const INHERITED_GIT_ENV: &[&str] = &[
 
 pub(super) struct Fixture {
     _dir: TempDir,
-    /// Conv-repo root — the dir holding `root/`, control files, and
-    /// any subagent worktrees. This is what `GitTree::from_repo` is
-    /// passed in production (ARCH §2.2).
+    /// Conv-repo root — the dir holding `root/`, control files
+    /// (`steps/`, `souls/`, etc.), and any subagent worktrees. This is
+    /// what `GitTree::from_repo` is passed in production (ARCH §2.2).
     pub(super) path: PathBuf,
     /// Primary worktree path (`<conv-repo>/root/`). All git commands
     /// in tests run from here, mirroring the harness.
@@ -62,26 +72,24 @@ impl Fixture {
         );
     }
 
-    /// Build a v0.3-shape conversation branch and merge it back to
-    /// `main` with `--no-ff`, mirroring the dispatch + response +
-    /// terminal-compaction sequence (ARCH §2.3, §2.6).
+    /// Build a v0.3.1-shape conversation branch and merge it back to
+    /// `main` with `--no-ff`. Branch carries a dispatch commit plus a
+    /// compactor sub-branch merge; the user-message step record lands
+    /// on disk at `<conv-repo>/steps/<conv-id>/001/request.json`,
+    /// outside every worktree (ARCH §2.3).
     pub(super) fn commit_v03_merged_conversation(&self, conv_id: &str, user_message: &str) {
         self.build_v03_branch(conv_id, user_message);
         run_git(&self.primary, &["checkout", "-q", "main"]);
+        // `git merge --no-ff <branch>` with no `-m` writes the default
+        // subject `Merge branch '<branch>'` — what `parse_merge_subject`
+        // keys off (ARCH §2.3, src/prompt/merge::rebase_and_merge).
         run_git(
             &self.primary,
-            &[
-                "merge",
-                "--no-ff",
-                "-q",
-                "-m",
-                &format!("merge {conv_id}"),
-                conv_id,
-            ],
+            &["merge", "--no-ff", "-q", "--no-edit", conv_id],
         );
     }
 
-    /// Build a v0.3-shape conversation branch and leave it unmerged
+    /// Build a v0.3.1-shape conversation branch and leave it unmerged
     /// (the in-flight case the renderer surfaces under "in-flight
     /// conversations").
     pub(super) fn build_v03_in_flight(&self, conv_id: &str, user_message: &str) {
@@ -89,55 +97,41 @@ impl Fixture {
         run_git(&self.primary, &["checkout", "-q", "main"]);
     }
 
-    fn build_v03_branch(&self, conv_id: &str, user_message: &str) {
-        run_git(&self.primary, &["checkout", "-q", "-b", conv_id, "main"]);
-        let step_dir = format!("steps/{conv_id}/001");
-        fs::create_dir_all(self.primary.join(&step_dir)).unwrap();
+    /// Write the diagnostic step record for `conv_id`'s first step at
+    /// the conv-repo root (ARCH §2.3). Called by `build_v03_branch`,
+    /// also exposed for tests that need to seed a step record without
+    /// building a full branch.
+    pub(super) fn write_step_record(&self, conv_id: &str, user_message: &str) {
+        let step_dir = self.path.join("steps").join(conv_id).join("001");
+        fs::create_dir_all(&step_dir).unwrap();
         let request_json = serde_json::json!({
             "model": "m",
             "messages": [{"role": "user", "content": user_message}],
         });
         fs::write(
-            self.primary.join(format!("{step_dir}/request.json")),
+            step_dir.join("request.json"),
             serde_json::to_vec_pretty(&request_json).unwrap(),
         )
         .unwrap();
-        run_git(&self.primary, &["add", &format!("{step_dir}/request.json")]);
+    }
+
+    fn build_v03_branch(&self, conv_id: &str, user_message: &str) {
+        run_git(&self.primary, &["checkout", "-q", "-b", conv_id, "main"]);
+        // Dispatch commit (ARCH §2.3 step 2): goal.md + soul.md only.
+        // The user message is *not* in the tree — it lives in
+        // `request.json` on disk under `<conv-repo>/steps/...`.
+        fs::write(self.primary.join("goal.md"), user_message).unwrap();
+        fs::write(self.primary.join("soul.md"), "you are a tester\n").unwrap();
+        run_git(&self.primary, &["add", "goal.md", "soul.md"]);
         run_git(
             &self.primary,
-            &[
-                "commit",
-                "-q",
-                "-m",
-                &format!("step 001: dispatch [{conv_id}]"),
-            ],
-        );
-        let response_json = serde_json::json!({
-            "content": [{"type": "text", "text": "pong"}],
-            "stop_reason": "end_turn"
-        });
-        fs::write(
-            self.primary.join(format!("{step_dir}/response.json")),
-            serde_json::to_vec_pretty(&response_json).unwrap(),
-        )
-        .unwrap();
-        run_git(
-            &self.primary,
-            &["add", &format!("{step_dir}/response.json")],
-        );
-        run_git(
-            &self.primary,
-            &[
-                "commit",
-                "-q",
-                "-m",
-                &format!("step 001: response [{conv_id}]"),
-            ],
+            &["commit", "-q", "-m", &format!("dispatch [{conv_id}]")],
         );
         // Compactor sub-branch: hyphenated descent off the conversation
         // branch (ARCH §2.3); one summary commit, merged --no-ff back
-        // into the conversation branch. Mirrors the real shape produced
-        // by `dispatch_compactor`.
+        // into the conversation branch with the default merge subject.
+        // Mirrors the real shape produced by `dispatch_compactor` plus
+        // `src/prompt/merge::rebase_and_merge`.
         let cmp_branch = format!("{conv_id}-c");
         run_git(
             &self.primary,
@@ -162,16 +156,11 @@ impl Fixture {
         run_git(&self.primary, &["checkout", "-q", conv_id]);
         run_git(
             &self.primary,
-            &[
-                "merge",
-                "--no-ff",
-                "-q",
-                "-m",
-                &format!("compactor merge [{conv_id}]"),
-                &cmp_branch,
-            ],
+            &["merge", "--no-ff", "-q", "--no-edit", &cmp_branch],
         );
         run_git(&self.primary, &["branch", "-q", "-D", &cmp_branch]);
+        // Step record on disk, outside every worktree (ARCH §2.3).
+        self.write_step_record(conv_id, user_message);
     }
 }
 

@@ -9,22 +9,25 @@
 //! Git access is via the `git` CLI (a hard dep of lernie itself, per
 //! ARCH §2.2) — no libgit2 native build step is required.
 //!
-//! # v0.3 layout
+//! # v0.3.1 layout
 //!
 //! The conv-repo (ARCH §2.2) holds its `.git` inside the primary
-//! worktree at `<conv-repo>/root/`; control-plane files live at the
-//! conv-repo root, outside any worktree. Callers pass the conv-repo
-//! path; this module resolves the git working dir to `<conv-repo>/root/`
-//! before issuing any git command.
+//! worktree at `<conv-repo>/root/`; control-plane files (`manifest.yaml`,
+//! `souls/`, the `steps/` tree) live at the conv-repo root, outside any
+//! worktree. Callers pass the conv-repo path; this module resolves the
+//! git working dir to `<conv-repo>/root/` before issuing any git command,
+//! and reads step records (for previews) directly from the conv-repo
+//! root.
 //!
 //! Each user-message dispatch spawns a bare `<conv-id>` branch off
 //! `main` and merges back with `--no-ff` on completion (ARCH §2.3).
-//! The merge commit on `main`'s first-parent trunk introduces step
-//! files at `steps/<conv-id>/<NNN>/{request.json,response.json}`. The
-//! UI keys off that path to recognize a conversation merge and pull
-//! the user message from `request.json`'s `messages[0].content`.
-//! Subagent branches (named by full hyphenated descent) appear under
-//! the same enumeration when unmerged.
+//! v0.3.1 (bl-c22c P4) keys conversation detection off the merged
+//! branch's name, recovered from the trunk merge commit's default
+//! `Merge branch '<name>'` subject — branch names already encode the
+//! conv-id (or hyphenated descent for subagents). Step records are no
+//! longer in any commit (§2.3 "Step records are not committed to git"),
+//! so the user-message preview reads from
+//! `<conv-repo>/steps/<conv-id>/001/request.json` on disk.
 
 mod cmd;
 mod detect;
@@ -69,9 +72,11 @@ pub struct CommitNode {
     pub short_oid: String,
     pub timestamp_unix: i64,
     /// The conversation id this commit represents, if any. Populated
-    /// for `--no-ff` merge commits whose introduced files include
-    /// `steps/<conv-id>/<NNN>/...`; `None` for trunk commits that
-    /// are neither (initial scaffold commit, config tweaks, etc.).
+    /// for `--no-ff` merge commits whose default `Merge branch '<name>'`
+    /// subject parses (ARCH §2.3); `None` for non-merge commits and for
+    /// merges whose subject does not match the conversation shape
+    /// (initial scaffold commit, config tweaks, hand-run merges with
+    /// rewritten subjects, etc.).
     pub conv_id: Option<String>,
     pub preview: Option<String>,
     /// Step commits on the conversation branch this merge commit
@@ -108,9 +113,9 @@ impl GitTree {
         let log = cmd::git_log_first_parent(&git_dir)?;
         let mut commits = Vec::with_capacity(log.len());
         for entry in log {
-            commits.push(enumerate::build_node(&git_dir, entry)?);
+            commits.push(enumerate::build_node(conv_repo, &git_dir, entry)?);
         }
-        let in_flight = enumerate::enumerate_in_flight(&git_dir)?;
+        let in_flight = enumerate::enumerate_in_flight(conv_repo, &git_dir)?;
         Ok(Self { commits, in_flight })
     }
 }

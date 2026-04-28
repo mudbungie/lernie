@@ -249,14 +249,30 @@ v0.3 ships two built-ins:
   harness sends is forwarded to the entire spawned tree (§2.9
   cascade). Try it directly: `echo '{"command":"ls"}' | lernie tool bash`.
 
-## Dispatching the compactor directly
+## Dispatching subagents directly
 
-`lernie dispatch compactor <repo> <conv-id>` runs the same
-terminal-compaction routine that `lernie prompt` triggers internally.
-Useful for re-compacting a conversation branch that still exists as a
-ref, or for testing the compactor path independently. The command
-only runs the compaction + compactor→conversation merge; merge into
-`main` is the caller's problem (§2.6).
+`lernie dispatch <role> <repo> <branch> [--goal <text>]` is the §3.4
+re-entry point every subagent uses. The role name is positional, so
+the surface generalizes across the v0.3 compactor, the v0.4 worker,
+and future roles (verifier, critic, …) without a CLI shape change.
+
+- `lernie dispatch compactor <repo> <conv-id>` runs the same
+  terminal-compaction routine `lernie prompt` triggers internally.
+  Useful for re-compacting a conversation branch that still exists as
+  a ref, or for testing the compactor path independently. The
+  compactor's goal is built-in boilerplate; passing `--goal` is
+  rejected. The command only runs the compaction +
+  compactor→conversation merge; merge into `main` is the caller's
+  problem (§2.6).
+- `lernie dispatch worker <repo> <parent-branch> --goal <text>`
+  spawns a worker subagent off `<parent-branch>`'s tip. The new
+  branch is `<parent-branch>-<sub-id>` (hyphenated descent, §2.2),
+  with a sibling worktree at the same path; `goal.md` carries the
+  supplied text and `soul.md` is loaded from
+  `<repo>/souls/worker.md`, both committed as the dispatch commit
+  (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step
+  loop, the `dispatch`/`await` tool surface that puts a parent in
+  front of it, and the merge-back land in subsequent phases.
 
 ## Providers
 

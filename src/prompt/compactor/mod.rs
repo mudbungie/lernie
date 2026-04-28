@@ -21,6 +21,7 @@
 pub mod tools;
 
 use super::merge::rebase_and_merge;
+use super::subagent::{SpawnRequest, spawn_subagent_branch};
 use super::{Clock, Error, IdGen};
 use crate::template::GitRunner;
 use std::path::Path;
@@ -69,20 +70,24 @@ pub fn run(
     // the real summary in v0.4+ comes through the dispatch contract.
     let summary = build_summary(req.parent_conv_id);
 
-    spawn_compactor_branch(
-        req.parent_worktree,
-        &cmp_worktree,
-        &cmp_branch,
-        req.parent_conv_id,
+    // Dispatch (§2.5 / §2.7): branch + worktree + goal.md + dispatch
+    // commit. The v0.3 compactor stub omits soul.md because it has no
+    // model call; the shared helper accepts `soul_text: None` for that
+    // case. v0.4+ wires a real compactor agent that fills it in.
+    let goal_text = compactor_goal(req.parent_conv_id);
+    let commit_subject = format!("compaction: dispatch [{}]", req.parent_conv_id);
+    spawn_subagent_branch(
+        &SpawnRequest {
+            parent_worktree: req.parent_worktree,
+            parent_branch: req.parent_conv_id,
+            sub_branch: &cmp_branch,
+            sub_worktree: &cmp_worktree,
+            goal_text: &goal_text,
+            soul_text: None,
+            commit_subject: &commit_subject,
+        },
         git,
     )?;
-
-    // Dispatch commit (§2.10): goal.md lands before any model call.
-    // v0.3 has no model call, but the shape is the load-bearing
-    // part — v0.4+ inherits the same dispatch surface for the real
-    // compactor agent.
-    write_goal(&cmp_worktree, req.parent_conv_id)?;
-    commit_goal(&cmp_worktree, req.parent_conv_id, git)?;
 
     let summary_rel = write_summary(&cmp_worktree, &summary)?;
     commit_summary(&cmp_worktree, &summary_rel, req.parent_conv_id, git)?;
@@ -126,69 +131,11 @@ pub(crate) fn compactor_goal(parent_branch: &str) -> String {
     )
 }
 
-/// Write `goal.md` to the compactor's worktree. Mirrors the
-/// dispatch-side `write_dispatch_files`'s goal write (§2.8) — every
-/// non-root branch carries a goal at the worktree root.
-fn write_goal(cmp_worktree: &Path, parent_branch: &str) -> Result<(), Error> {
-    std::fs::create_dir_all(cmp_worktree)?;
-    std::fs::write(cmp_worktree.join("goal.md"), compactor_goal(parent_branch))?;
-    Ok(())
-}
-
-/// `git add` the goal then `git commit` the dispatch snapshot. Names
-/// the conversation in the message so history reads `compaction:
-/// dispatch [<conv-id>]` analogously to the dispatch commit on the
-/// parent branch.
-fn commit_goal(
-    cmp_worktree: &Path,
-    parent_conv_id: &str,
-    git: &dyn GitRunner,
-) -> Result<(), Error> {
-    git.run(cmp_worktree, &["add", "goal.md"])
-        .map_err(|source| Error::Git { op: "add", source })?;
-    let msg = format!("compaction: dispatch [{parent_conv_id}]");
-    git.run(cmp_worktree, &["commit", "-m", msg.as_str()])
-        .map_err(|source| Error::Git {
-            op: "commit",
-            source,
-        })
-}
-
 /// Stub summary body. Identifies the dispatching conversation
 /// without reading any of its diagnostic step records (§2.3 — no
 /// runtime read of `request.json` / `response.json`).
 fn build_summary(parent_conv_id: &str) -> String {
     format!("conversation {parent_conv_id}: terminal compaction\n")
-}
-
-/// `git worktree add -b <cmp_branch> <cmp_worktree> <parent_branch>`,
-/// run inside the parent worktree (which has access to the same `.git`
-/// dir as `root/`, §2.2). Spawning from the parent worktree means we
-/// do not need to know where `root/` is — the compactor stays scoped
-/// to its dispatching branch.
-fn spawn_compactor_branch(
-    parent_worktree: &Path,
-    cmp_worktree: &Path,
-    cmp_branch: &str,
-    parent_branch: &str,
-    git: &dyn GitRunner,
-) -> Result<(), Error> {
-    let wt_str = cmp_worktree.to_string_lossy().to_string();
-    git.run(
-        parent_worktree,
-        &[
-            "worktree",
-            "add",
-            "-b",
-            cmp_branch,
-            wt_str.as_str(),
-            parent_branch,
-        ],
-    )
-    .map_err(|source| Error::Git {
-        op: "worktree add",
-        source,
-    })
 }
 
 fn commit_summary(

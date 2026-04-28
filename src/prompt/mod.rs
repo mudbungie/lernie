@@ -32,7 +32,9 @@ pub mod dispatch;
 pub mod dispatcher;
 pub mod merge;
 pub mod step;
+pub mod subagent;
 pub mod tool;
+pub mod worker;
 
 #[cfg(test)]
 mod tests;
@@ -42,6 +44,7 @@ pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
+pub use worker::WorkerRequest;
 
 use crate::config::ProvidersConfig;
 use crate::template::GitRunner;
@@ -56,7 +59,7 @@ use thiserror::Error;
 const WORKER_ROLE: &str = "worker";
 /// Per-conv-repo directory holding the role souls (ARCH §4.3 — soul =
 /// `<conv-repo>/souls/<role>.md` by convention).
-const SOULS_DIR: &str = "souls";
+pub(crate) const SOULS_DIR: &str = "souls";
 /// Per-conv-repo control file naming the role → (provider, model)
 /// assignments (ARCH §4.3). Lives at the conv-repo root, outside any
 /// worktree (§2.2 control vs data plane).

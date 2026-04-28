@@ -1,6 +1,6 @@
 //! The `lernie` harness binary.
 //!
-//! v0.3 surface:
+//! Surface:
 //!
 //! - `new <path>` — scaffold a conversation repo from the embedded
 //!   template (ARCH §2.2).
@@ -10,11 +10,14 @@
 //!   response as a follow-up commit, dispatch the terminal compactor
 //!   off the branch tip (§2.7), and `--no-ff` merge the result back
 //!   to `main` (§2.6). Prints the conversation branch name.
-//! - `dispatch compactor <repo> <branch>` — run the terminal
-//!   compactor against an already-spawned conversation branch. Same
-//!   shape `prompt` uses internally; exposed for external callers and
-//!   future non-root-conversation dispatch cases (verifier, adversary,
-//!   v0.4+).
+//! - `dispatch <role> <repo> <branch> [--goal <text>]` — re-entry
+//!   point for subagent dispatch (ARCH §3.4). `<role>` is positional
+//!   so the surface generalizes across the v0.3 compactor, the v0.4
+//!   worker, and future verifier/critic/etc. (§2.5). `--goal` is
+//!   required for `worker` and forbidden for `compactor` (whose goal
+//!   is built-in boilerplate, §2.7); per-role validation lives here
+//!   rather than in the clap surface so adding a role is a one-line
+//!   match arm rather than a Subcommand-tree edit.
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3). The
 //!   tool executor's resolution order falls through to
 //!   `<lernie> tool <name>` after external lookups miss; the
@@ -26,11 +29,11 @@ use clap::{Parser, Subcommand};
 use lernie::harness_root;
 use lernie::prompt::{
     self, CompactorRequest, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool,
-    SystemClock, tool::builtin,
+    SystemClock, WorkerRequest, tool::builtin,
 };
 use lernie::template::{self, RealGit};
 use std::io;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 #[derive(Parser)]
@@ -60,12 +63,23 @@ enum Command {
         /// The user message to send.
         message: String,
     },
-    /// Dispatch a subagent. The v0.3 surface has one role
-    /// (`compactor`); v0.4+ adds verifier, worker, adversary, etc.
-    /// through the same primitive.
+    /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` selects which
+    /// subagent shape — `compactor` (terminal compaction, §2.7) or
+    /// `worker` (per-call goal, §2.5). Future roles slot in by name
+    /// without a clap surface change.
     Dispatch {
-        #[command(subcommand)]
-        role: DispatchRole,
+        /// Role name. v0.4: `compactor` | `worker`.
+        role: String,
+        /// Path to the conversation repo.
+        repo: PathBuf,
+        /// Dispatching branch. For `compactor`, the conversation
+        /// branch being compacted; for `worker`, the parent branch
+        /// off whose tip the worker is spawned.
+        branch: String,
+        /// Per-call goal text. Required for `worker`; rejected for
+        /// `compactor` (whose goal is built-in boilerplate, §2.7).
+        #[arg(long)]
+        goal: Option<String>,
     },
     /// In-process built-in tool entry (ARCH §3.3). Reads
     /// `tool_use.input` JSON from stdin, writes raw result bytes to
@@ -82,21 +96,12 @@ enum Command {
     },
 }
 
-#[derive(Subcommand)]
-enum DispatchRole {
-    /// Run terminal compaction against a conversation branch: spawn a
-    /// compactor branch off its tip (hyphenated descent of the
-    /// parent's id, ARCH §2.2), write `summary/<seq>.md`, and
-    /// `--no-ff` merge back into the conversation branch. Does not
-    /// merge the conversation into `main` — that is the caller's
-    /// responsibility (§2.6).
-    Compactor {
-        /// Path to the conversation repo.
-        repo: PathBuf,
-        /// Conversation branch to compact (the bare `<conv-id>`).
-        branch: String,
-    },
-}
+/// Role name for the v0.3 terminal compactor (ARCH §2.7). Built-in
+/// boilerplate goal — `--goal` on the CLI is rejected for this role.
+const ROLE_COMPACTOR: &str = "compactor";
+/// Role name for the v0.4 worker subagent (ARCH §2.5). Per-call goal,
+/// supplied via `--goal <text>`.
+const ROLE_WORKER: &str = "worker";
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -160,14 +165,11 @@ fn main() -> ExitCode {
             }
         }
         Command::Dispatch {
-            role: DispatchRole::Compactor { repo, branch },
-        } => match run_compactor_cli(&repo, &branch) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => {
-                eprintln!("lernie dispatch compactor: {e}");
-                ExitCode::FAILURE
-            }
-        },
+            role,
+            repo,
+            branch,
+            goal,
+        } => run_dispatch_cli(&role, &repo, &branch, goal.as_deref()),
         Command::Tool { name } => {
             let stdin = io::stdin();
             let stdout = io::stdout();
@@ -189,18 +191,94 @@ fn main() -> ExitCode {
     }
 }
 
-/// CLI handler for `lernie dispatch compactor`. Builds a
-/// [`CompactorRequest`] from the repo + branch and runs the stub
-/// through the in-process entry point. §3.4 permits in-process
-/// re-entry; the invariant is that the interface is the CLI. The
-/// branch name IS the conversation id (ARCH §2.3 — no prefix), so it
-/// also names the worktree directory at `<repo>/<branch>/` (§2.2).
-fn run_compactor_cli(repo: &PathBuf, branch: &str) -> Result<(), prompt::Error> {
+/// CLI handler for `lernie dispatch <role>`. The branch name IS the
+/// conversation id (ARCH §2.3 — no prefix), so it also names the
+/// worktree directory at `<repo>/<branch>/` (§2.2). Per-role argument
+/// rules (`--goal` required for worker, rejected for compactor) are
+/// enforced here and surfaced as a non-zero exit with a `lernie
+/// dispatch <role>:` prefix matching the existing error style.
+fn run_dispatch_cli(role: &str, repo: &Path, branch: &str, goal: Option<&str>) -> ExitCode {
+    let outcome = match role {
+        ROLE_COMPACTOR => run_compactor_cli(repo, branch, goal),
+        ROLE_WORKER => run_worker_cli(repo, branch, goal),
+        other => Err(DispatchCliError::UnknownRole(other.to_owned())),
+    };
+    match outcome {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("lernie dispatch {role}: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Errors specific to the dispatch CLI argument shape. Joined with
+/// [`prompt::Error`] (the in-process role implementations' error
+/// type) under one `Display` so the eprintln formatting stays
+/// uniform across cases.
+#[derive(Debug)]
+enum DispatchCliError {
+    UnknownRole(String),
+    GoalRequired(&'static str),
+    GoalForbidden(&'static str),
+    Inner(prompt::Error),
+}
+
+impl std::fmt::Display for DispatchCliError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownRole(r) => write!(f, "unknown role {r:?}"),
+            Self::GoalRequired(r) => write!(f, "--goal is required for role {r:?}"),
+            Self::GoalForbidden(r) => write!(
+                f,
+                "--goal is not accepted for role {r:?} (built-in boilerplate)"
+            ),
+            Self::Inner(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl From<prompt::Error> for DispatchCliError {
+    fn from(value: prompt::Error) -> Self {
+        Self::Inner(value)
+    }
+}
+
+fn run_compactor_cli(
+    repo: &Path,
+    branch: &str,
+    goal: Option<&str>,
+) -> Result<(), DispatchCliError> {
+    if goal.is_some() {
+        return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
+    }
     let worktree = repo.join(branch);
     let req = CompactorRequest {
         repo,
         parent_conv_id: branch,
         parent_worktree: &worktree,
     };
-    prompt::compactor::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)
+    Ok(prompt::compactor::run(
+        &req,
+        &RealGit::new(),
+        &SystemClock,
+        &NanoIdGen,
+    )?)
+}
+
+fn run_worker_cli(
+    repo: &Path,
+    parent_branch: &str,
+    goal: Option<&str>,
+) -> Result<(), DispatchCliError> {
+    let goal = goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?;
+    let parent_worktree = repo.join(parent_branch);
+    let req = WorkerRequest {
+        repo,
+        parent_branch,
+        parent_worktree: &parent_worktree,
+        goal,
+    };
+    let _sub_branch = prompt::worker::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)?;
+    Ok(())
 }

@@ -130,11 +130,14 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(wire, request);
 
     // Compactor was dispatched via the CLI surface (§3.4): the
-    // dispatcher saw the repo + conversation branch exactly once.
+    // dispatcher saw role=compactor, the repo, the conversation
+    // branch, and no `--goal` (compactor uses built-in boilerplate).
     let dispatches = dispatcher.calls.borrow().clone();
     assert_eq!(dispatches.len(), 1);
-    assert_eq!(dispatches[0].0, repo.path());
-    assert_eq!(dispatches[0].1, "ct-1-deadbeef");
+    assert_eq!(dispatches[0].0, "compactor");
+    assert_eq!(dispatches[0].1, repo.path());
+    assert_eq!(dispatches[0].2, "ct-1-deadbeef");
+    assert_eq!(dispatches[0].3, None);
 
     // Git sequence (cmp internals are now behind the dispatcher
     // boundary): 4 for the conversation branch (worktree add,

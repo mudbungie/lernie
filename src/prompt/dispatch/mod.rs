@@ -196,7 +196,7 @@ pub(super) fn run_exchange(
     // the CLI: the harness re-enters `lernie dispatch compactor`
     // rather than calling the compactor module directly.
     deps.dispatcher
-        .dispatch_compactor(repo, &branch_name)
+        .dispatch("compactor", repo, &branch_name, None)
         .map_err(|source| Error::DispatchFailed {
             role: "compactor",
             source,

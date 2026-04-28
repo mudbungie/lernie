@@ -152,10 +152,17 @@ impl GitRunner for StubGit {
     }
 }
 
-/// Recording [`Dispatcher`] for the compactor handoff.
+/// One observed [`Dispatcher::dispatch`] invocation: `(role, repo,
+/// branch, goal)`. Aliased so the `RefCell` field type stays under
+/// clippy's complexity ceiling.
+pub(super) type DispatchCall = (String, PathBuf, String, Option<String>);
+
+/// Recording [`Dispatcher`] for the dispatch handoff. Captures both
+/// the compactor handoff (no goal, role=`compactor`) and the worker
+/// handoff (`--goal …`, role=`worker`) without needing two stubs.
 #[derive(Default)]
 pub(super) struct StubDispatcher {
-    pub(super) calls: RefCell<Vec<(PathBuf, String)>>,
+    pub(super) calls: RefCell<Vec<DispatchCall>>,
     fail: Option<io::Error>,
 }
 
@@ -172,8 +179,19 @@ impl StubDispatcher {
 }
 
 impl Dispatcher for StubDispatcher {
-    fn dispatch_compactor(&self, repo: &Path, branch: &str) -> io::Result<()> {
-        let entry = (repo.to_path_buf(), branch.to_owned());
+    fn dispatch(
+        &self,
+        role: &str,
+        repo: &Path,
+        branch: &str,
+        goal: Option<&str>,
+    ) -> io::Result<()> {
+        let entry = (
+            role.to_owned(),
+            repo.to_path_buf(),
+            branch.to_owned(),
+            goal.map(str::to_owned),
+        );
         self.calls.borrow_mut().push(entry);
         match &self.fail {
             None => Ok(()),

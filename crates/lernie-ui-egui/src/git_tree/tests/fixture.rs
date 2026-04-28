@@ -115,6 +115,28 @@ impl Fixture {
         .unwrap();
     }
 
+    /// Write a partial `response.json` for `conv_id`'s `seq`-th step.
+    /// Each `event` is a JSONL line (no trailing newline); they are
+    /// joined with `\n` and a trailing `\n` is appended, mirroring the
+    /// shape `src/prompt/dispatch::stream::run_complete` produces line
+    /// by line. The fd closes when this helper returns — the harness's
+    /// IN_CLOSE_WRITE semantics aren't reproduced here, but the on-disk
+    /// snapshot the UI tails is identical, which is what the
+    /// stateless-re-read view-model contract (ARCH §3.5) cares about.
+    pub(super) fn write_response_events(&self, conv_id: &str, seq: u32, events: &[&str]) {
+        let step_dir = self
+            .path
+            .join("steps")
+            .join(conv_id)
+            .join(format!("{seq:03}"));
+        fs::create_dir_all(&step_dir).unwrap();
+        let mut payload = events.join("\n");
+        if !events.is_empty() {
+            payload.push('\n');
+        }
+        fs::write(step_dir.join("response.json"), payload).unwrap();
+    }
+
     fn build_v03_branch(&self, conv_id: &str, user_message: &str) {
         run_git(&self.primary, &["checkout", "-q", "-b", conv_id, "main"]);
         // Dispatch commit (ARCH §2.3 step 2): goal.md + soul.md only.

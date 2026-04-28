@@ -151,5 +151,96 @@ fn from_repo_v03_in_flight_without_request_json_drops_preview() {
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert_eq!(tree.in_flight.len(), 1);
     assert!(tree.in_flight[0].preview.is_none());
+    assert!(tree.in_flight[0].streaming_text.is_none());
     assert_eq!(tree.in_flight[0].steps.len(), 1);
+}
+
+#[test]
+fn from_repo_in_flight_surfaces_partial_response_text() {
+    // bl-0619: live-streaming text view-model. The harness writes
+    // `<conv-repo>/steps/<conv-id>/<NNN>/response.json` as JSONL of
+    // §4.4 stream events while the model is producing output; the
+    // frontend reads it on every tick and folds `text_delta` events
+    // into the in-flight branch's `streaming_text`.
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.build_v03_in_flight("20260427T120100Z-strm", "summarize Rust ownership");
+    fx.write_response_events(
+        "20260427T120100Z-strm",
+        1,
+        &[
+            r#"{"type":"message_start","message":{"id":"m1"}}"#,
+            r#"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}"#,
+            r#"{"type":"text_delta","index":0,"text":"Rust"}"#,
+            r#"{"type":"text_delta","index":0,"text":" tracks"}"#,
+            r#"{"type":"text_delta","index":0,"text":" ownership"}"#,
+        ],
+    );
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    assert_eq!(tree.in_flight.len(), 1);
+    assert_eq!(
+        tree.in_flight[0].streaming_text.as_deref(),
+        Some("Rust tracks ownership")
+    );
+}
+
+#[test]
+fn from_repo_in_flight_picks_latest_step_response_text() {
+    // Multi-step loop: step 001 has a complete response, step 002 is
+    // mid-stream. Streaming text reflects the latest step only — earlier
+    // steps' bodies surface through the per-step commit view, not the
+    // live-streaming pane.
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.build_v03_in_flight("20260427T120200Z-loop", "step into the loop");
+    fx.write_response_events(
+        "20260427T120200Z-loop",
+        1,
+        &[r#"{"type":"text_delta","index":0,"text":"first step body"}"#],
+    );
+    fx.write_response_events(
+        "20260427T120200Z-loop",
+        2,
+        &[r#"{"type":"text_delta","index":0,"text":"second step partial"}"#],
+    );
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    assert_eq!(
+        tree.in_flight[0].streaming_text.as_deref(),
+        Some("second step partial")
+    );
+}
+
+#[test]
+fn from_repo_in_flight_with_response_but_no_text_deltas_yet() {
+    // Response file exists but only `message_start` has landed — no
+    // text_delta events yet. The view-model should still be `None`
+    // (nothing user-visible to render) and detection must not crash.
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.build_v03_in_flight("20260427T120300Z-prep", "still preparing");
+    fx.write_response_events(
+        "20260427T120300Z-prep",
+        1,
+        &[r#"{"type":"message_start","message":{"id":"m1"}}"#],
+    );
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    assert!(tree.in_flight[0].streaming_text.is_none());
+}
+
+#[test]
+fn from_repo_v03_merged_conversation_has_no_streaming_text_field_set() {
+    // Streaming text is an in-flight-only concern; merged commits
+    // surface their text through the per-step commit view, not via the
+    // streaming pane. We assert the in-flight list is empty so there's
+    // no place for streaming text to land.
+    let fx = Fixture::new();
+    fx.commit_other("README.md", "initial");
+    fx.commit_v03_merged_conversation("20260427T120400Z-done", "merged work");
+    fx.write_response_events(
+        "20260427T120400Z-done",
+        1,
+        &[r#"{"type":"text_delta","index":0,"text":"after-merge text"}"#],
+    );
+    let tree = GitTree::from_repo(&fx.path).unwrap();
+    assert!(tree.in_flight.is_empty());
 }

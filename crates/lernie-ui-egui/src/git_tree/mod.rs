@@ -32,6 +32,7 @@
 mod cmd;
 mod detect;
 mod enumerate;
+mod streaming;
 
 use std::path::{Path, PathBuf};
 
@@ -40,6 +41,12 @@ use std::path::{Path, PathBuf};
 /// in the harness; the duplicate constant keeps the UI crate free of a
 /// dep on the harness binary.
 const ROOT_WORKTREE: &str = "root";
+
+/// Top-level directory under the conv-repo holding per-conversation
+/// step records (ARCH §2.2 / §2.3). Mirrors
+/// `src/prompt/step::STEPS_DIR`; the duplicate constant keeps the UI
+/// crate free of a dep on the harness binary.
+const STEPS_DIR: &str = "steps";
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitTreeError {
@@ -105,6 +112,13 @@ pub struct ConversationBranch {
     /// newest. Same shape as merged-conversation steps.
     pub steps: Vec<StepCommit>,
     pub preview: Option<String>,
+    /// Live-updating model text for the latest in-flight step on this
+    /// branch. Re-derived from
+    /// `<conv-repo>/steps/<conv-id>/<NNN>/response.json` on every
+    /// `from_repo` call (ARCH §3.5: stateless re-read on each tick).
+    /// `None` when no `text_delta` events have landed yet (or the
+    /// step's `response.json` is absent).
+    pub streaming_text: Option<String>,
 }
 
 impl GitTree {
@@ -177,6 +191,11 @@ fn render_in_flight(ui: &mut egui::Ui, branch: &ConversationBranch) {
             ui.label(preview);
         }
     });
+    if let Some(text) = &branch.streaming_text {
+        ui.indent(("streaming", &branch.branch_name), |ui| {
+            ui.label(text);
+        });
+    }
 }
 
 #[cfg(test)]

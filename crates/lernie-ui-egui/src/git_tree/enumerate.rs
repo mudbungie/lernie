@@ -12,7 +12,8 @@
 
 use super::cmd::{LogEntry, for_each_ref_unmerged, walk_branch_steps, walk_merge_step_commits};
 use super::detect::{extract_request_preview, parse_merge_subject};
-use super::{CommitNode, ConversationBranch, GitTreeError};
+use super::streaming::streaming_text_from_disk;
+use super::{CommitNode, ConversationBranch, GitTreeError, STEPS_DIR};
 use std::path::Path;
 
 pub(super) fn build_node(
@@ -83,6 +84,7 @@ pub(super) fn enumerate_in_flight(
         let tip_short_oid = tip_oid.get(..8).unwrap_or(&tip_oid).to_string();
         let steps = walk_branch_steps(git_dir, &branch_name)?;
         let preview = preview_from_disk(conv_repo, &conv_id);
+        let streaming_text = streaming_text_from_disk(conv_repo, &conv_id);
         branches.push(ConversationBranch {
             branch_name,
             conv_id,
@@ -91,6 +93,7 @@ pub(super) fn enumerate_in_flight(
             tip_timestamp_unix: tip_ts,
             steps,
             preview,
+            streaming_text,
         });
     }
     Ok(branches)
@@ -98,7 +101,7 @@ pub(super) fn enumerate_in_flight(
 
 fn preview_from_disk(conv_repo: &Path, conv_id: &str) -> Option<String> {
     let path = conv_repo
-        .join("steps")
+        .join(STEPS_DIR)
         .join(conv_id)
         .join("001")
         .join("request.json");

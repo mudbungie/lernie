@@ -163,11 +163,12 @@ pub trait ToolExecutor {
     /// <call.id>/`, and return the outcome the loop needs to assemble
     /// the next step's `tool_result` block.
     ///
-    /// `step_dir` is the absolute worktree-rooted path of the
-    /// `steps/<conv-id>/<NNN>/` directory the call belongs to — i.e.
-    /// the directory the snapshot commit landed `request.json` and
-    /// `response.json` in, per [`crate::prompt::step`]. The executor
-    /// owns the `tools/<tool-id>/` subtree below it.
+    /// `step_dir` is the absolute conv-repo-rooted path of the
+    /// `steps/<conv-id>/<NNN>/` directory the call belongs to — at the
+    /// conversation-repo root, outside every worktree (ARCH §2.2 /
+    /// §2.3), the directory `request.json` / `response.json` /
+    /// `meta.json` are written into per [`crate::prompt::step`]. The
+    /// executor owns the `tools/<tool-id>/` subtree below it.
     ///
     /// `stop` is the harness-wide cancel flag (PRINCIPLES "Stops are
     /// aggressive and cascading"): when set mid-execution, the

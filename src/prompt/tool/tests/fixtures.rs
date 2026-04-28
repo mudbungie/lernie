@@ -74,11 +74,12 @@ pub(super) fn write_script(path: &Path, body: &str) {
     std::fs::set_permissions(path, perm).expect("chmod");
 }
 
-/// Per-test step directory. Mirrors the v0.3 layout
-/// `<worktree>/steps/<conv-id>/<NNN>/` (ARCH §2.2 / §2.3) so the
-/// executor lands `tools/<tool-id>/` underneath. `_root` is held
-/// only for its `Drop` — the tempdir cleanup happens when [`StepDir`]
-/// goes out of scope.
+/// Per-test step directory. Mirrors the v0.3.1 layout
+/// `<conv-repo>/steps/<conv-id>/<NNN>/` (ARCH §2.2 / §2.3 — at the
+/// conv-repo root, outside every worktree) so the executor lands
+/// `tools/<tool-id>/` underneath. `_root` is held only for its
+/// `Drop` — the tempdir cleanup happens when [`StepDir`] goes out
+/// of scope.
 pub(super) struct StepDir {
     _root: TempDir,
     pub(super) path: PathBuf,

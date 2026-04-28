@@ -339,20 +339,13 @@ can't be read, a placeholder view is shown instead.
 Three pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
-> **v0.3.1 transitional note.** The harness now writes step records
-> to `<conv-repo>/steps/<conv-id>/<NNN>/` (outside every worktree,
-> ARCH §2.2 / §2.3). The UI's `fs_watcher` still scopes step paths
-> under `root/steps/...` and `git_tree` still keys conversation
-> detection off git-tracked `steps/<conv-id>/...` paths — both of
-> those will surface stale results until v0.3.1 P4 retargets them
-> to the conv-repo-root layout.
-
 - `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
-  change events. The watched set covers conv-repo control files
+  change events. The watched set covers conv-repo root paths
   (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `version`,
-  `souls/`), per-worktree contents under any subdir (`goal.md`,
-  `soul.md`, `summary/`, `steps/`, `descriptions/`, `skills/`,
-  `.gitattributes`), and the primary worktree's git refs
+  `souls/`, `steps/` — the last lives at the conv-repo root outside
+  every worktree per ARCH §2.2 / §2.3), per-worktree contents under
+  any subdir (`goal.md`, `soul.md`, `summary/`, `descriptions/`,
+  `skills/`, `.gitattributes`), and the primary worktree's git refs
   (`root/.git/HEAD`, `root/.git/refs/`). Live updates wire through here
   in a follow-up.
 - `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
@@ -365,8 +358,11 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   with their step commits) plus the set of unmerged conversation
   branches (`git for-each-ref --no-merged=main refs/heads/`, per
   PRINCIPLES.md single-source-of-truth). Conversation detection keys
-  off `steps/<conv-id>/<NNN>/...` paths introduced by each merge. A
-  thin egui widget in the same module renders it.
+  off the merged branch name in each `--no-ff` merge subject (step
+  records are no longer in the merge tree per ARCH §2.3); the user-
+  message preview is read from `<conv-repo>/steps/<conv-id>/001/
+  request.json` on disk. A thin egui widget in the same module renders
+  it.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

@@ -259,13 +259,14 @@ The pinned goal resolves the recency-decay problem in deep agent trees where seq
 
 Stops are aggressive. When a stop is issued (by user, by timeout, by cascade from a parent):
 
-1. A cancel marker is written to the branch's state directory.
-2. In-flight HTTP requests to provider endpoints are dropped.
-3. SIGTERM is sent to all tool subprocesses in the branch and its descendants.
-4. Descendants' cancel markers are written, cascading.
-5. Branches are left unmerged and flagged `stopped`.
+1. SIGTERM is sent to the harness process working on the branch (and the kernel cascades through its process group, covering tool subprocesses and any subagent harnesses spawned per §3.4).
+2. In-flight HTTP requests to provider endpoints are dropped as a side effect of the adapter receiving SIGTERM (§4.4 Cancellation: 5s flush deadline before SIGKILL).
+3. The kernel closes the harness's open fds. The latest step's `response.json` (§4.4 "On-disk response shape: JSONL of stream events, always") receives `IN_CLOSE_WRITE` (§3.5) without a terminal `message_stop` event having been emitted — this missing terminal event *is* the on-disk signature of a stopped step. No separate cancel marker is written; the absence of `message_stop` on a closed file is sufficient.
+4. The branch is left unmerged. Its `stopped` status is derived state, not a written flag — consistent with `docs/PRINCIPLES.md` "Single source of truth": an unmerged branch whose latest step's `response.json` is closed without `message_stop` is `stopped`. (Crashes, kills, and explicit user stops are indistinguishable on disk and treated identically.)
 
 A stopped root conversation is terminal: like any root conversation, it does not merge back to `main`. A stopped subagent conversation is also terminal: it does not merge back to its parent, and the parent's `await(handle)` resolves to a `stopped` status. The user may purge a stopped branch, ignore it, or *resume* it — resumption is a new dispatch using the stopped branch's state as context. The new conversation is a distinct branch with its own goal; the stopped branch remains as a ref for retention.
+
+Between-step lulls (the brief window when one re-entrance subprocess has emitted its terminal `message_stop` and exited but the next `lernie event` subprocess has not yet exec'd) are not stops: the latest step's `response.json` ends with `message_stop`, distinguishing it from a terminated chain. The §6 stateless re-entrance pattern guarantees that during normal operation a chain has either an emitted terminal event or a live process — never neither.
 
 Default retention: 30 days, then tarballed and GC'd.
 
@@ -378,6 +379,8 @@ The frontend surface is exactly two things, and nothing else:
 1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3); the conv-repo-root control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`); the conv-repo-root step records under `steps/<conv-id>/NNN/` (§2.3); and each branch's worktree contents (`goal.md`, `soul.md`, `summary/`, `descriptions/`, `skills/`). Notification is inotify where available, polling otherwise (§3.1).
 
    **Streaming text watch path.** Live model-call output is tailed at `<conv-repo>/steps/<conv-id>/<NNN>/response.json` — the JSONL stream (§4.4) is appended event-by-event as the adapter writes it. **Completion signal: writer closes the fd; inotify `IN_CLOSE_WRITE` marks the response complete.** The frontend tails the file (offset-tracking line read), and on `IN_CLOSE_WRITE` flips the response from "in flight" to "done" — no separate sentinel file, no out-of-band marker. This is the same fd-close convention used elsewhere in the architecture (e.g. atomic-rename writes, where `IN_CLOSE_WRITE` on the temp path precedes the rename); here the streaming append *is* the writer, so close-of-fd directly signals end-of-stream.
+
+   **Branch-state classification.** The four branch states the live view renders (§7.1) are derived from refs and the JSONL terminal event, not from any sidecar marker. `merged`: the branch is reachable from `main`'s HEAD (`merge-base(branch, main) == HEAD(branch)`). `in_flight`: branch is unmerged and the latest step's `response.json` is still being written (no `IN_CLOSE_WRITE` yet, or no `message_stop` line and the file is still open). `stopped`: branch is unmerged, the latest step's `response.json` is closed, and its last JSONL event is not `message_stop` (§2.9 — kill, crash, and explicit stop are indistinguishable on disk). `conflicted`: derived from the integration attempt per §2.6 step 6, not from a property of the branch itself; relevant once subagent merges ship (v0.4+). Precedence at render time is `merged > stopped > in_flight`; `conflicted` is orthogonal and rendered alongside.
 2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, resume, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port.
 
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.

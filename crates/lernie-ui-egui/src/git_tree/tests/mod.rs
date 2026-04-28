@@ -5,9 +5,13 @@
 //! (detection, parsing, preview extraction), [`repo`] covers the
 //! end-to-end [`super::GitTree::from_repo`] flow against real
 //! tempdir-backed git repos, and [`render`] exercises the egui
-//! rendering stubs.
+//! rendering stubs. Branch-state coverage (bl-de6b) lives in
+//! [`state_render`] (badge mapping) and [`state_repo`] (end-to-end
+//! classification against real fixtures).
 
 mod fixture;
 mod render;
 mod repo;
+mod state_render;
+mod state_repo;
 mod unit;

@@ -32,8 +32,11 @@
 mod cmd;
 mod detect;
 mod enumerate;
+mod state;
 mod streaming;
 mod tools;
+
+pub use state::BranchState;
 
 use std::path::{Path, PathBuf};
 
@@ -127,6 +130,12 @@ pub struct ConversationBranch {
     /// via `request_repaint_after`. Re-derived on every `from_repo` call
     /// (§3.5).
     pub tool_calls: Vec<ToolCall>,
+    /// Branch-state classification (ARCH §2.9 / §7.1) derived from the
+    /// latest step's `response.json` terminal event. Always `InFlight`
+    /// or `Stopped` for a row in this section — `Merged` and
+    /// `Conflicted` are not produced for unmerged branches. Re-derived
+    /// on every `from_repo` call (§3.5).
+    pub state: BranchState,
 }
 
 /// A single tool call surfaced to the renderer. v0.5 scope is the
@@ -214,6 +223,8 @@ fn render_step(ui: &mut egui::Ui, step: &StepCommit) {
 
 fn render_in_flight(ui: &mut egui::Ui, branch: &ConversationBranch) {
     ui.horizontal(|ui| {
+        let (glyph, color) = state_badge(branch.state);
+        ui.colored_label(color, glyph);
         ui.monospace(&branch.tip_short_oid);
         ui.label(branch.tip_timestamp_unix.to_string());
         ui.label(&branch.branch_name);
@@ -242,6 +253,20 @@ const PULSE_REPAINT_DELAY: std::time::Duration = std::time::Duration::from_milli
 /// Pulse frequency in radians per second — ~0.6 Hz, slow enough to read
 /// as "alive" rather than "blinking error".
 const PULSE_RATE_RAD_PER_SEC: f64 = 4.0;
+
+/// Glyph + colour for each branch state (ARCH §7.1 termination markers).
+/// Pure function over the enum so renderer tests can assert the mapping
+/// without a windowing context. `Conflicted` is unreachable in v0.5
+/// (no subagent merges yet) but the mapping is provided so a future
+/// renderer pass picks it up without code changes.
+pub(crate) fn state_badge(state: BranchState) -> (&'static str, egui::Color32) {
+    match state {
+        BranchState::Merged => ("●", egui::Color32::from_rgb(120, 200, 120)),
+        BranchState::InFlight => ("◐", egui::Color32::from_rgb(120, 180, 220)),
+        BranchState::Stopped => ("■", egui::Color32::from_rgb(180, 180, 180)),
+        BranchState::Conflicted => ("✕", egui::Color32::from_rgb(220, 120, 120)),
+    }
+}
 
 fn render_tool_call(ui: &mut egui::Ui, call: &ToolCall) {
     ui.horizontal(|ui| {

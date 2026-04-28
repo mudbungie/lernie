@@ -4,13 +4,18 @@
 //! paint output (in particular, in-flight streaming text per bl-0619).
 
 use crate::git_tree::{
-    CommitNode, ConversationBranch, GitTree, StepCommit, ToolCall, ToolCallState, render,
+    BranchState, CommitNode, ConversationBranch, GitTree, StepCommit, ToolCall, ToolCallState,
+    render,
 };
+
+// `BranchState` only appears in struct-init positions below; renderer-
+// level tests for the badge mapping itself live in
+// `tests::state_render`.
 
 /// Run the renderer headlessly and concatenate every `Shape::Text`
 /// galley's text in paint order. Used by tests that assert specific
 /// strings reach the paint layer (e.g. streaming text in flight).
-fn rendered_text(tree: &GitTree) -> String {
+pub(super) fn rendered_text(tree: &GitTree) -> String {
     let ctx = egui::Context::default();
     let output = ctx.run(Default::default(), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, tree));
@@ -131,6 +136,7 @@ fn render_populated_tree_runs_without_panic() {
             preview: Some("wip".into()),
             streaming_text: None,
             tool_calls: Vec::new(),
+            state: BranchState::InFlight,
         }],
     };
     let _ = ctx.run(Default::default(), |ctx| {
@@ -152,6 +158,7 @@ fn render_in_flight_branch_paints_streaming_text() {
             preview: Some("explain quicksort".into()),
             streaming_text: Some("Quicksort partitions around a pivot".into()),
             tool_calls: Vec::new(),
+            state: BranchState::InFlight,
         }],
     };
     let painted = rendered_text(&tree);
@@ -175,6 +182,7 @@ fn render_in_flight_branch_without_streaming_text_paints_no_body() {
             preview: None,
             streaming_text: None,
             tool_calls: Vec::new(),
+            state: BranchState::Stopped,
         }],
     };
     // No assertion on absence (egui paints frame chrome around the
@@ -221,6 +229,7 @@ fn branch_with_tool(tool_id: &str, state: ToolCallState) -> ConversationBranch {
             tool_id: tool_id.into(),
             state,
         }],
+        state: BranchState::InFlight,
     }
 }
 

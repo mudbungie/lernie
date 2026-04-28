@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-45e7",
+  "claimed_by": "Maharishis",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-28T00:40:09.380946086Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["ci"],
   "title": "CI: fix tarpaulin coverage failure on GitHub runner",
   "type": "bug",
-  "updated_at": "2026-04-28T00:40:09.380946086Z"
+  "updated_at": "2026-04-28T00:45:43.760597830Z"
 }

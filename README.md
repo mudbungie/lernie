@@ -173,27 +173,27 @@ follow-up commit, runs the terminal compactor off the tip, and
    ≥2 has no pre-call commit — the branch tip already reflects the
    model-read state. Loop until `stop_reason` is anything other
    than `tool_use`.
-9. Dispatch the terminal compactor (§2.7) off the conversation tip
-   by re-entering the binary as `lernie dispatch compactor <repo>
-   <conv-id>` (subprocess invocation per §3.4 — the harness never
-   shortcuts past the CLI for procedure-to-procedure calls). The
-   compactor spawns branch `<conv-id>-<cmp-id>` (hyphenated descent
-   per §2.2) off the conversation tip in a sibling worktree at
-   `<repo>/<conv-id>-<cmp-id>/`, writes `goal.md` with the
-   boilerplate compactor goal and lands it as a dispatch commit
-   (§2.8, §2.10), then writes a placeholder `summary/001.md`
-   (v0.3.1 stub — identifies the parent conversation but does not
-   read `response.json` per §2.3 diagnostic-only contract) and
-   lands that as a follow-up commit, and `--no-ff` merges the
-   compactor branch back into the conversation branch. The v0.3
-   compactor is a stub — it does not call a model, and
-   `mark_for_deletion` is a no-op; the shape exists so v0.4+ can
-   layer real semantics without moving call sites.
-10. Rebase the conversation branch onto the current `main` tip and
+10. Dispatch the terminal compactor (§2.7) off the conversation tip
+    by re-entering the binary as `lernie dispatch compactor <repo>
+    <conv-id>` (subprocess invocation per §3.4 — the harness never
+    shortcuts past the CLI for procedure-to-procedure calls). The
+    compactor spawns branch `<conv-id>-<cmp-id>` (hyphenated descent
+    per §2.2) off the conversation tip in a sibling worktree at
+    `<repo>/<conv-id>-<cmp-id>/`, writes `goal.md` with the
+    boilerplate compactor goal and lands it as a dispatch commit
+    (§2.8, §2.10), then writes a placeholder `summary/001.md`
+    (v0.3.1 stub — identifies the parent conversation but does not
+    read `response.json` per §2.3 diagnostic-only contract) and
+    lands that as a follow-up commit, and `--no-ff` merges the
+    compactor branch back into the conversation branch. The v0.3
+    compactor is a stub — it does not call a model, and
+    `mark_for_deletion` is a no-op; the shape exists so v0.4+ can
+    layer real semantics without moving call sites.
+11. Rebase the conversation branch onto the current `main` tip and
     `--no-ff` merge it into `main` (§2.6), running the merge inside
     `<repo>/root/`. Remove the conversation worktree; the branch
     ref stays for the retention window (§2.3).
-11. Print the conversation branch name on stdout.
+12. Print the conversation branch name on stdout.
 
 After `lernie prompt` returns, inspect the merge from the primary
 worktree (`root/` is where `main` is checked out):

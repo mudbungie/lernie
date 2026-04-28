@@ -34,9 +34,16 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install cargo-tarpaulin
+        # Pin to 0.35.2: 0.35.3 was yanked, and 0.35.4+ silently drops
+        # inline `#[cfg(test)] mod tests;` files from tarpaulin's coverable
+        # denominator. Without the pin, taiki-e/install-action grabs the
+        # latest release and the runner reports a smaller "100% covered"
+        # denominator than `make ci` does locally — same source tree,
+        # different floors. See tarpaulin.toml for the matching local
+        # requirement.
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-tarpaulin
+          tool: cargo-tarpaulin@0.35.2
 
       - name: make ci
         run: make ci

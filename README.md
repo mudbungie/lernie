@@ -435,7 +435,11 @@ See `bl skill` for the full guide.
    `*.yaml`, `*.yml`, `*.json`, `*.lock`), `Makefile`, `.gitignore`,
    `LICENSE`, and anything under `.githooks/` are exempt.
 3. **100% line coverage.** `cargo tarpaulin --fail-under 100` runs on every
-   commit that touches a Cargo project.
+   commit that touches a Cargo project. The tarpaulin version is pinned (see
+   `tarpaulin.toml` and `.github/workflows/ci.yml`) so the denominator means
+   the same thing locally and on CI — newer releases have silently dropped
+   inline `#[cfg(test)] mod tests;` files from the count, weakening the floor.
+   `make coverage` aborts with an install hint if the local version drifts.
 
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.

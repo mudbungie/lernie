@@ -32,7 +32,15 @@ release:
 test:
 	cargo test --workspace
 
+TARPAULIN_PIN := 0.35.2
+
 coverage:
+	@have=$$(cargo tarpaulin --version 2>/dev/null | awk '{print $$NF}'); \
+	if [ "$$have" != "$(TARPAULIN_PIN)" ]; then \
+	  echo "tarpaulin $(TARPAULIN_PIN) required (have: $${have:-none}); see tarpaulin.toml" >&2; \
+	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
+	  exit 1; \
+	fi
 	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'crates/*/src/main.rs'
 
 schemas:

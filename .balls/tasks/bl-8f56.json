@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-28T01:07:07.076625794Z",
-  "delivered_in": null,
+  "delivered_in": "bc3fd7c8e78f9e2a7df52a6ba62cb3aed319a519",
   "depends_on": [],
   "description": "Follow-up to bl-45e7. That ball's stated diagnosis (missing llvm-tools-preview) was wrong — adding the component was a defensible defensive change for `--engine llvm`, but the actual failure on workflow run 25027967885 is two integration tests panicking because the runner has no `git config --global user.email` / `user.name`:\n\n- tests/prompt_end_to_end.rs:113 — `prompt_subcommand_compacts_and_merges_conversation_to_main` fails with `git [\"commit\", \"-m\", \"init conversation repo\"] exited with exit status: 128: Author identity unknown ... fatal: empty ident name (for <runner@...>) not allowed`\n- tests/merge_ours.rs:161 — `merge_ours_discipline_holds_against_subagent_merge_back` fails the same way during rebase\n\nLocally tests pass because mudbungie@gmail.com is configured globally. The runner is a fresh ubuntu-latest with no identity.\n\nFix: add a step in .github/workflows/ci.yml before `make ci` that runs:\n  git config --global user.email \\\"ci@lernie.local\\\"\n  git config --global user.name \\\"lernie CI\\\"\n\n(Alternative — set identity inside the test setup helpers — would add per-test ceremony for an environment-shaped problem; CI-side config is the right layer.)\n\nGates (per CLAUDE.md):\n- tests: workflow run on the merge commit must be green; verify by pushing and checking gh run\n- docs: no doc change needed\n- alignment: no spec change; runner identity is a CI hygiene fix",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 1,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["ci"],
   "title": "CI: configure git identity on GitHub runner so integration tests pass",
   "type": "bug",
-  "updated_at": "2026-04-28T01:07:11.416808145Z"
+  "updated_at": "2026-04-28T01:19:49.687120075Z"
 }

@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-29T00:58:48.712898623Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "README/ARCH/TAXONOMY/etc reflect the dispatch built-in tool as landed.",
+  "external": {},
+  "id": "bl-6707",
+  "links": [],
+  "parent": "bl-175a",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: docs up to date (bl-175a v0.4 P2 dispatch)",
+  "type": "task",
+  "updated_at": "2026-04-29T00:58:48.712898623Z"
+}

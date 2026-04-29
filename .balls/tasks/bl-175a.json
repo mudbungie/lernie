@@ -2,7 +2,7 @@
   "branch": "work/bl-175a",
   "claimed_by": "Stigmatize",
   "closed_at": null,
-  "closed_children": [{"closed_at":"2026-04-29T01:34:31.721594394Z","id":"bl-a22e","title":"Gate: tests pass (bl-175a v0.4 P2 dispatch)"}],
+  "closed_children": [{"closed_at":"2026-04-29T01:34:31.721594394Z","id":"bl-a22e","title":"Gate: tests pass (bl-175a v0.4 P2 dispatch)"},{"closed_at":"2026-04-29T01:34:48.829464917Z","id":"bl-6707","title":"Gate: docs up to date (bl-175a v0.4 P2 dispatch)"}],
   "created_at": "2026-04-25T22:10:58.945261896Z",
   "delivered_in": "cf547682f8157462741a681d5730a96aded1cc6c",
   "depends_on": ["bl-88f4"],
@@ -16,5 +16,5 @@
   "tags": ["v0.4"],
   "title": "v0.4 Phase 2: built-in tool — dispatch",
   "type": "task",
-  "updated_at": "2026-04-29T01:34:32.116090927Z"
+  "updated_at": "2026-04-29T01:34:48.834185278Z"
 }

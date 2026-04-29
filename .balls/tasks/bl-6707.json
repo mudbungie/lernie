@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-175a",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.4","gate"],
   "title": "Gate: docs up to date (bl-175a v0.4 P2 dispatch)",
   "type": "task",
-  "updated_at": "2026-04-29T01:34:35.073893574Z"
+  "updated_at": "2026-04-29T01:34:48.815854566Z"
 }

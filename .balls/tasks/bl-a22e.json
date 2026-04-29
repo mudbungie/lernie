@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-29T00:58:47.163732635Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "All tests green and coverage at 100% (per CLAUDE.md gate standard) for the dispatch built-in tool work.",
+  "external": {},
+  "id": "bl-a22e",
+  "links": [],
+  "parent": "bl-175a",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: tests pass (bl-175a v0.4 P2 dispatch)",
+  "type": "task",
+  "updated_at": "2026-04-29T00:58:47.163732635Z"
+}

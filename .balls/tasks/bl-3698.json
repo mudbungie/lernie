@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-175a",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.4","gate"],
   "title": "Gate: alignment (bl-175a v0.4 P2 dispatch)",
   "type": "task",
-  "updated_at": "2026-04-29T01:34:52.061114286Z"
+  "updated_at": "2026-04-29T01:35:08.650505168Z"
 }

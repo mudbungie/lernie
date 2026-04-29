@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-29T00:58:50.572450299Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Dispatch built-in tool implementation aligns with docs/ARCHITECTURE.md (§2.5, §3.3, §3.4), docs/PRINCIPLES.md, and docs/TAXONOMY.md.",
+  "external": {},
+  "id": "bl-3698",
+  "links": [],
+  "parent": "bl-175a",
+  "priority": 2,
+  "status": "open",
+  "tags": ["v0.4","gate"],
+  "title": "Gate: alignment (bl-175a v0.4 P2 dispatch)",
+  "type": "task",
+  "updated_at": "2026-04-29T00:58:50.572450299Z"
+}

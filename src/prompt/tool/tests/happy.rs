@@ -3,8 +3,8 @@
 //! / `output.json` per ARCH §3.3 "Disk record".
 
 use super::super::{
-    INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool, ToolCall, ToolExecutor, ToolInputRecord,
-    ToolOutputRecord,
+    ENV_CONV_BRANCH, ENV_CONV_REPO, INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool,
+    ToolCall, ToolExecutor, ToolInputRecord, ToolOutputRecord,
 };
 use super::fixtures::{FixedClock, HarnessRoot, StepDir};
 use serde_json::json;
@@ -167,4 +167,50 @@ fn tool_that_ignores_stdin_still_succeeds() {
         .unwrap();
     assert!(!outcome.is_error);
     assert_eq!(outcome.content, b"done\n");
+}
+
+#[test]
+fn executor_sets_conv_repo_and_conv_branch_env_vars_on_tool_subprocess() {
+    // Per ARCH §3.3 (env-var bullet), the executor derives the conv-repo
+    // root and the calling branch from `step_dir = <conv-repo>/steps/
+    // <conv-id>/<NNN>` and exports them. The dispatch built-in is the
+    // v0.4 reader; this test pins the writer side so the contract can't
+    // drift.
+    let root = HarnessRoot::new();
+    root.install(
+        "echoenv",
+        r#"printf "%s\n%s" "${LERNIE_CONV_REPO:-}" "${LERNIE_CONV_BRANCH:-}""#,
+    );
+    let clock = FixedClock::default();
+    let step = StepDir::new();
+    let exec = SpawnTool::new(root.path(), &clock);
+    let outcome = exec
+        .execute(
+            ToolCall {
+                id: "tu_env",
+                name: "echoenv",
+                input: &json!({}),
+            },
+            &step.path,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert!(!outcome.is_error);
+
+    // step.path = <tmp>/steps/convid/001 — so the env-var derivation
+    // sees conv-repo at <tmp> and conv-branch at "convid".
+    let conv_repo = step
+        .path
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
+    let expected = format!("{}\nconvid", conv_repo.display());
+    assert_eq!(String::from_utf8(outcome.content).unwrap(), expected);
+
+    // Sanity: pin the constant names so a rename trips this test.
+    assert_eq!(ENV_CONV_REPO, "LERNIE_CONV_REPO");
+    assert_eq!(ENV_CONV_BRANCH, "LERNIE_CONV_BRANCH");
 }

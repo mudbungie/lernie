@@ -44,21 +44,33 @@ pub(super) struct Captured {
     pub(super) status: ExitStatus,
 }
 
+/// Inputs to [`spawn_and_capture`]. Bundled into a struct so the call
+/// site stays a single line — the function takes 7 arguments which is
+/// past readable for a positional call (and past `tarpaulin`'s
+/// instrumentation comfort, which mis-attributes coverage on
+/// multi-line `&borrow` argument lists).
+pub(super) struct SpawnArgs<'a> {
+    pub(super) binary: &'a OsString,
+    pub(super) args: &'a [OsString],
+    pub(super) stdin_bytes: &'a [u8],
+    /// (key, value) pairs added to the inherited environment per ARCH
+    /// §3.3 (the harness conveys conversation context —
+    /// `LERNIE_CONV_REPO`, `LERNIE_CONV_BRANCH` — to tools through
+    /// env vars rather than the model-facing input schema).
+    pub(super) extra_env: &'a [(&'a str, OsString)],
+    pub(super) stop: &'a AtomicBool,
+    pub(super) deadline: Duration,
+    pub(super) tool_name: &'a str,
+}
+
 /// Spawn `binary args`, write `stdin_bytes`, capture stdio in
 /// background threads, and reap the child. Polls `stop` every
 /// [`POLL_INTERVAL`]; when set, sends SIGTERM and waits up to
 /// `deadline` before SIGKILL.
-pub(super) fn spawn_and_capture(
-    binary: &OsString,
-    args: &[OsString],
-    stdin_bytes: &[u8],
-    stop: &AtomicBool,
-    deadline: Duration,
-    tool_name: &str,
-) -> Result<Captured, ExecError> {
-    let mut child = spawn_with_etxtbsy_retry(binary, args, tool_name)?;
+pub(super) fn spawn_and_capture(req: &SpawnArgs<'_>) -> Result<Captured, ExecError> {
+    let mut child = spawn_with_etxtbsy_retry(req.binary, req.args, req.extra_env, req.tool_name)?;
 
-    let stdin_data = stdin_bytes.to_vec();
+    let stdin_data = req.stdin_bytes.to_vec();
     let mut child_stdin = child.stdin.take().expect("stdin is piped");
     let stdin_thread = thread::spawn(move || {
         let _ = child_stdin.write_all(&stdin_data);
@@ -78,7 +90,7 @@ pub(super) fn spawn_and_capture(
         buf
     });
 
-    let status = wait_with_stop(&mut child, stop, deadline);
+    let status = wait_with_stop(&mut child, req.stop, req.deadline);
     stdin_thread.join().expect("stdin writer did not panic");
     let stdout = stdout_thread.join().expect("stdout reader did not panic");
     let stderr = stderr_thread.join().expect("stderr reader did not panic");
@@ -103,17 +115,20 @@ pub(super) fn spawn_and_capture(
 fn spawn_with_etxtbsy_retry(
     binary: &OsString,
     args: &[OsString],
+    extra_env: &[(&str, OsString)],
     tool_name: &str,
 ) -> Result<Child, ExecError> {
     let deadline = Instant::now() + ETXTBSY_RETRY_BUDGET;
     loop {
-        match Command::new(binary)
-            .args(args)
+        let mut cmd = Command::new(binary);
+        cmd.args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-        {
+            .stderr(Stdio::piped());
+        for (k, v) in extra_env {
+            cmd.env(k, v);
+        }
+        match cmd.spawn() {
             Ok(child) => return Ok(child),
             Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && Instant::now() < deadline => {
                 thread::sleep(ETXTBSY_RETRY_INTERVAL);

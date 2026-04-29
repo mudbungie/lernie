@@ -279,6 +279,10 @@ fn run_worker_cli(
         parent_worktree: &parent_worktree,
         goal,
     };
-    let _sub_branch = prompt::worker::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)?;
+    // Print the spawned subagent branch so callers — notably the
+    // `dispatch` built-in (ARCH §3.3) — can capture it as the
+    // `tool_result` handle without listing branches to find it.
+    let sub_branch = prompt::worker::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)?;
+    println!("{sub_branch}");
     Ok(())
 }

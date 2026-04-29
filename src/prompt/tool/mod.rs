@@ -49,6 +49,15 @@ pub const EXTERNAL_PREFIX: &str = "lernie-tool-";
 /// (ARCH §3.3 — "addressed as `lernie tool <name>`").
 pub const IN_PROCESS_SUBCOMMAND: &str = "tool";
 
+/// Env var conveying the conversation-repo root path to the tool
+/// subprocess (ARCH §3.3 env-var bullet). Pinned here so the executor
+/// (the writer) and the `dispatch` built-in (the reader) cannot drift.
+pub const ENV_CONV_REPO: &str = "LERNIE_CONV_REPO";
+/// Env var conveying the calling conversation's branch name (== full
+/// hyphenated descent / conv-id, ARCH §2.2) to the tool subprocess.
+/// Same provenance as [`ENV_CONV_REPO`].
+pub const ENV_CONV_BRANCH: &str = "LERNIE_CONV_BRANCH";
+
 /// Per-step subdirectory holding tool-call records (ARCH §3.3 "Disk
 /// record" → `steps/<conv-id>/<NNN>/tools/<tool-id>/`).
 pub const STEP_TOOLS_SUBDIR: &str = "tools";

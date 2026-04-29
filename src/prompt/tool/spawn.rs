@@ -11,7 +11,7 @@
 //!    path is `std::env::current_exe()` — re-entry into the same
 //!    dispatcher, matching PRINCIPLES "Everyone uses the front door".
 
-use super::subprocess::spawn_and_capture;
+use super::subprocess::{SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
     ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, tool_call_dir,
@@ -137,9 +137,20 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
 
         let (binary, args) = self.resolve(call.name)?;
         let stdin = serde_json::to_vec(call.input).expect("Value is always serializable");
+        let extra_env = harness_env_for(step_dir);
 
+        let binary_ref = &binary;
+        let req = SpawnArgs {
+            binary: binary_ref,
+            args: &args,
+            stdin_bytes: &stdin,
+            extra_env: &extra_env,
+            stop,
+            deadline: self.deadline,
+            tool_name: call.name,
+        };
         let started_at = self.clock.now_iso8601();
-        let captured = spawn_and_capture(&binary, &args, &stdin, stop, self.deadline, call.name)?;
+        let captured = spawn_and_capture(&req)?;
         let ended_at = self.clock.now_iso8601();
 
         let exit_code = match captured.status.code() {
@@ -164,6 +175,27 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
 
         Ok(ToolOutcome { content, is_error })
     }
+}
+
+/// Env vars the harness conveys to every tool subprocess per ARCH §3.3
+/// (the env-var bullet on the stdio contract). Names are pinned in
+/// [`super::builtin::dispatch`] (the dispatch built-in is the v0.4
+/// reader); tools that do not need them ignore them. Both are derived
+/// from `step_dir = <conv-repo>/steps/<conv-id>/<NNN>` so the executor
+/// stays the single source of truth and no caller has to hand them in.
+fn harness_env_for(step_dir: &Path) -> Vec<(&'static str, std::ffi::OsString)> {
+    let mut env: Vec<(&'static str, std::ffi::OsString)> = Vec::new();
+    // step_dir = <conv-repo>/steps/<conv-id>/<NNN>; ascend three to
+    // reach the conv-repo, two for the conv-id segment.
+    if let Some(conv_id_dir) = step_dir.parent() {
+        if let Some(conv_id) = conv_id_dir.file_name() {
+            env.push((super::ENV_CONV_BRANCH, conv_id.to_owned()));
+        }
+        if let Some(conv_repo) = conv_id_dir.parent().and_then(Path::parent) {
+            env.push((super::ENV_CONV_REPO, conv_repo.as_os_str().to_owned()));
+        }
+    }
+    env
 }
 
 /// Build the §3.3 / §2.10 "killed by a signal that was not the

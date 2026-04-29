@@ -215,7 +215,7 @@ git -C /path/to/my-conversation/root \
 
 A ballooning count indicates a silent failure in the merge pipeline.
 
-## Built-in tools (v0.3)
+## Built-in tools (v0.3, +v0.4 Phase 2 dispatch)
 
 The agent can call **built-in tools** that ship inside the `lernie`
 binary as `lernie tool <name>` subcommands (ARCH §3.3 / §12). The tool
@@ -238,7 +238,7 @@ Each built-in is the triple §3.3 pins:
   the tool's description in `tools: [...]`; the body explains when to
   reach for it.
 
-v0.3 ships two built-ins:
+Built-ins:
 
 - **`read_file`** — read the entire contents of a file at a given
   path. Rejects files larger than 1 MiB; v0.4+ adds the
@@ -248,6 +248,17 @@ v0.3 ships two built-ins:
   stdout. The shell runs in its own process group so a SIGTERM the
   harness sends is forwarded to the entire spawned tree (§2.9
   cascade). Try it directly: `echo '{"command":"ls"}' | lernie tool bash`.
+- **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
+  branch with the supplied goal and returns
+  `{"status":"in_progress","handle":"<sub-branch>"}` synchronously
+  (ARCH §2.5 "Async work uses handles"). Input is `{role, goal}`;
+  the role must resolve to `<conv-repo>/souls/<role>.md` and a
+  `roles:` entry in `<conv-repo>/providers.yaml`. Reads the calling
+  conversation's repo + branch from the harness-set
+  `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` env vars (ARCH §3.3 env
+  bullet); spawns through `lernie dispatch <role>` (§3.4). The
+  subagent's own step loop and the `await(handle)` tool that
+  resolves the handle ship in subsequent v0.4 phases.
 
 ## Dispatching subagents directly
 

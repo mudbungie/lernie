@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "dispatch",
+  "description": "Input schema for the lernie built-in `dispatch` tool (ARCH §2.5, §3.3, §3.4 — v0.4 Phase 2). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "Subagent role to dispatch. Must resolve to <conv-repo>/souls/<role>.md and be present in the per-repo providers.yaml `roles:` block (ARCH §4.3). v0.4 Phase 2 supports `worker`; future roles slot in by name as the dispatch CLI grows."
+    },
+    "goal": {
+      "type": "string",
+      "description": "Per-call goal text. Written verbatim to the subagent's goal.md on its dispatch commit (ARCH §2.3 step 2 / §2.8). The subagent reads its goal there; the dispatching agent does not see the subagent's intermediate work — only the terminal compacted result, returned later via `await(handle)`."
+    }
+  },
+  "required": ["role", "goal"],
+  "additionalProperties": false
+}

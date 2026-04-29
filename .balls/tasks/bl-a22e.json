@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-175a",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.4","gate"],
   "title": "Gate: tests pass (bl-175a v0.4 P2 dispatch)",
   "type": "task",
-  "updated_at": "2026-04-29T01:32:36.386367964Z"
+  "updated_at": "2026-04-29T01:34:31.706781766Z"
 }

@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-3698",
+  "claimed_by": "mark",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-29T00:58:50.572450299Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-175a",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.4","gate"],
   "title": "Gate: alignment (bl-175a v0.4 P2 dispatch)",
   "type": "task",
-  "updated_at": "2026-04-29T00:58:50.572450299Z"
+  "updated_at": "2026-04-29T01:34:52.061114286Z"
 }

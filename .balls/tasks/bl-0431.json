@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-30T17:05:01.399442101Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-4d80. Verify README §Build targets table includes 'make ui REPO=<path>' with a one-line description matching shipped behavior. Verify §Running the UI (or equivalent) mentions the make target as an option alongside the bare 'lernie-ui-egui --repo ...' invocation. Close when grep is clean.",
+  "external": {},
+  "id": "bl-0431",
+  "links": [],
+  "parent": "bl-4d80",
+  "priority": 3,
+  "status": "open",
+  "tags": ["gate"],
+  "title": "Gate: docs reflect make ui",
+  "type": "task",
+  "updated_at": "2026-04-30T17:05:01.399442101Z"
+}

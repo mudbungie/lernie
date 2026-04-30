@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-829f",
+  "claimed_by": "Dogging",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-25T22:11:14.866200805Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-f1c5",
   "priority": 2,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.4"],
   "title": "v0.4 Phase 3: built-in tool — await",
   "type": "task",
-  "updated_at": "2026-04-25T22:11:14.866200805Z"
+  "updated_at": "2026-04-30T03:15:38.895726572Z"
 }

@@ -5,9 +5,14 @@
 //! filesystem and issues user actions exclusively as `lernie <subcommand>`
 //! invocations per §3.4.
 //!
-//! For this skeleton milestone, only argument parsing and a placeholder
-//! view are wired up; filesystem watching, CLI outbound, and git-tree
-//! rendering land in subsequent tasks.
+//! Modules: [`fs_watcher`] (notify-driven re-render trigger),
+//! [`cli_outbound`] (`lernie <subcommand>` exec + stream), [`git_tree`]
+//! (the per-tick view-model — trunk + unmerged-branch tree, streaming
+//! text from §4.4 events, branch-state badges, tool-call pulses), and
+//! [`actions`] (new-prompt + stop user-action surface). Every render is
+//! a pure function of filesystem state at the current tick; the public
+//! view-model API is reentrant, so a future `lernie-ui-web` runs
+//! concurrently against the same repo without coordination.
 
 pub mod actions;
 pub mod cli_outbound;

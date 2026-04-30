@@ -444,7 +444,7 @@ lernie-ui-egui --repo /path/to/my-conversation
 ```
 
 egui is winit-based; its only runtime deps are the X11/Wayland libs already
-present on any Linux desktop session. No `apt install` step is required.
+present on any Linux desktop. No `apt install` step is required.
 
 ## Contributing
 

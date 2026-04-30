@@ -376,7 +376,7 @@ The harness resolves `lernie-provider-<name>` at
    provider/model pair.
 4. Run `lernie prompt <repo> '...'`.
 
-## UI (v0.5, skeleton)
+## UI (v0.5)
 
 `lernie-ui-egui` is the desktop frontend: an egui/eframe window that renders
 a conversation repo and issues user actions via `lernie <subcommand>`. Per
@@ -404,8 +404,10 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   every worktree per ARCH §2.2 / §2.3), per-worktree contents under
   any subdir (`goal.md`, `soul.md`, `summary/`, `descriptions/`,
   `skills/`, `.gitattributes`), and the primary worktree's git refs
-  (`root/.git/HEAD`, `root/.git/refs/`). Live updates wire through here
-  in a follow-up.
+  (`root/.git/HEAD`, `root/.git/refs/`). Filesystem events drive the
+  re-render tick; the renderer is a pure function of on-disk state at
+  that tick (no in-memory accumulator), so a missed event at most
+  delays a frame.
 - `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
   spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
   aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
@@ -419,8 +421,14 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   off the merged branch name in each `--no-ff` merge subject (step
   records are no longer in the merge tree per ARCH §2.3); the user-
   message preview is read from `<conv-repo>/steps/<conv-id>/001/
-  request.json` on disk. A thin egui widget in the same module renders
-  it.
+  request.json` on disk. Submodules layer the live indicators: streaming
+  text folded from the latest step's `response.json` JSONL (`text_delta`
+  events, ARCH §4.4); branch-state badges (in-flight / stopped / merged
+  / conflicted) derived from refs + the §4.4 terminal event without
+  sidecars (PRINCIPLES.md single-source-of-truth); tool-call pulses
+  derived from `tools/<tool-id>/input.json` present without `output.json`
+  (ARCH §3.3 in-progress-is-derived-state). A thin egui widget in the
+  same module renders it.
 - `actions` — the user-action surface: `ActionsState` holds the
   in-progress prompt input and selected branch (in-memory only per
   §3.5), and `dispatch_new_prompt` / `dispatch_stop` build the argv for

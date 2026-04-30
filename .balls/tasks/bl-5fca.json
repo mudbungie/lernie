@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-23T01:14:31.979775450Z",
-  "delivered_in": null,
+  "delivered_in": "1a9aa3280b83e8405e5140ebe3c656c12e70cb99",
   "depends_on": [],
   "description": "All subtask test gates closed. End-to-end demo from the epic description runs green: fresh repo, lernie prompt, frontend renders exchange-branch spawn, streaming, merge-back, branch-state indicators. cargo test + tarpaulin --fail-under 100 green on the merged state.",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-c0a5",
   "priority": 3,
-  "status": "in_progress",
+  "status": "review",
   "tags": [],
   "title": "Gate: tests pass (v0.5 UI epic)",
   "type": "task",
-  "updated_at": "2026-04-30T07:20:31.617515226Z"
+  "updated_at": "2026-04-30T07:37:08.490007973Z"
 }

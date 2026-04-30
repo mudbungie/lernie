@@ -12,16 +12,25 @@
 //! - [`State::Conflicted`]: the merge protocol wrote
 //!   `refs/lernie/conflicted/<handle>` on rebase failure (ARCH §2.6
 //!   step 6 — harness defect surface).
-//! - [`State::Stopped`]: the subagent's latest step's `response.json`
-//!   ended in a §4.4 `error` event. v0.4 deliberately skips the
-//!   "killed mid-stream, no terminal event" case (filed as a follow-on
-//!   — it needs filesystem-close detection).
+//! - [`State::Stopped`]: two on-disk signatures, both surfaced through
+//!   the same variant (ARCH §2.9 — kill, crash, and explicit stop are
+//!   indistinguishable on disk):
+//!     1. The latest step's `response.json` ended in a §4.4 `error`
+//!        event (clean failure — provider error or compactor abort).
+//!     2. The latest step's `response.json` has no `message_stop` and
+//!        no `error` line, AND no writer process holds it open
+//!        (kill-mid-stream — harness died with the fd open, kernel
+//!        closed it on exit). Detected by reusing the §2.9 / ARCH
+//!        line-267 [`PgidFinder`] /proc-fd scan that backs `lernie
+//!        stop`'s pid discovery — same source of truth that the §3.5
+//!        in_flight classification reads.
 //! - [`State::InFlight`]: none of the above; caller polls again.
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use super::Error;
+use crate::prompt::stop::PgidFinder;
 use crate::template::GitRunner;
 
 /// Subdir of the conv-repo holding step records (ARCH §2.2 / §2.3).
@@ -79,6 +88,7 @@ pub(super) fn check(
     parent: &str,
     handle: &str,
     git: &dyn GitRunner,
+    writer_finder: &dyn PgidFinder,
 ) -> Result<State, Error> {
     if conflicted_ref_exists(git_dir, handle, git)? {
         return Ok(State::Conflicted);
@@ -87,10 +97,35 @@ pub(super) fn check(
         let summary = latest_summary(git_dir, handle, git)?;
         return Ok(State::Merged(summary));
     }
-    if latest_response_has_error(repo, handle)? {
-        return Ok(State::Stopped);
+    match examine_latest_response(repo, handle)? {
+        // §4.4 `error` line: the adapter or harness recorded a typed
+        // failure before exiting cleanly. Stopped on the spot.
+        Examined::Error => Ok(State::Stopped),
+        // §4.4 `message_stop`: model finished a step cleanly. Harness
+        // still has terminal compaction + merge-back to do, so the
+        // chain may still progress — keep polling.
+        Examined::MessageStop => Ok(State::InFlight),
+        // No file to scan — either no step dir yet, or the latest
+        // step has not produced a `response.json`. Nothing to
+        // disambiguate against /proc; keep polling.
+        Examined::Absent => Ok(State::InFlight),
+        // File on disk with bytes but no terminal line — disambiguate
+        // mid-stream from kill-mid-stream via the §3.5 writer probe.
+        Examined::NonTerminal(path) => {
+            if writer_finder
+                .find_writer_pgid(&path)
+                .map_err(|source| Error::Git {
+                    op: "scan /proc for response.json writer",
+                    source,
+                })?
+                .is_none()
+            {
+                Ok(State::Stopped)
+            } else {
+                Ok(State::InFlight)
+            }
+        }
     }
-    Ok(State::InFlight)
 }
 
 /// `git for-each-ref` succeeds with empty stdout when the ref does
@@ -160,19 +195,41 @@ fn latest_summary(git_dir: &Path, handle: &str, git: &dyn GitRunner) -> Result<S
         })
 }
 
-/// Latest step's `response.json` ends in a `{"type":"error",...}`
-/// JSONL line (ARCH §4.4 terminal event). v0.4 takes this as the
-/// stopped signature; a kill-mid-stream subagent (no terminal event
-/// at all) needs filesystem-close detection and is deferred.
-fn latest_response_has_error(repo: &Path, handle: &str) -> Result<bool, Error> {
+/// Outcome of one `response.json` examination — drives the [`check`]
+/// match arms. Mirrors the UI's `git_tree::state` classifier shape
+/// (ARCH §3.5, §7.1) but bundles the path with the kill-mid-stream
+/// variant so the writer-probe arm is total: there is no
+/// `NonTerminal`-without-path state in the type.
+#[derive(Debug)]
+enum Examined {
+    /// No latest step yet, or the step has no `response.json` on
+    /// disk. Nothing to probe.
+    Absent,
+    /// Last completed line is a §4.4 `message_stop` — model step
+    /// finished cleanly; harness may still be advancing.
+    MessageStop,
+    /// Last completed line is a §4.4 `error` — typed failure recorded
+    /// on disk. Always Stopped.
+    Error,
+    /// File exists with bytes but no terminal `message_stop`/`error`
+    /// line — disambiguate mid-stream from kill-mid-stream by probing
+    /// the bundled path against [`PgidFinder`].
+    NonTerminal(PathBuf),
+}
+
+/// Locate the latest step's `response.json` and classify its
+/// terminal-line state. Bundles the path with `NonTerminal` so the
+/// caller can hand it to the [`PgidFinder`] without re-resolving the
+/// path (single source of truth — one path computation per poll).
+fn examine_latest_response(repo: &Path, handle: &str) -> Result<Examined, Error> {
     let conv_steps = repo.join(STEPS_DIR).join(handle);
     let Some(latest) = latest_step_dir(&conv_steps) else {
-        return Ok(false);
+        return Ok(Examined::Absent);
     };
     let path = latest.join(RESPONSE_FILE);
     let bytes = match fs::read(&path) {
         Ok(b) => b,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Examined::Absent),
         Err(source) => {
             return Err(Error::Git {
                 op: "read response.json",
@@ -180,7 +237,7 @@ fn latest_response_has_error(repo: &Path, handle: &str) -> Result<bool, Error> {
             });
         }
     };
-    Ok(last_completed_line_is_error(&bytes))
+    Ok(classify_last_line(&bytes, path))
 }
 
 /// Walk `conv_steps` for numeric subdirs and return the highest. The
@@ -198,23 +255,31 @@ fn latest_step_dir(conv_steps: &Path) -> Option<std::path::PathBuf> {
     entries.last().map(|e| e.path())
 }
 
-/// Last fully-terminated JSONL line has `"type":"error"`. Mirrors the
-/// UI classifier's mid-write tolerance (`crates/lernie-ui-egui/src/git_tree/state.rs`):
+/// Last fully-terminated JSONL line classification. Mirrors the UI's
+/// `git_tree::state::has_terminal_event` mid-write tolerance — a
 /// trailing partial line (no `\n` yet) is dropped; only the most
-/// recent completed line is examined.
-fn last_completed_line_is_error(bytes: &[u8]) -> bool {
+/// recent completed line is examined. Malformed JSON or unknown
+/// event types both fall through to `NonTerminal` so the kill-mid-
+/// stream probe can run; a writer crashing while emitting garbage is
+/// still a kill. Consumes `path` so the `NonTerminal` variant carries
+/// it forward to the writer probe.
+fn classify_last_line(bytes: &[u8], path: PathBuf) -> Examined {
     let terminated = match bytes.iter().rposition(|&b| b == b'\n') {
         Some(idx) => &bytes[..=idx],
-        None => return false,
+        None => return Examined::NonTerminal(path),
     };
     let Some(line) = terminated
         .split(|&b| b == b'\n')
         .rfind(|line| !line.is_empty())
     else {
-        return false;
+        return Examined::NonTerminal(path);
     };
     let Ok(value): Result<serde_json::Value, _> = serde_json::from_slice(line) else {
-        return false;
+        return Examined::NonTerminal(path);
     };
-    value.get("type").and_then(|v| v.as_str()) == Some("error")
+    match value.get("type").and_then(|v| v.as_str()) {
+        Some("error") => Examined::Error,
+        Some("message_stop") => Examined::MessageStop,
+        _ => Examined::NonTerminal(path),
+    }
 }

@@ -12,9 +12,14 @@
 //!   is reachable from the calling branch (`merge-base(handle,parent) ==
 //!   HEAD(handle)`); `summary` is the latest `summary/<NNN>.md` on the
 //!   subagent's tip (the terminal compactor's output, §2.7).
-//! - `{"status":"stopped"}` — subagent's latest step's `response.json`
-//!   ended in a §4.4 `error` event (kill-mid-stream detection deferred,
-//!   see `SKILL.md`).
+//! - `{"status":"stopped"}` — surfaces both on-disk stop signatures
+//!   (ARCH §2.9, §3.5): the latest step's `response.json` ended in a
+//!   §4.4 `error` event, OR the file has no terminal event line and
+//!   no process holds its fd open (kill-mid-stream — kernel closed
+//!   the harness's fds on exit). The kill case reuses the
+//!   [`PgidFinder`] /proc-fd scan that backs `lernie stop`'s pid
+//!   discovery (ARCH line 267 — same source of truth as the §3.5
+//!   `in_flight` classification).
 //! - `{"status":"conflicted"}` — the merge protocol wrote a
 //!   `refs/lernie/conflicted/<handle>` ref on rebase failure (§2.6
 //!   step 6).
@@ -30,6 +35,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use thiserror::Error;
 
+use crate::prompt::stop::PgidFinder;
 use crate::template::{GitRunner, ROOT_WORKTREE};
 
 mod state;
@@ -145,12 +151,14 @@ impl Sleeper for ThreadSleeper {
 /// Pure entry point: parse stdin, validate, poll for terminal state,
 /// write the JSON outcome to `stdout`. The `lernie tool await` shim
 /// wires this to the live process's stdio plus [`ProcessEnv`] +
-/// [`ThreadSleeper`] + a real [`GitRunner`].
+/// [`ThreadSleeper`] + a real [`GitRunner`] + a real [`PgidFinder`]
+/// (`crate::prompt::stop::ProcFsFinder` against `/proc`).
 pub fn run<R: Read, W: Write>(
     stdin: &mut R,
     stdout: &mut W,
     env: &dyn EnvLookup,
     git: &dyn GitRunner,
+    writer_finder: &dyn PgidFinder,
     sleeper: &dyn Sleeper,
 ) -> Result<(), Error> {
     let mut buf = Vec::new();
@@ -167,7 +175,8 @@ pub fn run<R: Read, W: Write>(
     validate_descent(&input.handle, &parent)?;
     let git_dir = repo.join(ROOT_WORKTREE);
 
-    let terminal = poll_until_terminal(&repo, &git_dir, &parent, &input.handle, git, sleeper)?;
+    #[rustfmt::skip]
+    let terminal = poll_until_terminal(&repo, &git_dir, &parent, &input.handle, git, writer_finder, sleeper)?;
     write_payload(stdout, terminal.as_output())
 }
 
@@ -181,10 +190,11 @@ fn poll_until_terminal(
     parent: &str,
     handle: &str,
     git: &dyn GitRunner,
+    writer_finder: &dyn PgidFinder,
     sleeper: &dyn Sleeper,
 ) -> Result<state::Terminal, Error> {
     loop {
-        match state::check(repo, git_dir, parent, handle, git)? {
+        match state::check(repo, git_dir, parent, handle, git, writer_finder)? {
             state::State::Merged(s) => return Ok(state::Terminal::Merged(s)),
             state::State::Stopped => return Ok(state::Terminal::Stopped),
             state::State::Conflicted => return Ok(state::Terminal::Conflicted),

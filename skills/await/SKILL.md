@@ -36,9 +36,17 @@ A JSON object on `tool_result.content`. Exactly one of:
   conversation (ARCH §2.6). `summary` is the latest
   `summary/<NNN>.md` on the subagent's branch (its terminal
   compactor's output, ARCH §2.7).
-- `stopped` — the subagent terminated without merging — its latest
-  step's `response.json` ended in a §4.4 `error` event. The chain is
-  not advancing.
+- `stopped` — the subagent terminated without merging. Two on-disk
+  signatures both surface this status (ARCH §2.9 — kill, crash, and
+  explicit stop are indistinguishable on disk):
+    1. The latest step's `response.json` ended in a §4.4 `error`
+       event (clean failure — provider error or compactor abort).
+    2. The latest step's `response.json` has bytes but no terminal
+       `message_stop` / `error` line, AND no process holds the file's
+       fd open (kill-mid-stream — harness died with the fd open,
+       kernel closed it on exit). The fd-open check uses the same
+       `/proc/<pid>/fd/*` scan that `lernie stop` uses for pid
+       discovery (ARCH line 267 — single source of truth, Linux only).
 - `conflicted` — the subagent's merge-back attempt hit a rebase
   conflict (ARCH §2.6 step 6 — harness defect; the structural
   single-author guarantee was violated and operator attention is
@@ -67,8 +75,8 @@ in-band errors, ARCH §4.4).
 - `await` blocks until the subagent is terminal. It does not time
   out — if the subagent's harness has wedged, the parent harness must
   be killed at the user's discretion.
-- v0.4 detects `stopped` from the §4.4 `error` event in the latest
-  step's `response.json`. A subagent killed mid-stream (no `error`,
-  no `message_stop`) is not yet detected as `stopped` — that path
-  needs filesystem-close detection (inotify) and is filed for a
-  follow-on.
+- The kill-mid-stream `stopped` signal uses a `/proc/<pid>/fd/*` scan
+  to ask "is any process holding `response.json` open for write?" —
+  same source of truth `lernie stop` reads. Linux only; non-Linux
+  hosts will hit the typed `Error::Git { op: "scan /proc for
+  response.json writer", .. }` error path.

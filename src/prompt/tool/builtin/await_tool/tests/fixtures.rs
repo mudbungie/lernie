@@ -4,9 +4,11 @@
 //! end-to-end against a tempdir.
 
 use super::super::*;
+use crate::prompt::stop::PgidFinder;
 use crate::template::{GitRunner, ROOT_WORKTREE, RealGit};
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::io;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tempfile::TempDir;
@@ -192,5 +194,65 @@ impl<'a> Sleeper for ConflictOnFirstSleep<'a> {
                 .run_git(&["update-ref", ref_name.as_str(), self.handle]);
         }
         *self.count.borrow_mut() += 1;
+    }
+}
+
+/// Stub [`PgidFinder`] for await tests. Defaults to "a writer is
+/// holding the file open" (`Some(pgid)`), which is the production
+/// state during a step's stream — that lets every existing test that
+/// drives an in-flight response stay in flight without modification.
+/// Kill-mid-stream tests flip `present` to false to surface the
+/// no-writer signature. The stub ignores the queried path: the await
+/// loop only ever asks about the latest response.json, so the trivial
+/// path-agnostic stub is sufficient.
+pub(super) struct StubPgidFinder {
+    present: Cell<bool>,
+    err: Cell<Option<io::ErrorKind>>,
+    /// Records every path the trait was queried for. Useful for tests
+    /// that want to assert the loop did consult /proc.
+    pub(super) calls: std::cell::RefCell<Vec<PathBuf>>,
+}
+
+impl StubPgidFinder {
+    /// Default: writer present. Matches the dominant production case.
+    pub(super) fn writer_present() -> Self {
+        Self {
+            present: Cell::new(true),
+            err: Cell::new(None),
+            calls: std::cell::RefCell::new(Vec::new()),
+        }
+    }
+
+    /// No writer holds the fd — the kill-mid-stream signal.
+    pub(super) fn no_writer() -> Self {
+        Self {
+            present: Cell::new(false),
+            err: Cell::new(None),
+            calls: std::cell::RefCell::new(Vec::new()),
+        }
+    }
+
+    /// Force the trait to surface an io error so the
+    /// `scan /proc for response.json writer` Error::Git arm is
+    /// reachable from a test.
+    pub(super) fn raises(kind: io::ErrorKind) -> Self {
+        Self {
+            present: Cell::new(true),
+            err: Cell::new(Some(kind)),
+            calls: std::cell::RefCell::new(Vec::new()),
+        }
+    }
+}
+
+impl PgidFinder for StubPgidFinder {
+    fn find_writer_pgid(&self, response_path: &Path) -> io::Result<Option<i32>> {
+        self.calls.borrow_mut().push(response_path.to_path_buf());
+        if let Some(kind) = self.err.get() {
+            return Err(io::Error::new(kind, "stub finder failure"));
+        }
+        // The actual pgid value is irrelevant to the await loop —
+        // only `is_none()` is consulted — so a fixed sentinel is
+        // sufficient.
+        Ok(if self.present.get() { Some(424242) } else { None })
     }
 }

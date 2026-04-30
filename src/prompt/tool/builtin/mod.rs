@@ -16,6 +16,7 @@
 use std::io::{Read, Write};
 use thiserror::Error;
 
+use crate::prompt::stop::ProcFsFinder;
 use crate::template::RealGit;
 
 pub mod await_tool;
@@ -76,14 +77,17 @@ pub fn run<R: Read, W: Write, E: Write>(
     stdout: &mut W,
     stderr: &mut E,
 ) -> Result<i32, Error> {
-    // `await` is purely a git-and-fs poller; production deps are
-    // [`await_tool::ProcessEnv`] + [`RealGit`] + [`ThreadSleeper`].
+    // `await` is a git-and-fs poller plus a /proc writer probe (the
+    // kill-mid-stream stopped signature, ARCH §2.9 / §3.5). Production
+    // deps: [`await_tool::ProcessEnv`] + [`RealGit`] + [`ProcFsFinder`]
+    // (re-used from `crate::prompt::stop`, single source of truth for
+    // "is a writer holding response.json open?") + [`ThreadSleeper`].
     // Routed here directly to keep [`run_with`] scoped to the
     // dispatch arm's pre-existing test surface (which would otherwise
-    // need an extra git stub in every dispatch routing test).
+    // need extra stubs in every dispatch routing test).
     if name == "await" {
         #[rustfmt::skip]
-        let res = await_tool::run(stdin, stdout, &await_tool::ProcessEnv, &RealGit::new(), &await_tool::ThreadSleeper);
+        let res = await_tool::run(stdin, stdout, &await_tool::ProcessEnv, &RealGit::new(), &ProcFsFinder::default(), &await_tool::ThreadSleeper);
         return res.map(|()| 0).map_err(Error::Await);
     }
     // `current_exe` failure here is exotic (mostly unusual platforms

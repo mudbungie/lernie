@@ -1,7 +1,14 @@
-//! Stopped-path tests: subagent's latest step's `response.json`
-//! ended in a §4.4 `error` event. v0.4 deliberately scopes stopped
-//! detection to the `error` signature; killed-mid-stream is filed
-//! as a follow-on (see SKILL.md).
+//! Stopped-path tests. Two on-disk signatures both surface as
+//! `{"status":"stopped"}` (ARCH §2.9 — kill / crash / explicit stop
+//! are indistinguishable on disk):
+//!
+//! 1. The latest step's `response.json` ended in a §4.4 `error`
+//!    event (clean failure).
+//! 2. The latest step's `response.json` has no terminal event line
+//!    AND no process holds its fd open — the kill-mid-stream
+//!    signature, detected via the [`super::fixtures::StubPgidFinder`]
+//!    in tests and via `/proc/<pid>/fd/*` (`ProcFsFinder`) in
+//!    production.
 //!
 //! Tests covering "in-flight states that must keep polling" use
 //! [`super::fixtures::ConflictOnFirstSleep`]: the sleeper writes a
@@ -9,7 +16,9 @@
 //! `conflicted` and the loop terminates deterministically.
 
 use super::super::*;
-use super::fixtures::{ConflictOnFirstSleep, LiveRepo, NoopSleeper, env, input_for};
+use super::fixtures::{
+    ConflictOnFirstSleep, LiveRepo, NoopSleeper, StubPgidFinder, env, input_for,
+};
 use std::io::Cursor;
 
 const ERROR_EVENT: &str = r#"{"type":"message_start"}
@@ -30,11 +39,23 @@ fn fixture_with_unmerged_sub() -> LiveRepo {
     live
 }
 
-fn run_stopped(live: &LiveRepo, sleeper: &dyn Sleeper) -> serde_json::Value {
+fn run_stopped(
+    live: &LiveRepo,
+    finder: &dyn crate::prompt::stop::PgidFinder,
+    sleeper: &dyn Sleeper,
+) -> serde_json::Value {
     let mut stdin = Cursor::new(input_for("p1-sub"));
     let mut stdout = Vec::new();
     let env_stub = env(live.repo(), "p1");
-    run(&mut stdin, &mut stdout, &env_stub, &live.git, sleeper).unwrap();
+    run(
+        &mut stdin,
+        &mut stdout,
+        &env_stub,
+        &live.git,
+        finder,
+        sleeper,
+    )
+    .unwrap();
     serde_json::from_slice(&stdout).unwrap()
 }
 
@@ -42,7 +63,11 @@ fn run_stopped(live: &LiveRepo, sleeper: &dyn Sleeper) -> serde_json::Value {
 fn stopped_when_latest_response_ends_in_error_event() {
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, ERROR_EVENT);
-    let payload = run_stopped(&live, &NoopSleeper::new());
+    let payload = run_stopped(
+        &live,
+        &StubPgidFinder::writer_present(),
+        &NoopSleeper::new(),
+    );
     assert_eq!(payload["status"], "stopped");
     assert!(payload.get("summary").is_none());
 }
@@ -55,7 +80,14 @@ fn stopped_uses_latest_step_when_earlier_step_was_clean() {
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, MESSAGE_STOP);
     live.write_response("p1-sub", 2, ERROR_EVENT);
-    assert_eq!(run_stopped(&live, &NoopSleeper::new())["status"], "stopped");
+    assert_eq!(
+        run_stopped(
+            &live,
+            &StubPgidFinder::writer_present(),
+            &NoopSleeper::new()
+        )["status"],
+        "stopped"
+    );
 }
 
 #[test]
@@ -64,7 +96,10 @@ fn no_steps_dir_is_in_flight_until_terminal_state_appears() {
     // returns None and the loop polls again.
     let live = fixture_with_unmerged_sub();
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    assert_eq!(
+        run_stopped(&live, &StubPgidFinder::writer_present(), &sleeper)["status"],
+        "conflicted"
+    );
 }
 
 #[test]
@@ -79,18 +114,28 @@ fn empty_steps_dir_is_in_flight() {
     )
     .unwrap();
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    assert_eq!(
+        run_stopped(&live, &StubPgidFinder::writer_present(), &sleeper)["status"],
+        "conflicted"
+    );
 }
 
 #[test]
 fn latest_step_without_response_json_is_in_flight() {
     // Step dir exists but no response.json yet (file write not
-    // landed). `fs::read` returns NotFound, classifier returns
-    // false.
+    // landed). `fs::read` returns NotFound; the classifier resolves
+    // to `Absent` and skips the writer probe.
     let live = fixture_with_unmerged_sub();
     std::fs::create_dir_all(live.repo().join("steps").join("p1-sub").join("001")).unwrap();
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    let finder = StubPgidFinder::writer_present();
+    assert_eq!(
+        run_stopped(&live, &finder, &sleeper)["status"],
+        "conflicted"
+    );
+    // No response.json on disk — the loop must NOT have probed
+    // /proc, since there's no path to scan.
+    assert!(finder.calls.borrow().is_empty());
 }
 
 #[test]
@@ -114,6 +159,7 @@ fn response_json_read_failure_surfaces_as_typed_error() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -130,34 +176,45 @@ fn response_json_read_failure_surfaces_as_typed_error() {
 }
 
 #[test]
-fn malformed_jsonl_lines_keep_loop_in_flight() {
-    // Last completed line is non-JSON; the classifier returns false
-    // and the loop polls again.
+fn malformed_jsonl_lines_with_writer_present_keep_loop_in_flight() {
+    // Last completed line is non-JSON. With a writer holding the fd
+    // open, this is mid-stream garbage and the loop keeps polling —
+    // ConflictOnFirstSleep then resolves it.
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, "garbage line\n");
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    assert_eq!(
+        run_stopped(&live, &StubPgidFinder::writer_present(), &sleeper)["status"],
+        "conflicted"
+    );
 }
 
 #[test]
-fn response_json_with_no_newlines_keeps_loop_in_flight() {
+fn response_json_with_no_newlines_keeps_loop_in_flight_when_writer_present() {
     // Mid-write very early — writer has not flushed any complete
-    // line yet. No `\n` in the buffer means no completed line, and
-    // the classifier returns false.
+    // line yet. No `\n` in the buffer means no completed line, but
+    // /proc shows the writer holds the fd, so we keep polling.
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, "{\"type\":\"message_start\"}");
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    assert_eq!(
+        run_stopped(&live, &StubPgidFinder::writer_present(), &sleeper)["status"],
+        "conflicted"
+    );
 }
 
 #[test]
-fn response_json_only_blank_lines_keeps_loop_in_flight() {
-    // Only `\n\n\n` — every split line is empty; the rfind-non-empty
-    // check returns None and the classifier returns false.
+fn response_json_only_blank_lines_keeps_loop_in_flight_when_writer_present() {
+    // Only `\n\n\n` — every split line is empty; classifier reports
+    // `NonTerminal` and the writer-present /proc probe keeps the
+    // loop spinning.
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, "\n\n\n");
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    assert_eq!(
+        run_stopped(&live, &StubPgidFinder::writer_present(), &sleeper)["status"],
+        "conflicted"
+    );
 }
 
 #[test]
@@ -165,10 +222,20 @@ fn message_stop_alone_keeps_loop_in_flight_until_terminal_state_appears() {
     // A subagent step ending in `message_stop` is NOT terminal for
     // the subagent (the harness still has terminal compaction +
     // merge-back to do). The poll loop must spin until something
-    // terminal lands.
+    // terminal lands. /proc is NOT consulted — the message_stop arm
+    // short-circuits ahead of the writer probe.
     let live = fixture_with_unmerged_sub();
     live.write_response("p1-sub", 1, MESSAGE_STOP);
     let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
-    assert_eq!(run_stopped(&live, &sleeper)["status"], "conflicted");
+    let finder = StubPgidFinder::writer_present();
+    assert_eq!(
+        run_stopped(&live, &finder, &sleeper)["status"],
+        "conflicted"
+    );
     assert_eq!(*sleeper.count.borrow(), 1);
+    assert!(
+        finder.calls.borrow().is_empty(),
+        "message_stop must not consult /proc"
+    );
 }
+

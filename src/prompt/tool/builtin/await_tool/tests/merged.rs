@@ -2,7 +2,7 @@
 //! reachable from parent's tip, summary readable from sub's tree.
 
 use super::super::*;
-use super::fixtures::{LiveRepo, NoopSleeper, env, input_for};
+use super::fixtures::{LiveRepo, NoopSleeper, StubPgidFinder, env, input_for};
 use std::io::Cursor;
 
 #[test]
@@ -20,15 +20,26 @@ fn merged_path_returns_status_and_summary_from_sub_branch_tip() {
     let mut stdin = Cursor::new(input_for("p1-sub"));
     let mut stdout = Vec::new();
     let env_stub = env(live.repo(), "p1");
+    let finder = StubPgidFinder::writer_present();
     let sleeper = NoopSleeper::new();
 
-    run(&mut stdin, &mut stdout, &env_stub, &live.git, &sleeper).unwrap();
+    run(
+        &mut stdin,
+        &mut stdout,
+        &env_stub,
+        &live.git,
+        &finder,
+        &sleeper,
+    )
+    .unwrap();
 
     let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(payload["status"], "merged");
     assert_eq!(payload["summary"], "terminal summary text");
     // Loop terminated on the first poll — no sleep.
     assert_eq!(sleeper.count.get(), 0);
+    // Merged path resolves on git refs alone — no /proc probe.
+    assert!(finder.calls.borrow().is_empty());
 }
 
 #[test]
@@ -53,6 +64,7 @@ fn merged_path_picks_highest_seq_summary() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap();
@@ -81,6 +93,7 @@ fn merged_without_summary_surfaces_typed_error() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();

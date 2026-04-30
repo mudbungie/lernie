@@ -1,7 +1,7 @@
 //! Error-path tests: every variant of [`super::super::Error`].
 
 use super::super::*;
-use super::fixtures::{LiveRepo, NoopSleeper, env, input_for};
+use super::fixtures::{LiveRepo, NoopSleeper, StubPgidFinder, env, input_for};
 use std::io::Cursor;
 
 struct EmptyEnv;
@@ -35,6 +35,7 @@ fn invalid_input_json_surfaces_invalid_json() {
         &mut stdout,
         &EmptyEnv,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -51,6 +52,7 @@ fn missing_handle_field_surfaces_invalid_json() {
         &mut stdout,
         &EmptyEnv,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -70,6 +72,7 @@ fn extra_field_surfaces_invalid_json() {
         &mut stdout,
         &EmptyEnv,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -86,6 +89,7 @@ fn missing_conv_repo_env_surfaces_missing_env() {
         &mut stdout,
         &EmptyEnv,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -109,6 +113,7 @@ fn missing_conv_branch_env_surfaces_missing_env() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -129,6 +134,7 @@ fn handle_not_a_descendant_is_rejected() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -155,6 +161,7 @@ fn handle_equal_to_parent_is_rejected() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -173,6 +180,7 @@ fn handle_with_just_trailing_dash_is_rejected() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -195,6 +203,7 @@ fn git_failure_on_missing_handle_surfaces_typed() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -259,6 +268,7 @@ fn write_failure_surfaces_as_write_error() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();
@@ -281,6 +291,7 @@ fn stdin_read_failure_surfaces_as_stdin_read() {
         &mut stdout,
         &EmptyEnv,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap_err();

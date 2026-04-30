@@ -3,7 +3,7 @@
 //! step 6). await reads that ref directly via `git for-each-ref`.
 
 use super::super::*;
-use super::fixtures::{LiveRepo, NoopSleeper, env, input_for};
+use super::fixtures::{LiveRepo, NoopSleeper, StubPgidFinder, env, input_for};
 use std::io::Cursor;
 
 #[test]
@@ -26,6 +26,7 @@ fn conflicted_when_marker_ref_present_at_sub_branch_tip() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap();
@@ -57,6 +58,7 @@ fn conflicted_takes_precedence_over_merged() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap();
@@ -90,6 +92,7 @@ fn unrelated_conflicted_ref_does_not_match_handle() {
         &mut stdout,
         &env_stub,
         &live.git,
+        &StubPgidFinder::writer_present(),
         &NoopSleeper::new(),
     )
     .unwrap();

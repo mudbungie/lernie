@@ -253,6 +253,10 @@ impl PgidFinder for StubPgidFinder {
         // The actual pgid value is irrelevant to the await loop —
         // only `is_none()` is consulted — so a fixed sentinel is
         // sufficient.
-        Ok(if self.present.get() { Some(424242) } else { None })
+        Ok(if self.present.get() {
+            Some(424242)
+        } else {
+            None
+        })
     }
 }

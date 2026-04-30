@@ -29,10 +29,7 @@ fn fixture_with_unmerged_sub() -> LiveRepo {
     live
 }
 
-fn run_against(
-    live: &LiveRepo,
-    finder: &dyn crate::prompt::stop::PgidFinder,
-) -> serde_json::Value {
+fn run_against(live: &LiveRepo, finder: &dyn crate::prompt::stop::PgidFinder) -> serde_json::Value {
     let mut stdin = Cursor::new(input_for("p1-sub"));
     let mut stdout = Vec::new();
     let env_stub = env(live.repo(), "p1");

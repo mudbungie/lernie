@@ -238,4 +238,3 @@ fn message_stop_alone_keeps_loop_in_flight_until_terminal_state_appears() {
         "message_stop must not consult /proc"
     );
 }
-

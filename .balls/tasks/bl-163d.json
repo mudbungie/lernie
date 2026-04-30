@@ -5,7 +5,7 @@
   "closed_children": [],
   "created_at": "2026-04-26T02:24:39.445985949Z",
   "delivered_in": null,
-  "depends_on": [],
+  "depends_on": ["bl-a144"],
   "description": "Wire egui UI controls to issue user actions through the existing `cli_outbound` module (ARCH §3.4 / §3.5: user actions are exclusively `lernie <subcommand>` invocations).\n\n=== Scope ===\n\nTwo buttons, both invoked through `cli_outbound::run`:\n\n- **New prompt.** Text input + submit, invokes `lernie prompt <repo> <message>` (current CLI surface; argument shape per `src/bin/lernie.rs`). Exact subcommand string is read from the live binary, not coined here.\n- **Stop.** Targets a selected unmerged branch, invokes `lernie stop <repo> <branch>` (CLI shape pinned by bl-a144).\n\nResume was excised from v0.5 by bl-abf3 (architecture amendment); no resume button.\n\n=== Rules ===\n\n- No persistent UI state (§3.5). Selection lives in memory; everything reproducible from filesystem.\n- All commands go through `cli_outbound::run`; no direct `Command::new` in the UI module.\n- Disabled-button states derive from view-model: Stop disabled when no in-flight branch is selected; New prompt disabled when input is empty.\n\n=== Tests ===\n\n- View-model unit: button enabled/disabled bits derive correctly from fixture repos (in-flight selection, empty input, etc.).\n- Integration: a fake `lernie` on PATH (shell stub, no mocking) records its argv; clicking each button produces the expected argv shape (`lernie prompt <repo> <text>` / `lernie stop <repo> <branch>`).\n\n=== Dependencies ===\n\n- **bl-a144** — `lernie stop` subcommand must exist and have a pinned CLI shape before this ball is claimable; otherwise the integration test would assert against a moving target.\n- **bl-abf3** — ARCH amendment excising user-action resume must land first so v0.5 done-when, §2.9, §3.4 are consistent before this ball wires its buttons.\n\n=== Gates ===\n\nTests, docs, alignment per AGENTS.md.",
   "external": {},
   "id": "bl-163d",
@@ -16,5 +16,5 @@
   "tags": ["v0.5","ui"],
   "title": "UI: user-action buttons wired through cli_outbound (new prompt / stop / resume)",
   "type": "task",
-  "updated_at": "2026-04-30T03:17:16.563704498Z"
+  "updated_at": "2026-04-30T03:17:19.514394520Z"
 }

@@ -9,12 +9,12 @@
   "description": "Add a make target that wraps 'cargo run --bin lernie-ui-egui -- --repo $(REPO)' so contributors can launch the UI without remembering the cargo invocation. Mirror the shape of the existing 'make new-conversation DEST=<path>' target. Document in README §Build targets.",
   "external": {},
   "id": "bl-4d80",
-  "links": [{"link_type":"gates","target":"bl-8de5"}],
+  "links": [{"link_type":"gates","target":"bl-8de5"},{"link_type":"gates","target":"bl-0431"}],
   "parent": null,
   "priority": 3,
   "status": "open",
   "tags": [],
   "title": "Makefile: add 'make ui' target to launch lernie-ui-egui",
   "type": "task",
-  "updated_at": "2026-04-30T17:05:04.345860600Z"
+  "updated_at": "2026-04-30T17:05:04.359735574Z"
 }

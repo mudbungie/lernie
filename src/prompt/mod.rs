@@ -32,6 +32,7 @@ pub mod dispatch;
 pub mod dispatcher;
 pub mod merge;
 pub mod step;
+pub mod stop;
 pub mod subagent;
 pub mod tool;
 pub mod worker;

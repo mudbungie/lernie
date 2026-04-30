@@ -215,6 +215,37 @@ git -C /path/to/my-conversation/root \
 
 A ballooning count indicates a silent failure in the merge pipeline.
 
+## Stopping a conversation
+
+```
+lernie stop /path/to/my-conversation <conv-id>
+```
+
+Sends `SIGTERM` to the process group of the harness driving `<conv-id>`
+(and any subagent harnesses on hyphenated descendants — `<conv-id>-…`),
+with a 5-second flush deadline before `SIGKILL`. This is the same
+cascade pattern adapter (§4.4) and tool (§3.3) cancellation use, applied
+to the harness itself ([ARCH §2.9](docs/ARCHITECTURE.md#29-stopped-branches)).
+The pid is discovered by scanning `/proc/<pid>/fd/*` for the writer
+holding the latest step's `response.json` open — no sidecar pid file —
+so the same `IN_CLOSE_WRITE` signal that drives the §3.5 in-flight UI
+classification also targets the cascade. Linux only.
+
+Behavior:
+
+- **Idempotent.** A branch with no live writer (already stopped, or the
+  harness exited cleanly) returns success without sending any signal.
+- **Errors when** the branch doesn't exist, or is already merged into
+  `main`. Both surface as a non-zero exit with a `lernie stop:` prefix
+  on stderr.
+- **No on-disk cancel marker.** The §2.9 signature of a stopped branch
+  is the latest step's `response.json` closed without a terminal
+  `message_stop` event — produced for free by the kernel closing the
+  harness's open fds when the process terminates.
+
+The frontend's stop button (per [ARCH §3.5](docs/ARCHITECTURE.md#35-ui-contract))
+exec's this exact subcommand; there is no second control surface.
+
 ## Built-in tools (v0.3, +v0.4 Phase 2 dispatch)
 
 The agent can call **built-in tools** that ship inside the `lernie`

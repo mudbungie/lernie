@@ -257,12 +257,14 @@ The pinned goal resolves the recency-decay problem in deep agent trees where seq
 
 ### 2.9 Stopped branches
 
-Stops are aggressive. When a stop is issued (by user, by timeout, by cascade from a parent):
+Stops are aggressive. When a stop is issued (by user, by timeout, by cascade from a parent — the user-driven case is the CLI subcommand `lernie stop <repo> <branch>` per §3.4, idempotent against an already-terminal branch):
 
 1. SIGTERM is sent to the harness process working on the branch (and the kernel cascades through its process group, covering tool subprocesses and any subagent harnesses spawned per §3.4).
 2. In-flight HTTP requests to provider endpoints are dropped as a side effect of the adapter receiving SIGTERM (§4.4 Cancellation: 5s flush deadline before SIGKILL).
 3. The kernel closes the harness's open fds. The latest step's `response.json` (§4.4 "On-disk response shape: JSONL of stream events, always") receives `IN_CLOSE_WRITE` (§3.5) without a terminal `message_stop` event having been emitted — this missing terminal event *is* the on-disk signature of a stopped step. No separate cancel marker is written; the absence of `message_stop` on a closed file is sufficient.
 4. The branch is left unmerged. Its `stopped` status is derived state, not a written flag — consistent with `docs/PRINCIPLES.md` "Single source of truth": an unmerged branch whose latest step's `response.json` is closed without `message_stop` is `stopped`. (Crashes, kills, and explicit user stops are indistinguishable on disk and treated identically.)
+
+The user-action stop (`lernie stop <repo> <branch>`) discovers the harness pid the same way: it scans `/proc/<pid>/fd/*` for the writer holding the latest step's `response.json` open and signals that pid's process group. There is no sidecar pid file — the open fd is already the source the §3.5 `in_flight` classification reads, so the same observation drives both. The harness sets its own process group at startup (`setpgid(0, 0)` in `lernie prompt`) so the `kill(-pgid, SIGTERM)` cascade reaches its provider adapter and any subagent harnesses re-entered via `lernie dispatch` (which deliberately do *not* setpgid, inheriting the parent's pgid) without touching the invoking shell or UI process.
 
 A stopped root conversation is terminal: like any root conversation, it does not merge back to `main`. A stopped subagent conversation is also terminal: it does not merge back to its parent, and the parent's `await(handle)` resolves to a `stopped` status. The stopped branch remains as a ref for retention. User paths forward are the ordinary dispatch primitives: `lernie prompt` to start a new conversation, or fork-from-history to spawn a new branch off the stopped tip. There is no distinct "resume" operation — both fork-from-history and new-prompt subsume what resume would have done, and a third name would only obscure that.
 

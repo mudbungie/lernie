@@ -18,6 +18,8 @@
 //!   is built-in boilerplate, §2.7); per-role validation lives here
 //!   rather than in the clap surface so adding a role is a one-line
 //!   match arm rather than a Subcommand-tree edit.
+//! - `stop <repo> <branch>` — cascading SIGTERM on the harness's
+//!   pgid (ARCH §2.9); idempotent for already-stopped branches.
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3). The
 //!   tool executor's resolution order falls through to
 //!   `<lernie> tool <name>` after external lookups miss; the
@@ -81,6 +83,8 @@ enum Command {
         #[arg(long)]
         goal: Option<String>,
     },
+    /// Stop a conversation branch (ARCH §2.9 cascading SIGTERM).
+    Stop { repo: PathBuf, branch: String },
     /// In-process built-in tool entry (ARCH §3.3). Reads
     /// `tool_use.input` JSON from stdin, writes raw result bytes to
     /// stdout, and exits 0 on success or non-zero on failure (the
@@ -129,6 +133,7 @@ fn main() -> ExitCode {
             }
         }
         Command::Prompt { repo, message } => {
+            prompt::stop::become_pgid_leader(); // §2.9 cascade leader
             let dispatcher = match SpawnDispatcher::new() {
                 Ok(d) => d,
                 Err(e) => {
@@ -170,6 +175,13 @@ fn main() -> ExitCode {
             branch,
             goal,
         } => run_dispatch_cli(&role, &repo, &branch, goal.as_deref()),
+        Command::Stop { repo, branch } => match prompt::stop::cli_run(&repo, &branch) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("lernie stop: {e}");
+                ExitCode::FAILURE
+            }
+        },
         Command::Tool { name } => {
             let stdin = io::stdin();
             let stdout = io::stdout();

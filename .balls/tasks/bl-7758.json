@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-04-30T17:05:01.411358653Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "Pre-close gate for bl-4d80. Verify the Makefile change is consistent with docs/ARCHITECTURE.md §3.5 (the UI is stateless, launched against an existing conv-repo) and docs/PRINCIPLES.md / docs/TAXONOMY.md (no new terms of art coined). The change is plumbing-only and should not require any spec edits; close when confirmed.",
+  "external": {},
+  "id": "bl-7758",
+  "links": [],
+  "parent": "bl-4d80",
+  "priority": 3,
+  "status": "open",
+  "tags": ["gate"],
+  "title": "Gate: alignment with project specs (make ui)",
+  "type": "task",
+  "updated_at": "2026-04-30T17:05:01.411358653Z"
+}

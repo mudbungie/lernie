@@ -14,7 +14,7 @@
   "priority": 2,
   "status": "open",
   "tags": ["v0.5","ui"],
-  "title": "UI: user-action buttons wired through cli_outbound (new prompt / stop / resume)",
+  "title": "UI: user-action buttons wired through cli_outbound (new prompt / stop)",
   "type": "task",
-  "updated_at": "2026-04-30T03:17:19.525057640Z"
+  "updated_at": "2026-04-30T03:17:27.187144293Z"
 }

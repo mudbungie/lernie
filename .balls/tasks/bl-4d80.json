@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-4d80",
+  "claimed_by": "Notably",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-30T17:04:50.452911109Z",
@@ -12,9 +12,9 @@
   "links": [{"link_type":"gates","target":"bl-8de5"},{"link_type":"gates","target":"bl-0431"},{"link_type":"gates","target":"bl-7758"}],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": [],
   "title": "Makefile: add 'make ui' target to launch lernie-ui-egui",
   "type": "task",
-  "updated_at": "2026-04-30T17:05:04.370159616Z"
+  "updated_at": "2026-04-30T17:05:06.522217183Z"
 }

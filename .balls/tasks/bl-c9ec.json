@@ -1,6 +1,6 @@
 {
-  "branch": null,
-  "claimed_by": null,
+  "branch": "work/bl-c9ec",
+  "claimed_by": "Excellence",
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-30T04:10:50.650482546Z",
@@ -12,9 +12,9 @@
   "links": [],
   "parent": null,
   "priority": 3,
-  "status": "open",
+  "status": "in_progress",
   "tags": ["v0.4"],
   "title": "await: detect killed-mid-stream subagents via filesystem-close (inotify)",
   "type": "task",
-  "updated_at": "2026-04-30T04:10:50.650482546Z"
+  "updated_at": "2026-04-30T07:27:45.958110817Z"
 }

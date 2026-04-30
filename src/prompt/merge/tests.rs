@@ -142,27 +142,35 @@ fn alignment_runs_checkout_and_commit_when_changes_exist() {
 }
 
 #[test]
-fn rebase_failure_aborts_and_surfaces_as_git_rebase_error() {
-    // Fail the rebase (0); abort (1) succeeds; merge + remove
-    // never run.
+fn rebase_failure_aborts_marks_conflicted_and_surfaces_as_git_rebase_error() {
+    // Fail the rebase (0); abort (1) succeeds; conflicted-ref write
+    // (2) records the marker; merge + remove never run.
     let git = ScriptedGit::new(&[0]);
     let err = run_it(&git).unwrap_err();
     assert!(matches!(err, Error::Git { op: "rebase", .. }));
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 2);
+    assert_eq!(runs.len(), 3);
     assert_eq!(runs[0].1, vec!["rebase", "parent"]);
     assert_eq!(runs[1].1, vec!["rebase", "--abort"]);
+    // The conflicted-ref write points the marker at the child branch
+    // (post-abort, the branch is back at its pre-rebase tip per
+    // `git rebase --abort` semantics).
+    assert_eq!(runs[2].1[0], "update-ref");
+    assert_eq!(runs[2].1[1], "refs/lernie/conflicted/child");
+    assert_eq!(runs[2].1[2], "child");
 }
 
 #[test]
 fn rebase_abort_failure_is_swallowed_but_rebase_error_surfaces() {
-    // Rebase AND abort both fail. The primary error still
-    // surfaces; we cannot do more than report it.
-    let git = ScriptedGit::new(&[0, 1]);
+    // Rebase AND abort both fail. The primary error still surfaces;
+    // we cannot do more than report it. The conflicted-ref write
+    // still attempts (its own failure is swallowed too) — the
+    // marker write is best-effort, same shape as the abort itself.
+    let git = ScriptedGit::new(&[0, 1, 2]);
     let err = run_it(&git).unwrap_err();
     assert!(matches!(err, Error::Git { op: "rebase", .. }));
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 2);
+    assert_eq!(runs.len(), 3);
 }
 
 #[test]

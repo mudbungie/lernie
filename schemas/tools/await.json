@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "await",
+  "description": "Input schema for the lernie built-in `await` tool (ARCH §2.5, §3.3 — v0.4 Phase 3). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "handle": {
+      "type": "string",
+      "description": "Subagent handle returned by an earlier `dispatch` call. The handle IS the subagent's full hyphenated descent / branch name (ARCH §2.2 / §2.3). `await` blocks until the named subagent reaches a terminal state (merged, stopped, or conflicted) and emits the outcome as `tool_result.content`."
+    }
+  },
+  "required": ["handle"],
+  "additionalProperties": false
+}

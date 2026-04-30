@@ -8,12 +8,17 @@
 //! stdout = raw result bytes, exit code = is_error) is enforced here.
 //!
 //! v0.3 shipped two built-ins (`read_file`, `bash`); v0.4 Phase 2 adds
-//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5). Adding a new
-//! one is a match arm in [`run`] plus a sibling module.
+//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5) and Phase 3
+//! adds [`await_tool`] (the dispatch/await pair's resolution half,
+//! §2.5). Adding a new one is a match arm in [`run`] plus a sibling
+//! module.
 
 use std::io::{Read, Write};
 use thiserror::Error;
 
+use crate::template::RealGit;
+
+pub mod await_tool;
 pub mod bash;
 pub mod dispatch;
 pub mod read_file;
@@ -46,6 +51,12 @@ pub enum Error {
     /// after stdout so the agent sees the failure verbatim.
     #[error(transparent)]
     Dispatch(#[from] dispatch::Error),
+    /// `await` failed (bad input JSON, foreign handle, git read
+    /// failure, etc., per [`await_tool::Error`]). The §3.3 stdio
+    /// contract concats stderr after stdout so the agent sees the
+    /// failure verbatim.
+    #[error(transparent)]
+    Await(#[from] await_tool::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
@@ -65,6 +76,16 @@ pub fn run<R: Read, W: Write, E: Write>(
     stdout: &mut W,
     stderr: &mut E,
 ) -> Result<i32, Error> {
+    // `await` is purely a git-and-fs poller; production deps are
+    // [`await_tool::ProcessEnv`] + [`RealGit`] + [`ThreadSleeper`].
+    // Routed here directly to keep [`run_with`] scoped to the
+    // dispatch arm's pre-existing test surface (which would otherwise
+    // need an extra git stub in every dispatch routing test).
+    if name == "await" {
+        #[rustfmt::skip]
+        let res = await_tool::run(stdin, stdout, &await_tool::ProcessEnv, &RealGit::new(), &await_tool::ThreadSleeper);
+        return res.map(|()| 0).map_err(Error::Await);
+    }
     // `current_exe` failure here is exotic (mostly unusual platforms
     // / `proc` mounts); panicking is consistent with the harness-wide
     // pattern for unrecoverable startup invariants.
@@ -102,168 +123,4 @@ pub fn run_with<R: Read, W: Write, E: Write>(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::io::Cursor;
-
-    #[test]
-    fn unknown_tool_name_surfaces_unknown_variant() {
-        let mut stdin = Cursor::new(Vec::<u8>::new());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let err = run("not_a_tool", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-        let msg = err.to_string();
-        assert!(msg.contains("not_a_tool"), "{msg}");
-        assert!(msg.contains("unknown"), "{msg}");
-    }
-
-    #[test]
-    fn read_file_routed_to_inner_module() {
-        // A minimal-but-valid input that drives the inner module's
-        // happy path. Exercising the dispatch arm for read_file.
-        let tmp = tempfile::NamedTempFile::new().unwrap();
-        std::fs::write(tmp.path(), b"hi").unwrap();
-        let input = serde_json::json!({ "path": tmp.path() }).to_string();
-        let mut stdin = Cursor::new(input.into_bytes());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let code = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap();
-        assert_eq!(code, 0);
-        assert_eq!(stdout, b"hi");
-    }
-
-    #[test]
-    fn read_file_error_is_carried_through_dispatcher() {
-        // Bad JSON on stdin — read_file::Error::InvalidJson — should
-        // surface through the From conversion as Error::ReadFile.
-        let mut stdin = Cursor::new(b"not json".to_vec());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let err = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-        assert!(matches!(err, Error::ReadFile(_)), "{err}");
-    }
-
-    #[test]
-    fn bash_routed_to_inner_module() {
-        // Drives the dispatch arm for bash through a trivial command.
-        let input = serde_json::json!({ "command": "printf hi" }).to_string();
-        let mut stdin = Cursor::new(input.into_bytes());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let code = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap();
-        assert_eq!(code, 0);
-        assert_eq!(stdout, b"hi");
-    }
-
-    #[test]
-    fn bash_error_is_carried_through_dispatcher() {
-        // Bad JSON on stdin — bash::Error::InvalidJson — should
-        // surface through the From conversion as Error::Bash.
-        let mut stdin = Cursor::new(b"not json".to_vec());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let err = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-        assert!(matches!(err, Error::Bash(_)), "{err}");
-    }
-
-    /// Test-only stub for the dispatch tool's [`Spawner`] dependency.
-    /// Returns a fixed handle on stdout, exit 0 — exercising the
-    /// happy-path arm of [`run_with`] without spawning a real
-    /// subprocess.
-    struct StubSpawner;
-    impl dispatch::Spawner for StubSpawner {
-        fn dispatch(
-            &self,
-            _role: &str,
-            _repo: &std::path::Path,
-            _branch: &str,
-            _goal: &str,
-        ) -> std::io::Result<dispatch::DispatchOutput> {
-            Ok(dispatch::DispatchOutput {
-                stdout: "p1-sub\n".to_string(),
-                stderr: String::new(),
-                exit: 0,
-            })
-        }
-    }
-
-    /// Stub env that returns the same conv-repo / conv-branch
-    /// regardless of which key is asked for. Real lookups discriminate
-    /// on key; the dispatch tool only requests the two we care about
-    /// so a key-blind stub is sound for the routing test.
-    struct StubEnv {
-        repo: std::path::PathBuf,
-        branch: String,
-    }
-    impl dispatch::EnvLookup for StubEnv {
-        fn get(&self, key: &str) -> Option<std::ffi::OsString> {
-            if key == crate::prompt::tool::ENV_CONV_REPO {
-                Some(self.repo.as_os_str().to_owned())
-            } else if key == crate::prompt::tool::ENV_CONV_BRANCH {
-                Some(self.branch.as_str().into())
-            } else {
-                None
-            }
-        }
-    }
-
-    #[test]
-    fn dispatch_routed_to_inner_module() {
-        let repo = tempfile::TempDir::new().unwrap();
-        std::fs::write(
-            repo.path().join("providers.yaml"),
-            "roles:\n  worker:\n    provider: anthropic\n    model: m\n",
-        )
-        .unwrap();
-        std::fs::create_dir_all(repo.path().join("souls")).unwrap();
-        std::fs::write(repo.path().join("souls").join("worker.md"), "soul").unwrap();
-
-        let input = serde_json::json!({"role":"worker","goal":"g"}).to_string();
-        let mut stdin = Cursor::new(input.into_bytes());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let env = StubEnv {
-            repo: repo.path().to_path_buf(),
-            branch: "p1".into(),
-        };
-        let code = run_with(
-            "dispatch",
-            &mut stdin,
-            &mut stdout,
-            &mut stderr,
-            &env,
-            &StubSpawner,
-        )
-        .unwrap();
-        assert_eq!(code, 0);
-        let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
-        assert_eq!(payload["status"], "in_progress");
-        assert_eq!(payload["handle"], "p1-sub");
-    }
-
-    #[test]
-    fn dispatch_error_is_carried_through_dispatcher() {
-        // No env vars set on the StubEnv variant below — surfaces as
-        // dispatch::Error::MissingEnv via #[from] into Error::Dispatch.
-        struct EmptyEnv;
-        impl dispatch::EnvLookup for EmptyEnv {
-            fn get(&self, _key: &str) -> Option<std::ffi::OsString> {
-                None
-            }
-        }
-        let input = serde_json::json!({"role":"worker","goal":"g"}).to_string();
-        let mut stdin = Cursor::new(input.into_bytes());
-        let mut stdout = Vec::new();
-        let mut stderr = Vec::new();
-        let err = run_with(
-            "dispatch",
-            &mut stdin,
-            &mut stdout,
-            &mut stderr,
-            &EmptyEnv,
-            &StubSpawner,
-        )
-        .unwrap_err();
-        assert!(matches!(err, Error::Dispatch(_)), "{err}");
-    }
-}
+mod tests;

@@ -9,14 +9,18 @@
 //! versions, `--no-ff` merge child into parent, remove the child's
 //! worktree — and differ only in which paths name parent and child.
 //!
-//! §2.6 step 5 says a rebase that conflicts "indicates a harness
+//! §2.6 step 6 says a rebase that conflicts "indicates a harness
 //! defect — two branches were given overlapping write paths". v0.3
 //! does not have the single-author-per-file machinery in place yet,
 //! so in practice the conflict path is reached when concurrent root
 //! conversations overlap on e.g. `goal.md` — which v0.3 does not
-//! test. For v0.3 we surface conflicts as [`Error::Git`] with
-//! `op: "rebase"`, aborting the rebase so the worktree is left in a
-//! clean state (no mid-rebase garbage) and the operator can retry.
+//! test. We surface conflicts as [`Error::Git`] with `op: "rebase"`,
+//! abort the rebase so the worktree is left in a clean state, and
+//! write a marker ref `refs/lernie/conflicted/<child_branch>` at the
+//! child's pre-rebase tip — that marker is what `await(handle)`
+//! (v0.4 P3) reads to surface `{"status":"conflicted"}` on the
+//! subagent's resolution. Single source of truth: the marker is a
+//! plain git ref, not a sidecar file.
 //!
 //! **The alignment step.** Vanilla `merge=ours` only resolves
 //! both-modified conflicts; it is silent on "added on theirs only"
@@ -35,6 +39,14 @@
 use super::Error;
 use crate::template::{GitRunner, MERGE_OURS_PATHS};
 use std::path::Path;
+
+/// Ref-namespace prefix for the merge protocol's conflicted marker
+/// (ARCH §2.6 step 6). Mirrored by the await tool's
+/// [`crate::prompt::tool::builtin::await_tool::CONFLICTED_REF_PREFIX`]
+/// — kept aligned by code review (the constant is the single source
+/// of the spec; the await module re-exports its own copy so the
+/// builtin tool does not have to depend on `super::merge`).
+const CONFLICTED_REF_PREFIX: &str = "refs/lernie/conflicted/";
 
 /// Rebase `child_branch` onto `parent_branch`'s tip (run inside
 /// `child_worktree`), then merge `child_branch` into `parent_branch`
@@ -61,8 +73,16 @@ pub fn rebase_and_merge(
         // hand-running `git rebase --abort`. We intentionally ignore
         // the abort's error — if it fails there is nothing more the
         // harness can do, and the rebase failure is the one the
-        // operator needs to see.
+        // operator needs to see. After abort, the child branch ref is
+        // back at its pre-rebase tip; mark that tip with a
+        // conflicted ref so `await(handle)` (v0.4 P3) can resolve it
+        // without reading sidecar state.
         let _ = git.run(child_worktree, &["rebase", "--abort"]);
+        let conflicted_ref = format!("{CONFLICTED_REF_PREFIX}{child_branch}");
+        let _ = git.run(
+            child_worktree,
+            &["update-ref", conflicted_ref.as_str(), child_branch],
+        );
         return Err(Error::Git {
             op: "rebase",
             source,

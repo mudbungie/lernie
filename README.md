@@ -394,7 +394,7 @@ labeled with the conversation id and a truncated `messages[0].content`
 preview pulled from `steps/<conv-id>/001/request.json`. If the tree
 can't be read, a placeholder view is shown instead.
 
-Three pure-Rust modules inside the crate (no egui dep on the view-model
+Four pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
 - `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
@@ -421,6 +421,15 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   message preview is read from `<conv-repo>/steps/<conv-id>/001/
   request.json` on disk. A thin egui widget in the same module renders
   it.
+- `actions` — the user-action surface: `ActionsState` holds the
+  in-progress prompt input and selected branch (in-memory only per
+  §3.5), and `dispatch_new_prompt` / `dispatch_stop` build the argv for
+  `lernie prompt <repo> <message>` / `lernie stop <repo> <branch>` and
+  invoke `cli_outbound`. Enable/disable derivation (`new_prompt_enabled`,
+  `stop_enabled`) is a pure function of the input string and the
+  unmerged-branch list. Per the §2.9 amendment landed in bl-abf3,
+  there is no user-facing "resume" — continuing from a stopped branch
+  is a fresh `lernie prompt` or fork-from-history.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

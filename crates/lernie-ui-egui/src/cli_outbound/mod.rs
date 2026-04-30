@@ -2,10 +2,13 @@
 //!
 //! Per ARCHITECTURE.md §3.4 ("CLI as control plane") and §3.5 ("UI
 //! contract"), every user action a frontend issues — new prompt, stop,
-//! resume, fork-from-history — is an `exec("lernie", args)` and nothing
-//! else. This module wraps that exec with stream-chunked stdout/stderr,
-//! terminal exit reporting, and aggressive SIGTERM-then-SIGKILL cleanup on
-//! drop (§2.9: "Stops are aggressive").
+//! fork-from-history — is an `exec("lernie", args)` and nothing else.
+//! (Per the §2.9 amendment landed in bl-abf3, "resume" is no longer a
+//! user-facing operation; continuing from a stopped branch is `lernie
+//! prompt` or fork-from-history.) This module wraps that exec with
+//! stream-chunked stdout/stderr, terminal exit reporting, and
+//! aggressive SIGTERM-then-SIGKILL cleanup on drop (§2.9: "Stops are
+//! aggressive").
 //!
 //! The module is pure Rust — no egui/eframe dependency — so a future
 //! `lernie-ui-web` crate can reuse it unchanged. It has no knowledge of

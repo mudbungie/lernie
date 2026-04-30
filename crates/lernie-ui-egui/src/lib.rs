@@ -9,6 +9,7 @@
 //! view are wired up; filesystem watching, CLI outbound, and git-tree
 //! rendering land in subsequent tasks.
 
+pub mod actions;
 pub mod cli_outbound;
 pub mod fs_watcher;
 pub mod git_tree;

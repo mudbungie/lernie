@@ -97,9 +97,7 @@ fn render_actions(
                 }
             });
         let enabled = stop_enabled(state.selected_branch.as_deref(), branches);
-        if ui
-            .add_enabled(enabled, egui::Button::new("Stop"))
-            .clicked()
+        if ui.add_enabled(enabled, egui::Button::new("Stop")).clicked()
             && let Some(branch) = state.selected_branch.as_deref()
         {
             spawn_detached(dispatch_stop(cli, &app.repo, branch));
@@ -114,13 +112,14 @@ fn render_actions(
 /// terminal `Exited` chunk). Errors are printed to stderr and dropped;
 /// surfacing them in the UI is out of v0.5 scope.
 fn spawn_detached(
-    spawn_result: Result<lernie_ui_egui::cli_outbound::Stream, lernie_ui_egui::cli_outbound::CliError>,
+    spawn_result: Result<
+        lernie_ui_egui::cli_outbound::Stream,
+        lernie_ui_egui::cli_outbound::CliError,
+    >,
 ) {
     match spawn_result {
         Ok(stream) => {
-            std::thread::spawn(move || {
-                for _ in stream {}
-            });
+            std::thread::spawn(move || for _ in stream {});
         }
         Err(e) => eprintln!("lernie-ui-egui: spawn failed: {e}"),
     }

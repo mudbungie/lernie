@@ -142,10 +142,27 @@ fn write_script_helper_is_round_tripped_by_the_fixture() {
     // Sanity: `fixtures::write_script` produces a runnable script.
     // Without this the resolution / cascade tests would fail in a
     // confusing way.
+    //
+    // The exec is wrapped in the same ETXTBSY-retry envelope the
+    // production spawner (`subprocess::spawn_with_etxtbsy_retry`) uses,
+    // because cargo runs tests in parallel and a sibling thread's
+    // fork can briefly inherit this thread's not-yet-CLOEXEC write
+    // fd to the script — same race the production retry was added
+    // to mask.
+    use std::time::{Duration, Instant};
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("hi.sh");
     write_script(&path, "echo hi");
-    let out = std::process::Command::new(&path).output().unwrap();
+    let deadline = Instant::now() + Duration::from_millis(200);
+    let out = loop {
+        match std::process::Command::new(&path).output() {
+            Ok(o) => break o,
+            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(2));
+            }
+            Err(e) => panic!("exec failed: {e}"),
+        }
+    };
     assert!(out.status.success());
     assert_eq!(out.stdout, b"hi\n");
 }

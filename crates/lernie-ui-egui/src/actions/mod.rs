@@ -67,11 +67,7 @@ pub fn stop_enabled(selected_branch: Option<&str>, branches: &[ConversationBranc
 /// (ARCH §2.9 cascade), so the architectural intent is detach-and-drain
 /// — spawn a thread that consumes the stream until natural exit so the
 /// harness lives independently of the UI (§1 #4 Regenerability).
-pub fn dispatch_new_prompt(
-    cli: &Cli,
-    repo: &Path,
-    message: &str,
-) -> Result<Stream, CliError> {
+pub fn dispatch_new_prompt(cli: &Cli, repo: &Path, message: &str) -> Result<Stream, CliError> {
     let repo = repo.display().to_string();
     cli.run(&[SUBCOMMAND_PROMPT, &repo, message])
 }

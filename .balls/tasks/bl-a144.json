@@ -4,7 +4,7 @@
   "closed_at": null,
   "closed_children": [],
   "created_at": "2026-04-29T01:07:49.349889425Z",
-  "delivered_in": null,
+  "delivered_in": "08a6376f473465490db8868399b0165e02ab515e",
   "depends_on": [],
   "description": "Implement `lernie stop <repo> <branch>` per ARCH §2.9 — cascading SIGTERM that terminates the harness process working on the branch, with the kernel cascading through its process group to cover tool subprocesses and any subagent harnesses spawned per §3.4.\n\n=== Why this is its own ball ===\n\nARCH §2.9 specifies the mechanism (SIGTERM, 5s flush deadline before SIGKILL per §4.4) and the on-disk signature (latest step's `response.json` closed without `message_stop`). ARCH §3.4 lists `stop` among the CLI subcommands the frontend issues. Today neither the subcommand nor the pid-discovery mechanism it would need exists. bl-163d is a UI wiring task; this is the backend it would invoke.\n\n=== Scope ===\n\n1. **Pid discovery.** A branch needs a way to point to \"the harness process currently driving it.\" Likely shape: `lernie prompt` (and any subagent dispatcher per §3.4) writes a pid file at a deterministic path under the conv repo (e.g. `<conv-repo>/steps/<conv-id>/<NNN>/harness.pid` or a per-branch sentinel) and removes it on clean exit. `lernie stop` reads the pid file, sends SIGTERM, and waits up to 5s before escalating to SIGKILL.\n   - Concrete path and atomic-write/cleanup discipline must respect §3.5 single-source-of-truth (\"never mirror state — derive from the source\"). If a branch→pid lookup can be derived from `/proc` or process group inspection without a pid file, prefer that.\n\n2. **CLI surface.** `lernie stop <repo> <branch>` — argument shape consistent with `lernie prompt <repo> <message>` and `lernie dispatch <role> <repo> <branch>`. Idempotent: stopping an already-terminal branch is a no-op success. Errors when the branch doesn't exist or isn't unmerged.\n\n3. **Cascade.** Process-group SIGTERM (`kill -TERM -<pgid>`) so tool subprocesses and subagent harnesses go down together. Verify on Linux; document any portability deltas.\n\n4. **On-disk signature.** Per §2.9, no separate cancel marker is written. The signature of a stopped branch is `response.json` closed without a `message_stop` event. This task should not introduce a new sentinel; the existing `IN_CLOSE_WRITE`-without-`message_stop` mechanism is sufficient and already classified by the UI's branch-state derivation (bl-de6b).\n\n=== Tests ===\n\n- Integration: spawn a fixture `lernie prompt` against a slow/stalled provider stub; `lernie stop` returns success; the response.json on disk is closed without `message_stop`; the branch is classified `stopped` by the existing UI state derivation.\n- Process group: confirm a child tool subprocess receives SIGTERM via the cascade.\n- Idempotency: stopping a stopped branch returns success without error.\n- Negative: stopping a non-existent or already-merged branch returns a meaningful error.\n\n=== Gates ===\n\nTests, docs (ARCH §2.9 + §3.4 surface description, README/CLI help), alignment (PRINCIPLES single-source-of-truth, §3.5 stateless re-entrance) — per AGENTS.md.\n\n=== Out of scope ===\n\n- The UI button wiring to invoke this subcommand (that's bl-163d).\n- `lernie resume` (separate v0.6 piece per prior bl-163d note).\n- Workflow-driven cascade triggers from a parent stopping its children (that's a §6 workflow concern).",
   "external": {},
@@ -12,9 +12,9 @@
   "links": [],
   "parent": "bl-c0a5",
   "priority": 2,
-  "status": "in_progress",
+  "status": "review",
   "tags": ["v0.5","harness"],
   "title": "lernie stop <repo> <branch>: cascading SIGTERM per ARCH §2.9",
   "type": "task",
-  "updated_at": "2026-04-30T03:19:01.045165287Z"
+  "updated_at": "2026-04-30T04:25:03.460692371Z"
 }

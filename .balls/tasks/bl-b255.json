@@ -1,0 +1,20 @@
+{
+  "branch": null,
+  "claimed_by": null,
+  "closed_at": null,
+  "closed_children": [],
+  "created_at": "2026-05-02T08:38:56.766098978Z",
+  "delivered_in": null,
+  "depends_on": [],
+  "description": "The UI's branch-state classifier and ARCH §7.1 disagree on what\nconstitutes `Stopped` for an unmerged branch.\n\nARCH §7.1 (line 386):\n  > `stopped`: branch is unmerged, the latest step's\n  > `response.json` is closed, and its last JSONL event is\n  > **not** `message_stop`\n\nCurrent UI implementation\n(`crates/lernie-ui-egui/src/git_tree/state.rs::has_terminal_event`):\ntreats both `message_stop` AND `error` as terminal events, returning\n`BranchState::Stopped` when the last completed line is either.\n\nWhy the spec is right (and the UI is wrong):\n- For a subagent step that emitted `message_stop`, the harness\n  still has terminal compaction + merge-back to do (§2.3 step 5,\n  §2.6, §2.7). The chain is mid-progress, not stopped.\n- For a root conversation between steps, the latest step ends in\n  `message_stop` and the next step has not yet been written. The\n  branch is in_flight, not stopped — the UI flickers \"stopped\"\n  during normal multi-step exchanges.\n- The post-bl-c9ec await built-in already follows ARCH §7.1: it\n  treats `message_stop` as InFlight and uses the §3.5 fd-open\n  observation (via `PgidFinder` /proc-fd scan) to disambiguate\n  mid-stream from kill-mid-stream. The UI is the last consumer\n  still on the pre-spec interpretation.\n\nScope:\n- Update `has_terminal_event` (or replace it) so `message_stop`\n  alone does NOT classify as `Stopped`. The spec-correct rule is:\n  unmerged AND fd-closed AND last completed line is not\n  `message_stop`. `error` remains a Stopped signal regardless of\n  fd state.\n- The fd-closed check needs a signal the UI doesn't currently\n  track. Options (pick on merit):\n  1. inotify CLOSE_WRITE via the existing `notify`-based\n     `fs_watcher` (matches ARCH §3.5 line 384 — \"Completion\n     signal: writer closes the fd; inotify `IN_CLOSE_WRITE` marks\n     the response complete\"). The watcher is already running; this\n     is a classifier-side change to consume CLOSE_WRITE events.\n  2. /proc fd-scan via the same `PgidFinder` await uses. Cross-\n     crate, so requires plumbing or a shared crate.\n  Option 1 is the canonical UI approach per the spec.\n- Tests: extend `state.rs::tests` so `message_stop`-without-close\n  classifies as `InFlight`, `message_stop`-with-close classifies\n  as `Stopped`, and the existing `error` cases still work.\n\nOut of scope:\n- Re-architecting the renderer; the change is local to the\n  classifier and its watcher input.\n- The harness side — `await` (post bl-c9ec) and `lernie stop`\n  already match the spec.",
+  "external": {},
+  "id": "bl-b255",
+  "links": [],
+  "parent": null,
+  "priority": 3,
+  "status": "open",
+  "tags": ["v0.5","ui"],
+  "title": "UI classifier: message_stop is not a Stopped signal (ARCH §7.1 misalignment)",
+  "type": "bug",
+  "updated_at": "2026-05-02T08:38:56.766098978Z"
+}

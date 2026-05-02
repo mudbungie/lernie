@@ -443,6 +443,10 @@ side, reusable by a future `lernie-ui-web`) back the UI:
 lernie-ui-egui --repo /path/to/my-conversation
 ```
 
+From a source checkout, `make ui REPO=/path/to/my-conversation` does the
+same via `cargo run --bin lernie-ui-egui` and is what contributors
+typically use during development.
+
 egui is winit-based; its only runtime deps are the X11/Wayland libs already
 present on any Linux desktop. No `apt install` step is required.
 
@@ -474,6 +478,7 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-conversation DEST=<path>` | Scaffold a conversation repo from `template/` |
+| `make ui REPO=<path>`  | Launch `lernie-ui-egui` against an existing conv-repo via `cargo run`        |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |

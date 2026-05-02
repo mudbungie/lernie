@@ -1,1 +1,0 @@
-{"ts":"2026-05-02T08:34:53.320511586Z","author":"Notably","text":"Add `make ui REPO=<path>` target\n\nWraps cargo run for lernie-ui-egui so contributors don't have to type\nthe full invocation; mirrors the existing `make new-conversation`\ntarget shape (required-arg guard, --quiet, no shell-quoting surprises).\nREADME §Build targets and §UI updated."}

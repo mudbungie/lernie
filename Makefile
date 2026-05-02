@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check schemas new-conversation install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test coverage lint fmt fmt-check check schemas new-conversation ui install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -49,6 +49,10 @@ schemas:
 new-conversation:
 	@test -n "$(DEST)" || { echo "usage: make new-conversation DEST=<path>"; exit 1; }
 	@cargo run --quiet --bin lernie -- new "$(DEST)"
+
+ui:
+	@test -n "$(REPO)" || { echo "usage: make ui REPO=<path>"; exit 1; }
+	@cargo run --quiet --bin lernie-ui-egui -- --repo "$(REPO)"
 
 lint:
 	cargo clippy --all-targets -- -D warnings

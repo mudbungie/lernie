@@ -1,7 +1,8 @@
 +++
 title = "Design: sandboxed tools — WASM/WASI capability clamp (v1.1 spec)"
 created = 1783464230
-updated = 1783464230
+updated = 1783467730
+claimant = "Sandcastle-0bae"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

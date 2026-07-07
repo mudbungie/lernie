@@ -1,7 +1,8 @@
 +++
 title = "Cleanup: retire superseded design-lineage artifacts (LHCS/WDF drafts, ~/dev/harness, harness_stack, lernie-adapters)"
 created = 1783465324
-updated = 1783465324
+updated = 1783466123
+claimant = "Sandcastle-de03"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 The v0.4 fold (bl-f739, main 2375d70) supersedes all of these. Operational task — the deletions live outside git/worktree flow; record what was done in the close message.

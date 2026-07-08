@@ -171,9 +171,9 @@ fn from_repo_in_flight_surfaces_partial_response_text() {
         &[
             r#"{"type":"message_start","message":{"id":"m1"}}"#,
             r#"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}"#,
-            r#"{"type":"text_delta","index":0,"text":"Rust"}"#,
-            r#"{"type":"text_delta","index":0,"text":" tracks"}"#,
-            r#"{"type":"text_delta","index":0,"text":" ownership"}"#,
+            r#"{"type":"content_delta","index":0,"delta":{"text_delta":"Rust"}}"#,
+            r#"{"type":"content_delta","index":0,"delta":{"text_delta":" tracks"}}"#,
+            r#"{"type":"content_delta","index":0,"delta":{"text_delta":" ownership"}}"#,
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
@@ -196,12 +196,12 @@ fn from_repo_in_flight_picks_latest_step_response_text() {
     fx.write_response_events(
         "20260427T120200Z-loop",
         1,
-        &[r#"{"type":"text_delta","index":0,"text":"first step body"}"#],
+        &[r#"{"type":"content_delta","index":0,"delta":{"text_delta":"first step body"}}"#],
     );
     fx.write_response_events(
         "20260427T120200Z-loop",
         2,
-        &[r#"{"type":"text_delta","index":0,"text":"second step partial"}"#],
+        &[r#"{"type":"content_delta","index":0,"delta":{"text_delta":"second step partial"}}"#],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert_eq!(
@@ -269,7 +269,7 @@ fn from_repo_v03_merged_conversation_has_no_streaming_text_field_set() {
     fx.write_response_events(
         "20260427T120400Z-done",
         1,
-        &[r#"{"type":"text_delta","index":0,"text":"after-merge text"}"#],
+        &[r#"{"type":"content_delta","index":0,"delta":{"text_delta":"after-merge text"}}"#],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert!(tree.in_flight.is_empty());

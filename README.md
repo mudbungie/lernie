@@ -27,28 +27,37 @@ make install LERNIE_HOME=/opt/lernie          # harness root -> /opt/lernie/
 `make install` runs a release build and then:
 
 1. Lays down the harness root skeleton at `$LERNIE_HOME` (default
-   `~/.lernie/`) — `adapters/`, `workflows/`, `tools/`, `skills/`,
-   `agents/`, and `conversations/` (ARCH §2.2). Re-runs are idempotent:
-   directory creation uses `mkdir -p`; existing config files are kept.
+   `~/.lernie/`) — `workflows/`, `tools/`, `skills/`, `agents/`, and
+   `conversations/` (ARCH §2.2). Re-runs are idempotent: directory
+   creation uses `mkdir -p`; existing config files are kept.
 2. Installs `lernie` and `lernie-ui-egui` into `$INSTALL_PREFIX/bin`
    with `install -m 0755` (atomic overwrite, no symlinks). Make sure
    that directory is on your `PATH`.
-3. Installs `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/`
-   — the harness resolves `lernie-provider-<name>` there before
-   falling back to `PATH` (ARCH §4.4), so per-harness-root credential
-   isolation is preserved.
-4. Drops a default `$LERNIE_HOME/providers.yaml` (anthropic endpoint
-   + a couple of model rows) and a `$LERNIE_HOME/agents/default/`
-   skeleton copied from [`template/`](template/) — only when those
-   paths don't already exist, so rotated credentials and hand-edited
-   profiles survive a re-install.
+3. Installs the provider adapter — brazen's `bz` — with
+   `cargo install brazen --version =0.0.2 --locked` (the `BRAZEN_PIN`
+   in the Makefile, kept in lockstep with the `brazen = "=0.0.2"`
+   dependency in `Cargo.toml`). One binary serves every provider
+   (ARCH §4.4); the harness resolves `bz` on `PATH`, and a load-time
+   guard rejects any `bz` whose version differs from the pin.
+4. Drops a default `$LERNIE_HOME/models.yaml` (model capabilities +
+   context windows — no endpoints or auth, which are brazen's) and a
+   `$LERNIE_HOME/agents/default/` skeleton copied from
+   [`template/`](template/) — only when those paths don't already
+   exist, so hand-edited config survives a re-install.
 5. Smoke-tests the freshly installed binaries with `lernie --version`
    and a throwaway `lernie new`. Failure aborts the install with a
    non-zero exit.
 
-`make uninstall` removes the installed binaries; the harness root
-(config, conversations, custom adapters) stays put — clean it up
-manually if you want a true uninstall.
+Provider endpoints, auth, and wire dialects live entirely in brazen's
+own config (`~/.config/brazen/config.toml`; inspect with
+`bz --dump-config`, authenticate with `bz --login --provider <id>`).
+lernie references a provider *row* by name and never sees credential
+material (ARCH §4.1).
+
+`make uninstall` removes the `lernie`/`lernie-ui-egui` binaries; `bz`
+(installed via cargo) is removed with `cargo uninstall brazen`. The
+harness root (config, conversations) stays put — clean it up manually
+if you want a true uninstall.
 
 ## Configuration schemas
 
@@ -63,7 +72,7 @@ from the Rust types under `src/config/`. `make schemas` writes them to
 | `schemas/manifest.json`       | `config::manifest::Manifest`               | `<conv-repo>/manifest.yaml`           |
 | `schemas/workflow.json`       | `config::workflow::Workflow`               | `<conv-repo>/workflow.yaml`           |
 | `schemas/providers.json`      | `config::per_repo_providers::PerRepoProviders` | `<conv-repo>/providers.yaml` (`roles:`) |
-| `schemas/global-providers.json` | `config::providers::Providers`           | `<harness-root>/providers.yaml`       |
+| `schemas/models.json`         | `config::models::Models`                   | `<harness-root>/models.yaml`          |
 
 ## Layout: harness root and conversation repos
 
@@ -71,11 +80,12 @@ There are two distinct on-disk locations (ARCH §2.2):
 
 - **Harness root** — installation-global, defaults to `~/.lernie/`,
   overridable via `LERNIE_HOME`. Holds the global
-  [`providers.yaml`](docs/ARCHITECTURE.md#41-provider-abstraction)
-  (endpoints, auth, models — §4.1), `adapters/`, `workflows/`, `tools/`,
-  `skills/`, and `agents/<profile>/` per-profile skeletons. Shared across
-  every conversation; rotates with key rollover and infrastructure
-  changes.
+  [`models.yaml`](docs/ARCHITECTURE.md#42-model-abstraction) (model
+  capabilities + context windows, plus an optional `adapter:` binary
+  override — §4.2), and `workflows/`, `tools/`, `skills/`, and
+  `agents/<profile>/` per-profile skeletons. Provider endpoints and
+  auth live in brazen's config, not here (§4.1). Shared across every
+  conversation.
 - **Conversation repo** — one self-contained git repository per root
   conversation, at `<harness-root>/conversations/<root-id>/`. Carries the
   per-repo `providers.yaml` (`roles:` only — §4.3), `manifest.yaml`,
@@ -115,85 +125,70 @@ the scaffolded path is printed on stdout. `goal.md` and `soul.md` inside
 `root/` are intentionally not in the template — they are written at
 dispatch time (ARCH §2.3, §2.8).
 
-## Sending a prompt (v0.3)
+## Sending a prompt
 
 ```
-ANTHROPIC_API_KEY=... lernie prompt /path/to/my-conversation 'hello'
+lernie prompt /path/to/my-conversation 'hello'
 ```
 
-`lernie prompt` is the v0.3 root-conversation path (ARCH §2.3, §2.6,
-§2.7, §2.8, §2.10). Each invocation spawns its own branch off `main`,
-commits a snapshot before the model call, lands the response as a
-follow-up commit, runs the terminal compactor off the tip, and
-`--no-ff` merges the compacted branch back into `main`:
+`lernie prompt` is the root-conversation path (ARCH §2.3, §2.6, §2.7,
+§2.8, §2.10). Each invocation spawns its own branch off `main`, drives
+the model call through brazen's `bz` (§4.4), runs the terminal compactor
+off the tip, and `--no-ff` merges the compacted branch back into `main`:
 
 1. Resolve the harness root (`LERNIE_HOME` or `~/.lernie/`, ARCH
-   §2.2). Load `<harness-root>/providers.yaml` (endpoints, auth, model
-   capabilities — §4.1) and `<repo>/providers.yaml` (`roles:` block —
-   §4.3); cross-validate `roles.worker.{provider,model}` against the
-   global file.
-2. Read the worker soul from `<repo>/souls/worker.md` (§4.3 — by
-   convention, no per-role path override).
-3. Invoke `lernie-provider-<name> describe` (resolved at
-   `<harness-root>/adapters/`, then `PATH`, per §4.4) to read the
-   adapter's `endpoint_env`.
-4. Spawn branch `<conv-id>` (the bare hyphenated id — no `ex/`
-   prefix per §2.3) off `main` and allocate a sibling worktree at
-   `<repo>/<conv-id>/` (§2.2). The `git worktree add` runs inside
-   `<repo>/root/`, where the `.git` directory lives.
-5. Write the branch goal to `goal.md` and the role soul to `soul.md`
-   in the new worktree; commit them on the branch as the dispatch
-   snapshot. That commit's tree is step 1's read state (§2.10).
-   Capture the branch tip's sha for the step's `meta.json`.
-6. Write the model call's input to
-   `<conv-repo>/steps/<conv-id>/001/request.json` (at the conv-repo
-   root, *outside* the worktree, §2.2 / §2.3) — it's a diagnostic
-   artifact, not committed and never read at runtime by the harness.
-7. Invoke `lernie-provider-<name> complete`, setting each env var
-   named in `endpoint_env` to `providers.<name>.endpoint`; pipe the
-   Messages-API-shaped request on stdin; read one JSON document back.
-   Credential env vars like `ANTHROPIC_API_KEY` propagate by normal
-   process inheritance.
-8. Drive `complete` with `stream: true` and tail the adapter's
-   stdout into
-   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` as JSONL of
-   §4.4 stream events (one event per line). The harness folds the
-   same events into an in-memory accumulator (assistant text +
-   `tool_use` blocks per §3.3) for the next step's wire request.
-   `meta.json` next to it carries `{commit, started_at, ended_at}`.
-   `response.json` is diagnostic-only (§2.3) — never read back at
-   runtime. Closing the response.json fd at terminal `message_stop`
-   / `error` is the §3.5 IN_CLOSE_WRITE completion signal.
-9. **Step loop (§2.5).** If the response's `stop_reason` is
-   `tool_use`, run every emitted `tool_use` block through the
+   §2.2). Load `<harness-root>/models.yaml` (capabilities + context
+   windows + optional `adapter:` override — §4.2) and
+   `<repo>/providers.yaml` (`roles:` block — §4.3); cross-validate
+   `roles.worker.{provider,model}` against `models.yaml`.
+2. Run the load-time version guard: `bz --version` must equal the
+   linked brazen crate version (§4.4). Under an `adapter:` override the
+   guard is skipped and the in-band `MessageStart.v` handshake governs.
+   Read the worker soul from `<repo>/souls/worker.md` (§4.3).
+3. Spawn branch `<conv-id>` (the bare hyphenated id, §2.3) off `main`
+   and allocate a sibling worktree at `<repo>/<conv-id>/` (§2.2). Write
+   the branch goal to `goal.md` and the role soul to `soul.md`; commit
+   them as the dispatch snapshot — that commit's tree is step 1's read
+   state (§2.10).
+4. Build a typed `brazen::CanonicalRequest` (linked crate — the
+   fail-open `extra` map stays unreachable), mirror it to
+   `<conv-repo>/steps/<conv-id>/001/request.json` (a diagnostic
+   artifact, outside every worktree, never read at runtime, §2.3).
+5. **Model call, harness-owned retry loop (§2.10, §4.4).** Exec
+   `bz --json --provider <row>` once per *attempt*, canonical request
+   on stdin, appending each attempt's stdout verbatim to
+   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` as brazen `v=1`
+   NDJSON — one self-delimiting segment per attempt, each ending in a
+   terminal `end`. On a retryable in-band `Error`
+   (`CanonicalError::retryable()`, never re-derived) the harness
+   re-invokes `bz` with the identical request, up to the `workflow.yaml`
+   attempt cap with exponential backoff. brazen never retries; auth and
+   endpoints are entirely its own. The `response.json` fd is held open
+   across every attempt and backoff sleep — its close is the §3.5
+   IN_CLOSE_WRITE completion signal. The harness folds the events into
+   an in-memory accumulator (assistant text + `tool_use` blocks) for the
+   next step; `meta.json` carries `{commit, started_at, ended_at}`.
+6. **Step loop (§2.5).** If the completion's terminal reason is
+   `Finish{ToolUse}`, run every emitted `tool_use` block through the
    tool executor — the per-call records land under
    `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of
    every worktree, §3.3) — then assemble step `<NNN+1>` whose user
    message carries one `tool_result` block per emitted call. Step
-   ≥2 has no pre-call commit — the branch tip already reflects the
-   model-read state. Loop until `stop_reason` is anything other
-   than `tool_use`.
-10. Dispatch the terminal compactor (§2.7) off the conversation tip
-    by re-entering the binary as `lernie dispatch compactor <repo>
-    <conv-id>` (subprocess invocation per §3.4 — the harness never
-    shortcuts past the CLI for procedure-to-procedure calls). The
-    compactor spawns branch `<conv-id>-<cmp-id>` (hyphenated descent
-    per §2.2) off the conversation tip in a sibling worktree at
-    `<repo>/<conv-id>-<cmp-id>/`, writes `goal.md` with the
-    boilerplate compactor goal and lands it as a dispatch commit
-    (§2.8, §2.10), then writes a placeholder `summary/001.md`
-    (v0.3.1 stub — identifies the parent conversation but does not
-    read `response.json` per §2.3 diagnostic-only contract) and
-    lands that as a follow-up commit, and `--no-ff` merges the
-    compactor branch back into the conversation branch. The v0.3
-    compactor is a stub — it does not call a model, and
-    `mark_for_deletion` is a no-op; the shape exists so v0.4+ can
-    layer real semantics without moving call sites.
-11. Rebase the conversation branch onto the current `main` tip and
-    `--no-ff` merge it into `main` (§2.6), running the merge inside
-    `<repo>/root/`. Remove the conversation worktree; the branch
-    ref stays for the retention window (§2.3).
-12. Print the conversation branch name on stdout.
+   ≥2 has no pre-call commit. Loop until the terminal reason is
+   anything other than `ToolUse`.
+7. Dispatch the terminal compactor (§2.7) off the conversation tip
+   by re-entering the binary as `lernie dispatch compactor <repo>
+   <conv-id>` (subprocess invocation per §3.4). The compactor spawns
+   branch `<conv-id>-<cmp-id>` (hyphenated descent per §2.2) off the
+   conversation tip, writes a placeholder `summary/001.md`, and
+   `--no-ff` merges back into the conversation branch. The compactor
+   is a stub — it does not call a model; the shape exists so v0.4+ can
+   layer real semantics without moving call sites.
+8. Rebase the conversation branch onto the current `main` tip and
+   `--no-ff` merge it into `main` (§2.6), running the merge inside
+   `<repo>/root/`. Remove the conversation worktree; the branch
+   ref stays for the retention window (§2.3).
+9. Print the conversation branch name on stdout.
 
 After `lernie prompt` returns, inspect the merge from the primary
 worktree (`root/` is where `main` is checked out):
@@ -239,9 +234,9 @@ Behavior:
   `main`. Both surface as a non-zero exit with a `lernie stop:` prefix
   on stderr.
 - **No on-disk cancel marker.** The §2.9 signature of a stopped branch
-  is the latest step's `response.json` closed without a terminal
-  `message_stop` event — produced for free by the kernel closing the
-  harness's open fds when the process terminates.
+  is the latest step's `response.json` closed without a terminal `end`
+  event — produced for free by the kernel closing the harness's open fds
+  when the process terminates (and `bz` dies with it, §4.4).
 
 The frontend's stop button (per [ARCH §3.5](docs/ARCHITECTURE.md#35-ui-contract))
 exec's this exact subcommand; there is no second control surface.
@@ -318,63 +313,45 @@ and future roles (verifier, critic, …) without a CLI shape change.
 
 ## Providers
 
-Model calls go through **provider adapters** — separate binaries the harness
-invokes over stdio, one per named provider (see
-[ARCH §4.4](docs/ARCHITECTURE.md#44-provider-adapters)). Auth, HTTP, and
-transient retry live inside the adapter; the harness only forwards the env
-vars the adapter declares. A new provider is a standalone executable, not a
-harness patch.
-
-The reference adapter is `lernie-provider-anthropic`, built alongside
-`lernie` by `cargo build`:
+Every model call goes through **brazen** — one small, stateless binary
+(`bz`) that adapts every provider and wire protocol behind a single pipe
+contract (see [ARCH §4.4](docs/ARCHITECTURE.md#44-the-provider-adapter-brazen)):
 
 ```
-lernie-provider-anthropic describe
-ANTHROPIC_API_KEY=... lernie-provider-anthropic complete < request.json
+stdin (canonical request, JSON) → bz → stdout (v=1 event stream, NDJSON, one terminal `end`)
 ```
 
-`describe` prints the adapter's self-description JSON (name,
-`schema_version`, capabilities, models, `auth_env`, `endpoint_env`).
-`complete` reads one Messages-API request on stdin and writes either a
-single JSON response object or — when the request carries `stream:
-true` — a JSON Lines event stream of normalized §4.4 events
-(`message_start`, `content_block_start`, `text_delta`,
-`tool_use_delta`, `content_block_stop`, terminal `message_stop` with
-`usage` + `api_calls`). Errors land in-band as `{"type":"error",
-"kind":"retryable"|"fatal", ...}` in either mode; exit code `0` covers
-both, with non-zero reserved for adapter-side crashes. The upstream
-URL is read from the env var named in `endpoint_env`
-(`LERNIE_PROVIDER_ANTHROPIC_ENDPOINT` for the reference adapter), with
-a built-in default if unset. SIGTERM cancels in-flight work and emits
-a terminal `error` event before exit (§4.4 "Cancellation"). The
-adapter advertises `streaming` in `describe.capabilities`; v0.3.1
-flips streaming on by default for `lernie prompt` so `response.json`
-is JSONL of §4.4 events end-to-end (§4.4 "On-disk response shape:
-JSONL of stream events, always.").
+The harness execs `bz --json --provider <row>` once per attempt, pipes a
+typed `brazen::CanonicalRequest` on stdin, and appends bz's stdout
+verbatim to the step's `response.json`. lernie links the `brazen` crate
+(`brazen = "=0.0.2"`) for the canonical *types* only — the data plane
+always crosses the subprocess boundary (§3.4). Two facts follow:
 
-Harness-side adapter discovery and invocation (§4.4 "Discovery" /
-"Endpoint") is wired into the `lernie prompt` subcommand — see
-**Sending a prompt (v0.3)** above.
+- **Retry is the harness's.** brazen never retries — one `bz` process,
+  one HTTP round-trip. On a retryable in-band `Error`
+  (`CanonicalError::retryable()`, the linked crate's single home for the
+  fact) the harness re-invokes `bz` up to the `workflow.yaml` attempt cap
+  (§2.10). Each attempt appends one segment to `response.json`; the last
+  is authoritative.
+- **Auth and endpoints are brazen's.** Provider *rows* (endpoint,
+  protocol, auth mode, model aliases) live in brazen's own config
+  (`~/.config/brazen/config.toml`; `bz --dump-config`, `bz --login`).
+  lernie references a row by name and never sees credential material
+  (§4.1). A load-time guard (`bz --version` == the linked crate version)
+  rejects a mismatched binary; `make install` installs the pin with
+  `cargo install brazen --version =0.0.2`.
 
-### Dropping in a custom adapter
+### Adding a provider
 
-The harness resolves `lernie-provider-<name>` at
-`<harness-root>/adapters/` first, then falls back to `PATH` (ARCH
-§4.4). To test a new one:
-
-1. Copy the binary into `$LERNIE_HOME/adapters/` (default
-   `~/.lernie/adapters/` — the same location `make install` uses for
-   the bundled anthropic adapter) with the name
-   `lernie-provider-<name>`. A `PATH` install also works for
-   experimentation but skips the per-harness-root isolation.
-2. Add a provider entry in `<harness-root>/providers.yaml` (ARCH
-   §4.1) keyed by `<name>`, with the `endpoint:` and `auth:` the
-   adapter expects, and a `models:` entry whose `provider:` points at
-   that key.
-3. In the conversation repo's `<repo>/providers.yaml` (`roles:`
-   block, ARCH §4.3), point the `worker` role at the new
-   provider/model pair.
-4. Run `lernie prompt <repo> '...'`.
+- **A new provider on a supported protocol** is a brazen config row — no
+  code anywhere. Add the row (`bz` config), reference its name as a
+  model's `provider:` in `<harness-root>/models.yaml`, and point a role
+  at that model in `<repo>/providers.yaml`.
+- **A new wire protocol or auth mode** is a contribution to brazen.
+- **An alternate adapter binary** that honors the same pipe contract
+  slots in via the optional `adapter:` path in `models.yaml` (§4.2); the
+  version guard is skipped for it and the in-band `MessageStart.v`
+  handshake governs compatibility instead.
 
 ## UI (v0.5)
 

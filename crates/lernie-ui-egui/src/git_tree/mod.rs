@@ -32,6 +32,7 @@
 mod cmd;
 mod detect;
 mod enumerate;
+mod fd_probe;
 mod state;
 mod streaming;
 mod tools;
@@ -168,7 +169,10 @@ impl GitTree {
         for entry in log {
             commits.push(enumerate::build_node(conv_repo, &git_dir, entry)?);
         }
-        let in_flight = enumerate::enumerate_in_flight(conv_repo, &git_dir)?;
+        // The §3.5 fd-close gate probes `/proc` for a writer still
+        // holding a terminal step's `response.json` open (mid-retry).
+        let probe = fd_probe::ProcFsProbe::default();
+        let in_flight = enumerate::enumerate_in_flight(conv_repo, &git_dir, &probe)?;
         Ok(Self { commits, in_flight })
     }
 }

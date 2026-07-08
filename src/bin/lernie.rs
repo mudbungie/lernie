@@ -6,10 +6,10 @@
 //!   template (ARCH §2.2).
 //! - `prompt <repo> <message>` — drive one root conversation
 //!   end-to-end: spawn a `<conv-id>` branch off `main` (no prefix —
-//!   §2.3), commit the snapshot before the model call, land the
-//!   response as a follow-up commit, dispatch the terminal compactor
-//!   off the branch tip (§2.7), and `--no-ff` merge the result back
-//!   to `main` (§2.6). Prints the conversation branch name.
+//!   §2.3), commit the snapshot, drive the model call via `bz` (§4.4),
+//!   dispatch the terminal compactor off the branch tip (§2.7), and
+//!   `--no-ff` merge the result back to `main` (§2.6). Prints the
+//!   conversation branch name.
 //! - `dispatch <role> <repo> <branch> [--goal <text>]` — re-entry
 //!   point for subagent dispatch (ARCH §3.4). `<role>` is positional
 //!   so the surface generalizes across the v0.3 compactor, the v0.4
@@ -20,12 +20,10 @@
 //!   match arm rather than a Subcommand-tree edit.
 //! - `stop <repo> <branch>` — cascading SIGTERM on the harness's
 //!   pgid (ARCH §2.9); idempotent for already-stopped branches.
-//! - `tool <name>` — in-process built-in tool entry (ARCH §3.3). The
-//!   tool executor's resolution order falls through to
-//!   `<lernie> tool <name>` after external lookups miss; the
-//!   subcommand reads the `tool_use.input` JSON from stdin, writes
-//!   bytes to stdout, and exits 0 on success (non-zero on failure)
-//!   per the §3.3 stdio contract.
+//! - `tool <name>` — in-process built-in tool entry (ARCH §3.3): the
+//!   tool executor falls through to `<lernie> tool <name>` after
+//!   external lookups miss. Reads `tool_use.input` JSON from stdin,
+//!   writes bytes to stdout, exits 0/non-zero per the §3.3 contract.
 
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
@@ -151,6 +149,7 @@ fn main() -> ExitCode {
             let tool_executor = SpawnTool::new(&harness, &SystemClock);
             let deps = prompt::Deps {
                 adapter: &SpawnAdapter,
+                sleeper: &prompt::RealSleeper,
                 git: &RealGit::new(),
                 clock: &SystemClock,
                 id_gen: &NanoIdGen,

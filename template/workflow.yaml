@@ -8,3 +8,10 @@ events:
   branch_stopped:
     - mark_abandoned
     - notify_ui
+
+# Harness-owned retry policy for a step's model call (ARCH §2.10, §4.4):
+# brazen never retries — the harness re-invokes `bz` on a retryable
+# in-band Error, up to max_attempts, with exponential backoff.
+retry:
+  max_attempts: 3
+  backoff: exponential

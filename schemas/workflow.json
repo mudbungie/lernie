@@ -25,9 +25,28 @@
           "type": "string"
         }
       }
+    },
+    "retry": {
+      "description": "Retry policy for a step's model call (ARCH §2.10, §4.4): the harness owns the retry loop (brazen never retries), reading the attempt cap and backoff from here. Omitted uses [`RetryConfig:: default`].",
+      "default": {
+        "backoff": "exponential",
+        "max_attempts": 3
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/RetryConfig"
+        }
+      ]
     }
   },
   "definitions": {
+    "Backoff": {
+      "description": "Closed set of backoff policies between retry attempts (ARCH §6). Exponential is the shipped policy; adding another is a code change, like every other closed workflow set.",
+      "type": "string",
+      "enum": [
+        "exponential"
+      ]
+    },
     "CompactionConfig": {
       "description": "Optional `compaction:` block (ARCH §6).",
       "type": "object",
@@ -67,6 +86,25 @@
         },
         "trigger": {
           "$ref": "#/definitions/CompactionTrigger"
+        }
+      }
+    },
+    "RetryConfig": {
+      "description": "Harness-owned retry policy (ARCH §6 `retry:` block). One `bz` process per attempt (§4.4); a retryable in-band `Error` re-invokes `bz` with the identical request up to `max_attempts`, sleeping the backoff between attempts (§2.10).",
+      "type": "object",
+      "required": [
+        "backoff",
+        "max_attempts"
+      ],
+      "properties": {
+        "backoff": {
+          "$ref": "#/definitions/Backoff"
+        },
+        "max_attempts": {
+          "description": "Attempt cap per model call — `1` disables retry (a single attempt). Each attempt is one `bz` invocation appending one segment to `response.json` (§4.4).",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
         }
       }
     }

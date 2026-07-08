@@ -1,40 +1,32 @@
 //! Branch-state classifier (ARCH §2.9 / §3.5 / §7.1).
 //!
 //! The four states the live view renders are derived from refs and the
-//! JSONL terminal event in `response.json`, not from any sidecar marker
-//! (PRINCIPLES.md "Single source of truth"). For an unmerged branch row
-//! (the in-flight section's rows), the classifier reads the latest
-//! step's `response.json` and returns:
+//! brazen `v=1` terminal event in `response.json`, not from any sidecar
+//! marker (PRINCIPLES.md "Single source of truth"). For an unmerged
+//! branch row the classifier reads the latest step's `response.json`
+//! and returns:
 //!
-//! - [`BranchState::InFlight`] when no §4.4 terminal event is present —
-//!   the writer is still appending, or the response file is absent
-//!   pre-first-event.
-//! - [`BranchState::Stopped`] when the last JSONL line is a §4.4
-//!   terminal event. Per ARCH §2.9 (post bl-de6b amendment), kill /
-//!   crash / explicit user stop are indistinguishable on disk; for root
-//!   conversations (which do not merge back per §2.3 step 5) `Stopped`
-//!   is the natural terminal state regardless of how the chain ended. A
-//!   *complete* and a *failed* step both settle here (§3.5 — a failed
-//!   step renders as stopped with the error surfaced); the badge does
-//!   not split them, so this classifier only asks "is there a terminal
-//!   line?".
-//!
-//! **Dual vocabulary (v0.6 transition, bl-507a).** A terminal line is
-//! recognized in either vocabulary: the legacy v0.3 `message_stop` /
-//! `error`, or brazen's `v=1` terminator `{"type":"end"}` (§4.4). The
-//! follow-on ball (bl-56ee) drops the legacy tokens; until then both are
-//! accepted so the writer swap merges green.
+//! - [`BranchState::InFlight`] when no §4.4 terminal `end` event is
+//!   present (the writer is still appending, or the response file is
+//!   absent pre-first-event), OR a terminal `end` is present but the
+//!   writer still holds the fd open — the §3.5 fd-close gate: the
+//!   harness holds ONE fd across every retry attempt and the backoff
+//!   sleeps between them (§4.4), so a mid-retry `end` segment stays
+//!   `in_flight`, never `stopped`.
+//! - [`BranchState::Stopped`] when the latest step's `response.json`
+//!   carries a terminal `end` line AND no writer holds its fd open
+//!   (§2.9 — kill / crash / explicit stop are indistinguishable on
+//!   disk; a completed or failed step both settle here, the badge does
+//!   not split them).
 //!
 //! [`BranchState::Merged`] and [`BranchState::Conflicted`] are part of
 //! the type for renderer completeness but are not produced by this
-//! classifier — `Merged` shows up as a `--no-ff` merge node on `main`'s
-//! first-parent log (§2.3, rendered by the existing trunk path), and
-//! `Conflicted` requires a subagent merge attempt which doesn't ship
-//! until v0.4 (§2.6 step 6).
+//! classifier (see the enum docs).
 
 use std::path::Path;
 
 use super::STEPS_DIR;
+use super::fd_probe::WriterProbe;
 use super::streaming::latest_step_dir;
 
 const RESPONSE_FILE: &str = "response.json";
@@ -45,47 +37,53 @@ pub enum BranchState {
     /// the unmerged-branch classifier; reserved for future renderers
     /// that want an explicit badge on trunk merge nodes.
     Merged,
-    /// Latest step's `response.json` is still being written: file is
-    /// absent pre-first-event, or its last JSONL line is not a §4.4
-    /// terminal event.
+    /// Latest step's `response.json` is still being written (no terminal
+    /// `end`, or file absent), or a terminal `end` landed while a writer
+    /// still holds the fd open (mid-retry, §3.5).
     InFlight,
-    /// Latest step's `response.json` ended in a §4.4 terminal event
-    /// (`message_stop` or `error`). The chain is no longer advancing.
+    /// Latest step's `response.json` carries a terminal `end` and no
+    /// writer holds its fd open. The chain is no longer advancing.
     Stopped,
     /// Subagent merge attempt conflicted (§2.6 step 6). Not reachable
-    /// in v0.5 (no subagent merges ship until v0.4). Retained so
-    /// renderers handle the variant once it arrives.
+    /// until subagent merges ship. Retained so renderers handle it.
     Conflicted,
 }
 
 /// Classify an unmerged conversation branch by reading the latest
-/// step's `response.json` from disk. Always returns `InFlight` or
-/// `Stopped` — `Merged` and `Conflicted` are produced elsewhere (or
-/// not at all, in v0.5).
-pub(super) fn classify_unmerged(conv_repo: &Path, conv_id: &str) -> BranchState {
+/// step's `response.json`. Always returns `InFlight` or `Stopped` —
+/// `Merged` and `Conflicted` are produced elsewhere.
+pub(super) fn classify_unmerged(
+    conv_repo: &Path,
+    conv_id: &str,
+    probe: &dyn WriterProbe,
+) -> BranchState {
     let conv_steps = conv_repo.join(STEPS_DIR).join(conv_id);
     let Some(latest) = latest_step_dir(&conv_steps) else {
         return BranchState::InFlight;
     };
-    let bytes = match std::fs::read(latest.join(RESPONSE_FILE)) {
+    let path = latest.join(RESPONSE_FILE);
+    let bytes = match std::fs::read(&path) {
         Ok(b) => b,
         Err(_) => return BranchState::InFlight,
     };
-    if has_terminal_event(&bytes) {
-        BranchState::Stopped
-    } else {
+    if !has_terminal_event(&bytes) {
+        return BranchState::InFlight;
+    }
+    // Terminal `end` present — the §3.5 fd-close gate decides. A writer
+    // still holding the fd open means the model call is mid-flight
+    // (mid-retry, or between the terminal `end` of one attempt and the
+    // next), so the segment reads in_flight.
+    if probe.writer_open(&path) {
         BranchState::InFlight
+    } else {
+        BranchState::Stopped
     }
 }
 
-/// Last completed JSONL line is a §4.4 terminal event. Mid-write
-/// tolerance: a trailing line with no `\n` yet is dropped (the writer is
-/// still appending it), and only the most recent fully-terminated line
-/// is examined — mirroring the streaming accumulator's stance.
+/// Last completed JSONL line is brazen's terminal `end` event (§4.4).
+/// Mid-write tolerance: a trailing line with no `\n` yet is dropped, and
+/// only the most recent fully-terminated line is examined.
 fn has_terminal_event(bytes: &[u8]) -> bool {
-    // Trim a trailing partial line: drop everything after the last `\n`.
-    // A buffer ending in `\n` is left intact; one ending mid-line is
-    // truncated to the last newline boundary.
     let terminated = match bytes.iter().rposition(|&b| b == b'\n') {
         Some(idx) => &bytes[..=idx],
         None => return false,
@@ -100,19 +98,27 @@ fn has_terminal_event(bytes: &[u8]) -> bool {
     let Ok(value): Result<serde_json::Value, _> = serde_json::from_slice(line) else {
         return false;
     };
-    // Dual-vocabulary terminal set (bl-507a): brazen's `v=1` terminator
-    // is `end`; the legacy `message_stop` / `error` tokens are the seam
-    // bl-56ee deletes once the writer emits only brazen events.
-    matches!(
-        value.get("type").and_then(|v| v.as_str()),
-        Some("end") | Some("message_stop") | Some("error")
-    )
+    value.get("type").and_then(|v| v.as_str()) == Some("end")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use tempfile::tempdir;
+
+    /// Stub probe with a fixed answer.
+    struct StubProbe(bool);
+    impl WriterProbe for StubProbe {
+        fn writer_open(&self, _path: &Path) -> bool {
+            self.0
+        }
+    }
+    fn closed() -> StubProbe {
+        StubProbe(false)
+    }
+    fn open() -> StubProbe {
+        StubProbe(true)
+    }
 
     fn write(path: &Path, contents: &[u8]) {
         if let Some(parent) = path.parent() {
@@ -121,37 +127,26 @@ mod tests {
         std::fs::write(path, contents).unwrap();
     }
 
-    #[test]
-    fn last_line_message_stop_is_terminal() {
-        let jsonl = br#"{"type":"message_start"}
-{"type":"text_delta","text":"hi"}
-{"type":"message_stop","usage":{"input_tokens":1,"output_tokens":1},"api_calls":1}
-"#;
-        assert!(has_terminal_event(jsonl));
+    fn resp(dir: &Path, conv: &str, seq: &str) -> std::path::PathBuf {
+        dir.join(STEPS_DIR).join(conv).join(seq).join(RESPONSE_FILE)
     }
 
-    #[test]
-    fn last_line_error_is_terminal() {
-        let jsonl = br#"{"type":"message_start"}
-{"type":"error","kind":"fatal","message":"boom"}
-"#;
-        assert!(has_terminal_event(jsonl));
-    }
-
-    #[test]
-    fn last_line_brazen_end_is_terminal() {
-        // brazen v=1 terminator (bl-507a dual vocabulary).
-        let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
-{"type":"content_delta","index":0,"delta":{"text_delta":"hi"}}
+    const FINISH_END: &[u8] = br#"{"type":"message_start","v":1,"role":"assistant"}
 {"type":"finish","reason":"stop"}
 {"type":"end"}
 "#;
-        assert!(has_terminal_event(jsonl));
+    const ERROR_END: &[u8] = br#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"error","kind":"transport","message":"reset"}
+{"type":"end"}
+"#;
+
+    #[test]
+    fn last_line_brazen_end_is_terminal() {
+        assert!(has_terminal_event(FINISH_END));
     }
 
     #[test]
-    fn last_line_brazen_content_delta_is_not_terminal() {
-        // brazen stream killed mid-append: no trailing `end`.
+    fn brazen_content_delta_is_not_terminal() {
         let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
 {"type":"content_delta","index":0,"delta":{"text_delta":"par"}}
 "#;
@@ -159,11 +154,12 @@ mod tests {
     }
 
     #[test]
-    fn last_line_text_delta_is_not_terminal() {
-        let jsonl = br#"{"type":"message_start"}
-{"type":"text_delta","text":"partial"}
-"#;
-        assert!(!has_terminal_event(jsonl));
+    fn legacy_message_stop_is_not_terminal() {
+        // The v0.6 transition ends here: only brazen `end` is terminal.
+        assert!(!has_terminal_event(b"{\"type\":\"message_stop\"}\n"));
+        assert!(!has_terminal_event(
+            b"{\"type\":\"error\",\"kind\":\"x\"}\n"
+        ));
     }
 
     #[test]
@@ -174,118 +170,99 @@ mod tests {
 
     #[test]
     fn trailing_partial_line_is_ignored() {
-        // Mid-write race: a line was started but `\n` hasn't landed yet.
-        // The completed terminal event before it must still classify.
-        let jsonl =
-            b"{\"type\":\"message_start\"}\n{\"type\":\"message_stop\",\"api_calls\":1}\n{partial";
+        let jsonl = b"{\"type\":\"finish\",\"reason\":\"stop\"}\n{\"type\":\"end\"}\n{partial";
         assert!(has_terminal_event(jsonl));
     }
 
     #[test]
     fn malformed_last_line_is_not_terminal() {
-        let jsonl = b"{\"type\":\"text_delta\",\"text\":\"x\"}\nnot json\n";
-        assert!(!has_terminal_event(jsonl));
+        assert!(!has_terminal_event(
+            b"{\"type\":\"content_delta\"}\nnot json\n"
+        ));
     }
 
     #[test]
-    fn classify_returns_in_flight_when_steps_dir_absent() {
+    fn classify_in_flight_when_steps_dir_absent() {
         let dir = tempdir().unwrap();
         assert_eq!(
-            classify_unmerged(dir.path(), "no-such-conv"),
+            classify_unmerged(dir.path(), "no-such-conv", &closed()),
             BranchState::InFlight
         );
     }
 
     #[test]
-    fn classify_returns_in_flight_when_response_absent() {
+    fn classify_in_flight_when_response_absent() {
         let dir = tempdir().unwrap();
         let conv = "20260427T140000Z-aaaa";
         std::fs::create_dir_all(dir.path().join(STEPS_DIR).join(conv).join("001")).unwrap();
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::InFlight);
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &closed()),
+            BranchState::InFlight
+        );
     }
 
     #[test]
-    fn classify_returns_in_flight_when_no_terminal_event() {
+    fn classify_in_flight_when_no_terminal_event() {
         let dir = tempdir().unwrap();
         let conv = "20260427T140000Z-bbbb";
-        let path = dir
-            .path()
-            .join(STEPS_DIR)
-            .join(conv)
-            .join("001")
-            .join(RESPONSE_FILE);
-        write(&path, b"{\"type\":\"text_delta\",\"text\":\"hi\"}\n");
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::InFlight);
+        write(
+            &resp(dir.path(), conv, "001"),
+            b"{\"type\":\"content_delta\",\"index\":0,\"delta\":{\"text_delta\":\"hi\"}}\n",
+        );
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &closed()),
+            BranchState::InFlight
+        );
     }
 
     #[test]
-    fn classify_returns_stopped_on_message_stop() {
+    fn classify_stopped_on_terminal_end_with_fd_closed() {
         let dir = tempdir().unwrap();
         let conv = "20260427T140000Z-cccc";
-        let path = dir
-            .path()
-            .join(STEPS_DIR)
-            .join(conv)
-            .join("001")
-            .join(RESPONSE_FILE);
-        write(
-            &path,
-            b"{\"type\":\"message_start\"}\n{\"type\":\"message_stop\",\"api_calls\":1}\n",
+        write(&resp(dir.path(), conv, "001"), FINISH_END);
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &closed()),
+            BranchState::Stopped
         );
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::Stopped);
     }
 
     #[test]
-    fn classify_returns_stopped_on_error_event() {
+    fn classify_stopped_on_error_segment_with_fd_closed() {
         let dir = tempdir().unwrap();
         let conv = "20260427T140000Z-dddd";
-        let path = dir
-            .path()
-            .join(STEPS_DIR)
-            .join(conv)
-            .join("001")
-            .join(RESPONSE_FILE);
-        write(
-            &path,
-            b"{\"type\":\"error\",\"kind\":\"fatal\",\"message\":\"x\"}\n",
+        write(&resp(dir.path(), conv, "001"), ERROR_END);
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &closed()),
+            BranchState::Stopped
         );
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::Stopped);
     }
 
     #[test]
-    fn classify_returns_stopped_on_brazen_end() {
-        // brazen v=1 terminal drives the same Stopped classification as
-        // the legacy tokens (bl-507a dual vocabulary).
+    fn mid_retry_terminal_segment_with_fd_open_is_in_flight() {
+        // THE §3.5 fd-close gate: an `error`+`end` failed attempt with a
+        // writer still holding the fd open is mid-retry — in_flight, not
+        // stopped. Same for a `finish`+`end` between attempts.
         let dir = tempdir().unwrap();
-        let conv = "20260427T140000Z-bzen";
-        let path = dir
-            .path()
-            .join(STEPS_DIR)
-            .join(conv)
-            .join("001")
-            .join(RESPONSE_FILE);
-        write(
-            &path,
-            b"{\"type\":\"finish\",\"reason\":\"stop\"}\n{\"type\":\"end\"}\n",
+        let conv = "20260427T140000Z-eeee";
+        write(&resp(dir.path(), conv, "001"), ERROR_END);
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &open()),
+            BranchState::InFlight
         );
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::Stopped);
     }
 
     #[test]
     fn classify_reads_latest_step_only() {
-        // Earlier step terminated cleanly; latest step is mid-stream.
-        // The classifier must read the latest step, returning InFlight.
         let dir = tempdir().unwrap();
-        let conv = "20260427T140000Z-eeee";
-        let steps = dir.path().join(STEPS_DIR).join(conv);
+        let conv = "20260427T140000Z-ffff";
+        write(&resp(dir.path(), conv, "001"), FINISH_END);
         write(
-            &steps.join("001").join(RESPONSE_FILE),
-            b"{\"type\":\"message_stop\",\"api_calls\":1}\n",
+            &resp(dir.path(), conv, "002"),
+            b"{\"type\":\"content_delta\",\"index\":0,\"delta\":{\"text_delta\":\"go\"}}\n",
         );
-        write(
-            &steps.join("002").join(RESPONSE_FILE),
-            b"{\"type\":\"text_delta\",\"text\":\"still going\"}\n",
+        assert_eq!(
+            classify_unmerged(dir.path(), conv, &closed()),
+            BranchState::InFlight
         );
-        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::InFlight);
     }
 }

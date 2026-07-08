@@ -6,8 +6,8 @@
 //! validation pass) can validate configuration without linking the crate.
 
 use crate::config::manifest::Manifest;
+use crate::config::models::Models;
 use crate::config::per_repo_providers::PerRepoProviders;
-use crate::config::providers::Providers;
 use crate::config::version::Version;
 use crate::config::workflow::Workflow;
 use schemars::JsonSchema;
@@ -23,16 +23,17 @@ pub struct SchemaFile {
 
 /// Build all schema files in declaration order.
 ///
-/// Both `providers.yaml` files (per-repo and harness-root) share a name on
-/// disk, so the schemas are split: `providers.json` is the per-repo shape
-/// (the conversation-repo file with only `roles:`), and
-/// `global-providers.json` is the harness-root shape (endpoints, auth,
-/// models). See ARCH §4.1 "Two-file config split".
+/// The two harness config files have distinct on-disk names now:
+/// `providers.json` is the per-repo `<conv-repo>/providers.yaml` shape
+/// (only `roles:`), and `models.json` is the harness-root
+/// `<harness-root>/models.yaml` shape (capabilities, context windows,
+/// optional `adapter:` override — no endpoints or auth, which are
+/// brazen's). See ARCH §4.1/§4.2.
 pub fn all() -> Vec<SchemaFile> {
     vec![
         schema_file::<Version>("version.json"),
         schema_file::<PerRepoProviders>("providers.json"),
-        schema_file::<Providers>("global-providers.json"),
+        schema_file::<Models>("models.json"),
         schema_file::<Manifest>("manifest.json"),
         schema_file::<Workflow>("workflow.json"),
     ]

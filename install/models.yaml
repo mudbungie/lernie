@@ -1,0 +1,29 @@
+# Global harness-root models.yaml (ARCH §4.2).
+#
+# Holds the facts lernie's behavior relies on and brazen does not own:
+# per-model capabilities and context windows. `provider:` on each model
+# is a brazen provider-row NAME (§4.1) — endpoints, auth, and wire
+# dialects live in brazen's own config (`~/.config/brazen/config.toml`;
+# `bz --dump-config` / `bz --login`), never here. Per-repo providers.yaml
+# files reference a model by id; this file rotates independently of any
+# conversation repo.
+#
+# An optional `adapter:` line (an absolute path to a bz-contract-compatible
+# binary) overrides the default `bz` on PATH (§4.2 / §4.4). Omit it to use
+# the pinned `bz` the load-time version guard checks.
+#
+# `make install` lays this down only if no models.yaml already exists at
+# the harness root, so re-running install never clobbers hand-edited
+# entries.
+
+models:
+  claude-sonnet-4-7:
+    provider: anthropic
+    model_id: claude-sonnet-4-7
+    capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
+    context_window: 200000
+  claude-haiku-4-5:
+    provider: anthropic
+    model_id: claude-haiku-4-5
+    capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
+    context_window: 200000

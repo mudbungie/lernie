@@ -27,7 +27,7 @@ const WORKTREE_REMOVE_INDEX: usize = MERGE_INDEX + 1;
 
 #[test]
 fn run_surfaces_worktree_add_failure() {
-    // describe succeeds; `git worktree add` fails (index 0).
+    // version guard passes; `git worktree add` fails (index 0).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(0)).unwrap_err();
@@ -180,8 +180,10 @@ fn run_surfaces_dispatcher_failure() {
     let id = FixedIdGen;
     let dispatcher = StubDispatcher::failing(std::io::ErrorKind::Other, "lernie binary missing");
     let tool_executor = StubToolExecutor::ok();
+    let sleeper = StubSleeper::default();
     let deps = Deps {
         adapter: &adapter,
+        sleeper: &sleeper,
         git: &git,
         clock: &clock,
         id_gen: &id,

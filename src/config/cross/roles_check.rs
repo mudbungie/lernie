@@ -1,35 +1,28 @@
-//! Per-repo `roles:` section against the global `providers.yaml`
-//! (ARCH §4.3). The role's `provider` must exist globally; the role's
-//! `model` must be in the global model list and belong to the named
-//! provider.
+//! Per-repo `roles:` section against the global `models.yaml`
+//! (ARCH §4.3). The role's `model` must be declared in `models.yaml`,
+//! and the model's `provider` (a brazen row name) must match the role's
+//! declared `provider`. The provider row itself is *not* validated here
+//! — its existence is brazen's fact, resolved at call time (§4.1); a
+//! missing row is a brazen load-time failure, never a silent fallback.
 
 use crate::config::error::LoadError;
+use crate::config::models::Models;
 use crate::config::per_repo_providers::PerRepoProviders;
-use crate::config::providers::Providers;
 
 /// Validate references from the per-repo `roles:` section into the
-/// global `providers.yaml`. Per ARCH §4.3, every role names a provider
-/// (which must exist globally) and a model id (which must belong to
-/// that provider's model list).
-pub fn check_roles_against_providers(
+/// global `models.yaml`. Per ARCH §4.3, every role names a model id
+/// (which must be declared globally) whose `provider` matches the role's
+/// declared provider row.
+pub fn check_roles_against_models(
     per_repo: &PerRepoProviders,
-    providers: &Providers,
+    models: &Models,
 ) -> Result<(), LoadError> {
     for (role, assignment) in &per_repo.roles {
-        if !providers.providers.contains_key(&assignment.provider) {
-            return Err(LoadError::UnresolvedRef {
-                key: format!("roles.{role}.provider"),
-                message: format!(
-                    "names provider {:?} which is not declared in the global providers.yaml",
-                    assignment.provider
-                ),
-            });
-        }
-        let Some(model) = providers.models.get(&assignment.model) else {
+        let Some(model) = models.models.get(&assignment.model) else {
             return Err(LoadError::UnresolvedRef {
                 key: format!("roles.{role}.model"),
                 message: format!(
-                    "names model {:?} which is not declared in the global providers.yaml",
+                    "names model {:?} which is not declared in the global models.yaml",
                     assignment.model
                 ),
             });
@@ -38,7 +31,7 @@ pub fn check_roles_against_providers(
             return Err(LoadError::UnresolvedRef {
                 key: format!("roles.{role}"),
                 message: format!(
-                    "model {:?} is served by provider {:?}, not {:?} as declared",
+                    "model {:?} is served by provider row {:?}, not {:?} as declared",
                     assignment.model, model.provider, assignment.provider
                 ),
             });
@@ -59,14 +52,7 @@ mod tests {
         f
     }
 
-    const TWO_PROVIDER_GLOBAL: &str = r#"
-providers:
-  anthropic:
-    endpoint: https://api.anthropic.com
-    auth: { type: api_key, env: ANTHROPIC_API_KEY }
-  bedrock:
-    endpoint: https://bedrock.example
-    auth: { type: aws_sigv4, profile: default }
+    const TWO_MODEL_GLOBAL: &str = r#"
 models:
   claude-sonnet-4-7:
     provider: anthropic
@@ -80,8 +66,8 @@ models:
     context_window: 200000
 "#;
 
-    fn global() -> Providers {
-        Providers::load(yaml(TWO_PROVIDER_GLOBAL).path()).unwrap().0
+    fn global() -> Models {
+        Models::load(yaml(TWO_MODEL_GLOBAL).path()).unwrap().0
     }
 
     fn per_repo(s: &str) -> PerRepoProviders {
@@ -89,8 +75,8 @@ models:
     }
 
     #[test]
-    fn roles_resolve_against_global_providers() {
-        let p = global();
+    fn roles_resolve_against_global_models() {
+        let m = global();
         let r = per_repo(
             r#"
 roles:
@@ -98,28 +84,14 @@ roles:
   compactor: { provider: bedrock, model: claude-haiku-4-5 }
 "#,
         );
-        assert!(check_roles_against_providers(&r, &p).is_ok());
-    }
-
-    #[test]
-    fn roles_unresolved_provider() {
-        let p = global();
-        let r = per_repo("roles:\n  worker: { provider: phantom, model: claude-sonnet-4-7 }\n");
-        let err = check_roles_against_providers(&r, &p).unwrap_err();
-        match err {
-            LoadError::UnresolvedRef { key, message } => {
-                assert_eq!(key, "roles.worker.provider");
-                assert!(message.contains("phantom"));
-            }
-            other => panic!("expected UnresolvedRef, got {other:?}"),
-        }
+        assert!(check_roles_against_models(&r, &m).is_ok());
     }
 
     #[test]
     fn roles_unresolved_model() {
-        let p = global();
+        let m = global();
         let r = per_repo("roles:\n  worker: { provider: anthropic, model: claude-sonnet-9000 }\n");
-        let err = check_roles_against_providers(&r, &p).unwrap_err();
+        let err = check_roles_against_models(&r, &m).unwrap_err();
         match err {
             LoadError::UnresolvedRef { key, message } => {
                 assert_eq!(key, "roles.worker.model");
@@ -131,12 +103,12 @@ roles:
 
     #[test]
     fn roles_model_provider_mismatch() {
-        // claude-haiku-4-5 is served by bedrock in the global file;
+        // claude-haiku-4-5 is served by the bedrock row in models.yaml;
         // declaring it under provider 'anthropic' must surface as a
         // distinct error so users can fix the config without guessing.
-        let p = global();
+        let m = global();
         let r = per_repo("roles:\n  worker: { provider: anthropic, model: claude-haiku-4-5 }\n");
-        let err = check_roles_against_providers(&r, &p).unwrap_err();
+        let err = check_roles_against_models(&r, &m).unwrap_err();
         match err {
             LoadError::UnresolvedRef { key, message } => {
                 assert_eq!(key, "roles.worker");
@@ -149,6 +121,6 @@ roles:
 
     #[test]
     fn empty_roles_resolve_trivially() {
-        assert!(check_roles_against_providers(&PerRepoProviders::default(), &global()).is_ok());
+        assert!(check_roles_against_models(&PerRepoProviders::default(), &global()).is_ok());
     }
 }

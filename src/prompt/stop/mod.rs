@@ -8,7 +8,7 @@
 //!
 //! No on-disk cancel marker is written: per §2.9 the on-disk
 //! signature of a stopped branch is the latest step's `response.json`
-//! closed (`IN_CLOSE_WRITE`, §3.5) without a terminal `message_stop`
+//! closed (`IN_CLOSE_WRITE`, §3.5) without a terminal brazen `end`
 //! event. The kernel produces that signature for free when the
 //! harness terminates without flushing — same way crashes and
 //! external kills are indistinguishable on disk per §2.9.

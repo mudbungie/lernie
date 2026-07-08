@@ -1,13 +1,14 @@
-//! End-to-end branch-state classification (bl-de6b) against real
-//! conv-repo fixtures.
+//! End-to-end branch-state classification against real conv-repo
+//! fixtures.
 //!
-//! Mirrors the on-disk shape `src/prompt/dispatch::stream::run_complete`
-//! produces — JSONL `response.json` lines under
-//! `<conv-repo>/steps/<conv-id>/<NNN>/`. Per ARCH §2.9 (post-bl-de6b
-//! amendment) the classifier reads the latest step's `response.json`
-//! and treats the absence of a §4.4 terminal event as in-flight; a
-//! `message_stop` or `error` line marks the chain as no longer
-//! advancing.
+//! Mirrors the on-disk shape the harness's model-call driver produces —
+//! brazen `v=1` NDJSON `response.json` lines under
+//! `<conv-repo>/steps/<conv-id>/<NNN>/`. The classifier reads the latest
+//! step's `response.json`: absence of a terminal `end` (or a terminal
+//! `end` with the writer still holding the fd open, §3.5) is in-flight;
+//! a terminal `end` with the fd closed marks the chain stopped. These
+//! fixtures write no live writer, so the real `/proc` probe sees the fd
+//! as closed.
 
 use super::fixture::Fixture;
 use crate::git_tree::{BranchState, GitTree};
@@ -36,8 +37,8 @@ fn from_repo_in_flight_branch_with_partial_response_classifies_as_in_flight() {
         "20260427T160100Z-mid0",
         1,
         &[
-            r#"{"type":"message_start","message":{"id":"m1"}}"#,
-            r#"{"type":"text_delta","index":0,"text":"hello"}"#,
+            r#"{"type":"message_start","v":1,"role":"assistant"}"#,
+            r#"{"type":"content_delta","index":0,"delta":{"text_delta":"hello"}}"#,
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
@@ -45,11 +46,10 @@ fn from_repo_in_flight_branch_with_partial_response_classifies_as_in_flight() {
 }
 
 #[test]
-fn from_repo_in_flight_branch_after_message_stop_classifies_as_stopped() {
-    // The terminal `message_stop` event has landed; the chain is no
-    // longer advancing. Root conversations don't merge back (ARCH §2.3
-    // step 5), so this is the natural terminal state for a root
-    // conversation.
+fn from_repo_in_flight_branch_after_terminal_end_classifies_as_stopped() {
+    // The terminal `end` landed and no writer holds the fd; the chain is
+    // no longer advancing. Root conversations don't merge back (ARCH
+    // §2.3 step 5), so this is the natural terminal state.
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_v03_in_flight("20260427T160200Z-end0", "ended");
@@ -57,9 +57,10 @@ fn from_repo_in_flight_branch_after_message_stop_classifies_as_stopped() {
         "20260427T160200Z-end0",
         1,
         &[
-            r#"{"type":"message_start","message":{"id":"m1"}}"#,
-            r#"{"type":"text_delta","index":0,"text":"done"}"#,
-            r#"{"type":"message_stop","usage":{"input_tokens":1,"output_tokens":1},"api_calls":1}"#,
+            r#"{"type":"message_start","v":1,"role":"assistant"}"#,
+            r#"{"type":"content_delta","index":0,"delta":{"text_delta":"done"}}"#,
+            r#"{"type":"finish","reason":"stop"}"#,
+            r#"{"type":"end"}"#,
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
@@ -67,10 +68,9 @@ fn from_repo_in_flight_branch_after_message_stop_classifies_as_stopped() {
 }
 
 #[test]
-fn from_repo_in_flight_branch_after_error_event_classifies_as_stopped() {
-    // The terminal `error` event landed instead of `message_stop`.
-    // Per §4.4 these are both terminal; the classifier treats them the
-    // same (the chain is no longer advancing).
+fn from_repo_in_flight_branch_after_error_segment_classifies_as_stopped() {
+    // A failed attempt (error + terminal end) with the fd closed marks
+    // the chain stopped (§4.4 — a failed step renders as stopped).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_v03_in_flight("20260427T160300Z-err0", "errored");
@@ -78,8 +78,9 @@ fn from_repo_in_flight_branch_after_error_event_classifies_as_stopped() {
         "20260427T160300Z-err0",
         1,
         &[
-            r#"{"type":"message_start","message":{"id":"m1"}}"#,
-            r#"{"type":"error","kind":"fatal","http_status":500,"message":"oops"}"#,
+            r#"{"type":"message_start","v":1,"role":"assistant"}"#,
+            r#"{"type":"error","kind":"provider","message":"oops"}"#,
+            r#"{"type":"end"}"#,
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();

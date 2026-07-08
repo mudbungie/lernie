@@ -1,6 +1,7 @@
 //! Integration test: cascade. `lernie prompt` against a stalling
-//! httpmock + `lernie stop` → harness dies, response.json closed
-//! without `message_stop`, branch left unmerged (ARCH §2.9).
+//! httpmock + `lernie stop` → harness dies (taking its `bz` child with
+//! it), response.json closed without a terminal `end`, branch left
+//! unmerged (ARCH §2.9).
 //!
 //! Idempotence + error-path tests live in `tests/stop_idempotence.rs`.
 
@@ -13,18 +14,18 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 use stop_common::{
     HAPPY_SSE, git_command, lernie_bin, poll_for_conv_branch_with_diag, poll_for_path,
-    scaffold_repo, spawn_prompt, write_global_providers,
+    scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
 };
 use tempfile::TempDir;
 
 #[test]
-fn stop_cascades_sigterm_and_leaves_response_without_message_stop() {
+fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
-        // Long delay — adapter blocks on the HTTP response, harness
-        // has opened response.json (empty) and is tailing the
-        // adapter. `lernie stop` cuts the cord.
+        // Long delay — `bz` blocks on the HTTP response, the harness has
+        // opened response.json (empty) and holds its fd. `lernie stop`
+        // cuts the cord.
         then.status(200)
             .header("content-type", "text/event-stream")
             .delay(Duration::from_secs(30))
@@ -34,11 +35,12 @@ fn stop_cascades_sigterm_and_leaves_response_without_message_stop() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, &server.base_url());
+    write_global_models(&harness);
+    let brazen_config = write_brazen_config(holder.path(), &server.base_url());
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
 
-    let mut prompt_child = spawn_prompt(&dest, &harness, "ping");
+    let mut prompt_child = spawn_prompt(&dest, &harness, &brazen_config, "ping");
 
     let primary = dest.join("root");
     let branch =
@@ -67,7 +69,7 @@ fn stop_cascades_sigterm_and_leaves_response_without_message_stop() {
     );
 
     // §2.9 on-disk signature: latest response.json closed and either
-    // empty or whose last JSONL line is not `message_stop`.
+    // empty or whose last JSONL line is not the terminal `end`.
     let resp_path = step_dir.join("response.json");
     let resp = fs::read(&resp_path).unwrap();
     let lines: Vec<&[u8]> = resp
@@ -78,8 +80,8 @@ fn stop_cascades_sigterm_and_leaves_response_without_message_stop() {
         let v: serde_json::Value = serde_json::from_slice(last).expect("trailing line is JSON");
         assert_ne!(
             v["type"].as_str(),
-            Some("message_stop"),
-            "stopped response.json must not end with message_stop; last: {v}"
+            Some("end"),
+            "stopped response.json must not end with a terminal `end`; last: {v}"
         );
     }
 

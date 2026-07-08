@@ -3,13 +3,14 @@
 //! Lives alongside [`super::fixtures`] but split out so the latter
 //! stays under the repo's per-file line cap.
 
-use crate::prompt::{AdapterRunner, Dispatcher};
+use crate::prompt::{AdapterRunner, BRAZEN_PIN, Dispatcher, Sleeper};
 use crate::template::GitRunner;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::ffi::OsString;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 /// Canned [`AdapterRunner`] reply. `Ok` carries raw stdout bytes
 /// (with `\n` terminators) that the stub replays into the per-line
@@ -19,21 +20,21 @@ pub(super) enum AdapterReply {
     Err(io::Error),
 }
 
-/// One adapter invocation: (binary, argv, envs, stdin).
-pub(super) type AdapterCall = (OsString, Vec<String>, Vec<(String, String)>, Vec<u8>);
+/// One adapter invocation: (binary, argv, stdin).
+pub(super) type AdapterCall = (OsString, Vec<String>, Vec<u8>);
 
-/// Canonical `describe` JSON. Tests varying the shape build inline.
-pub(super) const STUB_DESCRIBE_JSON: &str = r#"{
-    "name":"anthropic","schema_version":2,
-    "capabilities":["tool_use_native","streaming"],
-    "models":["claude-sonnet-4-7"],
-    "auth_env":["ANTHROPIC_API_KEY"],
-    "endpoint_env":["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
-}"#;
+/// The bytes `bz --version` prints under the pin the harness expects
+/// (the load-time version guard, §4.4).
+pub(super) fn version_line() -> Vec<u8> {
+    format!("bz {BRAZEN_PIN}\n").into_bytes()
+}
 
 /// FIFO-replying [`AdapterRunner`] with a recording log. Each scripted
-/// reply's bytes are split on `\n` and replayed through the runner's
-/// callback (the §4.4 wire shape: one event per line).
+/// reply's bytes are split on `\n` and replayed through the callback
+/// (the §4.4 wire shape: one event per line). Under the default
+/// (no `adapter:` override) resolution the harness first runs the
+/// version guard (`bz --version`), so a `run`-level script leads with
+/// [`version_line`]; adapter-override tests skip that.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
@@ -50,17 +51,13 @@ impl StubAdapter {
         }
     }
 
-    /// `describe` ok then `complete_bytes` (JSONL) on the next call.
-    pub(super) fn happy(complete_bytes: &[u8]) -> Self {
+    /// Version guard reply then one model-call stream (the default
+    /// no-override happy path).
+    pub(super) fn happy(model_stream: &[u8]) -> Self {
         Self::scripted([
-            AdapterReply::Ok(STUB_DESCRIBE_JSON.as_bytes().to_vec()),
-            AdapterReply::Ok(complete_bytes.to_vec()),
+            AdapterReply::Ok(version_line()),
+            AdapterReply::Ok(model_stream.to_vec()),
         ])
-    }
-
-    /// One-shot error reply (fires on the `describe` call).
-    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
-        Self::scripted([AdapterReply::Err(io::Error::new(kind, msg.to_string()))])
     }
 
     pub(super) fn reply_ok(bytes: &[u8]) -> AdapterReply {
@@ -69,10 +66,6 @@ impl StubAdapter {
     pub(super) fn reply_err(kind: io::ErrorKind, msg: &str) -> AdapterReply {
         AdapterReply::Err(io::Error::new(kind, msg.to_string()))
     }
-
-    pub(super) fn last(&self) -> AdapterCall {
-        self.observed.borrow().last().cloned().expect("no calls")
-    }
 }
 
 impl AdapterRunner for StubAdapter {
@@ -80,16 +73,12 @@ impl AdapterRunner for StubAdapter {
         &self,
         binary: &OsString,
         args: &[&str],
-        envs: &[(&str, &str)],
         stdin_bytes: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
     ) -> io::Result<()> {
         self.observed.borrow_mut().push((
             binary.clone(),
             args.iter().map(|s| (*s).to_owned()).collect(),
-            envs.iter()
-                .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-                .collect(),
             stdin_bytes.to_vec(),
         ));
         let bytes = match self.replies.borrow_mut().pop_front() {
@@ -109,6 +98,20 @@ impl AdapterRunner for StubAdapter {
 
 pub(super) fn unreachable_adapter() -> StubAdapter {
     StubAdapter::scripted([])
+}
+
+/// No-op [`Sleeper`]: the retry loop's backoff sleeps are elided in
+/// tests (the retry *logic* does not depend on wall time). Records the
+/// requested durations so a test can assert a backoff was scheduled.
+#[derive(Default)]
+pub(super) struct StubSleeper {
+    pub(super) slept: RefCell<Vec<Duration>>,
+}
+
+impl Sleeper for StubSleeper {
+    fn sleep(&self, dur: Duration) {
+        self.slept.borrow_mut().push(dur);
+    }
 }
 
 /// Recording [`GitRunner`] with optional `fail_at` index.
@@ -153,13 +156,10 @@ impl GitRunner for StubGit {
 }
 
 /// One observed [`Dispatcher::dispatch`] invocation: `(role, repo,
-/// branch, goal)`. Aliased so the `RefCell` field type stays under
-/// clippy's complexity ceiling.
+/// branch, goal)`.
 pub(super) type DispatchCall = (String, PathBuf, String, Option<String>);
 
-/// Recording [`Dispatcher`] for the dispatch handoff. Captures both
-/// the compactor handoff (no goal, role=`compactor`) and the worker
-/// handoff (`--goal …`, role=`worker`) without needing two stubs.
+/// Recording [`Dispatcher`] for the dispatch handoff.
 #[derive(Default)]
 pub(super) struct StubDispatcher {
     pub(super) calls: RefCell<Vec<DispatchCall>>,

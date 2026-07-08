@@ -1,14 +1,16 @@
 //! Shared fixtures for `prompt::tests::*`.
 //!
-//! Stubs (`StubAdapter`, `StubGit`, `StubDispatcher`) live in
-//! [`super::stubs`]; §4.4 JSONL stream synthesis helpers
-//! (`streaming_response`, `happy_response_bytes`, `parse_jsonl`) live
-//! in [`super::streams`]. Both are re-exported here so test files keep
-//! the single `use super::fixtures::*;` import surface.
+//! Stubs (`StubAdapter`, `StubSleeper`, `StubGit`, `StubDispatcher`)
+//! live in [`super::stubs`]; brazen `v=1` NDJSON synthesis helpers
+//! (`stream_of`, `error_stream`, `happy_response_bytes`, `parse_jsonl`)
+//! live in [`super::streams`]. Both are re-exported here so test files
+//! keep the single `use super::fixtures::*;` import surface.
 
-pub(super) use super::streams::{happy_response_bytes, parse_jsonl, streaming_response};
+pub(super) use super::streams::{
+    Block, error_stream, happy_response_bytes, parse_jsonl, stream_of,
+};
 pub(super) use super::stubs::{
-    STUB_DESCRIBE_JSON, StubAdapter, StubDispatcher, StubGit, unreachable_adapter,
+    StubAdapter, StubDispatcher, StubGit, StubSleeper, unreachable_adapter, version_line,
 };
 pub(super) use super::tool_stub::StubToolExecutor;
 
@@ -41,14 +43,9 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Global `<harness-root>/providers.yaml` (ARCH §4.1).
-pub(super) const VALID_GLOBAL_PROVIDERS_YAML: &str = r#"
-providers:
-  anthropic:
-    endpoint: https://api.anthropic.com
-    auth:
-      type: api_key
-      env: ANTHROPIC_API_KEY
+/// Global `<harness-root>/models.yaml` (ARCH §4.2) — capabilities and
+/// context windows only; endpoints and auth are brazen's (§4.1).
+pub(super) const VALID_GLOBAL_MODELS_YAML: &str = r#"
 models:
   claude-sonnet-4-7:
     provider: anthropic
@@ -63,13 +60,31 @@ roles:
   worker:
     provider: anthropic
     model: claude-sonnet-4-7
+    tools: [bash, read_file]
 "#;
 
-/// Lay out a v0.3 conv repo (§2.2): per-repo `providers.yaml` and
-/// optional `souls/worker.md`.
+/// Minimal `workflow.yaml` (ARCH §6). The retry block is omitted so
+/// [`crate::config::RetryConfig::default`] (3 attempts, exponential)
+/// applies unless a test overrides it.
+pub(super) const VALID_WORKFLOW_YAML: &str = "events: {}\n";
+
+/// Lay out a v0.6 conv repo (§2.2): per-repo `providers.yaml`, a
+/// `workflow.yaml` (read for the retry policy, §2.10), and optional
+/// `souls/worker.md`.
 pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> TempDir {
+    scaffold_repo_with_workflow(per_repo_yaml, VALID_WORKFLOW_YAML, worker_soul)
+}
+
+/// Like [`scaffold_repo`] but with an explicit `workflow.yaml` body so a
+/// test can pin a `retry:` block.
+pub(super) fn scaffold_repo_with_workflow(
+    per_repo_yaml: &str,
+    workflow_yaml: &str,
+    worker_soul: Option<&str>,
+) -> TempDir {
     let tmp = TempDir::new().unwrap();
     std::fs::write(tmp.path().join("providers.yaml"), per_repo_yaml).unwrap();
+    std::fs::write(tmp.path().join("workflow.yaml"), workflow_yaml).unwrap();
     if let Some(body) = worker_soul {
         let souls = tmp.path().join("souls");
         std::fs::create_dir_all(&souls).unwrap();
@@ -78,20 +93,28 @@ pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> T
     tmp
 }
 
-/// Lay out a temp harness root (ARCH §2.2) with a global
-/// `providers.yaml`.
+/// Lay out a temp harness root (ARCH §2.2) with a global `models.yaml`.
 pub(super) fn scaffold_harness_root() -> TempDir {
     let tmp = TempDir::new().unwrap();
-    std::fs::write(
-        tmp.path().join("providers.yaml"),
-        VALID_GLOBAL_PROVIDERS_YAML,
-    )
-    .unwrap();
+    std::fs::write(tmp.path().join("models.yaml"), VALID_GLOBAL_MODELS_YAML).unwrap();
     tmp
 }
 
+/// Harness root whose `models.yaml` names an `adapter:` override (§4.2)
+/// — the version guard is skipped and the MessageStart.v handshake
+/// governs (§4.4). The override path need not exist: the stub adapter
+/// ignores the binary.
+pub(super) fn scaffold_harness_root_with_adapter(adapter: &str) -> TempDir {
+    let tmp = TempDir::new().unwrap();
+    let yaml = format!("adapter: {adapter}\n{VALID_GLOBAL_MODELS_YAML}");
+    std::fs::write(tmp.path().join("models.yaml"), yaml).unwrap();
+    tmp
+}
+
+#[allow(clippy::too_many_arguments)]
 pub(super) fn valid_deps<'a>(
     adapter: &'a StubAdapter,
+    sleeper: &'a StubSleeper,
     git: &'a StubGit,
     clock: &'a FixedClock,
     id: &'a FixedIdGen,
@@ -101,6 +124,7 @@ pub(super) fn valid_deps<'a>(
 ) -> Deps<'a> {
     Deps {
         adapter,
+        sleeper,
         git,
         clock,
         id_gen: id,
@@ -110,7 +134,8 @@ pub(super) fn valid_deps<'a>(
     }
 }
 
-/// Drive [`crate::prompt::run`] with default stubs.
+/// Drive [`crate::prompt::run`] with default stubs (no-override path:
+/// the adapter script leads with the version-guard reply).
 pub(super) fn run_with_stubs(
     repo: &Path,
     msg: &str,
@@ -119,12 +144,13 @@ pub(super) fn run_with_stubs(
 ) -> Result<String, crate::prompt::Error> {
     let harness = scaffold_harness_root();
     let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
-    let tool_executor = StubToolExecutor::ok();
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     crate::prompt::run(
         repo,
         msg,
         &valid_deps(
             adapter,
+            &sleeper,
             git,
             &clock,
             &id,

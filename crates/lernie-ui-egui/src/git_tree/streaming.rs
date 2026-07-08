@@ -13,11 +13,9 @@
 //! are ignored at this layer — pulsing tool indicators (bl-23d9) and
 //! branch-state badges (bl-de6b) read their own signals.
 //!
-//! **Dual vocabulary (v0.6 transition, bl-507a).** Text fragments are
-//! read in either vocabulary: the legacy v0.3 `text_delta` event or
-//! brazen's `v=1` `content_delta` carrying a `text_delta` `Delta`
-//! (§4.4). The follow-on ball (bl-56ee) drops the legacy arm; until then
-//! both are accepted so the writer swap keeps live text rendering.
+//! Text fragments are read from brazen's `v=1` `content_delta` carrying
+//! a `text_delta` `Delta` (§4.4). The v0.6 legacy vocabulary is retired
+//! (bl-56ee).
 
 use std::path::Path;
 
@@ -99,15 +97,12 @@ fn accumulate_text_deltas(bytes: &[u8]) -> Option<String> {
     if text.is_empty() { None } else { Some(text) }
 }
 
-/// The dual-vocabulary text seam (bl-507a). Legacy v0.3:
-/// `{"type":"text_delta","text":"…"}`. brazen v=1:
+/// The brazen `v=1` text seam:
 /// `{"type":"content_delta","delta":{"text_delta":"…"}}` — the text arm
 /// of the externally-tagged `Delta`; a `json_delta` (tool arguments) or
-/// `thinking_delta` carries no display text and yields `None`. The
-/// follow-on ball (bl-56ee) deletes the legacy arm.
+/// `thinking_delta` carries no display text and yields `None`.
 fn text_fragment(value: &serde_json::Value) -> Option<&str> {
     match value.get("type").and_then(|v| v.as_str())? {
-        "text_delta" => value.get("text").and_then(|v| v.as_str()),
         "content_delta" => value
             .get("delta")
             .and_then(|d| d.get("text_delta"))
@@ -130,10 +125,10 @@ mod tests {
 
     #[test]
     fn accumulates_text_in_order_across_indices() {
-        let jsonl = br#"{"type":"message_start"}
-{"type":"text_delta","index":0,"text":"hel"}
-{"type":"text_delta","index":0,"text":"lo"}
-{"type":"text_delta","index":0,"text":" world"}
+        let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"content_delta","index":0,"delta":{"text_delta":"hel"}}
+{"type":"content_delta","index":0,"delta":{"text_delta":"lo"}}
+{"type":"content_delta","index":0,"delta":{"text_delta":" world"}}
 "#;
         assert_eq!(
             accumulate_text_deltas(jsonl).as_deref(),
@@ -177,7 +172,8 @@ mod tests {
 
     #[test]
     fn tolerates_malformed_lines_without_aborting() {
-        let jsonl = b"not json\n{\"type\":\"text_delta\",\"text\":\"hi\"}\n{partial";
+        let jsonl =
+            b"not json\n{\"type\":\"content_delta\",\"index\":0,\"delta\":{\"text_delta\":\"hi\"}}\n{partial";
         assert_eq!(accumulate_text_deltas(jsonl).as_deref(), Some("hi"));
     }
 
@@ -188,9 +184,9 @@ mod tests {
     }
 
     #[test]
-    fn text_delta_without_text_field_is_skipped() {
-        let jsonl = br#"{"type":"text_delta","index":0}
-{"type":"text_delta","index":0,"text":"x"}
+    fn content_delta_without_text_delta_is_skipped() {
+        let jsonl = br#"{"type":"content_delta","index":0,"delta":{"json_delta":"{}"}}
+{"type":"content_delta","index":0,"delta":{"text_delta":"x"}}
 "#;
         assert_eq!(accumulate_text_deltas(jsonl).as_deref(), Some("x"));
     }
@@ -202,11 +198,11 @@ mod tests {
         let steps = dir.path().join(STEPS_DIR).join(conv);
         write(
             &steps.join("001").join(RESPONSE_FILE),
-            b"{\"type\":\"text_delta\",\"text\":\"first\"}\n",
+            b"{\"type\":\"content_delta\",\"index\":0,\"delta\":{\"text_delta\":\"first\"}}\n",
         );
         write(
             &steps.join("002").join(RESPONSE_FILE),
-            b"{\"type\":\"text_delta\",\"text\":\"second\"}\n",
+            b"{\"type\":\"content_delta\",\"index\":0,\"delta\":{\"text_delta\":\"second\"}}\n",
         );
         assert_eq!(
             streaming_text_from_disk(dir.path(), conv).as_deref(),

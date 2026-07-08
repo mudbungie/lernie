@@ -2,9 +2,10 @@
 
 use lernie::config::action::{Action, DispatchMode};
 use lernie::config::error::LoadError;
-use lernie::config::workflow::{CompactionTrigger, Event, Workflow};
+use lernie::config::workflow::{Backoff, CompactionTrigger, Event, RetryConfig, Workflow};
 use std::io::Write;
 use std::path::Path;
+use std::time::Duration;
 use tempfile::NamedTempFile;
 
 fn write_yaml(s: &str) -> NamedTempFile {
@@ -62,6 +63,31 @@ fn parses_arch_example() {
         w.compaction.as_ref().unwrap().intermediate.trigger,
         CompactionTrigger::EveryNCommits
     );
+}
+
+#[test]
+fn parses_explicit_retry_block() {
+    // Covers the RetryConfig + Backoff deserialize path (ARCH §6, §2.10).
+    let f = write_yaml(
+        "events:\n  user_message:\n    - merge\nretry:\n  max_attempts: 5\n  backoff: exponential\n",
+    );
+    let w = Workflow::load(f.path()).unwrap();
+    assert_eq!(w.retry.max_attempts, 5);
+    assert_eq!(w.retry.backoff, Backoff::Exponential);
+    // Exponential backoff doubles from the first rung.
+    let d1 = w.retry.backoff.delay(1);
+    let d2 = w.retry.backoff.delay(2);
+    assert!(d2 > d1 && d1 > Duration::ZERO);
+}
+
+#[test]
+fn omitted_retry_block_uses_the_default() {
+    // No `retry:` → RetryConfig::default (3 attempts, exponential).
+    let f = write_yaml("events:\n  user_message:\n    - merge\n");
+    let w = Workflow::load(f.path()).unwrap();
+    assert_eq!(w.retry, RetryConfig::default());
+    assert_eq!(w.retry.max_attempts, 3);
+    assert_eq!(w.retry.backoff, Backoff::Exponential);
 }
 
 #[test]

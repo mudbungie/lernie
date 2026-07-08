@@ -18,6 +18,61 @@ pub struct Workflow {
     pub events: BTreeMap<Event, Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compaction: Option<CompactionConfig>,
+    /// Retry policy for a step's model call (ARCH §2.10, §4.4): the
+    /// harness owns the retry loop (brazen never retries), reading the
+    /// attempt cap and backoff from here. Omitted uses [`RetryConfig::
+    /// default`].
+    #[serde(default)]
+    pub retry: RetryConfig,
+}
+
+/// Harness-owned retry policy (ARCH §6 `retry:` block). One `bz`
+/// process per attempt (§4.4); a retryable in-band `Error` re-invokes
+/// `bz` with the identical request up to `max_attempts`, sleeping the
+/// backoff between attempts (§2.10).
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct RetryConfig {
+    /// Attempt cap per model call — `1` disables retry (a single
+    /// attempt). Each attempt is one `bz` invocation appending one
+    /// segment to `response.json` (§4.4).
+    pub max_attempts: u32,
+    pub backoff: Backoff,
+}
+
+impl Default for RetryConfig {
+    fn default() -> Self {
+        // Matches the ARCH §6 example: 3 attempts, exponential backoff.
+        Self {
+            max_attempts: 3,
+            backoff: Backoff::Exponential,
+        }
+    }
+}
+
+/// Closed set of backoff policies between retry attempts (ARCH §6).
+/// Exponential is the shipped policy; adding another is a code change,
+/// like every other closed workflow set.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Backoff {
+    Exponential,
+}
+
+/// Base delay before the first retry (the exponential's first rung).
+const BACKOFF_BASE_MS: u64 = 250;
+
+impl Backoff {
+    /// Delay to sleep before the retry that follows a failed `attempt`
+    /// (1-based). Exponential doubles per rung from [`BACKOFF_BASE_MS`],
+    /// saturating so a pathological attempt count cannot overflow.
+    pub fn delay(self, attempt: u32) -> std::time::Duration {
+        match self {
+            Backoff::Exponential => {
+                let factor = 2u64.saturating_pow(attempt.saturating_sub(1));
+                std::time::Duration::from_millis(BACKOFF_BASE_MS.saturating_mul(factor))
+            }
+        }
+    }
 }
 
 /// Closed set of workflow events. Names match the arch examples.

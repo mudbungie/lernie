@@ -459,7 +459,7 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build, lay down the harness root (default: `~/.lernie/`), drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`) and `lernie-provider-anthropic` into `$LERNIE_HOME/adapters/` |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root (default: `~/.lernie/`) with a default `models.yaml` and the `agents/default/` template |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness root config in place |
 
 ### Workflow

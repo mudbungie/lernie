@@ -11,5 +11,9 @@ on = "close"
 [[blockers]]
 id = "bl-8237"
 on = "close"
+
+[[blockers]]
+id = "bl-8a68"
+on = "close"
 +++
 Surgical follow-on to bl-ed40. The shipped executor-lock paragraph says 'A would-be executor that fails the acquire … deposits whatever it came to deposit and exits', implying an invocation that both deposits and drives. Contradiction with the design's own discipline: lernie message is only ever a writer (its lock try-acquire is a liveness probe, released immediately, never held to drive); lernie prompt/dispatch/advance are only ever drivers (acquire-or-exit as a no-op, nothing to deposit). Fix: state the totality explicitly and rewrite the losing-acquirer sentence so the loser arm is the same code as the uncontended case — no combined path whose arms could drift.

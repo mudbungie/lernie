@@ -11,6 +11,10 @@ on = "close"
 [[blockers]]
 id = "bl-6306"
 on = "close"
+
+[[blockers]]
+id = "bl-2868"
+on = "close"
 +++
 Deliverable: tracked doc edit (ARCHITECTURE §2.5 and/or §2.11), no code. Follow-on to bl-ed40/bl-3eea.
 

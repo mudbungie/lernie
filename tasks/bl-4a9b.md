@@ -1,7 +1,8 @@
 +++
 title = "Fix v0.6 stragglers: prompt_retry.rs git-env leak + per_repo_providers.rs stale providers.yaml strings"
 created = 1783490289
-updated = 1783490289
+updated = 1783490318
+claimant = "Sandcastle-4a9b"
 priority = 5
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

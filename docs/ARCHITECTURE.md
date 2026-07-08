@@ -1,7 +1,7 @@
 # Agent Harness Spec
 
-**Status:** Draft v0.3
-**Scope:** Design specification for a git-backed agent harness with branch-per-dispatch context management.
+**Status:** Draft v0.4
+**Scope:** Design specification for a git-backed agent harness with branch-per-dispatch context management. v0.4 folds in the `harness` repo design exploration (2026-07): brazen becomes the provider layer (§4), budgets and sandboxed tools join the milestone chain (§12).
 
 ---
 
@@ -22,7 +22,7 @@ The following are explicitly out of scope for v1:
 
 - Multi-tenancy or multi-user isolation. Single user assumed.
 - Distributed execution. Single machine, single harness process.
-- Tool sandboxing. Tools run with user privileges; no capability restriction.
+- Tool sandboxing. Tools run with user privileges; no capability restriction. (A v1 non-goal only: specced as milestone v1.1, §12.)
 - Remote git operations. Conversation repos are never pushed anywhere.
 - Secrets management infrastructure. Env vars injected at tool execution, referenced by name in config. No vault, no rotation.
 
@@ -42,7 +42,10 @@ All terminology below is load-bearing and is used exclusively in the senses defi
 | **Step** | One model call and the tool calls it emits. | Child of a conversation; structurally bounded by the model call, not by tool completion. Lands as linear commits within the conversation's branch. |
 | **Model call** | One execution of a model to produce output. | Atomic. The defining event of a step; each step has exactly one. |
 | **Tool call** | The model's structured request to invoke a named tool. | Emitted by a model call; structural child of its emitting step (even if it resolves temporally during a later step). |
-| **API call** | One HTTP request to a provider endpoint. | Implementation detail of a model call (usually 1:1; streaming or retries may make it 1:many). |
+| **API call** | One HTTP request to a provider endpoint. | 1:1 with attempts by construction (§4.4); retries make a model call span several. |
+| **Attempt** | One invocation of the provider adapter for a step's model call — exactly one API call by construction (§4.4). | A model call comprises one or more attempts (§2.10); each attempt lands as one segment in the step's `response.json`. |
+| **brazen** | The provider adapter project (binary `bz`, crate `brazen`): one stateless binary adapting every provider and wire protocol behind a canonical request/event pipe contract. | The only component that knows provider wire protocols (§4.4); its specs define the canonical vocabulary. |
+| **Canonical request / canonical event** | brazen's typed request shape and its `v=1` streaming event vocabulary (brazen `architecture.md` §3). | The adapter wire contract; `response.json` is JSONL of canonical events (§2.3, §4.4). |
 | **Dispatch** | The event that spawns a child conversation with a goal. Two forms: a user message (spawns a root conversation) and a tool call targeting a subagent (spawns a subagent conversation off the commit where the dispatch landed on the parent branch). | Creates a branch. |
 | **Branch** | The git container for a conversation. | Every conversation has exactly one branch; every dispatch creates one. |
 | **Goal** | The stated objective handed to a conversation at dispatch. | One per conversation; not rewritten during execution; pinned at the head of context for every model call on the branch (§2.8). |
@@ -72,7 +75,7 @@ Directory layout:
 ├── steps/<conv-id>/NNN/          # diagnostic step records; outside every worktree (§2.3)
 │   ├── meta.json                 # {commit, started_at, …} — branch tip at step-start
 │   ├── request.json              # diagnostic; replay rebuilds the wire input from `commit`
-│   ├── response.json             # JSONL of §4.4 stream events
+│   ├── response.json             # JSONL of canonical events, attempt segments (§4.4)
 │   └── tools/<tool-id>/          # input.json, output.json — runtime-read by harness
 ├── root/                         # primary worktree; .git lives here
 │   ├── .git/
@@ -136,7 +139,7 @@ Per-step files:
 
 - `meta.json` — `{commit, started_at, ended_at, …}`. The `commit` field is the sha of the branch tip at step-start; it is the **read state** for the step's model call. Replay reproduces the wire input by re-running the context assembler (§5) against this commit's tree — `request.json` is not the source of truth. Step 1's `commit` is the dispatch commit (§2.3 step 2). Step ≥2's `commit` is the prior step's tip, advanced by any worktree-modifying tool-call commits between them; the harness writes no pre-call commit for step ≥2 (§2.10).
 - `request.json` — diagnostic snapshot of the wire request the model saw. Written for audit and human inspection only (see Diagnostic-only contract below).
-- `response.json` — JSONL of §4.4 stream events (one event per line), regardless of whether the adapter ran in streaming or non-streaming mode; the wire-side shape distinction collapses on disk. See §4.4 for the on-disk shape and §3.5 for the live-streaming completion signal.
+- `response.json` — JSONL of canonical events (one event per line), appended across one or more attempt segments, each segment terminated by its `{"type":"end"}` line; the wire-side streaming/non-streaming distinction collapses inside the adapter before bytes reach disk. See §4.4 for the segment rules and §3.5 for the live-streaming completion signal.
 - `tools/<tool-id>/` — per-tool-call records (`input.json`, `output.json`); `<tool-id>` is the `tool_use.id` from the wire (e.g. `toolu_01abc…`). Full contract in §3.3.
 
 **Diagnostic-only contract (request.json, response.json).** The harness writes `request.json` and `response.json` strictly as diagnostic / audit artifacts. They have **no runtime read integration anywhere in the harness**:
@@ -260,15 +263,15 @@ The pinned goal resolves the recency-decay problem in deep agent trees where seq
 Stops are aggressive. When a stop is issued (by user, by timeout, by cascade from a parent — the user-driven case is the CLI subcommand `lernie stop <repo> <branch>` per §3.4, idempotent against an already-terminal branch):
 
 1. SIGTERM is sent to the harness process working on the branch (and the kernel cascades through its process group, covering tool subprocesses and any subagent harnesses spawned per §3.4).
-2. In-flight HTTP requests to provider endpoints are dropped as a side effect of the adapter receiving SIGTERM (§4.4 Cancellation: 5s flush deadline before SIGKILL).
-3. The kernel closes the harness's open fds. The latest step's `response.json` (§4.4 "On-disk response shape: JSONL of stream events, always") receives `IN_CLOSE_WRITE` (§3.5) without a terminal `message_stop` event having been emitted — this missing terminal event *is* the on-disk signature of a stopped step. No separate cancel marker is written; the absence of `message_stop` on a closed file is sufficient.
-4. The branch is left unmerged. Its `stopped` status is derived state, not a written flag — consistent with `docs/PRINCIPLES.md` "Single source of truth": an unmerged branch whose latest step's `response.json` is closed without `message_stop` is `stopped`. (Crashes, kills, and explicit user stops are indistinguishable on disk and treated identically.)
+2. In-flight HTTP requests to provider endpoints are dropped as a side effect of the adapter receiving SIGTERM — `bz` installs no signal handlers and dies at once (§4.4 Cancellation); already-flushed event lines stay valid.
+3. The kernel closes the harness's open fds. The latest step's `response.json` (§4.4 "On-disk response shape: appended attempt segments") receives `IN_CLOSE_WRITE` (§3.5) without a terminal `end` event having been emitted — this missing terminal event *is* the on-disk signature of a stopped step. No separate cancel marker is written; the absence of a trailing `end` on a closed file is sufficient.
+4. The branch is left unmerged. Its `stopped` status is derived state, not a written flag — consistent with `docs/PRINCIPLES.md` "Single source of truth": an unmerged branch whose latest step's `response.json` is closed without a trailing `end` is `stopped`. (Crashes, kills, and explicit user stops are indistinguishable on disk and treated identically.)
 
 The user-action stop (`lernie stop <repo> <branch>`) discovers the harness pid the same way: it scans `/proc/<pid>/fd/*` for the writer holding the latest step's `response.json` open and signals that pid's process group. There is no sidecar pid file — the open fd is already the source the §3.5 `in_flight` classification reads, so the same observation drives both. The harness sets its own process group at startup (`setpgid(0, 0)` in `lernie prompt`) so the `kill(-pgid, SIGTERM)` cascade reaches its provider adapter and any subagent harnesses re-entered via `lernie dispatch` (which deliberately do *not* setpgid, inheriting the parent's pgid) without touching the invoking shell or UI process.
 
 A stopped root conversation is terminal: like any root conversation, it does not merge back to `main`. A stopped subagent conversation is also terminal: it does not merge back to its parent, and the parent's `await(handle)` resolves to a `stopped` status. The stopped branch remains as a ref for retention. User paths forward are the ordinary dispatch primitives: `lernie prompt` to start a new conversation, or fork-from-history to spawn a new branch off the stopped tip. There is no distinct "resume" operation — both fork-from-history and new-prompt subsume what resume would have done, and a third name would only obscure that.
 
-Between-step lulls (the brief window when one `lernie advance` subprocess has emitted its terminal `message_stop` and exited but the next `lernie advance` subprocess has not yet exec'd) are not stops: the latest step's `response.json` ends with `message_stop`, distinguishing it from a terminated chain. The §6 stateless re-entrance pattern guarantees that during normal operation a chain has either an emitted terminal event or a live process — never neither.
+Between-step lulls (the brief window when one `lernie advance` subprocess has emitted its terminal `end` and exited but the next `lernie advance` subprocess has not yet exec'd) are not stops: the latest step's `response.json` ends with `end`, distinguishing it from a terminated chain. The §6 stateless re-entrance pattern guarantees that during normal operation a chain has either an emitted terminal event or a live process — never neither.
 
 Default retention: 30 days, then tarballed and GC'd.
 
@@ -276,7 +279,7 @@ Default retention: 30 days, then tarballed and GC'd.
 
 **Read state per step.** Step 1 commits the dispatch artifacts (`goal.md`, `soul.md` per §2.3 step 2) on the new branch *before* its model call; that commit is step 1's read state. Step ≥2 takes no pre-call commit — the prior step's tip (advanced by any worktree-modifying tool-call commits, §2.3) is its read state. The branch tip at step-start is recorded in `meta.json`'s `commit` field (§2.3) so retry and replay are tractable: a failed model call is reissued by re-running the context assembler (§5) against the recorded sha and re-invoking the adapter, with no drift from the original wire input. The on-disk `request.json` is diagnostic, not authoritative.
 
-- **Retryable provider errors** (transient network failure, 429 rate limit, 5xx) are retried inline with backoff, bounded by a configurable attempt cap. Retries do not produce additional commits — the commit frames the model call, not the individual API call.
+- **Retryable provider errors** (transient network failure, 429 rate limit, 5xx) are retried inline with backoff, bounded by the attempt cap in `workflow.yaml` (§6). Retryability is classified by `CanonicalError::retryable()` from the linked brazen crate (§4.4) — computed from the in-band `Error` event, never re-derived by the harness. Each retry is a fresh attempt: a new `bz` invocation appending a new segment to `response.json` (§4.4). Retries do not produce additional commits — the commit frames the model call, not the individual attempt.
 - **Non-retryable errors** (400 validation failure, auth failure, impossible-to-satisfy schema) abort the step. The branch is left in the state it held before the model call and flagged for operator attention.
 - **Unknown or ambiguous failures** trigger a diagnostic dispatch: a subagent conversation is dispatched off the branch's current commit with a goal describing the failure, access to the branch state and the raw error, and instructions to produce a recommended next action (retry, abort, modify config, escalate).
 
@@ -308,8 +311,8 @@ Consequences:
 ### 3.2 Components
 
 - **Harness** (permitted synonym: **daemon**). The single program that drives execution: watches for events, spawns branches, runs model calls via the provider adapter layer (§4.4), invokes the tool executor, triggers merges and compactions, updates state. It owns all external↔filesystem interaction on the repo — provider endpoints (via adapter subprocesses), tool subprocesses, git operations. Stateless across restarts — resumes from disk. Any place this document says "the harness does X", it is this component. "Daemon" is allowed as a shorthand; both refer to the same role.
-- **Tool executor.** Runs tool subprocesses on behalf of the harness; contract in §3.3. Per tool call: assembles stdin from the `tool_use.input` the model emitted; invokes the tool binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external); captures stdout and stderr atomically (temp path + rename) into `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/output.json` (out of every worktree, §2.2, §2.3); maps the exit code to the `is_error` flag on the `tool_result` block the harness builds when assembling the next step's request payload. Cascades SIGTERM on cancel (§2.9) with a 5s deadline before SIGKILL, mirroring §4.4. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10. Does not auto-dispatch on oversized tool output in v0.3 (§11).
-- **Provider adapter.** External binary, one per named provider, that owns HTTP, auth, and transient-error retry. Invoked per model call over stdio; non-resident (process per model call, no long-lived state). Contract in §4.4.
+- **Tool executor.** Runs tool subprocesses on behalf of the harness; contract in §3.3. Per tool call: assembles stdin from the `tool_use.input` the model emitted; invokes the tool binary (`lernie tool <name>` in-process or `lernie-tool-<name>` external); captures stdout and stderr atomically (temp path + rename) into `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/output.json` (out of every worktree, §2.2, §2.3); maps the exit code to the `is_error` flag on the `tool_result` block the harness builds when assembling the next step's request payload. Cascades SIGTERM on cancel (§2.9) with a 5s deadline before SIGKILL (§3.3). Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10. Does not auto-dispatch on oversized tool output in v0.3 (§11).
+- **Provider adapter.** External binary — brazen's `bz`, one binary for every provider — that owns HTTP, wire dialects, and auth. Invoked per attempt over stdio; non-resident (process per attempt, no long-lived state). Transient-error retry belongs to the harness (§2.10), not the adapter. Contract in §4.4.
 - **UI** (permitted synonym: **frontend**). A stateless renderer over the conversation repo. Reads and watches filesystem paths in the repo; issues user actions exclusively as `lernie <subcommand>` invocations per §3.4. Holds no persistent state — every render is a pure function of filesystem state at the current git ref. The UI is pluggable: multiple frontends (desktop GUI, webclient, TUI) may run concurrently against one repo without coordination, because they share nothing but the filesystem and the CLI. Contract in §3.5. "Frontend" is allowed as a shorthand; both refer to the same role.
 
 The harness, the tool executor, and provider adapters share the same disk contract. None share memory. The UI participates in the same disk contract as a read-only consumer.
@@ -329,8 +332,8 @@ A standalone skill (no associated tool) exists to give an agent capability via p
 
 **Tool.** Composed of three required artifacts:
 
-1. **Binary.** An executable invoked by the harness. **In-process** tools are subcommands of the `lernie` binary, addressed as `lernie tool <name>` — the default for tools shipped with the harness (v0.3 ships `bash` and `read_file` here). **External** tools are standalone binaries named `lernie-tool-<name>`, mirroring the `lernie-provider-<name>` convention from §4.4 — the same externalization pattern that lets contributors ship adapters without patching the core. Discovery mirrors §4.4: the harness looks up `lernie-tool-<name>` at `<harness-root>/tools/` (installed by `make install`) before falling back to `PATH`. The choice of flavor is per-tool; the stdio contract below is identical.
-2. **JSON schema.** Declares the tool's `input` parameters at `<harness-root>/tools/<name>.json`. Required by provider APIs. Either generated from the binary's metadata or hand-authored. Sent verbatim as the `input_schema` of the tool's entry in the model call's `tools: [...]` array. The harness commits a copy under `descriptions/tools/` at conversation creation time, inherited by every branch via git, and composes it into the context.
+1. **Binary.** An executable invoked by the harness. **In-process** tools are subcommands of the `lernie` binary, addressed as `lernie tool <name>` — the default for tools shipped with the harness (v0.3 ships `bash` and `read_file` here). **External** tools are standalone binaries named `lernie-tool-<name>` — the externalization pattern that lets contributors ship tools without patching the core (the provider layer used the same per-name pattern until v0.6 retired it for brazen, §4.4). The harness looks up `lernie-tool-<name>` at `<harness-root>/tools/` (installed by `make install`) before falling back to `PATH`. The choice of flavor is per-tool; the stdio contract below is identical.
+2. **JSON schema.** Declares the tool's `input` parameters at `<harness-root>/tools/<name>.json`. Required by provider APIs. Either generated from the binary's metadata or hand-authored. Sent verbatim as the schema of the tool's entry in the canonical request's `tools: [...]` array (a brazen `Tool::Custom` — each protocol projects it into its own spelling, §4.4). The harness commits a copy under `descriptions/tools/` at conversation creation time, inherited by every branch via git, and composes it into the context.
 3. **Skill.** A `SKILL.md` describing when and how the tool should be used. Required for every tool; follows the skill lifecycle above. The frontmatter `description` becomes the `description` field of the tool's entry in the `tools: [...]` array.
 
 **Tools-list assembly.** A role's enabled tools are declared in the per-repo `<conv-repo>/providers.yaml` `roles:` section under a `tools: [...]` field (see §4.3). Any on-disk triple (binary + schema + skill) is generally discoverable; role configs select from that pool.
@@ -341,8 +344,8 @@ A standalone skill (no associated tool) exists to give an agent capability via p
 - **Stdout.** Raw bytes. The harness wraps them as the `content` of the `tool_result` block returned to the agent on the next step. No JSON envelope around tool output — tools stay simple and the canonical `tool_result` shape is the harness's concern.
 - **Stderr.** Raw bytes. Captured to the on-disk record regardless of exit status; concatenated into `tool_result.content` after stdout when the tool exits non-zero so the agent sees the failure message.
 - **Exit code.** 0 → `tool_result.is_error = false`; non-zero → `tool_result.is_error = true`. Termination by a signal other than the harness's own SIGTERM (SIGSEGV, SIGABRT, etc.) is a harness-level fault per §2.10 — the step aborts and the branch is flagged, not delivered to the model as a semantic error.
-- **Environment.** The harness sets two env vars on every tool subprocess so tools that depend on conversation context can read them without the model having to thread context through the input schema: `LERNIE_CONV_REPO` (absolute path to the conv-repo root, §2.2) and `LERNIE_CONV_BRANCH` (the calling conversation's branch == its full hyphenated descent / conv-id, §2.2 / §2.3). Both are derived from the executor's `step_dir` so they are guaranteed-correct for the call. Tools that do not need them ignore them; the v0.4 `dispatch` and `await` built-ins are the canonical readers. The convention mirrors §4.4's adapter env-var injection (`auth_env`, `endpoint_env`) — same shape, same direction (harness → subprocess), same "harness owns the names" discipline.
-- **SIGTERM and deadline.** The harness sends SIGTERM on cancel (§2.9); the tool has 5 seconds to flush and exit cleanly, after which SIGKILL follows. Same deadline as §4.4 — one cancellation protocol covers both externalization surfaces.
+- **Environment.** The harness sets two env vars on every tool subprocess so tools that depend on conversation context can read them without the model having to thread context through the input schema: `LERNIE_CONV_REPO` (absolute path to the conv-repo root, §2.2) and `LERNIE_CONV_BRANCH` (the calling conversation's branch == its full hyphenated descent / conv-id, §2.2 / §2.3). Both are derived from the executor's `step_dir` so they are guaranteed-correct for the call. Tools that do not need them ignore them; the v0.4 `dispatch` and `await` built-ins are the canonical readers. The direction and discipline are fixed: harness → subprocess, and the harness owns the names.
+- **SIGTERM and deadline.** The harness sends SIGTERM on cancel (§2.9); the tool has 5 seconds to flush and exit cleanly, after which SIGKILL follows. The flush deadline is tools-only: the provider adapter needs none — `bz` dies on SIGTERM at once, and the missing trailing `end` is the signature (§4.4 Cancellation).
 
 **Disk record.** The tool executor (§3.2) lands two files per tool call under `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` — at the conv-repo root, outside every worktree (§2.2, §2.3):
 
@@ -381,9 +384,9 @@ The frontend surface is exactly two things, and nothing else:
 
 1. **Filesystem reads.** The frontend reads and watches paths under the conversation repo. The load-bearing paths follow the repo layout (§2.2): the git tree itself (refs, commits, objects — branch state is read from `refs/heads/` per §2.3); the conv-repo-root control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`); the conv-repo-root step records under `steps/<conv-id>/NNN/` (§2.3); and each branch's worktree contents (`goal.md`, `soul.md`, `summary/`, `descriptions/`, `skills/`). Notification is inotify where available, polling otherwise (§3.1).
 
-   **Streaming text watch path.** Live model-call output is tailed at `<conv-repo>/steps/<conv-id>/<NNN>/response.json` — the JSONL stream (§4.4) is appended event-by-event as the adapter writes it. **Completion signal: writer closes the fd; inotify `IN_CLOSE_WRITE` marks the response complete.** The frontend tails the file (offset-tracking line read), and on `IN_CLOSE_WRITE` flips the response from "in flight" to "done" — no separate sentinel file, no out-of-band marker. This is the same fd-close convention used elsewhere in the architecture (e.g. atomic-rename writes, where `IN_CLOSE_WRITE` on the temp path precedes the rename); here the streaming append *is* the writer, so close-of-fd directly signals end-of-stream.
+   **Streaming text watch path.** Live model-call output is tailed at `<conv-repo>/steps/<conv-id>/<NNN>/response.json` — the JSONL stream of canonical events (§4.4) is appended event-by-event as the adapter writes it. **Completion signal: writer closes the fd; inotify `IN_CLOSE_WRITE` marks the response complete.** The frontend tails the file (offset-tracking line read), and on `IN_CLOSE_WRITE` flips the response from "in flight" to "done" — no separate sentinel file, no out-of-band marker. This is the same fd-close convention used elsewhere in the architecture (e.g. atomic-rename writes, where `IN_CLOSE_WRITE` on the temp path precedes the rename); here the streaming append *is* the writer, so close-of-fd directly signals end-of-stream.
 
-   **Branch-state classification.** The four branch states the live view renders (§7.1) are derived from refs and the JSONL terminal event, not from any sidecar marker. `merged`: the branch is reachable from `main`'s HEAD (`merge-base(branch, main) == HEAD(branch)`). `in_flight`: branch is unmerged and the latest step's `response.json` is still being written (no `IN_CLOSE_WRITE` yet, or no `message_stop` line and the file is still open). `stopped`: branch is unmerged, the latest step's `response.json` is closed, and its last JSONL event is not `message_stop` (§2.9 — kill, crash, and explicit stop are indistinguishable on disk). `conflicted`: derived from the integration attempt per §2.6 step 6, not from a property of the branch itself; relevant once subagent merges ship (v0.4+). Precedence at render time is `merged > stopped > in_flight`; `conflicted` is orthogonal and rendered alongside.
+   **Branch-state classification.** The four branch states the live view renders (§7.1) are derived from refs and the JSONL terminal event, not from any sidecar marker. `merged`: the branch is reachable from `main`'s HEAD (`merge-base(branch, main) == HEAD(branch)`). `in_flight`: branch is unmerged and the latest step's `response.json` is still being written (no `IN_CLOSE_WRITE` yet, or no trailing `end` line and the file is still open). `stopped`: branch is unmerged, the latest step's `response.json` is closed, and its last JSONL line is not `end` (§2.9 — kill, crash, and explicit stop are indistinguishable on disk; a closed file whose last segment carries an `Error` event is a *failed* step per §2.10, rendered as stopped with the error surfaced). `conflicted`: derived from the integration attempt per §2.6 step 6, not from a property of the branch itself; relevant once subagent merges ship (v0.4+). Precedence at render time is `merged > stopped > in_flight`; `conflicted` is orthogonal and rendered alongside.
 2. **CLI invocations.** The frontend issues user actions by `exec`'ing `lernie <subcommand>`. New prompt, stop, fork-from-history — all are ordinary CLI subcommands per §3.4. There is no separate API surface, no socket, no shared input directory, no library port. There is no user-facing "resume": continuing from a stopped branch is `lernie prompt` (new conversation, stopped branch as context) or fork-from-history (new branch off the stopped tip), per §2.9.
 
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
@@ -398,48 +401,35 @@ This discipline is what makes pluggability structural rather than aspirational. 
 
 The taxonomy (`docs/TAXONOMY.md` §2) flags "provider" as one of the field's most overloaded terms, naming three distinct roles: **model creator** (trains the weights), **inference provider** (serves the weights over an API), and **gateway** (unifies multiple inference providers behind one surface). This document uses **provider** in the *inference provider* sense throughout: an (endpoint, auth) pair.
 
-The harness does not speak provider wire protocols directly. Each provider is served by a **provider adapter** (§4.4) — a separate binary invoked as a subprocess per model call. That keeps the harness free of per-vendor HTTP quirks and lets external contributors (corporate users with bespoke SSO, custom retry logic, private model routers) ship adapters without modifying core code. In the vocabulary of this spec, "provider" names the `(endpoint, auth)` pair in config; "provider adapter" names the binary that implements one provider's protocol. They are distinct terms of art and not interchangeable.
+The harness does not speak provider wire protocols directly. Every model call goes through the **provider adapter** (§4.4) — brazen's `bz`, one external binary invoked as a subprocess per attempt. One binary serves every provider: which providers exist, their endpoints, their auth, and their wire dialects are **brazen's** facts, declared in brazen's own config (`~/.config/brazen/config.toml`, overridable via `--config`/`BRAZEN_CONFIG`; brazen's `config.md` is authoritative) as named provider rows. lernie references a provider row by name and never reads endpoint or credential material — the row name is the entire provider surface lernie sees. In the vocabulary of this spec, "provider" names the `(endpoint, auth)` pair (a brazen row); "provider adapter" names the binary. They are distinct terms of art and not interchangeable.
 
-**Two-file config split.** Provider configuration is split by lifetime and scope:
+> **Historical.** v0.1–v0.5 shipped a bespoke per-provider adapter contract: one `lernie-provider-<name>` binary per provider, `describe`/`complete` subcommands, an Anthropic-Messages-shaped canonical request, a home-grown event vocabulary, and env-var forwarding for auth and endpoints (`auth_env`/`endpoint_env`). v0.6 retires all of it in favor of brazen (§4.4). The externalization *principle* survives — the provider integration is still a separate binary behind a narrow stdio contract — but the contract is now brazen's canonical protocol, and there is one adapter binary rather than one per provider.
 
-- **Global** (`<harness-root>/providers.yaml`). Endpoint URLs, auth env var names, adapter binary overrides, retry knobs. Shared across all conversation repos; rotates with key rollover and infrastructure changes.
-- **Per-repo** (`<conv-repo>/providers.yaml`). Role → (provider-name, model-id) mapping only. Frozen at conversation creation (§2.2); governs which model this conversation's roles dispatch to for the rest of its life.
+**Config split by lifetime and owner:**
 
-This split is what makes frozen-bootstrap repos portable without also freezing credentials. A conversation repo references providers by name and picks up the current endpoint/auth at call time; rotating an API key in the global file immediately affects in-flight conversations (correctly).
+- **brazen's config** (`config.toml`; brazen's tooling — `bz --dump-config`, `bz --login` — edits and inspects it). Provider rows: protocol, endpoint, auth mode, model aliases, per-row body defaults. Rotates with key rollover and infrastructure changes.
+- **Global lernie** (`<harness-root>/models.yaml`, replacing the retired global `providers.yaml`). Model capabilities and context windows (§4.2) — facts lernie's behavior relies on and brazen does not own — plus the optional `adapter:` binary override (§4.4 Extensibility).
+- **Per-repo** (`<conv-repo>/providers.yaml`). Role → (provider row, model id) mapping and role toolsets only. Frozen at conversation creation (§2.2); governs which model this conversation's roles dispatch to for the rest of its life.
 
-Global provider config shape:
-
-```yaml
-providers:
-  anthropic:
-    endpoint: https://api.anthropic.com
-    auth:
-      type: api_key
-      env: ANTHROPIC_API_KEY
-  bedrock:
-    endpoint: https://bedrock-runtime.us-east-1.amazonaws.com
-    adapter: /opt/corp/lernie-provider-corp-bedrock
-    auth:
-      type: aws_sigv4
-      profile: default
-```
-
-The optional `adapter:` key names the binary to invoke; when absent, the harness looks up `lernie-provider-<name>` at `<harness-root>/adapters/` (installed by `make install`) before falling back to `PATH`. The harness itself does not read `endpoint:` or `auth:` — those are the adapter's to interpret. The harness only needs the adapter binary and the env-var names returned by `describe` (§4.4).
+The frozen-bootstrap property is preserved: a conversation repo pins *which row and model* its roles use; endpoint and auth resolve at call time inside brazen, so rotating a key or endpoint immediately affects in-flight conversations (correctly), and the per-repo file never carries machine-local or secret material. Retry policy is not provider config at all — the attempt cap and backoff are workflow policy and live in `workflow.yaml` (§6).
 
 ### 4.2 Model abstraction
 
-A **model** is (provider, model_id, capabilities). Model lists come from the provider's API where available. Capabilities is an extensible mapping declaring features the harness can rely on. The `models:` block lives alongside `providers:` in the global `<harness-root>/providers.yaml`, since each model is one key away from its (endpoint, auth) pair.
+A **model** is (provider row, model_id, capabilities). Capabilities is an extensible mapping declaring features the harness can rely on. The `models:` block lives in the global `<harness-root>/models.yaml`:
 
 ```yaml
+adapter: /usr/local/bin/bz        # optional override; default is `bz` on PATH (§4.4)
 models:
   claude-sonnet-4-7:
-    provider: anthropic
+    provider: anthropic           # a brazen provider-row name
     model_id: claude-sonnet-4-7
     capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
     context_window: 200000
 ```
 
 Capabilities are code-backed (each capability has a behavior implementation in the harness). Capabilities are extend-only: once declared, they are never removed from the registry, but the set on a given model may shrink if the provider removes support. The loader seeds a known-name registry from the names that appear in this spec; an unknown name on load produces a warning, never an error, so a new provider may declare new capabilities without blocking parsing.
+
+Model-id validity is brazen's concern, not lernie's: `bz` resolves the id against its per-provider model cache (refreshed by `bz --list-models`) and otherwise attempts it verbatim on the wire. lernie performs no model-list calls of its own; `models.yaml` carries only the facts lernie *acts on* (capabilities, context window), not a mirror of what the provider serves.
 
 ### 4.3 Role-based model assignment
 
@@ -456,74 +446,45 @@ roles:
     model: claude-haiku-4-5
 ```
 
-Each role's system prompt is read from `<conv-repo>/souls/<role>.md` by convention — there is no per-role path override, and no freeform path field to validate. At dispatch time the harness copies the appropriate soul to the new branch's `soul.md` (§2.3 step 2). Provider endpoint and auth are resolved at call time against the global `<harness-root>/providers.yaml` — the per-repo file carries only the (provider-name, model-id) pointer.
+Each role's system prompt is read from `<conv-repo>/souls/<role>.md` by convention — there is no per-role path override, and no freeform path field to validate. At dispatch time the harness copies the appropriate soul to the new branch's `soul.md` (§2.3 step 2). `provider:` names a brazen row; endpoint and auth resolve at call time inside brazen (§4.1) — the per-repo file carries only the (row-name, model-id) pointer, cross-validated against `<harness-root>/models.yaml` at load.
 
 The optional `tools:` field selects which tools the role's agent can call (see §3.3). Omitted or empty means none. The compactor's toolset (`write_summary`, `mark_for_deletion`) is built into the compactor primitive (§2.7), not declared here.
 
-### 4.4 Provider adapters
+### 4.4 The provider adapter: brazen
 
-A **provider adapter** is a binary that implements one provider's wire protocol. The harness invokes the adapter per model call; the adapter owns the HTTP request, auth, and any transient-error retry loop. This makes the provider layer externally extensible — the same externalization pattern already used for tools (§3.3), now applied to the provider boundary.
+The **provider adapter** is [brazen](https://github.com/mudbungie/brazen) — one small, stateless binary (`bz`) that adapts every provider and wire protocol behind a single pipe contract:
 
-**Discovery.** By default, the harness looks up `lernie-provider-<name>` on `PATH`, where `<name>` is the provider key from `providers.yaml`. A provider entry may pin a specific binary with `adapter: /abs/path/to/binary`, which is used verbatim. The adapter is located once per model call — there is no long-lived adapter process.
+```
+stdin (canonical request, JSON) → bz → stdout (canonical event stream, NDJSON, one terminal `end`)
+```
 
-**Subcommands.** Every adapter supports exactly two subcommands:
+brazen's own specs are the authoritative contract — its `architecture.md` (canonical request §3.1, `v=1` event vocabulary §3.2–3.4, exit codes §8, CLI surface §5.10), `config.md`, and `providers.md`. This section binds lernie to that contract and records the division of labor; it deliberately re-specifies nothing brazen already owns. brazen is our own project: pieces the harness needs that brazen lacks are built in brazen, not worked around here.
 
-- `describe` — reads nothing from stdin; writes a single JSON object to stdout:
-  ```json
-  {
-    "name": "anthropic",
-    "schema_version": 2,
-    "capabilities": ["tool_use_native", "streaming", "prompt_caching"],
-    "models": ["claude-sonnet-4-7", "claude-haiku-4-5"],
-    "auth_env": ["ANTHROPIC_API_KEY"],
-    "endpoint_env": ["LERNIE_PROVIDER_ANTHROPIC_ENDPOINT"]
-  }
-  ```
-  `schema_version` is an integer. The harness rejects unknown major versions at load and refuses to use the adapter — no silent downgrade (see "Decline illegal operations" in PRINCIPLES.md).
+**Invocation.** One `bz` process per **attempt** (§2.1): `bz --json --provider <row>`, canonical request on stdin. The model id rides the request; config resolution is brazen's (`--config` / `BRAZEN_CONFIG` / XDG — the harness sets `BRAZEN_CONFIG` only under test isolation). Streaming is brazen's default and lernie never overrides it; a provider whose wire response is non-streaming is normalized by brazen into the same event stream. The v0.3 "synthesize JSONL from a non-streaming response" path is deleted — every attempt's stdout is already the on-disk shape.
 
-- `complete` — reads a JSON request on stdin (Anthropic Messages-API shape is the canonical form; adapters for other providers translate internally) and writes one of two forms to stdout:
-  - **Non-streaming:** a single JSON response object. See **Response shape (non-streaming)** below.
-  - **Streaming:** a JSON Lines event stream — one JSON event per line. Event types are block-oriented to mirror the content-block structure of assistant messages: `message_start`, `content_block_start`, `text_delta`, `tool_use_delta`, `content_block_stop`, `message_stop`. The terminal `message_stop` carries `usage` and `api_calls` (the count of HTTP requests the adapter made — see §2.1 for the model call / API call distinction; retries or streaming reconnects may make this greater than one). See **Response shape (streaming)** below.
+**The vocabulary is linked; the data plane is exec'd.** lernie links the `brazen` crate at an exact pinned version for the canonical *types* — `CanonicalRequest` and its content vocabulary, `Event`, `CanonicalError` — and builds requests as typed structs, which makes brazen's fail-open `extra` map unreachable (the typo hazard of hand-built JSON does not exist). This is a shared vocabulary, not a channel: no lernie code calls brazen's `generate()`; every model call crosses the subprocess boundary, preserving §3.4's discipline. Two consequences:
 
-  Streaming vs non-streaming is chosen by a field in the stdin request; the contract is the same binary in both modes.
+- **`retryable` has one home.** Retry classification is `CanonicalError::retryable()` from the linked crate — a computed query lernie never re-implements (§2.10).
+- **Version skew is guarded.** At load, `bz --version` must equal the linked crate version; a mismatch is rejected — no silent downgrade (PRINCIPLES "Decline illegal operations"). `make install` installs the pinned binary (`cargo install brazen --version =<pin>`). Under an `adapter:` override (§4.2) the version guard is skipped and the in-band event-schema handshake (`MessageStart.v = 1`) governs instead.
 
-  Adapters MAY accept an optional `--request <path>` argv flag as an alternative to stdin; when set, the adapter reads the request JSON from that file and invocation semantics are identical to the stdin path. The flag is additive — adapters are not required to implement it, and the harness currently always uses stdin. It exists for human / external-tool use against the on-disk `<conv-repo>/steps/<conv-id>/<NNN>/request.json` (§2.3, §2.10, §3.1). Note that this on-disk file is diagnostic (§2.3): the harness's own replay path re-runs the context assembler against `meta.json`'s `commit` and feeds the rebuilt request to the adapter via stdin, not by pointing the adapter at the diagnostic file. A file-open failure on `--request` is an adapter-side fault (non-zero exit, per **Errors** below), not an in-band provider error.
+**Attempts and retry — the harness's job.** brazen never retries (a stated brazen non-goal); each `bz` process performs exactly one HTTP round-trip. The harness owns the retry loop (§2.10): on an in-band `Error` event whose kind is retryable, it re-invokes `bz` with the identical request — the assembler is deterministic from the step's recorded `commit`, so no request drift is possible — up to the attempt cap and backoff declared in `workflow.yaml` (§6). One attempt ≡ one API call *by construction*, so "API calls per model call" (§8) is derived, never stored: it is the number of attempt segments in `response.json`.
 
-**Response shape (non-streaming).** The response object is the Anthropic Messages-API wire shape (the body of a `POST /v1/messages` response at <https://docs.anthropic.com/en/api/messages>). Non-Anthropic adapters translate their provider's native response into this shape before writing it. Required top-level fields:
+**On-disk response shape: appended attempt segments.** The harness appends each attempt's stdout verbatim to the step's `response.json`. brazen guarantees every stream — success, refusal, or failure — ends with exactly one `{"type":"end"}` line, so the file is a sequence of self-delimiting **segments**, one per attempt, and the last segment is authoritative; earlier segments are the audit trail of failed attempts. Reading rules (shared by §3.5 classification, `await`, and replay tooling):
 
-- `id` (string) — opaque message id. Adapters backing providers that do not mint one MUST synthesize a stable value.
-- `model` (string) — the model that actually produced the response (may differ from the requested model if the provider routed).
-- `stop_reason` (string) — the Anthropic wire vocabulary for this field, round-tripped verbatim. Unknown values are accepted (forward-compat).
-- `content` (array of content blocks) — each block is `{"type": <str>, ...}`. Consumers at v0.1 handle the `text` block (`{"type":"text","text":<str>}`); other block types parse without error.
-- `usage` (object) — MUST include `input_tokens` (integer) and `output_tokens` (integer). Prompt-caching fields, when present, MUST use Anthropic's native names `cache_creation_input_tokens` and `cache_read_input_tokens`; adapters MUST NOT rename them (no `cache_write_tokens` / `cache_read_tokens`).
+- *in flight* — the file is open (no `IN_CLOSE_WRITE` yet).
+- *complete* — closed, last line `end`, last segment carries a `Finish` (any reason, including refusal) and no `Error`.
+- *failed* — closed, last line `end`, last segment carries an `Error` event (retry budget exhausted or non-retryable); the branch is flagged per §2.10.
+- *stopped/killed* — closed **without** a trailing `end` line: the writer died mid-stream (§2.9). Kill, crash, and explicit stop remain indistinguishable on disk and are treated identically.
 
-`api_calls` is NOT a field of the non-streaming response object: the harness treats one `complete` invocation as one model call regardless of how many HTTP calls the adapter made internally. (The streaming `message_stop` does carry `api_calls` — see below — because the harness cannot otherwise observe retry fan-out mid-stream.)
+**Errors.** brazen surfaces every failure in-band as an `Error` event on stdout and also sets a sysexits exit code computed from the same fact. The event is authoritative: the harness classifies from the parsed `CanonicalError` and treats the exit code as diagnostic. A `bz` process that dies without emitting a trailing `end` is the kill signature above — handled by §2.9/§2.10, never delivered to the model.
 
-Unknown top-level fields are accepted and ignored (forward-compat, mirroring `describe.schema_version`). The top-level `type` field is reserved: `"error"` signals the in-band error object (see **Errors** below); any other value is undefined and MUST NOT be produced. In particular, there is no `"type": "message"` wrapper — the response object itself is the message.
+**Cancellation.** brazen installs no signal handlers: SIGTERM kills `bz` at once (default disposition, exit 143), dropping the in-flight HTTP request; already-flushed NDJSON lines stay valid. The missing trailing `end` on the closed fd *is* the stop signature — no flush deadline, no cancel marker, determinism via absence of mechanism. (The 5-second SIGTERM→SIGKILL deadline remains the contract for *tools*, §3.3, which may need to flush real work.)
 
-**Response shape (streaming).** Event names (`text_delta`, `tool_use_delta`, etc.) are an adapter-contract shape, not Anthropic's wire streaming shape — adapters translate. The terminal `message_stop`:
+**Auth and endpoints.** Entirely brazen's: provider rows carry auth mode and endpoint; credentials live in brazen's 0600 credstore; interactive flows are `bz --login`, operator-run, never harness-run — the harness never prompts and never sees credential material. The v0.3 `auth_env`/`endpoint_env` forwarding machinery is retired with the rest of the bespoke contract.
 
-- `usage` — same object shape as non-streaming (Anthropic-native field names, including cache fields when present).
-- `api_calls` (integer, ≥1) — REQUIRED. Count of HTTP requests the adapter made under this `complete` invocation; accounts for retries and streaming reconnects.
+**Fit with disk-as-bus (§3.1).** Unchanged in shape: the adapter's stdin and stdout are pipes; the harness mirrors the assembled canonical request to the step's diagnostic `request.json` (one per step — attempts share the same assembled request) and appends events to `response.json`. Both remain outside every worktree and outside context assembly (§2.3); the terminal-line classification above reads only event framing from `response.json`'s tail — the same observation the frontend makes (§3.5). The pipes are the wire; the disk is the record.
 
-**Errors.** Adapters report errors in-band, not by exiting non-zero:
-
-- Non-streaming: the top-level JSON object is `{ "type": "error", "kind": "retryable" | "fatal", "http_status": <int|null>, "message": "…", "retry_after_seconds": <int|null> }`.
-- Streaming: the terminal event has the same shape with `"type": "error"`.
-
-Exit code 0 means the adapter produced a valid output (including a `type: error` object). Non-zero exit means the adapter itself crashed — the harness treats that as a harness-level fault, not a provider failure, and flags it for operator attention per §2.10. The adapter owns transient-error retry; the harness treats one `complete` invocation as one model call regardless of how many API calls the adapter makes under the hood.
-
-**Cancellation.** The harness sends SIGTERM on stop (§2.9). The adapter must drop any in-flight HTTP request, flush partial state — for streaming, emit a final `message_stop` or `error` event — and exit within 5 seconds. SIGKILL follows if it does not.
-
-**Auth.** Auth lives entirely inside the adapter. The harness forwards the env vars named in `describe.auth_env` into the subprocess environment; everything else — refresh tokens, keychain access, `aws-sso login`, Okta CLI flows — is the adapter's concern. The harness never handles credentials directly and never prompts.
-
-**Endpoint.** Endpoint URLs are opaque to the harness. The adapter declares one or more env var names in `describe.endpoint_env`; the harness sets each to the value of `providers.<name>.endpoint` (verbatim, no parsing) before invoking `complete`. An adapter that omits `endpoint_env` opts out of harness-set endpoints and uses its built-in default. Symmetric in shape with `auth_env`, but `auth_env` propagates values from the harness's environment whereas `endpoint_env` carries values from `providers.yaml` — neither requires the harness to interpret the URL.
-
-**Fit with disk-as-bus (§3.1).** The adapter's stdin and stdout are pipes; the harness mirrors both to the conv-repo-root step record at `<conv-repo>/steps/<conv-id>/<NNN>/{request.json, response.json}` (§2.3) — outside every worktree, not git-tracked. Both files are diagnostic / audit artifacts (§2.3 Diagnostic-only contract); the harness does not read them at runtime. Replay (§2.10) re-runs the context assembler (§5) against `meta.json`'s `commit` and re-invokes the adapter — it does not read the diagnostic files. The pipes are the wire; the disk is the record.
-
-**On-disk response shape: JSONL of stream events, always.** Regardless of whether the adapter ran in streaming or non-streaming mode on the wire, the harness writes `response.json` as a JSONL stream of §4.4 events — one event per line. Streaming-mode adapters: the harness appends each event line as the adapter emits it. Non-streaming-mode adapters: the harness wraps the single response object as a synthetic event sequence — `message_start` (with the response's `id`, `model`), one or more `content_block_start` / block-delta / `content_block_stop` triples derived from the response's `content` blocks, and a terminal `message_stop` (with the response's `usage` and `stop_reason`; `api_calls = 1`). The wire-side streaming/non-streaming distinction collapses on disk: every consumer of `response.json` (the frontend's tail at §3.5, replay tooling, audit) sees the same JSONL shape. End-of-stream is signaled by writer-closes-fd (§3.5 IN_CLOSE_WRITE).
-
-**Schema versioning.** `describe.schema_version` is the adapter's self-declared contract version. The harness keeps a minimum-supported-version constant. A `schema_version` below that is rejected at load. A `schema_version` above that is accepted optimistically — the harness ignores unknown fields. This is the same forward-compatibility discipline used for `providers.yaml` capabilities (§4.2).
+**Extensibility.** A new provider on a supported protocol is a brazen config row — no code anywhere. A new wire protocol or auth mode is a contribution to brazen. The escape hatch for a deployment that cannot ship through brazen is the `adapter:` override in `models.yaml` (§4.2): any binary honoring the same pipe contract — canonical request in, `v=1` events out, one `end` — slots in verbatim, with the in-band `MessageStart.v` handshake as its compatibility gate.
 
 ---
 
@@ -618,6 +579,15 @@ compaction:
   intermediate:
     trigger: every_n_commits   # or: every_t_seconds, on_flush
     n: 10
+
+retry:
+  max_attempts: 3              # attempt cap per model call (§2.10, §4.4)
+  backoff: exponential
+
+budgets:                       # v0.7 — spend limits (see "Budgets" below)
+  max_total_tokens: 2000000
+  max_wall_seconds: 3600
+  max_depth: 4
 ```
 
 Action strings that contain `: ` (named arguments) must be quoted, since YAML otherwise parses them as map entries. Bare actions (no named args) need no quotes.
@@ -625,6 +595,8 @@ Action strings that contain `: ` (named arguments) must be quoted, since YAML ot
 Actions are implemented in the harness; the workflow declares which run when. The `flush` action emitted by a running agent triggers an intermediate compaction without terminating the branch (§2.7). This is the primary surface for experimentation.
 
 Per-step hooks (`pre_step`, `post_step`, `on_tool_return`) fire on every branch and are the primary extension points for cross-cutting behavior — observability, budget enforcement, cache maintenance, scheduled intermediate compaction triggers. Their handlers typically dispatch subagents or emit log entries rather than modifying the in-flight branch's tree directly; any write still goes through the harness-assigned write-path machinery (§2.5).
+
+**Budgets (v0.7).** `budgets:` declares per-conversation spend limits: `max_total_tokens`, `max_wall_seconds`, `max_depth`. The harness checks them at every model-call boundary, before invoking the adapter. Spend is derived at check time from the `Usage` events already on disk in `response.json` across the conversation tree — no running counter is stored (`docs/PRINCIPLES.md` "Single source of truth"). A dispatch hands the child the minimum of the parent's remaining budget and the child's own declaration. Exhaustion is a harness-issued stop (§2.9) plus a `refs/lernie/budget-exhausted/<branch>` ref — the same git-native marking pattern as the conflicted ref (§2.6 step 6) — which `await(handle)` surfaces as `{status: budget_exhausted}`. Exhaustion is an ordinary terminal state, never a special transcript shape.
 
 **No resident interpreter.** Nothing parses `workflow.yaml` resident-style and drives the state machine from memory. The chain is driven by a single CLI subcommand, **`lernie advance <repo>`**: a fresh subprocess that reads the repo, evaluates workflow rules against on-disk state to determine the next workflow action, runs that action's procedures by exec'ing them per §3.4 (`lernie dispatch <role>`, `lernie merge`, etc.), and before exiting exec's another `lernie advance` to continue the chain. The currently-executing `lernie advance` subprocess *is* the interpreter while it runs — a baton passed forward by exec, not a daemon. The chain ends at a terminal action (final merge, stop, error); there is no watcher noticing completions, each step hands off by exec. Combined with disk-as-bus (§3.1), this keeps the system stateless across process boundaries: a crashed subprocess leaves nothing in memory to reconstruct, and the same `lernie advance` invocation re-enters the chain by reading the repo and running the next action — recovery is not a separate operation, it is the same operation as advancing. This is the concrete mechanism behind §1's Regenerability property.
 
@@ -663,7 +635,7 @@ Because every exchange (root conversation) is its own branch and nothing else to
 First-class metrics, written to commit trailers and event log. All counts are reported along three scope axes, which are not interchangeable:
 
 - Tokens per step, per conversation, per conversation repo.
-- Model calls per step (always 1), tool calls per step, API calls per model call.
+- Model calls per step (always 1), tool calls per step, attempts per model call (≡ API calls, §2.1; derived as the segment count of the step's `response.json`, §4.4 — never stored).
 - Cost per step, per conversation, per conversation repo.
 - Unmerged-subagent-branch count per conversation repo. This is a critical health metric: a ballooning count indicates silent failure somewhere in the merge pipeline. Subagent branches are those whose name contains a hyphen (root conversations live on `main`, §2.3); unmerged ones are enumerated by `git branch --list '*-*' --no-merged main | wc -l`. Root conversations are intentionally unmerged (§2.3 step 5) and are not counted here.
 - Step duration, tool call duration, compaction duration.
@@ -725,7 +697,7 @@ Every conversation repo declares its schema version in `<conv-repo>/version` (at
 
 Named explicitly so they are not rediscovered later:
 
-- Tool sandboxing and capability restriction.
+- Tool sandboxing and capability restriction — now a named milestone (v1.1, §12): a WASM/WASI capability clamp over the unchanged §3.3 stdio contract.
 - Multi-user and multi-tenant isolation.
 - Distributed execution across machines.
 - Secrets management beyond env var injection.
@@ -768,18 +740,28 @@ Phase 3 lands the `await` built-in tool — `lernie tool await`, input `{handle}
 
 **Success criterion:** Git tree view, live streaming, pulsing tool indicators, branch-state indicators. Watching the repo filesystem (§3.5) is the only read mechanism; user actions go out as `lernie <subcommand>` invocations.
 
-### v0.6 — Workflow config
+### v0.6 — brazen provider layer
 
-**Success criterion:** The `workflow.yaml` surface works. At least one non-baseline workflow variant (e.g., a verifier step) runs end-to-end without code changes.
+**Success criterion:** Every model call flows through `bz` (§4.4): the context assembler emits a typed brazen canonical request; `response.json` is JSONL of canonical `v=1` events in attempt segments; the harness owns retry (a forced-retry case produces two segments and correct classification); `await` and the UI classify from the `end`-terminal vocabulary; at least two providers (anthropic plus one other) work via brazen config rows with zero lernie code difference; `crates/lernie-provider-anthropic`, the `describe`/`complete` contract, and `auth_env`/`endpoint_env` forwarding are deleted; the load-time version-skew guard works.
 
-### v0.7 — Task suite
+This milestone folds in the `harness` repo design exploration (2026-07). Its keeper is the adapter boundary — brazen owns the one thing the harness must never know: which provider or model is on the wire. Its other keepers land as budgets (v0.7) and sandboxed tools (v1.1). Its transcript-as-JSONL reframe was rejected: lernie's git substrate is the single source of truth and strictly richer (refs, worktrees, merges) than an append-only transcript file.
+
+### v0.7 — Workflow config and budgets
+
+**Success criterion:** The `workflow.yaml` surface works. At least one non-baseline workflow variant (e.g., a verifier step) runs end-to-end without code changes. Budgets (§6) enforce at the model-call boundary: a conversation tree that exhausts `max_total_tokens` stops with a `refs/lernie/budget-exhausted/<branch>` ref and `await` surfaces `{status: budget_exhausted}`; a child dispatch inherits the clamped remainder.
+
+### v0.8 — Task suite
 
 **Success criterion:** 50 tasks with machine-checkable success criteria. Baseline harness achieves 40% ± 5% pass@1 on the suite (Wilson CI). Per-category failure tagging works.
 
-### v0.8 — Experiments and replay
+### v0.9 — Experiments and replay
 
 **Success criterion:** `agent-eval --config <experiment> --suite <suite> --runs N` produces per-task pass@1 and pass@5 with confidence intervals. Any run can be tarballed and replayed. Config changes (prompt edits) deployable without code changes in under 60 seconds end-to-end.
 
 ### v1.0
 
 **Success criterion:** All of the above, plus at least one demonstrated workflow variant that beats baseline on at least one failure category by a statistically significant margin on pass@1. This is the proof that the architecture's experimentation surface is actually useful.
+
+### v1.1 — Sandboxed tools
+
+**Success criterion:** A tool compiled to `wasm32-wasip2` runs under a wasmtime host with WASI clamped to the intersection of the tool's declared capability manifest and the role's grant (fs scopes, net hosts, exec, clock, env). The §3.3 stdio contract is unchanged — the sandbox is a hosting decision derived from the artifact kind (a WASM component vs a native executable), never a config field. A native binary requires the `exec` grant; the default grant set is empty; a tool asking beyond its grant fails at load, loudly, before any model call. The capability grammar must be small enough to audit at a glance — if a grant needs a comment, the grammar failed. (From the `harness` repo's spec §6 — its strongest differentiator, preserved.)

@@ -3,14 +3,12 @@ use crate::git_tree::{BranchState, ConversationBranch};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
-use std::sync::Mutex;
 use tempfile::tempdir;
 
-// Mirror cli_outbound's spawn discipline: serialize write+spawn pairs
-// so a posix_spawn in another thread can't inherit the write fd we're
-// about to exec, which on Linux returns ETXTBSY. cli_outbound has the
-// rationale in full.
-static SPAWN_LOCK: Mutex<()> = Mutex::new(());
+// Spawn discipline rationale and the binary-wide lock live in
+// crate::test_support — one static for every test module, because
+// per-module locks do not exclude each other's threads.
+use crate::test_support::SPAWN_LOCK;
 
 fn write_argv_recorder(dir: &Path, name: &str, log: &Path) -> PathBuf {
     let path = dir.join(name);

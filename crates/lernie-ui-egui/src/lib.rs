@@ -19,6 +19,22 @@ pub mod cli_outbound;
 pub mod fs_watcher;
 pub mod git_tree;
 
+/// Test-only spawn discipline shared by every test module in this binary.
+///
+/// Serializes script-write-then-spawn pairs across tests. Without this, a
+/// concurrent posix_spawn in another thread inherits the write fd held by
+/// fs::write in this thread; that fd is CLOEXEC but only closes once the
+/// peer's own exec completes. If this thread's exec on the script it just
+/// wrote lands while the peer child still holds the inherited write fd,
+/// Linux returns ETXTBSY. Holding one lock across write + spawn in every
+/// test eliminates the overlap window — it must be a single static for the
+/// whole binary: per-module locks do not exclude each other's threads.
+#[cfg(test)]
+pub(crate) mod test_support {
+    use std::sync::Mutex;
+    pub(crate) static SPAWN_LOCK: Mutex<()> = Mutex::new(());
+}
+
 use clap::Parser;
 use std::path::PathBuf;
 

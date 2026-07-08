@@ -7,14 +7,10 @@ use tempfile::tempdir;
 
 static ENV_LOCK: Mutex<()> = Mutex::new(());
 
-// Serializes script-write-then-spawn pairs across tests. Without this, a
-// concurrent posix_spawn in another thread inherits the write fd held by
-// fs::write in this thread; that fd is CLOEXEC but only closes once the
-// peer's own exec completes. If this thread's exec on the script it just
-// wrote lands while the peer child still holds the inherited write fd,
-// Linux returns ETXTBSY. Holding the lock across write + Cli::run in
-// every test eliminates the overlap window.
-static SPAWN_LOCK: Mutex<()> = Mutex::new(());
+// Spawn discipline rationale and the binary-wide lock live in
+// crate::test_support — one static for every test module, because
+// per-module locks do not exclude each other's threads.
+use crate::test_support::SPAWN_LOCK;
 
 fn write_script(dir: &Path, name: &str, body: &str) -> (PathBuf, MutexGuard<'static, ()>) {
     let guard = SPAWN_LOCK.lock().unwrap_or_else(|e| e.into_inner());

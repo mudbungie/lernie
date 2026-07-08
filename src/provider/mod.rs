@@ -11,5 +11,11 @@
 //! `lernie` crate carries no library dependency on any specific
 //! provider implementation. Config-file parsing for the provider
 //! concept lives in [`crate::config::providers`].
+//!
+//! [`segment`] classifies a closed `response.json`'s last attempt
+//! segment (§4.4) across both the legacy v0.3 and the brazen `v=1`
+//! event vocabularies — the single seam every framing reader shares
+//! through the v0.6 transition.
 
+pub mod segment;
 pub mod wire;

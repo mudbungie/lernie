@@ -29,6 +29,18 @@ const MESSAGE_STOP: &str = r#"{"type":"message_start"}
 {"type":"message_stop","api_calls":1}
 "#;
 
+// brazen v=1 fixtures (bl-507a dual vocabulary): terminal is `end`,
+// with `finish`/`error` carried inside the segment.
+const BRAZEN_ERROR: &str = r#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"error","kind":"transport","message":"reset"}
+{"type":"end"}
+"#;
+
+const BRAZEN_FINISH: &str = r#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"finish","reason":"stop"}
+{"type":"end"}
+"#;
+
 fn fixture_with_unmerged_sub() -> LiveRepo {
     let live = LiveRepo::new();
     live.run_git(&["checkout", "-b", "p1"]);
@@ -70,6 +82,39 @@ fn stopped_when_latest_response_ends_in_error_event() {
     );
     assert_eq!(payload["status"], "stopped");
     assert!(payload.get("summary").is_none());
+}
+
+#[test]
+fn stopped_when_latest_response_ends_in_brazen_error_segment() {
+    // brazen v=1 failed attempt: `end` terminal, `error` in the last
+    // segment → Failed → stopped (bl-507a).
+    let live = fixture_with_unmerged_sub();
+    live.write_response("p1-sub", 1, BRAZEN_ERROR);
+    let payload = run_stopped(
+        &live,
+        &StubPgidFinder::writer_present(),
+        &NoopSleeper::new(),
+    );
+    assert_eq!(payload["status"], "stopped");
+}
+
+#[test]
+fn brazen_finish_alone_keeps_loop_in_flight() {
+    // A brazen `finish`+`end` step (Complete) is not terminal for the
+    // subagent — the harness may still advance. Mirrors the legacy
+    // `message_stop` case; /proc is NOT consulted (bl-507a).
+    let live = fixture_with_unmerged_sub();
+    live.write_response("p1-sub", 1, BRAZEN_FINISH);
+    let sleeper = ConflictOnFirstSleep::new(&live, "p1-sub");
+    let finder = StubPgidFinder::writer_present();
+    assert_eq!(
+        run_stopped(&live, &finder, &sleeper)["status"],
+        "conflicted"
+    );
+    assert!(
+        finder.calls.borrow().is_empty(),
+        "a complete segment must not consult /proc"
+    );
 }
 
 #[test]

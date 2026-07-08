@@ -1,7 +1,8 @@
 +++
 title = "Budgets: per-conversation spend limits (v0.7 workflow scope)"
 created = 1783464230
-updated = 1783464230
+updated = 1783490465
+claimant = "Sandcastle-9e9b"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

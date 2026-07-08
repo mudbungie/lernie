@@ -3,6 +3,10 @@ title = "Design: front-door conversation messaging — queue model (any sender c
 created = 1783471203
 updated = 1783471203
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-a346"
+on = "close"
 +++
 Design task. Deliverable: tracked edits to docs/ARCHITECTURE.md (+ TAXONOMY.md entries), no code.
 

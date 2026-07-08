@@ -7,6 +7,10 @@ root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 [[blockers]]
 id = "bl-a346"
 on = "close"
+
+[[blockers]]
+id = "bl-5e34"
+on = "close"
 +++
 Design task. Deliverable: tracked edits to docs/ARCHITECTURE.md (+ TAXONOMY.md entries), no code.
 

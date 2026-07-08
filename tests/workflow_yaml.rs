@@ -2,7 +2,7 @@
 
 use lernie::config::action::{Action, DispatchMode};
 use lernie::config::error::LoadError;
-use lernie::config::workflow::{Backoff, CompactionTrigger, Event, RetryConfig, Workflow};
+use lernie::config::workflow::{Backoff, Budgets, CompactionTrigger, Event, RetryConfig, Workflow};
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
@@ -88,6 +88,39 @@ fn omitted_retry_block_uses_the_default() {
     assert_eq!(w.retry, RetryConfig::default());
     assert_eq!(w.retry.max_attempts, 3);
     assert_eq!(w.retry.backoff, Backoff::Exponential);
+}
+
+#[test]
+fn parses_explicit_budgets_block() {
+    // ARCH §6 budgets example: all three limits declared.
+    let f = write_yaml(
+        "events: {}\nbudgets:\n  max_total_tokens: 2000000\n  max_wall_seconds: 3600\n  max_depth: 4\n",
+    );
+    let w = Workflow::load(f.path()).unwrap();
+    assert_eq!(w.budgets.max_total_tokens, Some(2_000_000));
+    assert_eq!(w.budgets.max_wall_seconds, Some(3600));
+    assert_eq!(w.budgets.max_depth, Some(4));
+}
+
+#[test]
+fn omitted_budgets_block_is_all_unbounded() {
+    // No `budgets:` → Budgets::default (every axis None = unbounded).
+    let f = write_yaml("events:\n  user_message:\n    - merge\n");
+    let w = Workflow::load(f.path()).unwrap();
+    assert_eq!(w.budgets, Budgets::default());
+    assert!(w.budgets.max_total_tokens.is_none());
+    assert!(w.budgets.max_wall_seconds.is_none());
+    assert!(w.budgets.max_depth.is_none());
+}
+
+#[test]
+fn partial_budgets_leaves_the_other_axes_unbounded() {
+    // A single declared limit; the rest stay unbounded (§6).
+    let f = write_yaml("events: {}\nbudgets:\n  max_total_tokens: 500\n");
+    let w = Workflow::load(f.path()).unwrap();
+    assert_eq!(w.budgets.max_total_tokens, Some(500));
+    assert!(w.budgets.max_wall_seconds.is_none());
+    assert!(w.budgets.max_depth.is_none());
 }
 
 #[test]

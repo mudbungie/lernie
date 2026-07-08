@@ -1,3 +1,4 @@
+mod budget_enforcement;
 mod errors;
 mod errors_disk;
 mod errors_parse;

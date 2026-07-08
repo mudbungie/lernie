@@ -14,6 +14,7 @@
 //! - [`conflicted`]: `refs/lernie/conflicted/<handle>` ref present.
 //! - [`errors`]: every failure variant of [`super::Error`].
 
+mod budget_exhausted;
 mod conflicted;
 mod errors;
 mod fixtures;

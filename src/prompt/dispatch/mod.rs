@@ -31,10 +31,11 @@ mod tool_step;
 
 pub use model_call::{RealSleeper, Sleeper};
 
+use super::budget;
 use super::merge::rebase_and_merge;
 use super::step::{RESPONSE_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
-use crate::config::{Model, RetryConfig};
+use crate::config::{Budgets, Model, RetryConfig};
 use crate::template::ROOT_WORKTREE;
 use brazen::{Content, Message, Role};
 use model_call::ModelCall;
@@ -49,9 +50,11 @@ use tool_step::run_tool_calls;
 /// (ARCH §2.3).
 const TRUNK_BRANCH: &str = "main";
 
-/// Per-request `max_tokens` cap. Moves to manifest/budget config when
-/// that surface lands (v0.7); the row's brazen default still applies if
-/// a provider requires one.
+/// Per-request `max_tokens` output cap — one model call's output
+/// ceiling. Distinct from the §6 spend budgets ([`Budgets`]), which
+/// bound *cumulative* tokens across the conversation tree; this is a
+/// per-call limit. Moves to manifest config when that surface lands; the
+/// row's brazen default still applies if a provider requires one.
 const DEFAULT_MAX_TOKENS: u32 = 4096;
 
 /// Inputs resolved by [`super::run`] before branch work starts.
@@ -64,6 +67,9 @@ pub(super) struct Resolved<'a> {
     pub(super) binary: OsString,
     /// Harness-owned retry policy from `workflow.yaml` (§2.10, §6).
     pub(super) retry: RetryConfig,
+    /// Per-conversation spend limits from `workflow.yaml` (§6). Checked
+    /// at every model-call boundary before the adapter is invoked.
+    pub(super) budgets: Budgets,
     /// True under an `adapter:` override — the MessageStart.v handshake
     /// governs in place of the version guard (§4.4).
     pub(super) expect_handshake: bool,
@@ -102,6 +108,7 @@ pub(super) fn run_exchange(
     };
 
     let mut step_seq: u32 = 1;
+    let mut exhausted = false;
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
@@ -109,6 +116,26 @@ pub(super) fn run_exchange(
         }
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
+
+        // §6 budget check at the model-call boundary, before invoking the
+        // adapter. Spend/wall/depth are derived from disk across the
+        // branch and its descent — no stored counter (PRINCIPLES SSOT).
+        // On exhaustion the harness writes the git-native
+        // `refs/lernie/budget-exhausted/<branch>` marker and ceases the
+        // loop: an ordinary terminal state (§6), classified by `await`
+        // like any other. The root has no parent to clamp against, so its
+        // declared budget is its effective budget.
+        if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
+            eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
+            budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {
+                Error::Git {
+                    op: "budget-exhausted update-ref",
+                    source,
+                }
+            })?;
+            exhausted = true;
+            break;
+        }
 
         let request = model_call::build_request(
             &resolved.model.model_id,
@@ -157,23 +184,27 @@ pub(super) fn run_exchange(
         step_seq += 1;
     }
 
-    // Terminal compaction (§2.7) + merge-back (§2.6), both via the CLI
-    // control plane (§3.4).
-    deps.dispatcher
-        .dispatch("compactor", repo, &branch_name, None)
-        .map_err(|source| Error::DispatchFailed {
-            role: "compactor",
-            source,
-        })?;
+    // An exhausted conversation is terminal-by-exhaustion (§6, §2.9): it
+    // does not compact or merge back — it persists unmerged behind the
+    // budget-exhausted ref. Otherwise: terminal compaction (§2.7) +
+    // merge-back (§2.6), both via the CLI control plane (§3.4).
+    if !exhausted {
+        deps.dispatcher
+            .dispatch("compactor", repo, &branch_name, None)
+            .map_err(|source| Error::DispatchFailed {
+                role: "compactor",
+                source,
+            })?;
 
-    rebase_and_merge(
-        &primary_worktree,
-        TRUNK_BRANCH,
-        &primary_worktree,
-        &worktree_path,
-        &branch_name,
-        deps.git,
-    )?;
+        rebase_and_merge(
+            &primary_worktree,
+            TRUNK_BRANCH,
+            &primary_worktree,
+            &worktree_path,
+            &branch_name,
+            deps.git,
+        )?;
+    }
 
     Ok(branch_name)
 }

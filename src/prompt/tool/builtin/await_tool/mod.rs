@@ -23,6 +23,11 @@
 //! - `{"status":"conflicted"}` — the merge protocol wrote a
 //!   `refs/lernie/conflicted/<handle>` ref on rebase failure (§2.6
 //!   step 6).
+//! - `{"status":"budget_exhausted"}` — budget enforcement wrote a
+//!   `refs/lernie/budget-exhausted/<handle>` ref when the conversation
+//!   crossed a `workflow.yaml` spend limit (§6). An ordinary terminal
+//!   state, surfaced through the same git-native marker path as
+//!   `conflicted`.
 //!
 //! Single source of truth: every state read is via git refs or the
 //! conversation-repo's filesystem (`docs/PRINCIPLES.md`). No sidecar
@@ -71,6 +76,8 @@ enum Output<'a> {
     Stopped,
     #[serde(rename = "conflicted")]
     Conflicted,
+    #[serde(rename = "budget_exhausted")]
+    BudgetExhausted,
 }
 
 /// Every way [`run`] can fail. Per ARCH §3.3, stderr is concatenated
@@ -198,6 +205,7 @@ fn poll_until_terminal(
             state::State::Merged(s) => return Ok(state::Terminal::Merged(s)),
             state::State::Stopped => return Ok(state::Terminal::Stopped),
             state::State::Conflicted => return Ok(state::Terminal::Conflicted),
+            state::State::BudgetExhausted => return Ok(state::Terminal::BudgetExhausted),
             state::State::InFlight => sleeper.sleep(POLL_INTERVAL),
         }
     }

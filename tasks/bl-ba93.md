@@ -1,0 +1,8 @@
++++
+title = "tests gate: §2.11 writer/driver amendment bl-3eea"
+created = 1783490442
+updated = 1783490442
+parent = "bl-3eea"
+root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
++++
+Gate for bl-3eea. tests: workspace suite green, coverage 100%. docs: §2.11 edit internally consistent with §3.4/§6 and the v0.8 milestone. alignment: coherent with ARCHITECTURE/PRINCIPLES/TAXONOMY.

@@ -21,6 +21,21 @@ fn lernie_bin() -> &'static str {
     env!("CARGO_BIN_EXE_lernie")
 }
 
+/// Env vars that, when inherited, override `-C <repo>` and redirect a
+/// child `git` invocation back onto the outer repo (e.g. when this test
+/// runs under a git hook, which exports `GIT_DIR`/`GIT_INDEX_FILE` into
+/// the environment) — cleared on every spawn. Mirrors
+/// `lernie-ui-egui::git_tree::cmd::INHERITED_GIT_ENV`.
+const INHERITED_GIT_ENV: &[&str] = &[
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_PREFIX",
+    "GIT_COMMON_DIR",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+];
+
 const HAPPY_SSE: &str = concat!(
     "event: message_start\n",
     "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_r\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
@@ -190,7 +205,11 @@ fn retryable_529_then_clean_writes_two_segments_and_completes() {
 
     // The branch merged back to main (the retry recovered cleanly).
     let primary = dest.join("root");
-    let out = Command::new("git")
+    let mut cmd = Command::new("git");
+    for var in INHERITED_GIT_ENV {
+        cmd.env_remove(var);
+    }
+    let out = cmd
         .arg("-C")
         .arg(&primary)
         .args(["branch", "--list", "*-*", "--no-merged", "main"])

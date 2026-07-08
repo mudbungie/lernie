@@ -2,10 +2,10 @@
 //! frozen at conversation creation (ARCH §4.3).
 //!
 //! The conversation-repo file carries only the `roles:` section: which
-//! provider name and which model id each role dispatches to. Endpoint,
-//! auth, and model capabilities live in the global
-//! `<harness-root>/providers.yaml` and rotate independently (ARCH §4.1
-//! "Two-file config split").
+//! provider name and which model id each role dispatches to. Endpoint
+//! and auth resolve inside brazen at call time (never a harness file);
+//! model capabilities live in the global `<harness-root>/models.yaml`
+//! and rotate independently (ARCH §4.1).
 //!
 //! A legacy `providers:` or `models:` block (the v0.2 shape) is a hard
 //! load error: those sections belong to the global file only, and a
@@ -50,7 +50,7 @@ impl PerRepoProviders {
     /// [`crate::config::cross::check_roles_against_providers`].
     ///
     /// Hard-errors if the file carries legacy `providers:` or `models:`
-    /// blocks — those belong to the global `<harness-root>/providers.yaml`
+    /// blocks — those belong to the global `<harness-root>/models.yaml`
     /// only (ARCH §4.1).
     pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
@@ -71,7 +71,7 @@ impl PerRepoProviders {
                         key: (*legacy).to_string(),
                         message: format!(
                             "{legacy:?} block belongs in the global \
-                             <harness-root>/providers.yaml; the per-repo file must \
+                             <harness-root>/models.yaml; the per-repo file must \
                              only carry the 'roles:' section (ARCH §4.1)",
                         ),
                     });

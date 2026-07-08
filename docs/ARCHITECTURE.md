@@ -362,6 +362,8 @@ A standalone skill (no associated tool) exists to give an agent capability via p
 
 **Deferred to v0.4+ (see §11).** Oversized-output auto-dispatch — raw output handed to a parsing subagent, only the compacted result reaching the parent step — is not in v0.3. Oversized output reaches the agent unchanged.
 
+**Sandbox (v1.1, §3.6).** The v1.1 milestone wraps this contract in a capability sandbox derived from the artifact kind — a `wasm32-wasip2` component runs WASI-clamped, a native binary runs only under an `exec` grant. The stdin/stdout/exit protocol above is unchanged; the sandbox bounds *authority*, not *interface*. See §3.6.
+
 ### 3.4 CLI as control plane
 
 `lernie` is a single binary with subcommands. Every procedure the harness can start — subagent dispatch (§2.5), compaction (§2.7), verification, and any other workflow-invoked procedure (§6) — is reachable through a subcommand of that binary. The CLI is the sole entry point: a procedure invoking another procedure does so by going through the CLI dispatcher, never through in-process function calls, shared memory, or ad-hoc sockets. Subagent dispatch, the canonical case, is `lernie dispatch …`.
@@ -394,6 +396,52 @@ The frontend surface is exactly two things, and nothing else:
 Frontends hold no persistent state. Everything a frontend renders is derived from the filesystem at the current git ref; ephemeral UI state (cursor position, scroll offset, selection) lives in memory only and is discarded on exit. Restart is equivalent to re-reading the repo.
 
 This discipline is what makes pluggability structural rather than aspirational. Two frontends running against one repo cannot corrupt each other because neither writes repo state; both observe the same on-disk ground truth, and both issue commands through the same CLI surface the harness itself uses. Swapping a frontend out is unplugging one reader; adding a second is adding another reader.
+
+### 3.6 Sandboxed tools (v1.1)
+
+Forward spec for the v1.1 milestone (§12). The sandbox is a **hosting wrapper** around the §3.3 tool contract, not a change to it: an external tool artifact runs inside a bounded authority envelope while still speaking the identical stdin/stdout/exit protocol. Everything §3.3 says about how a tool is invoked and how its output is framed holds verbatim; §3.6 adds only *with what authority* the artifact runs. In-process built-ins (`lernie tool <name>`, §3.3) are subcommands of the trusted `lernie` binary — they *are* the harness, not guests, and run with its authority; the sandbox governs only **external** artifacts (the `lernie-tool-<name>` slot at `<harness-root>/tools/`). Shipping a tool in-process is the decision to place it in the trusted computing base.
+
+**Flavor is derived from the artifact, never configured.** The host reads the artifact's bytes and dispatches on format — there is no `sandbox:` field, no `native:` flag, nothing in `providers.yaml` selecting *how* a tool runs:
+
+- A **`wasm32-wasip2` component** (WebAssembly component-model preamble) runs under a wasmtime host with WASI (WebAssembly System Interface) clamped to the effective authority below.
+- A **native executable** (ELF or any host binary) is not a WASI guest and cannot be clamped; the only thing between it and the host is the `exec` capability. It runs *iff* the effective grant includes `exec` (below), with full host-process authority.
+
+The flavor being a property of the artifact — not of config — is the severability line (`docs/PRINCIPLES.md`): deleting the sandbox deletes no config field, because the choice was never a field. Removing a default deletes config, not code.
+
+**Manifest, grant, effective authority.** Two inputs meet on five axes — **fs** (filesystem scopes), **net** (egress hosts), **exec** (spawn a host process), **clock** (read wall-clock time), **env** (host environment variables):
+
+- The **capability manifest** is what a tool *declares it needs*. For a WASM component this is not a sidecar file — it is the component's own **WASI imports**, read from the artifact (a component that never imports `wasi:sockets` cannot open a socket; the manifest cannot be under-declared, because a non-imported interface has no host function to reach). Deriving the manifest from the imports is the single-source rule (`docs/PRINCIPLES.md` "Single source of truth"): a sidecar manifest could drift from the actual imports; the imports cannot drift from themselves.
+- The **capability grant** is what the **role** *permits* — a `grant:` block in the role's `providers.yaml` entry (§4.3), the ceiling for every tool the role may invoke. **Default: empty.** A role with no `grant:` runs tools with no authority at all, so only a pure-compute tool (empty manifest) loads.
+- The **effective authority** a tool runs with is the intersection **manifest ∩ grant** — never a third stored field, always computed at load. Because the load gate below guarantees manifest ⊆ grant, the intersection equals the manifest: a tool gets exactly what it imports, and the grant is the ceiling that must contain it, never a floor that dilates it.
+
+**Native is the `exec` grant.** A native artifact carries no WASI imports to clamp, so running it *is* spawning a host process with host authority — exactly the `exec` capability. A native tool therefore loads only under a role granting `exec`, and then runs unclamped. `exec` is the same axis a WASM component needs to spawn a subprocess of its own: one axis, one meaning — "may hold host-process authority." With the empty default, no native tool runs until a role explicitly grants `exec`; the wide-authority escape hatch is one legible, opt-in word.
+
+**A tool asking beyond its grant fails at load, loudly.** The load gate is **manifest ⊆ grant**, checked when the harness resolves a role's toolset — before any model call. A tool whose manifest names an axis, host, scope, or mode the grant does not cover is rejected with an error naming the tool and the offending axis; it is never silently clamped to a crippled subset that would fail mysteriously at runtime (`docs/PRINCIPLES.md` "Decline illegal operations": silent degradation is never preferable to a loud refusal). The check is total and static: a role's grant either contains a tool's needs, or the repo does not load.
+
+**The grant grammar.** The grant attaches to the §4.3 role block as one `grant:` map — five keys, no nesting beyond a flat list per axis, no per-tool escape hatch, no freeform field to validate:
+
+```yaml
+roles:
+  worker:
+    provider: anthropic
+    model: claude-sonnet-4-7
+    tools: [bash, read_file]
+    grant:                        # v1.1 — omitted means empty (no authority)
+      fs:  [rw:.]                 # <mode>:<subtree>, mode in {r, rw}, worktree-relative
+      net: [api.anthropic.com]    # exact egress hosts; no wildcards, no ports
+      exec: true                  # may spawn / be a host process
+      clock: true                 # may read wall-clock time
+      env:  [PATH, HOME]          # host env-var passthrough allowlist
+```
+
+Each axis is exactly as wide as its audit unit and no wider: **fs** scopes are `<mode>:<path>` with mode `r` or `rw` over disjoint worktree-relative subtrees (§5.1), so `rw:.` reads at a glance as "read-write the worktree, nothing above it" (granting a parent subsumes its children — do not list both); **net** is a list of exact hostnames — wildcards and port syntax are rejected, because a wildcard host defeats audit-at-a-glance; **exec** and **clock** are booleans, since a host process and a clock are each all-or-nothing; **env** is an allowlist of variable names (the harness-owned `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH`, §3.3, are the contract and always present — never part of the grant). The booleans-and-lists shape is not imposed; it is the natural granularity of each axis. If a grant needs a comment to be understood, the grammar has failed — the inline comments above annotate the *grammar* for this spec, not any real grant. The `grant:` block is the one new config knob the sandbox adds; it is the severability home for capability policy, and everything else the sandbox needs — the flavor, the manifest — is derived from the artifact.
+
+**Boundaries — what the clamp does not solve.** The clamp bounds a tool's *authority*, not the trustworthiness of its code:
+
+- **Supply-chain trust.** A malicious component granted `net: [evil.example]` will exfiltrate to `evil.example` — the host permits exactly the grant. The clamp is an authority bound, not a provenance check. The mitigation is the empty default plus the legible grant: authoring a grant is the operator vouching for the artifact, a decision made once and auditable at a glance. Artifact signing/provenance is out of scope (deferred, §11).
+- **Escalation via chained tools.** A tool with `exec` already holds host-process authority; anything it spawns is that grant working as designed, not an escalation — `exec` *is* the ceiling, which is why it is one explicit opt-in axis defaulting off. A tool without `exec` can spawn nothing. Cross-tool data-passing through the worktree is bounded by fs scopes and by single-author-per-file (§2.6): sibling tools cannot target the same file.
+- **Clock and env covert channels.** A granted `clock` permits timing side channels and a granted `env` var can carry data; both default off/empty, so the channel is closed unless a role opens it deliberately. The harness holds no provider credentials to leak (brazen owns them, §4.4), so an empty `env` grant exposes nothing sensitive by construction. The residual — that granting an axis grants its misuse — is the accepted cost of the grant, kept visible by the grammar.
+- **Resource exhaustion.** The grant bounds *where* a tool acts, not how much it spends. Wall-time is bounded by the SIGTERM deadline (§3.3) and by budgets (§6, `max_wall_seconds`); a disk/CPU quota beyond that is deferred (§11).
 
 ---
 
@@ -453,6 +501,8 @@ roles:
 Each role's system prompt is read from `<conv-repo>/souls/<role>.md` by convention — there is no per-role path override, and no freeform path field to validate. At dispatch time the harness copies the appropriate soul to the new branch's `soul.md` (§2.3 step 2). `provider:` names a brazen row; endpoint and auth resolve at call time inside brazen (§4.1) — the per-repo file carries only the (row-name, model-id) pointer, cross-validated against `<harness-root>/models.yaml` at load.
 
 The optional `tools:` field selects which tools the role's agent can call (see §3.3). Omitted or empty means none. The compactor's toolset (`write_summary`, `mark_for_deletion`) is built into the compactor primitive (§2.7), not declared here.
+
+**(v1.1)** A `grant:` block may sit beside `tools:` in the role entry, declaring the capability ceiling — fs/net/exec/clock/env — for every tool the role invokes. Omitted means empty (no authority). The grammar and its manifest-intersect-grant semantics are §3.6; the grant is the one new config knob the sandbox adds, and it is the severability home for capability policy (removing it deletes config, not code).
 
 ### 4.4 The provider adapter: brazen
 
@@ -707,7 +757,8 @@ Every conversation repo declares its schema version in `<conv-repo>/version` (at
 
 Named explicitly so they are not rediscovered later:
 
-- Tool sandboxing and capability restriction — now a named milestone (v1.1, §12): a WASM/WASI capability clamp over the unchanged §3.3 stdio contract.
+- Tool sandboxing and capability restriction — now a named milestone (v1.1, §12) with its spec at §3.6: a WASM/WASI capability clamp over the unchanged §3.3 stdio contract.
+- Tool artifact provenance and signing — the v1.1 sandbox (§3.6) bounds a tool's *authority*, not the trustworthiness of its bytes; verifying artifact origin is deferred.
 - Multi-user and multi-tenant isolation.
 - Distributed execution across machines.
 - Secrets management beyond env var injection.
@@ -774,4 +825,4 @@ This milestone folds in the `harness` repo design exploration (2026-07). Its kee
 
 ### v1.1 — Sandboxed tools
 
-**Success criterion:** A tool compiled to `wasm32-wasip2` runs under a wasmtime host with WASI clamped to the intersection of the tool's declared capability manifest and the role's grant (fs scopes, net hosts, exec, clock, env). The §3.3 stdio contract is unchanged — the sandbox is a hosting decision derived from the artifact kind (a WASM component vs a native executable), never a config field. A native binary requires the `exec` grant; the default grant set is empty; a tool asking beyond its grant fails at load, loudly, before any model call. The capability grammar must be small enough to audit at a glance — if a grant needs a comment, the grammar failed. (From the `harness` repo's spec §6 — its strongest differentiator, preserved.)
+**Success criterion:** A tool compiled to `wasm32-wasip2` runs under a wasmtime host with WASI clamped to the intersection of the tool's declared capability manifest and the role's grant (fs scopes, net hosts, exec, clock, env). The §3.3 stdio contract is unchanged — the sandbox is a hosting decision derived from the artifact kind (a WASM component vs a native executable), never a config field. A native binary requires the `exec` grant; the default grant set is empty; a tool asking beyond its grant fails at load, loudly, before any model call. The capability grammar must be small enough to audit at a glance — if a grant needs a comment, the grammar failed. Full spec: §3.6 (grammar, artifact-kind derivation, manifest-intersect-grant, boundaries). (From the `harness` repo's spec §6 — its strongest differentiator, preserved.)

@@ -15,3 +15,12 @@ events:
 retry:
   max_attempts: 3
   backoff: exponential
+
+# Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked at
+# every model-call boundary before the adapter is invoked; spend, wall,
+# and depth are derived from disk each check — no stored counter. Omit a
+# limit (or the whole block) to leave that axis unbounded.
+budgets:
+  max_total_tokens: 2000000
+  max_wall_seconds: 3600
+  max_depth: 4

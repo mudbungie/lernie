@@ -23,6 +23,7 @@
 //! effects.
 
 pub mod adapter;
+pub mod budget;
 pub mod clock;
 pub mod compactor;
 pub mod dispatch;
@@ -45,7 +46,7 @@ pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 pub use worker::WorkerRequest;
 
-use crate::config::{ModelsConfig, RetryConfig, Workflow};
+use crate::config::{Budgets, ModelsConfig, RetryConfig, Workflow};
 use crate::template::GitRunner;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -175,7 +176,7 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
         check_bz_version(deps.adapter, &binary)?;
     }
 
-    let retry = load_retry(repo)?;
+    let (retry, budgets) = load_workflow_policy(repo)?;
 
     let soul_path = repo.join(SOULS_DIR).join(format!("{WORKER_ROLE}.md"));
     let soul = std::fs::read_to_string(&soul_path).map_err(|source| Error::SoulRead {
@@ -189,15 +190,18 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
         soul,
         binary,
         retry,
+        budgets,
         expect_handshake,
     };
     dispatch::run_exchange(repo, user_message, &resolved, deps)
 }
 
-/// Load the harness-owned retry policy from `workflow.yaml` (§6, §2.10).
-fn load_retry(repo: &Path) -> Result<RetryConfig, Error> {
+/// Load the harness-owned retry policy and the per-conversation budgets
+/// from `workflow.yaml` (§6; retry §2.10, budgets §6). Parsed together
+/// from the one frozen copy so the file is read once.
+fn load_workflow_policy(repo: &Path) -> Result<(RetryConfig, Budgets), Error> {
     let workflow = Workflow::load(&repo.join(WORKFLOW_FILE))?;
-    Ok(workflow.retry)
+    Ok((workflow.retry, workflow.budgets))
 }
 
 /// Load-time version guard (§4.4): `bz --version` must report the exact

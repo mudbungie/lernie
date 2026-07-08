@@ -24,6 +24,39 @@ pub struct Workflow {
     /// default`].
     #[serde(default)]
     pub retry: RetryConfig,
+    /// Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked
+    /// at every model-call boundary before invoking the adapter; every
+    /// value is derived at check time from on-disk `Usage` events, step
+    /// timestamps, and branch depth — the harness stores no running
+    /// counter (PRINCIPLES "Single source of truth"). Omitted → every
+    /// limit unbounded.
+    #[serde(default)]
+    pub budgets: Budgets,
+}
+
+/// Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each
+/// limit is optional; an omitted limit is unbounded. All three are
+/// derived at check time — never stored — and a dispatch clamps a child
+/// to `min(parent remaining, child declaration)` per axis (ARCH §6).
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+pub struct Budgets {
+    /// Cap on tokens summed across *every* attempt segment of every
+    /// step's `response.json` in the conversation tree — failed and
+    /// superseded attempts are billed too (ARCH §6/§8; the
+    /// last-segment-authoritative rule governs *context*, not billing).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_total_tokens: Option<u64>,
+    /// Cap on wall-clock seconds summed per step from `meta.json`'s
+    /// `started_at`→`ended_at`; each span already includes the backoff
+    /// sleeps between that step's attempts (ARCH §6 "wall is wall",
+    /// §2.10).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_wall_seconds: Option<u64>,
+    /// Cap on the conversation's dispatch depth (root = 0; each dispatch
+    /// is one deeper). A conversation deeper than this exhausts on its
+    /// first model call (ARCH §6).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_depth: Option<u32>,
 }
 
 /// Harness-owned retry policy (ARCH §6 `retry:` block). One `bz`

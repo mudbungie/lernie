@@ -12,6 +12,9 @@
 //! - [`State::Conflicted`]: the merge protocol wrote
 //!   `refs/lernie/conflicted/<handle>` on rebase failure (ARCH §2.6
 //!   step 6 — harness defect surface).
+//! - [`State::BudgetExhausted`]: the budget enforcement wrote
+//!   `refs/lernie/budget-exhausted/<handle>` when the conversation crossed
+//!   a `workflow.yaml` limit (ARCH §6 — same git-native marking pattern).
 //! - [`State::Stopped`]: a terminal on-disk signature, evaluated ONLY
 //!   once the writer has closed the `response.json` fd (§3.5, §4.4 "Fd
 //!   held open for the whole model call"). Two signatures both surface
@@ -37,6 +40,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use super::Error;
+use crate::prompt::budget::BUDGET_EXHAUSTED_REF_PREFIX;
 use crate::prompt::stop::PgidFinder;
 use crate::provider::segment::{self, Outcome};
 use crate::template::GitRunner;
@@ -60,6 +64,7 @@ pub(super) enum State {
     Merged(String),
     Stopped,
     Conflicted,
+    BudgetExhausted,
     InFlight,
 }
 
@@ -71,6 +76,7 @@ pub(super) enum Terminal {
     Merged(String),
     Stopped,
     Conflicted,
+    BudgetExhausted,
 }
 
 impl Terminal {
@@ -81,6 +87,7 @@ impl Terminal {
             },
             Self::Stopped => super::Output::Stopped,
             Self::Conflicted => super::Output::Conflicted,
+            Self::BudgetExhausted => super::Output::BudgetExhausted,
         }
     }
 }
@@ -100,6 +107,14 @@ pub(super) fn check(
 ) -> Result<State, Error> {
     if conflicted_ref_exists(git_dir, handle, git)? {
         return Ok(State::Conflicted);
+    }
+    // Budget exhaustion (§6) is a git-native marker like the conflicted
+    // ref, checked before the response-based classification: an exhausted
+    // branch's latest `response.json` closed cleanly on the last step it
+    // *did* take (the loop stopped before the next model call), so it
+    // would otherwise read `complete`/`in_flight`, never terminal.
+    if budget_exhausted_ref_exists(git_dir, handle, git)? {
+        return Ok(State::BudgetExhausted);
     }
     if is_merged(git_dir, parent, handle, git)? {
         let summary = latest_summary(git_dir, handle, git)?;
@@ -146,6 +161,24 @@ pub(super) fn check(
 /// capture is the existence test.
 fn conflicted_ref_exists(git_dir: &Path, handle: &str, git: &dyn GitRunner) -> Result<bool, Error> {
     let ref_name = format!("{CONFLICTED_REF_PREFIX}{handle}");
+    let out = git
+        .run_capture(git_dir, &["for-each-ref", &ref_name])
+        .map_err(|source| Error::Git {
+            op: "for-each-ref",
+            source,
+        })?;
+    Ok(!out.trim().is_empty())
+}
+
+/// The budget-exhausted marker (`refs/lernie/budget-exhausted/<handle>`,
+/// ARCH §6) — same git-native existence test as the conflicted ref: a
+/// non-empty `for-each-ref` capture means the ref is present.
+fn budget_exhausted_ref_exists(
+    git_dir: &Path,
+    handle: &str,
+    git: &dyn GitRunner,
+) -> Result<bool, Error> {
+    let ref_name = format!("{BUDGET_EXHAUSTED_REF_PREFIX}{handle}");
     let out = git
         .run_capture(git_dir, &["for-each-ref", &ref_name])
         .map_err(|source| Error::Git {

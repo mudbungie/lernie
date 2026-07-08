@@ -309,6 +309,14 @@ Constrains generation to a provided JSON Schema, giving guaranteed-parseable out
 - **Capability** — overloaded: (1) informal marketing umbrella; (2) MCP protocol-level feature flags negotiated at init (tools, resources, prompts, sampling, roots); (3) Anthropic's framing of what Skills grant. "Servers that support tools MUST declare the tools capability." — MCP Spec [spec] — https://modelcontextprotocol.io/specification/2025-11-25/server/tools
 - **Plugin** — in 2026, overwhelmingly refers to Claude Code plugins (an installable bundle of skills, sub-agents, slash commands, hooks, MCP servers), not OpenAI's deprecated 2023 ChatGPT Plugins. "Plugins extend Claude Code with skills, agents, hooks, and MCP servers." — Claude Code docs [vendor doc] — https://code.claude.com/docs/en/discover-plugins
 
+### Capability grant (lernie-specific coinage)
+lernie coins **capability grant** (or **grant**) and **capability manifest** as paired terms of art for its v1.1 tool sandbox (`docs/ARCHITECTURE.md` §3.6), distinct from the three field senses of "capability" above:
+- **Capability manifest** — the set of host capabilities a tool artifact *declares it needs*, across five axes (fs scopes, net hosts, exec, clock, env). For a `wasm32-wasip2` component it is not a sidecar file but the component's own **WASI imports**, read from the artifact; a non-imported interface has no host function to reach, so the manifest cannot be under-declared.
+- **Capability grant** — the ceiling a **role** *permits*, a flat `grant:` block in the role's `providers.yaml` entry (`docs/ARCHITECTURE.md` §4.3, §3.6). Default empty.
+- **Effective authority** = manifest ∩ grant, computed at load, gated by manifest ⊆ grant (a tool asking beyond its grant fails at load, loudly).
+
+This is neither the MCP "capability" (a protocol feature flag negotiated at init, §4 above) nor the marketing "Skills grant capability" sense. lernie's grant is a host-authority envelope enforced by the wasmtime/WASI host; its manifest is derived from the artifact, never declared in config — the config carries only the grant.
+
 ### Model Context Protocol (MCP)
 Introduced by Anthropic in late 2024 and now the lingua franca for tool integration; defines a **client–host–server** architecture over JSON Remote Procedure Call 2.0 (JSON-RPC 2.0). The official spec: **"MCP follows a client-host-server architecture where each host can run multiple client instances."**
 

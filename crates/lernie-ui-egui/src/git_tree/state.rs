@@ -10,11 +10,20 @@
 //!   the writer is still appending, or the response file is absent
 //!   pre-first-event.
 //! - [`BranchState::Stopped`] when the last JSONL line is a §4.4
-//!   terminal event (`message_stop` or `error`). Per ARCH §2.9 (post
-//!   bl-de6b amendment), kill / crash / explicit user stop are
-//!   indistinguishable on disk; for root conversations (which do not
-//!   merge back per §2.3 step 5) `Stopped` is the natural terminal
-//!   state regardless of how the chain ended.
+//!   terminal event. Per ARCH §2.9 (post bl-de6b amendment), kill /
+//!   crash / explicit user stop are indistinguishable on disk; for root
+//!   conversations (which do not merge back per §2.3 step 5) `Stopped`
+//!   is the natural terminal state regardless of how the chain ended. A
+//!   *complete* and a *failed* step both settle here (§3.5 — a failed
+//!   step renders as stopped with the error surfaced); the badge does
+//!   not split them, so this classifier only asks "is there a terminal
+//!   line?".
+//!
+//! **Dual vocabulary (v0.6 transition, bl-507a).** A terminal line is
+//! recognized in either vocabulary: the legacy v0.3 `message_stop` /
+//! `error`, or brazen's `v=1` terminator `{"type":"end"}` (§4.4). The
+//! follow-on ball (bl-56ee) drops the legacy tokens; until then both are
+//! accepted so the writer swap merges green.
 //!
 //! [`BranchState::Merged`] and [`BranchState::Conflicted`] are part of
 //! the type for renderer completeness but are not produced by this
@@ -69,11 +78,10 @@ pub(super) fn classify_unmerged(conv_repo: &Path, conv_id: &str) -> BranchState 
     }
 }
 
-/// Last completed JSONL line is a §4.4 terminal event (`message_stop`
-/// or `error`). Mid-write tolerance: a trailing line with no `\n` yet is
-/// dropped (the writer is still appending it), and only the most recent
-/// fully-terminated line is examined — mirroring the streaming
-/// accumulator's stance.
+/// Last completed JSONL line is a §4.4 terminal event. Mid-write
+/// tolerance: a trailing line with no `\n` yet is dropped (the writer is
+/// still appending it), and only the most recent fully-terminated line
+/// is examined — mirroring the streaming accumulator's stance.
 fn has_terminal_event(bytes: &[u8]) -> bool {
     // Trim a trailing partial line: drop everything after the last `\n`.
     // A buffer ending in `\n` is left intact; one ending mid-line is
@@ -92,9 +100,12 @@ fn has_terminal_event(bytes: &[u8]) -> bool {
     let Ok(value): Result<serde_json::Value, _> = serde_json::from_slice(line) else {
         return false;
     };
+    // Dual-vocabulary terminal set (bl-507a): brazen's `v=1` terminator
+    // is `end`; the legacy `message_stop` / `error` tokens are the seam
+    // bl-56ee deletes once the writer emits only brazen events.
     matches!(
         value.get("type").and_then(|v| v.as_str()),
-        Some("message_stop") | Some("error")
+        Some("end") | Some("message_stop") | Some("error")
     )
 }
 
@@ -125,6 +136,26 @@ mod tests {
 {"type":"error","kind":"fatal","message":"boom"}
 "#;
         assert!(has_terminal_event(jsonl));
+    }
+
+    #[test]
+    fn last_line_brazen_end_is_terminal() {
+        // brazen v=1 terminator (bl-507a dual vocabulary).
+        let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"content_delta","index":0,"delta":{"text_delta":"hi"}}
+{"type":"finish","reason":"stop"}
+{"type":"end"}
+"#;
+        assert!(has_terminal_event(jsonl));
+    }
+
+    #[test]
+    fn last_line_brazen_content_delta_is_not_terminal() {
+        // brazen stream killed mid-append: no trailing `end`.
+        let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"content_delta","index":0,"delta":{"text_delta":"par"}}
+"#;
+        assert!(!has_terminal_event(jsonl));
     }
 
     #[test]
@@ -217,6 +248,25 @@ mod tests {
         write(
             &path,
             b"{\"type\":\"error\",\"kind\":\"fatal\",\"message\":\"x\"}\n",
+        );
+        assert_eq!(classify_unmerged(dir.path(), conv), BranchState::Stopped);
+    }
+
+    #[test]
+    fn classify_returns_stopped_on_brazen_end() {
+        // brazen v=1 terminal drives the same Stopped classification as
+        // the legacy tokens (bl-507a dual vocabulary).
+        let dir = tempdir().unwrap();
+        let conv = "20260427T140000Z-bzen";
+        let path = dir
+            .path()
+            .join(STEPS_DIR)
+            .join(conv)
+            .join("001")
+            .join(RESPONSE_FILE);
+        write(
+            &path,
+            b"{\"type\":\"finish\",\"reason\":\"stop\"}\n{\"type\":\"end\"}\n",
         );
         assert_eq!(classify_unmerged(dir.path(), conv), BranchState::Stopped);
     }

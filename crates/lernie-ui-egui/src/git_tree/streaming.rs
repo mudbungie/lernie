@@ -8,10 +8,16 @@
 //! `text_delta` events into the displayed text.
 //!
 //! Functions here are pure over an on-disk `<conv-repo>/steps/` tree.
-//! The only event we need to look at for text rendering is `text_delta`
-//! (§4.4); other events (`message_start`, `tool_use_delta`, etc.) are
-//! ignored at this layer — pulsing tool indicators (bl-23d9) and
+//! The only events we look at for text rendering are the text deltas
+//! (§4.4); other events (`message_start`, tool-argument deltas, etc.)
+//! are ignored at this layer — pulsing tool indicators (bl-23d9) and
 //! branch-state badges (bl-de6b) read their own signals.
+//!
+//! **Dual vocabulary (v0.6 transition, bl-507a).** Text fragments are
+//! read in either vocabulary: the legacy v0.3 `text_delta` event or
+//! brazen's `v=1` `content_delta` carrying a `text_delta` `Delta`
+//! (§4.4). The follow-on ball (bl-56ee) drops the legacy arm; until then
+//! both are accepted so the writer swap keeps live text rendering.
 
 use std::path::Path;
 
@@ -73,10 +79,10 @@ pub(super) fn latest_step_dir(conv_steps: &Path) -> Option<std::path::PathBuf> {
 }
 
 /// Fold a JSONL `response.json` payload into accumulated text. Each
-/// line is a §4.4 stream event; we collect `text_delta.text` in stream
+/// line is a §4.4 stream event; we collect text fragments in stream
 /// order across all block indices. Lines that fail to parse, or events
-/// of other types, are skipped — partial-write tolerance is structural
-/// (the harness may be mid-line on disk).
+/// that carry no display text, are skipped — partial-write tolerance is
+/// structural (the harness may be mid-line on disk).
 fn accumulate_text_deltas(bytes: &[u8]) -> Option<String> {
     let mut text = String::new();
     for line in bytes.split(|&b| b == b'\n') {
@@ -86,14 +92,28 @@ fn accumulate_text_deltas(bytes: &[u8]) -> Option<String> {
         let Ok(value): Result<serde_json::Value, _> = serde_json::from_slice(line) else {
             continue;
         };
-        if value.get("type").and_then(|v| v.as_str()) != Some("text_delta") {
-            continue;
-        }
-        if let Some(delta) = value.get("text").and_then(|v| v.as_str()) {
-            text.push_str(delta);
+        if let Some(fragment) = text_fragment(&value) {
+            text.push_str(fragment);
         }
     }
     if text.is_empty() { None } else { Some(text) }
+}
+
+/// The dual-vocabulary text seam (bl-507a). Legacy v0.3:
+/// `{"type":"text_delta","text":"…"}`. brazen v=1:
+/// `{"type":"content_delta","delta":{"text_delta":"…"}}` — the text arm
+/// of the externally-tagged `Delta`; a `json_delta` (tool arguments) or
+/// `thinking_delta` carries no display text and yields `None`. The
+/// follow-on ball (bl-56ee) deletes the legacy arm.
+fn text_fragment(value: &serde_json::Value) -> Option<&str> {
+    match value.get("type").and_then(|v| v.as_str())? {
+        "text_delta" => value.get("text").and_then(|v| v.as_str()),
+        "content_delta" => value
+            .get("delta")
+            .and_then(|d| d.get("text_delta"))
+            .and_then(|v| v.as_str()),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -119,6 +139,30 @@ mod tests {
             accumulate_text_deltas(jsonl).as_deref(),
             Some("hello world")
         );
+    }
+
+    #[test]
+    fn accumulates_brazen_content_delta_text() {
+        // brazen v=1: text rides `content_delta.delta.text_delta`
+        // (bl-507a dual vocabulary).
+        let jsonl = br#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"content_start","index":0,"kind":{"text":{}}}
+{"type":"content_delta","index":0,"delta":{"text_delta":"Hel"}}
+{"type":"content_delta","index":0,"delta":{"text_delta":"lo"}}
+{"type":"finish","reason":"stop"}
+{"type":"end"}
+"#;
+        assert_eq!(accumulate_text_deltas(jsonl).as_deref(), Some("Hello"));
+    }
+
+    #[test]
+    fn ignores_brazen_non_text_deltas() {
+        // Tool-argument (`json_delta`) and `thinking_delta` fragments
+        // carry no display text.
+        let jsonl = br#"{"type":"content_delta","index":1,"delta":{"json_delta":"{\"a\":"}}
+{"type":"content_delta","index":0,"delta":{"thinking_delta":"hmm"}}
+"#;
+        assert!(accumulate_text_deltas(jsonl).is_none());
     }
 
     #[test]

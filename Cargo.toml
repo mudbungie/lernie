@@ -9,6 +9,7 @@ description = "A git-backed agent harness"
 license = "MIT"
 
 [dependencies]
+brazen = "=0.0.2"
 clap = { version = "4", features = ["derive"] }
 include_dir = "0.7"
 libc = "0.2"

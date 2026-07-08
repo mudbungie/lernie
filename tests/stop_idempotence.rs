@@ -5,7 +5,7 @@ mod stop_common;
 
 use std::fs;
 use std::process::{Command, Stdio};
-use stop_common::{git_command, git_run, lernie_bin, scaffold_repo, write_global_providers};
+use stop_common::{git_command, git_run, lernie_bin, scaffold_repo, write_global_models};
 use tempfile::TempDir;
 
 #[test]
@@ -13,7 +13,7 @@ fn stop_on_branch_with_no_live_writer_is_idempotent_success() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, "https://example.invalid");
+    write_global_models(&harness);
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
     let primary = dest.join("root");
@@ -57,7 +57,7 @@ fn stop_on_missing_branch_errors() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, "https://example.invalid");
+    write_global_models(&harness);
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
 
@@ -81,7 +81,7 @@ fn stop_on_merged_branch_errors() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, "https://example.invalid");
+    write_global_models(&harness);
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
     let primary = dest.join("root");

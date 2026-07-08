@@ -1,7 +1,7 @@
 //! Kill-mid-stream stopped tests (ARCH §2.9, §3.5). The on-disk
-//! signature: latest step's `response.json` has bytes but no
-//! `message_stop`/`error` terminal line, AND no process holds the
-//! fd open — the kernel closed it on harness exit. Detected by the
+//! signature: latest step's `response.json` has bytes but no trailing
+//! brazen `end` terminal line, AND no process holds the fd open — the
+//! kernel closed it on harness exit. Detected by the
 //! [`crate::prompt::stop::PgidFinder`] /proc-fd scan that backs
 //! `lernie stop`'s pid discovery (single source of truth — same
 //! observation the §3.5 in_flight classification reads).
@@ -16,8 +16,8 @@ use super::super::*;
 use super::fixtures::{LiveRepo, NoopSleeper, StubPgidFinder, env, input_for};
 use std::io::Cursor;
 
-const PARTIAL_STREAM: &str = r#"{"type":"message_start"}
-{"type":"content_block_delta","delta":{"text":"partial"}}
+const PARTIAL_STREAM: &str = r#"{"type":"message_start","v":1,"role":"assistant"}
+{"type":"content_delta","index":0,"delta":{"text_delta":"partial"}}
 "#;
 
 fn fixture_with_unmerged_sub() -> LiveRepo {

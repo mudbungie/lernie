@@ -77,11 +77,14 @@ fn unrelated_conflicted_ref_does_not_match_handle() {
     live.branch_and_commit("p1", "p1-other", "m2.txt");
     live.run_git(&["checkout", "p1"]);
     live.run_git(&["update-ref", "refs/lernie/conflicted/p1-other", "p1-other"]);
+    // p1-sub's own latest response is a failed attempt (error + terminal
+    // `end`) with the fd closed (no writer) → the failure has settled.
     live.write_response(
         "p1-sub",
         1,
-        r#"{"type":"error","kind":"fatal","message":"x"}
-"#,
+        "{\"type\":\"message_start\",\"v\":1,\"role\":\"assistant\"}\n\
+         {\"type\":\"error\",\"kind\":\"transport\",\"message\":\"x\"}\n\
+         {\"type\":\"end\"}\n",
     );
 
     let mut stdin = Cursor::new(input_for("p1-sub"));
@@ -92,12 +95,12 @@ fn unrelated_conflicted_ref_does_not_match_handle() {
         &mut stdout,
         &env_stub,
         &live.git,
-        &StubPgidFinder::writer_present(),
+        &StubPgidFinder::no_writer(),
         &NoopSleeper::new(),
     )
     .unwrap();
     // p1-sub is not the conflicted one; its own latest response.json
-    // ended in error → stopped.
+    // ended in a failed attempt with the fd closed → stopped.
     let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(payload["status"], "stopped");
 }

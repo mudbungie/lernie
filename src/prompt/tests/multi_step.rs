@@ -1,52 +1,66 @@
-//! v0.3 ball #3 (with v0.3.1 layout): multi-step exchange-loop
-//! tests. Drives the loop through [`StubToolExecutor`] to assert
-//! §2.5 pairing, per-step on-disk shape, and the `stop_reason !=
-//! "tool_use"` termination rule.
+//! Multi-step exchange-loop tests. Drives the loop through
+//! [`StubToolExecutor`] to assert §2.5 pairing, per-step on-disk shape,
+//! and the `Finish{!ToolUse}` termination rule over brazen `v=1` events.
 
 use super::fixtures::*;
 use crate::prompt::run;
-use serde_json::json;
+use brazen::FinishReason;
+use serde_json::{Value, json};
 
-/// Streaming-mode response body (JSONL of §4.4 events) with `content`
-/// = `blocks` and `stop_reason` = `stop`.
-fn response_body(stop: &str, blocks: serde_json::Value) -> Vec<u8> {
-    streaming_response(stop, &blocks)
+fn tool_use_stream(id: &str, name: &str, cmd_key: &str, cmd_val: &str) -> Vec<u8> {
+    stream_of(
+        FinishReason::ToolUse,
+        &[Block::ToolUse {
+            id,
+            name,
+            input: json!({ cmd_key: cmd_val }),
+        }],
+    )
 }
 
-fn tool_use_bash_ls() -> serde_json::Value {
-    json!([{"type":"tool_use","id":"toolu_01","name":"bash","input":{"cmd":"ls"}}])
+fn final_stream() -> Vec<u8> {
+    stream_of(FinishReason::Stop, &[Block::Text("done")])
 }
 
-fn final_text() -> serde_json::Value {
-    json!([{"type":"text","text":"done"}])
+fn last_line_type(bytes: &[u8]) -> String {
+    let lines = parse_jsonl(bytes);
+    lines.last().unwrap()["type"].as_str().unwrap().to_string()
+}
+
+fn finish_reason(bytes: &[u8]) -> String {
+    parse_jsonl(bytes)
+        .into_iter()
+        .find(|e| e["type"] == "finish")
+        .unwrap()["reason"]
+        .as_str()
+        .unwrap()
+        .to_string()
 }
 
 #[test]
-fn loop_runs_two_steps_when_first_response_is_tool_use() {
-    // Step 1 returns tool_use → loop runs the executor stub, builds
-    // step 2's request with the tool_result, calls the model again;
-    // step 2 returns end_turn → loop terminates and the compactor +
-    // merge-back fires once.
+fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
-    let r1 = response_body("tool_use", tool_use_bash_ls());
-    let r2 = response_body("end_turn", final_text());
+    let r1 = tool_use_stream("toolu_01", "bash", "cmd", "ls");
+    let r2 = final_stream();
     let adapter = StubAdapter::scripted([
-        StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
+        StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&r1),
         StubAdapter::reply_ok(&r2),
     ]);
     let git = StubGit::ok();
-    let clock = FixedClock::default();
-    let id = FixedIdGen;
-    let dispatcher = StubDispatcher::ok();
-    let tool_executor = StubToolExecutor::with_reply("bash", "files: a b");
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (
+        StubSleeper::default(),
+        StubToolExecutor::with_reply("bash", "files: a b"),
+    );
 
     let branch = run(
         repo.path(),
         "list files",
         &valid_deps(
             &adapter,
+            &sleeper,
             &git,
             &clock,
             &id,
@@ -59,33 +73,29 @@ fn loop_runs_two_steps_when_first_response_is_tool_use() {
     assert_eq!(branch, "ct-1-deadbeef");
     let worktree = repo.path().join("ct-1-deadbeef");
 
-    // Executor saw exactly one call in step 1 with the emitted
-    // tool_use's id/name/input. The step_dir end-segment carries the
-    // step seq AND lives at the conv-repo root, outside any
-    // worktree (§2.2 / §2.3).
+    // Executor saw one call in step 1 with the emitted tool_use.
     let tool_calls = tool_executor.calls.borrow().clone();
     assert_eq!(tool_calls.len(), 1);
-    let (step_dir, id, name, input) = &tool_calls[0];
+    let (step_dir, tid, name, input) = &tool_calls[0];
     assert_eq!(step_dir, &repo.path().join("steps/ct-1-deadbeef/001"));
     assert_eq!(
-        (id.as_str(), name.as_str(), &input["cmd"]),
-        ("toolu_01", "bash", &serde_json::json!("ls"))
+        (tid.as_str(), name.as_str(), &input["cmd"]),
+        ("toolu_01", "bash", &json!("ls"))
     );
 
-    // Step records live at the conv-repo root (§2.2). Step 1 request:
-    // bare user string. Step 2 request: §2.5 pairing — assistant
-    // tool_use + user tool_result.
-    assert!(
-        !worktree.join("steps").exists(),
-        "step records must not land inside any worktree (§2.2)"
-    );
+    assert!(!worktree.join("steps").exists());
     let step1_dir = repo.path().join("steps/ct-1-deadbeef/001");
     let step2_dir = repo.path().join("steps/ct-1-deadbeef/002");
-    let req1: serde_json::Value =
+
+    // Step 1 request: one user message, bare text (a `Content::Text`).
+    let req1: Value =
         serde_json::from_slice(&std::fs::read(step1_dir.join("request.json")).unwrap()).unwrap();
     assert_eq!(req1["messages"].as_array().unwrap().len(), 1);
-    assert_eq!(req1["messages"][0]["content"], "list files");
-    let req2: serde_json::Value =
+    assert_eq!(req1["messages"][0]["content"][0]["text"], "list files");
+
+    // Step 2 request: §2.5 pairing — assistant tool_use + user
+    // tool_result (whose content is a canonical `Content` array).
+    let req2: Value =
         serde_json::from_slice(&std::fs::read(step2_dir.join("request.json")).unwrap()).unwrap();
     let msgs = req2["messages"].as_array().unwrap();
     assert_eq!(msgs.len(), 3);
@@ -93,66 +103,51 @@ fn loop_runs_two_steps_when_first_response_is_tool_use() {
     assert_eq!(msgs[1]["content"][0]["id"], "toolu_01");
     assert_eq!(msgs[2]["role"], "user");
     assert_eq!(msgs[2]["content"][0]["tool_use_id"], "toolu_01");
-    assert_eq!(msgs[2]["content"][0]["content"], "files: a b");
+    assert_eq!(msgs[2]["content"][0]["content"][0]["text"], "files: a b");
 
-    // Step 2 has no dispatch artifact — goal/soul live on the branch
-    // tip from step 1 (§2.10 — step ≥2 has no pre-call commit).
     assert!(worktree.join("goal.md").exists());
-    // response.json is JSONL of §4.4 stream events (P3). The terminal
-    // line is `message_stop` with `stop_reason=end_turn` for step 2.
-    let resp2_lines = parse_jsonl(&std::fs::read(step2_dir.join("response.json")).unwrap());
-    let stop = resp2_lines.last().unwrap();
-    assert_eq!(stop["type"], "message_stop");
-    assert_eq!(stop["stop_reason"], "end_turn");
+    // Step 2's response terminal is brazen's `end`; the finish reason
+    // is `stop`.
+    let resp2 = std::fs::read(step2_dir.join("response.json")).unwrap();
+    assert_eq!(last_line_type(&resp2), "end");
+    assert_eq!(finish_reason(&resp2), "stop");
     assert_eq!(dispatcher.calls.borrow().len(), 1);
 
-    // Git op log: 3 (step 1: worktree add + dispatch add + commit) +
-    // 2 (rev-parse per step, 2 steps) + 6 (merge-back) = 11. No
-    // per-step request/response commits, no per-tool-call commits —
-    // step records are diagnostic-only and live outside every
-    // worktree (§2.3, §3.3 amended).
+    // Git op log unchanged by the data-plane swap (the version guard
+    // runs no git): 4 (step 1 setup + rev-parse) + 1 (step 2 rev-parse)
+    // + 6 (merge-back) = 11.
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 11);
-    // Step 1 ops: worktree add (0), dispatch add goal+soul (1),
-    // dispatch commit (2), rev-parse for step 1's meta (3).
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[2].1[2].contains("step 001: dispatch"));
     assert_eq!(runs[3].1, vec!["rev-parse", "HEAD"]);
-    // Step 2: only rev-parse (no dispatch commit).
     assert_eq!(runs[4].1, vec!["rev-parse", "HEAD"]);
-    // 5..11 are merge-back.
     assert_eq!(runs[5].1, vec!["rebase", "main"]);
 }
 
 #[test]
-fn loop_runs_three_steps_when_two_responses_in_a_row_are_tool_use() {
-    // Step 1: tool_use; Step 2: tool_use; Step 3: end_turn. Verifies
-    // the loop continues iterating, each new request rolls in the
-    // prior assistant + tool_result, and the step seq lands on 003.
+fn loop_runs_three_steps_when_two_completions_in_a_row_are_tool_use() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
-    let tool_use_2 =
-        json!([{"type":"tool_use","id":"toolu_02","name":"bash","input":{"cmd":"pwd"}}]);
-    let r1 = response_body("tool_use", tool_use_bash_ls());
-    let r2 = response_body("tool_use", tool_use_2);
-    let r3 = response_body("end_turn", final_text());
+    let r1 = tool_use_stream("toolu_01", "bash", "cmd", "ls");
+    let r2 = tool_use_stream("toolu_02", "bash", "cmd", "pwd");
+    let r3 = final_stream();
     let adapter = StubAdapter::scripted([
-        StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
+        StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&r1),
         StubAdapter::reply_ok(&r2),
         StubAdapter::reply_ok(&r3),
     ]);
     let git = StubGit::ok();
-    let clock = FixedClock::default();
-    let id = FixedIdGen;
-    let dispatcher = StubDispatcher::ok();
-    let tool_executor = StubToolExecutor::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
         repo.path(),
         "go",
         &valid_deps(
             &adapter,
+            &sleeper,
             &git,
             &clock,
             &id,
@@ -163,14 +158,12 @@ fn loop_runs_three_steps_when_two_responses_in_a_row_are_tool_use() {
     )
     .unwrap();
 
-    // Step records sit at the conv-repo root (§2.2 / §2.3).
     let step3_resp = repo.path().join("steps/ct-1-deadbeef/003/response.json");
     assert!(step3_resp.exists());
     assert!(!repo.path().join("steps/ct-1-deadbeef/004").exists());
 
     let calls = tool_executor.calls.borrow().clone();
     assert_eq!(calls.len(), 2);
-    // Step seq is encoded in the per-call step_dir tail.
     assert!(calls[0].0.ends_with("steps/ct-1-deadbeef/001"));
     assert!(calls[1].0.ends_with("steps/ct-1-deadbeef/002"));
     assert_eq!(calls[0].1, "toolu_01");
@@ -179,32 +172,38 @@ fn loop_runs_three_steps_when_two_responses_in_a_row_are_tool_use() {
 
 #[test]
 fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
-    // One step, two tool_use blocks → two executor calls in the
-    // emitted order, two tool_result blocks on the next user message.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
-    let two_tool_use = json!([
-        {"type":"tool_use","id":"toolu_a","name":"bash","input":{"cmd":"ls"}},
-        {"type":"tool_use","id":"toolu_b","name":"read_file","input":{"path":"/x"}}
-    ]);
-    let r1 = response_body("tool_use", two_tool_use);
-    let r2 = response_body("end_turn", final_text());
+    let two_tool_use = stream_of(
+        FinishReason::ToolUse,
+        &[
+            Block::ToolUse {
+                id: "toolu_a",
+                name: "bash",
+                input: json!({"cmd": "ls"}),
+            },
+            Block::ToolUse {
+                id: "toolu_b",
+                name: "read_file",
+                input: json!({"path": "/x"}),
+            },
+        ],
+    );
     let adapter = StubAdapter::scripted([
-        StubAdapter::reply_ok(STUB_DESCRIBE_JSON.as_bytes()),
-        StubAdapter::reply_ok(&r1),
-        StubAdapter::reply_ok(&r2),
+        StubAdapter::reply_ok(&version_line()),
+        StubAdapter::reply_ok(&two_tool_use),
+        StubAdapter::reply_ok(&final_stream()),
     ]);
     let git = StubGit::ok();
-    let clock = FixedClock::default();
-    let id = FixedIdGen;
-    let dispatcher = StubDispatcher::ok();
-    let tool_executor = StubToolExecutor::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
         repo.path(),
         "do two things",
         &valid_deps(
             &adapter,
+            &sleeper,
             &git,
             &clock,
             &id,
@@ -221,7 +220,7 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
     assert_eq!(pair(&calls[0]), ("toolu_a".into(), "bash".into()));
     assert_eq!(pair(&calls[1]), ("toolu_b".into(), "read_file".into()));
 
-    let req2: serde_json::Value = serde_json::from_slice(
+    let req2: Value = serde_json::from_slice(
         &std::fs::read(repo.path().join("steps/ct-1-deadbeef/002/request.json")).unwrap(),
     )
     .unwrap();
@@ -231,5 +230,5 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
     assert_eq!(user_blocks[1]["tool_use_id"], "toolu_b");
 }
 
-// Loop-termination cases (max_tokens stop_reason; tool-executor
-// failure) live in [`super::multi_step_terminal`].
+// Loop-termination cases (tool-executor failure) live in
+// [`super::multi_step_terminal`].

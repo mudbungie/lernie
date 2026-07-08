@@ -1,24 +1,16 @@
-//! v0.3.1 P3 stream-shape error paths for [`crate::prompt::run`].
+//! Stream-shape error paths for [`crate::prompt::run`] over brazen
+//! `v=1` events (ARCH §4.4 / §3.5).
 //!
-//! Pins the streaming-wire decisions in `docs/ARCHITECTURE.md` §4.4
-//! "Response shape (streaming)" / §3.5 (writer-closes-fd completion):
-//! malformed JSONL surfaces as [`Error::AdapterJson`]; assembler
-//! contract violations (half-stream, missing stop_reason, malformed
-//! tool input) surface as either an [`Error::AdapterError`] synthesized
-//! by the harness or `AdapterJson` for the parse failure.
-//!
-//! Lives in its own file so the original [`super::errors`] stays under
-//! the repo's per-file line cap; the cases here are spec-anchored to
-//! the §4.4 streaming surface specifically.
+//! Malformed JSONL surfaces as [`Error::AdapterJson`]; a stream with no
+//! trailing `end` (killed mid-stream) surfaces as
+//! [`Error::AdapterHalfStream`]; a tool_use block whose `json_delta`
+//! buffer is not valid JSON surfaces as `AdapterJson`.
 
 use super::fixtures::*;
 use crate::prompt::Error;
 
 #[test]
-fn run_surfaces_malformed_complete_jsonl_line() {
-    // A complete-side line that isn't valid JSON surfaces as
-    // AdapterJson — the streaming wire is JSONL, one event per line,
-    // so a parse failure on any line is a contract violation.
+fn run_surfaces_malformed_jsonl_line() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(b"{ not json\n");
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
@@ -26,67 +18,30 @@ fn run_surfaces_malformed_complete_jsonl_line() {
 }
 
 #[test]
-fn run_surfaces_event_missing_required_type_tag() {
-    // A JSONL line that is valid JSON but does not tag itself as a
-    // known §4.4 event type fails StreamEvent deserialization and
-    // surfaces as AdapterJson.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(b"{\"unexpected\":\"shape\"}\n");
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::AdapterJson(_)));
-}
-
-#[test]
-fn run_surfaces_half_stream_with_synthetic_fatal_message() {
-    // Adapter exits without writing any terminal event — the
-    // assembler's HalfStream surfaces as a synthesized fatal
-    // AdapterError so a half-stream is never silently dropped.
+fn run_surfaces_half_stream_as_adapter_half_stream() {
+    // The model call produced no trailing `end` (empty stream here) —
+    // the writer died mid-stream (§2.9).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(b"");
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    match err {
-        Error::AdapterError {
-            kind,
-            message,
-            http_status,
-        } => {
-            assert_eq!(kind, "fatal");
-            assert!(message.contains("stream ended without message_stop"));
-            assert_eq!(http_status, None);
-        }
-        other => panic!("expected AdapterError, got {other:?}"),
-    }
+    assert!(matches!(err, Error::AdapterHalfStream));
 }
 
 #[test]
-fn run_surfaces_message_stop_missing_stop_reason() {
-    // §4.4 requires a stop_reason on message_stop (or earlier); a
-    // stop event with none surfaces as a synthetic fatal.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let body = b"{\"type\":\"message_stop\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1},\"api_calls\":1}\n";
-    let adapter = StubAdapter::happy(body);
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    match err {
-        Error::AdapterError { kind, message, .. } => {
-            assert_eq!(kind, "fatal");
-            assert!(message.contains("missing stop_reason"));
-        }
-        other => panic!("expected AdapterError, got {other:?}"),
-    }
-}
-
-#[test]
-fn run_surfaces_invalid_tool_input_partial_json() {
-    // A tool_use stream whose accumulated `partial_json` is not valid
-    // JSON surfaces as AdapterJson — the harness can't construct the
-    // next step's tool_use input from a malformed payload.
+fn run_surfaces_invalid_tool_input_json_delta() {
+    // A tool_use block whose accumulated `json_delta` is malformed —
+    // the harness cannot build the next step's tool input.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let body = concat!(
-        r#"{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"t1","name":"bash","input":{}}}"#,
+        r#"{"type":"message_start","v":1,"role":"assistant"}"#,
         "\n",
-        r#"{"type":"tool_use_delta","index":0,"partial_json":"{ not json"}"#,
+        r#"{"type":"content_start","index":0,"kind":{"tool_use":{"id":"t1","name":"bash"}}}"#,
         "\n",
-        r#"{"type":"message_stop","stop_reason":"tool_use","usage":{"input_tokens":1,"output_tokens":1},"api_calls":1}"#,
+        r#"{"type":"content_delta","index":0,"delta":{"json_delta":"{ not json"}}"#,
+        "\n",
+        r#"{"type":"finish","reason":"tool_use"}"#,
+        "\n",
+        r#"{"type":"end"}"#,
         "\n",
     );
     let adapter = StubAdapter::happy(body.as_bytes());
@@ -95,36 +50,40 @@ fn run_surfaces_invalid_tool_input_partial_json() {
 }
 
 #[test]
-fn run_short_circuits_subsequent_lines_after_first_parse_error() {
-    // After the first malformed JSONL line, later lines still write
-    // through to response.json (faithful diagnostic record) but the
-    // assembler is no longer fed — the first parse error is the one
-    // surfaced.
+fn run_short_circuits_after_first_parse_error() {
+    // After the first malformed line, later lines still tee to
+    // response.json but the assembler stops being fed — the first parse
+    // error is the surfaced one.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let body = b"{ not json\n{\"type\":\"message_stop\",\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1},\"api_calls\":1}\n";
-    let adapter = StubAdapter::happy(body);
+    let body = concat!(
+        "{ not json\n",
+        r#"{"type":"finish","reason":"stop"}"#,
+        "\n",
+        r#"{"type":"end"}"#,
+        "\n",
+    );
+    let adapter = StubAdapter::happy(body.as_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)));
 }
 
 #[test]
-fn run_writes_post_terminal_lines_to_disk_without_re_feeding_assembler() {
-    // A buggy adapter that emits stray events after message_stop must
-    // not break the run: the harness appends them to response.json
-    // (faithful diagnostic record) but skips feeding the (already
-    // terminal) assembler. The conversation completes normally.
+fn run_tolerates_post_terminal_stray_lines() {
+    // A buggy adapter emitting events after `end` must not break the
+    // run: they tee to disk but the (already terminal) assembler
+    // ignores them.
     let body = concat!(
-        r#"{"type":"message_start","message":{"id":"m","model":"x","usage":{"input_tokens":1,"output_tokens":0}}}"#,
+        r#"{"type":"message_start","v":1,"role":"assistant"}"#,
         "\n",
-        r#"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}"#,
+        r#"{"type":"content_start","index":0,"kind":{"text":{}}}"#,
         "\n",
-        r#"{"type":"text_delta","index":0,"text":"hi"}"#,
+        r#"{"type":"content_delta","index":0,"delta":{"text_delta":"hi"}}"#,
         "\n",
-        r#"{"type":"content_block_stop","index":0}"#,
+        r#"{"type":"finish","reason":"stop"}"#,
         "\n",
-        r#"{"type":"message_stop","stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":1},"api_calls":1}"#,
+        r#"{"type":"end"}"#,
         "\n",
-        r#"{"type":"text_delta","index":0,"text":"stray post-terminal"}"#,
+        r#"{"type":"content_delta","index":0,"delta":{"text_delta":"stray"}}"#,
         "\n",
     );
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));

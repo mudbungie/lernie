@@ -1,0 +1,200 @@
+//! Forced-retry integration (ARCH §12 v0.6 criterion, §2.10, §4.4).
+//!
+//! Drives real `lernie prompt` → real `bz` against a mock endpoint that
+//! returns HTTP 529 (overloaded) on the first hit and a clean Anthropic
+//! SSE stream on the second. Asserts the harness-owned retry loop
+//! re-invoked `bz`: `response.json` carries exactly TWO attempt segments
+//! (§4.4), the first an in-band `error` with provider status 529 whose
+//! `CanonicalError::retryable()` drove the retry, and the last segment
+//! classifies complete. A raw sequencing TCP server is used (httpmock
+//! cannot vary a response by hit count within one subprocess run).
+
+use std::fs;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::path::Path;
+use std::process::{Command, Stdio};
+use std::thread;
+use tempfile::TempDir;
+
+fn lernie_bin() -> &'static str {
+    env!("CARGO_BIN_EXE_lernie")
+}
+
+const HAPPY_SSE: &str = concat!(
+    "event: message_start\n",
+    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_r\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
+    "event: content_block_start\n",
+    "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+    "event: content_block_delta\n",
+    "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"pong\"}}\n\n",
+    "event: content_block_stop\n",
+    "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+    "event: message_delta\n",
+    "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\"},\"usage\":{\"output_tokens\":1}}\n\n",
+    "event: message_stop\n",
+    "data: {\"type\":\"message_stop\"}\n\n",
+);
+
+const OVERLOADED_529: &str =
+    r#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"#;
+
+/// Serve a scripted `(status, content_type, body)` list, one per
+/// incoming connection (one `bz` attempt = one process = one
+/// connection). Returns the base URL.
+fn spawn_seq_server(responses: Vec<(u16, &'static str, String)>) -> String {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    thread::spawn(move || {
+        for (status, ctype, body) in responses {
+            let (mut stream, _) = listener.accept().expect("accept");
+            drain_http_request(&mut stream);
+            let resp = format!(
+                "HTTP/1.1 {status} STATUS\r\ncontent-type: {ctype}\r\n\
+                 content-length: {}\r\nconnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            stream.write_all(resp.as_bytes()).expect("write response");
+            stream.flush().expect("flush");
+        }
+    });
+    format!("http://127.0.0.1:{port}")
+}
+
+/// Read one chunk of `bz`'s HTTP request off the socket. `bz` writes its
+/// (small) request in full before reading the response, and the socket
+/// send buffer holds it, so a single best-effort read is enough to let
+/// its write complete before we reply. Branch-free by construction.
+fn drain_http_request(stream: &mut TcpStream) {
+    let mut tmp = [0u8; 8192];
+    let _ = stream.read(&mut tmp);
+}
+
+fn write_global_models(harness: &Path) {
+    fs::write(
+        harness.join("models.yaml"),
+        "\
+models:
+  claude-sonnet-4-7:
+    provider: test
+    model_id: claude-sonnet-4-7
+    capabilities: [tool_use_native]
+    context_window: 200000
+  claude-haiku-4-5:
+    provider: test
+    model_id: claude-haiku-4-5
+    capabilities: [tool_use_native]
+    context_window: 200000
+",
+    )
+    .unwrap();
+}
+
+fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
+    let toml = format!(
+        "timeout_connect = 5\ntimeout_response = 10\ntimeout_idle = 10\n\
+         [[provider]]\nname = \"test\"\nbase_url = \"{endpoint}\"\n\
+         protocol = \"anthropic_messages\"\nauth = \"none\"\n\
+         body_defaults = {{ max_tokens = 64 }}\n"
+    );
+    let path = dir.join("brazen.toml");
+    fs::write(&path, toml).unwrap();
+    path
+}
+
+fn scaffold(dest: &Path, harness: &Path) {
+    let out = Command::new(lernie_bin())
+        .arg("new")
+        .arg(dest)
+        .env("LERNIE_HOME", harness)
+        .output()
+        .expect("spawn lernie new");
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    fs::write(
+        dest.join("providers.yaml"),
+        "\
+roles:
+  worker:
+    provider: test
+    model: claude-sonnet-4-7
+  compactor:
+    provider: test
+    model: claude-haiku-4-5
+",
+    )
+    .unwrap();
+}
+
+#[test]
+fn retryable_529_then_clean_writes_two_segments_and_completes() {
+    let endpoint = spawn_seq_server(vec![
+        (529, "application/json", OVERLOADED_529.to_string()),
+        (200, "text/event-stream", HAPPY_SSE.to_string()),
+    ]);
+
+    let holder = TempDir::new().unwrap();
+    let harness = holder.path().join("harness");
+    fs::create_dir_all(&harness).unwrap();
+    write_global_models(&harness);
+    let brazen_config = write_brazen_config(holder.path(), &endpoint);
+    let dest = holder.path().join("conv");
+    scaffold(&dest, &harness);
+
+    let out = Command::new(lernie_bin())
+        .arg("prompt")
+        .arg(&dest)
+        .arg("ping")
+        .env("LERNIE_HOME", &harness)
+        .env("BRAZEN_CONFIG", &brazen_config)
+        .stderr(Stdio::piped())
+        .output()
+        .expect("spawn lernie prompt");
+    assert!(
+        out.status.success(),
+        "lernie prompt: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let conv_id = String::from_utf8(out.stdout).unwrap().trim().to_string();
+
+    let response = fs::read(dest.join(format!("steps/{conv_id}/001/response.json"))).unwrap();
+    let lines: Vec<serde_json::Value> = response
+        .split(|b| *b == b'\n')
+        .filter(|l| !l.is_empty())
+        .map(|l| serde_json::from_slice(l).expect("valid JSON line"))
+        .collect();
+
+    // Exactly TWO attempt segments (two terminal `end` lines).
+    let ends = lines.iter().filter(|e| e["type"] == "end").count();
+    assert_eq!(ends, 2, "expected two attempt segments, got {lines:#?}");
+
+    // Segment 1 carries the retryable 529 that drove the retry.
+    let err = lines
+        .iter()
+        .find(|e| e["type"] == "error")
+        .expect("first segment carries an error");
+    assert_eq!(err["kind"]["provider"]["status"], 529);
+
+    // The last segment completed: a `finish` then the terminal `end`,
+    // with the recovered text.
+    assert_eq!(lines.last().unwrap()["type"], "end");
+    assert!(lines.iter().any(|e| e["type"] == "finish"));
+    assert!(
+        lines
+            .iter()
+            .any(|e| e["type"] == "content_delta" && e["delta"]["text_delta"] == "pong")
+    );
+
+    // The branch merged back to main (the retry recovered cleanly).
+    let primary = dest.join("root");
+    let out = Command::new("git")
+        .arg("-C")
+        .arg(&primary)
+        .args(["branch", "--list", "*-*", "--no-merged", "main"])
+        .output()
+        .unwrap();
+    assert!(String::from_utf8_lossy(&out.stdout).trim().is_empty());
+}

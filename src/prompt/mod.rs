@@ -1,28 +1,25 @@
-//! `lernie prompt` — v0.3 root-conversation backend.
+//! `lernie prompt` — root-conversation backend (ARCH §2.3).
 //!
-//! v0.3 realizes ARCH §2.3's branch invariant for the root-conversation
-//! (user-message) case: each prompt spawns a `<conv-id>` branch off
-//! `main` (no `ex/` prefix — the hyphenated descent in the name is
-//! self-describing per §2.3), commits a snapshot (§2.10) before the
-//! model call, lands the response as a follow-up commit, dispatches the
-//! terminal compactor off the tip (§2.7), and `--no-ff` merges the
-//! compacted branch back to `main` (§2.6). Main advances by one merge
-//! commit per `lernie prompt`.
+//! Each prompt spawns a `<conv-id>` branch off `main`, commits the
+//! dispatch snapshot (§2.10), drives the step loop through brazen's `bz`
+//! (§4.4), lands each step's response as attempt segments, dispatches
+//! the terminal compactor off the tip (§2.7), and `--no-ff` merges the
+//! branch back to `main` (§2.6).
 //!
-//! Provider plumbing follows ARCH §4.4 strictly: `describe` runs once
-//! per invocation to pick up the adapter's `endpoint_env` list, then
-//! each named env var is set to `providers.<name>.endpoint` before
-//! `complete`. The harness never reads or interprets the URL.
-//!
-//! Configuration follows the v0.3 layout (ARCH §2.2, §4.1, §4.3): the
-//! per-repo `<conv-repo>/providers.yaml` carries the role → (provider,
-//! model) mapping; the global `<harness-root>/providers.yaml` carries
-//! endpoints, auth, and model capabilities. Souls live at
-//! `<conv-repo>/souls/<role>.md` (§4.3 — no per-role path override).
+//! Provider plumbing follows ARCH §4.4: every model call execs `bz`
+//! (`bz --json --provider <row>`, canonical request on stdin, `v=1`
+//! events on stdout) once per attempt, with the harness owning the retry
+//! loop (§2.10). Auth and endpoints are entirely brazen's; the harness
+//! references a provider *row* by name and never sees credential
+//! material (§4.1). Config: the global `<harness-root>/models.yaml`
+//! carries capabilities / context windows / the optional `adapter:`
+//! override (§4.2); the per-repo `<conv-repo>/providers.yaml` carries
+//! the role → (provider row, model, tools) mapping (§4.3). Retry policy
+//! (attempt cap + backoff) is `workflow.yaml`'s (§6).
 //!
 //! [`run`] is orchestrated against injected [`AdapterRunner`],
-//! [`GitRunner`], [`Clock`], and [`IdGen`] so every branch of the
-//! flow is exercisable without a live provider or on-disk side
+//! [`Sleeper`], [`GitRunner`], [`Clock`], and [`IdGen`] so every branch
+//! of the flow is exercisable without a live provider or on-disk side
 //! effects.
 
 pub mod adapter;
@@ -43,41 +40,50 @@ mod tests;
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
+pub use dispatch::{RealSleeper, Sleeper};
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 pub use worker::WorkerRequest;
 
-use crate::config::ProvidersConfig;
+use crate::config::{ModelsConfig, RetryConfig, Workflow};
 use crate::template::GitRunner;
-use serde_json::Value;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 /// Role name resolved from per-repo `providers.yaml` (`roles:` block,
-/// ARCH §4.3) to drive the root conversation. v0.3 has one role; v0.4
-/// introduces subagent dispatch which uses the same lookup against
-/// other role names.
+/// ARCH §4.3) to drive the root conversation.
 const WORKER_ROLE: &str = "worker";
 /// Per-conv-repo directory holding the role souls (ARCH §4.3 — soul =
 /// `<conv-repo>/souls/<role>.md` by convention).
 pub(crate) const SOULS_DIR: &str = "souls";
-/// Per-conv-repo control file naming the role → (provider, model)
-/// assignments (ARCH §4.3). Lives at the conv-repo root, outside any
-/// worktree (§2.2 control vs data plane).
+/// Per-conv-repo control file naming the role → (provider row, model,
+/// tools) assignments (ARCH §4.3). Lives at the conv-repo root, outside
+/// any worktree (§2.2 control vs data plane).
 const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
-/// Global control file naming endpoints, auth, and model capabilities
-/// (ARCH §4.1). Lives at the harness root and rotates independently of
-/// any conversation repo.
-const GLOBAL_PROVIDERS_FILE: &str = "providers.yaml";
+/// Global control file naming model capabilities / context windows and
+/// the optional `adapter:` override (ARCH §4.2). Lives at the harness
+/// root.
+const GLOBAL_MODELS_FILE: &str = "models.yaml";
+/// Per-conv-repo control file binding workflow events to actions and
+/// declaring the retry policy (ARCH §6).
+const WORKFLOW_FILE: &str = "workflow.yaml";
+
+/// The exact brazen crate version lernie links (`brazen = "=0.0.2"` in
+/// `Cargo.toml`). The load-time version guard rejects a `bz` whose
+/// `--version` differs (§4.4 "Version skew is guarded"). This pin and
+/// the `Cargo.toml` dependency are the two homes of the number; keep
+/// them in lockstep (also the `make install` pin).
+pub const BRAZEN_PIN: &str = "0.0.2";
 
 /// Every way [`run`] can fail. The taxonomy is intentionally narrower
-/// than the provider client's: step-level distinctions (network vs
-/// parse vs auth) are the adapter's, not the harness's.
+/// than brazen's: wire-level distinctions are brazen's, surfaced in-band
+/// as the `CanonicalError` this enum folds into [`Error::AdapterError`].
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("config: {0}")]
     Config(#[from] crate::config::LoadError),
-    #[error("providers.yaml has no {0:?} role (required for v0.3)")]
+    #[error("providers.yaml has no {0:?} role")]
     RoleMissing(String),
     #[error("read soul {path}: {source}")]
     SoulRead {
@@ -101,14 +107,19 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
-    #[error("adapter returned malformed JSON: {0}")]
+    #[error("adapter emitted malformed v=1 event JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
-    #[error("adapter error ({kind}): {message}")]
-    AdapterError {
-        kind: String,
-        message: String,
-        http_status: Option<u16>,
-    },
+    #[error("provider error ({kind}): {message}")]
+    AdapterError { kind: String, message: String },
+    #[error("adapter stream ended without a terminal `end` (killed mid-stream, §2.9)")]
+    AdapterHalfStream,
+    #[error(
+        "bz version {found:?} does not match the linked brazen crate {expected:?} \
+         (§4.4 — install the pinned binary: cargo install brazen --version ={expected})"
+    )]
+    VersionSkew { found: String, expected: String },
+    #[error("adapter-override handshake failed: MessageStart.v={found:?}, expected {expected}")]
+    HandshakeMismatch { found: Option<u8>, expected: u8 },
     #[error("git {op}: {source}")]
     Git {
         op: &'static str,
@@ -119,11 +130,12 @@ pub enum Error {
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the
 /// struct itself carries no generic parameters and tests can pass
-/// stubs inline. `harness_root` resolves the global `providers.yaml`
-/// (ARCH §4.1); production passes [`crate::harness_root::resolve`]'s
+/// stubs inline. `harness_root` resolves the global `models.yaml`
+/// (ARCH §4.2); production passes [`crate::harness_root::resolve`]'s
 /// result, tests pass a temp dir.
 pub struct Deps<'a> {
     pub adapter: &'a dyn AdapterRunner,
+    pub sleeper: &'a dyn Sleeper,
     pub git: &'a dyn GitRunner,
     pub clock: &'a dyn Clock,
     pub id_gen: &'a dyn IdGen,
@@ -132,33 +144,38 @@ pub struct Deps<'a> {
     pub harness_root: &'a Path,
 }
 
-/// Drive one root conversation against `repo`: load configs, spawn the
-/// conversation branch, commit the snapshot, invoke the provider
-/// adapter, commit the response. Returns the branch name (the bare
-/// `<conv-id>`, ARCH §2.3) so callers can locate the two commits
-/// without a separate lookup.
+/// Drive one root conversation against `repo`: load configs, run the
+/// load-time version guard, spawn the conversation branch, drive the
+/// step loop through `bz`, and merge back. Returns the branch name (the
+/// bare `<conv-id>`, ARCH §2.3).
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
-    let global_path = deps.harness_root.join(GLOBAL_PROVIDERS_FILE);
+    let global_path = deps.harness_root.join(GLOBAL_MODELS_FILE);
     let per_repo_path = repo.join(PER_REPO_PROVIDERS_FILE);
-    let (cfg, _warnings) = ProvidersConfig::load(&global_path, &per_repo_path)?;
+    let (cfg, _warnings) = ModelsConfig::load(&global_path, &per_repo_path)?;
 
     let assignment = cfg
         .per_repo
         .roles
         .get(WORKER_ROLE)
         .ok_or_else(|| Error::RoleMissing(WORKER_ROLE.to_string()))?;
-    // Cross-check inside ProvidersConfig::load guarantees both lookups
-    // resolve.
+    // Cross-check inside ModelsConfig::load guarantees this resolves.
     let model = cfg
         .global
         .models
         .get(&assignment.model)
-        .expect("cross-check passed, so role.model is in providers.models");
-    let provider = cfg
-        .global
-        .providers
-        .get(&assignment.provider)
-        .expect("cross-check passed, so role.provider is in providers.providers");
+        .expect("cross-check passed, so role.model is in models.yaml");
+
+    // Adapter resolution (§4.2): the optional `adapter:` override, else
+    // `bz` on PATH. The version guard runs only for the default binary;
+    // an override is governed by the in-band MessageStart.v handshake.
+    let adapter_override = cfg.global.adapter.as_deref();
+    let binary = adapter::resolve_binary(adapter_override);
+    let expect_handshake = adapter_override.is_some();
+    if !expect_handshake {
+        check_bz_version(deps.adapter, &binary)?;
+    }
+
+    let retry = load_retry(repo)?;
 
     let soul_path = repo.join(SOULS_DIR).join(format!("{WORKER_ROLE}.md"));
     let soul = std::fs::read_to_string(&soul_path).map_err(|source| Error::SoulRead {
@@ -168,22 +185,36 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
 
     let resolved = dispatch::Resolved {
         model,
-        provider_name: &assignment.provider,
-        provider,
+        provider_row: &assignment.provider,
         soul,
+        binary,
+        retry,
+        expect_handshake,
     };
     dispatch::run_exchange(repo, user_message, &resolved, deps)
 }
 
-/// Parse the `endpoint_env` field out of the adapter's `describe`
-/// JSON. Missing field is an empty list — an adapter that does not
-/// advertise `endpoint_env` opts out of harness-set endpoints and
-/// uses its built-in default. Wrong-typed values surface as
-/// [`Error::AdapterJson`].
-pub(super) fn parse_endpoint_env(bytes: &[u8]) -> Result<Vec<String>, Error> {
-    let value: Value = serde_json::from_slice(bytes).map_err(Error::AdapterJson)?;
-    let Some(field) = value.get("endpoint_env") else {
-        return Ok(Vec::new());
-    };
-    serde_json::from_value(field.clone()).map_err(Error::AdapterJson)
+/// Load the harness-owned retry policy from `workflow.yaml` (§6, §2.10).
+fn load_retry(repo: &Path) -> Result<RetryConfig, Error> {
+    let workflow = Workflow::load(&repo.join(WORKFLOW_FILE))?;
+    Ok(workflow.retry)
+}
+
+/// Load-time version guard (§4.4): `bz --version` must report the exact
+/// version of the linked brazen crate ([`BRAZEN_PIN`]); a mismatch is
+/// declined (PRINCIPLES "Decline illegal operations") rather than
+/// silently downgraded.
+fn check_bz_version(adapter: &dyn AdapterRunner, binary: &OsString) -> Result<(), Error> {
+    let out =
+        adapter::capture_stdout(adapter, binary, &["--version"]).map_err(Error::AdapterSpawn)?;
+    // `bz --version` prints e.g. `bz 0.0.2`; the version is the last
+    // whitespace token.
+    let found = out.split_whitespace().last().unwrap_or("").to_string();
+    if found != BRAZEN_PIN {
+        return Err(Error::VersionSkew {
+            found,
+            expected: BRAZEN_PIN.to_string(),
+        });
+    }
+    Ok(())
 }

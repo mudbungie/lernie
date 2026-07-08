@@ -1,19 +1,20 @@
-//! §4.4 JSONL stream synthesis helpers for the harness test suite.
+//! brazen `v=1` NDJSON synthesis helpers for the harness test suite.
 //!
-//! Tests script the harness's streaming `complete` path by handing
-//! [`super::fixtures::StubAdapter`] pre-baked JSONL bytes — one event
-//! per `\n`-terminated line. The helpers here turn ergonomic content-
-//! block descriptions (text, tool_use) into the §4.4 wire shape so
-//! tests focus on what the model "said," not on the event protocol.
+//! Tests script the harness's model-call path by handing
+//! [`super::fixtures::StubAdapter`] pre-baked NDJSON bytes — one
+//! [`brazen::Event`] per `\n`-terminated line, exactly the shape `bz`
+//! writes (§4.4). Events are constructed from the linked crate's typed
+//! vocabulary and serialized, so the bytes can never drift from what the
+//! assembler parses.
 //!
-//! Lives in its own file to keep `fixtures.rs` under the repo's 300-
-//! line per-file cap.
+//! Lives in its own file to keep `fixtures.rs` under the repo's 300-line
+//! per-file cap.
 
-use serde_json::{Value, json};
+use brazen::{CanonicalError, ContentKind, Delta, ErrorKind, Event, FinishReason, Role};
+use serde_json::Value;
 
-/// Parse a JSONL byte buffer into one [`Value`] per non-empty line.
-/// Used by tests that read `response.json` back to assert event-stream
-/// shape on disk.
+/// Parse an NDJSON byte buffer into one [`Value`] per non-empty line.
+/// Used by tests that read `response.json` back to assert on-disk shape.
 pub(super) fn parse_jsonl(bytes: &[u8]) -> Vec<Value> {
     bytes
         .split(|b| *b == b'\n')
@@ -22,66 +23,92 @@ pub(super) fn parse_jsonl(bytes: &[u8]) -> Vec<Value> {
         .collect()
 }
 
-/// Build a §4.4 JSONL stream from a single text response — the
-/// streaming-mode equivalent of the legacy non-streaming
-/// `HAPPY_RESPONSE_JSON` payload. Used as `complete_bytes` for
-/// [`super::fixtures::StubAdapter::happy`] in single-step happy-path
-/// tests.
-pub(super) fn happy_text_stream(text: &str, stop_reason: &str) -> Vec<u8> {
-    streaming_response(stop_reason, &json!([{"type":"text","text":text}]))
-}
-
-/// Pre-baked happy-path stream with `stop_reason=end_turn` and a single
-/// `"hi there"` text block. Mirrors the legacy `HAPPY_RESPONSE_JSON`
-/// non-streaming body; tests that just need *any* successful complete
-/// pull this off the shelf.
-pub(super) fn happy_response_bytes() -> Vec<u8> {
-    happy_text_stream("hi there", "end_turn")
-}
-
-/// Synthesize a §4.4 JSONL byte stream from one set of content blocks
-/// plus a stop_reason. Each text block emits a `text_delta` carrying
-/// its full `text` field; each tool_use block emits an
-/// `input_json_delta` carrying its serialized `input` as one
-/// `partial_json` payload. The terminal `message_stop` carries
-/// `stop_reason`, a stub usage object, and `api_calls = 1`.
-pub(super) fn streaming_response(stop_reason: &str, content: &serde_json::Value) -> Vec<u8> {
-    let mut out = Vec::new();
-    let mut push = |v: serde_json::Value| {
-        out.extend_from_slice(&serde_json::to_vec(&v).unwrap());
-        out.push(b'\n');
-    };
-    push(json!({
-        "type":"message_start",
-        "message":{"id":"msg_x","model":"claude-sonnet-4-7",
-            "usage":{"input_tokens":5,"output_tokens":0}}
-    }));
-    let blocks = content.as_array().expect("content must be an array");
-    for (idx, block) in blocks.iter().enumerate() {
-        let kind = block.get("type").and_then(|v| v.as_str()).unwrap_or("");
-        match kind {
-            "text" => {
-                let text = block.get("text").and_then(|v| v.as_str()).unwrap_or("");
-                push(json!({"type":"content_block_start","index":idx,
-                    "content_block":{"type":"text","text":""}}));
-                push(json!({"type":"text_delta","index":idx,"text":text}));
-                push(json!({"type":"content_block_stop","index":idx}));
-            }
-            "tool_use" => {
-                let id = block.get("id").cloned().unwrap_or(json!(""));
-                let name = block.get("name").cloned().unwrap_or(json!(""));
-                let input = block.get("input").cloned().unwrap_or(json!({}));
-                let partial_json = serde_json::to_string(&input).unwrap();
-                push(json!({"type":"content_block_start","index":idx,
-                    "content_block":{"type":"tool_use","id":id,"name":name,"input":{}}}));
-                push(json!({"type":"tool_use_delta","index":idx,
-                    "partial_json":partial_json}));
-                push(json!({"type":"content_block_stop","index":idx}));
-            }
-            _ => panic!("streaming_response: unsupported block type {kind:?}"),
-        }
-    }
-    push(json!({"type":"message_stop","stop_reason":stop_reason,
-        "usage":{"input_tokens":5,"output_tokens":3},"api_calls":1}));
+/// Serialize one event as an NDJSON line (trailing `\n`).
+fn line(event: &Event) -> Vec<u8> {
+    let mut out = serde_json::to_vec(event).expect("Event serializes");
+    out.push(b'\n');
     out
+}
+
+/// A `Content` block description for [`stream_of`].
+pub(super) enum Block<'a> {
+    Text(&'a str),
+    ToolUse {
+        id: &'a str,
+        name: &'a str,
+        input: Value,
+    },
+}
+
+/// Build a complete `v=1` segment: `message_start` → per-block
+/// (`content_start`/`content_delta`/`content_stop`) → `usage` →
+/// `finish{reason}` → `end`. The single terminal `end` makes the bytes a
+/// self-delimiting attempt segment (§4.4).
+pub(super) fn stream_of(reason: FinishReason, blocks: &[Block<'_>]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend(line(&Event::message_start(
+        Some("msg_x".into()),
+        Some("claude-sonnet-4-7".into()),
+        Role::Assistant,
+    )));
+    for (idx, block) in blocks.iter().enumerate() {
+        let index = idx as u32;
+        match block {
+            Block::Text(text) => {
+                out.extend(line(&Event::ContentStart {
+                    index,
+                    kind: ContentKind::Text {},
+                }));
+                out.extend(line(&Event::ContentDelta {
+                    index,
+                    delta: Delta::TextDelta((*text).to_string()),
+                }));
+            }
+            Block::ToolUse { id, name, input } => {
+                out.extend(line(&Event::ContentStart {
+                    index,
+                    kind: ContentKind::ToolUse {
+                        id: (*id).to_string(),
+                        name: (*name).to_string(),
+                    },
+                }));
+                out.extend(line(&Event::ContentDelta {
+                    index,
+                    delta: Delta::JsonDelta(serde_json::to_string(input).unwrap()),
+                }));
+            }
+        }
+        out.extend(line(&Event::ContentStop { index }));
+    }
+    let mut usage = brazen::Usage::default();
+    usage.input_tokens = Some(5);
+    usage.output_tokens = Some(3);
+    out.extend(line(&Event::Usage(usage)));
+    out.extend(line(&Event::Finish { reason }));
+    out.extend(line(&Event::End));
+    out
+}
+
+/// A failed segment: `message_start` → `error{kind}` → `end`. brazen
+/// always closes even a failed stream with one `end` (§4.4).
+pub(super) fn error_stream(kind: ErrorKind, message: &str) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend(line(&Event::message_start(
+        Some("msg_x".into()),
+        Some("claude-sonnet-4-7".into()),
+        Role::Assistant,
+    )));
+    out.extend(line(&Event::Error(CanonicalError {
+        kind,
+        message: message.to_string(),
+        provider_detail: None,
+    })));
+    out.extend(line(&Event::End));
+    out
+}
+
+/// The off-the-shelf happy stream: one `"hi there"` text block, finish
+/// `stop`. Tests that need *any* successful completion pull this.
+pub(super) fn happy_response_bytes() -> Vec<u8> {
+    stream_of(FinishReason::Stop, &[Block::Text("hi there")])
 }

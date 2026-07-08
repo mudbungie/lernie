@@ -18,7 +18,7 @@ use thiserror::Error;
 
 const ENV_VAR: &str = "LERNIE_HOME";
 const DEFAULT_DIRNAME: &str = ".lernie";
-const PROVIDERS_FILE: &str = "providers.yaml";
+const MODELS_FILE: &str = "models.yaml";
 
 /// Why [`resolve`] could not produce a path. The only failure is the
 /// "no override and no home" pair — every other case yields a path
@@ -51,9 +51,9 @@ pub fn resolve() -> Result<PathBuf, Error> {
     resolve_from(env_val.as_deref(), home.as_deref())
 }
 
-/// Path to the global `providers.yaml` within `root` (ARCH §4.1).
-pub fn providers_path(root: &Path) -> PathBuf {
-    root.join(PROVIDERS_FILE)
+/// Path to the global `models.yaml` within `root` (ARCH §4.2).
+pub fn models_path(root: &Path) -> PathBuf {
+    root.join(MODELS_FILE)
 }
 
 #[cfg(test)]
@@ -92,10 +92,10 @@ mod tests {
     }
 
     #[test]
-    fn providers_path_appends_filename() {
+    fn models_path_appends_filename() {
         assert_eq!(
-            providers_path(Path::new("/opt/lernie")),
-            PathBuf::from("/opt/lernie/providers.yaml")
+            models_path(Path::new("/opt/lernie")),
+            PathBuf::from("/opt/lernie/models.yaml")
         );
     }
 

@@ -1,30 +1,8 @@
-//! Classification tests over both vocabularies (ARCH §4.4 reading
-//! rules). Legacy v0.3 fixtures (`message_stop` / `error` terminals)
-//! sit alongside brazen `v=1` fixtures (`{"type":"end"}` terminal,
-//! `finish`/`error` inside the segment) so the follow-on writer swap
-//! (bl-56ee) is proven green before it lands.
+//! Classification tests over brazen's `v=1` vocabulary (ARCH §4.4
+//! reading rules): `{"type":"end"}` terminal, `finish`/`error` carried
+//! inside the segment. The v0.6 legacy vocabulary is retired (bl-56ee).
 
 use super::{Outcome, classify};
-
-// ---- Legacy v0.3 vocabulary -------------------------------------------
-
-const LEGACY_COMPLETE: &str = concat!(
-    r#"{"type":"message_start"}"#,
-    "\n",
-    r#"{"type":"text_delta","index":0,"text":"hi"}"#,
-    "\n",
-    r#"{"type":"message_stop","usage":{"input_tokens":1,"output_tokens":1},"api_calls":1}"#,
-    "\n",
-);
-
-const LEGACY_FAILED: &str = concat!(
-    r#"{"type":"message_start"}"#,
-    "\n",
-    r#"{"type":"error","kind":"fatal","message":"boom"}"#,
-    "\n",
-);
-
-// ---- brazen v=1 vocabulary --------------------------------------------
 
 const BRAZEN_COMPLETE: &str = concat!(
     r#"{"type":"message_start","v":1,"role":"assistant"}"#,
@@ -102,16 +80,6 @@ const BRAZEN_STOPPED: &str = concat!(
     r#"{"type":"content_delta","index":0,"delta":{"text_delta":"par"}}"#,
     "\n",
 );
-
-#[test]
-fn legacy_message_stop_is_complete() {
-    assert_eq!(classify(LEGACY_COMPLETE.as_bytes()), Outcome::Complete);
-}
-
-#[test]
-fn legacy_error_terminal_is_failed() {
-    assert_eq!(classify(LEGACY_FAILED.as_bytes()), Outcome::Failed);
-}
 
 #[test]
 fn brazen_end_with_finish_is_complete() {

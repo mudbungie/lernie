@@ -12,25 +12,26 @@
 //! - [`State::Conflicted`]: the merge protocol wrote
 //!   `refs/lernie/conflicted/<handle>` on rebase failure (ARCH §2.6
 //!   step 6 — harness defect surface).
-//! - [`State::Stopped`]: two on-disk signatures, both surfaced through
-//!   the same variant (ARCH §2.9 — kill, crash, and explicit stop are
-//!   indistinguishable on disk):
-//!     1. The latest step's `response.json` last segment carries an
-//!        `Error` ([`Outcome::Failed`] — provider error, retry budget
-//!        exhausted, or compactor abort).
-//!     2. The latest step's `response.json` has no trailing terminal
-//!        line ([`Outcome::NoTerminal`]) AND no writer process holds it
-//!        open (kill-mid-stream — harness died with the fd open, kernel
-//!        closed it on exit). Detected by reusing the §2.9 / ARCH
-//!        line-267 [`PgidFinder`] /proc-fd scan that backs `lernie
-//!        stop`'s pid discovery — same source of truth that the §3.5
-//!        in_flight classification reads.
+//! - [`State::Stopped`]: a terminal on-disk signature, evaluated ONLY
+//!   once the writer has closed the `response.json` fd (§3.5, §4.4 "Fd
+//!   held open for the whole model call"). Two signatures both surface
+//!   here — a last segment carrying an `Error` ([`Outcome::Failed`] —
+//!   retry budget exhausted or a non-retryable provider error, §2.10),
+//!   and no trailing terminal line ([`Outcome::NoTerminal`],
+//!   kill-mid-stream) — each requiring that no writer holds the fd open
+//!   (ARCH §2.9 — kill, crash, and explicit stop are indistinguishable
+//!   on disk). While a writer still holds the fd the harness may be
+//!   mid-retry — one fd spans every attempt and the backoff sleeps
+//!   between them (§4.4) — so a mid-retry `Error` or partial segment
+//!   reads [`State::InFlight`], never `Stopped`. The probe reuses the
+//!   §2.9 [`PgidFinder`] /proc-fd scan that backs `lernie stop`'s pid
+//!   discovery — the same source of truth the §3.5 in_flight
+//!   classification reads.
 //! - [`State::InFlight`]: none of the above; caller polls again.
 //!
 //! The `response.json` framing is read through
-//! [`crate::provider::segment`], the single seam that accepts both the
-//! legacy v0.3 and brazen `v=1` vocabularies (§4.4) — so `await`
-//! survives the v0.6 writer swap without a change here.
+//! [`crate::provider::segment`], the single brazen-`v=1` framing seam
+//! (§4.4).
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -104,35 +105,39 @@ pub(super) fn check(
         let summary = latest_summary(git_dir, handle, git)?;
         return Ok(State::Merged(summary));
     }
-    match examine_latest_response(repo, handle)? {
-        // Last segment carries an `Error` (§4.4 *failed*): the adapter
-        // or harness recorded a typed failure. Stopped on the spot.
-        Some((Outcome::Failed, _)) => Ok(State::Stopped),
-        // Clean terminal (§4.4 *complete*): the model finished a step.
-        // The harness still has terminal compaction + merge-back to do,
-        // so the chain may still progress — keep polling.
-        Some((Outcome::Complete, _)) => Ok(State::InFlight),
+    let (outcome, path) = match examine_latest_response(repo, handle)? {
         // No file to scan — either no step dir yet, or the latest step
         // has not produced a `response.json`. Nothing to disambiguate
         // against /proc; keep polling.
-        None => Ok(State::InFlight),
-        // Bytes on disk but no trailing terminal (§4.4 *no terminal*) —
-        // disambiguate mid-stream from kill-mid-stream via the §3.5
-        // writer probe.
-        Some((Outcome::NoTerminal, path)) => {
-            if writer_finder
-                .find_writer_pgid(&path)
-                .map_err(|source| Error::Git {
-                    op: "scan /proc for response.json writer",
-                    source,
-                })?
-                .is_none()
-            {
-                Ok(State::Stopped)
-            } else {
-                Ok(State::InFlight)
-            }
-        }
+        None => return Ok(State::InFlight),
+        Some(x) => x,
+    };
+    // Clean terminal (§4.4 *complete*): the model finished a step. The
+    // harness still has terminal compaction + merge-back to do, so the
+    // chain may still progress — keep polling. No /proc probe: a
+    // completed segment is never a stop.
+    if outcome == Outcome::Complete {
+        return Ok(State::InFlight);
+    }
+    // Failed (last segment carries an `Error`) or NoTerminal (no
+    // trailing `end`) are terminal ONLY once the writer closes the fd
+    // (§3.5, §4.4 "Fd held open for the whole model call"): the harness
+    // holds one fd across *all* attempts and the backoff sleeps between
+    // them, so while a writer still holds it open the retry loop is
+    // pending — a mid-retry `Error` segment stays `in_flight`, never
+    // `stopped`. The terminal classification is evaluated only after
+    // the fd closes (no writer found).
+    if writer_finder
+        .find_writer_pgid(&path)
+        .map_err(|source| Error::Git {
+            op: "scan /proc for response.json writer",
+            source,
+        })?
+        .is_some()
+    {
+        Ok(State::InFlight)
+    } else {
+        Ok(State::Stopped)
     }
 }
 

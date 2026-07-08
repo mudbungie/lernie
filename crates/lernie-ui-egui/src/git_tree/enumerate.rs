@@ -12,6 +12,7 @@
 
 use super::cmd::{LogEntry, for_each_ref_unmerged, walk_branch_steps, walk_merge_step_commits};
 use super::detect::{extract_request_preview, parse_merge_subject};
+use super::fd_probe::WriterProbe;
 use super::state::classify_unmerged;
 use super::streaming::streaming_text_from_disk;
 use super::tools::tool_calls_from_disk;
@@ -58,6 +59,7 @@ pub(super) fn build_node(
 pub(super) fn enumerate_in_flight(
     conv_repo: &Path,
     git_dir: &Path,
+    probe: &dyn WriterProbe,
 ) -> Result<Vec<ConversationBranch>, GitTreeError> {
     let out = for_each_ref_unmerged(git_dir)?;
     let text = String::from_utf8_lossy(&out);
@@ -88,7 +90,7 @@ pub(super) fn enumerate_in_flight(
         let preview = preview_from_disk(conv_repo, &conv_id);
         let streaming_text = streaming_text_from_disk(conv_repo, &conv_id);
         let tool_calls = tool_calls_from_disk(conv_repo, &conv_id);
-        let state = classify_unmerged(conv_repo, &conv_id);
+        let state = classify_unmerged(conv_repo, &conv_id, probe);
         branches.push(ConversationBranch {
             branch_name,
             conv_id,

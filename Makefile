@@ -13,13 +13,13 @@ LERNIE_HOME    ?= $(HOME)/.lernie
 
 # Binaries that resolve via `PATH`: the harness CLI and the UI shell.
 PATH_BINARIES     := lernie lernie-ui-egui
-# Binaries the harness resolves at `<harness-root>/adapters/`
-# (ARCH §4.1, §4.4) — provider adapters live alongside the harness root,
-# not on PATH, so credential rotations and adapter swaps stay local to
-# this install.
-ADAPTER_BINARIES  := lernie-provider-anthropic
+# The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for
+# every provider, installed from crates.io at the exact version the
+# lernie crate links (the load-time version guard, §4.4). Keep this pin
+# in lockstep with the `brazen = "=<pin>"` dependency in Cargo.toml.
+BRAZEN_PIN        := 0.0.2
 # Subdirectories of the harness root laid down on first install.
-HARNESS_DIRS      := adapters workflows tools skills agents conversations
+HARNESS_DIRS      := workflows tools skills agents conversations
 
 all: check
 
@@ -80,15 +80,13 @@ install: release
 		install -m 0755 "target/release/$$bin" "$(INSTALL_BIN)/$$bin"; \
 		echo "installed $(INSTALL_BIN)/$$bin"; \
 	done
-	@for bin in $(ADAPTER_BINARIES); do \
-		install -m 0755 "target/release/$$bin" "$(LERNIE_HOME)/adapters/$$bin"; \
-		echo "installed $(LERNIE_HOME)/adapters/$$bin"; \
-	done
-	@if [ ! -e "$(LERNIE_HOME)/providers.yaml" ]; then \
-		install -m 0644 install/providers.yaml "$(LERNIE_HOME)/providers.yaml"; \
-		echo "installed $(LERNIE_HOME)/providers.yaml"; \
+	@echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"
+	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked
+	@if [ ! -e "$(LERNIE_HOME)/models.yaml" ]; then \
+		install -m 0644 install/models.yaml "$(LERNIE_HOME)/models.yaml"; \
+		echo "installed $(LERNIE_HOME)/models.yaml"; \
 	else \
-		echo "kept     $(LERNIE_HOME)/providers.yaml (existing)"; \
+		echo "kept     $(LERNIE_HOME)/models.yaml (existing)"; \
 	fi
 	@if [ ! -e "$(LERNIE_HOME)/agents/default" ]; then \
 		cp -R template "$(LERNIE_HOME)/agents/default"; \
@@ -98,10 +96,10 @@ install: release
 	fi
 	@$(MAKE) --no-print-directory install-verify
 	@echo
-	@echo "make sure $(INSTALL_BIN) is on your PATH."
+	@echo "make sure $(INSTALL_BIN) is on your PATH (and that 'bz' resolves there too)."
 	@echo "harness root: $(LERNIE_HOME) (override with LERNIE_HOME=...)"
-	@echo "drop external provider adapters into $(LERNIE_HOME)/adapters/"
-	@echo "with the name 'lernie-provider-<name>' — see ARCH §4.4."
+	@echo "provider endpoints/auth live in brazen's config: bz --dump-config / bz --login."
+	@echo "declare model capabilities in $(LERNIE_HOME)/models.yaml — see ARCH §4.2/§4.4."
 
 # Smoke-test the freshly installed binaries: `lernie --version` proves the
 # CLI loads, `lernie new` exercises the embedded template scaffold against
@@ -117,9 +115,7 @@ uninstall:
 	@for bin in $(PATH_BINARIES); do \
 		rm -f "$(INSTALL_BIN)/$$bin" && echo "removed $(INSTALL_BIN)/$$bin"; \
 	done
-	@for bin in $(ADAPTER_BINARIES); do \
-		rm -f "$(LERNIE_HOME)/adapters/$$bin" && echo "removed $(LERNIE_HOME)/adapters/$$bin"; \
-	done
+	@echo "note: 'bz' (brazen) was installed via cargo; remove with 'cargo uninstall brazen'."
 
 ci: check
 

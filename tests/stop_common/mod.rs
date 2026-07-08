@@ -47,59 +47,37 @@ pub fn git_run(dest: &Path, args: &[&str]) {
     );
 }
 
-fn adapter_bin_dir() -> std::path::PathBuf {
-    static BUILT: std::sync::Once = std::sync::Once::new();
-    BUILT.call_once(|| {
-        let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
-        let status = Command::new(cargo)
-            .args([
-                "build",
-                "--quiet",
-                "--package",
-                "lernie-provider-anthropic",
-                "--bin",
-                "lernie-provider-anthropic",
-            ])
-            .status()
-            .expect("spawn cargo build");
-        assert!(status.success(), "cargo build adapter failed");
-    });
-    let profile = if cfg!(debug_assertions) {
-        "debug"
-    } else {
-        "release"
-    };
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("target")
-        .join(profile)
+/// Global `<harness-root>/models.yaml` (ARCH §4.2). Both roles' models
+/// point at the fixture `test` brazen row (endpoints/auth are brazen's).
+pub fn write_global_models(harness: &Path) {
+    let yaml = "\
+models:
+  claude-sonnet-4-7:
+    provider: test
+    model_id: claude-sonnet-4-7
+    capabilities: [tool_use_native]
+    context_window: 200000
+  claude-haiku-4-5:
+    provider: test
+    model_id: claude-haiku-4-5
+    capabilities: [tool_use_native]
+    context_window: 200000
+";
+    fs::write(harness.join("models.yaml"), yaml).unwrap();
 }
 
-pub fn path_env_with_adapter() -> std::ffi::OsString {
-    let existing = std::env::var_os("PATH").unwrap_or_default();
-    let mut dirs = vec![adapter_bin_dir()];
-    dirs.extend(std::env::split_paths(&existing));
-    std::env::join_paths(dirs).expect("PATH join")
-}
-
-pub fn write_global_providers(harness: &Path, endpoint: &str) {
-    let yaml = format!(
-        "providers:\n  \
-           anthropic:\n    \
-             endpoint: {endpoint}\n    \
-             auth:\n      type: api_key\n      env: ANTHROPIC_API_KEY\n\
-         models:\n  \
-           claude-sonnet-4-7:\n    \
-             provider: anthropic\n    \
-             model_id: claude-sonnet-4-7\n    \
-             capabilities: [tool_use_native]\n    \
-             context_window: 200000\n  \
-           claude-haiku-4-5:\n    \
-             provider: anthropic\n    \
-             model_id: claude-haiku-4-5\n    \
-             capabilities: [tool_use_native]\n    \
-             context_window: 200000\n",
+/// A brazen config (§4.4) with a keyless `test` provider row whose
+/// endpoint is `endpoint`. Returns the config path.
+pub fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
+    let toml = format!(
+        "timeout_connect = 5\ntimeout_response = 60\ntimeout_idle = 60\n\
+         [[provider]]\nname = \"test\"\nbase_url = \"{endpoint}\"\n\
+         protocol = \"anthropic_messages\"\nauth = \"none\"\n\
+         body_defaults = {{ max_tokens = 64 }}\n"
     );
-    fs::write(harness.join("providers.yaml"), yaml).unwrap();
+    let path = dir.join("brazen.toml");
+    fs::write(&path, toml).unwrap();
+    path
 }
 
 pub fn scaffold_repo(dest: &Path, harness: &Path) {
@@ -114,6 +92,20 @@ pub fn scaffold_repo(dest: &Path, harness: &Path) {
         "lernie new: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+    // Point both roles at the fixture `test` brazen row (§4.3).
+    fs::write(
+        dest.join("providers.yaml"),
+        "\
+roles:
+  worker:
+    provider: test
+    model: claude-sonnet-4-7
+  compactor:
+    provider: test
+    model: claude-haiku-4-5
+",
+    )
+    .unwrap();
 }
 
 /// Block until the conversation branch exists in `<repo>/root/`'s
@@ -204,14 +196,18 @@ pub fn poll_for_path(path: &Path, deadline: Duration) {
     }
 }
 
-pub fn spawn_prompt(dest: &Path, harness: &Path, user_message: &str) -> Child {
+pub fn spawn_prompt(
+    dest: &Path,
+    harness: &Path,
+    brazen_config: &Path,
+    user_message: &str,
+) -> Child {
     Command::new(lernie_bin())
         .arg("prompt")
         .arg(dest)
         .arg(user_message)
-        .env("PATH", path_env_with_adapter())
-        .env("ANTHROPIC_API_KEY", "test-key")
         .env("LERNIE_HOME", harness)
+        .env("BRAZEN_CONFIG", brazen_config)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()

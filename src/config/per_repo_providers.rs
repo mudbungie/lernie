@@ -27,14 +27,19 @@ pub struct PerRepoProviders {
     pub roles: BTreeMap<String, RoleAssignment>,
 }
 
-/// One role's assignment: which provider (by name in the global
-/// `providers.yaml`) and which model (by id in that provider's model
-/// list). Both are validated cross-file in
-/// [`crate::config::cross::check_roles_against_providers`].
+/// One role's assignment: which provider (by brazen row name) and which
+/// model (by id in the global `models.yaml`), plus the role's enabled
+/// tools (ARCH §4.3). `provider`/`model` are validated cross-file in
+/// [`crate::config::cross::check_roles_against_models`]; endpoint and
+/// auth resolve inside brazen at call time (§4.1 — no `auth_env` /
+/// `endpoint_env` here). `tools` selects which tools the role's agent
+/// may call (§3.3); omitted or empty means none.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct RoleAssignment {
     pub provider: String,
     pub model: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tools: Vec<String>,
 }
 
 const LEGACY_KEYS: &[&str] = &["providers", "models"];
@@ -109,6 +114,7 @@ roles:
   worker:
     provider: anthropic
     model: claude-sonnet-4-7
+    tools: [bash, read_file]
   compactor:
     provider: anthropic
     model: claude-haiku-4-5
@@ -121,6 +127,10 @@ roles:
         assert_eq!(p.roles.len(), 2);
         assert_eq!(p.roles["worker"].provider, "anthropic");
         assert_eq!(p.roles["worker"].model, "claude-sonnet-4-7");
+        // The role's `tools:` list (ARCH §4.3) parses; an omitted list
+        // defaults empty (the compactor's toolset is built-in, §2.7).
+        assert_eq!(p.roles["worker"].tools, vec!["bash", "read_file"]);
+        assert!(p.roles["compactor"].tools.is_empty());
     }
 
     #[test]

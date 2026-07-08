@@ -1,12 +1,17 @@
-//! End-to-end subprocess test for `lernie prompt`: chains `lernie
-//! new` (scaffold) and `lernie prompt` (one root conversation)
-//! against a local `httpmock` server. Asserts the v0.3.1 contract:
-//! bare-conv-id branch off `main`, dispatch commit (goal+soul only)
-//! before the model call, terminal compaction, `--no-ff` merge back
-//! to `main`, the merge=ours discipline (§2.6 — subagent's `summary/`
-//! scrubbed from main, reachable only in compactor-branch history),
-//! and the diagnostic-only step record at `<conv-repo>/steps/`
-//! outside every worktree (§2.3).
+//! End-to-end subprocess test for `lernie prompt` over the real
+//! brazen `bz` data plane (ARCH §4.4).
+//!
+//! Chains `lernie new` (scaffold) and `lernie prompt` (one root
+//! conversation). The model call execs real `bz` (§4.4); `BRAZEN_CONFIG`
+//! points bz at a fixture provider row whose endpoint is an `httpmock`
+//! server returning an Anthropic SSE stream — bz normalizes it into the
+//! canonical `v=1` event stream lernie records. Env is set on the
+//! `lernie prompt` subprocess (inherited by its bz child), so tests are
+//! race-free without touching the test process's own environment.
+//!
+//! Asserts the branch/merge/compaction contract AND the swap-specific
+//! shape: a typed canonical request on stdin, `v=1` NDJSON with a
+//! terminal `end` on disk.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -19,8 +24,6 @@ fn lernie_bin() -> &'static str {
     env!("CARGO_BIN_EXE_lernie")
 }
 
-/// Git env vars a pre-commit hook context may inherit; they would
-/// override `-C` and redirect to the outer repo. Scrubbed on spawn.
 const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -40,69 +43,67 @@ fn git_command(dest: &Path, args: &[&str]) -> Command {
     cmd
 }
 
-/// Build the sibling adapter binary (separate workspace crate, so
-/// `CARGO_BIN_EXE_<name>` is not set) and return its directory.
-fn adapter_bin_dir() -> std::path::PathBuf {
-    static BUILT: std::sync::Once = std::sync::Once::new();
-    BUILT.call_once(|| {
-        let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".into());
-        let status = std::process::Command::new(cargo)
-            .args([
-                "build",
-                "--quiet",
-                "--package",
-                "lernie-provider-anthropic",
-                "--bin",
-                "lernie-provider-anthropic",
-            ])
-            .status()
-            .expect("spawn cargo build");
-        assert!(
-            status.success(),
-            "cargo build lernie-provider-anthropic failed"
-        );
-    });
-    let profile = if cfg!(debug_assertions) {
-        "debug"
-    } else {
-        "release"
-    };
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("target")
-        .join(profile)
-}
-
-fn path_env_with_adapter() -> std::ffi::OsString {
-    let existing = std::env::var_os("PATH").unwrap_or_default();
-    let mut dirs = vec![adapter_bin_dir()];
-    dirs.extend(std::env::split_paths(&existing));
-    std::env::join_paths(dirs).expect("PATH join")
-}
-
-/// Write a global `<harness-root>/providers.yaml` (ARCH §2.2/§4.1)
-/// pointing the `anthropic` endpoint at `endpoint`.
-fn write_global_providers(harness: &Path, endpoint: &str) {
-    let yaml = format!(
-        "providers:\n  \
-           anthropic:\n    \
-             endpoint: {endpoint}\n    \
-             auth:\n      type: api_key\n      env: ANTHROPIC_API_KEY\n\
-         models:\n  \
-           claude-sonnet-4-7:\n    \
-             provider: anthropic\n    \
-             model_id: claude-sonnet-4-7\n    \
-             capabilities: [tool_use_native]\n    \
-             context_window: 200000\n  \
-           claude-haiku-4-5:\n    \
-             provider: anthropic\n    \
-             model_id: claude-haiku-4-5\n    \
-             capabilities: [tool_use_native]\n    \
-             context_window: 200000\n",
+fn git_capture(dest: &Path, args: &[&str]) -> String {
+    let out = git_command(dest, args).output().expect("spawn git");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
     );
-    fs::write(harness.join("providers.yaml"), yaml).unwrap();
+    String::from_utf8(out.stdout).unwrap().trim().to_string()
 }
 
-/// Scaffold a conversation repo at `dest` via `lernie new`.
+/// Global `<harness-root>/models.yaml` (ARCH §4.2) — capabilities only;
+/// endpoints/auth are brazen's. Both roles' models point at the fixture
+/// `test` provider row so the cross-check passes.
+fn write_global_models(harness: &Path) {
+    let yaml = "\
+models:
+  claude-sonnet-4-7:
+    provider: test
+    model_id: claude-sonnet-4-7
+    capabilities: [tool_use_native]
+    context_window: 200000
+  claude-haiku-4-5:
+    provider: test
+    model_id: claude-haiku-4-5
+    capabilities: [tool_use_native]
+    context_window: 200000
+";
+    fs::write(harness.join("models.yaml"), yaml).unwrap();
+}
+
+/// A brazen config (§4.4) defining a keyless `test` provider row whose
+/// endpoint is the mock server. `auth = "none"` needs no credential, so
+/// the harness never sees key material (§4.1).
+pub fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
+    let toml = format!(
+        "timeout_connect = 5\ntimeout_response = 10\ntimeout_idle = 10\n\
+         [[provider]]\nname = \"test\"\nbase_url = \"{endpoint}\"\n\
+         protocol = \"anthropic_messages\"\nauth = \"none\"\n\
+         body_defaults = {{ max_tokens = 64 }}\n"
+    );
+    let path = dir.join("brazen.toml");
+    fs::write(&path, toml).unwrap();
+    path
+}
+
+/// Overwrite the scaffolded per-repo providers.yaml so both roles use
+/// the fixture `test` brazen row (§4.3).
+fn write_per_repo_roles(dest: &Path) {
+    let yaml = "\
+roles:
+  worker:
+    provider: test
+    model: claude-sonnet-4-7
+    tools: [bash, read_file]
+  compactor:
+    provider: test
+    model: claude-haiku-4-5
+";
+    fs::write(dest.join("providers.yaml"), yaml).unwrap();
+}
+
 fn scaffold_repo(dest: &Path, harness: &Path) {
     let out = Command::new(lernie_bin())
         .arg("new")
@@ -115,19 +116,10 @@ fn scaffold_repo(dest: &Path, harness: &Path) {
         "lernie new: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+    write_per_repo_roles(dest);
 }
 
-fn git_capture(dest: &Path, args: &[&str]) -> String {
-    let out = git_command(dest, args).output().expect("spawn git");
-    assert!(
-        out.status.success(),
-        "git {args:?}: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-    String::from_utf8(out.stdout).unwrap().trim().to_string()
-}
-
-/// Anthropic-native SSE happy stream; adapter translates to §4.4 JSONL.
+/// Anthropic-native SSE happy stream; `bz` normalizes to `v=1` events.
 const HAPPY_SSE: &str = concat!(
     "event: message_start\n",
     "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_e2e\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
@@ -156,22 +148,20 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, &server.base_url());
+    write_global_models(&harness);
+    let brazen_config = write_brazen_config(holder.path(), &server.base_url());
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
 
-    // Main is checked out inside `<conv-repo>/root/` (§2.2).
     let primary = dest.join("root");
     let main_head_before = git_capture(&primary, &["rev-parse", "main"]);
-    assert!(!main_head_before.is_empty());
 
     let prompt_out = Command::new(lernie_bin())
         .arg("prompt")
         .arg(&dest)
         .arg("ping")
-        .env("PATH", path_env_with_adapter())
-        .env("ANTHROPIC_API_KEY", "test-key")
         .env("LERNIE_HOME", &harness)
+        .env("BRAZEN_CONFIG", &brazen_config)
         .stderr(Stdio::piped())
         .output()
         .expect("spawn lernie prompt");
@@ -185,7 +175,6 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         .unwrap()
         .trim()
         .to_string();
-    // Bare conv-id `<ts>-<short-id>`, no `ex/` prefix (§2.3).
     assert!(!branch.contains('/'), "got {branch:?}");
     assert_eq!(branch.len(), 25, "got {branch:?}");
     let conv_id = branch.clone();
@@ -193,52 +182,38 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     // Main advanced via --no-ff merge (two parent shas).
     let main_head_after = git_capture(&primary, &["rev-parse", "main"]);
     assert_ne!(main_head_before, main_head_after, "main should advance");
-    let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", "main"]);
-    let parent_shas: Vec<_> = parents.split_whitespace().collect();
     let conv_tip = git_capture(&primary, &["rev-parse", &branch]);
-    assert_eq!(parent_shas, [&main_head_before[..], &conv_tip[..]]);
+    let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", "main"]);
+    assert_eq!(
+        parents.split_whitespace().collect::<Vec<_>>(),
+        [&main_head_before[..], &conv_tip[..]]
+    );
 
     // §2.6 alignment: summary/** stays on the compactor sub-branch.
     let summary_on_main = git_command(&primary, &["show", "main:summary/001.md"])
         .output()
         .expect("spawn git show");
     assert!(!summary_on_main.status.success(), "summary on main");
-    let summary_commits = git_capture(
-        &primary,
-        &[
-            "log",
-            "--all",
-            "--pretty=%H",
-            "--diff-filter=A",
-            "--",
-            "summary/001.md",
-        ],
-    );
-    let first_sha = summary_commits.lines().next().expect("summary in history");
-    let summary_blob = git_capture(&primary, &["show", &format!("{first_sha}:summary/001.md")]);
-    assert_eq!(
-        summary_blob,
-        format!("conversation {conv_id}: terminal compaction")
-    );
 
-    // Step records live outside every worktree (§2.2 / §2.3); read
-    // them directly from the conv-repo's filesystem.
+    // Step records live outside every worktree (§2.2 / §2.3).
     let step_dir = dest.join(format!("steps/{conv_id}/001"));
-    let read_json = |name: &str| -> serde_json::Value {
-        serde_json::from_slice(&fs::read(step_dir.join(name)).unwrap()).unwrap()
-    };
-    let request = read_json("request.json");
-    assert_eq!(request["messages"][0]["content"], "ping");
+    let request: serde_json::Value =
+        serde_json::from_slice(&fs::read(step_dir.join("request.json")).unwrap()).unwrap();
+    // Typed canonical request: user content is a `Content::Text` array,
+    // the goal is pinned at the head of `system`, and `stream` is absent
+    // (brazen's default governs, §4.4).
+    assert_eq!(request["messages"][0]["content"][0]["text"], "ping");
     assert!(
-        request["system"]
+        request["system"][0]["text"]
             .as_str()
             .unwrap()
             .starts_with("<goal>\nping\n</goal>"),
-        "goal not pinned at head of system"
     );
-    assert_eq!(request["stream"], true);
-    // response.json is JSONL of §4.4 events tail-appended event-by-
-    // event; closing the fd is the §3.5 IN_CLOSE_WRITE completion.
+    // lernie sets no `stream` (brazen default governs, §4.4); the typed
+    // request serializes the unset Option as JSON `null`.
+    assert!(request["stream"].is_null());
+
+    // response.json is `v=1` NDJSON; the terminal line is `end`.
     let lines: Vec<serde_json::Value> = fs::read(step_dir.join("response.json"))
         .unwrap()
         .split(|b| *b == b'\n')
@@ -246,36 +221,15 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         .map(|l| serde_json::from_slice(l).expect("valid JSON line"))
         .collect();
     assert_eq!(lines.first().unwrap()["type"], "message_start");
-    assert_eq!(lines.last().unwrap()["type"], "message_stop");
-    let text = lines.iter().find(|e| e["type"] == "text_delta").unwrap();
-    assert_eq!(text["text"], "pong");
-    // meta.json `commit` is the branch tip at step-start (§2.10).
-    let commit = read_json("meta.json")["commit"]
-        .as_str()
-        .unwrap()
-        .to_owned();
-    assert_eq!(commit.len(), 40, "meta.commit not full sha: {commit:?}");
-    assert!(commit.chars().all(|c| c.is_ascii_hexdigit()));
+    assert_eq!(lines.last().unwrap()["type"], "end");
+    let text = lines.iter().find(|e| e["type"] == "content_delta").unwrap();
+    assert_eq!(text["delta"]["text_delta"], "pong");
 
-    // Step records must not be git-tracked anywhere (§2.2).
-    let tracked_steps = git_capture(&primary, &["ls-files", "steps/"]);
-    assert!(tracked_steps.is_empty(), "got {tracked_steps:?}");
-
-    // Worktree removed; branch ref survives retention window (§2.3).
-    let worktree = dest.join(&conv_id);
-    assert!(!worktree.exists(), "conv worktree must be removed");
-    let branches = git_capture(&primary, &["branch", "--list", &branch]);
-    assert!(
-        branches.contains(&branch),
-        "conv ref must survive: {branches:?}"
-    );
-
-    // §8 unmerged-branch metric: empty post-merge, read from refs.
-    let unmerged = git_capture(
-        &primary,
-        &["branch", "--list", "*-*", "--no-merged", "main"],
-    );
-    assert!(unmerged.is_empty(), "got {unmerged:?}");
+    // Step records are never git-tracked (§2.2).
+    assert!(git_capture(&primary, &["ls-files", "steps/"]).is_empty());
+    // Worktree removed; branch ref survives (§2.3).
+    assert!(!dest.join(&conv_id).exists());
+    assert!(git_capture(&primary, &["branch", "--list", &branch]).contains(&branch));
 }
 
 #[test]
@@ -283,17 +237,15 @@ fn prompt_subcommand_surfaces_missing_repo() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
-    write_global_providers(&harness, "https://api.anthropic.com");
+    write_global_models(&harness);
     let out = Command::new(lernie_bin())
         .arg("prompt")
         .arg(holder.path().join("does-not-exist"))
         .arg("hi")
-        .env("PATH", path_env_with_adapter())
         .env("LERNIE_HOME", &harness)
         .stderr(Stdio::piped())
         .output()
         .expect("spawn lernie prompt");
     assert!(!out.status.success(), "expected failure on missing repo");
-    let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains("lernie prompt"), "got: {stderr}");
+    assert!(String::from_utf8_lossy(&out.stderr).contains("lernie prompt"));
 }

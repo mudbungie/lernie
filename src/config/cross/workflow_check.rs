@@ -54,6 +54,7 @@ mod tests {
             RoleAssignment {
                 provider: "anthropic".to_string(),
                 model: "claude-sonnet-4-7".to_string(),
+                tools: Vec::new(),
             },
         );
         PerRepoProviders { roles }

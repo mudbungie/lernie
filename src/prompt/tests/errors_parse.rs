@@ -1,41 +1,26 @@
-//! Spec-anchored parser tests for the §4.4 streaming wire shape on
-//! the harness side.
+//! Parse-level failures on the brazen `v=1` event wire (ARCH §4.4).
 //!
-//! These tests pin the per-line decisions made in
-//! `docs/ARCHITECTURE.md` §4.4 "Response shape (streaming)" — every
-//! complete invocation produces JSON Lines, the terminal event is
-//! `message_stop` (or `error`), and `kind`/`message` on an in-band
-//! error event are required fields.
-//!
-//! Kept separate from [`super::errors`] so the spec anchor stays
-//! findable (and so each file stays under the repo's per-file line
-//! cap).
+//! A `response.json` line that is not a decodable `brazen::Event`
+//! surfaces as [`Error::AdapterJson`] — the harness will not proceed on
+//! a stream it cannot parse. (Unknown *event types* are tolerated via
+//! brazen's forward-compat `Other`; these cases are structurally
+//! undecodable, not merely unknown.)
 
 use super::fixtures::*;
 use crate::prompt::Error;
 
 #[test]
-fn run_rejects_message_stop_with_required_field_omitted() {
-    // Per-stream cases the harness must reject. Each body is one
-    // JSONL line. The harness surfaces every one as AdapterJson
-    // because StreamEvent's tag-based deserialization rejects
-    // missing required fields.
+fn run_rejects_undecodable_event_lines() {
     let cases: &[(&str, &[u8])] = &[
+        ("non-object JSON", b"[1,2,3]\n"),
+        ("object with no type tag", b"{\"unexpected\":\"shape\"}\n"),
         (
-            "message_stop missing usage",
-            b"{\"type\":\"message_stop\",\"stop_reason\":\"end_turn\",\"api_calls\":1}\n",
-        ),
-        (
-            "message_stop missing api_calls",
-            b"{\"type\":\"message_stop\",\"stop_reason\":\"end_turn\",\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}\n",
-        ),
-        (
-            "error missing kind",
+            "error event missing kind",
             b"{\"type\":\"error\",\"message\":\"boom\"}\n",
         ),
         (
-            "error missing message",
-            b"{\"type\":\"error\",\"kind\":\"fatal\"}\n",
+            "error event missing message",
+            b"{\"type\":\"error\",\"kind\":\"transport\"}\n",
         ),
     ];
     for (label, body) in cases {
@@ -47,22 +32,4 @@ fn run_rejects_message_stop_with_required_field_omitted() {
             "{label}: expected AdapterJson, got {err:?}"
         );
     }
-}
-
-#[test]
-fn run_accepts_message_stop_without_optional_stop_reason_when_message_start_carries_it() {
-    // §4.4 lets `stop_reason` arrive on `message_start.message`,
-    // `message_delta`, or the terminal `message_stop`. A stop event
-    // with no `stop_reason` is fine if message_start already carried
-    // one.
-    let body = concat!(
-        r#"{"type":"message_start","message":{"id":"m","model":"x","stop_reason":"end_turn","usage":{"input_tokens":1,"output_tokens":0}}}"#,
-        "\n",
-        r#"{"type":"message_stop","usage":{"input_tokens":1,"output_tokens":2},"api_calls":1}"#,
-        "\n",
-    );
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(body.as_bytes());
-    run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok())
-        .expect("stop_reason from message_start must be honored");
 }

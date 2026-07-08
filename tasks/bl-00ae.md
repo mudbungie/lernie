@@ -1,7 +1,8 @@
 +++
 title = "v0.6 — brazen provider layer (fold ~/dev/harness into lernie)"
 created = 1783464230
-updated = 1783465324
+updated = 1783490520
+claimant = "Sandcastle"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

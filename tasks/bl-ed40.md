@@ -11,6 +11,10 @@ on = "close"
 [[blockers]]
 id = "bl-5e34"
 on = "close"
+
+[[blockers]]
+id = "bl-25b1"
+on = "close"
 +++
 Design task. Deliverable: tracked edits to docs/ARCHITECTURE.md (+ TAXONOMY.md entries), no code.
 

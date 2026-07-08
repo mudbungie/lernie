@@ -2,6 +2,7 @@
 title = "Amend §2.11: writer/driver totality — every branch invocation is either a writer (deposit, exit) or a driver (acquire-or-exit), never both"
 created = 1783490442
 updated = 1783490442
+claimant = "Incredibly"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

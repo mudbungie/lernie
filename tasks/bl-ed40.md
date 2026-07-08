@@ -1,7 +1,8 @@
 +++
 title = "Design: front-door conversation messaging — queue model (any sender can message any conversation; single step-loop executor per branch)"
 created = 1783471203
-updated = 1783471203
+updated = 1783471235
+claimant = "Incredibly"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

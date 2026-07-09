@@ -28,6 +28,7 @@ mod assembler;
 mod model_call;
 mod step_commit;
 mod tool_step;
+mod tools;
 
 pub use model_call::{RealSleeper, Sleeper};
 
@@ -62,6 +63,10 @@ pub(super) struct Resolved<'a> {
     pub(super) model: &'a Model,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: &'a str,
+    /// The role's declared tool names (§4.3 `tools:`). Composed against
+    /// the branch's `descriptions/tools/*.json` schemas into the typed
+    /// request's `tools` array (§3.3) so the model is told its toolset.
+    pub(super) tools: &'a [String],
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
     pub(super) binary: OsString,
@@ -109,10 +114,17 @@ pub(super) fn run_exchange(
 
     let mut step_seq: u32 = 1;
     let mut exhausted = false;
+    // §3.3/§4.3: the role's declared tools composed against the schemas
+    // committed under `descriptions/tools/` in the branch's read-state
+    // tree (§2.10). Composed once at step 1 — after the dispatch commit
+    // establishes that tree — and cloned into every step's request, since
+    // the schemas are git-inherited and do not change mid-branch.
+    let mut tools: Vec<brazen::Tool> = Vec::new();
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
             commit_dispatch(&worktree_path, &conv_id, deps)?;
+            tools = tools::compose(&worktree_path, resolved.tools)?;
         }
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
@@ -141,6 +153,7 @@ pub(super) fn run_exchange(
             &resolved.model.model_id,
             &system_with_goal,
             messages.clone(),
+            tools.clone(),
             DEFAULT_MAX_TOKENS,
         );
         let request_value =

@@ -127,6 +127,20 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
+    #[error("tool {name} schema unreadable at {path}: {source}")]
+    ToolSchemaIo {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("tool {name} schema at {path} is not valid JSON: {source}")]
+    ToolSchemaJson {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: serde_json::Error,
+    },
 }
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the
@@ -187,6 +201,7 @@ pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, E
     let resolved = dispatch::Resolved {
         model,
         provider_row: &assignment.provider,
+        tools: &assignment.tools,
         soul,
         binary,
         retry,

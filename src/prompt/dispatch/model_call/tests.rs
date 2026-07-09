@@ -138,18 +138,18 @@ fn ends(bytes: &[u8]) -> usize {
 
 #[test]
 fn build_request_is_a_typed_canonical_request() {
-    let req = build_request(
-        "claude-sonnet-4-7",
-        "sys",
-        vec![Message {
-            role: Role::User,
-            content: vec![Content::Text("hi".into())],
-        }],
-        4096,
-    );
+    // Message pass-through is asserted in the e2e test; here we pin the
+    // typed shape and the composed `tools` array (§3.3).
+    let tool = brazen::Tool {
+        name: "bash".into(),
+        description: None,
+        input_schema: serde_json::json!({"type": "object"}),
+    };
+    let req = build_request("claude-sonnet-4-7", "sys", vec![], vec![tool.clone()], 4096);
     assert_eq!(req.model, "claude-sonnet-4-7");
     assert_eq!(req.max_tokens, Some(4096));
     assert_eq!(req.system, Some(vec![Content::Text("sys".into())]));
+    assert_eq!(req.tools, vec![tool]);
     // `stream` absent → brazen default governs; `extra` stays empty.
     assert_eq!(req.stream, None);
     assert!(req.extra.is_empty());

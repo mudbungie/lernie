@@ -21,7 +21,7 @@ use super::assembler::{Assembler, AssemblyError, Completion, SegmentOutcome};
 use crate::config::RetryConfig;
 use crate::prompt::Error;
 use crate::prompt::adapter::AdapterRunner;
-use brazen::{CanonicalRequest, Content, EVENT_SCHEMA_VERSION, Message};
+use brazen::{CanonicalRequest, Content, EVENT_SCHEMA_VERSION, Message, Tool};
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::Write;
@@ -60,17 +60,21 @@ pub(super) struct ModelCall<'a> {
 /// Build a typed [`CanonicalRequest`] (§4.4 "the vocabulary is linked"):
 /// building the struct directly makes brazen's fail-open `extra` map
 /// unreachable. `stream` is left `None` — streaming is brazen's default
-/// and lernie never overrides it (§4.4).
+/// and lernie never overrides it (§4.4). `tools` carries the role's
+/// composed toolset (§3.3 — the schemas the model is told it may call);
+/// an empty vec is "no tools declared/available".
 pub(super) fn build_request(
     model_id: &str,
     system: &str,
     messages: Vec<Message>,
+    tools: Vec<Tool>,
     max_tokens: u32,
 ) -> CanonicalRequest {
     CanonicalRequest {
         model: model_id.to_string(),
         system: Some(vec![Content::Text(system.to_string())]),
         messages,
+        tools,
         max_tokens: Some(max_tokens),
         ..CanonicalRequest::default()
     }

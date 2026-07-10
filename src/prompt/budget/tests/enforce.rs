@@ -1,9 +1,8 @@
-//! Enforcement tests: [`check`] boundaries, [`remaining`] / [`clamp`]
-//! clamped inheritance, [`mark_exhausted`], and the `Display` output.
+//! Enforcement tests: [`check`] boundaries (incl. the whole-tree
+//! derivation over the root id for a subagent branch), [`mark_exhausted`],
+//! and the `Display` output.
 
-use super::super::{
-    Axis, BUDGET_EXHAUSTED_REF_PREFIX, Exhausted, check, clamp, mark_exhausted, remaining,
-};
+use super::super::{Axis, BUDGET_EXHAUSTED_REF_PREFIX, Exhausted, check, mark_exhausted};
 use super::{repo, seg, usage_line, write_meta, write_response};
 use crate::config::Budgets;
 use crate::template::{GitRunner, RealGit};
@@ -96,63 +95,67 @@ fn check_depth_is_positional_allows_at_limit_exhausts_over() {
 }
 
 #[test]
-fn remaining_depletes_tokens_and_wall_keeps_depth_absolute() {
+fn check_derives_whole_tree_over_root_for_a_subagent_branch() {
+    // `steps/` is one shared tree (ARCH §2.2/§2.3/§2.6): a subagent driver
+    // must see the root's and its siblings' live spend, not just its own
+    // subtree — this is the invariant the no-inheritance refactor rests on.
     let r = repo();
-    write_response(r.path(), "conv", 1, &tokens(700));
+    write_response(r.path(), "t0-r0", 1, &tokens(600)); // the root's spend
+    write_response(r.path(), "t0-r0-t1-c1", 1, &tokens(500)); // this subagent's
+    write_response(r.path(), "t0-r0-t1-s2", 1, &tokens(400)); // a sibling's
+    let b = Budgets {
+        max_total_tokens: Some(1000),
+        ..Budgets::default()
+    };
+    // Checked from the subagent branch: root_of → "t0-r0", summing the
+    // whole tree = 600 + 500 + 400 = 1500 >= 1000. The subagent's own
+    // subtree alone (500) is under 1000, so this can only trip whole-tree.
+    let ex = check(r.path(), "t0-r0-t1-c1", &b).unwrap();
+    assert_eq!(ex.axis, Axis::Tokens);
+    assert_eq!((ex.limit, ex.actual), (1000, 1500));
+}
+
+#[test]
+fn check_wall_also_derives_over_the_whole_tree() {
+    // Wall likewise sums the whole tree, not just the driver's subtree.
+    let r = repo();
     write_meta(
         r.path(),
-        "conv",
+        "t0-r0",
         1,
         "2026-01-01T00:00:00Z",
-        "2026-01-01T00:00:20Z",
+        "2026-01-01T00:00:30Z",
     );
-    let parent = Budgets {
-        max_total_tokens: Some(1000),
-        max_wall_seconds: Some(60),
-        max_depth: Some(4),
+    write_meta(
+        r.path(),
+        "t0-r0-t1-c1",
+        1,
+        "2026-01-01T00:00:00Z",
+        "2026-01-01T00:00:25Z",
+    );
+    let b = Budgets {
+        max_wall_seconds: Some(50),
+        ..Budgets::default()
     };
-    let rem = remaining(r.path(), "conv", &parent);
-    assert_eq!(rem.max_total_tokens, Some(300)); // 1000 - 700
-    assert_eq!(rem.max_wall_seconds, Some(40)); // 60 - 20
-    assert_eq!(rem.max_depth, Some(4)); // absolute, unchanged
+    // From the subagent: 30 + 25 = 55 >= 50; the subagent's own 25 is under.
+    let ex = check(r.path(), "t0-r0-t1-c1", &b).unwrap();
+    assert_eq!(ex.axis, Axis::Wall);
+    assert_eq!((ex.limit, ex.actual), (50, 55));
 }
 
 #[test]
-fn remaining_saturates_at_zero_and_passes_none_through() {
+fn check_depth_exhausts_a_deep_subagent_but_not_its_root() {
+    // Depth is positional and per-driver: the same limit spares the root
+    // (depth 0) and exhausts a subagent below max_depth.
     let r = repo();
-    write_response(r.path(), "conv", 1, &tokens(5000));
-    let parent = Budgets {
-        max_total_tokens: Some(1000),
-        max_wall_seconds: None,
-        max_depth: None,
+    let b = Budgets {
+        max_depth: Some(1),
+        ..Budgets::default()
     };
-    let rem = remaining(r.path(), "conv", &parent);
-    assert_eq!(rem.max_total_tokens, Some(0)); // saturating_sub, no underflow
-    assert_eq!(rem.max_wall_seconds, None); // None passes through
-    assert_eq!(rem.max_depth, None);
-}
-
-#[test]
-fn clamp_takes_min_per_axis_over_all_option_combinations() {
-    // A child inherits min(parent_remaining, child_declared) per axis.
-    let parent_remaining = Budgets {
-        max_total_tokens: Some(300),
-        max_wall_seconds: Some(40),
-        max_depth: Some(4),
-    };
-    let child = Budgets {
-        max_total_tokens: Some(1000),
-        max_wall_seconds: None,
-        max_depth: Some(2),
-    };
-    let c = clamp(&parent_remaining, &child);
-    assert_eq!(c.max_total_tokens, Some(300)); // min(300, 1000) → parent's leftover
-    assert_eq!(c.max_wall_seconds, Some(40)); // (Some, None) → parent's
-    assert_eq!(c.max_depth, Some(2)); // min(4, 2) → child's tighter
-    // (None, Some) and (None, None) arms of min_opt:
-    let c2 = clamp(&Budgets::default(), &child);
-    assert_eq!(c2.max_total_tokens, Some(1000)); // (None, Some) → child's
-    assert_eq!(c2.max_wall_seconds, None); // (None, None) → unbounded
+    assert_eq!(check(r.path(), "t0-r0", &b), None); // depth 0 <= 1
+    let ex = check(r.path(), "t0-r0-t1-c1-t2-g1", &b).unwrap(); // depth 2
+    assert_eq!(ex.axis, Axis::Depth);
+    assert_eq!((ex.limit, ex.actual), (1, 2));
 }
 
 #[test]

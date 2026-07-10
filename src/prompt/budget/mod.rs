@@ -7,16 +7,18 @@
 //! all derived from disk at check time by [`derive`] — no running counter
 //! is stored (PRINCIPLES "Single source of truth").
 //!
-//! **Clamped inheritance.** A dispatch hands a child the minimum of the
-//! parent's remaining budget and the child's own declaration
-//! ([`remaining`] + [`clamp`], ARCH §6). Because `workflow.yaml` is one
-//! frozen copy per conversation tree, "child declaration" and "parent
-//! declaration" are the same limits, so the clamp resolves to the
-//! parent's remaining headroom — a hand-off that cannot be re-derived
-//! once the child starts spending (the parent's subtree spend then
-//! includes the child's). The root conversation has no parent, so its
-//! effective budget *is* its declaration, evaluated over the whole tree
-//! (branch + descent).
+//! **One live whole-tree check — no inheritance.** A budget is a
+//! per-conversation-tree ceiling, and `steps/` is one shared tree at the
+//! conv-repo root, written live by every conversation (root and every
+//! subagent) and never merged (ARCH §2.2/§2.3/§2.6). So any driver — root
+//! or subagent — derives the *whole tree's* live spend against the root
+//! id ([`root_of`]) and checks it against the single frozen `workflow.yaml`
+//! limit. Nothing is handed down at dispatch: the child reads the same
+//! total the parent would, so there is no snapshot to freeze and no
+//! parent-minus-child to double-count. Tokens and wall derive over the
+//! whole tree; `max_depth` is positional and derives from the driver's own
+//! branch name. (An optional per-subtree cap — a future `--token-cap`-style
+//! knob checked against a subtree's own spend — is not built here.)
 //!
 //! **Exhaustion is an ordinary terminal state.** On exhaustion the
 //! harness ceases the branch's step loop and writes
@@ -86,18 +88,18 @@ impl std::fmt::Display for Exhausted {
     }
 }
 
-/// Evaluate `effective` (a conversation's clamped limits) against
-/// spend/wall/depth derived from disk for `branch` and its descent.
-/// Returns the first crossed axis, or `None` when every declared limit
-/// still has headroom. An unbounded axis (`None` limit) never triggers.
-///
-/// Tokens and wall are consumables — exhausted at `actual >= limit`, so
-/// the conversation stops *before* it overspends. Depth is positional —
-/// `max_depth` is the deepest allowed depth, so it exhausts at
-/// `actual > limit` (module doc: the root interaction).
-pub fn check(repo: &Path, branch: &str, effective: &Budgets) -> Option<Exhausted> {
-    if let Some(limit) = effective.max_total_tokens {
-        let actual = derive::spend(repo, branch);
+/// Evaluate the single frozen `budgets` against spend/wall/depth derived
+/// live from disk. Tokens and wall are whole-tree consumables — derived
+/// over [`root_of`]`(branch)` (the branch plus its entire descent, ARCH
+/// §6) and exhausted at `actual >= limit`, so the driver stops *before* it
+/// overspends. Depth is positional — derived from `branch` itself and
+/// exhausted at `actual > limit` (`max_depth` is the deepest allowed
+/// depth; the root at depth 0 is never depth-exhausted). Returns the first
+/// crossed axis, or `None` when every declared limit still has headroom;
+/// an unbounded axis (`None` limit) never triggers.
+pub fn check(repo: &Path, branch: &str, budgets: &Budgets) -> Option<Exhausted> {
+    if let Some(limit) = budgets.max_total_tokens {
+        let actual = derive::spend(repo, root_of(branch));
         if actual >= limit {
             return Some(Exhausted {
                 axis: Axis::Tokens,
@@ -106,8 +108,8 @@ pub fn check(repo: &Path, branch: &str, effective: &Budgets) -> Option<Exhausted
             });
         }
     }
-    if let Some(limit) = effective.max_wall_seconds {
-        let actual = derive::wall_seconds(repo, branch);
+    if let Some(limit) = budgets.max_wall_seconds {
+        let actual = derive::wall_seconds(repo, root_of(branch));
         if actual >= limit {
             return Some(Exhausted {
                 axis: Axis::Wall,
@@ -116,7 +118,7 @@ pub fn check(repo: &Path, branch: &str, effective: &Budgets) -> Option<Exhausted
             });
         }
     }
-    if let Some(limit) = effective.max_depth {
+    if let Some(limit) = budgets.max_depth {
         let actual = u64::from(derive::depth(branch));
         if actual > u64::from(limit) {
             return Some(Exhausted {
@@ -129,46 +131,16 @@ pub fn check(repo: &Path, branch: &str, effective: &Budgets) -> Option<Exhausted
     None
 }
 
-/// The parent's leftover budget, for clamping a child's declaration
-/// against (ARCH §6 clamped inheritance). Tokens and wall deplete by the
-/// parent's derived spend (saturating, so a parent at/over its cap hands
-/// zero, never an underflow); depth is a shared absolute ceiling and
-/// passes through unchanged.
-pub fn remaining(repo: &Path, parent_branch: &str, parent: &Budgets) -> Budgets {
-    Budgets {
-        max_total_tokens: parent
-            .max_total_tokens
-            .map(|m| m.saturating_sub(derive::spend(repo, parent_branch))),
-        max_wall_seconds: parent
-            .max_wall_seconds
-            .map(|m| m.saturating_sub(derive::wall_seconds(repo, parent_branch))),
-        max_depth: parent.max_depth,
-    }
-}
-
-/// Clamp a child's own declaration to the parent's remaining budget:
-/// `min` per axis (ARCH §6 "hands the child min(parent remaining, child
-/// declaration)"). An axis bounded on only one side takes that side's
-/// limit; unbounded on both stays unbounded.
-pub fn clamp(parent_remaining: &Budgets, child_declared: &Budgets) -> Budgets {
-    Budgets {
-        max_total_tokens: min_opt(
-            parent_remaining.max_total_tokens,
-            child_declared.max_total_tokens,
-        ),
-        max_wall_seconds: min_opt(
-            parent_remaining.max_wall_seconds,
-            child_declared.max_wall_seconds,
-        ),
-        max_depth: min_opt(parent_remaining.max_depth, child_declared.max_depth),
-    }
-}
-
-fn min_opt<T: Ord>(a: Option<T>, b: Option<T>) -> Option<T> {
-    match (a, b) {
-        (Some(a), Some(b)) => Some(a.min(b)),
-        (Some(a), None) => Some(a),
-        (None, b) => b,
+/// The root conversation id of a branch: its first two hyphen-delimited
+/// tokens (`<ts>-<short>`, ARCH §2.2). Every dispatch appends
+/// `-<ts>-<short>` (hyphenated descent), so the root is the prefix before
+/// the second hyphen. Whole-tree spend/wall derive against this, since
+/// [`derive`] sums a branch plus its entire descent — the root's descent
+/// *is* the whole tree. A bare root id (at most one hyphen) is its own root.
+fn root_of(branch: &str) -> &str {
+    match branch.match_indices('-').nth(1) {
+        Some((idx, _)) => &branch[..idx],
+        None => branch,
     }
 }
 

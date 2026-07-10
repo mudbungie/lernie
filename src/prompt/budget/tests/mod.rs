@@ -3,9 +3,9 @@
 //!
 //! - [`derive`]: spend / wall / depth derivations over on-disk step
 //!   trees (branch + descent), including the tolerance branches.
-//! - [`enforce`]: [`super::check`] boundaries, [`super::remaining`] /
-//!   [`super::clamp`] clamped inheritance, [`super::mark_exhausted`],
-//!   and the `Display` diagnostics.
+//! - [`enforce`]: [`super::check`] boundaries (incl. the whole-tree
+//!   derivation over the root id for a subagent branch),
+//!   [`super::mark_exhausted`], and the `Display` diagnostics.
 
 mod derive;
 mod enforce;

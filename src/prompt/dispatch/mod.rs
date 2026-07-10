@@ -130,13 +130,13 @@ pub(super) fn run_exchange(
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
         // §6 budget check at the model-call boundary, before invoking the
-        // adapter. Spend/wall/depth are derived from disk across the
-        // branch and its descent — no stored counter (PRINCIPLES SSOT).
-        // On exhaustion the harness writes the git-native
-        // `refs/lernie/budget-exhausted/<branch>` marker and ceases the
-        // loop: an ordinary terminal state (§6), classified by `await`
-        // like any other. The root has no parent to clamp against, so its
-        // declared budget is its effective budget.
+        // adapter. Tokens/wall are derived live over the whole conversation
+        // tree (the root id and its descent) and depth over this branch —
+        // no stored counter, no per-dispatch inheritance (PRINCIPLES SSOT;
+        // `steps/` is shared per §2.2/§2.3). On exhaustion the harness
+        // writes the git-native `refs/lernie/budget-exhausted/<branch>`
+        // marker and ceases the loop: an ordinary terminal state (§6),
+        // classified by `await` like any other.
         if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
             eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
             budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {

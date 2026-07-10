@@ -11,6 +11,10 @@ on = "close"
 [[blockers]]
 id = "bl-c406"
 on = "close"
+
+[[blockers]]
+id = "bl-32ca"
+on = "close"
 +++
 ## Finding
 ARCH §6 clamped inheritance (remaining + clamp + a dispatch-time snapshot handed to the child) is redundant machinery. It was designed as if a subagent could not see its siblings' live spend. But steps/ is ONE shared tree at the conv-repo root, outside every worktree, NOT in git, namespaced by conv-id, never merged: §2.2 'steps/ ... shared across the whole conversation tree and namespaced by conversation id'; §2.3 'every conversation in the tree (root + every subagent) writes into a single shared steps/ tree'; §2.6 'they share the conv-repo's steps/ tree from the moment they're written.' So any driver can derive the WHOLE tree's live spend with no merge, no snapshot, no inheritance. The double-counting caveat in budget/mod.rs ('cannot be re-derived once the child starts spending') is self-inflicted: it only appears because the design computes parent-minus-child instead of reading the whole-tree total once.

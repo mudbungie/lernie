@@ -1,7 +1,8 @@
 +++
 title = "Collapse §6 budgets to one live whole-tree check; delete clamped inheritance"
 created = 1783645920
-updated = 1783645923
+updated = 1783645924
+claimant = "Chandlers"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

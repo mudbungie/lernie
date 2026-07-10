@@ -1,7 +1,8 @@
 +++
 title = "alignment gate: §6 budget collapse bl-f48c"
 created = 1783645923
-updated = 1783645923
+updated = 1783646012
+claimant = "Chandlers"
 parent = "bl-f48c"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

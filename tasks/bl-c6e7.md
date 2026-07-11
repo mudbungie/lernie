@@ -8,6 +8,10 @@ tags = ["design-2026-07"]
 [[blockers]]
 id = "bl-cfd0"
 on = "close"
+
+[[blockers]]
+id = "bl-8c9b"
+on = "close"
 +++
 Settled in design discussion 2026-07-09/10. Split the harness root (currently ~/.lernie, src/harness_root.rs) along XDG lifetimes: $XDG_CONFIG_HOME/lernie for configuration (models.yaml; likely workflow templates — implementer decides split with the doc) and $XDG_DATA_HOME/lernie for data (conversations/, and the agents/skills/tools pools). LERNIE_HOME stays as the single override that collapses BOTH to one dir — test isolation (parallel tests, sandboxed replay) keeps working unchanged with one env var. brazen already resolves XDG-style, so this aligns the two projects.
 

@@ -84,7 +84,7 @@ fn scaffold_happy_path_lays_out_v0_3_shape() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let git = StubGit::ok();
-    scaffold(&dest, &git).unwrap();
+    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
 
     // Control plane lives at conv-repo root, outside the worktree.
     assert!(dest.join("manifest.yaml").is_file());
@@ -116,6 +116,19 @@ fn scaffold_happy_path_lays_out_v0_3_shape() {
 }
 
 #[test]
+fn scaffold_surfaces_descriptions_producer_failure() {
+    // Malformed skill (no frontmatter) aborts before any git run (§3.3).
+    let holder = TempDir::new().unwrap();
+    let data_root = holder.path().join("data");
+    fs::create_dir_all(data_root.join("skills/broken")).unwrap();
+    fs::write(data_root.join("skills/broken/SKILL.md"), "no frontmatter\n").unwrap();
+    let git = StubGit::ok();
+    let err = scaffold(&holder.path().join("conv"), &data_root, &git).unwrap_err();
+    assert!(matches!(err, ScaffoldError::Descriptions(_)), "got {err:?}");
+    assert!(git.runs.borrow().is_empty(), "no git runs before the abort");
+}
+
+#[test]
 fn scaffold_does_not_track_control_plane_in_git() {
     // The conv-repo root is *not* the worktree; the control files live
     // outside any git history. Asserts the inverse of the happy path:
@@ -123,7 +136,7 @@ fn scaffold_does_not_track_control_plane_in_git() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let git = StubGit::ok();
-    scaffold(&dest, &git).unwrap();
+    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
     let runs = git.runs.borrow();
     assert!(runs.iter().all(|(d, _)| d != &dest));
 }
@@ -132,7 +145,12 @@ fn scaffold_does_not_track_control_plane_in_git() {
 fn scaffold_propagates_init_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
-    let err = scaffold(&dest, &StubGit::failing_at(0)).unwrap_err();
+    let err = scaffold(
+        &dest,
+        &holder.path().join("no-pool"),
+        &StubGit::failing_at(0),
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)), "got {err:?}");
 }
 
@@ -140,7 +158,12 @@ fn scaffold_propagates_init_failure() {
 fn scaffold_propagates_config_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
-    let err = scaffold(&dest, &StubGit::failing_at(1)).unwrap_err();
+    let err = scaffold(
+        &dest,
+        &holder.path().join("no-pool"),
+        &StubGit::failing_at(1),
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)));
 }
 
@@ -148,7 +171,12 @@ fn scaffold_propagates_config_failure() {
 fn scaffold_propagates_add_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
-    let err = scaffold(&dest, &StubGit::failing_at(2)).unwrap_err();
+    let err = scaffold(
+        &dest,
+        &holder.path().join("no-pool"),
+        &StubGit::failing_at(2),
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)));
 }
 
@@ -156,7 +184,12 @@ fn scaffold_propagates_add_failure() {
 fn scaffold_propagates_commit_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
-    let err = scaffold(&dest, &StubGit::failing_at(3)).unwrap_err();
+    let err = scaffold(
+        &dest,
+        &holder.path().join("no-pool"),
+        &StubGit::failing_at(3),
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)));
 }
 
@@ -164,7 +197,12 @@ fn scaffold_propagates_commit_failure() {
 fn scaffold_refuses_non_empty_dest() {
     let holder = TempDir::new().unwrap();
     fs::write(holder.path().join("x"), b"x").unwrap();
-    let err = scaffold(holder.path(), &StubGit::ok()).unwrap_err();
+    let err = scaffold(
+        holder.path(),
+        &holder.path().join("no-pool"),
+        &StubGit::ok(),
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::DestNotEmpty(_)));
 }
 
@@ -177,7 +215,7 @@ fn scaffold_surfaces_extract_io_error() {
     let blocker = holder.path().join("blocker");
     fs::write(&blocker, b"blocks extraction").unwrap();
     let dest = blocker.join("child");
-    let err = scaffold(&dest, &StubGit::ok()).unwrap_err();
+    let err = scaffold(&dest, &holder.path().join("no-pool"), &StubGit::ok()).unwrap_err();
     assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
 }
 
@@ -190,7 +228,7 @@ fn scaffold_surfaces_root_dir_creation_failure() {
     let dest = holder.path().join("conv");
     fs::create_dir_all(&dest).unwrap();
     fs::write(dest.join("root"), b"actually-a-file").unwrap();
-    let err = scaffold(&dest, &StubGit::ok()).unwrap_err();
+    let err = scaffold(&dest, &holder.path().join("no-pool"), &StubGit::ok()).unwrap_err();
     // Either DestNotEmpty (root file was the occupant) or Io —
     // both are acceptable failure shapes; the point is no git was run.
     assert!(matches!(

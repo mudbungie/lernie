@@ -12,6 +12,8 @@
 //! step in [`crate::prompt::merge`], but the .gitattributes + driver
 //! pair is the backstop for any merge that bypasses the harness).
 
+pub mod descriptions;
+
 use include_dir::{Dir, include_dir};
 use std::fs;
 use std::io;
@@ -49,6 +51,8 @@ pub enum ScaffoldError {
     Io(#[source] io::Error),
     #[error("git error: {0}")]
     Git(#[source] io::Error),
+    #[error("descriptions-always: {0}")]
+    Descriptions(#[source] descriptions::Error),
 }
 
 /// Abstraction over running `git` subcommands inside a target directory.
@@ -135,20 +139,26 @@ pub const ROOT_WORKTREE: &str = "root";
 ///    files at the conv-repo root, outside any worktree).
 /// 3. Create `dest/root/` and write `.gitattributes` pinning the
 ///    `merge=ours` rules from ARCH §2.6.
-/// 4. Run `git init -b main`, register the `merge.ours.driver` config
+/// 4. Snapshot the descriptions-always tree (ARCH §3.3): every tool
+///    schema and skill frontmatter from the `data_root` pools is copied
+///    into `dest/root/descriptions/{tools,skills}/` so the initial commit
+///    carries it and every agent branch inherits it via git. An empty or
+///    absent pool yields an empty descriptions tree.
+/// 5. Run `git init -b main`, register the `merge.ours.driver` config
 ///    so the `.gitattributes` rules are actually honored (without it
 ///    git silently ignores `merge=ours` on a hand-run merge), then
 ///    `git add -A` + an initial `git commit -m "init conversation repo"`
 ///    *inside* `dest/root/` via the supplied [`GitRunner`]. The `.git`
 ///    lives in `root/`; the control files at the conv-repo root are
-///    deliberately untracked.
-pub fn scaffold<G: GitRunner>(dest: &Path, git: &G) -> Result<(), ScaffoldError> {
+///    deliberately untracked, while `descriptions/**` is tracked context.
+pub fn scaffold<G: GitRunner>(dest: &Path, data_root: &Path, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
     fs::create_dir_all(dest).map_err(ScaffoldError::Io)?;
     TEMPLATE.extract(dest).map_err(ScaffoldError::Io)?;
     let root = dest.join(ROOT_WORKTREE);
     fs::create_dir_all(&root).map_err(ScaffoldError::Io)?;
     fs::write(root.join(".gitattributes"), ROOT_GITATTRIBUTES).map_err(ScaffoldError::Io)?;
+    descriptions::snapshot(data_root, &root).map_err(ScaffoldError::Descriptions)?;
     git.run(&root, &["init", "-b", "main"])
         .map_err(ScaffoldError::Git)?;
     // `git config merge.ours.driver true`: registers a no-op driver

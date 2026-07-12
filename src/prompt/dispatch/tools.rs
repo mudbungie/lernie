@@ -19,14 +19,18 @@
 //! JSON is a config fault, surfaced rather than dropped (PRINCIPLES
 //! "Decline illegal operations"). Declared order is preserved.
 //!
-//! The `description` field (§3.3 point 3: sourced from the tool's
-//! `SKILL.md` frontmatter) is left `None` here — SKILL.md frontmatter is
-//! composed by the same descriptions-always machinery that populates
-//! `descriptions/tools/`, which is not yet wired; the `input_schema`
-//! (with its own per-property descriptions) is the toolset signal this
-//! step delivers.
+//! The `description` field (§3.3 point 3) is sourced from the tool's
+//! `SKILL.md` frontmatter, snapshotted alongside the schema by the
+//! descriptions-always producer (`crate::template::descriptions`) into
+//! `descriptions/skills/<name>.md`. A tool whose schema is present but
+//! whose skill frontmatter is absent composes with `description: None`
+//! — the transient producer-ordering state §3.3 sanctions — rather than
+//! being dropped; a present-but-malformed frontmatter is a config fault,
+//! surfaced rather than dropped (PRINCIPLES "Decline illegal
+//! operations").
 
 use crate::prompt::Error;
+use crate::skill;
 use brazen::Tool;
 use serde_json::Value;
 use std::path::Path;
@@ -35,6 +39,11 @@ use std::path::Path;
 /// (ARCH §3.3 — `descriptions/tools/<name>.json`, sent verbatim as
 /// `input_schema`).
 const TOOLS_DESC_DIR: &str = "descriptions/tools";
+
+/// Worktree-relative directory holding the committed skill frontmatter
+/// (ARCH §3.3 — `descriptions/skills/<name>.md`; a tool's `description`
+/// is its own skill's frontmatter `description`).
+const SKILLS_DESC_DIR: &str = "descriptions/skills";
 
 /// Compose the role's `declared` tools against the schemas present under
 /// `<worktree>/descriptions/tools/`. Returns one [`Tool`] per declared
@@ -63,11 +72,37 @@ pub(super) fn compose(worktree: &Path, declared: &[String]) -> Result<Vec<Tool>,
             })?;
         tools.push(Tool {
             name: name.clone(),
-            description: None,
+            description: read_description(worktree, name)?,
             input_schema,
         });
     }
     Ok(tools)
+}
+
+/// The `description` for tool `name`, from its skill frontmatter at
+/// `<worktree>/descriptions/skills/<name>.md` (§3.3 point 3). Absent
+/// frontmatter → `None` (the schema-before-description ordering §3.3
+/// sanctions); a present-but-malformed frontmatter is surfaced.
+fn read_description(worktree: &Path, name: &str) -> Result<Option<String>, Error> {
+    let path = worktree.join(SKILLS_DESC_DIR).join(format!("{name}.md"));
+    let body = match std::fs::read_to_string(&path) {
+        Ok(s) => s,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(source) => {
+            return Err(Error::SkillFrontmatterIo {
+                name: name.to_string(),
+                path,
+                source,
+            });
+        }
+    };
+    skill::parse(&body)
+        .map(|fm| Some(fm.description))
+        .map_err(|source| Error::SkillFrontmatter {
+            name: name.to_string(),
+            path,
+            source,
+        })
 }
 
 #[cfg(test)]

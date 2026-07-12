@@ -13,6 +13,14 @@ fn write_schema(worktree: &Path, name: &str, body: &str) {
     fs::write(dir.join(format!("{name}.json")), body).unwrap();
 }
 
+/// Write `descriptions/skills/<name>.md` in `worktree` with a frontmatter
+/// `body` (the shape the descriptions-always producer emits).
+fn write_skill(worktree: &Path, name: &str, frontmatter_body: &str) {
+    let dir = worktree.join(SKILLS_DESC_DIR);
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(dir.join(format!("{name}.md")), frontmatter_body).unwrap();
+}
+
 const BASH_SCHEMA: &str = r#"{
   "type": "object",
   "properties": { "command": { "type": "string" } },
@@ -33,8 +41,60 @@ fn declared_tool_with_schema_carries_it_verbatim() {
         tools[0].input_schema,
         serde_json::from_str::<Value>(BASH_SCHEMA).unwrap()
     );
-    // description sourcing (SKILL.md frontmatter) is not yet wired.
+    // A schema present without its skill frontmatter composes with a
+    // `None` description — the transient producer-ordering state §3.3
+    // sanctions — rather than being dropped.
     assert_eq!(tools[0].description, None);
+}
+
+#[test]
+fn skill_frontmatter_populates_the_tool_description() {
+    let wt = TempDir::new().unwrap();
+    write_schema(wt.path(), "bash", BASH_SCHEMA);
+    write_skill(
+        wt.path(),
+        "bash",
+        "name: bash\ndescription: Run a shell command.\n",
+    );
+
+    let tools = compose(wt.path(), &["bash".to_string()]).unwrap();
+    // §3.3 point 3: the tool entry's `description` is its skill's
+    // frontmatter `description`.
+    assert_eq!(
+        tools[0].description.as_deref(),
+        Some("Run a shell command.")
+    );
+    assert_eq!(
+        tools[0].input_schema,
+        serde_json::from_str::<Value>(BASH_SCHEMA).unwrap()
+    );
+}
+
+#[test]
+fn malformed_skill_frontmatter_is_a_hard_error() {
+    let wt = TempDir::new().unwrap();
+    write_schema(wt.path(), "bash", BASH_SCHEMA);
+    // Present but not a valid frontmatter mapping (missing fields).
+    write_skill(wt.path(), "bash", "not: a valid frontmatter\n");
+    let err = compose(wt.path(), &["bash".to_string()]).unwrap_err();
+    match err {
+        Error::SkillFrontmatter { name, .. } => assert_eq!(name, "bash"),
+        other => panic!("expected SkillFrontmatter, got {other:?}"),
+    }
+}
+
+#[test]
+fn unreadable_skill_frontmatter_surfaces_io_error() {
+    let wt = TempDir::new().unwrap();
+    write_schema(wt.path(), "bash", BASH_SCHEMA);
+    // A directory where `bash.md` is expected: `read_to_string` fails
+    // with a non-NotFound error, surfaced rather than treated as absent.
+    fs::create_dir_all(wt.path().join(SKILLS_DESC_DIR).join("bash.md")).unwrap();
+    let err = compose(wt.path(), &["bash".to_string()]).unwrap_err();
+    match err {
+        Error::SkillFrontmatterIo { name, .. } => assert_eq!(name, "bash"),
+        other => panic!("expected SkillFrontmatterIo, got {other:?}"),
+    }
 }
 
 #[test]

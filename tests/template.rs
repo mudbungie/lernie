@@ -38,11 +38,18 @@ fn lernie_bin() -> PathBuf {
 }
 
 fn scaffold(dest: &Path) -> String {
+    // Point the harness root at a throwaway empty dir so the
+    // descriptions-always producer (ARCH §3.3) sees empty pools and the
+    // scaffold shape stays deterministic regardless of the dev host's
+    // installed pools. `descriptions_are_snapshotted_from_the_pool`
+    // covers the populated case.
+    let home = TempDir::new().unwrap();
     let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
     let out = cmd
         .arg("new")
         .arg(dest)
+        .env("LERNIE_HOME", home.path())
         .env("GIT_AUTHOR_NAME", "lernie-test")
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")

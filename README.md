@@ -121,12 +121,12 @@ make new-conversation DEST=/path/to/my-conversation
 ```
 
 The binary embeds `template/` at build time (via `include_dir`), extracts
-it to the destination, creates the `root/` worktree subdirectory with
-`.gitattributes` pinning the §2.6 `merge=ours` rules, runs `git init -b
-main` *inside* `root/`, registers the `merge.ours.driver` config so
-those rules are actually honored on hand-run merges (the harness's
-own merges enforce the discipline more strictly via the rebase-time
-alignment step), and lands a single `init conversation repo` commit. The control-plane files (`manifest.yaml`, `workflow.yaml`,
+it to the destination, creates the `root/` worktree subdirectory, runs
+`git init -b main` *inside* `root/`, and lands a single (possibly empty)
+`init conversation repo` commit. Merge-back is gone (§2.6), so no
+`merge=ours` `.gitattributes` or `merge.ours.driver` is scaffolded — the
+one merge left in the system is compaction, conflict-free by construction.
+The control-plane files (`manifest.yaml`, `workflow.yaml`,
 `providers.yaml`, `version`, `souls/`) sit at the conv-repo root —
 outside any worktree — and are deliberately untracked. The destination
 must either not exist or be an empty directory. With no path argument,
@@ -143,8 +143,11 @@ lernie prompt /path/to/my-conversation 'hello'
 
 `lernie prompt` is the root-conversation path (ARCH §2.3, §2.6, §2.7,
 §2.8, §2.10). Each invocation spawns its own branch off `main`, drives
-the model call through brazen's `bz` (§4.4), runs the terminal compactor
-off the tip, and `--no-ff` merges the compacted branch back into `main`:
+the model call through brazen's `bz` (§4.4), and runs the terminal
+compactor off the tip — the compaction merge lands into the conversation's
+own branch. Merge-back is gone (§2.6): the root branch persists on its own
+ref (§2.4), and a child returns by depositing a result message into its
+parent's inbox (§2.6):
 
 1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
    §2.2). Load `<config-root>/models.yaml` (capabilities + context
@@ -225,39 +228,46 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    (§2.10). `tool_use`/`tool_result` pairing holds by construction: a
    tool result commits immediately after its emitting step's model-output
    entry, so it always lands in the immediately following user message.
-7. Dispatch the terminal compactor (§2.7) off the conversation tip
-   by re-entering the binary as `lernie dispatch compactor <repo>
-   <conv-id>` (subprocess invocation per §3.4). The compactor spawns
-   branch `<conv-id>-<cmp-id>` (hyphenated descent per §2.2) off the
-   conversation tip, writes a placeholder `summary/001.md`, and
-   `--no-ff` merges back into the conversation branch. The compactor
-   is a stub — it does not call a model; the shape exists so v0.4+ can
-   layer real semantics without moving call sites.
-8. Rebase the conversation branch onto the current `main` tip and
-   `--no-ff` merge it into `main` (§2.6), running the merge inside
-   `<repo>/root/`. Remove the conversation worktree; the branch
-   ref stays for the retention window (§2.3).
+7. **Terminal return (§2.6, §2.3 step 5).** Every terminal event —
+   normal completion (`final-response`), budget exhaustion
+   (`budget-exhausted`, §6) — deposits a **result message** into the
+   parent's inbox: an ordinary deposit whose frontmatter adds `epitaph:`
+   and `terminal_ref:` (the branch tip) and whose body is the terminal
+   response iff the agent spoke. For a root this is a structural no-op —
+   a root has no parent inbox; its response answers the user (§2.4). The
+   deposit is executor-side, never a model tool call ("Return is not a
+   verb"). At delivery, a message carrying `terminal_ref:` applies the
+   fork-point→terminal **work-product transfer** as one commit before its
+   delivery commit, filtered to work products; a diff that fails to apply
+   is declined at `refs/lernie/conflicted/<agent-id>` (§2.6).
+8. On a normal completion, dispatch the terminal compactor (§2.7) off the
+   conversation tip by re-entering the binary as `lernie dispatch
+   compactor <repo> <conv-id>` (§3.4). The compactor spawns branch
+   `<conv-id>-<cmp-id>` (hyphenated descent per §2.2) off the tip, writes
+   a placeholder `summary/001.md`, and lands the **compaction merge** —
+   a plain `--no-ff` merge into the conversation branch, the one merge
+   left in the system (§2.6), conflict-free with no rebase or alignment.
+   The compactor is a stub — it does not call a model; the shape exists so
+   v0.4+ can layer real semantics without moving call sites. **Merge-back
+   is gone (§2.6):** the root branch persists on its own ref (§2.4);
+   nothing merges to `main`, and the conversation worktree is not torn
+   down (quiescence, not teardown, §2.3 step 6).
 9. Print the conversation branch name on stdout.
 
-After `lernie prompt` returns, inspect the merge from the primary
+After `lernie prompt` returns, inspect the conversation from the primary
 worktree (`root/` is where `main` is checked out):
 
 ```
 cd /path/to/my-conversation/root
-git log --oneline --decorate main -4
-git show --stat main              # the --no-ff merge commit
-cat summary/001.md                # terminal summary
+git log --oneline --decorate <conv-id> -4
+git show --stat <conv-id>         # the compaction merge commit
+git show <conv-id>:summary/001.md # terminal summary (on the conv branch)
 ```
 
-The unmerged branch count health metric (ARCH §8) is read straight
-from git refs — no sidecar file:
-
-```
-git -C /path/to/my-conversation/root \
-    branch --list '*-*' --no-merged main | wc -l
-```
-
-A ballooning count indicates a silent failure in the merge pipeline.
+The root branch persists unmerged by design (§2.4), so the health metric
+is no longer branch count but silent deaths and undelivered returns
+(ARCH §8) — read straight from git refs, the executor lock, and inbox
+listings, with no sidecar file.
 
 ## Stopping a conversation
 
@@ -337,9 +347,12 @@ Built-ins:
   the child's address") dissolved the handle/`await` pair: the child's
   result comes back as a **deposit into the parent's inbox** carrying
   an epitaph (§2.6, §2.11), so `await`/`check` had nothing left to
-  observe and are gone. That inbox return path is specced (ARCH §2.11)
-  but not yet implemented; until it lands, `dispatch` spawns the child
-  and returns its address, but the result does not yet flow back.
+  observe and are gone. The return path — the result-message deposit
+  and the delivery-time work-product transfer — is now built (bl-4ce8,
+  §2.6); the epitaph deposits are wired at the root's terminal events but
+  fire for a child only once children run a step loop (`worker.rs` still
+  stops at the dispatch commit), so today `dispatch` spawns the child and
+  returns its address while the child does not yet reach a terminal event.
 - **`message`** — deposits content into an *existing* agent's inbox
   (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
   by its agent id (its branch name / hyphenated descent). Unlike
@@ -401,9 +414,11 @@ and future roles (verifier, critic, …) without a CLI shape change.
   with a sibling worktree at the same path; `goal.md` carries the
   supplied text and `soul.md` is loaded from
   `<repo>/souls/worker.md`, both committed as the dispatch commit
-  (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step
-  loop, the `dispatch` tool that puts a parent in front of it, and the
-  inbox result-return path (§2.11) land in subsequent phases.
+  (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step loop
+  is a later milestone. The inbox result-return path it will use is
+  already built (result-message deposit + work-product transfer, bl-4ce8,
+  §2.6); it fires once the child runs a step loop and reaches a terminal
+  event.
 
 ## Providers
 
@@ -474,7 +489,7 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   `souls/`, `steps/` — the last lives at the conv-repo root outside
   every worktree per ARCH §2.2 / §2.3), per-worktree contents under
   any subdir (`goal.md`, `soul.md`, `summary/`, `descriptions/`,
-  `skills/`, `.gitattributes`), and the primary worktree's git refs
+  `skills/`), and the primary worktree's git refs
   (`root/.git/HEAD`, `root/.git/refs/`). Filesystem events drive the
   re-render tick; the renderer is a pure function of on-disk state at
   that tick (no in-memory accumulator), so a missed event at most

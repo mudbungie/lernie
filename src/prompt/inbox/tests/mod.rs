@@ -11,3 +11,4 @@
 mod deposit;
 mod lock;
 mod probe;
+mod result;

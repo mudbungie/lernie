@@ -4,9 +4,9 @@
 //!
 //! - `new <path>` — scaffold a conversation repo from the embedded
 //!   template (ARCH §2.2).
-//! - `prompt <repo> <message>` — drive one root conversation
-//!   end-to-end: spawn the `<conv-id>` branch, drive the model call via
-//!   `bz` (§4.4), compact, and `--no-ff` merge back to `main` (§2.6).
+//! - `prompt <repo> <message>` — drive one root conversation end-to-end:
+//!   spawn the `<conv-id>` branch, drive the model call via `bz` (§4.4),
+//!   and compact via the compaction merge (§2.6 — no merge-back).
 //! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent
 //!   dispatch re-entry (ARCH §3.4). `<role>` is positional; per-role
 //!   `--goal` rules (required for `worker`, rejected for `compactor`)

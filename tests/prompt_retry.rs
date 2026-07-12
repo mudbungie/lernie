@@ -203,7 +203,10 @@ fn retryable_529_then_clean_writes_two_segments_and_completes() {
             .any(|e| e["type"] == "content_delta" && e["delta"]["text_delta"] == "pong")
     );
 
-    // The branch merged back to main (the retry recovered cleanly).
+    // The retry recovered cleanly and the conversation reached its normal
+    // terminal completion. Merge-back is gone (§2.6): the root branch
+    // persists on its own ref, unmerged into `main` (§2.4), so it shows up
+    // among `--no-merged main` rather than being absorbed.
     let primary = dest.join("root");
     let mut cmd = Command::new("git");
     for var in INHERITED_GIT_ENV {
@@ -215,5 +218,8 @@ fn retryable_529_then_clean_writes_two_segments_and_completes() {
         .args(["branch", "--list", "*-*", "--no-merged", "main"])
         .output()
         .unwrap();
-    assert!(String::from_utf8_lossy(&out.stdout).trim().is_empty());
+    assert!(
+        String::from_utf8_lossy(&out.stdout).contains(&conv_id),
+        "conv branch persists unmerged into main (§2.6)"
+    );
 }

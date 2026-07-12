@@ -123,16 +123,18 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
 
     // Git sequence: 3 (branch setup + dispatch add/commit) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
-    // (rev-parse) + 2 (model-output transcript entry add + commit) + 6
-    // (merge-back). The version guard runs no git.
+    // (rev-parse) + 2 (model-output transcript entry add + commit) + 1
+    // (terminal result-deposit rev-parse, §2.6). Merge-back is gone
+    // (§2.6): the root branch persists on its own ref. The version guard
+    // runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 15);
+    assert_eq!(runs.len(), 10);
     let (dest0, args0) = &runs[0];
     assert_eq!(dest0, &primary_worktree);
     assert_eq!(args0[..4], ["worktree", "add", "-b", "ct-1-deadbeef"]);
     assert_eq!(args0[4], worktree.to_string_lossy().to_string());
     assert_eq!(args0[5], "main");
-    for (dest, _args) in &runs[1..9] {
+    for (dest, _args) in &runs[1..10] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside conv worktree");
     }
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
@@ -169,17 +171,12 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // The staging file left by rename — no debris under steps/.
     assert!(!step_dir.join("staging.json").exists());
 
+    // The terminal result deposit (§2.6, §2.3 step 5) reads the branch
+    // tip as its terminal ref (`rev-parse HEAD`); the deposit itself is a
+    // structural no-op for a root (no parent inbox, §2.4), so it lands no
+    // git op of its own and no merge-back follows.
     assert_eq!(runs[9].0, worktree);
-    assert_eq!(runs[9].1, vec!["rebase", "main"]);
-    assert_eq!(runs[10].1[0], "rm");
-    assert_eq!(runs[11].1[0], "ls-tree");
-    assert_eq!(runs[12].1, vec!["diff", "--cached", "--name-only"]);
-    assert_eq!(runs[13].0, primary_worktree);
-    assert_eq!(runs[13].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
-    assert_eq!(runs[14].0, primary_worktree);
-    assert_eq!(runs[14].1[0], "worktree");
-    assert_eq!(runs[14].1[1], "remove");
-    assert_eq!(runs[14].1[2], worktree.to_string_lossy().to_string());
+    assert_eq!(runs[9].1, vec!["rev-parse", "HEAD"]);
 }
 
 #[test]

@@ -110,6 +110,101 @@ fn render(sender: &str, deposited_at: &str, content: &str) -> String {
     format!("---\nfrom: {sender}\ndeposited_at: {deposited_at}\n---\n{content}")
 }
 
+/// The pinned manner of an agent's ending, carried by a **result
+/// message** (ARCH §2.6). A *total* field — the union over every
+/// terminal event, never an exception set — so downstream code branches
+/// on its **value**, never on the message's shape (§2.6). The on-disk
+/// spelling is hyphenated (`final-response`, `budget-exhausted`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Epitaph {
+    /// The agent produced a final response and terminated normally.
+    FinalResponse,
+    /// The agent was stopped — user, timeout, or parent cascade (§2.9).
+    Stopped,
+    /// The agent tree exhausted a spend budget (§6).
+    BudgetExhausted,
+    /// The agent crashed too hard to run any handler; the §8 sweep
+    /// deposits this on its behalf (§2.6, §2.9).
+    Died,
+}
+
+impl Epitaph {
+    /// The on-disk `epitaph:` value (§2.6, §2.11).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Epitaph::FinalResponse => "final-response",
+            Epitaph::Stopped => "stopped",
+            Epitaph::BudgetExhausted => "budget-exhausted",
+            Epitaph::Died => "died",
+        }
+    }
+}
+
+/// Deposit a **result message** (ARCH §2.6) from a terminated child
+/// (`child_id`) into its parent's inbox (`parent_id`) under `workspace`.
+/// This is an ordinary [`deposit`] whose frontmatter additionally
+/// carries the two pinned fields — `epitaph:` (always) and
+/// `terminal_ref:` (always, the sha of the child's branch tip at
+/// return) — and whose body is the terminal response iff the agent
+/// spoke (`terminal_response` is `Some`); the body is absent exactly
+/// when it never spoke (§2.6, §2.11). One file shape, no sidecar, no
+/// variant kinds. Sender is the child, so the parent's sender-namespaced
+/// inbox records "a message from the child exists" (§2.11) — which is
+/// what lets the §8 sweep act as scribe for a crashed child.
+///
+/// Executor-side by construction: this is a plain filesystem deposit,
+/// never a model `message` tool call ("Return is not a verb",
+/// `docs/PRINCIPLES.md`). Total and reusable — the normal terminal
+/// paths (§2.9, §6) and the §8 silent-death sweep (bl-d148) all deposit
+/// through it.
+pub fn deposit_result(
+    workspace: &Path,
+    parent_id: &str,
+    child_id: &str,
+    epitaph: Epitaph,
+    terminal_ref: &str,
+    terminal_response: Option<&str>,
+    clock: &dyn Clock,
+) -> Result<PathBuf, DepositError> {
+    let dir = inbox_dir(workspace, parent_id);
+    std::fs::create_dir_all(&dir).map_err(|e| io_err(&dir, e))?;
+    let seq = next_sequence(&dir, child_id).map_err(|e| io_err(&dir, e))?;
+    let filename = message_filename(child_id, seq);
+    let body = render_result(
+        child_id,
+        &clock.now_iso8601(),
+        epitaph,
+        terminal_ref,
+        terminal_response,
+    );
+    atomic_create(&dir, &filename, body.as_bytes())?;
+    Ok(dir.join(filename))
+}
+
+/// Render a result message (§2.6, §2.11): the ordinary `from:` /
+/// `deposited_at:` frontmatter plus `epitaph:` and `terminal_ref:`, then
+/// the terminal response as the body — present iff `Some`. When the
+/// agent never spoke the file ends at the closing frontmatter delimiter
+/// with no body, which is exactly how delivery composes an empty
+/// user-role turn for it.
+fn render_result(
+    child_id: &str,
+    deposited_at: &str,
+    epitaph: Epitaph,
+    terminal_ref: &str,
+    terminal_response: Option<&str>,
+) -> String {
+    let head = format!(
+        "---\nfrom: {child_id}\ndeposited_at: {deposited_at}\n\
+         epitaph: {ep}\nterminal_ref: {terminal_ref}\n---\n",
+        ep = epitaph.as_str(),
+    );
+    match terminal_response {
+        Some(body) => format!("{head}{body}"),
+        None => head,
+    }
+}
+
 /// Write `bytes` to `dir/filename` via a sibling temp file and an atomic
 /// rename, so no reader ever observes a partial deposit (§2.11).
 pub(super) fn atomic_create(dir: &Path, filename: &str, bytes: &[u8]) -> Result<(), DepositError> {

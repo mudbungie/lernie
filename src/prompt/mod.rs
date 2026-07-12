@@ -2,9 +2,11 @@
 //!
 //! Each prompt spawns a `<conv-id>` branch off `main`, commits the
 //! dispatch snapshot (§2.10), drives the step loop through brazen's `bz`
-//! (§4.4), lands each step's response as attempt segments, dispatches
-//! the terminal compactor off the tip (§2.7), and `--no-ff` merges the
-//! branch back to `main` (§2.6).
+//! (§4.4), lands each step's response as attempt segments, and dispatches
+//! the terminal compactor off the tip — the compaction merge, the one
+//! merge left in the system (§2.6, §2.7). Merge-back is gone: the root
+//! branch persists on its own ref (§2.4), and a child returns by
+//! depositing a result message into its parent's inbox (§2.6).
 //!
 //! Provider plumbing follows ARCH §4.4: every model call execs `bz`
 //! (`bz --json --provider <row>`, canonical request on stdin, `v=1`
@@ -29,7 +31,6 @@ pub mod compactor;
 pub mod dispatch;
 pub mod dispatcher;
 pub mod inbox;
-pub mod merge;
 pub mod step;
 pub mod stop;
 pub mod subagent;

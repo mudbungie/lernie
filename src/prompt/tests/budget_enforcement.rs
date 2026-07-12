@@ -95,7 +95,7 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
 #[test]
 fn unbounded_workflow_never_triggers_a_budget_stop() {
     // No `budgets:` block → every limit unbounded → the loop runs to a
-    // normal terminal completion and merges back (baseline behavior).
+    // normal terminal completion and dispatches the compactor (baseline).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&happy_response_bytes());

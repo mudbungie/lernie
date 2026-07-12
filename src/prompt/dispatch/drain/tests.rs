@@ -237,6 +237,41 @@ fn drain_delivers_pending_messages_in_mtime_order_committing_each() {
 }
 
 #[test]
+fn drain_applies_the_work_product_transfer_for_a_result_message() {
+    // A deposited message carrying `terminal_ref:` is a result message
+    // (§2.6): the drain runs the work-product transfer (merge-base + diff)
+    // before its delivery commit. With the stub git the diff writes no
+    // patch, so the transfer is an empty no-op commit — but the transfer
+    // path is exercised, and the message still delivers.
+    let dir = TempDir::new().unwrap();
+    let worktree = dir.path().join("wt");
+    std::fs::create_dir_all(&worktree).unwrap();
+    let inbox = dir.path().join("inbox/parent");
+    deposit_file(
+        &inbox,
+        "parent-kid-001.md",
+        "---\nfrom: parent-kid\nepitaph: final-response\nterminal_ref: abc123\n---\ndone",
+        at(10),
+    );
+
+    let git = RecordGit::clean();
+    drain(&worktree, &inbox, "parent", &git).unwrap();
+
+    // The transfer ran (merge-base against the terminal ref, then the
+    // filtered diff) ahead of the delivery add+commit.
+    let runs = git.runs.borrow();
+    assert_eq!(runs[0], vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[1][..2], ["merge-base", "parent"]);
+    assert_eq!(runs[1][2], "abc123");
+    assert_eq!(runs[2][0], "diff");
+    assert_eq!(runs[3], vec!["add", "messages/001-parent-kid.md"]);
+    assert!(runs[4][2].contains("transcript 001: parent-kid"));
+    // The message was delivered out of the inbox.
+    assert!(!inbox.join("parent-kid-001.md").exists());
+    assert!(worktree.join("messages/001-parent-kid.md").exists());
+}
+
+#[test]
 fn drain_on_an_absent_inbox_only_probes_for_strays() {
     let dir = TempDir::new().unwrap();
     let worktree = dir.path().join("wt");

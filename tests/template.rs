@@ -3,8 +3,8 @@
 //!
 //! Validates the resulting repo against ARCH §2.2: control-plane files
 //! at the conv-repo root (outside any worktree); `root/` as the primary
-//! worktree with `.git` inside it and the `merge=ours` `.gitattributes`
-//! pinned per ARCH §2.6.
+//! worktree with `.git` inside it. Merge-back is gone (§2.6), so no
+//! `merge=ours` `.gitattributes` is scaffolded.
 
 use lernie::config::manifest::{Manifest, OverflowPolicy};
 use lernie::config::per_repo_providers::PerRepoProviders;
@@ -131,18 +131,14 @@ fn souls_directory_holds_role_prompts() {
 }
 
 #[test]
-fn root_worktree_holds_git_and_gitattributes() {
-    // ARCH §2.2: `.git` lives in `root/`. ARCH §2.6: `.gitattributes`
-    // pins goal.md, soul.md, summary/** to merge=ours, committed on
-    // main at scaffold time.
+fn root_worktree_holds_git() {
+    // ARCH §2.2: `.git` lives in `root/`. Merge-back is gone (§2.6), so no
+    // `.gitattributes` merge=ours discipline is scaffolded.
     let (_holder, repo) = scaffolded();
     let root = repo.join("root");
     assert!(root.is_dir());
     assert!(root.join(".git").is_dir());
-    let attrs = std::fs::read_to_string(root.join(".gitattributes")).unwrap();
-    assert!(attrs.contains("goal.md") && attrs.contains("merge=ours"));
-    assert!(attrs.contains("soul.md") && attrs.contains("merge=ours"));
-    assert!(attrs.contains("summary/**") && attrs.contains("merge=ours"));
+    assert!(!root.join(".gitattributes").exists());
 }
 
 #[test]
@@ -174,8 +170,6 @@ fn control_plane_lives_outside_any_worktree() {
             "control file {forbidden} leaked into the worktree: {listed:?}"
         );
     }
-    // .gitattributes is the one tracked file.
-    assert!(listed.lines().any(|l| l == ".gitattributes"));
 }
 
 #[test]

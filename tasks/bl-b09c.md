@@ -1,7 +1,8 @@
 +++
 title = "Design: workspace substrate — one repo, config branches, agents as worktrees; merge-back eliminated"
 created = 1783819509
-updated = 1783819621
+updated = 1783820283
+claimant = "edits-b09c"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["design-2026-07"]
 

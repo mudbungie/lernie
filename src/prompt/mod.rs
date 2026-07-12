@@ -134,6 +134,8 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
+    #[error("deposit initial user message: {0}")]
+    Deposit(#[from] inbox::DepositError),
     #[error("tool {name} schema unreadable at {path}: {source}")]
     ToolSchemaIo {
         name: String,

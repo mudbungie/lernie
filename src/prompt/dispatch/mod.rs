@@ -8,24 +8,21 @@
 //! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md` and
 //!    commit — that commit's tree *is* step 1's read state (§2.10).
 //!    Step ≥2 takes no pre-call commit.
-//! 3. For each step: record the branch-tip sha, write `request.json` +
-//!    `meta.json` under `<conv-repo>/steps/<conv-id>/<NNN>/` (outside
-//!    every worktree, §2.2 / §2.3), and drive the model call through the
-//!    harness-owned retry loop ([`model_call`]): `bz --json --provider
-//!    <row>` per attempt, request on stdin, each attempt's stdout
-//!    appended verbatim to `response.json` (§4.4). Closing the
-//!    `response.json` fd at step resolution is the §3.5 IN_CLOSE_WRITE
-//!    completion signal.
-//! 4. **Step loop (§2.5).** Each step re-assembles its model-facing
-//!    history from the read-state commit's tree ([`assembler`], §2.3,
-//!    §5). If the settled assistant entry carries any `tool_use` block,
-//!    run every one through the [`crate::prompt::ToolExecutor`] —
-//!    committing each `tool_result` as a transcript entry — then loop; a
-//!    step with no `tool_use` block is terminal.
-//! 5. Dispatch the terminal compactor off the tip (§2.7).
-//! 6. Rebase onto `main` and `--no-ff` merge (§2.6).
+//! 3. **Step loop (§2.5).** At each boundary the executor drains the
+//!    agent's inbox ([`drain`], §2.11) — pending messages land as delivery
+//!    commits ahead of the read state — then records the branch-tip sha,
+//!    writes `request.json` + `meta.json` under
+//!    `<conv-repo>/steps/<conv-id>/<NNN>/` (§2.2 / §2.3), and drives the
+//!    model call through the retry loop ([`model_call`], §4.4). Each step
+//!    re-assembles its history from the read-state commit's tree
+//!    ([`assembler`], §2.3, §5); a settled `tool_use` block runs through
+//!    [`crate::prompt::ToolExecutor`], committing each `tool_result` as a
+//!    transcript entry, then loops; no `tool_use` is terminal.
+//! 4. Dispatch the terminal compactor off the tip (§2.7), then rebase
+//!    onto `main` and `--no-ff` merge (§2.6).
 
 mod assembler;
+mod drain;
 mod model_call;
 mod staging;
 mod step_commit;
@@ -55,11 +52,6 @@ use tool_step::run_tool_calls;
 /// The trunk branch every root conversation eventually merges into
 /// (ARCH §2.3).
 const TRUNK_BRANCH: &str = "main";
-
-/// Origin token for the user's own messages in the transcript
-/// (`messages/NNN-user.md`, §2.3). `assistant` and `tool` are reserved;
-/// every other sender is an agent id or `user`.
-const USER_SENDER: &str = "user";
 
 /// Per-request `max_tokens` output cap — one model call's output
 /// ceiling. Distinct from the §6 spend budgets ([`Budgets`]), which
@@ -122,6 +114,12 @@ pub(super) fn run_exchange(
 
     spawn_branch(&primary_worktree, &worktree_path, &branch_name, deps)?;
 
+    // The initial user message enters through the front door (§2.4,
+    // §2.11): deposit it into this agent's own inbox and let the step-1
+    // boundary drain (below) deliver it — the same path any reprompt takes,
+    // so there is no bespoke initial-message delivery beside the drain.
+    inbox::deposit(repo, &conv_id, inbox::USER_SENDER, user_message, deps.clock)?;
+
     let system_with_goal = prepend_goal(user_message, &resolved.soul);
 
     let call = ModelCall {
@@ -136,40 +134,35 @@ pub(super) fn run_exchange(
     let mut step_seq: u32 = 1;
     let mut exhausted = false;
     // §3.3/§4.3: the role's declared tools composed against the schemas
-    // committed under `descriptions/tools/` in the branch's read-state
-    // tree (§2.10). Composed once at step 1 — after the dispatch commit
-    // establishes that tree — and cloned into every step's request, since
-    // the schemas are git-inherited and do not change mid-branch.
+    // committed under `descriptions/tools/` in the read-state tree (§2.10).
+    // Composed once at step 1 — after the dispatch commit establishes that
+    // tree — and cloned into every step's request (schemas are git-
+    // inherited and do not change mid-branch).
     let mut tools: Vec<brazen::Tool> = Vec::new();
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
             commit_dispatch(&worktree_path, &conv_id, deps)?;
-            // Deliver the initial user message as the first transcript
-            // entry (§2.3, §2.11) — the pre-inbox stand-in for the
-            // step-boundary drain. Assembly reads it back as step 1's
-            // user-role message.
-            transcript::commit_message(
-                &worktree_path,
-                &conv_id,
-                USER_SENDER,
-                user_message,
-                deps.git,
-            )?;
             tools = tools::compose(&worktree_path, resolved.tools)?;
         }
+
+        // Step-boundary drain (§2.11 *Delivery*): move each pending inbox
+        // message into the transcript and commit it, ahead of this step's
+        // read-state capture so a delivered message is part of the commit
+        // the model call assembles from (§2.3, §2.10). Ordered after the
+        // prior step's tool entries (loop tail) and before the rev-parse
+        // (§2.3), so a message never wedges between paired tool blocks.
+        drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?;
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
         // §6 budget check at the model-call boundary, before invoking the
-        // adapter. Tokens/wall are derived live over the whole conversation
-        // tree (the root id and its descent) and depth over this branch —
-        // no stored counter, no per-dispatch inheritance (PRINCIPLES SSOT;
+        // adapter. Tokens/wall are derived live over the conversation tree
+        // and depth over this branch — no stored counter (PRINCIPLES SSOT;
         // `steps/` is shared per §2.2/§2.3). On exhaustion the harness
         // writes the git-native `refs/lernie/budget-exhausted/<branch>`
-        // marker and ceases the loop: an ordinary terminal state (§6),
-        // which deposits a result message into the parent's inbox like
-        // any other terminal event (§2.11).
+        // marker and ceases the loop: an ordinary terminal state (§6) that
+        // deposits a result message like any other terminal event (§2.11).
         if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
             eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
             budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {
@@ -249,9 +242,8 @@ pub(super) fn run_exchange(
     }
 
     // An exhausted conversation is terminal-by-exhaustion (§6, §2.9): it
-    // does not compact or merge back — it persists unmerged behind the
-    // budget-exhausted ref. Otherwise: terminal compaction (§2.7) +
-    // merge-back (§2.6), both via the CLI control plane (§3.4).
+    // persists unmerged behind the budget-exhausted ref. Otherwise:
+    // terminal compaction (§2.7) + merge-back (§2.6), via the CLI (§3.4).
     if !exhausted {
         deps.dispatcher
             .dispatch("compactor", repo, &branch_name, None)

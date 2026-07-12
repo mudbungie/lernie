@@ -63,6 +63,35 @@ fn next_seq_is_max_prefix_plus_one_ignoring_unparsable_names() {
 }
 
 #[test]
+fn deliver_message_renames_the_inbox_file_in_and_commits_it() {
+    let dir = TempDir::new().unwrap();
+    let worktree = dir.path();
+    // An assistant entry already occupies 001, so the delivery lands at
+    // 002 — the counter is shared across origins (§2.3).
+    write_entry(worktree, "001-assistant.json");
+    // A deposited inbox file with frontmatter + body, elsewhere on disk.
+    let src = dir.path().join("bob-005.md");
+    std::fs::write(&src, "---\nfrom: bob\n---\nhello").unwrap();
+
+    let git = RecordGit::default();
+    deliver_message(worktree, "conv-3", "bob", &src, &git).unwrap();
+
+    // The file *moved* (rename, not copy): gone from its origin, present
+    // in the transcript with frontmatter and body untouched (§2.11).
+    assert!(!src.exists(), "inbox file renamed away");
+    let entry = worktree.join("messages/002-bob.md");
+    assert_eq!(
+        std::fs::read_to_string(&entry).unwrap(),
+        "---\nfrom: bob\n---\nhello"
+    );
+
+    let runs = git.runs.borrow();
+    assert_eq!(runs[0].1, vec!["add", "messages/002-bob.md"]);
+    assert!(runs[1].1[2].contains("transcript 002: bob"));
+    assert!(runs[1].1[2].contains("[conv-3]"));
+}
+
+#[test]
 fn commit_assistant_renames_staging_and_commits_the_entry() {
     let dir = TempDir::new().unwrap();
     let worktree = dir.path();

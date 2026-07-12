@@ -59,7 +59,15 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
         "<goal>\nhello\n</goal>\n\nsystem body"
     );
     assert_eq!(request["messages"][0]["role"], "user");
-    assert_eq!(request["messages"][0]["content"][0]["text"], "hello");
+    // The initial user message entered through the front door (§2.11):
+    // deposited into the agent's own inbox, then delivered by the step-1
+    // drain. Its `from:` / `deposited_at:` frontmatter travels with the
+    // file and is model-visible by design (§2.11) — `deposited_at` is the
+    // first `now_iso8601` tick (`iso-1`).
+    assert_eq!(
+        request["messages"][0]["content"][0]["text"],
+        "---\nfrom: user\ndeposited_at: iso-1\n---\nhello"
+    );
     assert_eq!(request["max_tokens"], 4096);
     // `stream` is not set by lernie — brazen's default governs (§4.4).
     // The typed request serializes an unset Option as JSON `null`.
@@ -81,11 +89,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
 
     // meta.json carries the branch-tip sha at step-start (§2.10). The
     // stub git's run_capture returns "", so `commit` is empty here.
+    // The deposit's `deposited_at` consumed `iso-1`, so the step-1 model
+    // call bookends at `iso-2` / `iso-3`.
     let meta: StepMeta =
         serde_json::from_slice(&std::fs::read(step_dir.join("meta.json")).unwrap()).unwrap();
     assert_eq!(meta.commit, "");
-    assert_eq!(meta.started_at, "iso-1");
-    assert_eq!(meta.ended_at, "iso-2");
+    assert_eq!(meta.started_at, "iso-2");
+    assert_eq!(meta.ended_at, "iso-3");
 
     // Adapter called twice: the version guard (`bz --version`) then the
     // model call (`bz --json --provider anthropic`, request on stdin).
@@ -111,37 +121,40 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(dispatches[0].2, "ct-1-deadbeef");
     assert_eq!(dispatches[0].3, None);
 
-    // Git sequence: 3 (branch setup + dispatch add/commit) + 2
-    // (user-message transcript entry add + commit, §2.3) + 1 (rev-parse)
-    // + 2 (assistant transcript entry add + commit) + 6 (merge-back).
-    // The version guard runs no git.
+    // Git sequence: 3 (branch setup + dispatch add/commit) + 1 (drain
+    // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
+    // (rev-parse) + 2 (assistant transcript entry add + commit) + 6
+    // (merge-back). The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 14);
+    assert_eq!(runs.len(), 15);
     let (dest0, args0) = &runs[0];
     assert_eq!(dest0, &primary_worktree);
     assert_eq!(args0[..4], ["worktree", "add", "-b", "ct-1-deadbeef"]);
     assert_eq!(args0[4], worktree.to_string_lossy().to_string());
     assert_eq!(args0[5], "main");
-    for (dest, _args) in &runs[1..8] {
+    for (dest, _args) in &runs[1..9] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside conv worktree");
     }
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
     assert_eq!(runs[2].1[0], "commit");
     assert!(runs[2].1[2].contains("step 001: dispatch"));
     assert!(runs[2].1[2].contains("[ct-1-deadbeef]"));
-    // The initial user message is delivered as the first transcript
-    // entry (§2.3) before step 1's read state is captured.
-    assert_eq!(runs[3].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[4].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[5].1, vec!["rev-parse", "HEAD"]);
+    // The step-1 drain (§2.11 *Delivery*): a stray-recovery probe over
+    // messages/ (clean here — no add/commit), then the initial user
+    // message delivered from the inbox as the first transcript entry,
+    // before step 1's read state is captured.
+    assert_eq!(runs[3].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[4].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[5].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[6].1, vec!["rev-parse", "HEAD"]);
 
     // The transcript writer commits the assistant entry (§2.3): the
     // sealed staging file is renamed to messages/002-assistant.json and
     // committed before the merge-back.
-    assert_eq!(runs[6].1, vec!["add", "messages/002-assistant.json"]);
-    assert_eq!(runs[7].1[0], "commit");
-    assert!(runs[7].1[2].contains("transcript 002: assistant"));
-    assert!(runs[7].1[2].contains("[ct-1-deadbeef]"));
+    assert_eq!(runs[7].1, vec!["add", "messages/002-assistant.json"]);
+    assert_eq!(runs[8].1[0], "commit");
+    assert!(runs[8].1[2].contains("transcript 002: assistant"));
+    assert!(runs[8].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
     // canonical assistant blocks (the "hi there" text block).
     let entry = worktree.join("messages/002-assistant.json");
@@ -152,17 +165,17 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // The staging file left by rename — no debris under steps/.
     assert!(!step_dir.join("assistant.staging.json").exists());
 
-    assert_eq!(runs[8].0, worktree);
-    assert_eq!(runs[8].1, vec!["rebase", "main"]);
-    assert_eq!(runs[9].1[0], "rm");
-    assert_eq!(runs[10].1[0], "ls-tree");
-    assert_eq!(runs[11].1, vec!["diff", "--cached", "--name-only"]);
-    assert_eq!(runs[12].0, primary_worktree);
-    assert_eq!(runs[12].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
+    assert_eq!(runs[9].0, worktree);
+    assert_eq!(runs[9].1, vec!["rebase", "main"]);
+    assert_eq!(runs[10].1[0], "rm");
+    assert_eq!(runs[11].1[0], "ls-tree");
+    assert_eq!(runs[12].1, vec!["diff", "--cached", "--name-only"]);
     assert_eq!(runs[13].0, primary_worktree);
-    assert_eq!(runs[13].1[0], "worktree");
-    assert_eq!(runs[13].1[1], "remove");
-    assert_eq!(runs[13].1[2], worktree.to_string_lossy().to_string());
+    assert_eq!(runs[13].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
+    assert_eq!(runs[14].0, primary_worktree);
+    assert_eq!(runs[14].1[0], "worktree");
+    assert_eq!(runs[14].1[1], "remove");
+    assert_eq!(runs[14].1[2], worktree.to_string_lossy().to_string());
 }
 
 #[test]

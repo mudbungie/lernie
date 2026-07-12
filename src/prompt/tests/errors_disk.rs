@@ -15,11 +15,12 @@ use super::fixtures::*;
 use crate::prompt::{Deps, Error, run};
 
 /// Index of `git rev-parse HEAD` on the StubGit's run log: 0 worktree
-/// add, 1 dispatch add, 2 dispatch commit, 3 user-message transcript
-/// add, 4 user-message transcript commit (§2.3 — the initial message is
-/// delivered before step 1's read state is captured), 5 rev-parse.
+/// add, 1 dispatch add, 2 dispatch commit, 3 the step-1 drain stray-probe
+/// (`git status`, §2.11), 4 user-message delivery add, 5 user-message
+/// delivery commit (§2.11 — the initial message is delivered through the
+/// front door before step 1's read state is captured), 6 rev-parse.
 /// Pinned as a constant so the merge-back op-index labels stay readable.
-const REV_PARSE_INDEX: usize = 5;
+const REV_PARSE_INDEX: usize = 6;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the assistant entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream). Two runs sit between
@@ -107,7 +108,8 @@ fn run_surfaces_dispatch_commit_failure() {
 #[test]
 fn run_surfaces_rev_parse_failure() {
     // Branch-tip capture for meta.json's `commit` field (§2.10) is
-    // index 3; failing it surfaces as Error::Git { op: "rev-parse" }.
+    // [`REV_PARSE_INDEX`]; failing it surfaces as Error::Git { op:
+    // "rev-parse" }.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(
@@ -211,10 +213,10 @@ fn run_surfaces_dispatcher_failure() {
         "got {err:?}"
     );
     // Pre-dispatcher git op count: worktree add, dispatch add, dispatch
-    // commit, the user-message transcript entry's add + commit (§2.3),
-    // rev-parse for meta, plus the assistant transcript entry's add +
-    // commit = 8.
-    assert_eq!(git.runs.borrow().len(), 8, "merge-to-main never starts");
+    // commit, the step-1 drain stray-probe (§2.11), the user-message
+    // delivery add + commit (§2.11), rev-parse for meta, plus the
+    // assistant transcript entry's add + commit = 9.
+    assert_eq!(git.runs.borrow().len(), 9, "merge-to-main never starts");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,

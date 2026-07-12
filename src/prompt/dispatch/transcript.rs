@@ -57,23 +57,28 @@ pub(super) fn next_seq(worktree: &Path) -> Result<u32, Error> {
     Ok(max + 1)
 }
 
-/// Commit a delivered message as `messages/NNN-<sender>.md` at the
-/// branch's next counter (§2.3 *Origins*, §2.11). The initial user
-/// message is delivered this way — the pre-inbox stand-in for the
-/// step-boundary drain (§2.11) — and composes as user-role content
-/// (§5.3). `sender` is the origin token (`user`, or an agent id).
-pub(super) fn commit_message(
+/// Deliver a deposited inbox message into the transcript (§2.11
+/// *Delivery*): the message file at `src` *moves* by a literal
+/// `rename(2)` into `messages/NNN-<sender>.md` at the branch's next
+/// counter (§2.3 *Origins*), then a commit lands it (the delivery
+/// commit). The message file has exactly one home at every instant — it
+/// left the inbox and lands in the transcript in one atomic move.
+/// `sender` is the depositing sender parsed from the inbox filename (the
+/// path carries framing; the file's frontmatter travels untouched, §2.11)
+/// and becomes the origin token; the entry composes as user-role content
+/// (§5.3).
+pub(super) fn deliver_message(
     worktree: &Path,
     conv_id: &str,
     sender: &str,
-    body: &str,
+    src: &Path,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
     let seq = next_seq(worktree)?;
     let rel = format!("{MESSAGES_DIR}/{seq:0w$}-{sender}.md", w = SEQ_WIDTH);
     let dest = worktree.join(&rel);
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
-    std::fs::write(&dest, body)?;
+    std::fs::rename(src, &dest)?;
     commit_entry(worktree, conv_id, seq, &rel, sender, git)
 }
 

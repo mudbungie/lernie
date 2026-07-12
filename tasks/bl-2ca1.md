@@ -9,6 +9,10 @@ tags = ["code"]
 [[blockers]]
 id = "bl-65d8"
 on = "claim"
+
+[[blockers]]
+id = "bl-680c"
+on = "close"
 +++
 Blocked on bl-65d8 (the doc must land first).
 

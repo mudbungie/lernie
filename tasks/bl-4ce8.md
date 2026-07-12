@@ -1,7 +1,8 @@
 +++
 title = "Delete merge/: result-message return replaces rebase-then-merge-back [substrate]"
 created = 1783829720
-updated = 1783832052
+updated = 1783832833
+claimant = "Shrike"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["code"]

@@ -5,25 +5,19 @@
 //! - `new <path>` — scaffold a conversation repo from the embedded
 //!   template (ARCH §2.2).
 //! - `prompt <repo> <message>` — drive one root conversation
-//!   end-to-end: spawn a `<conv-id>` branch off `main` (no prefix —
-//!   §2.3), commit the snapshot, drive the model call via `bz` (§4.4),
-//!   dispatch the terminal compactor off the branch tip (§2.7), and
-//!   `--no-ff` merge the result back to `main` (§2.6). Prints the
-//!   conversation branch name.
-//! - `dispatch <role> <repo> <branch> [--goal <text>]` — re-entry
-//!   point for subagent dispatch (ARCH §3.4). `<role>` is positional
-//!   so the surface generalizes across the v0.3 compactor, the v0.4
-//!   worker, and future verifier/critic/etc. (§2.5). `--goal` is
-//!   required for `worker` and forbidden for `compactor` (whose goal
-//!   is built-in boilerplate, §2.7); per-role validation lives here
-//!   rather than in the clap surface so adding a role is a one-line
-//!   match arm rather than a Subcommand-tree edit.
+//!   end-to-end: spawn the `<conv-id>` branch, drive the model call via
+//!   `bz` (§4.4), compact, and `--no-ff` merge back to `main` (§2.6).
+//! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent
+//!   dispatch re-entry (ARCH §3.4). `<role>` is positional; per-role
+//!   `--goal` rules (required for `worker`, rejected for `compactor`)
+//!   are validated in [`run_dispatch_cli`] rather than the clap surface.
 //! - `stop <repo> <branch>` — cascading SIGTERM on the harness's
 //!   pgid (ARCH §2.9); idempotent for already-stopped branches.
+//! - `message <workspace> <agent> <content>` — deposit into an agent's
+//!   inbox and probe the executor lock (§2.11, [`prompt::inbox::cli_run`]).
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3): the
-//!   tool executor falls through to `<lernie> tool <name>` after
-//!   external lookups miss. Reads `tool_use.input` JSON from stdin,
-//!   writes bytes to stdout, exits 0/non-zero per the §3.3 contract.
+//!   executor falls through to `<lernie> tool <name>` after external
+//!   lookups miss. Reads `tool_use.input` JSON on stdin, bytes on stdout.
 
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
@@ -45,36 +39,32 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Create a new conversation repo. With no argument, scaffolds at
-    /// `<harness-root>/conversations/<auto-id>/` (ARCH §2.2). With a
-    /// path argument, scaffolds there literally.
+    /// Create a new conversation repo (ARCH §2.2). With no argument,
+    /// scaffolds at `<data-root>/conversations/<auto-id>/`; with a path
+    /// argument, scaffolds there literally.
     New {
-        /// Destination path. Must not already exist as a non-empty
-        /// directory. Optional — when omitted, an auto-generated id
-        /// under the harness root is used.
+        /// Destination path. Optional — an auto-generated id under the
+        /// data root is used when omitted.
         path: Option<PathBuf>,
     },
-    /// Send one user message through the configured worker role on a
-    /// fresh root-conversation branch. Prints the branch name on
-    /// success.
+    /// Send one user message through the worker role on a fresh
+    /// root-conversation branch. Prints the branch name.
     Prompt {
         /// Path to an existing conversation repo (created by `lernie new`).
         repo: PathBuf,
         /// The user message to send.
         message: String,
     },
-    /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` selects which
-    /// subagent shape — `compactor` (terminal compaction, §2.7) or
-    /// `worker` (per-call goal, §2.5). Future roles slot in by name
-    /// without a clap surface change.
+    /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
+    /// (terminal compaction, §2.7) or `worker` (per-call goal, §2.5);
+    /// future roles slot in by name without a clap surface change.
     Dispatch {
         /// Role name. v0.4: `compactor` | `worker`.
         role: String,
         /// Path to the conversation repo.
         repo: PathBuf,
-        /// Dispatching branch. For `compactor`, the conversation
-        /// branch being compacted; for `worker`, the parent branch
-        /// off whose tip the worker is spawned.
+        /// Dispatching branch — the branch being compacted (`compactor`)
+        /// or the parent off whose tip the worker spawns.
         branch: String,
         /// Per-call goal text. Required for `worker`; rejected for
         /// `compactor` (whose goal is built-in boilerplate, §2.7).
@@ -83,14 +73,22 @@ enum Command {
     },
     /// Stop a conversation branch (ARCH §2.9 cascading SIGTERM).
     Stop { repo: PathBuf, branch: String },
+    /// Deposit a message into an existing agent's inbox and probe the
+    /// executor lock (ARCH §2.11, §3.4). Sender is harness-derived from
+    /// `LERNIE_CONV_BRANCH`, never model-supplied.
+    Message {
+        /// Path to the workspace (conversation repo) root.
+        workspace: PathBuf,
+        /// Recipient agent id (== its branch name / hyphenated descent).
+        agent: String,
+        /// Message content — the body of the deposited file.
+        content: String,
+    },
     /// In-process built-in tool entry (ARCH §3.3). Reads
-    /// `tool_use.input` JSON from stdin, writes raw result bytes to
-    /// stdout, and exits 0 on success or non-zero on failure (the
-    /// stderr message is concatenated into `tool_result.content` by
-    /// the executor when `is_error` is set). The tool executor
-    /// resolves to this subcommand as the third hop of §3.3 lookup
-    /// (`<harness-root>/tools/lernie-tool-<name>` → PATH →
-    /// `<lernie> tool <name>`).
+    /// `tool_use.input` JSON on stdin, writes bytes on stdout, exits
+    /// 0/non-zero per the §3.3 contract. The executor resolves here as
+    /// the third lookup hop (`<data-root>/tools/lernie-tool-<name>` →
+    /// PATH → `<lernie> tool <name>`).
     Tool {
         /// Tool name as the model emitted it on the `tool_use` block
         /// (e.g. `read_file`).
@@ -98,11 +96,9 @@ enum Command {
     },
 }
 
-/// Role name for the v0.3 terminal compactor (ARCH §2.7). Built-in
-/// boilerplate goal — `--goal` on the CLI is rejected for this role.
+/// Role name for the v0.3 terminal compactor (§2.7); `--goal` rejected.
 const ROLE_COMPACTOR: &str = "compactor";
-/// Role name for the v0.4 worker subagent (ARCH §2.5). Per-call goal,
-/// supplied via `--goal <text>`.
+/// Role name for the v0.4 worker subagent (§2.5); `--goal` required.
 const ROLE_WORKER: &str = "worker";
 
 fn main() -> ExitCode {
@@ -182,6 +178,17 @@ fn main() -> ExitCode {
                 ExitCode::FAILURE
             }
         },
+        Command::Message {
+            workspace,
+            agent,
+            content,
+        } => match prompt::inbox::cli_run(&workspace, &agent, &content) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("lernie message: {e}");
+                ExitCode::FAILURE
+            }
+        },
         Command::Tool { name } => {
             let stdin = io::stdin();
             let stdout = io::stdout();
@@ -191,8 +198,7 @@ fn main() -> ExitCode {
             let mut stderr = stderr.lock();
             match builtin::run(&name, &mut stdin, &mut stdout, &mut stderr) {
                 // Tool exit codes ride within `u8` (POSIX 0..=255 plus
-                // 128+signo); `as u8` is a faithful narrowing because
-                // every legal value already fits.
+                // 128+signo), so `as u8` is a faithful narrowing.
                 Ok(code) => ExitCode::from(code as u8),
                 Err(e) => {
                     eprintln!("lernie tool {name}: {e}");
@@ -203,12 +209,9 @@ fn main() -> ExitCode {
     }
 }
 
-/// CLI handler for `lernie dispatch <role>`. The branch name IS the
-/// conversation id (ARCH §2.3 — no prefix), so it also names the
-/// worktree directory at `<repo>/<branch>/` (§2.2). Per-role argument
-/// rules (`--goal` required for worker, rejected for compactor) are
-/// enforced here and surfaced as a non-zero exit with a `lernie
-/// dispatch <role>:` prefix matching the existing error style.
+/// CLI handler for `lernie dispatch <role>` (ARCH §3.4). Per-role
+/// `--goal` rules are enforced here and surfaced as a non-zero exit
+/// with a `lernie dispatch <role>:` prefix.
 fn run_dispatch_cli(role: &str, repo: &Path, branch: &str, goal: Option<&str>) -> ExitCode {
     let outcome = match role {
         ROLE_COMPACTOR => run_compactor_cli(repo, branch, goal),
@@ -224,10 +227,8 @@ fn run_dispatch_cli(role: &str, repo: &Path, branch: &str, goal: Option<&str>) -
     }
 }
 
-/// Errors specific to the dispatch CLI argument shape. Joined with
-/// [`prompt::Error`] (the in-process role implementations' error
-/// type) under one `Display` so the eprintln formatting stays
-/// uniform across cases.
+/// Errors specific to the dispatch CLI argument shape, joined with
+/// [`prompt::Error`] under one `Display` for uniform `eprintln`.
 #[derive(Debug)]
 enum DispatchCliError {
     UnknownRole(String),
@@ -291,9 +292,8 @@ fn run_worker_cli(
         parent_worktree: &parent_worktree,
         goal,
     };
-    // Print the spawned subagent branch so callers — notably the
-    // `dispatch` built-in (ARCH §3.3) — can capture it as the
-    // `tool_result` handle without listing branches to find it.
+    // Print the spawned subagent branch so the `dispatch` built-in can
+    // capture it as the `tool_result` handle (ARCH §3.3).
     let sub_branch = prompt::worker::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)?;
     println!("{sub_branch}");
     Ok(())

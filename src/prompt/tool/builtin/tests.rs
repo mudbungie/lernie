@@ -86,6 +86,26 @@ impl dispatch::Spawner for StubSpawner {
     }
 }
 
+/// Test-only stub for the message tool's [`message::Sender`]
+/// dependency. Records nothing and reports a clean deposit — enough to
+/// exercise the routing arm of [`run_with`] without spawning a real
+/// `lernie message` subprocess.
+struct StubSender;
+impl message::Sender for StubSender {
+    fn send(
+        &self,
+        _workspace: &std::path::Path,
+        _agent: &str,
+        _content: &str,
+        _sender: &str,
+    ) -> std::io::Result<message::SendOutput> {
+        Ok(message::SendOutput {
+            stderr: String::new(),
+            exit: 0,
+        })
+    }
+}
+
 /// HashMap-backed stub [`dispatch::EnvLookup`] — keyed by var name,
 /// `None` for anything not seeded. Mirrors the dispatch module's own
 /// test fixture so the dispatcher routing test does not invent a
@@ -133,12 +153,63 @@ fn dispatch_routed_to_inner_module() {
         &mut stderr,
         &env,
         &StubSpawner,
+        &StubSender,
     )
     .unwrap();
     assert_eq!(code, 0);
     let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(payload["status"], "in_progress");
     assert_eq!(payload["handle"], "p1-sub");
+}
+
+#[test]
+fn message_routed_to_inner_module() {
+    let repo = tempfile::TempDir::new().unwrap();
+    let input = serde_json::json!({"agent":"p1-child","content":"steer left"}).to_string();
+    let mut stdin = Cursor::new(input.into_bytes());
+    let mut stdout = Vec::new();
+    let mut stderr = Vec::new();
+    let env = stub_env(repo.path(), "p1");
+    let code = run_with(
+        "message",
+        &mut stdin,
+        &mut stdout,
+        &mut stderr,
+        &env,
+        &StubSpawner,
+        &StubSender,
+    )
+    .unwrap();
+    assert_eq!(code, 0);
+    let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
+    assert_eq!(payload["status"], "deposited");
+}
+
+#[test]
+fn message_error_is_carried_through_dispatcher() {
+    // No env vars — surfaces as message::Error::MissingEnv via #[from]
+    // into Error::Message.
+    struct EmptyEnv;
+    impl dispatch::EnvLookup for EmptyEnv {
+        fn get(&self, _key: &str) -> Option<std::ffi::OsString> {
+            None
+        }
+    }
+    let input = serde_json::json!({"agent":"p1-child","content":"hi"}).to_string();
+    let mut stdin = Cursor::new(input.into_bytes());
+    let mut stdout = Vec::new();
+    let mut stderr = Vec::new();
+    let err = run_with(
+        "message",
+        &mut stdin,
+        &mut stdout,
+        &mut stderr,
+        &EmptyEnv,
+        &StubSpawner,
+        &StubSender,
+    )
+    .unwrap_err();
+    assert!(matches!(err, Error::Message(_)), "{err}");
 }
 
 #[test]
@@ -162,6 +233,7 @@ fn dispatch_error_is_carried_through_dispatcher() {
         &mut stderr,
         &EmptyEnv,
         &StubSpawner,
+        &StubSender,
     )
     .unwrap_err();
     assert!(matches!(err, Error::Dispatch(_)), "{err}");

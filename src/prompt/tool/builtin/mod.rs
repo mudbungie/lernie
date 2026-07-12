@@ -8,17 +8,20 @@
 //! stdout = raw result bytes, exit code = is_error) is enforced here.
 //!
 //! v0.3 shipped two built-ins (`read_file`, `bash`); v0.4 Phase 2 adds
-//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5). A dispatch
-//! returns the child's address immediately and never blocks: the
-//! child's result arrives later as an inbox deposit (§2.11), so there
-//! is no polling half to pair with it. Adding a new one is a match arm
-//! in [`run`] plus a sibling module.
+//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5), and the inbox
+//! substrate adds [`message`] (deposit content into an existing agent's
+//! inbox, ARCH §2.11). A dispatch returns the child's address
+//! immediately and never blocks; a message deposits synchronously and
+//! returns `{status: deposited}`. Both derive the calling agent's
+//! identity from `LERNIE_CONV_BRANCH` (§3.3), never from model input.
+//! Adding a new one is a match arm in [`run`] plus a sibling module.
 
 use std::io::{Read, Write};
 use thiserror::Error;
 
 pub mod bash;
 pub mod dispatch;
+pub mod message;
 pub mod read_file;
 
 /// Reasons [`run`] can fail. Each in-process tool surfaces its own
@@ -49,6 +52,11 @@ pub enum Error {
     /// after stdout so the agent sees the failure verbatim.
     #[error(transparent)]
     Dispatch(#[from] dispatch::Error),
+    /// `message` failed (bad input JSON, missing env, `lernie message`
+    /// exit non-zero, etc., per [`message::Error`]). Same stderr-concat
+    /// contract as the other arms.
+    #[error(transparent)]
+    Message(#[from] message::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
@@ -62,17 +70,23 @@ pub enum Error {
 /// failure; `bash` propagates the shell's own exit code so a non-zero
 /// command can flow through without being misclassified as a harness
 /// fault.
+// `#[rustfmt::skip]` keeps the `run_with` tail call on one line: exploded
+// across arg lines, tarpaulin's llvm engine mis-attributes the argument
+// lines as uncovered (a known multi-line-call quirk), and every line here
+// is exercised by the routing tests in [`tests`].
+#[rustfmt::skip]
 pub fn run<R: Read, W: Write, E: Write>(
     name: &str,
     stdin: &mut R,
     stdout: &mut W,
     stderr: &mut E,
 ) -> Result<i32, Error> {
-    // `current_exe` failure here is exotic (mostly unusual platforms
-    // / `proc` mounts); panicking is consistent with the harness-wide
+    // `current_exe` failure here is exotic (mostly unusual platforms /
+    // `proc` mounts); panicking is consistent with the harness-wide
     // pattern for unrecoverable startup invariants.
     let spawner = dispatch::SubprocessSpawner::new().expect("current_exe resolves");
-    run_with(name, stdin, stdout, stderr, &dispatch::ProcessEnv, &spawner)
+    let sender = message::SubprocessSender::new().expect("current_exe resolves");
+    run_with(name, stdin, stdout, stderr, &dispatch::ProcessEnv, &spawner, &sender)
 }
 
 /// Same as [`run`] but with the `dispatch`-tool dependencies (env
@@ -87,6 +101,7 @@ pub fn run_with<R: Read, W: Write, E: Write>(
     stderr: &mut E,
     env: &dyn dispatch::EnvLookup,
     spawner: &dyn dispatch::Spawner,
+    sender: &dyn message::Sender,
 ) -> Result<i32, Error> {
     if name == "read_file" {
         return read_file::run(stdin, stdout)
@@ -100,6 +115,11 @@ pub fn run_with<R: Read, W: Write, E: Write>(
         return dispatch::run(stdin, stdout, env, spawner)
             .map(|()| 0)
             .map_err(Error::Dispatch);
+    }
+    if name == "message" {
+        return message::run(stdin, stdout, env, sender)
+            .map(|()| 0)
+            .map_err(Error::Message);
     }
     Err(Error::Unknown(name.to_string()))
 }

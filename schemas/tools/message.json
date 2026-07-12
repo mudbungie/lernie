@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "message",
+  "description": "Input schema for the lernie built-in `message` tool (ARCH §2.11, §3.3, §3.4). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "Recipient agent id — its full hyphenated descent, which is also its branch name and its address (ARCH §2.3). A child's address is the id its dispatch returned; the parent's address is this agent's id minus its last descent segment. The message is deposited into that agent's inbox and delivered at its next step boundary (ARCH §2.11)."
+    },
+    "content": {
+      "type": "string",
+      "description": "The message body — content addressed to the recipient. Delivered verbatim as a user-role transcript entry at the recipient's next step boundary; steering context beside its pinned goal, not a goal rewrite (ARCH §2.8, §2.11)."
+    }
+  },
+  "required": ["agent", "content"],
+  "additionalProperties": false
+}

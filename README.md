@@ -367,7 +367,8 @@ Built-ins:
   entry at its next boundary. A deposit into a *quiescent* agent is not
   yet self-delivering: the driver-launch on a free lease is still a no-op
   pending `lernie advance` (§6), so such a deposit waits in
-  `inbox/<agent-id>/` until a driver next runs against the branch.
+  `inbox/<agent-id>/` until a driver next runs against the branch — where
+  the **startup scan** (below) now flushes it.
 
 ## Messaging an existing agent directly
 
@@ -392,6 +393,47 @@ re-enters the verb, else `user` for a bare invocation.
   no-op for now; the deposit still lands and is delivered by the
   step-boundary drain (bl-1129) of the next driver that runs against the
   branch.
+
+## The startup scan
+
+Every driver invocation — `lernie prompt`, and every `lernie dispatch`
+re-entry — runs one workspace-wide **startup scan** before it touches its
+own branch (ARCH §2.11 *The startup scan*, §8, bl-d148). Two derived
+actions, no watcher and no schedule (a transient process; an idle
+workspace stays unswept until the next invocation, by design):
+
+- **Silent-death sweep.** Every agent branch with no live executor (the
+  §2.11 executor-lock probe) that either died mid-work (its latest step's
+  `response.json` closed without a terminal `end`) or — for a child —
+  never deposited a result message is a *silent death* (the §8 health
+  count). For each hard-crashed **child** in that set, the sweep deposits
+  a `died`-epitaph result message *on the child's behalf* (sender = the
+  child — the sweep is the scribe, not the author), so the parent is
+  revived rather than stalled. The "never deposited" test reads both the
+  parent's inbox (undelivered) and its transcript (delivered), so a prior
+  sweep's own deposit is seen on re-scan and never re-deposited —
+  idempotent by construction.
+- **Inbox flush.** Every agent with pending inbox files and a free lock
+  gets a driver **launched** — never drained: the scanner moves no files
+  and commits nothing; only an agent's own lock-holding executor
+  delivers. An agent whose lock is held is left alone. The sweep's own
+  deposits are picked up by the flush that follows in the same scan.
+
+**Shipped state.** The scan (silent-death sweep + inbox flush) ships and
+is wired at `lernie prompt` and `lernie dispatch` startup. The flush
+reuses the same driver-launch seam as `lernie message`, so its launcher
+is the same documented **no-op pending `lernie advance` (§6)**: the scan
+decides *which* agents need a driver and would launch it, but the spawn
+itself lands once `lernie advance` exists. Because a child does not yet
+run a step loop (the worker path stops at the dispatch commit), a real
+"died child" cannot arise from a run today — the derivation is exercised
+against constructed on-disk states.
+
+**Namespace note.** ARCH §8 writes the candidate enumeration as `git
+branch --list 'agents/*'`, but the shipped harness names agent branches
+bare (a root is its `<conv-id>`, a child is `<parent>-<sub-id>`), so the
+scan enumerates *every branch except `main`* — in shipped reality every
+non-`main` branch is an agent.
 
 ## Dispatching subagents directly
 

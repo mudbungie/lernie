@@ -7,9 +7,11 @@
 //! deposit-starts-a-driver probe ([`probe_and_launch`]) behind the
 //! `lernie message` verb ([`cli_message`]). The delivery drain that moves
 //! these files into the transcript lives with the executor's step loop
-//! (bl-1129, [`crate::prompt::dispatch`] — a driver, not a writer); the
-//! startup scan (bl-d148) and the result-message return path (bl-4ce8)
-//! also ride this substrate but are out of scope here.
+//! (bl-1129, [`crate::prompt::dispatch`] — a driver, not a writer). The
+//! workspace-wide **startup scan** — the silent-death sweep and inbox
+//! flush every driver runs before its own branch work — is [`scan`]
+//! (bl-d148); it and the result-message return path (bl-4ce8) ride this
+//! same substrate.
 //!
 //! **Writer/driver totality (§2.11).** `lernie message` is a *writer*:
 //! it deposits and, if it observes the recipient quiescent (the lock
@@ -21,12 +23,14 @@
 
 pub mod deposit;
 pub mod lock;
+pub mod scan;
 
 #[cfg(test)]
 mod tests;
 
 pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
+pub use scan::{ScanError, ScanReport, scan};
 
 use crate::prompt::{Clock, SystemClock};
 use std::ffi::OsStr;

@@ -1,0 +1,229 @@
+//! The startup scan's derivations (ARCH §2.11 *The startup scan*, §8).
+//!
+//! Pure and read-only over the workspace: branch enumeration, the
+//! live-executor probe, the returned/never-deposited derivation across a
+//! parent's inbox and transcript, the died-mid-work classification over
+//! `steps/`, and the inbox-flush enumeration. The orchestration that acts
+//! on these lives in [`super`]; keeping the derivations here holds both
+//! files under the repo's per-file line cap and makes every predicate
+//! unit-testable in isolation.
+
+use super::ScanError;
+use crate::prompt::inbox::{INBOX_DIR, inbox_dir, try_acquire};
+use crate::prompt::step::{RESPONSE_FILE, STEPS_DIR};
+use crate::provider::segment::{Outcome, classify};
+use crate::template::GitRunner;
+use std::io;
+use std::path::{Path, PathBuf};
+
+/// The reserved non-agent branch: the ref every agent branch forks off
+/// (§2.3). Excluded from the sweep's candidate enumeration.
+const MAIN_BRANCH: &str = "main";
+/// The transcript directory a delivered message lands in, as
+/// `messages/<NNN>-<sender>.md` (§2.11 *Delivery*). Read via `git
+/// ls-tree` off the parent branch to detect a *delivered* return.
+const MESSAGES_DIR: &str = "messages";
+/// Message-file extension (§2.11 *Deposit* — `<sender>-<NNN>.md`).
+const MESSAGE_EXT: &str = "md";
+
+/// The candidate branch set: every branch except `main` (§8, and the
+/// shipped-namespace note in [`super`] — bare agent branches, no
+/// `agents/` prefix). Read with `git branch --list`, one short refname
+/// per line.
+pub(super) fn agent_branches(root: &Path, git: &dyn GitRunner) -> Result<Vec<String>, ScanError> {
+    let out = git
+        .run_capture(root, &["branch", "--list", "--format=%(refname:short)"])
+        .map_err(|source| ScanError::Git {
+            op: "branch --list",
+            source,
+        })?;
+    Ok(out
+        .lines()
+        .map(str::trim)
+        .filter(|b| !b.is_empty() && *b != MAIN_BRANCH)
+        .map(str::to_string)
+        .collect())
+}
+
+/// Is `branch` currently driven? A non-blocking [`try_acquire`] whose
+/// *success* means nobody holds the lock (the lease is dropped at once —
+/// probing is not driving). `Ok(true)` ⇒ another executor owns it.
+pub(super) fn is_driven(workspace: &Path, branch: &str) -> Result<bool, ScanError> {
+    let dir = inbox_dir(workspace, branch);
+    match try_acquire(&dir).map_err(|source| ScanError::Probe {
+        path: dir.clone(),
+        source,
+    })? {
+        Some(_guard) => Ok(false),
+        None => Ok(true),
+    }
+}
+
+/// Has the child `child` returned a result to `parent`? True when a
+/// message from the child exists in the parent's inbox (undelivered) *or*
+/// in the parent's transcript (delivered) — the sender-namespaced
+/// derivation across both homes (§2.11). Either presence means the return
+/// already happened, so the sweep must not deposit again.
+pub(super) fn returned(
+    workspace: &Path,
+    root: &Path,
+    git: &dyn GitRunner,
+    parent: &str,
+    child: &str,
+) -> Result<bool, ScanError> {
+    if has_inbox_message(workspace, parent, child) {
+        return Ok(true);
+    }
+    transcript_has(root, git, parent, child)
+}
+
+/// Is there an undelivered message *from* `child` in `parent`'s inbox — a
+/// file named `<child>-<NNN>.md`? An absent or unreadable inbox is "no
+/// message" (the general path with empty inputs).
+fn has_inbox_message(workspace: &Path, parent: &str, child: &str) -> bool {
+    let dir = inbox_dir(workspace, parent);
+    let Ok(rd) = std::fs::read_dir(&dir) else {
+        return false;
+    };
+    rd.flatten()
+        .any(|e| is_message_from(&e.file_name().to_string_lossy(), child))
+}
+
+/// Does `name` name a deposit from `sender` — `<sender>-<NNN>.md` with a
+/// numeric `<NNN>`? The same shape [`crate::prompt::inbox::deposit`]
+/// writes.
+pub(super) fn is_message_from(name: &str, sender: &str) -> bool {
+    let prefix = format!("{sender}-");
+    let suffix = format!(".{MESSAGE_EXT}");
+    name.strip_prefix(&prefix)
+        .and_then(|m| m.strip_suffix(&suffix))
+        .is_some_and(|seq| seq.parse::<u32>().is_ok())
+}
+
+/// Has a message from `child` been *delivered* into `parent`'s transcript
+/// — a committed `messages/<NNN>-<child>.md` on the parent branch? Read
+/// with `git ls-tree` off the branch ref, so a torn-down worktree is no
+/// obstacle (§2.3 step 6).
+fn transcript_has(
+    root: &Path,
+    git: &dyn GitRunner,
+    parent: &str,
+    child: &str,
+) -> Result<bool, ScanError> {
+    let out = git
+        .run_capture(
+            root,
+            &["ls-tree", "-r", "--name-only", parent, "--", MESSAGES_DIR],
+        )
+        .map_err(|source| ScanError::Git {
+            op: "ls-tree messages",
+            source,
+        })?;
+    Ok(out.lines().any(|line| transcript_line_from(line, child)))
+}
+
+/// Does a `messages/<NNN>-<sender>.md` transcript path name a delivery
+/// from `sender`? Strip the dir and `.md`, split the leading numeric
+/// `<NNN>-` off, and compare the remainder (`007-a-b` → sender `a-b`).
+pub(super) fn transcript_line_from(line: &str, sender: &str) -> bool {
+    let file = line.rsplit('/').next().unwrap_or(line);
+    let Some(stem) = file.strip_suffix(&format!(".{MESSAGE_EXT}")) else {
+        return false;
+    };
+    match stem.split_once('-') {
+        Some((seq, rest)) => seq.parse::<u32>().is_ok() && rest == sender,
+        None => false,
+    }
+}
+
+/// Did `branch` die mid-work — is its latest step's `response.json` closed
+/// without a terminal `end` (§2.9, [`Outcome::NoTerminal`])? Reads only
+/// the framing tail via [`classify`], honoring the §2.3 diagnostic-only
+/// contract (framing-yes / content-no). No `steps/` tree (the shipped
+/// child shape) or no readable response ⇒ this signal is silent (`false`).
+pub(super) fn died_mid_work(workspace: &Path, branch: &str) -> bool {
+    let steps = workspace.join(STEPS_DIR).join(branch);
+    let Some(latest) = latest_step_dir(&steps) else {
+        return false;
+    };
+    match std::fs::read(latest.join(RESPONSE_FILE)) {
+        Ok(bytes) => classify(&bytes) == Outcome::NoTerminal,
+        Err(_) => false,
+    }
+}
+
+/// The highest-numbered `steps/<branch>/<NNN>/` directory, or `None` when
+/// the tree is absent or holds no numeric step dir.
+fn latest_step_dir(steps: &Path) -> Option<PathBuf> {
+    let rd = std::fs::read_dir(steps).ok()?;
+    rd.flatten()
+        .filter_map(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            name.parse::<u32>().ok().map(|n| (n, e.path()))
+        })
+        .max_by_key(|(n, _)| *n)
+        .map(|(_, p)| p)
+}
+
+/// The branch tip sha — the child's `terminal_ref:` for the sweep's
+/// `died` deposit (§2.6). `git rev-parse --verify <branch>`.
+pub(super) fn branch_tip(
+    root: &Path,
+    git: &dyn GitRunner,
+    branch: &str,
+) -> Result<String, ScanError> {
+    let out = git
+        .run_capture(root, &["rev-parse", "--verify", branch])
+        .map_err(|source| ScanError::Git {
+            op: "rev-parse branch tip",
+            source,
+        })?;
+    Ok(out.trim().to_string())
+}
+
+/// Every agent that has an inbox directory under `<workspace>/inbox/`,
+/// sorted. An absent inbox root yields nothing (the general path with
+/// empty inputs, not a bootstrap case).
+pub(super) fn inbox_agents(workspace: &Path) -> Result<Vec<String>, ScanError> {
+    let root = workspace.join(INBOX_DIR);
+    let rd = match std::fs::read_dir(&root) {
+        Ok(rd) => rd,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(source) => return Err(ScanError::InboxRoot { path: root, source }),
+    };
+    let mut agents: Vec<String> = rd
+        .flatten()
+        .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    agents.sort();
+    Ok(agents)
+}
+
+/// Does this inbox hold at least one well-formed pending deposit
+/// (`<sender>-<NNN>.md`)? A leading-dot temp file or a stray is not a
+/// deposit and does not count.
+pub(super) fn has_pending(dir: &Path) -> bool {
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return false;
+    };
+    rd.flatten().any(|e| {
+        let name = e.file_name().to_string_lossy().into_owned();
+        is_pending_deposit(&name)
+    })
+}
+
+/// Is `name` a well-formed `<sender>-<NNN>.md` deposit? Splits the numeric
+/// `<NNN>` tail off the `.md` stem; a non-numeric tail, wrong extension,
+/// empty sender, or a `.tmp`/leading-dot temp is not a deposit.
+pub(super) fn is_pending_deposit(name: &str) -> bool {
+    let Some(stem) = name.strip_suffix(&format!(".{MESSAGE_EXT}")) else {
+        return false;
+    };
+    match stem.rsplit_once('-') {
+        Some((sender, seq)) => {
+            seq.parse::<u32>().is_ok() && !sender.is_empty() && !sender.starts_with('.')
+        }
+        None => false,
+    }
+}

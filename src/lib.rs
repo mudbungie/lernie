@@ -16,4 +16,5 @@ pub mod config;
 pub mod harness_root;
 pub mod prompt;
 pub mod provider;
+pub mod skill;
 pub mod template;

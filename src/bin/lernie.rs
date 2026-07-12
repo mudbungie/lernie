@@ -109,17 +109,18 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     match cli.command {
         Command::New { path } => {
-            let dest = match path {
-                Some(p) => p,
-                None => match harness_root::resolve() {
-                    Ok(roots) => roots.data.join("conversations").join(NanoIdGen.short()),
-                    Err(e) => {
-                        eprintln!("lernie new: {e}");
-                        return ExitCode::FAILURE;
-                    }
-                },
+            // `roots` is always resolved: descriptions-always (§3.3)
+            // snapshots the data-root pools into the new repo at creation.
+            let roots = match harness_root::resolve() {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("lernie new: {e}");
+                    return ExitCode::FAILURE;
+                }
             };
-            match template::scaffold(&dest, &RealGit::new()) {
+            let dest =
+                path.unwrap_or_else(|| roots.data.join("conversations").join(NanoIdGen.short()));
+            match template::scaffold(&dest, &roots.data, &RealGit::new()) {
                 Ok(()) => {
                     println!("{}", dest.display());
                     ExitCode::SUCCESS

@@ -141,6 +141,20 @@ pub enum Error {
         #[source]
         source: serde_json::Error,
     },
+    #[error("tool {name} skill frontmatter unreadable at {path}: {source}")]
+    SkillFrontmatterIo {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("tool {name} skill frontmatter at {path} is malformed: {source}")]
+    SkillFrontmatter {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: serde_yaml_ng::Error,
+    },
 }
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the

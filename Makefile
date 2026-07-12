@@ -108,6 +108,14 @@ install: release
 	else \
 		echo "kept     $(LERNIE_DATA_HOME)/agents/default/ (existing)"; \
 	fi
+	@# Data-root pools (ARCH §3.3): the tool JSON schemas and skill dirs
+	@# the descriptions-always producer snapshots into each new repo's
+	@# `descriptions/**` at `lernie new`. Shipped artifacts are re-copied
+	@# (a fresh source is the point); user-added pool entries survive.
+	@install -m 0644 schemas/tools/*.json "$(LERNIE_DATA_HOME)/tools/"
+	@echo "installed tool schemas -> $(LERNIE_DATA_HOME)/tools/"
+	@cp -R skills/. "$(LERNIE_DATA_HOME)/skills/"
+	@echo "installed skill pool   -> $(LERNIE_DATA_HOME)/skills/"
 	@$(MAKE) --no-print-directory install-verify
 	@echo
 	@echo "make sure $(INSTALL_BIN) is on your PATH (and that 'bz' resolves there too)."

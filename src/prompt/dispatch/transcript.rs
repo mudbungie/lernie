@@ -1,17 +1,18 @@
 //! Committing transcript entries to the branch (ARCH §2.3, §3.3).
 //!
 //! The **transcript** is the branch-scoped sequence under `messages/`:
-//! each step's assistant output and each tool call's result is one
+//! each step's model output and each tool call's result is one
 //! immutable entry, committed by the executor as it lands (§2.3). An
 //! entry's filename is `NNN-<origin>.json` — `NNN` the branch's single
-//! zero-padded transcript counter and `<origin>` a reserved token
-//! (`assistant` / `tool`, §2.3). Order lives in the filename and nowhere
-//! else, so the counter is *derived* — [`next_seq`] reads the `messages/`
-//! listing and returns max-present-plus-one — never stored (PRINCIPLES
-//! single source of truth).
+//! zero-padded transcript counter and `<origin>` the entry's author: the
+//! **model id** that produced a model-output entry (§2.3, §4.3), or the
+//! one reserved token `tool` for a tool result. Order lives in the
+//! filename and nowhere else, so the counter is *derived* — [`next_seq`]
+//! reads the `messages/` listing and returns max-present-plus-one —
+//! never stored (PRINCIPLES single source of truth).
 //!
 //! Each entry file is a JSON array of brazen's canonical [`Content`]
-//! blocks (an assistant entry's streamed blocks; a tool entry's single
+//! blocks (a model-output entry's streamed blocks; a tool entry's single
 //! `tool_result` block), so it composes verbatim as one wire message
 //! (§2.3) — what makes replay bit-identical rather than a lossy
 //! re-rendering.
@@ -26,9 +27,10 @@ pub(super) const MESSAGES_DIR: &str = "messages";
 /// Zero-pad width of the transcript counter, matching the step-record
 /// convention (`steps/<id>/NNN`, `summary/NNN`).
 const SEQ_WIDTH: usize = 3;
-/// Reserved origin token for a step's assistant output (§2.3).
-const ASSISTANT_ORIGIN: &str = "assistant";
-/// Reserved origin token for a tool call's result (§2.3).
+/// The one reserved `.json` origin token (§2.3): a tool call's result.
+/// A model-output entry's origin token is instead the model id that
+/// authored it, so a model id colliding with this token is declined
+/// ([`commit_assistant`]), never munged.
 const TOOL_ORIGIN: &str = "tool";
 
 /// The branch's next transcript counter: max of the `NNN` prefixes
@@ -82,29 +84,37 @@ pub(super) fn deliver_message(
     commit_entry(worktree, conv_id, seq, &rel, sender, git)
 }
 
-/// Commit a step's assistant output: seal-and-rename — the sealed
-/// staging file (§2.3 *The transcript writer*) *leaves* by rename into
-/// `messages/NNN-assistant.json` at the branch's next counter, then a
-/// commit lands it. `NNN` is evaluated here, inside the executor's
-/// serialized commit section (§2.3). Returns the committed canonical
-/// blocks — read back from the transcript entry (its one content home,
-/// §2.3), never from any `steps/` record — so the step loop can run this
-/// step's `tool_use` calls without a second content fold.
+/// Commit a step's model output: seal-and-rename — the sealed staging
+/// file (§2.3 *The transcript writer*) *leaves* by rename into
+/// `messages/NNN-<model-id>.json` at the branch's next counter, then a
+/// commit lands it. The origin token is `model_id` — the model that
+/// authored the entry, as it rode the canonical request (§2.3, §4.3); a
+/// model id colliding with the one reserved `.json` token [`TOOL_ORIGIN`]
+/// is declined (decline illegal operations, §2.3), never munged. `NNN` is
+/// evaluated here, inside the executor's serialized commit section (§2.3).
+/// Returns the committed canonical blocks — read back from the transcript
+/// entry (its one content home, §2.3), never from any `steps/` record —
+/// so the step loop can run this step's `tool_use` calls without a second
+/// content fold.
 pub(super) fn commit_assistant(
     worktree: &Path,
     conv_id: &str,
+    model_id: &str,
     staging_path: &Path,
     git: &dyn GitRunner,
 ) -> Result<Vec<Content>, Error> {
+    if model_id == TOOL_ORIGIN {
+        return Err(Error::ReservedModelId(model_id.to_string()));
+    }
     let seq = next_seq(worktree)?;
-    let rel = entry_rel(seq, ASSISTANT_ORIGIN);
+    let rel = entry_rel(seq, model_id);
     let dest = worktree.join(&rel);
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
     std::fs::rename(staging_path, &dest)?;
-    commit_entry(worktree, conv_id, seq, &rel, ASSISTANT_ORIGIN, git)?;
+    commit_entry(worktree, conv_id, seq, &rel, model_id, git)?;
     let bytes = std::fs::read(&dest)?;
     // Harness-sealed staging, so always a valid canonical array (§2.3).
-    Ok(serde_json::from_slice(&bytes).expect("assistant entry is a canonical Content array"))
+    Ok(serde_json::from_slice(&bytes).expect("model-output entry is a canonical Content array"))
 }
 
 /// Commit one resolved tool call's canonical `tool_result` block as

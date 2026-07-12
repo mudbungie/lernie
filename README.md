@@ -180,13 +180,14 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    the handshake `v` — for retry/classification; `meta.json` carries
    `{commit, started_at, ended_at}`. The events' *content* streams into
    the **transcript writer**'s (§2.3) staging file
-   `<conv-repo>/steps/<conv-id>/<NNN>/assistant.staging.json`,
+   `<conv-repo>/steps/<conv-id>/<NNN>/staging.json`,
    appending each content block as it completes; segment authority
    (§4.4) truncates it on an `Error` attempt and the settling `Finish`
    seals it — one stream, two sinks (diagnostic `response.json` +
    transcript), never read back. When the model call completes, the
    sealed file is renamed into the worktree as
-   `messages/NNN-assistant.json` — a JSON array of canonical `Content`
+   `messages/NNN-<model-id>.json` — its origin token is the model that
+   authored it (§2.3), the body a JSON array of canonical `Content`
    blocks — and committed. `NNN` is the branch's transcript counter,
    max-present-plus-one from the `messages/` listing, evaluated at
    commit time. The initial user message now enters through the front
@@ -205,12 +206,13 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    Each step then re-assembles its model-facing history
    from the read-state commit's tree — `readdir` of `messages/`, sorted
    by the filename's `NNN` prefix, each entry composed by its origin
-   token (`NNN-<sender>.md` → user text, `NNN-assistant.json` → the
-   assistant message, `NNN-tool.json` → `tool_result` in the following
+   token (`NNN-<sender>.md` → user text, `NNN-<model-id>.json` → the
+   assistant message — any `.json` token but the reserved `tool`,
+   `NNN-tool.json` → `tool_result` in the following
    user message), with consecutive same-side entries grouped into one
    alternating wire message. There is no in-memory history and no
    git-log walk; running, retry, and replay are one code path against
-   one input, the commit's tree (§2.3, §5). If the settled assistant
+   one input, the commit's tree (§2.3, §5). If the settled model-output
    entry carries any `tool_use` block, run every one through the tool
    executor — the per-call records land under
    `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of every
@@ -221,7 +223,7 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    commit, but each step's transcript entries (assistant output, tool
    results) do advance the branch tip, which is that step's read state
    (§2.10). `tool_use`/`tool_result` pairing holds by construction: a
-   tool result commits immediately after its emitting step's assistant
+   tool result commits immediately after its emitting step's model-output
    entry, so it always lands in the immediately following user message.
 7. Dispatch the terminal compactor (§2.7) off the conversation tip
    by re-entering the binary as `lernie dispatch compactor <repo>

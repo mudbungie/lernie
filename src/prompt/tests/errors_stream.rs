@@ -54,8 +54,8 @@ fn run_surfaces_invalid_tool_input_json_delta_at_content_stop() {
     // Same malformed `json_delta`, but the block is `content_stop`'d —
     // so the transcript writer's staging sink (§2.3) parses it and
     // surfaces the `AdapterJson` at the block's stop. The model call
-    // commits no assistant entry; the branch tip does not move past the
-    // user-message delivery.
+    // commits no model-output entry; the branch tip does not move past
+    // the user-message delivery.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let body = concat!(
         r#"{"type":"message_start","v":1,"role":"assistant"}"#,
@@ -75,9 +75,9 @@ fn run_surfaces_invalid_tool_input_json_delta_at_content_stop() {
     let git = StubGit::ok();
     let err = run_with_stubs(repo.path(), "hi", &adapter, &git).unwrap_err();
     assert!(matches!(err, Error::AdapterJson(_)));
-    // No assistant transcript entry was committed: the staging sink
+    // No model-output transcript entry was committed: the staging sink
     // erred before the seal-and-rename, so no `git add
-    // messages/…-assistant.json` ran. (The user-message delivery entry
+    // messages/…-<model-id>.json` ran. (The user-message delivery entry
     // committed earlier, before the model call — that is the on-ramp,
     // not the step's own output.)
     assert!(
@@ -85,8 +85,10 @@ fn run_surfaces_invalid_tool_input_json_delta_at_content_stop() {
             .borrow()
             .iter()
             .any(|(_, args)| args.first().map(String::as_str) == Some("add")
-                && args.get(1).is_some_and(|a| a.ends_with("-assistant.json"))),
-        "no assistant transcript commit on a failed model call"
+                && args
+                    .get(1)
+                    .is_some_and(|a| a.ends_with("-claude-sonnet-4-7.json"))),
+        "no model-output transcript commit on a failed model call"
     );
 }
 

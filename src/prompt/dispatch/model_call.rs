@@ -102,7 +102,7 @@ pub(super) fn build_request(
 /// Drive one model call to resolution: `bz --json --provider <row>` per
 /// attempt, request on stdin, each attempt's stdout appended verbatim to
 /// `response_path` as one segment. On success the staging sink is sealed
-/// (the assistant transcript entry, §2.3) and `Ok(())` returns — the
+/// (the model-output transcript entry, §2.3) and `Ok(())` returns — the
 /// call's *content* has its one home in that entry, never a return
 /// value. A non-retryable / budget-exhausted `Error`, a half-stream
 /// kill, or a malformed event surfaces as a harness [`Error`].
@@ -116,7 +116,7 @@ pub(super) fn run(
     }
     // One fd, held across every attempt and backoff sleep (§3.5). The
     // staging sink (§2.3) is the second stream off the same pass — the
-    // assistant transcript entry under construction, sealed and renamed
+    // model-output transcript entry under construction, sealed and renamed
     // by the caller once the call settles complete.
     let mut response_file = File::create(response_path)?;
     let mut staging = StagingWriter::create(&staging_path_for(response_path))?;

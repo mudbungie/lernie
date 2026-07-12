@@ -87,6 +87,11 @@ pub enum Error {
     Config(#[from] crate::config::LoadError),
     #[error("providers.yaml has no {0:?} role")]
     RoleMissing(String),
+    #[error(
+        "model id {0:?} collides with the reserved transcript origin token `tool` (§2.3); \
+         rename the model row"
+    )]
+    ReservedModelId(String),
     #[error("read soul {path}: {source}")]
     SoulRead {
         path: PathBuf,

@@ -136,7 +136,8 @@ pub(super) fn run_exchange(
         // `steps/` is shared per §2.2/§2.3). On exhaustion the harness
         // writes the git-native `refs/lernie/budget-exhausted/<branch>`
         // marker and ceases the loop: an ordinary terminal state (§6),
-        // classified by `await` like any other.
+        // which deposits a result message into the parent's inbox like
+        // any other terminal event (§2.11).
         if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
             eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
             budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {

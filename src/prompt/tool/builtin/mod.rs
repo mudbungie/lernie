@@ -8,18 +8,15 @@
 //! stdout = raw result bytes, exit code = is_error) is enforced here.
 //!
 //! v0.3 shipped two built-ins (`read_file`, `bash`); v0.4 Phase 2 adds
-//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5) and Phase 3
-//! adds [`await_tool`] (the dispatch/await pair's resolution half,
-//! §2.5). Adding a new one is a match arm in [`run`] plus a sibling
-//! module.
+//! [`dispatch`] (the subagent-spawning tool, ARCH §2.5). A dispatch
+//! returns the child's address immediately and never blocks: the
+//! child's result arrives later as an inbox deposit (§2.11), so there
+//! is no polling half to pair with it. Adding a new one is a match arm
+//! in [`run`] plus a sibling module.
 
 use std::io::{Read, Write};
 use thiserror::Error;
 
-use crate::prompt::stop::ProcFsFinder;
-use crate::template::RealGit;
-
-pub mod await_tool;
 pub mod bash;
 pub mod dispatch;
 pub mod read_file;
@@ -52,12 +49,6 @@ pub enum Error {
     /// after stdout so the agent sees the failure verbatim.
     #[error(transparent)]
     Dispatch(#[from] dispatch::Error),
-    /// `await` failed (bad input JSON, foreign handle, git read
-    /// failure, etc., per [`await_tool::Error`]). The §3.3 stdio
-    /// contract concats stderr after stdout so the agent sees the
-    /// failure verbatim.
-    #[error(transparent)]
-    Await(#[from] await_tool::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
@@ -77,19 +68,6 @@ pub fn run<R: Read, W: Write, E: Write>(
     stdout: &mut W,
     stderr: &mut E,
 ) -> Result<i32, Error> {
-    // `await` is a git-and-fs poller plus a /proc writer probe (the
-    // kill-mid-stream stopped signature, ARCH §2.9 / §3.5). Production
-    // deps: [`await_tool::ProcessEnv`] + [`RealGit`] + [`ProcFsFinder`]
-    // (re-used from `crate::prompt::stop`, single source of truth for
-    // "is a writer holding response.json open?") + [`ThreadSleeper`].
-    // Routed here directly to keep [`run_with`] scoped to the
-    // dispatch arm's pre-existing test surface (which would otherwise
-    // need extra stubs in every dispatch routing test).
-    if name == "await" {
-        #[rustfmt::skip]
-        let res = await_tool::run(stdin, stdout, &await_tool::ProcessEnv, &RealGit::new(), &ProcFsFinder::default(), &await_tool::ThreadSleeper);
-        return res.map(|()| 0).map_err(Error::Await);
-    }
     // `current_exe` failure here is exotic (mostly unusual platforms
     // / `proc` mounts); panicking is consistent with the harness-wide
     // pattern for unrecoverable startup invariants.

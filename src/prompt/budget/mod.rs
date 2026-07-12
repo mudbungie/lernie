@@ -23,10 +23,10 @@
 //! **Exhaustion is an ordinary terminal state.** On exhaustion the
 //! harness ceases the branch's step loop and writes
 //! `refs/lernie/budget-exhausted/<branch>` ([`mark_exhausted`]) — the
-//! same git-native marking pattern as the §2.6-step-6 conflicted ref,
-//! read by `await(handle)` to surface `{status: budget_exhausted}`. No
-//! new event type, no `response.json` marker — a ref plus a stop,
-//! classified like any other terminal state (ARCH §6).
+//! same git-native marking pattern as the §2.6-step-6 conflicted ref.
+//! No new event type, no `response.json` marker — a ref plus a stop,
+//! which deposits a result message into the parent's inbox like any
+//! other terminal event (ARCH §6, §2.11).
 //!
 //! **`max_depth` and the root (flagged, ARCH §6).** §6 does not spell out
 //! the depth boundary. This module reads `max_depth` as the deepest
@@ -47,7 +47,8 @@ use std::path::Path;
 /// Git-native marker ref for an exhausted conversation
 /// (`refs/lernie/budget-exhausted/<branch>`, ARCH §6 — mirrors the
 /// §2.6-step-6 conflicted ref). The single home of the prefix; the
-/// `await` built-in reads it to surface `{status: budget_exhausted}`.
+/// terminal budget-exhausted state it marks is surfaced as a result
+/// deposit into the parent's inbox (§2.11) like any other.
 pub const BUDGET_EXHAUSTED_REF_PREFIX: &str = "refs/lernie/budget-exhausted/";
 
 /// Which declared limit a conversation crossed.

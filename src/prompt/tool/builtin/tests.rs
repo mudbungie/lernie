@@ -65,19 +65,6 @@ fn bash_error_is_carried_through_dispatcher() {
     assert!(matches!(err, Error::Bash(_)), "{err}");
 }
 
-#[test]
-fn await_routed_to_inner_module() {
-    // Routing test for the `await` arm. Bad JSON on stdin —
-    // await_tool::Error::InvalidJson — surfaces through the From
-    // conversion as Error::Await without ever reaching env lookup or
-    // git, so this test is self-contained.
-    let mut stdin = Cursor::new(b"not json".to_vec());
-    let mut stdout = Vec::new();
-    let mut stderr = Vec::new();
-    let err = run("await", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-    assert!(matches!(err, Error::Await(_)), "{err}");
-}
-
 /// Test-only stub for the dispatch tool's [`Spawner`] dependency.
 /// Returns a fixed handle on stdout, exit 0 — exercising the
 /// happy-path arm of [`run_with`] without spawning a real

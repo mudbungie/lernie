@@ -17,10 +17,9 @@
 //! test. We surface conflicts as [`Error::Git`] with `op: "rebase"`,
 //! abort the rebase so the worktree is left in a clean state, and
 //! write a marker ref `refs/lernie/conflicted/<child_branch>` at the
-//! child's pre-rebase tip — that marker is what `await(handle)`
-//! (v0.4 P3) reads to surface `{"status":"conflicted"}` on the
-//! subagent's resolution. Single source of truth: the marker is a
-//! plain git ref, not a sidecar file.
+//! child's pre-rebase tip — the declined-transfer mark (§2.6), read
+//! back when the subagent's result is surfaced. Single source of
+//! truth: the marker is a plain git ref, not a sidecar file.
 //!
 //! **The alignment step.** Vanilla `merge=ours` only resolves
 //! both-modified conflicts; it is silent on "added on theirs only"
@@ -41,11 +40,8 @@ use crate::template::{GitRunner, MERGE_OURS_PATHS};
 use std::path::Path;
 
 /// Ref-namespace prefix for the merge protocol's conflicted marker
-/// (ARCH §2.6 step 6). Mirrored by the await tool's
-/// [`crate::prompt::tool::builtin::await_tool::CONFLICTED_REF_PREFIX`]
-/// — kept aligned by code review (the constant is the single source
-/// of the spec; the await module re-exports its own copy so the
-/// builtin tool does not have to depend on `super::merge`).
+/// (ARCH §2.6 step 6) — the declined-transfer mark. Single source of
+/// the spec's ref name; a plain git ref, not a sidecar file.
 const CONFLICTED_REF_PREFIX: &str = "refs/lernie/conflicted/";
 
 /// Rebase `child_branch` onto `parent_branch`'s tip (run inside
@@ -75,8 +71,8 @@ pub fn rebase_and_merge(
         // harness can do, and the rebase failure is the one the
         // operator needs to see. After abort, the child branch ref is
         // back at its pre-rebase tip; mark that tip with a
-        // conflicted ref so `await(handle)` (v0.4 P3) can resolve it
-        // without reading sidecar state.
+        // conflicted ref (the declined-transfer mark, §2.6) so the
+        // subagent's result can be surfaced without sidecar state.
         let _ = git.run(child_worktree, &["rebase", "--abort"]);
         let conflicted_ref = format!("{CONFLICTED_REF_PREFIX}{child_branch}");
         let _ = git.run(

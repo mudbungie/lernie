@@ -26,9 +26,7 @@ use lernie::prompt::{
     SystemClock, WorkerRequest, tool::builtin,
 };
 use lernie::template::{self, RealGit};
-use std::io;
-use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::{io, path::Path, path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
 #[command(name = "lernie", about = "Git-backed agent harness", version)]
@@ -128,6 +126,7 @@ fn main() -> ExitCode {
             }
         }
         Command::Prompt { repo, message } => {
+            prompt::inbox::scan::scan_startup(&repo); // §2.11 startup scan
             prompt::stop::become_pgid_leader(); // §2.9 cascade leader
             let dispatcher = match SpawnDispatcher::new() {
                 Ok(d) => d,
@@ -213,6 +212,7 @@ fn main() -> ExitCode {
 /// `--goal` rules are enforced here and surfaced as a non-zero exit
 /// with a `lernie dispatch <role>:` prefix.
 fn run_dispatch_cli(role: &str, repo: &Path, branch: &str, goal: Option<&str>) -> ExitCode {
+    prompt::inbox::scan::scan_startup(repo); // §2.11 startup scan (driver)
     let outcome = match role {
         ROLE_COMPACTOR => run_compactor_cli(repo, branch, goal),
         ROLE_WORKER => run_worker_cli(repo, branch, goal),

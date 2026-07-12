@@ -11,7 +11,7 @@ CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on ever
 ## Quickstart
 
 ```
-make install              # lay down ~/.lernie/ + binaries on PATH
+make install              # lay down the XDG harness homes + binaries on PATH
 lernie new ~/work/chat    # scaffold a conversation repo
 ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
 ```
@@ -19,17 +19,21 @@ ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
 ## Install
 
 ```
-make install                                  # default: ~/.local/bin + ~/.lernie/
+make install                                  # default: ~/.local/bin, XDG homes
 make install INSTALL_PREFIX=/usr/local        # binaries -> /usr/local/bin/
-make install LERNIE_HOME=/opt/lernie          # harness root -> /opt/lernie/
+make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lernie/
 ```
 
 `make install` runs a release build and then:
 
-1. Lays down the harness root skeleton at `$LERNIE_HOME` (default
-   `~/.lernie/`) — `workflows/`, `tools/`, `skills/`, `agents/`, and
-   `conversations/` (ARCH §2.2). Re-runs are idempotent: directory
-   creation uses `mkdir -p`; existing config files are kept.
+1. Lays down the harness root skeleton, split by XDG lifetime (ARCH
+   §2.2): the **config root** (`$XDG_CONFIG_HOME/lernie`, default
+   `~/.config/lernie`) gets `models.yaml` and `workflows/`; the **data
+   root** (`$XDG_DATA_HOME/lernie`, default `~/.local/share/lernie`)
+   gets the `tools/`, `skills/`, `agents/`, and `conversations/` pools.
+   `LERNIE_HOME`, if set, collapses both roots to that one directory.
+   Re-runs are idempotent: directory creation uses `mkdir -p`; existing
+   config files are kept.
 2. Installs `lernie` and `lernie-ui-egui` into `$INSTALL_PREFIX/bin`
    with `install -m 0755` (atomic overwrite, no symlinks). Make sure
    that directory is on your `PATH`.
@@ -39,11 +43,11 @@ make install LERNIE_HOME=/opt/lernie          # harness root -> /opt/lernie/
    dependency in `Cargo.toml`). One binary serves every provider
    (ARCH §4.4); the harness resolves `bz` on `PATH`, and a load-time
    guard rejects any `bz` whose version differs from the pin.
-4. Drops a default `$LERNIE_HOME/models.yaml` (model capabilities +
-   context windows — no endpoints or auth, which are brazen's) and a
-   `$LERNIE_HOME/agents/default/` skeleton copied from
-   [`template/`](template/) — only when those paths don't already
-   exist, so hand-edited config survives a re-install.
+4. Drops a default `models.yaml` under the config root (model
+   capabilities + context windows — no endpoints or auth, which are
+   brazen's) and an `agents/default/` skeleton under the data root,
+   copied from [`template/`](template/) — only when those paths don't
+   already exist, so hand-edited config survives a re-install.
 5. Smoke-tests the freshly installed binaries with `lernie --version`
    and a throwaway `lernie new`. Failure aborts the install with a
    non-zero exit.
@@ -56,8 +60,9 @@ material (ARCH §4.1).
 
 `make uninstall` removes the `lernie`/`lernie-ui-egui` binaries; `bz`
 (installed via cargo) is removed with `cargo uninstall brazen`. The
-harness root (config, conversations) stays put — clean it up manually
-if you want a true uninstall.
+harness homes (the config and data roots, holding config and
+conversations) stay put — clean them up manually if you want a true
+uninstall.
 
 ## Configuration schemas
 
@@ -72,22 +77,27 @@ from the Rust types under `src/config/`. `make schemas` writes them to
 | `schemas/manifest.json`       | `config::manifest::Manifest`               | `<conv-repo>/manifest.yaml`           |
 | `schemas/workflow.json`       | `config::workflow::Workflow`               | `<conv-repo>/workflow.yaml`           |
 | `schemas/providers.json`      | `config::per_repo_providers::PerRepoProviders` | `<conv-repo>/providers.yaml` (`roles:`) |
-| `schemas/models.json`         | `config::models::Models`                   | `<harness-root>/models.yaml`          |
+| `schemas/models.json`         | `config::models::Models`                   | `<config-root>/models.yaml`           |
 
 ## Layout: harness root and conversation repos
 
-There are two distinct on-disk locations (ARCH §2.2):
+The harness root is installation-global state, split by XDG lifetime
+into two homes (ARCH §2.2). `LERNIE_HOME`, if set and non-empty,
+collapses both to that one directory (test isolation, alternate
+installs). Three distinct on-disk locations:
 
-- **Harness root** — installation-global, defaults to `~/.lernie/`,
-  overridable via `LERNIE_HOME`. Holds the global
+- **Config root** — hand-edited declarations, `$XDG_CONFIG_HOME/lernie`
+  (default `~/.config/lernie`). Holds the global
   [`models.yaml`](docs/ARCHITECTURE.md#42-model-abstraction) (model
   capabilities + context windows, plus an optional `adapter:` binary
-  override — §4.2), and `workflows/`, `tools/`, `skills/`, and
-  `agents/<profile>/` per-profile skeletons. Provider endpoints and
-  auth live in brazen's config, not here (§4.1). Shared across every
-  conversation.
+  override — §4.2) and the `workflows/` templates. Provider endpoints
+  and auth live in brazen's config, not here (§4.1).
+- **Data root** — machine-populated pools, `$XDG_DATA_HOME/lernie`
+  (default `~/.local/share/lernie`). Holds `tools/`, `skills/`, and
+  `agents/<profile>/` per-profile skeletons, plus the `conversations/`
+  tree. Shared across every conversation.
 - **Conversation repo** — one self-contained git repository per root
-  conversation, at `<harness-root>/conversations/<root-id>/`. Carries the
+  conversation, at `<data-root>/conversations/<root-id>/`. Carries the
   per-repo `providers.yaml` (`roles:` only — §4.3), `manifest.yaml`,
   `workflow.yaml`, `souls/`, and a `root/` worktree where `main` is
   checked out. Subagent conversations are sibling worktrees of `root/`,
@@ -97,10 +107,10 @@ There are two distinct on-disk locations (ARCH §2.2):
 Each conversation repo is scaffolded from [`template/`](template/) — the
 versioned skeleton embedded into the `lernie` binary at build time, the
 v0.3-shape default profile in the absence of a custom
-`<harness-root>/agents/<profile>/`. Create one:
+`<data-root>/agents/<profile>/`. Create one:
 
 ```
-lernie new                     # auto-id under <harness-root>/conversations/
+lernie new                     # auto-id under <data-root>/conversations/
 lernie new /path/to/my-conversation
 ```
 
@@ -120,7 +130,7 @@ alignment step), and lands a single `init conversation repo` commit. The control
 `providers.yaml`, `version`, `souls/`) sit at the conv-repo root —
 outside any worktree — and are deliberately untracked. The destination
 must either not exist or be an empty directory. With no path argument,
-the destination is `<LERNIE_HOME or ~/.lernie>/conversations/<auto-id>/`;
+the destination is `<data-root>/conversations/<auto-id>/`;
 the scaffolded path is printed on stdout. `goal.md` and `soul.md` inside
 `root/` are intentionally not in the template — they are written at
 dispatch time (ARCH §2.3, §2.8).
@@ -136,8 +146,8 @@ lernie prompt /path/to/my-conversation 'hello'
 the model call through brazen's `bz` (§4.4), runs the terminal compactor
 off the tip, and `--no-ff` merges the compacted branch back into `main`:
 
-1. Resolve the harness root (`LERNIE_HOME` or `~/.lernie/`, ARCH
-   §2.2). Load `<harness-root>/models.yaml` (capabilities + context
+1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
+   §2.2). Load `<config-root>/models.yaml` (capabilities + context
    windows + optional `adapter:` override — §4.2) and
    `<repo>/providers.yaml` (`roles:` block — §4.3); cross-validate
    `roles.worker.{provider,model}` against `models.yaml`.
@@ -245,7 +255,7 @@ exec's this exact subcommand; there is no second control surface.
 
 The agent can call **built-in tools** that ship inside the `lernie`
 binary as `lernie tool <name>` subcommands (ARCH §3.3 / §12). The tool
-executor's resolution order — `<harness-root>/tools/lernie-tool-<name>`
+executor's resolution order — `<data-root>/tools/lernie-tool-<name>`
 → `PATH` → `lernie tool <name>` — falls through to this in-process
 route for tools not externalized.
 
@@ -256,11 +266,11 @@ Each built-in is the triple §3.3 pins:
   0 on success or non-zero on failure (stderr is concatenated after
   stdout into `tool_result.content` when `is_error` is set).
 - **JSON schema** — at [`schemas/tools/<name>.json`](schemas/tools/),
-  copied to `<harness-root>/tools/<name>.json` by `make install`. Sent
+  copied to `<data-root>/tools/<name>.json` by `make install`. Sent
   verbatim as the `input_schema` of the tool's entry in the model
   call's `tools: [...]` array.
 - **Skill** — at [`skills/<name>/SKILL.md`](skills/), copied to
-  `<harness-root>/skills/<name>/`. The frontmatter `description` is
+  `<data-root>/skills/<name>/`. The frontmatter `description` is
   the tool's description in `tools: [...]`; the body explains when to
   reach for it.
 
@@ -345,7 +355,7 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
 
 - **A new provider on a supported protocol** is a brazen config row — no
   code anywhere. Add the row (`bz` config), reference its name as a
-  model's `provider:` in `<harness-root>/models.yaml`, and point a role
+  model's `provider:` in `<config-root>/models.yaml`, and point a role
   at that model in `<repo>/providers.yaml`.
 - **A new wire protocol or auth mode** is a contribution to brazen.
 - **An alternate adapter binary** that honors the same pipe contract
@@ -459,8 +469,8 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root (default: `~/.lernie/`) with a default `models.yaml` and the `agents/default/` template |
-| `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness root config in place |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `agents/default/` template; `LERNIE_HOME` collapses both |
+| `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow
 

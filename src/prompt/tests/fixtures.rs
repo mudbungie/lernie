@@ -120,7 +120,7 @@ pub(super) fn valid_deps<'a>(
     id: &'a FixedIdGen,
     dispatcher: &'a StubDispatcher,
     tool_executor: &'a StubToolExecutor,
-    harness_root: &'a Path,
+    config_root: &'a Path,
 ) -> Deps<'a> {
     Deps {
         adapter,
@@ -130,7 +130,7 @@ pub(super) fn valid_deps<'a>(
         id_gen: id,
         dispatcher,
         tool_executor,
-        harness_root,
+        config_root,
     }
 }
 

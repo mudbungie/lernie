@@ -145,9 +145,11 @@ pub enum Error {
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the
 /// struct itself carries no generic parameters and tests can pass
-/// stubs inline. `harness_root` resolves the global `models.yaml`
-/// (ARCH §4.2); production passes [`crate::harness_root::resolve`]'s
-/// result, tests pass a temp dir.
+/// stubs inline. `config_root` is the config-lifetime harness root
+/// (ARCH §2.2), which holds the global `models.yaml` (ARCH §4.2);
+/// production passes [`crate::harness_root::Roots::config`], tests pass
+/// a temp dir. The data-lifetime root reaches [`run`] only through
+/// `tool_executor`, which already carries it.
 pub struct Deps<'a> {
     pub adapter: &'a dyn AdapterRunner,
     pub sleeper: &'a dyn Sleeper,
@@ -156,7 +158,7 @@ pub struct Deps<'a> {
     pub id_gen: &'a dyn IdGen,
     pub dispatcher: &'a dyn Dispatcher,
     pub tool_executor: &'a dyn ToolExecutor,
-    pub harness_root: &'a Path,
+    pub config_root: &'a Path,
 }
 
 /// Drive one root conversation against `repo`: load configs, run the
@@ -164,7 +166,7 @@ pub struct Deps<'a> {
 /// step loop through `bz`, and merge back. Returns the branch name (the
 /// bare `<conv-id>`, ARCH §2.3).
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
-    let global_path = deps.harness_root.join(GLOBAL_MODELS_FILE);
+    let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
     let per_repo_path = repo.join(PER_REPO_PROVIDERS_FILE);
     let (cfg, _warnings) = ModelsConfig::load(&global_path, &per_repo_path)?;
 

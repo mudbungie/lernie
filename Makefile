@@ -6,10 +6,20 @@
 INSTALL_PREFIX ?= $(HOME)/.local
 INSTALL_BIN    := $(INSTALL_PREFIX)/bin
 
-# Harness root (ARCH §2.2): installation-global state, defaults to
-# `~/.lernie/`, overridable via LERNIE_HOME — at install time and at
-# runtime alike.
-LERNIE_HOME    ?= $(HOME)/.lernie
+# Harness root (ARCH §2.2): installation-global state, split by XDG
+# lifetime into a config root (hand-edited declarations) and a data root
+# (machine-populated pools). LERNIE_HOME, if set, collapses BOTH to that
+# one directory — at install time and at runtime alike. This mirrors the
+# resolver policy in src/harness_root.rs exactly.
+XDG_CONFIG_HOME    ?= $(HOME)/.config
+XDG_DATA_HOME      ?= $(HOME)/.local/share
+ifdef LERNIE_HOME
+LERNIE_CONFIG_HOME := $(LERNIE_HOME)
+LERNIE_DATA_HOME   := $(LERNIE_HOME)
+else
+LERNIE_CONFIG_HOME := $(XDG_CONFIG_HOME)/lernie
+LERNIE_DATA_HOME   := $(XDG_DATA_HOME)/lernie
+endif
 
 # Binaries that resolve via `PATH`: the harness CLI and the UI shell.
 PATH_BINARIES     := lernie lernie-ui-egui
@@ -18,8 +28,11 @@ PATH_BINARIES     := lernie lernie-ui-egui
 # lernie crate links (the load-time version guard, §4.4). Keep this pin
 # in lockstep with the `brazen = "=<pin>"` dependency in Cargo.toml.
 BRAZEN_PIN        := 0.0.2
-# Subdirectories of the harness root laid down on first install.
-HARNESS_DIRS      := workflows tools skills agents conversations
+# Subdirectories laid down on first install, by lifetime (ARCH §2.2):
+# config-lifetime templates under the config root, machine-populated
+# pools under the data root.
+CONFIG_DIRS       := workflows
+DATA_DIRS         := tools skills agents conversations
 
 all: check
 
@@ -75,31 +88,33 @@ install-hooks:
 # rotated credentials and hand-edited entries survive a re-install.
 install: release
 	@mkdir -p "$(INSTALL_BIN)"
-	@for d in $(HARNESS_DIRS); do mkdir -p "$(LERNIE_HOME)/$$d"; done
+	@for d in $(CONFIG_DIRS); do mkdir -p "$(LERNIE_CONFIG_HOME)/$$d"; done
+	@for d in $(DATA_DIRS); do mkdir -p "$(LERNIE_DATA_HOME)/$$d"; done
 	@for bin in $(PATH_BINARIES); do \
 		install -m 0755 "target/release/$$bin" "$(INSTALL_BIN)/$$bin"; \
 		echo "installed $(INSTALL_BIN)/$$bin"; \
 	done
 	@echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"
 	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked
-	@if [ ! -e "$(LERNIE_HOME)/models.yaml" ]; then \
-		install -m 0644 install/models.yaml "$(LERNIE_HOME)/models.yaml"; \
-		echo "installed $(LERNIE_HOME)/models.yaml"; \
+	@if [ ! -e "$(LERNIE_CONFIG_HOME)/models.yaml" ]; then \
+		install -m 0644 install/models.yaml "$(LERNIE_CONFIG_HOME)/models.yaml"; \
+		echo "installed $(LERNIE_CONFIG_HOME)/models.yaml"; \
 	else \
-		echo "kept     $(LERNIE_HOME)/models.yaml (existing)"; \
+		echo "kept     $(LERNIE_CONFIG_HOME)/models.yaml (existing)"; \
 	fi
-	@if [ ! -e "$(LERNIE_HOME)/agents/default" ]; then \
-		cp -R template "$(LERNIE_HOME)/agents/default"; \
-		echo "installed $(LERNIE_HOME)/agents/default/"; \
+	@if [ ! -e "$(LERNIE_DATA_HOME)/agents/default" ]; then \
+		cp -R template "$(LERNIE_DATA_HOME)/agents/default"; \
+		echo "installed $(LERNIE_DATA_HOME)/agents/default/"; \
 	else \
-		echo "kept     $(LERNIE_HOME)/agents/default/ (existing)"; \
+		echo "kept     $(LERNIE_DATA_HOME)/agents/default/ (existing)"; \
 	fi
 	@$(MAKE) --no-print-directory install-verify
 	@echo
 	@echo "make sure $(INSTALL_BIN) is on your PATH (and that 'bz' resolves there too)."
-	@echo "harness root: $(LERNIE_HOME) (override with LERNIE_HOME=...)"
+	@echo "config root: $(LERNIE_CONFIG_HOME)   data root: $(LERNIE_DATA_HOME)"
+	@echo "  (LERNIE_HOME collapses both; else \$$XDG_CONFIG_HOME / \$$XDG_DATA_HOME)"
 	@echo "provider endpoints/auth live in brazen's config: bz --dump-config / bz --login."
-	@echo "declare model capabilities in $(LERNIE_HOME)/models.yaml — see ARCH §4.2/§4.4."
+	@echo "declare model capabilities in $(LERNIE_CONFIG_HOME)/models.yaml — see ARCH §4.2/§4.4."
 
 # Smoke-test the freshly installed binaries: `lernie --version` proves the
 # CLI loads, `lernie new` exercises the embedded template scaffold against

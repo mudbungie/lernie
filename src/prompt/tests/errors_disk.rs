@@ -189,7 +189,7 @@ fn run_surfaces_dispatcher_failure() {
         id_gen: &id,
         dispatcher: &dispatcher,
         tool_executor: &tool_executor,
-        harness_root: harness.path(),
+        config_root: harness.path(),
     };
     let err = run(repo.path(), "hi", &deps).unwrap_err();
     assert!(

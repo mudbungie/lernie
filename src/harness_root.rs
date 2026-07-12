@@ -1,59 +1,114 @@
-//! Resolution of the **harness root** (ARCH §2.2).
+//! Resolution of the **harness root** (ARCH §2.2), split along XDG
+//! lifetimes into a **config root** and a **data root**.
 //!
-//! The harness root holds installation-global state outside any one
-//! conversation repo: the global `providers.yaml` (ARCH §4.1), and the
-//! per-profile `agents/`, `adapters/`, `workflows/`, `tools/`, and
-//! `skills/` directories. Conversation repos live underneath at
-//! `<root>/conversations/<root-id>/`.
+//! - **Config root** (`$XDG_CONFIG_HOME/lernie`, default
+//!   `~/.config/lernie`) holds the hand-edited declarations: the global
+//!   `models.yaml` (ARCH §4.2) and the `workflows/` templates.
+//! - **Data root** (`$XDG_DATA_HOME/lernie`, default
+//!   `~/.local/share/lernie`) holds machine-populated state: the
+//!   `conversations/` tree and the `agents/`, `skills/`, and `tools/`
+//!   pools the harness copies from at conversation bootstrap.
 //!
-//! `LERNIE_HOME`, when set and non-empty, is used verbatim. Otherwise
-//! the root defaults to `~/.lernie/`. Resolution is deliberately not
-//! cached — tests scope env-var changes per call, and the cost of one
-//! `getenv` per use is irrelevant next to the I/O it gates.
+//! `LERNIE_HOME`, when set and non-empty, is the single override that
+//! **collapses both roots to that one directory** — test isolation
+//! (parallel tests, sandboxed replay) keeps working with one env var.
+//! Otherwise each root resolves XDG-style, matching brazen's own
+//! resolution. An empty override or empty XDG var falls through to the
+//! home-based default — an empty env var would otherwise produce the
+//! current working directory's neighbor and is almost never intended.
+//!
+//! Resolution is deliberately not cached — tests scope env-var changes
+//! per call, and the cost of a few `getenv`s per use is irrelevant next
+//! to the I/O it gates.
 
 use std::env;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-const ENV_VAR: &str = "LERNIE_HOME";
-const DEFAULT_DIRNAME: &str = ".lernie";
+const ENV_HOME: &str = "LERNIE_HOME";
+const ENV_XDG_CONFIG: &str = "XDG_CONFIG_HOME";
+const ENV_XDG_DATA: &str = "XDG_DATA_HOME";
+const SUBDIR: &str = "lernie";
+const CONFIG_FALLBACK: &str = ".config";
+const DATA_FALLBACK: &str = ".local/share";
 const MODELS_FILE: &str = "models.yaml";
 
-/// Why [`resolve`] could not produce a path. The only failure is the
-/// "no override and no home" pair — every other case yields a path
-/// (whether or not the directory exists on disk).
+/// Why [`resolve`] could not produce paths. The only failure is the
+/// "no override, no XDG var, and no home" triple — every other case
+/// yields paths (whether or not the directories exist on disk).
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum Error {
     #[error("LERNIE_HOME is unset and no home directory is available")]
     NoHome,
 }
 
-/// Pure resolver. `override_value` is the literal `LERNIE_HOME` value
-/// (or `None` if unset); `home` is the user's home directory (or
-/// `None` if unknown). An empty `override_value` falls through to the
-/// home-based default — an empty env var would otherwise produce the
-/// current working directory's neighbor and is almost never intended.
-pub fn resolve_from(override_value: Option<&OsStr>, home: Option<&Path>) -> Result<PathBuf, Error> {
+/// The harness root, split by XDG lifetime. Under `LERNIE_HOME` both
+/// fields hold the same directory; under XDG they diverge.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Roots {
+    /// Config-lifetime root: `models.yaml`, `workflows/`.
+    pub config: PathBuf,
+    /// Data-lifetime root: `conversations/`, `agents/`, `skills/`, `tools/`.
+    pub data: PathBuf,
+}
+
+/// Pure resolver. `override_value` is the literal `LERNIE_HOME` (or
+/// `None`); `xdg_config` / `xdg_data` are the literal `XDG_CONFIG_HOME`
+/// / `XDG_DATA_HOME` values; `home` is the user's home directory. A
+/// non-empty override collapses both roots to it; otherwise each root
+/// is `<xdg-or-home-fallback>/lernie`.
+pub fn resolve_from(
+    override_value: Option<&OsStr>,
+    xdg_config: Option<&OsStr>,
+    xdg_data: Option<&OsStr>,
+    home: Option<&Path>,
+) -> Result<Roots, Error> {
     if let Some(v) = override_value
         && !v.is_empty()
     {
-        return Ok(PathBuf::from(v));
+        let both = PathBuf::from(v);
+        return Ok(Roots {
+            config: both.clone(),
+            data: both,
+        });
     }
-    home.map(|h| h.join(DEFAULT_DIRNAME)).ok_or(Error::NoHome)
+    Ok(Roots {
+        config: xdg_root(xdg_config, home, CONFIG_FALLBACK)?,
+        data: xdg_root(xdg_data, home, DATA_FALLBACK)?,
+    })
 }
 
-/// Resolve the harness root from the live process environment.
-pub fn resolve() -> Result<PathBuf, Error> {
-    let env_val = env::var_os(ENV_VAR);
+/// One XDG-style root: `$XDG_.../lernie` when the var is set and
+/// non-empty, else `<home>/<fallback>/lernie`.
+fn xdg_root(xdg: Option<&OsStr>, home: Option<&Path>, fallback: &str) -> Result<PathBuf, Error> {
+    if let Some(v) = xdg
+        && !v.is_empty()
+    {
+        return Ok(Path::new(v).join(SUBDIR));
+    }
+    home.map(|h| h.join(fallback).join(SUBDIR))
+        .ok_or(Error::NoHome)
+}
+
+/// Resolve the split harness root from the live process environment.
+pub fn resolve() -> Result<Roots, Error> {
+    let override_value = env::var_os(ENV_HOME);
+    let xdg_config = env::var_os(ENV_XDG_CONFIG);
+    let xdg_data = env::var_os(ENV_XDG_DATA);
     #[allow(deprecated)] // un-deprecated in Rust 1.86; lint precedes that.
     let home = env::home_dir();
-    resolve_from(env_val.as_deref(), home.as_deref())
+    resolve_from(
+        override_value.as_deref(),
+        xdg_config.as_deref(),
+        xdg_data.as_deref(),
+        home.as_deref(),
+    )
 }
 
-/// Path to the global `models.yaml` within `root` (ARCH §4.2).
-pub fn models_path(root: &Path) -> PathBuf {
-    root.join(MODELS_FILE)
+/// Path to the global `models.yaml` within the config root (ARCH §4.2).
+pub fn models_path(config_root: &Path) -> PathBuf {
+    config_root.join(MODELS_FILE)
 }
 
 #[cfg(test)]
@@ -61,57 +116,106 @@ mod tests {
     use super::*;
     use std::ffi::OsString;
 
-    #[test]
-    fn override_takes_precedence() {
-        let p = resolve_from(Some(OsStr::new("/opt/lernie")), Some(Path::new("/home/x"))).unwrap();
-        assert_eq!(p, PathBuf::from("/opt/lernie"));
+    fn os(s: &str) -> OsString {
+        OsString::from(s)
     }
 
     #[test]
-    fn empty_override_falls_through_to_home() {
-        let p = resolve_from(Some(OsStr::new("")), Some(Path::new("/home/x"))).unwrap();
-        assert_eq!(p, PathBuf::from("/home/x/.lernie"));
+    fn override_collapses_both_roots() {
+        let r = resolve_from(
+            Some(OsStr::new("/opt/lernie")),
+            Some(OsStr::new("/xc")),
+            Some(OsStr::new("/xd")),
+            Some(Path::new("/home/x")),
+        )
+        .unwrap();
+        assert_eq!(r.config, PathBuf::from("/opt/lernie"));
+        assert_eq!(r.data, PathBuf::from("/opt/lernie"));
     }
 
     #[test]
-    fn unset_override_uses_home_default() {
-        let p = resolve_from(None, Some(Path::new("/home/x"))).unwrap();
-        assert_eq!(p, PathBuf::from("/home/x/.lernie"));
+    fn empty_override_falls_through_to_xdg() {
+        let r = resolve_from(
+            Some(OsStr::new("")),
+            Some(OsStr::new("/xc")),
+            Some(OsStr::new("/xd")),
+            Some(Path::new("/home/x")),
+        )
+        .unwrap();
+        assert_eq!(r.config, PathBuf::from("/xc/lernie"));
+        assert_eq!(r.data, PathBuf::from("/xd/lernie"));
     }
 
     #[test]
-    fn missing_both_is_an_error() {
-        let err = resolve_from(None, None).unwrap_err();
+    fn xdg_vars_name_each_root() {
+        let r = resolve_from(None, Some(OsStr::new("/xc")), Some(OsStr::new("/xd")), None).unwrap();
+        assert_eq!(r.config, PathBuf::from("/xc/lernie"));
+        assert_eq!(r.data, PathBuf::from("/xd/lernie"));
+    }
+
+    #[test]
+    fn unset_xdg_uses_home_fallbacks() {
+        let r = resolve_from(None, None, None, Some(Path::new("/home/x"))).unwrap();
+        assert_eq!(r.config, PathBuf::from("/home/x/.config/lernie"));
+        assert_eq!(r.data, PathBuf::from("/home/x/.local/share/lernie"));
+    }
+
+    #[test]
+    fn empty_xdg_var_falls_through_to_home_fallback() {
+        let r = resolve_from(
+            None,
+            Some(OsStr::new("")),
+            Some(OsStr::new("")),
+            Some(Path::new("/home/x")),
+        )
+        .unwrap();
+        assert_eq!(r.config, PathBuf::from("/home/x/.config/lernie"));
+        assert_eq!(r.data, PathBuf::from("/home/x/.local/share/lernie"));
+    }
+
+    #[test]
+    fn missing_config_root_is_an_error() {
+        // No override, no XDG_CONFIG_HOME, no home → config leg fails.
+        let err = resolve_from(None, None, Some(OsStr::new("/xd")), None).unwrap_err();
         assert_eq!(err, Error::NoHome);
     }
 
     #[test]
-    fn empty_override_with_no_home_is_an_error() {
-        let err = resolve_from(Some(OsStr::new("")), None).unwrap_err();
+    fn missing_data_root_is_an_error() {
+        // Config leg succeeds via XDG_CONFIG_HOME; data leg has neither
+        // XDG_DATA_HOME nor a home directory to fall back on.
+        let err = resolve_from(None, Some(OsStr::new("/xc")), None, None).unwrap_err();
         assert_eq!(err, Error::NoHome);
+    }
+
+    #[test]
+    fn empty_override_with_no_home_and_no_xdg_is_an_error() {
+        let err = resolve_from(Some(OsStr::new("")), None, None, None).unwrap_err();
+        assert_eq!(err, Error::NoHome);
+    }
+
+    #[test]
+    fn override_value_with_path_separator_is_preserved() {
+        let v = os("/srv/data/lernie");
+        let r = resolve_from(Some(v.as_os_str()), None, None, None).unwrap();
+        assert_eq!(r.config, PathBuf::from("/srv/data/lernie"));
+        assert_eq!(r.data, PathBuf::from("/srv/data/lernie"));
     }
 
     #[test]
     fn models_path_appends_filename() {
         assert_eq!(
-            models_path(Path::new("/opt/lernie")),
-            PathBuf::from("/opt/lernie/models.yaml")
+            models_path(Path::new("/xc/lernie")),
+            PathBuf::from("/xc/lernie/models.yaml")
         );
     }
 
     #[test]
-    fn live_resolve_returns_some_path() {
+    fn live_resolve_returns_some_paths() {
         // The live resolver must produce *something* on this host: the
         // test harness has either LERNIE_HOME set or a home directory.
         // Asserting only that it succeeds keeps the test independent of
         // the runner's environment.
         let _ = resolve().expect("either LERNIE_HOME or HOME must be set");
-    }
-
-    #[test]
-    fn override_value_with_path_separator_is_preserved() {
-        let v = OsString::from("/srv/data/lernie");
-        let p = resolve_from(Some(v.as_os_str()), None).unwrap();
-        assert_eq!(p, PathBuf::from("/srv/data/lernie"));
     }
 }

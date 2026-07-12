@@ -62,7 +62,7 @@ fn replay_from_a_recorded_tree_yields_the_alternating_wire_history() {
     write(dir.path(), "001-user.md", b"go");
     write_json(
         dir.path(),
-        "002-assistant.json",
+        "002-claude-fable-5.json",
         &[Content::ToolUse {
             id: "toolu_1".into(),
             name: "bash".into(),
@@ -96,7 +96,7 @@ fn consecutive_same_side_entries_group_into_one_message() {
     write(dir.path(), "001-user.md", b"do two");
     write_json(
         dir.path(),
-        "002-assistant.json",
+        "002-claude-fable-5.json",
         &[
             Content::ToolUse {
                 id: "a".into(),
@@ -133,7 +133,7 @@ fn entries_sort_by_numeric_prefix_and_ignore_non_conforming_names() {
     let dir = TempDir::new().unwrap();
     write_json(
         dir.path(),
-        "002-assistant.json",
+        "002-claude-fable-5.json",
         &[Content::Text("second".into())],
     );
     write(dir.path(), "001-user.md", b"first");

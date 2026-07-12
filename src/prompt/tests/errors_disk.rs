@@ -22,7 +22,7 @@ use crate::prompt::{Deps, Error, run};
 /// Pinned as a constant so the merge-back op-index labels stay readable.
 const REV_PARSE_INDEX: usize = 6;
 /// After the model call settles, the transcript writer (§2.3) commits
-/// the assistant entry — `git add` then `commit` — before the loop
+/// the model-output entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream). Two runs sit between
 /// the rev-parse and the merge-back.
 const TRANSCRIPT_ADD_INDEX: usize = REV_PARSE_INDEX + 1;
@@ -215,7 +215,7 @@ fn run_surfaces_dispatcher_failure() {
     // Pre-dispatcher git op count: worktree add, dispatch add, dispatch
     // commit, the step-1 drain stray-probe (§2.11), the user-message
     // delivery add + commit (§2.11), rev-parse for meta, plus the
-    // assistant transcript entry's add + commit = 9.
+    // model-output transcript entry's add + commit = 9.
     assert_eq!(git.runs.borrow().len(), 9, "merge-to-main never starts");
 }
 

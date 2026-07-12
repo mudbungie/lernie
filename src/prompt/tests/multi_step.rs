@@ -120,9 +120,9 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
 
     // Git op log: 3 (step 1 setup) + 1 (step-1 drain stray-probe) + 2
     // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
-    // (step-1 assistant transcript entry add+commit) + 2 (the tool
+    // (step-1 model-output transcript entry add+commit) + 2 (the tool
     // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
-    // (step 2 rev-parse) + 2 (step-2 assistant entry add+commit) + 6
+    // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 6
     // (merge-back) = 21. The version guard runs no git.
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 21);
@@ -134,21 +134,28 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     assert_eq!(runs[4].1, vec!["add", "messages/001-user.md"]);
     assert!(runs[5].1[2].contains("transcript 001: user"));
     assert_eq!(runs[6].1, vec!["rev-parse", "HEAD"]);
-    // Step 1's transcript: assistant entry (002), then the tool result
-    // entry (003) — the §2.3 ordering (assistant output before its tool
+    // Step 1's transcript: model-output entry (002), then the tool result
+    // entry (003) — the §2.3 ordering (model output before its tool
     // results). Counters are max-present-plus-one from the messages/
-    // listing, so they never collide with the step number.
-    assert_eq!(runs[7].1, vec!["add", "messages/002-assistant.json"]);
-    assert!(runs[8].1[2].contains("transcript 002: assistant"));
+    // listing, so they never collide with the step number. The model
+    // output's origin token is the authoring model id (§2.3).
+    assert_eq!(
+        runs[7].1,
+        vec!["add", "messages/002-claude-sonnet-4-7.json"]
+    );
+    assert!(runs[8].1[2].contains("transcript 002: claude-sonnet-4-7"));
     assert_eq!(runs[9].1, vec!["add", "messages/003-tool.json"]);
     assert!(runs[10].1[2].contains("transcript 003: tool"));
     // Step 2 opens with its own boundary drain (empty inbox → stray-probe
     // only), then the branch-tip capture (advanced by step 1's transcript
-    // commits), then commits its own assistant entry (004).
+    // commits), then commits its own model-output entry (004).
     assert_eq!(runs[11].1, vec!["status", "--porcelain", "--", "messages"]);
     assert_eq!(runs[12].1, vec!["rev-parse", "HEAD"]);
-    assert_eq!(runs[13].1, vec!["add", "messages/004-assistant.json"]);
-    assert!(runs[14].1[2].contains("transcript 004: assistant"));
+    assert_eq!(
+        runs[13].1,
+        vec!["add", "messages/004-claude-sonnet-4-7.json"]
+    );
+    assert!(runs[14].1[2].contains("transcript 004: claude-sonnet-4-7"));
     assert_eq!(runs[15].1, vec!["rebase", "main"]);
 
     // The tool entry on disk is the canonical tool_result block.

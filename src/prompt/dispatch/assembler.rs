@@ -8,8 +8,10 @@
 //! composes each entry into a wire [`Message`] by its origin token:
 //!
 //! - `NNN-<sender>.md` — a delivered message (§2.11): user-role text.
-//! - `NNN-assistant.json` — one step's assistant output: the canonical
-//!   [`Content`] blocks verbatim, as an assistant-role message.
+//! - `NNN-<model-id>.json` — one step's model output: the canonical
+//!   [`Content`] blocks verbatim, as an assistant-role message. The
+//!   origin token names the model that authored the entry (§2.3, §4.3);
+//!   any token but the reserved `tool` composes assistant-side.
 //! - `NNN-tool.json` — one tool call's `tool_result` block(s): user-role
 //!   content in the following wire message.
 //!
@@ -26,10 +28,11 @@ use std::path::{Path, PathBuf};
 
 /// Branch-scoped transcript directory (ARCH §2.3 — `messages/NNN-…`).
 const MESSAGES_DIR: &str = "messages";
-/// Reserved origin token for a step's assistant output (§2.3); every
-/// other `.json` token (`tool`) and every `.md` sender composes
+/// The one reserved `.json` origin token (§2.3): a `tool` entry composes
+/// user-side as `tool_result` content. Every other `.json` token is a
+/// model id and composes assistant-side; every `.md` sender composes
 /// user-side.
-const ASSISTANT_ORIGIN: &str = "assistant";
+const TOOL_ORIGIN: &str = "tool";
 
 /// Which wire side an entry composes onto (§2.3). Grouping is by side,
 /// not by [`Role`], so the enum can derive `PartialEq` without leaning
@@ -105,18 +108,22 @@ fn compose_entry(path: &Path) -> Result<(Side, Vec<Content>), Error> {
     Ok((entry_side(path), blocks))
 }
 
-/// A `.json` entry is assistant-side iff its origin token is the
-/// reserved `assistant` (§2.3); `tool` (and any other) composes
-/// user-side as `tool_result` content.
+/// A `.json` entry composes user-side (a `tool_result`) iff its origin
+/// token is the reserved `tool` (§2.3); every other token is a model id
+/// (the entry's author) and composes assistant-side as model output. The
+/// origin token is the stem past its `NNN-` counter prefix — model ids
+/// carry hyphens (`claude-fable-5`), so the split keeps everything after
+/// the first.
 fn entry_side(path: &Path) -> Side {
     let stem = path
         .file_stem()
         .map(|s| s.to_string_lossy())
         .unwrap_or_default();
-    if stem.ends_with(&format!("-{ASSISTANT_ORIGIN}")) {
-        Side::Assistant
-    } else {
+    let origin = stem.split_once('-').map(|x| x.1).unwrap_or_default();
+    if origin == TOOL_ORIGIN {
         Side::User
+    } else {
+        Side::Assistant
     }
 }
 

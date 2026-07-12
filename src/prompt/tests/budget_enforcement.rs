@@ -136,7 +136,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
     // The marker `update-ref` is git op #13 in the exhaustion path (0
     // worktree add, 1 dispatch add, 2 dispatch commit, 3 step-1 drain
     // stray-probe, 4/5 user-message delivery add+commit, 6 step-1
-    // rev-parse, 7/8 step-1 assistant transcript add+commit, 9/10 the tool
+    // rev-parse, 7/8 step-1 model-output transcript add+commit, 9/10 the tool
     // transcript add+commit, 11 step-2 drain stray-probe, 12 step-2
     // rev-parse, 13 mark_exhausted update-ref). Failing it surfaces the §6
     // exhaustion write's error arm.

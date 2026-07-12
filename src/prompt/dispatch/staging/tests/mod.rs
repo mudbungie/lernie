@@ -38,7 +38,7 @@ fn sealed_blocks(w: StagingWriter, path: &std::path::Path) -> Vec<Content> {
 }
 
 fn new_writer(dir: &TempDir) -> (StagingWriter, std::path::PathBuf) {
-    let path = dir.path().join("assistant.staging.json");
+    let path = dir.path().join("staging.json");
     (StagingWriter::create(&path).unwrap(), path)
 }
 
@@ -183,6 +183,6 @@ fn staging_path_sits_beside_the_response_file() {
     let resp = std::path::Path::new("/w/steps/id/001/response.json");
     assert_eq!(
         staging_path_for(resp),
-        std::path::Path::new("/w/steps/id/001/assistant.staging.json"),
+        std::path::Path::new("/w/steps/id/001/staging.json"),
     );
 }

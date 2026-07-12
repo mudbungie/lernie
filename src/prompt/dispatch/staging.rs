@@ -3,7 +3,7 @@
 //!
 //! Both sinks of a model call are streams off the one adapter pass:
 //! every event appends verbatim to the diagnostic `response.json`
-//! (§4.4), and *content* additionally streams here — the assistant
+//! (§4.4), and *content* additionally streams here — the model-output
 //! transcript entry under construction, a JSON array of brazen's
 //! canonical [`Content`] blocks written **block-by-block as each
 //! content block completes** (`content_stop`). A block is the smallest
@@ -19,7 +19,7 @@
 //!   *accumulate* and the continuation (§2.10) resumes past them,
 //!   reading the writer's own sink — never a diagnostic record;
 //! - the final `Finish` [`seal`]s the array, ready to rename into the
-//!   worktree as `messages/NNN-assistant.json` (§2.3).
+//!   worktree as `messages/NNN-<model-id>.json` (§2.3).
 //!
 //! Nothing here reads `response.json` back: the staging file is the
 //! writer's own sink, so the diagnostic-only contract (§2.3) is
@@ -56,7 +56,7 @@ enum Block {
     Skip,
 }
 
-/// Incremental writer for one model call's assistant transcript entry
+/// Incremental writer for one model call's model-output transcript entry
 /// (ARCH §2.3). The file is a JSON array grown one element per completed
 /// block; it is invalid JSON (an open `[…`) until [`Self::seal`] closes
 /// it, which is fine — it is debris until sealed and renamed.
@@ -196,7 +196,7 @@ fn open_block(kind: &ContentKind) -> Block {
 }
 
 /// The staging path beside a step's `response.json`
-/// (`…/<NNN>/assistant.staging.json`, §2.3).
+/// (`…/<NNN>/staging.json`, §2.3).
 pub(super) fn staging_path_for(response_path: &Path) -> PathBuf {
     response_path.with_file_name(crate::prompt::step::STAGING_FILE)
 }

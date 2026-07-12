@@ -54,9 +54,9 @@ fn next_seq_is_one_when_messages_dir_is_empty() {
 #[test]
 fn next_seq_is_max_prefix_plus_one_ignoring_unparsable_names() {
     let dir = TempDir::new().unwrap();
-    write_entry(dir.path(), "001-assistant.json");
+    write_entry(dir.path(), "001-claude-fable-5.json");
     write_entry(dir.path(), "004-tool.json");
-    write_entry(dir.path(), "002-assistant.json");
+    write_entry(dir.path(), "002-claude-fable-5.json");
     // A stray non-conforming name contributes no counter.
     write_entry(dir.path(), "notes.txt");
     assert_eq!(next_seq(dir.path()).unwrap(), 5);
@@ -66,9 +66,9 @@ fn next_seq_is_max_prefix_plus_one_ignoring_unparsable_names() {
 fn deliver_message_renames_the_inbox_file_in_and_commits_it() {
     let dir = TempDir::new().unwrap();
     let worktree = dir.path();
-    // An assistant entry already occupies 001, so the delivery lands at
+    // A model-output entry already occupies 001, so the delivery lands at
     // 002 — the counter is shared across origins (§2.3).
-    write_entry(worktree, "001-assistant.json");
+    write_entry(worktree, "001-claude-fable-5.json");
     // A deposited inbox file with frontmatter + body, elsewhere on disk.
     let src = dir.path().join("bob-005.md");
     std::fs::write(&src, "---\nfrom: bob\n---\nhello").unwrap();
@@ -92,37 +92,58 @@ fn deliver_message_renames_the_inbox_file_in_and_commits_it() {
 }
 
 #[test]
-fn commit_assistant_renames_staging_and_commits_the_entry() {
+fn commit_assistant_renames_staging_and_commits_at_the_model_id_origin() {
     let dir = TempDir::new().unwrap();
     let worktree = dir.path();
     // A sealed staging file waiting to be renamed in.
-    let staging = worktree.join("assistant.staging.json");
+    let staging = worktree.join("staging.json");
     std::fs::write(&staging, br#"[{"type":"text","text":"hi"}]"#).unwrap();
 
     let git = RecordGit::default();
-    commit_assistant(worktree, "conv-1", &staging, &git).unwrap();
+    // The origin token is the authoring model id (§2.3), not `assistant`.
+    commit_assistant(worktree, "conv-1", "claude-fable-5", &staging, &git).unwrap();
 
-    // Staging moved to messages/001-assistant.json, verbatim.
+    // Staging moved to messages/001-claude-fable-5.json, verbatim.
     assert!(!staging.exists(), "staging renamed away");
-    let entry = worktree.join("messages/001-assistant.json");
+    let entry = worktree.join("messages/001-claude-fable-5.json");
     let blocks: Vec<Content> = serde_json::from_slice(&std::fs::read(&entry).unwrap()).unwrap();
     assert_eq!(blocks, vec![Content::Text("hi".into())]);
 
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 2);
     assert_eq!(runs[0].0, worktree);
-    assert_eq!(runs[0].1, vec!["add", "messages/001-assistant.json"]);
+    assert_eq!(runs[0].1, vec!["add", "messages/001-claude-fable-5.json"]);
     assert_eq!(runs[1].1[0], "commit");
-    assert!(runs[1].1[2].contains("transcript 001: assistant"));
+    assert!(runs[1].1[2].contains("transcript 001: claude-fable-5"));
     assert!(runs[1].1[2].contains("[conv-1]"));
+}
+
+#[test]
+fn commit_assistant_declines_a_model_id_colliding_with_the_reserved_tool_token() {
+    // A model id equal to the one reserved `.json` origin token is
+    // declined, not munged (§2.3 — decline illegal operations): were it
+    // written, the assembler would mis-compose the model output as a
+    // `tool_result`.
+    let dir = TempDir::new().unwrap();
+    let staging = dir.path().join("staging.json");
+    std::fs::write(&staging, b"[]").unwrap();
+    let git = RecordGit::default();
+    let err = commit_assistant(dir.path(), "c", "tool", &staging, &git).unwrap_err();
+    assert!(
+        matches!(&err, Error::ReservedModelId(m) if m == "tool"),
+        "got {err:?}"
+    );
+    // Declined before any git op and before the staging file moved.
+    assert!(git.runs.borrow().is_empty());
+    assert!(staging.exists(), "staging untouched on decline");
 }
 
 #[test]
 fn commit_tool_writes_a_single_block_array_and_commits_at_the_next_seq() {
     let dir = TempDir::new().unwrap();
     let worktree = dir.path();
-    // Prior assistant entry occupies 001, so the tool lands at 002.
-    write_entry(worktree, "001-assistant.json");
+    // Prior model-output entry occupies 001, so the tool lands at 002.
+    write_entry(worktree, "001-claude-fable-5.json");
 
     let tool_result = Content::ToolResult {
         tool_use_id: "toolu_9".into(),
@@ -148,7 +169,10 @@ fn commit_tool_writes_a_single_block_array_and_commits_at_the_next_seq() {
 
 #[test]
 fn entry_rel_zero_pads_to_three_digits() {
-    assert_eq!(entry_rel(7, "assistant"), "messages/007-assistant.json");
+    assert_eq!(
+        entry_rel(7, "claude-fable-5"),
+        "messages/007-claude-fable-5.json"
+    );
     assert_eq!(entry_rel(42, "tool"), "messages/042-tool.json");
 }
 
@@ -166,9 +190,9 @@ fn commit_add_failure_surfaces_as_a_git_error() {
         }
     }
     let dir = TempDir::new().unwrap();
-    let staging = dir.path().join("assistant.staging.json");
+    let staging = dir.path().join("staging.json");
     std::fs::write(&staging, b"[]").unwrap();
-    let err = commit_assistant(dir.path(), "c", &staging, &FailGit).unwrap_err();
+    let err = commit_assistant(dir.path(), "c", "claude-fable-5", &staging, &FailGit).unwrap_err();
     assert!(
         matches!(
             err,
@@ -203,10 +227,10 @@ fn commit_verb_failure_surfaces_as_a_git_error() {
         }
     }
     let dir = TempDir::new().unwrap();
-    let staging = dir.path().join("assistant.staging.json");
+    let staging = dir.path().join("staging.json");
     std::fs::write(&staging, b"[]").unwrap();
     let git = FailCommit { n: RefCell::new(0) };
-    let err = commit_assistant(dir.path(), "c", &staging, &git).unwrap_err();
+    let err = commit_assistant(dir.path(), "c", "claude-fable-5", &staging, &git).unwrap_err();
     assert!(
         matches!(
             err,

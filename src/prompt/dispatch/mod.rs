@@ -209,27 +209,27 @@ pub(super) fn run_exchange(
             },
         )?;
 
-        // Transcript writer (§2.3): the model call settled complete, so
-        // seal-and-rename the staging entry into `messages/NNN-assistant.json`
-        // and commit it — the entry that advances the branch tip for the
-        // next step's read state (§2.10). The committed blocks come back
-        // as this step's assistant content (their one home, §2.3).
+        // Transcript writer (§2.3): seal-and-rename the staging entry to
+        // `messages/NNN-<model-id>.json` (origin = authoring model, §4.3) and commit.
         let staging_path = repo.join(&step_dir_rel_str).join(STAGING_FILE);
-        let assistant_content =
-            transcript::commit_assistant(&worktree_path, &conv_id, &staging_path, deps.git)?;
+        let assistant_content = transcript::commit_assistant(
+            &worktree_path,
+            &conv_id,
+            &resolved.model.model_id,
+            &staging_path,
+            deps.git,
+        )?;
 
-        // The step continues iff it emitted tool calls to resolve (§2.5);
-        // a step with no `tool_use` block is terminal.
-        let has_tool_use = assistant_content
+        // A step with no `tool_use` block is terminal (§2.5).
+        if !assistant_content
             .iter()
-            .any(|block| matches!(block, Content::ToolUse { .. }));
-        if !has_tool_use {
+            .any(|b| matches!(b, Content::ToolUse { .. }))
+        {
             break;
         }
 
         // §2.5 pairing: run each tool_use, committing its tool_result as
-        // a transcript entry (§2.3). The next step re-assembles the whole
-        // history from the tree — nothing accumulates in memory.
+        // a transcript entry (§2.3); the next step re-assembles from the tree.
         run_tool_calls(
             repo,
             &worktree_path,

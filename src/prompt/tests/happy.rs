@@ -123,7 +123,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
 
     // Git sequence: 3 (branch setup + dispatch add/commit) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
-    // (rev-parse) + 2 (assistant transcript entry add + commit) + 6
+    // (rev-parse) + 2 (model-output transcript entry add + commit) + 6
     // (merge-back). The version guard runs no git.
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 15);
@@ -148,22 +148,26 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert!(runs[5].1[2].contains("transcript 001: user"));
     assert_eq!(runs[6].1, vec!["rev-parse", "HEAD"]);
 
-    // The transcript writer commits the assistant entry (§2.3): the
-    // sealed staging file is renamed to messages/002-assistant.json and
+    // The transcript writer commits the model-output entry (§2.3): the
+    // sealed staging file is renamed to messages/002-<model-id>.json —
+    // the origin token is the model that authored it (§2.3) — and
     // committed before the merge-back.
-    assert_eq!(runs[7].1, vec!["add", "messages/002-assistant.json"]);
+    assert_eq!(
+        runs[7].1,
+        vec!["add", "messages/002-claude-sonnet-4-7.json"]
+    );
     assert_eq!(runs[8].1[0], "commit");
-    assert!(runs[8].1[2].contains("transcript 002: assistant"));
+    assert!(runs[8].1[2].contains("transcript 002: claude-sonnet-4-7"));
     assert!(runs[8].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
-    // canonical assistant blocks (the "hi there" text block).
-    let entry = worktree.join("messages/002-assistant.json");
+    // canonical model-output blocks (the "hi there" text block).
+    let entry = worktree.join("messages/002-claude-sonnet-4-7.json");
     let blocks: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&entry).unwrap()).unwrap();
     assert_eq!(blocks[0]["type"], "text");
     assert_eq!(blocks[0]["text"], "hi there");
     // The staging file left by rename — no debris under steps/.
-    assert!(!step_dir.join("assistant.staging.json").exists());
+    assert!(!step_dir.join("staging.json").exists());
 
     assert_eq!(runs[9].0, worktree);
     assert_eq!(runs[9].1, vec!["rebase", "main"]);

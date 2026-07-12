@@ -48,9 +48,11 @@ struct Input {
 
 /// Wire shape of the output — the `tool_result.content` payload the
 /// agent sees on its next step. `status` is always `in_progress` here
-/// (ARCH §2.5 — the parent agent retrieves the terminal result later
-/// via `await(handle)`); `handle` is the subagent's full hyphenated
-/// descent branch (`<parent>-<sub-id>`, ARCH §2.2 / §2.3).
+/// (ARCH §2.5 — dispatch returns the child's address immediately and
+/// never blocks; the child's terminal result arrives later as a
+/// deposit into the parent's inbox, §2.11, not via any polling call);
+/// `handle` is the subagent's full hyphenated descent branch
+/// (`<parent>-<sub-id>`, ARCH §2.2 / §2.3), which is also its address.
 #[derive(Debug, Serialize, PartialEq, Eq)]
 struct Output<'a> {
     status: &'a str,

@@ -12,7 +12,7 @@ carrying that step's model call and the tool calls it emitted. New branches
 appear only at dispatch boundaries. Tools are invoked through the
 harness-supplied tool contract (binary + JSON schema + skill); long-running
 tools, including dispatch, return a handle immediately and their terminal
-result arrives on a later step via `await(handle)`.
+result arrives on a later step as a message in your inbox.
 
 On each step, either emit tool calls that make progress or produce a terminal
 assistant response that satisfies the goal. Prefer fewer, sharper tool calls

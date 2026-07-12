@@ -292,14 +292,15 @@ Built-ins:
   `roles:` entry in `<conv-repo>/providers.yaml`. Reads the calling
   conversation's repo + branch from the harness-set
   `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` env vars (ARCH §3.3 env
-  bullet); spawns through `lernie dispatch <role>` (§3.4). The
-  subagent's own step loop and the `await(handle)` tool that
-  resolves the handle ship in subsequent v0.4 phases. (Shipped-state
-  note: the substrate redesign — ARCH §2.5 "Dispatch returns the
-  child's address" — retires the handle/`await` pair, returning the
-  child's address synchronously and delivering its result as an inbox
-  deposit that carries an epitaph, §2.6; retargeting this tool is
-  tracked separately.)
+  bullet); spawns through `lernie dispatch <role>` (§3.4). The handle
+  it returns is the child's *address* — there is no polling tool to
+  pair with it. The substrate redesign (ARCH §2.5 "Dispatch returns
+  the child's address") dissolved the handle/`await` pair: the child's
+  result comes back as a **deposit into the parent's inbox** carrying
+  an epitaph (§2.6, §2.11), so `await`/`check` had nothing left to
+  observe and are gone. That inbox return path is specced (ARCH §2.11)
+  but not yet implemented; until it lands, `dispatch` spawns the child
+  and returns its address, but the result does not yet flow back.
 
 ## Dispatching subagents directly
 
@@ -323,8 +324,8 @@ and future roles (verifier, critic, …) without a CLI shape change.
   supplied text and `soul.md` is loaded from
   `<repo>/souls/worker.md`, both committed as the dispatch commit
   (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step
-  loop, the `dispatch`/`await` tool surface that puts a parent in
-  front of it, and the merge-back land in subsequent phases.
+  loop, the `dispatch` tool that puts a parent in front of it, and the
+  inbox result-return path (§2.11) land in subsequent phases.
 
 ## Providers
 

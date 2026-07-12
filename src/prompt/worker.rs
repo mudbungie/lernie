@@ -4,9 +4,9 @@
 //! conversation, with a per-call goal. v0.4 Phase 1 lands the dispatch
 //! shape only: spawn the branch + worktree, write `goal.md` and
 //! `soul.md`, commit the dispatch snapshot, exit. The subagent's own
-//! step loop, the `dispatch` and `await` tools that put it in front of
-//! a parent agent, and the merge-back path — Phases 2/3/4 — slot in on
-//! top of this commit.
+//! step loop, the `dispatch` tool that puts it in front of a parent
+//! agent, and the result-message return path (an inbox deposit on
+//! termination, §2.11) slot in on top of this commit.
 //!
 //! Soul resolution mirrors the root-conversation path (`prompt::run`):
 //! `<conv-repo>/souls/worker.md` (ARCH §4.3 — no per-role path

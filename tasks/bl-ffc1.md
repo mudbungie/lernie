@@ -1,7 +1,0 @@
-+++
-title = "tests gate: single-home context design bl-c904"
-created = 1783748001
-updated = 1783820216
-claimant = "edits-c904"
-root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
-+++

@@ -1,7 +1,7 @@
 +++
 title = "Delete await_tool: await/check have no referent once step 5 is total [substrate]"
 created = 1783829720
-updated = 1783829720
+updated = 1783830473
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["code"]
@@ -9,10 +9,6 @@ tags = ["code"]
 [[blockers]]
 id = "bl-65d8"
 on = "claim"
-
-[[blockers]]
-id = "bl-680c"
-on = "close"
 
 [[blockers]]
 id = "bl-8fac"

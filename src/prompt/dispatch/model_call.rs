@@ -5,9 +5,10 @@
 //! round-trip (§4.4). The harness owns the retry loop: on an in-band
 //! `Error` event whose kind is retryable ([`CanonicalError::retryable`],
 //! the linked crate's single home for the fact — never re-derived), it
-//! re-invokes `bz` with the *identical* request (the assembler is
-//! deterministic from the step's recorded commit, so no drift) up to the
-//! `workflow.yaml` attempt cap, sleeping the backoff between attempts.
+//! re-invokes `bz` with the *identical* request (context assembly is a
+//! pure function of the step's recorded commit tree, §2.3, so no drift)
+//! up to the `workflow.yaml` attempt cap, sleeping the backoff between
+//! attempts.
 //!
 //! **Fd held open for the whole model call (§3.5).** The `response.json`
 //! fd is opened once at the first attempt and held across *every*
@@ -17,17 +18,34 @@
 //! Each attempt's stdout is appended verbatim as one segment; the last
 //! segment is authoritative (§4.4).
 
-use super::assembler::{Assembler, AssemblyError, Completion, SegmentOutcome};
 use super::staging::{StagingWriter, staging_path_for};
 use crate::config::RetryConfig;
 use crate::prompt::Error;
 use crate::prompt::adapter::AdapterRunner;
-use brazen::{CanonicalRequest, Content, EVENT_SCHEMA_VERSION, Message, Tool};
+use brazen::{
+    CanonicalError, CanonicalRequest, Content, EVENT_SCHEMA_VERSION, Event, Message, Tool,
+};
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
+
+/// How one attempt's segment settled — the framing the retry loop acts
+/// on (§4.4, §2.10). Content lives only in the staging sink (§2.3), so
+/// no assembled blocks ride here.
+enum SegmentOutcome {
+    /// Trailing `end`, no `error`: the model call completed (§4.4). The
+    /// handshake version stamped on the first `message_start`, if any,
+    /// rides along for the adapter-override guard (§4.4).
+    Complete { handshake_v: Option<u8> },
+    /// An in-band `error` event: the retry loop classifies retryability
+    /// via [`CanonicalError::retryable`] (§2.10).
+    Failed(CanonicalError),
+    /// The stream ended without a trailing `end` — killed mid-stream
+    /// (§2.9 signature).
+    HalfStream,
+}
 
 /// Injected sleep so the retry backoff is real in production and a
 /// no-op in tests (the retry *logic* does not depend on wall time).
@@ -83,14 +101,16 @@ pub(super) fn build_request(
 
 /// Drive one model call to resolution: `bz --json --provider <row>` per
 /// attempt, request on stdin, each attempt's stdout appended verbatim to
-/// `response_path` as one segment. Returns the assembled [`Completion`]
-/// on success; a non-retryable / budget-exhausted `Error`, a half-stream
+/// `response_path` as one segment. On success the staging sink is sealed
+/// (the assistant transcript entry, §2.3) and `Ok(())` returns — the
+/// call's *content* has its one home in that entry, never a return
+/// value. A non-retryable / budget-exhausted `Error`, a half-stream
 /// kill, or a malformed event surfaces as a harness [`Error`].
 pub(super) fn run(
     call: &ModelCall<'_>,
     request_bytes: &[u8],
     response_path: &Path,
-) -> Result<Completion, Error> {
+) -> Result<(), Error> {
     if let Some(parent) = response_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -107,11 +127,11 @@ pub(super) fn run(
         staging.begin_segment();
         let outcome = run_attempt(call, &args, request_bytes, &mut response_file, &mut staging)?;
         match outcome {
-            SegmentOutcome::Complete(completion) => {
-                check_handshake(call.expect_handshake, &completion)?;
+            SegmentOutcome::Complete { handshake_v } => {
+                check_handshake(call.expect_handshake, handshake_v)?;
                 staging.seal()?;
                 drop(response_file);
-                return Ok(completion);
+                return Ok(());
             }
             SegmentOutcome::Failed(err) => {
                 // §4.4 segment authority: an `Error`-terminated segment
@@ -139,10 +159,15 @@ pub(super) fn run(
 }
 
 /// One `bz` attempt: tee every stdout line to the open `response_file`
-/// (as a segment), stream content into the `staging` sink (§2.3), and
-/// fold it into a fresh [`Assembler`] (the diagnostic in-memory shape).
-/// A malformed event line — or a tool-use block whose `json_delta` does
-/// not parse — surfaces as [`Error::AdapterJson`].
+/// (as a segment) and stream content into the `staging` sink (§2.3),
+/// tracking only the segment's *framing* — the terminal `end`, an
+/// in-band `error`, and the first `message_start`'s handshake `v`
+/// (§4.4). Events after the terminal `end` are ignored (defensive — a
+/// buggy adapter emitting stray lines must not corrupt the entry). A
+/// malformed event line — or a `content_stop`'d tool-use block whose
+/// `json_delta` does not parse — surfaces as [`Error::AdapterJson`]; a
+/// tool-use block never `content_stop`'d is caught by the sink's seal
+/// (§2.3, [`StagingWriter::seal`]).
 fn run_attempt(
     call: &ModelCall<'_>,
     args: &[&str],
@@ -150,19 +175,31 @@ fn run_attempt(
     response_file: &mut File,
     staging: &mut StagingWriter,
 ) -> Result<SegmentOutcome, Error> {
-    let mut assembler = Assembler::new();
     let mut feed_err: Option<serde_json::Error> = None;
     let mut staging_err: Option<Error> = None;
+    let mut error: Option<CanonicalError> = None;
+    let mut ended = false;
+    let mut handshake_v: Option<u8> = None;
     call.adapter
         .run(call.binary, args, request_bytes, &mut |line| {
             response_file.write_all(line)?;
             response_file.write_all(b"\n")?;
-            if feed_err.is_none() && staging_err.is_none() {
-                match serde_json::from_slice::<brazen::Event>(line) {
-                    Ok(event) => match staging.feed(&event) {
-                        Ok(()) => assembler.feed(event),
-                        Err(e) => staging_err = Some(e),
-                    },
+            if feed_err.is_none() && staging_err.is_none() && !ended {
+                match serde_json::from_slice::<Event>(line) {
+                    Ok(event) => {
+                        match &event {
+                            Event::MessageStart { v, .. } => handshake_v = Some(*v),
+                            Event::Error(e) => error = Some(e.clone()),
+                            Event::End => ended = true,
+                            _ => {}
+                        }
+                        // The terminal `end`/`error`/`finish` events are
+                        // no-ops in the sink (§2.3); post-terminal stray
+                        // lines are blocked by the `!ended` guard above.
+                        if let Err(e) = staging.feed(&event) {
+                            staging_err = Some(e);
+                        }
+                    }
                     Err(e) => feed_err = Some(e),
                 }
             }
@@ -175,23 +212,23 @@ fn run_attempt(
     if let Some(e) = staging_err {
         return Err(e);
     }
-    // Both sinks parse each tool_use block's `json_delta`: staging at the
-    // block's `content_stop` (surfaced as `staging_err` above), the
-    // assembler when it finalizes every started block here — the latter
-    // catches a bad parse the stream never `content_stop`'d. Same fact,
-    // same `AdapterJson`; the assembler path retires with the accumulator
-    // (bl-26cb).
-    assembler
-        .into_outcome()
-        .map_err(|AssemblyError(e)| Error::AdapterJson(e))
+    // An `error` segment is `Failed` even if a trailing `end` closed it;
+    // no `end` at all is the kill signature (§2.9).
+    if let Some(err) = error {
+        return Ok(SegmentOutcome::Failed(err));
+    }
+    if !ended {
+        return Ok(SegmentOutcome::HalfStream);
+    }
+    Ok(SegmentOutcome::Complete { handshake_v })
 }
 
 /// Under an `adapter:` override the completed segment must carry a
 /// `MessageStart.v` equal to `brazen::EVENT_SCHEMA_VERSION` (§4.4).
-fn check_handshake(expect: bool, completion: &Completion) -> Result<(), Error> {
-    if expect && completion.handshake_v() != Some(EVENT_SCHEMA_VERSION) {
+fn check_handshake(expect: bool, handshake_v: Option<u8>) -> Result<(), Error> {
+    if expect && handshake_v != Some(EVENT_SCHEMA_VERSION) {
         return Err(Error::HandshakeMismatch {
-            found: completion.handshake_v(),
+            found: handshake_v,
             expected: EVENT_SCHEMA_VERSION,
         });
     }

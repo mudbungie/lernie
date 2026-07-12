@@ -57,23 +57,49 @@ pub(super) fn next_seq(worktree: &Path) -> Result<u32, Error> {
     Ok(max + 1)
 }
 
+/// Commit a delivered message as `messages/NNN-<sender>.md` at the
+/// branch's next counter (§2.3 *Origins*, §2.11). The initial user
+/// message is delivered this way — the pre-inbox stand-in for the
+/// step-boundary drain (§2.11) — and composes as user-role content
+/// (§5.3). `sender` is the origin token (`user`, or an agent id).
+pub(super) fn commit_message(
+    worktree: &Path,
+    conv_id: &str,
+    sender: &str,
+    body: &str,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    let seq = next_seq(worktree)?;
+    let rel = format!("{MESSAGES_DIR}/{seq:0w$}-{sender}.md", w = SEQ_WIDTH);
+    let dest = worktree.join(&rel);
+    std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
+    std::fs::write(&dest, body)?;
+    commit_entry(worktree, conv_id, seq, &rel, sender, git)
+}
+
 /// Commit a step's assistant output: seal-and-rename — the sealed
 /// staging file (§2.3 *The transcript writer*) *leaves* by rename into
 /// `messages/NNN-assistant.json` at the branch's next counter, then a
 /// commit lands it. `NNN` is evaluated here, inside the executor's
-/// serialized commit section (§2.3).
+/// serialized commit section (§2.3). Returns the committed canonical
+/// blocks — read back from the transcript entry (its one content home,
+/// §2.3), never from any `steps/` record — so the step loop can run this
+/// step's `tool_use` calls without a second content fold.
 pub(super) fn commit_assistant(
     worktree: &Path,
     conv_id: &str,
     staging_path: &Path,
     git: &dyn GitRunner,
-) -> Result<(), Error> {
+) -> Result<Vec<Content>, Error> {
     let seq = next_seq(worktree)?;
     let rel = entry_rel(seq, ASSISTANT_ORIGIN);
     let dest = worktree.join(&rel);
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
     std::fs::rename(staging_path, &dest)?;
-    commit_entry(worktree, conv_id, seq, &rel, ASSISTANT_ORIGIN, git)
+    commit_entry(worktree, conv_id, seq, &rel, ASSISTANT_ORIGIN, git)?;
+    let bytes = std::fs::read(&dest)?;
+    // Harness-sealed staging, so always a valid canonical array (§2.3).
+    Ok(serde_json::from_slice(&bytes).expect("assistant entry is a canonical Content array"))
 }
 
 /// Commit one resolved tool call's canonical `tool_result` block as

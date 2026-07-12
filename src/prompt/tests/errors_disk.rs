@@ -15,9 +15,11 @@ use super::fixtures::*;
 use crate::prompt::{Deps, Error, run};
 
 /// Index of `git rev-parse HEAD` on the StubGit's run log: 0 worktree
-/// add, 1 dispatch add, 2 dispatch commit, 3 rev-parse. Pinned as a
-/// constant so the merge-back op-index labels stay readable.
-const REV_PARSE_INDEX: usize = 3;
+/// add, 1 dispatch add, 2 dispatch commit, 3 user-message transcript
+/// add, 4 user-message transcript commit (§2.3 — the initial message is
+/// delivered before step 1's read state is captured), 5 rev-parse.
+/// Pinned as a constant so the merge-back op-index labels stay readable.
+const REV_PARSE_INDEX: usize = 5;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the assistant entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream). Two runs sit between
@@ -208,10 +210,11 @@ fn run_surfaces_dispatcher_failure() {
         ),
         "got {err:?}"
     );
-    // Pre-dispatcher git op count: worktree add, dispatch add,
-    // dispatch commit, rev-parse for meta, plus the assistant
-    // transcript entry's add + commit (§2.3) = 6.
-    assert_eq!(git.runs.borrow().len(), 6, "merge-to-main never starts");
+    // Pre-dispatcher git op count: worktree add, dispatch add, dispatch
+    // commit, the user-message transcript entry's add + commit (§2.3),
+    // rev-parse for meta, plus the assistant transcript entry's add +
+    // commit = 8.
+    assert_eq!(git.runs.borrow().len(), 8, "merge-to-main never starts");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,

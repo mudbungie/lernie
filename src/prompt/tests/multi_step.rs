@@ -113,32 +113,36 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     assert_eq!(finish_reason(&resp2), "stop");
     assert_eq!(dispatcher.calls.borrow().len(), 1);
 
-    // Git op log: 4 (step 1 setup + rev-parse) + 2 (step-1 assistant
-    // transcript entry add+commit) + 2 (the tool transcript entry
-    // add+commit) + 1 (step 2 rev-parse) + 2 (step-2 assistant entry
-    // add+commit) + 6 (merge-back) = 17. The version guard runs no git.
+    // Git op log: 3 (step 1 setup) + 2 (user-message entry add+commit) +
+    // 1 (step 1 rev-parse) + 2 (step-1 assistant transcript entry
+    // add+commit) + 2 (the tool transcript entry add+commit) + 1 (step 2
+    // rev-parse) + 2 (step-2 assistant entry add+commit) + 6 (merge-back)
+    // = 19. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 17);
+    assert_eq!(runs.len(), 19);
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[2].1[2].contains("step 001: dispatch"));
-    assert_eq!(runs[3].1, vec!["rev-parse", "HEAD"]);
-    // Step 1's transcript: assistant entry (001), then the tool result
-    // entry (002) — the §2.3 ordering (assistant output before its tool
+    // The initial user message is the first transcript entry (001).
+    assert_eq!(runs[3].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[4].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[5].1, vec!["rev-parse", "HEAD"]);
+    // Step 1's transcript: assistant entry (002), then the tool result
+    // entry (003) — the §2.3 ordering (assistant output before its tool
     // results). Counters are max-present-plus-one from the messages/
     // listing, so they never collide with the step number.
-    assert_eq!(runs[4].1, vec!["add", "messages/001-assistant.json"]);
-    assert!(runs[5].1[2].contains("transcript 001: assistant"));
-    assert_eq!(runs[6].1, vec!["add", "messages/002-tool.json"]);
-    assert!(runs[7].1[2].contains("transcript 002: tool"));
+    assert_eq!(runs[6].1, vec!["add", "messages/002-assistant.json"]);
+    assert!(runs[7].1[2].contains("transcript 002: assistant"));
+    assert_eq!(runs[8].1, vec!["add", "messages/003-tool.json"]);
+    assert!(runs[9].1[2].contains("transcript 003: tool"));
     // Step 2 opens with the branch-tip capture (advanced by step 1's
-    // transcript commits), then commits its own assistant entry (003).
-    assert_eq!(runs[8].1, vec!["rev-parse", "HEAD"]);
-    assert_eq!(runs[9].1, vec!["add", "messages/003-assistant.json"]);
-    assert!(runs[10].1[2].contains("transcript 003: assistant"));
-    assert_eq!(runs[11].1, vec!["rebase", "main"]);
+    // transcript commits), then commits its own assistant entry (004).
+    assert_eq!(runs[10].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[11].1, vec!["add", "messages/004-assistant.json"]);
+    assert!(runs[12].1[2].contains("transcript 004: assistant"));
+    assert_eq!(runs[13].1, vec!["rebase", "main"]);
 
     // The tool entry on disk is the canonical tool_result block.
-    let tool_entry = worktree.join("messages/002-tool.json");
+    let tool_entry = worktree.join("messages/003-tool.json");
     let blocks: Value = serde_json::from_slice(&std::fs::read(&tool_entry).unwrap()).unwrap();
     assert_eq!(blocks[0]["type"], "tool_result");
     assert_eq!(blocks[0]["tool_use_id"], "toolu_01");

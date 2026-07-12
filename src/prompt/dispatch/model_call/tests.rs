@@ -100,8 +100,9 @@ fn retry(max: u32) -> RetryConfig {
     }
 }
 
-/// The run outcome, backoff-sleep count, and per-attempt stdin bytes.
-type Driven = (Result<Completion, Error>, usize, Vec<Vec<u8>>);
+/// Run outcome (`()` on success — content lives in the staging entry,
+/// §2.3), backoff-sleep count, and per-attempt stdin bytes.
+type Driven = (Result<(), Error>, usize, Vec<Vec<u8>>);
 
 fn run_at(path: &Path, replies: Vec<io::Result<Vec<u8>>>, retry: RetryConfig, hs: bool) -> Driven {
     let adapter = StubAdapter::new(replies);
@@ -162,7 +163,7 @@ fn single_attempt_completes_and_writes_one_segment() {
         retry(3),
         false,
     );
-    assert!(!r.unwrap().is_tool_use());
+    r.unwrap();
     assert_eq!(sleeps, 0, "no retry, no sleep");
     assert_eq!(segment::classify(&bytes), Outcome::Complete);
     assert_eq!(stdins[0], b"{}");

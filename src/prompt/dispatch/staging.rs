@@ -167,8 +167,14 @@ impl StagingWriter {
     }
 
     /// Close the JSON array at the model call's final `Finish` (§2.3):
-    /// the file is now valid and ready to rename into the worktree.
+    /// the file is now valid and ready to rename into the worktree. A
+    /// block still in progress at `Finish` — a stream that reached its
+    /// terminal without a closing `content_stop` — is finalized here, so
+    /// its content is captured (and a malformed tool-use `json_delta`
+    /// still surfaces as [`Error::AdapterJson`]) rather than silently
+    /// dropped.
     pub(super) fn seal(mut self) -> Result<(), Error> {
+        self.finalize()?;
         self.file.write_all(b"]")?;
         self.file.flush()?;
         Ok(())

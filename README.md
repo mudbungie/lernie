@@ -175,35 +175,44 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    attempt cap with exponential backoff. brazen never retries; auth and
    endpoints are entirely its own. The `response.json` fd is held open
    across every attempt and backoff sleep — its close is the §3.5
-   IN_CLOSE_WRITE completion signal. The harness folds the events into
-   an in-memory accumulator (assistant text + `tool_use` blocks) for the
-   next step; `meta.json` carries `{commit, started_at, ended_at}`.
-   In the same pass a second sink — the **transcript writer** (§2.3) —
-   streams content into a staging file
+   IN_CLOSE_WRITE completion signal. As the events stream, the harness
+   tracks only their *framing* — the terminal `end`, an in-band `Error`,
+   the handshake `v` — for retry/classification; `meta.json` carries
+   `{commit, started_at, ended_at}`. The events' *content* streams into
+   the **transcript writer**'s (§2.3) staging file
    `<conv-repo>/steps/<conv-id>/<NNN>/assistant.staging.json`,
    appending each content block as it completes; segment authority
    (§4.4) truncates it on an `Error` attempt and the settling `Finish`
-   seals it. When the model call completes, the sealed file is renamed
-   into the worktree as `messages/NNN-assistant.json` — a JSON array of
-   canonical `Content` blocks — and committed. `NNN` is the branch's
-   transcript counter, max-present-plus-one from the `messages/`
-   listing, evaluated at commit time.
-6. **Step loop (§2.5).** If the completion's terminal reason is
-   `Finish{ToolUse}`, run every emitted `tool_use` block through the
-   tool executor — the per-call records land under
-   `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of
-   every worktree, §3.3). As each tool resolves the transcript writer
-   commits `messages/NNN-tool.json` (its canonical `tool_result` block,
-   §3.3) — then assemble step `<NNN+1>` whose user message carries one
-   `tool_result` block per emitted call. Step ≥2 has no *dispatch*
+   seals it — one stream, two sinks (diagnostic `response.json` +
+   transcript), never read back. When the model call completes, the
+   sealed file is renamed into the worktree as
+   `messages/NNN-assistant.json` — a JSON array of canonical `Content`
+   blocks — and committed. `NNN` is the branch's transcript counter,
+   max-present-plus-one from the `messages/` listing, evaluated at
+   commit time. The initial user message is delivered the same way,
+   committed as the first transcript entry `messages/NNN-user.md`
+   (§2.3, the pre-inbox stand-in for the step-boundary drain, §2.11).
+6. **Step loop (§2.5).** Each step re-assembles its model-facing history
+   from the read-state commit's tree — `readdir` of `messages/`, sorted
+   by the filename's `NNN` prefix, each entry composed by its origin
+   token (`NNN-<sender>.md` → user text, `NNN-assistant.json` → the
+   assistant message, `NNN-tool.json` → `tool_result` in the following
+   user message), with consecutive same-side entries grouped into one
+   alternating wire message. There is no in-memory history and no
+   git-log walk; running, retry, and replay are one code path against
+   one input, the commit's tree (§2.3, §5). If the settled assistant
+   entry carries any `tool_use` block, run every one through the tool
+   executor — the per-call records land under
+   `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of every
+   worktree, §3.3; written but never read at runtime), and as each tool
+   resolves the transcript writer commits `messages/NNN-tool.json` (its
+   canonical `tool_result` block) — then loop into step `<NNN+1>`. A
+   step with no `tool_use` block is terminal. Step ≥2 has no *dispatch*
    commit, but each step's transcript entries (assistant output, tool
    results) do advance the branch tip, which is that step's read state
-   (§2.10). Loop until the terminal reason is anything other than
-   `ToolUse`. **The transcript runs alongside the shipped in-memory
-   path:** both are written; the accumulator is still what assembles the
-   next request. Re-pointing the assembler at the committed transcript
-   (deleting the accumulator and the `output.json` read path) is a
-   separate task.
+   (§2.10). `tool_use`/`tool_result` pairing holds by construction: a
+   tool result commits immediately after its emitting step's assistant
+   entry, so it always lands in the immediately following user message.
 7. Dispatch the terminal compactor (§2.7) off the conversation tip
    by re-entering the binary as `lernie dispatch compactor <repo>
    <conv-id>` (subprocess invocation per §3.4). The compactor spawns

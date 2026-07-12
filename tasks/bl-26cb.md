@@ -1,7 +1,8 @@
 +++
 title = "Re-point context assembler at the transcript; delete accumulator and output.json read path [substrate]"
 created = 1783831462
-updated = 1783831462
+updated = 1783832062
+claimant = "Tansy"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["substrate"]

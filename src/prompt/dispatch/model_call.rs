@@ -18,6 +18,7 @@
 //! segment is authoritative (§4.4).
 
 use super::assembler::{Assembler, AssemblyError, Completion, SegmentOutcome};
+use super::staging::{StagingWriter, staging_path_for};
 use crate::config::RetryConfig;
 use crate::prompt::Error;
 use crate::prompt::adapter::AdapterRunner;
@@ -93,20 +94,29 @@ pub(super) fn run(
     if let Some(parent) = response_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    // One fd, held across every attempt and backoff sleep (§3.5).
+    // One fd, held across every attempt and backoff sleep (§3.5). The
+    // staging sink (§2.3) is the second stream off the same pass — the
+    // assistant transcript entry under construction, sealed and renamed
+    // by the caller once the call settles complete.
     let mut response_file = File::create(response_path)?;
+    let mut staging = StagingWriter::create(&staging_path_for(response_path))?;
     let args = ["--json", "--provider", call.provider_row];
     let max = call.retry.max_attempts.max(1);
     let mut attempt = 1;
     loop {
-        let outcome = run_attempt(call, &args, request_bytes, &mut response_file)?;
+        staging.begin_segment();
+        let outcome = run_attempt(call, &args, request_bytes, &mut response_file, &mut staging)?;
         match outcome {
             SegmentOutcome::Complete(completion) => {
                 check_handshake(call.expect_handshake, &completion)?;
+                staging.seal()?;
                 drop(response_file);
                 return Ok(completion);
             }
             SegmentOutcome::Failed(err) => {
+                // §4.4 segment authority: an `Error`-terminated segment
+                // contributes nothing — truncate its blocks from staging.
+                staging.truncate_segment()?;
                 if err.retryable() && attempt < max {
                     call.sleeper.sleep(call.retry.backoff.delay(attempt));
                     attempt += 1;
@@ -119,6 +129,8 @@ pub(super) fn run(
                 });
             }
             SegmentOutcome::HalfStream => {
+                // Killed mid-stream (§2.9): nothing settled, so staging
+                // is left as debris the step's re-run overwrites (§2.3).
                 drop(response_file);
                 return Err(Error::AdapterHalfStream);
             }
@@ -127,23 +139,30 @@ pub(super) fn run(
 }
 
 /// One `bz` attempt: tee every stdout line to the open `response_file`
-/// (as a segment) and fold it into a fresh [`Assembler`]. A malformed
-/// event line surfaces as [`Error::AdapterJson`].
+/// (as a segment), stream content into the `staging` sink (§2.3), and
+/// fold it into a fresh [`Assembler`] (the diagnostic in-memory shape).
+/// A malformed event line — or a tool-use block whose `json_delta` does
+/// not parse — surfaces as [`Error::AdapterJson`].
 fn run_attempt(
     call: &ModelCall<'_>,
     args: &[&str],
     request_bytes: &[u8],
     response_file: &mut File,
+    staging: &mut StagingWriter,
 ) -> Result<SegmentOutcome, Error> {
     let mut assembler = Assembler::new();
     let mut feed_err: Option<serde_json::Error> = None;
+    let mut staging_err: Option<Error> = None;
     call.adapter
         .run(call.binary, args, request_bytes, &mut |line| {
             response_file.write_all(line)?;
             response_file.write_all(b"\n")?;
-            if feed_err.is_none() {
+            if feed_err.is_none() && staging_err.is_none() {
                 match serde_json::from_slice::<brazen::Event>(line) {
-                    Ok(event) => assembler.feed(event),
+                    Ok(event) => match staging.feed(&event) {
+                        Ok(()) => assembler.feed(event),
+                        Err(e) => staging_err = Some(e),
+                    },
                     Err(e) => feed_err = Some(e),
                 }
             }
@@ -153,6 +172,15 @@ fn run_attempt(
     if let Some(e) = feed_err {
         return Err(Error::AdapterJson(e));
     }
+    if let Some(e) = staging_err {
+        return Err(e);
+    }
+    // Both sinks parse each tool_use block's `json_delta`: staging at the
+    // block's `content_stop` (surfaced as `staging_err` above), the
+    // assembler when it finalizes every started block here — the latter
+    // catches a bad parse the stream never `content_stop`'d. Same fact,
+    // same `AdapterJson`; the assembler path retires with the accumulator
+    // (bl-26cb).
     assembler
         .into_outcome()
         .map_err(|AssemblyError(e)| Error::AdapterJson(e))

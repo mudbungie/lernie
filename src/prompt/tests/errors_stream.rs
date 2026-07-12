@@ -50,6 +50,43 @@ fn run_surfaces_invalid_tool_input_json_delta() {
 }
 
 #[test]
+fn run_surfaces_invalid_tool_input_json_delta_at_content_stop() {
+    // Same malformed `json_delta`, but the block is `content_stop`'d —
+    // so the transcript writer's staging sink (§2.3) parses it first and
+    // surfaces the `AdapterJson` before the assembler's own finalize
+    // would. The step commits nothing; the branch tip does not move.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let body = concat!(
+        r#"{"type":"message_start","v":1,"role":"assistant"}"#,
+        "\n",
+        r#"{"type":"content_start","index":0,"kind":{"tool_use":{"id":"t1","name":"bash"}}}"#,
+        "\n",
+        r#"{"type":"content_delta","index":0,"delta":{"json_delta":"{ not json"}}"#,
+        "\n",
+        r#"{"type":"content_stop","index":0}"#,
+        "\n",
+        r#"{"type":"finish","reason":"tool_use"}"#,
+        "\n",
+        r#"{"type":"end"}"#,
+        "\n",
+    );
+    let adapter = StubAdapter::happy(body.as_bytes());
+    let git = StubGit::ok();
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &git).unwrap_err();
+    assert!(matches!(err, Error::AdapterJson(_)));
+    // No transcript entry was committed: the staging sink erred before
+    // the seal-and-rename, so no `git add messages/…` ran.
+    assert!(
+        !git.runs
+            .borrow()
+            .iter()
+            .any(|(_, args)| args.first().map(String::as_str) == Some("add")
+                && args.get(1).is_some_and(|a| a.starts_with("messages/"))),
+        "no transcript commit on a failed model call"
+    );
+}
+
+#[test]
 fn run_short_circuits_after_first_parse_error() {
     // After the first malformed line, later lines still tee to
     // response.json but the assembler stops being fed — the first parse

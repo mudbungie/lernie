@@ -18,7 +18,13 @@ use crate::prompt::{Deps, Error, run};
 /// add, 1 dispatch add, 2 dispatch commit, 3 rev-parse. Pinned as a
 /// constant so the merge-back op-index labels stay readable.
 const REV_PARSE_INDEX: usize = 3;
-const REBASE_INDEX: usize = REV_PARSE_INDEX + 1;
+/// After the model call settles, the transcript writer (§2.3) commits
+/// the assistant entry — `git add` then `commit` — before the loop
+/// terminates (no tool_use on the happy stream). Two runs sit between
+/// the rev-parse and the merge-back.
+const TRANSCRIPT_ADD_INDEX: usize = REV_PARSE_INDEX + 1;
+const TRANSCRIPT_COMMIT_INDEX: usize = TRANSCRIPT_ADD_INDEX + 1;
+const REBASE_INDEX: usize = TRANSCRIPT_COMMIT_INDEX + 1;
 const MERGE_OURS_RM_INDEX: usize = REBASE_INDEX + 1;
 const MERGE_OURS_LS_TREE_INDEX: usize = MERGE_OURS_RM_INDEX + 1;
 const MERGE_OURS_DIFF_INDEX: usize = MERGE_OURS_LS_TREE_INDEX + 1;
@@ -203,8 +209,9 @@ fn run_surfaces_dispatcher_failure() {
         "got {err:?}"
     );
     // Pre-dispatcher git op count: worktree add, dispatch add,
-    // dispatch commit, rev-parse for meta = 4.
-    assert_eq!(git.runs.borrow().len(), 4, "merge-to-main never starts");
+    // dispatch commit, rev-parse for meta, plus the assistant
+    // transcript entry's add + commit (§2.3) = 6.
+    assert_eq!(git.runs.borrow().len(), 6, "merge-to-main never starts");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,
@@ -229,6 +236,16 @@ macro_rules! merge_back_failure_test {
     };
 }
 
+merge_back_failure_test!(
+    run_surfaces_transcript_add_failure,
+    TRANSCRIPT_ADD_INDEX,
+    "transcript add"
+);
+merge_back_failure_test!(
+    run_surfaces_transcript_commit_failure,
+    TRANSCRIPT_COMMIT_INDEX,
+    "transcript commit"
+);
 merge_back_failure_test!(
     run_surfaces_merge_to_main_rebase_failure,
     REBASE_INDEX,

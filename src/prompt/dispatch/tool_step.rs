@@ -4,13 +4,21 @@
 //! each one to [`crate::prompt::ToolExecutor`] in emission order. The
 //! executor lands `input.json` and `output.json` under
 //! `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` — outside every
-//! worktree (§2.2 / §2.3). The per-tool diagnostic record is *not* a
-//! commit (§3.3); only worktree-modifying tools commit, inside their own
-//! subprocess contract, not here.
+//! worktree (§2.2 / §2.3), a diagnostic record that is *not* a commit.
+//!
+//! As each tool resolves, its canonical `tool_result` block *is*
+//! committed — `messages/NNN-tool.json`, the transcript entry the next
+//! step's request will compose from (§2.3, §3.3 "Wire `tool_result`
+//! framing is transcript-backed"). The per-call `output.json` stays the
+//! raw audit capture; the transcript entry is what entered context —
+//! two facts, not two copies. The sequential loop *is* the sibling-tool
+//! serialization §3.3 requires, and the counter read (`next_seq`) rides
+//! inside it.
 //!
 //! Living in a sibling module keeps `super`'s `run_exchange` body under
 //! the repo's 300-line code-file cap.
 
+use super::transcript;
 use crate::prompt::Deps;
 use crate::prompt::Error;
 use crate::prompt::tool::{ToolCall as ToolUse, ToolOutcome};
@@ -19,10 +27,14 @@ use std::path::Path;
 use std::sync::atomic::AtomicBool;
 
 /// Drive every `tool_use` block in `assistant_content` through the
-/// executor. Returns the `tool_result` blocks in emission order (§4.4
-/// `Content::ToolResult`).
+/// executor, committing each result as a transcript entry (§2.3).
+/// Returns the `tool_result` blocks in emission order (§4.4
+/// `Content::ToolResult`) — the shipped in-memory path the next step's
+/// request still assembles from, alongside the committed entries.
 pub(super) fn run_tool_calls(
     conv_repo: &Path,
+    worktree: &Path,
+    conv_id: &str,
     step_dir_rel_str: &str,
     assistant_content: &[Content],
     deps: &Deps<'_>,
@@ -41,7 +53,9 @@ pub(super) fn run_tool_calls(
                 tool: name.clone(),
                 source,
             })?;
-        tool_results.push(outcome_to_tool_result(id, &outcome));
+        let tool_result = outcome_to_tool_result(id, &outcome);
+        transcript::commit_tool(worktree, conv_id, &tool_result, deps.git)?;
+        tool_results.push(tool_result);
     }
     Ok(tool_results)
 }

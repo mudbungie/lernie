@@ -25,6 +25,10 @@
 //! - `tools/<tool-id>/` — per-tool-call records (`input.json`,
 //!   `output.json`); the harness *does* read `output.json` to
 //!   assemble the next step's `tool_result` blocks (§3.3).
+//! - `assistant.staging.json` — the transcript entry under
+//!   construction (§2.3 *The transcript writer*): the writer's own
+//!   sink, not a diagnostic record, renamed out to the worktree at
+//!   the model call's settling `Finish`.
 
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +49,15 @@ pub const RESPONSE_FILE: &str = "response.json";
 /// (§2.3). Readable by the harness — it carries the commit a
 /// replay re-assembles against, which is the load-bearing piece.
 pub const META_FILE: &str = "meta.json";
+/// The assistant transcript entry *under construction* (ARCH §2.3 *The
+/// transcript writer*). Content blocks stream here block-by-block as a
+/// JSON array; segment authority (§4.4) truncates it on an `Error`
+/// segment, accumulates it on `Pause`, and the final `Finish` seals it,
+/// whereupon the executor renames it into the worktree as
+/// `messages/NNN-assistant.json` (§2.3). The one path under `steps/`
+/// that is not a diagnostic record — the writer's own sink, never read
+/// back as a step record (§2.3 Diagnostic-only contract).
+pub const STAGING_FILE: &str = "assistant.staging.json";
 
 /// Width of the zero-padded step sequence in on-disk paths
 /// (`steps/<conv-id>/001`, `…/002`, ...). Three digits gives comfortable

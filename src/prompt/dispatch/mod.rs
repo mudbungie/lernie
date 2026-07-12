@@ -26,15 +26,17 @@
 
 mod assembler;
 mod model_call;
+mod staging;
 mod step_commit;
 mod tool_step;
 mod tools;
+mod transcript;
 
 pub use model_call::{RealSleeper, Sleeper};
 
 use super::budget;
 use super::merge::rebase_and_merge;
-use super::step::{RESPONSE_FILE, StepMeta, step_dir_rel};
+use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
 use crate::config::{Budgets, Model, RetryConfig};
 use crate::template::ROOT_WORKTREE;
@@ -179,6 +181,15 @@ pub(super) fn run_exchange(
             },
         )?;
 
+        // Transcript writer (§2.3): the model call settled complete, so
+        // seal-and-rename the staging entry into `messages/NNN-assistant.json`
+        // and commit it — the entry that advances the branch tip for the
+        // next step's read state (§2.10). Runs alongside the shipped
+        // in-memory accumulator path (below), which still assembles the
+        // next request until bl-26cb re-points it.
+        let staging_path = repo.join(&step_dir_rel_str).join(STAGING_FILE);
+        transcript::commit_assistant(&worktree_path, &conv_id, &staging_path, deps.git)?;
+
         if !completion.is_tool_use() {
             break;
         }
@@ -186,7 +197,14 @@ pub(super) fn run_exchange(
         // §2.5 pairing: every tool_use gets a matching tool_result on
         // the next user message, in emission order.
         let assistant_content = completion.content;
-        let tool_results = run_tool_calls(repo, &step_dir_rel_str, &assistant_content, deps)?;
+        let tool_results = run_tool_calls(
+            repo,
+            &worktree_path,
+            &conv_id,
+            &step_dir_rel_str,
+            &assistant_content,
+            deps,
+        )?;
         messages.push(Message {
             role: Role::Assistant,
             content: assistant_content,

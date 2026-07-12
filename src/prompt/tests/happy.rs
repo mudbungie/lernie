@@ -111,16 +111,17 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(dispatches[0].2, "ct-1-deadbeef");
     assert_eq!(dispatches[0].3, None);
 
-    // Git sequence: 4 (conversation branch setup + rev-parse) + 6
-    // (merge-back). The version guard runs no git.
+    // Git sequence: 4 (conversation branch setup + rev-parse) + 2
+    // (assistant transcript entry add + commit, §2.3) + 6 (merge-back).
+    // The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 10);
+    assert_eq!(runs.len(), 12);
     let (dest0, args0) = &runs[0];
     assert_eq!(dest0, &primary_worktree);
     assert_eq!(args0[..4], ["worktree", "add", "-b", "ct-1-deadbeef"]);
     assert_eq!(args0[4], worktree.to_string_lossy().to_string());
     assert_eq!(args0[5], "main");
-    for (dest, _args) in &runs[1..4] {
+    for (dest, _args) in &runs[1..6] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside conv worktree");
     }
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
@@ -129,17 +130,34 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert!(runs[2].1[2].contains("[ct-1-deadbeef]"));
     assert_eq!(runs[3].1, vec!["rev-parse", "HEAD"]);
 
-    assert_eq!(runs[4].0, worktree);
-    assert_eq!(runs[4].1, vec!["rebase", "main"]);
-    assert_eq!(runs[5].1[0], "rm");
-    assert_eq!(runs[6].1[0], "ls-tree");
-    assert_eq!(runs[7].1, vec!["diff", "--cached", "--name-only"]);
-    assert_eq!(runs[8].0, primary_worktree);
-    assert_eq!(runs[8].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
-    assert_eq!(runs[9].0, primary_worktree);
-    assert_eq!(runs[9].1[0], "worktree");
-    assert_eq!(runs[9].1[1], "remove");
-    assert_eq!(runs[9].1[2], worktree.to_string_lossy().to_string());
+    // The transcript writer commits the assistant entry (§2.3): the
+    // sealed staging file is renamed to messages/001-assistant.json and
+    // committed before the merge-back.
+    assert_eq!(runs[4].1, vec!["add", "messages/001-assistant.json"]);
+    assert_eq!(runs[5].1[0], "commit");
+    assert!(runs[5].1[2].contains("transcript 001: assistant"));
+    assert!(runs[5].1[2].contains("[ct-1-deadbeef]"));
+    // The renamed entry is on disk in the worktree and holds the
+    // canonical assistant blocks (the "hi there" text block).
+    let entry = worktree.join("messages/001-assistant.json");
+    let blocks: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(&entry).unwrap()).unwrap();
+    assert_eq!(blocks[0]["type"], "text");
+    assert_eq!(blocks[0]["text"], "hi there");
+    // The staging file left by rename — no debris under steps/.
+    assert!(!step_dir.join("assistant.staging.json").exists());
+
+    assert_eq!(runs[6].0, worktree);
+    assert_eq!(runs[6].1, vec!["rebase", "main"]);
+    assert_eq!(runs[7].1[0], "rm");
+    assert_eq!(runs[8].1[0], "ls-tree");
+    assert_eq!(runs[9].1, vec!["diff", "--cached", "--name-only"]);
+    assert_eq!(runs[10].0, primary_worktree);
+    assert_eq!(runs[10].1, vec!["merge", "--no-ff", "ct-1-deadbeef"]);
+    assert_eq!(runs[11].0, primary_worktree);
+    assert_eq!(runs[11].1[0], "worktree");
+    assert_eq!(runs[11].1[1], "remove");
+    assert_eq!(runs[11].1[2], worktree.to_string_lossy().to_string());
 }
 
 #[test]

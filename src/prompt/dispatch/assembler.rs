@@ -16,8 +16,13 @@
 //!   override path checks (§4.4).
 //!
 //! Per the diagnostic-only contract (§2.3) the harness never reads
-//! `response.json` back at runtime — every consumer of the model's
-//! output goes through this in-memory accumulator.
+//! `response.json` back at runtime. This accumulator is the shipped
+//! path that assembles the *next request*; the same adapter pass also
+//! feeds the transcript writer's staging sink ([`super::staging`], §2.3),
+//! which commits the durable `messages/NNN-assistant.json` entry. Both
+//! are written off one pass with no read-back; re-pointing request
+//! assembly at the committed transcript (retiring this accumulator) is
+//! bl-26cb.
 
 use brazen::{CanonicalError, Content, ContentKind, Delta, Event, FinishReason};
 

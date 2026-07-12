@@ -13,13 +13,13 @@ use std::io;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// Drive `run` with default stubs against an explicit harness root.
+/// Drive `run` with default stubs against an explicit config root.
 fn run_with_harness(
     repo: &Path,
     msg: &str,
     adapter: &StubAdapter,
     git: &StubGit,
-    harness_root: &Path,
+    config_root: &Path,
 ) -> Result<String, Error> {
     let clock = FixedClock::default();
     let (id, dispatcher) = (FixedIdGen, StubDispatcher::ok());
@@ -35,7 +35,7 @@ fn run_with_harness(
             &id,
             &dispatcher,
             &tool_executor,
-            harness_root,
+            config_root,
         ),
     )
 }

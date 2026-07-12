@@ -4,7 +4,7 @@
 //!
 //! Resolution order, per ARCH §3.3:
 //!
-//! 1. `<harness_root>/tools/lernie-tool-<name>` (installed by `make
+//! 1. `<data_root>/tools/lernie-tool-<name>` (installed by `make
 //!    install`).
 //! 2. `lernie-tool-<name>` on `PATH` (mirroring §4.4 adapter discovery).
 //! 3. In-process fallback: `<lernie binary> tool <name>`. The binary
@@ -24,10 +24,10 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 /// Production [`ToolExecutor`]. Constructed per-call by the loop so
-/// the borrow of `harness_root` and `clock` stays scoped to one
+/// the borrow of `data_root` and `clock` stays scoped to one
 /// invocation.
 pub struct SpawnTool<'a> {
-    harness_root: &'a Path,
+    data_root: &'a Path,
     clock: &'a dyn Clock,
     deadline: Duration,
     binary_resolver: Box<dyn BinaryResolver + 'a>,
@@ -66,9 +66,9 @@ impl BinaryResolver for CurrentExeResolver {
 impl<'a> SpawnTool<'a> {
     /// Build a [`SpawnTool`] backed by [`CurrentExeResolver`] and the
     /// default §3.3 deadline.
-    pub fn new(harness_root: &'a Path, clock: &'a dyn Clock) -> Self {
+    pub fn new(data_root: &'a Path, clock: &'a dyn Clock) -> Self {
         Self {
-            harness_root,
+            data_root,
             clock,
             deadline: super::DEFAULT_TOOL_DEADLINE,
             binary_resolver: Box::new(CurrentExeResolver),
@@ -95,7 +95,7 @@ impl<'a> SpawnTool<'a> {
     /// case.
     fn resolve(&self, name: &str) -> Result<(OsString, Vec<OsString>), ExecError> {
         let external_name = format!("{}{}", super::EXTERNAL_PREFIX, name);
-        let tools_root = self.harness_root.join(super::TOOLS_DIR);
+        let tools_root = self.data_root.join(super::TOOLS_DIR);
         let harness_path = tools_root.join(&external_name);
         if harness_path.is_file() {
             return Ok((harness_path.into_os_string(), Vec::new()));

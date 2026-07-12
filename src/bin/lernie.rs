@@ -112,7 +112,7 @@ fn main() -> ExitCode {
             let dest = match path {
                 Some(p) => p,
                 None => match harness_root::resolve() {
-                    Ok(root) => root.join("conversations").join(NanoIdGen.short()),
+                    Ok(roots) => roots.data.join("conversations").join(NanoIdGen.short()),
                     Err(e) => {
                         eprintln!("lernie new: {e}");
                         return ExitCode::FAILURE;
@@ -139,14 +139,14 @@ fn main() -> ExitCode {
                     return ExitCode::FAILURE;
                 }
             };
-            let harness = match harness_root::resolve() {
-                Ok(h) => h,
+            let roots = match harness_root::resolve() {
+                Ok(r) => r,
                 Err(e) => {
                     eprintln!("lernie prompt: {e}");
                     return ExitCode::FAILURE;
                 }
             };
-            let tool_executor = SpawnTool::new(&harness, &SystemClock);
+            let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
             let deps = prompt::Deps {
                 adapter: &SpawnAdapter,
                 sleeper: &prompt::RealSleeper,
@@ -155,7 +155,7 @@ fn main() -> ExitCode {
                 id_gen: &NanoIdGen,
                 dispatcher: &dispatcher,
                 tool_executor: &tool_executor,
-                harness_root: &harness,
+                config_root: &roots.config,
             };
             match prompt::run(&repo, &message, &deps) {
                 Ok(branch) => {

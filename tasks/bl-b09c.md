@@ -20,6 +20,10 @@ on = "close"
 [[blockers]]
 id = "bl-7467"
 on = "close"
+
+[[blockers]]
+id = "bl-6848"
+on = "close"
 +++
 Settled in design discussion 2026-07-09..11. Deliverable: living rewrite of ARCH §2.2–§2.6 and §7 (touches §9.2 archival). Written in the bl-08df ladder, on the bl-c904 context model — hence the needs edges.
 

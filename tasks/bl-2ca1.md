@@ -11,10 +11,6 @@ id = "bl-65d8"
 on = "claim"
 
 [[blockers]]
-id = "bl-8fac"
-on = "close"
-
-[[blockers]]
 id = "bl-ebdc"
 on = "close"
 +++

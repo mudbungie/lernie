@@ -12,6 +12,10 @@ on = "close"
 [[blockers]]
 id = "bl-f91a"
 on = "close"
+
+[[blockers]]
+id = "bl-97fb"
+on = "close"
 +++
 Settled in design discussion 2026-07-09..11. Deliverable: living rewrite of ARCH §2.1 (terms table + banned list) and the lernie-stance paragraphs in TAXONOMY (§1 step/turn notes, §3 conversation/thread/session sprawl).
 

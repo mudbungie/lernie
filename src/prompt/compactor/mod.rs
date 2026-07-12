@@ -6,10 +6,14 @@
 //! ships a stub that uses neither a model call nor real deletion
 //! marking — what it demonstrates is the **dispatch shape**: the
 //! compactor runs on its own branch off the dispatching branch's tip
-//! and merges back through the normal merge protocol (§2.6). That
-//! shape is the load-bearing part, because the generalized dispatch
-//! primitive in v0.4 reuses it verbatim; this is the "One obvious
-//! path" principle instantiated (see `docs/PRINCIPLES.md`).
+//! and lands via the **compaction merge** — the one merge left in the
+//! system now that merge-back is gone (§2.6). A compactor forks off the
+//! branch tip and rewrites only what existed there while the live agent
+//! appends past it, so the `--no-ff` merge back into the dispatching
+//! branch is conflict-free by construction — no rebase, no `merge=ours`
+//! alignment (§2.6). That dispatch shape is the load-bearing part; the
+//! generalized dispatch primitive in v0.4 reuses it verbatim ("One
+//! obvious path", `docs/PRINCIPLES.md`).
 //!
 //! The stub writes a placeholder one-line summary identifying the
 //! dispatching conversation. v0.3.1 dropped its previous read of
@@ -20,7 +24,6 @@
 
 pub mod tools;
 
-use super::merge::rebase_and_merge;
 use super::subagent::{SpawnRequest, spawn_subagent_branch};
 use super::{Clock, Error, IdGen};
 use crate::template::GitRunner;
@@ -92,22 +95,36 @@ pub fn run(
     let summary_rel = write_summary(&cmp_worktree, &summary)?;
     commit_summary(&cmp_worktree, &summary_rel, req.parent_conv_id, git)?;
 
-    // `repo` arg of `rebase_and_merge` is just the cwd for the
-    // `worktree remove` step. The conv-repo root itself is not a git
-    // checkout in v0.3 (the `.git` lives inside `root/`, ARCH §2.2),
-    // so we use the parent worktree — which shares the same .git
-    // dir — as the cwd. Either linked worktree would do; `parent_worktree`
-    // is the one already in scope.
-    rebase_and_merge(
-        req.parent_worktree,
-        req.parent_conv_id,
-        req.parent_worktree,
-        &cmp_worktree,
-        &cmp_branch,
-        git,
-    )?;
+    compaction_merge(req.parent_worktree, &cmp_branch, &cmp_worktree, git)?;
 
     Ok(())
+}
+
+/// Land the compaction merge (ARCH §2.6): `--no-ff` merge the compactor
+/// branch into the dispatching branch, then remove the compactor
+/// worktree. Run inside `parent_worktree`, which shares the conv-repo's
+/// one `.git` dir (§2.2). No rebase and no `merge=ours` alignment — the
+/// compactor forked off the dispatching tip and only rewrites what
+/// existed there, so the merge is conflict-free by construction (§2.6).
+/// The compactor branch ref survives for the retention window (§2.3);
+/// only its worktree checkout is cleaned up here.
+fn compaction_merge(
+    parent_worktree: &Path,
+    cmp_branch: &str,
+    cmp_worktree: &Path,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    git.run(parent_worktree, &["merge", "--no-ff", cmp_branch])
+        .map_err(|source| Error::Git {
+            op: "merge",
+            source,
+        })?;
+    let wt_str = cmp_worktree.to_string_lossy().to_string();
+    git.run(parent_worktree, &["worktree", "remove", wt_str.as_str()])
+        .map_err(|source| Error::Git {
+            op: "worktree remove",
+            source,
+        })
 }
 
 /// Boilerplate goal handed to the compactor at dispatch time. The

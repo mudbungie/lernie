@@ -15,7 +15,7 @@
 //! `(mtime, filename)` — so the same inbox always yields the same
 //! committed sequence and replay agrees with the live run.
 
-use super::transcript;
+use super::{transcript, transfer};
 use crate::prompt::Error;
 use crate::template::GitRunner;
 use std::path::{Path, PathBuf};
@@ -37,6 +37,14 @@ pub(super) fn drain(
 ) -> Result<(), Error> {
     recover_strays(worktree, conv_id, git)?;
     for msg in pending(inbox)? {
+        // A result message (§2.6) carries a `terminal_ref:` and applies
+        // its work-product transfer as one commit *before* its own
+        // delivery commit (§2.6, §2.11). An ordinary steering message
+        // carries none and delivers directly.
+        let body = std::fs::read_to_string(&msg.path).map_err(Error::Io)?;
+        if let Some(terminal_ref) = transfer::terminal_ref_of(&body) {
+            transfer::apply(worktree, conv_id, &msg.sender, &terminal_ref, git)?;
+        }
         transcript::deliver_message(worktree, conv_id, &msg.sender, &msg.path, git)?;
     }
     Ok(())

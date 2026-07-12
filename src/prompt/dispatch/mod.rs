@@ -3,38 +3,37 @@
 //!
 //! [`run_exchange`] executes a single root conversation off `main`:
 //!
-//! 1. Spawn branch `<conv-id>` off `main` and allocate a sibling
-//!    worktree at `<conv-repo>/<conv-id>/` (§2.2).
-//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md` and
-//!    commit — that commit's tree *is* step 1's read state (§2.10).
-//!    Step ≥2 takes no pre-call commit.
+//! 1. Spawn branch `<conv-id>` off `main` with a sibling worktree (§2.2).
+//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md` and commit —
+//!    that commit's tree *is* step 1's read state (§2.10).
 //! 3. **Step loop (§2.5).** At each boundary the executor drains the
-//!    agent's inbox ([`drain`], §2.11) — pending messages land as delivery
-//!    commits ahead of the read state — then records the branch-tip sha,
-//!    writes `request.json` + `meta.json` under
-//!    `<conv-repo>/steps/<conv-id>/<NNN>/` (§2.2 / §2.3), and drives the
-//!    model call through the retry loop ([`model_call`], §4.4). Each step
-//!    re-assembles its history from the read-state commit's tree
-//!    ([`assembler`], §2.3, §5); a settled `tool_use` block runs through
-//!    [`crate::prompt::ToolExecutor`], committing each `tool_result` as a
-//!    transcript entry, then loops; no `tool_use` is terminal.
-//! 4. Dispatch the terminal compactor off the tip (§2.7), then rebase
-//!    onto `main` and `--no-ff` merge (§2.6).
+//!    agent's inbox ([`drain`], §2.11), records the branch-tip sha, writes
+//!    the step record under `<conv-repo>/steps/<conv-id>/<NNN>/`, and
+//!    drives the model call through the retry loop ([`model_call`], §4.4).
+//!    Each step re-assembles its history from the read-state commit's tree
+//!    ([`assembler`], §2.3, §5); a settled `tool_use` loops, no `tool_use`
+//!    is terminal.
+//! 4. On a normal terminal event, dispatch the terminal compactor off the
+//!    tip (§2.7) — the compaction merge is the one merge left (§2.6).
+//!    Merge-back is gone: the root branch persists on its own ref (§2.4).
+//!    Every terminal event ([`result_deposit`]) deposits a result message
+//!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root.
 
 mod assembler;
 mod drain;
 mod model_call;
+mod result_deposit;
 mod staging;
 mod step_commit;
 mod tool_step;
 mod tools;
 mod transcript;
+mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
 
 use super::budget;
-use super::inbox;
-use super::merge::rebase_and_merge;
+use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
 use crate::config::{Budgets, Model, RetryConfig};
@@ -49,15 +48,9 @@ use step_commit::{
 };
 use tool_step::run_tool_calls;
 
-/// The trunk branch every root conversation eventually merges into
-/// (ARCH §2.3).
-const TRUNK_BRANCH: &str = "main";
-
-/// Per-request `max_tokens` output cap — one model call's output
-/// ceiling. Distinct from the §6 spend budgets ([`Budgets`]), which
-/// bound *cumulative* tokens across the conversation tree; this is a
-/// per-call limit. Moves to manifest config when that surface lands; the
-/// row's brazen default still applies if a provider requires one.
+/// Per-request `max_tokens` output cap — one model call's output ceiling,
+/// distinct from the §6 cumulative spend budgets ([`Budgets`]). Moves to
+/// manifest config when that surface lands.
 const DEFAULT_MAX_TOKENS: u32 = 4096;
 
 /// Inputs resolved by [`super::run`] before branch work starts.
@@ -98,11 +91,9 @@ pub(super) fn run_exchange(
     let primary_worktree = repo.join(ROOT_WORKTREE);
 
     // Executor lock (§2.11): acquire the branch's inbox lease before any
-    // work. Held for the whole step loop and released by the kernel on
-    // exit. Losing the acquire means another driver already owns this
-    // branch — exit as a clean no-op (Writer/driver totality). A fresh
-    // root prompt always wins (its conv-id is unique), so the None arm is
-    // the re-entry/concurrency guard, not the common path.
+    // work, held for the whole loop and kernel-released on exit. Losing
+    // the acquire means another driver owns this branch — clean no-op
+    // (Writer/driver totality); a fresh root always wins (unique conv-id).
     let inbox = inbox::inbox_dir(repo, &conv_id);
     let _executor_lock = match inbox::try_acquire(&inbox).map_err(|source| Error::ExecutorLock {
         path: inbox.clone(),
@@ -114,10 +105,9 @@ pub(super) fn run_exchange(
 
     spawn_branch(&primary_worktree, &worktree_path, &branch_name, deps)?;
 
-    // The initial user message enters through the front door (§2.4,
-    // §2.11): deposit it into this agent's own inbox and let the step-1
-    // boundary drain (below) deliver it — the same path any reprompt takes,
-    // so there is no bespoke initial-message delivery beside the drain.
+    // The initial user message enters through the front door (§2.4, §2.11):
+    // deposited into this agent's own inbox and delivered by the step-1
+    // drain — the same path any reprompt takes, no bespoke delivery.
     inbox::deposit(repo, &conv_id, inbox::USER_SENDER, user_message, deps.clock)?;
 
     let system_with_goal = prepend_goal(user_message, &resolved.soul);
@@ -134,10 +124,8 @@ pub(super) fn run_exchange(
     let mut step_seq: u32 = 1;
     let mut exhausted = false;
     // §3.3/§4.3: the role's declared tools composed against the schemas
-    // committed under `descriptions/tools/` in the read-state tree (§2.10).
-    // Composed once at step 1 — after the dispatch commit establishes that
-    // tree — and cloned into every step's request (schemas are git-
-    // inherited and do not change mid-branch).
+    // committed under `descriptions/tools/` (§2.10), once at step 1 and
+    // cloned into every step's request (git-inherited, stable mid-branch).
     let mut tools: Vec<brazen::Tool> = Vec::new();
     loop {
         if step_seq == 1 {
@@ -147,22 +135,18 @@ pub(super) fn run_exchange(
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox
-        // message into the transcript and commit it, ahead of this step's
-        // read-state capture so a delivered message is part of the commit
-        // the model call assembles from (§2.3, §2.10). Ordered after the
-        // prior step's tool entries (loop tail) and before the rev-parse
-        // (§2.3), so a message never wedges between paired tool blocks.
+        // message into the transcript ahead of this step's read-state
+        // capture, so it is part of the commit the model call assembles
+        // from — and after the prior step's tool entries, so a message
+        // never wedges between paired tool blocks (§2.3).
         drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?;
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
-        // §6 budget check at the model-call boundary, before invoking the
-        // adapter. Tokens/wall are derived live over the conversation tree
-        // and depth over this branch — no stored counter (PRINCIPLES SSOT;
-        // `steps/` is shared per §2.2/§2.3). On exhaustion the harness
-        // writes the git-native `refs/lernie/budget-exhausted/<branch>`
-        // marker and ceases the loop: an ordinary terminal state (§6) that
-        // deposits a result message like any other terminal event (§2.11).
+        // §6 budget check at the model-call boundary: tokens/wall/depth
+        // derived live over the tree (no stored counter, PRINCIPLES SSOT).
+        // Exhaustion writes `refs/lernie/budget-exhausted/<branch>` and
+        // ceases the loop — an ordinary terminal state.
         if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
             eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
             budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {
@@ -171,14 +155,22 @@ pub(super) fn run_exchange(
                     source,
                 }
             })?;
+            // Terminal event (§2.3 step 5, §6): deposit a `budget-exhausted`
+            // result message. The agent did not speak this step, so no body.
+            result_deposit::deposit_terminal(
+                repo,
+                &conv_id,
+                &worktree_path,
+                Epitaph::BudgetExhausted,
+                None,
+                deps,
+            )?;
             exhausted = true;
             break;
         }
 
-        // §2.3 / §5: assemble the model-facing history from the
-        // read-state commit's tree (the worktree checkout equals that
-        // commit at step start). One code path for running, retry, and
-        // replay — no in-memory history, no git-log walk.
+        // §2.3 / §5: assemble the model-facing history from the read-state
+        // commit's tree — one code path for running, retry, and replay.
         let messages = assemble(&worktree_path)?;
         let request = model_call::build_request(
             &resolved.model.model_id,
@@ -210,7 +202,7 @@ pub(super) fn run_exchange(
         )?;
 
         // Transcript writer (§2.3): seal-and-rename the staging entry to
-        // `messages/NNN-<model-id>.json` (origin = authoring model, §4.3) and commit.
+        // `messages/NNN-<model-id>.json` (origin = authoring model) + commit.
         let staging_path = repo.join(&step_dir_rel_str).join(STAGING_FILE);
         let assistant_content = transcript::commit_assistant(
             &worktree_path,
@@ -220,11 +212,22 @@ pub(super) fn run_exchange(
             deps.git,
         )?;
 
-        // A step with no `tool_use` block is terminal (§2.5).
+        // A step with no `tool_use` block is terminal (§2.5): deposit a
+        // `final-response` result message carrying the terminal response
+        // iff the agent spoke (§2.3 step 5, §2.6). No-op for a root.
         if !assistant_content
             .iter()
             .any(|b| matches!(b, Content::ToolUse { .. }))
         {
+            let response = result_deposit::terminal_text(&assistant_content);
+            result_deposit::deposit_terminal(
+                repo,
+                &conv_id,
+                &worktree_path,
+                Epitaph::FinalResponse,
+                response.as_deref(),
+                deps,
+            )?;
             break;
         }
 
@@ -242,8 +245,13 @@ pub(super) fn run_exchange(
     }
 
     // An exhausted conversation is terminal-by-exhaustion (§6, §2.9): it
-    // persists unmerged behind the budget-exhausted ref. Otherwise:
-    // terminal compaction (§2.7) + merge-back (§2.6), via the CLI (§3.4).
+    // persists behind the budget-exhausted ref with no compaction.
+    // Otherwise the normal terminal path dispatches the terminal
+    // compactor off the tip (§2.7), whose return lands the compaction
+    // merge — the one merge left in the system (§2.6) — into this branch.
+    // There is no merge-back: the root branch persists on its own ref
+    // (§2.4), and any child's return already rode the result-message
+    // channel above (§2.6).
     if !exhausted {
         deps.dispatcher
             .dispatch("compactor", repo, &branch_name, None)
@@ -251,22 +259,13 @@ pub(super) fn run_exchange(
                 role: "compactor",
                 source,
             })?;
-
-        rebase_and_merge(
-            &primary_worktree,
-            TRUNK_BRANCH,
-            &primary_worktree,
-            &worktree_path,
-            &branch_name,
-            deps.git,
-        )?;
     }
 
     Ok(branch_name)
 }
 
-/// `git worktree add -b <branch> <worktree_path> main` — run inside the
-/// primary worktree (`<conv-repo>/root/`) where `.git` lives (§2.2).
+/// `git worktree add -b <branch> <worktree_path> main`, run inside the
+/// primary worktree where `.git` lives (§2.2).
 fn spawn_branch(
     primary_worktree: &Path,
     worktree_path: &Path,
@@ -292,9 +291,9 @@ fn spawn_branch(
         })
 }
 
-/// Prepend the branch's goal to the role's soul so it sits at the head
-/// of assembled context (ARCH §2.8). v0.6 keeps the inline `<goal>`
-/// framing; manifest-driven assembly replaces it later.
+/// Prepend the branch's goal to the role's soul so it sits at the head of
+/// assembled context (ARCH §2.8); manifest-driven assembly replaces the
+/// inline `<goal>` framing later.
 fn prepend_goal(goal: &str, soul: &str) -> String {
     format!("<goal>\n{goal}\n</goal>\n\n{soul}")
 }

@@ -25,7 +25,7 @@ pub mod lock;
 #[cfg(test)]
 mod tests;
 
-pub use deposit::{DepositError, deposit};
+pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
 
 use crate::prompt::{Clock, SystemClock};
@@ -45,6 +45,53 @@ pub const USER_SENDER: &str = "user";
 /// deposit target and the executor lock's home (§2.11).
 pub fn inbox_dir(workspace: &Path, agent_id: &str) -> PathBuf {
     workspace.join(INBOX_DIR).join(agent_id)
+}
+
+/// The parent agent's id — `agent_id` minus its last descent segment
+/// (§2.11 "the parent's address is the agent's own id minus its last
+/// descent segment") — or `None` when `agent_id` is a root (it has no
+/// parent). An agent id is a hyphenated descent of `<ts>-<short>`
+/// segments (§2.3), and both the compact timestamp and the short id are
+/// hyphen-free (`clock.rs`), so each segment is exactly two
+/// hyphen-delimited tokens: a root is two tokens, and stripping the last
+/// segment removes the trailing two. This is the same token arithmetic
+/// [`crate::prompt::budget::derive::depth`] already relies on.
+pub fn parent_of(agent_id: &str) -> Option<String> {
+    let tokens: Vec<&str> = agent_id.split('-').collect();
+    if tokens.len() <= 2 {
+        return None;
+    }
+    Some(tokens[..tokens.len() - 2].join("-"))
+}
+
+/// Deposit a child's **result message** (§2.6) on its own behalf, into
+/// its parent's inbox — the total return step (§2.3 step 5). A no-op
+/// returning `Ok(None)` when `agent_id` is a root ([`parent_of`] is
+/// `None`): a root has no parent inbox, its terminal response answers
+/// the user instead (§2.4). Otherwise deposits and returns the created
+/// path. The deposit is executor-side, never a model tool call ("Return
+/// is not a verb", `docs/PRINCIPLES.md`).
+pub fn deposit_child_result(
+    workspace: &Path,
+    agent_id: &str,
+    epitaph: Epitaph,
+    terminal_ref: &str,
+    terminal_response: Option<&str>,
+    clock: &dyn Clock,
+) -> Result<Option<PathBuf>, DepositError> {
+    match parent_of(agent_id) {
+        None => Ok(None),
+        Some(parent) => deposit_result(
+            workspace,
+            &parent,
+            agent_id,
+            epitaph,
+            terminal_ref,
+            terminal_response,
+            clock,
+        )
+        .map(Some),
+    }
 }
 
 /// Launches a driver for a quiescent agent. Kept as a trait so the

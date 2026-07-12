@@ -94,25 +94,23 @@ fn scaffold_happy_path_lays_out_v0_3_shape() {
     assert!(dest.join("souls/worker.md").is_file());
     assert!(dest.join("souls/compactor.md").is_file());
 
-    // root/ is the primary worktree; .gitattributes holds the merge=ours
-    // pins from ARCH §2.6.
+    // root/ is the primary worktree. Merge-back is gone (ARCH §2.6), so
+    // no `.gitattributes` merge=ours discipline is scaffolded.
     let root = dest.join("root");
     assert!(root.is_dir());
-    let attrs = fs::read_to_string(root.join(".gitattributes")).unwrap();
-    assert!(attrs.contains("goal.md     merge=ours"));
-    assert!(attrs.contains("soul.md     merge=ours"));
-    assert!(attrs.contains("summary/**  merge=ours"));
+    assert!(!root.join(".gitattributes").exists());
 
-    // Every git invocation ran inside root/, not the conv-repo root.
+    // Every git invocation ran inside root/, not the conv-repo root. No
+    // merge driver registration — the merge=ours discipline is retired.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 4);
+    assert_eq!(runs.len(), 3);
     assert!(runs.iter().all(|(d, _)| d == &root));
     assert_eq!(runs[0].1, vec!["init", "-b", "main"]);
-    // The custom merge driver registration (ARCH §2.6) lives here so
-    // the `.gitattributes` rules are honored on hand-run merges.
-    assert_eq!(runs[1].1, vec!["config", "merge.ours.driver", "true"]);
-    assert_eq!(runs[2].1, vec!["add", "-A"]);
-    assert_eq!(runs[3].1, vec!["commit", "-m", "init conversation repo"]);
+    assert_eq!(runs[1].1, vec!["add", "-A"]);
+    assert_eq!(
+        runs[2].1,
+        vec!["commit", "--allow-empty", "-m", "init conversation repo"]
+    );
 }
 
 #[test]
@@ -155,7 +153,7 @@ fn scaffold_propagates_init_failure() {
 }
 
 #[test]
-fn scaffold_propagates_config_failure() {
+fn scaffold_propagates_add_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let err = scaffold(
@@ -168,26 +166,13 @@ fn scaffold_propagates_config_failure() {
 }
 
 #[test]
-fn scaffold_propagates_add_failure() {
-    let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
-    let err = scaffold(
-        &dest,
-        &holder.path().join("no-pool"),
-        &StubGit::failing_at(2),
-    )
-    .unwrap_err();
-    assert!(matches!(err, ScaffoldError::Git(_)));
-}
-
-#[test]
 fn scaffold_propagates_commit_failure() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("conv");
     let err = scaffold(
         &dest,
         &holder.path().join("no-pool"),
-        &StubGit::failing_at(3),
+        &StubGit::failing_at(2),
     )
     .unwrap_err();
     assert!(matches!(err, ScaffoldError::Git(_)));

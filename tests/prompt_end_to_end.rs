@@ -136,7 +136,7 @@ const HAPPY_SSE: &str = concat!(
 );
 
 #[test]
-fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
+fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
@@ -179,21 +179,31 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
     assert_eq!(branch.len(), 25, "got {branch:?}");
     let conv_id = branch.clone();
 
-    // Main advanced via --no-ff merge (two parent shas).
+    // Merge-back is gone (§2.6): main does NOT advance — the root branch
+    // persists on its own ref (§2.4), and nothing merges to `main`.
     let main_head_after = git_capture(&primary, &["rev-parse", "main"]);
-    assert_ne!(main_head_before, main_head_after, "main should advance");
-    let conv_tip = git_capture(&primary, &["rev-parse", &branch]);
-    let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", "main"]);
-    assert_eq!(
-        parents.split_whitespace().collect::<Vec<_>>(),
-        [&main_head_before[..], &conv_tip[..]]
-    );
+    assert_eq!(main_head_before, main_head_after, "main must not advance");
 
-    // §2.6 alignment: summary/** stays on the compactor sub-branch.
+    // The compaction merge (§2.6) is the one merge left in the system: it
+    // lands the summary on the conversation's OWN branch (a two-parent
+    // merge commit at the tip), never on `main`.
+    let conv_parents = git_capture(&primary, &["log", "-1", "--pretty=%P", &branch]);
+    assert_eq!(
+        conv_parents.split_whitespace().count(),
+        2,
+        "conv tip is the compaction merge commit"
+    );
+    let summary_on_branch = git_command(&primary, &["show", &format!("{branch}:summary/001.md")])
+        .output()
+        .expect("spawn git show");
+    assert!(
+        summary_on_branch.status.success(),
+        "summary landed on the conversation branch"
+    );
     let summary_on_main = git_command(&primary, &["show", "main:summary/001.md"])
         .output()
         .expect("spawn git show");
-    assert!(!summary_on_main.status.success(), "summary on main");
+    assert!(!summary_on_main.status.success(), "summary never on main");
 
     // Step records live outside every worktree (§2.2 / §2.3).
     let step_dir = dest.join(format!("steps/{conv_id}/001"));
@@ -238,8 +248,10 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
 
     // Step records are never git-tracked (§2.2).
     assert!(git_capture(&primary, &["ls-files", "steps/"]).is_empty());
-    // Worktree removed; branch ref survives (§2.3).
-    assert!(!dest.join(&conv_id).exists());
+    // The branch ref survives (§2.3); the conversation worktree persists —
+    // quiescence, not teardown, now that merge-back no longer removes it
+    // (§2.3 step 6, §2.6).
+    assert!(dest.join(&conv_id).exists());
     assert!(git_capture(&primary, &["branch", "--list", &branch]).contains(&branch));
 }
 

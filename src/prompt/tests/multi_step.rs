@@ -122,10 +122,11 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
     // (step-1 model-output transcript entry add+commit) + 2 (the tool
     // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
-    // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 6
-    // (merge-back) = 21. The version guard runs no git.
+    // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 1
+    // (terminal result-deposit rev-parse, §2.6) = 16. Merge-back is gone
+    // (§2.6). The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 21);
+    assert_eq!(runs.len(), 16);
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[2].1[2].contains("step 001: dispatch"));
     // Step-1 drain (§2.11): the clean stray-probe, then the initial user
@@ -156,7 +157,9 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
         vec!["add", "messages/004-claude-sonnet-4-7.json"]
     );
     assert!(runs[14].1[2].contains("transcript 004: claude-sonnet-4-7"));
-    assert_eq!(runs[15].1, vec!["rebase", "main"]);
+    // The terminal result deposit reads the branch tip (§2.6); no
+    // merge-back follows.
+    assert_eq!(runs[15].1, vec!["rev-parse", "HEAD"]);
 
     // The tool entry on disk is the canonical tool_result block.
     let tool_entry = worktree.join("messages/003-tool.json");

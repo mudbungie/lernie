@@ -12,7 +12,7 @@ use serde_json::json;
 #[test]
 fn loop_terminates_on_non_tool_use_finish() {
     // A `Finish{Length}` (max-tokens) terminates; the branch still
-    // reaches the compactor + merge-back exactly once.
+    // reaches the compactor dispatch exactly once (§2.7).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let r1 = stream_of(FinishReason::Length, &[Block::Text("done")]);

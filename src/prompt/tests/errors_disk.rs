@@ -4,8 +4,10 @@
 //! worktree add`, the I/O writes for the dispatch (worktree dir,
 //! goal, soul) and for the diagnostic step record (request, response,
 //! meta), the dispatch commit's `git add` / `git commit`, the
-//! branch-tip capture (`git rev-parse`), and the merge-back-to-main
-//! rebase / merge / remove. Compactor-internal failures live in
+//! branch-tip capture (`git rev-parse`), the model-output transcript
+//! entry commit, and the terminal result-deposit's branch-tip read
+//! (§2.6). Merge-back is gone (§2.6), so its rebase / merge / remove
+//! arms are gone with it. Compactor-internal failures live in
 //! `compactor::tests` — they sit behind the [`crate::prompt::Dispatcher`]
 //! boundary, so are not reachable through `prompt::run` with a stub
 //! dispatcher. Config and adapter failure paths live in
@@ -19,20 +21,19 @@ use crate::prompt::{Deps, Error, run};
 /// (`git status`, §2.11), 4 user-message delivery add, 5 user-message
 /// delivery commit (§2.11 — the initial message is delivered through the
 /// front door before step 1's read state is captured), 6 rev-parse.
-/// Pinned as a constant so the merge-back op-index labels stay readable.
+/// Pinned as a constant so the transcript/terminal op-index labels stay
+/// readable.
 const REV_PARSE_INDEX: usize = 6;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the model-output entry — `git add` then `commit` — before the loop
-/// terminates (no tool_use on the happy stream). Two runs sit between
-/// the rev-parse and the merge-back.
+/// terminates (no tool_use on the happy stream).
 const TRANSCRIPT_ADD_INDEX: usize = REV_PARSE_INDEX + 1;
 const TRANSCRIPT_COMMIT_INDEX: usize = TRANSCRIPT_ADD_INDEX + 1;
-const REBASE_INDEX: usize = TRANSCRIPT_COMMIT_INDEX + 1;
-const MERGE_OURS_RM_INDEX: usize = REBASE_INDEX + 1;
-const MERGE_OURS_LS_TREE_INDEX: usize = MERGE_OURS_RM_INDEX + 1;
-const MERGE_OURS_DIFF_INDEX: usize = MERGE_OURS_LS_TREE_INDEX + 1;
-const MERGE_INDEX: usize = MERGE_OURS_DIFF_INDEX + 1;
-const WORKTREE_REMOVE_INDEX: usize = MERGE_INDEX + 1;
+/// The terminal event deposits a result message (§2.6, §2.3 step 5),
+/// which reads the branch tip (`git rev-parse HEAD`) as its terminal
+/// ref. It is the last git op before the loop breaks; the deposit itself
+/// is a no-op for a root (no parent inbox, §2.4).
+const TERMINAL_REV_PARSE_INDEX: usize = TRANSCRIPT_COMMIT_INDEX + 1;
 
 #[test]
 fn run_surfaces_worktree_add_failure() {
@@ -179,9 +180,8 @@ fn run_surfaces_meta_write_failure() {
 
 #[test]
 fn run_surfaces_dispatcher_failure() {
-    // Dispatcher returns an error — surfaces as DispatchFailed and
-    // skips the merge-to-main step. Built inline because the helper's
-    // default dispatcher is always-ok.
+    // Dispatcher returns an error — surfaces as DispatchFailed. Built
+    // inline because the helper's default dispatcher is always-ok.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&happy_response_bytes());
@@ -214,14 +214,16 @@ fn run_surfaces_dispatcher_failure() {
     );
     // Pre-dispatcher git op count: worktree add, dispatch add, dispatch
     // commit, the step-1 drain stray-probe (§2.11), the user-message
-    // delivery add + commit (§2.11), rev-parse for meta, plus the
-    // model-output transcript entry's add + commit = 9.
-    assert_eq!(git.runs.borrow().len(), 9, "merge-to-main never starts");
+    // delivery add + commit (§2.11), rev-parse for meta, the model-output
+    // transcript entry's add + commit, plus the terminal result-deposit's
+    // branch-tip read (§2.6) = 10. The compactor dispatch is the next
+    // step, and it is the one that fails.
+    assert_eq!(git.runs.borrow().len(), 10, "compactor dispatch is next");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,
-/// .. }`. Shared helper so each merge-back op-index test stays one
-/// line — the macro path tarpaulin trips on otherwise.
+/// .. }`. Shared helper so each op-index test stays one line — the macro
+/// path tarpaulin trips on otherwise.
 fn assert_run_fails_with_git_op(idx: usize, expected_op: &'static str) {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&happy_response_bytes());
@@ -232,7 +234,7 @@ fn assert_run_fails_with_git_op(idx: usize, expected_op: &'static str) {
     }
 }
 
-macro_rules! merge_back_failure_test {
+macro_rules! git_op_failure_test {
     ($name:ident, $idx:expr, $op:literal) => {
         #[test]
         fn $name() {
@@ -241,43 +243,19 @@ macro_rules! merge_back_failure_test {
     };
 }
 
-merge_back_failure_test!(
+git_op_failure_test!(
     run_surfaces_transcript_add_failure,
     TRANSCRIPT_ADD_INDEX,
     "transcript add"
 );
-merge_back_failure_test!(
+git_op_failure_test!(
     run_surfaces_transcript_commit_failure,
     TRANSCRIPT_COMMIT_INDEX,
     "transcript commit"
 );
-merge_back_failure_test!(
-    run_surfaces_merge_to_main_rebase_failure,
-    REBASE_INDEX,
-    "rebase"
-);
-merge_back_failure_test!(
-    run_surfaces_merge_ours_rm_failure,
-    MERGE_OURS_RM_INDEX,
-    "merge=ours rm"
-);
-merge_back_failure_test!(
-    run_surfaces_merge_ours_ls_tree_failure,
-    MERGE_OURS_LS_TREE_INDEX,
-    "merge=ours ls-tree"
-);
-merge_back_failure_test!(
-    run_surfaces_merge_ours_diff_failure,
-    MERGE_OURS_DIFF_INDEX,
-    "merge=ours diff"
-);
-merge_back_failure_test!(
-    run_surfaces_merge_to_main_merge_failure,
-    MERGE_INDEX,
-    "merge"
-);
-merge_back_failure_test!(
-    run_surfaces_conv_worktree_remove_failure,
-    WORKTREE_REMOVE_INDEX,
-    "worktree remove"
+// The terminal result-deposit's branch-tip read (§2.6, §2.3 step 5).
+git_op_failure_test!(
+    run_surfaces_terminal_deposit_rev_parse_failure,
+    TERMINAL_REV_PARSE_INDEX,
+    "rev-parse"
 );

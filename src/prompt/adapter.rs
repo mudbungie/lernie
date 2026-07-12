@@ -12,7 +12,9 @@
 //! line, and the harness is the live writer of
 //! `<conv-repo>/steps/<conv-id>/<NNN>/response.json` (§3.5). Routing
 //! lines through a callback lets the harness append each event to disk
-//! as it arrives and feed the in-memory assembler in the same pass.
+//! as it arrives and stream *content* into the transcript writer's
+//! staging sink (§2.3) in the same pass — one stream, two sinks, no
+//! read-back.
 //!
 //! **Exit code is diagnostic (§4.4).** brazen surfaces every failure
 //! in-band as an `Error` event on stdout and *also* sets a sysexits

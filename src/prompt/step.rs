@@ -23,8 +23,9 @@
 //!   `IN_CLOSE_WRITE` end-of-stream signal (§3.5). Diagnostic-only;
 //!   the harness never reads it back (§2.3).
 //! - `tools/<tool-id>/` — per-tool-call records (`input.json`,
-//!   `output.json`); the harness *does* read `output.json` to
-//!   assemble the next step's `tool_result` blocks (§3.3).
+//!   `output.json`); diagnostic raw capture, written but never read at
+//!   runtime (§2.3 Diagnostic-only contract). A tool result's runtime
+//!   home is its transcript entry, `messages/NNN-tool.json` (§2.3, §3.3).
 //! - `assistant.staging.json` — the transcript entry under
 //!   construction (§2.3 *The transcript writer*): the writer's own
 //!   sink, not a diagnostic record, renamed out to the worktree at

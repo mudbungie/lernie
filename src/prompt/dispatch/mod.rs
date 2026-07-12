@@ -16,11 +16,12 @@
 //!    appended verbatim to `response.json` (§4.4). Closing the
 //!    `response.json` fd at step resolution is the §3.5 IN_CLOSE_WRITE
 //!    completion signal.
-//! 4. **Step loop (§2.5).** If the completion's terminal reason is
-//!    `Finish{ToolUse}`, run every emitted `tool_use` block through the
-//!    [`crate::prompt::ToolExecutor`], then assemble a follow-up step
-//!    whose user message carries one `tool_result` block per call. Any
-//!    other terminal reason ends the loop.
+//! 4. **Step loop (§2.5).** Each step re-assembles its model-facing
+//!    history from the read-state commit's tree ([`assembler`], §2.3,
+//!    §5). If the settled assistant entry carries any `tool_use` block,
+//!    run every one through the [`crate::prompt::ToolExecutor`] —
+//!    committing each `tool_result` as a transcript entry — then loop; a
+//!    step with no `tool_use` block is terminal.
 //! 5. Dispatch the terminal compactor off the tip (§2.7).
 //! 6. Rebase onto `main` and `--no-ff` merge (§2.6).
 
@@ -41,7 +42,8 @@ use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
 use crate::config::{Budgets, Model, RetryConfig};
 use crate::template::ROOT_WORKTREE;
-use brazen::{Content, Message, Role};
+use assembler::assemble;
+use brazen::Content;
 use model_call::ModelCall;
 use std::ffi::OsString;
 use std::path::Path;
@@ -53,6 +55,11 @@ use tool_step::run_tool_calls;
 /// The trunk branch every root conversation eventually merges into
 /// (ARCH §2.3).
 const TRUNK_BRANCH: &str = "main";
+
+/// Origin token for the user's own messages in the transcript
+/// (`messages/NNN-user.md`, §2.3). `assistant` and `tool` are reserved;
+/// every other sender is an agent id or `user`.
+const USER_SENDER: &str = "user";
 
 /// Per-request `max_tokens` output cap — one model call's output
 /// ceiling. Distinct from the §6 spend budgets ([`Budgets`]), which
@@ -116,10 +123,6 @@ pub(super) fn run_exchange(
     spawn_branch(&primary_worktree, &worktree_path, &branch_name, deps)?;
 
     let system_with_goal = prepend_goal(user_message, &resolved.soul);
-    // The growing canonical-request `messages` list across loop
-    // iterations (§2.5). Step 1's user message is bare text; tool-result
-    // follow-ups append `ToolResult` blocks.
-    let mut messages: Vec<Message> = vec![user_message_block(user_message)];
 
     let call = ModelCall {
         adapter: deps.adapter,
@@ -142,6 +145,17 @@ pub(super) fn run_exchange(
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
             commit_dispatch(&worktree_path, &conv_id, deps)?;
+            // Deliver the initial user message as the first transcript
+            // entry (§2.3, §2.11) — the pre-inbox stand-in for the
+            // step-boundary drain. Assembly reads it back as step 1's
+            // user-role message.
+            transcript::commit_message(
+                &worktree_path,
+                &conv_id,
+                USER_SENDER,
+                user_message,
+                deps.git,
+            )?;
             tools = tools::compose(&worktree_path, resolved.tools)?;
         }
 
@@ -168,10 +182,15 @@ pub(super) fn run_exchange(
             break;
         }
 
+        // §2.3 / §5: assemble the model-facing history from the
+        // read-state commit's tree (the worktree checkout equals that
+        // commit at step start). One code path for running, retry, and
+        // replay — no in-memory history, no git-log walk.
+        let messages = assemble(&worktree_path)?;
         let request = model_call::build_request(
             &resolved.model.model_id,
             &system_with_goal,
-            messages.clone(),
+            messages,
             tools.clone(),
             DEFAULT_MAX_TOKENS,
         );
@@ -184,7 +203,7 @@ pub(super) fn run_exchange(
             serde_json::to_vec(&request).expect("CanonicalRequest is always serializable");
         let started_at = deps.clock.now_iso8601();
         let response_path = repo.join(&step_dir_rel_str).join(RESPONSE_FILE);
-        let completion = model_call::run(&call, &request_bytes, &response_path)?;
+        model_call::run(&call, &request_bytes, &response_path)?;
         let ended_at = deps.clock.now_iso8601();
 
         write_meta(
@@ -200,20 +219,25 @@ pub(super) fn run_exchange(
         // Transcript writer (§2.3): the model call settled complete, so
         // seal-and-rename the staging entry into `messages/NNN-assistant.json`
         // and commit it — the entry that advances the branch tip for the
-        // next step's read state (§2.10). Runs alongside the shipped
-        // in-memory accumulator path (below), which still assembles the
-        // next request until bl-26cb re-points it.
+        // next step's read state (§2.10). The committed blocks come back
+        // as this step's assistant content (their one home, §2.3).
         let staging_path = repo.join(&step_dir_rel_str).join(STAGING_FILE);
-        transcript::commit_assistant(&worktree_path, &conv_id, &staging_path, deps.git)?;
+        let assistant_content =
+            transcript::commit_assistant(&worktree_path, &conv_id, &staging_path, deps.git)?;
 
-        if !completion.is_tool_use() {
+        // The step continues iff it emitted tool calls to resolve (§2.5);
+        // a step with no `tool_use` block is terminal.
+        let has_tool_use = assistant_content
+            .iter()
+            .any(|block| matches!(block, Content::ToolUse { .. }));
+        if !has_tool_use {
             break;
         }
 
-        // §2.5 pairing: every tool_use gets a matching tool_result on
-        // the next user message, in emission order.
-        let assistant_content = completion.content;
-        let tool_results = run_tool_calls(
+        // §2.5 pairing: run each tool_use, committing its tool_result as
+        // a transcript entry (§2.3). The next step re-assembles the whole
+        // history from the tree — nothing accumulates in memory.
+        run_tool_calls(
             repo,
             &worktree_path,
             &conv_id,
@@ -221,14 +245,6 @@ pub(super) fn run_exchange(
             &assistant_content,
             deps,
         )?;
-        messages.push(Message {
-            role: Role::Assistant,
-            content: assistant_content,
-        });
-        messages.push(Message {
-            role: Role::User,
-            content: tool_results,
-        });
         step_seq += 1;
     }
 
@@ -255,14 +271,6 @@ pub(super) fn run_exchange(
     }
 
     Ok(branch_name)
-}
-
-/// A bare-text user message (§4.4 — a `Content::Text`).
-fn user_message_block(text: &str) -> Message {
-    Message {
-        role: Role::User,
-        content: vec![Content::Text(text.to_string())],
-    }
 }
 
 /// `git worktree add -b <branch> <worktree_path> main` — run inside the

@@ -287,14 +287,19 @@ Built-ins:
 - **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously
-  (ARCH §2.5 "Async work uses handles"). Input is `{role, goal}`;
+  (ARCH §2.5). Input is `{role, goal}`;
   the role must resolve to `<conv-repo>/souls/<role>.md` and a
   `roles:` entry in `<conv-repo>/providers.yaml`. Reads the calling
   conversation's repo + branch from the harness-set
   `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` env vars (ARCH §3.3 env
   bullet); spawns through `lernie dispatch <role>` (§3.4). The
   subagent's own step loop and the `await(handle)` tool that
-  resolves the handle ship in subsequent v0.4 phases.
+  resolves the handle ship in subsequent v0.4 phases. (Shipped-state
+  note: the substrate redesign — ARCH §2.5 "Dispatch returns the
+  child's address" — retires the handle/`await` pair, returning the
+  child's address synchronously and delivering its result as an inbox
+  deposit that carries an epitaph, §2.6; retargeting this tool is
+  tracked separately.)
 
 ## Dispatching subagents directly
 

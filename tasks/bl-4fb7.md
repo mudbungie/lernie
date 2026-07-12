@@ -1,0 +1,11 @@
++++
+title = "alignment: coherent vs ARCHITECTURE/PRINCIPLES/TAXONOMY"
+created = 1783832724
+updated = 1783832724
+parent = "bl-79aa"
+root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-79aa"
+on = "claim"
++++

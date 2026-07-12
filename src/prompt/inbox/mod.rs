@@ -5,10 +5,11 @@
 //! This module lands the deposit half of the channel: the executor lock
 //! ([`lock`]), the create-only deposit ([`deposit`]), and the
 //! deposit-starts-a-driver probe ([`probe_and_launch`]) behind the
-//! `lernie message` verb ([`cli_message`]). The delivery drain
-//! (bl-1129), the startup scan (bl-d148), and the result-message return
-//! path (bl-4ce8) ride this substrate but are out of scope here — for
-//! now deposited files simply accumulate in the inbox.
+//! `lernie message` verb ([`cli_message`]). The delivery drain that moves
+//! these files into the transcript lives with the executor's step loop
+//! (bl-1129, [`crate::prompt::dispatch`] — a driver, not a writer); the
+//! startup scan (bl-d148) and the result-message return path (bl-4ce8)
+//! also ride this substrate but are out of scope here.
 //!
 //! **Writer/driver totality (§2.11).** `lernie message` is a *writer*:
 //! it deposits and, if it observes the recipient quiescent (the lock

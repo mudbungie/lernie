@@ -201,8 +201,19 @@ fn prompt_subcommand_compacts_and_merges_conversation_to_main() {
         serde_json::from_slice(&fs::read(step_dir.join("request.json")).unwrap()).unwrap();
     // Typed canonical request: user content is a `Content::Text` array,
     // the goal is pinned at the head of `system`, and `stream` is absent
-    // (brazen's default governs, §4.4).
-    assert_eq!(request["messages"][0]["content"][0]["text"], "ping");
+    // (brazen's default governs, §4.4). The initial message reached the
+    // request through the front door (§2.11): deposited into the inbox and
+    // delivered by the step-1 drain, so its `from:` / `deposited_at:`
+    // frontmatter travels with the body and is model-visible by design.
+    let user_text = request["messages"][0]["content"][0]["text"]
+        .as_str()
+        .unwrap();
+    assert!(
+        user_text.starts_with("---\nfrom: user\n"),
+        "got {user_text:?}"
+    );
+    assert!(user_text.contains("\ndeposited_at: "), "got {user_text:?}");
+    assert!(user_text.ends_with("\n---\nping"), "got {user_text:?}");
     assert!(
         request["system"][0]["text"]
             .as_str()

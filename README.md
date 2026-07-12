@@ -189,10 +189,20 @@ off the tip, and `--no-ff` merges the compacted branch back into `main`:
    `messages/NNN-assistant.json` — a JSON array of canonical `Content`
    blocks — and committed. `NNN` is the branch's transcript counter,
    max-present-plus-one from the `messages/` listing, evaluated at
-   commit time. The initial user message is delivered the same way,
-   committed as the first transcript entry `messages/NNN-user.md`
-   (§2.3, the pre-inbox stand-in for the step-boundary drain, §2.11).
-6. **Step loop (§2.5).** Each step re-assembles its model-facing history
+   commit time. The initial user message now enters through the front
+   door like any other (§2.11): the executor deposits it into the agent's
+   own inbox, and the step-boundary drain delivers it as the first
+   transcript entry `messages/NNN-user.md` (bl-1129) — no bespoke
+   initial-message path beside the drain.
+6. **Step loop (§2.5).** At each step boundary the executor first
+   **drains the inbox** (bl-1129, §2.11): after committing any
+   renamed-but-uncommitted stray a prior death left in `messages/`, it
+   moves each pending `inbox/<agent-id>/<sender>-<NNN>.md` into the
+   worktree as `messages/<counterNNN>-<sender>.md` (a literal `rename(2)`
+   — one home at every instant) and commits the move, in a deterministic
+   `(mtime, filename)` order, ahead of the read-state capture so a
+   delivered message is part of the commit the model call assembles from.
+   Each step then re-assembles its model-facing history
    from the read-state commit's tree — `readdir` of `messages/`, sorted
    by the filename's `NNN` prefix, each entry composed by its origin
    token (`NNN-<sender>.md` → user text, `NNN-assistant.json` → the
@@ -336,11 +346,13 @@ Built-ins:
   calling agent's id, taken from the harness-set `LERNIE_CONV_BRANCH`
   (never model-supplied), so provenance cannot be forged. It goes
   through the front door — `lernie message` (below) — like `dispatch`
-  goes through `lernie dispatch`. **Shipped state:** the deposit lands;
-  delivery (the step-boundary drain that turns the inbox file into a
-  transcript entry, §2.11) is not yet built (bl-1129), so a deposited
-  message accumulates in `inbox/<agent-id>/` until a driver with the
-  drain runs.
+  goes through `lernie dispatch`. **Shipped state:** the deposit lands
+  and the step-boundary drain delivers it (bl-1129) — the next driver to
+  step the branch moves the inbox file into `messages/` as a transcript
+  entry at its next boundary. A deposit into a *quiescent* agent is not
+  yet self-delivering: the driver-launch on a free lease is still a no-op
+  pending `lernie advance` (§6), so such a deposit waits in
+  `inbox/<agent-id>/` until a driver next runs against the branch.
 
 ## Messaging an existing agent directly
 
@@ -362,9 +374,9 @@ re-enters the verb, else `user` for a bare invocation.
   boundary); a free lease means the branch is quiescent.
 - On a free lease the verb launches a driver — `lernie advance` (ARCH
   §6). That verb is not yet implemented, so the launch is a documented
-  no-op for now; the deposit still lands and is delivered by the next
-  driver that runs against the branch once the delivery drain (bl-1129)
-  ships.
+  no-op for now; the deposit still lands and is delivered by the
+  step-boundary drain (bl-1129) of the next driver that runs against the
+  branch.
 
 ## Dispatching subagents directly
 

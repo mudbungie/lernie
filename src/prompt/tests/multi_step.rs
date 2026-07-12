@@ -87,11 +87,16 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     let step1_dir = repo.path().join("steps/ct-1-deadbeef/001");
     let step2_dir = repo.path().join("steps/ct-1-deadbeef/002");
 
-    // Step 1 request: one user message, bare text (a `Content::Text`).
+    // Step 1 request: one user message, the front-door delivery of the
+    // initial message (§2.11) — its deposit frontmatter travels with the
+    // body and is model-visible (`deposited_at` is the first clock tick).
     let req1: Value =
         serde_json::from_slice(&std::fs::read(step1_dir.join("request.json")).unwrap()).unwrap();
     assert_eq!(req1["messages"].as_array().unwrap().len(), 1);
-    assert_eq!(req1["messages"][0]["content"][0]["text"], "list files");
+    assert_eq!(
+        req1["messages"][0]["content"][0]["text"],
+        "---\nfrom: user\ndeposited_at: iso-1\n---\nlist files"
+    );
 
     // Step 2 request: §2.5 pairing — assistant tool_use + user
     // tool_result (whose content is a canonical `Content` array).
@@ -113,33 +118,38 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     assert_eq!(finish_reason(&resp2), "stop");
     assert_eq!(dispatcher.calls.borrow().len(), 1);
 
-    // Git op log: 3 (step 1 setup) + 2 (user-message entry add+commit) +
-    // 1 (step 1 rev-parse) + 2 (step-1 assistant transcript entry
-    // add+commit) + 2 (the tool transcript entry add+commit) + 1 (step 2
-    // rev-parse) + 2 (step-2 assistant entry add+commit) + 6 (merge-back)
-    // = 19. The version guard runs no git.
+    // Git op log: 3 (step 1 setup) + 1 (step-1 drain stray-probe) + 2
+    // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
+    // (step-1 assistant transcript entry add+commit) + 2 (the tool
+    // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
+    // (step 2 rev-parse) + 2 (step-2 assistant entry add+commit) + 6
+    // (merge-back) = 21. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 19);
+    assert_eq!(runs.len(), 21);
     assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[2].1[2].contains("step 001: dispatch"));
-    // The initial user message is the first transcript entry (001).
-    assert_eq!(runs[3].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[4].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[5].1, vec!["rev-parse", "HEAD"]);
+    // Step-1 drain (§2.11): the clean stray-probe, then the initial user
+    // message delivered from the inbox as the first transcript entry (001).
+    assert_eq!(runs[3].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[4].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[5].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[6].1, vec!["rev-parse", "HEAD"]);
     // Step 1's transcript: assistant entry (002), then the tool result
     // entry (003) — the §2.3 ordering (assistant output before its tool
     // results). Counters are max-present-plus-one from the messages/
     // listing, so they never collide with the step number.
-    assert_eq!(runs[6].1, vec!["add", "messages/002-assistant.json"]);
-    assert!(runs[7].1[2].contains("transcript 002: assistant"));
-    assert_eq!(runs[8].1, vec!["add", "messages/003-tool.json"]);
-    assert!(runs[9].1[2].contains("transcript 003: tool"));
-    // Step 2 opens with the branch-tip capture (advanced by step 1's
-    // transcript commits), then commits its own assistant entry (004).
-    assert_eq!(runs[10].1, vec!["rev-parse", "HEAD"]);
-    assert_eq!(runs[11].1, vec!["add", "messages/004-assistant.json"]);
-    assert!(runs[12].1[2].contains("transcript 004: assistant"));
-    assert_eq!(runs[13].1, vec!["rebase", "main"]);
+    assert_eq!(runs[7].1, vec!["add", "messages/002-assistant.json"]);
+    assert!(runs[8].1[2].contains("transcript 002: assistant"));
+    assert_eq!(runs[9].1, vec!["add", "messages/003-tool.json"]);
+    assert!(runs[10].1[2].contains("transcript 003: tool"));
+    // Step 2 opens with its own boundary drain (empty inbox → stray-probe
+    // only), then the branch-tip capture (advanced by step 1's transcript
+    // commits), then commits its own assistant entry (004).
+    assert_eq!(runs[11].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[12].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[13].1, vec!["add", "messages/004-assistant.json"]);
+    assert!(runs[14].1[2].contains("transcript 004: assistant"));
+    assert_eq!(runs[15].1, vec!["rebase", "main"]);
 
     // The tool entry on disk is the canonical tool_result block.
     let tool_entry = worktree.join("messages/003-tool.json");

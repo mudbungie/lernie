@@ -133,12 +133,13 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
 
 #[test]
 fn budget_ref_write_failure_surfaces_as_a_git_error() {
-    // The marker `update-ref` is git op #11 in the exhaustion path (0
-    // worktree add, 1 dispatch add, 2 dispatch commit, 3/4 user-message
-    // transcript add+commit, 5 step-1 rev-parse, 6/7 step-1 assistant
-    // transcript add+commit, 8/9 the tool transcript add+commit, 10
-    // step-2 rev-parse, 11 mark_exhausted update-ref). Failing it
-    // surfaces the §6 exhaustion write's error arm.
+    // The marker `update-ref` is git op #13 in the exhaustion path (0
+    // worktree add, 1 dispatch add, 2 dispatch commit, 3 step-1 drain
+    // stray-probe, 4/5 user-message delivery add+commit, 6 step-1
+    // rev-parse, 7/8 step-1 assistant transcript add+commit, 9/10 the tool
+    // transcript add+commit, 11 step-2 drain stray-probe, 12 step-2
+    // rev-parse, 13 mark_exhausted update-ref). Failing it surfaces the §6
+    // exhaustion write's error arm.
     let repo = scaffold_repo_with_workflow(
         VALID_PER_REPO_PROVIDERS_YAML,
         WORKFLOW_WITH_TOKEN_BUDGET,
@@ -149,7 +150,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(11);
+    let git = StubGit::failing_at(13);
     let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 

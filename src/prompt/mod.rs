@@ -43,7 +43,7 @@ mod tests;
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
-pub use dispatch::{RealSleeper, Sleeper};
+pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 pub use worker::WorkerRequest;
@@ -188,6 +188,12 @@ pub struct Deps<'a> {
     pub dispatcher: &'a dyn Dispatcher,
     pub tool_executor: &'a dyn ToolExecutor,
     pub config_root: &'a Path,
+    /// The executor's SIGTERM flag (ARCH §2.9 step 3), observed at the
+    /// step-loop check points. Production wires the process-wide
+    /// [`dispatch::stop_flag`] after [`dispatch::install_stop_handler`];
+    /// tests inject a constructed [`std::sync::atomic::AtomicBool`] so the
+    /// stopped-deposit path is exercised without a real signal.
+    pub stop: &'a std::sync::atomic::AtomicBool,
 }
 
 /// Drive one root conversation against `repo`: load configs, run the

@@ -8,6 +8,7 @@ mod fixtures;
 mod happy;
 mod multi_step;
 mod multi_step_terminal;
+mod stop_deposit;
 mod streams;
 mod stubs;
 mod tool_stub;

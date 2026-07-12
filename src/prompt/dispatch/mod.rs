@@ -1,5 +1,5 @@
 //! Root-conversation branch orchestration (ARCH §2.3, §2.5, §2.6, §2.7,
-//! §2.8, §2.10).
+//! §2.8, §2.9, §2.10).
 //!
 //! [`run_exchange`] executes a single root conversation off `main`:
 //!
@@ -13,11 +13,10 @@
 //!    Each step re-assembles its history from the read-state commit's tree
 //!    ([`assembler`], §2.3, §5); a settled `tool_use` loops, no `tool_use`
 //!    is terminal.
-//! 4. On a normal terminal event, dispatch the terminal compactor off the
-//!    tip (§2.7) — the compaction merge is the one merge left (§2.6).
-//!    Merge-back is gone: the root branch persists on its own ref (§2.4).
-//!    Every terminal event ([`result_deposit`]) deposits a result message
-//!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root.
+//! 4. Every terminal event ([`result_deposit`]) deposits a result message
+//!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root; a
+//!    stop deposits `stopped` on its way out (§2.9, [`terminal`]). A normal
+//!    end dispatches the terminal compactor (§2.6, §2.7); stops/exhaustion skip it (§2.4).
 
 mod assembler;
 mod drain;
@@ -25,14 +24,16 @@ mod model_call;
 mod result_deposit;
 mod staging;
 mod step_commit;
+pub mod stop_signal;
+mod terminal;
 mod tool_step;
 mod tools;
 mod transcript;
 mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
+pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
-use super::budget;
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
@@ -123,6 +124,8 @@ pub(super) fn run_exchange(
 
     let mut step_seq: u32 = 1;
     let mut exhausted = false;
+    // §2.9 step 3: set when a check point sees the SIGTERM handler flag.
+    let mut stopped = false;
     // §3.3/§4.3: the role's declared tools composed against the schemas
     // committed under `descriptions/tools/` (§2.10), once at step 1 and
     // cloned into every step's request (git-inherited, stable mid-branch).
@@ -143,28 +146,22 @@ pub(super) fn run_exchange(
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
-        // §6 budget check at the model-call boundary: tokens/wall/depth
-        // derived live over the tree (no stored counter, PRINCIPLES SSOT).
-        // Exhaustion writes `refs/lernie/budget-exhausted/<branch>` and
-        // ceases the loop — an ordinary terminal state.
-        if let Some(ex) = budget::check(repo, &branch_name, &resolved.budgets) {
-            eprintln!("lernie: budget {ex} on {branch_name}; stopping (§6)");
-            budget::mark_exhausted(&worktree_path, &branch_name, deps.git).map_err(|source| {
-                Error::Git {
-                    op: "budget-exhausted update-ref",
-                    source,
-                }
-            })?;
-            // Terminal event (§2.3 step 5, §6): deposit a `budget-exhausted`
-            // result message. The agent did not speak this step, so no body.
-            result_deposit::deposit_terminal(
-                repo,
-                &conv_id,
-                &worktree_path,
-                Epitaph::BudgetExhausted,
-                None,
-                deps,
-            )?;
+        // §2.9 step 3 check point: a stop between steps (or during a prior
+        // step's tool work) is caught here, before the next model call.
+        if stop_signal::stopped(deps) {
+            stopped = true;
+            break;
+        }
+
+        // §6 budget check (deposits + marks the ref on exhaustion, §2.9).
+        if terminal::budget_exhausted(
+            repo,
+            &conv_id,
+            &branch_name,
+            &worktree_path,
+            &resolved.budgets,
+            deps,
+        )? {
             exhausted = true;
             break;
         }
@@ -188,7 +185,16 @@ pub(super) fn run_exchange(
             serde_json::to_vec(&request).expect("CanonicalRequest is always serializable");
         let started_at = deps.clock.now_iso8601();
         let response_path = repo.join(&step_dir_rel_str).join(RESPONSE_FILE);
-        model_call::run(&call, &request_bytes, &response_path)?;
+        let call_outcome = model_call::run(&call, &request_bytes, &response_path);
+        // §2.9 step 3 check point: a stop delivered during the call killed
+        // `bz`, leaving `response.json` without a trailing `end` (the stop
+        // signature, untouched here) — surfacing as `AdapterHalfStream`.
+        // With the flag set it is a stop, not a failure: swallow and exit.
+        if stop_signal::stopped(deps) {
+            stopped = true;
+            break;
+        }
+        call_outcome?;
         let ended_at = deps.clock.now_iso8601();
 
         write_meta(
@@ -212,9 +218,8 @@ pub(super) fn run_exchange(
             deps.git,
         )?;
 
-        // A step with no `tool_use` block is terminal (§2.5): deposit a
-        // `final-response` result message carrying the terminal response
-        // iff the agent spoke (§2.3 step 5, §2.6). No-op for a root.
+        // No `tool_use` block is terminal (§2.5): deposit a `final-response`
+        // result, response body iff the agent spoke (§2.6). No-op for a root.
         if !assistant_content
             .iter()
             .any(|b| matches!(b, Content::ToolUse { .. }))
@@ -231,8 +236,8 @@ pub(super) fn run_exchange(
             break;
         }
 
-        // §2.5 pairing: run each tool_use, committing its tool_result as
-        // a transcript entry (§2.3); the next step re-assembles from the tree.
+        // §2.5 pairing: run each tool_use, committing its tool_result as a
+        // transcript entry (§2.3); the next step re-assembles from the tree.
         run_tool_calls(
             repo,
             &worktree_path,
@@ -244,22 +249,18 @@ pub(super) fn run_exchange(
         step_seq += 1;
     }
 
-    // An exhausted conversation is terminal-by-exhaustion (§6, §2.9): it
-    // persists behind the budget-exhausted ref with no compaction.
-    // Otherwise the normal terminal path dispatches the terminal
-    // compactor off the tip (§2.7), whose return lands the compaction
-    // merge — the one merge left in the system (§2.6) — into this branch.
-    // There is no merge-back: the root branch persists on its own ref
-    // (§2.4), and any child's return already rode the result-message
-    // channel above (§2.6).
-    if !exhausted {
-        deps.dispatcher
-            .dispatch("compactor", repo, &branch_name, None)
-            .map_err(|source| Error::DispatchFailed {
-                role: "compactor",
-                source,
-            })?;
-    }
+    // Terminal handling (§2.7, §2.9, §6): stopped deposits and skips
+    // compaction, exhausted skips it, the ordinary path dispatches the
+    // terminal compactor — the one merge left (§2.6). No merge-back.
+    terminal::finish(
+        repo,
+        &conv_id,
+        &branch_name,
+        &worktree_path,
+        stopped,
+        exhausted,
+        deps,
+    )?;
 
     Ok(branch_name)
 }

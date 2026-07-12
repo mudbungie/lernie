@@ -4,20 +4,18 @@
 //!
 //! - `new <path>` — scaffold a conversation repo from the embedded
 //!   template (ARCH §2.2).
-//! - `prompt <repo> <message>` — drive one root conversation end-to-end:
-//!   spawn the `<conv-id>` branch, drive the model call via `bz` (§4.4),
-//!   and compact via the compaction merge (§2.6 — no merge-back).
-//! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent
-//!   dispatch re-entry (ARCH §3.4). `<role>` is positional; per-role
-//!   `--goal` rules (required for `worker`, rejected for `compactor`)
-//!   are validated in [`run_dispatch_cli`] rather than the clap surface.
+//! - `prompt <repo> <message>` — drive one root conversation: spawn the
+//!   `<conv-id>` branch, model-call via `bz` (§4.4), compact (§2.6).
+//! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent dispatch
+//!   re-entry (ARCH §3.4). `<role>` is positional; per-role `--goal` rules
+//!   (required for `worker`, rejected for `compactor`) are validated in
+//!   [`run_dispatch_cli`] rather than the clap surface.
 //! - `stop <repo> <branch>` — cascading SIGTERM on the harness's
 //!   pgid (ARCH §2.9); idempotent for already-stopped branches.
 //! - `message <workspace> <agent> <content>` — deposit into an agent's
 //!   inbox and probe the executor lock (§2.11, [`prompt::inbox::cli_run`]).
-//! - `tool <name>` — in-process built-in tool entry (ARCH §3.3): the
-//!   executor falls through to `<lernie> tool <name>` after external
-//!   lookups miss. Reads `tool_use.input` JSON on stdin, bytes on stdout.
+//! - `tool <name>` — in-process built-in tool entry (ARCH §3.3), reached when
+//!   external lookups miss: `tool_use.input` JSON on stdin, bytes on stdout.
 
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
@@ -128,6 +126,7 @@ fn main() -> ExitCode {
         Command::Prompt { repo, message } => {
             prompt::inbox::scan::scan_startup(&repo); // §2.11 startup scan
             prompt::stop::become_pgid_leader(); // §2.9 cascade leader
+            prompt::install_stop_handler(); // §2.9 step-3 stopped deposit
             let dispatcher = match SpawnDispatcher::new() {
                 Ok(d) => d,
                 Err(e) => {
@@ -152,6 +151,7 @@ fn main() -> ExitCode {
                 dispatcher: &dispatcher,
                 tool_executor: &tool_executor,
                 config_root: &roots.config,
+                stop: prompt::stop_flag(),
             };
             match prompt::run(&repo, &message, &deps) {
                 Ok(branch) => {

@@ -230,8 +230,10 @@ parent's inbox (§2.6):
    entry, so it always lands in the immediately following user message.
 7. **Terminal return (§2.6, §2.3 step 5).** Every terminal event —
    normal completion (`final-response`), budget exhaustion
-   (`budget-exhausted`, §6) — deposits a **result message** into the
-   parent's inbox: an ordinary deposit whose frontmatter adds `epitaph:`
+   (`budget-exhausted`, §6), and stop (`stopped`, §2.9 — the executor's
+   SIGTERM handler deposits on its way out) — deposits a **result
+   message** into the parent's inbox: an ordinary deposit whose
+   frontmatter adds `epitaph:`
    and `terminal_ref:` (the branch tip) and whose body is the terminal
    response iff the agent spoke. For a root this is a structural no-op —
    a root has no parent inbox; its response answers the user (§2.4). The
@@ -285,6 +287,15 @@ holding the latest step's `response.json` open — no sidecar pid file —
 so the same `IN_CLOSE_WRITE` signal that drives the §3.5 in-flight UI
 classification also targets the cascade. Linux only.
 
+The group signal reaches every member independently: `bz` installs no
+handler and dies at once (leaving the missing-`end` signature, §4.4),
+while the **executor catches its own copy** — SIGTERM is catchable — and,
+instead of dying on the spot, deposits its branch's `stopped` result on
+its way out (§2.9 step 3, executor-side, "Return is not a verb") and then
+exits cleanly. Catching shields nobody: the kernel already delivered to
+`bz` and the tools. For a root the deposit is a no-op (no parent inbox);
+the observable is the clean exit.
+
 Behavior:
 
 - **Idempotent.** A branch with no live writer (already stopped, or the
@@ -294,8 +305,9 @@ Behavior:
   on stderr.
 - **No on-disk cancel marker.** The §2.9 signature of a stopped branch
   is the latest step's `response.json` closed without a terminal `end`
-  event — produced for free by the kernel closing the harness's open fds
-  when the process terminates (and `bz` dies with it, §4.4).
+  event — produced by `bz` dying mid-stream on its own SIGTERM (§4.4);
+  the executor's `stopped` deposit is an independent write to the inbox
+  tree and never touches that signature.
 
 The frontend's stop button (per [ARCH §3.5](docs/ARCHITECTURE.md#35-ui-contract))
 exec's this exact subcommand; there is no second control surface.
@@ -349,10 +361,12 @@ Built-ins:
   an epitaph (§2.6, §2.11), so `await`/`check` had nothing left to
   observe and are gone. The return path — the result-message deposit
   and the delivery-time work-product transfer — is now built (bl-4ce8,
-  §2.6); the epitaph deposits are wired at the root's terminal events but
-  fire for a child only once children run a step loop (`worker.rs` still
-  stops at the dispatch commit), so today `dispatch` spawns the child and
-  returns its address while the child does not yet reach a terminal event.
+  bl-9f53, §2.6); the epitaph deposits (final-response, budget-exhausted,
+  and stop — the executor-side SIGTERM handler, §2.9) are wired at the
+  root's terminal events but fire for a child only once children run a
+  step loop (`worker.rs` still stops at the dispatch commit), so today
+  `dispatch` spawns the child and returns its address while the child does
+  not yet reach a terminal event.
 - **`message`** — deposits content into an *existing* agent's inbox
   (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
   by its agent id (its branch name / hyphenated descent). Unlike

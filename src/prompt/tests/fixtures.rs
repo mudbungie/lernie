@@ -131,7 +131,18 @@ pub(super) fn valid_deps<'a>(
         dispatcher,
         tool_executor,
         config_root,
+        stop: never_stopped(),
     }
+}
+
+/// A stop flag that is never set — the default for tests off the §2.9
+/// stop path. Returned from a function (not a bare `&static`, which const-
+/// promotes and reads as an uncovered line) so `valid_deps` can hand out a
+/// borrow without every caller threading one. Stop-path tests construct
+/// their own live [`AtomicBool`] instead.
+pub(super) fn never_stopped() -> &'static std::sync::atomic::AtomicBool {
+    static NEVER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    &NEVER
 }
 
 /// Drive [`crate::prompt::run`] with default stubs (no-override path:

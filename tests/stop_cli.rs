@@ -1,7 +1,10 @@
 //! Integration test: cascade. `lernie prompt` against a stalling
-//! httpmock + `lernie stop` → harness dies (taking its `bz` child with
-//! it), response.json closed without a terminal `end`, branch left
-//! unmerged (ARCH §2.9).
+//! httpmock + `lernie stop` → the group SIGTERM kills `bz` (no handler),
+//! and the executor catches its own copy, deposits its `stopped` result
+//! on the way out, and exits cleanly (ARCH §2.9 step 3 — "Return is not a
+//! verb"). response.json is left closed without a terminal `end` (the
+//! stop signature, an independent write untouched by the deposit) and the
+//! branch is left unmerged.
 //!
 //! Idempotence + error-path tests live in `tests/stop_idempotence.rs`.
 
@@ -62,10 +65,15 @@ fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
         String::from_utf8_lossy(&stop_out.stderr)
     );
 
+    // §2.9 step 3: the executor catches SIGTERM, deposits its result on
+    // the way out, and exits cleanly — it does not die on the spot. (This
+    // is a root conversation, so the deposit is a structural no-op; the
+    // clean exit is the observable.) `bz` still died from its own copy of
+    // the group SIGTERM, leaving the missing-`end` signature below.
     let prompt_status = prompt_child.wait().expect("reap lernie prompt");
     assert!(
-        !prompt_status.success(),
-        "lernie prompt must exit non-zero after stop, got {prompt_status:?}"
+        prompt_status.success(),
+        "lernie prompt must exit cleanly after depositing on stop, got {prompt_status:?}"
     );
 
     // §2.9 on-disk signature: latest response.json closed and either

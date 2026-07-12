@@ -1,0 +1,146 @@
+//! §2.9 step-3 stop path: the executor catches SIGTERM, deposits the
+//! branch's result with a `stopped` epitaph on its way out, and exits
+//! without compacting — the deposit is executor-side ("Return is not a
+//! verb"). Two check points are exercised: a stop seen *between* steps
+//! (before the next model call) and a stop delivered *during* the model
+//! call (which kills `bz`, leaving `response.json` without a trailing
+//! `end` — the on-disk stop signature, which this path must not disturb).
+//!
+//! The `FixedClock` compact stamp is `ct-1`, so the conv-id
+//! `ct-1-deadbeef` parses as a child of `ct` (§2.11 token arithmetic) —
+//! the deposit therefore lands a real file under `inbox/ct/` rather than
+//! no-opping, letting these tests assert the `stopped` epitaph directly.
+
+use super::fixtures::*;
+use crate::prompt::adapter::AdapterRunner;
+use crate::prompt::step::step_dir_rel;
+use crate::prompt::{Deps, run};
+use std::ffi::OsString;
+use std::io;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// Read the single deposited result message under `inbox/ct/`.
+fn deposited_result(repo: &std::path::Path) -> String {
+    let dir = repo.join("inbox").join("ct");
+    let entry = std::fs::read_dir(&dir)
+        .unwrap_or_else(|e| panic!("no inbox/ct dir ({e})"))
+        .map(|e| e.unwrap().path())
+        .find(|p| p.extension().is_some_and(|x| x == "md"))
+        .expect("a deposited .md result");
+    std::fs::read_to_string(entry).unwrap()
+}
+
+#[test]
+fn stop_between_steps_deposits_stopped_and_skips_compaction() {
+    // The stop flag is already set when the loop reaches its first check
+    // point (after the step-1 dispatch commit, before the model call): the
+    // loop breaks straight to the on-the-way-out deposit. The adapter is
+    // scripted with the version guard reply only — a model call would
+    // panic "called more times than scripted", proving none fired.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
+    let git = StubGit::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
+    let stop = AtomicBool::new(true);
+
+    let mut deps = valid_deps(
+        &adapter,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &dispatcher,
+        &tool_executor,
+        harness.path(),
+    );
+    deps.stop = &stop;
+
+    let branch = run(repo.path(), "hi", &deps).unwrap();
+    assert_eq!(branch, "ct-1-deadbeef");
+    // No terminal compactor for a stopped branch (§2.9, like exhausted).
+    assert!(dispatcher.calls.borrow().is_empty());
+    // The result deposited on the way out carries the `stopped` epitaph.
+    assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
+    // The model call never ran, so no step-1 response record exists.
+    assert!(!repo.path().join(step_dir_rel("ct-1-deadbeef", 1)).exists());
+}
+
+/// Adapter whose model call simulates SIGTERM arriving mid-stream: it
+/// flips the injected stop flag, then dies after a lone `message_start`
+/// with no trailing `end` — exactly `bz`'s §2.9 on-disk signature. The
+/// version-guard call is served normally and does not flip the flag.
+struct FlipMidCall<'a> {
+    flag: &'a AtomicBool,
+}
+
+impl AdapterRunner for FlipMidCall<'_> {
+    fn run(
+        &self,
+        _binary: &OsString,
+        args: &[&str],
+        _stdin: &[u8],
+        on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
+    ) -> io::Result<()> {
+        if args.contains(&"--version") {
+            for line in version_line().split(|b| *b == b'\n') {
+                if !line.is_empty() {
+                    on_line(line)?;
+                }
+            }
+            return Ok(());
+        }
+        // The model call: SIGTERM lands now. Emit a `message_start` and
+        // stop — no `end`, the stop signature — then set the flag so the
+        // executor's next check point reads the stop.
+        on_line(br#"{"type":"message_start","v":1,"role":"assistant"}"#)?;
+        self.flag.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+}
+
+#[test]
+fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
+    let stop = AtomicBool::new(false);
+    let adapter = FlipMidCall { flag: &stop };
+    let git = StubGit::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
+
+    let deps = Deps {
+        adapter: &adapter,
+        sleeper: &sleeper,
+        git: &git,
+        clock: &clock,
+        id_gen: &id,
+        dispatcher: &dispatcher,
+        tool_executor: &tool_executor,
+        config_root: harness.path(),
+        stop: &stop,
+    };
+
+    // The half-stream mid-call would surface as `AdapterHalfStream`, but
+    // with the stop flag set the executor treats it as a stop: `run`
+    // returns Ok, not an error.
+    let branch = run(repo.path(), "hi", &deps).unwrap();
+    assert_eq!(branch, "ct-1-deadbeef");
+    assert!(dispatcher.calls.borrow().is_empty());
+    assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
+
+    // The stop signature is intact: `response.json` was written (the
+    // model call ran) and closed without a trailing `end` event. The
+    // deposit above wrote to a different tree (`inbox/`), untouched here.
+    let response = repo
+        .path()
+        .join(step_dir_rel("ct-1-deadbeef", 1))
+        .join("response.json");
+    let lines = parse_jsonl(&std::fs::read(&response).unwrap());
+    assert_eq!(lines.first().unwrap()["type"], "message_start");
+    assert!(
+        !lines.iter().any(|e| e["type"] == "end"),
+        "stopped step must have no terminal `end` (the §2.9 signature)"
+    );
+}

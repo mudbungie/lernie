@@ -35,6 +35,7 @@ mod transcript;
 pub use model_call::{RealSleeper, Sleeper};
 
 use super::budget;
+use super::inbox;
 use super::merge::rebase_and_merge;
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
@@ -96,6 +97,21 @@ pub(super) fn run_exchange(
     let branch_name = conv_id.clone();
     let worktree_path = repo.join(&conv_id);
     let primary_worktree = repo.join(ROOT_WORKTREE);
+
+    // Executor lock (§2.11): acquire the branch's inbox lease before any
+    // work. Held for the whole step loop and released by the kernel on
+    // exit. Losing the acquire means another driver already owns this
+    // branch — exit as a clean no-op (Writer/driver totality). A fresh
+    // root prompt always wins (its conv-id is unique), so the None arm is
+    // the re-entry/concurrency guard, not the common path.
+    let inbox = inbox::inbox_dir(repo, &conv_id);
+    let _executor_lock = match inbox::try_acquire(&inbox).map_err(|source| Error::ExecutorLock {
+        path: inbox.clone(),
+        source,
+    })? {
+        Some(guard) => guard,
+        None => return Ok(branch_name),
+    };
 
     spawn_branch(&primary_worktree, &worktree_path, &branch_name, deps)?;
 

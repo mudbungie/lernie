@@ -319,6 +319,43 @@ Built-ins:
   observe and are gone. That inbox return path is specced (ARCH §2.11)
   but not yet implemented; until it lands, `dispatch` spawns the child
   and returns its address, but the result does not yet flow back.
+- **`message`** — deposits content into an *existing* agent's inbox
+  (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
+  by its agent id (its branch name / hyphenated descent). Unlike
+  `dispatch` it starts no branch and returns no address — it deposits
+  synchronously and returns `{"status":"deposited"}`. The sender is the
+  calling agent's id, taken from the harness-set `LERNIE_CONV_BRANCH`
+  (never model-supplied), so provenance cannot be forged. It goes
+  through the front door — `lernie message` (below) — like `dispatch`
+  goes through `lernie dispatch`. **Shipped state:** the deposit lands;
+  delivery (the step-boundary drain that turns the inbox file into a
+  transcript entry, §2.11) is not yet built (bl-1129), so a deposited
+  message accumulates in `inbox/<agent-id>/` until a driver with the
+  drain runs.
+
+## Messaging an existing agent directly
+
+`lernie message <workspace> <agent> <content>` deposits a message into
+`<agent>`'s inbox and, finding the recipient quiescent, would launch a
+driver to deliver it (ARCH §2.11, §3.4). The sender is read from
+`LERNIE_CONV_BRANCH` — the calling agent's id when the `message` tool
+re-enters the verb, else `user` for a bare invocation.
+
+- The deposit is a create-only file at `<workspace>/inbox/<agent>/
+  <sender>-<NNN>.md` (temp-path + atomic rename), with `from:` /
+  `deposited_at:` frontmatter and the content as its body. `<NNN>` is
+  the sender's own sequence, derived as max-present-plus-one over its
+  existing files in that inbox.
+- After depositing, the verb probes the **executor lock** (`flock` on
+  the inbox directory): the same lease the shipped `lernie prompt` step
+  loop holds for its whole run, releasing it on exit. A held lease means
+  a driver is already stepping the branch (it will deliver at its next
+  boundary); a free lease means the branch is quiescent.
+- On a free lease the verb launches a driver — `lernie advance` (ARCH
+  §6). That verb is not yet implemented, so the launch is a documented
+  no-op for now; the deposit still lands and is delivered by the next
+  driver that runs against the branch once the delivery drain (bl-1129)
+  ships.
 
 ## Dispatching subagents directly
 

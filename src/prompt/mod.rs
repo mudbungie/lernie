@@ -28,6 +28,7 @@ pub mod clock;
 pub mod compactor;
 pub mod dispatch;
 pub mod dispatcher;
+pub mod inbox;
 pub mod merge;
 pub mod step;
 pub mod stop;
@@ -124,6 +125,12 @@ pub enum Error {
     #[error("git {op}: {source}")]
     Git {
         op: &'static str,
+        #[source]
+        source: std::io::Error,
+    },
+    #[error("acquire executor lock on inbox {path}: {source}")]
+    ExecutorLock {
+        path: PathBuf,
         #[source]
         source: std::io::Error,
     },

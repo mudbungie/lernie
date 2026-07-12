@@ -1,7 +1,8 @@
 +++
 title = "Inbox substrate: executor flock, deposit, lernie message verb, message tool [substrate]"
 created = 1783831462
-updated = 1783831462
+updated = 1783831660
+claimant = "Sable"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["substrate"]

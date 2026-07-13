@@ -129,9 +129,15 @@ fn resolve_cli_sender_uses_branch_when_set() {
 #[test]
 fn cli_run_deposits_via_production_deps() {
     // Exercises the production wiring: env-derived sender, SystemClock,
-    // AdvanceLauncher (no-op). Whatever `LERNIE_CONV_BRANCH` is in the
-    // test env, a single message file must land.
+    // the real AdvanceLauncher. Whatever `LERNIE_CONV_BRANCH` is in the
+    // test env, a single message file must land. The lock is held by
+    // the test so the probe observes Busy and no real driver spawns
+    // (the launch path is exercised by the launcher tests below and the
+    // advance CLI integration test).
     let ws = TempDir::new().unwrap();
+    let _held = try_acquire(&inbox_dir(ws.path(), "a1"))
+        .unwrap()
+        .expect("free");
     cli_run(ws.path(), "a1", "hi").unwrap();
     let files: Vec<_> = std::fs::read_dir(inbox_dir(ws.path(), "a1"))
         .unwrap()
@@ -142,8 +148,22 @@ fn cli_run_deposits_via_production_deps() {
 }
 
 #[test]
-fn advance_launcher_is_a_noop_until_advance_exists() {
-    // The production launcher is a documented stub pending `lernie
-    // advance` (§6); it must succeed so the deposit path is not blocked.
-    AdvanceLauncher.launch(Path::new("/tmp"), "a1").unwrap();
+fn advance_launcher_spawns_detached_and_returns_at_once() {
+    // Fire-and-forget (§2.11): `true` accepts the advance args and exits
+    // 0; launch returns as soon as the spawn lands, never waiting.
+    let launcher = AdvanceLauncher::with_exe("true".into());
+    launcher.launch(Path::new("/tmp"), "a1").unwrap();
+}
+
+#[test]
+fn advance_launcher_surfaces_a_spawn_failure() {
+    let launcher = AdvanceLauncher::with_exe("/no/such/lernie-binary".into());
+    let err = launcher.launch(Path::new("/tmp"), "a1").unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::NotFound);
+}
+
+#[test]
+fn advance_launcher_current_resolves_the_running_binary() {
+    // Smoke-test the current_exe wiring; no spawn is performed.
+    AdvanceLauncher::current().unwrap();
 }

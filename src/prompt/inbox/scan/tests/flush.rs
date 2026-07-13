@@ -167,9 +167,10 @@ fn crash_stranding_is_healed_by_an_explicit_scan() {
     let deposited = inbox_dir(ws.path(), PARENT).join(format!("{CHILD}-001.md"));
     let body = std::fs::read_to_string(&deposited).unwrap();
     assert!(body.contains("epitaph: died"), "got {body:?}");
-    // The flush found the freshly-filled parent inbox launchable; the
-    // production launcher is the documented no-op pending `lernie
-    // advance`, so the report is the observable.
+    // The flush found the freshly-filled parent inbox launchable and
+    // detach-spawned a driver for it (fire-and-forget; under the test
+    // harness the spawned image is inert, so the report is the
+    // deterministic observable — the real chain is `advance_cli.rs`).
     assert_eq!(report.flushed, vec![PARENT.to_string()]);
     // The operator-facing summary renders the §8 counts.
     assert_eq!(

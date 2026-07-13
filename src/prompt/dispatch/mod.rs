@@ -24,6 +24,7 @@
 //!    driver's own-branch entry — acquire-or-exit, deliver or silently
 //!    no-op — is [`driver`].
 
+pub mod advance;
 mod assembler;
 mod drain;
 pub mod driver;

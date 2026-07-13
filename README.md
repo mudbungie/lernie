@@ -389,17 +389,15 @@ Built-ins:
   goes through `lernie dispatch`. **Shipped state:** the deposit lands
   and the step-boundary drain delivers it (bl-1129) — the next driver to
   step the branch moves the inbox file into `messages/` as a transcript
-  entry at its next boundary. A deposit into a *quiescent* agent is not
-  yet self-delivering: the driver-launch on a free lease is still a no-op
-  pending `lernie advance` (§6), so such a deposit waits in
-  `inbox/<agent-id>/` until a driver next runs against the branch, or
-  until an operator runs `lernie scan` (below), whose flush launches for
-  it.
+  entry at its next boundary. A deposit into a *quiescent* agent is
+  self-delivering: the free-lease probe detach-spawns `lernie advance`
+  (§6, below), which acquires the lease, delivers the deposit, and steps
+  the branch.
 
 ## Messaging an existing agent directly
 
 `lernie message <workspace> <agent> <content>` deposits a message into
-`<agent>`'s inbox and, finding the recipient quiescent, would launch a
+`<agent>`'s inbox and, finding the recipient quiescent, launches a
 driver to deliver it (ARCH §2.11, §3.4). The sender is read from
 `LERNIE_CONV_BRANCH` — the calling agent's id when the `message` tool
 re-enters the verb, else `user` for a bare invocation.
@@ -414,11 +412,33 @@ re-enters the verb, else `user` for a bare invocation.
   loop holds for its whole run, releasing it on exit. A held lease means
   a driver is already stepping the branch (it will deliver at its next
   boundary); a free lease means the branch is quiescent.
-- On a free lease the verb launches a driver — `lernie advance` (ARCH
-  §6). That verb is not yet implemented, so the launch is a documented
-  no-op for now; the deposit still lands and is delivered by the
-  step-boundary drain (bl-1129) of the next driver that runs against the
-  branch.
+- On a free lease the verb launches a driver — `lernie advance
+  <workspace> <agent>` (ARCH §6) — as a **detached spawn** (§2.11):
+  `setsid` (its own session and process group), stdio to null,
+  fire-and-forget. The driver outlives the `lernie message` process, so
+  messaging is scriptable: the verb returns as soon as the deposit and
+  spawn land, and delivery + stepping continue in the driver.
+
+## Driving a branch: `lernie advance`
+
+`lernie advance <workspace> <agent>` is the §6 driver verb — the
+process every launch seam spawns, and the same verb an operator runs by
+hand. One invocation is one **hop**: take the lease (adopt the
+`LERNIE_LOCK_FD` fd published by a predecessor hop, else try-acquire
+the executor lock — losing it is a clean no-op), deliver pending inbox
+messages through the real drain (rematerializing a torn-down worktree
+first), derive warrant from the transcript tail (ends user-side → a
+model call is due; ends assistant-side without `tool_use`, or empty →
+exit silently; assistant `tool_use` with uncommitted results → decline
+loudly, the one non-replayable state), run one step, and hand off: a
+step that emitted `tool_use` runs its tools and **exec's the successor
+`lernie advance`** with the lock fd deliberately inherited (close-on-
+exec cleared just before exec; the successor fstat-validates the fd
+against the inbox directory and restores close-on-exec), while a
+terminal event ends the chain through the §2.11 exit protocol. Because
+the successor is `exec`'d in the same process, the pid, process group,
+and flock lease all survive the hop — `lernie stop` lands on whichever
+hop is current, and no rival driver can wedge between hops.
 
 ## The exit protocol and the operator scan
 
@@ -435,9 +455,9 @@ to deliver exits silently (no step, no epitaph, no further launch —
 `dispatch::driver::drive` is that entry), and the launch is decided by
 epitaph value — a final response launches; `stopped` and
 `budget-exhausted` never do. The exit launch rides the same launcher
-seam as the writer probe, so it is the same documented no-op pending
-`lernie advance` (§6); the decision logic, ordering, and driver entry
-are live and tested.
+seam as the writer probe, so it is the same detached `lernie advance`
+spawn (§6); the decision logic, ordering, driver entry, and the spawn
+itself are live and tested.
 
 Crashes are accepted as a failure class (§2.11): everything is on disk,
 so a hard death strands results and messages *late*, never lost, and
@@ -468,11 +488,11 @@ touch, by design):
 
 **Shipped state.** The scan (silent-death sweep + inbox flush) ships
 behind `lernie scan` and *only* there — driver startup (`lernie prompt`,
-`lernie dispatch`) runs no workspace scan. The flush and the exit launch
-reuse the same driver-launch seam as `lernie message`, so the spawn is
-the same documented **no-op pending `lernie advance` (§6)**: each seam
-decides *when* a driver is needed and would launch it, but the spawn
-itself lands once `lernie advance` exists. Because a child does not yet
+`lernie dispatch`, `lernie advance`) runs no workspace scan. The flush
+and the exit launch reuse the same driver-launch seam as `lernie
+message`, and the spawn is real: each seam decides *when* a driver is
+needed and detach-spawns `lernie advance` (§6) for it. Because a child
+does not yet
 run a step loop (the worker path stops at the dispatch commit), a real
 "died child" cannot arise from a run today — the derivation is exercised
 against constructed on-disk states.

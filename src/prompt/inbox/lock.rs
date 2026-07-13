@@ -26,8 +26,19 @@ use std::path::Path;
 /// Rust lifetime.
 #[derive(Debug)]
 pub struct ExecutorLock {
-    // Held solely to keep the fd (and thus the lease) alive; never read.
-    _fd: File,
+    // Held solely to keep the fd (and thus the lease) alive; read only
+    // by the §6 exec baton, which publishes the number as LERNIE_LOCK_FD.
+    fd: File,
+}
+
+impl ExecutorLock {
+    /// The lease fd's raw number — what the §6 exec baton publishes as
+    /// `LERNIE_LOCK_FD` for the successor hop to adopt. The fd stays
+    /// owned by the guard; the baton leaks the guard just before exec so
+    /// the open file description (and the flock riding it) survives it.
+    pub fn as_raw_fd(&self) -> std::os::fd::RawFd {
+        self.fd.as_raw_fd()
+    }
 }
 
 /// Try to acquire the executor lock for the agent whose inbox is
@@ -70,7 +81,7 @@ pub(super) fn interpret_lock(
     err: io::Error,
 ) -> io::Result<Option<ExecutorLock>> {
     if ret == 0 {
-        Ok(Some(ExecutorLock { _fd: fd }))
+        Ok(Some(ExecutorLock { fd }))
     } else if err.raw_os_error() == Some(libc::EWOULDBLOCK) {
         Ok(None)
     } else {

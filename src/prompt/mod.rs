@@ -29,8 +29,10 @@ pub mod budget;
 pub mod clock;
 pub mod compactor;
 pub mod dispatch;
+pub mod dispatch_cli;
 pub mod dispatcher;
 pub mod inbox;
+mod resolve;
 pub mod step;
 pub mod stop;
 pub mod subagent;
@@ -48,9 +50,7 @@ pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 pub use worker::WorkerRequest;
 
-use crate::config::{Budgets, ModelsConfig, RetryConfig, Workflow};
 use crate::template::GitRunner;
-use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -68,9 +68,6 @@ const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// the optional `adapter:` override (ARCH §4.2). Lives at the harness
 /// root.
 const GLOBAL_MODELS_FILE: &str = "models.yaml";
-/// Per-conv-repo control file binding workflow events to actions and
-/// declaring the retry policy (ARCH §6).
-const WORKFLOW_FILE: &str = "workflow.yaml";
 
 /// The exact brazen crate version lernie links (`brazen = "=0.0.2"` in
 /// `Cargo.toml`). The load-time version guard rejects a `bz` whose
@@ -86,6 +83,8 @@ pub const BRAZEN_PIN: &str = "0.0.2";
 pub enum Error {
     #[error("config: {0}")]
     Config(#[from] crate::config::LoadError),
+    #[error("harness root: {0}")]
+    HarnessRoot(#[from] crate::harness_root::Error),
     #[error("providers.yaml has no {0:?} role")]
     RoleMissing(String),
     #[error(
@@ -140,6 +139,18 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
+    #[error(
+        "adopt LERNIE_LOCK_FD lease for {agent}: {detail} — a bad fd means a defective \
+         launcher; declined, never silently reacquired (§6)"
+    )]
+    LeaseAdopt { agent: String, detail: String },
+    #[error(
+        "branch {branch} tip is an assistant entry with tool_use unmatched by committed \
+         tool results — a mid-step crash after the assistant entry landed; tool side \
+         effects are not replayable, so this is declined (§6). Recover by fork-from-history \
+         (§2.3)."
+    )]
+    UnpairedToolUse { branch: String },
     #[error("deposit initial user message: {0}")]
     Deposit(#[from] inbox::DepositError),
     #[error("tool {name} schema unreadable at {path}: {source}")]
@@ -197,7 +208,7 @@ pub struct Deps<'a> {
     /// The driver launcher for the §2.11 exit protocol's self-directed
     /// launch, fired after the executor releases its lock on a
     /// final-response exit. Production wires [`inbox::AdvanceLauncher`]
-    /// (the documented no-op pending `lernie advance`, §6); tests inject
+    /// (the detached `lernie advance` spawn, §2.11/§6); tests inject
     /// a recording launcher so the launch decision and its ordering are
     /// observable.
     pub launcher: &'a dyn inbox::Launcher,
@@ -208,76 +219,6 @@ pub struct Deps<'a> {
 /// step loop through `bz`, and merge back. Returns the branch name (the
 /// bare `<conv-id>`, ARCH §2.3).
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
-    let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
-    let per_repo_path = repo.join(PER_REPO_PROVIDERS_FILE);
-    let (cfg, _warnings) = ModelsConfig::load(&global_path, &per_repo_path)?;
-
-    let assignment = cfg
-        .per_repo
-        .roles
-        .get(WORKER_ROLE)
-        .ok_or_else(|| Error::RoleMissing(WORKER_ROLE.to_string()))?;
-    // Cross-check inside ModelsConfig::load guarantees this resolves.
-    let model = cfg
-        .global
-        .models
-        .get(&assignment.model)
-        .expect("cross-check passed, so role.model is in models.yaml");
-
-    // Adapter resolution (§4.2): the optional `adapter:` override, else
-    // `bz` on PATH. The version guard runs only for the default binary;
-    // an override is governed by the in-band MessageStart.v handshake.
-    let adapter_override = cfg.global.adapter.as_deref();
-    let binary = adapter::resolve_binary(adapter_override);
-    let expect_handshake = adapter_override.is_some();
-    if !expect_handshake {
-        check_bz_version(deps.adapter, &binary)?;
-    }
-
-    let (retry, budgets) = load_workflow_policy(repo)?;
-
-    let soul_path = repo.join(SOULS_DIR).join(format!("{WORKER_ROLE}.md"));
-    let soul = std::fs::read_to_string(&soul_path).map_err(|source| Error::SoulRead {
-        path: soul_path.clone(),
-        source,
-    })?;
-
-    let resolved = dispatch::Resolved {
-        model,
-        provider_row: &assignment.provider,
-        tools: &assignment.tools,
-        soul,
-        binary,
-        retry,
-        budgets,
-        expect_handshake,
-    };
-    dispatch::run_exchange(repo, user_message, &resolved, deps)
-}
-
-/// Load the harness-owned retry policy and the per-conversation budgets
-/// from `workflow.yaml` (§6; retry §2.10, budgets §6). Parsed together
-/// from the one frozen copy so the file is read once.
-fn load_workflow_policy(repo: &Path) -> Result<(RetryConfig, Budgets), Error> {
-    let workflow = Workflow::load(&repo.join(WORKFLOW_FILE))?;
-    Ok((workflow.retry, workflow.budgets))
-}
-
-/// Load-time version guard (§4.4): `bz --version` must report the exact
-/// version of the linked brazen crate ([`BRAZEN_PIN`]); a mismatch is
-/// declined (PRINCIPLES "Decline illegal operations") rather than
-/// silently downgraded.
-fn check_bz_version(adapter: &dyn AdapterRunner, binary: &OsString) -> Result<(), Error> {
-    let out =
-        adapter::capture_stdout(adapter, binary, &["--version"]).map_err(Error::AdapterSpawn)?;
-    // `bz --version` prints e.g. `bz 0.0.2`; the version is the last
-    // whitespace token.
-    let found = out.split_whitespace().last().unwrap_or("").to_string();
-    if found != BRAZEN_PIN {
-        return Err(Error::VersionSkew {
-            found,
-            expected: BRAZEN_PIN.to_string(),
-        });
-    }
-    Ok(())
+    let cfg = resolve::resolve_worker(repo, deps)?;
+    dispatch::run_exchange(repo, user_message, &cfg.as_resolved(), deps)
 }

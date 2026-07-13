@@ -392,8 +392,9 @@ Built-ins:
   entry at its next boundary. A deposit into a *quiescent* agent is not
   yet self-delivering: the driver-launch on a free lease is still a no-op
   pending `lernie advance` (§6), so such a deposit waits in
-  `inbox/<agent-id>/` until a driver next runs against the branch — where
-  the **startup scan** (below) now flushes it.
+  `inbox/<agent-id>/` until a driver next runs against the branch, or
+  until an operator runs `lernie scan` (below), whose flush launches for
+  it.
 
 ## Messaging an existing agent directly
 
@@ -419,13 +420,34 @@ re-enters the verb, else `user` for a bare invocation.
   step-boundary drain (bl-1129) of the next driver that runs against the
   branch.
 
-## The startup scan
+## The exit protocol and the operator scan
 
-Every driver invocation — `lernie prompt`, and every `lernie dispatch`
-re-entry — runs one workspace-wide **startup scan** before it touches its
-own branch (ARCH §2.11 *The startup scan*, §8, bl-d148). Two derived
-actions, no watcher and no schedule (a transient process; an idle
-workspace stays unswept until the next invocation, by design):
+Normal operation needs zero scanning (ARCH §2.11): `lernie message`
+deposits, probes the executor lock, and launches a driver if the agent
+is quiescent; the executor drains its inbox at every step boundary. The
+graceful-exit crack — a deposit landing after an executor's final drain
+but before its lock release — is closed by the **exit protocol**
+(§2.11, bl-5846): one terminal sequence, no agent kinds — deposit the
+result message (a structural no-op for a parentless agent) → release
+own lock → spawn a driver at own agent, fire-and-forget → exit. Two
+pins terminate the recursion: a driver that acquires and finds nothing
+to deliver exits silently (no step, no epitaph, no further launch —
+`dispatch::driver::drive` is that entry), and the launch is decided by
+epitaph value — a final response launches; `stopped` and
+`budget-exhausted` never do. The exit launch rides the same launcher
+seam as the writer probe, so it is the same documented no-op pending
+`lernie advance` (§6); the decision logic, ordering, and driver entry
+are live and tested.
+
+Crashes are accepted as a failure class (§2.11): everything is on disk,
+so a hard death strands results and messages *late*, never lost, and
+the next touch heals. That touch is a user reprompt — or the operator
+verb **`lernie scan <workspace>`** (§2.11, §8, bl-d148 + bl-5846): one
+workspace-wide pass, run by hand or by cron if you want a heartbeat,
+never wired into any driver hot path or default schedule (the events it
+compensates for happen at crash rate, not step rate). Two derived
+actions, no watcher (an idle workspace stays unswept until the next
+touch, by design):
 
 - **Silent-death sweep.** Every agent branch with no live executor (the
   §2.11 executor-lock probe) that either died mid-work (its latest step's
@@ -442,13 +464,14 @@ workspace stays unswept until the next invocation, by design):
   gets a driver **launched** — never drained: the scanner moves no files
   and commits nothing; only an agent's own lock-holding executor
   delivers. An agent whose lock is held is left alone. The sweep's own
-  deposits are picked up by the flush that follows in the same scan.
+  deposits are picked up by the flush that follows in the same pass.
 
-**Shipped state.** The scan (silent-death sweep + inbox flush) ships and
-is wired at `lernie prompt` and `lernie dispatch` startup. The flush
-reuses the same driver-launch seam as `lernie message`, so its launcher
-is the same documented **no-op pending `lernie advance` (§6)**: the scan
-decides *which* agents need a driver and would launch it, but the spawn
+**Shipped state.** The scan (silent-death sweep + inbox flush) ships
+behind `lernie scan` and *only* there — driver startup (`lernie prompt`,
+`lernie dispatch`) runs no workspace scan. The flush and the exit launch
+reuse the same driver-launch seam as `lernie message`, so the spawn is
+the same documented **no-op pending `lernie advance` (§6)**: each seam
+decides *when* a driver is needed and would launch it, but the spawn
 itself lands once `lernie advance` exists. Because a child does not yet
 run a step loop (the worker path stops at the dispatch commit), a real
 "died child" cannot arise from a run today — the derivation is exercised

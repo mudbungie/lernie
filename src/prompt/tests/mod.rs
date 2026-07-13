@@ -4,6 +4,8 @@ mod errors_disk;
 mod errors_parse;
 mod errors_stream;
 mod executor_lock;
+mod exit_launch;
+mod exit_race;
 mod fixtures;
 mod happy;
 mod multi_step;

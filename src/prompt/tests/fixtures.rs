@@ -132,7 +132,20 @@ pub(super) fn valid_deps<'a>(
         tool_executor,
         config_root,
         stop: never_stopped(),
+        launcher: no_launch(),
     }
+}
+
+/// The default exit-protocol launcher for tests off the §2.11 launch
+/// path: the production [`AdvanceLauncher`] no-op, handed out as a
+/// static so `valid_deps` needs no extra parameter. Launch-path tests
+/// override `deps.launcher` with a recording stub instead — the same
+/// pattern as [`never_stopped`].
+///
+/// [`AdvanceLauncher`]: crate::prompt::inbox::AdvanceLauncher
+pub(super) fn no_launch() -> &'static crate::prompt::inbox::AdvanceLauncher {
+    static NO_LAUNCH: crate::prompt::inbox::AdvanceLauncher = crate::prompt::inbox::AdvanceLauncher;
+    &NO_LAUNCH
 }
 
 /// A stop flag that is never set — the default for tests off the §2.9

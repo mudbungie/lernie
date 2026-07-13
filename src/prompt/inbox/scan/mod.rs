@@ -1,7 +1,14 @@
-//! The workspace startup scan (ARCH §2.11 *The startup scan*, §8).
+//! The workspace scan behind the operator verb `lernie scan` (ARCH
+//! §2.11 *Crashes are a failure class*, §8).
 //!
-//! Every driver invocation, before it touches its own branch, runs one
-//! workspace-wide scan with two derived actions:
+//! The scan compensates for crash-rate events, so it runs at operator
+//! frequency — by hand, or by cron if an operator wants a heartbeat —
+//! and is **never wired into any driver's hot path or default schedule**
+//! (§2.11): normal operation is carried entirely by the deposit → probe →
+//! launch channel plus the step-boundary drain, and the graceful-exit
+//! crack is closed by the exit protocol (§2.11,
+//! [`crate::prompt::dispatch`]), not by scanning. One pass, two derived
+//! actions:
 //!
 //! 1. **Silent-death sweep** (§8): enumerate agent branches with *no live
 //!    executor* (the [`try_acquire`] lock probe, released immediately)
@@ -19,7 +26,7 @@
 //!    executor delivers. An agent whose lock is held is left alone.
 //!
 //! The sweep runs first, so its own deposits are picked up by the flush
-//! that follows in the same scan.
+//! that follows in the same pass.
 //!
 //! **Shipped-namespace note.** §8 writes the candidate enumeration as
 //! `git branch --list 'agents/*'`, but the shipped harness names agent
@@ -84,6 +91,7 @@ pub enum ScanError {
 
 /// What one [`scan`] did, for the §8 health metrics and for tests. All
 /// three are derived on the fly — nothing is stored (PRINCIPLES SSOT).
+/// `Display` is the operator-facing summary `lernie scan` prints.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScanReport {
     /// §8 silent-death count: candidate branches (no live executor that
@@ -96,7 +104,7 @@ pub struct ScanReport {
     pub flushed: Vec<String>,
 }
 
-/// Run the workspace-wide startup scan under `workspace` (§2.11, §8): the
+/// Run the workspace-wide scan under `workspace` (§2.11, §8): the
 /// silent-death sweep, then the inbox flush. `git` reads the branch and
 /// transcript state (run in `<workspace>/root`, §2.2); `launcher` is the
 /// injected driver launcher (production is the [`super::AdvanceLauncher`]
@@ -114,17 +122,27 @@ pub fn scan(
     Ok(report)
 }
 
-/// The production driver-startup entry: run [`scan`] with the real deps
-/// (`git`, clock, and the [`AdvanceLauncher`] no-op) wired in, and log any
-/// failure to stderr rather than propagate it. The scan is best-effort by
-/// design (§2.11 *Undelivered is derived*) — a swept child or an
-/// unflushed inbox is re-derived from disk on the next invocation, so a
-/// scan error must never block a driver's own branch work. Mirrors the
-/// [`super::cli_run`] production-wiring convenience; the bin calls this at
-/// `lernie prompt` / `lernie dispatch` startup.
-pub fn scan_startup(workspace: &std::path::Path) {
-    if let Err(e) = scan(workspace, &RealGit::new(), &SystemClock, &AdvanceLauncher) {
-        eprintln!("lernie: startup scan (§2.11): {e}");
+/// The `lernie scan <workspace>` entry (§2.11, §3.4): run [`scan`] with
+/// the real deps (`git`, clock, and the [`AdvanceLauncher`] no-op pending
+/// `lernie advance`) wired in. An operator verb is loud, not best-effort:
+/// errors propagate to a non-zero exit rather than being swallowed —
+/// the operator invoked the sweep and is owed its outcome. Mirrors the
+/// [`super::cli_run`] production-wiring convenience for `lernie message`.
+pub fn cli_run(workspace: &std::path::Path) -> Result<ScanReport, ScanError> {
+    scan(workspace, &RealGit::new(), &SystemClock, &AdvanceLauncher)
+}
+
+impl std::fmt::Display for ScanReport {
+    /// One operator-facing line: the §8 health counts plus what this
+    /// pass did about them.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "silent deaths: {}; died deposits swept: {}; drivers launched: {}",
+            self.silent_deaths,
+            self.swept.len(),
+            self.flushed.len()
+        )
     }
 }
 

@@ -32,6 +32,40 @@ pub(super) const GOAL_FILE: &str = "goal.md";
 /// the same reason `goal.md` does.
 pub(super) const SOUL_FILE: &str = "soul.md";
 
+/// `git worktree add -b <branch> <worktree_path> main`, run inside the
+/// primary worktree where `.git` lives (§2.2).
+pub(super) fn spawn_branch(
+    primary_worktree: &Path,
+    worktree_path: &Path,
+    branch_name: &str,
+    deps: &Deps<'_>,
+) -> Result<(), Error> {
+    let wt_str = worktree_path.to_string_lossy().to_string();
+    deps.git
+        .run(
+            primary_worktree,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                branch_name,
+                wt_str.as_str(),
+                "main",
+            ],
+        )
+        .map_err(|source| Error::Git {
+            op: "worktree add",
+            source,
+        })
+}
+
+/// Prepend the branch's goal to the role's soul so it sits at the head of
+/// assembled context (ARCH §2.8); manifest-driven assembly replaces the
+/// inline `<goal>` framing later.
+pub(super) fn prepend_goal(goal: &str, soul: &str) -> String {
+    format!("<goal>\n{goal}\n</goal>\n\n{soul}")
+}
+
 /// Step 1: write `goal.md` + `soul.md` to the worktree root. Step
 /// ≥2 has no dispatch artifact (the branch tip already reflects the
 /// model-read state per §2.10).

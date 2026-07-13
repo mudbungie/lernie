@@ -54,7 +54,7 @@ pub(super) fn drain(
 /// (§2.11 — advisory arrival order made a deterministic committed
 /// sequence).
 #[derive(Debug)]
-struct Pending {
+pub(super) struct Pending {
     mtime: SystemTime,
     name: String,
     path: PathBuf,
@@ -65,8 +65,9 @@ struct Pending {
 /// absent inbox yields nothing — the general path with empty inputs, not
 /// a bootstrap special case. A name that is not a well-formed
 /// `<sender>-<NNN>.md` deposit (an in-flight `.tmp`, a stray) contributes
-/// nothing: only real deposits are delivered.
-fn pending(inbox: &Path) -> Result<Vec<Pending>, Error> {
+/// nothing: only real deposits are delivered. `pub(super)` for the
+/// launched driver's found-anything test ([`super::driver`]).
+pub(super) fn pending(inbox: &Path) -> Result<Vec<Pending>, Error> {
     let rd = match std::fs::read_dir(inbox) {
         Ok(rd) => rd,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),

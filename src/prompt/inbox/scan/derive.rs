@@ -1,4 +1,5 @@
-//! The startup scan's derivations (ARCH §2.11 *The startup scan*, §8).
+//! The workspace scan's derivations (ARCH §2.11 *Crashes are a failure
+//! class*, §8 — the `lernie scan` operator verb).
 //!
 //! Pure and read-only over the workspace: branch enumeration, the
 //! live-executor probe, the returned/never-deposited derivation across a

@@ -201,6 +201,7 @@ fn run_surfaces_dispatcher_failure() {
         tool_executor: &tool_executor,
         config_root: harness.path(),
         stop: never_stopped(),
+        launcher: no_launch(),
     };
     let err = run(repo.path(), "hi", &deps).unwrap_err();
     assert!(

@@ -8,10 +8,11 @@
 //! `lernie message` verb ([`cli_message`]). The delivery drain that moves
 //! these files into the transcript lives with the executor's step loop
 //! (bl-1129, [`crate::prompt::dispatch`] — a driver, not a writer). The
-//! workspace-wide **startup scan** — the silent-death sweep and inbox
-//! flush every driver runs before its own branch work — is [`scan`]
-//! (bl-d148); it and the result-message return path (bl-4ce8) ride this
-//! same substrate.
+//! workspace-wide sweep-and-flush behind the **operator verb**
+//! `lernie scan` — crash-rate compensation, never wired into any driver
+//! hot path (§2.11) — is [`scan`] (bl-d148, bl-5846); it, the
+//! result-message return path (bl-4ce8), and the §2.11 exit protocol's
+//! self-directed launch (bl-5846) ride this same substrate.
 //!
 //! **Writer/driver totality (§2.11).** `lernie message` is a *writer*:
 //! it deposits and, if it observes the recipient quiescent (the lock
@@ -98,26 +99,34 @@ pub fn deposit_child_result(
     }
 }
 
-/// Launches a driver for a quiescent agent. Kept as a trait so the
-/// deposit-starts-a-driver decision is testable with the launch injected
-/// (§2.11), and so the production launch target can change without
-/// touching the probe logic.
+/// Launches a driver for a quiescent agent — the one launch seam shared
+/// by the writer's post-deposit probe, the `lernie scan` flush, and the
+/// exit protocol's self-directed launch (§2.11). Kept as a trait so
+/// every launch decision is testable with the spawn injected, and so the
+/// production launch target can change without touching the callers. No
+/// launcher ever decides whether launching is warranted; warrant is
+/// decided by the launched driver under the lock (§2.11).
 pub trait Launcher {
     /// Start a driver for `agent_id` under `workspace`. Called only
-    /// after the probe found the branch quiescent and released its
-    /// lease, so the launched driver competes for the acquire like any
-    /// other (§2.11 Writer/driver totality).
+    /// with no lease held by the caller — the probe released its lease,
+    /// the exiting executor released its lock — so the launched driver
+    /// competes for the acquire like any other (§2.11 Writer/driver
+    /// totality). Fire-and-forget: the caller never watches the driver.
     fn launch(&self, workspace: &Path, agent_id: &str) -> io::Result<()>;
 }
 
 /// The production launch target is `lernie advance <workspace> <agent>`
 /// (§6), the workflow-chain driver that acquires the lock, rematerializes
-/// the worktree, drains the inbox, and steps. That verb is not yet
+/// the worktree, drains the inbox, and steps (its own-branch entry is
+/// [`crate::prompt::dispatch::driver::drive`]). That verb is not yet
 /// implemented (specced in §6; tracked separately), so this launcher is
 /// a deliberate no-op: the deposit has already landed and will be
 /// delivered by the next driver that runs against the branch (§2.11
-/// "Undelivered is derived"). The probe decision above it is live and
-/// tested; only the spawn is stubbed pending `lernie advance`.
+/// "Undelivered is derived"). The probe, flush, and exit-launch decisions
+/// above it are live and tested; only the spawn is stubbed pending
+/// `lernie advance` — when it lands, the spawn is detached per §2.11
+/// (`setsid`: own process group, stdio to a log or null) so a §2.9 stop
+/// cascade against the launching process never reaches the driver.
 #[derive(Debug, Default)]
 pub struct AdvanceLauncher;
 

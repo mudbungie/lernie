@@ -194,6 +194,13 @@ pub struct Deps<'a> {
     /// tests inject a constructed [`std::sync::atomic::AtomicBool`] so the
     /// stopped-deposit path is exercised without a real signal.
     pub stop: &'a std::sync::atomic::AtomicBool,
+    /// The driver launcher for the §2.11 exit protocol's self-directed
+    /// launch, fired after the executor releases its lock on a
+    /// final-response exit. Production wires [`inbox::AdvanceLauncher`]
+    /// (the documented no-op pending `lernie advance`, §6); tests inject
+    /// a recording launcher so the launch decision and its ordering are
+    /// observable.
+    pub launcher: &'a dyn inbox::Launcher,
 }
 
 /// Drive one root conversation against `repo`: load configs, run the

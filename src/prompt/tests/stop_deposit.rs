@@ -120,6 +120,7 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
         tool_executor: &tool_executor,
         config_root: harness.path(),
         stop: &stop,
+        launcher: no_launch(),
     };
 
     // The half-stream mid-call would surface as `AdapterHalfStream`, but

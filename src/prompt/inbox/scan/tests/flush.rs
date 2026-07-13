@@ -132,12 +132,50 @@ fn pending_deposit_matcher_rejects_non_deposits() {
 }
 
 #[test]
-fn scan_startup_swallows_a_scan_error() {
+fn cli_run_surfaces_a_scan_error_loudly() {
     // The production wiring runs `git` in `<workspace>/root`, which does
-    // not exist here → the enumeration errors → best-effort scan_startup
-    // logs and returns (never panics, never propagates).
+    // not exist here → the enumeration errors → the operator verb
+    // propagates it (loud, not best-effort — §2.11 operator framing).
     let ws = TempDir::new().unwrap();
-    scan_startup(ws.path());
+    let err = cli_run(ws.path()).unwrap_err();
+    assert!(matches!(err, ScanError::Git { .. }), "{err}");
+}
+
+#[test]
+fn crash_stranding_is_healed_by_an_explicit_scan() {
+    // A hard-crashed child (real branches, no live executor, no result
+    // anywhere) strands its parked parent — until an operator runs
+    // `lernie scan` (§2.11 "Crashes are a failure class"): the sweep
+    // deposits the `died` result on the child's behalf and the flush
+    // reports the parent's inbox as launchable. Production wiring
+    // (`cli_run`: real git, real clock, the launcher stub).
+    let ws = TempDir::new().unwrap();
+    let root = ws.path().join(crate::template::ROOT_WORKTREE);
+    std::fs::create_dir_all(&root).unwrap();
+    let g = crate::template::RealGit::new();
+    g.run(&root, &["init", "-b", "main"]).unwrap();
+    g.run(&root, &["config", "user.email", "t@test.invalid"])
+        .unwrap();
+    g.run(&root, &["config", "user.name", "t"]).unwrap();
+    g.run(&root, &["commit", "--allow-empty", "-m", "init"])
+        .unwrap();
+    g.run(&root, &["branch", PARENT]).unwrap();
+    g.run(&root, &["branch", CHILD]).unwrap();
+
+    let report = cli_run(ws.path()).unwrap();
+    assert_eq!(report.swept, vec![CHILD.to_string()]);
+    let deposited = inbox_dir(ws.path(), PARENT).join(format!("{CHILD}-001.md"));
+    let body = std::fs::read_to_string(&deposited).unwrap();
+    assert!(body.contains("epitaph: died"), "got {body:?}");
+    // The flush found the freshly-filled parent inbox launchable; the
+    // production launcher is the documented no-op pending `lernie
+    // advance`, so the report is the observable.
+    assert_eq!(report.flushed, vec![PARENT.to_string()]);
+    // The operator-facing summary renders the §8 counts.
+    assert_eq!(
+        report.to_string(),
+        "silent deaths: 1; died deposits swept: 1; drivers launched: 1"
+    );
 }
 
 #[test]

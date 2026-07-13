@@ -13,6 +13,8 @@
 //!   `--stop-children` also walks the id namespace to stop descendants.
 //! - `message <workspace> <agent> <content>` — deposit into an agent's
 //!   inbox and probe the executor lock (§2.11, [`prompt::inbox::cli_run`]).
+//! - `scan <workspace>` — the operator sweep-and-flush (§2.11, §8).
+//!   Hand/cron only; never wired into any driver hot path.
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3):
 //!   `tool_use.input` JSON on stdin, bytes on stdout.
 
@@ -83,6 +85,12 @@ enum Command {
         /// Message content — the body of the deposited file.
         content: String,
     },
+    /// Operator verb: one workspace-wide silent-death sweep + inbox flush
+    /// (ARCH §2.11, §8). Hand/cron only; never on a driver hot path.
+    Scan {
+        /// Path to the workspace (conversation repo) root.
+        workspace: PathBuf,
+    },
     /// In-process built-in tool entry (ARCH §3.3): `tool_use.input` JSON
     /// on stdin, bytes on stdout, exit 0/non-zero. Third resolver hop
     /// (`<data-root>/tools/lernie-tool-<name>` → PATH → `<lernie> tool …`).
@@ -90,6 +98,20 @@ enum Command {
         /// Tool name as the model emitted it (e.g. `read_file`).
         name: String,
     },
+}
+
+/// Uniform failure exit: `<prefix>: <error>` on stderr, non-zero.
+fn fail(prefix: &str, e: impl std::fmt::Display) -> ExitCode {
+    eprintln!("{prefix}: {e}");
+    ExitCode::FAILURE
+}
+
+/// Uniform success/failure exit for product-less verbs.
+fn ok_or_fail(prefix: &str, r: Result<(), impl std::fmt::Display>) -> ExitCode {
+    match r {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => fail(prefix, e),
+    }
 }
 
 /// Role name for the v0.3 terminal compactor (§2.7); `--goal` rejected.
@@ -105,10 +127,7 @@ fn main() -> ExitCode {
             // into the new repo at creation, so `roots` is always resolved.
             let roots = match harness_root::resolve() {
                 Ok(r) => r,
-                Err(e) => {
-                    eprintln!("lernie new: {e}");
-                    return ExitCode::FAILURE;
-                }
+                Err(e) => return fail("lernie new", e),
             };
             let dest =
                 path.unwrap_or_else(|| roots.data.join("conversations").join(NanoIdGen.short()));
@@ -117,29 +136,20 @@ fn main() -> ExitCode {
                     println!("{}", dest.display());
                     ExitCode::SUCCESS
                 }
-                Err(e) => {
-                    eprintln!("lernie new: {e}");
-                    ExitCode::FAILURE
-                }
+                Err(e) => fail("lernie new", e),
             }
         }
         Command::Prompt { repo, message } => {
-            prompt::inbox::scan::scan_startup(&repo); // §2.11 startup scan
+            // No workspace scan: drivers touch only their own branch (§2.11).
             prompt::stop::become_pgid_leader(); // §2.9 cascade leader
             prompt::install_stop_handler(); // §2.9 step-3 stopped deposit
             let dispatcher = match SpawnDispatcher::new() {
                 Ok(d) => d,
-                Err(e) => {
-                    eprintln!("lernie prompt: cannot resolve current binary: {e}");
-                    return ExitCode::FAILURE;
-                }
+                Err(e) => return fail("lernie prompt: cannot resolve current binary", e),
             };
             let roots = match harness_root::resolve() {
                 Ok(r) => r,
-                Err(e) => {
-                    eprintln!("lernie prompt: {e}");
-                    return ExitCode::FAILURE;
-                }
+                Err(e) => return fail("lernie prompt", e),
             };
             let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
             let deps = prompt::Deps {
@@ -152,16 +162,15 @@ fn main() -> ExitCode {
                 tool_executor: &tool_executor,
                 config_root: &roots.config,
                 stop: prompt::stop_flag(),
+                // §2.11 exit launch: no-op pending `lernie advance` (§6).
+                launcher: &prompt::inbox::AdvanceLauncher,
             };
             match prompt::run(&repo, &message, &deps) {
                 Ok(branch) => {
                     println!("{branch}");
                     ExitCode::SUCCESS
                 }
-                Err(e) => {
-                    eprintln!("lernie prompt: {e}");
-                    ExitCode::FAILURE
-                }
+                Err(e) => fail("lernie prompt", e),
             }
         }
         Command::Dispatch {
@@ -174,23 +183,24 @@ fn main() -> ExitCode {
             repo,
             branch,
             stop_children,
-        } => match prompt::stop::cli_run(&repo, &branch, stop_children) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => {
-                eprintln!("lernie stop: {e}");
-                ExitCode::FAILURE
-            }
-        },
+        } => ok_or_fail(
+            "lernie stop",
+            prompt::stop::cli_run(&repo, &branch, stop_children),
+        ),
         Command::Message {
             workspace,
             agent,
             content,
-        } => match prompt::inbox::cli_run(&workspace, &agent, &content) {
-            Ok(()) => ExitCode::SUCCESS,
-            Err(e) => {
-                eprintln!("lernie message: {e}");
-                ExitCode::FAILURE
+        } => ok_or_fail(
+            "lernie message",
+            prompt::inbox::cli_run(&workspace, &agent, &content),
+        ),
+        Command::Scan { workspace } => match prompt::inbox::scan::cli_run(&workspace) {
+            Ok(report) => {
+                println!("{report}");
+                ExitCode::SUCCESS
             }
+            Err(e) => fail("lernie scan", e),
         },
         Command::Tool { name } => {
             let mut stdin = io::stdin().lock();
@@ -199,10 +209,7 @@ fn main() -> ExitCode {
             match builtin::run(&name, &mut stdin, &mut stdout, &mut stderr) {
                 // Tool exit codes ride within `u8` (POSIX), so `as u8` is faithful.
                 Ok(code) => ExitCode::from(code as u8),
-                Err(e) => {
-                    eprintln!("lernie tool {name}: {e}");
-                    ExitCode::FAILURE
-                }
+                Err(e) => fail(&format!("lernie tool {name}"), e),
             }
         }
     }
@@ -212,20 +219,17 @@ fn main() -> ExitCode {
 /// `--goal` rules surface as a `lernie dispatch <role>:` non-zero exit.
 fn run_dispatch_cli(role: &str, repo: &Path, branch: &str, goal: Option<&str>) -> ExitCode {
     prompt::stop::become_pgid_leader(); // §2.9: child executor takes its own pgid
-    prompt::inbox::scan::scan_startup(repo); // §2.11 startup scan (driver)
+    // No workspace scan here — dispatch re-entry is a hot path (§2.11).
     let outcome = match role {
         ROLE_COMPACTOR => run_compactor_cli(repo, branch, goal),
         ROLE_WORKER => run_worker_cli(repo, branch, goal),
         other => Err(DispatchCliError::UnknownRole(other.to_owned())),
     };
-    match outcome {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(e) => {
-            eprintln!("lernie dispatch {role}: {e}");
-            ExitCode::FAILURE
-        }
-    }
+    ok_or_fail(&format!("lernie dispatch {role}"), outcome)
 }
+
+/// Shorthand for the per-role dispatch handlers' outcome.
+type DispatchResult = Result<(), DispatchCliError>;
 
 /// Dispatch CLI argument-shape errors, joined with [`prompt::Error`]
 /// under one `Display` for uniform `eprintln`.
@@ -242,10 +246,7 @@ impl std::fmt::Display for DispatchCliError {
         match self {
             Self::UnknownRole(r) => write!(f, "unknown role {r:?}"),
             Self::GoalRequired(r) => write!(f, "--goal is required for role {r:?}"),
-            Self::GoalForbidden(r) => write!(
-                f,
-                "--goal is not accepted for role {r:?} (built-in boilerplate)"
-            ),
+            Self::GoalForbidden(r) => write!(f, "--goal is not accepted for role {r:?}"),
             Self::Inner(e) => write!(f, "{e}"),
         }
     }
@@ -257,11 +258,7 @@ impl From<prompt::Error> for DispatchCliError {
     }
 }
 
-fn run_compactor_cli(
-    repo: &Path,
-    branch: &str,
-    goal: Option<&str>,
-) -> Result<(), DispatchCliError> {
+fn run_compactor_cli(repo: &Path, branch: &str, goal: Option<&str>) -> DispatchResult {
     if goal.is_some() {
         return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
     }
@@ -279,11 +276,7 @@ fn run_compactor_cli(
     )?)
 }
 
-fn run_worker_cli(
-    repo: &Path,
-    parent_branch: &str,
-    goal: Option<&str>,
-) -> Result<(), DispatchCliError> {
+fn run_worker_cli(repo: &Path, parent_branch: &str, goal: Option<&str>) -> DispatchResult {
     let goal = goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?;
     let parent_worktree = repo.join(parent_branch);
     let req = WorkerRequest {

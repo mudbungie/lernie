@@ -186,7 +186,7 @@ pub fn deposit_result(
 /// the terminal response as the body — present iff `Some`. When the
 /// agent never spoke the file ends at the closing frontmatter delimiter
 /// with no body, which is exactly how delivery composes an empty
-/// user-role turn for it.
+/// user-role wire message for it.
 fn render_result(
     child_id: &str,
     deposited_at: &str,

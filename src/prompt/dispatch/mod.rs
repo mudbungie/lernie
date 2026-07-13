@@ -17,9 +17,16 @@
 //!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root; a
 //!    stop deposits `stopped` on its way out (§2.9, [`terminal`]). A normal
 //!    end dispatches the terminal compactor (§2.6, §2.7); stops/exhaustion skip it (§2.4).
+//! 5. **Exit protocol (§2.11):** deposit → release own lock → spawn a
+//!    driver at own agent, fire-and-forget → exit. The launch is decided
+//!    by epitaph value ([`terminal::exit_launch`]): a final response
+//!    launches; `stopped` and `budget-exhausted` never do. The launched
+//!    driver's own-branch entry — acquire-or-exit, deliver or silently
+//!    no-op — is [`driver`].
 
 mod assembler;
 mod drain;
+pub mod driver;
 mod model_call;
 mod result_deposit;
 mod staging;
@@ -45,7 +52,8 @@ use model_call::ModelCall;
 use std::ffi::OsString;
 use std::path::Path;
 use step_commit::{
-    commit_dispatch, read_branch_tip, write_dispatch_files, write_meta, write_request,
+    commit_dispatch, prepend_goal, read_branch_tip, spawn_branch, write_dispatch_files, write_meta,
+    write_request,
 };
 use tool_step::run_tool_calls;
 
@@ -96,7 +104,7 @@ pub(super) fn run_exchange(
     // the acquire means another driver owns this branch — clean no-op
     // (Writer/driver totality); a fresh root always wins (unique conv-id).
     let inbox = inbox::inbox_dir(repo, &conv_id);
-    let _executor_lock = match inbox::try_acquire(&inbox).map_err(|source| Error::ExecutorLock {
+    let executor_lock = match inbox::try_acquire(&inbox).map_err(|source| Error::ExecutorLock {
         path: inbox.clone(),
         source,
     })? {
@@ -252,49 +260,19 @@ pub(super) fn run_exchange(
     // Terminal handling (§2.7, §2.9, §6): stopped deposits and skips
     // compaction, exhausted skips it, the ordinary path dispatches the
     // terminal compactor — the one merge left (§2.6). No merge-back.
-    terminal::finish(
-        repo,
-        &conv_id,
-        &branch_name,
-        &worktree_path,
-        stopped,
-        exhausted,
-        deps,
-    )?;
+    let epitaph = match (stopped, exhausted) {
+        (true, _) => Epitaph::Stopped,
+        (false, true) => Epitaph::BudgetExhausted,
+        (false, false) => Epitaph::FinalResponse,
+    };
+    terminal::finish(repo, &conv_id, &branch_name, &worktree_path, epitaph, deps)?;
+
+    // Exit protocol (§2.11): the result deposit landed at the terminal
+    // event above; now release own lock, then spawn a driver at own
+    // agent, fire-and-forget, and exit. After release this process has
+    // no authority — spawn and exit are its only remaining acts.
+    drop(executor_lock);
+    terminal::exit_launch(repo, &conv_id, epitaph, deps);
 
     Ok(branch_name)
-}
-
-/// `git worktree add -b <branch> <worktree_path> main`, run inside the
-/// primary worktree where `.git` lives (§2.2).
-fn spawn_branch(
-    primary_worktree: &Path,
-    worktree_path: &Path,
-    branch_name: &str,
-    deps: &Deps<'_>,
-) -> Result<(), Error> {
-    let wt_str = worktree_path.to_string_lossy().to_string();
-    deps.git
-        .run(
-            primary_worktree,
-            &[
-                "worktree",
-                "add",
-                "-b",
-                branch_name,
-                wt_str.as_str(),
-                "main",
-            ],
-        )
-        .map_err(|source| Error::Git {
-            op: "worktree add",
-            source,
-        })
-}
-
-/// Prepend the branch's goal to the role's soul so it sits at the head of
-/// assembled context (ARCH §2.8); manifest-driven assembly replaces the
-/// inline `<goal>` framing later.
-fn prepend_goal(goal: &str, soul: &str) -> String {
-    format!("<goal>\n{goal}\n</goal>\n\n{soul}")
 }

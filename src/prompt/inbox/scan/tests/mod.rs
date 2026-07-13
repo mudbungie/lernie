@@ -17,7 +17,7 @@ mod sweep;
 use super::derive::{
     died_mid_work, has_pending, is_message_from, is_pending_deposit, transcript_line_from,
 };
-use super::{ScanError, ScanReport, scan, scan_startup};
+use super::{ScanError, ScanReport, cli_run, scan};
 use crate::prompt::Clock;
 use crate::prompt::inbox::{INBOX_DIR, Launcher, inbox_dir, try_acquire};
 use crate::prompt::step::{RESPONSE_FILE, STEPS_DIR};

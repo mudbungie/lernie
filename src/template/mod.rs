@@ -12,6 +12,7 @@
 //! worktree: agents fork off the config branch's head (§2.3), and the
 //! fork *is* the freeze (§2.2).
 
+pub mod authoring;
 pub mod descriptions;
 
 use include_dir::{Dir, include_dir};
@@ -150,14 +151,26 @@ pub fn scaffold<G: GitRunner>(dest: &Path, data_root: &Path, git: &G) -> Result<
     fs::create_dir_all(&author).map_err(ScaffoldError::Io)?;
     TEMPLATE.extract(&author).map_err(ScaffoldError::Io)?;
     descriptions::snapshot(data_root, &author).map_err(ScaffoldError::Descriptions)?;
-    git.run(&author, &["add", "-A"])
-        .map_err(ScaffoldError::Git)?;
     let msg = format!("config: init [{config_ref}]");
-    git.run(&author, &["commit", "-m", msg.as_str()])
-        .map_err(ScaffoldError::Git)?;
-    git.run(&repo, &["worktree", "remove", author_str.as_str()])
-        .map_err(ScaffoldError::Git)?;
+    commit_checkout(git, &repo, &author, &msg).map_err(ScaffoldError::Git)?;
     Ok(())
+}
+
+/// Stage everything in an authoring checkout, commit it with `msg`, and
+/// remove the checkout worktree — the shared tail of config-commit
+/// authoring (ARCH §2.2), used by both [`scaffold`] (the first config
+/// commit) and [`authoring::author`] (every later one). Each git step's
+/// failure rides `io::Error`; the caller maps it to its own error kind.
+pub(crate) fn commit_checkout<G: GitRunner>(
+    git: &G,
+    repo: &Path,
+    author: &Path,
+    msg: &str,
+) -> io::Result<()> {
+    let author_str = author.to_string_lossy().to_string();
+    git.run(author, &["add", "-A"])?;
+    git.run(author, &["commit", "-m", msg])?;
+    git.run(repo, &["worktree", "remove", author_str.as_str()])
 }
 
 fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {

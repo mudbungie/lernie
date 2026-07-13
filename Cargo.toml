@@ -30,4 +30,4 @@ path = "src/bin/gen_schemas.rs"
 
 [[bin]]
 name = "lernie"
-path = "src/bin/lernie.rs"
+path = "src/bin/lernie/main.rs"

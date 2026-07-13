@@ -112,31 +112,6 @@ fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
     path
 }
 
-/// Git env vars a hook-invoked test may inherit; scrub them so the
-/// spawned `git` operates on the fixture, not the outer repo.
-const INHERITED_GIT_ENV: &[&str] = &[
-    "GIT_DIR",
-    "GIT_WORK_TREE",
-    "GIT_INDEX_FILE",
-    "GIT_OBJECT_DIRECTORY",
-    "GIT_PREFIX",
-    "GIT_COMMON_DIR",
-    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-];
-
-fn git(dest: &Path, args: &[&str]) {
-    let mut cmd = Command::new("git");
-    for var in INHERITED_GIT_ENV {
-        cmd.env_remove(var);
-    }
-    let out = cmd.arg("-C").arg(dest).args(args).output().expect("git");
-    assert!(
-        out.status.success(),
-        "git {args:?}: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
-}
-
 const ROLES_YAML: &str = "\
 roles:
   worker:
@@ -160,18 +135,17 @@ fn scaffold(dest: &Path, harness: &Path) {
         "lernie new: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    // Config-commit amendment (§2.2): point roles at the fixture row.
-    let author = dest.join(".amend");
-    let author_str = author.to_string_lossy().to_string();
-    let repo = dest.join("repo.git");
-    git(
-        &repo,
-        &["worktree", "add", author_str.as_str(), "config/default"],
-    );
-    fs::write(author.join("providers.yaml"), ROLES_YAML).unwrap();
-    git(&author, &["add", "-A"]);
-    git(&author, &["commit", "-m", "config: amend"]);
-    git(&repo, &["worktree", "remove", author_str.as_str()]);
+    // Config-commit amendment (§2.2): point roles at the fixture row,
+    // over the shipped authoring core rather than hand-rolled worktrees.
+    lernie::template::authoring::author(
+        dest,
+        &dest.join(".no-pools"),
+        "default",
+        lernie::template::authoring::Origin::Advance,
+        |dir| fs::write(dir.join("providers.yaml"), ROLES_YAML),
+        &lernie::template::RealGit::new(),
+    )
+    .unwrap();
 }
 
 /// Poll for `path` to exist, up to `deadline` — the driver chain runs

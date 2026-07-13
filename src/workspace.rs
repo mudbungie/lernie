@@ -29,9 +29,18 @@ pub const REPO_DIR: &str = "repo.git";
 pub const AGENTS_DIR: &str = "agents";
 /// Ref-namespace prefix for agent branches: `agents/<agent-id>` (§2.3).
 pub const AGENT_REF_PREFIX: &str = "agents/";
+/// Ref-namespace prefix for config branches: `config/<name>` (§2.3).
+pub const CONFIG_REF_PREFIX: &str = "config/";
 /// The default config branch a fresh root agent forks off (§2.3 *Fresh
 /// start* — the head of a config branch; `lernie new` authors this one).
 pub const DEFAULT_CONFIG_REF: &str = "config/default";
+
+/// A config branch ref, `config/<name>` (§2.3). The prefix is the kind
+/// (config vs agent), applied only at the git boundary — the bare name
+/// is what a user names on the `lernie config` command line.
+pub fn config_ref(name: &str) -> String {
+    format!("{CONFIG_REF_PREFIX}{name}")
+}
 /// The harness-facing control paths the dispatch commit removes from an
 /// agent's tree when it forks off a config commit (§2.2 "Control is
 /// read from the config commit; worktrees hold only context").

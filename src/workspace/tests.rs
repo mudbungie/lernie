@@ -20,6 +20,7 @@ fn paths_and_refs_derive_from_the_id() {
         std::path::Path::new("/w/agents/a-b")
     );
     assert_eq!(agent_ref("a-b"), "agents/a-b");
+    assert_eq!(config_ref("strict-verifier"), "config/strict-verifier");
 }
 
 #[test]

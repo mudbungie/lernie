@@ -5,6 +5,7 @@
 //! module declaration).
 
 use super::{DEFAULT_CONFIG_REF, agent_ref, agent_worktree, repo_git};
+use crate::template::authoring::{self, Origin};
 use crate::template::{GitRunner, RealGit, scaffold};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
@@ -55,25 +56,30 @@ pub(crate) fn spawn_root(ws: &Path, id: &str) -> PathBuf {
 }
 
 /// Advance `config/default` with the given control files — the
-/// harness-assisted user act of §2.2, as a test fixture: materialize a
-/// transient checkout, overwrite the files, commit, tear down. Agents
-/// forked after this govern under the new head.
+/// harness-assisted user act of §2.2, over the shipped authoring core
+/// ([`authoring::author`], `Origin::Advance`). Agents forked after this
+/// govern under the new head. Fixtures carry no data-root pools, so the
+/// descriptions refresh reads an absent pool (an empty tree, §3.3) — any
+/// nonexistent path serves as the `data_root`.
 pub(crate) fn amend_config(ws: &Path, files: &[(&str, &str)]) {
-    let g = RealGit::new();
-    let author = ws.join(".amend-config");
-    let author_str = author.to_string_lossy().to_string();
-    g.run(
-        &repo_git(ws),
-        &["worktree", "add", author_str.as_str(), DEFAULT_CONFIG_REF],
+    let owned: Vec<(String, String)> = files
+        .iter()
+        .map(|(r, c)| (r.to_string(), c.to_string()))
+        .collect();
+    authoring::author(
+        ws,
+        &ws.join(".no-pools"),
+        "default",
+        Origin::Advance,
+        move |dir| {
+            for (rel, content) in &owned {
+                let path = dir.join(rel);
+                std::fs::create_dir_all(path.parent().unwrap())?;
+                std::fs::write(path, content)?;
+            }
+            Ok(())
+        },
+        &RealGit::new(),
     )
     .unwrap();
-    for (rel, content) in files {
-        let path = author.join(rel);
-        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(path, content).unwrap();
-    }
-    g.run(&author, &["add", "-A"]).unwrap();
-    g.run(&author, &["commit", "-m", "config: amend"]).unwrap();
-    g.run(&repo_git(ws), &["worktree", "remove", author_str.as_str()])
-        .unwrap();
 }

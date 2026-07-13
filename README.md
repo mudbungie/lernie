@@ -144,6 +144,31 @@ context).
 actionable error, not migrated — create a fresh workspace with
 `lernie new`.
 
+## Authoring config commits
+
+`lernie new` authors a workspace's *first* config commit. Every later
+one — the general harness-assisted user act of ARCH §2.2 — is
+`lernie config`:
+
+```
+lernie config <workspace>                       # advance config/default
+lernie config <workspace> <name>                # advance config/<name>
+lernie config <workspace> <name> --from <src>   # fork config/<name> off config/<src>
+lernie config <workspace> <name> --orphan       # fresh orphan lineage
+```
+
+The verb materializes a transient checkout of the target config lineage,
+refreshes the `descriptions/**` snapshot from the data-root pools (ARCH
+§3.3), opens the checkout in `$EDITOR` (falling back to `vi`) so you edit
+the control files (`workflow.yaml`, `providers.yaml`, `manifest.yaml`,
+`souls/`, `version`), commits, and tears the checkout down. `<name>`
+defaults to `default`. `--from` and `--orphan` are mutually exclusive and
+only apply when creating a new branch. An authoring pass that changes
+nothing is declined (git's empty-commit refusal) — the branch does not
+move. This is the **only** act that advances a config branch (ARCH §2.3);
+agents forked before it keep their governing config, and agents forked
+after it govern under the new head (fork is the freeze, §2.2).
+
 ## Sending a prompt
 
 ```

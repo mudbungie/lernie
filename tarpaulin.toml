@@ -24,7 +24,7 @@
 #   process for pid: …` → segfault). Serial execution sidesteps the
 #   race; the 100% workspace coverage floor stays the same.
 [default]
-exclude-files = ["src/bin/*", "crates/*/src/main.rs"]
+exclude-files = ["src/bin/*", "src/bin/lernie/*", "crates/*/src/main.rs"]
 ignore-panics = true
 timeout = "300s"
 args = ["--test-threads=1"]

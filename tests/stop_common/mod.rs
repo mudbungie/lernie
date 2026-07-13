@@ -86,26 +86,32 @@ pub fn repo_git(dest: &Path) -> std::path::PathBuf {
 }
 
 /// Advance `config/default` with the given control files — the
-/// harness-assisted config-commit authoring of ARCH §2.2, done the way
-/// a user would: a transient checkout, edits, one commit.
+/// harness-assisted config-commit authoring of ARCH §2.2, over the
+/// shipped core (`lernie::template::authoring::author`, `Origin::Advance`)
+/// rather than hand-rolled worktree juggling. The descriptions refresh
+/// reads an absent pool (an empty tree, §3.3), leaving the snapshot
+/// `lernie new` wrote intact and only landing the given edits.
 pub fn amend_config(dest: &Path, files: &[(&str, &str)]) {
-    let author = dest.join(".amend-config");
-    let author_str = author.to_string_lossy().to_string();
-    git_run(
-        &repo_git(dest),
-        &["worktree", "add", author_str.as_str(), "config/default"],
-    );
-    for (rel, content) in files {
-        let path = author.join(rel);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(path, content).unwrap();
-    }
-    git_run(&author, &["add", "-A"]);
-    git_run(&author, &["commit", "-m", "config: amend"]);
-    git_run(
-        &repo_git(dest),
-        &["worktree", "remove", author_str.as_str()],
-    );
+    let owned: Vec<(String, String)> = files
+        .iter()
+        .map(|(r, c)| (r.to_string(), c.to_string()))
+        .collect();
+    lernie::template::authoring::author(
+        dest,
+        &dest.join(".no-pools"),
+        "default",
+        lernie::template::authoring::Origin::Advance,
+        move |dir| {
+            for (rel, content) in &owned {
+                let path = dir.join(rel);
+                fs::create_dir_all(path.parent().unwrap())?;
+                fs::write(path, content)?;
+            }
+            Ok(())
+        },
+        &lernie::template::RealGit::new(),
+    )
+    .unwrap();
 }
 
 pub fn scaffold_repo(dest: &Path, harness: &Path) {

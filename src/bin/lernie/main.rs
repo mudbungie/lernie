@@ -4,6 +4,11 @@
 //!
 //! - `new <path>` — create a workspace and author its first config
 //!   commit on `config/default` (ARCH §2.2).
+//! - `config <workspace> [<name>]` — author a config commit beyond
+//!   `lernie new` (ARCH §2.2): materialize a checkout, refresh the
+//!   `descriptions/**` snapshot (§3.3), hand it to `$EDITOR`, commit.
+//!   Advances `config/<name>` (default `default`); `--from <source>`
+//!   forks a new branch, `--orphan` starts a fresh lineage.
 //! - `prompt <repo> <message>` — drive one root conversation: spawn the
 //!   `agents/<conv-id>` branch off the default config branch's head,
 //!   model-call via `bz` (§4.4), compact (§2.6).
@@ -27,13 +32,15 @@
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3):
 //!   `tool_use.input` JSON on stdin, bytes on stdout.
 
+mod cli;
+
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
 use lernie::prompt::{
     self, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool, SystemClock, tool::builtin,
 };
 use lernie::template::{self, RealGit};
-use std::{io, path::Path, path::PathBuf, process::ExitCode};
+use std::{io, path::PathBuf, process::ExitCode};
 
 #[derive(Parser)]
 #[command(name = "lernie", about = "Git-backed agent harness", version)]
@@ -48,6 +55,22 @@ enum Command {
     /// first config commit on `config/default`. No argument creates
     /// `<data-root>/workspaces/<auto-id>/`; a path creates there.
     New { path: Option<PathBuf> },
+    /// Author a config commit beyond `lernie new` (ARCH §2.2, §2.3): the
+    /// only act that advances a config branch. Materializes a checkout of
+    /// the target lineage, refreshes `descriptions/**` from the data-root
+    /// pools (§3.3), opens it in `$EDITOR`, and commits. `<name>` defaults
+    /// to `default`. `--from <source>` forks a new `config/<name>` off
+    /// `config/<source>`; `--orphan` starts a fresh lineage.
+    Config {
+        workspace: PathBuf,
+        name: Option<String>,
+        /// Fork a new branch off `config/<source>` instead of advancing.
+        #[arg(long)]
+        from: Option<String>,
+        /// Start a fresh orphan lineage instead of advancing.
+        #[arg(long)]
+        orphan: bool,
+    },
     /// Send one user message on a fresh root branch; prints its name.
     Prompt { repo: PathBuf, message: String },
     /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
@@ -143,6 +166,29 @@ fn main() -> ExitCode {
                 Err(e) => fail("lernie new", e),
             }
         }
+        Command::Config {
+            workspace,
+            name,
+            from,
+            orphan,
+        } => {
+            let roots = match harness_root::resolve() {
+                Ok(r) => r,
+                Err(e) => return fail("lernie config", e),
+            };
+            ok_or_fail(
+                "lernie config",
+                template::authoring::from_cli(
+                    &workspace,
+                    &roots.data,
+                    name.as_deref(),
+                    from.as_deref(),
+                    orphan,
+                    cli::edit_in_editor,
+                    &RealGit::new(),
+                ),
+            )
+        }
         Command::Prompt { repo, message } => {
             // No workspace scan: drivers touch only their own branch (§2.11).
             prompt::stop::become_pgid_leader(); // §2.9 cascade leader
@@ -194,7 +240,7 @@ fn main() -> ExitCode {
                 prompt::dispatch_cli::run(&role, &repo, &branch, goal.as_deref()),
             )
         }
-        Command::Advance { workspace, agent } => run_advance_cli(&workspace, &agent),
+        Command::Advance { workspace, agent } => cli::run_advance_cli(&workspace, &agent),
         Command::Stop {
             repo,
             branch,
@@ -243,24 +289,5 @@ fn main() -> ExitCode {
                 Err(e) => fail(&format!("lernie tool {name}"), e),
             }
         }
-    }
-}
-
-/// CLI handler for `lernie advance <workspace> <agent>` (ARCH §6): one
-/// hop of the workflow chain. The library does everything up to the
-/// exec ([`prompt::dispatch::advance::cli::cli_run`]); this shim only
-/// performs the `exec` itself — a successful `execve` replaces this
-/// image (the §6 exec baton, lock fd riding it), so the call returning
-/// at all is the failure path.
-fn run_advance_cli(workspace: &Path, agent: &str) -> ExitCode {
-    prompt::stop::become_pgid_leader(); // §2.9: every driver takes its own pgid
-    prompt::install_stop_handler(); // §2.9 step-3 stopped deposit
-    match prompt::dispatch::advance::cli::cli_run(workspace, agent) {
-        Ok(prompt::dispatch::advance::cli::AdvanceHandoff::Exec(mut cmd)) => {
-            use std::os::unix::process::CommandExt;
-            fail("lernie advance: exec successor", cmd.exec())
-        }
-        Ok(prompt::dispatch::advance::cli::AdvanceHandoff::Done(_)) => ExitCode::SUCCESS,
-        Err(e) => fail("lernie advance", e),
     }
 }

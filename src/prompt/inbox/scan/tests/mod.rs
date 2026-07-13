@@ -1,4 +1,5 @@
-//! Tests for the startup scan (ARCH §2.11 *The startup scan*, §8), split
+//! Tests for the `lernie scan` workspace sweep (ARCH §2.11 *Crashes are
+//! a failure class*, §8), split
 //! by axis so each file stays under the repo's per-file line cap.
 //!
 //! - [`sweep`]: the silent-death sweep — the never-deposited-child deposit,

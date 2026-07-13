@@ -38,10 +38,13 @@ impl Clock for FixedClock {
     }
 }
 
-/// A [`GitRunner`] scripted for the scan's three reads: `branch --list`,
-/// `ls-tree` (per parent branch), and `rev-parse` (per branch tip). Any
-/// unscripted `ls-tree`/`rev-parse` returns empty / a default sha; an
-/// optional `fail_op` makes the next matching op error.
+/// A [`GitRunner`] scripted for the scan's three reads: the `agents/*`
+/// enumeration (`for-each-ref`, §8 seam), `ls-tree` (per parent
+/// branch), and `rev-parse` (per branch tip). Scripted with bare agent
+/// ids; the stub answers under the `agents/` ref prefix the derivations
+/// ask with (§2.3). Any unscripted `ls-tree`/`rev-parse` returns empty
+/// / a default sha; an optional `fail_op` makes the next matching op
+/// error.
 #[derive(Default)]
 pub(super) struct StubGit {
     branches: String,
@@ -81,25 +84,38 @@ impl GitRunner for StubGit {
             .borrow_mut()
             .push(args.iter().map(|s| (*s).to_string()).collect());
         match args.first().copied() {
-            Some("branch") => {
+            Some("for-each-ref") => {
                 if self.fail_op == Some("branch") {
-                    return Err(io::Error::other("branch boom"));
+                    return Err(io::Error::other("enumeration boom"));
                 }
-                Ok(self.branches.clone())
+                // The seam asks for short refnames under agents/ (§8).
+                Ok(self
+                    .branches
+                    .lines()
+                    .filter(|l| !l.is_empty())
+                    .map(|id| format!("agents/{id}"))
+                    .collect::<Vec<_>>()
+                    .join("\n"))
             }
             Some("ls-tree") => {
                 if self.fail_op == Some("ls-tree") {
                     return Err(io::Error::other("ls-tree boom"));
                 }
-                // `git ls-tree -r --name-only <branch> -- messages` → [3].
-                let branch = args.get(3).copied().unwrap_or("");
+                // `git ls-tree -r --name-only agents/<branch> -- messages` → [3].
+                let branch = args
+                    .get(3)
+                    .and_then(|b| b.strip_prefix("agents/"))
+                    .unwrap_or("");
                 Ok(self.ls_tree.get(branch).cloned().unwrap_or_default())
             }
             Some("rev-parse") => {
                 if self.fail_op == Some("rev-parse") {
                     return Err(io::Error::other("rev-parse boom"));
                 }
-                let branch = args.get(2).copied().unwrap_or("");
+                let branch = args
+                    .get(2)
+                    .and_then(|b| b.strip_prefix("agents/"))
+                    .unwrap_or("");
                 Ok(self
                     .tips
                     .get(branch)

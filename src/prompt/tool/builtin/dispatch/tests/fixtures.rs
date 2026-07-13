@@ -104,18 +104,26 @@ impl Spawner for ErrSpawner {
     }
 }
 
-/// Build a fake conv-repo with a `providers.yaml` that lists `role`
-/// and a soul at `souls/<role>.md`. Mirrors the v0.4 templated
-/// scaffold's per-repo shape (ARCH §4.3) — minimal because validation
-/// only inspects the `roles:` keys and the soul-file existence.
-pub(super) fn fake_repo(role: &str) -> TempDir {
-    let dir = TempDir::new().unwrap();
-    let repo = dir.path();
+/// Build a real workspace whose config commit lists `role` in
+/// `providers.yaml` with a soul at `souls/<role>.md`, plus the parent
+/// agent branches the tests' env values name — validation reads the
+/// governing config commit of the calling branch (ARCH §2.2), so the
+/// ancestry must really exist. Returns `(holder, workspace_path)`.
+pub(super) fn fake_repo(role: &str) -> (TempDir, PathBuf) {
+    let (holder, ws) = crate::workspace::fixture::workspace();
     let yaml = format!("roles:\n  {role}:\n    provider: anthropic\n    model: sonnet\n",);
-    std::fs::write(repo.join("providers.yaml"), yaml).unwrap();
-    std::fs::create_dir_all(repo.join("souls")).unwrap();
-    std::fs::write(repo.join("souls").join(format!("{role}.md")), "soul body\n").unwrap();
-    dir
+    let soul_rel = format!("souls/{role}.md");
+    crate::workspace::fixture::amend_config(
+        &ws,
+        &[
+            ("providers.yaml", yaml.as_str()),
+            (&soul_rel, "soul body\n"),
+        ],
+    );
+    for parent in ["p1", "p1-conv"] {
+        crate::workspace::fixture::spawn_root(&ws, parent);
+    }
+    (holder, ws)
 }
 
 pub(super) fn input_for(role: &str, goal: &str) -> Vec<u8> {

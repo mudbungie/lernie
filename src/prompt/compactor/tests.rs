@@ -123,10 +123,10 @@ fn compactor_goal_text_names_parent_branch() {
 fn run_happy_path_writes_goal_summary_and_merges() {
     let (repo, parent_wt) = parent_layout("p1");
     let git = StubGit::ok();
-    // Hyphenated descent (ARCH §2.2): cmp branch + worktree directory
-    // share the same name `<parent>-<cmp-id>`.
+    // Hyphenated descent (ARCH §2.2): cmp id + worktree directory share
+    // the same name `<parent>-<cmp-id>`; the ref is `agents/<id>` (§2.3).
     let cmp_branch = "p1-ct-2-deadbeef";
-    let cmp_worktree = repo.path().join(cmp_branch);
+    let cmp_worktree = crate::workspace::agent_worktree(repo.path(), cmp_branch);
 
     run(
         &req(repo.path(), &parent_wt),
@@ -140,41 +140,52 @@ fn run_happy_path_writes_goal_summary_and_merges() {
     // 0: worktree add -b cmp_branch cmp_worktree parent_branch (run
     // inside parent worktree, which shares the .git dir).
     assert_eq!(runs[0].0, parent_wt);
-    assert_eq!(runs[0].1[..4], ["worktree", "add", "-b", cmp_branch]);
+    assert_eq!(
+        runs[0].1[..4],
+        ["worktree", "add", "-b", "agents/p1-ct-2-deadbeef"]
+    );
     assert_eq!(runs[0].1[4], cmp_worktree.to_string_lossy().to_string());
-    assert_eq!(runs[0].1[5], "p1");
+    assert_eq!(runs[0].1[5], "agents/p1");
 
-    // 1: add goal.md (in cmp wt)
+    // 1: control-file removal (total no-op off a parent tip, §2.3
+    // step 2).
     assert_eq!(runs[1].0, cmp_worktree);
-    assert_eq!(runs[1].1, vec!["add", "goal.md"]);
+    assert_eq!(runs[1].1[..5], ["rm", "-r", "-q", "--ignore-unmatch", "--"]);
 
-    // 2: commit dispatch (in cmp wt)
+    // 2: add goal.md (in cmp wt)
     assert_eq!(runs[2].0, cmp_worktree);
-    assert_eq!(runs[2].1[0], "commit");
-    assert!(runs[2].1[2].contains("compaction: dispatch"));
-    assert!(runs[2].1[2].contains("[p1]"));
+    assert_eq!(runs[2].1, vec!["add", "goal.md"]);
 
-    // 3: add summary/001.md (in cmp wt)
+    // 3: commit dispatch (in cmp wt)
     assert_eq!(runs[3].0, cmp_worktree);
-    assert_eq!(runs[3].1, vec!["add", "summary/001.md"]);
+    assert_eq!(runs[3].1[0], "commit");
+    assert!(runs[3].1[2].contains("compaction: dispatch"));
+    assert!(runs[3].1[2].contains("[p1]"));
 
-    // 4: commit summary (in cmp wt)
+    // 4: add summary/001.md (in cmp wt)
     assert_eq!(runs[4].0, cmp_worktree);
-    assert_eq!(runs[4].1[0], "commit");
-    assert!(runs[4].1[2].contains("compaction: terminal summary"));
+    assert_eq!(runs[4].1, vec!["add", "summary/001.md"]);
 
-    // 5..6: the compaction merge (ARCH §2.6) — `--no-ff` merge of the
-    // compactor branch into the dispatching branch, then worktree
-    // remove. No rebase and no merge=ours alignment: the merge is
-    // conflict-free by construction. Both run inside the parent
-    // worktree (shared .git dir), since the conv-repo root itself is
-    // not a git checkout in v0.3 (ARCH §2.2).
-    assert_eq!(runs[5].0, parent_wt);
-    assert_eq!(runs[5].1, vec!["merge", "--no-ff", cmp_branch]);
+    // 5: commit summary (in cmp wt)
+    assert_eq!(runs[5].0, cmp_worktree);
+    assert_eq!(runs[5].1[0], "commit");
+    assert!(runs[5].1[2].contains("compaction: terminal summary"));
+
+    // 6..7: the compaction merge (ARCH §2.6) — `--no-ff` merge of the
+    // compactor branch (its `agents/*` ref) into the dispatching
+    // branch, then worktree remove. No rebase and no merge=ours
+    // alignment: the merge is conflict-free by construction. Both run
+    // inside the parent worktree — any access point onto the one
+    // workspace repository (§2.2).
     assert_eq!(runs[6].0, parent_wt);
-    assert_eq!(runs[6].1[..2], ["worktree", "remove"]);
-    assert_eq!(runs[6].1[2], cmp_worktree.to_string_lossy().to_string());
-    assert_eq!(runs.len(), 7, "no rebase/align steps remain");
+    assert_eq!(
+        runs[6].1,
+        vec!["merge", "--no-ff", "agents/p1-ct-2-deadbeef"]
+    );
+    assert_eq!(runs[7].0, parent_wt);
+    assert_eq!(runs[7].1[..2], ["worktree", "remove"]);
+    assert_eq!(runs[7].1[2], cmp_worktree.to_string_lossy().to_string());
+    assert_eq!(runs.len(), 8, "no rebase/align steps remain");
 
     // Disk-side: goal.md and summary are present in the cmp wt tree
     // (they were physically written before each git add).
@@ -207,12 +218,13 @@ macro_rules! run_failing_at_test {
 }
 
 run_failing_at_test!(run_surfaces_worktree_add_failure, 0, "worktree add");
-run_failing_at_test!(run_surfaces_goal_add_failure, 1, "add");
-run_failing_at_test!(run_surfaces_goal_commit_failure, 2, "commit");
-run_failing_at_test!(run_surfaces_summary_add_failure, 3, "add");
-run_failing_at_test!(run_surfaces_summary_commit_failure, 4, "commit");
-run_failing_at_test!(run_surfaces_merge_failure, 5, "merge");
-run_failing_at_test!(run_surfaces_worktree_remove_failure, 6, "worktree remove");
+run_failing_at_test!(run_surfaces_control_rm_failure, 1, "rm control files");
+run_failing_at_test!(run_surfaces_goal_add_failure, 2, "add");
+run_failing_at_test!(run_surfaces_goal_commit_failure, 3, "commit");
+run_failing_at_test!(run_surfaces_summary_add_failure, 4, "add");
+run_failing_at_test!(run_surfaces_summary_commit_failure, 5, "commit");
+run_failing_at_test!(run_surfaces_merge_failure, 6, "merge");
+run_failing_at_test!(run_surfaces_worktree_remove_failure, 7, "worktree remove");
 
 #[test]
 fn stub_run_capture_records_and_returns_empty() {

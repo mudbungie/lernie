@@ -1,46 +1,8 @@
-//! Pure-function unit tests for the detect + cmd layers (v0.3).
+//! Pure-function unit tests for the detect + cmd layers.
 
 use crate::git_tree::GitTreeError;
 use crate::git_tree::cmd::{parse_log, parse_step_commits};
-use crate::git_tree::detect::{
-    PREVIEW_MAX, extract_request_preview, parse_merge_subject, truncate_preview,
-};
-
-#[test]
-fn parse_merge_subject_recovers_branch_name_from_default_subject() {
-    assert_eq!(
-        parse_merge_subject("Merge branch '20260422T120000Z-a001'"),
-        Some("20260422T120000Z-a001")
-    );
-}
-
-#[test]
-fn parse_merge_subject_recovers_branch_name_with_into_tail() {
-    // Git appends ` into <target>` when the merge target isn't `main`.
-    assert_eq!(
-        parse_merge_subject("Merge branch 'aa-bb-cc' into aa-bb"),
-        Some("aa-bb-cc")
-    );
-}
-
-#[test]
-fn parse_merge_subject_handles_hyphenated_descent_id() {
-    assert_eq!(
-        parse_merge_subject("Merge branch 'aa-bb-cc'"),
-        Some("aa-bb-cc")
-    );
-}
-
-#[test]
-fn parse_merge_subject_rejects_non_merge_subject() {
-    assert_eq!(parse_merge_subject("dispatch [abc]"), None);
-}
-
-#[test]
-fn parse_merge_subject_rejects_truncated_subject() {
-    // Missing closing quote — defensive against history rewrites.
-    assert_eq!(parse_merge_subject("Merge branch 'abc"), None);
-}
+use crate::git_tree::detect::{PREVIEW_MAX, extract_request_preview, truncate_preview};
 
 #[test]
 fn truncate_preview_passes_short_input_through() {

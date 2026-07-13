@@ -12,7 +12,7 @@ CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on ever
 
 ```
 make install              # lay down the XDG harness homes + binaries on PATH
-lernie new ~/work/chat    # scaffold a conversation repo
+lernie new ~/work/chat    # create a workspace (bare repo.git + config/default)
 ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
 ```
 
@@ -30,7 +30,7 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    §2.2): the **config root** (`$XDG_CONFIG_HOME/lernie`, default
    `~/.config/lernie`) gets `models.yaml` and `workflows/`; the **data
    root** (`$XDG_DATA_HOME/lernie`, default `~/.local/share/lernie`)
-   gets the `tools/`, `skills/`, `agents/`, and `conversations/` pools.
+   gets the `tools/` and `skills/` pools and the `workspaces/` tree.
    `LERNIE_HOME`, if set, collapses both roots to that one directory.
    Re-runs are idempotent: directory creation uses `mkdir -p`; existing
    config files are kept.
@@ -45,9 +45,11 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    guard rejects any `bz` whose version differs from the pin.
 4. Drops a default `models.yaml` under the config root (model
    capabilities + context windows — no endpoints or auth, which are
-   brazen's) and an `agents/default/` skeleton under the data root,
-   copied from [`template/`](template/) — only when those paths don't
-   already exist, so hand-edited config survives a re-install.
+   brazen's) — only when it doesn't already exist, so hand-edited
+   config survives a re-install. There is no frozen profile pool: the
+   config a workspace runs under is its own `config/default` commit,
+   authored from [`template/`](template/) at `lernie new` (fork is the
+   freeze, ARCH §2.2).
 5. Smoke-tests the freshly installed binaries with `lernie --version`
    and a throwaway `lernie new`. Failure aborts the install with a
    non-zero exit.
@@ -61,25 +63,25 @@ material (ARCH §4.1).
 `make uninstall` removes the `lernie`/`lernie-ui-egui` binaries; `bz`
 (installed via cargo) is removed with `cargo uninstall brazen`. The
 harness homes (the config and data roots, holding config and
-conversations) stay put — clean them up manually if you want a true
+workspaces) stay put — clean them up manually if you want a true
 uninstall.
 
 ## Configuration schemas
 
-JSON Schemas for the harness-root and conversation-repo config files (per
+JSON Schemas for the harness-root and config-commit control files (per
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2, §4.1) are generated
 from the Rust types under `src/config/`. `make schemas` writes them to
 `schemas/` for editor integration and external validators:
 
-| File                          | Backed by Rust type                        | On-disk file                          |
+| File                          | Backed by Rust type                        | Config-commit / on-disk file          |
 |-------------------------------|--------------------------------------------|---------------------------------------|
-| `schemas/version.json`        | `config::version::Version`                 | `<conv-repo>/version`                 |
-| `schemas/manifest.json`       | `config::manifest::Manifest`               | `<conv-repo>/manifest.yaml`           |
-| `schemas/workflow.json`       | `config::workflow::Workflow`               | `<conv-repo>/workflow.yaml`           |
-| `schemas/providers.json`      | `config::per_repo_providers::PerRepoProviders` | `<conv-repo>/providers.yaml` (`roles:`) |
+| `schemas/version.json`        | `config::version::Version`                 | `version` (config commit)             |
+| `schemas/manifest.json`       | `config::manifest::Manifest`               | `manifest.yaml` (config commit)       |
+| `schemas/workflow.json`       | `config::workflow::Workflow`               | `workflow.yaml` (config commit)       |
+| `schemas/providers.json`      | `config::per_repo_providers::PerRepoProviders` | `providers.yaml` (config commit, `roles:`) |
 | `schemas/models.json`         | `config::models::Models`                   | `<config-root>/models.yaml`           |
 
-## Layout: harness root and conversation repos
+## Layout: harness root and workspaces
 
 The harness root is installation-global state, split by XDG lifetime
 into two homes (ARCH §2.2). `LERNIE_HOME`, if set and non-empty,
@@ -93,47 +95,54 @@ installs). Three distinct on-disk locations:
   override — §4.2) and the `workflows/` templates. Provider endpoints
   and auth live in brazen's config, not here (§4.1).
 - **Data root** — machine-populated pools, `$XDG_DATA_HOME/lernie`
-  (default `~/.local/share/lernie`). Holds `tools/`, `skills/`, and
-  `agents/<profile>/` per-profile skeletons, plus the `conversations/`
-  tree. Shared across every conversation.
-- **Conversation repo** — one self-contained git repository per root
-  conversation, at `<data-root>/conversations/<root-id>/`. Carries the
-  per-repo `providers.yaml` (`roles:` only — §4.3), `manifest.yaml`,
-  `workflow.yaml`, `souls/`, and a `root/` worktree where `main` is
-  checked out. Subagent conversations are sibling worktrees of `root/`,
-  one per `<a>-<b>-…/` directory. Conversation repos are never pushed to
-  a remote.
+  (default `~/.local/share/lernie`). Holds the `tools/` and `skills/`
+  pools plus the `workspaces/` tree. Shared across every workspace.
+- **Workspace** — one git repository per workspace, at
+  `<data-root>/workspaces/<workspace>/` (ARCH §2.2): a bare `repo.git`
+  holding config branches (`config/<name>`) and agent refs
+  (`agents/<agent-id>`) — **no `main`**. The control files
+  (`providers.yaml` `roles:` only — §4.3, `manifest.yaml`,
+  `workflow.yaml`, `version`, `souls/`) live in the **config commit**,
+  read from each agent's governing config commit (`git merge-base`
+  against the `config/*` heads — derived from ancestry, never stored).
+  Agent worktrees are siblings under `agents/<agent-id>/`; `steps/` and
+  `inbox/` sit at the workspace root, outside every worktree.
+  Workspace repositories are never pushed to a remote.
 
-Each conversation repo is scaffolded from [`template/`](template/) — the
-versioned skeleton embedded into the `lernie` binary at build time, the
-v0.3-shape default profile in the absence of a custom
-`<data-root>/agents/<profile>/`. Create one:
+`lernie new` creates a workspace and authors its **first config commit**
+— an orphan root on `config/default` — from [`template/`](template/),
+the versioned skeleton embedded into the `lernie` binary at build time:
 
 ```
-lernie new                     # auto-id under <data-root>/conversations/
-lernie new /path/to/my-conversation
+lernie new                     # auto-id under <data-root>/workspaces/
+lernie new /path/to/my-workspace
 ```
 
 Or via the Makefile wrapper:
 
 ```
-make new-conversation DEST=/path/to/my-conversation
+make new-workspace DEST=/path/to/my-workspace
 ```
 
-The binary embeds `template/` at build time (via `include_dir`), extracts
-it to the destination, creates the `root/` worktree subdirectory, runs
-`git init -b main` *inside* `root/`, and lands a single (possibly empty)
-`init conversation repo` commit. Merge-back is gone (§2.6), so no
-`merge=ours` `.gitattributes` or `merge.ours.driver` is scaffolded — the
-one merge left in the system is compaction, conflict-free by construction.
-The control-plane files (`manifest.yaml`, `workflow.yaml`,
-`providers.yaml`, `version`, `souls/`) sit at the conv-repo root —
-outside any worktree — and are deliberately untracked. The destination
-must either not exist or be an empty directory. With no path argument,
-the destination is `<data-root>/conversations/<auto-id>/`;
-the scaffolded path is printed on stdout. `goal.md` and `soul.md` inside
-`root/` are intentionally not in the template — they are written at
-dispatch time (ARCH §2.3, §2.8).
+The binary runs `git init --bare -b config/default <dest>/repo.git`,
+materializes a transient authoring checkout, extracts the template's
+control files into it, snapshots the data-root pools into
+`descriptions/{tools,skills}/` (ARCH §3.3 descriptions-always), commits
+(`config: init [config/default]`), and tears the checkout down. The
+workspace is left with exactly one ref — the config commit every fresh
+root agent forks off (fork is the freeze, §2.2). The destination must
+either not exist or be an empty directory. With no path argument, the
+destination is `<data-root>/workspaces/<auto-id>/`; the created path is
+printed on stdout. `goal.md` and `soul.md` are intentionally not in the
+template — they are written per-branch at dispatch time (ARCH §2.3,
+§2.8), which also **removes the control files from the agent's tree**
+(§2.2: control is read from the config commit; worktrees hold only
+context).
+
+**Pre-v1 clean break (ARCH §10):** the retired per-conversation layout
+(a `root/` worktree with loose control files) is refused with an
+actionable error, not migrated — create a fresh workspace with
+`lernie new`.
 
 ## Sending a prompt
 
@@ -142,35 +151,47 @@ lernie prompt /path/to/my-conversation 'hello'
 ```
 
 `lernie prompt` is the root-conversation path (ARCH §2.3, §2.6, §2.7,
-§2.8, §2.10). Each invocation spawns its own branch off `main`, drives
-the model call through brazen's `bz` (§4.4), and runs the terminal
-compactor off the tip — the compaction merge lands into the conversation's
-own branch. Merge-back is gone (§2.6): the root branch persists on its own
-ref (§2.4), and a child returns by depositing a result message into its
-parent's inbox (§2.6):
+§2.8, §2.10). Each invocation spawns its own `agents/<conv-id>` branch
+off the default config branch's head (§2.2–§2.3 — there is no `main`),
+drives the model call through brazen's `bz` (§4.4), and runs the
+terminal compactor off the tip — the compaction merge lands into the
+conversation's own branch. Merge-back is gone (§2.6): the root branch
+persists on its own ref (§2.4), and a child returns by depositing a
+result message into its parent's inbox (§2.6):
 
 1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
-   §2.2). Load `<config-root>/models.yaml` (capabilities + context
-   windows + optional `adapter:` override — §4.2) and
-   `<repo>/providers.yaml` (`roles:` block — §4.3); cross-validate
-   `roles.worker.{provider,model}` against `models.yaml`.
+   §2.2) and guard the workspace layout (a non-workspace, or the
+   retired per-conversation layout, is refused — §2.2, §10). Load
+   `<config-root>/models.yaml` (capabilities + context windows +
+   optional `adapter:` override — §4.2) and, from the config commit's
+   tree (`git show <config-commit>:providers.yaml`, §2.2),
+   `providers.yaml` (`roles:` block — §4.3); cross-validate
+   `roles.worker.{provider,model}` against `models.yaml`. For a fresh
+   root the config commit is `config/default`'s head — the very commit
+   the new agent forks off; `lernie advance` derives an existing
+   agent's **governing config commit** from ancestry instead
+   (`git merge-base` against the `config/*` heads — never stored).
 2. Run the load-time version guard: `bz --version` must equal the
    linked brazen crate version (§4.4). Under an `adapter:` override the
    guard is skipped and the in-band `MessageStart.v` handshake governs.
-   Read the worker soul from `<repo>/souls/worker.md` (§4.3).
-3. Spawn branch `<conv-id>` (the bare hyphenated id, §2.3) off `main`
-   and allocate a sibling worktree at `<repo>/<conv-id>/` (§2.2). Write
-   the branch goal to `goal.md` and the role soul to `soul.md`; commit
-   them as the dispatch snapshot — that commit's tree is step 1's read
-   state (§2.10).
+   Read the worker soul from the config commit's `souls/worker.md`
+   (§2.2, §4.3).
+3. Spawn branch `agents/<conv-id>` (§2.3 — the id is the bare
+   hyphenated descent; the `agents/` prefix is the ref namespace) off
+   `config/default` and allocate a worktree at
+   `<workspace>/agents/<conv-id>/` (§2.2). Write the branch goal to
+   `goal.md` and the role soul to `soul.md`, remove the config commit's
+   control files from the tree (§2.2 — the worktree holds only
+   context), and commit — that commit's tree is step 1's read state
+   (§2.10).
 4. Build a typed `brazen::CanonicalRequest` (linked crate — the
    fail-open `extra` map stays unreachable), mirror it to
-   `<conv-repo>/steps/<conv-id>/001/request.json` (a diagnostic
+   `<workspace>/steps/<conv-id>/001/request.json` (a diagnostic
    artifact, outside every worktree, never read at runtime, §2.3).
 5. **Model call, harness-owned retry loop (§2.10, §4.4).** Exec
    `bz --json --provider <row>` once per *attempt*, canonical request
    on stdin, appending each attempt's stdout verbatim to
-   `<conv-repo>/steps/<conv-id>/<NNN>/response.json` as brazen `v=1`
+   `<workspace>/steps/<conv-id>/<NNN>/response.json` as brazen `v=1`
    NDJSON — one self-delimiting segment per attempt, each ending in a
    terminal `end`. On a retryable in-band `Error`
    (`CanonicalError::retryable()`, never re-derived) the harness
@@ -183,7 +204,7 @@ parent's inbox (§2.6):
    the handshake `v` — for retry/classification; `meta.json` carries
    `{commit, started_at, ended_at}`. The events' *content* streams into
    the **transcript writer**'s (§2.3) staging file
-   `<conv-repo>/steps/<conv-id>/<NNN>/staging.json`,
+   `<workspace>/steps/<conv-id>/<NNN>/staging.json`,
    appending each content block as it completes; segment authority
    (§4.4) truncates it on an `Error` attempt and the settling `Finish`
    seals it — one stream, two sinks (diagnostic `response.json` +
@@ -218,7 +239,7 @@ parent's inbox (§2.6):
    one input, the commit's tree (§2.3, §5). If the settled model-output
    entry carries any `tool_use` block, run every one through the tool
    executor — the per-call records land under
-   `<conv-repo>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of every
+   `<workspace>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of every
    worktree, §3.3; written but never read at runtime), and as each tool
    resolves the transcript writer commits `messages/NNN-tool.json` (its
    canonical `tool_result` block) — then loop into step `<NNN+1>`. A
@@ -252,18 +273,18 @@ parent's inbox (§2.6):
    The compactor is a stub — it does not call a model; the shape exists so
    v0.4+ can layer real semantics without moving call sites. **Merge-back
    is gone (§2.6):** the root branch persists on its own ref (§2.4);
-   nothing merges to `main`, and the conversation worktree is not torn
+   nothing merges anywhere, and the conversation worktree is not torn
    down (quiescence, not teardown, §2.3 step 6).
-9. Print the conversation branch name on stdout.
+9. Print the agent id (the bare conv-id) on stdout.
 
-After `lernie prompt` returns, inspect the conversation from the primary
-worktree (`root/` is where `main` is checked out):
+After `lernie prompt` returns, inspect the conversation against the
+bare workspace repository:
 
 ```
-cd /path/to/my-conversation/root
-git log --oneline --decorate <conv-id> -4
-git show --stat <conv-id>         # the compaction merge commit
-git show <conv-id>:summary/001.md # terminal summary (on the conv branch)
+cd /path/to/my-workspace
+git -C repo.git log --oneline --decorate agents/<conv-id> -4
+git -C repo.git show --stat agents/<conv-id>  # the compaction merge commit
+git -C repo.git show agents/<conv-id>:summary/001.md # terminal summary
 ```
 
 The root branch persists unmerged by design (§2.4), so the health metric
@@ -311,9 +332,11 @@ Behavior:
 
 - **Idempotent.** A branch with no live writer (already stopped, or the
   harness exited cleanly) returns success without sending any signal.
-- **Errors when** the branch doesn't exist, or is already merged into
-  `main`. Both surface as a non-zero exit with a `lernie stop:` prefix
-  on stderr.
+- **Errors when** the agent branch (`agents/<conv-id>`) doesn't exist.
+  Surfaces as a non-zero exit with a `lernie stop:` prefix on stderr.
+  (The old "already merged" refusal died with `main`: nothing merges,
+  so there is no merged state to refuse — an already-terminal branch is
+  simply the idempotent no-holder case above.)
 - **No on-disk cancel marker.** The §2.9 signature of a stopped branch
   is the latest step's `response.json` closed without a terminal `end`
   event — produced by `bz` dying mid-stream on its own SIGTERM (§4.4);
@@ -360,8 +383,9 @@ Built-ins:
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously
   (ARCH §2.5). Input is `{role, goal}`;
-  the role must resolve to `<conv-repo>/souls/<role>.md` and a
-  `roles:` entry in `<conv-repo>/providers.yaml`. Reads the calling
+  the role must resolve to `souls/<role>.md` and a `roles:` entry in
+  `providers.yaml` — both read from the calling branch's governing
+  config commit (§2.2). Reads the calling
   conversation's repo + branch from the harness-set
   `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` env vars (ARCH §3.3 env
   bullet); spawns through `lernie dispatch <role>` (§3.4). The handle
@@ -497,11 +521,10 @@ run a step loop (the worker path stops at the dispatch commit), a real
 "died child" cannot arise from a run today — the derivation is exercised
 against constructed on-disk states.
 
-**Namespace note.** ARCH §8 writes the candidate enumeration as `git
-branch --list 'agents/*'`, but the shipped harness names agent branches
-bare (a root is its `<conv-id>`, a child is `<parent>-<sub-id>`), so the
-scan enumerates *every branch except `main`* — in shipped reality every
-non-`main` branch is an agent.
+**Namespace note.** The candidate enumeration is the `agents/*` ref
+namespace, exactly as ARCH §8 writes it (a root is `agents/<conv-id>`,
+a child `agents/<parent>-<sub-id>`); config branches are excluded
+structurally by the prefix — there is no `main` (§2.2).
 
 ## Dispatching subagents directly
 
@@ -510,20 +533,20 @@ re-entry point every subagent uses. The role name is positional, so
 the surface generalizes across the v0.3 compactor, the v0.4 worker,
 and future roles (verifier, critic, …) without a CLI shape change.
 
-- `lernie dispatch compactor <repo> <conv-id>` runs the same
+- `lernie dispatch compactor <workspace> <conv-id>` runs the same
   terminal-compaction routine `lernie prompt` triggers internally.
   Useful for re-compacting a conversation branch that still exists as
   a ref, or for testing the compactor path independently. The
   compactor's goal is built-in boilerplate; passing `--goal` is
-  rejected. The command only runs the compaction +
-  compactor→conversation merge; merge into `main` is the caller's
-  problem (§2.6).
-- `lernie dispatch worker <repo> <parent-branch> --goal <text>`
-  spawns a worker subagent off `<parent-branch>`'s tip. The new
-  branch is `<parent-branch>-<sub-id>` (hyphenated descent, §2.2),
-  with a sibling worktree at the same path; `goal.md` carries the
-  supplied text and `soul.md` is loaded from
-  `<repo>/souls/worker.md`, both committed as the dispatch commit
+  rejected. The command runs the compaction + the compaction merge
+  into the conversation branch — the one merge in the system (§2.6).
+- `lernie dispatch worker <workspace> <parent-id> --goal <text>`
+  spawns a worker subagent off the parent's tip. The new id is
+  `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref
+  `agents/<parent>-<sub-id>` (§2.3), its worktree
+  `agents/<parent>-<sub-id>/`; `goal.md` carries the supplied text and
+  `soul.md` is read from the parent's governing config commit
+  (`souls/worker.md`, §2.2), both committed as the dispatch commit
   (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step loop
   is a later milestone. The inbox result-return path it will use is
   already built (result-message deposit + work-product transfer, bl-4ce8,
@@ -581,57 +604,51 @@ function of filesystem state — and one of potentially several frontends
 (a future `lernie-ui-web` would share the pure-Rust view-model layer).
 
 On startup, the binary loads the current git history of the target
-conv-repo (ARCH §2.2 — the dir with `manifest.yaml`, `root/`, and any
-sibling subagent worktrees) and renders a two-tier tree: `main`'s
-first-parent trunk, with each `--no-ff` conversation merge showing its
-step commits indented beneath; any unmerged conversation branches (root
-in-flight or subagent) follow in their own section. Each merge node is
-labeled with the conversation id and a truncated `messages[0].content`
-preview pulled from `steps/<conv-id>/001/request.json`. If the tree
+workspace (ARCH §2.2 — the dir with `repo.git/`, `steps/`, `inbox/`,
+and the `agents/` worktrees) and renders a two-tier tree: the config
+lineage (`config/default`) as the trunk, and every `agents/*` branch in
+its own section — agents never merge anywhere (§2.6), so every agent is
+a live row, labeled with its id and a truncated `messages[0].content`
+preview pulled from `steps/<agent-id>/001/request.json`. If the tree
 can't be read, a placeholder view is shown instead.
 
 Four pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
 
-- `fs_watcher` — tracks the §3.5 repo paths via `notify` and coalesces
-  change events. The watched set covers conv-repo root paths
-  (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `version`,
-  `souls/`, `steps/` — the last lives at the conv-repo root outside
-  every worktree per ARCH §2.2 / §2.3), per-worktree contents under
-  any subdir (`goal.md`, `soul.md`, `summary/`, `descriptions/`,
-  `skills/`), and the primary worktree's git refs
-  (`root/.git/HEAD`, `root/.git/refs/`). Filesystem events drive the
-  re-render tick; the renderer is a pure function of on-disk state at
-  that tick (no in-memory accumulator), so a missed event at most
-  delays a frame.
+- `fs_watcher` — tracks the §3.5 workspace paths via `notify` and
+  coalesces change events. The watched set covers the workspace-root
+  `steps/` and `inbox/` trees (outside every worktree per ARCH §2.2 /
+  §2.11), per-agent worktree contents under `agents/<agent-id>/`
+  (`goal.md`, `soul.md`, `summary/`, `messages/`, `descriptions/`,
+  `skills/`), and the bare repository's refs (`repo.git/HEAD`,
+  `repo.git/refs/`). Filesystem events drive the re-render tick; the
+  renderer is a pure function of on-disk state at that tick (no
+  in-memory accumulator), so a missed event at most delays a frame.
 - `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
   spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
   aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
   the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
-- `git_tree` — resolves the conv-repo path to its `root/` worktree
+- `git_tree` — resolves the workspace path to its bare `repo.git`
   (ARCH §2.2) and produces a view-model (`GitTree`) independent of
-  egui: `main`'s first-parent trunk (including conversation merge nodes
-  with their step commits) plus the set of unmerged conversation
-  branches (`git for-each-ref --no-merged=main refs/heads/`, per
-  PRINCIPLES.md single-source-of-truth). Conversation detection keys
-  off the merged branch name in each `--no-ff` merge subject (step
-  records are no longer in the merge tree per ARCH §2.3); the user-
-  message preview is read from `<conv-repo>/steps/<conv-id>/001/
-  request.json` on disk. Submodules layer the live indicators: streaming
-  text folded from the latest step's `response.json` JSONL (`text_delta`
-  events, ARCH §4.4); branch-state badges (in-flight / stopped / merged
-  / conflicted) derived from refs + the §4.4 terminal event without
-  sidecars (PRINCIPLES.md single-source-of-truth); tool-call pulses
-  derived from `tools/<tool-id>/input.json` present without `output.json`
-  (ARCH §3.3 in-progress-is-derived-state). A thin egui widget in the
-  same module renders it.
+  egui: the config lineage's first-parent log plus every agent branch
+  (`git for-each-ref refs/heads/agents/`, per PRINCIPLES.md
+  single-source-of-truth). The user-message preview is read from
+  `<workspace>/steps/<agent-id>/001/request.json` on disk. Submodules
+  layer the live indicators: streaming text folded from the latest
+  step's `response.json` JSONL (`text_delta` events, ARCH §4.4);
+  branch-state badges (in-flight / stopped) derived from refs + the
+  §4.4 terminal event without sidecars (PRINCIPLES.md
+  single-source-of-truth); tool-call pulses derived from
+  `tools/<tool-id>/input.json` present without `output.json` (ARCH
+  §3.3 in-progress-is-derived-state). A thin egui widget in the same
+  module renders it.
 - `actions` — the user-action surface: `ActionsState` holds the
   in-progress prompt input and selected branch (in-memory only per
   §3.5), and `dispatch_new_prompt` / `dispatch_stop` build the argv for
-  `lernie prompt <repo> <message>` / `lernie stop <repo> <branch>` and
-  invoke `cli_outbound`. Enable/disable derivation (`new_prompt_enabled`,
-  `stop_enabled`) is a pure function of the input string and the
-  unmerged-branch list. Per the §2.9 amendment landed in bl-abf3,
+  `lernie prompt <workspace> <message>` / `lernie stop <workspace>
+  <agent-id>` and invoke `cli_outbound`. Enable/disable derivation
+  (`new_prompt_enabled`, `stop_enabled`) is a pure function of the
+  input string and the agent list. Per the §2.9 amendment landed in bl-abf3,
   there is no user-facing "resume" — continuing from a stopped branch
   is a fresh `lernie prompt` or fork-from-history.
 
@@ -650,10 +667,11 @@ present on any Linux desktop. No `apt install` step is required.
 
 **Archive a run.** A "run" is an agent subtree, not a whole workspace (§9.2).
 `lernie bundle <workspace> <agent> <out-dir>` writes the subtree — the
-`<agent>` branch and its `<agent>-*` hyphen-descendants (§2.3), with all the
-ancestry those refs reach — as one `git bundle`, and copies the matching
-`steps/<id>*` and `inbox/<id>*` diagnostic slices beside it. One bundle plus
-two slices is the whole run.
+`agents/<agent>` branch and its `agents/<agent>-*` hyphen-descendants (§2.3),
+with all the ancestry those refs reach, the governing config commit included
+(§2.2) — as one `git bundle`, and copies the matching `steps/<id>*` and
+`inbox/<id>*` diagnostic slices beside it. One bundle plus two slices is the
+whole run.
 
 ```
 lernie bundle /path/to/workspace <agent-id> /path/to/archive
@@ -661,20 +679,17 @@ lernie bundle /path/to/workspace <agent-id> /path/to/archive
 
 **Replay a run.** `lernie replay <archive>` reconstructs a scratch workspace
 under `LERNIE_HOME`'s data root at `replays/<primary-id>/` (the primary id is
-the subtree's root branch), fetches every branch out of the bundle, materializes
-the primary's worktree, restores the slices, and prints the scratch path. Point
-the ordinary frontend at it — replay is not a mode (§2.3). Set `LERNIE_HOME` to
-an isolated directory to keep the replay sandboxed.
+the subtree's root agent), fetches every branch out of the bundle into a
+fresh bare `repo.git`, materializes the primary's worktree under `agents/`,
+restores the slices, and prints the scratch path. Point the ordinary frontend
+at it — replay is not a mode (§2.3). Set `LERNIE_HOME` to an isolated
+directory to keep the replay sandboxed. The governing config rides the
+bundle's ancestry (§2.2): the config commit is an ancestor of every agent
+branch, so no config sidecar exists.
 
 ```
 LERNIE_HOME=/tmp/replay lernie replay /path/to/archive
 ```
-
-> Pre-substrate note: the workspace's control files (`workflow.yaml`,
-> `manifest.yaml`, `providers.yaml`, `souls/`, `version`) are currently
-> untracked at the workspace root, so they do not travel in the bundle; the
-> shipped bundle/replay targets *inspection* of the branch tree, transcripts,
-> and diagnostic slices (ARCH §9.2 shipped-state note).
 
 **Task suite.** The evaluation suite lives as data under `tests/suite/` — 50
 tasks with machine-checkable `check` scripts, tagged by the seven §9.1 failure
@@ -710,12 +725,12 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make fmt`            | `cargo fmt`                                           |
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
-| `make new-conversation DEST=<path>` | Scaffold a conversation repo from `template/` |
-| `make ui REPO=<path>`  | Launch `lernie-ui-egui` against an existing conv-repo via `cargo run`        |
+| `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
+| `make ui REPO=<path>`  | Launch `lernie-ui-egui` against an existing workspace via `cargo run`        |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `agents/default/` template; `LERNIE_HOME` collapses both |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree; `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow
@@ -727,8 +742,7 @@ rejected by the pre-commit hook.
 bl prime --as <you>
 bl claim <task-id>              # creates a worktree; cd into it
 # ...edit, test, commit...
-bl review <task-id> -m "..."    # squash-merges into main
-bl close  <task-id> -m "..."    # from the repo root
+bl close  <task-id> -m "..."    # squash-merges into main; run from the repo root
 ```
 
 See `bl skill` for the full guide.
@@ -739,7 +753,7 @@ See `bl skill` for the full guide.
 
 1. **No direct commits to mainline.** `main` and `master` are rejected unless
    the commit is the tail of a merge (`MERGE_MSG`/`SQUASH_MSG` present), which
-   is how `bl review` lands squash-merges.
+   is how `bl close` lands squash-merges.
 2. **300-line cap on code files.** Docs (`*.md`, `*.txt`), config (`*.toml`,
    `*.yaml`, `*.yml`, `*.json`, `*.lock`), `Makefile`, `.gitignore`,
    `LICENSE`, and anything under `.githooks/` are exempt.

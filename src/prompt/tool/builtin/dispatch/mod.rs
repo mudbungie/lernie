@@ -24,16 +24,14 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use thiserror::Error;
 
-use crate::config::{LoadError, PerRepoProviders};
-use crate::prompt::SOULS_DIR;
+use crate::config::LoadError;
 
-/// Per-repo `providers.yaml` filename — pinned by ARCH §4.3 (the
-/// per-repo config carries the role → (provider, model) mapping).
-/// Local copy so the dispatch tool can validate `role` against the
-/// `roles:` block without reaching back through the harness library.
+/// Config-commit `providers.yaml` filename — pinned by ARCH §4.3 (the
+/// config carries the role → (provider, model) mapping), read from the
+/// calling branch's governing config commit (§2.2).
 const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// Filename suffix for soul files (ARCH §4.3 — soul =
-/// `<conv-repo>/souls/<role>.md`).
+/// `souls/<role>.md` in the governing config commit).
 const SOUL_SUFFIX: &str = ".md";
 
 /// Wire shape of the input. `serde(deny_unknown_fields)` so a
@@ -84,9 +82,18 @@ pub enum Error {
     /// in its `roles:` block.
     #[error("role {role:?} is not defined in {path}", path = path.display())]
     RoleMissing { role: String, path: PathBuf },
-    /// Soul file for the requested role does not exist.
+    /// Soul file for the requested role does not exist in the
+    /// governing config commit's tree.
     #[error("soul {path} does not exist", path = path.display())]
     SoulMissing { path: PathBuf },
+    /// Deriving the governing config commit (§2.2) or reading a control
+    /// file from its tree failed.
+    #[error("governing config for {branch}: {source}")]
+    GoverningConfig {
+        branch: String,
+        #[source]
+        source: io::Error,
+    },
     /// `providers.yaml` parse / I/O surfaced via the harness's config
     /// loader.
     #[error("providers.yaml: {0}")]
@@ -232,7 +239,7 @@ pub fn run<R: Read, W: Write>(
         .into_string()
         .map_err(|_| Error::MissingEnv(super::super::ENV_CONV_BRANCH))?;
 
-    validate_role(&repo_path, &input.role)?;
+    validate::validate_role(&repo_path, &branch_str, &input.role)?;
 
     let captured = dispatcher
         .dispatch(&input.role, &repo_path, &branch_str, &input.goal)
@@ -264,26 +271,7 @@ fn require_env(env: &dyn EnvLookup, key: &'static str) -> Result<OsString, Error
     env.get(key).ok_or(Error::MissingEnv(key))
 }
 
-/// Confirm the role is defined in the conv-repo's `providers.yaml`
-/// (`roles:` block, ARCH §4.3) AND that its soul exists at
-/// `<conv-repo>/souls/<role>.md` (§4.3 — no path override). Both
-/// checks land before the spawn so we fail with a clean typed error
-/// instead of a noisy subprocess exit on a doomed call.
-fn validate_role(repo: &Path, role: &str) -> Result<(), Error> {
-    let providers_path = repo.join(PER_REPO_PROVIDERS_FILE);
-    let providers = PerRepoProviders::load(&providers_path)?;
-    if !providers.roles.contains_key(role) {
-        return Err(Error::RoleMissing {
-            role: role.to_string(),
-            path: providers_path,
-        });
-    }
-    let soul_path = repo.join(SOULS_DIR).join(format!("{role}{SOUL_SUFFIX}"));
-    if !soul_path.exists() {
-        return Err(Error::SoulMissing { path: soul_path });
-    }
-    Ok(())
-}
+mod validate;
 
 #[cfg(test)]
 mod tests;

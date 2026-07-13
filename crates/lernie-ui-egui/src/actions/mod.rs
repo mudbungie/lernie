@@ -37,9 +37,10 @@ pub struct ActionsState {
     /// In-progress text for the New-prompt input. The button is
     /// disabled while this is empty (or whitespace-only).
     pub new_prompt_input: String,
-    /// User-selected unmerged branch. The Stop button is disabled
-    /// while this is `None` or while the selected branch is no longer
-    /// in-flight (e.g. merged or stopped between selection and click).
+    /// User-selected agent id (§2.3 — the id is the address; `lernie
+    /// stop` takes it, not the `agents/*` ref). The Stop button is
+    /// disabled while this is `None` or while the selected agent is no
+    /// longer in-flight (e.g. stopped between selection and click).
     pub selected_branch: Option<String>,
 }
 
@@ -49,17 +50,17 @@ pub fn new_prompt_enabled(input: &str) -> bool {
     !input.trim().is_empty()
 }
 
-/// True iff `selected_branch` names a branch in `branches` whose state
-/// is [`BranchState::InFlight`]. Returns `false` for `None`, for a name
-/// not present, and for any non-`InFlight` state — a stopped or merged
-/// branch is not stoppable.
+/// True iff `selected_branch` names an agent (by id, §2.3) in
+/// `branches` whose state is [`BranchState::InFlight`]. Returns `false`
+/// for `None`, for an id not present, and for any non-`InFlight` state
+/// — a stopped agent is not stoppable again.
 pub fn stop_enabled(selected_branch: Option<&str>, branches: &[ConversationBranch]) -> bool {
     let Some(name) = selected_branch else {
         return false;
     };
     branches
         .iter()
-        .any(|b| b.branch_name == name && matches!(b.state, BranchState::InFlight))
+        .any(|b| b.conv_id == name && matches!(b.state, BranchState::InFlight))
 }
 
 /// Spawn `lernie prompt <repo> <message>`. Caller owns the returned
@@ -72,9 +73,9 @@ pub fn dispatch_new_prompt(cli: &Cli, repo: &Path, message: &str) -> Result<Stre
     cli.run(&[SUBCOMMAND_PROMPT, &repo, message])
 }
 
-/// Spawn `lernie stop <repo> <branch>`. The harness performs the §2.9
-/// SIGTERM cascade against the harness pgid (bl-a144); this is the UI
-/// view of that same operation.
+/// Spawn `lernie stop <workspace> <agent-id>`. The harness performs
+/// the §2.9 SIGTERM cascade against the executor pgid; this is the UI
+/// view of that same operation. `branch` is the agent id (§2.3).
 pub fn dispatch_stop(cli: &Cli, repo: &Path, branch: &str) -> Result<Stream, CliError> {
     let repo = repo.display().to_string();
     cli.run(&[SUBCOMMAND_STOP, &repo, branch])

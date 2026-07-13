@@ -1,10 +1,11 @@
-//! Integration test for the conversation repo template, exercised
-//! end-to-end through the `lernie new` subcommand.
+//! Integration test for the workspace template, exercised end-to-end
+//! through the `lernie new` subcommand.
 //!
-//! Validates the resulting repo against ARCH §2.2: control-plane files
-//! at the conv-repo root (outside any worktree); `root/` as the primary
-//! worktree with `.git` inside it. Merge-back is gone (§2.6), so no
-//! `merge=ours` `.gitattributes` is scaffolded.
+//! Validates the resulting workspace against ARCH §2.2: one bare
+//! repository at `repo.git`, exactly one ref — `config/default`, no
+//! `main` — whose head commit carries the control files (`manifest.yaml`,
+//! `workflow.yaml`, `providers.yaml`, `version`, `souls/`) and the
+//! `descriptions/**` snapshot.
 
 use lernie::config::manifest::{Manifest, OverflowPolicy};
 use lernie::config::per_repo_providers::PerRepoProviders;
@@ -67,23 +68,56 @@ fn scaffold(dest: &Path) -> String {
 
 fn scaffolded() -> (TempDir, PathBuf) {
     let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
+    let dest = holder.path().join("ws");
     let stdout = scaffold(&dest);
     assert_eq!(stdout, dest.display().to_string(), "stdout must echo path");
     (holder, dest)
 }
 
+/// Read `<path>` out of the config commit's tree — the §2.2 control
+/// home (`git show config/default:<path>` against the bare repo.git).
+fn show_control(ws: &Path, path: &str) -> String {
+    let mut cmd = Command::new("git");
+    scrub_git_env(&mut cmd);
+    let out = cmd
+        .arg("-C")
+        .arg(ws.join("repo.git"))
+        .args(["show", &format!("config/default:{path}")])
+        .output()
+        .expect("spawn git show");
+    assert!(
+        out.status.success(),
+        "git show {path}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8(out.stdout).unwrap()
+}
+
+/// Parse a control file through its loader, from the config commit's
+/// tree (the loaders' `parse` seams exist for exactly this, §2.2).
+fn parse_origin(path: &str) -> PathBuf {
+    PathBuf::from(format!("config/default:{path}"))
+}
+
 #[test]
 fn version_file_is_one() {
-    let (_holder, repo) = scaffolded();
-    let v = Version::load(&repo.join("version")).unwrap();
-    assert_eq!(v, Version(1));
+    let (_holder, ws) = scaffolded();
+    let raw = show_control(&ws, "version");
+    assert_eq!(raw.trim(), "1");
+    // The loader agrees when handed the same content via a temp file.
+    let tmp = TempDir::new().unwrap();
+    std::fs::write(tmp.path().join("version"), &raw).unwrap();
+    assert_eq!(
+        Version::load(&tmp.path().join("version")).unwrap(),
+        Version(1)
+    );
 }
 
 #[test]
 fn providers_yaml_is_roles_only_and_validates() {
-    let (_holder, repo) = scaffolded();
-    let per_repo = PerRepoProviders::load(&repo.join("providers.yaml")).unwrap();
+    let (_holder, ws) = scaffolded();
+    let raw = show_control(&ws, "providers.yaml");
+    let per_repo = PerRepoProviders::parse(&raw, &parse_origin("providers.yaml")).unwrap();
     assert!(per_repo.roles.contains_key("worker"));
     assert!(per_repo.roles.contains_key("compactor"));
     assert_eq!(per_repo.roles["worker"].provider, "anthropic");
@@ -92,8 +126,11 @@ fn providers_yaml_is_roles_only_and_validates() {
 
 #[test]
 fn manifest_yaml_is_role_keyed_per_arch_5_2() {
-    let (_holder, repo) = scaffolded();
-    let manifest = Manifest::load(&repo.join("manifest.yaml")).unwrap();
+    let (_holder, ws) = scaffolded();
+    let raw = show_control(&ws, "manifest.yaml");
+    let tmp = TempDir::new().unwrap();
+    std::fs::write(tmp.path().join("manifest.yaml"), &raw).unwrap();
+    let manifest = Manifest::load(&tmp.path().join("manifest.yaml")).unwrap();
     assert!(manifest.roles.contains_key("worker"));
     assert!(manifest.roles.contains_key("compactor"));
     let worker = &manifest.roles["worker"];
@@ -101,9 +138,7 @@ fn manifest_yaml_is_role_keyed_per_arch_5_2() {
     assert!(worker.pinned.iter().any(|p| p == "goal.md"));
     assert!(worker.pinned.iter().any(|p| p == "soul.md"));
     // ARCH §5.2 amended (v0.3.1): step records are not context, so
-    // `worker.order` carries no `steps/**` entries. The shipped
-    // template overflow policy switched to `drop_oldest_summaries`
-    // to reflect what the order actually contains.
+    // `worker.order` carries no `steps/**` entries.
     assert!(
         !worker.order.iter().any(|p| p.starts_with("steps/")),
         "worker.order must not reference steps/** (§5.2 amended)"
@@ -117,98 +152,84 @@ fn manifest_yaml_is_role_keyed_per_arch_5_2() {
 
 #[test]
 fn workflow_yaml_validates() {
-    let (_holder, repo) = scaffolded();
-    Workflow::load(&repo.join("workflow.yaml")).unwrap();
+    let (_holder, ws) = scaffolded();
+    let raw = show_control(&ws, "workflow.yaml");
+    Workflow::parse(&raw, &parse_origin("workflow.yaml")).unwrap();
 }
 
 #[test]
-fn souls_directory_holds_role_prompts() {
-    let (_holder, repo) = scaffolded();
-    let souls = repo.join("souls");
-    assert!(souls.is_dir());
-    assert!(souls.join("worker.md").is_file());
-    assert!(souls.join("compactor.md").is_file());
+fn souls_live_in_the_config_commit() {
+    let (_holder, ws) = scaffolded();
+    assert!(show_control(&ws, "souls/worker.md").contains("# Worker"));
+    assert!(!show_control(&ws, "souls/compactor.md").is_empty());
 }
 
 #[test]
-fn root_worktree_holds_git() {
-    // ARCH §2.2: `.git` lives in `root/`. Merge-back is gone (§2.6), so no
-    // `.gitattributes` merge=ours discipline is scaffolded.
-    let (_holder, repo) = scaffolded();
-    let root = repo.join("root");
-    assert!(root.is_dir());
-    assert!(root.join(".git").is_dir());
-    assert!(!root.join(".gitattributes").exists());
-}
-
-#[test]
-fn control_plane_lives_outside_any_worktree() {
-    // ARCH §2.2 control-plane files (manifest, workflow, providers,
-    // version, souls/) sit at the conv-repo root, not inside `root/`.
-    // git ls-files inside root/ must not enumerate any of them.
-    let (_holder, repo) = scaffolded();
-    let root = repo.join("root");
+fn workspace_has_exactly_one_ref_and_no_main() {
+    // ARCH §2.2–§2.3: no `main`, no trunk — the only ref in a fresh
+    // workspace is the config branch, and the repository is bare.
+    let (_holder, ws) = scaffolded();
+    let repo = ws.join("repo.git");
+    assert!(repo.is_dir());
     let mut cmd = Command::new("git");
     scrub_git_env(&mut cmd);
     let out = cmd
         .arg("-C")
-        .arg(&root)
-        .args(["ls-files"])
+        .arg(&repo)
+        .args(["for-each-ref", "--format=%(refname)"])
         .output()
         .unwrap();
     assert!(out.status.success());
-    let listed = String::from_utf8(out.stdout).unwrap();
-    for forbidden in [
-        "manifest.yaml",
-        "workflow.yaml",
-        "providers.yaml",
-        "version",
-        "souls",
-    ] {
-        assert!(
-            !listed.lines().any(|l| l.contains(forbidden)),
-            "control file {forbidden} leaked into the worktree: {listed:?}"
-        );
-    }
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap().trim(),
+        "refs/heads/config/default"
+    );
+    let mut bare = Command::new("git");
+    scrub_git_env(&mut bare);
+    let out = bare
+        .arg("-C")
+        .arg(&repo)
+        .args(["rev-parse", "--is-bare-repository"])
+        .output()
+        .unwrap();
+    assert_eq!(String::from_utf8(out.stdout).unwrap().trim(), "true");
 }
 
 #[test]
-fn root_worktree_runs_main_with_one_commit() {
-    let (_holder, repo) = scaffolded();
-    let root = repo.join("root");
+fn config_commit_is_an_orphan_root_with_one_commit() {
+    let (_holder, ws) = scaffolded();
+    let repo = ws.join("repo.git");
     let mut log = Command::new("git");
     scrub_git_env(&mut log);
     let log_out = log
         .arg("-C")
-        .arg(&root)
-        .args(["log", "--oneline"])
+        .arg(&repo)
+        .args(["log", "--oneline", "config/default"])
         .output()
         .unwrap();
     assert!(log_out.status.success(), "git log failed");
     let text = String::from_utf8(log_out.stdout).unwrap();
     assert_eq!(text.lines().count(), 1, "expected one commit, got:\n{text}");
-    assert!(text.contains("init conversation repo"));
+    assert!(text.contains("config: init [config/default]"));
+}
 
-    let mut head = Command::new("git");
-    scrub_git_env(&mut head);
-    let head_out = head
-        .arg("-C")
-        .arg(&root)
-        .args(["symbolic-ref", "--short", "HEAD"])
-        .output()
-        .unwrap();
-    assert!(head_out.status.success());
-    let branch = String::from_utf8(head_out.stdout)
+#[test]
+fn no_stray_files_or_checkouts_remain() {
+    // The authoring checkout is torn down (§2.2): the workspace holds
+    // only repo.git after creation.
+    let (_holder, ws) = scaffolded();
+    let entries: Vec<String> = std::fs::read_dir(&ws)
         .unwrap()
-        .trim()
-        .to_string();
-    assert_eq!(branch, "main");
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(entries, vec!["repo.git".to_string()], "got {entries:?}");
 }
 
 #[test]
 fn no_args_uses_harness_root_with_auto_id() {
     // `lernie new` with no path argument resolves
-    // <LERNIE_HOME>/conversations/<auto-id>/ and prints that path.
+    // <LERNIE_HOME>/workspaces/<auto-id>/ and prints that path.
     let home = TempDir::new().unwrap();
     let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
@@ -228,9 +249,8 @@ fn no_args_uses_harness_root_with_auto_id() {
     );
     let printed = String::from_utf8(out.stdout).unwrap().trim().to_string();
     let printed_path = PathBuf::from(&printed);
-    assert!(printed_path.starts_with(home.path().join("conversations")));
-    assert!(printed_path.join("manifest.yaml").is_file());
-    assert!(printed_path.join("root/.git").is_dir());
+    assert!(printed_path.starts_with(home.path().join("workspaces")));
+    assert!(printed_path.join("repo.git").is_dir());
 }
 
 #[test]
@@ -257,6 +277,5 @@ fn binary_accepts_existing_empty_destination() {
     std::fs::create_dir(&dest).unwrap();
     let stdout = scaffold(&dest);
     assert_eq!(stdout, dest.display().to_string());
-    assert!(dest.join("manifest.yaml").is_file());
-    assert!(dest.join("root/.git").is_dir());
+    assert!(dest.join("repo.git").is_dir());
 }

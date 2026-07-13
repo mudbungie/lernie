@@ -38,19 +38,42 @@ fn git(dest: &Path, args: &[&str]) {
 const PARENT: &str = "20260101-p1";
 const CHILD: &str = "20260101-p1-20260102-c1";
 
-/// A workspace whose git state shows a hard-crashed child: real `root`
-/// worktree on `main`, a parent branch, and a child branch that never
-/// deposited a result — the §8 sweep's candidate.
+/// A workspace whose git state shows a hard-crashed child: a bare
+/// repo.git with a config/default root (§2.2), a parent agent branch,
+/// and a child agent branch that never deposited a result — the §8
+/// sweep's candidate.
 fn workspace_with_crashed_child() -> TempDir {
     let ws = TempDir::new().unwrap();
-    let root = ws.path().join("root");
-    std::fs::create_dir_all(&root).unwrap();
-    git(&root, &["init", "-b", "main"]);
-    git(&root, &["config", "user.email", "t@test.invalid"]);
-    git(&root, &["config", "user.name", "t"]);
-    git(&root, &["commit", "--allow-empty", "-m", "init"]);
-    git(&root, &["branch", PARENT]);
-    git(&root, &["branch", CHILD]);
+    let repo = ws.path().join("repo.git");
+    std::fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "--bare", "-b", "config/default"]);
+    let author = ws.path().join(".author");
+    let author_str = author.to_string_lossy().to_string();
+    git(
+        &repo,
+        &[
+            "worktree",
+            "add",
+            "--orphan",
+            "-b",
+            "config/default",
+            author_str.as_str(),
+        ],
+    );
+    std::fs::write(author.join("version"), "1\n").unwrap();
+    git(&author, &["add", "-A"]);
+    git(&author, &["config", "user.email", "t@test.invalid"]);
+    git(&author, &["config", "user.name", "t"]);
+    git(&author, &["commit", "-m", "config: init"]);
+    git(&repo, &["worktree", "remove", author_str.as_str()]);
+    git(
+        &repo,
+        &["branch", &format!("agents/{PARENT}"), "config/default"],
+    );
+    git(
+        &repo,
+        &["branch", &format!("agents/{CHILD}"), "config/default"],
+    );
     ws
 }
 
@@ -94,8 +117,8 @@ fn scan_verb_heals_a_crash_stranded_child() {
 
 #[test]
 fn scan_verb_surfaces_a_broken_workspace_loudly() {
-    // No `root` worktree → the branch enumeration fails → non-zero exit
-    // (an operator verb is loud, §2.11).
+    // Not a workspace (no repo.git) → the §2.2 layout guard refuses →
+    // non-zero exit (an operator verb is loud, §2.11).
     let ws = TempDir::new().unwrap();
     let out = Command::new(lernie_bin())
         .arg("scan")

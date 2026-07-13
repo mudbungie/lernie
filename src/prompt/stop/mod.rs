@@ -72,8 +72,8 @@ const POLL_INTERVAL: Duration = Duration::from_millis(50);
 pub enum Error {
     #[error("branch {0:?} does not exist in repo")]
     BranchMissing(String),
-    #[error("branch {0:?} is already merged into main")]
-    AlreadyMerged(String),
+    #[error(transparent)]
+    Layout(#[from] crate::workspace::LayoutError),
     #[error("git {op}: {source}")]
     Git {
         op: &'static str,
@@ -88,7 +88,7 @@ pub enum Error {
 
 /// Stop the harness driving `branch`; optionally its subagent subtree.
 ///
-/// 1. Validate `branch` exists in `<repo>/root/.git` and is unmerged.
+/// 1. Validate `agents/<branch>` exists in `<workspace>/repo.git`.
 /// 2. Collect the inbox directories to signal (§2.11 lock homes):
 ///    `inbox/<branch>/` always, plus every `inbox/<branch>-*/`
 ///    descendant (hyphenated descent, §2.3) **iff** `stop_children` —
@@ -113,9 +113,8 @@ pub fn run(
     deadline: Duration,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
-    // The inspector takes the conv-repo path; it routes git inside
-    // the primary worktree (`<repo>/root/`, ARCH §2.2) where `.git`
-    // lives.
+    // The inspector takes the workspace path; it routes git against
+    // the bare `<workspace>/repo.git` (ARCH §2.2).
     if !inspector
         .exists(repo, branch, git)
         .map_err(|source| Error::Git {
@@ -124,15 +123,6 @@ pub fn run(
         })?
     {
         return Err(Error::BranchMissing(branch.to_owned()));
-    }
-    if inspector
-        .is_merged_into_main(repo, branch, git)
-        .map_err(|source| Error::Git {
-            op: "merge-base --is-ancestor",
-            source,
-        })?
-    {
-        return Err(Error::AlreadyMerged(branch.to_owned()));
     }
 
     let inbox_dirs = collect_inbox_dirs(repo, branch, stop_children)?;
@@ -159,6 +149,7 @@ pub fn run(
 /// namespace. Production builds use the default deps; tests exercise
 /// [`run`] directly with stubs.
 pub fn cli_run(repo: &Path, branch: &str, stop_children: bool) -> Result<(), Error> {
+    crate::workspace::require(repo)?;
     run(
         repo,
         branch,

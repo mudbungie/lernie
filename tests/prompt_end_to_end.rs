@@ -1,17 +1,11 @@
 //! End-to-end subprocess test for `lernie prompt` over the real
-//! brazen `bz` data plane (ARCH §4.4).
-//!
-//! Chains `lernie new` (scaffold) and `lernie prompt` (one root
-//! conversation). The model call execs real `bz` (§4.4); `BRAZEN_CONFIG`
-//! points bz at a fixture provider row whose endpoint is an `httpmock`
-//! server returning an Anthropic SSE stream — bz normalizes it into the
-//! canonical `v=1` event stream lernie records. Env is set on the
-//! `lernie prompt` subprocess (inherited by its bz child), so tests are
-//! race-free without touching the test process's own environment.
-//!
-//! Asserts the branch/merge/compaction contract AND the swap-specific
-//! shape: a typed canonical request on stdin, `v=1` NDJSON with a
-//! terminal `end` on disk.
+//! brazen `bz` data plane (ARCH §4.4). Chains `lernie new` (workspace creation) and `lernie prompt` (one
+//! root conversation). The model call execs real `bz` (§4.4);
+//! `BRAZEN_CONFIG` points bz at a fixture provider row whose endpoint
+//! is an `httpmock` server returning an Anthropic SSE stream. Env is
+//! set on the `lernie prompt` subprocess, so tests are race-free.
+//! Asserts the branch/compaction contract and the wire shape: a typed
+//! canonical request on stdin, `v=1` NDJSON with a terminal `end`.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -88,8 +82,9 @@ pub fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
     path
 }
 
-/// Overwrite the scaffolded per-repo providers.yaml so both roles use
-/// the fixture `test` brazen row (§4.3).
+/// Amend the config commit's providers.yaml so both roles use the
+/// fixture `test` brazen row (§4.3) — control lives in the config
+/// lineage (§2.2), so the edit is a config commit, not a loose file.
 fn write_per_repo_roles(dest: &Path) {
     let yaml = "\
 roles:
@@ -101,7 +96,17 @@ roles:
     provider: test
     model: claude-haiku-4-5
 ";
-    fs::write(dest.join("providers.yaml"), yaml).unwrap();
+    let bare = dest.join("repo.git");
+    let author = dest.join(".amend");
+    let author_str = author.to_string_lossy().to_string();
+    let _ = git_capture(
+        &bare,
+        &["worktree", "add", author_str.as_str(), "config/default"],
+    );
+    fs::write(author.join("providers.yaml"), yaml).unwrap();
+    let _ = git_capture(&author, &["add", "-A"]);
+    let _ = git_capture(&author, &["commit", "-m", "config: amend"]);
+    let _ = git_capture(&bare, &["worktree", "remove", author_str.as_str()]);
 }
 
 fn scaffold_repo(dest: &Path, harness: &Path) {
@@ -153,8 +158,8 @@ fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
 
-    let primary = dest.join("root");
-    let main_head_before = git_capture(&primary, &["rev-parse", "main"]);
+    let bare = dest.join("repo.git");
+    let config_head_before = git_capture(&bare, &["rev-parse", "config/default"]);
 
     let prompt_out = Command::new(lernie_bin())
         .arg("prompt")
@@ -171,39 +176,55 @@ fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
         String::from_utf8_lossy(&prompt_out.stderr)
     );
 
-    let branch = String::from_utf8(prompt_out.stdout)
+    let conv_id = String::from_utf8(prompt_out.stdout)
         .unwrap()
         .trim()
         .to_string();
-    assert!(!branch.contains('/'), "got {branch:?}");
-    assert_eq!(branch.len(), 25, "got {branch:?}");
-    let conv_id = branch.clone();
+    assert!(!conv_id.contains('/'), "stdout carries the id: {conv_id:?}");
+    assert_eq!(conv_id.len(), 25, "got {conv_id:?}");
+    let branch_ref = format!("agents/{conv_id}");
 
-    // Merge-back is gone (§2.6): main does NOT advance — the root branch
-    // persists on its own ref (§2.4), and nothing merges to `main`.
-    let main_head_after = git_capture(&primary, &["rev-parse", "main"]);
-    assert_eq!(main_head_before, main_head_after, "main must not advance");
+    // The config branch does NOT advance (§2.3 branch advancement: only
+    // user config edits move it); the agent persists on its own ref.
+    let config_head_after = git_capture(&bare, &["rev-parse", "config/default"]);
+    assert_eq!(
+        config_head_before, config_head_after,
+        "config/default must not advance"
+    );
+
+    // The dispatch commit removed the control files from the agent's
+    // tree (§2.2): providers.yaml lives in the config commit only.
+    let control_on_branch = git_command(&bare, &["show", &format!("{branch_ref}:providers.yaml")])
+        .output()
+        .expect("spawn git show");
+    assert!(
+        !control_on_branch.status.success(),
+        "control files must leave the agent tree (§2.2)"
+    );
 
     // The compaction merge (§2.6) is the one merge left in the system: it
     // lands the summary on the conversation's OWN branch (a two-parent
-    // merge commit at the tip), never on `main`.
-    let conv_parents = git_capture(&primary, &["log", "-1", "--pretty=%P", &branch]);
+    // merge commit at the tip), never on the config branch.
+    let conv_parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &branch_ref]);
     assert_eq!(
         conv_parents.split_whitespace().count(),
         2,
         "conv tip is the compaction merge commit"
     );
-    let summary_on_branch = git_command(&primary, &["show", &format!("{branch}:summary/001.md")])
+    let summary_on_branch = git_command(&bare, &["show", &format!("{branch_ref}:summary/001.md")])
         .output()
         .expect("spawn git show");
     assert!(
         summary_on_branch.status.success(),
         "summary landed on the conversation branch"
     );
-    let summary_on_main = git_command(&primary, &["show", "main:summary/001.md"])
+    let summary_on_config = git_command(&bare, &["show", "config/default:summary/001.md"])
         .output()
         .expect("spawn git show");
-    assert!(!summary_on_main.status.success(), "summary never on main");
+    assert!(
+        !summary_on_config.status.success(),
+        "summary never on the config branch"
+    );
 
     // Step records live outside every worktree (§2.2 / §2.3).
     let step_dir = dest.join(format!("steps/{conv_id}/001"));
@@ -246,13 +267,17 @@ fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
     let text = lines.iter().find(|e| e["type"] == "content_delta").unwrap();
     assert_eq!(text["delta"]["text_delta"], "pong");
 
-    // Step records are never git-tracked (§2.2).
-    assert!(git_capture(&primary, &["ls-files", "steps/"]).is_empty());
-    // The branch ref survives (§2.3); the conversation worktree persists —
-    // quiescence, not teardown, now that merge-back no longer removes it
-    // (§2.3 step 6, §2.6).
-    assert!(dest.join(&conv_id).exists());
-    assert!(git_capture(&primary, &["branch", "--list", &branch]).contains(&branch));
+    // Step records are never git-tracked (§2.2): nothing under steps/
+    // is in the agent branch's tree.
+    assert!(
+        git_capture(&bare, &["ls-tree", "-r", "--name-only", &branch_ref])
+            .lines()
+            .all(|l| !l.starts_with("steps/"))
+    );
+    // The branch ref survives (§2.3); the agent worktree persists under
+    // agents/ — quiescence, not teardown (§2.3 step 6, §2.6).
+    assert!(dest.join("agents").join(&conv_id).exists());
+    assert!(git_capture(&bare, &["branch", "--list", &branch_ref]).contains(&conv_id));
 }
 
 #[test]

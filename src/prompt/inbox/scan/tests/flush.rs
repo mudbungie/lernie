@@ -16,7 +16,7 @@ fn flush_launches_only_free_pending_inboxes() {
     let _held = try_acquire(&inbox_dir(ws.path(), "a2"))
         .unwrap()
         .expect("free");
-    let git = StubGit::with_branches(&["main"]);
+    let git = StubGit::with_branches(&[]);
     let launcher = StubLauncher::default();
     let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
     assert_eq!(report.flushed, vec!["a1".to_string()]);
@@ -26,7 +26,7 @@ fn flush_launches_only_free_pending_inboxes() {
 #[test]
 fn flush_is_a_noop_without_an_inbox_root() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&["main"]);
+    let git = StubGit::with_branches(&[]);
     let report = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap();
     assert_eq!(report, ScanReport::default());
 }
@@ -36,12 +36,12 @@ fn flush_is_a_noop_without_an_inbox_root() {
 #[test]
 fn branch_enumeration_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&["main", CHILD]).failing("branch");
+    let git = StubGit::with_branches(&[CHILD]).failing("branch");
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(
         err,
         ScanError::Git {
-            op: "branch --list",
+            op: "for-each-ref agents/",
             ..
         }
     ));
@@ -50,7 +50,7 @@ fn branch_enumeration_error_is_surfaced() {
 #[test]
 fn transcript_read_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&["main", CHILD]).failing("ls-tree");
+    let git = StubGit::with_branches(&[CHILD]).failing("ls-tree");
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(
         err,
@@ -64,7 +64,7 @@ fn transcript_read_error_is_surfaced() {
 #[test]
 fn branch_tip_read_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&["main", CHILD]).failing("rev-parse");
+    let git = StubGit::with_branches(&[CHILD]).failing("rev-parse");
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(
         err,
@@ -81,7 +81,7 @@ fn probe_error_is_surfaced() {
     // A file where the child's inbox dir should be makes try_acquire fail.
     std::fs::create_dir_all(ws.path().join(INBOX_DIR)).unwrap();
     std::fs::write(inbox_dir(ws.path(), CHILD), b"not a dir").unwrap();
-    let git = StubGit::with_branches(&["main", CHILD]);
+    let git = StubGit::with_branches(&[CHILD]);
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(err, ScanError::Probe { .. }), "{err}");
 }
@@ -90,7 +90,7 @@ fn probe_error_is_surfaced() {
 fn launch_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
     deposit_msg(ws.path(), "a1", "user-001.md");
-    let git = StubGit::with_branches(&["main"]);
+    let git = StubGit::with_branches(&[]);
     let err = scan(ws.path(), &git, &FixedClock, &FailLauncher).unwrap_err();
     assert!(matches!(err, ScanError::Flush { .. }), "{err}");
 }
@@ -100,7 +100,7 @@ fn inbox_root_read_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
     // `inbox` is a file, not a directory → read_dir errors (not NotFound).
     std::fs::write(ws.path().join(INBOX_DIR), b"not a dir").unwrap();
-    let git = StubGit::with_branches(&["main"]);
+    let git = StubGit::with_branches(&[]);
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(err, ScanError::InboxRoot { .. }), "{err}");
 }
@@ -133,12 +133,12 @@ fn pending_deposit_matcher_rejects_non_deposits() {
 
 #[test]
 fn cli_run_surfaces_a_scan_error_loudly() {
-    // The production wiring runs `git` in `<workspace>/root`, which does
-    // not exist here → the enumeration errors → the operator verb
-    // propagates it (loud, not best-effort — §2.11 operator framing).
+    // The production wiring guards the layout first (§2.2): a bare
+    // directory is not a workspace, and the operator verb propagates
+    // the refusal (loud, not best-effort — §2.11 operator framing).
     let ws = TempDir::new().unwrap();
     let err = cli_run(ws.path()).unwrap_err();
-    assert!(matches!(err, ScanError::Git { .. }), "{err}");
+    assert!(matches!(err, ScanError::Layout(_)), "{err}");
 }
 
 #[test]
@@ -149,22 +149,13 @@ fn crash_stranding_is_healed_by_an_explicit_scan() {
     // deposits the `died` result on the child's behalf and the flush
     // reports the parent's inbox as launchable. Production wiring
     // (`cli_run`: real git, real clock, the launcher stub).
-    let ws = TempDir::new().unwrap();
-    let root = ws.path().join(crate::template::ROOT_WORKTREE);
-    std::fs::create_dir_all(&root).unwrap();
-    let g = crate::template::RealGit::new();
-    g.run(&root, &["init", "-b", "main"]).unwrap();
-    g.run(&root, &["config", "user.email", "t@test.invalid"])
-        .unwrap();
-    g.run(&root, &["config", "user.name", "t"]).unwrap();
-    g.run(&root, &["commit", "--allow-empty", "-m", "init"])
-        .unwrap();
-    g.run(&root, &["branch", PARENT]).unwrap();
-    g.run(&root, &["branch", CHILD]).unwrap();
+    let (_h, ws) = crate::workspace::fixture::workspace();
+    crate::workspace::fixture::spawn_root(&ws, PARENT);
+    crate::workspace::fixture::spawn_agent(&ws, CHILD, &crate::workspace::agent_ref(PARENT));
 
-    let report = cli_run(ws.path()).unwrap();
+    let report = cli_run(&ws).unwrap();
     assert_eq!(report.swept, vec![CHILD.to_string()]);
-    let deposited = inbox_dir(ws.path(), PARENT).join(format!("{CHILD}-001.md"));
+    let deposited = inbox_dir(&ws, PARENT).join(format!("{CHILD}-001.md"));
     let body = std::fs::read_to_string(&deposited).unwrap();
     assert!(body.contains("epitaph: died"), "got {body:?}");
     // The flush found the freshly-filled parent inbox launchable and

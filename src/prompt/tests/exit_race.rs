@@ -11,7 +11,7 @@ use crate::prompt::adapter::AdapterRunner;
 use crate::prompt::dispatch::driver::{self, DriveOutcome};
 use crate::prompt::inbox::{Launcher, inbox_dir, try_acquire};
 use crate::prompt::{Deps, run};
-use crate::template::{GitRunner, ROOT_WORKTREE, RealGit};
+use crate::template::{GitRunner, RealGit};
 use std::cell::RefCell;
 use std::ffi::OsString;
 use std::io;
@@ -160,15 +160,15 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
     // Real git end to end: a deposit lands between the final drain and
     // the lock release; the unconditional exit launch hands the branch to
     // a driver that acquires the freed lock and delivers it (§2.11).
-    let holder = tempfile::TempDir::new().unwrap();
-    let data_root = holder.path().join("data");
-    std::fs::create_dir_all(&data_root).unwrap();
-    let repo = holder.path().join("ws");
-    crate::template::scaffold(&repo, &data_root, &RealGit::new()).unwrap();
-    std::fs::write(repo.join("providers.yaml"), VALID_PER_REPO_PROVIDERS_YAML).unwrap();
-    std::fs::write(repo.join("workflow.yaml"), VALID_WORKFLOW_YAML).unwrap();
-    std::fs::create_dir_all(repo.join("souls")).unwrap();
-    std::fs::write(repo.join("souls").join("worker.md"), "soul").unwrap();
+    let (_holder, repo) = crate::workspace::fixture::workspace();
+    crate::workspace::fixture::amend_config(
+        &repo,
+        &[
+            ("providers.yaml", VALID_PER_REPO_PROVIDERS_YAML),
+            ("workflow.yaml", VALID_WORKFLOW_YAML),
+            ("souls/worker.md", "soul"),
+        ],
+    );
     let harness = scaffold_harness_root();
 
     let agent = "ct-1-deadbeef";
@@ -206,8 +206,14 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
     // the late deposit's delivery commit).
     let shown = RealGit::new()
         .run_capture(
-            &repo.join(ROOT_WORKTREE),
-            &["show", &format!("{agent}:messages/003-user.md")],
+            &crate::workspace::repo_git(&repo),
+            &[
+                "show",
+                &format!(
+                    "{}:messages/003-user.md",
+                    crate::workspace::agent_ref(agent)
+                ),
+            ],
         )
         .unwrap();
     assert!(shown.contains("late mail"), "got {shown:?}");

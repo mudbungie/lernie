@@ -71,7 +71,7 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     )
     .unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
-    let worktree = repo.path().join("ct-1-deadbeef");
+    let worktree = worktree_path(repo.path());
 
     // Executor saw one call in step 1 with the emitted tool_use.
     let tool_calls = tool_executor.calls.borrow().clone();
@@ -118,48 +118,49 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     assert_eq!(finish_reason(&resp2), "stop");
     assert_eq!(dispatcher.calls.borrow().len(), 1);
 
-    // Git op log: 3 (step 1 setup) + 1 (step-1 drain stray-probe) + 2
+    // Git op log: 4 (control resolution, §2.2) + 4 (step 1 setup:
+    // spawn, control rm, add, commit) + 1 (step-1 drain stray-probe) + 2
     // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
     // (step-1 model-output transcript entry add+commit) + 2 (the tool
     // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
     // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 1
-    // (terminal result-deposit rev-parse, §2.6) = 16. Merge-back is gone
+    // (terminal result-deposit rev-parse, §2.6) = 21. Merge-back is gone
     // (§2.6). The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 16);
-    assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
-    assert!(runs[2].1[2].contains("step 001: dispatch"));
+    assert_eq!(runs.len(), 21);
+    assert_eq!(runs[6].1, vec!["add", "goal.md", "soul.md"]);
+    assert!(runs[7].1[2].contains("step 001: dispatch"));
     // Step-1 drain (§2.11): the clean stray-probe, then the initial user
     // message delivered from the inbox as the first transcript entry (001).
-    assert_eq!(runs[3].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[4].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[5].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[6].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[8].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[9].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[10].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[11].1, vec!["rev-parse", "HEAD"]);
     // Step 1's transcript: model-output entry (002), then the tool result
     // entry (003) — the §2.3 ordering (model output before its tool
     // results). Counters are max-present-plus-one from the messages/
     // listing, so they never collide with the step number. The model
     // output's origin token is the authoring model id (§2.3).
     assert_eq!(
-        runs[7].1,
+        runs[12].1,
         vec!["add", "messages/002-claude-sonnet-4-7.json"]
     );
-    assert!(runs[8].1[2].contains("transcript 002: claude-sonnet-4-7"));
-    assert_eq!(runs[9].1, vec!["add", "messages/003-tool.json"]);
-    assert!(runs[10].1[2].contains("transcript 003: tool"));
+    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-4-7"));
+    assert_eq!(runs[14].1, vec!["add", "messages/003-tool.json"]);
+    assert!(runs[15].1[2].contains("transcript 003: tool"));
     // Step 2 opens with its own boundary drain (empty inbox → stray-probe
     // only), then the branch-tip capture (advanced by step 1's transcript
     // commits), then commits its own model-output entry (004).
-    assert_eq!(runs[11].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[12].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[16].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[17].1, vec!["rev-parse", "HEAD"]);
     assert_eq!(
-        runs[13].1,
+        runs[18].1,
         vec!["add", "messages/004-claude-sonnet-4-7.json"]
     );
-    assert!(runs[14].1[2].contains("transcript 004: claude-sonnet-4-7"));
+    assert!(runs[19].1[2].contains("transcript 004: claude-sonnet-4-7"));
     // The terminal result deposit reads the branch tip (§2.6); no
     // merge-back follows.
-    assert_eq!(runs[15].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[20].1, vec!["rev-parse", "HEAD"]);
 
     // The tool entry on disk is the canonical tool_result block.
     let tool_entry = worktree.join("messages/003-tool.json");

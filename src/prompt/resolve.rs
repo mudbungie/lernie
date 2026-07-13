@@ -1,11 +1,15 @@
 //! Worker-role config resolution shared by every step-driving verb
-//! (ARCH §4.2, §4.3, §6).
+//! (ARCH §2.2, §4.2, §4.3, §6).
 //!
-//! `lernie prompt` (a fresh root's in-process loop) and `lernie
-//! advance` (the §6 hop) issue the same kind of step against the same
-//! role config, so the resolution — global `models.yaml`, per-repo
-//! `providers.yaml`, `workflow.yaml` policy, the role soul, the adapter
-//! binary and its load-time version guard (§4.4) — has one home here.
+//! Control is read from a **config commit** (ARCH §2.2), never from a
+//! worktree file: `lernie prompt` (a fresh root) resolves against the
+//! head of the default config branch — the very commit the new agent is
+//! about to fork off — and `lernie advance` (the §6 hop) resolves the
+//! **governing config commit** of the existing agent's branch, derived
+//! from ancestry ([`crate::workspace::governing_config`]). The reads —
+//! `providers.yaml`, `workflow.yaml` policy, the role soul — go through
+//! `git show <commit>:<path>`; the global `models.yaml` and the adapter
+//! binary with its load-time version guard (§4.4) resolve as before.
 //! [`WorkerConfig`] is the owned product; [`WorkerConfig::as_resolved`]
 //! borrows it into the [`dispatch::Resolved`] shape the step machinery
 //! consumes. `lernie advance` resolves *lazily*: a no-op hop (lost
@@ -14,17 +18,28 @@
 use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
 use crate::config::{Budgets, Model, ModelsConfig, RetryConfig, Workflow};
 use crate::prompt::{AdapterRunner, BRAZEN_PIN, adapter, dispatch};
+use crate::workspace;
 use std::ffi::OsString;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-/// Per-conv-repo control file binding workflow events to actions and
-/// declaring the retry policy (ARCH §6).
+/// Control file binding workflow events to actions and declaring the
+/// retry policy (ARCH §6), read from the config commit (§2.2).
 const WORKFLOW_FILE: &str = "workflow.yaml";
 
-/// The owned resolution of the worker role against one repo: everything
-/// a step needs that is not on the branch itself. Owned (not borrowed
-/// from a `ModelsConfig`) so callers that resolve lazily — `lernie
-/// advance` — can return it from the resolving scope.
+/// Which config commit governs the resolution (ARCH §2.2).
+pub(super) enum ConfigSource<'a> {
+    /// A fresh root about to fork: the named config branch's head
+    /// (§2.3 *Fresh start* — the default fork point).
+    ConfigBranch(&'a str),
+    /// An existing agent: its governing config commit, the nearest
+    /// `config/*` ancestor of its branch (§2.2), derived from ancestry.
+    Agent(&'a str),
+}
+
+/// The owned resolution of the worker role against one workspace:
+/// everything a step needs that is not on the branch itself. Owned (not
+/// borrowed from a `ModelsConfig`) so callers that resolve lazily —
+/// `lernie advance` — can return it from the resolving scope.
 #[derive(Clone)]
 pub(super) struct WorkerConfig {
     pub(super) model: Model,
@@ -59,19 +74,30 @@ impl WorkerConfig {
     }
 }
 
-/// Resolve the worker role against `repo`: load configs, run the
-/// load-time version guard (§4.4), and read the role soul.
-pub(super) fn resolve_worker(repo: &Path, deps: &Deps<'_>) -> Result<WorkerConfig, Error> {
+/// Resolve the worker role against `workspace`: derive the config
+/// commit, read the control files from its tree, run the load-time
+/// version guard (§4.4), and read the role soul.
+pub(super) fn resolve_worker(
+    workspace: &Path,
+    source: ConfigSource<'_>,
+    deps: &Deps<'_>,
+) -> Result<WorkerConfig, Error> {
+    let commit = config_commit(workspace, &source, deps)?;
+
     let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
-    let per_repo_path = repo.join(PER_REPO_PROVIDERS_FILE);
-    let (cfg, _warnings) = ModelsConfig::load(&global_path, &per_repo_path)?;
+    let providers_raw = read_control(workspace, &commit, PER_REPO_PROVIDERS_FILE, deps)?;
+    let (cfg, _warnings) = ModelsConfig::load_with_per_repo(
+        &global_path,
+        &providers_raw,
+        &control_origin(&commit, PER_REPO_PROVIDERS_FILE),
+    )?;
 
     let assignment = cfg
         .per_repo
         .roles
         .get(WORKER_ROLE)
         .ok_or_else(|| Error::RoleMissing(WORKER_ROLE.to_string()))?;
-    // Cross-check inside ModelsConfig::load guarantees this resolves.
+    // Cross-check inside the load guarantees this resolves.
     let model = cfg
         .global
         .models
@@ -89,13 +115,11 @@ pub(super) fn resolve_worker(repo: &Path, deps: &Deps<'_>) -> Result<WorkerConfi
         check_bz_version(deps.adapter, &binary)?;
     }
 
-    let (retry, budgets) = load_workflow_policy(repo)?;
+    let workflow_raw = read_control(workspace, &commit, WORKFLOW_FILE, deps)?;
+    let workflow = Workflow::parse(&workflow_raw, &control_origin(&commit, WORKFLOW_FILE))?;
 
-    let soul_path = repo.join(SOULS_DIR).join(format!("{WORKER_ROLE}.md"));
-    let soul = std::fs::read_to_string(&soul_path).map_err(|source| Error::SoulRead {
-        path: soul_path.clone(),
-        source,
-    })?;
+    let soul_rel = format!("{SOULS_DIR}/{WORKER_ROLE}.md");
+    let soul = read_control(workspace, &commit, &soul_rel, deps)?;
 
     Ok(WorkerConfig {
         model,
@@ -103,18 +127,51 @@ pub(super) fn resolve_worker(repo: &Path, deps: &Deps<'_>) -> Result<WorkerConfi
         tools: assignment.tools.clone(),
         soul,
         binary,
-        retry,
-        budgets,
+        retry: workflow.retry,
+        budgets: workflow.budgets,
         expect_handshake,
     })
 }
 
-/// Load the harness-owned retry policy and the per-conversation budgets
-/// from `workflow.yaml` (§6; retry §2.10, budgets §6). Parsed together
-/// from the one frozen copy so the file is read once.
-fn load_workflow_policy(repo: &Path) -> Result<(RetryConfig, Budgets), Error> {
-    let workflow = Workflow::load(&repo.join(WORKFLOW_FILE))?;
-    Ok((workflow.retry, workflow.budgets))
+/// Resolve the governing config commit sha for the source (§2.2):
+/// a config branch's head for a fresh fork, the ancestry derivation for
+/// an existing agent.
+fn config_commit(
+    workspace: &Path,
+    source: &ConfigSource<'_>,
+    deps: &Deps<'_>,
+) -> Result<String, Error> {
+    match source {
+        ConfigSource::ConfigBranch(config_ref) => {
+            workspace::config_head(workspace, config_ref, deps.git)
+        }
+        ConfigSource::Agent(agent_id) => workspace::governing_config(workspace, agent_id, deps.git),
+    }
+    .map_err(|source| Error::Git {
+        op: "governing config",
+        source,
+    })
+}
+
+/// Read one control file from the config commit's tree (§2.2).
+fn read_control(
+    workspace: &Path,
+    commit: &str,
+    path: &str,
+    deps: &Deps<'_>,
+) -> Result<String, Error> {
+    workspace::show_control(workspace, commit, path, deps.git).map_err(|source| {
+        Error::ControlRead {
+            path: control_origin(commit, path),
+            source,
+        }
+    })
+}
+
+/// A `<commit>:<path>` label for errors — the control file's one true
+/// address (§2.2: control lives in the config commit, not on disk).
+fn control_origin(commit: &str, path: &str) -> PathBuf {
+    PathBuf::from(format!("{commit}:{path}"))
 }
 
 /// Load-time version guard (§4.4): `bz --version` must report the exact

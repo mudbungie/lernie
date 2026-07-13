@@ -61,12 +61,11 @@ pub fn run(
     id_gen: &dyn IdGen,
 ) -> Result<(), Error> {
     let cmp_id = format!("{}-{}", clock.now_compact(), id_gen.short());
-    // Hyphenated descent (ARCH §2.2): the compactor's branch and
-    // worktree both live under `<parent>-<cmp>`. Branch name and
-    // directory name are intentionally identical so on-disk layout
-    // and ref namespace are isomorphic.
+    // Hyphenated descent (ARCH §2.2): the compactor's id and worktree
+    // both live under `<parent>-<cmp>`; the branch ref is `agents/<id>`
+    // (§2.3), applied at the git boundary.
     let cmp_branch = format!("{}-{cmp_id}", req.parent_conv_id);
-    let cmp_worktree = req.repo.join(&cmp_branch);
+    let cmp_worktree = crate::workspace::agent_worktree(req.repo, &cmp_branch);
 
     // Stub summary: just identifies the parent conversation. Reading
     // `response.json` would violate §2.3's diagnostic-only contract;
@@ -114,7 +113,8 @@ fn compaction_merge(
     cmp_worktree: &Path,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
-    git.run(parent_worktree, &["merge", "--no-ff", cmp_branch])
+    let cmp_ref = crate::workspace::agent_ref(cmp_branch);
+    git.run(parent_worktree, &["merge", "--no-ff", cmp_ref.as_str()])
         .map_err(|source| Error::Git {
             op: "merge",
             source,

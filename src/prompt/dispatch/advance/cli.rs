@@ -11,7 +11,7 @@
 use super::{AdvanceOutcome, run};
 use crate::harness_root;
 use crate::prompt::inbox::{self, AdvanceLauncher, baton};
-use crate::prompt::resolve::resolve_worker;
+use crate::prompt::resolve::{ConfigSource, resolve_worker};
 use crate::prompt::{Deps, Error, RealSleeper, SpawnAdapter, SpawnDispatcher, SystemClock};
 use crate::prompt::{NanoIdGen, tool::SpawnTool};
 use std::ffi::OsStr;
@@ -51,6 +51,7 @@ fn cli_run_with(
     agent_id: &str,
     lease_env: Option<&OsStr>,
 ) -> Result<AdvanceHandoff, Error> {
+    crate::workspace::require(workspace)?;
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
     let lease = match baton::take_lease(lease_env, &inbox_dir) {
         Ok(Some(lease)) => lease,
@@ -88,7 +89,7 @@ fn cli_run_with(
     };
 
     let outcome = run(workspace, agent_id, Some(lease), &deps, &mut || {
-        resolve_worker(workspace, &deps)
+        resolve_worker(workspace, ConfigSource::Agent(agent_id), &deps)
     })?;
     handoff(&exe, workspace, agent_id, outcome)
 }
@@ -121,9 +122,18 @@ mod tests {
     }
 
     #[test]
-    fn empty_workspace_is_nothing_to_do_via_production_wiring() {
+    fn a_non_workspace_is_refused_by_the_layout_guard() {
+        // Pre-v1 clean break (§2.2, §10): the guard fires before any
+        // lease or inbox work.
         let ws = TempDir::new().unwrap();
-        let out = cli_run(ws.path(), "20260101-a1").unwrap();
+        let err = cli_run(ws.path(), "20260101-a1").unwrap_err();
+        assert!(matches!(err, Error::Layout(_)), "{err}");
+    }
+
+    #[test]
+    fn empty_workspace_is_nothing_to_do_via_production_wiring() {
+        let (_h, ws) = crate::workspace::fixture::workspace();
+        let out = cli_run(&ws, "20260101-a1").unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
@@ -132,9 +142,9 @@ mod tests {
 
     #[test]
     fn held_lock_is_already_driven() {
-        let ws = TempDir::new().unwrap();
-        let _held = test_lease(&inbox_dir(ws.path(), "20260101-a1"));
-        let out = cli_run(ws.path(), "20260101-a1").unwrap();
+        let (_h, ws) = crate::workspace::fixture::workspace();
+        let _held = test_lease(&inbox_dir(&ws, "20260101-a1"));
+        let out = cli_run(&ws, "20260101-a1").unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::AlreadyDriven)
@@ -143,19 +153,18 @@ mod tests {
 
     #[test]
     fn broken_inbox_surfaces_as_executor_lock_error() {
-        let ws = TempDir::new().unwrap();
-        std::fs::create_dir_all(ws.path().join("inbox")).unwrap();
-        std::fs::write(inbox_dir(ws.path(), "20260101-a1"), b"not a dir").unwrap();
-        let err = cli_run(ws.path(), "20260101-a1").unwrap_err();
+        let (_h, ws) = crate::workspace::fixture::workspace();
+        std::fs::create_dir_all(ws.join("inbox")).unwrap();
+        std::fs::write(inbox_dir(&ws, "20260101-a1"), b"not a dir").unwrap();
+        let err = cli_run(&ws, "20260101-a1").unwrap_err();
         assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
     }
 
     #[test]
     fn bad_lease_env_is_declined_loudly_as_lease_adopt() {
-        let ws = TempDir::new().unwrap();
-        std::fs::create_dir_all(inbox_dir(ws.path(), "20260101-a1")).unwrap();
-        let err =
-            cli_run_with(ws.path(), "20260101-a1", Some(OsStr::new("not-an-fd"))).unwrap_err();
+        let (_h, ws) = crate::workspace::fixture::workspace();
+        std::fs::create_dir_all(inbox_dir(&ws, "20260101-a1")).unwrap();
+        let err = cli_run_with(&ws, "20260101-a1", Some(OsStr::new("not-an-fd"))).unwrap_err();
         assert!(matches!(err, Error::LeaseAdopt { .. }), "{err}");
     }
 
@@ -164,12 +173,12 @@ mod tests {
         // Simulate the predecessor: acquire, publish the fd number, and
         // leak the guard (exactly what `successor_command` does before
         // exec). The adopting hop finds nothing due on the empty branch.
-        let ws = TempDir::new().unwrap();
-        let dir = inbox_dir(ws.path(), "20260101-a1");
+        let (_h, ws) = crate::workspace::fixture::workspace();
+        let dir = inbox_dir(&ws, "20260101-a1");
         let lease = test_lease(&dir);
         let fd = lease.as_raw_fd().to_string();
         std::mem::forget(lease);
-        let out = cli_run_with(ws.path(), "20260101-a1", Some(OsStr::new(&fd))).unwrap();
+        let out = cli_run_with(&ws, "20260101-a1", Some(OsStr::new(&fd))).unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
@@ -180,36 +189,15 @@ mod tests {
     fn a_warranted_hop_delivers_then_consults_the_resolver() {
         // A real branch with pending mail: the hop delivers (real git),
         // finds the tail user-side, and consults the production
-        // resolver — loud on a workspace with no role config. That the
-        // delivery landed before the resolution failed is the §6 lazy-
-        // resolution ordering, observed on disk.
-        use crate::template::GitRunner;
-        let ws = TempDir::new().unwrap();
-        let root = ws.path().join(crate::template::ROOT_WORKTREE);
-        std::fs::create_dir_all(&root).unwrap();
-        let g = crate::template::RealGit::new();
-        g.run(&root, &["init", "-b", "main"]).unwrap();
-        g.run(&root, &["config", "user.email", "t@test.invalid"])
-            .unwrap();
-        g.run(&root, &["config", "user.name", "t"]).unwrap();
-        g.run(&root, &["commit", "--allow-empty", "-m", "init"])
-            .unwrap();
+        // resolver — loud against the test-machine harness root, whose
+        // global models.yaml does not carry the template's models. That
+        // the delivery landed before the resolution failed is the §6
+        // lazy-resolution ordering, observed on disk.
+        let (_h, ws) = crate::workspace::fixture::workspace();
         let agent = "20260101-a1";
-        let wt = ws.path().join(agent);
-        g.run(
-            &root,
-            &[
-                "worktree",
-                "add",
-                "-b",
-                agent,
-                wt.to_string_lossy().as_ref(),
-                "main",
-            ],
-        )
-        .unwrap();
-        inbox::deposit(ws.path(), agent, "user", "hi", &SystemClock).unwrap();
-        let err = cli_run(ws.path(), agent).unwrap_err();
+        let wt = crate::workspace::fixture::spawn_root(&ws, agent);
+        inbox::deposit(&ws, agent, "user", "hi", &SystemClock).unwrap();
+        let err = cli_run(&ws, agent).unwrap_err();
         assert!(!err.to_string().is_empty());
         // The delivery commit landed ahead of the failed resolution.
         assert!(wt.join("messages/001-user.md").exists());

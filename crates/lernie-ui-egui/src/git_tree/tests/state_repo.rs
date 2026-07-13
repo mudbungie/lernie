@@ -20,7 +20,7 @@ fn from_repo_in_flight_branch_with_no_response_yet_classifies_as_in_flight() {
     // absence of a closed terminal event → InFlight.
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
-    fx.build_v03_in_flight("20260427T160000Z-pre0", "no response yet");
+    fx.build_agent("20260427T160000Z-pre0", "no response yet");
     let tree = GitTree::from_repo(&fx.path).unwrap();
     assert_eq!(tree.in_flight.len(), 1);
     assert_eq!(tree.in_flight[0].state, BranchState::InFlight);
@@ -32,7 +32,7 @@ fn from_repo_in_flight_branch_with_partial_response_classifies_as_in_flight() {
     // event has been emitted yet — the writer is still appending.
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
-    fx.build_v03_in_flight("20260427T160100Z-mid0", "mid stream");
+    fx.build_agent("20260427T160100Z-mid0", "mid stream");
     fx.write_response_events(
         "20260427T160100Z-mid0",
         1,
@@ -52,7 +52,7 @@ fn from_repo_in_flight_branch_after_terminal_end_classifies_as_stopped() {
     // §2.3 step 5), so this is the natural terminal state.
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
-    fx.build_v03_in_flight("20260427T160200Z-end0", "ended");
+    fx.build_agent("20260427T160200Z-end0", "ended");
     fx.write_response_events(
         "20260427T160200Z-end0",
         1,
@@ -73,7 +73,7 @@ fn from_repo_in_flight_branch_after_error_segment_classifies_as_stopped() {
     // the chain stopped (§4.4 — a failed step renders as stopped).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
-    fx.build_v03_in_flight("20260427T160300Z-err0", "errored");
+    fx.build_agent("20260427T160300Z-err0", "errored");
     fx.write_response_events(
         "20260427T160300Z-err0",
         1,

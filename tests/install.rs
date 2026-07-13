@@ -54,8 +54,10 @@ fn make_install_lays_down_skeleton_idempotently() {
     run_install(prefix.path(), home.path());
 
     // Harness-root skeleton (ARCH §2.2). No `adapters/` — the adapter is
-    // brazen's `bz` on PATH now (§4.4).
-    for d in ["workflows", "tools", "skills", "agents", "conversations"] {
+    // brazen's `bz` on PATH now (§4.4). No `agents/` profile pool and no
+    // `conversations/` tree — the pool dissolved into config commits
+    // (fork is the freeze, §2.2) and workspaces live under `workspaces/`.
+    for d in ["workflows", "tools", "skills", "workspaces"] {
         assert!(
             home.path().join(d).is_dir(),
             "harness root subdir missing: {d}"
@@ -64,6 +66,10 @@ fn make_install_lays_down_skeleton_idempotently() {
     assert!(
         !home.path().join("adapters").exists(),
         "the retired per-provider adapters/ dir must not be created"
+    );
+    assert!(
+        !home.path().join("agents").exists(),
+        "the retired frozen-copy agents/ profile pool must not be created (§2.2)"
     );
 
     // Path binaries land under INSTALL_PREFIX/bin.
@@ -84,18 +90,8 @@ fn make_install_lays_down_skeleton_idempotently() {
         "auth material must not live in models.yaml (§4.1)"
     );
 
-    // Default agent profile (ARCH §2.2 frozen-copy bootstrap source).
-    let profile = home.path().join("agents/default");
-    assert!(profile.join("manifest.yaml").is_file());
-    assert!(profile.join("workflow.yaml").is_file());
-    assert!(profile.join("providers.yaml").is_file());
-    assert!(profile.join("souls/worker.md").is_file());
-    assert!(profile.join("souls/compactor.md").is_file());
-
     // Idempotency: hand-edit config, re-run, verify it survives.
     std::fs::write(&models, "models: {}\n").unwrap();
-    let agent_marker = profile.join("CANARY");
-    std::fs::write(&agent_marker, b"keep me").unwrap();
 
     run_install(prefix.path(), home.path());
 
@@ -103,9 +99,5 @@ fn make_install_lays_down_skeleton_idempotently() {
         std::fs::read_to_string(&models).unwrap(),
         "models: {}\n",
         "models.yaml was clobbered by re-install"
-    );
-    assert!(
-        agent_marker.exists(),
-        "agents/default was clobbered by re-install"
     );
 }

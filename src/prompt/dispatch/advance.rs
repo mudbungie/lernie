@@ -121,7 +121,7 @@ pub(in crate::prompt) fn run(
     };
 
     driver::deliver(workspace, agent_id, deps.git)?;
-    let worktree = workspace.join(agent_id);
+    let worktree = crate::workspace::agent_worktree(workspace, agent_id);
     if !worktree.exists() {
         // Torn down and no mail: quiescent, nothing due (§2.3 step 6).
         return Ok(AdvanceOutcome::NothingToDo);

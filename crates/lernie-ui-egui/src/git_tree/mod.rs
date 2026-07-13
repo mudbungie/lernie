@@ -9,25 +9,21 @@
 //! Git access is via the `git` CLI (a hard dep of lernie itself, per
 //! ARCH §2.2) — no libgit2 native build step is required.
 //!
-//! # v0.3.1 layout
+//! # Workspace layout (ARCH §2.2–§2.3)
 //!
-//! The conv-repo (ARCH §2.2) holds its `.git` inside the primary
-//! worktree at `<conv-repo>/root/`; control-plane files (`manifest.yaml`,
-//! `souls/`, the `steps/` tree) live at the conv-repo root, outside any
-//! worktree. Callers pass the conv-repo path; this module resolves the
-//! git working dir to `<conv-repo>/root/` before issuing any git command,
-//! and reads step records (for previews) directly from the conv-repo
-//! root.
+//! A workspace holds one bare repository at `<workspace>/repo.git`:
+//! config branches (`config/<name>`) and agent refs
+//! (`agents/<agent-id>`) — no `main`. Callers pass the workspace path;
+//! this module resolves the git dir to `<workspace>/repo.git` before
+//! issuing any git command, and reads step records (for previews)
+//! directly from the workspace root's `steps/` tree.
 //!
-//! Each user-message dispatch spawns a bare `<conv-id>` branch off
-//! `main` and merges back with `--no-ff` on completion (ARCH §2.3).
-//! v0.3.1 (bl-c22c P4) keys conversation detection off the merged
-//! branch's name, recovered from the trunk merge commit's default
-//! `Merge branch '<name>'` subject — branch names already encode the
-//! conv-id (or hyphenated descent for subagents). Step records are no
-//! longer in any commit (§2.3 "Step records are not committed to git"),
-//! so the user-message preview reads from
-//! `<conv-repo>/steps/<conv-id>/001/request.json` on disk.
+//! The trunk section of the view is the config lineage (`HEAD`, which
+//! the workspace repository points at `config/default`); the agent
+//! section enumerates every `agents/*` ref — agents never merge
+//! anywhere (§2.6), so every agent is a live row. The user-message
+//! preview reads from `<workspace>/steps/<agent-id>/001/request.json`
+//! on disk.
 
 mod cmd;
 mod detect;
@@ -41,11 +37,10 @@ pub use state::BranchState;
 
 use std::path::{Path, PathBuf};
 
-/// Subdir under the conv-repo where the primary worktree (and the
-/// only `.git`) lives (ARCH §2.2). Mirrors `src/template::ROOT_WORKTREE`
-/// in the harness; the duplicate constant keeps the UI crate free of a
-/// dep on the harness binary.
-const ROOT_WORKTREE: &str = "root";
+/// The bare workspace repository dir (ARCH §2.2). Mirrors
+/// `src/workspace::REPO_DIR` in the harness; the duplicate constant
+/// keeps the UI crate free of a dep on the harness binary.
+const REPO_DIR: &str = "repo.git";
 
 /// Top-level directory under the conv-repo holding per-conversation
 /// step records (ARCH §2.2 / §2.3). Mirrors
@@ -69,12 +64,12 @@ pub enum GitTreeError {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct GitTree {
-    /// `main`'s first-parent trunk, oldest to newest. Includes the
-    /// `--no-ff` merge commits of completed root conversations.
+    /// The config lineage (`HEAD` → `config/default`, §2.2),
+    /// first-parent, oldest to newest.
     pub commits: Vec<CommitNode>,
-    /// Conversation branches not yet merged to `main`, enumerated via
-    /// `git for-each-ref --no-merged=main refs/heads/`. Empty in the
-    /// steady state where every dispatch has merged back.
+    /// Every agent branch (`agents/*`, §2.3), enumerated via
+    /// `git for-each-ref refs/heads/agents/`. Agents never merge
+    /// anywhere (§2.6); each persists on its own ref.
     pub in_flight: Vec<ConversationBranch>,
 }
 
@@ -83,18 +78,10 @@ pub struct CommitNode {
     pub oid: String,
     pub short_oid: String,
     pub timestamp_unix: i64,
-    /// The conversation id this commit represents, if any. Populated
-    /// for `--no-ff` merge commits whose default `Merge branch '<name>'`
-    /// subject parses (ARCH §2.3); `None` for non-merge commits and for
-    /// merges whose subject does not match the conversation shape
-    /// (initial scaffold commit, config tweaks, hand-run merges with
-    /// rewritten subjects, etc.).
-    pub conv_id: Option<String>,
-    pub preview: Option<String>,
-    /// Step commits on the conversation branch this merge commit
-    /// closes. Empty unless this is a merged-conversation commit.
-    /// Ordered oldest to newest (dispatch, response, compactor merge).
-    pub steps: Vec<StepCommit>,
+    /// Commit subject — config commits are the only trunk commits
+    /// (§2.2–§2.3: agents never merge anywhere), so the subject is the
+    /// row's label.
+    pub subject: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,12 +150,9 @@ pub enum ToolCallState {
 
 impl GitTree {
     pub fn from_repo(conv_repo: &Path) -> Result<Self, GitTreeError> {
-        let git_dir = conv_repo.join(ROOT_WORKTREE);
+        let git_dir = conv_repo.join(REPO_DIR);
         let log = cmd::git_log_first_parent(&git_dir)?;
-        let mut commits = Vec::with_capacity(log.len());
-        for entry in log {
-            commits.push(enumerate::build_node(conv_repo, &git_dir, entry)?);
-        }
+        let commits = log.into_iter().map(enumerate::build_node).collect();
         // The §3.5 fd-close gate probes `/proc` for a writer still
         // holding a terminal step's `response.json` open (mid-retry).
         let probe = fd_probe::ProcFsProbe::default();
@@ -188,13 +172,10 @@ pub fn render(ui: &mut egui::Ui, tree: &GitTree) {
     }
     for commit in &tree.commits {
         render_commit(ui, commit);
-        for step in &commit.steps {
-            render_step(ui, step);
-        }
     }
     if !tree.in_flight.is_empty() {
         ui.separator();
-        ui.label("in-flight conversations");
+        ui.label("agents");
         for branch in &tree.in_flight {
             render_in_flight(ui, branch);
             for step in &branch.steps {
@@ -208,12 +189,7 @@ fn render_commit(ui: &mut egui::Ui, commit: &CommitNode) {
     ui.horizontal(|ui| {
         ui.monospace(&commit.short_oid);
         ui.label(commit.timestamp_unix.to_string());
-        if let Some(id) = &commit.conv_id {
-            ui.label(id);
-        }
-        if let Some(preview) = &commit.preview {
-            ui.label(preview);
-        }
+        ui.label(&commit.subject);
     });
 }
 

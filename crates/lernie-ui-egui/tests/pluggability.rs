@@ -4,11 +4,12 @@
 //! just a sibling thread that calls the same public surface a real
 //! `lernie-ui-web` would.
 //!
-//! Mechanism: build a minimal v0.3.1-shape conv-repo on disk, then
-//! derive `GitTree::from_repo` from N threads simultaneously and
-//! assert they all observe identical state. The fixture itself stays
-//! frozen for the duration of the read window — the test is about
-//! reentrancy of the read path, not about race-tolerance under writes.
+//! Mechanism: build a minimal workspace (ARCH §2.2: bare repo.git,
+//! config/default, agents/* refs) on disk, then derive
+//! `GitTree::from_repo` from N threads simultaneously and assert they
+//! all observe identical state. The fixture itself stays frozen for
+//! the duration of the read window — the test is about reentrancy of
+//! the read path, not about race-tolerance under writes.
 
 use lernie_ui_egui::git_tree::GitTree;
 use std::process::Command;
@@ -40,31 +41,55 @@ fn run_git(repo: &std::path::Path, args: &[&str]) {
     assert!(status.success(), "git {args:?}");
 }
 
-/// Build a minimal v0.3.1 conv-repo: `<dir>/root/` is the primary
-/// worktree on `main`, with one merged conversation `c001` and one
-/// in-flight conversation `c002`. ARCH §2.2 / §2.3 layout.
+/// Build a minimal workspace: a bare `repo.git` with `config/default`
+/// (one config commit) and two agent branches `agents/c-001` and
+/// `agents/c-002`, each with a dispatch commit. ARCH §2.2 / §2.3.
 fn fixture() -> TempDir {
     let dir = TempDir::new().unwrap();
-    let primary = dir.path().join("root");
-    std::fs::create_dir_all(&primary).unwrap();
-    run_git(&primary, &["init", "-q", "-b", "main"]);
-    run_git(&primary, &["config", "user.email", "t@t.local"]);
-    run_git(&primary, &["config", "user.name", "Tester"]);
-    run_git(&primary, &["config", "commit.gpgsign", "false"]);
-    std::fs::write(primary.join("README"), "x").unwrap();
-    run_git(&primary, &["add", "README"]);
-    run_git(&primary, &["commit", "-q", "-m", "init"]);
-    run_git(&primary, &["checkout", "-q", "-b", "c001"]);
-    std::fs::write(primary.join("goal.md"), "g").unwrap();
-    run_git(&primary, &["add", "goal.md"]);
-    run_git(&primary, &["commit", "-q", "-m", "dispatch c001"]);
-    run_git(&primary, &["checkout", "-q", "main"]);
-    run_git(&primary, &["merge", "--no-ff", "-q", "--no-edit", "c001"]);
-    run_git(&primary, &["checkout", "-q", "-b", "c002"]);
-    std::fs::write(primary.join("goal.md"), "g2").unwrap();
-    run_git(&primary, &["add", "goal.md"]);
-    run_git(&primary, &["commit", "-q", "-m", "dispatch c002"]);
-    run_git(&primary, &["checkout", "-q", "main"]);
+    let repo = dir.path().join("repo.git");
+    std::fs::create_dir_all(&repo).unwrap();
+    run_git(&repo, &["init", "-q", "--bare", "-b", "config/default"]);
+    run_git(&repo, &["config", "user.email", "t@t.local"]);
+    run_git(&repo, &["config", "user.name", "Tester"]);
+    run_git(&repo, &["config", "commit.gpgsign", "false"]);
+    let author = dir.path().join(".author");
+    let author_str = author.to_string_lossy().to_string();
+    run_git(
+        &repo,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            "--orphan",
+            "-b",
+            "config/default",
+            author_str.as_str(),
+        ],
+    );
+    std::fs::write(author.join("version"), "1\n").unwrap();
+    run_git(&author, &["add", "version"]);
+    run_git(&author, &["commit", "-q", "-m", "config: init"]);
+    run_git(&repo, &["worktree", "remove", author_str.as_str()]);
+    for id in ["c-001", "c-002"] {
+        let wt = dir.path().join("agents").join(id);
+        let wt_str = wt.to_string_lossy().to_string();
+        let branch = format!("agents/{id}");
+        run_git(
+            &repo,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                branch.as_str(),
+                wt_str.as_str(),
+                "config/default",
+            ],
+        );
+        std::fs::write(wt.join("goal.md"), "g").unwrap();
+        run_git(&wt, &["add", "goal.md"]);
+        run_git(&wt, &["commit", "-q", "-m", &format!("dispatch [{id}]")]);
+    }
     dir
 }
 

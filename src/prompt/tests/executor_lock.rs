@@ -33,12 +33,13 @@ fn driver_that_loses_the_acquire_is_a_clean_noop() {
     // The verb still reports the branch name, but nothing was driven:
     // no worktree spawned, no model call issued.
     assert_eq!(branch, CONV_ID);
+    // Control resolution (read-only, §2.2) ran; no branch work did.
     assert!(
-        git.runs.borrow().is_empty(),
-        "no git work on the no-op path"
+        git.runs.borrow().iter().all(|(_, a)| a[0] != "worktree"),
+        "no git branch work on the no-op path"
     );
     assert!(
-        !repo.path().join(CONV_ID).exists(),
+        !worktree_path(repo.path()).exists(),
         "no worktree materialized"
     );
 }

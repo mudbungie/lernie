@@ -77,7 +77,7 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
             == &vec![
                 "update-ref".to_string(),
                 "refs/lernie/budget-exhausted/ct-1-deadbeef".to_string(),
-                "ct-1-deadbeef".to_string(),
+                "HEAD".to_string(),
             ]),
         "expected budget-exhausted update-ref; got {runs:?}"
     );
@@ -150,7 +150,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(13);
+    let git = StubGit::failing_at(18);
     let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 

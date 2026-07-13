@@ -145,12 +145,14 @@ fn root_of(branch: &str) -> &str {
     }
 }
 
-/// Write the budget-exhausted marker ref for `branch` at its tip
-/// (`git update-ref refs/lernie/budget-exhausted/<branch> <branch>`),
-/// run inside `worktree` where `.git` resolves. State lives in git, not
-/// a sidecar file (PRINCIPLES SSOT) — the same pattern as the §2.6
-/// conflicted ref.
+/// Write the budget-exhausted marker ref for the agent id `branch` at
+/// its tip (`git update-ref refs/lernie/budget-exhausted/<agent-id>
+/// HEAD`), run inside `worktree` — whose checked-out branch *is*
+/// `agents/<agent-id>` (§2.3), so `HEAD` is the tip with no ref-name
+/// round trip. State lives in git, not a sidecar file (PRINCIPLES SSOT)
+/// — the same pattern as the §2.6 conflicted ref, which is likewise
+/// keyed by agent id.
 pub fn mark_exhausted(worktree: &Path, branch: &str, git: &dyn GitRunner) -> std::io::Result<()> {
     let ref_name = format!("{BUDGET_EXHAUSTED_REF_PREFIX}{branch}");
-    git.run(worktree, &["update-ref", ref_name.as_str(), branch])
+    git.run(worktree, &["update-ref", ref_name.as_str(), "HEAD"])
 }

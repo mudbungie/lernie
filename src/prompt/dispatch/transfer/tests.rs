@@ -96,7 +96,7 @@ fn apply_lands_only_work_products_as_one_commit() {
         ],
     );
 
-    apply(wt, "main", "p-child", &terminal, &git()).unwrap();
+    apply(wt, "p-child", &terminal, &git()).unwrap();
 
     // The work product landed on main; the context paths did not.
     assert_eq!(
@@ -123,7 +123,7 @@ fn apply_commits_nothing_when_only_context_changed() {
         &[("messages/001-x.md", "ctx\n"), ("summary/001.md", "s\n")],
     );
 
-    apply(wt, "main", "p-child", &terminal, &git()).unwrap();
+    apply(wt, "p-child", &terminal, &git()).unwrap();
 
     // No transfer commit — HEAD is still the fork commit.
     let subject = git()
@@ -145,7 +145,7 @@ fn apply_declines_loudly_when_the_diff_does_not_apply() {
     git().run(wt, &["add", "-A"]).unwrap();
     git().run(wt, &["commit", "-m", "parent diverged"]).unwrap();
 
-    apply(wt, "main", "p-child", &terminal, &git()).unwrap();
+    apply(wt, "p-child", &terminal, &git()).unwrap();
 
     // Declined: no transfer commit, and the conflicted ref points at the
     // child's terminal sha (every byte preserved on its branch).
@@ -168,7 +168,7 @@ fn apply_declines_loudly_when_the_diff_does_not_apply() {
 fn apply_surfaces_a_bad_terminal_ref_as_merge_base_error() {
     let dir = init_repo();
     let wt = dir.path();
-    let err = apply(wt, "main", "p-child", "deadbeefdeadbeef", &git()).unwrap_err();
+    let err = apply(wt, "p-child", "deadbeefdeadbeef", &git()).unwrap_err();
     assert!(
         matches!(
             err,
@@ -236,7 +236,7 @@ fn apply_surfaces_diff_failure() {
         fail_diff: true,
         ..Default::default()
     };
-    let err = apply(d.path(), "main", "c", "term", &git).unwrap_err();
+    let err = apply(d.path(), "c", "term", &git).unwrap_err();
     assert!(
         matches!(
             err,
@@ -256,7 +256,7 @@ fn apply_surfaces_commit_failure() {
         fail_commit: true,
         ..Default::default()
     };
-    let err = apply(d.path(), "main", "c", "term", &git).unwrap_err();
+    let err = apply(d.path(), "c", "term", &git).unwrap_err();
     assert!(
         matches!(
             err,
@@ -277,7 +277,7 @@ fn apply_declines_and_surfaces_update_ref_failure() {
         fail_update_ref: true,
         ..Default::default()
     };
-    let err = apply(d.path(), "main", "c", "term", &git).unwrap_err();
+    let err = apply(d.path(), "c", "term", &git).unwrap_err();
     assert!(
         matches!(
             err,

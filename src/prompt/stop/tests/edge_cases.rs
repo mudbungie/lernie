@@ -3,8 +3,7 @@
 //! orchestration narrative.
 
 use super::fixtures::{
-    ErrFinder, ErrInspector, ErrMergedInspector, NoopGit, StubFinder, StubInspector,
-    touch_inbox_dir,
+    ErrFinder, ErrInspector, NoopGit, StubFinder, StubInspector, touch_inbox_dir,
 };
 use crate::prompt::stop::{Error, cascade, run};
 use crate::template::GitRunner;
@@ -37,36 +36,10 @@ fn run_propagates_inspector_exists_error_as_git() {
 }
 
 #[test]
-fn run_propagates_inspector_merged_error_as_git() {
-    let dir = TempDir::new().unwrap();
-    let err = run(
-        dir.path(),
-        "br",
-        false,
-        &ErrMergedInspector,
-        &StubFinder::default(),
-        &cascade::RecordingSignaler::new(0),
-        Duration::from_millis(1),
-        &NoopGit,
-    )
-    .unwrap_err();
-    matches!(
-        err,
-        Error::Git {
-            op: "merge-base --is-ancestor",
-            ..
-        }
-    );
-}
-
-#[test]
 fn run_propagates_finder_io_error_as_proc() {
     let dir = TempDir::new().unwrap();
     touch_inbox_dir(dir.path(), "br");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let err = run(
         dir.path(),
         "br",
@@ -125,13 +98,6 @@ fn error_display_branch_missing_includes_name() {
 }
 
 #[test]
-fn error_display_already_merged_includes_name() {
-    let e = Error::AlreadyMerged("foo".into());
-    let s = format!("{e}");
-    assert!(s.contains("\"foo\""), "got {s}");
-}
-
-#[test]
 fn error_display_inbox_walk_passes_through_io_message() {
     let e = Error::InboxWalk(io::Error::other("nope"));
     let s = format!("{e}");
@@ -149,24 +115,31 @@ fn noop_git_returns_ok_from_both_methods() {
 }
 
 #[test]
-fn cli_run_returns_branch_missing_against_empty_repo() {
-    // cli_run wires production deps (`GitInspector` / `ProcFsFinder`
-    // / `RealSignaler`). Pointed at a temp dir with no `<repo>/root/`,
-    // GitInspector's rev-parse fails and is interpreted as "branch
-    // does not exist" — the canonical pre-cascade error path.
+fn cli_run_guards_the_layout_before_anything_else() {
+    // cli_run wires production deps. Pointed at a temp dir that is not
+    // a workspace, the §2.2 layout guard refuses first (pre-v1 clean
+    // break) — before any git or /proc work.
     let dir = TempDir::new().unwrap();
     let err = super::super::cli_run(dir.path(), "no-such-branch", false).unwrap_err();
-    matches!(err, Error::BranchMissing(b) if b == "no-such-branch");
+    assert!(matches!(err, Error::Layout(_)), "{err}");
 }
 
 #[test]
-fn cli_run_forwards_stop_children_flag() {
-    // The `true` arm flows through cli_run into run/collect; the empty
-    // repo still short-circuits at branch validation, proving the flag
-    // is plumbed without needing a live executor.
-    let dir = TempDir::new().unwrap();
-    let err = super::super::cli_run(dir.path(), "no-such-branch", true).unwrap_err();
-    matches!(err, Error::BranchMissing(b) if b == "no-such-branch");
+fn cli_run_returns_branch_missing_against_a_real_workspace() {
+    // Against a real workspace (bare repo.git + config/default), a
+    // nonexistent agent id fails branch validation — the canonical
+    // pre-cascade error path — for both flag arms.
+    let (_h, ws) = crate::workspace::fixture::workspace();
+    let err = super::super::cli_run(&ws, "no-such-branch", false).unwrap_err();
+    assert!(
+        matches!(err, Error::BranchMissing(ref b) if b == "no-such-branch"),
+        "{err}"
+    );
+    let err = super::super::cli_run(&ws, "no-such-branch", true).unwrap_err();
+    assert!(
+        matches!(err, Error::BranchMissing(ref b) if b == "no-such-branch"),
+        "{err}"
+    );
 }
 
 #[test]

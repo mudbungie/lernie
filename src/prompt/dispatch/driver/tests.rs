@@ -6,49 +6,34 @@
 use super::{DriveOutcome, drive};
 use crate::prompt::SystemClock;
 use crate::prompt::inbox::{deposit, inbox_dir, try_acquire};
-use crate::template::{GitRunner, ROOT_WORKTREE, RealGit};
-use std::path::Path;
+use crate::template::{GitRunner, RealGit};
+use crate::workspace::{agent_ref, fixture, repo_git};
+use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 /// A root-shaped agent id (two hyphen-free tokens, §2.3).
 const AGENT: &str = "20260101-a1";
 
-/// A workspace with a `root` primary worktree on `main` and one agent
-/// branch + worktree — the §2.2 shipped layout, real git throughout.
-fn workspace() -> TempDir {
-    let ws = TempDir::new().unwrap();
-    let root = ws.path().join(ROOT_WORKTREE);
-    std::fs::create_dir_all(&root).unwrap();
-    let g = RealGit::new();
-    g.run(&root, &["init", "-b", "main"]).unwrap();
-    g.run(&root, &["config", "user.email", "t@test.invalid"])
-        .unwrap();
-    g.run(&root, &["config", "user.name", "t"]).unwrap();
-    g.run(&root, &["commit", "--allow-empty", "-m", "init"])
-        .unwrap();
-    let wt = ws.path().join(AGENT);
-    let wt_str = wt.to_string_lossy().to_string();
-    g.run(
-        &root,
-        &["worktree", "add", "-b", AGENT, wt_str.as_str(), "main"],
-    )
-    .unwrap();
-    ws
+/// A real workspace (bare repo.git + config/default, §2.2) with one
+/// agent branch `agents/<AGENT>` and its worktree under `agents/`.
+fn workspace() -> (TempDir, PathBuf) {
+    let (holder, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, AGENT);
+    (holder, ws)
 }
 
 fn tip(ws: &Path) -> String {
     RealGit::new()
-        .run_capture(&ws.join(ROOT_WORKTREE), &["rev-parse", AGENT])
+        .run_capture(&repo_git(ws), &["rev-parse", &agent_ref(AGENT)])
         .unwrap()
 }
 
 #[test]
 fn a_held_lock_means_already_driven() {
-    let ws = workspace();
-    let _held = try_acquire(&inbox_dir(ws.path(), AGENT))
-        .unwrap()
-        .expect("free");
-    let outcome = drive(ws.path(), AGENT, &RealGit::new()).unwrap();
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    let _held = try_acquire(&inbox_dir(ws, AGENT)).unwrap().expect("free");
+    let outcome = drive(ws, AGENT, &RealGit::new()).unwrap();
     assert_eq!(outcome, DriveOutcome::AlreadyDriven);
 }
 
@@ -57,25 +42,21 @@ fn empty_inbox_exits_silently_without_stepping_or_relaunching() {
     // §2.11 pin 1: acquire, find nothing, exit — no step (the branch tip
     // does not move), no epitaph (no deposit appears anywhere), no
     // further launch (structural: `drive` takes no launcher at all).
-    let ws = workspace();
-    let before = tip(ws.path());
-    let outcome = drive(ws.path(), AGENT, &RealGit::new()).unwrap();
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    let before = tip(ws);
+    let outcome = drive(ws, AGENT, &RealGit::new()).unwrap();
     assert_eq!(outcome, DriveOutcome::NothingToDeliver);
-    assert_eq!(tip(ws.path()), before, "no step: the tip must not move");
+    assert_eq!(tip(ws), before, "no step: the tip must not move");
     // No deposit anywhere: the workspace inbox tree holds only the
     // agent's own (empty) inbox dir the probe created.
-    let entries: Vec<_> = std::fs::read_dir(ws.path().join("inbox"))
+    let entries: Vec<_> = std::fs::read_dir(ws.join("inbox"))
         .unwrap()
         .flatten()
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
     assert_eq!(entries, vec![AGENT.to_string()]);
-    assert_eq!(
-        std::fs::read_dir(inbox_dir(ws.path(), AGENT))
-            .unwrap()
-            .count(),
-        0
-    );
+    assert_eq!(std::fs::read_dir(inbox_dir(ws, AGENT)).unwrap().count(), 0);
 }
 
 #[test]
@@ -83,22 +64,21 @@ fn a_late_deposit_is_delivered_by_the_launched_driver() {
     // The exit-race payoff: a deposit that landed after an executor's
     // final drain sits pending; the exit-launched driver acquires the
     // released lock and delivers it as a delivery commit.
-    let ws = workspace();
-    deposit(ws.path(), AGENT, "user", "late mail", &SystemClock).unwrap();
-    let outcome = drive(ws.path(), AGENT, &RealGit::new()).unwrap();
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    deposit(ws, AGENT, "user", "late mail", &SystemClock).unwrap();
+    let outcome = drive(ws, AGENT, &RealGit::new()).unwrap();
     assert_eq!(outcome, DriveOutcome::Delivered(1));
     // The file left the inbox (rename semantics, §2.11)…
-    assert_eq!(
-        std::fs::read_dir(inbox_dir(ws.path(), AGENT))
-            .unwrap()
-            .count(),
-        0
-    );
+    assert_eq!(std::fs::read_dir(inbox_dir(ws, AGENT)).unwrap().count(), 0);
     // …and landed committed in the transcript.
     let shown = RealGit::new()
         .run_capture(
-            &ws.path().join(ROOT_WORKTREE),
-            &["show", &format!("{AGENT}:messages/001-user.md")],
+            &repo_git(ws),
+            &[
+                "show",
+                &format!("{}:messages/001-user.md", agent_ref(AGENT)),
+            ],
         )
         .unwrap();
     assert!(shown.contains("late mail"), "got {shown:?}");
@@ -108,32 +88,34 @@ fn a_late_deposit_is_delivered_by_the_launched_driver() {
 fn a_torn_down_worktree_is_rematerialized_before_delivery() {
     // §2.3 step 6: quiescence may tear the worktree down; the branch ref
     // persists and the next driver rematerializes off it.
-    let ws = workspace();
-    let root = ws.path().join(ROOT_WORKTREE);
-    let wt = ws.path().join(AGENT);
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    let repo = repo_git(ws);
+    let wt = crate::workspace::agent_worktree(ws, AGENT);
     let wt_str = wt.to_string_lossy().to_string();
     RealGit::new()
-        .run(&root, &["worktree", "remove", wt_str.as_str()])
+        .run(&repo, &["worktree", "remove", wt_str.as_str()])
         .unwrap();
     assert!(!wt.exists());
-    deposit(ws.path(), AGENT, "user", "wake up", &SystemClock).unwrap();
-    let outcome = drive(ws.path(), AGENT, &RealGit::new()).unwrap();
+    deposit(ws, AGENT, "user", "wake up", &SystemClock).unwrap();
+    let outcome = drive(ws, AGENT, &RealGit::new()).unwrap();
     assert_eq!(outcome, DriveOutcome::Delivered(1));
     assert!(wt.join("messages").join("001-user.md").exists());
 }
 
 #[test]
 fn rematerialize_failure_is_surfaced_as_a_git_error() {
-    let ws = workspace();
-    let root = ws.path().join(ROOT_WORKTREE);
-    let wt = ws.path().join(AGENT);
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    let repo = repo_git(ws);
+    let wt = crate::workspace::agent_worktree(ws, AGENT);
     let wt_str = wt.to_string_lossy().to_string();
     let g = RealGit::new();
-    g.run(&root, &["worktree", "remove", wt_str.as_str()])
+    g.run(&repo, &["worktree", "remove", wt_str.as_str()])
         .unwrap();
-    g.run(&root, &["branch", "-D", AGENT]).unwrap();
-    deposit(ws.path(), AGENT, "user", "orphaned", &SystemClock).unwrap();
-    let err = drive(ws.path(), AGENT, &RealGit::new()).unwrap_err();
+    g.run(&repo, &["branch", "-D", &agent_ref(AGENT)]).unwrap();
+    deposit(ws, AGENT, "user", "orphaned", &SystemClock).unwrap();
+    let err = drive(ws, AGENT, &RealGit::new()).unwrap_err();
     assert!(
         matches!(
             err,
@@ -150,10 +132,11 @@ fn rematerialize_failure_is_surfaced_as_a_git_error() {
 fn a_broken_inbox_surfaces_as_an_executor_lock_error() {
     // A file where the agent's inbox dir should be makes the acquire
     // fail with an I/O error rather than a clean no-op.
-    let ws = workspace();
-    std::fs::create_dir_all(ws.path().join("inbox")).unwrap();
-    std::fs::write(inbox_dir(ws.path(), AGENT), b"not a dir").unwrap();
-    let err = drive(ws.path(), AGENT, &RealGit::new()).unwrap_err();
+    let (_h, ws) = workspace();
+    let ws = ws.as_path();
+    std::fs::create_dir_all(ws.join("inbox")).unwrap();
+    std::fs::write(inbox_dir(ws, AGENT), b"not a dir").unwrap();
+    let err = drive(ws, AGENT, &RealGit::new()).unwrap_err();
     assert!(
         matches!(err, crate::prompt::Error::ExecutorLock { .. }),
         "{err}"

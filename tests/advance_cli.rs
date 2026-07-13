@@ -1,7 +1,5 @@
 //! End-to-end test for `lernie advance` (ARCH §6): the reprompt chain
-//! and the exec baton, over real subprocesses and real `bz`.
-//!
-//! Flow: `lernie prompt` answers "ping" and quiesces. `lernie message`
+//! and the exec baton, over real subprocesses and real `bz`. Flow: `lernie prompt` answers "ping" and quiesces. `lernie message`
 //! deposits a reprompt and — the §2.11 probe finding the lease free —
 //! detach-spawns `lernie advance`, which delivers the deposit and steps.
 //! The model call returns `tool_use`, so the hop runs the bash tool and
@@ -11,9 +9,8 @@
 //! launches one last driver that finds nothing due (§2.11 pin 1).
 //!
 //! The scripted TCP server (the `prompt_retry.rs` pattern) serves one
-//! response per connection, so the chain's model calls are sequenced
-//! deterministically: ping → tool_use → final. The compactor is the
-//! v0.3 stub (no model call), so it opens no connection.
+//! response per connection: ping → tool_use → final. The compactor is
+//! the v0.3 stub (no model call), so it opens no connection.
 
 use std::fs;
 use std::io::{Read, Write};
@@ -115,6 +112,42 @@ fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
     path
 }
 
+/// Git env vars a hook-invoked test may inherit; scrub them so the
+/// spawned `git` operates on the fixture, not the outer repo.
+const INHERITED_GIT_ENV: &[&str] = &[
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_PREFIX",
+    "GIT_COMMON_DIR",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+];
+
+fn git(dest: &Path, args: &[&str]) {
+    let mut cmd = Command::new("git");
+    for var in INHERITED_GIT_ENV {
+        cmd.env_remove(var);
+    }
+    let out = cmd.arg("-C").arg(dest).args(args).output().expect("git");
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+const ROLES_YAML: &str = "\
+roles:
+  worker:
+    provider: test
+    model: claude-sonnet-4-7
+    tools: [bash]
+  compactor:
+    provider: test
+    model: claude-haiku-4-5
+";
+
 fn scaffold(dest: &Path, harness: &Path) {
     let out = Command::new(lernie_bin())
         .arg("new")
@@ -127,20 +160,18 @@ fn scaffold(dest: &Path, harness: &Path) {
         "lernie new: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    fs::write(
-        dest.join("providers.yaml"),
-        "\
-roles:
-  worker:
-    provider: test
-    model: claude-sonnet-4-7
-    tools: [bash]
-  compactor:
-    provider: test
-    model: claude-haiku-4-5
-",
-    )
-    .unwrap();
+    // Config-commit amendment (§2.2): point roles at the fixture row.
+    let author = dest.join(".amend");
+    let author_str = author.to_string_lossy().to_string();
+    let repo = dest.join("repo.git");
+    git(
+        &repo,
+        &["worktree", "add", author_str.as_str(), "config/default"],
+    );
+    fs::write(author.join("providers.yaml"), ROLES_YAML).unwrap();
+    git(&author, &["add", "-A"]);
+    git(&author, &["commit", "-m", "config: amend"]);
+    git(&repo, &["worktree", "remove", author_str.as_str()]);
 }
 
 /// Poll for `path` to exist, up to `deadline` — the driver chain runs
@@ -203,7 +234,7 @@ fn message_launches_a_detached_advance_chain_that_batons_through_tools() {
     // The chain: deliver (003-user) → step 2 (004 tool_use) → bash tool
     // (005-tool) → exec successor with the lease riding LERNIE_LOCK_FD →
     // step 3 (006 final response).
-    let messages = dest.join(&conv).join("messages");
+    let messages = dest.join("agents").join(&conv).join("messages");
     let deadline = Duration::from_secs(120);
     wait_for(&messages.join("003-user.md"), deadline);
     wait_for(&messages.join("004-claude-sonnet-4-7.json"), deadline);
@@ -244,12 +275,20 @@ fn advance_verb_surfaces_an_unusable_workspace_loudly() {
 }
 
 #[test]
-fn advance_on_a_quiescent_empty_workspace_is_a_silent_noop() {
-    let ws = TempDir::new().unwrap();
+fn advance_on_a_quiescent_empty_agent_is_a_silent_noop() {
+    // A real workspace, an agent id with no branch and no mail: the
+    // driver acquires, finds nothing due, exits silently (§2.11 pin 1).
+    let holder = TempDir::new().unwrap();
+    let harness = holder.path().join("harness");
+    fs::create_dir_all(&harness).unwrap();
+    write_global_models(&harness);
+    let dest = holder.path().join("ws");
+    scaffold(&dest, &harness);
     let out = Command::new(lernie_bin())
         .args(["advance"])
-        .arg(ws.path())
+        .arg(&dest)
         .arg("20260101-a1")
+        .env("LERNIE_HOME", &harness)
         .output()
         .expect("spawn lernie advance");
     assert!(

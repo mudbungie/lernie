@@ -134,12 +134,11 @@ fn cli_run_deposits_via_production_deps() {
     // the test so the probe observes Busy and no real driver spawns
     // (the launch path is exercised by the launcher tests below and the
     // advance CLI integration test).
-    let ws = TempDir::new().unwrap();
-    let _held = try_acquire(&inbox_dir(ws.path(), "a1"))
-        .unwrap()
-        .expect("free");
-    cli_run(ws.path(), "a1", "hi").unwrap();
-    let files: Vec<_> = std::fs::read_dir(inbox_dir(ws.path(), "a1"))
+    let (_h, ws) = crate::workspace::fixture::workspace();
+    let ws = ws.as_path();
+    let _held = try_acquire(&inbox_dir(ws, "a1")).unwrap().expect("free");
+    cli_run(ws, "a1", "hi").unwrap();
+    let files: Vec<_> = std::fs::read_dir(inbox_dir(ws, "a1"))
         .unwrap()
         .flatten()
         .filter(|e| e.file_name().to_string_lossy().ends_with(".md"))

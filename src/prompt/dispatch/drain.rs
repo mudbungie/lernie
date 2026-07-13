@@ -43,7 +43,7 @@ pub(super) fn drain(
         // carries none and delivers directly.
         let body = std::fs::read_to_string(&msg.path).map_err(Error::Io)?;
         if let Some(terminal_ref) = transfer::terminal_ref_of(&body) {
-            transfer::apply(worktree, conv_id, &msg.sender, &terminal_ref, git)?;
+            transfer::apply(worktree, &msg.sender, &terminal_ref, git)?;
         }
         transcript::deliver_message(worktree, conv_id, &msg.sender, &msg.path, git)?;
     }

@@ -114,7 +114,21 @@ impl Sleeper for StubSleeper {
     }
 }
 
+/// The fixed sha every capture that answers a revision question
+/// returns. 40 hex chars so it is shaped like a real commit id.
+pub(super) const STUB_SHA: &str = "cafecafecafecafecafecafecafecafecafecafe";
+
 /// Recording [`GitRunner`] with optional `fail_at` index.
+///
+/// Captures emulate just enough of git's read surface for the
+/// control-from-config-commit reads (ARCH §2.2) to resolve against the
+/// plain files [`super::fixtures::scaffold_repo`] lays out: `show
+/// <sha>:<path>` reads `<workspace>/<path>` (the stub's stand-in for
+/// the config commit's tree; `dest` is `<workspace>/repo.git`),
+/// revision questions return [`STUB_SHA`], and everything else
+/// captures empty (so e.g. the drain's `status --porcelain` reports a
+/// clean tree). The real contract is exercised by the real-git tests
+/// (`workspace::tests`, the integration suite).
 #[derive(Default)]
 pub(super) struct StubGit {
     pub(super) runs: RefCell<Vec<(PathBuf, Vec<String>)>>,
@@ -148,10 +162,20 @@ impl GitRunner for StubGit {
         }
     }
     fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        // Empty return: alignment rm produces no staged delta in stub
-        // tests, so neither conditional checkout nor alignment commit fires.
         self.run(dest, args)?;
-        Ok(String::new())
+        match args.first().copied() {
+            Some("show") => {
+                let spec = args.last().unwrap_or(&"");
+                let (_, path) = spec
+                    .split_once(':')
+                    .ok_or_else(|| io::Error::other("stub show: no <sha>:<path> spec"))?;
+                let ws = dest.parent().expect("dest is <workspace>/repo.git");
+                std::fs::read_to_string(ws.join(path))
+            }
+            Some("rev-parse" | "merge-base") => Ok(STUB_SHA.to_string()),
+            Some("for-each-ref") => Ok("refs/heads/config/default".to_string()),
+            _ => Ok(String::new()),
+        }
     }
 }
 

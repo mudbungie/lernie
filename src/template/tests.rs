@@ -80,63 +80,88 @@ impl GitRunner for StubGit {
 }
 
 #[test]
-fn scaffold_happy_path_lays_out_v0_3_shape() {
+fn scaffold_happy_path_authors_the_first_config_commit() {
     let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
+    let dest = holder.path().join("ws");
     let git = StubGit::ok();
     scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
 
-    // Control plane lives at conv-repo root, outside the worktree.
-    assert!(dest.join("manifest.yaml").is_file());
-    assert!(dest.join("workflow.yaml").is_file());
-    assert!(dest.join("providers.yaml").is_file());
-    assert!(dest.join("version").is_file());
-    assert!(dest.join("souls/worker.md").is_file());
-    assert!(dest.join("souls/compactor.md").is_file());
+    let repo = dest.join("repo.git");
+    let author = dest.join(".config-author");
 
-    // root/ is the primary worktree. Merge-back is gone (ARCH §2.6), so
-    // no `.gitattributes` merge=ours discipline is scaffolded.
-    let root = dest.join("root");
-    assert!(root.is_dir());
-    assert!(!root.join(".gitattributes").exists());
+    // The control files were written into the authoring checkout — the
+    // config commit's tree (§2.2). (Stub git does not remove the
+    // checkout, so its contents are observable here.)
+    for f in [
+        "manifest.yaml",
+        "workflow.yaml",
+        "providers.yaml",
+        "version",
+        "souls/worker.md",
+        "souls/compactor.md",
+    ] {
+        assert!(author.join(f).is_file(), "missing {f}");
+    }
 
-    // Every git invocation ran inside root/, not the conv-repo root. No
-    // merge driver registration — the merge=ours discipline is retired.
+    // Git sequence (§2.2): bare init with config/default as the initial
+    // branch (no `main` is ever created), the orphan authoring
+    // checkout, the config commit, and the checkout teardown.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 3);
-    assert!(runs.iter().all(|(d, _)| d == &root));
-    assert_eq!(runs[0].1, vec!["init", "-b", "main"]);
-    assert_eq!(runs[1].1, vec!["add", "-A"]);
+    assert_eq!(runs.len(), 5);
+    assert_eq!(runs[0].0, repo);
+    assert_eq!(runs[0].1, vec!["init", "--bare", "-b", "config/default"]);
+    assert_eq!(runs[1].0, repo);
+    assert_eq!(runs[1].1[..4], ["worktree", "add", "--orphan", "-b"],);
+    assert_eq!(runs[1].1[4], "config/default");
+    assert_eq!(runs[1].1[5], author.to_string_lossy().to_string());
+    assert_eq!(runs[2].0, author);
+    assert_eq!(runs[2].1, vec!["add", "-A"]);
+    assert_eq!(runs[3].0, author);
     assert_eq!(
-        runs[2].1,
-        vec!["commit", "--allow-empty", "-m", "init conversation repo"]
+        runs[3].1,
+        vec!["commit", "-m", "config: init [config/default]"]
     );
+    assert_eq!(runs[4].0, repo);
+    assert_eq!(runs[4].1[..2], ["worktree", "remove"]);
+}
+
+#[test]
+fn scaffold_with_real_git_yields_exactly_one_config_ref() {
+    // End to end with real git: the workspace has exactly the
+    // config/default ref — no `main` (§2.2) — its head carries the
+    // control files, and the authoring checkout is gone.
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("ws");
+    let git = RealGit::new();
+    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
+
+    let repo = dest.join("repo.git");
+    let refs = git
+        .run_capture(&repo, &["for-each-ref", "--format=%(refname)"])
+        .unwrap();
+    assert_eq!(refs, "refs/heads/config/default");
+    let providers = git
+        .run_capture(&repo, &["show", "config/default:providers.yaml"])
+        .unwrap();
+    assert!(providers.contains("roles:"), "{providers}");
+    assert!(!dest.join(".config-author").exists());
 }
 
 #[test]
 fn scaffold_surfaces_descriptions_producer_failure() {
-    // Malformed skill (no frontmatter) aborts before any git run (§3.3).
+    // Malformed skill (no frontmatter) aborts the config-commit
+    // authoring before anything is committed (§3.3): only the bare init
+    // and the authoring-checkout creation ran.
     let holder = TempDir::new().unwrap();
     let data_root = holder.path().join("data");
     fs::create_dir_all(data_root.join("skills/broken")).unwrap();
     fs::write(data_root.join("skills/broken/SKILL.md"), "no frontmatter\n").unwrap();
     let git = StubGit::ok();
-    let err = scaffold(&holder.path().join("conv"), &data_root, &git).unwrap_err();
+    let err = scaffold(&holder.path().join("ws"), &data_root, &git).unwrap_err();
     assert!(matches!(err, ScaffoldError::Descriptions(_)), "got {err:?}");
-    assert!(git.runs.borrow().is_empty(), "no git runs before the abort");
-}
-
-#[test]
-fn scaffold_does_not_track_control_plane_in_git() {
-    // The conv-repo root is *not* the worktree; the control files live
-    // outside any git history. Asserts the inverse of the happy path:
-    // git was never invoked with the conv-repo root as its target.
-    let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
-    let git = StubGit::ok();
-    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
     let runs = git.runs.borrow();
-    assert!(runs.iter().all(|(d, _)| d != &dest));
+    assert_eq!(runs.len(), 2, "init + worktree add only: {runs:?}");
+    assert!(runs.iter().all(|(_, a)| a[0] != "commit"));
 }
 
 #[test]
@@ -153,29 +178,20 @@ fn scaffold_propagates_init_failure() {
 }
 
 #[test]
-fn scaffold_propagates_add_failure() {
-    let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
-    let err = scaffold(
-        &dest,
-        &holder.path().join("no-pool"),
-        &StubGit::failing_at(1),
-    )
-    .unwrap_err();
-    assert!(matches!(err, ScaffoldError::Git(_)));
-}
-
-#[test]
-fn scaffold_propagates_commit_failure() {
-    let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
-    let err = scaffold(
-        &dest,
-        &holder.path().join("no-pool"),
-        &StubGit::failing_at(2),
-    )
-    .unwrap_err();
-    assert!(matches!(err, ScaffoldError::Git(_)));
+fn scaffold_propagates_each_git_failure_arm() {
+    // Indexes: 0 init, 1 worktree add, 2 add -A, 3 commit, 4 worktree
+    // remove — each surfaces as ScaffoldError::Git.
+    for idx in 1..=4 {
+        let holder = TempDir::new().unwrap();
+        let dest = holder.path().join("ws");
+        let err = scaffold(
+            &dest,
+            &holder.path().join("no-pool"),
+            &StubGit::failing_at(idx),
+        )
+        .unwrap_err();
+        assert!(matches!(err, ScaffoldError::Git(_)), "idx {idx}: {err:?}");
+    }
 }
 
 #[test]
@@ -192,82 +208,45 @@ fn scaffold_refuses_non_empty_dest() {
 }
 
 #[test]
-fn scaffold_surfaces_extract_io_error() {
-    // A path segment that exists as a regular file makes include_dir's
-    // `extract` fail when it tries to create the sub-directory —
-    // hits the `ScaffoldError::Io` arm of scaffold().
+fn scaffold_surfaces_author_extract_io_error() {
+    // A stub git whose worktree-add leaves a regular file squatting the
+    // authoring checkout's path makes the extract step fail — the
+    // post-init Io arm.
+    struct SquattingGit;
+    impl GitRunner for SquattingGit {
+        fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
+            if args.first() == Some(&"worktree") && args.get(1) == Some(&"add") {
+                let author: &str = args.last().unwrap();
+                let _ = fs::write(dest.parent().unwrap().join(".config-author"), b"squat");
+                let _ = author;
+            }
+            Ok(())
+        }
+        fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
+            self.run(dest, args).map(|_| String::new())
+        }
+    }
     let holder = TempDir::new().unwrap();
-    let blocker = holder.path().join("blocker");
-    fs::write(&blocker, b"blocks extraction").unwrap();
-    let dest = blocker.join("child");
-    let err = scaffold(&dest, &holder.path().join("no-pool"), &StubGit::ok()).unwrap_err();
+    let dest = holder.path().join("ws");
+    let err = scaffold(&dest, &holder.path().join("no-pool"), &SquattingGit).unwrap_err();
     assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
 }
 
 #[test]
-fn scaffold_surfaces_root_dir_creation_failure() {
-    // A pre-existing regular file at <dest>/root makes the create_dir_all
-    // call fail with ErrorKind::NotADirectory after the template extracted
-    // — exercises the second Io arm of scaffold (post-extract, pre-git).
+fn scaffold_surfaces_repo_dir_creation_failure() {
+    // A regular file blocking <dest>/repo.git's creation exercises the
+    // first Io arm (pre-git). `dest` itself must not exist for
+    // check_dest, so block one level up: dest's parent is a file.
     let holder = TempDir::new().unwrap();
-    let dest = holder.path().join("conv");
-    fs::create_dir_all(&dest).unwrap();
-    fs::write(dest.join("root"), b"actually-a-file").unwrap();
-    let err = scaffold(&dest, &holder.path().join("no-pool"), &StubGit::ok()).unwrap_err();
-    // Either DestNotEmpty (root file was the occupant) or Io —
-    // both are acceptable failure shapes; the point is no git was run.
-    assert!(matches!(
-        err,
-        ScaffoldError::DestNotEmpty(_) | ScaffoldError::Io(_)
-    ));
-}
-
-// --- RealGit -----------------------------------------------------
-#[test]
-fn realgit_default_matches_new() {
-    let _ = RealGit::default();
-}
-
-#[test]
-fn realgit_succeeds_on_valid_command() {
-    let holder = TempDir::new().unwrap();
-    RealGit::new()
-        .run(holder.path(), &["init", "-b", "main"])
-        .unwrap();
-    assert!(holder.path().join(".git").is_dir());
-}
-
-#[test]
-fn realgit_returns_error_on_nonzero_exit() {
-    let holder = TempDir::new().unwrap();
-    // No git repo here, so `git status` exits non-zero. That hits
-    // the `!status.success()` branch without needing a missing
-    // binary.
-    let err = RealGit::new()
-        .run(holder.path(), &["status", "--porcelain"])
-        .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("exited with"), "unexpected: {msg}");
-}
-
-#[test]
-fn realgit_returns_error_when_binary_missing() {
-    let holder = TempDir::new().unwrap();
-    let git = RealGit {
-        bin: PathBuf::from("/no/such/lernie-test-git"),
-    };
-    let err = git.run(holder.path(), &["init"]).unwrap_err();
-    assert_eq!(err.kind(), io::ErrorKind::NotFound);
-}
-
-#[test]
-fn realgit_run_capture_returns_stdout() {
-    // `git --version` prints a line to stdout that RealGit trims.
-    let holder = TempDir::new().unwrap();
-    let out = RealGit::new()
-        .run_capture(holder.path(), &["--version"])
-        .unwrap();
-    assert!(out.starts_with("git "), "unexpected: {out:?}");
+    let blocker = holder.path().join("blocker");
+    fs::write(&blocker, b"file").unwrap();
+    let err = scaffold(
+        &blocker.join("ws"),
+        &holder.path().join("no-pool"),
+        &StubGit::ok(),
+    )
+    .unwrap_err();
+    assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
 }
 
 #[test]

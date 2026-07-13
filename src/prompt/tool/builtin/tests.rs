@@ -132,20 +132,21 @@ fn stub_env(repo: &std::path::Path, branch: &str) -> StubEnv {
 
 #[test]
 fn dispatch_routed_to_inner_module() {
-    let repo = tempfile::TempDir::new().unwrap();
-    std::fs::write(
-        repo.path().join("providers.yaml"),
-        "roles:\n  worker:\n    provider: anthropic\n    model: m\n",
-    )
-    .unwrap();
-    std::fs::create_dir_all(repo.path().join("souls")).unwrap();
-    std::fs::write(repo.path().join("souls").join("worker.md"), "soul").unwrap();
+    let (_h, repo) = crate::workspace::fixture::workspace();
+    crate::workspace::fixture::amend_config(
+        &repo,
+        &[(
+            "providers.yaml",
+            "roles:\n  worker:\n    provider: anthropic\n    model: m\n",
+        )],
+    );
+    crate::workspace::fixture::spawn_root(&repo, "p1");
 
     let input = serde_json::json!({"role":"worker","goal":"g"}).to_string();
     let mut stdin = Cursor::new(input.into_bytes());
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let env = stub_env(repo.path(), "p1");
+    let env = stub_env(&repo, "p1");
     let code = run_with(
         "dispatch",
         &mut stdin,

@@ -6,7 +6,7 @@
 //!   `models.yaml` (ARCH §4.2) and the `workflows/` templates.
 //! - **Data root** (`$XDG_DATA_HOME/lernie`, default
 //!   `~/.local/share/lernie`) holds machine-populated state: the
-//!   `conversations/` tree and the `agents/`, `skills/`, and `tools/`
+//!   `workspaces/` tree and the `skills/` and `tools/`
 //!   pools the harness copies from at conversation bootstrap.
 //!
 //! `LERNIE_HOME`, when set and non-empty, is the single override that
@@ -49,7 +49,7 @@ pub enum Error {
 pub struct Roots {
     /// Config-lifetime root: `models.yaml`, `workflows/`.
     pub config: PathBuf,
-    /// Data-lifetime root: `conversations/`, `agents/`, `skills/`, `tools/`.
+    /// Data-lifetime root: `workspaces/`, `skills/`, `tools/`.
     pub data: PathBuf,
 }
 

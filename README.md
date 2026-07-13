@@ -598,7 +598,7 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
 ## UI (v0.5)
 
 `lernie-ui-egui` is the desktop frontend: an egui/eframe window that renders
-a conversation repo and issues user actions via `lernie <subcommand>`. Per
+a workspace and issues user actions via `lernie <subcommand>`. Per
 [ARCH §3.5](docs/ARCHITECTURE.md), it is stateless — every render is a pure
 function of filesystem state — and one of potentially several frontends
 (a future `lernie-ui-web` would share the pure-Rust view-model layer).

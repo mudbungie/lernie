@@ -1,14 +1,21 @@
 //! Pid discovery for `lernie stop` (Linux `/proc` scan).
 //!
-//! Resolves "the harness driving step `<NNN>` of branch `<branch>`"
-//! by scanning `/proc/<pid>/fd/*` symlinks for the absolute path of
-//! `<step>/response.json`. Filters to writers via the access-mode
-//! bits in `/proc/<pid>/fdinfo/<fd>` so a reader (e.g. a UI tail)
-//! cannot be mistaken for the harness.
+//! Resolves "the harness driving `<agent>`" by the **executor lock**
+//! (ARCH §2.11): it scans `/proc/<pid>/fd/*` symlinks for the absolute
+//! path of the agent's inbox directory — the `flock` home the executor
+//! opens at step-loop start and holds for the whole loop. That fd is the
+//! *is-anyone-driving* signal by construction: held across tool
+//! execution, inbox drains, and retry backoff alike (§2.11), so
+//! discovery lands whenever an executor is alive, not only while a model
+//! call is in flight. No access-mode filter — the lock fd is opened
+//! read-only (`File::open`, `inbox/lock.rs`), so a "writer" test would
+//! reject the very fd we are looking for; the inbox directory is
+//! namespaced per agent (§2.11), so any process holding it open is that
+//! agent's executor.
 //!
-//! The trait is `&dyn`-shaped so tests pass a stub and production
-//! pays the directory scan only when actually called. See
-//! [`super::tests::run`] for fixture usage.
+//! The trait is `&dyn`-shaped so tests pass a stub and production pays
+//! the directory scan only when actually called. See [`super::tests`]
+//! for fixture usage.
 //!
 //! Linux only — `/proc` is not portable to Darwin or Windows. ARCH
 //! §2.9 calls Linux out as the verified platform; portability deltas
@@ -17,12 +24,13 @@
 use std::io;
 use std::path::Path;
 
-/// "Find the pgid of any writer holding `response_path` open."
-/// `None` means no writer found — the harness has already exited or
-/// has not yet opened the file. The pgid (== leader pid for a setpgid'd
-/// harness, ARCH §2.9 cascade) is what [`super::cascade`] signals.
+/// "Find the pgid of the process holding `inbox_dir`'s fd open" — the
+/// executor lock (§2.11). `None` means no holder found: the executor has
+/// already exited or has not yet acquired the lock. The pgid (== leader
+/// pid for a setpgid'd harness, ARCH §2.9 cascade) is what
+/// [`super::cascade`] signals.
 pub trait PgidFinder {
-    fn find_writer_pgid(&self, response_path: &Path) -> io::Result<Option<i32>>;
+    fn find_holder_pgid(&self, inbox_dir: &Path) -> io::Result<Option<i32>>;
 }
 
 /// Production [`PgidFinder`] backed by `/proc`.
@@ -47,13 +55,13 @@ impl ProcFsFinder {
 }
 
 impl PgidFinder for ProcFsFinder {
-    fn find_writer_pgid(&self, response_path: &Path) -> io::Result<Option<i32>> {
+    fn find_holder_pgid(&self, inbox_dir: &Path) -> io::Result<Option<i32>> {
         // Canonicalize so the symlink-target compare is exact —
         // `/proc/<pid>/fd/<n>` resolves to a fully-resolved path.
-        let target = match std::fs::canonicalize(response_path) {
+        let target = match std::fs::canonicalize(inbox_dir) {
             Ok(p) => p,
-            // The file may have been removed between the harness
-            // closing it and us scanning. Treat as no writer.
+            // The inbox dir may not exist yet (a fresh agent whose
+            // executor has not opened it). Treat as no holder.
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(e),
         };
@@ -65,8 +73,8 @@ impl PgidFinder for ProcFsFinder {
             let Some(pid) = parse_pid_dir_name(&entry.file_name()) else {
                 continue;
             };
-            if let Some(fd) = pid_holds_writable(&entry.path(), &target)? {
-                return Ok(Some(read_pgid(&self.proc_root, pid, fd)?));
+            if pid_holds(&entry.path(), &target) {
+                return Ok(Some(read_pgid(&self.proc_root, pid)?));
             }
         }
         Ok(None)
@@ -77,16 +85,17 @@ fn parse_pid_dir_name(name: &std::ffi::OsStr) -> Option<i32> {
     name.to_str().and_then(|s| s.parse::<i32>().ok())
 }
 
-/// Walk `<proc_pid>/fd/` for a symlink resolving to `target`. Returns
-/// the fd number if found and (per `fdinfo`) opened for write.
-fn pid_holds_writable(proc_pid: &Path, target: &Path) -> io::Result<Option<u32>> {
+/// Does any fd under `<proc_pid>/fd/` resolve to `target`? No access-
+/// mode filter: the executor lock fd is opened read-only, so matching a
+/// held directory fd — not a *writable* one — is the whole test.
+fn pid_holds(proc_pid: &Path, target: &Path) -> bool {
     let fd_dir = proc_pid.join("fd");
     let entries = match std::fs::read_dir(&fd_dir) {
         Ok(e) => e,
         // Most pids will refuse the read (different uid, kernel
         // thread, raced teardown). The fd-scan is opportunistic —
         // pids we can't introspect simply don't match.
-        Err(_) => return Ok(None),
+        Err(_) => return false,
     };
     for entry in entries {
         let entry = match entry {
@@ -96,50 +105,12 @@ fn pid_holds_writable(proc_pid: &Path, target: &Path) -> io::Result<Option<u32>>
         // `read_link` on `/proc/<pid>/fd/<n>` returns the target
         // path; `metadata`/`canonicalize` would dereference and may
         // fail for sockets, pipes, etc. — read_link side-steps that.
-        let link = match std::fs::read_link(entry.path()) {
-            Ok(l) => l,
-            Err(_) => continue,
-        };
-        if link != target {
-            continue;
-        }
-        let Some(fd_num) = entry
-            .file_name()
-            .to_str()
-            .and_then(|s| s.parse::<u32>().ok())
-        else {
-            continue;
-        };
-        if fdinfo_is_writable(proc_pid, fd_num)? {
-            return Ok(Some(fd_num));
+        match std::fs::read_link(entry.path()) {
+            Ok(link) if link == *target => return true,
+            _ => continue,
         }
     }
-    Ok(None)
-}
-
-/// Parse `flags:` from `/proc/<pid>/fdinfo/<fd>`. The low octal digit
-/// of the access-mode is `0` for `O_RDONLY`, `1` for `O_WRONLY`, and
-/// `2` for `O_RDWR`. Anything but `0` counts as "writer".
-fn fdinfo_is_writable(proc_pid: &Path, fd: u32) -> io::Result<bool> {
-    let fdinfo_path = proc_pid.join("fdinfo").join(fd.to_string());
-    let contents = match std::fs::read_to_string(&fdinfo_path) {
-        Ok(s) => s,
-        // fdinfo may briefly be missing during fd churn; treat as
-        // not-a-writer rather than fatal — false positives in the
-        // pid scan must not abort `lernie stop`.
-        Err(_) => return Ok(false),
-    };
-    for line in contents.lines() {
-        if let Some(rest) = line.strip_prefix("flags:") {
-            let trimmed = rest.trim();
-            if trimmed.is_empty() {
-                return Ok(false);
-            }
-            let access_mode_digit = trimmed.chars().last().expect("non-empty after trim");
-            return Ok(access_mode_digit != '0');
-        }
-    }
-    Ok(false)
+    false
 }
 
 /// Read `/proc/<pid>/stat` and return the pgid (4th field by libc
@@ -147,7 +118,7 @@ fn fdinfo_is_writable(proc_pid: &Path, fd: u32) -> io::Result<bool> {
 /// `<pid> (<comm>) <state> <ppid> <pgid> ...`; the comm field can
 /// contain spaces and parens, so we split off everything up to the
 /// last `)` before tokenizing.
-fn read_pgid(proc_root: &Path, pid: i32, _fd: u32) -> io::Result<i32> {
+fn read_pgid(proc_root: &Path, pid: i32) -> io::Result<i32> {
     let stat_path = proc_root.join(pid.to_string()).join("stat");
     let raw = std::fs::read_to_string(&stat_path)?;
     let after_comm = raw.rsplit_once(')').map(|(_, rest)| rest).ok_or_else(|| {

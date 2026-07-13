@@ -14,13 +14,17 @@
 //! external kills are indistinguishable on disk per §2.9.
 //!
 //! Pid discovery derives from `/proc/<pid>/fd/*` symlink targets
-//! against the latest `response.json` path under
-//! `<conv-repo>/steps/<branch>/` (and any sibling
-//! `steps/<branch>-*/` for descended subagent conversations,
-//! hyphenated descent per §2.2). No sidecar pid file: the writer's
-//! open fd is the same source of truth the §3.5 `in_flight`
-//! classification already reads.
+//! against the agent's **inbox directory** — the executor lock's
+//! `flock` home (§2.11), held for the whole step loop. The target is
+//! `<workspace>/inbox/<branch>/` (and any sibling `inbox/<branch>-*/`
+//! for descended subagent conversations, hyphenated descent per §2.2).
+//! No sidecar pid file: the open lock fd is the *is-anyone-driving*
+//! signal the §2.11 lock probe and §3.5 classification already read —
+//! and, unlike the `response.json` model-call fd, it is open across
+//! tool execution and between-step gaps too, so a stop lands whenever
+//! an executor is alive (§2.9).
 
+use crate::prompt::inbox::INBOX_DIR;
 use crate::template::{GitRunner, RealGit};
 use std::io;
 use std::path::{Path, PathBuf};
@@ -38,15 +42,6 @@ pub use cascade::{RealSignaler, Signaler, cascade};
 pub use discover::{PgidFinder, ProcFsFinder};
 pub use inspector::{BranchInspector, GitInspector};
 
-/// Conv-repo subdir holding per-conversation step records (mirrors
-/// [`crate::prompt::step::STEPS_DIR`] — duplicated rather than re-
-/// exported so the stop module reads cleanly without a back-edge into
-/// step-writer code).
-const STEPS_DIR: &str = "steps";
-/// Step JSONL stream file (mirrors
-/// [`crate::prompt::step::RESPONSE_FILE`] — same rationale).
-const RESPONSE_FILE: &str = "response.json";
-
 /// SIGTERM-to-SIGKILL grace pinned by ARCH §2.9 (mirrors §4.4 / §3.3).
 /// Tests pass a sub-second deadline; production uses this constant.
 pub const STOP_DEADLINE: Duration = Duration::from_secs(5);
@@ -56,7 +51,7 @@ pub const STOP_DEADLINE: Duration = Duration::from_secs(5);
 /// idle wait costs nothing measurable.
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
 
-/// Every way [`run`] can fail. Idempotent paths (no writer found,
+/// Every way [`run`] can fail. Idempotent paths (no lock holder found,
 /// already-stopped) are `Ok(())`, not errors — `lernie stop` is a
 /// fire-and-forget operation, not a transactional one.
 #[derive(Debug, Error)]
@@ -73,20 +68,20 @@ pub enum Error {
     },
     #[error("scan /proc: {0}")]
     Proc(#[source] io::Error),
-    #[error("walk steps directory: {0}")]
-    StepsWalk(#[source] io::Error),
+    #[error("walk inbox directory: {0}")]
+    InboxWalk(#[source] io::Error),
 }
 
 /// Stop the harness driving `branch` and any subagent descendants.
 ///
 /// 1. Validate `branch` exists in `<repo>/root/.git` and is unmerged.
-/// 2. Walk every conv-id namespace rooted at `branch`
-///    (`steps/<branch>/` and `steps/<branch>-*/`) for the latest
-///    `response.json` under each.
-/// 3. Resolve each open writer's pgid via the supplied [`PgidFinder`].
+/// 2. Walk every agent-id namespace rooted at `branch`
+///    (`inbox/<branch>/` and `inbox/<branch>-*/`) — each the home of
+///    one executor lock (§2.11).
+/// 3. Resolve each lock holder's pgid via the supplied [`PgidFinder`].
 /// 4. SIGTERM the unique pgid set, wait `deadline`, SIGKILL leftovers.
 ///
-/// Idempotent: a stopped branch (no writer found) returns `Ok(())`.
+/// Idempotent: a stopped branch (no lock holder found) returns `Ok(())`.
 pub fn run(
     repo: &Path,
     branch: &str,
@@ -118,10 +113,10 @@ pub fn run(
         return Err(Error::AlreadyMerged(branch.to_owned()));
     }
 
-    let response_paths = collect_response_paths(repo, branch)?;
+    let inbox_dirs = collect_inbox_dirs(repo, branch)?;
     let mut pgids = Vec::new();
-    for path in response_paths {
-        if let Some(pgid) = finder.find_writer_pgid(&path).map_err(Error::Proc)? {
+    for dir in inbox_dirs {
+        if let Some(pgid) = finder.find_holder_pgid(&dir).map_err(Error::Proc)? {
             pgids.push(pgid);
         }
     }
@@ -178,59 +173,31 @@ fn become_pgid_leader_with(setpgid: impl FnOnce() -> libc::c_int) {
     }
 }
 
-/// Latest `response.json` path under `steps/<branch>/` and every
-/// `steps/<branch>-*/` (hyphenated descent per §2.2). The branch
-/// name itself is the conv-id; descended subagent conversations
-/// have ids that prefix-match the parent's (`<conv>-<sub>`).
-fn collect_response_paths(repo: &Path, branch: &str) -> Result<Vec<PathBuf>, Error> {
-    let steps_root = repo.join(STEPS_DIR);
-    let mut paths = Vec::new();
-    if !steps_root.exists() {
-        return Ok(paths);
+/// The inbox directory `inbox/<branch>/` and every `inbox/<branch>-*/`
+/// (hyphenated descent per §2.2) that exists — each the home of one
+/// executor lock (§2.11). The branch name itself is the agent id;
+/// descended subagent conversations have ids that prefix-match the
+/// parent's (`<conv>-<sub>`). Absent `inbox/` (an agent spawned but
+/// whose executor has not yet opened a lock) yields an empty set — a
+/// stop with nothing to signal, idempotently `Ok(())`.
+fn collect_inbox_dirs(repo: &Path, branch: &str) -> Result<Vec<PathBuf>, Error> {
+    let inbox_root = repo.join(INBOX_DIR);
+    let mut dirs = Vec::new();
+    if !inbox_root.exists() {
+        return Ok(dirs);
     }
-    let prefix = branch.to_owned();
-    let prefix_dash = format!("{prefix}-");
-    let entries = std::fs::read_dir(&steps_root).map_err(Error::StepsWalk)?;
+    let prefix_dash = format!("{branch}-");
+    let entries = std::fs::read_dir(&inbox_root).map_err(Error::InboxWalk)?;
     for entry in entries {
-        let entry = entry.map_err(Error::StepsWalk)?;
+        let entry = entry.map_err(Error::InboxWalk)?;
         let name = entry.file_name();
         let Some(name_str) = name.to_str() else {
             continue;
         };
-        if name_str != prefix && !name_str.starts_with(&prefix_dash) {
+        if name_str != branch && !name_str.starts_with(&prefix_dash) {
             continue;
         }
-        let conv_dir = entry.path();
-        if let Some(latest) = latest_step_response(&conv_dir).map_err(Error::StepsWalk)? {
-            paths.push(latest);
-        }
+        dirs.push(entry.path());
     }
-    Ok(paths)
-}
-
-/// Highest-numbered step subdir's `response.json` path. None when
-/// the conv-id directory is empty (the harness has spawned the
-/// branch but not yet written step 1's diagnostic record — a brief
-/// startup window).
-fn latest_step_response(conv_dir: &Path) -> io::Result<Option<PathBuf>> {
-    let mut best: Option<(String, PathBuf)> = None;
-    for entry in std::fs::read_dir(conv_dir)? {
-        let entry = entry?;
-        let name = entry.file_name();
-        let Some(name_str) = name.to_str() else {
-            continue;
-        };
-        // Step dirs are zero-padded 3-digit (`001`, `002`, ...) per
-        // step::STEP_SEQ_WIDTH, which makes lexical sort == numeric
-        // sort.
-        if name_str.len() != 3 || !name_str.chars().all(|c| c.is_ascii_digit()) {
-            continue;
-        }
-        let candidate = entry.path().join(RESPONSE_FILE);
-        match &best {
-            Some((cur_name, _)) if name_str.as_bytes() <= cur_name.as_bytes() => {}
-            _ => best = Some((name_str.to_owned(), candidate)),
-        }
-    }
-    Ok(best.map(|(_, p)| p))
+    Ok(dirs)
 }

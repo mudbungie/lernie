@@ -3,8 +3,8 @@
 //! orchestration narrative.
 
 use super::fixtures::{
-    ErrFinder, ErrInspector, ErrMergedInspector, NoopGit, STEPS_DIR, StubFinder, StubInspector,
-    touch_step_response,
+    ErrFinder, ErrInspector, ErrMergedInspector, NoopGit, StubFinder, StubInspector,
+    touch_inbox_dir,
 };
 use crate::prompt::stop::{Error, cascade, run};
 use crate::template::GitRunner;
@@ -60,7 +60,7 @@ fn run_propagates_inspector_merged_error_as_git() {
 #[test]
 fn run_propagates_finder_io_error_as_proc() {
     let dir = TempDir::new().unwrap();
-    touch_step_response(dir.path(), "br", 1);
+    touch_inbox_dir(dir.path(), "br");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -79,59 +79,9 @@ fn run_propagates_finder_io_error_as_proc() {
 }
 
 #[test]
-fn run_skips_step_subdirs_that_are_not_three_digit_numbers() {
+fn collect_inbox_dirs_returns_empty_when_inbox_root_missing() {
     let dir = TempDir::new().unwrap();
-    let conv = dir.path().join(STEPS_DIR).join("br");
-    std::fs::create_dir_all(conv.join("not-a-step")).unwrap();
-    std::fs::create_dir_all(conv.join("99")).unwrap(); // wrong width
-    let real = touch_step_response(dir.path(), "br", 5);
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
-    let finder = StubFinder::with_returns(vec![Some(33)]);
-    let signaler = cascade::RecordingSignaler::new(0);
-    run(
-        dir.path(),
-        "br",
-        &inspector,
-        &finder,
-        &signaler,
-        Duration::from_millis(1),
-        &NoopGit,
-    )
-    .unwrap();
-    assert_eq!(finder.seen.lock().unwrap().as_slice(), &[real]);
-}
-
-#[test]
-fn run_skips_branch_dir_with_no_step_subdirs_yet() {
-    let dir = TempDir::new().unwrap();
-    std::fs::create_dir_all(dir.path().join(STEPS_DIR).join("br")).unwrap();
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
-    let finder = StubFinder::default();
-    let signaler = cascade::RecordingSignaler::new(0);
-    run(
-        dir.path(),
-        "br",
-        &inspector,
-        &finder,
-        &signaler,
-        Duration::from_millis(1),
-        &NoopGit,
-    )
-    .unwrap();
-    assert!(finder.seen.lock().unwrap().is_empty());
-    assert!(signaler.took().is_empty());
-}
-
-#[test]
-fn collect_response_paths_returns_empty_when_steps_root_missing() {
-    let dir = TempDir::new().unwrap();
-    let v = super::super::collect_response_paths(dir.path(), "br").unwrap();
+    let v = super::super::collect_inbox_dirs(dir.path(), "br").unwrap();
     assert!(v.is_empty());
 }
 
@@ -150,8 +100,8 @@ fn error_display_already_merged_includes_name() {
 }
 
 #[test]
-fn error_display_steps_walk_passes_through_io_message() {
-    let e = Error::StepsWalk(io::Error::other("nope"));
+fn error_display_inbox_walk_passes_through_io_message() {
+    let e = Error::InboxWalk(io::Error::other("nope"));
     let s = format!("{e}");
     assert!(s.contains("nope"), "got {s}");
 }

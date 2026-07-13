@@ -1,6 +1,6 @@
 //! Happy-path orchestration tests for [`crate::prompt::stop::run`].
 
-use super::fixtures::{NoopGit, StubFinder, StubInspector, touch_step_response};
+use super::fixtures::{NoopGit, StubFinder, StubInspector, touch_inbox_dir};
 use crate::prompt::stop::{Error, cascade, run};
 use std::time::Duration;
 use tempfile::TempDir;
@@ -46,9 +46,9 @@ fn run_returns_already_merged_when_inspector_says_so() {
 }
 
 #[test]
-fn run_idempotent_when_no_writers_found() {
+fn run_idempotent_when_no_holder_found() {
     let dir = TempDir::new().unwrap();
-    touch_step_response(dir.path(), "br", 1);
+    touch_inbox_dir(dir.path(), "br");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -66,12 +66,12 @@ fn run_idempotent_when_no_writers_found() {
     .unwrap();
     assert!(
         signaler.took().is_empty(),
-        "no writer → no signals sent (idempotent)"
+        "no lock holder → no signals sent (idempotent)"
     );
 }
 
 #[test]
-fn run_idempotent_when_no_steps_dir_at_all() {
+fn run_idempotent_when_no_inbox_dir_at_all() {
     let dir = TempDir::new().unwrap();
     let inspector = StubInspector {
         exists: true,
@@ -92,11 +92,9 @@ fn run_idempotent_when_no_steps_dir_at_all() {
 }
 
 #[test]
-fn run_picks_highest_numbered_step() {
+fn run_signals_the_inbox_dir_holder() {
     let dir = TempDir::new().unwrap();
-    let _early = touch_step_response(dir.path(), "br", 1);
-    let latest = touch_step_response(dir.path(), "br", 7);
-    let _mid = touch_step_response(dir.path(), "br", 3);
+    let inbox = touch_inbox_dir(dir.path(), "br");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -113,15 +111,15 @@ fn run_picks_highest_numbered_step() {
         &NoopGit,
     )
     .unwrap();
-    assert_eq!(finder.seen.lock().unwrap().as_slice(), &[latest]);
+    assert_eq!(finder.seen.lock().unwrap().as_slice(), &[inbox]);
     assert_eq!(signaler.took(), vec![("term", 123)]);
 }
 
 #[test]
-fn run_covers_descended_subagent_conv_ids_via_hyphen_prefix() {
+fn run_covers_descended_subagent_ids_via_hyphen_prefix() {
     let dir = TempDir::new().unwrap();
-    touch_step_response(dir.path(), "br", 1);
-    touch_step_response(dir.path(), "br-sub", 2);
+    touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "br-sub");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -149,10 +147,10 @@ fn run_covers_descended_subagent_conv_ids_via_hyphen_prefix() {
 }
 
 #[test]
-fn run_dedupes_pgid_when_multiple_writers_share_one() {
+fn run_dedupes_pgid_when_multiple_holders_share_one() {
     let dir = TempDir::new().unwrap();
-    touch_step_response(dir.path(), "br", 1);
-    touch_step_response(dir.path(), "br-sub", 2);
+    touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "br-sub");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -173,11 +171,11 @@ fn run_dedupes_pgid_when_multiple_writers_share_one() {
 }
 
 #[test]
-fn run_skips_unrelated_conv_id_branches() {
+fn run_skips_unrelated_agent_id_dirs() {
     let dir = TempDir::new().unwrap();
-    touch_step_response(dir.path(), "br", 1);
-    touch_step_response(dir.path(), "different", 1);
-    touch_step_response(dir.path(), "br2-not-descended", 1);
+    touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "different");
+    touch_inbox_dir(dir.path(), "br2-not-descended");
     let inspector = StubInspector {
         exists: true,
         merged: false,
@@ -196,5 +194,5 @@ fn run_skips_unrelated_conv_id_branches() {
     .unwrap();
     let seen = finder.seen.lock().unwrap().clone();
     assert_eq!(seen.len(), 1, "only `br` should match: got {seen:?}");
-    assert!(seen[0].to_string_lossy().contains("/steps/br/"));
+    assert!(seen[0].to_string_lossy().contains("/inbox/br"));
 }

@@ -77,8 +77,8 @@ fn a_failing_exit_launch_is_swallowed() {
     run(repo.path(), "go", &deps).unwrap();
 }
 
-/// Adapter for the exit-race test: the version call replies normally;
-/// the model call first deposits a message into the exiting agent's own
+/// Adapter for the exit-race test: the version-guard probe replies
+/// normally; the model call first deposits into the exiting agent's own
 /// inbox — *after* this step's drain, i.e. inside the crack the exit
 /// protocol closes — then streams a final response.
 struct DepositMidCall<'a> {

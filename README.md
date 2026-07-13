@@ -646,6 +646,43 @@ typically use during development.
 egui is winit-based; its only runtime deps are the X11/Wayland libs already
 present on any Linux desktop. No `apt install` step is required.
 
+## Evaluation: archival and the task suite (§9)
+
+**Archive a run.** A "run" is an agent subtree, not a whole workspace (§9.2).
+`lernie bundle <workspace> <agent> <out-dir>` writes the subtree — the
+`<agent>` branch and its `<agent>-*` hyphen-descendants (§2.3), with all the
+ancestry those refs reach — as one `git bundle`, and copies the matching
+`steps/<id>*` and `inbox/<id>*` diagnostic slices beside it. One bundle plus
+two slices is the whole run.
+
+```
+lernie bundle /path/to/workspace <agent-id> /path/to/archive
+```
+
+**Replay a run.** `lernie replay <archive>` reconstructs a scratch workspace
+under `LERNIE_HOME`'s data root at `replays/<primary-id>/` (the primary id is
+the subtree's root branch), fetches every branch out of the bundle, materializes
+the primary's worktree, restores the slices, and prints the scratch path. Point
+the ordinary frontend at it — replay is not a mode (§2.3). Set `LERNIE_HOME` to
+an isolated directory to keep the replay sandboxed.
+
+```
+LERNIE_HOME=/tmp/replay lernie replay /path/to/archive
+```
+
+> Pre-substrate note: the workspace's control files (`workflow.yaml`,
+> `manifest.yaml`, `providers.yaml`, `souls/`, `version`) are currently
+> untracked at the workspace root, so they do not travel in the bundle; the
+> shipped bundle/replay targets *inspection* of the branch tree, transcripts,
+> and diagnostic slices (ARCH §9.2 shipped-state note).
+
+**Task suite.** The evaluation suite lives as data under `tests/suite/` — 50
+tasks with machine-checkable `check` scripts, tagged by the seven §9.1 failure
+categories (≥10 per category), format in `tests/suite/README.md`,
+well-formedness enforced by `tests/suite.rs`. The `agent-eval` runner that
+executes it (`--config`/`--suite`/`--runs`, pass@1/pass@5) is deferred until
+workflow variants exist (ARCH §9.3 shipped-state note).
+
 ## Contributing
 
 The instructions below are for contributors building lernie from source.

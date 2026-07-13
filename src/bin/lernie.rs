@@ -7,7 +7,7 @@
 //!   `<conv-id>` branch, model-call via `bz` (§4.4), compact (§2.6).
 //! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent dispatch
 //!   re-entry (ARCH §3.4); per-role `--goal` rules validated in
-//!   [`run_dispatch_cli`], not the clap surface.
+//!   [`prompt::dispatch_cli::run`], not the clap surface.
 //! - `stop <repo> <branch> [--stop-children]` — SIGTERM the executor's
 //!   pgid (ARCH §2.9); idempotent for already-stopped branches.
 //!   `--stop-children` also walks the id namespace to stop descendants.
@@ -18,6 +18,10 @@
 //! - `advance <workspace> <agent>` — one hop of the §6 workflow chain:
 //!   take the lease, deliver, step, exec the successor. The detached
 //!   launch target of every §2.11 launch seam.
+//! - `bundle <workspace> <agent> <out-dir>` — archive an agent subtree as
+//!   one `git bundle` plus the `steps/`/`inbox/` slices (ARCH §9.2).
+//! - `replay <archive>` — reconstruct a scratch workspace under
+//!   `LERNIE_HOME` from an archive and print its path (ARCH §9.2).
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3):
 //!   `tool_use.input` JSON on stdin, bytes on stdout.
 
@@ -40,30 +44,16 @@ struct Cli {
 enum Command {
     /// Create a new conversation repo (ARCH §2.2). No argument scaffolds
     /// at `<data-root>/conversations/<auto-id>/`; a path scaffolds there.
-    New {
-        /// Destination path. Optional — an auto-id under the data root
-        /// is used when omitted.
-        path: Option<PathBuf>,
-    },
+    New { path: Option<PathBuf> },
     /// Send one user message on a fresh root branch; prints its name.
-    Prompt {
-        /// Path to an existing conversation repo (created by `lernie new`).
-        repo: PathBuf,
-        /// The user message to send.
-        message: String,
-    },
+    Prompt { repo: PathBuf, message: String },
     /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
-    /// (§2.7) or `worker` (§2.5); future roles slot in by name.
+    /// (§2.7) or `worker` (§2.5); future roles slot in by name. `--goal`
+    /// is required for `worker`, rejected for `compactor` (§2.7).
     Dispatch {
-        /// Role name. v0.4: `compactor` | `worker`.
         role: String,
-        /// Path to the conversation repo.
         repo: PathBuf,
-        /// Dispatching branch — compacted (`compactor`) or the parent off
-        /// whose tip the worker spawns.
         branch: String,
-        /// Per-call goal text. Required for `worker`; rejected for
-        /// `compactor` (built-in boilerplate, §2.7).
         #[arg(long)]
         goal: Option<String>,
     },
@@ -78,21 +68,28 @@ enum Command {
         stop_children: bool,
     },
     /// Deposit a message into an agent's inbox and probe the executor
-    /// lock (ARCH §2.11, §3.4). Sender from `LERNIE_CONV_BRANCH`.
+    /// lock (ARCH §2.11, §3.4). Sender from `LERNIE_CONV_BRANCH`. `agent`
+    /// is the recipient id (== branch name / hyphenated descent).
     Message {
-        /// Path to the workspace (conversation repo) root.
         workspace: PathBuf,
-        /// Recipient agent id (== branch name / hyphenated descent).
         agent: String,
-        /// Message content — the body of the deposited file.
         content: String,
     },
     /// Operator verb: one workspace-wide silent-death sweep + inbox flush
     /// (ARCH §2.11, §8). Hand/cron only; never on a driver hot path.
-    Scan {
-        /// Path to the workspace (conversation repo) root.
+    Scan { workspace: PathBuf },
+    /// Archive an agent subtree (ARCH §9.2): git bundle of `<agent>` and
+    /// its hyphen-descendants plus the `steps/`/`inbox/` slices, under
+    /// `<out-dir>`.
+    Bundle {
         workspace: PathBuf,
+        agent: String,
+        out_dir: PathBuf,
     },
+    /// Replay an archive (ARCH §9.2) into a scratch workspace under
+    /// `LERNIE_HOME`'s data root (`replays/<agent>/`); prints its path
+    /// for the ordinary frontend (§3.5).
+    Replay { archive: PathBuf },
     /// Drive one agent's branch forward (ARCH §6): take the lease (adopt
     /// LERNIE_LOCK_FD or acquire), deliver pending mail, run the next
     /// step, and exec the successor hop. The target every launch seam
@@ -106,10 +103,7 @@ enum Command {
     /// In-process built-in tool entry (ARCH §3.3): `tool_use.input` JSON
     /// on stdin, bytes on stdout, exit 0/non-zero. Third resolver hop
     /// (`<data-root>/tools/lernie-tool-<name>` → PATH → `<lernie> tool …`).
-    Tool {
-        /// Tool name as the model emitted it (e.g. `read_file`).
-        name: String,
-    },
+    Tool { name: String },
 }
 
 /// Uniform failure exit: `<prefix>: <error>` on stderr, non-zero.
@@ -220,6 +214,21 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             }
             Err(e) => fail("lernie scan", e),
+        },
+        Command::Bundle {
+            workspace,
+            agent,
+            out_dir,
+        } => ok_or_fail(
+            "lernie bundle",
+            lernie::archive::bundle(&workspace, &agent, &out_dir, &RealGit::new()),
+        ),
+        Command::Replay { archive } => match lernie::archive::replay_cli(&archive) {
+            Ok(scratch) => {
+                println!("{}", scratch.display());
+                ExitCode::SUCCESS
+            }
+            Err(e) => fail("lernie replay", e),
         },
         Command::Tool { name } => {
             let mut stdin = io::stdin().lock();

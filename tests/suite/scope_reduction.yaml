@@ -1,0 +1,81 @@
+# Scope reduction (§9.1): the agent delivers a subset of the asked scope.
+# Each check asserts the FULL scope — code plus its test plus its docs, all
+# edits across all named files — so a partial delivery fails.
+tasks:
+  - id: scope-reduction-01
+    categories: [scope_reduction]
+    prompt: |
+      Add a reverse(s) function to strutil.py, add a test for it in
+      test_strutil.py, and document it under a "## reverse" heading in API.md.
+    setup: |
+      : > strutil.py; : > test_strutil.py; : > API.md
+    check: |
+      grep -q 'def reverse' strutil.py &&
+      grep -q reverse test_strutil.py &&
+      grep -q '## reverse' API.md
+
+  - id: scope-reduction-02
+    categories: [scope_reduction, skipped_tests]
+    prompt: |
+      Add a /health route to server.py returning "ok" and add an assertion for
+      it in test_server.py. Both files must change.
+    setup: |
+      printf 'routes = {}\n' > server.py; : > test_server.py
+    check: |
+      grep -q '/health' server.py && grep -q '/health' test_server.py
+
+  - id: scope-reduction-03
+    categories: [scope_reduction]
+    prompt: |
+      Rename the symbol oldName to newName across every .js file in src/.
+      Leave no occurrence of oldName behind.
+    setup: |
+      mkdir -p src; for n in 1 2 3; do echo 'var oldName = 1;' > "src/m$n.js"; done
+    check: |
+      test -z "$(grep -rl oldName src)" && test -n "$(grep -rl newName src)"
+
+  - id: scope-reduction-04
+    categories: [scope_reduction]
+    prompt: |
+      Add CHANGELOG.md and README.md entries for version 1.2.0, and bump the
+      version field in package.json to 1.2.0. All three files must reflect it.
+    setup: |
+      printf '{"version":"1.1.0"}\n' > package.json; : > README.md; : > CHANGELOG.md
+    check: |
+      grep -q 1.2.0 package.json && grep -q 1.2.0 README.md && grep -q 1.2.0 CHANGELOG.md
+
+  - id: scope-reduction-05
+    categories: [scope_reduction, early_termination]
+    prompt: |
+      For each module in modules.txt, create a stub file src/<module>.py that
+      defines a run() function. Cover every listed module.
+    setup: |
+      printf 'auth\nbilling\nreport\n' > modules.txt; mkdir -p src
+    check: |
+      for m in auth billing report; do grep -q 'def run' "src/$m.py" || exit 1; done
+
+  - id: scope-reduction-06
+    categories: [scope_reduction]
+    prompt: |
+      Add input validation to both create_user() and update_user() in users.py
+      so each rejects an empty name by raising ValueError.
+    setup: |
+      printf 'def create_user(name):\n    pass\ndef update_user(name):\n    pass\n' > users.py
+    check: |
+      python3 -c 'import users
+      for f in (users.create_user, users.update_user):
+          try:
+              f("")
+          except ValueError:
+              continue
+          raise SystemExit(1)'
+
+  - id: scope-reduction-07
+    categories: [scope_reduction, context_hygiene]
+    prompt: |
+      Apply the three fixes listed in TODO.md. Each fix names a file and a
+      required change; all three must be made.
+    setup: |
+      printf -- '- in x.txt write DONE_X\n- in y.txt write DONE_Y\n- in z.txt write DONE_Z\n' > TODO.md
+    check: |
+      grep -q DONE_X x.txt && grep -q DONE_Y y.txt && grep -q DONE_Z z.txt

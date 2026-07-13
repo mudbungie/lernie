@@ -1,0 +1,75 @@
+# Error recovery failure (§9.1): a broken state is seeded and the agent must
+# recover from it. Each check confirms the workspace reaches a working state.
+tasks:
+  - id: error-recovery-01
+    categories: [error_recovery]
+    prompt: |
+      broken.py has a syntax error. Fix it so `python3 broken.py` exits 0 and
+      prints "ok".
+    setup: |
+      printf 'def main(\n    print("ok")\nmain()\n' > broken.py
+    check: |
+      test "$(python3 broken.py)" = ok
+
+  - id: error-recovery-02
+    categories: [error_recovery, skipped_tests, hallucinated_apis]
+    prompt: |
+      The test suite fails with an ImportError. Diagnose and fix the cause so
+      the suite passes.
+    setup: |
+      printf 'from helper import h\n\ndef test_h():\n    assert h()=="H"\n' > test_h.py
+    check: |
+      python3 -c 'from helper import h; assert h()=="H"'
+
+  - id: error-recovery-03
+    categories: [error_recovery]
+    prompt: |
+      data.json is malformed and cannot be parsed. Repair it into valid JSON
+      preserving the intended keys a=1 and b=2.
+    setup: |
+      printf '{"a":1 "b":2,}\n' > data.json
+    check: |
+      python3 -c 'import json; d=json.load(open("data.json")); assert d=={"a":1,"b":2}'
+
+  - id: error-recovery-04
+    categories: [error_recovery]
+    prompt: |
+      run.sh exits non-zero because it references a missing file. Create what it
+      needs (or fix the path) so it exits 0.
+    setup: |
+      printf '#!/bin/sh\ncat input/data.txt\n' > run.sh
+    check: |
+      sh run.sh >/dev/null 2>&1
+
+  - id: error-recovery-05
+    categories: [error_recovery, fabricated_success]
+    prompt: |
+      The Makefile `build` target fails to compile app.c. Fix the source so
+      `make build` succeeds and ./app prints 5.
+    setup: |
+      printf 'build:\n\tcc -o app app.c\n' > Makefile
+      printf '#include <stdio.h>\nint main(){ printf("%%d\\n" 5); return 0; }\n' > app.c
+    check: |
+      make build >/dev/null 2>&1 && test "$(./app)" = 5
+
+  - id: error-recovery-06
+    categories: [error_recovery]
+    prompt: |
+      migrate.sh half-applied and left a lock file; it now refuses to run.
+      Recover so a fresh `sh migrate.sh` exits 0 and writes migrated.txt.
+    setup: |
+      printf '#!/bin/sh\n[ -f .lock ] && { echo locked >&2; exit 1; }\ntouch .lock; echo done > migrated.txt\n' > migrate.sh
+      touch .lock
+    check: |
+      sh migrate.sh >/dev/null 2>&1 && test -f migrated.txt
+
+  - id: error-recovery-07
+    categories: [error_recovery]
+    prompt: |
+      config.ini has a duplicate section that crashes the loader. Remove the
+      duplication so loader.py runs without error and prints the port 8080.
+    setup: |
+      printf '[srv]\nport=8080\n[srv]\nport=9090\n' > config.ini
+      printf 'import configparser\nc=configparser.ConfigParser()\nc.read("config.ini")\nprint(c["srv"]["port"])\n' > loader.py
+    check: |
+      test "$(python3 loader.py 2>/dev/null)" = 8080

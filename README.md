@@ -282,10 +282,11 @@ Sends `SIGTERM` to the process group of the harness driving `<conv-id>`
 with a 5-second flush deadline before `SIGKILL`. This is the same
 cascade pattern adapter (§4.4) and tool (§3.3) cancellation use, applied
 to the harness itself ([ARCH §2.9](docs/ARCHITECTURE.md#29-stopped-branches)).
-The pid is discovered by scanning `/proc/<pid>/fd/*` for the writer
-holding the latest step's `response.json` open — no sidecar pid file —
-so the same `IN_CLOSE_WRITE` signal that drives the §3.5 in-flight UI
-classification also targets the cascade. Linux only.
+The pid is discovered by scanning `/proc/<pid>/fd/*` for the process
+holding the agent's inbox-directory lock fd open — the executor lock
+(§2.11), held for the whole step loop, so a stop lands even during tool
+execution when no `response.json` is open — no sidecar pid file. Linux
+only.
 
 The group signal reaches every member independently: `bz` installs no
 handler and dies at once (leaving the missing-`end` signature, §4.4),

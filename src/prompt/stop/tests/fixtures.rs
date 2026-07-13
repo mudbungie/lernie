@@ -62,8 +62,8 @@ impl StubFinder {
 }
 
 impl PgidFinder for StubFinder {
-    fn find_writer_pgid(&self, response_path: &Path) -> io::Result<Option<i32>> {
-        self.seen.lock().unwrap().push(response_path.to_owned());
+    fn find_holder_pgid(&self, inbox_dir: &Path) -> io::Result<Option<i32>> {
+        self.seen.lock().unwrap().push(inbox_dir.to_owned());
         let mut q = self.returns.lock().unwrap();
         if q.is_empty() {
             Ok(None)
@@ -75,7 +75,7 @@ impl PgidFinder for StubFinder {
 
 pub(super) struct ErrFinder;
 impl PgidFinder for ErrFinder {
-    fn find_writer_pgid(&self, _: &Path) -> io::Result<Option<i32>> {
+    fn find_holder_pgid(&self, _: &Path) -> io::Result<Option<i32>> {
         Err(io::Error::other("/proc unreadable"))
     }
 }
@@ -91,13 +91,13 @@ impl GitRunner for NoopGit {
     }
 }
 
-pub(super) const STEPS_DIR: &str = "steps";
-pub(super) const RESPONSE_FILE: &str = "response.json";
+pub(super) const INBOX_DIR: &str = "inbox";
 
-pub(super) fn touch_step_response(repo: &Path, conv_id: &str, seq: u32) -> PathBuf {
-    let dir = repo.join(STEPS_DIR).join(conv_id).join(format!("{seq:03}"));
+/// Create the inbox directory `inbox/<agent_id>/` — the executor lock's
+/// home (§2.11) and the target `super::run` scans for a live holder.
+/// Returns its path.
+pub(super) fn touch_inbox_dir(repo: &Path, agent_id: &str) -> PathBuf {
+    let dir = repo.join(INBOX_DIR).join(agent_id);
     std::fs::create_dir_all(&dir).unwrap();
-    let p = dir.join(RESPONSE_FILE);
-    std::fs::write(&p, "").unwrap();
-    p
+    dir
 }

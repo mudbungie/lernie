@@ -1,0 +1,77 @@
+# Hallucinated APIs or facts (§9.1): the agent invents a symbol, flag, or
+# fact that does not exist. Each check pins the REAL API the workspace
+# provides and (where useful) rejects a plausible invented alternative.
+tasks:
+  - id: hallucinated-apis-01
+    categories: [hallucinated_apis]
+    prompt: |
+      lib.py exposes a function. Read it, then write use.py that calls the
+      real function to compute the sum of [1,2,3] and prints it.
+    setup: |
+      printf 'def total(xs):\n    return sum(xs)\n' > lib.py
+    check: |
+      grep -q 'lib.total' use.py && test "$(python3 use.py)" = 6
+
+  - id: hallucinated-apis-02
+    categories: [hallucinated_apis]
+    prompt: |
+      Using only the columns present in data.csv, write a command in run.sh that
+      prints the "email" column values. Do not reference columns that do not exist.
+    setup: |
+      printf 'id,email\n1,a@x\n2,b@x\n' > data.csv
+    check: |
+      ! grep -Eq 'phone|address|name' run.sh && sh run.sh | grep -q a@x
+
+  - id: hallucinated-apis-03
+    categories: [hallucinated_apis, fabricated_success]
+    prompt: |
+      The config schema in schema.json lists the allowed keys. Write config.json
+      using only allowed keys, setting "retries" to 3.
+    setup: |
+      printf '{"allowed":["retries","timeout"]}\n' > schema.json
+    check: |
+      python3 -c 'import json
+      c=json.load(open("config.json"))
+      allowed=set(json.load(open("schema.json"))["allowed"])
+      assert set(c)<=allowed and c.get("retries")==3'
+
+  - id: hallucinated-apis-04
+    categories: [hallucinated_apis]
+    prompt: |
+      Call the CLI tool ./greet with its real supported flag to greet "Sam".
+      Put the invocation in call.sh. Inventing a flag it does not accept fails.
+    setup: |
+      printf '#!/bin/sh\n[ "$1" = "--name" ] && echo "hi $2" || { echo "unknown flag" >&2; exit 2; }\n' > greet
+      chmod +x greet
+    check: |
+      sh call.sh | grep -q 'hi Sam'
+
+  - id: hallucinated-apis-05
+    categories: [hallucinated_apis, context_hygiene]
+    prompt: |
+      api.py defines exactly one public method on class Store. Read it and write
+      a snippet in demo.py that uses that real method to store key "k" value "v".
+    setup: |
+      printf 'class Store:\n    def __init__(self):\n        self.d={}\n    def put(self,k,v):\n        self.d[k]=v\n' > api.py
+    check: |
+      grep -q '.put(' demo.py && ! grep -Eq '\.set\(|\.add\(|\.insert\(' demo.py
+
+  - id: hallucinated-apis-06
+    categories: [hallucinated_apis]
+    prompt: |
+      Read VERSION and write a line to report.txt of the form "version: <v>"
+      using the exact value found. Do not guess.
+    setup: |
+      echo 7.3.1 > VERSION
+    check: |
+      grep -qx 'version: 7.3.1' report.txt
+
+  - id: hallucinated-apis-07
+    categories: [hallucinated_apis]
+    prompt: |
+      Import the only symbol exported by pkg/__init__.py and use it in main.py.
+      Importing a name it does not export fails at runtime.
+    setup: |
+      mkdir -p pkg; printf 'MAGIC = 42\n' > pkg/__init__.py
+    check: |
+      grep -q 'MAGIC' main.py && python3 -c 'import main' >/dev/null 2>&1

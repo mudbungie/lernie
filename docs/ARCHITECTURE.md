@@ -880,6 +880,8 @@ Each category has sufficient tasks (≥10) for statistical movement to be detect
 
 Optimization target is pass@1; pass@5 is tracked to distinguish capability shifts from reliability shifts.
 
+> **Shipped-state note.** The suite is authored as data under `tests/suite/` (bl-8094): one YAML file per failure category, each task carrying an `id`, a `prompt`, an optional `setup`, a machine-checkable `check` (shell; exit 0 is the sole pass signal, so success is observable state, never the agent's own claim), and category tags — format in `tests/suite/README.md`. It holds 50 tasks with ≥10 tasks per §9.1 category, reached via secondary tags (a task provoking two failure modes carries both) because seven categories cannot each hold ten of fifty disjointly; `tests/suite.rs` enforces the count, the seven-tag closed set, uniqueness, and file-placement-is-primary-tag. The ~40% baseline pass@1 (v0.9 criterion) is a property of *running* the suite and is verified once the runner lands (§9.3 shipped-state note).
+
 ### 9.2 Replay and archival
 
 A workspace is long-lived; "a run" is an agent subtree within it. The archival unit follows the agent, not the workspace (the v0.3 tarball-per-run died with the repo-per-root layout — there is no per-run directory to tar):
@@ -889,6 +891,8 @@ A workspace is long-lived; "a run" is an agent subtree within it. The archival u
 - **Retention and GC.** Deleting an expired or archived agent is deleting its branches; `git gc` prunes whatever objects nothing else reaches. Reachability *is* the retention policy: an ancestor shared with a config branch or a still-live sibling survives automatically, and nothing needs to compute what is safe to drop. The `steps/` and `inbox/` slices are plain directories, removed with the branches. Default retention 30 days (§2.9), then bundle-and-delete or delete outright, per workspace policy.
 
 A whole-workspace snapshot stays trivially available — `tar` the workspace directory (repo, steps, inboxes) — and remains the right unit for machine migration. It is not the archival unit, because a workspace never ends; agents do.
+
+> **Shipped-state note.** `lernie bundle <workspace> <agent> <out-dir>` and `lernie replay <archive>` ship the archival unit (bl-8094, `src/archive/`). `bundle` enumerates `<agent>` and its `<agent>-*` hyphen-descendant branches (§2.3) with `git branch --list`, writes one `git bundle` of them (all ancestry those refs reach), and copies the matching `steps/<id>*` and `inbox/<id>*` slices beside it — one bundle plus two slices. `replay` derives the subtree-root (**primary**) id as the shortest branch in the bundle, fetches every branch into a fresh `root/` repo at `replays/<primary-id>/` under `LERNIE_HOME`'s data root (isolation, §2.2), materializes the primary's worktree as a sibling, restores the slices, and prints the scratch-workspace path; the ordinary frontend (§3.5) then inspects it — replay is not a mode. **Pre-substrate divergence:** the prose above assumes the config-commit substrate (§2.2), where the governing config is an ancestor of every agent branch and so rides inside the bundle. In the shipped layout the workspace's control files (`workflow.yaml`, `manifest.yaml`, `providers.yaml`, `version`, `souls/`) are *untracked* at the workspace root, outside the `root/` git dir, and are reachable from no branch — so they do not enter the bundle. The shipped bundle/replay serves §9.2's primary use (inspection of the branch tree, transcripts, and diagnostic slices); full re-execution fidelity additionally needs the config, which folds into the bundle's ancestry with no change to the verb surface once the substrate lands.
 
 ### 9.3 Experiments
 
@@ -905,6 +909,8 @@ experiments/
 ```
 
 An evaluation run is (experiment × suite × N), producing per-task pass@1 and per-category failure breakdowns. A new experiment is a config diff; no code changes.
+
+> **Shipped-state note.** The runner (`agent-eval --config/--suite/--runs`, v0.10) is **deferred** (bl-25fc, claim-blocked on the workflow-action interpreter bl-6a3b): it only becomes meaningful once workflow variants exist, and building it against nonexistent variants was out of scope for bl-8094. Its home is a separate binary `crates/agent-eval` in this workspace — intentionally *not* scaffolded yet, since an empty crate cannot meet the 100% coverage gate; its full contract and the pass@1 / pass@5 + Wilson-CI statistics (§9.1) ride bl-25fc's body. bl-8094 shipped the runner's two prerequisites — bundle/replay (§9.2) and the task suite (§9.1) — so the runner is the sole remaining piece of the evaluation layer.
 
 ---
 
@@ -983,9 +989,13 @@ This milestone folds in the `harness` repo design exploration (2026-07). Its kee
 
 **Success criterion:** 50 tasks with machine-checkable success criteria. Baseline harness achieves 40% ± 5% pass@1 on the suite (Wilson CI). Per-category failure tagging works.
 
+**Shipped shape.** The suite's *data and structure* landed (bl-8094): 50 tasks under `tests/suite/`, ≥10 per §9.1 category, per-category tagging, machine-checkable `check` scripts, validated by `tests/suite.rs` (§9.1 shipped-state note). The 40% ± 5% baseline measurement rides the runner, which is deferred (v0.10 shipped shape).
+
 ### v0.10 — Experiments and replay
 
 **Success criterion:** `agent-eval --config <experiment> --suite <suite> --runs N` produces per-task pass@1 and pass@5 with confidence intervals. Any run (agent subtree) can be bundled and replayed (§9.2). Config changes (prompt edits) deployable without code changes in under 60 seconds end-to-end.
+
+**Shipped shape.** Bundle/replay landed (bl-8094): `lernie bundle` / `lernie replay` (§9.2 shipped-state note). The `agent-eval` runner is **deferred** (bl-25fc, claim-blocked on the workflow-action interpreter bl-6a3b) — it is meaningful only once workflow variants exist (§9.3 shipped-state note); the experiments surface (`experiments/<name>/workflow.yaml`) lands with it.
 
 ### v1.0
 

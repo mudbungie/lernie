@@ -12,6 +12,10 @@
 //! the provider adapter itself is brazen's external `bz` binary, exec'd
 //! per attempt (§4.4).
 
+/// [`archive`] bundles an agent subtree into one `git bundle` plus the
+/// `steps/` and `inbox/` slices, and replays it into a scratch workspace
+/// for inspection with the ordinary frontend (ARCH §9.2).
+pub mod archive;
 pub mod config;
 pub mod harness_root;
 pub mod prompt;

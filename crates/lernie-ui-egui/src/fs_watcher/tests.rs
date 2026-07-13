@@ -15,9 +15,9 @@ fn settle_and_tick(watcher: &Watcher) -> Vec<Change> {
     watcher.tick()
 }
 
-/// Build the per-worktree subdir for the root conversation (ARCH §2.2).
-fn make_root_worktree(repo: &Path) {
-    fs::create_dir_all(repo.join("root")).unwrap();
+/// Build an agent worktree dir under `agents/` (ARCH §2.2).
+fn make_agent_worktree(repo: &Path, id: &str) {
+    fs::create_dir_all(repo.join("agents").join(id)).unwrap();
 }
 
 #[test]
@@ -74,11 +74,13 @@ fn detects_subagent_step_record_at_conv_repo_root() {
 }
 
 #[test]
-fn detects_root_control_file_writes() {
+fn detects_inbox_deposits_at_workspace_root() {
+    // Inboxes live at `<workspace>/inbox/<agent-id>/` (ARCH §2.11).
     let root = tempdir().unwrap();
+    fs::create_dir_all(root.path().join("inbox/aa-bb")).unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
-    let target = root.path().join("manifest.yaml");
+    let target = root.path().join("inbox/aa-bb/user-001.md");
     fs::write(&target, b"x").unwrap();
     let changes = settle_and_tick(&watcher);
     let hit = changes.iter().find(|c| c.path == target).expect("event");
@@ -86,22 +88,10 @@ fn detects_root_control_file_writes() {
 }
 
 #[test]
-fn detects_souls_subdir_writes() {
-    let root = tempdir().unwrap();
-    fs::create_dir(root.path().join("souls")).unwrap();
-    let watcher = Watcher::new(root.path()).unwrap();
-    wait_quiet(&watcher);
-    let target = root.path().join("souls/worker.md");
-    fs::write(&target, b"x").unwrap();
-    let changes = settle_and_tick(&watcher);
-    assert!(changes.iter().any(|e| e.path == target));
-}
-
-#[test]
 fn detects_removal_under_summary() {
     let root = tempdir().unwrap();
-    fs::create_dir_all(root.path().join("root/summary")).unwrap();
-    let target = root.path().join("root/summary/001.md");
+    fs::create_dir_all(root.path().join("agents/aa-bb/summary")).unwrap();
+    let target = root.path().join("agents/aa-bb/summary/001.md");
     fs::write(&target, b"hi").unwrap();
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
@@ -119,8 +109,8 @@ fn ignores_paths_outside_allowlist() {
     fs::write(root.path().join("README.md"), b"x").unwrap();
     fs::create_dir_all(root.path().join("random")).unwrap();
     fs::write(root.path().join("random/x.txt"), b"x").unwrap();
-    fs::create_dir_all(root.path().join("root/random")).unwrap();
-    fs::write(root.path().join("root/random/x.txt"), b"x").unwrap();
+    fs::create_dir_all(root.path().join("agents/aa-bb/random")).unwrap();
+    fs::write(root.path().join("agents/aa-bb/random/x.txt"), b"x").unwrap();
     std::thread::sleep(Duration::from_millis(200));
     assert!(watcher.tick().is_empty());
 }
@@ -169,10 +159,10 @@ fn coalesces_atomic_rename_to_destination() {
 }
 
 #[test]
-fn detects_goal_md_update_in_root_worktree() {
+fn detects_goal_md_update_in_an_agent_worktree() {
     let root = tempdir().unwrap();
-    make_root_worktree(root.path());
-    let target = root.path().join("root/goal.md");
+    make_agent_worktree(root.path(), "aa-bb");
+    let target = root.path().join("agents/aa-bb/goal.md");
     let watcher = Watcher::new(root.path()).unwrap();
     wait_quiet(&watcher);
     fs::write(&target, b"hi").unwrap();
@@ -197,15 +187,15 @@ fn is_watched_admits_root_control_files() {
 }
 
 #[test]
-fn is_watched_admits_per_worktree_paths_under_any_workdir() {
+fn is_watched_admits_per_worktree_paths_under_any_agent_id() {
     let r = Path::new("/r");
     for prefix in WORKTREE_PREFIXES {
-        for workdir in ["root", "aa-bb", "20260424T120000Z-deadbeef"] {
-            let path = r.join(workdir).join(prefix);
-            assert!(is_watched(r, &path), "{workdir}/{prefix}");
+        for id in ["aa-bb", "20260424T120000Z-deadbeef"] {
+            let path = r.join("agents").join(id).join(prefix);
+            assert!(is_watched(r, &path), "agents/{id}/{prefix}");
             assert!(
                 is_watched(r, &path.join("child")),
-                "{workdir}/{prefix}/child"
+                "agents/{id}/{prefix}/child"
             );
         }
     }
@@ -217,7 +207,7 @@ fn is_watched_admits_refs_and_head() {
     for prefix in REFS_PREFIXES {
         assert!(is_watched(r, &r.join(prefix)), "{prefix}");
     }
-    assert!(is_watched(r, &r.join("root/.git/refs/heads/main")));
+    assert!(is_watched(r, &r.join("repo.git/refs/heads/agents/aa-bb")));
 }
 
 #[test]
@@ -231,7 +221,9 @@ fn is_watched_rejects_unrelated_top_level_files() {
 fn is_watched_rejects_arbitrary_subdir_files() {
     let r = Path::new("/r");
     assert!(!is_watched(r, &r.join("aa-bb/random.txt")));
-    assert!(!is_watched(r, &r.join("root/notes/x.md")));
+    assert!(!is_watched(r, &r.join("agents/aa-bb/notes/x.md")));
+    // A bare `agents/<id>` file (no per-worktree tail) is not watched.
+    assert!(!is_watched(r, &r.join("agents/aa-bb")));
 }
 
 #[test]

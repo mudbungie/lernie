@@ -58,34 +58,36 @@ pub(crate) struct SpawnRequest<'a> {
 /// Spawn the subagent branch and write the dispatch commit. Steps,
 /// in order:
 ///
-/// 1. `git worktree add -b <sub_branch> <sub_worktree> <parent_branch>`
-///    in the parent worktree (which shares `.git` with the conv-repo
-///    root, §2.2).
-/// 2. Write `goal.md` to the new worktree.
-/// 3. If a soul was supplied, write `soul.md` to the new worktree.
+/// 1. `git worktree add -b agents/<sub-id> <sub_worktree>
+///    agents/<parent-id>` in the parent worktree (any access point onto
+///    the one workspace repository, §2.2). Ids are bare hyphenated
+///    descents; the `agents/` ref prefix is applied here, at the git
+///    boundary (§2.3).
+/// 2. Stage the removal of the config commit's control files (§2.2,
+///    §2.3 step 2) — a no-op for a fork off a parent's tip, whose tree
+///    already lost them (`--ignore-unmatch` keeps the primitive total).
+/// 3. Write `goal.md` (and `soul.md` when supplied) to the new worktree.
 /// 4. `git add` the artifacts.
 /// 5. `git commit -m <commit_subject>` — the dispatch commit (§2.3
 ///    step 2 / §2.10). Step 1 of the subagent's own step loop, when
 ///    one runs, takes no further pre-call commit; the dispatch commit
 ///    *is* its read state.
-///
-/// Disk and git ordering match the v0.3 compactor stub so callers that
-/// audit the run sequence (e.g. `compactor::tests`) keep working
-/// verbatim through the refactor.
 pub(crate) fn spawn_subagent_branch(
     req: &SpawnRequest<'_>,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
     let wt_str = req.sub_worktree.to_string_lossy().to_string();
+    let sub_ref = crate::workspace::agent_ref(req.sub_branch);
+    let parent_ref = crate::workspace::agent_ref(req.parent_branch);
     git.run(
         req.parent_worktree,
         &[
             "worktree",
             "add",
             "-b",
-            req.sub_branch,
+            sub_ref.as_str(),
             wt_str.as_str(),
-            req.parent_branch,
+            parent_ref.as_str(),
         ],
     )
     .map_err(|source| Error::Git {
@@ -97,6 +99,7 @@ pub(crate) fn spawn_subagent_branch(
     // explicit `create_dir_all` is here for stub-git tests (and is a
     // harmless no-op in production since the directory already exists).
     std::fs::create_dir_all(req.sub_worktree)?;
+    crate::prompt::dispatch::remove_control_files(req.sub_worktree, git)?;
     std::fs::write(req.sub_worktree.join(GOAL_FILE), req.goal_text)?;
     if let Some(soul) = req.soul_text {
         std::fs::write(req.sub_worktree.join(SOUL_FILE), soul)?;

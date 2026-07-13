@@ -1,69 +1,45 @@
-//! Branch-state lookups for `lernie stop`.
+//! Branch-state lookup for `lernie stop`.
 //!
-//! Two questions need answering before sending any signal:
-//! - does `<branch>` exist as a ref in the conv-repo?
-//! - is it already merged into `main`?
+//! One question needs answering before sending any signal: does the
+//! agent branch `agents/<id>` exist in the workspace repository? An
+//! exit-code question on `git`, so the trait is shaped around it rather
+//! than a generic "run-git" surface. Tests inject a stub that returns
+//! the bit directly; production shells out via the supplied
+//! [`GitRunner`] against `<workspace>/repo.git` (ARCH §2.2 — the bare
+//! workspace repository).
 //!
-//! Both are exit-code questions on `git`, so the trait is shaped
-//! around them rather than a generic "run-git" surface. Tests inject
-//! a stub that returns the bits directly; production shells out via
-//! the supplied [`GitRunner`] inside `<repo>/root/` (ARCH §2.2 — the
-//! primary worktree where `.git` lives).
+//! The v0.3-era "already merged into main" refusal is gone with `main`
+//! itself (§2.2–§2.3): no branch merges anywhere, so there is no merged
+//! state to refuse — an already-terminal branch is simply a stop with
+//! no lock holder, idempotently `Ok(())`.
 
 use crate::template::GitRunner;
 use std::io;
 use std::path::Path;
 
-/// Subdir under the conv-repo where the primary worktree (and the
-/// only `.git`) lives. Mirrors [`crate::template::ROOT_WORKTREE`] —
-/// duplicated here rather than re-exported so the stop module is a
-/// single read.
-const ROOT_WORKTREE: &str = "root";
-
-/// The two ref-state questions [`super::run`] needs answered before
+/// The ref-existence question [`super::run`] needs answered before
 /// signaling. The trait is `&dyn`-shaped so tests pass a stub and
 /// production passes [`GitInspector`] without paying the subprocess
 /// cost in the test path.
 pub trait BranchInspector {
     fn exists(&self, repo: &Path, branch: &str, git: &dyn GitRunner) -> io::Result<bool>;
-    fn is_merged_into_main(
-        &self,
-        repo: &Path,
-        branch: &str,
-        git: &dyn GitRunner,
-    ) -> io::Result<bool>;
 }
 
 /// Production [`BranchInspector`] — runs `git rev-parse --verify
-/// refs/heads/<branch>` and `git merge-base --is-ancestor <branch>
-/// main` inside `<repo>/root/`.
+/// refs/heads/agents/<branch>` against `<workspace>/repo.git`.
 #[derive(Debug, Default, Clone, Copy)]
 pub struct GitInspector;
 
 impl BranchInspector for GitInspector {
     fn exists(&self, repo: &Path, branch: &str, git: &dyn GitRunner) -> io::Result<bool> {
-        let root = repo.join(ROOT_WORKTREE);
-        let refspec = format!("refs/heads/{branch}");
+        let refspec = format!("refs/heads/{}", crate::workspace::agent_ref(branch));
         // `rev-parse --verify` exits 0 when the ref resolves, non-
         // zero otherwise. `GitRunner::run` surfaces non-zero as `Err`
         // — translate that to the boolean we want.
-        match git.run(&root, &["rev-parse", "--verify", "--quiet", &refspec]) {
-            Ok(()) => Ok(true),
-            Err(_) => Ok(false),
-        }
-    }
-
-    fn is_merged_into_main(
-        &self,
-        repo: &Path,
-        branch: &str,
-        git: &dyn GitRunner,
-    ) -> io::Result<bool> {
-        let root = repo.join(ROOT_WORKTREE);
-        // `merge-base --is-ancestor <branch> main` exits 0 when
-        // branch's tip is reachable from main (i.e. merged), non-
-        // zero when it is not. Same exit-code-as-boolean shape.
-        match git.run(&root, &["merge-base", "--is-ancestor", branch, "main"]) {
+        match git.run(
+            &crate::workspace::repo_git(repo),
+            &["rev-parse", "--verify", "--quiet", &refspec],
+        ) {
             Ok(()) => Ok(true),
             Err(_) => Ok(false),
         }
@@ -77,15 +53,16 @@ mod tests {
     use std::path::PathBuf;
 
     struct RecordingGit {
-        invocations: RefCell<Vec<Vec<String>>>,
+        invocations: RefCell<Vec<(PathBuf, Vec<String>)>>,
         result: io::Result<()>,
     }
 
     impl GitRunner for RecordingGit {
-        fn run(&self, _: &Path, args: &[&str]) -> io::Result<()> {
-            self.invocations
-                .borrow_mut()
-                .push(args.iter().map(|s| (*s).to_owned()).collect());
+        fn run(&self, dest: &Path, args: &[&str]) -> io::Result<()> {
+            self.invocations.borrow_mut().push((
+                dest.to_path_buf(),
+                args.iter().map(|s| (*s).to_owned()).collect(),
+            ));
             // `io::Error` isn't `Clone`, so we mirror the kind /
             // message rather than re-emit the same instance.
             match &self.result {
@@ -112,17 +89,20 @@ mod tests {
     }
 
     #[test]
-    fn exists_true_on_zero_exit() {
+    fn exists_true_on_zero_exit_and_probes_the_agents_ref_in_repo_git() {
         let git = ok_git();
         assert!(
             GitInspector
-                .exists(&PathBuf::from("/r"), "br", &git)
+                .exists(&PathBuf::from("/w"), "br", &git)
                 .unwrap()
         );
         let calls = git.invocations.borrow();
+        // The §8 ref namespace: the id maps to `agents/<id>` at the git
+        // boundary, and the question is asked of the bare repo.git.
+        assert_eq!(calls[0].0, PathBuf::from("/w/repo.git"));
         assert_eq!(
-            calls[0],
-            vec!["rev-parse", "--verify", "--quiet", "refs/heads/br"]
+            calls[0].1,
+            vec!["rev-parse", "--verify", "--quiet", "refs/heads/agents/br"]
         );
     }
 
@@ -131,29 +111,7 @@ mod tests {
         let git = err_git();
         assert!(
             !GitInspector
-                .exists(&PathBuf::from("/r"), "br", &git)
-                .unwrap()
-        );
-    }
-
-    #[test]
-    fn is_merged_true_on_zero_exit() {
-        let git = ok_git();
-        assert!(
-            GitInspector
-                .is_merged_into_main(&PathBuf::from("/r"), "br", &git)
-                .unwrap()
-        );
-        let calls = git.invocations.borrow();
-        assert_eq!(calls[0], vec!["merge-base", "--is-ancestor", "br", "main"]);
-    }
-
-    #[test]
-    fn is_merged_false_on_nonzero_exit() {
-        let git = err_git();
-        assert!(
-            !GitInspector
-                .is_merged_into_main(&PathBuf::from("/r"), "br", &git)
+                .exists(&PathBuf::from("/w"), "br", &git)
                 .unwrap()
         );
     }

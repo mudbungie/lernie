@@ -105,21 +105,13 @@ fn render_populated_tree_runs_without_panic() {
                 oid: "a".repeat(40),
                 short_oid: "aaaaaaaa".into(),
                 timestamp_unix: 1,
-                conv_id: Some("20260422T120000Z-aaaa".into()),
-                preview: Some("hello".into()),
-                steps: vec![StepCommit {
-                    oid: "c".repeat(40),
-                    short_oid: "cccccccc".into(),
-                    timestamp_unix: 2,
-                }],
+                subject: "config: init [config/default]".into(),
             },
             CommitNode {
                 oid: "b".repeat(40),
                 short_oid: "bbbbbbbb".into(),
                 timestamp_unix: 3,
-                conv_id: None,
-                preview: None,
-                steps: vec![],
+                subject: "config: amend".into(),
             },
         ],
         in_flight: vec![ConversationBranch {
@@ -290,9 +282,7 @@ fn short_oid_falls_back_for_unexpectedly_short_hash() {
         oid: "abc".into(),
         short_oid: "abc".into(),
         timestamp_unix: 0,
-        conv_id: None,
-        preview: None,
-        steps: vec![],
+        subject: "s".into(),
     };
     assert_eq!(node.short_oid, "abc");
 }

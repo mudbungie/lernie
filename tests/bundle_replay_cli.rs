@@ -40,28 +40,46 @@ const CHILD: &str = "20260101-p1-20260102-c1";
 /// A sibling root agent that must NOT be captured by the subtree bundle.
 const UNRELATED: &str = "20260101-z9";
 
-/// Build a workspace with a parent agent branch carrying a child branch,
-/// an unrelated root branch, and diagnostic slices for the subtree.
+/// Build a workspace (§2.2: bare repo.git + config/default) with a
+/// parent agent branch carrying a child branch, an unrelated root
+/// branch, and diagnostic slices for the subtree.
 fn workspace() -> TempDir {
     let ws = TempDir::new().unwrap();
-    let root = ws.path().join("root");
-    std::fs::create_dir_all(&root).unwrap();
-    git(&root, &["init", "-q", "-b", "main"]);
-    git(&root, &["config", "user.email", "t@test.invalid"]);
-    git(&root, &["config", "user.name", "t"]);
-    git(&root, &["commit", "-q", "--allow-empty", "-m", "init"]);
+    let repo = ws.path().join("repo.git");
+    std::fs::create_dir_all(&repo).unwrap();
+    git(&repo, &["init", "-q", "--bare", "-b", "config/default"]);
+    git(&repo, &["config", "user.email", "t@test.invalid"]);
+    git(&repo, &["config", "user.name", "t"]);
+    let author = ws.path().join(".author");
+    git(
+        &repo,
+        &[
+            "worktree",
+            "add",
+            "-q",
+            "--orphan",
+            "-b",
+            "config/default",
+            author.to_str().unwrap(),
+        ],
+    );
+    std::fs::write(author.join("version"), "1\n").unwrap();
+    git(&author, &["add", "-A"]);
+    git(&author, &["commit", "-q", "-m", "config: init"]);
+    git(&repo, &["worktree", "remove", author.to_str().unwrap()]);
 
     // Parent agent branch + its worktree, with a goal work product.
-    let parent_wt = ws.path().join(PARENT);
+    let parent_wt = ws.path().join("agents").join(PARENT);
     git(
-        &root,
+        &repo,
         &[
             "worktree",
             "add",
             "-q",
             parent_wt.to_str().unwrap(),
             "-b",
-            PARENT,
+            &format!("agents/{PARENT}"),
+            "config/default",
         ],
     );
     std::fs::write(parent_wt.join("goal.md"), "parent goal\n").unwrap();
@@ -69,7 +87,7 @@ fn workspace() -> TempDir {
     git(&parent_wt, &["commit", "-q", "-m", "parent goal"]);
 
     // Child branch forked off the parent tip.
-    let child_wt = ws.path().join(CHILD);
+    let child_wt = ws.path().join("agents").join(CHILD);
     git(
         &parent_wt,
         &[
@@ -78,14 +96,17 @@ fn workspace() -> TempDir {
             "-q",
             child_wt.to_str().unwrap(),
             "-b",
-            CHILD,
+            &format!("agents/{CHILD}"),
         ],
     );
     std::fs::write(child_wt.join("goal.md"), "child goal\n").unwrap();
     git(&child_wt, &["add", "-A"]);
     git(&child_wt, &["commit", "-q", "-m", "child goal"]);
 
-    git(&root, &["branch", UNRELATED]);
+    git(
+        &repo,
+        &["branch", &format!("agents/{UNRELATED}"), "config/default"],
+    );
 
     // Diagnostic slices (§2.2): steps for both agents + an inbox message.
     let steps = ws.path().join("steps").join(PARENT).join("001");
@@ -147,7 +168,11 @@ fn bundle_then_replay_round_trips_the_subtree() {
     );
 
     // The bundle carries the subtree, and only the subtree.
-    let heads = Command::new("git")
+    let mut heads_cmd = Command::new("git");
+    for var in INHERITED_GIT_ENV {
+        heads_cmd.env_remove(var);
+    }
+    let heads = heads_cmd
         .args([
             "bundle",
             "list-heads",
@@ -156,8 +181,11 @@ fn bundle_then_replay_round_trips_the_subtree() {
         .output()
         .expect("list-heads");
     let heads = String::from_utf8_lossy(&heads.stdout);
-    assert!(heads.contains(PARENT), "heads: {heads}");
-    assert!(heads.contains(CHILD), "heads: {heads}");
+    assert!(
+        heads.contains(&format!("agents/{PARENT}")),
+        "heads: {heads}"
+    );
+    assert!(heads.contains(&format!("agents/{CHILD}")), "heads: {heads}");
     assert!(
         !heads.contains(UNRELATED),
         "unrelated branch leaked: {heads}"
@@ -175,11 +203,15 @@ fn bundle_then_replay_round_trips_the_subtree() {
     assert_eq!(scratch, home.path().join("replays").join(PARENT));
 
     // The reconstructed repo has both branches; the primary worktree is
-    // materialized; the slices are restored.
-    let scratch_root = scratch.join("root");
-    let branches = Command::new("git")
+    // materialized under agents/; the slices are restored.
+    let scratch_repo = scratch.join("repo.git");
+    let mut branch_cmd = Command::new("git");
+    for var in INHERITED_GIT_ENV {
+        branch_cmd.env_remove(var);
+    }
+    let branches = branch_cmd
         .arg("-C")
-        .arg(&scratch_root)
+        .arg(&scratch_repo)
         .args(["branch", "--list", "--format=%(refname:short)"])
         .output()
         .expect("branch");
@@ -189,7 +221,7 @@ fn bundle_then_replay_round_trips_the_subtree() {
         "branches: {branches}"
     );
     assert_eq!(
-        std::fs::read_to_string(scratch.join(PARENT).join("goal.md")).unwrap(),
+        std::fs::read_to_string(scratch.join("agents").join(PARENT).join("goal.md")).unwrap(),
         "parent goal\n"
     );
     assert!(
@@ -261,6 +293,6 @@ fn replay_cli_lands_under_lernie_home() {
     unsafe { std::env::remove_var("LERNIE_HOME") };
 
     assert_eq!(scratch, home.path().join("replays").join(PARENT));
-    assert!(scratch.join("root").join(".git").exists());
-    assert!(scratch.join(PARENT).join("goal.md").exists());
+    assert!(scratch.join("repo.git").is_dir());
+    assert!(scratch.join("agents").join(PARENT).join("goal.md").exists());
 }

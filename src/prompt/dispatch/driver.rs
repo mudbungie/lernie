@@ -26,7 +26,8 @@
 use super::drain;
 use crate::prompt::Error;
 use crate::prompt::inbox;
-use crate::template::{GitRunner, ROOT_WORKTREE};
+use crate::template::GitRunner;
+use crate::workspace;
 use std::path::Path;
 
 /// What one [`drive`] found and did — derived on the fly, nothing stored.
@@ -76,7 +77,7 @@ pub(super) fn deliver(
 ) -> Result<usize, Error> {
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
     let pending = drain::pending(&inbox_dir)?.len();
-    let worktree = workspace.join(agent_id);
+    let worktree = workspace::agent_worktree(workspace, agent_id);
     if !worktree.exists() {
         if pending == 0 {
             return Ok(0);
@@ -89,8 +90,8 @@ pub(super) fn deliver(
 
 /// Rematerialize a torn-down quiescent worktree off the persistent
 /// branch ref (§2.3 step 6 — the worktree is disposable materialization,
-/// never state): `git worktree add <path> <branch>`, run inside the
-/// primary worktree where `.git` lives (§2.2).
+/// never state): `git worktree add <path> agents/<id>`, run against the
+/// workspace's bare `repo.git` (§2.2).
 fn rematerialize(
     workspace: &Path,
     agent_id: &str,
@@ -98,9 +99,10 @@ fn rematerialize(
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
     let wt_str = worktree.to_string_lossy().to_string();
+    let branch_ref = workspace::agent_ref(agent_id);
     git.run(
-        workspace.join(ROOT_WORKTREE).as_path(),
-        &["worktree", "add", wt_str.as_str(), agent_id],
+        &workspace::repo_git(workspace),
+        &["worktree", "add", wt_str.as_str(), branch_ref.as_str()],
     )
     .map_err(|source| Error::Git {
         op: "worktree add (rematerialize)",

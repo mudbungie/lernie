@@ -10,30 +10,30 @@ use tempfile::TempDir;
 
 #[test]
 fn invalid_input_json_surfaces_invalidjson() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(b"not json".to_vec());
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     assert!(matches!(err, Error::InvalidJson(_)), "{err}");
 }
 
 #[test]
 fn missing_role_field_surfaces_invalidjson() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(br#"{"goal":"g"}"#.to_vec());
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     assert!(matches!(err, Error::InvalidJson(_)), "{err}");
 }
 
 #[test]
 fn unknown_input_field_surfaces_invalidjson() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(br#"{"role":"worker","goal":"g","extra":"bad"}"#.to_vec());
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     assert!(matches!(err, Error::InvalidJson(_)), "{err}");
 }
@@ -94,21 +94,37 @@ fn non_utf8_branch_env_surfaces_missingenv() {
 }
 
 #[test]
-fn missing_providers_yaml_surfaces_config_error() {
+fn missing_workspace_surfaces_governing_config_error() {
+    // A bare directory has no workspace repository: the governing-config
+    // derivation for the calling branch fails loudly (§2.2).
     let repo = TempDir::new().unwrap();
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = Vec::new();
     let env = env(repo.path(), "p1");
+    let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
+    assert!(matches!(err, Error::GoverningConfig { .. }), "{err}");
+}
+
+#[test]
+fn malformed_providers_yaml_surfaces_config_error() {
+    // A config commit whose providers.yaml carries a legacy block is a
+    // hard load error (§4.1) — surfaced through the Config variant.
+    let (_h, repo) = fake_repo("worker");
+    crate::workspace::fixture::amend_config(&repo, &[("providers.yaml", "providers: {}\n")]);
+    crate::workspace::fixture::spawn_root(&repo, "p9");
+    let mut stdin = Cursor::new(input_for("worker", "g"));
+    let mut stdout = Vec::new();
+    let env = env(&repo, "p9");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     assert!(matches!(err, Error::Config(_)), "{err}");
 }
 
 #[test]
 fn unknown_role_surfaces_rolemissing() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("verifier", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     match err {
         Error::RoleMissing { role, .. } => assert_eq!(role, "verifier"),
@@ -118,15 +134,23 @@ fn unknown_role_surfaces_rolemissing() {
 
 #[test]
 fn role_listed_but_soul_missing_surfaces_soulmissing() {
-    let repo = fake_repo("worker");
-    std::fs::remove_file(repo.path().join("souls").join("worker.md")).unwrap();
-    let mut stdin = Cursor::new(input_for("worker", "g"));
+    // A config listing the role but carrying no soul for it: the
+    // presence test against the config commit's tree fails (§4.3).
+    let (_h, repo) = fake_repo("worker");
+    let yaml = "roles:\n  verifier:\n    provider: anthropic\n    model: sonnet\n";
+    crate::workspace::fixture::amend_config(&repo, &[("providers.yaml", yaml)]);
+    crate::workspace::fixture::spawn_root(&repo, "p9");
+    let mut stdin = Cursor::new(input_for("verifier", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p9");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     match err {
         Error::SoulMissing { path } => {
-            assert!(path.ends_with("souls/worker.md"), "{}", path.display())
+            assert!(
+                path.to_string_lossy().ends_with("souls/verifier.md"),
+                "{}",
+                path.display()
+            )
         }
         other => panic!("expected SoulMissing, got {other}"),
     }
@@ -134,10 +158,10 @@ fn role_listed_but_soul_missing_surfaces_soulmissing() {
 
 #[test]
 fn spawn_io_error_surfaces_spawn() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &ErrSpawner).unwrap_err();
     match err {
         Error::Spawn { role, .. } => assert_eq!(role, "worker"),
@@ -147,10 +171,10 @@ fn spawn_io_error_surfaces_spawn() {
 
 #[test]
 fn nonzero_exit_surfaces_dispatchexit() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let spawner = StubSpawner::failing("kaboom", 7);
     let err = run(&mut stdin, &mut stdout, &env, &spawner).unwrap_err();
     match err {
@@ -164,10 +188,10 @@ fn nonzero_exit_surfaces_dispatchexit() {
 
 #[test]
 fn empty_stdout_surfaces_emptyhandle() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::empty_stdout()).unwrap_err();
     assert!(matches!(err, Error::EmptyHandle { .. }), "{err}");
 }
@@ -183,10 +207,10 @@ fn write_failure_on_stdout_surfaces_write() {
             Ok(())
         }
     }
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = BrokenStdout;
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("p1-sub")).unwrap_err();
     assert!(matches!(err, Error::Write(_)), "{err}");
 }
@@ -199,10 +223,10 @@ fn stdin_read_failure_surfaces_stdinread() {
             Err(io::Error::from(io::ErrorKind::ConnectionReset))
         }
     }
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = BrokenStdin;
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     assert!(matches!(err, Error::StdinRead(_)), "{err}");
 }

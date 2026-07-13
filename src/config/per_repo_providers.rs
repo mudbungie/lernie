@@ -57,8 +57,16 @@ impl PerRepoProviders {
             path: path.to_path_buf(),
             source,
         })?;
+        Self::parse(&raw, path)
+    }
+
+    /// Parse `providers.yaml` content already in hand — the
+    /// governing-config read path (ARCH §2.2: control is read from the
+    /// config commit's tree, never from a worktree file). `origin`
+    /// labels errors (e.g. `<config-commit>:providers.yaml`).
+    pub fn parse(raw: &str, path: &Path) -> Result<Self, LoadError> {
         let doc: serde_yaml_ng::Value =
-            serde_yaml_ng::from_str(&raw).map_err(|source| LoadError::Yaml {
+            serde_yaml_ng::from_str(raw).map_err(|source| LoadError::Yaml {
                 path: path.to_path_buf(),
                 source,
             })?;

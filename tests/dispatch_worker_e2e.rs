@@ -67,22 +67,23 @@ fn scaffold_repo(dest: &Path, harness: &Path) {
     );
 }
 
-/// Stand up a parent branch + worktree at `<repo>/<parent_branch>/` so
-/// the worker has somewhere to spawn off. Phase 1 doesn't model the
-/// parent's prior steps — we just need a branch ref off `main` with a
-/// checkout that `git worktree add` from inside it can reach.
+/// Stand up a parent agent branch + worktree at
+/// `<workspace>/agents/<parent>/` so the worker has somewhere to spawn
+/// off. Phase 1 doesn't model the parent's prior steps — we just need
+/// an `agents/*` ref off `config/default` (§2.3) with a checkout.
 fn fabricate_parent(repo: &Path, parent_branch: &str) {
-    let primary = repo.join("root");
-    let parent_wt = repo.join(parent_branch);
+    let bare = repo.join("repo.git");
+    let parent_wt = repo.join("agents").join(parent_branch);
+    let branch_ref = format!("agents/{parent_branch}");
     git_run(
-        &primary,
+        &bare,
         &[
             "worktree",
             "add",
             "-b",
-            parent_branch,
+            branch_ref.as_str(),
             parent_wt.to_str().unwrap(),
-            "main",
+            "config/default",
         ],
     );
 }
@@ -118,19 +119,20 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
     // `<ts>-<short-id>` (ARCH §2.2). Find it by listing branches that
     // start with the parent prefix and pick the one that isn't the
     // parent itself.
-    let primary = dest.join("root");
+    let bare = dest.join("repo.git");
     let branches = git_capture(
-        &primary,
+        &bare,
         &[
             "branch",
             "--list",
             "--format=%(refname:short)",
-            &format!("{parent_branch}-*"),
+            &format!("agents/{parent_branch}-*"),
         ],
     );
     let sub_branch = branches
         .lines()
         .map(str::trim)
+        .filter_map(|b| b.strip_prefix("agents/"))
         .find(|b| !b.is_empty())
         .expect("worker branch listed");
     assert!(
@@ -144,19 +146,19 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
     // Worker worktree directory present (dispatch did NOT clean it up
     // — Phase 1 stops at the dispatch commit, which is the read state
     // for the worker's own step 1, not done in this phase).
-    let sub_wt = dest.join(sub_branch);
+    let sub_wt = dest.join("agents").join(sub_branch);
     assert!(sub_wt.exists(), "worker worktree must exist");
 
     // Goal and soul files committed on the dispatch commit's tree.
     // Read them out of the branch ref so the assertion is robust to
     // worktree mutation in later phases.
-    let goal_blob = git_capture(&primary, &["show", &format!("{sub_branch}:goal.md")]);
+    let goal_blob = git_capture(&bare, &["show", &format!("agents/{sub_branch}:goal.md")]);
     assert_eq!(
         goal_blob,
         goal_text.trim_end_matches('\n'),
         "goal.md mismatch"
     );
-    let soul_blob = git_capture(&primary, &["show", &format!("{sub_branch}:soul.md")]);
+    let soul_blob = git_capture(&bare, &["show", &format!("agents/{sub_branch}:soul.md")]);
     assert!(
         soul_blob.contains("# Worker"),
         "expected template worker soul, got: {soul_blob}"
@@ -164,27 +166,30 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
 
     // Dispatch commit is the tip of the worker branch (Phase 1 lands
     // exactly one commit past the parent's tip).
-    let parent_tip = git_capture(&primary, &["rev-parse", parent_branch]);
-    let sub_tip = git_capture(&primary, &["rev-parse", sub_branch]);
+    let parent_ref = format!("agents/{parent_branch}");
+    let sub_ref = format!("agents/{sub_branch}");
+    let parent_tip = git_capture(&bare, &["rev-parse", &parent_ref]);
+    let sub_tip = git_capture(&bare, &["rev-parse", &sub_ref]);
     assert_ne!(parent_tip, sub_tip, "worker tip must advance");
-    let parents = git_capture(&primary, &["log", "-1", "--pretty=%P", sub_branch]);
+    let parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &sub_ref]);
     assert_eq!(parents.split_whitespace().count(), 1);
     assert_eq!(parents.split_whitespace().next().unwrap(), parent_tip);
 
-    // Commit subject matches `dispatch: worker [<sub-branch>]`.
-    let subject = git_capture(&primary, &["log", "-1", "--pretty=%s", sub_branch]);
+    // Commit subject matches `dispatch: worker [<sub-branch>]` (the id,
+    // not the ref — ids are the identifier everywhere, §2.3).
+    let subject = git_capture(&bare, &["log", "-1", "--pretty=%s", &sub_ref]);
     assert_eq!(subject, format!("dispatch: worker [{sub_branch}]"));
 
-    // No merge-back yet (Phase 4): worker branch shows up as unmerged
-    // against the parent branch.
+    // No merge into the parent: the worker branch is unmerged against
+    // it (children return by message, §2.6 — nothing merges back).
     let unmerged = git_capture(
-        &primary,
+        &bare,
         &[
             "branch",
             "--list",
-            &format!("{parent_branch}-*"),
+            &format!("agents/{parent_branch}-*"),
             "--no-merged",
-            parent_branch,
+            &parent_ref,
         ],
     );
     assert!(unmerged.contains(sub_branch), "got {unmerged:?}");

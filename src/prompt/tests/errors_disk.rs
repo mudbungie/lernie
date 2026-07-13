@@ -16,14 +16,17 @@
 use super::fixtures::*;
 use crate::prompt::{Deps, Error, run};
 
-/// Index of `git rev-parse HEAD` on the StubGit's run log: 0 worktree
-/// add, 1 dispatch add, 2 dispatch commit, 3 the step-1 drain stray-probe
-/// (`git status`, §2.11), 4 user-message delivery add, 5 user-message
-/// delivery commit (§2.11 — the initial message is delivered through the
-/// front door before step 1's read state is captured), 6 rev-parse.
-/// Pinned as a constant so the transcript/terminal op-index labels stay
-/// readable.
-const REV_PARSE_INDEX: usize = 6;
+/// Indexes on the StubGit's run log. Control resolution runs first
+/// (§2.2): 0 config-head rev-parse, 1-3 the three `show` control reads.
+/// Branch work follows: 4 worktree add, 5 the dispatch commit's
+/// control-file removal (§2.3 step 2), 6 dispatch add, 7 dispatch
+/// commit, 8 the step-1 drain stray-probe (`git status`, §2.11), 9
+/// user-message delivery add, 10 user-message delivery commit (§2.11 —
+/// the initial message is delivered through the front door before step
+/// 1's read state is captured), 11 rev-parse. Pinned as constants so
+/// the transcript/terminal op-index labels stay readable.
+pub(super) const WORKTREE_ADD_INDEX: usize = 4;
+const REV_PARSE_INDEX: usize = 11;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the model-output entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream).
@@ -34,24 +37,6 @@ const TRANSCRIPT_COMMIT_INDEX: usize = TRANSCRIPT_ADD_INDEX + 1;
 /// ref. It is the last git op before the loop breaks; the deposit itself
 /// is a no-op for a root (no parent inbox, §2.4).
 const TERMINAL_REV_PARSE_INDEX: usize = TRANSCRIPT_COMMIT_INDEX + 1;
-
-#[test]
-fn run_surfaces_worktree_add_failure() {
-    // version guard passes; `git worktree add` fails (index 0).
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(&happy_response_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(0)).unwrap_err();
-    assert!(
-        matches!(
-            err,
-            Error::Git {
-                op: "worktree add",
-                ..
-            }
-        ),
-        "got {err:?}"
-    );
-}
 
 #[test]
 fn run_surfaces_worktree_create_failure() {
@@ -87,23 +72,6 @@ fn run_surfaces_soul_write_failure() {
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
-}
-
-#[test]
-fn run_surfaces_dispatch_add_failure() {
-    // git add for the dispatch commit fails (index 1).
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(&happy_response_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "add", .. }));
-}
-
-#[test]
-fn run_surfaces_dispatch_commit_failure() {
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let adapter = StubAdapter::happy(&happy_response_bytes());
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(2)).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "commit", .. }));
 }
 
 #[test]
@@ -214,13 +182,14 @@ fn run_surfaces_dispatcher_failure() {
         ),
         "got {err:?}"
     );
-    // Pre-dispatcher git op count: worktree add, dispatch add, dispatch
-    // commit, the step-1 drain stray-probe (§2.11), the user-message
-    // delivery add + commit (§2.11), rev-parse for meta, the model-output
-    // transcript entry's add + commit, plus the terminal result-deposit's
-    // branch-tip read (§2.6) = 10. The compactor dispatch is the next
-    // step, and it is the one that fails.
-    assert_eq!(git.runs.borrow().len(), 10, "compactor dispatch is next");
+    // Pre-dispatcher git op count: 4 control reads (§2.2), worktree
+    // add, control-file rm, dispatch add, dispatch commit, the step-1
+    // drain stray-probe (§2.11), the user-message delivery add + commit
+    // (§2.11), rev-parse for meta, the model-output transcript entry's
+    // add + commit, plus the terminal result-deposit's branch-tip read
+    // (§2.6) = 15. The compactor dispatch is the next step, and it is
+    // the one that fails.
+    assert_eq!(git.runs.borrow().len(), 15, "compactor dispatch is next");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,

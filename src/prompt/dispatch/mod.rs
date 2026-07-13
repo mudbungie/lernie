@@ -1,11 +1,13 @@
 //! Root-conversation branch orchestration (ARCH §2.3, §2.5, §2.6, §2.7,
 //! §2.8, §2.9, §2.10).
 //!
-//! [`run_exchange`] executes a single root conversation off `main`:
+//! [`run_exchange`] executes a single root conversation:
 //!
-//! 1. Spawn branch `<conv-id>` off `main` with a sibling worktree (§2.2).
-//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md` and commit —
-//!    that commit's tree *is* step 1's read state (§2.10).
+//! 1. Spawn branch `agents/<conv-id>` off the default config branch's
+//!    head, with a worktree under `<workspace>/agents/` (§2.2–§2.3).
+//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md`, remove
+//!    the config commit's control files from the tree (§2.2), and
+//!    commit — that commit's tree *is* step 1's read state (§2.10).
 //! 3. **Step loop (§2.5).** At each boundary the executor drains the
 //!    agent's inbox ([`drain`], §2.11), records the branch-tip sha, writes
 //!    the step record under `<conv-repo>/steps/<conv-id>/<NNN>/`, and
@@ -40,13 +42,13 @@ mod transcript;
 mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
+pub(crate) use step_commit::remove_control_files;
 pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
 use crate::config::{Budgets, Model, RetryConfig};
-use crate::template::ROOT_WORKTREE;
 use assembler::assemble;
 use brazen::Content;
 use model_call::ModelCall;
@@ -97,8 +99,7 @@ pub(super) fn run_exchange(
     let short_id = deps.id_gen.short();
     let conv_id = format!("{ts}-{short_id}");
     let branch_name = conv_id.clone();
-    let worktree_path = repo.join(&conv_id);
-    let primary_worktree = repo.join(ROOT_WORKTREE);
+    let worktree_path = crate::workspace::agent_worktree(repo, &conv_id);
 
     // Executor lock (§2.11): acquire the branch's inbox lease before any
     // work, held for the whole loop and kernel-released on exit. Losing
@@ -113,7 +114,7 @@ pub(super) fn run_exchange(
         None => return Ok(branch_name),
     };
 
-    spawn_branch(&primary_worktree, &worktree_path, &branch_name, deps)?;
+    spawn_branch(repo, &worktree_path, &conv_id, deps)?;
 
     // The initial user message enters through the front door (§2.4, §2.11):
     // deposited into this agent's own inbox and delivered by the step-1

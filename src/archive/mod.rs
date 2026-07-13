@@ -14,21 +14,15 @@
 //! Inspection is then the ordinary frontend over the scratch workspace
 //! (§3.5) — **replay is not a mode** (§2.3); it is plumbing plus a verb.
 //!
-//! > **Shipped-state note.** §9.2 says the governing config "travels
-//! > inside the archive" because the config-commit substrate (§2.2) makes
-//! > it an ancestor of every agent branch. In the shipped pre-substrate
-//! > layout the workspace's control files (`workflow.yaml`,
-//! > `manifest.yaml`, `providers.yaml`, `version`, `souls/`) live
-//! > *untracked* at the workspace root, outside the `root/` git dir, so
-//! > they are not reachable from any branch and do not enter the bundle.
-//! > The shipped bundle/replay therefore targets §9.2's primary use —
-//! > inspection of the branch tree, transcripts, and diagnostic slices —
-//! > for which the branches plus slices are self-contained. Re-execution
-//! > fidelity additionally needs the config; when the config-commit
-//! > substrate lands, the config folds into the bundle's ancestry with no
-//! > change to this verb surface.
+//! With the workspace substrate (§2.2), the governing config commit is
+//! an ancestor of every agent branch, so it travels inside the bundle's
+//! ancestry exactly as §9.2 promises — no config sidecar. (The bundle's
+//! *refs* are the `agents/*` subtree only; the config commit rides as a
+//! reachable object, and the agent's governing commit is re-derivable
+//! from the dispatch commit's parent.)
 
 use crate::template::GitRunner;
+use crate::workspace;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -39,9 +33,6 @@ mod tests;
 /// The bundle filename inside an archive directory (§9.2 "One `git
 /// bundle`").
 pub const BUNDLE_FILE: &str = "agents.bundle";
-/// The workspace subdirectory holding the primary (`root/`) worktree and
-/// the only git dir (§2.2) — `git bundle create` runs against it.
-const ROOT_WORKTREE: &str = "root";
 /// The diagnostic slice directory names carried beside the bundle (§2.2).
 const SLICES: [&str; 2] = ["steps", "inbox"];
 
@@ -69,20 +60,22 @@ pub enum ArchiveError {
 }
 
 /// Archive the agent subtree rooted at `agent_id` into `out_dir` (§9.2):
-/// one `git bundle` of `<agent_id>` and its hyphen-descendants (with all
-/// ancestry they reach), plus the `steps/<id>*` and `inbox/<id>*` slices.
+/// one `git bundle` of `agents/<agent_id>` and its hyphen-descendants
+/// (with all ancestry they reach — the governing config commit included,
+/// §2.2), plus the `steps/<id>*` and `inbox/<id>*` slices.
 ///
-/// The bundle's refs are enumerated with `git branch --list` (the pattern
-/// `<id>` plus `<id>-*` is the §2.3 descent namespace); an agent id that
-/// matches no branch is [`ArchiveError::UnknownAgent`].
+/// The bundle's refs are enumerated with `git branch --list` against the
+/// bare `repo.git` (the pattern `agents/<id>` plus `agents/<id>-*` is
+/// the §2.3 descent namespace); an agent id that matches no branch is
+/// [`ArchiveError::UnknownAgent`].
 pub fn bundle(
-    workspace: &Path,
+    ws: &Path,
     agent_id: &str,
     out_dir: &Path,
     git: &dyn GitRunner,
 ) -> Result<(), ArchiveError> {
-    let root = workspace.join(ROOT_WORKTREE);
-    let refs = subtree_refs(&root, agent_id, git)?;
+    let repo = workspace::repo_git(ws);
+    let refs = subtree_refs(&repo, agent_id, git)?;
     if refs.is_empty() {
         return Err(ArchiveError::UnknownAgent(agent_id.to_owned()));
     }
@@ -91,24 +84,25 @@ pub fn bundle(
     let bundle_str = bundle_path.to_string_lossy().into_owned();
     let mut args: Vec<&str> = vec!["bundle", "create", &bundle_str];
     args.extend(refs.iter().map(String::as_str));
-    git.run(&root, &args).map_err(|source| ArchiveError::Git {
+    git.run(&repo, &args).map_err(|source| ArchiveError::Git {
         op: "bundle create",
         source,
     })?;
     for slice in SLICES {
-        copy_matching(&workspace.join(slice), &out_dir.join(slice), agent_id)?;
+        copy_matching(&ws.join(slice), &out_dir.join(slice), agent_id)?;
     }
     Ok(())
 }
 
 /// Reconstruct a scratch workspace from an archive directory under
-/// `scratch_base` (§9.2). Fetches every branch out of `<archive>/agents.bundle`
-/// into a fresh `root/` repo, materializes the subtree root's worktree as
-/// a sibling (§2.2), and restores the `steps/` and `inbox/` slices.
-/// Returns the scratch workspace path — the frontend inspects it directly.
+/// `scratch_base` (§9.2). Fetches every branch out of
+/// `<archive>/agents.bundle` into a fresh bare `repo.git` (§2.2),
+/// materializes the subtree root's worktree under `agents/`, and
+/// restores the `steps/` and `inbox/` slices. Returns the scratch
+/// workspace path — the frontend inspects it directly.
 ///
 /// The scratch workspace is `<scratch_base>/<primary-id>`, where the
-/// **primary id** is the shortest branch in the bundle (every other
+/// **primary id** is the shortest agent id in the bundle (every other
 /// branch is one of its hyphen-descendants, §2.3). It must not already
 /// exist ([`ArchiveError::DestExists`]).
 pub fn replay(
@@ -126,25 +120,26 @@ pub fn replay(
     if scratch.exists() {
         return Err(ArchiveError::DestExists(scratch));
     }
-    let root = scratch.join(ROOT_WORKTREE);
-    fs::create_dir_all(&root)?;
-    // Absolute bundle path: `-C root` moves git's cwd, so a relative
+    let repo = workspace::repo_git(&scratch);
+    fs::create_dir_all(&repo)?;
+    // Absolute bundle path: `-C repo.git` moves git's cwd, so a relative
     // spelling would resolve against the wrong directory.
     let bundle_abs = fs::canonicalize(&bundle_path)?;
     let bundle_arg = bundle_abs.to_string_lossy().into_owned();
-    run(git, &root, &["init", "-q", "-b", "main"], "init")?;
+    run(git, &repo, &["init", "-q", "--bare"], "init")?;
     run(
         git,
-        &root,
+        &repo,
         &["fetch", &bundle_arg, "refs/heads/*:refs/heads/*"],
         "fetch",
     )?;
-    let primary_wt = scratch.join(primary);
+    let primary_ref = workspace::agent_ref(primary);
+    let primary_wt = workspace::agent_worktree(&scratch, primary);
     let primary_wt_str = primary_wt.to_string_lossy().into_owned();
     run(
         git,
-        &root,
-        &["worktree", "add", &primary_wt_str, primary],
+        &repo,
+        &["worktree", "add", &primary_wt_str, &primary_ref],
         "worktree add",
     )?;
     for slice in SLICES {
@@ -169,22 +164,24 @@ pub fn replay_cli(archive: &Path) -> Result<PathBuf, ArchiveError> {
     )
 }
 
-/// Enumerate the subtree's branches: `<agent_id>` and every
-/// `<agent_id>-*` hyphen-descendant (§2.3), via `git branch --list`.
+/// Enumerate the subtree's branches: `agents/<agent_id>` and every
+/// `agents/<agent_id>-*` hyphen-descendant (§2.3), via
+/// `git branch --list` against the bare repo.git.
 fn subtree_refs(
-    root: &Path,
+    repo: &Path,
     agent_id: &str,
     git: &dyn GitRunner,
 ) -> Result<Vec<String>, ArchiveError> {
-    let descendants = format!("{agent_id}-*");
+    let subtree_root = workspace::agent_ref(agent_id);
+    let descendants = format!("{subtree_root}-*");
     let out = git
         .run_capture(
-            root,
+            repo,
             &[
                 "branch",
                 "--list",
                 "--format=%(refname:short)",
-                agent_id,
+                subtree_root.as_str(),
                 &descendants,
             ],
         )
@@ -200,7 +197,8 @@ fn subtree_refs(
         .collect())
 }
 
-/// The branch names a bundle carries, via `git bundle list-heads`.
+/// The agent ids a bundle carries (the `refs/heads/agents/` prefix
+/// stripped, §2.3), via `git bundle list-heads`.
 fn bundle_heads(
     dir: &Path,
     bundle_path: &Path,
@@ -217,19 +215,21 @@ fn bundle_heads(
         .lines()
         .filter_map(|l| {
             let refname = l.split_whitespace().nth(1)?;
+            let short = refname.strip_prefix("refs/heads/").unwrap_or(refname);
             Some(
-                refname
-                    .strip_prefix("refs/heads/")
-                    .unwrap_or(refname)
+                short
+                    .strip_prefix(workspace::AGENT_REF_PREFIX)
+                    .unwrap_or(short)
                     .to_owned(),
             )
         })
         .collect())
 }
 
-/// The subtree root among `heads`: the shortest branch, of which every
-/// other is a hyphen-descendant (§2.3). Empty is [`ArchiveError::EmptyBundle`];
-/// heads sharing no such root is [`ArchiveError::MalformedBundle`].
+/// The subtree root among `heads` (agent ids): the shortest, of which
+/// every other is a hyphen-descendant (§2.3). Empty is
+/// [`ArchiveError::EmptyBundle`]; heads sharing no such root is
+/// [`ArchiveError::MalformedBundle`].
 fn primary_head(heads: &[String]) -> Result<&str, ArchiveError> {
     let primary = heads
         .iter()

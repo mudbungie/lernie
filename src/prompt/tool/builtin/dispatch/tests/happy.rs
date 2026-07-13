@@ -8,10 +8,10 @@ use std::io::Cursor;
 
 #[test]
 fn happy_path_writes_handle_json_and_forwards_args() {
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "do the thing"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1-conv");
+    let env = env(&repo, "p1-conv");
     let spawner = StubSpawner::ok("p1-conv-ct9-feedface");
 
     run(&mut stdin, &mut stdout, &env, &spawner).unwrap();
@@ -23,7 +23,7 @@ fn happy_path_writes_handle_json_and_forwards_args() {
     let calls = spawner.calls.borrow();
     assert_eq!(calls.len(), 1);
     assert_eq!(calls[0].0, "worker");
-    assert_eq!(calls[0].1, repo.path());
+    assert_eq!(calls[0].1, repo);
     assert_eq!(calls[0].2, "p1-conv");
     assert_eq!(calls[0].3, "do the thing");
 }
@@ -32,10 +32,10 @@ fn happy_path_writes_handle_json_and_forwards_args() {
 fn handle_is_trimmed_of_trailing_whitespace() {
     // `lernie dispatch worker` prints with a trailing newline; the
     // handle on the wire must not carry it.
-    let repo = fake_repo("worker");
+    let (_h, repo) = fake_repo("worker");
     let mut stdin = Cursor::new(input_for("worker", "g"));
     let mut stdout = Vec::new();
-    let env = env(repo.path(), "p1");
+    let env = env(&repo, "p1");
     let spawner = StubSpawner::ok("p1-sub  ");
 
     run(&mut stdin, &mut stdout, &env, &spawner).unwrap();

@@ -73,7 +73,7 @@ fn write(path: &Path, body: &str) {
     fs::write(path, body).unwrap();
 }
 
-const REFS: &str = "20260101-p1\n20260101-p1-20260102-c1\n";
+const REFS: &str = "agents/20260101-p1\nagents/20260101-p1-20260102-c1\n";
 const AGENT: &str = "20260101-p1";
 
 // ---- bundle -------------------------------------------------------------
@@ -94,8 +94,8 @@ fn bundle_writes_bundle_and_matching_slices() {
     let runs = git.runs.borrow();
     assert_eq!(runs[0][0], "bundle");
     assert_eq!(runs[0][1], "create");
-    assert!(runs[0].contains(&"20260101-p1".to_owned()));
-    assert!(runs[0].contains(&"20260101-p1-20260102-c1".to_owned()));
+    assert!(runs[0].contains(&"agents/20260101-p1".to_owned()));
+    assert!(runs[0].contains(&"agents/20260101-p1-20260102-c1".to_owned()));
     // The matching slice copied; the unrelated sibling did not.
     assert!(out.path().join("steps/20260101-p1/001/meta.json").exists());
     assert!(!out.path().join("steps/20260101-other").exists());
@@ -154,7 +154,8 @@ fn bundle_surfaces_bundle_create_failure() {
 
 /// Canned `git bundle list-heads` output for the two-branch subtree,
 /// including a short line to exercise the parse filter.
-const HEADS: &str = "sha1 refs/heads/20260101-p1\nsha2 refs/heads/20260101-p1-20260102-c1\n\n";
+const HEADS: &str =
+    "sha1 refs/heads/agents/20260101-p1\nsha2 refs/heads/agents/20260101-p1-20260102-c1\n\n";
 
 /// An archive dir with a (touched) bundle file plus both slices.
 fn archive_with_bundle() -> tempfile::TempDir {
@@ -207,7 +208,7 @@ fn replay_rejects_malformed_bundle() {
     let arch = archive_with_bundle();
     let base = tmp();
     // Two heads sharing no common subtree root.
-    let git = StubGit::new("s1 refs/heads/aa-b\ns2 refs/heads/xx-y\n");
+    let git = StubGit::new("s1 refs/heads/agents/aa-b\ns2 refs/heads/agents/xx-y\n");
     let err = replay(arch.path(), base.path(), &git).unwrap_err();
     assert!(matches!(err, ArchiveError::MalformedBundle(_)), "{err:?}");
 }

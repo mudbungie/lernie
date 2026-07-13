@@ -80,6 +80,34 @@ pub fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
     path
 }
 
+/// `<workspace>/repo.git` — the bare workspace repository (ARCH §2.2).
+pub fn repo_git(dest: &Path) -> std::path::PathBuf {
+    dest.join("repo.git")
+}
+
+/// Advance `config/default` with the given control files — the
+/// harness-assisted config-commit authoring of ARCH §2.2, done the way
+/// a user would: a transient checkout, edits, one commit.
+pub fn amend_config(dest: &Path, files: &[(&str, &str)]) {
+    let author = dest.join(".amend-config");
+    let author_str = author.to_string_lossy().to_string();
+    git_run(
+        &repo_git(dest),
+        &["worktree", "add", author_str.as_str(), "config/default"],
+    );
+    for (rel, content) in files {
+        let path = author.join(rel);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, content).unwrap();
+    }
+    git_run(&author, &["add", "-A"]);
+    git_run(&author, &["commit", "-m", "config: amend"]);
+    git_run(
+        &repo_git(dest),
+        &["worktree", "remove", author_str.as_str()],
+    );
+}
+
 pub fn scaffold_repo(dest: &Path, harness: &Path) {
     let out = Command::new(lernie_bin())
         .arg("new")
@@ -92,10 +120,14 @@ pub fn scaffold_repo(dest: &Path, harness: &Path) {
         "lernie new: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    // Point both roles at the fixture `test` brazen row (§4.3).
-    fs::write(
-        dest.join("providers.yaml"),
-        "\
+    // Point both roles at the fixture `test` brazen row (§4.3) — a
+    // config-commit amendment, since control lives in the config
+    // lineage (§2.2), never as loose files.
+    amend_config(
+        dest,
+        &[(
+            "providers.yaml",
+            "\
 roles:
   worker:
     provider: test
@@ -104,23 +136,24 @@ roles:
     provider: test
     model: claude-haiku-4-5
 ",
-    )
-    .unwrap();
+        )],
+    );
 }
 
-/// Block until the conversation branch exists in `<repo>/root/`'s
-/// refs, or the deadline expires. The branch name is the bare conv-id
-/// (`<ts>-<short-id>`, 25 chars per §2.3) — the only ref of that
-/// shape in a fresh repo. Panics on early prompt exit (so the caller
-/// sees the prompt's stderr) or on timeout.
+/// Block until an agent branch exists under `agents/*` in the
+/// workspace's `repo.git`, or the deadline expires. The agent id is a
+/// bare root conv-id (`<ts>-<short-id>`, 25 chars per §2.3) — the only
+/// ref of that shape in a fresh workspace. Panics on early prompt exit
+/// (so the caller sees the prompt's stderr) or on timeout.
 pub fn poll_for_conv_branch_with_diag(
-    primary: &Path,
+    dest: &Path,
     deadline: Duration,
     prompt_child: &mut Child,
 ) -> String {
+    let repo = repo_git(dest);
     let until = Instant::now() + deadline;
     loop {
-        if let Some(name) = scan_conv_branches(primary) {
+        if let Some(name) = scan_conv_branches(&repo) {
             return name;
         }
         if let Ok(Some(status)) = prompt_child.try_wait() {
@@ -136,14 +169,14 @@ pub fn poll_for_conv_branch_with_diag(
         }
         if Instant::now() >= until {
             let buf = drain_stderr(prompt_child);
-            let branches = git_command(primary, &["branch", "--list"])
+            let branches = git_command(&repo, &["for-each-ref"])
                 .output()
                 .expect("spawn git");
             let _ = prompt_child.kill();
             let _ = prompt_child.wait();
             panic!(
-                "timeout waiting for conversation branch under {}; branches: {:?}; stderr: {}",
-                primary.display(),
+                "timeout waiting for an agents/* branch under {}; refs: {:?}; stderr: {}",
+                repo.display(),
                 String::from_utf8_lossy(&branches.stdout),
                 String::from_utf8_lossy(&buf)
             );
@@ -167,18 +200,25 @@ fn drain_stderr(child: &mut Child) -> Vec<u8> {
     buf
 }
 
-fn scan_conv_branches(primary: &Path) -> Option<String> {
-    let out = git_command(primary, &["branch", "--list"])
-        .output()
-        .expect("spawn git branch");
+fn scan_conv_branches(repo: &Path) -> Option<String> {
+    let out = git_command(
+        repo,
+        &[
+            "for-each-ref",
+            "--format=%(refname:short)",
+            "refs/heads/agents/",
+        ],
+    )
+    .output()
+    .expect("spawn git for-each-ref");
     if !out.status.success() {
         return None;
     }
     let s = String::from_utf8_lossy(&out.stdout);
     for line in s.lines() {
-        // git prefixes lines with '*' (current), '+' (checked out
-        // in another worktree), or ' ' (other) followed by a space.
-        let name = line.trim_start_matches(['*', '+', ' ']).trim();
+        let Some(name) = line.trim().strip_prefix("agents/") else {
+            continue;
+        };
         if name.len() == 25 && name.chars().filter(|c| *c == '-').count() == 1 {
             return Some(name.to_owned());
         }

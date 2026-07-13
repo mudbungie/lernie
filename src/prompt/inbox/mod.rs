@@ -217,6 +217,8 @@ pub fn probe_and_launch(
 pub enum MessageError {
     #[error(transparent)]
     Deposit(#[from] DepositError),
+    #[error(transparent)]
+    Layout(#[from] crate::workspace::LayoutError),
     #[error("probe executor lock: {0}")]
     Probe(#[source] io::Error),
     #[error("resolve lernie binary for the driver launch: {0}")]
@@ -247,6 +249,7 @@ pub fn cli_message(
 /// and wires the production clock plus the real [`AdvanceLauncher`]
 /// detached spawn (§2.11).
 pub fn cli_run(workspace: &Path, agent: &str, content: &str) -> Result<(), MessageError> {
+    crate::workspace::require(workspace)?;
     let sender =
         resolve_cli_sender(std::env::var_os(crate::prompt::tool::ENV_CONV_BRANCH).as_deref());
     let launcher = AdvanceLauncher::current().map_err(MessageError::Exe)?;

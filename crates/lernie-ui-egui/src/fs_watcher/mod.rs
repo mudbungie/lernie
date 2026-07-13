@@ -21,36 +21,27 @@ use notify::{
     event::{EventKind, ModifyKind, RenameMode},
 };
 
-/// Conv-repo control-plane paths (ARCH §2.2, §3.5). These live at the
-/// conv-repo root, outside any worktree. `steps/` joined this set in
-/// v0.3.1 when step records relocated out of every worktree
-/// (ARCH §2.2 / §2.3 / §3.5).
-const ROOT_CONTROL_PREFIXES: &[&str] = &[
-    "manifest.yaml",
-    "workflow.yaml",
-    "providers.yaml",
-    "version",
-    "souls",
-    "steps",
-];
+/// Workspace-root paths (ARCH §2.2, §3.5): the shared `steps/` and
+/// `inbox/` trees, outside every worktree, namespaced by agent id.
+/// Control files are no longer loose here — they live in the config
+/// commit (§2.2), observed through the refs below.
+const ROOT_CONTROL_PREFIXES: &[&str] = &["steps", "inbox"];
 
-/// Per-worktree paths (ARCH §2.2 layout). Each conversation occupies a
-/// sibling worktree directory under the conv-repo root (`root/` for the
-/// root conversation, `<a>-<b>/` etc. for subagents), with this set of
-/// files inside.
+/// Per-agent-worktree paths (ARCH §2.2 layout). Each agent occupies a
+/// worktree at `agents/<agent-id>/`, with this set of files inside.
 const WORKTREE_PREFIXES: &[&str] = &[
     "goal.md",
     "soul.md",
     "summary",
+    "messages",
     "descriptions",
     "skills",
-    ".gitattributes",
 ];
 
-/// Refs and HEAD live under the primary worktree's `.git/` directory
+/// Refs and HEAD live in the bare workspace repository at `repo.git`
 /// (ARCH §2.2). Branch existence is read from refs/ — no sidecar state
 /// file (PRINCIPLES.md "Single source of truth").
-const REFS_PREFIXES: &[&str] = &["root/.git/HEAD", "root/.git/refs"];
+const REFS_PREFIXES: &[&str] = &["repo.git/HEAD", "repo.git/refs"];
 
 #[derive(Debug, thiserror::Error)]
 #[error("filesystem watcher: {0}")]
@@ -177,14 +168,14 @@ fn is_watched(repo_root: &Path, path: &Path) -> bool {
     if matches_any(&rel_str, REFS_PREFIXES) {
         return true;
     }
-    // Per-worktree paths live one segment deep: `<workdir>/<prefix>...`.
-    // The worktree dir is `root/` for the root conversation and
-    // `<a>-<b>[-<c>]…/` for subagents (ARCH §2.2). The watcher does not
-    // enumerate worktree names — any first segment is admissible, the
-    // tail is what determines a hit.
-    if let Some((_workdir, tail)) = rel_str.split_once('/') {
-        if matches_any(tail, WORKTREE_PREFIXES) {
-            return true;
+    // Per-agent-worktree paths live under `agents/<agent-id>/…` (ARCH
+    // §2.2). The watcher does not enumerate agent ids — any id segment
+    // is admissible, the tail is what determines a hit.
+    if let Some(agents_tail) = rel_str.strip_prefix("agents/") {
+        if let Some((_agent_id, tail)) = agents_tail.split_once('/') {
+            if matches_any(tail, WORKTREE_PREFIXES) {
+                return true;
+            }
         }
     }
     false

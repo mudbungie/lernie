@@ -2,9 +2,11 @@
 //!
 //! Surface:
 //!
-//! - `new <path>` — scaffold a conversation repo (ARCH §2.2).
+//! - `new <path>` — create a workspace and author its first config
+//!   commit on `config/default` (ARCH §2.2).
 //! - `prompt <repo> <message>` — drive one root conversation: spawn the
-//!   `<conv-id>` branch, model-call via `bz` (§4.4), compact (§2.6).
+//!   `agents/<conv-id>` branch off the default config branch's head,
+//!   model-call via `bz` (§4.4), compact (§2.6).
 //! - `dispatch <role> <repo> <branch> [--goal <text>]` — subagent dispatch
 //!   re-entry (ARCH §3.4); per-role `--goal` rules validated in
 //!   [`prompt::dispatch_cli::run`], not the clap surface.
@@ -42,8 +44,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Create a new conversation repo (ARCH §2.2). No argument scaffolds
-    /// at `<data-root>/conversations/<auto-id>/`; a path scaffolds there.
+    /// Create a new workspace (ARCH §2.2): a bare repo.git plus the
+    /// first config commit on `config/default`. No argument creates
+    /// `<data-root>/workspaces/<auto-id>/`; a path creates there.
     New { path: Option<PathBuf> },
     /// Send one user message on a fresh root branch; prints its name.
     Prompt { repo: PathBuf, message: String },
@@ -131,7 +134,7 @@ fn main() -> ExitCode {
                 Err(e) => return fail("lernie new", e),
             };
             let dest =
-                path.unwrap_or_else(|| roots.data.join("conversations").join(NanoIdGen.short()));
+                path.unwrap_or_else(|| roots.data.join("workspaces").join(NanoIdGen.short()));
             match template::scaffold(&dest, &roots.data, &RealGit::new()) {
                 Ok(()) => {
                     println!("{}", dest.display());

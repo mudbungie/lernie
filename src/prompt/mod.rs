@@ -1,12 +1,15 @@
 //! `lernie prompt` — root-conversation backend (ARCH §2.3).
 //!
-//! Each prompt spawns a `<conv-id>` branch off `main`, commits the
-//! dispatch snapshot (§2.10), drives the step loop through brazen's `bz`
-//! (§4.4), lands each step's response as attempt segments, and dispatches
-//! the terminal compactor off the tip — the compaction merge, the one
-//! merge left in the system (§2.6, §2.7). Merge-back is gone: the root
-//! branch persists on its own ref (§2.4), and a child returns by
-//! depositing a result message into its parent's inbox (§2.6).
+//! Each prompt spawns an `agents/<conv-id>` branch off the default
+//! config branch's head (§2.2–§2.3 — there is no `main`), commits the
+//! dispatch commit (§2.10) — which also removes the harness-facing
+//! control files from the agent's tree (§2.2) — drives the step loop
+//! through brazen's `bz` (§4.4), lands each step's response as attempt
+//! segments, and dispatches the terminal compactor off the tip — the
+//! compaction merge, the one merge left in the system (§2.6, §2.7).
+//! Merge-back is gone: the root branch persists on its own ref (§2.4),
+//! and a child returns by depositing a result message into its parent's
+//! inbox (§2.6).
 //!
 //! Provider plumbing follows ARCH §4.4: every model call execs `bz`
 //! (`bz --json --provider <row>`, canonical request on stdin, `v=1`
@@ -15,9 +18,10 @@
 //! references a provider *row* by name and never sees credential
 //! material (§4.1). Config: the global `<harness-root>/models.yaml`
 //! carries capabilities / context windows / the optional `adapter:`
-//! override (§4.2); the per-repo `<conv-repo>/providers.yaml` carries
-//! the role → (provider row, model, tools) mapping (§4.3). Retry policy
-//! (attempt cap + backoff) is `workflow.yaml`'s (§6).
+//! override (§4.2); the config commit's `providers.yaml` carries the
+//! role → (provider row, model, tools) mapping (§4.3), read from the
+//! governing config commit (§2.2). Retry policy (attempt cap + backoff)
+//! is `workflow.yaml`'s (§6).
 //!
 //! [`run`] is orchestrated against injected [`AdapterRunner`],
 //! [`Sleeper`], [`GitRunner`], [`Clock`], and [`IdGen`] so every branch
@@ -54,15 +58,15 @@ use crate::template::GitRunner;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
-/// Role name resolved from per-repo `providers.yaml` (`roles:` block,
-/// ARCH §4.3) to drive the root conversation.
+/// Role name resolved from the config commit's `providers.yaml`
+/// (`roles:` block, ARCH §4.3) to drive the root conversation.
 const WORKER_ROLE: &str = "worker";
-/// Per-conv-repo directory holding the role souls (ARCH §4.3 — soul =
-/// `<conv-repo>/souls/<role>.md` by convention).
+/// Directory in the config commit's tree holding the role souls (ARCH
+/// §4.3 — soul = `souls/<role>.md` in the governing config commit).
 pub(crate) const SOULS_DIR: &str = "souls";
-/// Per-conv-repo control file naming the role → (provider row, model,
-/// tools) assignments (ARCH §4.3). Lives at the conv-repo root, outside
-/// any worktree (§2.2 control vs data plane).
+/// Control file naming the role → (provider row, model, tools)
+/// assignments (ARCH §4.3). Read from the governing config commit's
+/// tree (§2.2), never from a worktree file.
 const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// Global control file naming model capabilities / context windows and
 /// the optional `adapter:` override (ARCH §4.2). Lives at the harness
@@ -87,17 +91,19 @@ pub enum Error {
     HarnessRoot(#[from] crate::harness_root::Error),
     #[error("providers.yaml has no {0:?} role")]
     RoleMissing(String),
+    #[error(transparent)]
+    Layout(#[from] crate::workspace::LayoutError),
+    #[error("read control {path} from the config commit (§2.2): {source}")]
+    ControlRead {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
     #[error(
         "model id {0:?} collides with the reserved transcript origin token `tool` (§2.3); \
          rename the model row"
     )]
     ReservedModelId(String),
-    #[error("read soul {path}: {source}")]
-    SoulRead {
-        path: PathBuf,
-        #[source]
-        source: std::io::Error,
-    },
     #[error("i/o writing conversation artifact: {0}")]
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
@@ -214,11 +220,16 @@ pub struct Deps<'a> {
     pub launcher: &'a dyn inbox::Launcher,
 }
 
-/// Drive one root conversation against `repo`: load configs, run the
-/// load-time version guard, spawn the conversation branch, drive the
-/// step loop through `bz`, and merge back. Returns the branch name (the
-/// bare `<conv-id>`, ARCH §2.3).
+/// Drive one root conversation against the workspace at `repo`: check
+/// the layout (§2.2 — pre-v1 clean break on the retired
+/// per-conversation layout), resolve the worker role against the
+/// default config branch's head (the commit the new agent forks off,
+/// §2.3), run the load-time version guard, spawn the agent branch, and
+/// drive the step loop through `bz`. Returns the agent id (the full
+/// hyphenated descent — the branch ref is `agents/<id>`, ARCH §2.3).
 pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
-    let cfg = resolve::resolve_worker(repo, deps)?;
+    crate::workspace::require(repo)?;
+    let source = resolve::ConfigSource::ConfigBranch(crate::workspace::DEFAULT_CONFIG_REF);
+    let cfg = resolve::resolve_worker(repo, source, deps)?;
     dispatch::run_exchange(repo, user_message, &cfg.as_resolved(), deps)
 }

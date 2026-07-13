@@ -12,14 +12,10 @@ use std::sync::Mutex;
 
 pub(super) struct StubInspector {
     pub(super) exists: bool,
-    pub(super) merged: bool,
 }
 impl BranchInspector for StubInspector {
     fn exists(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
         Ok(self.exists)
-    }
-    fn is_merged_into_main(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
-        Ok(self.merged)
     }
 }
 
@@ -27,19 +23,6 @@ pub(super) struct ErrInspector;
 impl BranchInspector for ErrInspector {
     fn exists(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
         Err(io::Error::other("rev-parse blew up"))
-    }
-    fn is_merged_into_main(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
-        unreachable!()
-    }
-}
-
-pub(super) struct ErrMergedInspector;
-impl BranchInspector for ErrMergedInspector {
-    fn exists(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
-        Ok(true)
-    }
-    fn is_merged_into_main(&self, _: &Path, _: &str, _: &dyn GitRunner) -> io::Result<bool> {
-        Err(io::Error::other("merge-base blew up"))
     }
 }
 

@@ -14,12 +14,10 @@ use crate::prompt::inbox::{INBOX_DIR, inbox_dir, try_acquire};
 use crate::prompt::step::{RESPONSE_FILE, STEPS_DIR};
 use crate::provider::segment::{Outcome, classify};
 use crate::template::GitRunner;
+use crate::workspace;
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// The reserved non-agent branch: the ref every agent branch forks off
-/// (§2.3). Excluded from the sweep's candidate enumeration.
-const MAIN_BRANCH: &str = "main";
 /// The transcript directory a delivered message lands in, as
 /// `messages/<NNN>-<sender>.md` (§2.11 *Delivery*). Read via `git
 /// ls-tree` off the parent branch to detect a *delivered* return.
@@ -27,23 +25,18 @@ const MESSAGES_DIR: &str = "messages";
 /// Message-file extension (§2.11 *Deposit* — `<sender>-<NNN>.md`).
 const MESSAGE_EXT: &str = "md";
 
-/// The candidate branch set: every branch except `main` (§8, and the
-/// shipped-namespace note in [`super`] — bare agent branches, no
-/// `agents/` prefix). Read with `git branch --list`, one short refname
-/// per line.
-pub(super) fn agent_branches(root: &Path, git: &dyn GitRunner) -> Result<Vec<String>, ScanError> {
-    let out = git
-        .run_capture(root, &["branch", "--list", "--format=%(refname:short)"])
-        .map_err(|source| ScanError::Git {
-            op: "branch --list",
-            source,
-        })?;
-    Ok(out
-        .lines()
-        .map(str::trim)
-        .filter(|b| !b.is_empty() && *b != MAIN_BRANCH)
-        .map(str::to_string)
-        .collect())
+/// The candidate agent set (§8): every `agents/*` ref, prefix stripped
+/// to the agent id. This is the enumeration seam §8 names — the prefix
+/// is the kind (§2.3), so config branches are excluded structurally,
+/// not by subtracting a reserved name.
+pub(super) fn agent_branches(
+    workspace: &Path,
+    git: &dyn GitRunner,
+) -> Result<Vec<String>, ScanError> {
+    workspace::agent_ids(workspace, git).map_err(|source| ScanError::Git {
+        op: "for-each-ref agents/",
+        source,
+    })
 }
 
 /// Is `branch` currently driven? A non-blocking [`try_acquire`] whose
@@ -67,7 +60,6 @@ pub(super) fn is_driven(workspace: &Path, branch: &str) -> Result<bool, ScanErro
 /// already happened, so the sweep must not deposit again.
 pub(super) fn returned(
     workspace: &Path,
-    root: &Path,
     git: &dyn GitRunner,
     parent: &str,
     child: &str,
@@ -75,7 +67,7 @@ pub(super) fn returned(
     if has_inbox_message(workspace, parent, child) {
         return Ok(true);
     }
-    transcript_has(root, git, parent, child)
+    transcript_has(workspace, git, parent, child)
 }
 
 /// Is there an undelivered message *from* `child` in `parent`'s inbox — a
@@ -103,18 +95,26 @@ pub(super) fn is_message_from(name: &str, sender: &str) -> bool {
 
 /// Has a message from `child` been *delivered* into `parent`'s transcript
 /// — a committed `messages/<NNN>-<child>.md` on the parent branch? Read
-/// with `git ls-tree` off the branch ref, so a torn-down worktree is no
-/// obstacle (§2.3 step 6).
+/// with `git ls-tree` off the `agents/<parent>` ref against the bare
+/// repo.git, so a torn-down worktree is no obstacle (§2.3 step 6).
 fn transcript_has(
-    root: &Path,
+    ws: &Path,
     git: &dyn GitRunner,
     parent: &str,
     child: &str,
 ) -> Result<bool, ScanError> {
+    let parent_ref = workspace::agent_ref(parent);
     let out = git
         .run_capture(
-            root,
-            &["ls-tree", "-r", "--name-only", parent, "--", MESSAGES_DIR],
+            &workspace::repo_git(ws),
+            &[
+                "ls-tree",
+                "-r",
+                "--name-only",
+                parent_ref.as_str(),
+                "--",
+                MESSAGES_DIR,
+            ],
         )
         .map_err(|source| ScanError::Git {
             op: "ls-tree messages",
@@ -167,14 +167,19 @@ fn latest_step_dir(steps: &Path) -> Option<PathBuf> {
 }
 
 /// The branch tip sha — the child's `terminal_ref:` for the sweep's
-/// `died` deposit (§2.6). `git rev-parse --verify <branch>`.
+/// `died` deposit (§2.6). `git rev-parse --verify agents/<id>` against
+/// the bare repo.git.
 pub(super) fn branch_tip(
-    root: &Path,
+    ws: &Path,
     git: &dyn GitRunner,
     branch: &str,
 ) -> Result<String, ScanError> {
+    let branch_ref = workspace::agent_ref(branch);
     let out = git
-        .run_capture(root, &["rev-parse", "--verify", branch])
+        .run_capture(
+            &workspace::repo_git(ws),
+            &["rev-parse", "--verify", branch_ref.as_str()],
+        )
         .map_err(|source| ScanError::Git {
             op: "rev-parse branch tip",
             source,

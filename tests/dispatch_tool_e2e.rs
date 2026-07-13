@@ -62,17 +62,18 @@ fn scaffold_repo(dest: &Path, harness: &Path) {
 }
 
 fn fabricate_parent(repo: &Path, parent_branch: &str) {
-    let primary = repo.join("root");
-    let parent_wt = repo.join(parent_branch);
+    let bare = repo.join("repo.git");
+    let parent_wt = repo.join("agents").join(parent_branch);
+    let branch_ref = format!("agents/{parent_branch}");
     git_run(
-        &primary,
+        &bare,
         &[
             "worktree",
             "add",
             "-b",
-            parent_branch,
+            branch_ref.as_str(),
             parent_wt.to_str().unwrap(),
-            "main",
+            "config/default",
         ],
     );
 }
@@ -126,18 +127,20 @@ fn dispatch_tool_returns_handle_and_spawns_worker_branch() {
     );
 
     // The subagent worktree was actually created at the handle path
-    // (Phase 1's CLI does the worktree allocation + dispatch commit).
+    // under agents/ (Phase 1's CLI does the worktree allocation +
+    // dispatch commit; §2.2 sibling worktrees).
+    let handle_wt = repo.join("agents").join(handle);
     assert!(
-        repo.join(handle).exists(),
+        handle_wt.exists(),
         "subagent worktree must exist at {}",
-        repo.join(handle).display()
+        handle_wt.display()
     );
 
-    // The handle is also a branch ref — Phase 1 lands the dispatch
+    // The handle is also an agents/* ref — Phase 1 lands the dispatch
     // commit, so the ref points one commit past `parent_branch`.
-    let primary = repo.join("root");
-    let parent_tip = run_git_capture(&primary, &["rev-parse", parent_branch]);
-    let sub_tip = run_git_capture(&primary, &["rev-parse", handle]);
+    let bare = repo.join("repo.git");
+    let parent_tip = run_git_capture(&bare, &["rev-parse", &format!("agents/{parent_branch}")]);
+    let sub_tip = run_git_capture(&bare, &["rev-parse", &format!("agents/{handle}")]);
     assert_ne!(parent_tip, sub_tip, "subagent tip must advance");
 }
 

@@ -74,21 +74,25 @@ fn writes_goal_and_soul_when_soul_present() {
     spawn_subagent_branch(&req(parent_wt, sub_wt, Some("you are worker\n")), &git).unwrap();
 
     let runs = git.runs.borrow();
-    // 0: worktree add (in parent worktree)
+    // 0: worktree add (in parent worktree) — ids map to agents/* refs
+    // at the git boundary (§2.3).
     assert_eq!(runs[0].0, parent_wt);
     assert_eq!(
         runs[0].1[..4],
-        ["worktree", "add", "-b", "p1-ct-2-deadbeef"]
+        ["worktree", "add", "-b", "agents/p1-ct-2-deadbeef"]
     );
     assert_eq!(runs[0].1[4], sub_wt.to_string_lossy().to_string());
-    assert_eq!(runs[0].1[5], "p1");
-    // 1: add goal.md soul.md (in sub worktree)
+    assert_eq!(runs[0].1[5], "agents/p1");
+    // 1: control-file removal (total, --ignore-unmatch; §2.3 step 2)
     assert_eq!(runs[1].0, sub_wt);
-    assert_eq!(runs[1].1, vec!["add", "goal.md", "soul.md"]);
-    // 2: commit (in sub worktree)
+    assert_eq!(runs[1].1[..5], ["rm", "-r", "-q", "--ignore-unmatch", "--"]);
+    // 2: add goal.md soul.md (in sub worktree)
     assert_eq!(runs[2].0, sub_wt);
-    assert_eq!(runs[2].1[0], "commit");
-    assert_eq!(runs[2].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
+    assert_eq!(runs[2].1, vec!["add", "goal.md", "soul.md"]);
+    // 3: commit (in sub worktree)
+    assert_eq!(runs[3].0, sub_wt);
+    assert_eq!(runs[3].1[0], "commit");
+    assert_eq!(runs[3].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
 
     assert_eq!(
         std::fs::read_to_string(sub_wt.join("goal.md")).unwrap(),
@@ -110,7 +114,7 @@ fn writes_only_goal_when_soul_is_none() {
 
     let runs = git.runs.borrow();
     // The stage step adds only goal.md.
-    assert_eq!(runs[1].1, vec!["add", "goal.md"]);
+    assert_eq!(runs[2].1, vec!["add", "goal.md"]);
     assert!(
         !sub_dir.path().join("soul.md").exists(),
         "soul.md should not be written"
@@ -137,10 +141,32 @@ fn surfaces_worktree_add_failure() {
 }
 
 #[test]
-fn surfaces_add_failure() {
+fn surfaces_control_rm_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
     let git = StubGit::failing_at(1);
+    let err = spawn_subagent_branch(
+        &req(parent_dir.path(), sub_dir.path(), Some("soul\n")),
+        &git,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            Error::Git {
+                op: "rm control files",
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn surfaces_add_failure() {
+    let parent_dir = tmpdir();
+    let sub_dir = tmpdir();
+    let git = StubGit::failing_at(2);
     let err = spawn_subagent_branch(
         &req(parent_dir.path(), sub_dir.path(), Some("soul\n")),
         &git,
@@ -153,7 +179,7 @@ fn surfaces_add_failure() {
 fn surfaces_commit_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
-    let git = StubGit::failing_at(2);
+    let git = StubGit::failing_at(3);
     let err =
         spawn_subagent_branch(&req(parent_dir.path(), sub_dir.path(), None), &git).unwrap_err();
     assert!(

@@ -91,8 +91,8 @@ fn render_actions(
                 for branch in branches {
                     ui.selectable_value(
                         &mut state.selected_branch,
-                        Some(branch.branch_name.clone()),
-                        &branch.branch_name,
+                        Some(branch.conv_id.clone()),
+                        &branch.conv_id,
                     );
                 }
             });

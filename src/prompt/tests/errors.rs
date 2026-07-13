@@ -56,13 +56,6 @@ fn run_surfaces_global_models_yaml_load_error() {
 }
 
 #[test]
-fn run_surfaces_per_repo_providers_yaml_load_error() {
-    let tmp = TempDir::new().unwrap();
-    let err = run_with_stubs(tmp.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::Config(_)), "got {err:?}");
-}
-
-#[test]
 fn run_surfaces_cross_check_failure() {
     // role.model names a model not declared in models.yaml.
     let bad_per_repo = r#"
@@ -106,9 +99,11 @@ fn run_surfaces_version_skew() {
         Error::VersionSkew { found, .. } => assert_eq!(found, "9.9.9"),
         other => panic!("expected VersionSkew, got {other:?}"),
     }
+    // Only control-read git (rev-parse + show) preceded the guard —
+    // nothing mutating (no worktree add) before it passes (§4.4).
     assert!(
-        git.runs.borrow().is_empty(),
-        "no git before the guard passes"
+        git.runs.borrow().iter().all(|(_, a)| a[0] != "worktree"),
+        "no branch work before the guard passes"
     );
 }
 
@@ -119,27 +114,7 @@ fn run_surfaces_version_guard_spawn_failure() {
     let git = StubGit::ok();
     let err = run_with_stubs(repo.path(), "hi", &adapter, &git).unwrap_err();
     assert!(matches!(err, Error::AdapterSpawn(_)));
-    assert!(git.runs.borrow().is_empty());
-}
-
-#[test]
-fn run_surfaces_workflow_load_error() {
-    // Version guard passes, then the retry policy load fails because
-    // workflow.yaml is absent.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    std::fs::remove_file(repo.path().join("workflow.yaml")).unwrap();
-    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::Config(_)), "got {err:?}");
-}
-
-#[test]
-fn run_surfaces_missing_soul() {
-    // Version guard passes, then the soul read fails.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, None);
-    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
-    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::SoulRead { .. }));
+    assert!(git.runs.borrow().iter().all(|(_, a)| a[0] != "worktree"));
 }
 
 #[test]
@@ -238,7 +213,7 @@ fn error_display_includes_context() {
         expected: 1,
     }
     .to_string();
-    let _: String = Error::SoulRead {
+    let _: String = Error::ControlRead {
         path: PathBuf::from("/x"),
         source: io::Error::other("y"),
     }

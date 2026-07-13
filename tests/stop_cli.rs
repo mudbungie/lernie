@@ -16,8 +16,8 @@ use std::fs;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 use stop_common::{
-    HAPPY_SSE, git_command, lernie_bin, poll_for_conv_branch_with_diag, poll_for_path,
-    scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
+    HAPPY_SSE, amend_config, git_command, lernie_bin, poll_for_conv_branch_with_diag,
+    poll_for_path, repo_git, scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
 };
 use tempfile::TempDir;
 
@@ -47,9 +47,7 @@ fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
 
     let mut prompt_child = spawn_prompt(&dest, &harness, &brazen_config, "ping");
 
-    let primary = dest.join("root");
-    let branch =
-        poll_for_conv_branch_with_diag(&primary, Duration::from_secs(15), &mut prompt_child);
+    let branch = poll_for_conv_branch_with_diag(&dest, Duration::from_secs(15), &mut prompt_child);
     let step_dir = dest.join("steps").join(&branch).join("001");
     poll_for_path(&step_dir.join("response.json"), Duration::from_secs(15));
 
@@ -95,13 +93,13 @@ fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
         );
     }
 
-    let merged_check = git_command(&primary, &["merge-base", "--is-ancestor", &branch, "main"])
+    // The branch persists as its agents/* ref (§2.3) — there is no
+    // `main` and nothing merges; the ref is the record.
+    let branch_ref = format!("refs/heads/agents/{branch}");
+    let ref_check = git_command(&repo_git(&dest), &["rev-parse", "--verify", &branch_ref])
         .status()
-        .expect("spawn git merge-base");
-    assert!(
-        !merged_check.success(),
-        "branch should be unmerged after stop"
-    );
+        .expect("spawn git rev-parse");
+    assert!(ref_check.success(), "agent ref must persist after stop");
 }
 
 /// An Anthropic SSE that resolves to a single `bash` tool call running
@@ -184,18 +182,19 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
     let brazen_config = write_brazen_config(holder.path(), &server.base_url());
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
-    // Give the worker the bash tool (stop_common's scaffold declares none).
-    fs::write(
-        dest.join("providers.yaml"),
-        "roles:\n  worker:\n    provider: test\n    model: claude-sonnet-4-7\n    tools: [bash]\n  compactor:\n    provider: test\n    model: claude-haiku-4-5\n",
-    )
-    .unwrap();
+    // Give the worker the bash tool (stop_common's scaffold declares
+    // none) — another config-commit amendment (§2.2).
+    amend_config(
+        &dest,
+        &[(
+            "providers.yaml",
+            "roles:\n  worker:\n    provider: test\n    model: claude-sonnet-4-7\n    tools: [bash]\n  compactor:\n    provider: test\n    model: claude-haiku-4-5\n",
+        )],
+    );
 
     let mut prompt_child = spawn_prompt(&dest, &harness, &brazen_config, "run a slow tool");
 
-    let primary = dest.join("root");
-    let branch =
-        poll_for_conv_branch_with_diag(&primary, Duration::from_secs(15), &mut prompt_child);
+    let branch = poll_for_conv_branch_with_diag(&dest, Duration::from_secs(15), &mut prompt_child);
 
     // Wait until the tool is actually running: the marker proves the
     // model call finished (step-1 response.json closed with `end`) and

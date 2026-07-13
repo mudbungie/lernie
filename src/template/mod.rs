@@ -1,13 +1,16 @@
-//! Conversation-repo scaffolding (ARCH §2.2).
+//! Workspace creation and first config-commit authoring (ARCH §2.2).
 //!
 //! Embeds the [`template/`] directory at build time via `include_dir`,
 //! so the `lernie` binary is self-contained — no runtime template
-//! lookup. [`scaffold`] extracts the embedded tree to a destination,
-//! creates the `root/` worktree subdir, and initializes git inside
-//! `root/` via an injected [`GitRunner`]. Merge-back is gone (§2.6), so
-//! no `merge=ours` `.gitattributes` discipline is scaffolded: the only
-//! merge left is compaction, which is conflict-free by construction and
-//! needs no attribute driver.
+//! lookup. [`scaffold`] creates the bare workspace repository at
+//! `<dest>/repo.git` and authors the workspace's **first config
+//! commit** — an orphan root on `config/default` (§2.2) — as the
+//! harness-assisted act §2.2 describes: materialize a checkout, write
+//! the control files from the embedded template plus the
+//! `descriptions/**` snapshot from the data-root pools (§3.3), commit,
+//! and tear the checkout down. There is no `main` and no primary
+//! worktree: agents fork off the config branch's head (§2.3), and the
+//! fork *is* the freeze (§2.2).
 
 pub mod descriptions;
 
@@ -17,11 +20,10 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// The embedded conversation-repo template (ARCH §2.2). Holds only the
-/// control-plane files that live at the conv-repo root — `manifest.yaml`,
-/// `workflow.yaml`, `providers.yaml`, `version`, `souls/`. The `root/`
-/// worktree subdir is created by [`scaffold`] rather than embedded so the
-/// file shape stays inspectable.
+/// The embedded config-commit template (ARCH §2.2). Holds the control
+/// files a config commit carries — `manifest.yaml`, `workflow.yaml`,
+/// `providers.yaml`, `version`, `souls/` — authored onto the orphan
+/// `config/default` root by [`scaffold`].
 pub static TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/template");
 
 /// Errors [`scaffold`] can return.
@@ -110,44 +112,51 @@ const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
 ];
 
-/// Subdir under the conv-repo where the primary worktree (and the only
-/// `.git`) lives (ARCH §2.2).
-pub const ROOT_WORKTREE: &str = "root";
+/// Transient checkout directory used while authoring the first config
+/// commit; removed (as a git worktree) once the commit lands.
+const CONFIG_AUTHOR_DIR: &str = ".config-author";
 
-/// Create a new conversation repo at `dest` per ARCH §2.2:
+/// Create a new workspace at `dest` per ARCH §2.2:
 ///
 /// 1. Refuse if `dest` already exists and is non-empty.
-/// 2. Extract the embedded [`TEMPLATE`] tree to `dest/` (control-plane
-///    files at the conv-repo root, outside any worktree).
-/// 3. Create `dest/root/` — the primary worktree (ARCH §2.2). No
-///    `.gitattributes` is written: merge-back is gone (§2.6), so the
-///    `merge=ours` discipline it used to pin is retired.
-/// 4. Snapshot the descriptions-always tree (ARCH §3.3): every tool
-///    schema and skill frontmatter from the `data_root` pools is copied
-///    into `dest/root/descriptions/{tools,skills}/` so the initial commit
-///    carries it and every agent branch inherits it via git. An empty or
-///    absent pool yields an empty descriptions tree.
-/// 5. Run `git init -b main`, then `git add -A` + an initial
-///    `git commit -m "init conversation repo"` *inside* `dest/root/` via
-///    the supplied [`GitRunner`]. The `.git` lives in `root/`; the
-///    control files at the conv-repo root are deliberately untracked,
-///    while `descriptions/**` is tracked context.
+/// 2. `git init --bare -b config/default <dest>/repo.git` — the
+///    workspace repository. No `main` is ever created (§2.2).
+/// 3. Author the first config commit (an orphan root, §2.2) through a
+///    transient checkout: `git worktree add --orphan`, extract the
+///    embedded [`TEMPLATE`] control files, snapshot the
+///    descriptions-always tree from the `data_root` pools into
+///    `descriptions/{tools,skills}/` (ARCH §3.3 — an empty or absent
+///    pool yields an empty descriptions tree), `git add -A`, commit.
+/// 4. Remove the authoring worktree. The workspace is left with exactly
+///    one ref, `config/default`, whose head is the config commit every
+///    fresh root agent forks off (§2.3) — the fork is the freeze.
 pub fn scaffold<G: GitRunner>(dest: &Path, data_root: &Path, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
-    fs::create_dir_all(dest).map_err(ScaffoldError::Io)?;
-    TEMPLATE.extract(dest).map_err(ScaffoldError::Io)?;
-    let root = dest.join(ROOT_WORKTREE);
-    fs::create_dir_all(&root).map_err(ScaffoldError::Io)?;
-    descriptions::snapshot(data_root, &root).map_err(ScaffoldError::Descriptions)?;
-    git.run(&root, &["init", "-b", "main"])
+    let repo = crate::workspace::repo_git(dest);
+    let config_ref = crate::workspace::DEFAULT_CONFIG_REF;
+    fs::create_dir_all(&repo).map_err(ScaffoldError::Io)?;
+    let init_args = ["init", "--bare", "-b", config_ref];
+    git.run(&repo, &init_args).map_err(ScaffoldError::Git)?;
+
+    let author = dest.join(CONFIG_AUTHOR_DIR);
+    let author_str = author.to_string_lossy().to_string();
+    let mut add_args = vec!["worktree", "add", "--orphan", "-b", config_ref];
+    add_args.push(author_str.as_str());
+    git.run(&repo, &add_args).map_err(ScaffoldError::Git)?;
+
+    // `git worktree add` creates the directory in production; the
+    // explicit `create_dir_all` is for stub-git tests (and a harmless
+    // no-op in production) — the same pattern as the subagent spawn.
+    fs::create_dir_all(&author).map_err(ScaffoldError::Io)?;
+    TEMPLATE.extract(&author).map_err(ScaffoldError::Io)?;
+    descriptions::snapshot(data_root, &author).map_err(ScaffoldError::Descriptions)?;
+    git.run(&author, &["add", "-A"])
         .map_err(ScaffoldError::Git)?;
-    git.run(&root, &["add", "-A"]).map_err(ScaffoldError::Git)?;
-    // `--allow-empty`: with merge-back gone, `root/` no longer carries a
-    // `.gitattributes` (§2.6), so an install with an empty descriptions
-    // pool has nothing to stage — the init commit still must exist to
-    // found `main` (the ref every agent forks from, §2.3).
-    let commit = ["commit", "--allow-empty", "-m", "init conversation repo"];
-    git.run(&root, &commit).map_err(ScaffoldError::Git)?;
+    let msg = format!("config: init [{config_ref}]");
+    git.run(&author, &["commit", "-m", msg.as_str()])
+        .map_err(ScaffoldError::Git)?;
+    git.run(&repo, &["worktree", "remove", author_str.as_str()])
+        .map_err(ScaffoldError::Git)?;
     Ok(())
 }
 
@@ -167,3 +176,5 @@ fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_realgit;

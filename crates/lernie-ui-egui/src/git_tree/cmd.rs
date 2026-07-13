@@ -38,14 +38,8 @@ pub(super) fn git(repo: &Path, args: &[&str]) -> Result<Vec<u8>, GitTreeError> {
     Ok(output.stdout)
 }
 
-/// Raw `git log --format='%H %ct %P%x00%s'` row, parsed.
-///
-/// `parent_count` lets the caller branch on root vs single-parent vs
-/// merge without a second `git log`. `subject` carries git's default
-/// `--no-ff` merge subject (`Merge branch 'X'`) — the load-bearing
-/// signal for v0.3.1 conversation detection (ARCH §2.3, bl-c22c P4):
-/// the merged branch name *is* the conv-id (or hyphenated descent),
-/// since v0.3 dropped branch prefixes entirely.
+/// Raw `git log --format='%H %ct %P%x00%s'` row, parsed. The trunk is
+/// the config lineage (§2.2), so `subject` labels a config commit.
 #[derive(Debug)]
 pub(super) struct LogEntry {
     pub(super) oid: String,
@@ -106,34 +100,12 @@ pub(super) fn parse_log(stdout: &[u8]) -> Result<Vec<LogEntry>, GitTreeError> {
     Ok(result)
 }
 
-/// Commits on the conversation branch reachable from the merge's
-/// second parent but not from its first parent, along first-parent
-/// only — i.e., the dispatch commit, response commit(s), and any
-/// compactor merge commits on the conversation branch itself.
-pub(super) fn walk_merge_step_commits(
-    repo: &Path,
-    merge_oid: &str,
-) -> Result<Vec<StepCommit>, GitTreeError> {
-    let second_parent = format!("{merge_oid}^2");
-    let exclude_first = format!("^{merge_oid}^1");
-    let out = git(
-        repo,
-        &[
-            "log",
-            "--reverse",
-            "--first-parent",
-            "--format=%H %ct",
-            &second_parent,
-            &exclude_first,
-        ],
-    )?;
-    parse_step_commits(&out)
-}
-
 pub(super) fn walk_branch_steps(
     repo: &Path,
     branch: &str,
 ) -> Result<Vec<StepCommit>, GitTreeError> {
+    // Commits on the agent branch past every config lineage (§2.2 —
+    // there is no `main`; the fork point is a config commit).
     let out = git(
         repo,
         &[
@@ -142,7 +114,8 @@ pub(super) fn walk_branch_steps(
             "--first-parent",
             "--format=%H %ct",
             branch,
-            "^main",
+            "--not",
+            "--branches=config/*",
         ],
     )?;
     parse_step_commits(&out)
@@ -168,18 +141,15 @@ pub(super) fn parse_step_commits(stdout: &[u8]) -> Result<Vec<StepCommit>, GitTr
     Ok(result)
 }
 
-/// Unmerged conversation branches: every ref under `refs/heads/` not
-/// merged into `main`. v0.3 branches are bare conv-ids (root) or
-/// hyphenated descents (subagents) — there is no `ex/`/`inv/` prefix
-/// to filter on (ARCH §2.3).
-pub(super) fn for_each_ref_unmerged(repo: &Path) -> Result<Vec<u8>, GitTreeError> {
+/// Agent branches: every ref under `refs/heads/agents/` (ARCH §2.3 —
+/// the prefix is the kind; agents never merge anywhere, §2.6).
+pub(super) fn for_each_ref_agents(repo: &Path) -> Result<Vec<u8>, GitTreeError> {
     git(
         repo,
         &[
             "for-each-ref",
-            "--no-merged=main",
             "--format=%(refname:short) %(objectname) %(committerdate:unix)",
-            "refs/heads/",
+            "refs/heads/agents/",
         ],
     )
 }

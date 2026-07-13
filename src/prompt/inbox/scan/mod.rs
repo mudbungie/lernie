@@ -28,14 +28,11 @@
 //! The sweep runs first, so its own deposits are picked up by the flush
 //! that follows in the same pass.
 //!
-//! **Shipped-namespace note.** §8 writes the candidate enumeration as
-//! `git branch --list 'agents/*'`, but the shipped harness names agent
-//! branches bare — a root is its `<conv-id>` off `main`
-//! ([`crate::prompt::dispatch`]), a child is `<parent>-<sub-id>`
-//! ([`crate::prompt::worker`]) — with no `agents/` prefix. So the
-//! enumeration here is *every branch except `main`*: in shipped reality
-//! every non-`main` branch is an agent. When the branch namespace grows a
-//! prefix, [`derive::agent_branches`] is the one seam to change.
+//! **Namespace.** The candidate enumeration is the §8 seam, landed: the
+//! `agents/*` ref namespace (§2.3), read through
+//! [`crate::workspace::agent_ids`] — config branches are excluded
+//! structurally by the prefix, never by subtracting a reserved name
+//! (there is no `main`, §2.2).
 //!
 //! **Scope note.** A child does not yet run a step loop (`worker.rs` stops
 //! at the dispatch commit), so a real "died child" cannot arise from a run
@@ -50,7 +47,7 @@ use super::{
     AdvanceLauncher, Launcher, ProbeOutcome, deposit_result, inbox_dir, parent_of, probe_and_launch,
 };
 use crate::prompt::{Clock, SystemClock};
-use crate::template::{GitRunner, ROOT_WORKTREE, RealGit};
+use crate::template::{GitRunner, RealGit};
 use derive::{
     agent_branches, branch_tip, died_mid_work, has_pending, inbox_agents, is_driven, returned,
 };
@@ -67,6 +64,8 @@ pub enum ScanError {
         #[source]
         source: io::Error,
     },
+    #[error(transparent)]
+    Layout(#[from] crate::workspace::LayoutError),
     #[error(transparent)]
     Deposit(#[from] super::DepositError),
     #[error("probe executor lock at {path}: {source}")]
@@ -108,10 +107,10 @@ pub struct ScanReport {
 
 /// Run the workspace-wide scan under `workspace` (§2.11, §8): the
 /// silent-death sweep, then the inbox flush. `git` reads the branch and
-/// transcript state (run in `<workspace>/root`, §2.2); `launcher` is the
-/// injected driver launcher (production is the [`super::AdvanceLauncher`]
-/// detached `lernie advance` spawn, §2.11), so the whole decision logic
-/// is testable with launches captured.
+/// transcript state against the bare `<workspace>/repo.git` (§2.2);
+/// `launcher` is the injected driver launcher (production is the
+/// [`super::AdvanceLauncher`] detached `lernie advance` spawn, §2.11),
+/// so the whole decision logic is testable with launches captured.
 pub fn scan(
     workspace: &std::path::Path,
     git: &dyn GitRunner,
@@ -132,6 +131,7 @@ pub fn scan(
 /// Mirrors the [`super::cli_run`] production-wiring convenience for
 /// `lernie message`.
 pub fn cli_run(workspace: &std::path::Path) -> Result<ScanReport, ScanError> {
+    crate::workspace::require(workspace)?;
     let launcher = AdvanceLauncher::current().map_err(ScanError::Exe)?;
     scan(workspace, &RealGit::new(), &SystemClock, &launcher)
 }
@@ -158,8 +158,7 @@ fn sweep(
     clock: &dyn Clock,
     report: &mut ScanReport,
 ) -> Result<(), ScanError> {
-    let root = workspace.join(ROOT_WORKTREE);
-    for branch in agent_branches(&root, git)? {
+    for branch in agent_branches(workspace, git)? {
         // A live executor holds the branch's inbox lock — it is either
         // working (never a silent death) or will drain at its own next
         // boundary. The probe lease is released the instant it is taken.
@@ -171,7 +170,7 @@ fn sweep(
         // idempotence hinge: a prior sweep's own deposit is a message
         // *from the child*, so a re-scan sees it and does not re-deposit.
         let child_never = match parent_of(&branch) {
-            Some(parent) => !returned(workspace, &root, git, &parent, &branch)?,
+            Some(parent) => !returned(workspace, git, &parent, &branch)?,
             None => false,
         };
         if died || child_never {
@@ -179,7 +178,7 @@ fn sweep(
         }
         if child_never {
             let parent = parent_of(&branch).expect("child_never implies a parent");
-            let tip = branch_tip(&root, git, &branch)?;
+            let tip = branch_tip(workspace, git, &branch)?;
             deposit_result(
                 workspace,
                 &parent,

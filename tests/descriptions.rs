@@ -1,8 +1,8 @@
 //! Descriptions-always producer, end-to-end through `lernie new`
 //! (ARCH §3.3). A populated data-root pool must produce a committed
-//! `descriptions/**` tree on the new repo's initial `main`, so a
-//! downstream branch's tools composer (§3.3, bl-9e96) can intersect a
-//! role's declared tools against it.
+//! `descriptions/**` tree in the workspace's first config commit
+//! (`config/default`, §2.2), so a downstream branch's tools composer
+//! (§3.3, bl-9e96) can intersect a role's declared tools against it.
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -65,30 +65,29 @@ fn descriptions_are_snapshotted_from_the_pool_and_committed() {
         String::from_utf8_lossy(&out.stderr)
     );
 
-    // The tool schema is copied verbatim; the skill file carries only
-    // the frontmatter body (fenced markdown stripped).
-    let root = dest.join("root");
+    // The snapshot is committed in the config commit's tree (§2.2):
+    // the tool schema verbatim, the skill file carrying only the
+    // frontmatter body (fenced markdown stripped).
+    let repo = dest.join("repo.git");
+    let show = |path: &str| -> String {
+        let mut cmd = Command::new("git");
+        scrub_git_env(&mut cmd);
+        let out = cmd
+            .arg("-C")
+            .arg(&repo)
+            .args(["show", &format!("config/default:{path}")])
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "git show {path}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        String::from_utf8(out.stdout).unwrap()
+    };
+    assert_eq!(show("descriptions/tools/bash.json"), r#"{"type":"object"}"#);
     assert_eq!(
-        std::fs::read_to_string(root.join("descriptions/tools/bash.json")).unwrap(),
-        r#"{"type":"object"}"#
-    );
-    assert_eq!(
-        std::fs::read_to_string(root.join("descriptions/skills/bash.md")).unwrap(),
+        show("descriptions/skills/bash.md"),
         "name: bash\ndescription: Run a shell command.\n"
     );
-
-    // The snapshot is committed (tracked) on main, not worktree dirt.
-    let mut ls = Command::new("git");
-    scrub_git_env(&mut ls);
-    let listed = String::from_utf8(
-        ls.arg("-C")
-            .arg(&root)
-            .args(["ls-files"])
-            .output()
-            .unwrap()
-            .stdout,
-    )
-    .unwrap();
-    assert!(listed.lines().any(|l| l == "descriptions/tools/bash.json"));
-    assert!(listed.lines().any(|l| l == "descriptions/skills/bash.md"));
 }

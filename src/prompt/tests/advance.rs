@@ -55,7 +55,7 @@ pub(super) fn worker_config() -> WorkerConfig {
 /// given transcript entries (name, body) under `messages/`.
 pub(super) fn workspace_with_tail(entries: &[(&str, String)]) -> (TempDir, PathBuf) {
     let ws = TempDir::new().unwrap();
-    let wt = ws.path().join(AGENT);
+    let wt = crate::workspace::agent_worktree(ws.path(), AGENT);
     std::fs::create_dir_all(wt.join("messages")).unwrap();
     std::fs::write(wt.join("goal.md"), "the goal").unwrap();
     for (name, body) in entries {

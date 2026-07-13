@@ -261,7 +261,7 @@ fn drain_applies_the_work_product_transfer_for_a_result_message() {
     // filtered diff) ahead of the delivery add+commit.
     let runs = git.runs.borrow();
     assert_eq!(runs[0], vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[1][..2], ["merge-base", "parent"]);
+    assert_eq!(runs[1][..2], ["merge-base", "HEAD"]);
     assert_eq!(runs[1][2], "abc123");
     assert_eq!(runs[2][0], "diff");
     assert_eq!(runs[3], vec!["add", "messages/001-parent-kid.md"]);

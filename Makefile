@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check schemas new-conversation ui install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace ui install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -30,9 +30,11 @@ PATH_BINARIES     := lernie lernie-ui-egui
 BRAZEN_PIN        := 0.0.2
 # Subdirectories laid down on first install, by lifetime (ARCH §2.2):
 # config-lifetime templates under the config root, machine-populated
-# pools under the data root.
+# pools and the workspaces tree under the data root. (The v0.3 frozen
+# `agents/` profile pool is retired: the fork is the freeze, §2.2 —
+# configs live as config commits inside each workspace.)
 CONFIG_DIRS       := workflows
-DATA_DIRS         := tools skills agents conversations
+DATA_DIRS         := tools skills workspaces
 
 all: check
 
@@ -59,8 +61,8 @@ coverage:
 schemas:
 	cargo run --quiet --bin gen-schemas -- schemas
 
-new-conversation:
-	@test -n "$(DEST)" || { echo "usage: make new-conversation DEST=<path>"; exit 1; }
+new-workspace:
+	@test -n "$(DEST)" || { echo "usage: make new-workspace DEST=<path>"; exit 1; }
 	@cargo run --quiet --bin lernie -- new "$(DEST)"
 
 ui:
@@ -102,12 +104,6 @@ install: release
 	else \
 		echo "kept     $(LERNIE_CONFIG_HOME)/models.yaml (existing)"; \
 	fi
-	@if [ ! -e "$(LERNIE_DATA_HOME)/agents/default" ]; then \
-		cp -R template "$(LERNIE_DATA_HOME)/agents/default"; \
-		echo "installed $(LERNIE_DATA_HOME)/agents/default/"; \
-	else \
-		echo "kept     $(LERNIE_DATA_HOME)/agents/default/ (existing)"; \
-	fi
 	@# Data-root pools (ARCH §3.3): the tool JSON schemas and skill dirs
 	@# the descriptions-always producer snapshots into each new repo's
 	@# `descriptions/**` at `lernie new`. Shipped artifacts are re-copied
@@ -125,9 +121,10 @@ install: release
 	@echo "declare model capabilities in $(LERNIE_CONFIG_HOME)/models.yaml — see ARCH §4.2/§4.4."
 
 # Smoke-test the freshly installed binaries: `lernie --version` proves the
-# CLI loads, `lernie new` exercises the embedded template scaffold against
-# a throwaway path. Failure here aborts `make install` with a non-zero
-# exit, since a half-installed harness is worse than none.
+# CLI loads, `lernie new` exercises workspace creation (bare repo.git +
+# first config commit, ARCH §2.2) against a throwaway path. Failure here
+# aborts `make install` with a non-zero exit, since a half-installed
+# harness is worse than none.
 install-verify:
 	@tmp=$$(mktemp -d) && trap "rm -rf $$tmp" EXIT && \
 		"$(INSTALL_BIN)/lernie" --version >/dev/null && \

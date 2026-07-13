@@ -21,10 +21,7 @@ fn term_targets(signaler: &cascade::RecordingSignaler) -> Vec<i32> {
 #[test]
 fn run_returns_branch_missing_when_inspector_says_no() {
     let dir = TempDir::new().unwrap();
-    let inspector = StubInspector {
-        exists: false,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: false };
     let err = run(
         dir.path(),
         "br",
@@ -40,34 +37,10 @@ fn run_returns_branch_missing_when_inspector_says_no() {
 }
 
 #[test]
-fn run_returns_already_merged_when_inspector_says_so() {
-    let dir = TempDir::new().unwrap();
-    let inspector = StubInspector {
-        exists: true,
-        merged: true,
-    };
-    let err = run(
-        dir.path(),
-        "br",
-        false,
-        &inspector,
-        &StubFinder::default(),
-        &cascade::RecordingSignaler::new(0),
-        Duration::from_millis(1),
-        &NoopGit,
-    )
-    .unwrap_err();
-    matches!(err, Error::AlreadyMerged(b) if b == "br");
-}
-
-#[test]
 fn run_idempotent_when_no_holder_found() {
     let dir = TempDir::new().unwrap();
     touch_inbox_dir(dir.path(), "br");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let signaler = cascade::RecordingSignaler::new(0);
     run(
         dir.path(),
@@ -89,10 +62,7 @@ fn run_idempotent_when_no_holder_found() {
 #[test]
 fn run_idempotent_when_no_inbox_dir_at_all() {
     let dir = TempDir::new().unwrap();
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let signaler = cascade::RecordingSignaler::new(0);
     run(
         dir.path(),
@@ -112,10 +82,7 @@ fn run_idempotent_when_no_inbox_dir_at_all() {
 fn run_signals_the_inbox_dir_holder() {
     let dir = TempDir::new().unwrap();
     let inbox = touch_inbox_dir(dir.path(), "br");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(123)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(
@@ -142,10 +109,7 @@ fn run_default_leaves_live_child_untouched() {
     let dir = TempDir::new().unwrap();
     let self_inbox = touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "br-sub");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(11)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(
@@ -172,10 +136,7 @@ fn run_stop_children_covers_descended_subagent_ids_via_hyphen_prefix() {
     let dir = TempDir::new().unwrap();
     touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "br-sub");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(11), Some(22)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(
@@ -201,10 +162,7 @@ fn run_stop_children_covers_deep_descendants_in_one_prefix_scan() {
     touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "br-a");
     touch_inbox_dir(dir.path(), "br-a-b");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(1), Some(2), Some(3)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(
@@ -226,10 +184,7 @@ fn run_dedupes_pgid_when_multiple_holders_share_one() {
     let dir = TempDir::new().unwrap();
     touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "br-sub");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(7), Some(7)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(
@@ -252,10 +207,7 @@ fn run_skips_unrelated_agent_id_dirs() {
     touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "different");
     touch_inbox_dir(dir.path(), "br2-not-descended");
-    let inspector = StubInspector {
-        exists: true,
-        merged: false,
-    };
+    let inspector = StubInspector { exists: true };
     let finder = StubFinder::with_returns(vec![Some(99)]);
     let signaler = cascade::RecordingSignaler::new(0);
     run(

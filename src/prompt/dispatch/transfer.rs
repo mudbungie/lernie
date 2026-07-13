@@ -70,20 +70,21 @@ pub(super) fn terminal_ref_of(body: &str) -> Option<String> {
 
 /// Apply the work-product transfer for a result message from `child_id`
 /// naming `terminal_ref`, onto the parent branch checked out at
-/// `worktree` (its branch is `parent_branch`). Lands the filtered diff as
-/// one commit (§2.6); a clean empty diff commits nothing (the general
-/// path with empty inputs), and an apply failure is declined by marking
-/// `refs/lernie/conflicted/<child_id>` and returning `Ok` — the delivery
-/// still proceeds.
+/// `worktree`. The fork point derives from ancestry against `HEAD` —
+/// the worktree's checked-out branch *is* the parent branch (§2.3), so
+/// no ref name needs passing. Lands the filtered diff as one commit
+/// (§2.6); a clean empty diff commits nothing (the general path with
+/// empty inputs), and an apply failure is declined by marking
+/// `refs/lernie/conflicted/<child_id>` and returning `Ok` — the
+/// delivery still proceeds.
 pub(super) fn apply(
     worktree: &Path,
-    parent_branch: &str,
     child_id: &str,
     terminal_ref: &str,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
     let fork = git
-        .run_capture(worktree, &["merge-base", parent_branch, terminal_ref])
+        .run_capture(worktree, &["merge-base", "HEAD", terminal_ref])
         .map_err(|source| Error::Git {
             op: "transfer merge-base",
             source,

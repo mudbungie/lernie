@@ -55,4 +55,20 @@ impl ModelsConfig {
         cross::check_roles_against_models(&per_repo, &global)?;
         Ok((Self { global, per_repo }, warnings))
     }
+
+    /// Load the global half from disk and the per-repo half from content
+    /// already in hand — the governing-config read path (ARCH §2.2:
+    /// `providers.yaml` is read from the config commit's tree, never
+    /// from a worktree file). `per_repo_origin` labels per-repo parse
+    /// errors (e.g. `<config-commit>:providers.yaml`).
+    pub fn load_with_per_repo(
+        global_path: &Path,
+        per_repo_raw: &str,
+        per_repo_origin: &Path,
+    ) -> Result<(Self, Vec<Warning>), LoadError> {
+        let (global, warnings) = Models::load(global_path)?;
+        let per_repo = PerRepoProviders::parse(per_repo_raw, per_repo_origin)?;
+        cross::check_roles_against_models(&per_repo, &global)?;
+        Ok((Self { global, per_repo }, warnings))
+    }
 }

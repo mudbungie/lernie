@@ -32,25 +32,29 @@ pub(super) const GOAL_FILE: &str = "goal.md";
 /// the same reason `goal.md` does.
 pub(super) const SOUL_FILE: &str = "soul.md";
 
-/// `git worktree add -b <branch> <worktree_path> main`, run inside the
-/// primary worktree where `.git` lives (§2.2).
+/// `git worktree add -b agents/<id> <worktree_path> <config-ref>`, run
+/// against the workspace's bare `repo.git` (§2.2): fork the fresh root
+/// agent off the default config branch's head — the fork is the freeze
+/// (§2.2). Root id uniqueness per workspace is structural: the `-b`
+/// creation fails if the ref already exists.
 pub(super) fn spawn_branch(
-    primary_worktree: &Path,
+    workspace: &Path,
     worktree_path: &Path,
-    branch_name: &str,
+    agent_id: &str,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
     let wt_str = worktree_path.to_string_lossy().to_string();
+    let branch_ref = crate::workspace::agent_ref(agent_id);
     deps.git
         .run(
-            primary_worktree,
+            &crate::workspace::repo_git(workspace),
             &[
                 "worktree",
                 "add",
                 "-b",
-                branch_name,
+                branch_ref.as_str(),
                 wt_str.as_str(),
-                "main",
+                crate::workspace::DEFAULT_CONFIG_REF,
             ],
         )
         .map_err(|source| Error::Git {
@@ -80,15 +84,21 @@ pub(super) fn write_dispatch_files(
     Ok(())
 }
 
-/// Step 1's dispatch commit: `git add goal.md soul.md` then commit
-/// on the conversation branch. This is the only commit the harness
-/// emits for a step; §2.10 keeps step ≥2 commit-free, so the branch
-/// tip after a dispatch commit *is* step 1's read state.
+/// Step 1's dispatch commit (§2.3 step 2): remove the harness-facing
+/// control files from the agent's tree (§2.2 — control is read from the
+/// governing config commit; the worktree holds only context), `git add
+/// goal.md soul.md`, then commit on the agent branch. The removal is
+/// total, not conditional: `--ignore-unmatch` makes it a no-op when the
+/// fork point was not a config commit (a child forked off a parent's
+/// tip, whose tree already lost them). This is the only commit the
+/// harness emits for a step; §2.10 keeps step ≥2 commit-free, so the
+/// branch tip after a dispatch commit *is* step 1's read state.
 pub(super) fn commit_dispatch(
     worktree_path: &Path,
     conv_id: &str,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
+    remove_control_files(worktree_path, deps.git)?;
     deps.git
         .run(worktree_path, &["add", GOAL_FILE, SOUL_FILE])
         .map_err(|source| Error::Git { op: "add", source })?;
@@ -99,6 +109,22 @@ pub(super) fn commit_dispatch(
             op: "commit",
             source,
         })
+}
+
+/// Stage the removal of the config commit's control files from the
+/// agent's tree (§2.2): `git rm -r -q --ignore-unmatch -- <paths>`.
+/// `descriptions/**` is deliberately not among them — it *is* context
+/// (§3.3) and stays inherited.
+pub(crate) fn remove_control_files(
+    worktree_path: &Path,
+    git: &dyn crate::template::GitRunner,
+) -> Result<(), Error> {
+    let mut args: Vec<&str> = vec!["rm", "-r", "-q", "--ignore-unmatch", "--"];
+    args.extend_from_slice(crate::workspace::CONTROL_PATHS);
+    git.run(worktree_path, &args).map_err(|source| Error::Git {
+        op: "rm control files",
+        source,
+    })
 }
 
 /// Resolve the branch tip's sha at step-start. Recorded in

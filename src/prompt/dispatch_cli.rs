@@ -61,7 +61,8 @@ fn run_compactor(repo: &Path, branch: &str, goal: Option<&str>) -> Result<(), Di
     if goal.is_some() {
         return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
     }
-    let worktree = repo.join(branch);
+    crate::workspace::require(repo).map_err(crate::prompt::Error::from)?;
+    let worktree = crate::workspace::agent_worktree(repo, branch);
     let req = CompactorRequest {
         repo,
         parent_conv_id: branch,
@@ -81,7 +82,8 @@ fn run_worker(
     goal: Option<&str>,
 ) -> Result<(), DispatchCliError> {
     let goal = goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?;
-    let parent_worktree = repo.join(parent_branch);
+    crate::workspace::require(repo).map_err(crate::prompt::Error::from)?;
+    let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
     let req = WorkerRequest {
         repo,
         parent_branch,
@@ -100,30 +102,12 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
-    /// A real scaffolded conv repo (the `lernie new` core) with a
-    /// fabricated parent branch + worktree — the state `lernie
-    /// dispatch` is invoked against in production (§3.4).
+    /// A real scaffolded workspace (the `lernie new` core) with a
+    /// parent agent branch + worktree — the state `lernie dispatch` is
+    /// invoked against in production (§3.4).
     fn scaffolded_repo_with_parent(parent: &str) -> (TempDir, std::path::PathBuf) {
-        let holder = TempDir::new().unwrap();
-        let data_root = holder.path().join("data");
-        std::fs::create_dir_all(&data_root).unwrap();
-        let repo = holder.path().join("conv");
-        crate::template::scaffold(&repo, &data_root, &RealGit::new()).unwrap();
-        let root = repo.join(crate::template::ROOT_WORKTREE);
-        let wt = repo.join(parent);
-        crate::template::GitRunner::run(
-            &RealGit::new(),
-            &root,
-            &[
-                "worktree",
-                "add",
-                "-b",
-                parent,
-                wt.to_string_lossy().as_ref(),
-                "main",
-            ],
-        )
-        .unwrap();
+        let (holder, repo) = crate::workspace::fixture::workspace();
+        crate::workspace::fixture::spawn_root(&repo, parent);
         (holder, repo)
     }
 
@@ -132,15 +116,20 @@ mod tests {
         let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
         run("compactor", &repo, "20260101-p1", None).unwrap();
         // The compaction merge landed the summary on the parent branch.
-        assert!(repo.join("20260101-p1").join("summary/001.md").exists());
+        assert!(
+            crate::workspace::agent_worktree(&repo, "20260101-p1")
+                .join("summary/001.md")
+                .exists()
+        );
     }
 
     #[test]
     fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
         run("worker", &repo, "20260101-p1", Some("do the thing")).unwrap();
-        // Exactly one sub-branch worktree appeared under the parent's id.
-        let subs = std::fs::read_dir(&repo)
+        // Exactly one sub-agent worktree appeared under agents/ with
+        // the parent's id prefix (hyphenated descent, §2.3).
+        let subs = std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))
             .unwrap()
             .flatten()
             .filter(|e| {

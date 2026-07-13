@@ -1,10 +1,25 @@
-//! `lernie stop <repo> <branch>` — cascading SIGTERM per ARCH §2.9.
+//! `lernie stop <repo> <branch> [--stop-children]` — SIGTERM per ARCH §2.9.
 //!
-//! Sends SIGTERM to the harness process group driving `<branch>` (and
-//! any subagent harnesses spawned on descended branches per §3.4) with
-//! a 5-second flush deadline before SIGKILL — the same signal cascade
-//! §4.4 pins for adapters and §3.3 pins for tools, applied to the
-//! harness itself.
+//! **Default: stop the one agent.** A bare `lernie stop` signals the
+//! process group of the single executor driving `<branch>` — its
+//! provider adapter (`bz`) and cooperating tool subprocesses die with
+//! it (§2.9 steps 1-2), in-flight HTTP dropped — with a 5-second flush
+//! deadline before SIGKILL (the same cascade §4.4 pins for adapters and
+//! §3.3 for tools, applied to the harness). The kernel pgid is scoped to
+//! that **one** executor's own subprocesses: those are its limbs, not
+//! agents. A still-running child on a descended branch is a *separate*
+//! agent with its own pgid (each executor takes its own pgid at
+//! startup, root and child alike, §2.9) and is **not** touched — it
+//! outlives the parent and later deposits its result into the stopped
+//! parent's inbox, which revives the parent (§2.11).
+//!
+//! **`--stop-children`: walk the id namespace.** The agent→agent cascade
+//! is opt-in. Descent is encoded in the hyphenated agent id (§2.3), so
+//! the children (and all deeper descendants) of `<branch>` are exactly
+//! the inbox directories prefixed `<branch>-` (single source of truth —
+//! the flat id namespace *is* the tree, so one prefix scan covers every
+//! depth; no separate recursion). The flag enumerates that prefix and
+//! folds each descendant executor's pgid into the one SIGTERM sweep.
 //!
 //! No on-disk cancel marker is written: per §2.9 the on-disk
 //! signature of a stopped branch is the latest step's `response.json`
@@ -16,13 +31,12 @@
 //! Pid discovery derives from `/proc/<pid>/fd/*` symlink targets
 //! against the agent's **inbox directory** — the executor lock's
 //! `flock` home (§2.11), held for the whole step loop. The target is
-//! `<workspace>/inbox/<branch>/` (and any sibling `inbox/<branch>-*/`
-//! for descended subagent conversations, hyphenated descent per §2.2).
-//! No sidecar pid file: the open lock fd is the *is-anyone-driving*
-//! signal the §2.11 lock probe and §3.5 classification already read —
-//! and, unlike the `response.json` model-call fd, it is open across
-//! tool execution and between-step gaps too, so a stop lands whenever
-//! an executor is alive (§2.9).
+//! `<workspace>/inbox/<branch>/` (plus each sibling `inbox/<branch>-*/`
+//! under `--stop-children`). No sidecar pid file: the open lock fd is
+//! the *is-anyone-driving* signal the §2.11 lock probe and §3.5
+//! classification already read — and, unlike the `response.json`
+//! model-call fd, it is open across tool execution and between-step
+//! gaps too, so a stop lands whenever an executor is alive (§2.9).
 
 use crate::prompt::inbox::INBOX_DIR;
 use crate::template::{GitRunner, RealGit};
@@ -72,19 +86,27 @@ pub enum Error {
     InboxWalk(#[source] io::Error),
 }
 
-/// Stop the harness driving `branch` and any subagent descendants.
+/// Stop the harness driving `branch`; optionally its subagent subtree.
 ///
 /// 1. Validate `branch` exists in `<repo>/root/.git` and is unmerged.
-/// 2. Walk every agent-id namespace rooted at `branch`
-///    (`inbox/<branch>/` and `inbox/<branch>-*/`) — each the home of
-///    one executor lock (§2.11).
+/// 2. Collect the inbox directories to signal (§2.11 lock homes):
+///    `inbox/<branch>/` always, plus every `inbox/<branch>-*/`
+///    descendant (hyphenated descent, §2.3) **iff** `stop_children` —
+///    the opt-in agent→agent cascade. Default touches only the one
+///    agent; a live child keeps running and revives the parent on its
+///    later deposit (§2.9, §2.11).
 /// 3. Resolve each lock holder's pgid via the supplied [`PgidFinder`].
 /// 4. SIGTERM the unique pgid set, wait `deadline`, SIGKILL leftovers.
 ///
 /// Idempotent: a stopped branch (no lock holder found) returns `Ok(())`.
+// Four of the arguments are injected trait objects (inspector, finder,
+// signaler, git) — a test seam, not a data clump; bundling them buys
+// nothing and obscures the stub wiring the tests depend on.
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     repo: &Path,
     branch: &str,
+    stop_children: bool,
     inspector: &dyn BranchInspector,
     finder: &dyn PgidFinder,
     signaler: &dyn Signaler,
@@ -113,7 +135,7 @@ pub fn run(
         return Err(Error::AlreadyMerged(branch.to_owned()));
     }
 
-    let inbox_dirs = collect_inbox_dirs(repo, branch)?;
+    let inbox_dirs = collect_inbox_dirs(repo, branch, stop_children)?;
     let mut pgids = Vec::new();
     for dir in inbox_dirs {
         if let Some(pgid) = finder.find_holder_pgid(&dir).map_err(Error::Proc)? {
@@ -132,12 +154,15 @@ pub fn run(
 
 /// CLI entry point for `lernie stop` (ARCH §3.4 — kept in the lib so
 /// the bin file stays under the 300-line code cap and the wiring
-/// itself is unit-testable). Production builds use the default
-/// deps; tests exercise [`run`] directly with stubs.
-pub fn cli_run(repo: &Path, branch: &str) -> Result<(), Error> {
+/// itself is unit-testable). `stop_children` is the `--stop-children`
+/// flag (§2.9): `false` stops the one agent, `true` walks the id
+/// namespace. Production builds use the default deps; tests exercise
+/// [`run`] directly with stubs.
+pub fn cli_run(repo: &Path, branch: &str, stop_children: bool) -> Result<(), Error> {
     run(
         repo,
         branch,
+        stop_children,
         &GitInspector,
         &ProcFsFinder::default(),
         &RealSignaler,
@@ -147,12 +172,16 @@ pub fn cli_run(repo: &Path, branch: &str) -> Result<(), Error> {
 }
 
 /// Promote the calling process to a process-group leader so the
-/// §2.9 cascade (`kill(-pgid, SIGTERM)`) reaches its provider
-/// adapter and any subagent harnesses re-entered via `lernie
-/// dispatch` without escaping into the invoking shell or UI's
-/// process group. Called by `lernie prompt` at top-of-main; not
-/// called by `lernie dispatch` (subagent re-entries deliberately
-/// inherit the parent's pgid).
+/// §2.9 cascade (`kill(-pgid, SIGTERM)`) reaches this executor's own
+/// provider adapter and tool subprocesses without escaping into the
+/// invoking shell or UI's process group — and, symmetrically, without
+/// reaching *out* to a sibling or parent executor. Called at the top
+/// of **every** driver: `lernie prompt` (root) and `lernie dispatch`
+/// (child re-entry) alike. The old no-setpgid-for-child-harnesses rule
+/// is retired (§2.9): a child executor takes its own pgid like a root,
+/// so a bare `lernie stop` on a parent cannot cross the agent boundary
+/// into a running child — that cascade is now the opt-in CLI-level id
+/// namespace walk of `--stop-children`, not a kernel-group side effect.
 pub fn become_pgid_leader() {
     // SAFETY: setpgid is async-signal-safe; (0, 0) means "this
     // process; new group with itself as leader". Idempotent when
@@ -173,14 +202,23 @@ fn become_pgid_leader_with(setpgid: impl FnOnce() -> libc::c_int) {
     }
 }
 
-/// The inbox directory `inbox/<branch>/` and every `inbox/<branch>-*/`
-/// (hyphenated descent per §2.2) that exists — each the home of one
-/// executor lock (§2.11). The branch name itself is the agent id;
-/// descended subagent conversations have ids that prefix-match the
-/// parent's (`<conv>-<sub>`). Absent `inbox/` (an agent spawned but
-/// whose executor has not yet opened a lock) yields an empty set — a
-/// stop with nothing to signal, idempotently `Ok(())`.
-fn collect_inbox_dirs(repo: &Path, branch: &str) -> Result<Vec<PathBuf>, Error> {
+/// The inbox directory `inbox/<branch>/` — the home of the agent's own
+/// executor lock (§2.11) — plus, **iff** `stop_children`, every
+/// `inbox/<branch>-*/` descendant (hyphenated descent per §2.3). The
+/// branch name itself is the agent id; descended subagent conversations
+/// have ids that prefix-match the parent's (`<conv>-<sub>`), and the
+/// single `<branch>-` prefix scan matches every depth of the subtree —
+/// the flat id namespace already encodes the tree, so no recursion is
+/// needed. Default (`stop_children == false`) returns only the one
+/// agent's inbox, leaving live children untouched (§2.9). Absent
+/// `inbox/` (an agent spawned but whose executor has not yet opened a
+/// lock) yields an empty set — a stop with nothing to signal,
+/// idempotently `Ok(())`.
+fn collect_inbox_dirs(
+    repo: &Path,
+    branch: &str,
+    stop_children: bool,
+) -> Result<Vec<PathBuf>, Error> {
     let inbox_root = repo.join(INBOX_DIR);
     let mut dirs = Vec::new();
     if !inbox_root.exists() {
@@ -194,7 +232,9 @@ fn collect_inbox_dirs(repo: &Path, branch: &str) -> Result<Vec<PathBuf>, Error> 
         let Some(name_str) = name.to_str() else {
             continue;
         };
-        if name_str != branch && !name_str.starts_with(&prefix_dash) {
+        let is_self = name_str == branch;
+        let is_descendant = stop_children && name_str.starts_with(&prefix_dash);
+        if !is_self && !is_descendant {
             continue;
         }
         dirs.push(entry.path());

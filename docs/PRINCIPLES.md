@@ -59,8 +59,8 @@ Summarizing a branch's work uses a child agent with a constrained toolset (`writ
 ## Goals are pinned
 Each branch's goal sits at the head of context for every model call on that branch, regardless of position in the sequence. This defeats the recency-decay failure mode in deep agent trees, where the last message drowns out the original intent.
 
-## Stops are aggressive and cascading
-When a stop fires, in-flight HTTP is dropped, tool subprocesses receive SIGTERM, and descendants are cancel-marked. Better to waste a step than let runaway work continue after a user or parent has pulled the plug.
+## Stops are aggressive but agent-scoped
+When a stop fires, that agent's in-flight HTTP is dropped and its own tool subprocesses receive SIGTERM (its limbs, killed by one kernel process-group signal) — better to waste a step than let runaway work continue after a user or parent has pulled the plug. But a stop targets **one agent**: it does not cross into that agent's children, because a parent and child are separate agents, not a process hierarchy. Every executor takes its own process group (root and child alike), so the kernel signal cannot leak across the boundary; an orphaned child finishes and revives its stopped parent by depositing its result (§2.5, §2.11), so stopping a parent strands nothing. Killing a whole subtree is an explicit request — `lernie stop --stop-children` walks the id namespace (children of X are exactly the inboxes prefixed `X-`, §2.9) — never a silent side effect of stopping the root.
 
 ## Context assembly is deterministic
 What the model sees is a pure function of the repo state via `manifest.yaml`. Reproducibility becomes a property of the system, and "why is this in context?" always has a concrete answer.

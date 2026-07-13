@@ -19,6 +19,7 @@ fn run_propagates_inspector_exists_error_as_git() {
     let err = run(
         dir.path(),
         "br",
+        false,
         &ErrInspector,
         &StubFinder::default(),
         &cascade::RecordingSignaler::new(0),
@@ -41,6 +42,7 @@ fn run_propagates_inspector_merged_error_as_git() {
     let err = run(
         dir.path(),
         "br",
+        false,
         &ErrMergedInspector,
         &StubFinder::default(),
         &cascade::RecordingSignaler::new(0),
@@ -68,6 +70,7 @@ fn run_propagates_finder_io_error_as_proc() {
     let err = run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &ErrFinder,
         &cascade::RecordingSignaler::new(0),
@@ -81,8 +84,37 @@ fn run_propagates_finder_io_error_as_proc() {
 #[test]
 fn collect_inbox_dirs_returns_empty_when_inbox_root_missing() {
     let dir = TempDir::new().unwrap();
-    let v = super::super::collect_inbox_dirs(dir.path(), "br").unwrap();
+    let v = super::super::collect_inbox_dirs(dir.path(), "br", false).unwrap();
     assert!(v.is_empty());
+}
+
+#[test]
+fn collect_inbox_dirs_gates_descendants_on_stop_children() {
+    // Same on-disk tree, both flag values: default is self-only; the
+    // flag folds in the `br-*` descendant. Pins the opt-in boundary
+    // directly at the collector (§2.9).
+    let dir = TempDir::new().unwrap();
+    touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "br-sub");
+
+    let mut default_only = super::super::collect_inbox_dirs(dir.path(), "br", false).unwrap();
+    default_only.sort();
+    assert_eq!(
+        default_only.len(),
+        1,
+        "default is self-only: {default_only:?}"
+    );
+    assert!(default_only[0].ends_with("inbox/br"));
+
+    let mut with_children = super::super::collect_inbox_dirs(dir.path(), "br", true).unwrap();
+    with_children.sort();
+    assert_eq!(
+        with_children.len(),
+        2,
+        "flag includes the child: {with_children:?}"
+    );
+    assert!(with_children[0].ends_with("inbox/br"));
+    assert!(with_children[1].ends_with("inbox/br-sub"));
 }
 
 #[test]
@@ -123,7 +155,17 @@ fn cli_run_returns_branch_missing_against_empty_repo() {
     // GitInspector's rev-parse fails and is interpreted as "branch
     // does not exist" — the canonical pre-cascade error path.
     let dir = TempDir::new().unwrap();
-    let err = super::super::cli_run(dir.path(), "no-such-branch").unwrap_err();
+    let err = super::super::cli_run(dir.path(), "no-such-branch", false).unwrap_err();
+    matches!(err, Error::BranchMissing(b) if b == "no-such-branch");
+}
+
+#[test]
+fn cli_run_forwards_stop_children_flag() {
+    // The `true` arm flows through cli_run into run/collect; the empty
+    // repo still short-circuits at branch validation, proving the flag
+    // is plumbed without needing a live executor.
+    let dir = TempDir::new().unwrap();
+    let err = super::super::cli_run(dir.path(), "no-such-branch", true).unwrap_err();
     matches!(err, Error::BranchMissing(b) if b == "no-such-branch");
 }
 

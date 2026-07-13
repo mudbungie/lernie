@@ -53,6 +53,50 @@ fn stop_on_branch_with_no_live_writer_is_idempotent_success() {
 }
 
 #[test]
+fn stop_stop_children_flag_parses_and_is_idempotent() {
+    // The `--stop-children` id-namespace walk (§2.9) reaches the same
+    // no-holder short-circuit as a bare stop when nothing is driving —
+    // proving the flag parses and plumbs through `cli_run` end-to-end.
+    let holder = TempDir::new().unwrap();
+    let harness = holder.path().join("harness");
+    fs::create_dir_all(&harness).unwrap();
+    write_global_models(&harness);
+    let dest = holder.path().join("conv");
+    scaffold_repo(&dest, &harness);
+    let primary = dest.join("root");
+    git_run(&primary, &["checkout", "-b", "stale-branch-77"]);
+    fs::write(primary.join("scratch.txt"), "diverge\n").unwrap();
+    git_run(&primary, &["add", "scratch.txt"]);
+    git_run(
+        &primary,
+        &[
+            "-c",
+            "user.email=t@e",
+            "-c",
+            "user.name=T",
+            "commit",
+            "-m",
+            "diverge",
+        ],
+    );
+    git_run(&primary, &["checkout", "main"]);
+
+    let stop_out = Command::new(lernie_bin())
+        .arg("stop")
+        .arg(&dest)
+        .arg("stale-branch-77")
+        .arg("--stop-children")
+        .stderr(Stdio::piped())
+        .output()
+        .expect("spawn lernie stop --stop-children");
+    assert!(
+        stop_out.status.success(),
+        "lernie stop --stop-children must succeed idempotently: {}",
+        String::from_utf8_lossy(&stop_out.stderr)
+    );
+}
+
+#[test]
 fn stop_on_missing_branch_errors() {
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");

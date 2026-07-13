@@ -15,6 +15,8 @@ use super::fixtures::*;
 use crate::prompt::adapter::AdapterRunner;
 use crate::prompt::step::step_dir_rel;
 use crate::prompt::{Deps, run};
+use brazen::FinishReason;
+use serde_json::json;
 use std::ffi::OsString;
 use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -144,4 +146,96 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
         !lines.iter().any(|e| e["type"] == "end"),
         "stopped step must have no terminal `end` (the §2.9 signature)"
     );
+}
+
+/// One `tool_use` step, and the tool is cut down by the executor's own
+/// group SIGTERM (§2.9 steps 1-2): the stub flips the stop flag (the
+/// handler ran) and returns `KilledBySignal`. That is the stop, not a
+/// fault — `run` returns Ok with a `stopped` deposit and no compaction,
+/// the *same* terminal sequence as a stop landing in the model-call
+/// window. Before this wiring the `KilledBySignal` propagated as
+/// `ToolExec` and the harness exited non-zero (the crash shape).
+#[test]
+fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
+    let r1 = stream_of(
+        FinishReason::ToolUse,
+        &[Block::ToolUse {
+            id: "toolu_01",
+            name: "bash",
+            input: json!({"cmd": "ls"}),
+        }],
+    );
+    let adapter = StubAdapter::happy(&r1);
+    let git = StubGit::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let stop = AtomicBool::new(false);
+    let (sleeper, tool_executor) = (
+        StubSleeper::default(),
+        StubToolExecutor::stop_killed_on("bash"),
+    );
+
+    let mut deps = valid_deps(
+        &adapter,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &dispatcher,
+        &tool_executor,
+        harness.path(),
+    );
+    deps.stop = &stop;
+
+    let branch = run(repo.path(), "hi", &deps).unwrap();
+    assert_eq!(branch, "ct-1-deadbeef");
+    // The tool was entered before the stop felled it.
+    assert_eq!(tool_executor.calls.borrow().len(), 1);
+    // No terminal compactor for a stopped branch (§2.9), and the result
+    // deposited on the way out carries the `stopped` epitaph.
+    assert!(dispatcher.calls.borrow().is_empty());
+    assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
+}
+
+/// A tool killed by a signal with *no* stop pending is a genuine crash
+/// (§2.10), not a stop: the loop surfaces it as `ToolExec`, never the
+/// stopped-deposit exit — the out-of-stop-path classification.
+#[test]
+fn tool_killed_without_stop_surfaces_as_tool_exec_error() {
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
+    let r1 = stream_of(
+        FinishReason::ToolUse,
+        &[Block::ToolUse {
+            id: "toolu_01",
+            name: "bash",
+            input: json!({"cmd": "ls"}),
+        }],
+    );
+    let adapter = StubAdapter::happy(&r1);
+    let git = StubGit::ok();
+    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::killed_on("bash"));
+
+    let err = run(
+        repo.path(),
+        "hi",
+        &valid_deps(
+            &adapter,
+            &sleeper,
+            &git,
+            &clock,
+            &id,
+            &dispatcher,
+            &tool_executor,
+            harness.path(),
+        ),
+    )
+    .unwrap_err();
+    match err {
+        crate::prompt::Error::ToolExec { tool, .. } => assert_eq!(tool, "bash"),
+        other => panic!("expected ToolExec, got {other:?}"),
+    }
+    assert!(dispatcher.calls.borrow().is_empty());
 }

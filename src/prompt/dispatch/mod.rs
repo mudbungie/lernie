@@ -246,14 +246,20 @@ pub(super) fn run_exchange(
 
         // §2.5 pairing: run each tool_use, committing its tool_result as a
         // transcript entry (§2.3); the next step re-assembles from the tree.
-        run_tool_calls(
+        // §2.9 step 3 check point: a stop landing in this tool-execution
+        // window (the group SIGTERM felled the running tool) breaks here for
+        // the same stopped-deposit exit as the model-call window.
+        if run_tool_calls(
             repo,
             &worktree_path,
             &conv_id,
             &step_dir_rel_str,
             &assistant_content,
             deps,
-        )?;
+        )? {
+            stopped = true;
+            break;
+        }
         step_seq += 1;
     }
 

@@ -56,7 +56,7 @@ coverage:
 	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
 	  exit 1; \
 	fi
-	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'crates/*/src/main.rs'
+	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'crates/*/src/main.rs'
 
 schemas:
 	cargo run --quiet --bin gen-schemas -- schemas

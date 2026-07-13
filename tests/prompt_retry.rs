@@ -130,17 +130,9 @@ fn scaffold(dest: &Path, harness: &Path) {
         String::from_utf8_lossy(&out.stderr)
     );
     // Point the roles at the fixture brazen row — a config-commit
-    // amendment (§2.2: control lives in the config lineage).
-    let bare = dest.join("repo.git");
-    let author = dest.join(".amend");
-    let author_str = author.to_string_lossy().to_string();
-    git(
-        &bare,
-        &["worktree", "add", author_str.as_str(), "config/default"],
-    );
-    fs::write(
-        author.join("providers.yaml"),
-        "\
+    // amendment (§2.2: control lives in the config lineage), over the
+    // shipped authoring core rather than hand-rolled worktree juggling.
+    let providers = "\
 roles:
   worker:
     provider: test
@@ -148,25 +140,16 @@ roles:
   compactor:
     provider: test
     model: claude-haiku-4-5
-",
+";
+    lernie::template::authoring::author(
+        dest,
+        &dest.join(".no-pools"),
+        "default",
+        lernie::template::authoring::Origin::Advance,
+        |dir| fs::write(dir.join("providers.yaml"), providers),
+        &lernie::template::RealGit::new(),
     )
     .unwrap();
-    git(&author, &["add", "-A"]);
-    git(&author, &["commit", "-m", "config: amend"]);
-    git(&bare, &["worktree", "remove", author_str.as_str()]);
-}
-
-fn git(dest: &Path, args: &[&str]) {
-    let mut cmd = Command::new("git");
-    for var in INHERITED_GIT_ENV {
-        cmd.env_remove(var);
-    }
-    let out = cmd.arg("-C").arg(dest).args(args).output().expect("git");
-    assert!(
-        out.status.success(),
-        "git {args:?}: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
 }
 
 #[test]

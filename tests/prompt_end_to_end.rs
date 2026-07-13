@@ -96,17 +96,16 @@ roles:
     provider: test
     model: claude-haiku-4-5
 ";
-    let bare = dest.join("repo.git");
-    let author = dest.join(".amend");
-    let author_str = author.to_string_lossy().to_string();
-    let _ = git_capture(
-        &bare,
-        &["worktree", "add", author_str.as_str(), "config/default"],
-    );
-    fs::write(author.join("providers.yaml"), yaml).unwrap();
-    let _ = git_capture(&author, &["add", "-A"]);
-    let _ = git_capture(&author, &["commit", "-m", "config: amend"]);
-    let _ = git_capture(&bare, &["worktree", "remove", author_str.as_str()]);
+    // Config-commit amendment (§2.2) over the shipped authoring core.
+    lernie::template::authoring::author(
+        dest,
+        &dest.join(".no-pools"),
+        "default",
+        lernie::template::authoring::Origin::Advance,
+        |dir| fs::write(dir.join("providers.yaml"), yaml),
+        &lernie::template::RealGit::new(),
+    )
+    .unwrap();
 }
 
 fn scaffold_repo(dest: &Path, harness: &Path) {

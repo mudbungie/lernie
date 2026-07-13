@@ -1,35 +1,33 @@
-//! End-to-end branch-state classification against real conv-repo
+//! End-to-end §3.5 agent-state classification against real workspace
 //! fixtures.
 //!
-//! Mirrors the on-disk shape the harness's model-call driver produces —
-//! brazen `v=1` NDJSON `response.json` lines under
-//! `<conv-repo>/steps/<conv-id>/<NNN>/`. The classifier reads the latest
-//! step's `response.json`: absence of a terminal `end` (or a terminal
-//! `end` with the writer still holding the fd open, §3.5) is in-flight;
-//! a terminal `end` with the fd closed marks the chain stopped. These
-//! fixtures write no live writer, so the real `/proc` probe sees the fd
-//! as closed.
+//! These fixtures run **no live executor**, so the executor-lock probe
+//! finds no holder and the `response.json` writer probe finds the file
+//! closed: every agent settles into a *quiescent* (clean terminal) or
+//! *stopped* (failed / killed / no-run) classification (§4.4 terminal
+//! rules). The `live` and `in_flight` states require a running driver
+//! holding the lock and are covered by the unit tests in
+//! `super::super::state` (probe-injected) and `super::super::lock_probe`.
 
 use super::fixture::Fixture;
-use crate::git_tree::{BranchState, GitTree};
+use crate::git_tree::{AgentState, GitTree};
 
 #[test]
-fn from_repo_in_flight_branch_with_no_response_yet_classifies_as_in_flight() {
-    // Branch exists, dispatch commit landed, but no `response.json` has
-    // been written for any step. Per ARCH §2.9 (post-amendment):
-    // absence of a closed terminal event → InFlight.
+fn agent_with_no_response_yet_classifies_as_stopped() {
+    // Branch exists, dispatch commit landed, but no `response.json` and no
+    // live executor: nothing is driving it → stopped (§3.5, §2.9).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_agent("20260427T160000Z-pre0", "no response yet");
     let tree = GitTree::from_repo(&fx.path).unwrap();
-    assert_eq!(tree.in_flight.len(), 1);
-    assert_eq!(tree.in_flight[0].state, BranchState::InFlight);
+    assert_eq!(tree.agents.len(), 1);
+    assert_eq!(tree.agents[0].state, AgentState::Stopped);
 }
 
 #[test]
-fn from_repo_in_flight_branch_with_partial_response_classifies_as_in_flight() {
-    // Streaming has begun (text_delta lines on disk) but no terminal
-    // event has been emitted yet — the writer is still appending.
+fn agent_with_partial_response_and_no_executor_classifies_as_stopped() {
+    // Streaming began (text_delta on disk) but no terminal `end` landed and
+    // no executor holds the lock: killed mid-stream → stopped (§4.4).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_agent("20260427T160100Z-mid0", "mid stream");
@@ -42,14 +40,13 @@ fn from_repo_in_flight_branch_with_partial_response_classifies_as_in_flight() {
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
-    assert_eq!(tree.in_flight[0].state, BranchState::InFlight);
+    assert_eq!(tree.agents[0].state, AgentState::Stopped);
 }
 
 #[test]
-fn from_repo_in_flight_branch_after_terminal_end_classifies_as_stopped() {
-    // The terminal `end` landed and no writer holds the fd; the chain is
-    // no longer advancing. Root conversations don't merge back (ARCH
-    // §2.3 step 5), so this is the natural terminal state.
+fn agent_with_clean_terminal_classifies_as_quiescent() {
+    // A `finish` + `end` segment with the fd closed and no lock: a clean,
+    // complete model call awaiting a message → quiescent (§3.5, §4.4).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_agent("20260427T160200Z-end0", "ended");
@@ -64,13 +61,13 @@ fn from_repo_in_flight_branch_after_terminal_end_classifies_as_stopped() {
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
-    assert_eq!(tree.in_flight[0].state, BranchState::Stopped);
+    assert_eq!(tree.agents[0].state, AgentState::Quiescent);
 }
 
 #[test]
-fn from_repo_in_flight_branch_after_error_segment_classifies_as_stopped() {
-    // A failed attempt (error + terminal end) with the fd closed marks
-    // the chain stopped (§4.4 — a failed step renders as stopped).
+fn agent_with_error_terminal_classifies_as_stopped() {
+    // A failed attempt (error + terminal end) with the fd closed is a
+    // *failed* step, rendered stopped (§4.4, §2.10).
     let fx = Fixture::new();
     fx.commit_other("README.md", "initial");
     fx.build_agent("20260427T160300Z-err0", "errored");
@@ -84,5 +81,5 @@ fn from_repo_in_flight_branch_after_error_segment_classifies_as_stopped() {
         ],
     );
     let tree = GitTree::from_repo(&fx.path).unwrap();
-    assert_eq!(tree.in_flight[0].state, BranchState::Stopped);
+    assert_eq!(tree.agents[0].state, AgentState::Stopped);
 }

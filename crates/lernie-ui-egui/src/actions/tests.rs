@@ -1,5 +1,5 @@
 use super::*;
-use crate::git_tree::{BranchState, ConversationBranch};
+use crate::git_tree::{Agent, AgentState};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
@@ -27,10 +27,10 @@ fn drain(stream: Stream) {
     for _ in stream {}
 }
 
-fn branch(name: &str, state: BranchState) -> ConversationBranch {
-    ConversationBranch {
-        branch_name: name.to_string(),
-        conv_id: name.to_string(),
+fn branch(name: &str, state: AgentState) -> Agent {
+    Agent {
+        branch_name: format!("agents/{name}"),
+        agent_id: name.to_string(),
         tip_oid: "0".repeat(40),
         tip_short_oid: "0000000".to_string(),
         tip_timestamp_unix: 0,
@@ -39,6 +39,9 @@ fn branch(name: &str, state: BranchState) -> ConversationBranch {
         streaming_text: None,
         tool_calls: vec![],
         state,
+        pending_messages: 0,
+        declined_transfer: false,
+        budget_exhausted: false,
     }
 }
 
@@ -60,54 +63,59 @@ fn new_prompt_disabled_for_whitespace_only() {
 
 #[test]
 fn stop_disabled_when_selection_is_none() {
-    let bs = vec![branch("foo", BranchState::InFlight)];
+    let bs = vec![branch("foo", AgentState::InFlight)];
     assert!(!stop_enabled(None, &bs));
 }
 
 #[test]
-fn stop_disabled_when_selection_not_in_branches() {
-    let bs = vec![branch("foo", BranchState::InFlight)];
+fn stop_disabled_when_selection_not_in_agents() {
+    let bs = vec![branch("foo", AgentState::InFlight)];
     assert!(!stop_enabled(Some("bar"), &bs));
 }
 
 #[test]
-fn stop_disabled_when_selected_branch_stopped() {
-    let bs = vec![branch("foo", BranchState::Stopped)];
+fn stop_disabled_when_selected_agent_stopped() {
+    let bs = vec![branch("foo", AgentState::Stopped)];
     assert!(!stop_enabled(Some("foo"), &bs));
 }
 
 #[test]
-fn stop_disabled_when_selected_branch_merged() {
-    let bs = vec![branch("foo", BranchState::Merged)];
-    assert!(!stop_enabled(Some("foo"), &bs));
-}
-
-#[test]
-fn stop_disabled_when_selected_branch_conflicted() {
-    let bs = vec![branch("foo", BranchState::Conflicted)];
+fn stop_disabled_when_selected_agent_quiescent() {
+    // A finished-for-now agent has no executor to signal (§2.9).
+    let bs = vec![branch("foo", AgentState::Quiescent)];
     assert!(!stop_enabled(Some("foo"), &bs));
 }
 
 #[test]
 fn stop_enabled_when_selection_is_in_flight() {
-    let bs = vec![branch("foo", BranchState::InFlight)];
+    let bs = vec![branch("foo", AgentState::InFlight)];
     assert!(stop_enabled(Some("foo"), &bs));
 }
 
 #[test]
-fn stop_disabled_when_branches_empty() {
-    let bs: Vec<ConversationBranch> = vec![];
+fn stop_enabled_when_selection_is_live() {
+    // A driver between model calls (running a tool) is stoppable — the
+    // very case §2.9's lock-fd discovery exists for.
+    let bs = vec![branch("foo", AgentState::Live)];
+    assert!(stop_enabled(Some("foo"), &bs));
+}
+
+#[test]
+fn stop_disabled_when_agents_empty() {
+    let bs: Vec<Agent> = vec![];
     assert!(!stop_enabled(Some("foo"), &bs));
 }
 
 #[test]
-fn stop_picks_correct_branch_among_several() {
+fn stop_picks_correct_agent_among_several() {
     let bs = vec![
-        branch("a", BranchState::Stopped),
-        branch("b", BranchState::InFlight),
-        branch("c", BranchState::Merged),
+        branch("a", AgentState::Stopped),
+        branch("b", AgentState::InFlight),
+        branch("c", AgentState::Quiescent),
+        branch("d", AgentState::Live),
     ];
     assert!(stop_enabled(Some("b"), &bs));
+    assert!(stop_enabled(Some("d"), &bs));
     assert!(!stop_enabled(Some("a"), &bs));
     assert!(!stop_enabled(Some("c"), &bs));
 }

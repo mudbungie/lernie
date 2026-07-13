@@ -1,52 +1,65 @@
-//! Git-tree view-model and egui widget.
+//! Git-tree view-model (ARCH §7.1 live view, §3.5 agent-state contract).
 //!
-//! [`GitTree::from_repo`] inspects the repo's current git state and
-//! produces a view-model suitable for rendering. The view-model is a
-//! pure function of the repo's refs and tree content; it holds no egui
+//! [`GitTree::from_repo`] inspects the workspace's on-disk state and
+//! produces a view-model suitable for rendering. The view-model is a pure
+//! function of the workspace's refs and tree content; it holds no egui
 //! dependency, so a future `lernie-ui-web` crate can render the same
 //! structure from the web.
 //!
-//! Git access is via the `git` CLI (a hard dep of lernie itself, per
-//! ARCH §2.2) — no libgit2 native build step is required.
+//! Git access is via the `git` CLI (a hard dep of lernie itself, per ARCH
+//! §2.2) — no libgit2 native build step is required.
 //!
 //! # Workspace layout (ARCH §2.2–§2.3)
 //!
-//! A workspace holds one bare repository at `<workspace>/repo.git`:
-//! config branches (`config/<name>`) and agent refs
-//! (`agents/<agent-id>`) — no `main`. Callers pass the workspace path;
-//! this module resolves the git dir to `<workspace>/repo.git` before
-//! issuing any git command, and reads step records (for previews)
-//! directly from the workspace root's `steps/` tree.
+//! A workspace holds one bare repository at `<workspace>/repo.git`: config
+//! branches (`config/<name>`) and agent refs (`agents/<agent-id>`) — no
+//! `main`. Callers pass the workspace path; this module resolves the git
+//! dir to `<workspace>/repo.git` before issuing any git command, and reads
+//! step records, inboxes, and marks directly from the workspace root.
 //!
-//! The trunk section of the view is the config lineage (`HEAD`, which
-//! the workspace repository points at `config/default`); the agent
-//! section enumerates every `agents/*` ref — agents never merge
-//! anywhere (§2.6), so every agent is a live row. The user-message
-//! preview reads from `<workspace>/steps/<agent-id>/001/request.json`
-//! on disk.
+//! The trunk section is the config lineage (`HEAD`, which the workspace
+//! repository points at `config/default`); the agent section enumerates
+//! every `agents/*` ref and renders it as a **tree** by hyphenated descent
+//! (§2.3) — agents never merge anywhere (§2.6), so every agent persists on
+//! its own ref. Each agent carries its §3.5 state ([`AgentState`]), the two
+//! ref-derived marks (declined-transfer, budget-exhausted), a
+//! pending-message count from its inbox, and its branch commits with their
+//! subjects (delivery / work-product-transfer commits surface by subject).
 
 mod cmd;
+mod descent;
 mod detect;
 mod enumerate;
 mod fd_probe;
+mod lock_probe;
+mod marks;
+mod render;
 mod state;
 mod streaming;
+mod terminal;
 mod tools;
 
-pub use state::BranchState;
+pub use descent::{DescentRow, descent_order};
+pub use render::render;
+#[cfg(test)]
+pub(crate) use render::state_badge;
+pub use state::AgentState;
 
 use std::path::{Path, PathBuf};
 
 /// The bare workspace repository dir (ARCH §2.2). Mirrors
-/// `src/workspace::REPO_DIR` in the harness; the duplicate constant
-/// keeps the UI crate free of a dep on the harness binary.
+/// `src/workspace::REPO_DIR` in the harness; the duplicate constant keeps
+/// the UI crate free of a dep on the harness binary.
 const REPO_DIR: &str = "repo.git";
 
-/// Top-level directory under the conv-repo holding per-conversation
-/// step records (ARCH §2.2 / §2.3). Mirrors
-/// `src/prompt/step::STEPS_DIR`; the duplicate constant keeps the UI
-/// crate free of a dep on the harness binary.
+/// Top-level directory under the workspace root holding per-agent step
+/// records (ARCH §2.2 / §2.3). Mirrors `src/prompt/step::STEPS_DIR`.
 const STEPS_DIR: &str = "steps";
+
+/// Top-level directory under the workspace root holding per-agent inboxes
+/// (ARCH §2.11). Mirrors the harness's `inbox/<agent-id>/` layout; the
+/// pending-message count and the executor-lock probe both key off it.
+const INBOX_DIR: &str = "inbox";
 
 #[derive(Debug, thiserror::Error)]
 pub enum GitTreeError {
@@ -68,9 +81,11 @@ pub struct GitTree {
     /// first-parent, oldest to newest.
     pub commits: Vec<CommitNode>,
     /// Every agent branch (`agents/*`, §2.3), enumerated via
-    /// `git for-each-ref refs/heads/agents/`. Agents never merge
-    /// anywhere (§2.6); each persists on its own ref.
-    pub in_flight: Vec<ConversationBranch>,
+    /// `git for-each-ref refs/heads/agents/`. A flat authoritative set;
+    /// the render tree is derived from the ids by [`descent_order`]
+    /// (§2.3 hyphenated descent) — never stored (PRINCIPLES "Single
+    /// source of truth").
+    pub agents: Vec<Agent>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -89,51 +104,67 @@ pub struct StepCommit {
     pub oid: String,
     pub short_oid: String,
     pub timestamp_unix: i64,
+    /// Commit subject. Surfaces what a branch commit is — a dispatch, a
+    /// delivery commit, or a work-product-transfer commit (§2.11, §2.6,
+    /// §7.1 "delivery/result-message commits surfaced").
+    pub subject: String,
 }
 
+/// One agent branch (`agents/<agent-id>`, §2.3). Named `Agent` — every
+/// row is an agent, not an "unmerged conversation branch"; nothing merges
+/// (§2.6), so the merged/unmerged framing is gone.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ConversationBranch {
-    /// Branch name; equal to `conv_id` in v0.3 (no prefix). Held
-    /// separately so the renderer can label rows without re-deriving.
+pub struct Agent {
+    /// Branch name (`agents/<agent-id>`). Held separately so the renderer
+    /// can label rows without re-deriving.
     pub branch_name: String,
-    pub conv_id: String,
+    /// The agent id (`agents/` prefix stripped) — the identity everywhere
+    /// (steps/, inbox/, worktree dir, descent). The descent tree keys off
+    /// this (§2.3).
+    pub agent_id: String,
     pub tip_oid: String,
     pub tip_short_oid: String,
     pub tip_timestamp_unix: i64,
-    /// Commits on this branch not reachable from `main`, oldest to
-    /// newest. Same shape as merged-conversation steps.
+    /// Commits on this branch past every config lineage, oldest to newest
+    /// (each with its subject).
     pub steps: Vec<StepCommit>,
     pub preview: Option<String>,
-    /// Live-updating model text for the latest in-flight step on this
-    /// branch. Re-derived from
-    /// `<conv-repo>/steps/<conv-id>/<NNN>/response.json` on every
-    /// `from_repo` call (ARCH §3.5: stateless re-read on each tick).
-    /// `None` when no `text_delta` events have landed yet (or the
-    /// step's `response.json` is absent).
+    /// Live-updating model text for the latest step on this branch.
+    /// Re-derived from `<workspace>/steps/<agent-id>/<NNN>/response.json`
+    /// on every `from_repo` call (§3.5: stateless re-read on each tick).
+    /// `None` when no `text_delta` events have landed yet.
     pub streaming_text: Option<String>,
     /// Tool calls under this branch's latest step's `tools/` directory
-    /// (ARCH §3.3). State is derived purely from the presence of
-    /// `input.json` / `output.json`: input only ⇒ in-flight, both ⇒
-    /// complete. The renderer pulses in-flight nodes and animates them
-    /// via `request_repaint_after`. Re-derived on every `from_repo` call
-    /// (§3.5).
+    /// (ARCH §3.3), derived purely from `input.json` / `output.json`
+    /// presence. Re-derived on every `from_repo` call (§3.5).
     pub tool_calls: Vec<ToolCall>,
-    /// Branch-state classification (ARCH §2.9 / §7.1) derived from the
-    /// latest step's `response.json` terminal event. Always `InFlight`
-    /// or `Stopped` for a row in this section — `Merged` and
-    /// `Conflicted` are not produced for unmerged branches. Re-derived
-    /// on every `from_repo` call (§3.5).
-    pub state: BranchState,
+    /// §3.5 agent-state classification, derived from the executor lock and
+    /// the latest step's `response.json` terminal segment. Re-derived on
+    /// every `from_repo` call (§3.5).
+    pub state: AgentState,
+    /// Count of pending (undelivered) messages in the agent's inbox
+    /// (`<workspace>/inbox/<agent-id>/`, §2.11). A non-empty inbox drives
+    /// the §7.1 pending-message indicator; derived from the listing,
+    /// never stored.
+    pub pending_messages: usize,
+    /// `refs/lernie/conflicted/<agent-id>` exists — a work-product
+    /// transfer was declined (§2.6). Rendered as an orthogonal mark
+    /// alongside the state (§3.5, §7.1).
+    pub declined_transfer: bool,
+    /// `refs/lernie/budget-exhausted/<agent-id>` exists — the agent hit a
+    /// budget ceiling (§6). Rendered as an orthogonal mark alongside the
+    /// state (§3.5, §7.1).
+    pub budget_exhausted: bool,
 }
 
-/// A single tool call surfaced to the renderer. v0.5 scope is the
-/// pulsing in-flight indicator (bl-23d9); the disk records carry more
-/// metadata (timing, exit code, raw stdout) but the view-model only
+/// A single tool call surfaced to the renderer. The disk records carry
+/// more metadata (timing, exit code, raw stdout) but the view-model only
 /// needs identity + state to drive the indicator.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolCall {
     /// `tool_use.id` from the wire (e.g. `toolu_01abc…`); also the
-    /// `<tool-id>/` directory name under `<conv-repo>/steps/<conv-id>/<NNN>/tools/`.
+    /// `<tool-id>/` directory name under
+    /// `<workspace>/steps/<agent-id>/<NNN>/tools/`.
     pub tool_id: String,
     pub state: ToolCallState,
 }
@@ -149,122 +180,19 @@ pub enum ToolCallState {
 }
 
 impl GitTree {
-    pub fn from_repo(conv_repo: &Path) -> Result<Self, GitTreeError> {
-        let git_dir = conv_repo.join(REPO_DIR);
+    pub fn from_repo(workspace: &Path) -> Result<Self, GitTreeError> {
+        let git_dir = workspace.join(REPO_DIR);
         let log = cmd::git_log_first_parent(&git_dir)?;
         let commits = log.into_iter().map(enumerate::build_node).collect();
-        // The §3.5 fd-close gate probes `/proc` for a writer still
-        // holding a terminal step's `response.json` open (mid-retry).
-        let probe = fd_probe::ProcFsProbe::default();
-        let in_flight = enumerate::enumerate_in_flight(conv_repo, &git_dir, &probe)?;
-        Ok(Self { commits, in_flight })
+        // Two liveness observations (ARCH §2.11 "two observations"): the
+        // executor lock (inbox-dir fd) answers *is anyone driving*
+        // (`live`); the open `response.json` fd answers *is a model call in
+        // flight right now* (the `in_flight` sub-state).
+        let lock = lock_probe::ProcFsLockProbe::default();
+        let writer = fd_probe::ProcFsProbe::default();
+        let agents = enumerate::enumerate_agents(workspace, &git_dir, &lock, &writer)?;
+        Ok(Self { commits, agents })
     }
-}
-
-/// egui widget that renders a `GitTree` as a vertical list. Main's
-/// trunk comes first (each merge node with its step commits indented
-/// beneath); any in-flight conversation branches follow in their own
-/// section. Thin wrapper — all structure lives in the view-model.
-pub fn render(ui: &mut egui::Ui, tree: &GitTree) {
-    if tree.commits.is_empty() && tree.in_flight.is_empty() {
-        ui.label("(no commits yet)");
-        return;
-    }
-    for commit in &tree.commits {
-        render_commit(ui, commit);
-    }
-    if !tree.in_flight.is_empty() {
-        ui.separator();
-        ui.label("agents");
-        for branch in &tree.in_flight {
-            render_in_flight(ui, branch);
-            for step in &branch.steps {
-                render_step(ui, step);
-            }
-        }
-    }
-}
-
-fn render_commit(ui: &mut egui::Ui, commit: &CommitNode) {
-    ui.horizontal(|ui| {
-        ui.monospace(&commit.short_oid);
-        ui.label(commit.timestamp_unix.to_string());
-        ui.label(&commit.subject);
-    });
-}
-
-fn render_step(ui: &mut egui::Ui, step: &StepCommit) {
-    ui.horizontal(|ui| {
-        ui.label("  ↳");
-        ui.monospace(&step.short_oid);
-        ui.label(step.timestamp_unix.to_string());
-    });
-}
-
-fn render_in_flight(ui: &mut egui::Ui, branch: &ConversationBranch) {
-    ui.horizontal(|ui| {
-        let (glyph, color) = state_badge(branch.state);
-        ui.colored_label(color, glyph);
-        ui.monospace(&branch.tip_short_oid);
-        ui.label(branch.tip_timestamp_unix.to_string());
-        ui.label(&branch.branch_name);
-        if let Some(preview) = &branch.preview {
-            ui.label(preview);
-        }
-    });
-    if let Some(text) = &branch.streaming_text {
-        ui.indent(("streaming", &branch.branch_name), |ui| {
-            ui.label(text);
-        });
-    }
-    for call in &branch.tool_calls {
-        render_tool_call(ui, call);
-    }
-}
-
-/// Repaint cadence for pulsing tool indicators. ~30 fps is smooth
-/// enough for the eye and cheap enough for an idle UI (egui's
-/// `request_repaint_after` is the standard knob for this; an in-flight
-/// node sets it on every render so the loop sustains itself, while a
-/// complete node leaves the default `Duration::MAX` in place and the
-/// app goes back to waiting on input).
-const PULSE_REPAINT_DELAY: std::time::Duration = std::time::Duration::from_millis(33);
-
-/// Pulse frequency in radians per second — ~0.6 Hz, slow enough to read
-/// as "alive" rather than "blinking error".
-const PULSE_RATE_RAD_PER_SEC: f64 = 4.0;
-
-/// Glyph + colour for each branch state (ARCH §7.1 termination markers).
-/// Pure function over the enum so renderer tests can assert the mapping
-/// without a windowing context. `Conflicted` is unreachable in v0.5
-/// (no subagent merges yet) but the mapping is provided so a future
-/// renderer pass picks it up without code changes.
-pub(crate) fn state_badge(state: BranchState) -> (&'static str, egui::Color32) {
-    match state {
-        BranchState::Merged => ("●", egui::Color32::from_rgb(120, 200, 120)),
-        BranchState::InFlight => ("◐", egui::Color32::from_rgb(120, 180, 220)),
-        BranchState::Stopped => ("■", egui::Color32::from_rgb(180, 180, 180)),
-        BranchState::Conflicted => ("✕", egui::Color32::from_rgb(220, 120, 120)),
-    }
-}
-
-fn render_tool_call(ui: &mut egui::Ui, call: &ToolCall) {
-    ui.horizontal(|ui| {
-        ui.label("    ⚙");
-        match call.state {
-            ToolCallState::InFlight => {
-                let time = ui.ctx().input(|i| i.time);
-                let alpha = (0.5 + 0.5 * (time * PULSE_RATE_RAD_PER_SEC).sin()).clamp(0.0, 1.0);
-                let color = egui::Color32::from_white_alpha((alpha * 255.0) as u8);
-                ui.colored_label(color, &call.tool_id);
-                ui.label("(in-flight)");
-                ui.ctx().request_repaint_after(PULSE_REPAINT_DELAY);
-            }
-            ToolCallState::Complete => {
-                ui.label(&call.tool_id);
-            }
-        }
-    });
 }
 
 #[cfg(test)]

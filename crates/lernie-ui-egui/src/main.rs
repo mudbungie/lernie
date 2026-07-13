@@ -3,7 +3,7 @@ use lernie_ui_egui::actions::{
     ActionsState, dispatch_new_prompt, dispatch_stop, new_prompt_enabled, stop_enabled,
 };
 use lernie_ui_egui::cli_outbound::Cli;
-use lernie_ui_egui::git_tree::{ConversationBranch, GitTree};
+use lernie_ui_egui::git_tree::{Agent, GitTree};
 use lernie_ui_egui::{AppState, Args, render_app};
 
 fn main() -> eframe::Result<()> {
@@ -44,12 +44,12 @@ struct App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let branches: &[ConversationBranch] = self
+            let agents: &[Agent] = self
                 .tree
                 .as_ref()
-                .map(|t| t.in_flight.as_slice())
+                .map(|t| t.agents.as_slice())
                 .unwrap_or(&[]);
-            render_actions(ui, &mut self.actions, branches, &self.cli, &self.state);
+            render_actions(ui, &mut self.actions, agents, &self.cli, &self.state);
             ui.separator();
             render_app(ui, &self.state, self.tree.as_ref());
         });
@@ -64,7 +64,7 @@ impl eframe::App for App {
 fn render_actions(
     ui: &mut egui::Ui,
     state: &mut ActionsState,
-    branches: &[ConversationBranch],
+    agents: &[Agent],
     cli: &Cli,
     app: &AppState,
 ) {
@@ -88,15 +88,15 @@ fn render_actions(
         egui::ComboBox::from_id_salt("stop-branch")
             .selected_text(label)
             .show_ui(ui, |ui| {
-                for branch in branches {
+                for agent in agents {
                     ui.selectable_value(
                         &mut state.selected_branch,
-                        Some(branch.conv_id.clone()),
-                        &branch.conv_id,
+                        Some(agent.agent_id.clone()),
+                        &agent.agent_id,
                     );
                 }
             });
-        let enabled = stop_enabled(state.selected_branch.as_deref(), branches);
+        let enabled = stop_enabled(state.selected_branch.as_deref(), agents);
         if ui.add_enabled(enabled, egui::Button::new("Stop")).clicked()
             && let Some(branch) = state.selected_branch.as_deref()
         {

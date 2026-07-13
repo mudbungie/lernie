@@ -25,9 +25,9 @@ const OUTPUT_FILE: &str = "output.json";
 /// per `<tool-id>/` subdir whose `input.json` is present. Sorted by
 /// tool-id for deterministic ordering across ticks (the wire `tool_use.id`
 /// monotonically encodes call order, but disk `read_dir` is unordered).
-pub(super) fn tool_calls_from_disk(conv_repo: &Path, conv_id: &str) -> Vec<ToolCall> {
-    let conv_steps = conv_repo.join(STEPS_DIR).join(conv_id);
-    let Some(latest) = latest_step_dir(&conv_steps) else {
+pub(super) fn tool_calls_from_disk(workspace: &Path, agent_id: &str) -> Vec<ToolCall> {
+    let agent_steps = workspace.join(STEPS_DIR).join(agent_id);
+    let Some(latest) = latest_step_dir(&agent_steps) else {
         return Vec::new();
     };
     let tools_dir = latest.join(TOOLS_SUBDIR);

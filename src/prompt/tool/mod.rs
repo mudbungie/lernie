@@ -141,10 +141,12 @@ pub enum ExecError {
         #[source]
         source: io::Error,
     },
-    /// Tool died from a signal other than the harness's own SIGTERM
-    /// (SIGSEGV, SIGABRT, …). Per ARCH §3.3 / §2.10 this is a
-    /// harness-level fault, not a semantic tool failure delivered to
-    /// the model.
+    /// Tool died from a signal (SIGSEGV, SIGABRT, …). Per ARCH §3.3 /
+    /// §2.10 this is a harness-level fault, not a semantic tool failure
+    /// delivered to the model — *except* when it is the executor's own
+    /// group SIGTERM mid-stop: `run_tool_calls` (§2.9 step 3) reads that
+    /// case as the stop, not a fault, by the stop flag, so a `KilledBySignal`
+    /// only ever *propagates* out of the stop path.
     #[error(
         "tool {name:?} terminated by signal {signal} (not harness SIGTERM): \
         harness-level fault per ARCH §2.10"

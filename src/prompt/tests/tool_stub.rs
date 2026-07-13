@@ -30,6 +30,14 @@ pub(super) struct StubToolExecutor {
     pub(super) calls: RefCell<Vec<ObservedCall>>,
     replies: HashMap<String, String>,
     fail_on: Option<String>,
+    /// When set, `execute` on this tool name returns
+    /// [`ExecError::KilledBySignal`] — a tool cut down by a signal. If
+    /// `kill_sets_stop`, it first flips the injected stop flag, the §2.9
+    /// group-SIGTERM shape (the executor's handler ran and this limb died
+    /// with it) so the loop classifies the kill as a stop rather than a
+    /// fault.
+    kill_on: Option<String>,
+    kill_sets_stop: bool,
 }
 
 impl StubToolExecutor {
@@ -50,6 +58,24 @@ impl StubToolExecutor {
             ..Self::default()
         }
     }
+    /// A tool killed by a signal *without* a stop pending: a genuine
+    /// crash (SIGSEGV, …) the loop must surface as a fault (§2.10).
+    pub(super) fn killed_on(name: &str) -> Self {
+        Self {
+            kill_on: Some(name.to_string()),
+            ..Self::default()
+        }
+    }
+    /// A tool killed by the executor's own group SIGTERM mid-stop: sets
+    /// the injected stop flag and returns `KilledBySignal`, the shape the
+    /// loop must read as the clean stopped exit (§2.9 step 3).
+    pub(super) fn stop_killed_on(name: &str) -> Self {
+        Self {
+            kill_on: Some(name.to_string()),
+            kill_sets_stop: true,
+            ..Self::default()
+        }
+    }
 }
 
 impl ToolExecutor for StubToolExecutor {
@@ -57,7 +83,7 @@ impl ToolExecutor for StubToolExecutor {
         &self,
         call: ToolCall<'_>,
         step_dir: &Path,
-        _stop: &AtomicBool,
+        stop: &AtomicBool,
     ) -> Result<ToolOutcome, ExecError> {
         self.calls.borrow_mut().push((
             step_dir.to_path_buf(),
@@ -69,6 +95,15 @@ impl ToolExecutor for StubToolExecutor {
             return Err(ExecError::Spawn {
                 name: call.name.to_string(),
                 source: std::io::Error::other(format!("stub fail on {}", call.name)),
+            });
+        }
+        if self.kill_on.as_deref() == Some(call.name) {
+            if self.kill_sets_stop {
+                stop.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+            return Err(ExecError::KilledBySignal {
+                name: call.name.to_string(),
+                signal: 15,
             });
         }
         // Mirror the production §3.3 disk contract so the loop's

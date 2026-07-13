@@ -145,6 +145,14 @@ fn tool_use_sse(command: &str) -> String {
 /// old `response.json`-fd discovery would find no writer. Discovery via
 /// the executor's inbox-directory lock fd (held for the whole loop)
 /// still finds the pid, so the stop reaches the harness and its tool.
+///
+/// The stop landing here follows the *same* terminal sequence as the
+/// model-call window (§2.9 step 3): the tool subprocess dies with the
+/// group SIGTERM (its `KilledBySignal` read as the stop, not a fault),
+/// the `stopped` result is deposited, and the executor exits **cleanly**
+/// (exit 0) — not the non-zero crash shape a propagated `KilledBySignal`
+/// used to produce. (This is a root, so the deposit is a structural
+/// no-op; the clean exit is the observable, as in the model-call test.)
 #[test]
 fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
     let holder = TempDir::new().unwrap();
@@ -232,10 +240,14 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
     // executor terminates promptly. Had discovery relied on the closed
     // response.json fd, no signal would have been sent and the harness
     // would still be sleeping.
-    let status = wait_with_timeout(&mut prompt_child, Duration::from_secs(15));
+    let status = wait_with_timeout(&mut prompt_child, Duration::from_secs(15))
+        .expect("lernie prompt must terminate after the stop reaches it");
+    // §2.9 step 3: the tool's group-SIGTERM death is classified as the
+    // stop, so the executor deposits and exits *cleanly* — not the
+    // non-zero exit a propagated `KilledBySignal` fault used to produce.
     assert!(
-        status.is_some(),
-        "lernie prompt must terminate after the stop reaches it"
+        status.success(),
+        "stop during a tool window must exit cleanly (the stopped-deposit exit, §2.9 step 3), got {status:?}"
     );
 }
 

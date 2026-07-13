@@ -213,6 +213,52 @@ impl Fixture {
         }
     }
 
+    /// Deposit a pending message into `agent_id`'s inbox at
+    /// `<workspace>/inbox/<agent-id>/<filename>` (ARCH §2.11). Mirrors a
+    /// `<sender>-<NNN>.md` deposit the frontend counts for the
+    /// pending-message indicator (§7.1).
+    pub(super) fn deposit_message(&self, agent_id: &str, filename: &str, body: &str) {
+        let inbox = self.path.join("inbox").join(agent_id);
+        fs::create_dir_all(&inbox).unwrap();
+        fs::write(inbox.join(filename), body).unwrap();
+    }
+
+    /// Point a `refs/lernie/<kind>/<agent-id>` mark ref at `config/default`
+    /// (any commit is fine — the frontend reads existence, not content).
+    /// Mirrors `transfer::decline` (§2.6) and `budget::mark_exhausted`
+    /// (§6), which key the mark off the raw agent id.
+    pub(super) fn mark_ref(&self, refname: &str) {
+        run_git(&self.repo, &["update-ref", refname, "config/default"]);
+    }
+
+    /// Build a child agent branch `agents/<child_id>` off `parent_id`'s
+    /// branch tip — a hyphenated-descent fork (§2.3). Used to exercise the
+    /// descent-tree render (§7.1). The child carries one dispatch commit.
+    pub(super) fn build_child(&self, parent_id: &str, child_id: &str) {
+        let wt = self.path.join("agents").join(child_id);
+        let wt_str = wt.to_string_lossy().to_string();
+        let branch = format!("agents/{child_id}");
+        run_git(
+            &self.repo,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                branch.as_str(),
+                wt_str.as_str(),
+                &format!("agents/{parent_id}"),
+            ],
+        );
+        fs::write(wt.join("child.md"), "child work\n").unwrap();
+        run_git(&wt, &["add", "child.md"]);
+        run_git(
+            &wt,
+            &["commit", "-q", "-m", &format!("dispatch [{child_id}]")],
+        );
+        run_git(&self.repo, &["worktree", "remove", wt_str.as_str()]);
+    }
+
     /// Write a partial `response.json` for `conv_id`'s `seq`-th step.
     /// Each `event` is a JSONL line (no trailing newline); they are
     /// joined with `\n` and a trailing `\n` is appended, mirroring the

@@ -40,9 +40,9 @@ const RESPONSE_FILE: &str = "response.json";
 /// `<conv-repo>/steps/<conv-id>/`. Re-derived on every call from the
 /// directory listing so the view-model has no in-memory state to drift
 /// out of sync with disk (§3.5).
-pub(super) fn streaming_text_from_disk(conv_repo: &Path, conv_id: &str) -> Option<String> {
-    let conv_steps = conv_repo.join(STEPS_DIR).join(conv_id);
-    let latest = latest_step_dir(&conv_steps)?;
+pub(super) fn streaming_text_from_disk(workspace: &Path, agent_id: &str) -> Option<String> {
+    let agent_steps = workspace.join(STEPS_DIR).join(agent_id);
+    let latest = latest_step_dir(&agent_steps)?;
     let bytes = std::fs::read(latest.join(RESPONSE_FILE)).ok()?;
     accumulate_text_deltas(&bytes)
 }

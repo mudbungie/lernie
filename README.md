@@ -274,14 +274,24 @@ listings, with no sidecar file.
 ## Stopping a conversation
 
 ```
-lernie stop /path/to/my-conversation <conv-id>
+lernie stop /path/to/my-conversation <conv-id> [--stop-children]
 ```
 
-Sends `SIGTERM` to the process group of the harness driving `<conv-id>`
-(and any subagent harnesses on hyphenated descendants — `<conv-id>-…`),
-with a 5-second flush deadline before `SIGKILL`. This is the same
-cascade pattern adapter (§4.4) and tool (§3.3) cancellation use, applied
-to the harness itself ([ARCH §2.9](docs/ARCHITECTURE.md#29-stopped-branches)).
+Sends `SIGTERM` to the process group of the **one executor** driving
+`<conv-id>`, with a 5-second flush deadline before `SIGKILL`. This is the
+same cascade pattern adapter (§4.4) and tool (§3.3) cancellation use,
+applied to the harness itself
+([ARCH §2.9](docs/ARCHITECTURE.md#29-stopped-branches)). The group signal
+reaches that executor's own `bz` and tool subprocesses — its limbs — and
+**stops at the agent boundary**: a dispatched child harness has taken its
+own process group, so a bare stop does not fell it. A running child
+outlives the stopped parent and revives it later by depositing its result
+(§2.11) — stopping a parent strands nothing.
+
+`--stop-children` opts into the agent→agent cascade: it walks the id
+namespace — the descendants of `<conv-id>` are exactly the inbox
+directories prefixed `<conv-id>-` (§2.3), one prefix scan reaching every
+depth — and folds each descendant executor's group into the same sweep.
 The pid is discovered by scanning `/proc/<pid>/fd/*` for the process
 holding the agent's inbox-directory lock fd open — the executor lock
 (§2.11), held for the whole step loop, so a stop lands even during tool

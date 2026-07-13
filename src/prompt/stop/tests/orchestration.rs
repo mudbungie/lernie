@@ -5,6 +5,19 @@ use crate::prompt::stop::{Error, cascade, run};
 use std::time::Duration;
 use tempfile::TempDir;
 
+/// SIGTERM targets recorded by the signaler, sorted for order-free
+/// assertion.
+fn term_targets(signaler: &cascade::RecordingSignaler) -> Vec<i32> {
+    let mut t: Vec<i32> = signaler
+        .took()
+        .into_iter()
+        .filter(|(s, _)| *s == "term")
+        .map(|(_, target)| target)
+        .collect();
+    t.sort();
+    t
+}
+
 #[test]
 fn run_returns_branch_missing_when_inspector_says_no() {
     let dir = TempDir::new().unwrap();
@@ -15,6 +28,7 @@ fn run_returns_branch_missing_when_inspector_says_no() {
     let err = run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &StubFinder::default(),
         &cascade::RecordingSignaler::new(0),
@@ -35,6 +49,7 @@ fn run_returns_already_merged_when_inspector_says_so() {
     let err = run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &StubFinder::default(),
         &cascade::RecordingSignaler::new(0),
@@ -57,6 +72,7 @@ fn run_idempotent_when_no_holder_found() {
     run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &StubFinder::default(),
         &signaler,
@@ -81,6 +97,7 @@ fn run_idempotent_when_no_inbox_dir_at_all() {
     run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &StubFinder::default(),
         &signaler,
@@ -104,6 +121,7 @@ fn run_signals_the_inbox_dir_holder() {
     run(
         dir.path(),
         "br",
+        false,
         &inspector,
         &finder,
         &signaler,
@@ -116,7 +134,41 @@ fn run_signals_the_inbox_dir_holder() {
 }
 
 #[test]
-fn run_covers_descended_subagent_ids_via_hyphen_prefix() {
+fn run_default_leaves_live_child_untouched() {
+    // Child-outlives-parent (§2.9): a bare stop signals only the one
+    // agent. The descended `br-sub` executor (its own pgid) is never
+    // discovered, so it keeps running and can later revive the parent
+    // by depositing into its inbox (§2.11).
+    let dir = TempDir::new().unwrap();
+    let self_inbox = touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "br-sub");
+    let inspector = StubInspector {
+        exists: true,
+        merged: false,
+    };
+    let finder = StubFinder::with_returns(vec![Some(11)]);
+    let signaler = cascade::RecordingSignaler::new(0);
+    run(
+        dir.path(),
+        "br",
+        false,
+        &inspector,
+        &finder,
+        &signaler,
+        Duration::from_millis(1),
+        &NoopGit,
+    )
+    .unwrap();
+    // Only the agent's own inbox was probed; the child's was skipped.
+    assert_eq!(finder.seen.lock().unwrap().as_slice(), &[self_inbox]);
+    assert_eq!(term_targets(&signaler), vec![11]);
+}
+
+#[test]
+fn run_stop_children_covers_descended_subagent_ids_via_hyphen_prefix() {
+    // `--stop-children` walks the id namespace: `br` plus every
+    // `br-*` descendant, each its own executor pgid, folded into one
+    // sweep (§2.9).
     let dir = TempDir::new().unwrap();
     touch_inbox_dir(dir.path(), "br");
     touch_inbox_dir(dir.path(), "br-sub");
@@ -129,6 +181,7 @@ fn run_covers_descended_subagent_ids_via_hyphen_prefix() {
     run(
         dir.path(),
         "br",
+        true,
         &inspector,
         &finder,
         &signaler,
@@ -136,14 +189,36 @@ fn run_covers_descended_subagent_ids_via_hyphen_prefix() {
         &NoopGit,
     )
     .unwrap();
-    let mut targets: Vec<i32> = signaler
-        .took()
-        .into_iter()
-        .filter(|(s, _)| *s == "term")
-        .map(|(_, t)| t)
-        .collect();
-    targets.sort();
-    assert_eq!(targets, vec![11, 22]);
+    assert_eq!(term_targets(&signaler), vec![11, 22]);
+}
+
+#[test]
+fn run_stop_children_covers_deep_descendants_in_one_prefix_scan() {
+    // The flat id namespace *is* the tree: a grandchild `br-a-b` is
+    // prefixed `br-` too, so one scan reaches every depth — no
+    // recursion (§2.9).
+    let dir = TempDir::new().unwrap();
+    touch_inbox_dir(dir.path(), "br");
+    touch_inbox_dir(dir.path(), "br-a");
+    touch_inbox_dir(dir.path(), "br-a-b");
+    let inspector = StubInspector {
+        exists: true,
+        merged: false,
+    };
+    let finder = StubFinder::with_returns(vec![Some(1), Some(2), Some(3)]);
+    let signaler = cascade::RecordingSignaler::new(0);
+    run(
+        dir.path(),
+        "br",
+        true,
+        &inspector,
+        &finder,
+        &signaler,
+        Duration::from_millis(1),
+        &NoopGit,
+    )
+    .unwrap();
+    assert_eq!(term_targets(&signaler), vec![1, 2, 3]);
 }
 
 #[test]
@@ -160,6 +235,7 @@ fn run_dedupes_pgid_when_multiple_holders_share_one() {
     run(
         dir.path(),
         "br",
+        true,
         &inspector,
         &finder,
         &signaler,
@@ -185,6 +261,7 @@ fn run_skips_unrelated_agent_id_dirs() {
     run(
         dir.path(),
         "br",
+        true,
         &inspector,
         &finder,
         &signaler,

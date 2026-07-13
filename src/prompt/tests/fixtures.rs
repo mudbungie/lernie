@@ -137,15 +137,24 @@ pub(super) fn valid_deps<'a>(
 }
 
 /// The default exit-protocol launcher for tests off the §2.11 launch
-/// path: the production [`AdvanceLauncher`] no-op, handed out as a
-/// static so `valid_deps` needs no extra parameter. Launch-path tests
-/// override `deps.launcher` with a recording stub instead — the same
-/// pattern as [`never_stopped`].
+/// path: an inert stub handed out as a static so `valid_deps` needs no
+/// extra parameter (the production [`AdvanceLauncher`] now really
+/// spawns, so tests default to silence). Launch-path tests override
+/// `deps.launcher` with a recording stub instead — the same pattern as
+/// [`never_stopped`].
 ///
 /// [`AdvanceLauncher`]: crate::prompt::inbox::AdvanceLauncher
-pub(super) fn no_launch() -> &'static crate::prompt::inbox::AdvanceLauncher {
-    static NO_LAUNCH: crate::prompt::inbox::AdvanceLauncher = crate::prompt::inbox::AdvanceLauncher;
+pub(super) fn no_launch() -> &'static NoLaunch {
+    static NO_LAUNCH: NoLaunch = NoLaunch;
     &NO_LAUNCH
+}
+
+/// Inert [`crate::prompt::inbox::Launcher`]: succeeds, spawns nothing.
+pub(super) struct NoLaunch;
+impl crate::prompt::inbox::Launcher for NoLaunch {
+    fn launch(&self, _workspace: &Path, _agent_id: &str) -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 /// A stop flag that is never set — the default for tests off the §2.9

@@ -63,6 +63,15 @@ fn died_deposit(ws: &Path) -> PathBuf {
 #[test]
 fn scan_verb_heals_a_crash_stranded_child() {
     let ws = workspace_with_crashed_child();
+    // Hold the parent's executor lock across the scan: the sweep's
+    // deposit is lock-free and still lands, while the flush observes a
+    // driven branch and leaves it alone (§2.11) — so the deposit is
+    // still in the inbox for this test to read. The flush's real
+    // driver launch is exercised end-to-end in `advance_cli.rs`.
+    let parent_inbox = ws.path().join("inbox").join(PARENT);
+    let _held = lernie::prompt::inbox::try_acquire(&parent_inbox)
+        .unwrap()
+        .expect("free");
     let out = Command::new(lernie_bin())
         .arg("scan")
         .arg(ws.path())

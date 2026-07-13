@@ -87,6 +87,8 @@ pub enum ScanError {
         #[source]
         source: io::Error,
     },
+    #[error("resolve lernie binary for the driver launch: {0}")]
+    Exe(#[source] io::Error),
 }
 
 /// What one [`scan`] did, for the §8 health metrics and for tests. All
@@ -108,8 +110,8 @@ pub struct ScanReport {
 /// silent-death sweep, then the inbox flush. `git` reads the branch and
 /// transcript state (run in `<workspace>/root`, §2.2); `launcher` is the
 /// injected driver launcher (production is the [`super::AdvanceLauncher`]
-/// no-op until `lernie advance` exists), so the whole decision logic is
-/// testable with launches captured.
+/// detached `lernie advance` spawn, §2.11), so the whole decision logic
+/// is testable with launches captured.
 pub fn scan(
     workspace: &std::path::Path,
     git: &dyn GitRunner,
@@ -123,13 +125,15 @@ pub fn scan(
 }
 
 /// The `lernie scan <workspace>` entry (§2.11, §3.4): run [`scan`] with
-/// the real deps (`git`, clock, and the [`AdvanceLauncher`] no-op pending
-/// `lernie advance`) wired in. An operator verb is loud, not best-effort:
-/// errors propagate to a non-zero exit rather than being swallowed —
-/// the operator invoked the sweep and is owed its outcome. Mirrors the
-/// [`super::cli_run`] production-wiring convenience for `lernie message`.
+/// the real deps (`git`, clock, and the [`AdvanceLauncher`] detached
+/// `lernie advance` spawn) wired in. An operator verb is loud, not
+/// best-effort: errors propagate to a non-zero exit rather than being
+/// swallowed — the operator invoked the sweep and is owed its outcome.
+/// Mirrors the [`super::cli_run`] production-wiring convenience for
+/// `lernie message`.
 pub fn cli_run(workspace: &std::path::Path) -> Result<ScanReport, ScanError> {
-    scan(workspace, &RealGit::new(), &SystemClock, &AdvanceLauncher)
+    let launcher = AdvanceLauncher::current().map_err(ScanError::Exe)?;
+    scan(workspace, &RealGit::new(), &SystemClock, &launcher)
 }
 
 impl std::fmt::Display for ScanReport {

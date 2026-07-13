@@ -22,6 +22,7 @@
 //! no-op. Because no verb combines the two arms, the losing path is the
 //! same code as the uncontended one.
 
+pub mod baton;
 pub mod deposit;
 pub mod lock;
 pub mod scan;
@@ -115,24 +116,64 @@ pub trait Launcher {
     fn launch(&self, workspace: &Path, agent_id: &str) -> io::Result<()>;
 }
 
-/// The production launch target is `lernie advance <workspace> <agent>`
-/// (§6), the workflow-chain driver that acquires the lock, rematerializes
-/// the worktree, drains the inbox, and steps (its own-branch entry is
-/// [`crate::prompt::dispatch::driver::drive`]). That verb is not yet
-/// implemented (specced in §6; tracked separately), so this launcher is
-/// a deliberate no-op: the deposit has already landed and will be
-/// delivered by the next driver that runs against the branch (§2.11
-/// "Undelivered is derived"). The probe, flush, and exit-launch decisions
-/// above it are live and tested; only the spawn is stubbed pending
-/// `lernie advance` — when it lands, the spawn is detached per §2.11
-/// (`setsid`: own process group, stdio to a log or null) so a §2.9 stop
-/// cascade against the launching process never reaches the driver.
-#[derive(Debug, Default)]
-pub struct AdvanceLauncher;
+/// The production launcher: detach-spawns `lernie advance <workspace>
+/// <agent>` (§6), the workflow-chain driver that takes the lease,
+/// rematerializes the worktree, drains the inbox, and steps (its
+/// own-branch entry is [`crate::prompt::dispatch::driver::drive`]).
+///
+/// The spawn is **detached per §2.11**: `setsid` in the child (its own
+/// session and process group — a §2.9 stop cascade against the launching
+/// process never reaches the driver, and the driver outlives a launcher
+/// running inside another agent's tool subprocess or a user's script),
+/// stdio bound to null (the driver's observable state is its on-disk
+/// step records and commits, §3.1), and [`baton::LOCK_FD_ENV`] scrubbed
+/// (a launched driver *acquires*; only an exec'd successor adopts, §6).
+/// Fire-and-forget: the child is never waited on — a launcher is
+/// short-lived by design, and the unreaped driver reparents to init when
+/// the launcher exits.
+#[derive(Debug)]
+pub struct AdvanceLauncher {
+    exe: PathBuf,
+}
+
+impl AdvanceLauncher {
+    /// Launch through the currently running `lernie` binary. Fails when
+    /// the OS cannot resolve the current executable (rare).
+    pub fn current() -> io::Result<Self> {
+        Ok(Self {
+            exe: std::env::current_exe()?,
+        })
+    }
+
+    /// Explicit binary path — for tests and embedded callers that pick
+    /// a non-default `lernie`.
+    pub fn with_exe(exe: PathBuf) -> Self {
+        Self { exe }
+    }
+}
 
 impl Launcher for AdvanceLauncher {
-    fn launch(&self, _workspace: &Path, _agent_id: &str) -> io::Result<()> {
-        // No-op until `lernie advance` (§6) exists. See the type doc.
+    fn launch(&self, workspace: &Path, agent_id: &str) -> io::Result<()> {
+        let mut cmd = std::process::Command::new(&self.exe);
+        cmd.arg("advance")
+            .arg(workspace)
+            .arg(agent_id)
+            .env_remove(baton::LOCK_FD_ENV)
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null());
+        // SAFETY: `setsid()` is async-signal-safe and is the only call
+        // between fork and exec; failure (already a session leader —
+        // impossible post-fork) is ignored, the spawn proceeds grouped.
+        unsafe {
+            use std::os::unix::process::CommandExt;
+            cmd.pre_exec(|| {
+                // SAFETY: see above.
+                libc::setsid();
+                Ok(()) // LCOV_EXCL_LINE
+            });
+        }
+        cmd.spawn()?;
         Ok(())
     }
 }
@@ -178,6 +219,8 @@ pub enum MessageError {
     Deposit(#[from] DepositError),
     #[error("probe executor lock: {0}")]
     Probe(#[source] io::Error),
+    #[error("resolve lernie binary for the driver launch: {0}")]
+    Exe(#[source] io::Error),
 }
 
 /// The `lernie message <workspace> <agent> <content>` verb (§2.11,
@@ -201,18 +244,13 @@ pub fn cli_message(
 /// Kept in the lib so the bin stays under the 300-line cap and the wiring
 /// is unit-testable — the same discipline as `stop::cli_run`. Resolves
 /// the sender from the live `LERNIE_CONV_BRANCH` ([`resolve_cli_sender`])
-/// and wires the production clock plus the [`AdvanceLauncher`] stub.
+/// and wires the production clock plus the real [`AdvanceLauncher`]
+/// detached spawn (§2.11).
 pub fn cli_run(workspace: &Path, agent: &str, content: &str) -> Result<(), MessageError> {
     let sender =
         resolve_cli_sender(std::env::var_os(crate::prompt::tool::ENV_CONV_BRANCH).as_deref());
-    cli_message(
-        workspace,
-        agent,
-        content,
-        &sender,
-        &SystemClock,
-        &AdvanceLauncher,
-    )?;
+    let launcher = AdvanceLauncher::current().map_err(MessageError::Exe)?;
+    cli_message(workspace, agent, content, &sender, &SystemClock, &launcher)?;
     Ok(())
 }
 

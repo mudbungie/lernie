@@ -77,6 +77,30 @@ pub fn step_dir_rel(conv_id: &str, seq: u32) -> String {
     )
 }
 
+/// The branch's next step sequence, derived — never stored — as
+/// max-present-plus-one over the `steps/<conv-id>/` directory listing
+/// (ARCH §6: workflow position is a function of disk state; the same
+/// derivation discipline as the transcript counter, §2.3). An absent or
+/// empty directory yields `1` — the general path with empty inputs, not
+/// a bootstrap special case. A fresh `lernie advance` hop reads its
+/// position here instead of carrying a loop counter across the exec
+/// baton.
+pub fn next_step_seq(conv_repo: &std::path::Path, conv_id: &str) -> std::io::Result<u32> {
+    let dir = conv_repo.join(STEPS_DIR).join(conv_id);
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(rd) => rd,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(1),
+        Err(e) => return Err(e),
+    };
+    let mut max = 0u32;
+    for entry in entries {
+        if let Ok(seq) = entry?.file_name().to_string_lossy().parse::<u32>() {
+            max = max.max(seq);
+        }
+    }
+    Ok(max + 1)
+}
+
 /// On-disk shape of `meta.json`. The `commit` field is the branch
 /// tip's sha at step-start — the read state for the model call
 /// (§2.10). `started_at` / `ended_at` bookend the call's wall-clock
@@ -100,6 +124,32 @@ mod tests {
             "steps/20260422T000000Z-deadbeef/001"
         );
         assert_eq!(step_dir_rel("id", 42), "steps/id/042");
+    }
+
+    #[test]
+    fn next_step_seq_is_one_for_a_fresh_branch() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        assert_eq!(next_step_seq(tmp.path(), "c1").unwrap(), 1);
+    }
+
+    #[test]
+    fn next_step_seq_is_max_present_plus_one_ignoring_junk() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let dir = tmp.path().join(STEPS_DIR).join("c1");
+        std::fs::create_dir_all(dir.join("001")).unwrap();
+        std::fs::create_dir_all(dir.join("007")).unwrap();
+        std::fs::create_dir_all(dir.join("not-a-seq")).unwrap();
+        assert_eq!(next_step_seq(tmp.path(), "c1").unwrap(), 8);
+    }
+
+    #[test]
+    fn next_step_seq_surfaces_a_non_missing_read_error() {
+        // A file where the step directory should be is a real error,
+        // not the general empty case.
+        let tmp = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir_all(tmp.path().join(STEPS_DIR)).unwrap();
+        std::fs::write(tmp.path().join(STEPS_DIR).join("c1"), b"x").unwrap();
+        assert!(next_step_seq(tmp.path(), "c1").is_err());
     }
 
     #[test]

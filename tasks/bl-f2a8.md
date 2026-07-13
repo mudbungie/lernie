@@ -1,7 +1,8 @@
 +++
 title = "stop during tool execution: wire SIGTERM to run_tool_calls stop_flag for the clean stopped-deposit exit"
 created = 1783916329
-updated = 1783916329
+updated = 1783916902
+claimant = "Companions-f2a8"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 ## Problem (found during bl-aafc)

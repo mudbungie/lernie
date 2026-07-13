@@ -1,0 +1,12 @@
++++
+title = "gate: alignment [bl-aafc]"
+created = 1783914391
+updated = 1783914391
+parent = "bl-aafc"
+root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+tags = ["gate"]
+
+[[blockers]]
+id = "bl-aafc"
+on = "claim"
++++

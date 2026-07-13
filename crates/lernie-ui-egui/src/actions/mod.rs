@@ -2,12 +2,12 @@
 //!
 //! Two buttons live on the action surface. **New prompt** invokes
 //! `lernie prompt <repo> <message>`; **Stop** invokes
-//! `lernie stop <repo> <branch>` against the selected unmerged branch.
+//! `lernie stop <repo> <agent-id>` against the selected live agent.
 //! The CLI shapes are pinned by `src/bin/lernie.rs` (`Command::Prompt`
 //! and `Command::Stop`, the latter introduced by bl-a144). Per the §2.9
 //! amendment (bl-abf3) there is no user-facing "resume": continuing
-//! from a stopped branch is `lernie prompt` (new conversation with the
-//! stopped branch's state as context) or fork-from-history.
+//! a stopped agent is `lernie message` (the deposit starts a driver,
+//! §2.11) or fork-from-history.
 //!
 //! The view-model is a pure function of inputs and carries no egui
 //! dependency, so `lernie-ui-web` (or any other future frontend) can
@@ -18,15 +18,14 @@
 use std::path::Path;
 
 use crate::cli_outbound::{Cli, CliError, Stream};
-use crate::git_tree::{BranchState, ConversationBranch};
+use crate::git_tree::{Agent, AgentState};
 
 /// `lernie` subcommand for sending a user message on a fresh root
 /// branch. Pinned to `src/bin/lernie.rs` `Command::Prompt`.
 const SUBCOMMAND_PROMPT: &str = "prompt";
 
-/// `lernie` subcommand for stopping an in-flight conversation branch
-/// (ARCH §2.9 cascading SIGTERM, bl-a144). Pinned to `src/bin/lernie.rs`
-/// `Command::Stop`.
+/// `lernie` subcommand for stopping a live agent (ARCH §2.9 cascading
+/// SIGTERM, bl-a144). Pinned to `src/bin/lernie.rs` `Command::Stop`.
 const SUBCOMMAND_STOP: &str = "stop";
 
 /// Ephemeral action-surface state. Held in memory by the running
@@ -40,7 +39,8 @@ pub struct ActionsState {
     /// User-selected agent id (§2.3 — the id is the address; `lernie
     /// stop` takes it, not the `agents/*` ref). The Stop button is
     /// disabled while this is `None` or while the selected agent is no
-    /// longer in-flight (e.g. stopped between selection and click).
+    /// longer live (e.g. it went quiescent or stopped between selection
+    /// and click).
     pub selected_branch: Option<String>,
 }
 
@@ -50,17 +50,21 @@ pub fn new_prompt_enabled(input: &str) -> bool {
     !input.trim().is_empty()
 }
 
-/// True iff `selected_branch` names an agent (by id, §2.3) in
-/// `branches` whose state is [`BranchState::InFlight`]. Returns `false`
-/// for `None`, for an id not present, and for any non-`InFlight` state
-/// — a stopped agent is not stoppable again.
-pub fn stop_enabled(selected_branch: Option<&str>, branches: &[ConversationBranch]) -> bool {
+/// True iff `selected_branch` names an agent (by id, §2.3) in `agents`
+/// that is **live** — [`AgentState::Live`] or [`AgentState::InFlight`],
+/// the two states where a driver holds the executor lock (§2.11). Stop
+/// targets a live executor (§2.9), and it is wanted precisely during tool
+/// execution (a `Live` agent between model calls), not only mid-model-call
+/// — so both live states are stoppable. Returns `false` for `None`, for an
+/// id not present, and for a `Quiescent` or `Stopped` agent (no executor
+/// to signal).
+pub fn stop_enabled(selected_branch: Option<&str>, agents: &[Agent]) -> bool {
     let Some(name) = selected_branch else {
         return false;
     };
-    branches
+    agents
         .iter()
-        .any(|b| b.conv_id == name && matches!(b.state, BranchState::InFlight))
+        .any(|a| a.agent_id == name && matches!(a.state, AgentState::Live | AgentState::InFlight))
 }
 
 /// Spawn `lernie prompt <repo> <message>`. Caller owns the returned

@@ -1,20 +1,16 @@
 //! egui rendering smoke tests — exercise the widget against both empty
 //! and populated view-models to guarantee it does not panic, plus
 //! shape-level assertions that user-visible text actually lands in the
-//! paint output (in particular, in-flight streaming text per bl-0619).
+//! paint output (streaming text, tool ids, the descent tree, step
+//! subjects).
 
 use crate::git_tree::{
-    BranchState, CommitNode, ConversationBranch, GitTree, StepCommit, ToolCall, ToolCallState,
-    render,
+    Agent, AgentState, CommitNode, GitTree, StepCommit, ToolCall, ToolCallState, render,
 };
-
-// `BranchState` only appears in struct-init positions below; renderer-
-// level tests for the badge mapping itself live in
-// `tests::state_render`.
 
 /// Run the renderer headlessly and concatenate every `Shape::Text`
 /// galley's text in paint order. Used by tests that assert specific
-/// strings reach the paint layer (e.g. streaming text in flight).
+/// strings reach the paint layer.
 pub(super) fn rendered_text(tree: &GitTree) -> String {
     let ctx = egui::Context::default();
     let output = ctx.run(Default::default(), |ctx| {
@@ -42,13 +38,30 @@ fn collect_text(shape: &egui::Shape, out: &mut String) {
     }
 }
 
+/// A minimal agent row for render tests, in `state`.
+fn agent(id: &str, state: AgentState) -> Agent {
+    Agent {
+        branch_name: format!("agents/{id}"),
+        agent_id: id.to_string(),
+        tip_oid: "d".repeat(40),
+        tip_short_oid: "dddddddd".into(),
+        tip_timestamp_unix: 4,
+        steps: vec![],
+        preview: None,
+        streaming_text: None,
+        tool_calls: Vec::new(),
+        state,
+        pending_messages: 0,
+        declined_transfer: false,
+        budget_exhausted: false,
+    }
+}
+
 #[test]
 fn collect_text_recurses_into_shape_vec() {
     // egui can wrap multiple shapes in `Shape::Vec` (e.g. nested
     // layouts). Our shape walker must descend into it; an empty arm
-    // would silently drop any text under such a wrapper. We build the
-    // galleys inside a `ctx.run` so the font cache is initialized
-    // (fonts aren't available before first run; egui asserts on this).
+    // would silently drop any text under such a wrapper.
     use egui::{Color32, FontId, Pos2, Stroke};
     let ctx = egui::Context::default();
     let mut nested: Option<egui::Shape> = None;
@@ -98,7 +111,14 @@ fn render_empty_tree_shows_placeholder() {
 
 #[test]
 fn render_populated_tree_runs_without_panic() {
-    let ctx = egui::Context::default();
+    let mut a = agent("20260422T130000Z-wwww", AgentState::InFlight);
+    a.preview = Some("wip".into());
+    a.steps = vec![StepCommit {
+        oid: "e".repeat(40),
+        short_oid: "eeeeeeee".into(),
+        timestamp_unix: 5,
+        subject: "dispatch [20260422T130000Z-wwww]".into(),
+    }];
     let tree = GitTree {
         commits: vec![
             CommitNode {
@@ -114,82 +134,61 @@ fn render_populated_tree_runs_without_panic() {
                 subject: "config: amend".into(),
             },
         ],
-        in_flight: vec![ConversationBranch {
-            branch_name: "20260422T130000Z-wwww".into(),
-            conv_id: "20260422T130000Z-wwww".into(),
-            tip_oid: "d".repeat(40),
-            tip_short_oid: "dddddddd".into(),
-            tip_timestamp_unix: 4,
-            steps: vec![StepCommit {
-                oid: "e".repeat(40),
-                short_oid: "eeeeeeee".into(),
-                timestamp_unix: 5,
-            }],
-            preview: Some("wip".into()),
-            streaming_text: None,
-            tool_calls: Vec::new(),
-            state: BranchState::InFlight,
-        }],
-    };
-    let _ = ctx.run(Default::default(), |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &tree));
-    });
-}
-
-#[test]
-fn render_in_flight_branch_paints_streaming_text() {
-    let tree = GitTree {
-        commits: vec![],
-        in_flight: vec![ConversationBranch {
-            branch_name: "20260427T120000Z-stream".into(),
-            conv_id: "20260427T120000Z-stream".into(),
-            tip_oid: "f".repeat(40),
-            tip_short_oid: "ffffffff".into(),
-            tip_timestamp_unix: 6,
-            steps: vec![],
-            preview: Some("explain quicksort".into()),
-            streaming_text: Some("Quicksort partitions around a pivot".into()),
-            tool_calls: Vec::new(),
-            state: BranchState::InFlight,
-        }],
+        agents: vec![a],
     };
     let painted = rendered_text(&tree);
+    // Step-commit subjects surface delivery/transfer/dispatch commits.
     assert!(
-        painted.contains("Quicksort partitions around a pivot"),
-        "streaming text not found in paint shapes; got:\n{painted}"
+        painted.contains("dispatch [20260422T130000Z-wwww]"),
+        "got:\n{painted}"
     );
 }
 
 #[test]
-fn render_in_flight_branch_without_streaming_text_paints_no_body() {
+fn render_nests_children_under_parents_by_descent() {
+    // A parent and its child render in a pre-order tree; both agent ids
+    // reach the paint layer (indentation carries the shape).
     let tree = GitTree {
         commits: vec![],
-        in_flight: vec![ConversationBranch {
-            branch_name: "20260427T120000Z-quiet".into(),
-            conv_id: "20260427T120000Z-quiet".into(),
-            tip_oid: "0".repeat(40),
-            tip_short_oid: "00000000".into(),
-            tip_timestamp_unix: 7,
-            steps: vec![],
-            preview: None,
-            streaming_text: None,
-            tool_calls: Vec::new(),
-            state: BranchState::Stopped,
-        }],
+        agents: vec![
+            agent("root-a", AgentState::Quiescent),
+            agent("root-a-c1", AgentState::Stopped),
+        ],
     };
-    // No assertion on absence (egui paints frame chrome around the
-    // panel); the contract under test is the positive case above.
-    // Here we only verify the branch row itself still renders.
     let painted = rendered_text(&tree);
-    assert!(painted.contains("20260427T120000Z-quiet"));
+    assert!(painted.contains("agents/root-a"), "got:\n{painted}");
+    assert!(painted.contains("agents/root-a-c1"), "got:\n{painted}");
 }
 
-/// Run the renderer twice and return the second frame's
-/// `repaint_delay`. Egui returns 0 on the first frame regardless of the
-/// content (font cache + layout still warming up), so we have to settle
-/// to read the steady-state delay set by `request_repaint_after`. An
-/// in-flight tool keeps the delay short; a complete-only tree falls
-/// back to `Duration::MAX`.
+#[test]
+fn render_in_flight_agent_paints_streaming_text() {
+    let mut a = agent("20260427T120000Z-stream", AgentState::InFlight);
+    a.preview = Some("explain quicksort".into());
+    a.streaming_text = Some("Quicksort partitions around a pivot".into());
+    let tree = GitTree {
+        commits: vec![],
+        agents: vec![a],
+    };
+    let painted = rendered_text(&tree);
+    assert!(
+        painted.contains("Quicksort partitions around a pivot"),
+        "streaming text not found; got:\n{painted}"
+    );
+}
+
+#[test]
+fn render_agent_without_streaming_text_still_renders_row() {
+    let tree = GitTree {
+        commits: vec![],
+        agents: vec![agent("20260427T120000Z-quiet", AgentState::Stopped)],
+    };
+    let painted = rendered_text(&tree);
+    assert!(painted.contains("agents/20260427T120000Z-quiet"));
+}
+
+/// Run the renderer twice and return the second frame's `repaint_delay`.
+/// Egui returns 0 on the first frame regardless of content, so we settle
+/// to read the steady-state delay set by `request_repaint_after`.
 fn repaint_delay_for(tree: &GitTree) -> std::time::Duration {
     let ctx = egui::Context::default();
     for _ in 0..2 {
@@ -207,39 +206,28 @@ fn repaint_delay_for(tree: &GitTree) -> std::time::Duration {
         .repaint_delay
 }
 
-fn branch_with_tool(tool_id: &str, state: ToolCallState) -> ConversationBranch {
-    ConversationBranch {
-        branch_name: "20260427T140000Z-tool".into(),
-        conv_id: "20260427T140000Z-tool".into(),
-        tip_oid: "9".repeat(40),
-        tip_short_oid: "99999999".into(),
-        tip_timestamp_unix: 8,
-        steps: vec![],
-        preview: None,
-        streaming_text: None,
-        tool_calls: vec![ToolCall {
-            tool_id: tool_id.into(),
-            state,
-        }],
-        state: BranchState::InFlight,
-    }
+fn agent_with_tool(tool_id: &str, state: ToolCallState) -> Agent {
+    let mut a = agent("20260427T140000Z-tool", AgentState::InFlight);
+    a.tip_short_oid = "99999999".into();
+    a.tool_calls = vec![ToolCall {
+        tool_id: tool_id.into(),
+        state,
+    }];
+    a
 }
 
 #[test]
 fn render_in_flight_tool_call_schedules_repaint_and_paints_id() {
     let tree = GitTree {
         commits: vec![],
-        in_flight: vec![branch_with_tool("toolu_pulse_a", ToolCallState::InFlight)],
+        agents: vec![agent_with_tool("toolu_pulse_a", ToolCallState::InFlight)],
     };
     assert!(
         repaint_delay_for(&tree) < std::time::Duration::from_secs(1),
         "in-flight tool must schedule a near-term repaint"
     );
     let painted = rendered_text(&tree);
-    assert!(
-        painted.contains("toolu_pulse_a"),
-        "tool id must reach the paint layer; got:\n{painted}"
-    );
+    assert!(painted.contains("toolu_pulse_a"), "got:\n{painted}");
     assert!(painted.contains("(in-flight)"));
 }
 
@@ -247,7 +235,7 @@ fn render_in_flight_tool_call_schedules_repaint_and_paints_id() {
 fn render_complete_tool_call_does_not_schedule_repaint() {
     let tree = GitTree {
         commits: vec![],
-        in_flight: vec![branch_with_tool("toolu_done_b", ToolCallState::Complete)],
+        agents: vec![agent_with_tool("toolu_done_b", ToolCallState::Complete)],
     };
     assert_eq!(
         repaint_delay_for(&tree),
@@ -261,14 +249,14 @@ fn render_complete_tool_call_does_not_schedule_repaint() {
 
 #[test]
 fn render_mixed_tool_calls_schedules_repaint_when_any_in_flight() {
-    let mut branch = branch_with_tool("toolu_done_c", ToolCallState::Complete);
-    branch.tool_calls.push(ToolCall {
+    let mut a = agent_with_tool("toolu_done_c", ToolCallState::Complete);
+    a.tool_calls.push(ToolCall {
         tool_id: "toolu_pulse_d".into(),
         state: ToolCallState::InFlight,
     });
     let tree = GitTree {
         commits: vec![],
-        in_flight: vec![branch],
+        agents: vec![a],
     };
     assert!(repaint_delay_for(&tree) < std::time::Duration::from_secs(1));
     let painted = rendered_text(&tree);

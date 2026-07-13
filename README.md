@@ -605,12 +605,16 @@ function of filesystem state — and one of potentially several frontends
 
 On startup, the binary loads the current git history of the target
 workspace (ARCH §2.2 — the dir with `repo.git/`, `steps/`, `inbox/`,
-and the `agents/` worktrees) and renders a two-tier tree: the config
-lineage (`config/default`) as the trunk, and every `agents/*` branch in
-its own section — agents never merge anywhere (§2.6), so every agent is
-a live row, labeled with its id and a truncated `messages[0].content`
-preview pulled from `steps/<agent-id>/001/request.json`. If the tree
-can't be read, a placeholder view is shown instead.
+and the `agents/` worktrees) and renders a two-tier view (ARCH §7.1):
+the config lineage (`config/default`) as the trunk, and every `agents/*`
+branch below it as a **descent tree** — agents nested by their
+hyphenated id (`<a>`, `<a>-<b>`, …, §2.3), not a flat list. Each agent
+row carries its §3.5 state badge, the two ref-derived marks
+(declined-transfer, budget-exhausted), a pending-message indicator when
+its inbox is non-empty, and a truncated `messages[0].content` preview
+pulled from `steps/<agent-id>/001/request.json`; each branch commit
+surfaces by subject, so delivery and work-product-transfer commits are
+legible. If the tree can't be read, a placeholder view is shown instead.
 
 Four pure-Rust modules inside the crate (no egui dep on the view-model
 side, reusable by a future `lernie-ui-web`) back the UI:
@@ -630,27 +634,39 @@ side, reusable by a future `lernie-ui-web`) back the UI:
   the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
 - `git_tree` — resolves the workspace path to its bare `repo.git`
   (ARCH §2.2) and produces a view-model (`GitTree`) independent of
-  egui: the config lineage's first-parent log plus every agent branch
+  egui: the config lineage's first-parent log plus every agent
   (`git for-each-ref refs/heads/agents/`, per PRINCIPLES.md
-  single-source-of-truth). The user-message preview is read from
+  single-source-of-truth) as a flat `Vec<Agent>`, from which the render
+  tree is derived by hyphenated descent (`descent_order`, §2.3 — never
+  stored). The user-message preview is read from
   `<workspace>/steps/<agent-id>/001/request.json` on disk. Submodules
   layer the live indicators: streaming text folded from the latest
-  step's `response.json` JSONL (`text_delta` events, ARCH §4.4);
-  branch-state badges (in-flight / stopped) derived from refs + the
-  §4.4 terminal event without sidecars (PRINCIPLES.md
-  single-source-of-truth); tool-call pulses derived from
+  step's `response.json` JSONL (`text_delta` events, ARCH §4.4); the
+  §3.5 **agent-state classification** — `live` / `in_flight` /
+  `quiescent` / `stopped` — from two observations that are deliberately
+  not collapsed (ARCH §2.11), the executor-lock probe (`/proc` scan for
+  a holder of the agent's inbox-directory fd, mirroring the harness's
+  own `stop::discover`) and the `response.json` writer-fd probe, plus
+  the §4.4 terminal segment (`finish` ⇒ quiescent, `error`/no-`end` ⇒
+  stopped); the two ref-derived marks (`refs/lernie/conflicted/*`,
+  `refs/lernie/budget-exhausted/*`); pending-message counts from the
+  inbox listing; and tool-call pulses derived from
   `tools/<tool-id>/input.json` present without `output.json` (ARCH
   §3.3 in-progress-is-derived-state). A thin egui widget in the same
-  module renders it.
+  crate renders it. All state is on-disk-derived; no sidecars
+  (PRINCIPLES.md single-source-of-truth).
 - `actions` — the user-action surface: `ActionsState` holds the
-  in-progress prompt input and selected branch (in-memory only per
+  in-progress prompt input and selected agent (in-memory only per
   §3.5), and `dispatch_new_prompt` / `dispatch_stop` build the argv for
   `lernie prompt <workspace> <message>` / `lernie stop <workspace>
   <agent-id>` and invoke `cli_outbound`. Enable/disable derivation
   (`new_prompt_enabled`, `stop_enabled`) is a pure function of the
-  input string and the agent list. Per the §2.9 amendment landed in bl-abf3,
-  there is no user-facing "resume" — continuing from a stopped branch
-  is a fresh `lernie prompt` or fork-from-history.
+  input string and the agent list — Stop is offered for a **live**
+  agent (`live` or `in_flight`, the states with a driver holding the
+  lock), since a stop targets a live executor and is wanted during tool
+  execution too (§2.9). Per the §2.9 amendment landed in bl-abf3, there
+  is no user-facing "resume" — continuing a stopped agent is `lernie
+  message` (the deposit starts a driver, §2.11) or fork-from-history.
 
 ```
 lernie-ui-egui --repo /path/to/my-conversation

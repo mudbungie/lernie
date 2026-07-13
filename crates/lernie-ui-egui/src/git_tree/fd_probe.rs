@@ -190,6 +190,18 @@ mod tests {
     }
 
     #[test]
+    fn numeric_pid_without_an_fd_dir_is_skipped() {
+        // A pid we cannot introspect — no readable `fd/` subdir (other
+        // uid, raced teardown) — does not match: `read_dir` fails and the
+        // scan moves on.
+        let dir = tempdir().unwrap();
+        let target = target_file(dir.path());
+        let proc = dir.path().join("proc");
+        fs::create_dir_all(proc.join("55")).unwrap(); // pid 55, no `fd/`
+        assert!(!ProcFsProbe::with_root(proc).writer_open(&target));
+    }
+
+    #[test]
     fn non_numeric_proc_entries_and_missing_fdinfo_are_skipped() {
         let dir = tempdir().unwrap();
         let target = target_file(dir.path());

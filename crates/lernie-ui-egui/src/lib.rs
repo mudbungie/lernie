@@ -7,11 +7,12 @@
 //!
 //! Modules: [`fs_watcher`] (notify-driven re-render trigger),
 //! [`cli_outbound`] (`lernie <subcommand>` exec + stream), [`git_tree`]
-//! (the per-tick view-model — trunk + unmerged-branch tree, streaming
-//! text from §4.4 events, branch-state badges, tool-call pulses), and
-//! [`actions`] (new-prompt + stop user-action surface). Every render is
-//! a pure function of filesystem state at the current tick; the public
-//! view-model API is reentrant, so a future `lernie-ui-web` runs
+//! (the per-tick view-model — the config trunk plus the agent tree by
+//! hyphenated descent, §3.5 agent-state classification, streaming text
+//! from §4.4 events, tool-call pulses, pending-message and ref-derived
+//! marks), and [`actions`] (new-prompt + stop user-action surface). Every
+//! render is a pure function of filesystem state at the current tick; the
+//! public view-model API is reentrant, so a future `lernie-ui-web` runs
 //! concurrently against the same repo without coordination.
 
 pub mod actions;

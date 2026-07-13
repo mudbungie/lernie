@@ -98,22 +98,31 @@ fn parse_log_parses_merge_commit_with_two_parents() {
 
 #[test]
 fn parse_step_commits_parses_valid_lines() {
-    let out = parse_step_commits(b"abc 100\ndef 200\n").unwrap();
+    let out = parse_step_commits(b"abc 100\x00dispatch [x]\ndef 200\x00delivery: user\n").unwrap();
     assert_eq!(out.len(), 2);
     assert_eq!(out[0].oid, "abc");
     assert_eq!(out[0].timestamp_unix, 100);
+    assert_eq!(out[0].subject, "dispatch [x]");
     assert_eq!(out[1].timestamp_unix, 200);
+    assert_eq!(out[1].subject, "delivery: user");
 }
 
 #[test]
-fn parse_step_commits_errors_on_malformed_line() {
-    let err = parse_step_commits(b"abc\n").unwrap_err();
+fn parse_step_commits_errors_on_missing_subject_separator() {
+    // No `\x00` between the timestamp column and the subject.
+    let err = parse_step_commits(b"abc 100\n").unwrap_err();
+    assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
+}
+
+#[test]
+fn parse_step_commits_errors_on_missing_timestamp() {
+    let err = parse_step_commits(b"abc\x00subject\n").unwrap_err();
     assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
 }
 
 #[test]
 fn parse_step_commits_errors_on_non_numeric_timestamp() {
-    let err = parse_step_commits(b"abc notanumber\n").unwrap_err();
+    let err = parse_step_commits(b"abc notanumber\x00subject\n").unwrap_err();
     assert!(matches!(err, GitTreeError::LogFormat(_)), "{err:?}");
 }
 

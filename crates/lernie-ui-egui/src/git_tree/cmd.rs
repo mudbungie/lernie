@@ -105,14 +105,17 @@ pub(super) fn walk_branch_steps(
     branch: &str,
 ) -> Result<Vec<StepCommit>, GitTreeError> {
     // Commits on the agent branch past every config lineage (§2.2 —
-    // there is no `main`; the fork point is a config commit).
+    // there is no `main`; the fork point is a config commit). `\x00`
+    // separates the timestamp from the subject so a subject containing
+    // spaces parses unambiguously — the subject surfaces delivery and
+    // work-product-transfer commits (§2.11, §2.6, §7.1).
     let out = git(
         repo,
         &[
             "log",
             "--reverse",
             "--first-parent",
-            "--format=%H %ct",
+            "--format=%H %ct%x00%s",
             branch,
             "--not",
             "--branches=config/*",
@@ -125,7 +128,10 @@ pub(super) fn parse_step_commits(stdout: &[u8]) -> Result<Vec<StepCommit>, GitTr
     let text = String::from_utf8_lossy(stdout);
     let mut result = Vec::new();
     for line in text.lines() {
-        let (oid, ts) = line
+        let (head, subject) = line
+            .split_once('\x00')
+            .ok_or_else(|| GitTreeError::LogFormat(line.to_string()))?;
+        let (oid, ts) = head
             .split_once(' ')
             .ok_or_else(|| GitTreeError::LogFormat(line.to_string()))?;
         let ts: i64 = ts
@@ -136,6 +142,7 @@ pub(super) fn parse_step_commits(stdout: &[u8]) -> Result<Vec<StepCommit>, GitTr
             oid: oid.to_string(),
             short_oid,
             timestamp_unix: ts,
+            subject: subject.to_string(),
         });
     }
     Ok(result)
@@ -152,4 +159,11 @@ pub(super) fn for_each_ref_agents(repo: &Path) -> Result<Vec<u8>, GitTreeError> 
             "refs/heads/agents/",
         ],
     )
+}
+
+/// Every ref under a `refs/lernie/<kind>/` namespace, full refnames
+/// (ARCH §2.6 declined-transfer, §6 budget-exhausted). The caller strips
+/// `prefix` to recover the agent ids ([`super::marks`]).
+pub(super) fn for_each_ref_under(repo: &Path, prefix: &str) -> Result<Vec<u8>, GitTreeError> {
+    git(repo, &["for-each-ref", "--format=%(refname)", prefix])
 }

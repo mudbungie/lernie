@@ -163,7 +163,10 @@ fn commit_tool_writes_a_single_block_array_and_commits_at_the_next_seq() {
     assert_eq!(blocks, vec![tool_result]);
 
     let runs = git.runs.borrow();
-    assert_eq!(runs[0].1, vec!["add", "messages/002-tool.json"]);
+    // A tool commit stages the whole worktree (`git add -A`) so any side
+    // effect the tool produced — e.g. a copied `skills/<name>/` body —
+    // lands with the result entry (§2.3, ARCH commit_tool).
+    assert_eq!(runs[0].1, vec!["add", "-A"]);
     assert!(runs[1].1[2].contains("transcript 002: tool [conv-2]"));
 }
 

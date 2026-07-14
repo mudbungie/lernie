@@ -57,7 +57,7 @@
       ]
     },
     "Budgets": {
-      "description": "Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each limit is optional; an omitted limit is unbounded. All three are derived at check time — never stored — and a dispatch clamps a child to `min(parent remaining, child declaration)` per axis (ARCH §6).",
+      "description": "Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each limit is optional; an omitted limit is unbounded. All three are derived live from disk at check time — never stored — and are a whole-tree ceiling: any driver (root or subagent) checks the tree's total spend against the single frozen limit, with no per-dispatch inheritance (ARCH §6; the tree shares one `steps/` per §2.2/§2.3).",
       "type": "object",
       "properties": {
         "max_depth": {

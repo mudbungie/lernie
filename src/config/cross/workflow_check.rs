@@ -110,10 +110,11 @@ events:
 events:
   user_message:
     - spawn_exchange
-    - merge
+    - compaction_merge
+    - deliver_result
     - mark_abandoned
     - notify_ui
-    - gate_merge_on(verifier.approve)
+    - gate_return_on(verifier.approve)
 "#,
             )
             .path(),

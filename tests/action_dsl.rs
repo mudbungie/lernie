@@ -9,10 +9,17 @@ fn parses_zero_arg_actions() {
         Action::SpawnExchange
     );
     assert_eq!(
-        Action::parse("spawn_root_conversation").unwrap(),
-        Action::SpawnRootConversation
+        Action::parse("spawn_root_agent").unwrap(),
+        Action::SpawnRootAgent
     );
-    assert_eq!(Action::parse("merge").unwrap(), Action::Merge);
+    assert_eq!(
+        Action::parse("compaction_merge").unwrap(),
+        Action::CompactionMerge
+    );
+    assert_eq!(
+        Action::parse("deliver_result").unwrap(),
+        Action::DeliverResult
+    );
     assert_eq!(
         Action::parse("mark_abandoned").unwrap(),
         Action::MarkAbandoned
@@ -57,10 +64,10 @@ fn parses_dispatch_with_mode() {
 }
 
 #[test]
-fn parses_gate_merge_on() {
+fn parses_gate_return_on() {
     assert_eq!(
-        Action::parse("gate_merge_on(verifier.approve)").unwrap(),
-        Action::GateMergeOn {
+        Action::parse("gate_return_on(verifier.approve)").unwrap(),
+        Action::GateReturnOn {
             predicate: "verifier.approve".into()
         }
     );
@@ -74,7 +81,7 @@ fn rejects_unknown_action() {
 
 #[test]
 fn rejects_zero_arg_action_with_args() {
-    let e = Action::parse("merge(now)").unwrap_err();
+    let e = Action::parse("compaction_merge(now)").unwrap_err();
     assert!(e.contains("no arguments"), "got: {e}");
 }
 
@@ -103,9 +110,9 @@ fn rejects_dispatch_extra_positional() {
 }
 
 #[test]
-fn rejects_gate_merge_on_arity() {
-    assert!(Action::parse("gate_merge_on()").is_err());
-    assert!(Action::parse("gate_merge_on(a, b)").is_err());
+fn rejects_gate_return_on_arity() {
+    assert!(Action::parse("gate_return_on()").is_err());
+    assert!(Action::parse("gate_return_on(a, b)").is_err());
 }
 
 #[test]

@@ -4,7 +4,7 @@
 //! protocol by epitaph value. Real filesystem, stub git/adapter/tools.
 
 use super::fixtures::*;
-use crate::config::{Budgets, Capabilities, Model, RetryConfig};
+use crate::config::{Capabilities, Model, Workflow};
 use crate::prompt::Error;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, Launcher, inbox_dir, try_acquire};
@@ -45,8 +45,7 @@ pub(super) fn worker_config() -> WorkerConfig {
         tools: vec![],
         soul: "be helpful".into(),
         binary: "bz".into(),
-        retry: RetryConfig::default(),
-        budgets: Budgets::default(),
+        workflow: Workflow::parse("events: {}\n", std::path::Path::new("workflow.yaml")).unwrap(),
         expect_handshake: false,
     }
 }

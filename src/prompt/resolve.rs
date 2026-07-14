@@ -16,7 +16,7 @@
 //! acquire, nothing due) exits before any config is read (§6).
 
 use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
-use crate::config::{Budgets, Model, ModelsConfig, RetryConfig, Workflow};
+use crate::config::{Model, ModelsConfig, Workflow};
 use crate::prompt::{AdapterRunner, BRAZEN_PIN, adapter, dispatch};
 use crate::workspace;
 use std::ffi::OsString;
@@ -50,8 +50,12 @@ pub(super) struct WorkerConfig {
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
     pub(super) binary: OsString,
-    pub(super) retry: RetryConfig,
-    pub(super) budgets: Budgets,
+    /// The agent's workflow, read from the governing config commit (§2.2,
+    /// §6). Carries the event→action bindings the §6 interpreter runs, and
+    /// is the single home for the retry policy and budgets — `as_resolved`
+    /// derives both from it rather than mirroring them into their own
+    /// fields (`docs/PRINCIPLES.md` Single source of truth).
+    pub(super) workflow: Workflow,
     /// True under an `adapter:` override — the MessageStart.v handshake
     /// governs in place of the version guard (§4.4).
     pub(super) expect_handshake: bool,
@@ -59,7 +63,8 @@ pub(super) struct WorkerConfig {
 
 impl WorkerConfig {
     /// Borrow into the [`dispatch::Resolved`] shape the step machinery
-    /// takes (one struct, two drivers — §6 shipped-state note).
+    /// takes (one struct, two drivers — §6 shipped-state note). Retry and
+    /// budgets derive from the one `workflow` home (§6).
     pub(super) fn as_resolved(&self) -> dispatch::Resolved<'_> {
         dispatch::Resolved {
             model: &self.model,
@@ -67,8 +72,8 @@ impl WorkerConfig {
             tools: &self.tools,
             soul: self.soul.clone(),
             binary: self.binary.clone(),
-            retry: self.retry,
-            budgets: self.budgets,
+            retry: self.workflow.retry,
+            budgets: self.workflow.budgets,
             expect_handshake: self.expect_handshake,
         }
     }
@@ -127,8 +132,7 @@ pub(super) fn resolve_worker(
         tools: assignment.tools.clone(),
         soul,
         binary,
-        retry: workflow.retry,
-        budgets: workflow.budgets,
+        workflow,
         expect_handshake,
     })
 }

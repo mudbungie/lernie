@@ -12,6 +12,10 @@ on = "close"
 [[blockers]]
 id = "bl-b82a"
 on = "close"
+
+[[blockers]]
+id = "bl-02fd"
+on = "close"
 +++
 ## Scope (follows bl-6a3b)
 bl-6a3b landed the §6 binding interpreter (advance-native), reconciled the closed action/event set to the current post-merge-back names (gate_return_on, deliver_result, compaction_merge, compactor_return; spawn_root_agent), threaded the parsed workflow bindings through resolve::WorkerConfig, and wired the FIRST runtime lifecycle binding: branch_stopped -> [mark_abandoned, notify_ui] as git-native ref marks (refs/lernie/abandoned/*, refs/lernie/notify/*), executed config-only by lernie advance at the stopped terminal. Design for the whole feature is in ARCHITECTURE.md §6 'The binding interpreter (v0.7)'.

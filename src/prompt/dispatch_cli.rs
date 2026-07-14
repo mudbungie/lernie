@@ -4,8 +4,9 @@
 //! shim under the repo's 300-line cap and the wiring is unit-testable —
 //! the same discipline as `stop::cli_run` and `inbox::cli_run`.
 
-use super::{CompactorRequest, Error, WorkerRequest};
-use crate::prompt::{NanoIdGen, SystemClock, compactor, worker};
+use super::{ChildDispatchRequest, CompactorRequest, Error};
+use crate::prompt::inbox::{AdvanceLauncher, Launcher};
+use crate::prompt::{NanoIdGen, SystemClock, child_dispatch, compactor};
 use crate::template::RealGit;
 use std::path::Path;
 
@@ -81,19 +82,37 @@ fn run_worker(
     parent_branch: &str,
     goal: Option<&str>,
 ) -> Result<(), DispatchCliError> {
+    // The production launcher detach-spawns `lernie advance` (§2.11); its
+    // construction is pure (resolves `current_exe`, no spawn), so the
+    // spawn-free wiring is covered here and the launch decision is tested
+    // through [`run_worker_with`] against an injected launcher.
+    let launcher = AdvanceLauncher::current().map_err(crate::prompt::Error::from)?;
+    run_worker_with(repo, parent_branch, goal, &launcher)
+}
+
+/// [`run_worker`] with the driver launcher injected — the same
+/// launcher-as-parameter discipline as `inbox::probe_and_launch`, so the
+/// fork + front-door deposit is exercisable without spawning a real
+/// `lernie advance`.
+fn run_worker_with(
+    repo: &Path,
+    parent_branch: &str,
+    goal: Option<&str>,
+    launcher: &dyn Launcher,
+) -> Result<(), DispatchCliError> {
     let goal = goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?;
     crate::workspace::require(repo).map_err(crate::prompt::Error::from)?;
     let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
-    let req = WorkerRequest {
+    let req = ChildDispatchRequest {
         repo,
         parent_branch,
         parent_worktree: &parent_worktree,
         goal,
     };
-    // Print the spawned branch so the `dispatch` built-in captures it as
-    // the `tool_result` handle (ARCH §3.3) — stdout carries one product.
-    let sub_branch = worker::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen)?;
-    println!("{sub_branch}");
+    // Print the child id so the `dispatch` built-in captures it as the
+    // `tool_result` address (ARCH §3.3, §2.5) — stdout carries one product.
+    let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
+    println!("{child}");
     Ok(())
 }
 
@@ -123,10 +142,19 @@ mod tests {
         );
     }
 
+    /// A [`Launcher`] that swallows launches — the fork + front-door
+    /// deposit is under test, not the real `lernie advance` spawn.
+    struct NoopLauncher;
+    impl Launcher for NoopLauncher {
+        fn launch(&self, _workspace: &Path, _agent_id: &str) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
     #[test]
     fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run("worker", &repo, "20260101-p1", Some("do the thing")).unwrap();
+        run_worker_with(&repo, "20260101-p1", Some("do the thing"), &NoopLauncher).unwrap();
         // Exactly one sub-agent worktree appeared under agents/ with
         // the parent's id prefix (hyphenated descent, §2.3).
         let subs = std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))

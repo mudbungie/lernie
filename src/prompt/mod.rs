@@ -30,6 +30,7 @@
 
 pub mod adapter;
 pub mod budget;
+pub mod child_dispatch;
 pub mod clock;
 pub mod compactor;
 pub mod dispatch;
@@ -41,7 +42,6 @@ pub mod step;
 pub mod stop;
 pub mod subagent;
 pub mod tool;
-pub mod worker;
 
 #[cfg(test)]
 mod tests;
@@ -50,9 +50,9 @@ pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use compactor::CompactorRequest;
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
+pub use child_dispatch::ChildDispatchRequest;
 pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
-pub use worker::WorkerRequest;
 
 use crate::template::GitRunner;
 use std::path::{Path, PathBuf};

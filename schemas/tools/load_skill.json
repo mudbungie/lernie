@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "load_skill",
+  "description": "Input schema for the lernie built-in `load_skill` tool (ARCH §3.3 Body-on-demand). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the skill to load — one of the names advertised in the always-present skill descriptions. Must be a single directory name (no path separators). The harness copies that skill's body from the pool into your worktree at `skills/<name>/`, where it becomes part of your context on the next model call."
+    }
+  },
+  "required": ["name"],
+  "additionalProperties": false
+}

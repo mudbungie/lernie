@@ -1,19 +1,25 @@
 +++
 title = "epic: child step loop — dispatched children run to terminal and deposit (§2.5 live)"
 created = 1783917121
-updated = 1783917138
+updated = 1784004627
 claimant = "Bottoming"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
 +++
-## Scope
-The single biggest gap to a usable platform: worker.rs stops at the dispatch commit — no model call, no tool loop, no terminal event. Give a dispatched child the same step loop a root runs, so every structurally-wired-but-dormant piece goes live: result deposits (inbox::deposit_child_result), epitaphs, work-product transfer on delivery, parent revival, the died-sweep against real crashed children.
+## Scope (reshaped per user, 2026-07-13)
+Children never run: worker.rs stops at the dispatch commit. Land the user's dispatch shape — the parent/child relationship is essentially implicit, and dispatch is NOT a spawn:
 
-## Design direction (draft in this ball's worktree)
-- One loop, not two: the child executor runs run_exchange with the parent-derived deposit target. deposit_child_result is already total (no-op for roots); the gap is the early stop in worker.rs, not a missing loop.
-- Child on-ramp needs no goal deposit: the child forks off the commit where the dispatch landed (§2.5), so its inherited transcript ends with the dispatch tool_result — a user-role wire block — and the goal is pinned (§2.8). Wire-valid step 1 with zero new mechanism. Pin this in ARCH §2.5.
-- Detached spawn: the dispatch built-in must spawn the child executor to outlive the parent's tool subprocess — own pgid (setpgid, consistent with §2.9 agent-scoped stop), stdio to log/null. Same detachment contract bl-4684 pins for advance; share it.
-- Budgets: max_depth and whole-tree token/wall ceilings (§6) already derive against the root prefix; verify they enforce in the child loop unchanged.
+1. Tool dispatch, inline and synchronous: fork the child branch off the given ref (default: commit where the dispatch landed), dispatch commit pins goal.md, soul.md, and the **workflow appendix** — a workflow fragment composed after the governing config's workflow.yaml, carrying one binding: terminal event → send the result message (epitaph/terminal ref/terminal response, §2.6) to the dispatching agent's address.
+2. Deposit the dispatch message via lernie message — the front door; the deposit's own launch machinery starts the child nominally, like any agent.
+3. Tool returns the child's id. Nothing supervises anything.
+
+No child-specific loop, no worker path, and the step loop never branches on parent/child. Return totality becomes a property of the dispatch primitive (cannot fork without pinning the binding), not of loop code; the §8 died-sweep addresses its deposit by reading the same binding. Draft committed in this worktree (ARCH §2.5).
+
+## Open pins (design, this ball)
+- Appendix disk home: a dispatch-pinned file beside goal.md/soul.md (precedent: dispatch-pinned, model-visible) vs §2.2's control-out-of-worktree line. Needs settling.
+- Return address: derivable from the id today; if the appendix names it explicitly, pick ONE authoritative home (SSOT). Explicit-in-appendix decouples report-target from descent (watchdog shapes) — lean explicit, confirm.
+- goal.md vs dispatch message: whether the pinned goal duplicates the deposited text (as the root path does today) or distills it — settle against SSOT.
+- Ripples to coordinate with bl-4684 (advance): lernie dispatch drops out of the §2.11 driver list (it becomes writer-shaped: fork+deposit+exit); child revival and first drive are advance's. worker.rs and the dispatch-as-driver path get deleted, not extended.
 
 ## Dependencies
-Soft on bl-4684 (advance): deposits land without it, but revival of a quiescent parent waits for the launcher. Do not block claim; note the seam.
+Implementation lands against advance (bl-4684) as the launched driver; deposits and forks are buildable first, drive-by-advance last.

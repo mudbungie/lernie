@@ -121,10 +121,19 @@ pub enum Event {
     VerifierApprove,
     VerifierReject,
     WorkerFlush,
+    CompactorReturn,
     BranchStopped,
     PreStep,
     PostStep,
     OnToolReturn,
+}
+
+impl Event {
+    /// The `workflow.yaml` key for this event (ARCH §6) — the stable name
+    /// used in diagnostics and by the runtime interpreter.
+    pub fn as_str(self) -> &'static str {
+        event_name(self)
+    }
 }
 
 /// Optional `compaction:` block (ARCH §6).
@@ -192,6 +201,22 @@ impl Workflow {
         Ok(())
     }
 
+    /// The typed actions bound to one `event`, in declared order (ARCH §6
+    /// "The binding interpreter" — the flat list the hop matches against
+    /// disk circumstance). An unbound event yields the empty list: the
+    /// general path with empty inputs, not a bootstrap special case.
+    /// Strings were validated at load, so parsing here cannot fail.
+    pub fn actions_for(&self, event: Event) -> Vec<Action> {
+        self.events
+            .get(&event)
+            .map(|raw| {
+                raw.iter()
+                    .map(|s| Action::parse(s).expect("validated at load"))
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
     /// Pre-parse every action string into a typed [`Action`]. Intended for
     /// callers that want the typed view without re-validating.
     pub fn typed_events(&self) -> BTreeMap<Event, Vec<Action>> {
@@ -231,6 +256,7 @@ fn event_name(event: Event) -> &'static str {
         Event::VerifierApprove => "verifier_approve",
         Event::VerifierReject => "verifier_reject",
         Event::WorkerFlush => "worker_flush",
+        Event::CompactorReturn => "compactor_return",
         Event::BranchStopped => "branch_stopped",
         Event::PreStep => "pre_step",
         Event::PostStep => "post_step",

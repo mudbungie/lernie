@@ -166,7 +166,7 @@ fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
     );
     deps.launcher = &rec;
     let mut cfg = worker_config();
-    cfg.budgets = Budgets {
+    cfg.workflow.budgets = Budgets {
         max_total_tokens: Some(0),
         ..Budgets::default()
     };

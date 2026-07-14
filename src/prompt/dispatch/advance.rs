@@ -139,10 +139,19 @@ pub(in crate::prompt) fn run(
                 hop::StepOutcome::Terminal(epitaph) => {
                     // Terminal handling + exit protocol, exactly as
                     // `run_exchange`'s tail (§2.11): finish by epitaph
-                    // value, release own lock, then the self-directed
-                    // launch — after release this process has no
-                    // authority; spawn and return are its only acts.
+                    // value, evaluate the workflow's terminal-lifecycle
+                    // bindings (§6 — the epitaph names the event), release
+                    // own lock, then the self-directed launch — after
+                    // release this process has no authority; spawn and
+                    // return are its only acts.
                     terminal::finish(workspace, agent_id, agent_id, &worktree, epitaph, deps)?;
+                    crate::prompt::workflow_actions::run_terminal_bindings(
+                        &cfg.workflow,
+                        epitaph,
+                        &worktree,
+                        agent_id,
+                        deps.git,
+                    )?;
                     drop(lock);
                     terminal::exit_launch(workspace, agent_id, epitaph, deps);
                     Ok(AdvanceOutcome::Terminal(epitaph))

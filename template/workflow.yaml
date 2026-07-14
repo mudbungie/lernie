@@ -1,10 +1,13 @@
 events:
   user_message:
-    - spawn_root_conversation
+    - spawn_root_agent
     - dispatch(worker)
   worker_return:
+    - deliver_result
+  worker_flush:
     - dispatch(compactor)
-    - merge
+  compactor_return:
+    - compaction_merge
   branch_stopped:
     - mark_abandoned
     - notify_ui

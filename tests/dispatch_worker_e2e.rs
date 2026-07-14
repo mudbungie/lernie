@@ -1,10 +1,17 @@
-//! End-to-end subprocess test for `lernie dispatch worker`: scaffolds
-//! a conversation repo, fabricates a parent branch + worktree
-//! manually (no `lernie prompt` needed — Phase 1 has no model call),
-//! invokes the new CLI shape, and asserts the v0.4 Phase 1 contract:
-//! sibling worktree at `<repo>/<parent>-<sub-id>/`, branch
-//! `<parent>-<sub-id>` off the parent's tip, with `goal.md` + `soul.md`
-//! committed as the dispatch commit (ARCH §2.3 step 2 / §2.5 / §3.4).
+//! End-to-end subprocess test for `lernie dispatch worker`: scaffolds a
+//! workspace, fabricates a parent branch + worktree manually, invokes
+//! the CLI, and asserts the reshaped dispatch contract (ARCH §2.5 — fork
+//! plus front door): a child branch `<parent>-<sub-id>` off the parent's
+//! tip carrying the dispatch commit's `goal.md` + `soul.md` (§2.3
+//! step 2), plus a clean exit — the deposit + driver launch succeeded.
+//!
+//! The dispatch now *starts* the child (a detached `lernie advance`, §6),
+//! which runs asynchronously and may advance the child branch past its
+//! dispatch commit. Assertions therefore read only race-free facts: the
+//! dispatch commit is an immutable ancestor of the child branch, and
+//! `goal.md` / `soul.md` persist across any later delivery commit. The
+//! deposit itself is covered deterministically in the `child_dispatch`
+//! unit tests; here we prove the CLI wiring end-to-end.
 
 use std::fs;
 use std::path::Path;
@@ -143,11 +150,10 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
     // <ts>-<short-id> = compact-iso (no separators) + 8-char nanoid.
     assert!(suffix.len() >= 9 && suffix.contains('-'), "got {suffix:?}");
 
-    // Worker worktree directory present (dispatch did NOT clean it up
-    // — Phase 1 stops at the dispatch commit, which is the read state
-    // for the worker's own step 1, not done in this phase).
+    // Child worktree directory present — dispatch materialized it and
+    // the launched driver keeps it (§2.3 step 6, disposable but present).
     let sub_wt = dest.join("agents").join(sub_branch);
-    assert!(sub_wt.exists(), "worker worktree must exist");
+    assert!(sub_wt.exists(), "child worktree must exist");
 
     // Goal and soul files committed on the dispatch commit's tree.
     // Read them out of the branch ref so the assertion is robust to
@@ -164,24 +170,28 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
         "expected template worker soul, got: {soul_blob}"
     );
 
-    // Dispatch commit is the tip of the worker branch (Phase 1 lands
-    // exactly one commit past the parent's tip).
+    // The dispatch commit is an immutable ancestor of the child branch:
+    // find it in history by its subject `dispatch: worker [<sub-branch>]`
+    // (race-free — the launched driver only appends past it), and assert
+    // it forked off the parent's tip (§2.3 step 2).
     let parent_ref = format!("agents/{parent_branch}");
     let sub_ref = format!("agents/{sub_branch}");
     let parent_tip = git_capture(&bare, &["rev-parse", &parent_ref]);
-    let sub_tip = git_capture(&bare, &["rev-parse", &sub_ref]);
-    assert_ne!(parent_tip, sub_tip, "worker tip must advance");
-    let parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &sub_ref]);
-    assert_eq!(parents.split_whitespace().count(), 1);
-    assert_eq!(parents.split_whitespace().next().unwrap(), parent_tip);
+    let want_subject = format!("dispatch: worker [{sub_branch}]");
+    let history = git_capture(&bare, &["log", "--pretty=%H %s", &sub_ref]);
+    let dispatch_sha = history
+        .lines()
+        .find_map(|line| {
+            let (sha, subject) = line.split_once(' ')?;
+            (subject == want_subject).then(|| sha.to_string())
+        })
+        .expect("dispatch commit present in child history");
+    let dispatch_parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &dispatch_sha]);
+    assert_eq!(dispatch_parents.split_whitespace().count(), 1);
+    assert_eq!(dispatch_parents.split_whitespace().next().unwrap(), parent_tip);
 
-    // Commit subject matches `dispatch: worker [<sub-branch>]` (the id,
-    // not the ref — ids are the identifier everywhere, §2.3).
-    let subject = git_capture(&bare, &["log", "-1", "--pretty=%s", &sub_ref]);
-    assert_eq!(subject, format!("dispatch: worker [{sub_branch}]"));
-
-    // No merge into the parent: the worker branch is unmerged against
-    // it (children return by message, §2.6 — nothing merges back).
+    // No merge into the parent: the child branch is unmerged against it
+    // (children return by message, §2.6 — nothing merges back).
     let unmerged = git_capture(
         &bare,
         &[

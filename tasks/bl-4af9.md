@@ -1,7 +1,8 @@
 +++
 title = "epic: skill body-on-demand — agent-elected skill load into the worktree (§3.3)"
 created = 1783917134
-updated = 1784009490
+updated = 1784009527
+claimant = "Reappear-4af9"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
 +++

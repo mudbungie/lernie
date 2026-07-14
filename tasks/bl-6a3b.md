@@ -1,7 +1,8 @@
 +++
 title = "epic: workflow actions — event→action bindings act at runtime (§6, v0.7)"
 created = 1783917126
-updated = 1784009421
+updated = 1784010044
+claimant = "Reappear-6a3b"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
 

@@ -1,21 +1,23 @@
-//! `dispatch` built-in (ARCH §2.5, §3.3, §3.4 — v0.4 Phase 2).
+//! `dispatch` built-in (ARCH §2.5, §3.3, §3.4).
 //!
 //! Stdin is the `tool_use.input` block as JSON: `{ "role": <string>,
-//! "goal": <string> }`. The conversation context (which conv-repo,
+//! "goal": <string> }`. The conversation context (which workspace,
 //! which calling branch) arrives via the `LERNIE_CONV_REPO` and
 //! `LERNIE_CONV_BRANCH` env vars the executor sets per ARCH §3.3 — it
 //! is not in the model-facing input schema because the model does not
 //! pick which conversation it is part of.
 //!
-//! The tool spawns the subagent through the §3.4 control plane —
+//! The tool starts the child through the §3.4 control plane —
 //! `lernie dispatch <role> <repo> <branch> --goal <goal>` — rather than
-//! calling [`crate::prompt::worker::run`] in-process. That CLI does the
-//! Phase 1 work (worktree allocation, dispatch commit) and prints the
-//! new subagent branch on stdout; the dispatch tool captures that
-//! handle and re-emits it on its own stdout as the `tool_result`
-//! payload `{"status":"in_progress","handle":"<sub-branch>"}` (ARCH
-//! §2.5 "Async work uses handles"). The subagent's own step loop and
-//! merge-back are Phases 3/4/5 — out of scope here.
+//! forking in-process. That CLI does the whole dispatch primitive: fork
+//! the child branch + dispatch commit, then deposit the dispatch message
+//! through the front door so the child's driver (`lernie advance`, §6)
+//! starts nominally (ARCH §2.5 — fork plus front door, never a spawn).
+//! It prints the child's id on stdout; the dispatch tool captures that
+//! address and re-emits it on its own stdout as the `tool_result`
+//! payload `{"status":"in_progress","handle":"<child-id>"}` — the child
+//! runs asynchronously and its result returns later as a deposit into
+//! the parent's inbox (§2.5, §2.6), never through this tool's return.
 
 use serde::{Deserialize, Serialize};
 use std::ffi::OsString;

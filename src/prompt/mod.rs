@@ -42,6 +42,7 @@ pub mod step;
 pub mod stop;
 pub mod subagent;
 pub mod tool;
+mod workflow_actions;
 
 #[cfg(test)]
 mod tests;
@@ -157,6 +158,15 @@ pub enum Error {
          (§2.3)."
     )]
     UnpairedToolUse { branch: String },
+    #[error(
+        "workflow action {action:?} is not yet interpreted at the {event} event (§6 \
+         binding interpreter — shipped subset is the terminal ref marks); the action is \
+         in the closed set but its executor is a tracked follow-on of bl-6a3b"
+    )]
+    ActionUnsupported {
+        action: String,
+        event: &'static str,
+    },
     #[error("deposit initial user message: {0}")]
     Deposit(#[from] inbox::DepositError),
     #[error("tool {name} schema unreadable at {path}: {source}")]

@@ -20,18 +20,19 @@ fn write_yaml(s: &str) -> NamedTempFile {
 const ARCH_EXAMPLE: &str = r#"
 events:
   user_message:
-    - spawn_exchange
+    - spawn_root_agent
     - dispatch(worker)
   worker_return:
     - dispatch(verifier)
-    - gate_merge_on(verifier.approve)
+    - gate_return_on(verifier.approve)
   verifier_approve:
-    - dispatch(compactor)
-    - merge
+    - deliver_result
   verifier_reject:
     - "dispatch(worker, with: verifier.feedback)"
   worker_flush:
     - "dispatch(compactor, mode: intermediate)"
+  compactor_return:
+    - compaction_merge
   branch_stopped:
     - mark_abandoned
     - notify_ui
@@ -69,7 +70,7 @@ fn parses_arch_example() {
 fn parses_explicit_retry_block() {
     // Covers the RetryConfig + Backoff deserialize path (ARCH §6, §2.10).
     let f = write_yaml(
-        "events:\n  user_message:\n    - merge\nretry:\n  max_attempts: 5\n  backoff: exponential\n",
+        "events:\n  user_message:\n    - compaction_merge\nretry:\n  max_attempts: 5\n  backoff: exponential\n",
     );
     let w = Workflow::load(f.path()).unwrap();
     assert_eq!(w.retry.max_attempts, 5);
@@ -83,7 +84,7 @@ fn parses_explicit_retry_block() {
 #[test]
 fn omitted_retry_block_uses_the_default() {
     // No `retry:` → RetryConfig::default (3 attempts, exponential).
-    let f = write_yaml("events:\n  user_message:\n    - merge\n");
+    let f = write_yaml("events:\n  user_message:\n    - compaction_merge\n");
     let w = Workflow::load(f.path()).unwrap();
     assert_eq!(w.retry, RetryConfig::default());
     assert_eq!(w.retry.max_attempts, 3);
@@ -105,7 +106,7 @@ fn parses_explicit_budgets_block() {
 #[test]
 fn omitted_budgets_block_is_all_unbounded() {
     // No `budgets:` → Budgets::default (every axis None = unbounded).
-    let f = write_yaml("events:\n  user_message:\n    - merge\n");
+    let f = write_yaml("events:\n  user_message:\n    - compaction_merge\n");
     let w = Workflow::load(f.path()).unwrap();
     assert_eq!(w.budgets, Budgets::default());
     assert!(w.budgets.max_total_tokens.is_none());
@@ -202,6 +203,7 @@ const EVENT_NAMES: &[&str] = &[
     "verifier_approve",
     "verifier_reject",
     "worker_flush",
+    "compactor_return",
     "branch_stopped",
     "pre_step",
     "post_step",

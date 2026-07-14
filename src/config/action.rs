@@ -5,8 +5,9 @@
 //! - `dispatch(worker)`
 //! - `dispatch(worker, with: verifier.feedback)`
 //! - `dispatch(compactor, mode: intermediate)`
-//! - `gate_merge_on(verifier.approve)`
-//! - `merge`
+//! - `gate_return_on(verifier.approve)`
+//! - `deliver_result`
+//! - `compaction_merge`
 //! - `mark_abandoned`
 //! - `notify_ui`
 //!
@@ -21,7 +22,7 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Action {
     SpawnExchange,
-    SpawnRootConversation,
+    SpawnRootAgent,
     Dispatch {
         role: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -29,10 +30,18 @@ pub enum Action {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         mode: Option<DispatchMode>,
     },
-    GateMergeOn {
+    /// Hold a worker's result delivery until the gating predicate holds
+    /// (ARCH §6 "gate_return_on — the delivery-hold"): the held state is a
+    /// disk query, never a stored flag.
+    GateReturnOn {
         predicate: String,
     },
-    Merge,
+    /// Deliver a (possibly gate-held) result message + work-product
+    /// transfer (ARCH §2.6). Lifts a `gate_return_on` hold on approval.
+    DeliverResult,
+    /// The one merge (ARCH §2.6): land a returning compactor's branch
+    /// `--no-ff` at a step boundary. Bound to `compactor_return`.
+    CompactionMerge,
     MarkAbandoned,
     NotifyUi,
 }
@@ -53,14 +62,13 @@ impl Action {
         let (name, args) = split_call(trimmed)?;
         match name {
             "spawn_exchange" => no_args(name, &args).map(|_| Action::SpawnExchange),
-            "spawn_root_conversation" => {
-                no_args(name, &args).map(|_| Action::SpawnRootConversation)
-            }
-            "merge" => no_args(name, &args).map(|_| Action::Merge),
+            "spawn_root_agent" => no_args(name, &args).map(|_| Action::SpawnRootAgent),
+            "deliver_result" => no_args(name, &args).map(|_| Action::DeliverResult),
+            "compaction_merge" => no_args(name, &args).map(|_| Action::CompactionMerge),
             "mark_abandoned" => no_args(name, &args).map(|_| Action::MarkAbandoned),
             "notify_ui" => no_args(name, &args).map(|_| Action::NotifyUi),
             "dispatch" => parse_dispatch(&args),
-            "gate_merge_on" => parse_gate_merge_on(&args),
+            "gate_return_on" => parse_gate_return_on(&args),
             other => Err(format!("unknown action {other:?}")),
         }
     }
@@ -178,12 +186,12 @@ fn parse_mode(value: &str) -> Result<DispatchMode, String> {
     }
 }
 
-fn parse_gate_merge_on(args: &[Arg]) -> Result<Action, String> {
+fn parse_gate_return_on(args: &[Arg]) -> Result<Action, String> {
     match args {
-        [Arg::Positional(predicate)] => Ok(Action::GateMergeOn {
+        [Arg::Positional(predicate)] => Ok(Action::GateReturnOn {
             predicate: predicate.clone(),
         }),
-        _ => Err("gate_merge_on takes one positional predicate".into()),
+        _ => Err("gate_return_on takes one positional predicate".into()),
     }
 }
 

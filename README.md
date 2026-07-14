@@ -442,6 +442,19 @@ Built-ins:
   self-delivering: the free-lease probe detach-spawns `lernie advance`
   (§6, below), which acquires the lease, delivers the deposit, and steps
   the branch.
+- **`load_skill`** — copies a pooled skill's body into the calling
+  agent's worktree at `skills/<name>/`, where the next context assembly
+  composes it (ARCH §3.3 *Body-on-demand*, §5.2). Input is `{name}`; the
+  data-root pool + target worktree come from `LERNIE_HOME`/XDG and
+  `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH`. Returns
+  `{"status":"loaded","path":"skills/<name>"}` on a fresh copy or
+  `already_loaded` when the worktree already holds it (the loaded copy is
+  the snapshot the branch is pinned to; `rm` and reload to refresh). An
+  unknown or non-single-component name is declined (`is_error`, naming
+  the available pool). **Shipped state:** the copy commits with the tool
+  result — a tool commit now stages the whole worktree (`git add -A`,
+  `commit_tool`), landing any tool's worktree side effects with its
+  result entry (ARCH §2.3).
 
 ## Messaging an existing agent directly
 

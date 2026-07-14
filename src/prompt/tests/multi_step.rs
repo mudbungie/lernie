@@ -146,7 +146,9 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
         vec!["add", "messages/002-claude-sonnet-4-7.json"]
     );
     assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-4-7"));
-    assert_eq!(runs[14].1, vec!["add", "messages/003-tool.json"]);
+    // A tool commit stages the whole worktree (`git add -A`, §2.3) so any
+    // worktree side effect the tool produced lands with its result entry.
+    assert_eq!(runs[14].1, vec!["add", "-A"]);
     assert!(runs[15].1[2].contains("transcript 003: tool"));
     // Step 2 opens with its own boundary drain (empty inbox → stray-probe
     // only), then the branch-tip capture (advanced by step 1's transcript

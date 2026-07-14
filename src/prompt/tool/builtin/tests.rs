@@ -214,6 +214,59 @@ fn message_error_is_carried_through_dispatcher() {
 }
 
 #[test]
+fn load_skill_routed_to_inner_module() {
+    let repo = tempfile::TempDir::new().unwrap();
+    let home = tempfile::TempDir::new().unwrap();
+    let skill = home.path().join("skills/git-ops");
+    std::fs::create_dir_all(&skill).unwrap();
+    std::fs::write(skill.join("SKILL.md"), b"body").unwrap();
+
+    // The pool resolves from the `LERNIE_HOME`-collapsed data root (§3.3).
+    let mut env = stub_env(repo.path(), "a1");
+    env.0
+        .insert("LERNIE_HOME", home.path().as_os_str().to_owned());
+
+    let input = serde_json::json!({"name":"git-ops"}).to_string();
+    let mut stdin = Cursor::new(input.into_bytes());
+    let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
+    let code = run_with(
+        "load_skill",
+        &mut stdin,
+        &mut stdout,
+        &mut stderr,
+        &env,
+        &StubSpawner,
+        &StubSender,
+    )
+    .unwrap();
+    assert_eq!(code, 0);
+    let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
+    assert_eq!(payload["status"], "loaded");
+}
+
+#[test]
+fn load_skill_error_is_carried_through_dispatcher() {
+    // Repo+branch but no data-root env — surfaces as load_skill::Error::Root
+    // via #[from] into Error::LoadSkill.
+    let repo = tempfile::TempDir::new().unwrap();
+    let env = stub_env(repo.path(), "a1");
+    let input = serde_json::json!({"name":"git-ops"}).to_string();
+    let mut stdin = Cursor::new(input.into_bytes());
+    let (mut stdout, mut stderr) = (Vec::new(), Vec::new());
+    let err = run_with(
+        "load_skill",
+        &mut stdin,
+        &mut stdout,
+        &mut stderr,
+        &env,
+        &StubSpawner,
+        &StubSender,
+    )
+    .unwrap_err();
+    assert!(matches!(err, Error::LoadSkill(_)), "{err}");
+}
+
+#[test]
 fn dispatch_error_is_carried_through_dispatcher() {
     // No env vars set on the StubEnv variant below — surfaces as
     // dispatch::Error::MissingEnv via #[from] into Error::Dispatch.

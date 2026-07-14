@@ -81,7 +81,7 @@ pub(super) fn deliver_message(
     let dest = worktree.join(&rel);
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
     std::fs::rename(src, &dest)?;
-    commit_entry(worktree, conv_id, seq, &rel, sender, git)
+    commit_entry(worktree, conv_id, seq, &[&rel], sender, git)
 }
 
 /// Commit a step's model output: seal-and-rename — the sealed staging
@@ -111,7 +111,7 @@ pub(super) fn commit_assistant(
     let dest = worktree.join(&rel);
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
     std::fs::rename(staging_path, &dest)?;
-    commit_entry(worktree, conv_id, seq, &rel, model_id, git)?;
+    commit_entry(worktree, conv_id, seq, &[&rel], model_id, git)?;
     let bytes = std::fs::read(&dest)?;
     // Harness-sealed staging, so always a valid canonical array (§2.3).
     Ok(serde_json::from_slice(&bytes).expect("model-output entry is a canonical Content array"))
@@ -119,8 +119,18 @@ pub(super) fn commit_assistant(
 
 /// Commit one resolved tool call's canonical `tool_result` block as
 /// `messages/NNN-tool.json` (§3.3 "Wire `tool_result` framing is
-/// transcript-backed"). The counter read happens inside the sibling
-/// tool serialization the caller already imposes (§3.3).
+/// transcript-backed") **together with any worktree side effects the
+/// tool produced** — a copied `skills/<name>/` body (§3.3 Body-on-demand,
+/// [`crate::prompt::tool::builtin::load_skill`]), a file a shell tool
+/// wrote, etc. §2.3 pins this: "each tool call the step emitted commits
+/// its result — and any worktree side effects — as it lands." So this
+/// entry stages the whole worktree (`git add -A`), not just the result
+/// file: the `steps/` and `inbox/` trees sit at the workspace root
+/// outside every worktree (§2.2), so `-A` captures exactly the tool's
+/// worktree footprint and nothing diagnostic. A read-only tool touches
+/// nothing but its result entry, so `-A` degenerates to the single-file
+/// stage. The counter read happens inside the sibling tool serialization
+/// the caller already imposes (§3.3).
 pub(super) fn commit_tool(
     worktree: &Path,
     conv_id: &str,
@@ -133,7 +143,7 @@ pub(super) fn commit_tool(
     std::fs::create_dir_all(dest.parent().expect("messages/ has a parent"))?;
     let bytes = serde_json::to_vec(std::slice::from_ref(tool_result)).expect("Content serializes");
     std::fs::write(&dest, bytes)?;
-    commit_entry(worktree, conv_id, seq, &rel, TOOL_ORIGIN, git)
+    commit_entry(worktree, conv_id, seq, &["-A"], TOOL_ORIGIN, git)
 }
 
 /// `messages/NNN-<origin>.json` for `seq`, zero-padded to [`SEQ_WIDTH`].
@@ -141,20 +151,25 @@ fn entry_rel(seq: u32, origin: &str) -> String {
     format!("{MESSAGES_DIR}/{seq:0w$}-{origin}.json", w = SEQ_WIDTH)
 }
 
-/// `git add <rel>` then commit the entry on the conversation branch.
+/// `git add <add_args>` then commit the entry on the conversation
+/// branch. `add_args` is the pathspec to stage: a single `messages/…`
+/// entry for a delivery or model-output commit (their only footprint is
+/// that one file), or `-A` for a tool commit (which additionally captures
+/// the tool's worktree side effects, per [`commit_tool`]).
 fn commit_entry(
     worktree: &Path,
     conv_id: &str,
     seq: u32,
-    rel: &str,
+    add_args: &[&str],
     origin: &str,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
-    git.run(worktree, &["add", rel])
-        .map_err(|source| Error::Git {
-            op: "transcript add",
-            source,
-        })?;
+    let mut argv = vec!["add"];
+    argv.extend_from_slice(add_args);
+    git.run(worktree, &argv).map_err(|source| Error::Git {
+        op: "transcript add",
+        source,
+    })?;
     let msg = format!("transcript {seq:0w$}: {origin} [{conv_id}]", w = SEQ_WIDTH);
     git.run(worktree, &["commit", "-m", msg.as_str()])
         .map_err(|source| Error::Git {

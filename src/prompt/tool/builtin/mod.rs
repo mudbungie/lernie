@@ -10,9 +10,13 @@
 //! v0.3 shipped two built-ins (`read_file`, `bash`); v0.4 Phase 2 adds
 //! [`dispatch`] (the subagent-spawning tool, ARCH §2.5), and the inbox
 //! substrate adds [`message`] (deposit content into an existing agent's
-//! inbox, ARCH §2.11). A dispatch returns the child's address
+//! inbox, ARCH §2.11). [`load_skill`] realizes Body-on-demand (§3.3):
+//! it copies a pooled skill directory into the worktree at
+//! `skills/<name>/`, committed with the tool result so the next
+//! assembly composes it. A dispatch returns the child's address
 //! immediately and never blocks; a message deposits synchronously and
-//! returns `{status: deposited}`. Both derive the calling agent's
+//! returns `{status: deposited}`; a load_skill copies and returns
+//! `{status: loaded|already_loaded}`. All derive the calling agent's
 //! identity from `LERNIE_CONV_BRANCH` (§3.3), never from model input.
 //! Adding a new one is a match arm in [`run`] plus a sibling module.
 
@@ -21,6 +25,7 @@ use thiserror::Error;
 
 pub mod bash;
 pub mod dispatch;
+pub mod load_skill;
 pub mod message;
 pub mod read_file;
 
@@ -57,6 +62,12 @@ pub enum Error {
     /// contract as the other arms.
     #[error(transparent)]
     Message(#[from] message::Error),
+    /// `load_skill` failed (bad input JSON, missing env, unknown skill,
+    /// copy failure, etc., per [`load_skill::Error`]). An unknown skill
+    /// is a decline that reaches the model as an `is_error` `tool_result`
+    /// naming the available pool (§3.3). Same stderr-concat contract.
+    #[error(transparent)]
+    LoadSkill(#[from] load_skill::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
@@ -120,6 +131,11 @@ pub fn run_with<R: Read, W: Write, E: Write>(
         return message::run(stdin, stdout, env, sender)
             .map(|()| 0)
             .map_err(Error::Message);
+    }
+    if name == "load_skill" {
+        return load_skill::run(stdin, stdout, env)
+            .map(|()| 0)
+            .map_err(Error::LoadSkill);
     }
     Err(Error::Unknown(name.to_string()))
 }

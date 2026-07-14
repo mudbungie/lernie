@@ -2,7 +2,7 @@ roles:
   worker:
     provider: anthropic
     model: claude-sonnet-4-7
-    tools: [bash, read_file]
+    tools: [bash, read_file, load_skill]
   compactor:
     provider: anthropic
     model: claude-haiku-4-5

@@ -1,0 +1,20 @@
+[package]
+name = "agent-eval"
+version = "0.1.0"
+edition = "2024"
+description = "Experiment × suite × N evaluation runner for the lernie agent harness (ARCH §9.3)"
+license = "MIT"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_yaml_ng = "0.10"
+tempfile = "3"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
+
+[[bin]]
+name = "agent-eval"
+path = "src/main.rs"

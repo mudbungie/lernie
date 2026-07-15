@@ -7,6 +7,21 @@
 use agent_eval::agent::{Agent, BundleTarget, Bundler, CommandAgent, CommandBundler, Dispatch};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard};
+
+/// Serializes script-write-then-spawn pairs across tests. Without this, a
+/// concurrent posix_spawn in another thread inherits the write fd held by
+/// fs::write in this thread; that fd is CLOEXEC but only closes once the
+/// peer's own exec completes. If this thread's exec on the script it just
+/// wrote lands while the peer child still holds the inherited write fd,
+/// Linux returns ETXTBSY. Holding one lock across write + spawn in every
+/// test eliminates the overlap window — it must be a single static for the
+/// whole binary: per-module locks do not exclude each other's threads.
+static SPAWN_LOCK: Mutex<()> = Mutex::new(());
+
+fn spawn_lock() -> MutexGuard<'static, ()> {
+    SPAWN_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
 
 /// Write an executable `sh` stub and return its path.
 fn stub(dir: &Path, name: &str, body: &str) -> PathBuf {
@@ -21,6 +36,7 @@ fn stub(dir: &Path, name: &str, body: &str) -> PathBuf {
 /// Invoke a stub agent whose body writes `report_body` to the report file,
 /// and return the parsed outcome target.
 fn dispatch_with(report_body: &str) -> Option<BundleTarget> {
+    let _g = spawn_lock();
     let d = tempfile::tempdir().unwrap();
     let body = match report_body {
         "<none>" => "exit 0".to_string(),
@@ -66,6 +82,7 @@ fn report_variants_parse() {
 fn agent_exit_code_is_ignored() {
     // A stub that exits non-zero but writes a valid report: the exit code
     // is not the pass signal (§9.1), so the target still parses.
+    let _g = spawn_lock();
     let d = tempfile::tempdir().unwrap();
     let prog = stub(
         d.path(),
@@ -90,6 +107,9 @@ fn agent_exit_code_is_ignored() {
 
 #[test]
 fn agent_spawn_failure_is_an_error() {
+    // Writes no stub, but its own spawn still forks: an unlocked fork here
+    // inherits a peer's write fd and gives that peer the ETXTBSY.
+    let _g = spawn_lock();
     let agent = CommandAgent::new("agent-eval-no-such-binary-xyz");
     let d = tempfile::tempdir().unwrap();
     let err = agent
@@ -105,6 +125,7 @@ fn agent_spawn_failure_is_an_error() {
 
 #[test]
 fn bundler_success_and_failure() {
+    let _g = spawn_lock();
     let d = tempfile::tempdir().unwrap();
     let dest = d.path().join("out");
     #[rustfmt::skip]

@@ -6,10 +6,9 @@ This directory is the single source of truth for what an experiment is measured
 against (§9.3) — experiments and the suite version live in the repo together.
 
 The runner that executes the suite (`agent-eval --config <experiment> --suite
-<suite> --runs N`, §9.3 / v0.10) is **deferred**: it only becomes meaningful
-once workflow variants exist (bl-6a3b). This directory is the runner's input,
-authored ahead of it; the well-formedness test (`tests/suite.rs`) is the only
-thing that reads it today.
+<suite> --runs N`, §9.3 / v0.10) has **shipped** as the separate crate
+`crates/agent-eval`. This directory is its input; `crates/agent-eval/src/suite.rs`
+loads it and `tests/suite.rs` enforces its well-formedness.
 
 ## Layout
 

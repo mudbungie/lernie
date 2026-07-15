@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace ui install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace ui eval install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -22,7 +22,7 @@ LERNIE_DATA_HOME   := $(XDG_DATA_HOME)/lernie
 endif
 
 # Binaries that resolve via `PATH`: the harness CLI and the UI shell.
-PATH_BINARIES     := lernie lernie-ui-egui
+PATH_BINARIES     := lernie lernie-ui-egui agent-eval
 # The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for
 # every provider, installed from crates.io at the exact version the
 # lernie crate links (the load-time version guard, §4.4). Keep this pin
@@ -68,6 +68,12 @@ new-workspace:
 ui:
 	@test -n "$(REPO)" || { echo "usage: make ui REPO=<path>"; exit 1; }
 	@cargo run --quiet --bin lernie-ui-egui -- --repo "$(REPO)"
+
+# Run the evaluation runner (ARCH §9.3): experiment × suite × N.
+#   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 [AGENT=<cmd>]
+eval:
+	@test -n "$(CONFIG)" || { echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> [AGENT=<cmd>]"; exit 1; }
+	@cargo run --quiet -p agent-eval -- --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" $(if $(AGENT),--agent "$(AGENT)",)
 
 lint:
 	cargo clippy --all-targets -- -D warnings

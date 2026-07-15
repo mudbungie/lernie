@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "crates/lernie-ui-egui"]
+members = [".", "crates/lernie-ui-egui", "crates/agent-eval"]
 
 [package]
 name = "lernie"

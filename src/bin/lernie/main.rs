@@ -37,7 +37,7 @@ mod cli;
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
 use lernie::prompt::{
-    self, IdGen, NanoIdGen, SpawnAdapter, SpawnDispatcher, SpawnTool, SystemClock, tool::builtin,
+    self, IdGen, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock, tool::builtin,
 };
 use lernie::template::{self, RealGit};
 use std::{io, path::PathBuf, process::ExitCode};
@@ -193,10 +193,6 @@ fn main() -> ExitCode {
             // No workspace scan: drivers touch only their own branch (§2.11).
             prompt::stop::become_pgid_leader(); // §2.9 cascade leader
             prompt::install_stop_handler(); // §2.9 step-3 stopped deposit
-            let dispatcher = match SpawnDispatcher::new() {
-                Ok(d) => d,
-                Err(e) => return fail("lernie prompt: cannot resolve current binary", e),
-            };
             let roots = match harness_root::resolve() {
                 Ok(r) => r,
                 Err(e) => return fail("lernie prompt", e),
@@ -213,7 +209,6 @@ fn main() -> ExitCode {
                 git: &RealGit::new(),
                 clock: &SystemClock,
                 id_gen: &NanoIdGen,
-                dispatcher: &dispatcher,
                 tool_executor: &tool_executor,
                 config_root: &roots.config,
                 stop: prompt::stop_flag(),

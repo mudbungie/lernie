@@ -43,7 +43,7 @@ fn stop_between_steps_deposits_stopped_and_skips_compaction() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let stop = AtomicBool::new(true);
 
@@ -53,7 +53,6 @@ fn stop_between_steps_deposits_stopped_and_skips_compaction() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -62,7 +61,6 @@ fn stop_between_steps_deposits_stopped_and_skips_compaction() {
     let branch = run(repo.path(), "hi", &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     // No terminal compactor for a stopped branch (§2.9, like exhausted).
-    assert!(dispatcher.calls.borrow().is_empty());
     // The result deposited on the way out carries the `stopped` epitaph.
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
     // The model call never ran, so no step-1 response record exists.
@@ -109,7 +107,7 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
     let stop = AtomicBool::new(false);
     let adapter = FlipMidCall { flag: &stop };
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let deps = Deps {
@@ -118,7 +116,6 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
         git: &git,
         clock: &clock,
         id_gen: &id,
-        dispatcher: &dispatcher,
         tool_executor: &tool_executor,
         config_root: harness.path(),
         stop: &stop,
@@ -130,7 +127,6 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
     // returns Ok, not an error.
     let branch = run(repo.path(), "hi", &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
-    assert!(dispatcher.calls.borrow().is_empty());
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
 
     // The stop signature is intact: `response.json` was written (the
@@ -169,7 +165,7 @@ fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
     );
     let adapter = StubAdapter::happy(&r1);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let stop = AtomicBool::new(false);
     let (sleeper, tool_executor) = (
         StubSleeper::default(),
@@ -182,7 +178,6 @@ fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -194,7 +189,6 @@ fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
     assert_eq!(tool_executor.calls.borrow().len(), 1);
     // No terminal compactor for a stopped branch (§2.9), and the result
     // deposited on the way out carries the `stopped` epitaph.
-    assert!(dispatcher.calls.borrow().is_empty());
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
 }
 
@@ -215,7 +209,7 @@ fn tool_killed_without_stop_surfaces_as_tool_exec_error() {
     );
     let adapter = StubAdapter::happy(&r1);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::killed_on("bash"));
 
     let err = run(
@@ -227,7 +221,6 @@ fn tool_killed_without_stop_surfaces_as_tool_exec_error() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -237,5 +230,4 @@ fn tool_killed_without_stop_surfaces_as_tool_exec_error() {
         crate::prompt::Error::ToolExec { tool, .. } => assert_eq!(tool, "bash"),
         other => panic!("expected ToolExec, got {other:?}"),
     }
-    assert!(dispatcher.calls.borrow().is_empty());
 }

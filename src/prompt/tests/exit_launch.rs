@@ -82,7 +82,7 @@ fn final_response_exit_launches_own_agent_after_release_and_deposit() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&stream_of(brazen::FinishReason::Stop, &[Block::Text("hi")]));
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let launcher = ProbingLauncher::default();
 
@@ -92,7 +92,6 @@ fn final_response_exit_launches_own_agent_after_release_and_deposit() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -128,7 +127,7 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&stream_of(brazen::FinishReason::Stop, &[Block::Text("hi")]));
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (RootClock, FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (RootClock, FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let launcher = ProbingLauncher::default();
     let deps = Deps {
@@ -137,7 +136,6 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
         git: &git,
         clock: &clock,
         id_gen: &id,
-        dispatcher: &dispatcher,
         tool_executor: &tool_executor,
         config_root: harness.path(),
         stop: never_stopped(),
@@ -167,7 +165,7 @@ fn stopped_exit_never_launches() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let stop = AtomicBool::new(true);
     let launcher = ProbingLauncher::default();
@@ -178,7 +176,6 @@ fn stopped_exit_never_launches() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -210,7 +207,7 @@ fn budget_exhausted_exit_never_launches() {
         )),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let launcher = ProbingLauncher::default();
 
@@ -220,7 +217,6 @@ fn budget_exhausted_exit_never_launches() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -251,7 +247,7 @@ fn an_errored_executor_never_launches() {
         StubAdapter::reply_err(io::ErrorKind::ConnectionRefused, "no provider"),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let launcher = ProbingLauncher::default();
 
@@ -261,7 +257,6 @@ fn an_errored_executor_never_launches() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );

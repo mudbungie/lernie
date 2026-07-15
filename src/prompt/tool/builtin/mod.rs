@@ -24,6 +24,7 @@ use std::io::{Read, Write};
 use thiserror::Error;
 
 pub mod bash;
+pub mod compaction;
 pub mod dispatch;
 pub mod load_skill;
 pub mod message;
@@ -68,6 +69,11 @@ pub enum Error {
     /// naming the available pool (§3.3). Same stderr-concat contract.
     #[error(transparent)]
     LoadSkill(#[from] load_skill::Error),
+    /// A compactor tool (`write_summary` / `mark_for_deletion`) failed
+    /// (bad input JSON, missing env, deletion-only decline, etc., per
+    /// [`compaction::Error`], ARCH §2.7). Same stderr-concat contract.
+    #[error(transparent)]
+    Compaction(#[from] compaction::Error),
 }
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
@@ -136,6 +142,18 @@ pub fn run_with<R: Read, W: Write, E: Write>(
         return load_skill::run(stdin, stdout, env)
             .map(|()| 0)
             .map_err(Error::LoadSkill);
+    }
+    // The compactor toolset (§2.7), built into the primitive: available to
+    // the compactor role's injected toolset, not any `providers.yaml` list.
+    if name == "write_summary" {
+        return compaction::run_write_summary(stdin, stdout, env)
+            .map(|()| 0)
+            .map_err(Error::Compaction);
+    }
+    if name == "mark_for_deletion" {
+        return compaction::run_mark_for_deletion(stdin, stdout, env)
+            .map(|()| 0)
+            .map_err(Error::Compaction);
     }
     Err(Error::Unknown(name.to_string()))
 }

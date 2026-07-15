@@ -4,8 +4,9 @@
 //! `BRAZEN_CONFIG` points bz at a fixture provider row whose endpoint
 //! is an `httpmock` server returning an Anthropic SSE stream. Env is
 //! set on the `lernie prompt` subprocess, so tests are race-free.
-//! Asserts the branch/compaction contract and the wire shape: a typed
-//! canonical request on stdin, `v=1` NDJSON with a terminal `end`.
+//! Asserts the branch contract — no terminal compaction (§2.7), the
+//! agent persists on its own ref — and the wire shape: a typed canonical
+//! request on stdin, `v=1` NDJSON with a terminal `end`.
 
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -140,7 +141,7 @@ const HAPPY_SSE: &str = concat!(
 );
 
 #[test]
-fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
+fn prompt_subcommand_persists_conversation_without_terminal_compaction() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
@@ -201,28 +202,22 @@ fn prompt_subcommand_compacts_conversation_on_its_own_branch() {
         "control files must leave the agent tree (§2.2)"
     );
 
-    // The compaction merge (§2.6) is the one merge left in the system: it
-    // lands the summary on the conversation's OWN branch (a two-parent
-    // merge commit at the tip), never on the config branch.
+    // There is NO terminal compaction (§2.7 — the stage is deleted): a
+    // final response does not dispatch a compactor, so the conversation
+    // tip is the ordinary last transcript commit (a single parent), never
+    // a two-parent compaction merge, and no `summary/` lands on the branch.
     let conv_parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &branch_ref]);
     assert_eq!(
         conv_parents.split_whitespace().count(),
-        2,
-        "conv tip is the compaction merge commit"
+        1,
+        "conv tip is an ordinary commit, not a terminal-compaction merge (§2.7)"
     );
     let summary_on_branch = git_command(&bare, &["show", &format!("{branch_ref}:summary/001.md")])
         .output()
         .expect("spawn git show");
     assert!(
-        summary_on_branch.status.success(),
-        "summary landed on the conversation branch"
-    );
-    let summary_on_config = git_command(&bare, &["show", "config/default:summary/001.md"])
-        .output()
-        .expect("spawn git show");
-    assert!(
-        !summary_on_config.status.success(),
-        "summary never on the config branch"
+        !summary_on_branch.status.success(),
+        "no terminal-compaction summary lands on a final response (§2.7)"
     );
 
     // Step records live outside every worktree (§2.2 / §2.3).

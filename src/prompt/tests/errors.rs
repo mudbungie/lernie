@@ -22,7 +22,7 @@ fn run_with_harness(
     config_root: &Path,
 ) -> Result<String, Error> {
     let clock = FixedClock::default();
-    let (id, dispatcher) = (FixedIdGen, StubDispatcher::ok());
+    let id = FixedIdGen;
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     crate::prompt::run(
         repo,
@@ -33,7 +33,6 @@ fn run_with_harness(
             git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             config_root,
         ),
@@ -147,7 +146,7 @@ fn run_retries_on_retryable_error_then_completes() {
         StubAdapter::reply_ok(&happy_response_bytes()),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     crate::prompt::run(
         repo.path(),
@@ -158,7 +157,6 @@ fn run_retries_on_retryable_error_then_completes() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -222,11 +220,6 @@ fn error_display_includes_context() {
     let _: String = Error::AdapterJson(serde_json::from_str::<Value>("{").unwrap_err()).to_string();
     let _: String = Error::Git {
         op: "add",
-        source: io::Error::other("x"),
-    }
-    .to_string();
-    let _: String = Error::DispatchFailed {
-        role: "compactor",
         source: io::Error::other("x"),
     }
     .to_string();

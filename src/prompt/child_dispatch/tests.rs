@@ -48,6 +48,7 @@ fn req<'a>(repo: &'a Path, parent: &'a str, wt: &'a Path, goal: &'a str) -> Chil
         repo,
         parent_branch: parent,
         parent_worktree: wt,
+        role: crate::prompt::WORKER_ROLE,
         goal,
     }
 }

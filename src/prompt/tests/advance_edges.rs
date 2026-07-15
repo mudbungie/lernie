@@ -57,7 +57,7 @@ impl crate::prompt::tool::ToolExecutor for StopMidToolExecutor<'_> {
 #[test]
 fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
     let (ws, _wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
@@ -69,7 +69,6 @@ fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -79,13 +78,12 @@ fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
     assert!(matches!(out, AdvanceOutcome::Terminal(Epitaph::Stopped)));
     // §2.11 pin 2: stopped never relaunches; no compactor either (§2.9).
     assert!(rec.calls.borrow().is_empty());
-    assert!(dispatcher.calls.borrow().is_empty());
 }
 
 #[test]
 fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
     let (ws, _wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let stopped = AtomicBool::new(false);
     let adapter = StopMidCallAdapter { flag: &stopped };
@@ -98,7 +96,6 @@ fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
         git: &git,
         clock: &clock,
         id_gen: &id,
-        dispatcher: &dispatcher,
         tool_executor: &tools,
         config_root: ws.path(),
         stop: &stopped,
@@ -112,7 +109,7 @@ fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
 #[test]
 fn a_stop_during_the_tool_window_never_rides_the_baton() {
     let (ws, _wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "run it", &clock).unwrap();
     let tool_stream = stream_of(
         FinishReason::ToolUse,
@@ -133,7 +130,6 @@ fn a_stop_during_the_tool_window_never_rides_the_baton() {
         git: &git,
         clock: &clock,
         id_gen: &id,
-        dispatcher: &dispatcher,
         tool_executor: &tools,
         config_root: ws.path(),
         stop: &stopped,
@@ -149,7 +145,7 @@ fn a_stop_during_the_tool_window_never_rides_the_baton() {
 #[test]
 fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
     let (ws, _wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
@@ -160,7 +156,6 @@ fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -185,7 +180,7 @@ fn a_resolve_failure_propagates() {
     let clock = FixedClock::default();
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (id, dispatcher) = (FixedIdGen, StubDispatcher::ok());
+    let id = FixedIdGen;
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -193,7 +188,6 @@ fn a_resolve_failure_propagates() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -208,7 +202,7 @@ fn a_resolve_failure_propagates() {
 fn a_missing_pinned_goal_surfaces_as_io() {
     let (ws, wt) = workspace_with_tail(&terminal_tail());
     std::fs::remove_file(wt.join("goal.md")).unwrap();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
@@ -218,7 +212,6 @@ fn a_missing_pinned_goal_surfaces_as_io() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -232,7 +225,7 @@ fn a_broken_inbox_surfaces_as_an_executor_lock_error() {
     std::fs::create_dir_all(ws.path().join("inbox")).unwrap();
     std::fs::write(inbox_dir(ws.path(), AGENT), b"not a dir").unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -240,7 +233,6 @@ fn a_broken_inbox_surfaces_as_an_executor_lock_error() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -263,7 +255,7 @@ fn unpaired_tool_use_is_declined_loudly() {
     ];
     let (ws, _wt) = workspace_with_tail(&tail);
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -271,7 +263,6 @@ fn unpaired_tool_use_is_declined_loudly() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );

@@ -3,7 +3,7 @@
 //! Lives alongside [`super::fixtures`] but split out so the latter
 //! stays under the repo's per-file line cap.
 
-use crate::prompt::{AdapterRunner, BRAZEN_PIN, Dispatcher, Sleeper};
+use crate::prompt::{AdapterRunner, BRAZEN_PIN, Sleeper};
 use crate::template::GitRunner;
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -179,47 +179,3 @@ impl GitRunner for StubGit {
     }
 }
 
-/// One observed [`Dispatcher::dispatch`] invocation: `(role, repo,
-/// branch, goal)`.
-pub(super) type DispatchCall = (String, PathBuf, String, Option<String>);
-
-/// Recording [`Dispatcher`] for the dispatch handoff.
-#[derive(Default)]
-pub(super) struct StubDispatcher {
-    pub(super) calls: RefCell<Vec<DispatchCall>>,
-    fail: Option<io::Error>,
-}
-
-impl StubDispatcher {
-    pub(super) fn ok() -> Self {
-        Self::default()
-    }
-    pub(super) fn failing(kind: io::ErrorKind, msg: &str) -> Self {
-        Self {
-            fail: Some(io::Error::new(kind, msg.to_string())),
-            ..Self::default()
-        }
-    }
-}
-
-impl Dispatcher for StubDispatcher {
-    fn dispatch(
-        &self,
-        role: &str,
-        repo: &Path,
-        branch: &str,
-        goal: Option<&str>,
-    ) -> io::Result<()> {
-        let entry = (
-            role.to_owned(),
-            repo.to_path_buf(),
-            branch.to_owned(),
-            goal.map(str::to_owned),
-        );
-        self.calls.borrow_mut().push(entry);
-        match &self.fail {
-            None => Ok(()),
-            Some(e) => Err(io::Error::new(e.kind(), e.to_string())),
-        }
-    }
-}

@@ -748,9 +748,27 @@ LERNIE_HOME=/tmp/replay lernie replay /path/to/archive
 **Task suite.** The evaluation suite lives as data under `tests/suite/` — 50
 tasks with machine-checkable `check` scripts, tagged by the seven §9.1 failure
 categories (≥10 per category), format in `tests/suite/README.md`,
-well-formedness enforced by `tests/suite.rs`. The `agent-eval` runner that
-executes it (`--config`/`--suite`/`--runs`, pass@1/pass@5) is deferred until
-workflow variants exist (ARCH §9.3 shipped-state note).
+well-formedness enforced by `tests/suite.rs`.
+
+**Run the suite.** The `agent-eval` runner (a separate crate, `crates/agent-eval`,
+ARCH §9.3) executes an experiment against the suite N times per task and reports
+pass@1 (with 95% Wilson intervals) and pass@5, overall and per category:
+
+```
+agent-eval --config baseline --suite tests/suite --runs 5
+```
+
+`--config <name>` names an experiment — a `workflow.yaml` variant under
+`experiments/<name>/` (a config diff, no code changes; see `experiments/README.md`).
+Per run the runner seeds a fresh isolated `LERNIE_HOME` and working directory,
+runs the task `setup`, invokes the agent, then runs the task `check` — **exit 0
+is the sole pass signal** (§9.1), so success is observable state, never the
+agent's own claim. The agent invocation is `--agent <cmd>` (an external
+harness-driver receiving the prompt, with `LERNIE_HOME`/`LERNIE_EXPERIMENT` in
+the env); `--bundle-dir <dir>` archives failing runs for triage via `lernie
+bundle` (§9.2). The runner is fully tested against a faked agent, so it needs no
+live model to validate — a live-model run of the full suite is a separate,
+deliberately manual step.
 
 ## Contributing
 

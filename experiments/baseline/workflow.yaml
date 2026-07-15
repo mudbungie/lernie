@@ -1,0 +1,41 @@
+events:
+  user_message:
+    - spawn_root_agent
+    - dispatch(worker)
+  worker_return:
+    - deliver_result
+  worker_flush:
+    - dispatch(compactor)
+  compactor_return:
+    - compaction_merge
+  branch_stopped:
+    - mark_abandoned
+    - notify_ui
+
+# Intermediate compaction checkpoints (ARCH §2.6–§2.7, §6). The executor
+# reads this at each step boundary: when the trigger fires it dispatches a
+# compactor off the branch tip (the checkpoint commit C), whose return
+# lands the compaction merge (the `compactor_return: compaction_merge`
+# binding above). `trigger` is one of `every_n_commits`, `every_t_seconds`
+# (both take `n`), or `on_flush` (the agent-elected `flush`, no `n`). Omit
+# the whole block and the branch never compacts.
+compaction:
+  intermediate:
+    trigger: every_n_commits
+    n: 20
+
+# Harness-owned retry policy for a step's model call (ARCH §2.10, §4.4):
+# brazen never retries — the harness re-invokes `bz` on a retryable
+# in-band Error, up to max_attempts, with exponential backoff.
+retry:
+  max_attempts: 3
+  backoff: exponential
+
+# Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked at
+# every model-call boundary before the adapter is invoked; spend, wall,
+# and depth are derived from disk each check — no stored counter. Omit a
+# limit (or the whole block) to leave that axis unbounded.
+budgets:
+  max_total_tokens: 2000000
+  max_wall_seconds: 3600
+  max_depth: 4

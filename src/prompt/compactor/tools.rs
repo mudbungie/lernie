@@ -1,16 +1,30 @@
-//! Compactor tool surface (ARCH §2.7).
+//! Compactor toolset (ARCH §2.7) — `write_summary` and
+//! `mark_for_deletion`, and nothing else.
 //!
-//! These are the two tools a v1 compactor agent is allowed to call:
-//! `write_summary` and `mark_for_deletion`. The toolset is
-//! deliberately small so "deletion-only" is a structural property —
-//! the compactor has no general filesystem write surface, which makes
-//! the worst failure mode lost information rather than corrupted
-//! information.
+//! These are the **two** tools a compactor agent may call, and they are
+//! **built into the primitive, not declared in `providers.yaml`** (§2.7):
+//! the compactor's toolset is this fixed pair, injected by the harness for
+//! the compactor role alone, never assembled from a role's `tools:` list.
+//! The narrowness is the point — giving the compactor no general
+//! filesystem write surface makes "deletion-only" a **structural**
+//! property rather than a disciplinary one: the worst failure mode is lost
+//! information, never corrupted information (§2.7, §2.6 live-branch-wins).
 //!
-//! v0.3 exposes them here so the call sites in the stub (`super::run`)
-//! land with the final shape. The `mark_for_deletion` semantics are
-//! a no-op in v0.3 per ARCH §12; v0.4+ wires the real `git rm` path.
+//! - [`write_summary`] writes `summary/<NNN>.md` on the compactor branch —
+//!   the one location it may create, picked by scanning the directory.
+//! - [`mark_for_deletion`] nominates a file for removal; the harness
+//!   applies the deletion at commit time. "Applied at commit time" is
+//!   realized by staging the removal (`git rm`) so the compactor step's
+//!   own commit carries it (§2.3), and the compaction merge (§2.6) then
+//!   lands it — subject to live-branch-wins on any work-product overlap.
+//!
+//! The deletions are **deletion-only structural**: `git rm` can remove but
+//! never write content, so a compactor cannot corrupt a work product even
+//! by defect. The compactor decides relevance against the dispatching
+//! branch's goal (`goal.md`), which its inherited worktree carries (§2.7).
 
+use super::Error;
+use crate::template::GitRunner;
 use std::path::Path;
 
 /// Branch-relative directory holding compaction summaries (ARCH §2.7).
@@ -23,13 +37,12 @@ pub(crate) const SUMMARY_DIR: &str = "summary";
 const SUMMARY_SEQ_WIDTH: usize = 3;
 
 /// Write `summary/<NNN>.md` on `worktree`, picking the next-available
-/// seq by scanning the directory. Returns the branch-relative path of
-/// the written file for the subsequent `git add`.
+/// seq by scanning the directory. Returns the branch-relative path of the
+/// written file for the subsequent `git add`.
 ///
-/// Seq is branch-global over the summary directory's contents:
-/// intermediate compaction (§2.7 / v0.6) will write multiple summaries
-/// per branch, and reading existing seqs here means the stub and the
-/// future intermediate case share one numbering rule.
+/// Seq is branch-global over the summary directory's contents: a branch
+/// may compact several times (§2.7), and reading existing seqs here means
+/// every checkpoint shares one numbering rule.
 pub(crate) fn write_summary(worktree: &Path, content: &str) -> std::io::Result<String> {
     let dir_abs = worktree.join(SUMMARY_DIR);
     std::fs::create_dir_all(&dir_abs)?;
@@ -40,19 +53,26 @@ pub(crate) fn write_summary(worktree: &Path, content: &str) -> std::io::Result<S
     Ok(format!("{SUMMARY_DIR}/{file_name}"))
 }
 
-/// Nominate a file on the compactor branch for removal at commit
-/// time. v0.3 leaves this a no-op: the stub does not prune the raw
-/// step tree, so the merge commit carries the full step dirs
-/// alongside the compaction summary. v0.4+ wires this to `git rm`
-/// with the deletion-only write discipline (§2.7).
-#[allow(
-    dead_code,
-    reason = "surface is part of the v1 compactor contract (ARCH §2.7) — the v0.3 \
-        stub exposes it so call sites land with the final shape but the deletion \
-        semantics come in v0.4"
-)]
-pub fn mark_for_deletion(_worktree: &Path, _path: &Path) -> std::io::Result<()> {
-    Ok(())
+/// Nominate the branch-relative `path` for removal (ARCH §2.7). Realized
+/// as `git rm -r -- <path>` inside the compactor `worktree`, staging the
+/// deletion so the compactor step's commit carries it (§2.3) — the
+/// "applied at commit time" contract. **Deletion-only structural**: this
+/// can only remove, never write, so a compactor cannot corrupt content.
+///
+/// A path that does not exist on the branch is **declined loudly** rather
+/// than silently ignored (`docs/PRINCIPLES.md` "Decline illegal
+/// operations"): a compactor nominating a nonexistent file is a defect
+/// worth surfacing, and `git rm` errors on it.
+pub(crate) fn mark_for_deletion(
+    worktree: &Path,
+    path: &str,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    git.run(worktree, &["rm", "-r", "-q", "--", path])
+        .map_err(|source| Error::Git {
+            op: "mark_for_deletion rm",
+            source,
+        })
 }
 
 /// Pick the next summary-seq: one more than the highest existing
@@ -80,6 +100,7 @@ fn next_seq(dir: &Path) -> std::io::Result<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::template::RealGit;
 
     fn tmpdir() -> tempfile::TempDir {
         tempfile::TempDir::new().unwrap()
@@ -119,12 +140,43 @@ mod tests {
         assert_eq!(rel, "summary/003.md");
     }
 
+    /// A real repo on `agents/p1` with one tracked file, for the
+    /// deletion-only `git rm` path.
+    fn repo_with(rel: &str) -> tempfile::TempDir {
+        let dir = tmpdir();
+        let wt = dir.path();
+        let g = RealGit::new();
+        g.run(wt, &["init", "-b", "agents/p1"]).unwrap();
+        g.run(wt, &["config", "user.email", "t@t"]).unwrap();
+        g.run(wt, &["config", "user.name", "t"]).unwrap();
+        let f = wt.join(rel);
+        std::fs::create_dir_all(f.parent().unwrap()).unwrap();
+        std::fs::write(&f, "content\n").unwrap();
+        g.run(wt, &["add", "-A"]).unwrap();
+        g.run(wt, &["commit", "-m", "c"]).unwrap();
+        dir
+    }
+
     #[test]
-    fn mark_for_deletion_is_a_noop() {
-        // The stub exists to hold the compactor tool surface (ARCH
-        // §2.7). A no-op is what v0.3 ships; asserting the Ok makes
-        // future reimplementations visible as test changes.
-        let wt = tmpdir();
-        mark_for_deletion(wt.path(), Path::new("anything")).unwrap();
+    fn mark_for_deletion_stages_a_real_removal() {
+        let dir = repo_with("messages/001-user.md");
+        let wt = dir.path();
+        mark_for_deletion(wt, "messages/001-user.md", &RealGit::new()).unwrap();
+        // Removed from the worktree and staged for the next commit.
+        assert!(!wt.join("messages/001-user.md").exists());
+        let staged = RealGit::new()
+            .run_capture(wt, &["diff", "--cached", "--name-status"])
+            .unwrap();
+        assert!(staged.starts_with('D'), "staged deletion: {staged:?}");
+    }
+
+    #[test]
+    fn mark_for_deletion_declines_a_nonexistent_path() {
+        let dir = repo_with("keep.txt");
+        let err = mark_for_deletion(dir.path(), "no/such.md", &RealGit::new()).unwrap_err();
+        assert!(
+            matches!(err, Error::Git { op: "mark_for_deletion rm", .. }),
+            "{err:?}"
+        );
     }
 }

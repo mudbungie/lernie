@@ -37,7 +37,7 @@
 
 use super::clock::{Clock, IdGen};
 use super::subagent::{SpawnRequest, spawn_subagent_branch};
-use super::{Error, SOULS_DIR, WORKER_ROLE};
+use super::{Error, SOULS_DIR};
 use crate::prompt::inbox::{self, Launcher};
 use crate::template::GitRunner;
 use crate::workspace;
@@ -59,6 +59,12 @@ pub struct ChildDispatchRequest<'a> {
     /// The dispatching branch's worktree — where `git worktree add` runs
     /// (any access point onto the one workspace repository, §2.2).
     pub parent_worktree: &'a Path,
+    /// The child's role (§2.5, §4.3): selects the pinned soul
+    /// (`souls/<role>.md` in the governing config commit) and labels the
+    /// dispatch commit. `worker` for an ordinary child, `compactor` for a
+    /// compaction dispatch (§2.7) — parent/child is provenance, the role
+    /// is what the child *is*.
+    pub role: &'a str,
     /// The goal / dispatch message. Written verbatim to the child's
     /// `goal.md` and deposited as its first inbox message.
     pub goal: &'a str,
@@ -94,7 +100,7 @@ pub fn run(
                 source,
             }
         })?;
-    let soul_rel = format!("{SOULS_DIR}/{WORKER_ROLE}.md");
+    let soul_rel = format!("{SOULS_DIR}/{}.md", req.role);
     let soul = workspace::show_control(req.repo, &commit, &soul_rel, git).map_err(|source| {
         Error::ControlRead {
             path: PathBuf::from(format!("{commit}:{soul_rel}")),
@@ -102,7 +108,7 @@ pub fn run(
         }
     })?;
 
-    let commit_subject = format!("dispatch: {WORKER_ROLE} [{sub_branch}]");
+    let commit_subject = format!("dispatch: {} [{sub_branch}]", req.role);
     spawn_subagent_branch(
         &SpawnRequest {
             parent_worktree: req.parent_worktree,

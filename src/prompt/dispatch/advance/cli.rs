@@ -12,7 +12,7 @@ use super::{AdvanceOutcome, run};
 use crate::harness_root;
 use crate::prompt::inbox::{self, AdvanceLauncher, baton};
 use crate::prompt::resolve::{ConfigSource, resolve_worker};
-use crate::prompt::{Deps, Error, RealSleeper, SpawnAdapter, SpawnDispatcher, SystemClock};
+use crate::prompt::{Deps, Error, RealSleeper, SpawnAdapter, SystemClock};
 use crate::prompt::{NanoIdGen, tool::SpawnTool};
 use std::ffi::OsStr;
 use std::path::Path;
@@ -71,7 +71,6 @@ fn cli_run_with(
     };
 
     let exe = std::env::current_exe()?;
-    let dispatcher = SpawnDispatcher::new()?;
     let roots = harness_root::resolve()?;
     let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
     let launcher = AdvanceLauncher::with_exe(exe.clone());
@@ -81,7 +80,6 @@ fn cli_run_with(
         git: &crate::template::RealGit::new(),
         clock: &SystemClock,
         id_gen: &NanoIdGen,
-        dispatcher: &dispatcher,
         tool_executor: &tool_executor,
         config_root: &roots.config,
         stop: crate::prompt::stop_flag(),

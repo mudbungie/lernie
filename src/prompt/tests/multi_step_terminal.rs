@@ -1,8 +1,8 @@
 //! Loop-termination cases for the step loop. Split out of
 //! [`super::multi_step`] so that file stays under the per-file line cap;
 //! the focus here is the `Finish` branch points (a non-`ToolUse` finish
-//! terminates without tool work; a tool-executor failure aborts before
-//! the compactor runs).
+//! terminates without tool work; a tool-executor failure aborts the
+//! step).
 
 use super::fixtures::*;
 use crate::prompt::{Error, run};
@@ -11,14 +11,14 @@ use serde_json::json;
 
 #[test]
 fn loop_terminates_on_non_tool_use_finish() {
-    // A `Finish{Length}` (max-tokens) terminates; the branch still
-    // reaches the compactor dispatch exactly once (§2.7).
+    // A `Finish{Length}` (max-tokens) terminates without tool work and
+    // without a terminal compaction (§2.7 — the stage is deleted).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let r1 = stream_of(FinishReason::Length, &[Block::Text("done")]);
     let adapter = StubAdapter::happy(&r1);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
@@ -30,14 +30,12 @@ fn loop_terminates_on_non_tool_use_finish() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
     )
     .unwrap();
     assert!(tool_executor.calls.borrow().is_empty());
-    assert_eq!(dispatcher.calls.borrow().len(), 1);
 }
 
 #[test]
@@ -54,7 +52,7 @@ fn loop_surfaces_tool_executor_failure_as_tool_exec_error() {
     );
     let adapter = StubAdapter::happy(&r1);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::failing_on("bash"));
 
     let err = run(
@@ -66,7 +64,6 @@ fn loop_surfaces_tool_executor_failure_as_tool_exec_error() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -76,5 +73,4 @@ fn loop_surfaces_tool_executor_failure_as_tool_exec_error() {
         Error::ToolExec { tool, .. } => assert_eq!(tool, "bash"),
         other => panic!("expected ToolExec, got {other:?}"),
     }
-    assert!(dispatcher.calls.borrow().is_empty());
 }

@@ -17,8 +17,8 @@
 //!    is terminal.
 //! 4. Every terminal event ([`result_deposit`]) deposits a result message
 //!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root; a
-//!    stop deposits `stopped` on its way out (§2.9, [`terminal`]). A normal
-//!    end dispatches the terminal compactor (§2.6, §2.7); stops/exhaustion skip it (§2.4).
+//!    stop deposits `stopped` on its way out (§2.9, [`terminal`]). No
+//!    terminal compaction is dispatched (§2.7 — the stage is deleted).
 //! 5. **Exit protocol (§2.11):** deposit → release own lock → spawn a
 //!    driver at own agent, fire-and-forget → exit. The launch is decided
 //!    by epitaph value ([`terminal::exit_launch`]): a final response
@@ -265,15 +265,16 @@ pub(super) fn run_exchange(
         step_seq += 1;
     }
 
-    // Terminal handling (§2.7, §2.9, §6): stopped deposits and skips
-    // compaction, exhausted skips it, the ordinary path dispatches the
-    // terminal compactor — the one merge left (§2.6). No merge-back.
+    // Terminal handling (§2.9, §6): a stopped branch deposits its result
+    // on the way out; a final response deposited in the loop; an exhausted
+    // branch deposited at the boundary check. No terminal compaction is
+    // dispatched (§2.7 — the stage is deleted).
     let epitaph = match (stopped, exhausted) {
         (true, _) => Epitaph::Stopped,
         (false, true) => Epitaph::BudgetExhausted,
         (false, false) => Epitaph::FinalResponse,
     };
-    terminal::finish(repo, &conv_id, &branch_name, &worktree_path, epitaph, deps)?;
+    terminal::finish(repo, &conv_id, &worktree_path, epitaph, deps)?;
 
     // Exit protocol (§2.11): the result deposit landed at the terminal
     // event above; now release own lock, then spawn a driver at own

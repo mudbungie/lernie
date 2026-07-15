@@ -5,6 +5,10 @@
 use super::*;
 use std::io::Cursor;
 
+/// The compactor-tool routing arms (§2.7), split out to keep this file
+/// under the repo's per-file line cap.
+mod routing_compaction;
+
 #[test]
 fn unknown_tool_name_surfaces_unknown_variant() {
     let mut stdin = Cursor::new(Vec::<u8>::new());

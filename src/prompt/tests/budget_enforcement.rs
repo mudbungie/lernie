@@ -43,7 +43,7 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let branch = run(
@@ -55,7 +55,6 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -82,7 +81,6 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
         "expected budget-exhausted update-ref; got {runs:?}"
     );
     // Terminal-by-exhaustion: no compaction dispatch, no rebase/merge.
-    assert!(dispatcher.calls.borrow().is_empty());
     assert!(
         !runs.iter().any(|(_, args)| {
             let head = args.first().map(String::as_str);
@@ -95,12 +93,12 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
 #[test]
 fn unbounded_workflow_never_triggers_a_budget_stop() {
     // No `budgets:` block → every limit unbounded → the loop runs to a
-    // normal terminal completion and dispatches the compactor (baseline).
+    // normal terminal completion with no budget stop (baseline).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
@@ -112,15 +110,13 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
     )
     .unwrap();
 
-    // Reached the compactor dispatch + merge — no budget stop, no ref.
-    assert_eq!(dispatcher.calls.borrow().len(), 1);
+    // Ran to a normal terminal completion — no budget stop, no ref.
     let runs = git.runs.borrow();
     assert!(
         !runs.iter().any(|(_, args)| {
@@ -151,7 +147,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
     let git = StubGit::failing_at(18);
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let err = run(
@@ -163,7 +159,6 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),

@@ -143,8 +143,9 @@ pub(in crate::prompt) fn run(
                     // bindings (§6 — the epitaph names the event), release
                     // own lock, then the self-directed launch — after
                     // release this process has no authority; spawn and
-                    // return are its only acts.
-                    terminal::finish(workspace, agent_id, agent_id, &worktree, epitaph, deps)?;
+                    // return are its only acts. No terminal compaction is
+                    // dispatched (§2.7 — the stage is deleted).
+                    terminal::finish(workspace, agent_id, &worktree, epitaph, deps)?;
                     crate::prompt::workflow_actions::run_terminal_bindings(
                         &cfg.workflow,
                         epitaph,

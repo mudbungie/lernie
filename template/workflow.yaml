@@ -12,6 +12,18 @@ events:
     - mark_abandoned
     - notify_ui
 
+# Intermediate compaction checkpoints (ARCH §2.6–§2.7, §6). The executor
+# reads this at each step boundary: when the trigger fires it dispatches a
+# compactor off the branch tip (the checkpoint commit C), whose return
+# lands the compaction merge (the `compactor_return: compaction_merge`
+# binding above). `trigger` is one of `every_n_commits`, `every_t_seconds`
+# (both take `n`), or `on_flush` (the agent-elected `flush`, no `n`). Omit
+# the whole block and the branch never compacts.
+compaction:
+  intermediate:
+    trigger: every_n_commits
+    n: 20
+
 # Harness-owned retry policy for a step's model call (ARCH §2.10, §4.4):
 # brazen never retries — the harness re-invokes `bz` on a retryable
 # in-band Error, up to max_attempts, with exponential backoff.

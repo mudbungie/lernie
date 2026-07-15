@@ -42,6 +42,14 @@ pub(super) enum ConfigSource<'a> {
 /// `lernie advance` — can return it from the resolving scope.
 #[derive(Clone)]
 pub(super) struct WorkerConfig {
+    /// The agent's role (ARCH §2.5, §4.3), derived from its dispatch
+    /// commit subject — the single authoritative home ([`crate::prompt::
+    /// role`]). A fresh root resolves as `worker`; a dispatched child
+    /// resolves the role its parent pinned. Governs which `souls/<role>.md`
+    /// and `providers.yaml` role assignment were read, and whether the
+    /// built-in compactor toolset is injected (§2.7, the step composes it
+    /// for the `compactor` role alone).
+    pub(super) role: String,
     pub(super) model: Model,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: String,
@@ -88,6 +96,14 @@ pub(super) fn resolve_worker(
     deps: &Deps<'_>,
 ) -> Result<WorkerConfig, Error> {
     let commit = config_commit(workspace, &source, deps)?;
+    // §6 role-aware resolution: an agent's role is derived from its
+    // dispatch commit subject — the single authoritative home
+    // (`crate::prompt::role`). A fresh root has no agent branch yet and no
+    // dispatch commit to read, so it resolves the worker default; an
+    // existing agent (the `lernie advance` hop) reads its own subject, so a
+    // dispatched compactor resolves `souls/compactor.md` and the compactor
+    // `providers.yaml` assignment rather than the worker's.
+    let role = agent_role(workspace, &source, deps)?;
 
     let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
     let providers_raw = read_control(workspace, &commit, PER_REPO_PROVIDERS_FILE, deps)?;
@@ -100,8 +116,8 @@ pub(super) fn resolve_worker(
     let assignment = cfg
         .per_repo
         .roles
-        .get(WORKER_ROLE)
-        .ok_or_else(|| Error::RoleMissing(WORKER_ROLE.to_string()))?;
+        .get(role.as_str())
+        .ok_or_else(|| Error::RoleMissing(role.clone()))?;
     // Cross-check inside the load guarantees this resolves.
     let model = cfg
         .global
@@ -123,10 +139,11 @@ pub(super) fn resolve_worker(
     let workflow_raw = read_control(workspace, &commit, WORKFLOW_FILE, deps)?;
     let workflow = Workflow::parse(&workflow_raw, &control_origin(&commit, WORKFLOW_FILE))?;
 
-    let soul_rel = format!("{SOULS_DIR}/{WORKER_ROLE}.md");
+    let soul_rel = format!("{SOULS_DIR}/{role}.md");
     let soul = read_control(workspace, &commit, &soul_rel, deps)?;
 
     Ok(WorkerConfig {
+        role,
         model,
         provider_row: assignment.provider.clone(),
         tools: assignment.tools.clone(),
@@ -135,6 +152,29 @@ pub(super) fn resolve_worker(
         workflow,
         expect_handshake,
     })
+}
+
+/// The agent's role (§6 role-aware resolution). A fresh root about to
+/// fork has no dispatch commit yet, so it is the worker default; an
+/// existing agent's role is derived from its own dispatch commit subject
+/// — the single authoritative home ([`crate::prompt::role`]) — falling
+/// back to the worker default for a root branch (whose subject lacks the
+/// `dispatch: <role>` prefix).
+fn agent_role(
+    workspace: &Path,
+    source: &ConfigSource<'_>,
+    deps: &Deps<'_>,
+) -> Result<String, Error> {
+    match source {
+        ConfigSource::ConfigBranch(_) => Ok(WORKER_ROLE.to_string()),
+        ConfigSource::Agent(agent_id) => Ok(crate::prompt::role::derive(
+            &workspace::repo_git(workspace),
+            &workspace::agent_ref(agent_id),
+            agent_id,
+            deps.git,
+        )?
+        .unwrap_or_else(|| WORKER_ROLE.to_string())),
+    }
 }
 
 /// Resolve the governing config commit sha for the source (§2.2):

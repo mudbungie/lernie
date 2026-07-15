@@ -34,7 +34,7 @@ mod hop;
 #[cfg(test)]
 mod tests;
 
-use super::{assembler, driver, terminal};
+use super::{assembler, child_result, driver, terminal};
 use crate::prompt::inbox::{self, Epitaph, ExecutorLock};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Deps, Error};
@@ -127,13 +127,29 @@ pub(in crate::prompt) fn run(
         return Ok(AdvanceOutcome::NothingToDo);
     }
 
+    // §6 delivered-child-result circumstance: interpret any result message
+    // the drain left in the inbox (deliver_result / compaction_merge / a
+    // gate-hold, keyed on the returning child's role). This needs the
+    // workflow, so resolve once when a result is pending — a no-op hop has
+    // none and still resolves nothing (lazy resolution). The resolved
+    // config is reused by the step below rather than read twice.
+    let mut cfg = None;
+    if child_result::has_pending_result(workspace, agent_id)? {
+        let resolved = resolve()?;
+        child_result::interpret_pending(workspace, agent_id, &worktree, &resolved.workflow, deps)?;
+        cfg = Some(resolved);
+    }
+
     match warrant(&assembler::assemble(&worktree)?) {
         Warrant::NothingDue => Ok(AdvanceOutcome::NothingToDo),
         Warrant::Unpaired => Err(Error::UnpairedToolUse {
             branch: agent_id.to_string(),
         }),
         Warrant::ModelCallDue => {
-            let cfg = resolve()?;
+            let cfg = match cfg {
+                Some(cfg) => cfg,
+                None => resolve()?,
+            };
             match hop::step(workspace, agent_id, &worktree, &cfg, deps)? {
                 hop::StepOutcome::ToolsRan => Ok(AdvanceOutcome::ToolsPending(lock)),
                 hop::StepOutcome::Terminal(epitaph) => {

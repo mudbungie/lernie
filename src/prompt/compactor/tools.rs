@@ -27,6 +27,12 @@ use super::Error;
 use crate::template::GitRunner;
 use std::path::Path;
 
+/// Built-in tool name: write the next `summary/<NNN>.md` (ARCH §2.7).
+pub(crate) const WRITE_SUMMARY: &str = "write_summary";
+/// Built-in tool name: nominate a branch-relative path for removal
+/// (deletion-only structural, ARCH §2.7).
+pub(crate) const MARK_FOR_DELETION: &str = "mark_for_deletion";
+
 /// Branch-relative directory holding compaction summaries (ARCH §2.7).
 /// Lives at the worktree root so the manifest's role-keyed `pinned:
 /// [summary/**]` rule (§5.2) sees it.

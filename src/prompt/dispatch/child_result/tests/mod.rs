@@ -123,6 +123,7 @@ fn returned_child(
         parent_worktree: &parent_wt,
         role,
         goal,
+        fork_point: None,
     };
     let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
     // Simulate the child doing its work and committing (§2.3).
@@ -156,3 +157,4 @@ fn workflow(yaml: &str) -> Workflow {
 }
 
 mod cases;
+mod gate;

@@ -63,6 +63,38 @@ pub(super) fn run_terminal_bindings(
     let Some(event) = lifecycle_event(epitaph) else {
         return Ok(());
     };
+    run_event(workflow, event, worktree, agent_id, git)
+}
+
+/// Evaluate the workflow's bindings for a **per-step hook** event
+/// (`pre_step` / `post_step` / `on_tool_return`, ARCH §6) and run each in
+/// declared order. These fire on every branch, every step (the firing
+/// points bracket the model call in [`crate::prompt::dispatch`]); the
+/// shipped executor is the two git-native ref marks — the observability
+/// surface (`notify_ui`) and the abandonment assertion (`mark_abandoned`).
+/// Any other closed-set action in a hook (e.g. `dispatch`) is declined
+/// loudly, its hook executor a tracked follow-on. An unbound hook is the
+/// empty-inputs no-op.
+pub(super) fn run_step_hook(
+    workflow: &Workflow,
+    event: Event,
+    worktree: &Path,
+    agent_id: &str,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    run_event(workflow, event, worktree, agent_id, git)
+}
+
+/// Run every action bound to `event` in declared order — the shared
+/// ref-mark executor behind both the terminal-lifecycle seam and the
+/// per-step hooks. An unbound event runs nothing.
+fn run_event(
+    workflow: &Workflow,
+    event: Event,
+    worktree: &Path,
+    agent_id: &str,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
     for action in workflow.actions_for(event) {
         execute(&action, event, worktree, agent_id, git)?;
     }

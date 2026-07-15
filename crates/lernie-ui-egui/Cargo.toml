@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 description = "egui/eframe frontend for the lernie agent harness"
 license = "MIT"
+publish = false
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

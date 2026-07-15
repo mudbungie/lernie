@@ -22,6 +22,19 @@ pub trait Clock {
     /// Compact filename timestamp — e.g. `20260422T065432Z`. Sorted
     /// lexically, safe in a filename on every platform we care about.
     fn now_compact(&self) -> String;
+
+    /// Current wall-clock in Unix seconds — the input a compaction
+    /// checkpoint's `every_t_seconds` trigger measures elapsed time
+    /// against (ARCH §2.7, §6, [`super::compactor::checkpoint`]). Derived
+    /// from [`now_iso8601`](Clock::now_iso8601) so every clock — real or
+    /// test — gets it for free with no second wall-clock source (a
+    /// malformed timestamp yields `0`, the epoch, which reads as "no time
+    /// has elapsed" rather than a panic).
+    fn now_unix(&self) -> u64 {
+        DateTime::parse_from_rfc3339(&self.now_iso8601())
+            .map(|d| d.timestamp().max(0) as u64)
+            .unwrap_or(0)
+    }
 }
 
 /// Short (hex) identifier for the conv-id suffix. The real impl

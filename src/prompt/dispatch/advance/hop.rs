@@ -10,9 +10,10 @@
 //! `stopped`-epitaph terminal rather than riding into a successor.
 
 use super::super::{
-    DEFAULT_MAX_TOKENS, assembler, model_call, result_deposit, step_commit, stop_signal, terminal,
-    tool_step, tools, transcript,
+    DEFAULT_MAX_TOKENS, assembler, child_result, model_call, result_deposit, step_commit,
+    stop_signal, terminal, tool_step, tools, transcript,
 };
+use crate::prompt::compactor;
 use crate::prompt::inbox::Epitaph;
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, next_step_seq, step_dir_rel};
@@ -64,8 +65,14 @@ pub(super) fn step(
     let system_with_goal = step_commit::prepend_goal(&goal, &resolved.soul);
     // §3.3/§4.3: declared tools ∩ the branch's committed schemas —
     // git-inherited and stable mid-branch, so per-hop recomposition
-    // yields what step 1 composed.
-    let tools = tools::compose(worktree, resolved.tools)?;
+    // yields what step 1 composed. §2.7/§6 role-aware resolution: the
+    // compactor role's built-in toolset (write_summary / mark_for_deletion)
+    // is injected here for that role alone — it is never a `providers.yaml`
+    // list and never rides `descriptions/**`.
+    let mut tools = tools::compose(worktree, resolved.tools)?;
+    if cfg.role == compactor::COMPACTOR_ROLE {
+        tools.extend(compactor::builtin_tool_schemas());
+    }
     let call = ModelCall {
         adapter: deps.adapter,
         sleeper: deps.sleeper,
@@ -161,5 +168,11 @@ pub(super) fn step(
     {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }
+
+    // §2.7/§6 checkpoint: this step's commits landed, so the tip is C.
+    // If the `compaction:` clock is due, run the `worker_flush` bindings
+    // (dispatch a compactor off C). Config-only — a branch with no
+    // `compaction:` block never fires, so this is a no-op for it.
+    child_result::run_flush(workspace, agent_id, worktree, &cfg.workflow, deps)?;
     Ok(StepOutcome::ToolsRan)
 }

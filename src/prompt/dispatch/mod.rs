@@ -28,6 +28,7 @@
 
 pub mod advance;
 mod assembler;
+mod child_result;
 mod drain;
 pub mod driver;
 mod model_call;

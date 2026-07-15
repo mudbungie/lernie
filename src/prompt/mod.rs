@@ -37,6 +37,7 @@ pub mod dispatch;
 pub mod dispatch_cli;
 pub mod inbox;
 mod resolve;
+pub mod role;
 pub mod step;
 pub mod stop;
 pub mod subagent;

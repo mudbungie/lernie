@@ -145,12 +145,12 @@ pub fn run_with<R: Read, W: Write, E: Write>(
     }
     // The compactor toolset (§2.7), built into the primitive: available to
     // the compactor role's injected toolset, not any `providers.yaml` list.
-    if name == "write_summary" {
+    if name == crate::prompt::compactor::tools::WRITE_SUMMARY {
         return compaction::run_write_summary(stdin, stdout, env)
             .map(|()| 0)
             .map_err(Error::Compaction);
     }
-    if name == "mark_for_deletion" {
+    if name == crate::prompt::compactor::tools::MARK_FOR_DELETION {
         return compaction::run_mark_for_deletion(stdin, stdout, env)
             .map(|()| 0)
             .map_err(Error::Compaction);

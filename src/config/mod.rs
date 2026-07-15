@@ -24,7 +24,10 @@ pub use manifest::{Manifest, OverflowPolicy, RoleRules};
 pub use models::{Capabilities, Model, Models};
 pub use per_repo_providers::{PerRepoProviders, RoleAssignment};
 pub use version::Version;
-pub use workflow::{Backoff, Budgets, CompactionTrigger, Event, RetryConfig, Workflow};
+pub use workflow::{
+    Backoff, Budgets, CompactionConfig, CompactionTrigger, Event, IntermediateCompaction,
+    RetryConfig, Workflow,
+};
 
 use std::path::Path;
 

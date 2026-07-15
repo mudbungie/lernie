@@ -49,7 +49,7 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
         StubAdapter::reply_ok(&r2),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (
         StubSleeper::default(),
         StubToolExecutor::with_reply("bash", "files: a b"),
@@ -64,7 +64,6 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -116,7 +115,6 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     let resp2 = std::fs::read(step2_dir.join("response.json")).unwrap();
     assert_eq!(last_line_type(&resp2), "end");
     assert_eq!(finish_reason(&resp2), "stop");
-    assert_eq!(dispatcher.calls.borrow().len(), 1);
 
     // Git op log: 4 (control resolution, §2.2) + 4 (step 1 setup:
     // spawn, control rm, add, commit) + 1 (step-1 drain stray-probe) + 2
@@ -186,7 +184,7 @@ fn loop_runs_three_steps_when_two_completions_in_a_row_are_tool_use() {
         StubAdapter::reply_ok(&r3),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
@@ -198,7 +196,6 @@ fn loop_runs_three_steps_when_two_completions_in_a_row_are_tool_use() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -242,7 +239,7 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
         StubAdapter::reply_ok(&final_stream()),
     ]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
@@ -254,7 +251,6 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),

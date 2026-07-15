@@ -7,14 +7,12 @@
 //! branch-tip capture (`git rev-parse`), the model-output transcript
 //! entry commit, and the terminal result-deposit's branch-tip read
 //! (§2.6). Merge-back is gone (§2.6), so its rebase / merge / remove
-//! arms are gone with it. Compactor-internal failures live in
-//! `compactor::tests` — they sit behind the [`crate::prompt::Dispatcher`]
-//! boundary, so are not reachable through `prompt::run` with a stub
-//! dispatcher. Config and adapter failure paths live in
-//! [`super::errors`].
+//! arms are gone with it, and terminal compaction is deleted (§2.7), so
+//! no compactor dispatch follows a final response. Config and adapter
+//! failure paths live in [`super::errors`].
 
 use super::fixtures::*;
-use crate::prompt::{Deps, Error, run};
+use crate::prompt::Error;
 
 /// Indexes on the StubGit's run log. Control resolution runs first
 /// (§2.2): 0 config-head rev-parse, 1-3 the three `show` control reads.
@@ -144,52 +142,6 @@ fn run_surfaces_meta_write_failure() {
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
-}
-
-#[test]
-fn run_surfaces_dispatcher_failure() {
-    // Dispatcher returns an error — surfaces as DispatchFailed. Built
-    // inline because the helper's default dispatcher is always-ok.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let harness = scaffold_harness_root();
-    let adapter = StubAdapter::happy(&happy_response_bytes());
-    let git = StubGit::ok();
-    let clock = FixedClock::default();
-    let id = FixedIdGen;
-    let dispatcher = StubDispatcher::failing(std::io::ErrorKind::Other, "lernie binary missing");
-    let tool_executor = StubToolExecutor::ok();
-    let sleeper = StubSleeper::default();
-    let deps = Deps {
-        adapter: &adapter,
-        sleeper: &sleeper,
-        git: &git,
-        clock: &clock,
-        id_gen: &id,
-        dispatcher: &dispatcher,
-        tool_executor: &tool_executor,
-        config_root: harness.path(),
-        stop: never_stopped(),
-        launcher: no_launch(),
-    };
-    let err = run(repo.path(), "hi", &deps).unwrap_err();
-    assert!(
-        matches!(
-            err,
-            Error::DispatchFailed {
-                role: "compactor",
-                ..
-            }
-        ),
-        "got {err:?}"
-    );
-    // Pre-dispatcher git op count: 4 control reads (§2.2), worktree
-    // add, control-file rm, dispatch add, dispatch commit, the step-1
-    // drain stray-probe (§2.11), the user-message delivery add + commit
-    // (§2.11), rev-parse for meta, the model-output transcript entry's
-    // add + commit, plus the terminal result-deposit's branch-tip read
-    // (§2.6) = 15. The compactor dispatch is the next step, and it is
-    // the one that fails.
-    assert_eq!(git.runs.borrow().len(), 15, "compactor dispatch is next");
 }
 
 /// Failing the git call at `idx` surfaces as `Error::Git { op: $op,

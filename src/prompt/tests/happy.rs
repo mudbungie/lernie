@@ -19,7 +19,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let branch = run(
@@ -31,7 +31,6 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),
@@ -113,13 +112,6 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-    // Compactor dispatched via the CLI surface (§3.4).
-    let dispatches = dispatcher.calls.borrow().clone();
-    assert_eq!(dispatches.len(), 1);
-    assert_eq!(dispatches[0].0, "compactor");
-    assert_eq!(dispatches[0].1, repo.path());
-    assert_eq!(dispatches[0].2, "ct-1-deadbeef");
-    assert_eq!(dispatches[0].3, None);
 
     // Git sequence: 4 (control resolution from the config commit, §2.2:
     // config-head rev-parse + three `show` reads, all against repo.git)
@@ -229,7 +221,7 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
     let harness = scaffold_harness_root_with_adapter("/opt/alt-bz");
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     run(
@@ -241,7 +233,6 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
             &git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),

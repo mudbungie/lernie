@@ -10,7 +10,7 @@ pub(super) use super::streams::{
     Block, error_stream, happy_response_bytes, parse_jsonl, stream_of,
 };
 pub(super) use super::stubs::{
-    StubAdapter, StubDispatcher, StubGit, StubSleeper, unreachable_adapter, version_line,
+    StubAdapter, StubGit, StubSleeper, unreachable_adapter, version_line,
 };
 pub(super) use super::tool_stub::StubToolExecutor;
 
@@ -121,7 +121,6 @@ pub(super) fn valid_deps<'a>(
     git: &'a StubGit,
     clock: &'a FixedClock,
     id: &'a FixedIdGen,
-    dispatcher: &'a StubDispatcher,
     tool_executor: &'a StubToolExecutor,
     config_root: &'a Path,
 ) -> Deps<'a> {
@@ -131,7 +130,6 @@ pub(super) fn valid_deps<'a>(
         git,
         clock,
         id_gen: id,
-        dispatcher,
         tool_executor,
         config_root,
         stop: never_stopped(),
@@ -179,7 +177,7 @@ pub(super) fn run_with_stubs(
     git: &StubGit,
 ) -> Result<String, crate::prompt::Error> {
     let harness = scaffold_harness_root();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     crate::prompt::run(
         repo,
@@ -190,7 +188,6 @@ pub(super) fn run_with_stubs(
             git,
             &clock,
             &id,
-            &dispatcher,
             &tool_executor,
             harness.path(),
         ),

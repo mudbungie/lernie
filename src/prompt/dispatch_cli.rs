@@ -4,15 +4,17 @@
 //! shim under the repo's 300-line cap and the wiring is unit-testable —
 //! the same discipline as `stop::cli_run` and `inbox::cli_run`.
 
-use super::{ChildDispatchRequest, CompactorRequest, Error};
+use super::{ChildDispatchRequest, Error};
+use crate::prompt::compactor::{COMPACTOR_ROLE, compactor_goal};
 use crate::prompt::inbox::{AdvanceLauncher, Launcher};
-use crate::prompt::{NanoIdGen, SystemClock, child_dispatch, compactor};
+use crate::prompt::{NanoIdGen, SystemClock, child_dispatch};
 use crate::template::RealGit;
 use std::path::Path;
 
-/// Role name for the v0.3 terminal compactor (§2.7); `--goal` rejected.
-const ROLE_COMPACTOR: &str = "compactor";
-/// Role name for the v0.4 worker subagent (§2.5); `--goal` required.
+/// Role name for the compactor child (§2.7). An ordinary child dispatch
+/// like the worker, but with a boilerplate goal, so `--goal` is rejected.
+const ROLE_COMPACTOR: &str = COMPACTOR_ROLE;
+/// Role name for the worker subagent (§2.5); `--goal` required.
 const ROLE_WORKER: &str = "worker";
 
 /// Dispatch CLI argument-shape errors, joined with [`Error`] under one
@@ -44,73 +46,67 @@ impl From<Error> for DispatchCliError {
 
 /// Run `lernie dispatch <role> <repo> <branch> [--goal <text>]`
 /// (ARCH §3.4). Per-role `--goal` rules surface as `Err` for the bin's
-/// uniform non-zero exit.
+/// uniform non-zero exit. Both roles are ordinary child dispatches
+/// ([`child_dispatch`], §2.5, §2.7); they differ only in the pinned soul
+/// (`souls/<role>.md`) and in where the goal comes from — a worker carries
+/// a per-call `--goal`, a compactor a boilerplate goal (§2.7).
 pub fn run(
     role: &str,
     repo: &Path,
     branch: &str,
     goal: Option<&str>,
 ) -> Result<(), DispatchCliError> {
-    match role {
-        ROLE_COMPACTOR => run_compactor(repo, branch, goal),
-        ROLE_WORKER => run_worker(repo, branch, goal),
-        other => Err(DispatchCliError::UnknownRole(other.to_owned())),
-    }
-}
-
-fn run_compactor(repo: &Path, branch: &str, goal: Option<&str>) -> Result<(), DispatchCliError> {
-    if goal.is_some() {
-        return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
-    }
-    crate::workspace::require(repo).map_err(crate::prompt::Error::from)?;
-    let worktree = crate::workspace::agent_worktree(repo, branch);
-    let req = CompactorRequest {
-        repo,
-        parent_conv_id: branch,
-        parent_worktree: &worktree,
-    };
-    Ok(compactor::run(
-        &req,
-        &RealGit::new(),
-        &SystemClock,
-        &NanoIdGen,
-    )?)
-}
-
-fn run_worker(
-    repo: &Path,
-    parent_branch: &str,
-    goal: Option<&str>,
-) -> Result<(), DispatchCliError> {
     // The production launcher detach-spawns `lernie advance` (§2.11); its
     // construction is pure (resolves `current_exe`, no spawn), so the
     // spawn-free wiring is covered here and the launch decision is tested
-    // through [`run_worker_with`] against an injected launcher.
+    // through [`run_with`] against an injected launcher.
     let launcher = AdvanceLauncher::current().map_err(crate::prompt::Error::from)?;
-    run_worker_with(repo, parent_branch, goal, &launcher)
+    run_with(role, repo, branch, goal, &launcher)
 }
 
-/// [`run_worker`] with the driver launcher injected — the same
+/// [`run`] with the driver launcher injected — the same
 /// launcher-as-parameter discipline as `inbox::probe_and_launch`, so the
 /// fork + front-door deposit is exercisable without spawning a real
 /// `lernie advance`.
-fn run_worker_with(
+fn run_with(
+    role: &str,
     repo: &Path,
     parent_branch: &str,
     goal: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
-    let goal = goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?;
+    // Resolve the per-role goal (§2.7): a worker requires `--goal`; a
+    // compactor rejects it and uses the boilerplate goal instead.
+    let goal_text = match role {
+        ROLE_WORKER => goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?.to_owned(),
+        ROLE_COMPACTOR if goal.is_some() => {
+            return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
+        }
+        ROLE_COMPACTOR => compactor_goal(parent_branch),
+        other => return Err(DispatchCliError::UnknownRole(other.to_owned())),
+    };
+    dispatch_child(repo, parent_branch, role, &goal_text, launcher)
+}
+
+/// Fork `role`'s child off `parent_branch` and start it through the front
+/// door (§2.5), printing the child id so the `dispatch` built-in captures
+/// it as the `tool_result` address (§3.3 — stdout carries one product).
+fn dispatch_child(
+    repo: &Path,
+    parent_branch: &str,
+    role: &str,
+    goal: &str,
+    launcher: &dyn Launcher,
+) -> Result<(), DispatchCliError> {
     crate::workspace::require(repo).map_err(crate::prompt::Error::from)?;
     let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
     let req = ChildDispatchRequest {
         repo,
         parent_branch,
         parent_worktree: &parent_worktree,
+        role,
         goal,
     };
-    // Print the child id so the `dispatch` built-in captures it as the
-    // `tool_result` address (ARCH §3.3, §2.5) — stdout carries one product.
     let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
     println!("{child}");
     Ok(())
@@ -130,18 +126,6 @@ mod tests {
         (holder, repo)
     }
 
-    #[test]
-    fn compactor_dispatch_succeeds_against_a_real_repo() {
-        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run("compactor", &repo, "20260101-p1", None).unwrap();
-        // The compaction merge landed the summary on the parent branch.
-        assert!(
-            crate::workspace::agent_worktree(&repo, "20260101-p1")
-                .join("summary/001.md")
-                .exists()
-        );
-    }
-
     /// A [`Launcher`] that swallows launches — the fork + front-door
     /// deposit is under test, not the real `lernie advance` spawn.
     struct NoopLauncher;
@@ -151,26 +135,41 @@ mod tests {
         }
     }
 
-    #[test]
-    fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
-        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run_worker_with(&repo, "20260101-p1", Some("do the thing"), &NoopLauncher).unwrap();
-        // Exactly one sub-agent worktree appeared under agents/ with
-        // the parent's id prefix (hyphenated descent, §2.3).
-        let subs = std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))
+    /// Count sub-agent worktrees forked under `parent`'s id prefix.
+    fn sub_count(repo: &Path, parent: &str) -> usize {
+        std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))
             .unwrap()
             .flatten()
             .filter(|e| {
-                let n = e.file_name().to_string_lossy().into_owned();
-                n.starts_with("20260101-p1-")
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with(&format!("{parent}-"))
             })
-            .count();
-        assert_eq!(subs, 1);
+            .count()
+    }
+
+    #[test]
+    fn compactor_dispatch_forks_an_ordinary_compactor_child() {
+        // §2.7: the compactor is an ordinary child dispatch — a branch
+        // off the dispatching tip with the compactor soul pinned and a
+        // boilerplate goal deposited, run by the front door. No terminal
+        // stub, no synchronous summary.
+        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
+        run_with(ROLE_COMPACTOR, &repo, "20260101-p1", None, &NoopLauncher).unwrap();
+        assert_eq!(sub_count(&repo, "20260101-p1"), 1);
+    }
+
+    #[test]
+    fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
+        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
+        run_with(ROLE_WORKER, &repo, "20260101-p1", Some("do the thing"), &NoopLauncher).unwrap();
+        assert_eq!(sub_count(&repo, "20260101-p1"), 1);
     }
 
     #[test]
     fn unknown_role_is_refused_with_its_name() {
-        let err = run("no-such-role", Path::new("/tmp"), "b1", None).unwrap_err();
+        let err =
+            run_with("no-such-role", Path::new("/tmp"), "b1", None, &NoopLauncher).unwrap_err();
         assert!(matches!(err, DispatchCliError::UnknownRole(_)));
         assert_eq!(err.to_string(), "unknown role \"no-such-role\"");
     }

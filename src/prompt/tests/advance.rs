@@ -130,7 +130,7 @@ fn already_driven_is_a_clean_noop_without_resolving() {
     let (ws, _wt) = workspace_with_tail(&terminal_tail());
     let _held = try_acquire(&inbox_dir(ws.path(), AGENT)).unwrap().unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -138,7 +138,6 @@ fn already_driven_is_a_clean_noop_without_resolving() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -151,7 +150,7 @@ fn empty_workspace_is_nothing_to_do() {
     // No worktree, no inbox: quiescent-torn-down, nothing due.
     let ws = TempDir::new().unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -159,7 +158,6 @@ fn empty_workspace_is_nothing_to_do() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -171,7 +169,7 @@ fn empty_workspace_is_nothing_to_do() {
 fn terminal_tail_with_empty_inbox_is_the_pin_1_silent_exit() {
     let (ws, wt) = workspace_with_tail(&terminal_tail());
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(
         &adapter,
@@ -179,7 +177,6 @@ fn terminal_tail_with_empty_inbox_is_the_pin_1_silent_exit() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -196,7 +193,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
     // terminal → exit protocol (deposit no-op for a root, release,
     // final-response exit launch).
     let (ws, wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
     let (sleeper, git) = (StubSleeper::default(), StubGit::ok());
@@ -208,7 +205,6 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -228,9 +224,8 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
             .join(format!("steps/{AGENT}/001/response.json"))
             .exists()
     );
-    // Exit protocol: terminal compactor dispatched, self-launch fired.
-    assert_eq!(dispatcher.calls.borrow().len(), 1);
-    assert_eq!(dispatcher.calls.borrow()[0].0, "compactor");
+    // Exit protocol: no terminal compaction (§2.7 — the stage is
+    // deleted); the final-response self-launch fired.
     assert_eq!(*rec.calls.borrow(), vec![AGENT.to_string()]);
     // The lease was released before the launch: reacquirable again.
     assert!(eventually_free(ws.path(), AGENT));
@@ -239,7 +234,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
 #[test]
 fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
     let (ws, wt) = workspace_with_tail(&terminal_tail());
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "run it", &clock).unwrap();
     let tool_stream = stream_of(
         FinishReason::ToolUse,
@@ -259,7 +254,6 @@ fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tools,
         ws.path(),
     );
@@ -276,7 +270,6 @@ fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
     assert!(try_acquire(&inbox_dir(ws.path(), AGENT)).unwrap().is_none());
     drop(lease);
     assert!(eventually_free(ws.path(), AGENT));
-    // No exit protocol on a handoff: no compactor, no launch.
-    assert!(dispatcher.calls.borrow().is_empty());
+    // No exit protocol on a handoff: no launch.
     assert!(rec.calls.borrow().is_empty());
 }

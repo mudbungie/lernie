@@ -1,11 +1,19 @@
-//! What the step loop does on its way out (ARCH §2.7, §2.9, §2.11, §6).
+//! What the step loop does on its way out (ARCH §2.9, §2.11, §6).
 //!
 //! Three terminal shapes reach [`finish`], keyed by epitaph value (§2.6
 //! — code branches on the value, never on shape): a `stopped` branch
 //! (§2.9), an exhausted branch (§6), and the ordinary final-response
-//! branch (§2.7). Only the last dispatches the terminal compactor — the
-//! one merge left in the system (§2.6). A stopped or exhausted branch
-//! persists as-is on its own ref with no compaction.
+//! branch. Only a `stopped` branch has an outstanding deposit to make
+//! here; the final response deposited in the loop and the exhausted
+//! branch at the boundary check.
+//!
+//! **There is no terminal compaction** (§2.7: "There is no terminal
+//! compaction stage anymore"). The v0.3 compactor dispatch that fired at
+//! every final response is deleted: a child's result message carries its
+//! own terminal response (§2.6), not a compactor product, and with
+//! merge-back gone there is no merge payload to slim before returning.
+//! Compaction now runs only at configured checkpoints during a branch's
+//! life ([`crate::prompt::compactor::checkpoint`]).
 //!
 //! The stopped deposit is the §2.9 step-3 return performed *outside* the
 //! signal handler ([`super::stop_signal`]) — the executor's SIGTERM
@@ -69,32 +77,22 @@ pub(super) fn budget_exhausted(
     Ok(true)
 }
 
-/// Finish the exchange by epitaph value (§2.6): `stopped` deposits its
-/// result and skips compaction (§2.9); `budget-exhausted` already
-/// deposited at the boundary check and skips it too (§6); the ordinary
-/// final response (whose deposit landed in the loop) dispatches the
-/// terminal compactor (§2.7).
+/// Finish the exchange by epitaph value (§2.6). Only `stopped` has an
+/// outstanding deposit here — its result is deposited on the way out
+/// (§2.9 step 3). A final response deposited inside the loop and a
+/// `budget-exhausted` branch at the boundary check, so both are no-ops.
+/// No terminal compaction is dispatched (§2.7 — the stage is deleted).
 pub(super) fn finish(
     repo: &Path,
     conv_id: &str,
-    branch: &str,
     worktree: &Path,
     epitaph: Epitaph,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
-    match epitaph {
-        Epitaph::Stopped => {
-            // §2.9 step 3: the branch's result deposited on its way out.
-            deposit_terminal(repo, conv_id, worktree, Epitaph::Stopped, None, deps)
-        }
-        Epitaph::BudgetExhausted => Ok(()),
-        _ => deps
-            .dispatcher
-            .dispatch("compactor", repo, branch, None)
-            .map_err(|source| Error::DispatchFailed {
-                role: "compactor",
-                source,
-            }),
+    if epitaph == Epitaph::Stopped {
+        deposit_terminal(repo, conv_id, worktree, Epitaph::Stopped, None, deps)
+    } else {
+        Ok(())
     }
 }
 

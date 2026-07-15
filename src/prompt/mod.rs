@@ -35,7 +35,6 @@ pub mod clock;
 pub mod compactor;
 pub mod dispatch;
 pub mod dispatch_cli;
-pub mod dispatcher;
 pub mod inbox;
 mod resolve;
 pub mod step;
@@ -49,10 +48,8 @@ mod tests;
 
 pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
-pub use compactor::CompactorRequest;
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
 pub use child_dispatch::ChildDispatchRequest;
-pub use dispatcher::{Dispatcher, SpawnDispatcher};
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 
 use crate::template::GitRunner;
@@ -61,7 +58,7 @@ use thiserror::Error;
 
 /// Role name resolved from the config commit's `providers.yaml`
 /// (`roles:` block, ARCH §4.3) to drive the root conversation.
-const WORKER_ROLE: &str = "worker";
+pub(crate) const WORKER_ROLE: &str = "worker";
 /// Directory in the config commit's tree holding the role souls (ARCH
 /// §4.3 — soul = `souls/<role>.md` in the governing config commit).
 pub(crate) const SOULS_DIR: &str = "souls";
@@ -114,12 +111,6 @@ pub enum Error {
         tool: String,
         #[source]
         source: ExecError,
-    },
-    #[error("dispatch {role}: {source}")]
-    DispatchFailed {
-        role: &'static str,
-        #[source]
-        source: std::io::Error,
     },
     #[error("adapter emitted malformed v=1 event JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
@@ -212,7 +203,6 @@ pub struct Deps<'a> {
     pub git: &'a dyn GitRunner,
     pub clock: &'a dyn Clock,
     pub id_gen: &'a dyn IdGen,
-    pub dispatcher: &'a dyn Dispatcher,
     pub tool_executor: &'a dyn ToolExecutor,
     pub config_root: &'a Path,
     /// The executor's SIGTERM flag (ARCH §2.9 step 3), observed at the

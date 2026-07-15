@@ -58,7 +58,7 @@ fn a_failing_exit_launch_is_swallowed() {
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&stream_of(brazen::FinishReason::Stop, &[Block::Text("hi")]));
     let git = StubGit::ok();
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let mut deps = valid_deps(
@@ -67,7 +67,6 @@ fn a_failing_exit_launch_is_swallowed() {
         &git,
         &clock,
         &id,
-        &dispatcher,
         &tool_executor,
         harness.path(),
     );
@@ -176,7 +175,7 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
         workspace: &repo,
         agent,
     };
-    let (clock, id, dispatcher) = (FixedClock::default(), FixedIdGen, StubDispatcher::ok());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
     let launcher = DriveLauncher {
         outcomes: RefCell::new(Vec::new()),
@@ -187,7 +186,6 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
         git: &RealGit::new(),
         clock: &clock,
         id_gen: &id,
-        dispatcher: &dispatcher,
         tool_executor: &tool_executor,
         config_root: harness.path(),
         stop: never_stopped(),

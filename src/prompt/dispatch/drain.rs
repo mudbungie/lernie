@@ -37,13 +37,16 @@ pub(super) fn drain(
 ) -> Result<(), Error> {
     recover_strays(worktree, conv_id, git)?;
     for msg in pending(inbox)? {
-        // A result message (§2.6) carries a `terminal_ref:` and applies
-        // its work-product transfer as one commit *before* its own
-        // delivery commit (§2.6, §2.11). An ordinary steering message
-        // carries none and delivers directly.
+        // A **result message** (§2.6, carrying a `terminal_ref:`) is a
+        // lifecycle circumstance the §6 hop interprets by the returning
+        // child's role — deliver_result, compaction_merge, or a gate-hold
+        // (`super::child_result`) — not an ordinary steering message. The
+        // drain leaves it in the inbox for that interpreter and delivers
+        // only ordinary messages here (the hold is a disk query over the
+        // inbox, `docs/PRINCIPLES.md` Single source of truth).
         let body = std::fs::read_to_string(&msg.path).map_err(Error::Io)?;
-        if let Some(terminal_ref) = transfer::terminal_ref_of(&body) {
-            transfer::apply(worktree, &msg.sender, &terminal_ref, git)?;
+        if transfer::terminal_ref_of(&body).is_some() {
+            continue;
         }
         transcript::deliver_message(worktree, conv_id, &msg.sender, &msg.path, git)?;
     }
@@ -57,8 +60,12 @@ pub(super) fn drain(
 pub(super) struct Pending {
     mtime: SystemTime,
     name: String,
-    path: PathBuf,
-    sender: String,
+    /// Absolute path of the inbox file — read by the §6 child-result
+    /// interpreter ([`super::child_result`]) to route a result message.
+    pub(super) path: PathBuf,
+    /// The `<sender>` (a child's agent id, for a result message) — the
+    /// interpreter's key for role derivation and delivery.
+    pub(super) sender: String,
 }
 
 /// List the inbox's deliverable messages, sorted `(mtime, filename)`. An

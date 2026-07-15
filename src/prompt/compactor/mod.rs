@@ -38,11 +38,66 @@ pub use checkpoint::{CheckpointState, due, state};
 pub use merge::{MergeOutcome, merge};
 
 use super::Error;
+use brazen::Tool;
+use serde_json::json;
 
 /// Role name of the compactor child (ARCH §2.7). Its soul is
 /// `souls/compactor.md` in the governing config commit, and its toolset is
 /// the built-in [`tools`] pair — not a `providers.yaml` `tools:` list.
 pub const COMPACTOR_ROLE: &str = "compactor";
+
+/// The compactor's fixed toolset as canonical [`Tool`] schemas, injected
+/// into the model request for the **compactor role alone** (ARCH §2.7,
+/// §6 role-aware resolution). These are built into the primitive, never
+/// declared in `providers.yaml` and never sourced from `descriptions/**`
+/// (a compactor's inherited tree carries the dispatching branch's worker
+/// schemas, not these), so the harness supplies the schemas directly — the
+/// one place the model is told it may call `write_summary` /
+/// `mark_for_deletion`. Narrow by construction: two tools, deletion-only,
+/// making "the worst case is lost, never corrupted, information" a
+/// structural property (§2.7).
+pub fn builtin_tool_schemas() -> Vec<Tool> {
+    vec![
+        Tool {
+            name: tools::WRITE_SUMMARY.to_string(),
+            description: Some(
+                "Write a signal-preserving summary to the next summary/<NNN>.md \
+                 on this branch."
+                    .to_string(),
+            ),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": "The summary body, written verbatim."
+                    }
+                },
+                "required": ["content"],
+                "additionalProperties": false
+            }),
+        },
+        Tool {
+            name: tools::MARK_FOR_DELETION.to_string(),
+            description: Some(
+                "Nominate a branch-relative path for removal (deletion-only: this \
+                 can remove, never rewrite)."
+                    .to_string(),
+            ),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Branch-relative path to remove, e.g. messages/003-user.md."
+                    }
+                },
+                "required": ["path"],
+                "additionalProperties": false
+            }),
+        },
+    ]
+}
 
 /// Boilerplate goal handed to a compactor at dispatch (ARCH §2.7). The
 /// dispatching branch name interpolates so the compactor knows which
@@ -87,5 +142,17 @@ mod tests {
     #[test]
     fn compactor_role_is_the_soul_key() {
         assert_eq!(COMPACTOR_ROLE, "compactor");
+    }
+
+    #[test]
+    fn builtin_tool_schemas_are_the_two_named_tools_with_required_inputs() {
+        let schemas = builtin_tool_schemas();
+        let names: Vec<&str> = schemas.iter().map(|t| t.name.as_str()).collect();
+        assert_eq!(names, vec![tools::WRITE_SUMMARY, tools::MARK_FOR_DELETION]);
+        // Each carries a description and a required input field, so the
+        // model is told the tool's shape (§2.7 injected toolset).
+        assert!(schemas.iter().all(|t| t.description.is_some()));
+        assert_eq!(schemas[0].input_schema["required"][0], "content");
+        assert_eq!(schemas[1].input_schema["required"][0], "path");
     }
 }

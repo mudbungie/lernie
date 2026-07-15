@@ -1,4 +1,5 @@
 mod advance;
+mod advance_compaction;
 mod advance_edges;
 mod budget_enforcement;
 mod errors;

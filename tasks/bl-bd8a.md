@@ -1,7 +1,8 @@
 +++
 title = "workflow actions v0.7: remaining executors + verifier-gate end-to-end [follows bl-6a3b]"
 created = 1784010384
-updated = 1784010384
+updated = 1784078123
+claimant = "Reappear-w3"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
 

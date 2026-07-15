@@ -13,8 +13,10 @@ use super::super::{
     DEFAULT_MAX_TOKENS, assembler, child_result, model_call, result_deposit, step_commit,
     stop_signal, terminal, tool_step, tools, transcript,
 };
+use crate::config::Event;
 use crate::prompt::compactor;
 use crate::prompt::inbox::Epitaph;
+use crate::prompt::workflow_actions;
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, next_step_seq, step_dir_rel};
 use crate::prompt::{Deps, Error};
@@ -59,6 +61,9 @@ pub(super) fn step(
     )? {
         return Ok(StepOutcome::Terminal(Epitaph::BudgetExhausted));
     }
+
+    // §6 per-step hook: `pre_step` fires before the model call is issued.
+    workflow_actions::run_step_hook(&cfg.workflow, Event::PreStep, worktree, agent_id, deps.git)?;
 
     // §2.8: the goal is the pinned worktree file, re-read per hop.
     let goal = std::fs::read_to_string(worktree.join(step_commit::GOAL_FILE))?;
@@ -132,6 +137,10 @@ pub(super) fn step(
         deps.git,
     )?;
 
+    // §6 per-step hook: `post_step` fires after the model call returns and
+    // its output is committed, before any tool executes.
+    workflow_actions::run_step_hook(&cfg.workflow, Event::PostStep, worktree, agent_id, deps.git)?;
+
     // No `tool_use` block is terminal (§2.5): deposit a `final-response`
     // result, body iff the agent spoke (§2.6). A no-op for a root.
     if !assistant_content
@@ -168,6 +177,16 @@ pub(super) fn step(
     {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }
+
+    // §6 per-step hook: `on_tool_return` fires once the step's tool calls
+    // have resolved and committed (advance-native, this hop's tool window).
+    workflow_actions::run_step_hook(
+        &cfg.workflow,
+        Event::OnToolReturn,
+        worktree,
+        agent_id,
+        deps.git,
+    )?;
 
     // §2.7/§6 checkpoint: this step's commits landed, so the tip is C.
     // If the `compaction:` clock is due, run the `worker_flush` bindings

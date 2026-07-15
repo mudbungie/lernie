@@ -45,6 +45,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         parent_worktree: &parent_wt,
         role: "worker",
         goal: "do it",
+        fork_point: None,
     };
     let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();
     let child_wt = agent_worktree(&ws, &child);

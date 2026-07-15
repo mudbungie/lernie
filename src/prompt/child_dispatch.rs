@@ -68,6 +68,12 @@ pub struct ChildDispatchRequest<'a> {
     /// The goal / dispatch message. Written verbatim to the child's
     /// `goal.md` and deposited as its first inbox message.
     pub goal: &'a str,
+    /// The ref the child forks off (ARCH §2.3). `None` is the ordinary
+    /// child dispatch off the parent's tip (§2.5); `Some(ref)` forks off
+    /// another ref — a verifier off the worker's terminal ref (§6 gate) —
+    /// while the child id stays `<parent>-<sub>` (return address
+    /// unchanged).
+    pub fork_point: Option<&'a str>,
 }
 
 /// Fork a child agent off `req.parent_branch`'s tip and start it through
@@ -115,6 +121,7 @@ pub fn run(
             parent_branch: req.parent_branch,
             sub_branch: &sub_branch,
             sub_worktree: &sub_worktree,
+            fork_point: req.fork_point,
             goal_text: req.goal,
             soul_text: Some(&soul),
             commit_subject: &commit_subject,

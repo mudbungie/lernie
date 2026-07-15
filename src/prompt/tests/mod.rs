@@ -17,5 +17,6 @@ mod multi_step;
 mod multi_step_terminal;
 mod stop_deposit;
 mod streams;
+mod verifier_gate;
 mod stubs;
 mod tool_stub;

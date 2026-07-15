@@ -82,6 +82,7 @@ impl WorkerConfig {
             binary: self.binary.clone(),
             retry: self.workflow.retry,
             budgets: self.workflow.budgets,
+            workflow: &self.workflow,
             expect_handshake: self.expect_handshake,
         }
     }

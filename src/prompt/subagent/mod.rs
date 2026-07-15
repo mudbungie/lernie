@@ -42,6 +42,14 @@ pub(crate) struct SpawnRequest<'a> {
     /// name as `sub_branch` so on-disk layout and ref namespace are
     /// isomorphic (§2.2).
     pub(crate) sub_worktree: &'a Path,
+    /// The ref the new branch forks off (ARCH §2.3 *Any ref is a legal
+    /// fork point*). `None` is the default child dispatch — the parent's
+    /// own tip (§2.5). `Some(ref)` forks off another ref while still
+    /// naming the branch a child of `parent_branch`: a **verifier**
+    /// forks off the *worker's terminal ref* (§6 gate) so it inherits the
+    /// work it must judge, yet returns to the gating parent (its id, and
+    /// so its return address, stays `<parent>-<sub>`).
+    pub(crate) fork_point: Option<&'a str>,
     /// Goal text written to `<sub_worktree>/goal.md` and committed.
     pub(crate) goal_text: &'a str,
     /// Soul text written to `<sub_worktree>/soul.md` when supplied.
@@ -78,7 +86,11 @@ pub(crate) fn spawn_subagent_branch(
 ) -> Result<(), Error> {
     let wt_str = req.sub_worktree.to_string_lossy().to_string();
     let sub_ref = crate::workspace::agent_ref(req.sub_branch);
+    // Fork point (§2.3): the parent's own tip by default, or an explicit
+    // ref (a verifier off the worker's terminal ref, §6). Either way the
+    // new branch is named a child of `parent_branch`.
     let parent_ref = crate::workspace::agent_ref(req.parent_branch);
+    let start = req.fork_point.unwrap_or(parent_ref.as_str());
     git.run(
         req.parent_worktree,
         &[
@@ -87,7 +99,7 @@ pub(crate) fn spawn_subagent_branch(
             "-b",
             sub_ref.as_str(),
             wt_str.as_str(),
-            parent_ref.as_str(),
+            start,
         ],
     )
     .map_err(|source| Error::Git {

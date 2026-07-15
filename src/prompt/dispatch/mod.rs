@@ -1,30 +1,18 @@
-//! Root-conversation branch orchestration (ARCH §2.3, §2.5, §2.6, §2.7,
-//! §2.8, §2.9, §2.10).
+//! Root-conversation branch orchestration (ARCH §2.3–§2.10).
 //!
-//! [`run_exchange`] executes a single root conversation:
-//!
-//! 1. Spawn branch `agents/<conv-id>` off the default config branch's
-//!    head, with a worktree under `<workspace>/agents/` (§2.2–§2.3).
-//! 2. **Step 1 dispatch commit:** write `goal.md` + `soul.md`, remove
-//!    the config commit's control files from the tree (§2.2), and
-//!    commit — that commit's tree *is* step 1's read state (§2.10).
-//! 3. **Step loop (§2.5).** At each boundary the executor drains the
-//!    agent's inbox ([`drain`], §2.11), records the branch-tip sha, writes
-//!    the step record under `<conv-repo>/steps/<conv-id>/<NNN>/`, and
-//!    drives the model call through the retry loop ([`model_call`], §4.4).
-//!    Each step re-assembles its history from the read-state commit's tree
-//!    ([`assembler`], §2.3, §5); a settled `tool_use` loops, no `tool_use`
-//!    is terminal.
-//! 4. Every terminal event ([`result_deposit`]) deposits a result message
-//!    into the parent's inbox (§2.6, §2.3 step 5) — a no-op for a root; a
-//!    stop deposits `stopped` on its way out (§2.9, [`terminal`]). No
-//!    terminal compaction is dispatched (§2.7 — the stage is deleted).
-//! 5. **Exit protocol (§2.11):** deposit → release own lock → spawn a
-//!    driver at own agent, fire-and-forget → exit. The launch is decided
-//!    by epitaph value ([`terminal::exit_launch`]): a final response
-//!    launches; `stopped` and `budget-exhausted` never do. The launched
-//!    driver's own-branch entry — acquire-or-exit, deliver or silently
-//!    no-op — is [`driver`].
+//! [`run_exchange`] executes a single root conversation: spawn branch
+//! `agents/<conv-id>` off the default config head (§2.2–§2.3); write the
+//! step-1 dispatch commit (§2.2, §2.10); then the step loop (§2.5) —
+//! drain the inbox ([`drain`], §2.11), interpret delivered child results
+//! and the compaction checkpoint at each boundary (the §6 prompt→advance
+//! collapse, [`child_result`]), drive the model call through the retry
+//! loop ([`model_call`], §4.4), re-assemble history from the read-state
+//! commit ([`assembler`], §2.3, §5), and loop on a settled `tool_use`.
+//! Every terminal deposits a result message ([`result_deposit`], §2.6,
+//! no-op for a root), evaluates the terminal-lifecycle bindings (§6,
+//! [`workflow_actions`]), then runs the §2.11 exit protocol (deposit →
+//! release lock → epitaph-valued self-launch → exit, [`terminal`],
+//! [`driver`]). No terminal compaction (§2.7 — the stage is deleted).
 
 pub mod advance;
 mod assembler;
@@ -48,8 +36,9 @@ pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
+use super::workflow_actions;
 use super::{Deps, Error};
-use crate::config::{Budgets, Model, RetryConfig};
+use crate::config::{Budgets, Model, RetryConfig, Workflow};
 use assembler::assemble;
 use brazen::Content;
 use model_call::ModelCall;
@@ -83,6 +72,10 @@ pub(super) struct Resolved<'a> {
     /// Per-conversation spend limits from `workflow.yaml` (§6). Checked
     /// at every model-call boundary before the adapter is invoked.
     pub(super) budgets: Budgets,
+    /// The full workflow (§6): the root driver evaluates its per-step hooks
+    /// and lifecycle bindings from here, the same seams `lernie advance`
+    /// runs — the §6 prompt→advance collapse (both drivers, one evaluation).
+    pub(super) workflow: &'a Workflow,
     /// True under an `adapter:` override — the MessageStart.v handshake
     /// governs in place of the version guard (§4.4).
     pub(super) expect_handshake: bool,
@@ -154,6 +147,12 @@ pub(super) fn run_exchange(
         // from — and after the prior step's tool entries, so a message
         // never wedges between paired tool blocks (§2.3).
         drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?;
+
+        // §6 prompt→advance collapse: the root interprets delivered child
+        // results (deliver_result / compaction_merge / verifier gate) at the
+        // same boundary `lernie advance` does — empty-inputs no-op for a
+        // root with no dispatched children.
+        child_result::interpret_pending(repo, &conv_id, &worktree_path, resolved.workflow, deps)?;
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
 
@@ -263,6 +262,10 @@ pub(super) fn run_exchange(
             stopped = true;
             break;
         }
+
+        // §6 collapse: the `compaction:` checkpoint clock, same seam as
+        // `lernie advance` (`worker_flush` → dispatch a compactor off C).
+        child_result::run_flush(repo, &conv_id, &worktree_path, resolved.workflow, deps)?;
         step_seq += 1;
     }
 
@@ -276,6 +279,9 @@ pub(super) fn run_exchange(
         (false, false) => Epitaph::FinalResponse,
     };
     terminal::finish(repo, &conv_id, &worktree_path, epitaph, deps)?;
+    // §6 collapse: the root evaluates its terminal-lifecycle bindings
+    // (`branch_stopped` → mark_abandoned / notify_ui) too.
+    workflow_actions::run_terminal_bindings(resolved.workflow, epitaph, &worktree_path, &conv_id, deps.git)?;
 
     // Exit protocol (§2.11): the result deposit landed at the terminal
     // event above; now release own lock, then spawn a driver at own

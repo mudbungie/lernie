@@ -106,6 +106,7 @@ fn dispatch_child(
         parent_worktree: &parent_worktree,
         role,
         goal,
+        fork_point: None,
     };
     let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
     println!("{child}");

@@ -91,9 +91,10 @@ fn an_unsupported_child_result_action_is_declined_loudly() {
     let fx = Fx::new();
     returned_child(&ws, parent, "worker", "do it", ("out.txt", "x\n"), &fx);
     let wt = agent_worktree(&ws, parent);
-    // A worker_return bound to a gate action (its executor is Ball-2) is
-    // declined here, never silently no-oped.
-    let wf = workflow("events:\n  worker_return:\n    - gate_return_on(verifier.approve)\n");
+    // A worker_return bound to an action with no child-result executor
+    // (a ref-mark action belongs to the branch's own terminal) is declined
+    // here, never silently no-oped.
+    let wf = workflow("events:\n  worker_return:\n    - notify_ui\n");
     let err = interpret_pending(&ws, parent, &wt, &wf, &fx.deps()).unwrap_err();
     assert!(matches!(err, Error::ActionUnsupported { .. }), "{err:?}");
 }
@@ -168,6 +169,7 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
         parent_worktree: &parent_wt,
         role: "compactor",
         goal: "compact",
+        fork_point: None,
     };
     let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
 

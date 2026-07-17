@@ -38,9 +38,10 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    with `install -m 0755` (atomic overwrite, no symlinks). Make sure
    that directory is on your `PATH`.
 3. Installs the provider adapter — brazen's `bz` — with
-   `cargo install brazen --version =0.0.2 --locked` (the `BRAZEN_PIN`
-   in the Makefile, kept in lockstep with the `brazen = "=0.0.2"`
-   dependency in `Cargo.toml`). One binary serves every provider
+   `cargo install brazen --version =<pin> --locked`, where the pin is
+   the `brazen = "=<pin>"` dependency in `Cargo.toml` — its one home;
+   the Makefile and the load-time guard both derive from that line.
+   One binary serves every provider
    (ARCH §4.4); the harness resolves `bz` on `PATH`, and a load-time
    guard rejects any `bz` whose version differs from the pin.
 4. Drops a default `models.yaml` under the config root (model

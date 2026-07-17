@@ -25,9 +25,10 @@ endif
 PATH_BINARIES     := lernie lernie-ui-egui agent-eval
 # The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for
 # every provider, installed from crates.io at the exact version the
-# lernie crate links (the load-time version guard, §4.4). Keep this pin
-# in lockstep with the `brazen = "=<pin>"` dependency in Cargo.toml.
-BRAZEN_PIN        := 0.0.2
+# lernie crate links (the load-time version guard, §4.4). The pin's one
+# home is the `brazen = "=<pin>"` dependency in Cargo.toml; this derives
+# from it (the code-side guard derives from the same line).
+BRAZEN_PIN        := $(shell sed -n 's/^brazen = "=\([^"]*\)"$$/\1/p' Cargo.toml)
 # Subdirectories laid down on first install, by lifetime (ARCH §2.2):
 # config-lifetime templates under the config root, machine-populated
 # pools and the workspaces tree under the data root. (The v0.3 frozen
@@ -102,6 +103,7 @@ install: release
 		install -m 0755 "target/release/$$bin" "$(INSTALL_BIN)/$$bin"; \
 		echo "installed $(INSTALL_BIN)/$$bin"; \
 	done
+	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
 	@echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"
 	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked
 	@if [ ! -e "$(LERNIE_CONFIG_HOME)/models.yaml" ]; then \

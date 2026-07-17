@@ -78,6 +78,7 @@ pub(super) fn dispatch(
 
 /// Execute a verifier-verdict action (§6): approve drains the held worker
 /// result; reject re-dispatches the worker with feedback and discards it.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn execute(
     action: &Action,
     event: Event,

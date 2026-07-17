@@ -14,6 +14,7 @@ mod exit_race;
 mod fixtures;
 mod happy;
 mod multi_step;
+mod pin;
 mod multi_step_terminal;
 mod stop_deposit;
 mod streams;

@@ -72,12 +72,40 @@ const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// root.
 const GLOBAL_MODELS_FILE: &str = "models.yaml";
 
-/// The exact brazen crate version lernie links (`brazen = "=0.0.2"` in
-/// `Cargo.toml`). The load-time version guard rejects a `bz` whose
-/// `--version` differs (§4.4 "Version skew is guarded"). This pin and
-/// the `Cargo.toml` dependency are the two homes of the number; keep
-/// them in lockstep (also the `make install` pin).
-pub const BRAZEN_PIN: &str = "0.0.2";
+/// The crate manifest, embedded so [`brazen_pin`] derives from the
+/// pin's one home (`Cargo.toml`) instead of mirroring it.
+const MANIFEST: &str = include_str!("../../Cargo.toml");
+
+/// The exact brazen pin in a manifest — the version inside
+/// `brazen = "=<pin>"`, in either the inline spelling of the source
+/// `Cargo.toml` or the `[dependencies.brazen]` / `version = "=<pin>"`
+/// table spelling cargo normalizes published manifests into. `None`
+/// when the manifest carries no exact brazen pin.
+fn parse_brazen_pin(manifest: &str) -> Option<&str> {
+    let mut in_brazen_table = false;
+    for line in manifest.lines().map(str::trim) {
+        if let Some(rest) = line.strip_prefix("brazen = \"=") {
+            return rest.strip_suffix('"');
+        }
+        if line.starts_with('[') {
+            in_brazen_table = line == "[dependencies.brazen]";
+        } else if in_brazen_table
+            && let Some(rest) = line.strip_prefix("version = \"=")
+        {
+            return rest.strip_suffix('"');
+        }
+    }
+    None
+}
+
+/// The exact brazen crate version lernie links, read from the
+/// `brazen = "=<pin>"` dependency in the embedded `Cargo.toml` — the
+/// number's one home (the `make install` pin derives from the same
+/// line). The load-time version guard rejects a `bz` whose `--version`
+/// differs (§4.4 "Version skew is guarded").
+pub fn brazen_pin() -> &'static str {
+    parse_brazen_pin(MANIFEST).expect("Cargo.toml pins brazen as `brazen = \"=<version>\"`")
+}
 
 /// Every way [`run`] can fail. The taxonomy is intentionally narrower
 /// than brazen's: wire-level distinctions are brazen's, surfaced in-band

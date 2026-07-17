@@ -1,8 +1,8 @@
 //! The v0.7 success criterion (ARCH §6): a **verifier gating a worker's
 //! return, config-only, end-to-end**, on the stub-adapter harness with
 //! real git. The gate is expressed entirely as `workflow.yaml` bindings
-//! (`worker_return: [dispatch(verifier), gate_return_on(verifier.approve)]`
-//! + `verifier_approve: [deliver_result]`) plus a `souls/verifier.md`
+//! (`worker_return: [dispatch(verifier), gate_return_on(verifier.approve)]` +
+//! `verifier_approve: [deliver_result]`) plus a `souls/verifier.md`
 //! authored into the config — no code path is special-cased to it.
 //!
 //! The flow is driven through the ordinary `lernie advance` hop three

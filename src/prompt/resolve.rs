@@ -17,7 +17,7 @@
 
 use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
 use crate::config::{Model, ModelsConfig, Workflow};
-use crate::prompt::{AdapterRunner, BRAZEN_PIN, adapter, dispatch};
+use crate::prompt::{AdapterRunner, adapter, brazen_pin, dispatch};
 use crate::workspace;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
@@ -220,7 +220,7 @@ fn control_origin(commit: &str, path: &str) -> PathBuf {
 }
 
 /// Load-time version guard (§4.4): `bz --version` must report the exact
-/// version of the linked brazen crate ([`BRAZEN_PIN`]); a mismatch is
+/// version of the linked brazen crate ([`brazen_pin`]); a mismatch is
 /// declined (PRINCIPLES "Decline illegal operations") rather than
 /// silently downgraded.
 fn check_bz_version(adapter: &dyn AdapterRunner, binary: &OsString) -> Result<(), Error> {
@@ -229,10 +229,10 @@ fn check_bz_version(adapter: &dyn AdapterRunner, binary: &OsString) -> Result<()
     // `bz --version` prints e.g. `bz 0.0.2`; the version is the last
     // whitespace token.
     let found = out.split_whitespace().last().unwrap_or("").to_string();
-    if found != BRAZEN_PIN {
+    if found != brazen_pin() {
         return Err(Error::VersionSkew {
             found,
-            expected: BRAZEN_PIN.to_string(),
+            expected: brazen_pin().to_string(),
         });
     }
     Ok(())

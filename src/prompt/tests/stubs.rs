@@ -3,7 +3,7 @@
 //! Lives alongside [`super::fixtures`] but split out so the latter
 //! stays under the repo's per-file line cap.
 
-use crate::prompt::{AdapterRunner, BRAZEN_PIN, Sleeper};
+use crate::prompt::{AdapterRunner, Sleeper, brazen_pin};
 use crate::template::GitRunner;
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -26,7 +26,7 @@ pub(super) type AdapterCall = (OsString, Vec<String>, Vec<u8>);
 /// The bytes `bz --version` prints under the pin the harness expects
 /// (the load-time version guard, §4.4).
 pub(super) fn version_line() -> Vec<u8> {
-    format!("bz {BRAZEN_PIN}\n").into_bytes()
+    format!("bz {}\n", brazen_pin()).into_bytes()
 }
 
 /// FIFO-replying [`AdapterRunner`] with a recording log. Each scripted

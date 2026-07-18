@@ -1,7 +1,7 @@
 +++
 title = "epic: workspace substrate — config branches, agents/* refs, no main (§2.2–§2.3 physical)"
 created = 1783917121
-updated = 1784337077
+updated = 1784337562
 claimant = "Sorehead-a51c"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
@@ -18,15 +18,25 @@ on = "close"
 id = "bl-a3c1"
 on = "close"
 +++
-## Scope
-The spec's core physical model is not yet the shipped one. Shipped: lernie new scaffolds a per-conversation repo with git init -b main; agent branches are bare (<conv-id>, <parent>-<sub-id>); control files live in the worktree. Target (§2.2–§2.3): one repo per workspace at <data-root>/workspaces/<workspace>/ (bare repo.git), config branches config/<name> with no main, agent refs agents/<agent-id>, worktrees as siblings under agents/, control read from the governing config commit (nearest config/* ancestor), dispatch commit removes control files from the agent tree, config-commit authoring as a harness-assisted user act.
+## Status: DELIVERED (squash 0d5aa2d, 2026-07-13) + verified 2026-07-17
+The workspace-substrate reshape landed on main four days ago; the store's archive step was lost to a concurrent-write race, stranding this task open under a stale claim. This close-out re-verified every must-pin against the SHIPPED code (not docs/commit messages) and filled one consistency gap.
 
-## DECIDED (user, 2026-07-13): clean break
-No migration of existing conversation repos — pre-release, breaking is fine. Refuse the old layout with a loud, clear error naming what it found. Amend §10 in this ball so it stops promising pre-v1 readability (versioned migration discipline starts at a meaningful release).
+## Verified must-pins (code + test)
+1. One repo per workspace at <data-root>/workspaces/<workspace>/repo.git (bare): workspace::REPO_DIR + repo_git(); template::scaffold does 'git init --bare -b config/default'; Makefile DATA_DIRS has workspaces/.
+2. Config branches config/<name>, NO main: workspace::CONFIG_REF_PREFIX; scaffold inits -b config/default; ARCH §2.2 'there is no main'.
+3. Agent refs agents/<agent-id>, worktrees siblings under agents/: AGENT_REF_PREFIX, AGENTS_DIR, agent_worktree().
+4. Control read from governing config commit via ancestry, never stored: workspace::governing_config() (merge-base against config/* heads, nearest descendant kept; incomparable candidates declined); show_control()/control_exists() read the commit tree, never the worktree.
+5. Dispatch commit removes control files from agent tree: dispatch/step_commit.rs::remove_control_files ('git rm -r -q --ignore-unmatch' over workspace::CONTROL_PATHS), called by commit_dispatch.
+6. lernie new = workspace creation + first config-commit (orphan root), descriptions/** snapshot: template::scaffold (orphan config/default root, TEMPLATE.extract, descriptions::snapshot); later commits via template::authoring::author.
+7. Ref-prefix seam flipped: workspace::agent_ids() enumerates 'agents/*' via for-each-ref; consumed by inbox/scan/derive.rs and stop/inspector.rs — no 'every branch except main'.
+8. LERNIE_CONV_REPO/BRANCH semantics unchanged: still the env names across tool/builtin/* and inbox.
+9. Root id unique per workspace: dispatch/mod.rs run_exchange conv_id = '{ts}-{short_id}' (compact timestamp + nano id).
+10. Old layout refused not migrated: workspace::require() (OldLayout / NotAWorkspace, actionable errors naming what was found + 'lernie new'); guarded in prompt::run, stop, inbox scan, dispatch_cli, advance/cli, template/authoring, and (gap filled this pass) archive::bundle.
 
-## Must-pin items
-- Ref-prefix seam: scan/stop/budget enumeration is currently "every branch except main" — ARCH §8 calls this "the one seam to change when a prefix lands." Land the prefix and flip that seam in the same ball.
-- Governing-config resolution: derived from ancestry (git merge-base against config/* heads), never stored.
-- Template/scaffold rewrite: lernie new becomes workspace creation + first config-commit authoring (orphan root), snapshotting descriptions/** as today (bl-3092 seam migrates here per §3.3 shipped-state note).
-- LERNIE_CONV_REPO/BRANCH semantics unchanged (names are code, §3.3).
-- Root id allocation: unique per workspace.
+## Gap filled this close-out
+archive::bundle lacked the §10 layout guard that every other verb has; added workspace::require(ws)? + ArchiveError::Layout(#[from] LayoutError) with two tests (retired-layout + non-workspace). Split src/archive/tests.rs -> tests/{mod,bundle,replay}.rs to stay under the 300-line cap. Stabilized the cascade drain test (generous deadline, matching siblings) against a coverage-runner race.
+
+## Docs verified truthful
+ARCH §2.2-§2.3 describe the shipped mechanism (repo.git bare, config/*, agents/*, no main, governing config commit, dispatch commit removes control, fork-is-freeze). §9.2 shipped-state note credits bl-a51c for re-basing archive. TAXONOMY defines 'workspace' and 'governing config commit'. README shows 'lernie new ... (bare repo.git + config/default)'.
+
+## make check: green — fmt-check, clippy -D warnings, 100% coverage (3978/3978).

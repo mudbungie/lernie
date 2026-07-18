@@ -12,5 +12,9 @@ on = "claim"
 [[blockers]]
 id = "bl-0007"
 on = "close"
+
+[[blockers]]
+id = "bl-e20b"
+on = "close"
 +++
 Deliverable 3 of epic bl-8094. An evaluation run is (experiment × suite × N): run one workflow-config variant against the fixed task suite N times, machine-check each task, aggregate pass@1 (mean-of-means, Wilson 95% CI) and pass@5. DECIDED (epic recommendation, spec's naming): separate binary crates/agent-eval, not a lernie subcommand. Needs the suite format settled first (bl-3e1d).

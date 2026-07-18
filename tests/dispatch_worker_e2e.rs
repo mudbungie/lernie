@@ -240,11 +240,12 @@ fn dispatch_compactor_rejects_unexpected_goal() {
     fs::create_dir_all(&harness).unwrap();
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
+    fabricate_parent(&dest, "p1");
 
     let out = Command::new(lernie_bin())
         .args(["dispatch", "compactor"])
         .arg(&dest)
-        .arg("some-branch")
+        .arg("p1")
         .args(["--goal", "no goal allowed for compactor"])
         .env("LERNIE_HOME", &harness)
         .stderr(Stdio::piped())
@@ -259,22 +260,32 @@ fn dispatch_compactor_rejects_unexpected_goal() {
 }
 
 #[test]
-fn dispatch_unknown_role_surfaces_error() {
+fn dispatch_role_absent_from_config_is_refused() {
+    // The role set is open (§4.3): a role the governing config commit does
+    // not define — here `verifier`, absent from the default template — is
+    // refused by the config-validity check, which names the config commit
+    // consulted. Not a hard-coded name list; the same check that *accepts*
+    // a verifier the config adds (zero code).
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
     let dest = holder.path().join("conv");
     scaffold_repo(&dest, &harness);
+    fabricate_parent(&dest, "p1");
 
     let out = Command::new(lernie_bin())
         .args(["dispatch", "verifier"])
         .arg(&dest)
-        .arg("some-branch")
+        .arg("p1")
+        .args(["--goal", "judge it"])
         .env("LERNIE_HOME", &harness)
         .stderr(Stdio::piped())
         .output()
         .expect("spawn lernie dispatch verifier");
-    assert!(!out.status.success(), "expected failure on unknown role");
+    assert!(!out.status.success(), "expected failure on undefined role");
     let stderr = String::from_utf8_lossy(&out.stderr);
-    assert!(stderr.contains("unknown role"), "got stderr: {stderr}");
+    assert!(
+        stderr.contains("role \"verifier\" is not defined in"),
+        "got stderr: {stderr}"
+    );
 }

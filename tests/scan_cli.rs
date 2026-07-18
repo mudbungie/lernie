@@ -161,7 +161,7 @@ fn dispatch_hot_path_runs_no_workspace_scan() {
         .arg(PARENT)
         .output()
         .expect("spawn lernie dispatch");
-    assert!(!out.status.success(), "unknown role is refused");
+    assert!(!out.status.success(), "a config-undefined role is refused");
     assert!(
         !died_deposit(ws.path()).exists(),
         "lernie dispatch must not sweep the workspace (§2.11)"

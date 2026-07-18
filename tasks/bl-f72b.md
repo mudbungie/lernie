@@ -1,7 +1,8 @@
 +++
 title = "Open the dispatch role set: lernie dispatch <role> accepts any config-defined role"
 created = 1784337602
-updated = 1784337602
+updated = 1784337934
+claimant = "Sorehead-f72b"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["design-settled"]
 

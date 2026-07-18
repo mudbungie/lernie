@@ -17,10 +17,19 @@ jobs:
           git config --global user.email "ci@lernie.local"
           git config --global user.name "lernie CI"
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy, llvm-tools-preview
+      - name: Install pinned Rust toolchain
+        # rust-toolchain.toml is the single source of the pin (channel +
+        # components). Do NOT name a toolchain here — a floating
+        # dtolnay/rust-toolchain@stable would drift from what the hook and
+        # agents run, and pinning a version in this file would fork the pin
+        # into two homes. rustup ships on ubuntu-latest; the first cargo
+        # command in the repo makes it auto-install the exact toolchain and
+        # components from rust-toolchain.toml (override install), so CI, the
+        # pre-commit gate, and every agent build under identical
+        # rustc / rustfmt / clippy.
+        run: |
+          cargo --version
+          rustup show active-toolchain
 
       - name: Cache cargo registry and target
         uses: actions/cache@v5

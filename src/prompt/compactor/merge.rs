@@ -71,7 +71,13 @@ pub fn merge(
     // MERGE_HEAD is (checked next).
     let merge_res = git.run(
         parent_worktree,
-        &["merge", "--no-ff", "--no-commit", "--no-edit", &compactor_ref],
+        &[
+            "merge",
+            "--no-ff",
+            "--no-commit",
+            "--no-edit",
+            &compactor_ref,
+        ],
     );
 
     if !merge_in_progress(parent_worktree, git)? {
@@ -107,7 +113,10 @@ pub fn merge(
 /// --verify -q MERGE_HEAD` prints the sha and exits zero when a merge is
 /// underway, and exits non-zero (captured as `Err`) when none is.
 fn merge_in_progress(parent_worktree: &Path, git: &dyn GitRunner) -> Result<bool, Error> {
-    match git.run_capture(parent_worktree, &["rev-parse", "--verify", "-q", "MERGE_HEAD"]) {
+    match git.run_capture(
+        parent_worktree,
+        &["rev-parse", "--verify", "-q", "MERGE_HEAD"],
+    ) {
         Ok(out) => Ok(!out.trim().is_empty()),
         Err(_) => Ok(false),
     }

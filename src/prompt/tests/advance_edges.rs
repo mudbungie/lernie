@@ -63,15 +63,7 @@ fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
     let tools = StubToolExecutor::ok();
     let rec = RecLauncher::default();
     let stopped = AtomicBool::new(true);
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
     deps.stop = &stopped;
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
@@ -150,15 +142,7 @@ fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
     let rec = RecLauncher::default();
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
     let mut cfg = worker_config();
     cfg.workflow.budgets = Budgets {
@@ -182,15 +166,7 @@ fn a_resolve_failure_propagates() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let id = FixedIdGen;
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let err = run(ws.path(), AGENT, None, &deps, &mut || {
         Err(Error::RoleMissing("worker".into()))
     })
@@ -206,15 +182,7 @@ fn a_missing_pinned_goal_surfaces_as_io() {
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let err = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "{err}");
 }
@@ -227,15 +195,7 @@ fn a_broken_inbox_surfaces_as_an_executor_lock_error() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
     assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
 }
@@ -257,15 +217,7 @@ fn unpaired_tool_use_is_declined_loudly() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
     assert!(matches!(err, Error::UnpairedToolUse { .. }), "{err}");
 }

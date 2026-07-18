@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace ui eval install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace eval install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -21,8 +21,10 @@ LERNIE_CONFIG_HOME := $(XDG_CONFIG_HOME)/lernie
 LERNIE_DATA_HOME   := $(XDG_DATA_HOME)/lernie
 endif
 
-# Binaries that resolve via `PATH`: the harness CLI and the UI shell.
-PATH_BINARIES     := lernie lernie-ui-egui agent-eval
+# Binaries that resolve via `PATH`: the harness CLI and the eval runner.
+# The desktop frontend lives in its own repo (lernie-ui-egui) and
+# installs from there.
+PATH_BINARIES     := lernie agent-eval
 # The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for
 # every provider, installed from crates.io at the exact version the
 # lernie crate links (the load-time version guard, §4.4). The pin's one
@@ -65,10 +67,6 @@ schemas:
 new-workspace:
 	@test -n "$(DEST)" || { echo "usage: make new-workspace DEST=<path>"; exit 1; }
 	@cargo run --quiet --bin lernie -- new "$(DEST)"
-
-ui:
-	@test -n "$(REPO)" || { echo "usage: make ui REPO=<path>"; exit 1; }
-	@cargo run --quiet --bin lernie-ui-egui -- --repo "$(REPO)"
 
 # Run the evaluation runner (ARCH §9.3): experiment × suite × N.
 #   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 [AGENT=<cmd>]

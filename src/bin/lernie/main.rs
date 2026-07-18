@@ -36,9 +36,7 @@ mod cli;
 
 use clap::{Parser, Subcommand};
 use lernie::harness_root;
-use lernie::prompt::{
-    self, IdGen, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock, tool::builtin,
-};
+use lernie::prompt::{self, IdGen, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock, tool::builtin};
 use lernie::template::{self, RealGit};
 use std::{io, path::PathBuf, process::ExitCode};
 

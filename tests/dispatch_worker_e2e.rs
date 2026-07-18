@@ -188,7 +188,10 @@ fn dispatch_worker_lands_dispatch_commit_with_goal_and_soul() {
         .expect("dispatch commit present in child history");
     let dispatch_parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &dispatch_sha]);
     assert_eq!(dispatch_parents.split_whitespace().count(), 1);
-    assert_eq!(dispatch_parents.split_whitespace().next().unwrap(), parent_tip);
+    assert_eq!(
+        dispatch_parents.split_whitespace().next().unwrap(),
+        parent_tip
+    );
 
     // No merge into the parent: the child branch is unmerged against it
     // (children return by message, §2.6 — nothing merges back).

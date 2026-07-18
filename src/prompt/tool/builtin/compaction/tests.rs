@@ -81,8 +81,13 @@ fn mark_for_deletion_stages_a_removal() {
     worktree_repo(repo.path(), "p1", "messages/001-user.md");
     let mut input = Cursor::new(br#"{"path":"messages/001-user.md"}"#.to_vec());
     let mut out = Vec::new();
-    run_mark_for_deletion_with(&mut input, &mut out, &env(repo.path(), "p1"), &RealGit::new())
-        .unwrap();
+    run_mark_for_deletion_with(
+        &mut input,
+        &mut out,
+        &env(repo.path(), "p1"),
+        &RealGit::new(),
+    )
+    .unwrap();
     let wt = workspace::agent_worktree(repo.path(), "p1");
     assert!(!wt.join("messages/001-user.md").exists());
     let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
@@ -97,8 +102,7 @@ fn mark_for_deletion_real_git_wrapper_declines_a_missing_path() {
     worktree_repo(repo.path(), "p1", "keep.txt");
     let mut input = Cursor::new(br#"{"path":"no/such.md"}"#.to_vec());
     let mut out = Vec::new();
-    let err =
-        run_mark_for_deletion(&mut input, &mut out, &env(repo.path(), "p1")).unwrap_err();
+    let err = run_mark_for_deletion(&mut input, &mut out, &env(repo.path(), "p1")).unwrap_err();
     assert!(matches!(err, Error::Mark(_)), "{err:?}");
 }
 
@@ -115,8 +119,7 @@ fn invalid_input_json_is_declined() {
 fn a_stdin_read_failure_surfaces() {
     let repo = TempDir::new().unwrap();
     let mut out = Vec::new();
-    let err =
-        run_write_summary(&mut FailingReader, &mut out, &env(repo.path(), "p1")).unwrap_err();
+    let err = run_write_summary(&mut FailingReader, &mut out, &env(repo.path(), "p1")).unwrap_err();
     assert!(matches!(err, Error::StdinRead(_)), "{err:?}");
 }
 
@@ -124,8 +127,7 @@ fn a_stdin_read_failure_surfaces() {
 fn missing_repo_env_is_declined() {
     let mut input = Cursor::new(br#"{"content":"x"}"#.to_vec());
     let mut out = Vec::new();
-    let err =
-        run_write_summary(&mut input, &mut out, &StubEnv(HashMap::new())).unwrap_err();
+    let err = run_write_summary(&mut input, &mut out, &StubEnv(HashMap::new())).unwrap_err();
     assert!(matches!(err, Error::MissingEnv(ENV_CONV_REPO)), "{err:?}");
 }
 

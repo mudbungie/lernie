@@ -24,8 +24,8 @@ fn lernie_bin() -> &'static str {
 /// Env vars that, when inherited, override `-C <repo>` and redirect a
 /// child `git` invocation back onto the outer repo (e.g. when this test
 /// runs under a git hook, which exports `GIT_DIR`/`GIT_INDEX_FILE` into
-/// the environment) — cleared on every spawn. Mirrors
-/// `lernie-ui-egui::git_tree::cmd::INHERITED_GIT_ENV`.
+/// the environment) — cleared on every spawn. The lernie-ui-egui repo's
+/// `git_tree::cmd::INHERITED_GIT_ENV` mirrors this list.
 const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_DIR",
     "GIT_WORK_TREE",

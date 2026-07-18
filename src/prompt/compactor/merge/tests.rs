@@ -80,7 +80,11 @@ fn merge_lands_summary_and_clean_transcript_deletion() {
     // write sets — the merge is clean and both deletions/adds land.
     let dir = repo_at_checkpoint(&[("messages/001-user.md", "hi\n")]);
     let wt = dir.path();
-    compactor_branch(wt, ("summary/001.md", "digest\n"), &["messages/001-user.md"]);
+    compactor_branch(
+        wt,
+        ("summary/001.md", "digest\n"),
+        &["messages/001-user.md"],
+    );
     advance_live(wt, &[("messages/002-a.md", "reply\n")]);
 
     assert_eq!(merge(wt, "p1-cmp", &g()).unwrap(), MergeOutcome::Merged);
@@ -129,7 +133,16 @@ fn already_up_to_date_is_a_noop() {
 fn a_bad_compactor_ref_is_declined_loudly() {
     let dir = repo_at_checkpoint(&[("goal.md", "g\n")]);
     let err = merge(dir.path(), "does-not-exist", &g()).unwrap_err();
-    assert!(matches!(err, Error::Git { op: "compaction merge", .. }), "{err:?}");
+    assert!(
+        matches!(
+            err,
+            Error::Git {
+                op: "compaction merge",
+                ..
+            }
+        ),
+        "{err:?}"
+    );
 }
 
 /// Stub git reporting a merge in progress (non-empty `MERGE_HEAD`) so the
@@ -171,7 +184,13 @@ fn add_failure_surfaces_as_git_error() {
     // calls: 0=merge, 1=add(fail).
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &StubGit::failing_at(1)).unwrap_err();
     assert!(
-        matches!(err, Error::Git { op: "compaction merge add", .. }),
+        matches!(
+            err,
+            Error::Git {
+                op: "compaction merge add",
+                ..
+            }
+        ),
         "{err:?}"
     );
 }
@@ -181,7 +200,13 @@ fn commit_failure_surfaces_as_git_error() {
     // calls: 0=merge, 1=add, 2=commit(fail).
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &StubGit::failing_at(2)).unwrap_err();
     assert!(
-        matches!(err, Error::Git { op: "compaction merge commit", .. }),
+        matches!(
+            err,
+            Error::Git {
+                op: "compaction merge commit",
+                ..
+            }
+        ),
         "{err:?}"
     );
 }

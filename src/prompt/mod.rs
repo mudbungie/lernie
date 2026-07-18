@@ -48,9 +48,9 @@ mod workflow_actions;
 mod tests;
 
 pub use adapter::{AdapterRunner, SpawnAdapter};
+pub use child_dispatch::ChildDispatchRequest;
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
-pub use child_dispatch::ChildDispatchRequest;
 pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
 
 use crate::template::GitRunner;
@@ -89,9 +89,7 @@ fn parse_brazen_pin(manifest: &str) -> Option<&str> {
         }
         if line.starts_with('[') {
             in_brazen_table = line == "[dependencies.brazen]";
-        } else if in_brazen_table
-            && let Some(rest) = line.strip_prefix("version = \"=")
-        {
+        } else if in_brazen_table && let Some(rest) = line.strip_prefix("version = \"=") {
             return rest.strip_suffix('"');
         }
     }
@@ -183,10 +181,7 @@ pub enum Error {
          binding interpreter — shipped subset is the terminal ref marks); the action is \
          in the closed set but its executor is a tracked follow-on of bl-6a3b"
     )]
-    ActionUnsupported {
-        action: String,
-        event: &'static str,
-    },
+    ActionUnsupported { action: String, event: &'static str },
     #[error("deposit initial user message: {0}")]
     Deposit(#[from] inbox::DepositError),
     #[error("tool {name} schema unreadable at {path}: {source}")]

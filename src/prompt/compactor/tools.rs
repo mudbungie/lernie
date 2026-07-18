@@ -181,7 +181,13 @@ mod tests {
         let dir = repo_with("keep.txt");
         let err = mark_for_deletion(dir.path(), "no/such.md", &RealGit::new()).unwrap_err();
         assert!(
-            matches!(err, Error::Git { op: "mark_for_deletion rm", .. }),
+            matches!(
+                err,
+                Error::Git {
+                    op: "mark_for_deletion rm",
+                    ..
+                }
+            ),
             "{err:?}"
         );
     }

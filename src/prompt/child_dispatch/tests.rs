@@ -43,7 +43,12 @@ impl Launcher for RecordingLauncher {
     }
 }
 
-fn req<'a>(repo: &'a Path, parent: &'a str, wt: &'a Path, goal: &'a str) -> ChildDispatchRequest<'a> {
+fn req<'a>(
+    repo: &'a Path,
+    parent: &'a str,
+    wt: &'a Path,
+    goal: &'a str,
+) -> ChildDispatchRequest<'a> {
     ChildDispatchRequest {
         repo,
         parent_branch: parent,
@@ -169,7 +174,8 @@ fn missing_soul_is_surfaced_as_control_read_before_any_spawn() {
     )
     .unwrap();
     g.run(&author, &["rm", "-r", "-q", "souls"]).unwrap();
-    g.run(&author, &["commit", "-m", "config: no souls"]).unwrap();
+    g.run(&author, &["commit", "-m", "config: no souls"])
+        .unwrap();
     g.run(
         &workspace::repo_git(&ws),
         &["worktree", "remove", "--force", author_str.as_str()],

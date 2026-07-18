@@ -97,7 +97,15 @@ pub(super) fn execute(
             consume(verifier_cr)
         }
         (Event::VerifierReject, Action::Dispatch { role, with, .. }) if role == WORKER_ROLE => {
-            reject(workspace, agent_id, worktree, verifier_cr, results, with.as_deref(), deps)
+            reject(
+                workspace,
+                agent_id,
+                worktree,
+                verifier_cr,
+                results,
+                with.as_deref(),
+                deps,
+            )
         }
         _ => Err(Error::ActionUnsupported {
             action: format!("{action:?}"),
@@ -190,8 +198,11 @@ fn already_gated(
 /// ancestor of `d`. A non-zero exit (or a bad ref) is `Err` — read as "not
 /// an ancestor", never propagated.
 fn is_ancestor(worktree: &Path, ancestor: &str, descendant: &str, git: &dyn GitRunner) -> bool {
-    git.run(worktree, &["merge-base", "--is-ancestor", ancestor, descendant])
-        .is_ok()
+    git.run(
+        worktree,
+        &["merge-base", "--is-ancestor", ancestor, descendant],
+    )
+    .is_ok()
 }
 
 /// Remove a consumed inbox result message.

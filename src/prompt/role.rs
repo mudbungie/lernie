@@ -22,6 +22,10 @@ use crate::prompt::Error;
 use crate::template::GitRunner;
 use std::path::Path;
 
+/// Open-set role validity (§4.3) — the one home the dispatch built-in
+/// and the `lernie dispatch` CLI both consult before spawning.
+pub mod validate;
+
 /// Subject prefix of a child's dispatch commit (§2.5).
 const DISPATCH_PREFIX: &str = "dispatch: ";
 

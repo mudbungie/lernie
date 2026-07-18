@@ -28,14 +28,6 @@ use thiserror::Error;
 
 use crate::config::LoadError;
 
-/// Config-commit `providers.yaml` filename — pinned by ARCH §4.3 (the
-/// config carries the role → (provider, model) mapping), read from the
-/// calling branch's governing config commit (§2.2).
-const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
-/// Filename suffix for soul files (ARCH §4.3 — soul =
-/// `souls/<role>.md` in the governing config commit).
-const SOUL_SUFFIX: &str = ".md";
-
 /// Wire shape of the input. `serde(deny_unknown_fields)` so a
 /// malformed `tool_use.input` surfaces as [`Error::InvalidJson`]
 /// rather than silently dropping fields the model meant to pass.
@@ -97,9 +89,9 @@ pub enum Error {
         source: io::Error,
     },
     /// `providers.yaml` parse / I/O surfaced via the harness's config
-    /// loader.
+    /// loader (constructed by the `From<role::validate::Invalid>` projection).
     #[error("providers.yaml: {0}")]
-    Config(#[from] LoadError),
+    Config(LoadError),
     /// `lernie dispatch <role>` failed to spawn (binary missing,
     /// fork limits, etc.).
     #[error("spawn lernie dispatch {role:?}: {source}")]
@@ -125,6 +117,22 @@ pub enum Error {
     /// Writing the JSON output to stdout failed.
     #[error("write to stdout: {0}")]
     Write(#[source] io::Error),
+}
+
+/// Project the single-home open-set verdict ([`crate::prompt::role::validate::Invalid`])
+/// onto this tool's surface, preserving the variant messages the model
+/// already sees (§3.3). The pre-spawn validity check has one home; this
+/// impl is the tool's view of it, never a second copy of the logic.
+impl From<crate::prompt::role::validate::Invalid> for Error {
+    fn from(inv: crate::prompt::role::validate::Invalid) -> Self {
+        use crate::prompt::role::validate::Invalid;
+        match inv {
+            Invalid::RoleMissing { role, origin } => Error::RoleMissing { role, path: origin },
+            Invalid::SoulMissing { path } => Error::SoulMissing { path },
+            Invalid::Config(e) => Error::Config(e),
+            Invalid::Governing { branch, source } => Error::GoverningConfig { branch, source },
+        }
+    }
 }
 
 /// Trait for invoking `lernie dispatch <role>`. Production wires
@@ -241,7 +249,15 @@ pub fn run<R: Read, W: Write>(
         .into_string()
         .map_err(|_| Error::MissingEnv(super::super::ENV_CONV_BRANCH))?;
 
-    validate::validate_role(&repo_path, &branch_str, &input.role)?;
+    // Open-set validity (§4.3), the single home shared with the CLI:
+    // role listed in the governing config commit + soul present. The `?`
+    // projects an `Invalid` verdict onto this tool's `Error` (below).
+    crate::prompt::role::validate::validate(
+        &repo_path,
+        &branch_str,
+        &input.role,
+        &crate::template::RealGit::new(),
+    )?;
 
     let captured = dispatcher
         .dispatch(&input.role, &repo_path, &branch_str, &input.goal)
@@ -272,8 +288,6 @@ pub fn run<R: Read, W: Write>(
 fn require_env(env: &dyn EnvLookup, key: &'static str) -> Result<OsString, Error> {
     env.get(key).ok_or(Error::MissingEnv(key))
 }
-
-mod validate;
 
 #[cfg(test)]
 mod tests;

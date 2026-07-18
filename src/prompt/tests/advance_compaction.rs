@@ -103,7 +103,14 @@ fn a_compactor_hop_injects_the_builtin_toolset_into_the_request() {
     let rec = RecLauncher::default();
     let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
-    run(ws.path(), AGENT, None, &deps, &mut || Ok(compactor_config())).unwrap();
+    run(
+        ws.path(),
+        AGENT,
+        None,
+        &deps,
+        &mut || Ok(compactor_config()),
+    )
+    .unwrap();
 
     let req: serde_json::Value = serde_json::from_str(
         &std::fs::read_to_string(ws.path().join(format!("steps/{AGENT}/001/request.json")))

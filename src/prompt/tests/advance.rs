@@ -133,15 +133,7 @@ fn already_driven_is_a_clean_noop_without_resolving() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let out = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap();
     assert!(matches!(out, AdvanceOutcome::AlreadyDriven));
 }
@@ -153,15 +145,7 @@ fn empty_workspace_is_nothing_to_do() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let out = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap();
     assert!(matches!(out, AdvanceOutcome::NothingToDo));
 }
@@ -172,15 +156,7 @@ fn terminal_tail_with_empty_inbox_is_the_pin_1_silent_exit() {
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
-    let deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let out = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap();
     assert!(matches!(out, AdvanceOutcome::NothingToDo));
     // No step: no step records appeared, the transcript is untouched.
@@ -200,15 +176,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
     let (sleeper, git) = (StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
     let rec = RecLauncher::default();
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
     assert!(matches!(
@@ -249,15 +217,7 @@ fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
     let (sleeper, git) = (StubSleeper::default(), StubGit::ok());
     let tools = StubToolExecutor::ok();
     let rec = RecLauncher::default();
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tools,
-        ws.path(),
-    );
+    let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
     let AdvanceOutcome::ToolsPending(lease) = out else {

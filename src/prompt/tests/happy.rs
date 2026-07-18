@@ -112,7 +112,6 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-
     // Git sequence: 4 (control resolution from the config commit, §2.2:
     // config-head rev-parse + three `show` reads, all against repo.git)
     // + 1 (branch spawn off config/default) + 3 (dispatch commit:

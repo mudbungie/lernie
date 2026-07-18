@@ -65,7 +65,10 @@ fn a_compactor_result_lands_the_compaction_merge_and_consumes_the_message() {
         subj.contains(&format!("compaction merge [{child}]")),
         "{subj}"
     );
-    assert!(!has_pending_result(&ws, parent).unwrap(), "trigger consumed");
+    assert!(
+        !has_pending_result(&ws, parent).unwrap(),
+        "trigger consumed"
+    );
     // No transcript delivery for the compactor's result.
     assert!(!wt.join(format!("messages/001-{child}.md")).exists());
 }
@@ -118,12 +121,17 @@ fn run_flush_dispatches_a_compactor_when_the_checkpoint_is_due() {
     let wt = fixture::spawn_root(&ws, parent);
     let fx = Fx::new();
     // every_n_commits n=1: the parent already has commits, so it is due.
-    let wf = workflow("events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n    n: 1\n");
+    let wf = workflow(
+        "events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n    n: 1\n",
+    );
     run_flush(&ws, parent, &wt, &wf, &fx.deps()).unwrap();
     // A compactor child was launched through the front door.
     let launched = fx.launcher.launched.borrow();
     assert_eq!(launched.len(), 1);
-    assert!(launched[0].starts_with(&format!("{parent}-")), "{launched:?}");
+    assert!(
+        launched[0].starts_with(&format!("{parent}-")),
+        "{launched:?}"
+    );
 }
 
 #[test]

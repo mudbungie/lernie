@@ -22,8 +22,8 @@
 //! never no-op (`docs/PRINCIPLES.md` "Decline illegal operations").
 
 use crate::config::{Action, Event, Workflow};
-use crate::prompt::inbox::Epitaph;
 use crate::prompt::Error;
+use crate::prompt::inbox::Epitaph;
 use crate::template::GitRunner;
 use std::path::Path;
 
@@ -194,7 +194,10 @@ mod tests {
             runs[0],
             vec!["update-ref", "refs/lernie/abandoned/a-b", "HEAD"]
         );
-        assert_eq!(runs[1], vec!["update-ref", "refs/lernie/notify/a-b", "HEAD"]);
+        assert_eq!(
+            runs[1],
+            vec!["update-ref", "refs/lernie/notify/a-b", "HEAD"]
+        );
     }
 
     #[test]
@@ -220,8 +223,8 @@ mod tests {
     fn unsupported_action_is_declined_loudly() {
         let w = workflow("events:\n  branch_stopped:\n    - dispatch(worker)\n");
         let git = RecGit::default();
-        let err = run_terminal_bindings(&w, Epitaph::Stopped, Path::new("/wt"), "a-b", &git)
-            .unwrap_err();
+        let err =
+            run_terminal_bindings(&w, Epitaph::Stopped, Path::new("/wt"), "a-b", &git).unwrap_err();
         match err {
             Error::ActionUnsupported { action, event } => {
                 assert!(action.contains("Dispatch"), "got {action}");
@@ -238,8 +241,8 @@ mod tests {
             fail: true,
             ..Default::default()
         };
-        let err = run_terminal_bindings(&w, Epitaph::Stopped, Path::new("/wt"), "a-b", &git)
-            .unwrap_err();
+        let err =
+            run_terminal_bindings(&w, Epitaph::Stopped, Path::new("/wt"), "a-b", &git).unwrap_err();
         assert!(matches!(err, Error::Git { .. }), "got {err:?}");
     }
 }

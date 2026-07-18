@@ -78,7 +78,9 @@ fn run_with(
     // Resolve the per-role goal (§2.7): a worker requires `--goal`; a
     // compactor rejects it and uses the boilerplate goal instead.
     let goal_text = match role {
-        ROLE_WORKER => goal.ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?.to_owned(),
+        ROLE_WORKER => goal
+            .ok_or(DispatchCliError::GoalRequired(ROLE_WORKER))?
+            .to_owned(),
         ROLE_COMPACTOR if goal.is_some() => {
             return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
         }
@@ -163,7 +165,14 @@ mod tests {
     #[test]
     fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run_with(ROLE_WORKER, &repo, "20260101-p1", Some("do the thing"), &NoopLauncher).unwrap();
+        run_with(
+            ROLE_WORKER,
+            &repo,
+            "20260101-p1",
+            Some("do the thing"),
+            &NoopLauncher,
+        )
+        .unwrap();
         assert_eq!(sub_count(&repo, "20260101-p1"), 1);
     }
 

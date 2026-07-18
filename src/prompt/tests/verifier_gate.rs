@@ -114,20 +114,65 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
     git.run(&worker_wt, &["add", "-A"]).unwrap();
     git.run(&worker_wt, &["commit", "-m", "work"]).unwrap();
     let wtip = git.run_capture(&worker_wt, &["rev-parse", "HEAD"]).unwrap();
-    deposit_result(&ws, parent, &worker, inbox::Epitaph::FinalResponse, wtip.trim(), Some("done"), &clock)
-        .unwrap();
+    deposit_result(
+        &ws,
+        parent,
+        &worker,
+        inbox::Epitaph::FinalResponse,
+        wtip.trim(),
+        Some("done"),
+        &clock,
+    )
+    .unwrap();
 
     // (1) Parent hop: interpret the worker return under the gate → dispatch
     // a verifier off the worker's terminal ref, hold the worker result.
     let hold = unreachable_adapter();
-    let d1 = deps(&hold, &sleeper, &git, &clock, &id, &tools, &stop, &rec, cfg_root.path());
-    let out = run(&ws, parent, None, &d1, &mut || Ok(gate_cfg("worker", GATE_WORKFLOW))).unwrap();
-    assert!(matches!(out, AdvanceOutcome::NothingToDo), "held, no parent step: {out:?}");
+    let d1 = deps(
+        &hold,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &tools,
+        &stop,
+        &rec,
+        cfg_root.path(),
+    );
+    let out = run(&ws, parent, None, &d1, &mut || {
+        Ok(gate_cfg("worker", GATE_WORKFLOW))
+    })
+    .unwrap();
+    assert!(
+        matches!(out, AdvanceOutcome::NothingToDo),
+        "held, no parent step: {out:?}"
+    );
     // The worker result is still held in the inbox (undelivered).
-    assert!(inbox::inbox_dir(&ws, parent).join(format!("{worker}-001.md")).exists());
+    assert!(
+        inbox::inbox_dir(&ws, parent)
+            .join(format!("{worker}-001.md"))
+            .exists()
+    );
     // A verifier child was launched off the worker's terminal ref.
-    let verifier = rec.calls.borrow().iter().find(|a| **a != worker).cloned().expect("verifier launched");
-    assert!(git.run(&parent_wt, &["merge-base", "--is-ancestor", wtip.trim(), &crate::workspace::agent_ref(&verifier)]).is_ok());
+    let verifier = rec
+        .calls
+        .borrow()
+        .iter()
+        .find(|a| **a != worker)
+        .cloned()
+        .expect("verifier launched");
+    assert!(
+        git.run(
+            &parent_wt,
+            &[
+                "merge-base",
+                "--is-ancestor",
+                wtip.trim(),
+                &crate::workspace::agent_ref(&verifier)
+            ]
+        )
+        .is_ok()
+    );
 
     // (2) Verifier hop: it steps and its stub model emits an APPROVE
     // verdict, returning it to the parent's inbox.
@@ -135,22 +180,69 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         FinishReason::Stop,
         &[Block::Text("APPROVE")],
     ))]);
-    let d2 = deps(&approve, &sleeper, &git, &clock, &id, &tools, &stop, &rec, cfg_root.path());
-    let out = run(&ws, &verifier, None, &d2, &mut || Ok(gate_cfg("verifier", "events: {}\n"))).unwrap();
-    assert!(matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)), "{out:?}");
-    assert!(inbox::inbox_dir(&ws, parent).join(format!("{verifier}-001.md")).exists());
+    let d2 = deps(
+        &approve,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &tools,
+        &stop,
+        &rec,
+        cfg_root.path(),
+    );
+    let out = run(&ws, &verifier, None, &d2, &mut || {
+        Ok(gate_cfg("verifier", "events: {}\n"))
+    })
+    .unwrap();
+    assert!(
+        matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)),
+        "{out:?}"
+    );
+    assert!(
+        inbox::inbox_dir(&ws, parent)
+            .join(format!("{verifier}-001.md"))
+            .exists()
+    );
 
     // (3) Parent hop: interpret the verdict → deliver the held worker
     // result → step to react (stub final response).
     let react = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
-    let d3 = deps(&react, &sleeper, &git, &clock, &id, &tools, &stop, &rec, cfg_root.path());
-    let out = run(&ws, parent, None, &d3, &mut || Ok(gate_cfg("worker", GATE_WORKFLOW))).unwrap();
-    assert!(matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)), "{out:?}");
+    let d3 = deps(
+        &react,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &tools,
+        &stop,
+        &rec,
+        cfg_root.path(),
+    );
+    let out = run(&ws, parent, None, &d3, &mut || {
+        Ok(gate_cfg("worker", GATE_WORKFLOW))
+    })
+    .unwrap();
+    assert!(
+        matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)),
+        "{out:?}"
+    );
 
     // The gate lifted: the worker's result is now in the parent transcript,
     // its work product transferred, and both inbox messages consumed.
     assert!(parent_wt.join(format!("messages/001-{worker}.md")).exists());
-    assert_eq!(std::fs::read_to_string(parent_wt.join("out.txt")).unwrap(), "the work\n");
-    assert!(!inbox::inbox_dir(&ws, parent).join(format!("{worker}-001.md")).exists());
-    assert!(!inbox::inbox_dir(&ws, parent).join(format!("{verifier}-001.md")).exists());
+    assert_eq!(
+        std::fs::read_to_string(parent_wt.join("out.txt")).unwrap(),
+        "the work\n"
+    );
+    assert!(
+        !inbox::inbox_dir(&ws, parent)
+            .join(format!("{worker}-001.md"))
+            .exists()
+    );
+    assert!(
+        !inbox::inbox_dir(&ws, parent)
+            .join(format!("{verifier}-001.md"))
+            .exists()
+    );
 }

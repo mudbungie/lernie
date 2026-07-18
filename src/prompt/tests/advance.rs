@@ -38,7 +38,7 @@ pub(super) fn worker_config() -> WorkerConfig {
         role: "worker".into(),
         model: Model {
             provider: "anthropic".into(),
-            model_id: "claude-sonnet-4-7".into(),
+            model_id: "claude-sonnet-5".into(),
             capabilities: Capabilities(vec![]),
             context_window: 200_000,
         },
@@ -74,7 +74,7 @@ pub(super) fn terminal_tail() -> Vec<(&'static str, String)> {
     vec![
         ("001-user.md", "hi".to_string()),
         (
-            "002-claude-sonnet-4-7.json",
+            "002-claude-sonnet-5.json",
             model_entry(&[Content::Text("final".into())]),
         ),
     ]
@@ -186,7 +186,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
     // Delivered at the boundary, then answered by the new step.
     let delivered = std::fs::read_to_string(wt.join("messages/003-user.md")).unwrap();
     assert!(delivered.contains("again"), "got {delivered:?}");
-    assert!(wt.join("messages/004-claude-sonnet-4-7.json").exists());
+    assert!(wt.join("messages/004-claude-sonnet-5.json").exists());
     // The step record landed at the derived sequence (steps/ was empty).
     assert!(
         ws.path()

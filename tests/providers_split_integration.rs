@@ -16,9 +16,9 @@ use tempfile::TempDir;
 
 const GLOBAL_MODELS: &str = r#"
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native, prompt_caching, streaming]
     context_window: 200000
   claude-haiku-4-5:
@@ -32,7 +32,7 @@ const PER_REPO_ROLES: &str = r#"
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash, read_file]
   compactor:
     provider: anthropic
@@ -69,7 +69,7 @@ fn loads_both_halves_and_cross_validates() {
     assert!(cfg.global.adapter.is_none());
     assert_eq!(cfg.global.models.len(), 2);
     assert_eq!(cfg.per_repo.roles.len(), 2);
-    assert_eq!(cfg.per_repo.roles["worker"].model, "claude-sonnet-4-7");
+    assert_eq!(cfg.per_repo.roles["worker"].model, "claude-sonnet-5");
     assert_eq!(
         cfg.per_repo.roles["worker"].tools,
         vec!["bash", "read_file"]

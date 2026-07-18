@@ -54,9 +54,9 @@ mod tests {
 
     const TWO_MODEL_GLOBAL: &str = r#"
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native]
     context_window: 200000
   claude-haiku-4-5:
@@ -80,7 +80,7 @@ models:
         let r = per_repo(
             r#"
 roles:
-  worker: { provider: anthropic, model: claude-sonnet-4-7 }
+  worker: { provider: anthropic, model: claude-sonnet-5 }
   compactor: { provider: bedrock, model: claude-haiku-4-5 }
 "#,
         );

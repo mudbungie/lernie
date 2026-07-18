@@ -111,7 +111,7 @@ fn tool_use_sse(command: &str) -> String {
     let events = [
         (
             "message_start",
-            serde_json::json!({"type":"message_start","message":{"id":"msg_tool","model":"claude-sonnet-4-7","stop_reason":null,"content":[],"usage":{"input_tokens":2,"output_tokens":0}}}),
+            serde_json::json!({"type":"message_start","message":{"id":"msg_tool","model":"claude-sonnet-5","stop_reason":null,"content":[],"usage":{"input_tokens":2,"output_tokens":0}}}),
         ),
         (
             "content_block_start",
@@ -188,7 +188,7 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
         &dest,
         &[(
             "providers.yaml",
-            "roles:\n  worker:\n    provider: test\n    model: claude-sonnet-4-7\n    tools: [bash]\n  compactor:\n    provider: test\n    model: claude-haiku-4-5\n",
+            "roles:\n  worker:\n    provider: test\n    model: claude-sonnet-5\n    tools: [bash]\n  compactor:\n    provider: test\n    model: claude-haiku-4-5\n",
         )],
     );
 

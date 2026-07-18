@@ -117,11 +117,11 @@ mod tests {
 
     const ARCH_EXAMPLE: &str = r#"
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 200000
+    context_window: 1000000
 "#;
 
     #[test]
@@ -131,8 +131,8 @@ models:
         assert!(warnings.is_empty());
         assert!(m.adapter.is_none());
         assert_eq!(m.models.len(), 1);
-        assert_eq!(m.models["claude-sonnet-4-7"].provider, "anthropic");
-        assert_eq!(m.models["claude-sonnet-4-7"].context_window, 200_000);
+        assert_eq!(m.models["claude-sonnet-5"].provider, "anthropic");
+        assert_eq!(m.models["claude-sonnet-5"].context_window, 1_000_000);
     }
 
     #[test]

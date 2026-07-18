@@ -6,7 +6,7 @@ A git-backed agent harness. Design spec: [`docs/ARCHITECTURE.md`](docs/ARCHITECT
 Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 
-CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on every push and pull request to `main`.
+CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on every push and pull request to `main`. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
 
 ## Quickstart
 
@@ -714,6 +714,12 @@ make install-hooks
 Sets `core.hooksPath` to `.githooks`. Required on every fresh clone — git
 does not track `.git/config`, so the hook is not active until installed.
 
+The Rust toolchain is pinned in `rust-toolchain.toml` (channel `1.95.0`, with
+`rustfmt`, `clippy`, and `llvm-tools-preview`). rustup reads it automatically
+for every `cargo` command in the tree and installs the pinned toolchain on
+first use — no manual `rustup` step. This is what keeps `fmt-check` and
+`lint` from drifting between your machine, another agent's, and CI.
+
 ### Build targets
 
 | Target                | What it does                                          |
@@ -757,12 +763,18 @@ See `bl skill` for the full guide.
 2. **300-line cap on code files.** Docs (`*.md`, `*.txt`), config (`*.toml`,
    `*.yaml`, `*.yml`, `*.json`, `*.lock`), `Makefile`, `.gitignore`,
    `LICENSE`, and anything under `.githooks/` are exempt.
-3. **100% line coverage.** `cargo tarpaulin --fail-under 100` runs on every
-   commit that touches a Cargo project. The tarpaulin version is pinned (see
-   `tarpaulin.toml` and `.github/workflows/ci.yml`) so the denominator means
-   the same thing locally and on CI — newer releases have silently dropped
-   inline `#[cfg(test)] mod tests;` files from the count, weakening the floor.
-   `make coverage` aborts with an install hint if the local version drifts.
+3. **`make check`** on every commit that touches a Cargo project: `fmt-check`
+   (formatting), `lint` (`clippy -D warnings`), and `coverage` (`cargo
+   tarpaulin --fail-under 100`). The hook invokes `make check` rather than
+   re-listing the commands, so the close gate is always exactly what `make
+   check` is — the Makefile is the single source. Formatting and lint drift
+   therefore cannot land invisibly. The toolchain is pinned in
+   `rust-toolchain.toml` and the tarpaulin version in `tarpaulin.toml` (also
+   `.github/workflows/ci.yml`) so `fmt-check`, `lint`, and the coverage
+   denominator mean the same thing locally and on CI — newer tarpaulin
+   releases have silently dropped inline `#[cfg(test)] mod tests;` files from
+   the count, weakening the floor. `make coverage` aborts with an install
+   hint if the local tarpaulin version drifts.
 
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.

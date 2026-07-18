@@ -1,0 +1,23 @@
+# The Rust toolchain every build in this repo uses — the single source of
+# the pin. rustup honours this file for every cargo/rustc invocation made
+# inside the tree, so local agents, the pre-commit close gate, and CI (which
+# triggers the same install, see .github/workflows/ci.yml) all compile,
+# format, and lint under byte-identical rustc / rustfmt / clippy. There is
+# no second home for the version — CI does not name a toolchain; this file
+# governs.
+#
+# Pinned to 1.95.0 (ships rustfmt 1.9.0). An exact pin, not the floating
+# `stable`, for the same lockstep reason as the tarpaulin 0.35.2 pin in
+# tarpaulin.toml: a floating channel lets a rustfmt bump silently reformat
+# the tree and land drift invisibly, and a newer rustc can turn a clean
+# clippy run red — both gate `bl close` now. The pin must stay >= brazen's
+# rust-version (1.85) and support edition 2024; move this file and re-run
+# the gate in lockstep when the toolchain is bumped.
+#
+# `profile = "minimal"` keeps the install lean; the three components are
+# exactly what the gate needs — rustfmt (fmt-check), clippy (lint), and
+# llvm-tools-preview (tarpaulin's llvm coverage engine) — and nothing else.
+[toolchain]
+channel = "1.95.0"
+profile = "minimal"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]

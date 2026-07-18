@@ -250,19 +250,18 @@ mod tests {
 
     #[test]
     fn cascade_only_kills_still_alive_pgids() {
-        // alive_polls=1 means the first all() check sees one alive
-        // (one pid sampled), the second call sees zero. With three
-        // pgids, behavior: first all() check polls all 3 (alive=true,
-        // alive=false on 2nd, false on 3rd) but `all` short-circuits
-        // — so we may not exhaust the budget evenly. Pin instead by
-        // a single pgid so the ordering is deterministic.
+        // A single pgid keeps the poll ordering deterministic (`all`
+        // short-circuits, so multiple pgids would not exhaust the budget
+        // evenly). The deadline is generous — like the sibling
+        // drain-tests' `from_secs(60)` — so the *poll-count* path decides
+        // the outcome, never the wall clock: `new(2)` guarantees `alive`
+        // reports dead on the third poll, so cascade returns via the
+        // all-dead branch in ~2ms and never approaches the deadline. (A
+        // tight 5ms deadline coupled to the 2-poll drain raced under the
+        // coverage runner's instrumentation slowdown, spuriously firing
+        // SIGKILL.)
         let s = RecordingSignaler::new(2);
-        cascade(
-            &[42],
-            &s,
-            Duration::from_millis(5),
-            Duration::from_millis(1),
-        );
+        cascade(&[42], &s, Duration::from_secs(60), Duration::from_millis(1));
         let calls = s.took();
         let kills: Vec<&(&'static str, i32)> =
             calls.iter().filter(|(sig, _)| *sig == "kill").collect();

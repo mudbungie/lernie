@@ -4,6 +4,10 @@ created = 1784337602
 updated = 1784337602
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["design-settled"]
+
+[[blockers]]
+id = "bl-e6d4"
+on = "close"
 +++
 ## Settled design (from bl-3a85, the role design ball — do not re-litigate)
 A role is a pure config-selection key (docs/TAXONOMY.md §1 'Role', docs/ARCHITECTURE.md §4.3): the role set is OPEN — a role is valid iff the governing config commit lists roles.<name> in providers.yaml AND carries souls/<name>.md — and any valid role is dispatchable by any dispatcher, with no constraint relative to the parent's role.

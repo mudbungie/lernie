@@ -12,5 +12,9 @@ on = "close"
 [[blockers]]
 id = "bl-f1a5"
 on = "close"
+
+[[blockers]]
+id = "bl-fc44"
+on = "close"
 +++
 Deliverable 2 of epic bl-8094. Per §9/v0.9: 50 tasks, each with a machine-checkable success criterion (a checker script, not LLM-as-judge), ≥10 per failure category, tagged by category. OPEN (user, from epic body): suite home — in-repo (tests/suite/) vs own repo. Lean in-repo: the suite versions with the code it measures and adds no new repo mechanism — confirm with user before landing. Task content itself deserves user eyes: which failure categories, what task sources.

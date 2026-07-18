@@ -33,8 +33,16 @@ fn verifier_child(
             .git
             .run_capture(&agent_worktree(ws, &v), &["rev-parse", "HEAD"])
             .unwrap();
-        deposit_result(ws, parent, &v, Epitaph::FinalResponse, vtip.trim(), Some(response), &fx.clock)
-            .unwrap();
+        deposit_result(
+            ws,
+            parent,
+            &v,
+            Epitaph::FinalResponse,
+            vtip.trim(),
+            Some(response),
+            &fx.clock,
+        )
+        .unwrap();
     }
     v
 }
@@ -69,8 +77,16 @@ fn a_rejecting_verifier_redispatches_the_worker_and_discards_the_result() {
 
     // Both messages consumed; a fresh worker was dispatched (worker,
     // verifier, re-dispatched worker → three launches).
-    assert!(!inbox_dir(&ws, parent).join(format!("{worker}-001.md")).exists());
-    assert!(!inbox_dir(&ws, parent).join(format!("{verifier}-001.md")).exists());
+    assert!(
+        !inbox_dir(&ws, parent)
+            .join(format!("{worker}-001.md"))
+            .exists()
+    );
+    assert!(
+        !inbox_dir(&ws, parent)
+            .join(format!("{verifier}-001.md"))
+            .exists()
+    );
     assert_eq!(fx.launcher.launched.borrow().len(), 3);
 }
 
@@ -94,7 +110,11 @@ fn an_already_gated_worker_does_not_redispatch_a_verifier() {
     // No third launch: worker + the one in-flight verifier only, and the
     // worker result stays held.
     assert_eq!(fx.launcher.launched.borrow().len(), 2);
-    assert!(inbox_dir(&ws, parent).join(format!("{worker}-001.md")).exists());
+    assert!(
+        inbox_dir(&ws, parent)
+            .join(format!("{worker}-001.md"))
+            .exists()
+    );
 }
 
 #[test]
@@ -128,7 +148,10 @@ fn a_verdict_action_without_an_executor_is_declined() {
     let wt = agent_worktree(&ws, parent);
     let wf = workflow("events:\n  verifier_approve:\n    - notify_ui\n");
     let err = interpret_pending(&ws, parent, &wt, &wf, &fx.deps()).unwrap_err();
-    assert!(matches!(err, crate::prompt::Error::ActionUnsupported { .. }), "{err:?}");
+    assert!(
+        matches!(err, crate::prompt::Error::ActionUnsupported { .. }),
+        "{err:?}"
+    );
 }
 
 #[test]
@@ -157,7 +180,8 @@ fn verifier_reject_honors_a_literal_with_value_as_feedback() {
 #[test]
 fn split_frontmatter_reads_epitaph_and_body() {
     assert_eq!(split_frontmatter("no frontmatter"), (String::new(), None));
-    let (ep, body) = split_frontmatter("---\nepitaph: final-response\nterminal_ref: x\n---\nAPPROVE");
+    let (ep, body) =
+        split_frontmatter("---\nepitaph: final-response\nterminal_ref: x\n---\nAPPROVE");
     assert_eq!(ep, "final-response");
     assert_eq!(body.as_deref(), Some("APPROVE"));
     let (ep2, body2) = split_frontmatter("---\nepitaph: stopped\n---\n");

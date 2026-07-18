@@ -281,7 +281,13 @@ pub(super) fn run_exchange(
     terminal::finish(repo, &conv_id, &worktree_path, epitaph, deps)?;
     // §6 collapse: the root evaluates its terminal-lifecycle bindings
     // (`branch_stopped` → mark_abandoned / notify_ui) too.
-    workflow_actions::run_terminal_bindings(resolved.workflow, epitaph, &worktree_path, &conv_id, deps.git)?;
+    workflow_actions::run_terminal_bindings(
+        resolved.workflow,
+        epitaph,
+        &worktree_path,
+        &conv_id,
+        deps.git,
+    )?;
 
     // Exit protocol (§2.11): the result deposit landed at the terminal
     // event above; now release own lock, then spawn a driver at own

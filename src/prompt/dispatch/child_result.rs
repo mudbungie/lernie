@@ -71,7 +71,9 @@ pub(super) fn interpret_pending(
     for (cr, &event) in results.iter().zip(&events) {
         if matches!(event, Event::VerifierApprove | Event::VerifierReject) {
             for action in child_actions(workflow, event) {
-                verifier::execute(&action, event, workspace, agent_id, worktree, cr, &results, deps)?;
+                verifier::execute(
+                    &action, event, workspace, agent_id, worktree, cr, &results, deps,
+                )?;
             }
         }
     }

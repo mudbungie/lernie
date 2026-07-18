@@ -34,7 +34,7 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    `LERNIE_HOME`, if set, collapses both roots to that one directory.
    Re-runs are idempotent: directory creation uses `mkdir -p`; existing
    config files are kept.
-2. Installs `lernie` and `lernie-ui-egui` into `$INSTALL_PREFIX/bin`
+2. Installs `lernie` and `agent-eval` into `$INSTALL_PREFIX/bin`
    with `install -m 0755` (atomic overwrite, no symlinks). Make sure
    that directory is on your `PATH`.
 3. Installs the provider adapter — brazen's `bz` — with
@@ -61,7 +61,7 @@ own config (`~/.config/brazen/config.toml`; inspect with
 lernie references a provider *row* by name and never sees credential
 material (ARCH §4.1).
 
-`make uninstall` removes the `lernie`/`lernie-ui-egui` binaries; `bz`
+`make uninstall` removes the `lernie`/`agent-eval` binaries; `bz`
 (installed via cargo) is removed with `cargo uninstall brazen`. The
 harness homes (the config and data roots, holding config and
 workspaces) stay put — clean them up manually if you want a true
@@ -636,87 +636,15 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
 
 ## UI (v0.5)
 
-`lernie-ui-egui` is the desktop frontend: an egui/eframe window that renders
-a workspace and issues user actions via `lernie <subcommand>`. Per
-[ARCH §3.5](docs/ARCHITECTURE.md), it is stateless — every render is a pure
-function of filesystem state — and one of potentially several frontends
-(a future `lernie-ui-web` would share the pure-Rust view-model layer).
-
-On startup, the binary loads the current git history of the target
-workspace (ARCH §2.2 — the dir with `repo.git/`, `steps/`, `inbox/`,
-and the `agents/` worktrees) and renders a two-tier view (ARCH §7.1):
-the config lineage (`config/default`) as the trunk, and every `agents/*`
-branch below it as a **descent tree** — agents nested by their
-hyphenated id (`<a>`, `<a>-<b>`, …, §2.3), not a flat list. Each agent
-row carries its §3.5 state badge, the two ref-derived marks
-(declined-transfer, budget-exhausted), a pending-message indicator when
-its inbox is non-empty, and a truncated `messages[0].content` preview
-pulled from `steps/<agent-id>/001/request.json`; each branch commit
-surfaces by subject, so delivery and work-product-transfer commits are
-legible. If the tree can't be read, a placeholder view is shown instead.
-
-Four pure-Rust modules inside the crate (no egui dep on the view-model
-side, reusable by a future `lernie-ui-web`) back the UI:
-
-- `fs_watcher` — tracks the §3.5 workspace paths via `notify` and
-  coalesces change events. The watched set covers the workspace-root
-  `steps/` and `inbox/` trees (outside every worktree per ARCH §2.2 /
-  §2.11), per-agent worktree contents under `agents/<agent-id>/`
-  (`goal.md`, `soul.md`, `summary/`, `messages/`, `descriptions/`,
-  `skills/`), and the bare repository's refs (`repo.git/HEAD`,
-  `repo.git/refs/`). Filesystem events drive the re-render tick; the
-  renderer is a pure function of on-disk state at that tick (no
-  in-memory accumulator), so a missed event at most delays a frame.
-- `cli_outbound` — the frontend's sole command surface: `Cli::run(args)`
-  spawns `lernie <subcommand>` with stream-chunked stdout/stderr and
-  aggressive SIGTERM-then-SIGKILL cleanup on drop (ARCH §2.9). Override
-  the binary via `LERNIE_BINARY`; default is `lernie` on `PATH`.
-- `git_tree` — resolves the workspace path to its bare `repo.git`
-  (ARCH §2.2) and produces a view-model (`GitTree`) independent of
-  egui: the config lineage's first-parent log plus every agent
-  (`git for-each-ref refs/heads/agents/`, per PRINCIPLES.md
-  single-source-of-truth) as a flat `Vec<Agent>`, from which the render
-  tree is derived by hyphenated descent (`descent_order`, §2.3 — never
-  stored). The user-message preview is read from
-  `<workspace>/steps/<agent-id>/001/request.json` on disk. Submodules
-  layer the live indicators: streaming text folded from the latest
-  step's `response.json` JSONL (`text_delta` events, ARCH §4.4); the
-  §3.5 **agent-state classification** — `live` / `in_flight` /
-  `quiescent` / `stopped` — from two observations that are deliberately
-  not collapsed (ARCH §2.11), the executor-lock probe (`/proc` scan for
-  a holder of the agent's inbox-directory fd, mirroring the harness's
-  own `stop::discover`) and the `response.json` writer-fd probe, plus
-  the §4.4 terminal segment (`finish` ⇒ quiescent, `error`/no-`end` ⇒
-  stopped); the two ref-derived marks (`refs/lernie/conflicted/*`,
-  `refs/lernie/budget-exhausted/*`); pending-message counts from the
-  inbox listing; and tool-call pulses derived from
-  `tools/<tool-id>/input.json` present without `output.json` (ARCH
-  §3.3 in-progress-is-derived-state). A thin egui widget in the same
-  crate renders it. All state is on-disk-derived; no sidecars
-  (PRINCIPLES.md single-source-of-truth).
-- `actions` — the user-action surface: `ActionsState` holds the
-  in-progress prompt input and selected agent (in-memory only per
-  §3.5), and `dispatch_new_prompt` / `dispatch_stop` build the argv for
-  `lernie prompt <workspace> <message>` / `lernie stop <workspace>
-  <agent-id>` and invoke `cli_outbound`. Enable/disable derivation
-  (`new_prompt_enabled`, `stop_enabled`) is a pure function of the
-  input string and the agent list — Stop is offered for a **live**
-  agent (`live` or `in_flight`, the states with a driver holding the
-  lock), since a stop targets a live executor and is wanted during tool
-  execution too (§2.9). Per the §2.9 amendment landed in bl-abf3, there
-  is no user-facing "resume" — continuing a stopped agent is `lernie
-  message` (the deposit starts a driver, §2.11) or fork-from-history.
-
-```
-lernie-ui-egui --repo /path/to/my-conversation
-```
-
-From a source checkout, `make ui REPO=/path/to/my-conversation` does the
-same via `cargo run --bin lernie-ui-egui` and is what contributors
-typically use during development.
-
-egui is winit-based; its only runtime deps are the X11/Wayland libs already
-present on any Linux desktop. No `apt install` step is required.
+The desktop frontend lives in its own repository, `lernie-ui-egui`: an
+egui/eframe window that renders a workspace and issues user actions via
+`lernie <subcommand>`. It composes on lernie's public surfaces only —
+the CLI and the on-disk workspace layout (ARCH §3.5, §7.1) — and takes
+no Cargo dependency on this crate, so it builds, versions, and installs
+independently (`make install` there drops `lernie-ui-egui` next to
+`lernie`). Keeping frontends out of this workspace is deliberate:
+lernie ships as a composable component, and anything that composes it
+(a GUI, a web view) lives outside it and meets it at those surfaces.
 
 ## Evaluation: archival and the task suite (§9)
 
@@ -799,11 +727,10 @@ does not track `.git/config`, so the hook is not active until installed.
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
-| `make ui REPO=<path>`  | Launch `lernie-ui-egui` against an existing workspace via `cargo run`        |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`lernie-ui-egui` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree; `LERNIE_HOME` collapses both |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree; `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow

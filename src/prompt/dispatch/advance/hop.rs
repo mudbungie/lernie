@@ -16,9 +16,9 @@ use super::super::{
 use crate::config::Event;
 use crate::prompt::compactor;
 use crate::prompt::inbox::Epitaph;
-use crate::prompt::workflow_actions;
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, next_step_seq, step_dir_rel};
+use crate::prompt::workflow_actions;
 use crate::prompt::{Deps, Error};
 use brazen::Content;
 use model_call::ModelCall;

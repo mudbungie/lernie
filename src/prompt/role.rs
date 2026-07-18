@@ -112,8 +112,14 @@ mod tests {
 
     #[test]
     fn parse_role_reads_the_role_token() {
-        assert_eq!(parse_role("dispatch: compactor [a-b]").as_deref(), Some("compactor"));
-        assert_eq!(parse_role("dispatch: worker [a-b-c]").as_deref(), Some("worker"));
+        assert_eq!(
+            parse_role("dispatch: compactor [a-b]").as_deref(),
+            Some("compactor")
+        );
+        assert_eq!(
+            parse_role("dispatch: worker [a-b-c]").as_deref(),
+            Some("worker")
+        );
     }
 
     #[test]
@@ -128,7 +134,10 @@ mod tests {
         let role = derive(Path::new("/wt"), "termref", "p-1-c-2", &git).unwrap();
         assert_eq!(role.as_deref(), Some("verifier"));
         let args = git.args.borrow();
-        assert!(args.iter().any(|a| a == "^dispatch: .+ \\[p-1-c-2\\]$"), "{args:?}");
+        assert!(
+            args.iter().any(|a| a == "^dispatch: .+ \\[p-1-c-2\\]$"),
+            "{args:?}"
+        );
         assert!(args.iter().any(|a| a == "termref"));
     }
 
@@ -143,6 +152,15 @@ mod tests {
         let mut git = SubjGit::returning("");
         git.fail = true;
         let err = derive(Path::new("/wt"), "ref", "a-b", &git).unwrap_err();
-        assert!(matches!(err, Error::Git { op: "role derive log", .. }), "{err:?}");
+        assert!(
+            matches!(
+                err,
+                Error::Git {
+                    op: "role derive log",
+                    ..
+                }
+            ),
+            "{err:?}"
+        );
     }
 }

@@ -60,7 +60,11 @@ pub fn due(cfg: Option<&CompactionConfig>, state: &CheckpointState) -> bool {
     let Some(cfg) = cfg else {
         return false;
     };
-    let threshold = |v: u64| cfg.intermediate.n.is_some_and(|n| n > 0 && v >= u64::from(n));
+    let threshold = |v: u64| {
+        cfg.intermediate
+            .n
+            .is_some_and(|n| n > 0 && v >= u64::from(n))
+    };
     match cfg.intermediate.trigger {
         CompactionTrigger::EveryNCommits => threshold(u64::from(state.commits_since_checkpoint)),
         CompactionTrigger::EveryTSeconds => threshold(state.seconds_since_checkpoint),
@@ -90,11 +94,7 @@ pub fn state(
 
 /// Count commits on `HEAD` after `last` (exclusive), or the whole branch
 /// when `last` is `None`.
-fn commits_since(
-    worktree: &Path,
-    last: Option<&str>,
-    git: &dyn GitRunner,
-) -> Result<u32, Error> {
+fn commits_since(worktree: &Path, last: Option<&str>, git: &dyn GitRunner) -> Result<u32, Error> {
     let range = match last {
         Some(sha) => format!("{sha}..HEAD"),
         None => "HEAD".to_string(),

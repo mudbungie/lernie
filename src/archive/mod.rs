@@ -39,6 +39,9 @@ const SLICES: [&str; 2] = ["steps", "inbox"];
 /// Every way [`bundle`] or [`replay`] can fail.
 #[derive(Debug, thiserror::Error)]
 pub enum ArchiveError {
+    /// Layout guard decline (§10): not a workspace, or the retired layout.
+    #[error(transparent)]
+    Layout(#[from] workspace::LayoutError),
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
     #[error("git {op}: {source}")]
@@ -60,12 +63,13 @@ pub enum ArchiveError {
 }
 
 /// Archive the agent subtree rooted at `agent_id` into `out_dir` (§9.2):
-/// one `git bundle` of `agents/<agent_id>` and its hyphen-descendants
-/// (with all ancestry they reach — the governing config commit included,
-/// §2.2), plus the `steps/<id>*` and `inbox/<id>*` slices.
-///
-/// The bundle's refs are enumerated with `git branch --list` against the
-/// bare `repo.git` (the pattern `agents/<id>` plus `agents/<id>-*` is
+/// one `git bundle` of `agents/<agent_id>` and its hyphen-descendants (with
+/// all ancestry they reach — the governing config commit included, §2.2),
+/// plus the `steps/<id>*` and `inbox/<id>*` slices.
+/// The layout is guarded first ([`workspace::require`], §10) — the retired
+/// layout is declined before any git op, like every verb. The bundle's
+/// refs are then enumerated with `git branch --list` against the bare
+/// `repo.git` (the pattern `agents/<id>` plus `agents/<id>-*` is
 /// the §2.3 descent namespace); an agent id that matches no branch is
 /// [`ArchiveError::UnknownAgent`].
 pub fn bundle(
@@ -74,6 +78,7 @@ pub fn bundle(
     out_dir: &Path,
     git: &dyn GitRunner,
 ) -> Result<(), ArchiveError> {
+    workspace::require(ws)?;
     let repo = workspace::repo_git(ws);
     let refs = subtree_refs(&repo, agent_id, git)?;
     if refs.is_empty() {

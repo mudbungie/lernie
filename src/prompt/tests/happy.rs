@@ -50,7 +50,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let step_dir = repo.path().join("steps/ct-1-deadbeef/001");
     let request: serde_json::Value =
         serde_json::from_slice(&std::fs::read(step_dir.join("request.json")).unwrap()).unwrap();
-    assert_eq!(request["model"], "claude-sonnet-4-7");
+    assert_eq!(request["model"], "claude-sonnet-5");
     // Goal is prepended to the soul and rides as a canonical
     // `Content::Text` in `system[0]` (§2.8, §4.4 typed request).
     assert_eq!(
@@ -186,16 +186,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // sealed staging file is renamed to messages/002-<model-id>.json —
     // the origin token is the model that authored it (§2.3) — and
     // committed.
-    assert_eq!(
-        runs[12].1,
-        vec!["add", "messages/002-claude-sonnet-4-7.json"]
-    );
+    assert_eq!(runs[12].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
     assert_eq!(runs[13].1[0], "commit");
-    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-4-7"));
+    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-5"));
     assert!(runs[13].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
     // canonical model-output blocks (the "hi there" text block).
-    let entry = worktree.join("messages/002-claude-sonnet-4-7.json");
+    let entry = worktree.join("messages/002-claude-sonnet-5.json");
     let blocks: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&entry).unwrap()).unwrap();
     assert_eq!(blocks[0]["type"], "text");

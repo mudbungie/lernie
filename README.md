@@ -145,6 +145,15 @@ context).
 actionable error, not migrated — create a fresh workspace with
 `lernie new`.
 
+**First-run smoke test (required).** `lernie new` authors the default
+`providers.yaml` with a concrete model id, but validates it against
+nothing — id validity is brazen's fact, and lernie runs no model-list
+reconciliation (ARCH §4.2, the settled stance). A wrong id surfaces only
+at the first live model call. The required next step after creating a
+workspace is therefore a live `lernie prompt` (see the quick start
+above): it is the cheapest — and, by that stance, only — check that the
+authored id actually resolves on the wire.
+
 ## Authoring config commits
 
 `lernie new` authors a workspace's *first* config commit. Every later

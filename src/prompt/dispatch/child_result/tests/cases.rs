@@ -150,7 +150,7 @@ fn run_flush_is_a_noop_without_a_compaction_block() {
 /// config root.
 fn write_models(fx: &Fx) {
     let yaml = "adapter: /bin/true\nmodels:\n  \
-        claude-sonnet-4-7: {provider: anthropic, model_id: claude-sonnet-4-7, \
+        claude-sonnet-5: {provider: anthropic, model_id: claude-sonnet-5, \
         capabilities: [tool_use_native], context_window: 200000}\n  \
         claude-haiku-4-5: {provider: anthropic, model_id: claude-haiku-4-5, \
         capabilities: [tool_use_native], context_window: 200000}\n";
@@ -203,7 +203,7 @@ fn resolve_defaults_a_root_agent_to_the_worker_role() {
     write_models(&fx);
     let cfg = resolve_worker(&ws, ConfigSource::Agent(root), &fx.deps()).unwrap();
     assert_eq!(cfg.role, "worker");
-    assert_eq!(cfg.model.model_id, "claude-sonnet-4-7");
+    assert_eq!(cfg.model.model_id, "claude-sonnet-5");
 }
 
 #[test]

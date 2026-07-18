@@ -555,7 +555,7 @@ The flavor being a property of the artifact — not of config — is the severab
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash, read_file]
     grant:                        # v1.1 — omitted means empty (no authority)
       fs:  [rw:.]                 # <mode>:<subtree>, mode in {r, rw}, worktree-relative
@@ -603,16 +603,18 @@ A **model** is (provider row, model_id, capabilities). Capabilities is an extens
 ```yaml
 adapter: /usr/local/bin/bz        # optional override; default is `bz` on PATH (§4.4)
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic           # a brazen provider-row name
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 200000
+    context_window: 1000000
 ```
 
 Capabilities are code-backed (each capability has a behavior implementation in the harness). Capabilities are extend-only: once declared, they are never removed from the registry, but the set on a given model may shrink if the provider removes support. The loader seeds a known-name registry from the names that appear in this spec; an unknown name on load produces a warning, never an error, so a new provider may declare new capabilities without blocking parsing.
 
 Model-id validity is brazen's concern, not lernie's: `bz` resolves the id against its per-provider model cache (refreshed by `bz --list-models`) and otherwise attempts it verbatim on the wire. lernie performs no model-list calls of its own; `models.yaml` carries only the facts lernie *acts on* (capabilities, context window), not a mirror of what the provider serves.
+
+**No id reconciliation — the settled stance, and its smoke-test consequence.** A concrete id is hand-authored in two homes — the `models:` entry here and a role's `model:` in a config's `providers.yaml` (§4.3), cross-validated against each other at load (the role's model must be a key in this file). lernie reconciles the id against nothing further: there is no `bz --list-models` check at author or load time, and no capability-profile indirection that resolves the newest matching id from the provider's catalog. Both are severable enhancements deliberately not built (deferred, §11); id validity is brazen's fact. The consequence is deliberate: a wrong id — a typo, or a model that was never real or has been retired — is caught only at the **first live model call**, where brazen returns a not-found error and the harness declines loudly (`docs/PRINCIPLES.md` "Decline illegal operations") rather than degrading silently. A live `lernie prompt` is therefore the **required smoke test** after `lernie new`: it is the first — and, by this stance, only — check that the authored ids actually resolve on the wire. (Every "shipped" claim that rode wire-mocked tests validated the harness, never an id; this is why the smoke test is a workflow requirement, not an optional nicety.)
 
 ### 4.3 Role-based model assignment
 
@@ -622,7 +624,7 @@ Agent roles specify which model to use. This allows cheap models for compaction 
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash, read_file]
   compactor:
     provider: anthropic

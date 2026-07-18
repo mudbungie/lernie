@@ -87,7 +87,7 @@ fn run_surfaces_invalid_tool_input_json_delta_at_content_stop() {
             .any(|(_, args)| args.first().map(String::as_str) == Some("add")
                 && args
                     .get(1)
-                    .is_some_and(|a| a.ends_with("-claude-sonnet-4-7.json"))),
+                    .is_some_and(|a| a.ends_with("-claude-sonnet-5.json"))),
         "no model-output transcript commit on a failed model call"
     );
 }

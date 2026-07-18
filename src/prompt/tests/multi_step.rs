@@ -139,11 +139,8 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // results). Counters are max-present-plus-one from the messages/
     // listing, so they never collide with the step number. The model
     // output's origin token is the authoring model id (§2.3).
-    assert_eq!(
-        runs[12].1,
-        vec!["add", "messages/002-claude-sonnet-4-7.json"]
-    );
-    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-4-7"));
+    assert_eq!(runs[12].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
+    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-5"));
     // A tool commit stages the whole worktree (`git add -A`, §2.3) so any
     // worktree side effect the tool produced lands with its result entry.
     assert_eq!(runs[14].1, vec!["add", "-A"]);
@@ -153,11 +150,8 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // commits), then commits its own model-output entry (004).
     assert_eq!(runs[16].1, vec!["status", "--porcelain", "--", "messages"]);
     assert_eq!(runs[17].1, vec!["rev-parse", "HEAD"]);
-    assert_eq!(
-        runs[18].1,
-        vec!["add", "messages/004-claude-sonnet-4-7.json"]
-    );
-    assert!(runs[19].1[2].contains("transcript 004: claude-sonnet-4-7"));
+    assert_eq!(runs[18].1, vec!["add", "messages/004-claude-sonnet-5.json"]);
+    assert!(runs[19].1[2].contains("transcript 004: claude-sonnet-5"));
     // The terminal result deposit reads the branch tip (§2.6); no
     // merge-back follows.
     assert_eq!(runs[20].1, vec!["rev-parse", "HEAD"]);

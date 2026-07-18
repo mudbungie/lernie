@@ -47,9 +47,9 @@ impl IdGen for FixedIdGen {
 /// context windows only; endpoints and auth are brazen's (§4.1).
 pub(super) const VALID_GLOBAL_MODELS_YAML: &str = r#"
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native]
     context_window: 200000
 "#;
@@ -59,7 +59,7 @@ pub(super) const VALID_PER_REPO_PROVIDERS_YAML: &str = r#"
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash, read_file]
 "#;
 

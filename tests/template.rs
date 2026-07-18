@@ -121,7 +121,7 @@ fn providers_yaml_is_roles_only_and_validates() {
     assert!(per_repo.roles.contains_key("worker"));
     assert!(per_repo.roles.contains_key("compactor"));
     assert_eq!(per_repo.roles["worker"].provider, "anthropic");
-    assert_eq!(per_repo.roles["worker"].model, "claude-sonnet-4-7");
+    assert_eq!(per_repo.roles["worker"].model, "claude-sonnet-5");
 }
 
 #[test]

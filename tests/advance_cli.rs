@@ -26,7 +26,7 @@ fn lernie_bin() -> &'static str {
 
 const HAPPY_SSE: &str = concat!(
     "event: message_start\n",
-    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_a\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
+    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_a\",\"model\":\"claude-sonnet-5\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
     "event: content_block_start\n",
     "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
     "event: content_block_delta\n",
@@ -42,7 +42,7 @@ const HAPPY_SSE: &str = concat!(
 /// A `tool_use` completion: run `echo BATON-OK` through the bash tool.
 const TOOL_USE_SSE: &str = concat!(
     "event: message_start\n",
-    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_t\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
+    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_t\",\"model\":\"claude-sonnet-5\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
     "event: content_block_start\n",
     "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_01\",\"name\":\"bash\",\"input\":{}}}\n\n",
     "event: content_block_delta\n",
@@ -85,9 +85,9 @@ fn write_global_models(harness: &Path) {
         harness.join("models.yaml"),
         "\
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: test
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native]
     context_window: 200000
   claude-haiku-4-5:
@@ -116,7 +116,7 @@ const ROLES_YAML: &str = "\
 roles:
   worker:
     provider: test
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash]
   compactor:
     provider: test
@@ -211,9 +211,9 @@ fn message_launches_a_detached_advance_chain_that_batons_through_tools() {
     let messages = dest.join("agents").join(&conv).join("messages");
     let deadline = Duration::from_secs(120);
     wait_for(&messages.join("003-user.md"), deadline);
-    wait_for(&messages.join("004-claude-sonnet-4-7.json"), deadline);
+    wait_for(&messages.join("004-claude-sonnet-5.json"), deadline);
     wait_for(&messages.join("005-tool.json"), deadline);
-    wait_for(&messages.join("006-claude-sonnet-4-7.json"), deadline);
+    wait_for(&messages.join("006-claude-sonnet-5.json"), deadline);
 
     let tool_entry = fs::read_to_string(messages.join("005-tool.json")).unwrap();
     assert!(tool_entry.contains("BATON-OK"), "got {tool_entry:?}");

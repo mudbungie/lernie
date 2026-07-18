@@ -75,7 +75,7 @@ fn run_rejects_when_worker_role_missing() {
 roles:
   compactor:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
 "#;
     let repo = scaffold_repo(no_worker, Some("body"));
     let err =

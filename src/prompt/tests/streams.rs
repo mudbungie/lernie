@@ -48,7 +48,7 @@ pub(super) fn stream_of(reason: FinishReason, blocks: &[Block<'_>]) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend(line(&Event::message_start(
         Some("msg_x".into()),
-        Some("claude-sonnet-4-7".into()),
+        Some("claude-sonnet-5".into()),
         Role::Assistant,
     )));
     for (idx, block) in blocks.iter().enumerate() {
@@ -95,7 +95,7 @@ pub(super) fn error_stream(kind: ErrorKind, message: &str) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend(line(&Event::message_start(
         Some("msg_x".into()),
-        Some("claude-sonnet-4-7".into()),
+        Some("claude-sonnet-5".into()),
         Role::Assistant,
     )));
     out.extend(line(&Event::Error(CanonicalError {

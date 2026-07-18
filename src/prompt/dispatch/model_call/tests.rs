@@ -146,8 +146,8 @@ fn build_request_is_a_typed_canonical_request() {
         description: None,
         input_schema: serde_json::json!({"type": "object"}),
     };
-    let req = build_request("claude-sonnet-4-7", "sys", vec![], vec![tool.clone()], 4096);
-    assert_eq!(req.model, "claude-sonnet-4-7");
+    let req = build_request("claude-sonnet-5", "sys", vec![], vec![tool.clone()], 4096);
+    assert_eq!(req.model, "claude-sonnet-5");
     assert_eq!(req.max_tokens, Some(4096));
     assert_eq!(req.system, Some(vec![Content::Text("sys".into())]));
     assert_eq!(req.tools, vec![tool]);

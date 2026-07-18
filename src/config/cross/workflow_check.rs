@@ -53,7 +53,7 @@ mod tests {
             "worker".to_string(),
             RoleAssignment {
                 provider: "anthropic".to_string(),
-                model: "claude-sonnet-4-7".to_string(),
+                model: "claude-sonnet-5".to_string(),
                 tools: Vec::new(),
             },
         );

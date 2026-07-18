@@ -38,7 +38,7 @@ const INHERITED_GIT_ENV: &[&str] = &[
 
 const HAPPY_SSE: &str = concat!(
     "event: message_start\n",
-    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_r\",\"model\":\"claude-sonnet-4-7\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
+    "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_r\",\"model\":\"claude-sonnet-5\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
     "event: content_block_start\n",
     "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
     "event: content_block_delta\n",
@@ -90,9 +90,9 @@ fn write_global_models(harness: &Path) {
         harness.join("models.yaml"),
         "\
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: test
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native]
     context_window: 200000
   claude-haiku-4-5:
@@ -136,7 +136,7 @@ fn scaffold(dest: &Path, harness: &Path) {
 roles:
   worker:
     provider: test
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
   compactor:
     provider: test
     model: claude-haiku-4-5

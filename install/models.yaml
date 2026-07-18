@@ -18,11 +18,11 @@
 # entries.
 
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 200000
+    context_window: 1000000
   claude-haiku-4-5:
     provider: anthropic
     model_id: claude-haiku-4-5

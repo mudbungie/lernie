@@ -121,7 +121,7 @@ mod tests {
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
     tools: [bash, read_file]
   compactor:
     provider: anthropic
@@ -134,7 +134,7 @@ roles:
         let p = PerRepoProviders::load(f.path()).unwrap();
         assert_eq!(p.roles.len(), 2);
         assert_eq!(p.roles["worker"].provider, "anthropic");
-        assert_eq!(p.roles["worker"].model, "claude-sonnet-4-7");
+        assert_eq!(p.roles["worker"].model, "claude-sonnet-5");
         // The role's `tools:` list (ARCH §4.3) parses; an omitted list
         // defaults empty (the compactor's toolset is built-in, §2.7).
         assert_eq!(p.roles["worker"].tools, vec!["bash", "read_file"]);
@@ -161,7 +161,7 @@ providers:
 roles:
   worker:
     provider: anthropic
-    model: claude-sonnet-4-7
+    model: claude-sonnet-5
 "#;
         let f = write_yaml(yaml);
         let err = PerRepoProviders::load(f.path()).unwrap_err();
@@ -178,9 +178,9 @@ roles:
     fn rejects_legacy_models_block() {
         let yaml = r#"
 models:
-  claude-sonnet-4-7:
+  claude-sonnet-5:
     provider: anthropic
-    model_id: claude-sonnet-4-7
+    model_id: claude-sonnet-5
     capabilities: []
     context_window: 1000
 "#;

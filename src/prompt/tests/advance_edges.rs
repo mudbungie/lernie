@@ -205,7 +205,7 @@ fn unpaired_tool_use_is_declined_loudly() {
     let tail = vec![
         ("001-user.md", "hi".to_string()),
         (
-            "002-claude-sonnet-4-7.json",
+            "002-claude-sonnet-5.json",
             model_entry(&[Content::ToolUse {
                 id: "t1".into(),
                 name: "bash".into(),

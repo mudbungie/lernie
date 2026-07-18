@@ -80,7 +80,7 @@ fn make_install_lays_down_skeleton_idempotently() {
     let models = home.path().join("models.yaml");
     let body = std::fs::read_to_string(&models).unwrap();
     assert!(body.contains("provider: anthropic"));
-    assert!(body.contains("claude-sonnet-4-7"));
+    assert!(body.contains("claude-sonnet-5"));
     assert!(
         !body.contains("ANTHROPIC_API_KEY"),
         "auth material must not live in models.yaml (§4.1)"

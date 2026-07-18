@@ -1,9 +1,13 @@
 +++
 title = "epic: workspace substrate — config branches, agents/* refs, no main (§2.2–§2.3 physical)"
 created = 1783917121
-updated = 1784336887
+updated = 1784336892
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["epic"]
+
+[[blockers]]
+id = "bl-6572"
+on = "close"
 +++
 ## Scope
 The spec's core physical model is not yet the shipped one. Shipped: lernie new scaffolds a per-conversation repo with git init -b main; agent branches are bare (<conv-id>, <parent>-<sub-id>); control files live in the worktree. Target (§2.2–§2.3): one repo per workspace at <data-root>/workspaces/<workspace>/ (bare repo.git), config branches config/<name> with no main, agent refs agents/<agent-id>, worktrees as siblings under agents/, control read from the governing config commit (nearest config/* ancestor), dispatch commit removes control files from the agent tree, config-commit authoring as a harness-assisted user act.

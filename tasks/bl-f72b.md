@@ -8,6 +8,10 @@ tags = ["design-settled"]
 [[blockers]]
 id = "bl-e6d4"
 on = "close"
+
+[[blockers]]
+id = "bl-92ec"
+on = "close"
 +++
 ## Settled design (from bl-3a85, the role design ball — do not re-litigate)
 A role is a pure config-selection key (docs/TAXONOMY.md §1 'Role', docs/ARCHITECTURE.md §4.3): the role set is OPEN — a role is valid iff the governing config commit lists roles.<name> in providers.yaml AND carries souls/<name>.md — and any valid role is dispatchable by any dispatcher, with no constraint relative to the parent's role.

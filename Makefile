@@ -31,13 +31,10 @@ PATH_BINARIES     := lernie agent-eval
 # home is the `brazen = "=<pin>"` dependency in Cargo.toml; this derives
 # from it (the code-side guard derives from the same line).
 BRAZEN_PIN        := $(shell sed -n 's/^brazen = "=\([^"]*\)"$$/\1/p' Cargo.toml)
-# Subdirectories laid down on first install, by lifetime (ARCH §2.2):
-# config-lifetime templates under the config root, machine-populated
-# pools and the workspaces tree under the data root. (The v0.3 frozen
-# `agents/` profile pool is retired: the fork is the freeze, §2.2 —
-# configs live as config commits inside each workspace.)
-CONFIG_DIRS       := workflows
-DATA_DIRS         := tools skills workspaces
+# The harness-root skeleton (config-lifetime templates + machine-populated
+# pools and trees, ARCH §2.2) is founded by `lernie prime`, invoked below —
+# the single source of truth for what a ready installation carries. The
+# Makefile no longer enumerates the subdirs or re-copies the pools.
 
 all: check
 
@@ -95,8 +92,6 @@ install-hooks:
 # rotated credentials and hand-edited entries survive a re-install.
 install: release
 	@mkdir -p "$(INSTALL_BIN)"
-	@for d in $(CONFIG_DIRS); do mkdir -p "$(LERNIE_CONFIG_HOME)/$$d"; done
-	@for d in $(DATA_DIRS); do mkdir -p "$(LERNIE_DATA_HOME)/$$d"; done
 	@for bin in $(PATH_BINARIES); do \
 		install -m 0755 "target/release/$$bin" "$(INSTALL_BIN)/$$bin"; \
 		echo "installed $(INSTALL_BIN)/$$bin"; \
@@ -104,20 +99,14 @@ install: release
 	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
 	@echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"
 	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked
-	@if [ ! -e "$(LERNIE_CONFIG_HOME)/models.yaml" ]; then \
-		install -m 0644 install/models.yaml "$(LERNIE_CONFIG_HOME)/models.yaml"; \
-		echo "installed $(LERNIE_CONFIG_HOME)/models.yaml"; \
-	else \
-		echo "kept     $(LERNIE_CONFIG_HOME)/models.yaml (existing)"; \
-	fi
-	@# Data-root pools (ARCH §3.3): the tool JSON schemas and skill dirs
-	@# the descriptions-always producer snapshots into each new repo's
-	@# `descriptions/**` at `lernie new`. Shipped artifacts are re-copied
-	@# (a fresh source is the point); user-added pool entries survive.
-	@install -m 0644 schemas/tools/*.json "$(LERNIE_DATA_HOME)/tools/"
-	@echo "installed tool schemas -> $(LERNIE_DATA_HOME)/tools/"
-	@cp -R skills/. "$(LERNIE_DATA_HOME)/skills/"
-	@echo "installed skill pool   -> $(LERNIE_DATA_HOME)/skills/"
+	@# Found the harness root via the freshly-installed binary (ARCH §2.2):
+	@# `lernie prime` seeds the default models.yaml, the tool/skill pools,
+	@# and the workflows/ + workspaces/ dirs, seed-if-absent throughout —
+	@# hand-edited config survives, and the seeding lives in one place (the
+	@# verb), not duplicated here. The env below mirrors this Makefile's
+	@# root resolution; the binary applies the identical policy (§2.2).
+	@LERNIE_HOME='$(LERNIE_HOME)' XDG_CONFIG_HOME='$(XDG_CONFIG_HOME)' XDG_DATA_HOME='$(XDG_DATA_HOME)' "$(INSTALL_BIN)/lernie" prime
+	@echo "primed harness root: $(LERNIE_CONFIG_HOME) (config) + $(LERNIE_DATA_HOME) (data)"
 	@$(MAKE) --no-print-directory install-verify
 	@echo
 	@echo "make sure $(INSTALL_BIN) is on your PATH (and that 'bz' resolves there too)."

@@ -6,7 +6,9 @@
 //! split by XDG lifetime into a config root (`models.yaml`,
 //! `workflows/`) and a data root (`workspaces/` plus the `skills/` and
 //! `tools/` pools), collapsed to one directory by `LERNIE_HOME` (ARCH
-//! §2.2). [`workspace`] owns the workspace physical model (§2.2–§2.3):
+//! §2.2). [`install`] founds that harness root — the idempotent
+//! seed-if-absent `lernie prime` verb `make install` invokes (§2.2).
+//! [`workspace`] owns the workspace physical model (§2.2–§2.3):
 //! the bare `repo.git`, the `config/*` / `agents/*` ref namespaces, and
 //! governing-config resolution. [`template`] owns the config-commit
 //! skeleton that `lernie new` authors the first config commit from.
@@ -20,6 +22,7 @@
 pub mod archive;
 pub mod config;
 pub mod harness_root;
+pub mod install;
 pub mod prompt;
 pub mod provider;
 pub mod skill;

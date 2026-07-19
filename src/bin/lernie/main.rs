@@ -31,6 +31,8 @@
 //!   `LERNIE_HOME` from an archive and print its path (ARCH §9.2).
 //! - `tool <name>` — in-process built-in tool entry (ARCH §3.3):
 //!   `tool_use.input` JSON on stdin, bytes on stdout.
+//! - `prime` — idempotently found the harness root (ARCH §2.2): seed the
+//!   default `models.yaml` and the tool/skill pools, seed-if-absent.
 
 mod cli;
 
@@ -128,6 +130,10 @@ enum Command {
     /// on stdin, bytes on stdout, exit 0/non-zero. Third resolver hop
     /// (`<data-root>/tools/lernie-tool-<name>` → PATH → `<lernie> tool …`).
     Tool { name: String },
+    /// Found the installation substrate (ARCH §2.2): resolve the harness
+    /// root and seed the default `models.yaml`, the pools, and the
+    /// `workflows/`/`workspaces/` dirs — seed-if-absent. `make install` runs it.
+    Prime,
 }
 
 /// Uniform failure exit: `<prefix>: <error>` on stderr, non-zero.
@@ -281,6 +287,13 @@ fn main() -> ExitCode {
                 Ok(code) => ExitCode::from(code as u8),
                 Err(e) => fail(&format!("lernie tool {name}"), e),
             }
+        }
+        Command::Prime => {
+            let roots = match harness_root::resolve() {
+                Ok(r) => r,
+                Err(e) => return fail("lernie prime", e),
+            };
+            ok_or_fail("lernie prime", lernie::install::prime(&roots))
         }
     }
 }

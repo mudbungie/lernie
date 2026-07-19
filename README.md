@@ -26,32 +26,32 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
 
 `make install` runs a release build and then:
 
-1. Lays down the harness root skeleton, split by XDG lifetime (ARCH
-   §2.2): the **config root** (`$XDG_CONFIG_HOME/lernie`, default
-   `~/.config/lernie`) gets `models.yaml` and `workflows/`; the **data
-   root** (`$XDG_DATA_HOME/lernie`, default `~/.local/share/lernie`)
-   gets the `tools/` and `skills/` pools and the `workspaces/` tree.
-   `LERNIE_HOME`, if set, collapses both roots to that one directory.
-   Re-runs are idempotent: directory creation uses `mkdir -p`; existing
-   config files are kept.
-2. Installs `lernie` and `agent-eval` into `$INSTALL_PREFIX/bin`
+1. Installs `lernie` and `agent-eval` into `$INSTALL_PREFIX/bin`
    with `install -m 0755` (atomic overwrite, no symlinks). Make sure
    that directory is on your `PATH`.
-3. Installs the provider adapter — brazen's `bz` — with
+2. Installs the provider adapter — brazen's `bz` — with
    `cargo install brazen --version =<pin> --locked`, where the pin is
    the `brazen = "=<pin>"` dependency in `Cargo.toml` — its one home;
    the Makefile and the load-time guard both derive from that line.
    One binary serves every provider
    (ARCH §4.4); the harness resolves `bz` on `PATH`, and a load-time
    guard rejects any `bz` whose version differs from the pin.
-4. Drops a default `models.yaml` under the config root (model
-   capabilities + context windows — no endpoints or auth, which are
-   brazen's) — only when it doesn't already exist, so hand-edited
-   config survives a re-install. There is no frozen profile pool: the
-   config a workspace runs under is its own `config/default` commit,
-   authored from [`template/`](template/) at `lernie new` (fork is the
-   freeze, ARCH §2.2).
-5. Smoke-tests the freshly installed binaries with `lernie --version`
+3. **Founds the harness root by invoking `lernie prime`** — the single
+   verb that seeds the installation substrate (ARCH §2.2), so the
+   Makefile no longer duplicates the seeding. `prime` resolves the roots
+   (XDG split, collapsed by `LERNIE_HOME`) and lays down the default
+   `models.yaml` under the **config root** (model capabilities + context
+   windows — no endpoints or auth, which are brazen's), the `tools/` and
+   `skills/` pools and the `workspaces/` tree under the **data root**,
+   and the empty `workflows/` templates dir. It is **seed-if-absent
+   throughout**: a second run changes nothing, and a hand-edited
+   `models.yaml` (or any operator-added pool entry) survives a re-install.
+   The shipped assets are embedded in the binary, so `prime` needs no
+   source tree — `LERNIE_HOME=<dir> lernie prime` seeds any fresh home.
+   There is no frozen profile pool: the config a workspace runs under is
+   its own `config/default` commit, authored from
+   [`template/`](template/) at `lernie new` (fork is the freeze, ARCH §2.2).
+4. Smoke-tests the freshly installed binaries with `lernie --version`
    and a throwaway `lernie new`. Failure aborts the install with a
    non-zero exit.
 
@@ -396,11 +396,12 @@ Each built-in is the triple §3.3 pins:
   0 on success or non-zero on failure (stderr is concatenated after
   stdout into `tool_result.content` when `is_error` is set).
 - **JSON schema** — at [`schemas/tools/<name>.json`](schemas/tools/),
-  copied to `<data-root>/tools/<name>.json` by `make install`. Sent
-  verbatim as the `input_schema` of the tool's entry in the model
-  call's `tools: [...]` array.
-- **Skill** — at [`skills/<name>/SKILL.md`](skills/), copied to
-  `<data-root>/skills/<name>/`. The frontmatter `description` is
+  seeded to `<data-root>/tools/<name>.json` by `lernie prime` (which
+  `make install` invokes, ARCH §2.2). Sent verbatim as the
+  `input_schema` of the tool's entry in the model call's `tools: [...]`
+  array.
+- **Skill** — at [`skills/<name>/SKILL.md`](skills/), seeded to
+  `<data-root>/skills/<name>/` by `lernie prime`. The frontmatter `description` is
   the tool's description in `tools: [...]`; the body explains when to
   reach for it.
 
@@ -745,7 +746,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); lay down the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree; `LERNIE_HOME` collapses both |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow

@@ -1,7 +1,7 @@
 +++
 title = "gate: alignment — coherent vs ARCHITECTURE/PRINCIPLES/TAXONOMY"
 created = 1784337202
-updated = 1784525185
+updated = 1784525305
 parent = "bl-06d5"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
@@ -55,5 +55,12 @@ ARCH §2.1 **Banned usage**, verbatim: *"**\"call\"** without a qualifier — us
 
 **Fix:** → "The live **model call** needs a configured `bz` credential…". The other two diff hits ("the FIRST real model call", "makes the first real model call") are correctly qualified — leave them.
 
-### Disposition
-All three are edits to `work/bl-06d5`, which is **claimed by Sorehead-06d5** — not touched by this gate. bl-1de0 stays **open and unclaimed** pending remediation; re-run this gate after the fixes land. Note bl-06d5 is independently blocked on an anthropic credential (its own OPEN QUESTION), so this is not the critical path.
+### Disposition (final, 2026-07-19)
+
+Owner check first: bl-06d5 is claimed by **Sorehead-06d5**, but it is **stalled, not in flight** — claimed 2 days ago, last commit 2026-07-17 01:52, clean tree, nothing since; it stopped on its own OPEN QUESTION to the user about the anthropic credential. So the findings were filed rather than deferred to a live owner.
+
+- **F1 → filed as `bl-a785`** (`--parent bl-06d5 --blocks close`).
+- **F2 → filed as `bl-04eb`** (`--parent bl-06d5 --blocks close`).
+- **F3 → FIXED** at `b64e2b0` on `work/bl-06d5`: "live call" → "live model call", reflowed. Pre-commit green (fmt, clippy, 100% coverage 3978/3978, +0.00%). Applied directly in that worktree because the text exists nowhere else — it is new in the WIP, not on main. Recorded loudly in bl-06d5's journal so Sorehead sees the outside commit on resume.
+
+This gate closes: its findings are now enforced structurally by two close-blockers rather than by an open gate. bl-06d5 remains independently blocked on an anthropic credential, so none of this is the critical path.

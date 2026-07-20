@@ -43,8 +43,9 @@ use std::path::Path;
 
 /// What one hop found and did — derived on the fly, nothing stored.
 #[derive(Debug)]
-// `Terminal`'s Epitaph is read only by tests; the §3.4 narrowing (bl-231c)
-// dropped the public-API exemption for that carried-but-unread field.
+// `Terminal`'s Epitaph is carried but read only by tests — the exit
+// protocol already wrote it to disk (§2.11). Surface it or drop it;
+// tracked as bl-4f6d.
 #[allow(dead_code)]
 pub enum AdvanceOutcome {
     /// Another executor holds the lock: the branch is already driven —

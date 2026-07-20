@@ -68,11 +68,16 @@ roles:
 /// applies unless a test overrides it.
 pub(super) const VALID_WORKFLOW_YAML: &str = "events: {}\n";
 
+/// The config commit's `version` control file (ARCH §10) — the schema
+/// version this build understands, so the §10 schema-version guard in
+/// [`crate::prompt::resolve`] passes.
+pub(super) const VALID_VERSION: &str = "1\n";
+
 /// Lay out a stub-git workspace (§2.2): a `repo.git/` marker (so the
 /// layout guard passes), plus the control files [`StubGit`]'s `show`
-/// emulation serves as the config commit's tree — `providers.yaml`, a
-/// `workflow.yaml` (read for the retry policy, §2.10), and optional
-/// `souls/worker.md`.
+/// emulation serves as the config commit's tree — `version`,
+/// `providers.yaml`, a `workflow.yaml` (read for the retry policy,
+/// §2.10), and optional `souls/worker.md`.
 pub(super) fn scaffold_repo(per_repo_yaml: &str, worker_soul: Option<&str>) -> TempDir {
     scaffold_repo_with_workflow(per_repo_yaml, VALID_WORKFLOW_YAML, worker_soul)
 }
@@ -86,6 +91,7 @@ pub(super) fn scaffold_repo_with_workflow(
 ) -> TempDir {
     let tmp = TempDir::new().unwrap();
     std::fs::create_dir_all(tmp.path().join(crate::workspace::REPO_DIR)).unwrap();
+    std::fs::write(tmp.path().join("version"), VALID_VERSION).unwrap();
     std::fs::write(tmp.path().join("providers.yaml"), per_repo_yaml).unwrap();
     std::fs::write(tmp.path().join("workflow.yaml"), workflow_yaml).unwrap();
     if let Some(body) = worker_soul {

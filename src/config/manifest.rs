@@ -4,10 +4,15 @@
 //! includes, budget, and overflow policy. Paths are relative to the
 //! branch's worktree (§5.1).
 
-// Config machinery exercised by tests but not yet on any verb's runtime
-// path; the §3.4 narrowing (bl-231c) dropped the public-API dead-code
-// exemption it rode on. These are real config types, not test scaffolding,
-// so `allow(dead_code)` is the honest marker rather than `#[cfg(test)]`.
+// The manifest's consumer is §5.2 context assembly, which is not built:
+// `prompt::dispatch::assembler` composes context from `messages/` alone —
+// no pinned head, no manifest `order`, no budget, no overflow policy. So
+// this file parses and validates a control file the template really ships
+// into every config commit, and nothing reads it yet. That is a missing
+// feature (tracked: bl-e0cb), not test scaffolding, so `allow(dead_code)`
+// is the honest marker rather than `#[cfg(test)]`. When §5.2 lands this
+// needs a `parse(raw, origin)` seam like its siblings — control is read
+// from the config commit's tree, never a worktree file (§2.2).
 #![allow(dead_code)]
 
 use crate::config::error::LoadError;

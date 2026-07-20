@@ -21,7 +21,8 @@ use std::sync::atomic::AtomicBool;
 
 /// What the bin does after one hop: nothing, or exec the successor.
 #[derive(Debug)]
-#[allow(dead_code)] // `Done`'s payload is read only by tests (§3.4 narrowing)
+#[allow(dead_code)] // `Done`'s payload is discarded by `cmd::advance::outcome_of`
+// and read only by tests — surface it or drop it (bl-4f6d)
 pub enum AdvanceHandoff {
     /// The hop completed in this process — a no-op, an already-driven
     /// exit, or a terminal event whose exit protocol already ran.

@@ -11,9 +11,13 @@ use crate::config::workflow::Workflow;
 
 /// Validate `dispatch(<role>)` actions in `workflow.yaml` against the
 /// per-repo `providers.yaml` `roles:` section. Assumes `workflow`
-/// already passed `Workflow::load`.
-// Cross-check exercised by tests; not yet wired into a verb's runtime path (§3.4 narrowing, bl-231c).
-#[allow(dead_code)]
+/// already passed [`Workflow::parse`].
+///
+/// ARCH §4.3: "`dispatch(<role>)` actions are cross-validated against the
+/// `roles:` map at config load". [`crate::prompt::resolve::resolve_worker`]
+/// is that load — the one every step-driving verb goes through — so a
+/// workflow naming an undeclared role is declined there, before the first
+/// model call, rather than at the hop that finally reaches the binding.
 pub fn check_workflow_against_roles(
     workflow: &Workflow,
     per_repo: &PerRepoProviders,
@@ -40,13 +44,10 @@ mod tests {
     use super::*;
     use crate::config::per_repo_providers::{PerRepoProviders, RoleAssignment};
     use std::collections::BTreeMap;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
+    use std::path::Path;
 
-    fn yaml(s: &str) -> NamedTempFile {
-        let mut f = NamedTempFile::new().unwrap();
-        f.write_all(s.as_bytes()).unwrap();
-        f
+    fn workflow(yaml: &str) -> Workflow {
+        Workflow::parse(yaml, Path::new("<commit>:workflow.yaml")).unwrap()
     }
 
     fn worker_roles() -> PerRepoProviders {
@@ -65,34 +66,26 @@ mod tests {
     #[test]
     fn workflow_dispatch_role_resolves() {
         let r = worker_roles();
-        let w = Workflow::load(
-            yaml(
-                r#"
+        let w = workflow(
+            r#"
 events:
   user_message:
     - dispatch(worker)
 "#,
-            )
-            .path(),
-        )
-        .unwrap();
+        );
         assert!(check_workflow_against_roles(&w, &r).is_ok());
     }
 
     #[test]
     fn workflow_dispatch_role_unresolved() {
         let r = worker_roles();
-        let w = Workflow::load(
-            yaml(
-                r#"
+        let w = workflow(
+            r#"
 events:
   user_message:
     - dispatch(verifier)
 "#,
-            )
-            .path(),
-        )
-        .unwrap();
+        );
         let err = check_workflow_against_roles(&w, &r).unwrap_err();
         match err {
             LoadError::UnresolvedRef { message, .. } => {
@@ -106,9 +99,8 @@ events:
     #[test]
     fn non_dispatch_actions_are_ignored() {
         let r = worker_roles();
-        let w = Workflow::load(
-            yaml(
-                r#"
+        let w = workflow(
+            r#"
 events:
   user_message:
     - spawn_exchange
@@ -118,10 +110,7 @@ events:
     - notify_ui
     - gate_return_on(verifier.approve)
 "#,
-            )
-            .path(),
-        )
-        .unwrap();
+        );
         assert!(check_workflow_against_roles(&w, &r).is_ok());
     }
 }

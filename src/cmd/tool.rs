@@ -1,8 +1,9 @@
 //! `lernie tool <name>` — in-process built-in tool entry (ARCH §3.3):
 //! `tool_use.input` JSON on stdin, bytes on stdout, exit 0/non-zero. The
-//! stdio arrives through [`Fx`](super::Fx) (locked by the binding); the
-//! tool-resolution `current_exe` third hop stays in [`crate::prompt::tool`]
-//! (§3.3, a separate seam from the driver target).
+//! stdio arrives through [`Fx`](super::Fx) (locked by the binding), as
+//! does the driver target the `dispatch` / `message` built-ins re-enter
+//! the front door with (§2.11 — the same injected target the §3.3 tool
+//! resolver's third hop addresses).
 
 use super::{Error, Fx, Outcome};
 use crate::prompt::tool::builtin;
@@ -19,6 +20,7 @@ pub struct Args {
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
     let code = builtin::run(
         &args.name,
+        &fx.driver_target,
         &mut fx.tool_stdin,
         &mut fx.tool_stdout,
         &mut fx.tool_stderr,

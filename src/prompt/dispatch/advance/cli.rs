@@ -38,8 +38,9 @@ pub enum AdvanceHandoff {
 /// acquiring), drive [`run`] with the real components, and prepare the
 /// §6 handoff. `driver_target` is the running-binary path the exec
 /// binding injects (`cmd::Fx::driver_target`, §3.4) — it is the
-/// successor `execve` target *and* the launcher's detached-spawn target,
-/// so the library resolves no `current_exe` of its own; `stop` is the
+/// successor `execve` target, the launcher's detached-spawn target,
+/// *and* the §3.3 tool resolver's third hop, so the library resolves no
+/// `current_exe` of its own; `stop` is the
 /// executor's injected SIGTERM flag (`cmd::Fx::stop`, §2.9).
 pub fn cli_run(
     workspace: &Path,
@@ -87,7 +88,7 @@ fn cli_run_with(
     };
 
     let roots = harness_root::resolve()?;
-    let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
+    let tool_executor = SpawnTool::new(&roots.data, &SystemClock, driver_target);
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     let deps = Deps {
         adapter: &SpawnAdapter,

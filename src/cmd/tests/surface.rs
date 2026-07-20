@@ -150,3 +150,46 @@ fn prelude_reexports_the_binding_mechanisms() {
     let flag: &std::sync::atomic::AtomicBool = prelude::stop_flag();
     let _ = flag.load(std::sync::atomic::Ordering::SeqCst);
 }
+
+#[test]
+fn preludes_are_named_per_verb_by_the_surface() {
+    // The §2.9 prelude-per-verb map (ARCH §3.4 binding-preludes seam) is
+    // a query on the surface, so both bindings read one fact instead of
+    // each keeping a match in step with it. Compared as fn pointers —
+    // naming them is safe; *calling* them would mutate the test runner's
+    // pgid and signal disposition (covered in `prompt::stop`).
+    let want =
+        |c: Command| -> Vec<*const ()> { c.preludes().iter().map(|f| *f as *const ()).collect() };
+    let leader = prelude::become_pgid_leader as *const ();
+    let handler = prelude::install_stop_handler as *const ();
+
+    // Driver verbs own a step loop: process group + stopped-deposit handler.
+    for argv in [
+        &["lernie", "prompt", "/w", "hi"][..],
+        &["lernie", "advance", "/w", "20260101-a1"][..],
+    ] {
+        assert_eq!(want(parse(argv)), vec![leader, handler], "{argv:?}");
+    }
+    // `dispatch` is child re-entry — a group of its own, but it drives
+    // nothing, so no handler.
+    assert_eq!(
+        want(parse(&[
+            "lernie", "dispatch", "worker", "/w", "b", "--goal", "g"
+        ])),
+        vec![leader],
+    );
+    // Every other verb needs neither.
+    for argv in [
+        &["lernie", "new"][..],
+        &["lernie", "config", "/w"][..],
+        &["lernie", "stop", "/w", "20260101-a1"][..],
+        &["lernie", "message", "/w", "20260101-a1", "c"][..],
+        &["lernie", "scan", "/w"][..],
+        &["lernie", "bundle", "/w", "20260101-a1", "/out"][..],
+        &["lernie", "replay", "/b.bundle"][..],
+        &["lernie", "tool", "bash"][..],
+        &["lernie", "prime"][..],
+    ] {
+        assert!(parse(argv).preludes().is_empty(), "{argv:?}");
+    }
+}

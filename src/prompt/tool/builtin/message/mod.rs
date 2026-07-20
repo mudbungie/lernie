@@ -86,24 +86,17 @@ pub trait Sender {
     ) -> Result<SendOutput, io::Error>;
 }
 
-/// Production [`Sender`] — re-enters the running `lernie` binary as
-/// `lernie message`. The exe path is a field so tests can pin it to a
-/// stand-in without spawning the real `lernie`.
+/// Production [`Sender`] — re-enters the `lernie` command surface as
+/// `lernie message`. The exe is the binding-injected driver target
+/// (`cmd::Fx::driver_target`, §2.11) — never `current_exe`, which under
+/// a linked host names the host binary.
 pub struct SubprocessSender {
     exe: PathBuf,
 }
 
 impl SubprocessSender {
-    /// Re-enter the currently running `lernie` binary. Fails when the OS
-    /// cannot resolve the current executable (rare).
-    pub fn new() -> io::Result<Self> {
-        Ok(Self {
-            exe: std::env::current_exe()?,
-        })
-    }
-
-    /// Explicit binary path — exposed for tests and embedded callers.
-    #[cfg(test)] // test-only builder
+    /// Re-enter `exe` — the injected driver target in production, a
+    /// stand-in in tests that avoid spawning the real `lernie`.
     pub fn with_exe(exe: PathBuf) -> Self {
         Self { exe }
     }

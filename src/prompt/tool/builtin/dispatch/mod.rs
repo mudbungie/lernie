@@ -166,25 +166,18 @@ pub struct DispatchOutput {
 /// `lernie dispatch <role>`. The dispatch tool itself is `lernie tool
 /// dispatch` running in-process; re-entering the same binary keeps
 /// the §3.4 "everyone uses the front door" rule intact. The exe path
-/// is a field so tests can pin it to `true`/`false` and exercise the
-/// wrapper without spawning the real `lernie`; production constructs
-/// via [`SubprocessSpawner::new`], which uses `current_exe`.
+/// is the binding-injected driver target (`cmd::Fx::driver_target`,
+/// §2.11 "the driver target is injected at the binding, not resolved by
+/// name") — never `current_exe`, which under a linked host names the
+/// host binary, and the host carries no `dispatch` verb of its own.
 pub struct SubprocessSpawner {
     exe: PathBuf,
 }
 
 impl SubprocessSpawner {
-    /// Re-enter the currently running `lernie` binary. Fails when the
-    /// OS cannot resolve the current executable (rare; mostly unusual
-    /// platforms). Mirrors [`crate::prompt::dispatcher::SpawnDispatcher::new`].
-    pub fn new() -> io::Result<Self> {
-        Ok(Self {
-            exe: std::env::current_exe()?,
-        })
-    }
-
-    /// Explicit binary path — exposed for tests and embedded callers.
-    #[cfg(test)] // test-only builder
+    /// Re-enter `exe` — the injected driver target in production, a
+    /// `true`/`false` stand-in in tests that exercise the wrapper
+    /// without spawning the real `lernie`.
     pub fn with_exe(exe: PathBuf) -> Self {
         Self { exe }
     }

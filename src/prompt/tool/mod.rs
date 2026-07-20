@@ -12,7 +12,10 @@
 //!
 //! [`ToolExecutor`] is the trait the loop holds as `&dyn`. [`SpawnTool`]
 //! is the production implementation; tests construct it directly against
-//! a tempdir-rooted `harness_root` and shell-script fixture tools.
+//! a tempdir-rooted `harness_root` and shell-script fixture tools. Its
+//! third resolution hop re-enters the command surface at the
+//! binding-injected driver target (`cmd::Fx::driver_target`, §2.11) —
+//! the library resolves no binary path by name.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -122,18 +125,16 @@ pub struct ToolOutputRecord {
 }
 
 /// Every way [`ToolExecutor::execute`] can fail. The taxonomy
-/// distinguishes harness-level faults (bad install, lost subprocess,
-/// I/O failure landing the record) from in-band tool errors. In-band
+/// distinguishes harness-level faults (lost subprocess, I/O failure
+/// landing the record) from in-band tool errors. Resolution itself
+/// cannot fail — the §3.3 third hop is the injected driver target, so
+/// an unanswerable name is declined behind the front door as an
+/// ordinary non-zero tool exit, not as a variant here. In-band
 /// tool errors are not failures here — they surface as
 /// [`ToolOutcome::is_error`] and travel back to the agent via the
 /// `tool_result` block (§3.3 "Exit code").
 #[derive(Debug, Error)]
 pub enum ExecError {
-    /// Neither `<harness_root>/tools/lernie-tool-<name>` nor PATH
-    /// produced a binary; the in-process fallback is unavailable
-    /// because the harness binary path could not be resolved.
-    #[error("tool {name:?} not found at {harness_path:?}, on PATH, or via current_exe()")]
-    NotFound { name: String, harness_path: PathBuf },
     /// Spawn failed (bad executable, permission, fork limits, etc.).
     #[error("spawn tool {name:?}: {source}")]
     Spawn {

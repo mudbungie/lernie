@@ -34,9 +34,11 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
 /// [`Fx::stop`](super::Fx::stop).
 fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
     let roots = harness_root::resolve()?;
-    let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
-    // §2.11 exit launch: the detached `lernie advance` spawn (§6), aimed
-    // at the binding-injected driver target — no `current_exe` here.
+    // The binding-injected driver target (§2.11 "injected at the binding,
+    // not resolved by name") serves both re-entry seams: the §3.3 tool
+    // resolver's third hop and the §2.11/§6 detached launch. No
+    // `current_exe` here — under a linked host it would name the host.
+    let tool_executor = SpawnTool::new(&roots.data, &SystemClock, &fx.driver_target);
     let launcher = AdvanceLauncher::with_exe(fx.driver_target.clone());
     let deps = prompt::Deps {
         adapter: &SpawnAdapter,

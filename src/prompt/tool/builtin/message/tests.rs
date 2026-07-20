@@ -257,9 +257,3 @@ fn subprocess_sender_with_exe_surfaces_missing_binary() {
     let err = s.send(Path::new("/tmp"), "a", "c", "p1").unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::NotFound);
 }
-
-#[test]
-fn subprocess_sender_new_resolves_current_exe() {
-    let s = SubprocessSender::new().unwrap();
-    assert!(!s.exe.as_os_str().is_empty());
-}

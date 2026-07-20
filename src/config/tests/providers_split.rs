@@ -9,8 +9,8 @@
 //! brazen's). The test exercises the loader independently of the
 //! dispatch path so regressions in cross-validation land visibly.
 
-use lernie::config::{LoadError, ModelsConfig};
-use lernie::harness_root;
+use crate::config::{LoadError, ModelsConfig};
+use crate::harness_root;
 use std::path::PathBuf;
 use tempfile::TempDir;
 

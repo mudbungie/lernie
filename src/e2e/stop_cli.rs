@@ -8,17 +8,15 @@
 //!
 //! Idempotence + error-path tests live in `tests/stop_idempotence.rs`.
 
-mod stop_common;
-
+use super::stop_common::{
+    HAPPY_SSE, amend_config, git_command, lernie_bin, poll_for_conv_branch_with_diag,
+    poll_for_path, repo_git, scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
+};
 use httpmock::Method::POST;
 use httpmock::MockServer;
 use std::fs;
 use std::process::{Command, Stdio};
 use std::time::Duration;
-use stop_common::{
-    HAPPY_SSE, amend_config, git_command, lernie_bin, poll_for_conv_branch_with_diag,
-    poll_for_path, repo_git, scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
-};
 use tempfile::TempDir;
 
 #[test]

@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
-fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 const INHERITED_GIT_ENV: &[&str] = &[
@@ -278,18 +278,18 @@ fn replay_cli_lands_under_lernie_home() {
     let ws = workspace();
     let archive = TempDir::new().unwrap();
     let arch_dir = archive.path().join("arch");
-    lernie::archive::bundle(
+    crate::archive::bundle(
         ws.path(),
         PARENT,
         &arch_dir,
-        &lernie::template::RealGit::new(),
+        &crate::template::RealGit::new(),
     )
     .expect("bundle");
 
     let home = TempDir::new().unwrap();
     // SAFETY: single-threaded test run (tarpaulin.toml `--test-threads=1`).
     unsafe { std::env::set_var("LERNIE_HOME", home.path()) };
-    let scratch = lernie::archive::replay_cli(&arch_dir).expect("replay_cli");
+    let scratch = crate::archive::replay_cli(&arch_dir).expect("replay_cli");
     unsafe { std::env::remove_var("LERNIE_HOME") };
 
     assert_eq!(scratch, home.path().join("replays").join(PARENT));

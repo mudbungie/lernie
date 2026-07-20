@@ -32,7 +32,7 @@ mod tests;
 
 pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
-pub use scan::{ScanError, ScanReport, scan};
+pub use scan::scan;
 
 use crate::prompt::{Clock, SystemClock};
 use std::ffi::OsStr;
@@ -137,16 +137,11 @@ pub struct AdvanceLauncher {
 }
 
 impl AdvanceLauncher {
-    /// Launch through the currently running `lernie` binary. Fails when
-    /// the OS cannot resolve the current executable (rare).
-    pub fn current() -> io::Result<Self> {
-        Ok(Self {
-            exe: std::env::current_exe()?,
-        })
-    }
-
-    /// Explicit binary path — for tests and embedded callers that pick
-    /// a non-default `lernie`.
+    /// Explicit binary path — the driver target the binding injects
+    /// (`cmd::Fx::driver_target`, ARCH §2.11/§3.4) and every test picks.
+    /// The library resolves no running-binary path of its own: the one
+    /// `current_exe` for the launch/successor family lives at the exec
+    /// binding (`src/bin/`), threaded down as this argument.
     pub fn with_exe(exe: PathBuf) -> Self {
         Self { exe }
     }
@@ -221,8 +216,6 @@ pub enum MessageError {
     Layout(#[from] crate::workspace::LayoutError),
     #[error("probe executor lock: {0}")]
     Probe(#[source] io::Error),
-    #[error("resolve lernie binary for the driver launch: {0}")]
-    Exe(#[source] io::Error),
 }
 
 /// The `lernie message <workspace> <agent> <content>` verb (§2.11,
@@ -247,12 +240,19 @@ pub fn cli_message(
 /// is unit-testable — the same discipline as `stop::cli_run`. Resolves
 /// the sender from the live `LERNIE_CONV_BRANCH` ([`resolve_cli_sender`])
 /// and wires the production clock plus the real [`AdvanceLauncher`]
-/// detached spawn (§2.11).
-pub fn cli_run(workspace: &Path, agent: &str, content: &str) -> Result<(), MessageError> {
+/// detached spawn (§2.11) at `driver_target` — the running-binary path
+/// the exec binding injects (`cmd::Fx::driver_target`, §3.4), never
+/// resolved in the library.
+pub fn cli_run(
+    workspace: &Path,
+    agent: &str,
+    content: &str,
+    driver_target: &Path,
+) -> Result<(), MessageError> {
     crate::workspace::require(workspace)?;
     let sender =
         resolve_cli_sender(std::env::var_os(crate::prompt::tool::ENV_CONV_BRANCH).as_deref());
-    let launcher = AdvanceLauncher::current().map_err(MessageError::Exe)?;
+    let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     cli_message(workspace, agent, content, &sender, &SystemClock, &launcher)?;
     Ok(())
 }

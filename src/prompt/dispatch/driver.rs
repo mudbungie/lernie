@@ -32,6 +32,7 @@ use std::path::Path;
 
 /// What one [`drive`] found and did — derived on the fly, nothing stored.
 #[derive(Debug, PartialEq, Eq)]
+#[cfg(test)] // `driver::drive` is a test-only entry; runtime delivers via `driver::deliver`.
 pub enum DriveOutcome {
     /// Another executor holds the lock: the branch is already driven, so
     /// this driver exits as a clean no-op (§2.11 Writer/driver totality).
@@ -47,6 +48,7 @@ pub enum DriveOutcome {
 /// Drive `agent_id`'s branch: acquire-or-exit, then deliver whatever is
 /// pending — or exit silently when nothing is (§2.11 pin 1). The lock is
 /// held for the whole delivery and kernel-released on return.
+#[cfg(test)] // test-only drive entry; runtime uses `deliver` (see DriveOutcome).
 pub fn drive(workspace: &Path, agent_id: &str, git: &dyn GitRunner) -> Result<DriveOutcome, Error> {
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
     let Some(_lock) = inbox::try_acquire(&inbox_dir).map_err(|source| Error::ExecutorLock {

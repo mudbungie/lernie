@@ -15,8 +15,8 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-pub fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+pub fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 const INHERITED_GIT_ENV: &[&str] = &[
@@ -87,7 +87,7 @@ pub fn repo_git(dest: &Path) -> std::path::PathBuf {
 
 /// Advance `config/default` with the given control files — the
 /// harness-assisted config-commit authoring of ARCH §2.2, over the
-/// shipped core (`lernie::template::authoring::author`, `Origin::Advance`)
+/// shipped core (`crate::template::authoring::author`, `Origin::Advance`)
 /// rather than hand-rolled worktree juggling. The descriptions refresh
 /// reads an absent pool (an empty tree, §3.3), leaving the snapshot
 /// `lernie new` wrote intact and only landing the given edits.
@@ -96,11 +96,11 @@ pub fn amend_config(dest: &Path, files: &[(&str, &str)]) {
         .iter()
         .map(|(r, c)| (r.to_string(), c.to_string()))
         .collect();
-    lernie::template::authoring::author(
+    crate::template::authoring::author(
         dest,
         &dest.join(".no-pools"),
         "default",
-        lernie::template::authoring::Origin::Advance,
+        crate::template::authoring::Origin::Advance,
         move |dir| {
             for (rel, content) in &owned {
                 let path = dir.join(rel);
@@ -109,7 +109,7 @@ pub fn amend_config(dest: &Path, files: &[(&str, &str)]) {
             }
             Ok(())
         },
-        &lernie::template::RealGit::new(),
+        &crate::template::RealGit::new(),
     )
     .unwrap();
 }

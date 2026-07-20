@@ -3,6 +3,11 @@
 //! Per ARCH §10, this is a bare integer. The file's content is the integer
 //! and nothing else (trailing whitespace tolerated).
 
+// See config/manifest.rs: tested config machinery not yet on a verb's
+// runtime path; the §3.4 narrowing (bl-231c) dropped its dead-code
+// exemption. Real config type, so `allow(dead_code)`, not `#[cfg(test)]`.
+#![allow(dead_code)]
+
 use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

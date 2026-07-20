@@ -1,0 +1,206 @@
+//! The command surface (ARCH §3.4 "One command surface, two bindings").
+//!
+//! This module is the one authoritative definition of what `lernie` can
+//! do: the [`Cli`]/[`Command`] clap surface, one entry per verb
+//! ([`Command::run`] → `<verb>::run`), and the binding seam — [`Fx`] (the
+//! injections a binding supplies), [`Outcome`] (a verb's product), and
+//! [`Error`] (its uniform failure) — plus the [`prelude`] mechanisms a
+//! binding performs before invoking a driver verb.
+//!
+//! **Two bindings, one surface (§3.4).** The library performs no
+//! process-global or terminal effect: the running-binary path, the
+//! `$EDITOR` spawn, the locked stdio, and the SIGTERM flag all arrive
+//! through [`Fx`]; process-group leadership and stop-flag installation
+//! are the [`prelude`] the binding runs. `src/bin/lernie` is the exec
+//! binding; an embedding consumer is the other. Both parse the *same*
+//! [`Cli`] and drive the *same* [`Command::run`].
+
+use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
+
+pub mod advance;
+pub mod bundle;
+pub mod config;
+pub mod dispatch;
+pub mod message;
+pub mod new;
+pub mod prelude;
+pub mod prime;
+pub mod prompt;
+pub mod replay;
+pub mod scan;
+pub mod stop;
+pub mod tool;
+
+#[cfg(test)]
+mod tests;
+
+/// The `lernie` command-line surface (ARCH §3.4). Behaviourally identical
+/// across both bindings — the argv shape here is the single source of
+/// truth for the CLI, pinned by the `tests/*_cli.rs` end-to-end tests.
+#[derive(clap::Parser, Debug)]
+#[command(name = "lernie", about = "Git-backed agent harness", version)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Command,
+}
+
+/// Every verb, in a uniform shape: `Variant(<verb>::Args)`. The variant
+/// doc comment is the subcommand's `--help` about text (§3.4); per-arg
+/// help rides the `Args` fields.
+#[derive(clap::Subcommand, Debug)]
+pub enum Command {
+    /// Create a new workspace (ARCH §2.2): a bare repo.git plus the
+    /// first config commit on `config/default`. No argument creates
+    /// `<data-root>/workspaces/<auto-id>/`; a path creates there.
+    New(new::Args),
+    /// Author a config commit beyond `lernie new` (ARCH §2.2, §2.3): the
+    /// only act that advances a config branch. Materializes a checkout of
+    /// the target lineage, refreshes `descriptions/**` from the data-root
+    /// pools (§3.3), opens it in `$EDITOR`, and commits. `<name>` defaults
+    /// to `default`. `--from <source>` forks a new `config/<name>` off
+    /// `config/<source>`; `--orphan` starts a fresh lineage.
+    Config(config::Args),
+    /// Send one user message on a fresh root branch; prints its name.
+    Prompt(prompt::Args),
+    /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
+    /// (§2.7) or `worker` (§2.5); future roles slot in by name. `--goal`
+    /// is required for `worker`, rejected for `compactor` (§2.7).
+    Dispatch(dispatch::Args),
+    /// Stop a conversation branch (ARCH §2.9 SIGTERM). Default stops the
+    /// one agent; `--stop-children` also stops every descendant
+    /// (`<branch>-*`, §2.3) — the opt-in agent→agent cascade.
+    Stop(stop::Args),
+    /// Deposit a message into an agent's inbox and probe the executor
+    /// lock (ARCH §2.11, §3.4). Sender from `LERNIE_CONV_BRANCH`. `agent`
+    /// is the recipient id (== branch name / hyphenated descent).
+    Message(message::Args),
+    /// Operator verb: one workspace-wide silent-death sweep + inbox flush
+    /// (ARCH §2.11, §8). Hand/cron only; never on a driver hot path.
+    Scan(scan::Args),
+    /// Archive an agent subtree (ARCH §9.2): git bundle of `<agent>` and
+    /// its hyphen-descendants plus the `steps/`/`inbox/` slices, under
+    /// `<out-dir>`.
+    Bundle(bundle::Args),
+    /// Replay an archive (ARCH §9.2) into a scratch workspace under
+    /// `LERNIE_HOME`'s data root (`replays/<agent>/`); prints its path
+    /// for the ordinary frontend (§3.5).
+    Replay(replay::Args),
+    /// Drive one agent's branch forward (ARCH §6): take the lease (adopt
+    /// LERNIE_LOCK_FD or acquire), deliver pending mail, run the next
+    /// step, and exec the successor hop. The target every launch seam
+    /// spawns; also an operator verb.
+    Advance(advance::Args),
+    /// In-process built-in tool entry (ARCH §3.3): `tool_use.input` JSON
+    /// on stdin, bytes on stdout, exit 0/non-zero. Third resolver hop
+    /// (`<data-root>/tools/lernie-tool-<name>` → PATH → `<lernie> tool …`).
+    Tool(tool::Args),
+    /// Found the installation substrate (ARCH §2.2): resolve the harness
+    /// root and seed the default `models.yaml`, the pools, and the
+    /// `workflows/`/`workspaces/` dirs — seed-if-absent. `make install` runs it.
+    Prime(prime::Args),
+}
+
+/// A verb's one product (ARCH §3.4 one-product convention). The binding
+/// performs it: [`Line`](Outcome::Line) is the verb's single stdout
+/// product (new → dest path, prompt → branch, scan → report, replay →
+/// scratch path); [`Quiet`](Outcome::Quiet) is a product-less success;
+/// [`Exec`](Outcome::Exec) is the §6 advance successor handoff, which the
+/// exec binding `execve`s; [`Code`](Outcome::Code) is the `tool` verb's
+/// process exit status (§3.3 is_error contract).
+#[derive(Debug)]
+pub enum Outcome {
+    /// The verb's single stdout line.
+    Line(String),
+    /// Product-less success — nothing printed.
+    Quiet,
+    /// The advance successor command to `exec` (§6 exec baton). An
+    /// `AdvanceHandoff::Done` hop maps to [`Quiet`](Outcome::Quiet).
+    Exec(std::process::Command),
+    /// The `tool` verb's desired process exit code (§3.3).
+    Code(u8),
+}
+
+/// The binding's injections (ARCH §3.4 "Process effects stay at the
+/// binding"). Every process-global or terminal effect a verb needs is a
+/// field here, supplied by the binding — the library reaches for none of
+/// its own.
+pub struct Fx<'a> {
+    /// The running-binary path used for every detached `lernie advance`
+    /// launch and the §6 advance successor `execve` (§2.11). The exec
+    /// binding resolves it once via `std::env::current_exe` — the one
+    /// such resolution in the launch/successor family.
+    pub driver_target: PathBuf,
+    /// The `lernie config` `$EDITOR` hand-off (§2.2) — the interactive
+    /// spawn the exec binding supplies as `cli::edit_in_editor`.
+    pub editor: &'a dyn Fn(&Path) -> std::io::Result<()>,
+    /// The `lernie tool` stdin (§3.3 `tool_use.input` JSON).
+    pub tool_stdin: &'a mut dyn std::io::Read,
+    /// The `lernie tool` stdout (§3.3 raw result bytes).
+    pub tool_stdout: &'a mut dyn std::io::Write,
+    /// The `lernie tool` stderr (§3.3 stderr-concat contract).
+    pub tool_stderr: &'a mut dyn std::io::Write,
+    /// The executor's SIGTERM flag (§2.9 step 3), the driver verbs'
+    /// `Deps::stop`. The exec binding wires [`prelude::stop_flag`] after
+    /// [`prelude::install_stop_handler`].
+    pub stop: &'a AtomicBool,
+}
+
+/// A verb's uniform failure. `Display` renders exactly today's stderr
+/// shape `lernie <verb-prefix>: <error>` (dispatch's prefix is `dispatch
+/// <role>`; tool's is `tool <name>`), which the binding prints before a
+/// non-zero exit.
+#[derive(Debug)]
+pub struct Error {
+    prefix: String,
+    message: String,
+}
+
+impl Error {
+    /// Build a failure carrying `prefix` (the verb prefix, without the
+    /// leading `lernie `) and the `Display` of the underlying error.
+    pub fn new(prefix: impl Into<String>, source: impl std::fmt::Display) -> Self {
+        Self {
+            prefix: prefix.into(),
+            message: source.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "lernie {}: {}", self.prefix, self.message)
+    }
+}
+
+impl std::error::Error for Error {}
+
+/// The one-product stdout line for a path-valued outcome — `new`'s
+/// destination and `replay`'s scratch path (§3.4). The single home of
+/// the `Path`→`String` render, so covering it once (via `new`) covers it
+/// for both verbs.
+pub(crate) fn path_line(p: PathBuf) -> Outcome {
+    Outcome::Line(p.display().to_string())
+}
+
+impl Command {
+    /// Run the parsed verb against the binding's [`Fx`] (ARCH §3.4). One
+    /// arm per verb, each delegating to its module's `run`; the verb owns
+    /// its [`Error`] prefix and its [`Outcome`].
+    pub fn run(self, fx: &mut Fx) -> Result<Outcome, Error> {
+        match self {
+            Command::New(a) => new::run(a, fx),
+            Command::Config(a) => config::run(a, fx),
+            Command::Prompt(a) => prompt::run(a, fx),
+            Command::Dispatch(a) => dispatch::run(a, fx),
+            Command::Stop(a) => stop::run(a, fx),
+            Command::Message(a) => message::run(a, fx),
+            Command::Scan(a) => scan::run(a, fx),
+            Command::Bundle(a) => bundle::run(a, fx),
+            Command::Replay(a) => replay::run(a, fx),
+            Command::Advance(a) => advance::run(a, fx),
+            Command::Tool(a) => tool::run(a, fx),
+            Command::Prime(a) => prime::run(a, fx),
+        }
+    }
+}

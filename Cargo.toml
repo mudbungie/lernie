@@ -24,10 +24,11 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "std"
 [dev-dependencies]
 tempfile = "3"
 httpmock = "0.7"
-
-[[bin]]
-name = "gen-schemas"
-path = "src/bin/gen_schemas.rs"
+# The command-surface parity checker (`tests/command_surface_parity.rs`,
+# ARCH §3.4) parses the crate's source as the ground truth of what is
+# `pub` (syn) and introspects the CLI's verb set through the one clap in
+# [dependencies] — the checker itself links nothing but `cmd`.
+syn = { version = "2", features = ["full", "parsing"] }
 
 [[bin]]
 name = "lernie"

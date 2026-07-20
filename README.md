@@ -8,6 +8,15 @@ Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 
 CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on every push and pull request to `main`. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
 
+## One command surface, two bindings
+
+lernie is defined once as a **command surface** — the set of verbs, their arguments, and their products (ARCH §3.4). It is consumable two ways, and both are the *same* control plane:
+
+- **Exec binding** — run the `lernie` binary: `exec("lernie", args)` with env-var auth. This is what the CLI and every frontend use.
+- **Linked binding** — depend on the `lernie` crate and drive the same verb entries in-process. The crate's entire public API is `lernie::cmd` (the `Cli`/`Command` clap surface, one `run` entry per verb, the `Fx`/`Outcome`/`Error` binding seam, and the `prelude` binding preludes). The linked binding is **pin-exact 0.x only** — no semver stability, the posture brazen takes toward lernie.
+
+Parity between the two is enforced mechanically, not by convention: `tests/command_surface_parity.rs` walks the crate's actual public surface (via `syn`) and asserts a bijection with the CLI's introspected verb set (via clap) — the crate exposes nothing public that is not a verb's entry, its arguments, its products, or the binding preludes, and no verb lacks its entry. It rides `make check` (hence the pre-commit hook and GitHub Actions), so a divergence between the linked surface and the CLI fails the build.
+
 ## Quickstart
 
 ```
@@ -72,7 +81,12 @@ uninstall.
 JSON Schemas for the harness-root and config-commit control files (per
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §2.2, §4.1) are generated
 from the Rust types under `src/config/`. `make schemas` writes them to
-`schemas/` for editor integration and external validators:
+`schemas/` for editor integration and external validators. Generation is a
+golden test (`config::schemas::write_to` vs the checked-in `schemas/`):
+`make schemas` runs it with `UPDATE_SCHEMAS=1` to rewrite the directory,
+and the same test under `make check` fails if `schemas/` ever drifts from
+the source types — so the tree is always current, with no separate binary
+to run.
 
 | File                          | Backed by Rust type                        | Config-commit / on-disk file          |
 |-------------------------------|--------------------------------------------|---------------------------------------|

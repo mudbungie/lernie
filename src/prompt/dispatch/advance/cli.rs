@@ -17,9 +17,11 @@ use crate::prompt::{NanoIdGen, tool::SpawnTool};
 use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
+use std::sync::atomic::AtomicBool;
 
 /// What the bin does after one hop: nothing, or exec the successor.
 #[derive(Debug)]
+#[allow(dead_code)] // `Done`'s payload is read only by tests (§3.4 narrowing)
 pub enum AdvanceHandoff {
     /// The hop completed in this process — a no-op, an already-driven
     /// exit, or a terminal event whose exit protocol already ran.
@@ -33,12 +35,23 @@ pub enum AdvanceHandoff {
 /// Run one production hop: take the lease (adopting a predecessor's
 /// [`baton::LOCK_FD_ENV`] fd from the live environment, else
 /// acquiring), drive [`run`] with the real components, and prepare the
-/// §6 handoff.
-pub fn cli_run(workspace: &Path, agent_id: &str) -> Result<AdvanceHandoff, Error> {
+/// §6 handoff. `driver_target` is the running-binary path the exec
+/// binding injects (`cmd::Fx::driver_target`, §3.4) — it is the
+/// successor `execve` target *and* the launcher's detached-spawn target,
+/// so the library resolves no `current_exe` of its own; `stop` is the
+/// executor's injected SIGTERM flag (`cmd::Fx::stop`, §2.9).
+pub fn cli_run(
+    workspace: &Path,
+    agent_id: &str,
+    driver_target: &Path,
+    stop: &AtomicBool,
+) -> Result<AdvanceHandoff, Error> {
     cli_run_with(
         workspace,
         agent_id,
         std::env::var_os(baton::LOCK_FD_ENV).as_deref(),
+        driver_target,
+        stop,
     )
 }
 
@@ -50,6 +63,8 @@ fn cli_run_with(
     workspace: &Path,
     agent_id: &str,
     lease_env: Option<&OsStr>,
+    driver_target: &Path,
+    stop: &AtomicBool,
 ) -> Result<AdvanceHandoff, Error> {
     crate::workspace::require(workspace)?;
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
@@ -70,10 +85,9 @@ fn cli_run_with(
         }
     };
 
-    let exe = std::env::current_exe()?;
     let roots = harness_root::resolve()?;
     let tool_executor = SpawnTool::new(&roots.data, &SystemClock);
-    let launcher = AdvanceLauncher::with_exe(exe.clone());
+    let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     let deps = Deps {
         adapter: &SpawnAdapter,
         sleeper: &RealSleeper,
@@ -82,14 +96,14 @@ fn cli_run_with(
         id_gen: &NanoIdGen,
         tool_executor: &tool_executor,
         config_root: &roots.config,
-        stop: crate::prompt::stop_flag(),
+        stop,
         launcher: &launcher,
     };
 
     let outcome = run(workspace, agent_id, Some(lease), &deps, &mut || {
         resolve_worker(workspace, ConfigSource::Agent(agent_id), &deps)
     })?;
-    handoff(&exe, workspace, agent_id, outcome)
+    handoff(driver_target, workspace, agent_id, outcome)
 }
 
 /// Map a hop's outcome to the bin's next act (§6 step 5): tools ran →
@@ -119,19 +133,25 @@ mod tests {
         inbox::try_acquire(dir).unwrap().expect("free lock")
     }
 
+    /// The injected driver target for tests — a bare name; these hops all
+    /// error before any spawn/exec would consult it.
+    fn td() -> &'static Path {
+        Path::new("lernie")
+    }
+
     #[test]
     fn a_non_workspace_is_refused_by_the_layout_guard() {
         // Pre-v1 clean break (§2.2, §10): the guard fires before any
         // lease or inbox work.
         let ws = TempDir::new().unwrap();
-        let err = cli_run(ws.path(), "20260101-a1").unwrap_err();
+        let err = cli_run(ws.path(), "20260101-a1", td(), &AtomicBool::new(false)).unwrap_err();
         assert!(matches!(err, Error::Layout(_)), "{err}");
     }
 
     #[test]
     fn empty_workspace_is_nothing_to_do_via_production_wiring() {
         let (_h, ws) = crate::workspace::fixture::workspace();
-        let out = cli_run(&ws, "20260101-a1").unwrap();
+        let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
@@ -142,7 +162,7 @@ mod tests {
     fn held_lock_is_already_driven() {
         let (_h, ws) = crate::workspace::fixture::workspace();
         let _held = test_lease(&inbox_dir(&ws, "20260101-a1"));
-        let out = cli_run(&ws, "20260101-a1").unwrap();
+        let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::AlreadyDriven)
@@ -154,7 +174,7 @@ mod tests {
         let (_h, ws) = crate::workspace::fixture::workspace();
         std::fs::create_dir_all(ws.join("inbox")).unwrap();
         std::fs::write(inbox_dir(&ws, "20260101-a1"), b"not a dir").unwrap();
-        let err = cli_run(&ws, "20260101-a1").unwrap_err();
+        let err = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap_err();
         assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
     }
 
@@ -162,7 +182,14 @@ mod tests {
     fn bad_lease_env_is_declined_loudly_as_lease_adopt() {
         let (_h, ws) = crate::workspace::fixture::workspace();
         std::fs::create_dir_all(inbox_dir(&ws, "20260101-a1")).unwrap();
-        let err = cli_run_with(&ws, "20260101-a1", Some(OsStr::new("not-an-fd"))).unwrap_err();
+        let err = cli_run_with(
+            &ws,
+            "20260101-a1",
+            Some(OsStr::new("not-an-fd")),
+            td(),
+            &AtomicBool::new(false),
+        )
+        .unwrap_err();
         assert!(matches!(err, Error::LeaseAdopt { .. }), "{err}");
     }
 
@@ -176,7 +203,14 @@ mod tests {
         let lease = test_lease(&dir);
         let fd = lease.as_raw_fd().to_string();
         std::mem::forget(lease);
-        let out = cli_run_with(&ws, "20260101-a1", Some(OsStr::new(&fd))).unwrap();
+        let out = cli_run_with(
+            &ws,
+            "20260101-a1",
+            Some(OsStr::new(&fd)),
+            td(),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
         assert!(matches!(
             out,
             AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
@@ -195,7 +229,7 @@ mod tests {
         let agent = "20260101-a1";
         let wt = crate::workspace::fixture::spawn_root(&ws, agent);
         inbox::deposit(&ws, agent, "user", "hi", &SystemClock).unwrap();
-        let err = cli_run(&ws, agent).unwrap_err();
+        let err = cli_run(&ws, agent, td(), &AtomicBool::new(false)).unwrap_err();
         assert!(!err.to_string().is_empty());
         // The delivery commit landed ahead of the failed resolution.
         assert!(wt.join("messages/001-user.md").exists());

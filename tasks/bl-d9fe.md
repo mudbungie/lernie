@@ -1,9 +1,13 @@
 +++
 title = "gate: docs — docs reflect current state"
 created = 1784337201
-updated = 1784525188
+updated = 1784525234
 parent = "bl-06d5"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-06d5"
+on = "claim"
 +++
 ## VERDICT (Costs, 2026-07-19): NOT SATISFIED — one concrete fix owed + one user decision
 

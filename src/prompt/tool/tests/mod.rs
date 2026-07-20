@@ -13,10 +13,15 @@
 //!   from a signal not under harness control" §2.10 fault.
 //! - [`errors`]: failure modes of resolution, spawn, and disk-record
 //!   I/O.
+//! - [`bash_tool`], [`read_file_tool`]: end-to-end through the
+//!   cargo-built `lernie` binary (the §3.3 in-process fallback hop),
+//!   resolved via [`crate::test_support::lernie_binary`].
 
+mod bash_tool;
 mod cascade;
 mod errors;
 mod fixtures;
 mod happy;
+mod read_file_tool;
 mod resolve;
 mod types;

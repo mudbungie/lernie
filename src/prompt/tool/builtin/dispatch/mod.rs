@@ -184,6 +184,7 @@ impl SubprocessSpawner {
     }
 
     /// Explicit binary path — exposed for tests and embedded callers.
+    #[cfg(test)] // test-only builder
     pub fn with_exe(exe: PathBuf) -> Self {
         Self { exe }
     }

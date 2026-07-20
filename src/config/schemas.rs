@@ -1,9 +1,16 @@
 //! JSON Schema generation for the v0.3 conversation-repo + harness-root
 //! configuration files (ARCH §2.2, §4.1).
 //!
-//! Used by the `gen-schemas` binary (and by tests) to produce
-//! `schemas/<name>.json` so external tooling (editors, the template task's
-//! validation pass) can validate configuration without linking the crate.
+//! Driven by the `schemas_golden` test (§3.4) to produce `schemas/<name>.json`
+//! so external tooling (editors, the template task's validation pass) can
+//! validate configuration without linking the crate: `make schemas`
+//! (`UPDATE_SCHEMAS=1`) rewrites the directory, and the same test under
+//! `make check` fails on any drift.
+
+// The generation API is now reached only through the `schemas_golden` test
+// (which replaced the `gen-schemas` binary, §3.4) — real machinery, run on
+// every test pass, but off any verb's runtime path, so `allow(dead_code)`.
+#![allow(dead_code)]
 
 use crate::config::manifest::Manifest;
 use crate::config::models::Models;

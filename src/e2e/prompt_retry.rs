@@ -17,8 +17,8 @@ use std::process::{Command, Stdio};
 use std::thread;
 use tempfile::TempDir;
 
-fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 /// Env vars that, when inherited, override `-C <repo>` and redirect a
@@ -141,13 +141,13 @@ roles:
     provider: test
     model: claude-haiku-4-5
 ";
-    lernie::template::authoring::author(
+    crate::template::authoring::author(
         dest,
         &dest.join(".no-pools"),
         "default",
-        lernie::template::authoring::Origin::Advance,
+        crate::template::authoring::Origin::Advance,
         |dir| fs::write(dir.join("providers.yaml"), providers),
-        &lernie::template::RealGit::new(),
+        &crate::template::RealGit::new(),
     )
     .unwrap();
 }

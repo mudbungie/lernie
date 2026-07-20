@@ -4,6 +4,12 @@
 //! includes, budget, and overflow policy. Paths are relative to the
 //! branch's worktree (§5.1).
 
+// Config machinery exercised by tests but not yet on any verb's runtime
+// path; the §3.4 narrowing (bl-231c) dropped the public-API dead-code
+// exemption it rode on. These are real config types, not test scaffolding,
+// so `allow(dead_code)` is the honest marker rather than `#[cfg(test)]`.
+#![allow(dead_code)]
+
 use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

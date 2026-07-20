@@ -1,11 +1,9 @@
 //! Integration tests: `lernie stop` idempotence + error paths
 //! (companion to `tests/stop_cli.rs`'s cascade test).
 
-mod stop_common;
-
+use super::stop_common::{git_run, lernie_bin, repo_git, scaffold_repo, write_global_models};
 use std::fs;
 use std::process::{Command, Stdio};
-use stop_common::{git_run, lernie_bin, repo_git, scaffold_repo, write_global_models};
 use tempfile::TempDir;
 
 /// Fork a stale agent branch `agents/<id>` off `config/default` with a

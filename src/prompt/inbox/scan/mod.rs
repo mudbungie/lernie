@@ -86,8 +86,6 @@ pub enum ScanError {
         #[source]
         source: io::Error,
     },
-    #[error("resolve lernie binary for the driver launch: {0}")]
-    Exe(#[source] io::Error),
 }
 
 /// What one [`scan`] did, for the §8 health metrics and for tests. All
@@ -129,10 +127,15 @@ pub fn scan(
 /// best-effort: errors propagate to a non-zero exit rather than being
 /// swallowed — the operator invoked the sweep and is owed its outcome.
 /// Mirrors the [`super::cli_run`] production-wiring convenience for
-/// `lernie message`.
-pub fn cli_run(workspace: &std::path::Path) -> Result<ScanReport, ScanError> {
+/// `lernie message`. `driver_target` is the running-binary path the
+/// exec binding injects (`cmd::Fx::driver_target`, §3.4) for the
+/// detached `lernie advance` launches; the library resolves none itself.
+pub fn cli_run(
+    workspace: &std::path::Path,
+    driver_target: &std::path::Path,
+) -> Result<ScanReport, ScanError> {
     crate::workspace::require(workspace)?;
-    let launcher = AdvanceLauncher::current().map_err(ScanError::Exe)?;
+    let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     scan(workspace, &RealGit::new(), &SystemClock, &launcher)
 }
 

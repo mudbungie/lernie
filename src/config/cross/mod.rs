@@ -11,4 +11,3 @@ mod roles_check;
 mod workflow_check;
 
 pub use roles_check::check_roles_against_models;
-pub use workflow_check::check_workflow_against_roles;

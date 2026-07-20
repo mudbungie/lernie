@@ -52,6 +52,7 @@ impl PerRepoProviders {
     /// Hard-errors if the file carries legacy `providers:` or `models:`
     /// blocks — those belong to the global `<harness-root>/models.yaml`
     /// only (ARCH §4.1).
+    #[allow(dead_code)] // file-loader reached only by tests; runtime parses via `parse` (§3.4 narrowing)
     pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),

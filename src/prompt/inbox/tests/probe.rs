@@ -137,7 +137,7 @@ fn cli_run_deposits_via_production_deps() {
     let (_h, ws) = crate::workspace::fixture::workspace();
     let ws = ws.as_path();
     let _held = try_acquire(&inbox_dir(ws, "a1")).unwrap().expect("free");
-    cli_run(ws, "a1", "hi").unwrap();
+    cli_run(ws, "a1", "hi", Path::new("true")).unwrap();
     let files: Vec<_> = std::fs::read_dir(inbox_dir(ws, "a1"))
         .unwrap()
         .flatten()
@@ -159,10 +159,4 @@ fn advance_launcher_surfaces_a_spawn_failure() {
     let launcher = AdvanceLauncher::with_exe("/no/such/lernie-binary".into());
     let err = launcher.launch(Path::new("/tmp"), "a1").unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::NotFound);
-}
-
-#[test]
-fn advance_launcher_current_resolves_the_running_binary() {
-    // Smoke-test the current_exe wiring; no spawn is performed.
-    AdvanceLauncher::current().unwrap();
 }

@@ -22,7 +22,7 @@ LERNIE_DATA_HOME   := $(XDG_DATA_HOME)/lernie
 endif
 
 # Binaries that resolve via `PATH`: the harness CLI and the eval runner.
-# The desktop frontend lives in its own repo (lernie-ui-egui) and
+# The desktop frontend lives in its own repo (yog) and
 # installs from there.
 PATH_BINARIES     := lernie agent-eval
 # The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for

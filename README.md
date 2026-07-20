@@ -660,12 +660,12 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
 
 ## UI (v0.5)
 
-The desktop frontend lives in its own repository, `lernie-ui-egui`: an
+The desktop frontend lives in its own repository, `yog`: an
 egui/eframe window that renders a workspace and issues user actions via
 `lernie <subcommand>`. It composes on lernie's public surfaces only —
 the CLI and the on-disk workspace layout (ARCH §3.5, §7.1) — and takes
 no Cargo dependency on this crate, so it builds, versions, and installs
-independently (`make install` there drops `lernie-ui-egui` next to
+independently (`make install` there drops `yog` next to
 `lernie`). Keeping frontends out of this workspace is deliberate:
 lernie ships as a composable component, and anything that composes it
 (a GUI, a web view) lives outside it and meets it at those surfaces.

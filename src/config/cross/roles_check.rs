@@ -71,7 +71,7 @@ models:
     }
 
     fn per_repo(s: &str) -> PerRepoProviders {
-        PerRepoProviders::load(yaml(s).path()).unwrap()
+        PerRepoProviders::parse(s, std::path::Path::new("<commit>:providers.yaml")).unwrap()
     }
 
     #[test]

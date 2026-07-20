@@ -112,8 +112,9 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-    // Git sequence: 4 (control resolution from the config commit, §2.2:
-    // config-head rev-parse + three `show` reads, all against repo.git)
+    // Git sequence: 5 (control resolution from the config commit, §2.2:
+    // config-head rev-parse + four `show` reads — `version` first, the
+    // §10 schema-version guard, then providers/workflow/soul — against repo.git)
     // + 1 (branch spawn off config/default) + 3 (dispatch commit:
     // control-file removal, add, commit — §2.3 step 2) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
@@ -122,40 +123,41 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // (§2.6): the root branch persists on its own ref. The version guard
     // runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 15);
-    for (dest, _args) in &runs[0..5] {
+    assert_eq!(runs.len(), 16);
+    for (dest, _args) in &runs[0..6] {
         assert_eq!(dest, &repo_git, "control + spawn run against repo.git");
     }
     assert_eq!(
         runs[0].1,
         vec!["rev-parse", "--verify", "refs/heads/config/default"]
     );
+    assert_eq!(runs[1].1, vec!["show", &format!("{STUB_SHA}:version")]);
     assert_eq!(
-        runs[1].1,
+        runs[2].1,
         vec!["show", &format!("{STUB_SHA}:providers.yaml")]
     );
     assert_eq!(
-        runs[2].1,
+        runs[3].1,
         vec!["show", &format!("{STUB_SHA}:workflow.yaml")]
     );
     assert_eq!(
-        runs[3].1,
+        runs[4].1,
         vec!["show", &format!("{STUB_SHA}:souls/worker.md")]
     );
-    let args4 = &runs[4].1;
+    let args5 = &runs[5].1;
     assert_eq!(
-        args4[..4],
+        args5[..4],
         ["worktree", "add", "-b", "agents/ct-1-deadbeef"]
     );
-    assert_eq!(args4[4], worktree.to_string_lossy().to_string());
-    assert_eq!(args4[5], "config/default");
-    for (dest, _args) in &runs[5..15] {
+    assert_eq!(args5[4], worktree.to_string_lossy().to_string());
+    assert_eq!(args5[5], "config/default");
+    for (dest, _args) in &runs[6..16] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside the worktree");
     }
     // Dispatch commit (§2.3 step 2): the config commit's control files
     // leave the agent's tree (§2.2), then goal + soul commit.
     assert_eq!(
-        runs[5].1,
+        runs[6].1,
         vec![
             "rm",
             "-r",
@@ -169,27 +171,27 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
             "souls"
         ]
     );
-    assert_eq!(runs[6].1, vec!["add", "goal.md", "soul.md"]);
-    assert_eq!(runs[7].1[0], "commit");
-    assert!(runs[7].1[2].contains("step 001: dispatch"));
-    assert!(runs[7].1[2].contains("[ct-1-deadbeef]"));
+    assert_eq!(runs[7].1, vec!["add", "goal.md", "soul.md"]);
+    assert_eq!(runs[8].1[0], "commit");
+    assert!(runs[8].1[2].contains("step 001: dispatch"));
+    assert!(runs[8].1[2].contains("[ct-1-deadbeef]"));
     // The step-1 drain (§2.11 *Delivery*): a stray-recovery probe over
     // messages/ (clean here — no add/commit), then the initial user
     // message delivered from the inbox as the first transcript entry,
     // before step 1's read state is captured.
-    assert_eq!(runs[8].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[9].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[10].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[11].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[9].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[10].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[11].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[12].1, vec!["rev-parse", "HEAD"]);
 
     // The transcript writer commits the model-output entry (§2.3): the
     // sealed staging file is renamed to messages/002-<model-id>.json —
     // the origin token is the model that authored it (§2.3) — and
     // committed.
-    assert_eq!(runs[12].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
-    assert_eq!(runs[13].1[0], "commit");
-    assert!(runs[13].1[2].contains("transcript 002: claude-sonnet-5"));
-    assert!(runs[13].1[2].contains("[ct-1-deadbeef]"));
+    assert_eq!(runs[13].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
+    assert_eq!(runs[14].1[0], "commit");
+    assert!(runs[14].1[2].contains("transcript 002: claude-sonnet-5"));
+    assert!(runs[14].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
     // canonical model-output blocks (the "hi there" text block).
     let entry = worktree.join("messages/002-claude-sonnet-5.json");
@@ -204,8 +206,8 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // tip as its terminal ref (`rev-parse HEAD`); the deposit itself is a
     // structural no-op for a root (no parent inbox, §2.4), so it lands no
     // git op of its own and no merge-back follows.
-    assert_eq!(runs[14].0, worktree);
-    assert_eq!(runs[14].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[15].0, worktree);
+    assert_eq!(runs[15].1, vec!["rev-parse", "HEAD"]);
 }
 
 #[test]

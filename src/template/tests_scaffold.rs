@@ -9,7 +9,7 @@
 
 use crate::config::manifest::{Manifest, OverflowPolicy};
 use crate::config::per_repo_providers::PerRepoProviders;
-use crate::config::version::Version;
+use crate::config::version::{self, Version};
 use crate::config::workflow::Workflow;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -104,12 +104,12 @@ fn version_file_is_one() {
     let (_holder, ws) = scaffolded();
     let raw = show_control(&ws, "version");
     assert_eq!(raw.trim(), "1");
-    // The loader agrees when handed the same content via a temp file.
-    let tmp = TempDir::new().unwrap();
-    std::fs::write(tmp.path().join("version"), &raw).unwrap();
+    // The parser agrees when handed the same content the runtime reads
+    // out of the config commit — and accepts it, so the scaffolded
+    // template is a version this harness supports (ARCH §10).
     assert_eq!(
-        Version::load(&tmp.path().join("version")).unwrap(),
-        Version(1)
+        Version::parse(&raw, &parse_origin("version")).unwrap(),
+        Version(version::SUPPORTED)
     );
 }
 

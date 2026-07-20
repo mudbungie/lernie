@@ -9,7 +9,6 @@ use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::Path;
 
 /// Top-level `workflow.yaml` shape.
@@ -162,17 +161,6 @@ pub enum CompactionTrigger {
 }
 
 impl Workflow {
-    /// Read, parse, and validate `workflow.yaml` at `path`. Each action
-    /// string is parsed against the closed action set.
-    #[allow(dead_code)] // file-loader reached only by tests; runtime parses from git-show strings (§3.4 narrowing, bl-231c)
-    pub fn load(path: &Path) -> Result<Self, LoadError> {
-        let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
-            path: path.to_path_buf(),
-            source,
-        })?;
-        Self::parse(&raw, path)
-    }
-
     /// Parse and validate workflow YAML already in hand — the
     /// governing-config read path (ARCH §2.2: control is read from the
     /// config commit's tree, never from a worktree file). `origin`
@@ -218,9 +206,12 @@ impl Workflow {
             .unwrap_or_default()
     }
 
-    /// Pre-parse every action string into a typed [`Action`]. Intended for
-    /// callers that want the typed view without re-validating.
-    #[allow(dead_code)] // exercised by tests only; not yet on a verb's runtime path (§3.4 narrowing)
+    /// Pre-parse every action string into a typed [`Action`], keyed by
+    /// event — the whole-workflow view [`crate::config::cross::
+    /// check_workflow_against_roles`] sweeps at config load (§4.3), as
+    /// against [`actions_for`](Self::actions_for)'s single-event lookup on
+    /// the §6 hot path. Strings were validated at parse, so this cannot
+    /// fail.
     pub fn typed_events(&self) -> BTreeMap<Event, Vec<Action>> {
         self.events
             .iter()

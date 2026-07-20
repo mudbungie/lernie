@@ -16,7 +16,8 @@
 //! acquire, nothing due) exits before any config is read (§6).
 
 use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
-use crate::config::{Model, ModelsConfig, Workflow};
+use crate::config::version::Version;
+use crate::config::{Model, ModelsConfig, Workflow, cross};
 use crate::prompt::{AdapterRunner, adapter, brazen_pin, dispatch};
 use crate::workspace;
 use std::ffi::OsString;
@@ -25,6 +26,10 @@ use std::path::{Path, PathBuf};
 /// Control file binding workflow events to actions and declaring the
 /// retry policy (ARCH §6), read from the config commit (§2.2).
 const WORKFLOW_FILE: &str = "workflow.yaml";
+
+/// The config's schema version (ARCH §10), read from the config commit
+/// (§2.2) like every other control file.
+const VERSION_FILE: &str = "version";
 
 /// Which config commit governs the resolution (ARCH §2.2).
 pub(super) enum ConfigSource<'a> {
@@ -106,6 +111,12 @@ pub(super) fn resolve_worker(
     // `providers.yaml` assignment rather than the worker's.
     let role = agent_role(workspace, &source, deps)?;
 
+    // §10 schema-version guard, first of the control reads: a config
+    // commit authored by a newer harness may carry shapes the parsers
+    // below cannot read, so decline before interpreting any of them.
+    let version_raw = read_control(workspace, &commit, VERSION_FILE, deps)?;
+    Version::parse(&version_raw, &control_origin(&commit, VERSION_FILE))?;
+
     let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
     let providers_raw = read_control(workspace, &commit, PER_REPO_PROVIDERS_FILE, deps)?;
     let (cfg, _warnings) = ModelsConfig::load_with_per_repo(
@@ -139,6 +150,11 @@ pub(super) fn resolve_worker(
 
     let workflow_raw = read_control(workspace, &commit, WORKFLOW_FILE, deps)?;
     let workflow = Workflow::parse(&workflow_raw, &control_origin(&commit, WORKFLOW_FILE))?;
+    // §4.3: every `dispatch(<role>)` binding must name a role the same
+    // config commit declares. Checked here, at the load — a workflow
+    // naming an undeclared role is declined before the first model call,
+    // not at the hop that finally reaches the binding.
+    cross::check_workflow_against_roles(&workflow, &cfg.per_repo)?;
 
     let soul_rel = format!("{SOULS_DIR}/{role}.md");
     let soul = read_control(workspace, &commit, &soul_rel, deps)?;

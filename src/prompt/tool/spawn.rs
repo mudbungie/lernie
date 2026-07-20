@@ -7,9 +7,15 @@
 //! 1. `<data_root>/tools/lernie-tool-<name>` (installed by `make
 //!    install`).
 //! 2. `lernie-tool-<name>` on `PATH` (mirroring §4.4 adapter discovery).
-//! 3. In-process fallback: `<lernie binary> tool <name>`. The binary
-//!    path is `std::env::current_exe()` — re-entry into the same
-//!    dispatcher, matching PRINCIPLES "Everyone uses the front door".
+//! 3. In-process fallback: `<driver target> tool <name>` — re-entry
+//!    into the same dispatcher, matching PRINCIPLES "Everyone uses the
+//!    front door". The target is the one the binding injected
+//!    (`cmd::Fx::driver_target`), never a name this module resolves:
+//!    ARCH §2.11, "the driver target is injected at the binding, not
+//!    resolved by name". Under the exec binding that is the `lernie`
+//!    image; under a linked host it is the host's own re-exec target or
+//!    a PATH-resolved `lernie` — never the host binary itself, which
+//!    carries no `tool` verb of its own.
 
 use super::subprocess::{SpawnArgs, spawn_and_capture};
 use super::{
@@ -29,58 +35,42 @@ use std::time::Duration;
 pub struct SpawnTool<'a> {
     data_root: &'a Path,
     clock: &'a dyn Clock,
+    driver_target: &'a Path,
     deadline: Duration,
-    binary_resolver: Box<dyn BinaryResolver + 'a>,
+    path_lookup: Box<dyn PathLookup + 'a>,
 }
 
-/// Indirection for tool-binary resolution so tests can drive both the
-/// PATH lookup and the in-process fallback without manipulating the
-/// process env. Production wires [`CurrentExeResolver`], whose
-/// methods read the live `PATH` and `current_exe`.
-pub trait BinaryResolver {
-    /// Path to the `lernie` binary for in-process tool dispatch, or
-    /// `None` if it cannot be determined. A `None` here surfaces as
-    /// [`ExecError::NotFound`] when external lookup also missed.
-    fn lernie_binary(&self) -> Option<PathBuf>;
-
+/// Indirection for the §3.3 second hop so tests can drive the PATH
+/// lookup without manipulating the process env. Production wires
+/// [`EnvPath`], which reads the live `PATH`. The third hop needs no
+/// indirection: its target is injected, not looked up.
+pub trait PathLookup {
     /// PATH lookup for the externalized tool binary
     /// (`lernie-tool-<name>`), the second hop in §3.3 resolution.
-    /// Default delegates to [`which_in_path`]; tests override to
-    /// control PATH content without mutating the live env.
+    fn which_on_path(&self, prefixed_name: &str) -> Option<PathBuf>;
+}
+
+/// Real-process lookup: the live `PATH`, via [`which_in_path`].
+pub struct EnvPath;
+
+impl PathLookup for EnvPath {
     fn which_on_path(&self, prefixed_name: &str) -> Option<PathBuf> {
         which_in_path(prefixed_name)
     }
 }
 
-/// Real-process resolver: `std::env::current_exe()` is the actively
-/// running binary's path on every platform we care about; PATH is
-/// inherited via the default [`BinaryResolver::which_on_path`].
-///
-/// PHASE-3 (bl-231c follow-on): this is the one `current_exe` left in
-/// the library — the §3.3 tool-resolution third hop (`<lernie> tool
-/// <name>`), a *separate* seam from the §2.11/§6 driver-target family
-/// (`cmd::Fx::driver_target`), which no longer touches `current_exe`.
-/// Unify it with the injected driver target when `SpawnTool::new` is
-/// re-signed to take the binding's binary path (a change that migrates
-/// this module's ~18 `SpawnTool::new` unit-test call sites, out of
-/// scope for the command-surface port).
-pub struct CurrentExeResolver;
-
-impl BinaryResolver for CurrentExeResolver {
-    fn lernie_binary(&self) -> Option<PathBuf> {
-        std::env::current_exe().ok()
-    }
-}
-
 impl<'a> SpawnTool<'a> {
-    /// Build a [`SpawnTool`] backed by [`CurrentExeResolver`] and the
-    /// default §3.3 deadline.
-    pub fn new(data_root: &'a Path, clock: &'a dyn Clock) -> Self {
+    /// Build a [`SpawnTool`] over the live `PATH` and the default §3.3
+    /// deadline. `driver_target` is the binding-injected re-entry path
+    /// (`cmd::Fx::driver_target`) the third hop addresses as
+    /// `<driver_target> tool <name>`.
+    pub fn new(data_root: &'a Path, clock: &'a dyn Clock, driver_target: &'a Path) -> Self {
         Self {
             data_root,
             clock,
+            driver_target,
             deadline: super::DEFAULT_TOOL_DEADLINE,
-            binary_resolver: Box::new(CurrentExeResolver),
+            path_lookup: Box::new(EnvPath),
         }
     }
 
@@ -92,37 +82,31 @@ impl<'a> SpawnTool<'a> {
         self
     }
 
-    /// Override the in-process binary resolver — used by tests to
-    /// inject a known-bad or known-good lernie path without depending
-    /// on `std::env::current_exe()`'s value under cargo.
+    /// Override the PATH lookup — used by tests to drive the second hop
+    /// without mutating the live `PATH`.
     #[cfg(test)] // test-only builder
-    pub fn with_resolver(mut self, r: Box<dyn BinaryResolver + 'a>) -> Self {
-        self.binary_resolver = r;
+    pub fn with_path_lookup(mut self, l: Box<dyn PathLookup + 'a>) -> Self {
+        self.path_lookup = l;
         self
     }
 
     /// Apply the §3.3 resolution order. Returns `(binary, args)` so
     /// the caller can spawn it without re-deciding the in-process
-    /// case.
-    fn resolve(&self, name: &str) -> Result<(OsString, Vec<OsString>), ExecError> {
+    /// case. Total: the third hop is the injected driver target, so
+    /// there is no unresolvable case — a name no binary answers to is
+    /// declined by the dispatcher behind the front door
+    /// (`builtin::Error::Unknown`), not by this lookup.
+    fn resolve(&self, name: &str) -> (OsString, Vec<OsString>) {
         let external_name = format!("{}{}", super::EXTERNAL_PREFIX, name);
-        let tools_root = self.data_root.join(super::TOOLS_DIR);
-        let harness_path = tools_root.join(&external_name);
+        let harness_path = self.data_root.join(super::TOOLS_DIR).join(&external_name);
         if harness_path.is_file() {
-            return Ok((harness_path.into_os_string(), Vec::new()));
+            return (harness_path.into_os_string(), Vec::new());
         }
-        if let Some(p) = self.binary_resolver.which_on_path(&external_name) {
-            return Ok((p.into_os_string(), Vec::new()));
+        if let Some(p) = self.path_lookup.which_on_path(&external_name) {
+            return (p.into_os_string(), Vec::new());
         }
-        let resolver = &self.binary_resolver;
-        let lernie = resolver
-            .lernie_binary()
-            .ok_or_else(|| ExecError::NotFound {
-                name: name.to_string(),
-                harness_path,
-            })?;
         let args = vec![OsString::from(IN_PROCESS_SUBCOMMAND), OsString::from(name)];
-        Ok((lernie.into_os_string(), args))
+        (self.driver_target.as_os_str().to_owned(), args)
     }
 }
 
@@ -146,7 +130,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         };
         atomic_write_json(&dir, INPUT_FILE, &input_record)?;
 
-        let (binary, args) = self.resolve(call.name)?;
+        let (binary, args) = self.resolve(call.name);
         let stdin = serde_json::to_vec(call.input).expect("Value is always serializable");
         let extra_env = harness_env_for(step_dir);
 

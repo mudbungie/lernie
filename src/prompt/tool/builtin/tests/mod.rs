@@ -5,8 +5,22 @@
 use super::*;
 use std::io::Cursor;
 
-/// The compactor-tool routing arms (§2.7), split out to keep this file
-/// under the repo's per-file line cap.
+/// [`super::run`] with the injected driver target (`cmd::Fx::driver_target`,
+/// §2.11) supplied. No routing test here reaches the `dispatch` / `message`
+/// arms that re-enter it — those are driven through [`super::run_with`] with
+/// stub spawners — so a bare name suffices.
+pub(super) fn route<R: Read, W: Write, E: Write>(
+    name: &str,
+    stdin: &mut R,
+    stdout: &mut W,
+    stderr: &mut E,
+) -> Result<i32, Error> {
+    run(name, Path::new("lernie"), stdin, stdout, stderr)
+}
+
+/// The `bash` and compactor-tool routing arms, split out to keep this
+/// file under the repo's per-file line cap.
+mod routing_bash;
 mod routing_compaction;
 
 #[test]
@@ -14,7 +28,7 @@ fn unknown_tool_name_surfaces_unknown_variant() {
     let mut stdin = Cursor::new(Vec::<u8>::new());
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let err = run("not_a_tool", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
+    let err = route("not_a_tool", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
     let msg = err.to_string();
     assert!(msg.contains("not_a_tool"), "{msg}");
     assert!(msg.contains("unknown"), "{msg}");
@@ -30,7 +44,7 @@ fn read_file_routed_to_inner_module() {
     let mut stdin = Cursor::new(input.into_bytes());
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let code = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap();
+    let code = route("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap();
     assert_eq!(code, 0);
     assert_eq!(stdout, b"hi");
 }
@@ -42,31 +56,8 @@ fn read_file_error_is_carried_through_dispatcher() {
     let mut stdin = Cursor::new(b"not json".to_vec());
     let mut stdout = Vec::new();
     let mut stderr = Vec::new();
-    let err = run("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
+    let err = route("read_file", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
     assert!(matches!(err, Error::ReadFile(_)), "{err}");
-}
-
-#[test]
-fn bash_routed_to_inner_module() {
-    // Drives the dispatch arm for bash through a trivial command.
-    let input = serde_json::json!({ "command": "printf hi" }).to_string();
-    let mut stdin = Cursor::new(input.into_bytes());
-    let mut stdout = Vec::new();
-    let mut stderr = Vec::new();
-    let code = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap();
-    assert_eq!(code, 0);
-    assert_eq!(stdout, b"hi");
-}
-
-#[test]
-fn bash_error_is_carried_through_dispatcher() {
-    // Bad JSON on stdin — bash::Error::InvalidJson — should surface
-    // through the From conversion as Error::Bash.
-    let mut stdin = Cursor::new(b"not json".to_vec());
-    let mut stdout = Vec::new();
-    let mut stderr = Vec::new();
-    let err = run("bash", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-    assert!(matches!(err, Error::Bash(_)), "{err}");
 }
 
 /// Test-only stub for the dispatch tool's [`Spawner`] dependency.

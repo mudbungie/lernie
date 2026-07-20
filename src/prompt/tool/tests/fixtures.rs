@@ -8,6 +8,16 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
+/// The injected driver target (`cmd::Fx::driver_target`, §2.11) for
+/// tests whose tool resolves at the first or second §3.3 hop, so the
+/// third is never consulted. A bare name makes a regression that *does*
+/// reach the third hop fail loudly at spawn rather than quietly
+/// re-entering the test binary — which is exactly what threading the
+/// target instead of `current_exe` bought.
+pub(super) fn driver_target() -> &'static Path {
+    Path::new("lernie")
+}
+
 /// Deterministic [`Clock`] — `started_at` / `ended_at` come back as
 /// `iso-1` and `iso-2` so the on-disk record's timestamps are
 /// observable in assertions without dragging the wall clock in.

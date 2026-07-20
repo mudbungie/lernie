@@ -1,20 +1,12 @@
 //! Resolution / spawn / disk-record I/O failure modes — every
 //! [`super::super::ExecError`] variant gets a constructive test.
 
-use super::super::spawn::{BinaryResolver, which_in_path_env};
+use super::super::spawn::which_in_path_env;
 use super::super::{ExecError, SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, write_script};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target, write_script};
 use serde_json::json;
-use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
-
-struct StaticResolver(Option<PathBuf>);
-impl BinaryResolver for StaticResolver {
-    fn lernie_binary(&self) -> Option<PathBuf> {
-        self.0.clone()
-    }
-}
 
 #[test]
 fn spawn_error_when_resolved_binary_is_not_executable() {
@@ -29,7 +21,7 @@ fn spawn_error_when_resolved_binary_is_not_executable() {
     std::fs::write(&bin, b"not a real binary").unwrap();
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let err = exec
         .execute(
             ToolCall {
@@ -57,7 +49,7 @@ fn io_error_when_step_dir_is_a_file() {
     let bogus_step = scratch.path().join("not-a-dir");
     std::fs::write(&bogus_step, b"i am a file").unwrap();
     let clock = FixedClock::default();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let err = exec
         .execute(
             ToolCall {
@@ -74,36 +66,6 @@ fn io_error_when_step_dir_is_a_file() {
             assert!(dir.ends_with("tu_e2"), "wrong dir in error: {:?}", dir);
         }
         other => panic!("expected Io, got {other:?}"),
-    }
-}
-
-#[test]
-fn not_found_error_path_includes_harness_root_lookup_path() {
-    let root = HarnessRoot::new();
-    let clock = FixedClock::default();
-    let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock).with_resolver(Box::new(StaticResolver(None)));
-    let err = exec
-        .execute(
-            ToolCall {
-                id: "tu_e3",
-                name: "ghost",
-                input: &json!({}),
-            },
-            &step.path,
-            &AtomicBool::new(false),
-        )
-        .unwrap_err();
-    match err {
-        ExecError::NotFound { name, harness_path } => {
-            assert_eq!(name, "ghost");
-            assert!(
-                harness_path.ends_with("tools/lernie-tool-ghost"),
-                "wrong harness path: {:?}",
-                harness_path
-            );
-        }
-        other => panic!("expected NotFound, got {other:?}"),
     }
 }
 
@@ -193,7 +155,7 @@ fn spawn_retries_past_transient_etxtbsy() {
 
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -239,7 +201,7 @@ fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
 
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let err = exec
         .execute(
             ToolCall {

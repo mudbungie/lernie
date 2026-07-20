@@ -21,6 +21,7 @@
 //! Adding a new one is a match arm in [`run`] plus a sibling module.
 
 use std::io::{Read, Write};
+use std::path::Path;
 use thiserror::Error;
 
 pub mod bash;
@@ -78,7 +79,10 @@ pub enum Error {
 
 /// Dispatch one in-process tool call. `name` is the tool name as the
 /// model spelled it (and as the harness passed via `lernie tool
-/// <name>`); `stdin` carries the `tool_use.input` JSON; `stdout`
+/// <name>`); `driver_target` is the binding-injected re-entry path
+/// (`cmd::Fx::driver_target`, §2.11) the `dispatch` and `message`
+/// built-ins go back through the front door with; `stdin` carries the
+/// `tool_use.input` JSON; `stdout`
 /// receives the bytes the executor will surface as
 /// `tool_result.content` on success; `stderr` receives the bytes that
 /// — per §3.3 — concatenate after stdout when the exit code is
@@ -94,15 +98,13 @@ pub enum Error {
 #[rustfmt::skip]
 pub fn run<R: Read, W: Write, E: Write>(
     name: &str,
+    driver_target: &Path,
     stdin: &mut R,
     stdout: &mut W,
     stderr: &mut E,
 ) -> Result<i32, Error> {
-    // `current_exe` failure here is exotic (mostly unusual platforms /
-    // `proc` mounts); panicking is consistent with the harness-wide
-    // pattern for unrecoverable startup invariants.
-    let spawner = dispatch::SubprocessSpawner::new().expect("current_exe resolves");
-    let sender = message::SubprocessSender::new().expect("current_exe resolves");
+    let spawner = dispatch::SubprocessSpawner::with_exe(driver_target.to_path_buf());
+    let sender = message::SubprocessSender::with_exe(driver_target.to_path_buf());
     run_with(name, stdin, stdout, stderr, &dispatch::ProcessEnv, &spawner, &sender)
 }
 

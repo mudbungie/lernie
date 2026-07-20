@@ -2,7 +2,7 @@
 //! other signal → harness-level fault per §2.10" branch.
 
 use super::super::{ExecError, SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target};
 use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -23,7 +23,8 @@ while true; do sleep 0.05; done
     );
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock).with_deadline(Duration::from_secs(2));
+    let exec =
+        SpawnTool::new(root.path(), &clock, driver_target()).with_deadline(Duration::from_secs(2));
     let stop = AtomicBool::new(false);
 
     // Flip the stop flag from another thread shortly after spawn so the
@@ -67,7 +68,7 @@ while true; do sleep 0.05; done
     let clock = FixedClock::default();
     let step = StepDir::new();
     let deadline = Duration::from_millis(250);
-    let exec = SpawnTool::new(root.path(), &clock).with_deadline(deadline);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target()).with_deadline(deadline);
     let stop = AtomicBool::new(false);
     let started = Instant::now();
     thread::scope(|s| {
@@ -118,7 +119,7 @@ kill -SEGV $$
     );
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let err = exec
         .execute(
             ToolCall {

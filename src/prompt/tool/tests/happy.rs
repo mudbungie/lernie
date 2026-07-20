@@ -6,7 +6,7 @@ use super::super::{
     ENV_CONV_BRANCH, ENV_CONV_REPO, INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool,
     ToolCall, ToolExecutor, ToolInputRecord, ToolOutputRecord,
 };
-use super::fixtures::{FixedClock, HarnessRoot, StepDir};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target};
 use serde_json::json;
 use std::sync::atomic::AtomicBool;
 
@@ -16,7 +16,7 @@ fn happy_path_writes_input_and_output_records() {
     root.install("greet", r#"printf "hello %s" "$1""#);
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -60,7 +60,7 @@ exit 7
     );
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -98,7 +98,7 @@ echo "quiet result"
     );
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -127,7 +127,7 @@ fn stdin_payload_is_offered_verbatim_to_the_tool() {
     root.install("echo-stdin", "cat");
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let input = json!({"command": "ls -la", "n": 42});
     let outcome = exec
         .execute(
@@ -153,7 +153,7 @@ fn tool_that_ignores_stdin_still_succeeds() {
     root.install("ignore-stdin", "echo done");
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -183,7 +183,7 @@ fn executor_sets_conv_repo_and_conv_branch_env_vars_on_tool_subprocess() {
     );
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {

@@ -9,7 +9,7 @@
 //! brazen's). The test exercises the loader independently of the
 //! dispatch path so regressions in cross-validation land visibly.
 
-use crate::config::{LoadError, ModelsConfig};
+use crate::config::{LoadError, ModelsConfig, Warning};
 use crate::harness_root;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -39,32 +39,43 @@ roles:
     model: claude-haiku-4-5
 "#;
 
+/// The two halves as the runtime sees them: the global `models.yaml` on
+/// disk at the harness root, and the per-repo `providers.yaml` as content
+/// already read out of the config commit's tree (ARCH §2.2 — never a
+/// worktree file), labelled with its `<commit>:<path>` origin.
 struct Scratch {
     _root: TempDir,
-    _repo: TempDir,
     global_path: PathBuf,
-    per_repo_path: PathBuf,
+    per_repo_raw: String,
+    per_repo_origin: PathBuf,
+}
+
+impl Scratch {
+    fn load(&self) -> Result<(ModelsConfig, Vec<Warning>), LoadError> {
+        ModelsConfig::load_with_per_repo(
+            &self.global_path,
+            &self.per_repo_raw,
+            &self.per_repo_origin,
+        )
+    }
 }
 
 fn scratch(global: &str, per_repo: &str) -> Scratch {
     let root = TempDir::new().unwrap();
     let global_path = harness_root::models_path(root.path());
     std::fs::write(&global_path, global).unwrap();
-    let repo = TempDir::new().unwrap();
-    let per_repo_path = repo.path().join("providers.yaml");
-    std::fs::write(&per_repo_path, per_repo).unwrap();
     Scratch {
         _root: root,
-        _repo: repo,
         global_path,
-        per_repo_path,
+        per_repo_raw: per_repo.to_string(),
+        per_repo_origin: PathBuf::from("<commit>:providers.yaml"),
     }
 }
 
 #[test]
 fn loads_both_halves_and_cross_validates() {
     let s = scratch(GLOBAL_MODELS, PER_REPO_ROLES);
-    let (cfg, warnings) = ModelsConfig::load(&s.global_path, &s.per_repo_path).unwrap();
+    let (cfg, warnings) = s.load().unwrap();
     assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
     assert!(cfg.global.adapter.is_none());
     assert_eq!(cfg.global.models.len(), 2);
@@ -82,7 +93,7 @@ fn legacy_blocks_in_per_repo_are_a_load_error() {
     // hard-errors at load — those belong to the global file only.
     let per_repo_with_legacy = format!("{GLOBAL_MODELS}\n{PER_REPO_ROLES}");
     let s = scratch(GLOBAL_MODELS, &per_repo_with_legacy);
-    let err = ModelsConfig::load(&s.global_path, &s.per_repo_path).unwrap_err();
+    let err = s.load().unwrap_err();
     match err {
         LoadError::Invalid { key, .. } => assert_eq!(key, "models"),
         other => panic!("expected Invalid, got {other:?}"),
@@ -98,7 +109,7 @@ roles:
     model: claude-sonnet-9000
 "#;
     let s = scratch(GLOBAL_MODELS, bad_per_repo);
-    let err = ModelsConfig::load(&s.global_path, &s.per_repo_path).unwrap_err();
+    let err = s.load().unwrap_err();
     match err {
         LoadError::UnresolvedRef { key, message } => {
             assert_eq!(key, "roles.worker.model");
@@ -112,6 +123,6 @@ roles:
 fn missing_global_is_a_load_error() {
     let s = scratch(GLOBAL_MODELS, PER_REPO_ROLES);
     std::fs::remove_file(&s.global_path).unwrap();
-    let err = ModelsConfig::load(&s.global_path, &s.per_repo_path).unwrap_err();
+    let err = s.load().unwrap_err();
     assert!(matches!(err, LoadError::Io { .. }));
 }

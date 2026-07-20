@@ -71,3 +71,45 @@ fn run_surfaces_missing_soul() {
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     assert!(matches!(err, Error::ControlRead { .. }), "got {err:?}");
 }
+
+#[test]
+fn run_declines_a_config_schema_version_this_build_cannot_read() {
+    // ARCH §10: the config commit's `version` file is read before
+    // anything it could misparse. A version above the supported one was
+    // authored by a newer harness and is declined loudly, before the
+    // adapter is ever reached — hence `unreachable_adapter`.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let newer = format!("{}\n", crate::config::version::SUPPORTED + 1);
+    std::fs::write(repo.path().join("version"), newer).unwrap();
+    let err =
+        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Config(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_absent_version_as_control_read() {
+    // No `version` in the config commit's tree: the §2.2 control read
+    // fails loudly with the commit-qualified path rather than defaulting.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    std::fs::remove_file(repo.path().join("version")).unwrap();
+    let err =
+        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::ControlRead { .. }), "got {err:?}");
+}
+
+#[test]
+fn run_declines_a_workflow_dispatching_an_undeclared_role() {
+    // ARCH §4.3: `dispatch(<role>)` bindings are cross-validated against
+    // the same config commit's `roles:` map at config load. The fixture
+    // declares only `worker`, so a `dispatch(verifier)` binding is
+    // declined here — before the first model call, not at the hop that
+    // would finally reach the binding.
+    let repo = scaffold_repo_with_workflow(
+        VALID_PER_REPO_PROVIDERS_YAML,
+        "events:\n  worker_return:\n    - dispatch(verifier)\n",
+        Some("body"),
+    );
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::Config(_)), "got {err:?}");
+}

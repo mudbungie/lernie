@@ -43,24 +43,6 @@ pub struct ModelsConfig {
 }
 
 impl ModelsConfig {
-    /// Load both halves and cross-validate them in one call. Warnings
-    /// come from the global file (capability advice). The per-repo
-    /// file is hard-erroring: a legacy `providers:`/`models:` block
-    /// fails the load rather than warning.
-    // Runtime loads through `load_with_per_repo`; this file-pair variant is
-    // reached only by tests (config machinery pending full runtime wiring —
-    // see config/manifest.rs), off any verb's path since the §3.4 narrowing.
-    #[allow(dead_code)]
-    pub fn load(
-        global_path: &Path,
-        per_repo_path: &Path,
-    ) -> Result<(Self, Vec<Warning>), LoadError> {
-        let (global, warnings) = Models::load(global_path)?;
-        let per_repo = PerRepoProviders::load(per_repo_path)?;
-        cross::check_roles_against_models(&per_repo, &global)?;
-        Ok((Self { global, per_repo }, warnings))
-    }
-
     /// Load the global half from disk and the per-repo half from content
     /// already in hand — the governing-config read path (ARCH §2.2:
     /// `providers.yaml` is read from the config commit's tree, never

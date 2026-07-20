@@ -3,35 +3,51 @@
 //! Per ARCH §10, this is a bare integer. The file's content is the integer
 //! and nothing else (trailing whitespace tolerated).
 
-// See config/manifest.rs: tested config machinery not yet on a verb's
-// runtime path; the §3.4 narrowing (bl-231c) dropped its dead-code
-// exemption. Real config type, so `allow(dead_code)`, not `#[cfg(test)]`.
-#![allow(dead_code)]
-
 use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::fs;
 use std::path::Path;
 
-/// The on-disk schema version. v0.1 templates start at 1.
+/// The highest schema version this harness understands (ARCH §10). A
+/// config commit declaring a higher one was authored by a newer harness:
+/// its control files may carry shapes this build cannot read, so it is
+/// declined loudly (`docs/PRINCIPLES.md` "Decline illegal operations")
+/// rather than read on a guess. Older versions stay readable — that is
+/// the §10 promise, and what migration code is written for on a bump.
+pub const SUPPORTED: u32 = 1;
+
+/// The schema version of a conversation repo's config, already checked
+/// against [`SUPPORTED`]. Constructing one *is* the guard — there is no
+/// separate `check` step a caller can forget, and no representable
+/// `Version` this build cannot read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(transparent)]
 pub struct Version(pub u32);
 
 impl Version {
-    /// Read and parse the conv-repo `version` file at `path`.
-    pub fn load(path: &Path) -> Result<Self, LoadError> {
-        let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
-            path: path.to_path_buf(),
-            source,
-        })?;
+    /// Parse the `version` control file's content already in hand — the
+    /// governing-config read path (ARCH §2.2: control is read from the
+    /// config commit's tree, never from a worktree file). `origin` labels
+    /// errors (e.g. `<config-commit>:version`). The file's content is the
+    /// integer and nothing else (trailing whitespace tolerated), and a
+    /// version above [`SUPPORTED`] is declined.
+    pub fn parse(raw: &str, origin: &Path) -> Result<Self, LoadError> {
         let trimmed = raw.trim();
         let parsed: u32 = trimmed.parse().map_err(|_| LoadError::Invalid {
-            path: path.to_path_buf(),
+            path: origin.to_path_buf(),
             key: ".".into(),
             message: format!("expected an unsigned integer, got {trimmed:?}"),
         })?;
+        if parsed > SUPPORTED {
+            return Err(LoadError::Invalid {
+                path: origin.to_path_buf(),
+                key: ".".into(),
+                message: format!(
+                    "schema version {parsed} is newer than this harness understands \
+                     (supported: {SUPPORTED}); upgrade lernie to read this config"
+                ),
+            });
+        }
         Ok(Version(parsed))
     }
 }
@@ -39,31 +55,24 @@ impl Version {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
 
-    fn write_temp(contents: &str) -> NamedTempFile {
-        let mut f = NamedTempFile::new().unwrap();
-        f.write_all(contents.as_bytes()).unwrap();
-        f
+    fn origin() -> &'static Path {
+        Path::new("<commit>:version")
     }
 
     #[test]
     fn parses_a_bare_integer() {
-        let f = write_temp("1\n");
-        assert_eq!(Version::load(f.path()).unwrap(), Version(1));
+        assert_eq!(Version::parse("1\n", origin()).unwrap(), Version(SUPPORTED));
     }
 
     #[test]
     fn tolerates_trailing_whitespace() {
-        let f = write_temp("  42  \n\n");
-        assert_eq!(Version::load(f.path()).unwrap(), Version(42));
+        assert_eq!(Version::parse("  1  \n\n", origin()).unwrap(), Version(1));
     }
 
     #[test]
     fn rejects_non_integer_content() {
-        let f = write_temp("v1\n");
-        let err = Version::load(f.path()).unwrap_err();
+        let err = Version::parse("v1\n", origin()).unwrap_err();
         match err {
             LoadError::Invalid { message, .. } => {
                 assert!(message.contains("\"v1\""), "got: {message}");
@@ -73,9 +82,17 @@ mod tests {
     }
 
     #[test]
-    fn surfaces_io_errors() {
-        let path = Path::new("/nonexistent/path/version");
-        let err = Version::load(path).unwrap_err();
-        assert!(matches!(err, LoadError::Io { .. }));
+    fn declines_a_version_newer_than_this_harness() {
+        // ARCH §10: old versions stay readable, newer ones are declined
+        // loudly rather than read on a guess.
+        let err = Version::parse(&format!("{}\n", SUPPORTED + 1), origin()).unwrap_err();
+        match err {
+            LoadError::Invalid { path, message, .. } => {
+                assert_eq!(path, origin());
+                assert!(message.contains(&(SUPPORTED + 1).to_string()), "{message}");
+                assert!(message.contains("upgrade lernie"), "{message}");
+            }
+            other => panic!("expected Invalid, got {other:?}"),
+        }
     }
 }

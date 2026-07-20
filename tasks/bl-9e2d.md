@@ -1,7 +1,8 @@
 +++
 title = "Config machinery has no runtime caller: wire manifest/version/loaders/schema-gen into verbs or subtract them"
 created = 1784524950
-updated = 1784524950
+updated = 1784525158
+claimant = "Sightseer"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

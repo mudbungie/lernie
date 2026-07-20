@@ -13,13 +13,13 @@
 //!    `output.json.exit_code != 0`.
 
 use crate::prompt::clock::SystemClock;
-use crate::prompt::tool::spawn::BinaryResolver;
+use crate::prompt::tool::spawn::PathLookup;
 use crate::prompt::tool::{
     INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool, ToolCall, ToolExecutor, ToolInputRecord,
     ToolOutputRecord,
 };
 use serde_json::json;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
 
@@ -27,18 +27,13 @@ fn lernie_bin() -> PathBuf {
     crate::test_support::lernie_binary()
 }
 
-/// Resolver that pins the in-process route to the cargo-built lernie
-/// binary and forces external lookups to miss. The harness root is
-/// kept empty so resolution falls all the way through to the
-/// in-process fallback.
-struct InProcessLernie {
-    lernie: PathBuf,
-}
+/// Forces the §3.3 second hop to miss, so resolution falls through to
+/// the injected driver target — here the cargo-built `lernie` binary.
+/// The harness root is kept empty (the first hop misses too), and PATH
+/// is short-circuited here so the test never depends on the live env.
+struct NoPath;
 
-impl BinaryResolver for InProcessLernie {
-    fn lernie_binary(&self) -> Option<PathBuf> {
-        Some(self.lernie.clone())
-    }
+impl PathLookup for NoPath {
     fn which_on_path(&self, _prefixed_name: &str) -> Option<PathBuf> {
         None
     }
@@ -69,10 +64,8 @@ impl Fixture {
     }
 }
 
-fn executor<'a>(harness: &'a std::path::Path, clock: &'a SystemClock) -> SpawnTool<'a> {
-    SpawnTool::new(harness, clock).with_resolver(Box::new(InProcessLernie {
-        lernie: lernie_bin(),
-    }))
+fn executor<'a>(harness: &'a Path, clock: &'a SystemClock, lernie: &'a Path) -> SpawnTool<'a> {
+    SpawnTool::new(harness, clock, lernie).with_path_lookup(Box::new(NoPath))
 }
 
 #[test]
@@ -80,7 +73,8 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
     let fixture = Fixture::new();
 
     let clock = SystemClock;
-    let exec = executor(fixture.harness_path(), &clock);
+    let lernie = lernie_bin();
+    let exec = executor(fixture.harness_path(), &clock, &lernie);
     let outcome = exec
         .execute(
             ToolCall {
@@ -120,7 +114,8 @@ fn bash_failure_concats_stderr_and_marks_is_error() {
     let fixture = Fixture::new();
 
     let clock = SystemClock;
-    let exec = executor(fixture.harness_path(), &clock);
+    let lernie = lernie_bin();
+    let exec = executor(fixture.harness_path(), &clock, &lernie);
     let outcome = exec
         .execute(
             ToolCall {

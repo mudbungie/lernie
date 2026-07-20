@@ -87,12 +87,3 @@ fn subprocess_spawner_with_exe_surfaces_spawn_error_for_missing_binary() {
         .unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::NotFound);
 }
-
-#[test]
-fn subprocess_spawner_new_resolves_current_exe() {
-    // Smoke-test that current_exe lookup is wired; we don't need to
-    // actually invoke it — Linux test runners always have a known
-    // current exe.
-    let s = SubprocessSpawner::new().unwrap();
-    assert!(!s.exe.as_os_str().is_empty());
-}

@@ -4,7 +4,8 @@
 //! The verbs, their arguments, and their products are defined once, in
 //! [`lernie::cmd`] ([`lernie::cmd::Command`] is the authoritative
 //! inventory, §3.4). This binary is the thin exec binding: it parses the
-//! shared [`Cli`], runs the per-verb §2.9 preludes ([`prelude`](lernie::cmd::prelude)),
+//! shared [`Cli`], runs the §2.9 preludes the parsed verb names
+//! ([`Command::preludes`](lernie::cmd::Command::preludes)),
 //! builds the [`Fx`] injections (the running-binary path, the `$EDITOR`
 //! spawn, the locked stdio, the stop flag), invokes
 //! [`Command::run`](lernie::cmd::Command::run), and performs the returned
@@ -19,16 +20,20 @@
 mod cli;
 
 use clap::Parser;
-use lernie::cmd::{Cli, Command, Fx, Outcome, prelude};
+use lernie::cmd::{Cli, Fx, Outcome, prelude};
 use std::io;
 use std::path::Path;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    // The §2.9 binding preludes, run per parsed verb before the surface is
-    // invoked (ARCH §3.4 binding-preludes seam) — never inside a verb entry.
-    run_preludes(&cli.command);
+    // The §2.9 binding preludes, run before the surface is invoked (ARCH
+    // §3.4 binding-preludes seam) — never inside a verb entry. Which ones
+    // a verb needs is the surface's own tested fact (`Command::preludes`);
+    // performing them is this binding's act.
+    for prelude in cli.command.preludes() {
+        prelude();
+    }
 
     // The one `current_exe` of the launch/successor family (§2.11/§3.4):
     // resolved here at the injection point and threaded down as
@@ -66,22 +71,6 @@ fn main() -> ExitCode {
             eprintln!("{e}");
             ExitCode::FAILURE
         }
-    }
-}
-
-/// The §2.9 process-group-leadership and stop-flag preludes the binding
-/// performs before a driver verb (ARCH §3.4, [`prelude`](lernie::cmd::prelude)): `prompt`
-/// and `advance` take a pgid and install the stopped-deposit handler;
-/// `dispatch` (child re-entry) takes a pgid. Every other verb needs
-/// neither.
-fn run_preludes(command: &Command) {
-    match command {
-        Command::Prompt(_) | Command::Advance(_) => {
-            prelude::become_pgid_leader();
-            prelude::install_stop_handler();
-        }
-        Command::Dispatch(_) => prelude::become_pgid_leader(),
-        _ => {}
     }
 }
 

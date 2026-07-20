@@ -226,9 +226,9 @@ fn error_display_includes_context() {
     let _: String = Error::Io(io::Error::other("x")).to_string();
     let _: String = Error::ToolExec {
         tool: "bash".into(),
-        source: crate::prompt::ExecError::NotFound {
+        source: crate::prompt::ExecError::KilledBySignal {
             name: "bash".into(),
-            harness_path: PathBuf::from("/x"),
+            signal: 11,
         },
     }
     .to_string();

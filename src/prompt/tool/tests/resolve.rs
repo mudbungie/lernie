@@ -1,36 +1,22 @@
-//! §3.3 resolution order: harness-root, then PATH, then in-process
-//! fallback via [`super::super::BinaryResolver`]. Each branch lands in
-//! its own test so a regression points at the offending hop.
+//! §3.3 resolution order: harness-root, then PATH, then the injected
+//! driver target. Each branch lands in its own test so a regression
+//! points at the offending hop.
 
-use super::super::spawn::{BinaryResolver, CurrentExeResolver, which_in_path_env};
+use super::super::spawn::{EnvPath, PathLookup, which_in_path_env};
 use super::super::{SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, write_script};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target, write_script};
 use serde_json::json;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
 
-struct StaticResolver(Option<PathBuf>);
-impl BinaryResolver for StaticResolver {
-    fn lernie_binary(&self) -> Option<PathBuf> {
-        self.0.clone()
-    }
-}
-
-/// Test resolver that returns `path_hit` for the PATH lookup and
-/// `lernie` for the in-process fallback. Lets the resolve flow be
-/// driven without mutating the process PATH.
-struct ScriptedResolver {
-    path_hit: Option<PathBuf>,
-    lernie: Option<PathBuf>,
-}
-impl BinaryResolver for ScriptedResolver {
-    fn lernie_binary(&self) -> Option<PathBuf> {
-        self.lernie.clone()
-    }
+/// Test lookup answering every PATH query with one fixed verdict. Lets
+/// the second hop be driven without mutating the process PATH.
+pub(super) struct StaticPath(pub(super) Option<PathBuf>);
+impl PathLookup for StaticPath {
     fn which_on_path(&self, _prefixed_name: &str) -> Option<PathBuf> {
-        self.path_hit.clone()
+        self.0.clone()
     }
 }
 
@@ -40,7 +26,7 @@ fn resolves_external_from_harness_root_first() {
     let installed = root.install("greet", "echo from-harness-root");
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock);
+    let exec = SpawnTool::new(root.path(), &clock, driver_target());
     let outcome = exec
         .execute(
             ToolCall {
@@ -87,13 +73,15 @@ fn path_lookup_returns_none_when_unset() {
 }
 
 #[test]
-fn current_exe_resolver_returns_some_path_for_the_test_binary() {
-    // Cargo runs every test inside a real binary, so current_exe()
-    // never returns None here. The path itself is opaque — we only
-    // assert the trait wires through to a value.
-    let r = CurrentExeResolver;
-    let p = r.lernie_binary().expect("test binary must have a path");
-    assert!(p.is_file(), "current_exe() points at a real file: {:?}", p);
+fn the_production_lookup_reads_the_live_path() {
+    // [`EnvPath`] is what `SpawnTool::new` wires for the second hop; the
+    // assertions above drive `which_in_path_env` with a constructed path,
+    // so this pins the one production edge — the live-`PATH` read — with
+    // a name no install could plausibly carry.
+    assert_eq!(
+        EnvPath.which_on_path("lernie-tool-definitely-not-installed"),
+        None
+    );
 }
 
 #[test]
@@ -107,10 +95,8 @@ fn resolves_external_via_path_when_harness_root_misses() {
     write_script(&bin, "echo hit-via-path");
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock).with_resolver(Box::new(ScriptedResolver {
-        path_hit: Some(bin),
-        lernie: None,
-    }));
+    let exec = SpawnTool::new(root.path(), &clock, driver_target())
+        .with_path_lookup(Box::new(StaticPath(Some(bin))));
     let outcome = exec
         .execute(
             ToolCall {
@@ -127,22 +113,18 @@ fn resolves_external_via_path_when_harness_root_misses() {
 }
 
 #[test]
-fn falls_back_to_in_process_when_external_missing() {
+fn falls_back_to_the_injected_driver_target_when_external_missing() {
     let root = HarnessRoot::new();
     let scripts = TempDir::new().unwrap();
-    // Pretend `scripts/fake-lernie` is the lernie binary; when invoked
-    // with `tool greet …`, write the args to stdout so the test can
-    // confirm the in-process argv shape. Use [`ScriptedResolver`]
-    // rather than [`StaticResolver`] so this exercise also covers the
-    // resolver's own `lernie_binary` clone path.
+    // Pretend `scripts/fake-lernie` is the injected driver target; when
+    // invoked with `tool greet …`, echo the args so the test can confirm
+    // the third hop's argv shape.
     let fake_lernie = scripts.path().join("fake-lernie");
     write_script(&fake_lernie, r#"echo "$@""#);
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock).with_resolver(Box::new(ScriptedResolver {
-        path_hit: None,
-        lernie: Some(fake_lernie),
-    }));
+    let exec = SpawnTool::new(root.path(), &clock, &fake_lernie)
+        .with_path_lookup(Box::new(StaticPath(None)));
     let outcome = exec
         .execute(
             ToolCall {
@@ -155,29 +137,9 @@ fn falls_back_to_in_process_when_external_missing() {
         )
         .unwrap();
     assert!(!outcome.is_error);
-    // The fake lernie echoed `tool greet`, confirming the in-process
-    // argv is built per §3.3 ("addressed as `lernie tool <name>`").
+    // The stand-in echoed `tool greet`, confirming the third hop is
+    // built per §3.3 ("addressed as `lernie tool <name>`") against the
+    // *injected* target — not `current_exe`, which under this test
+    // binary (and under a linked host) is a different image entirely.
     assert_eq!(outcome.content, b"tool greet\n");
-}
-
-#[test]
-fn not_found_when_external_missing_and_resolver_returns_none() {
-    let root = HarnessRoot::new();
-    let clock = FixedClock::default();
-    let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock).with_resolver(Box::new(StaticResolver(None)));
-    let err = exec
-        .execute(
-            ToolCall {
-                id: "tu_1",
-                name: "missing-tool",
-                input: &json!({}),
-            },
-            &step.path,
-            &AtomicBool::new(false),
-        )
-        .unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("missing-tool"), "got: {msg}");
-    assert!(msg.contains("not found"), "got: {msg}");
 }

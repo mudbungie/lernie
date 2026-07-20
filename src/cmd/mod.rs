@@ -126,10 +126,15 @@ pub enum Outcome {
 /// field here, supplied by the binding — the library reaches for none of
 /// its own.
 pub struct Fx<'a> {
-    /// The running-binary path used for every detached `lernie advance`
-    /// launch and the §6 advance successor `execve` (§2.11). The exec
-    /// binding resolves it once via `std::env::current_exe` — the one
-    /// such resolution in the launch/successor family.
+    /// The re-entry path for **every** seam that goes back through the
+    /// front door: the detached `lernie advance` launch and the §6
+    /// successor `execve` (§2.11), the §3.3 tool resolver's third hop
+    /// (`<driver_target> tool <name>`), and the `dispatch` / `message`
+    /// built-ins' own re-entry. ARCH §2.11: "the driver target is
+    /// injected at the binding, not resolved by name" — the exec binding
+    /// resolves it once via `std::env::current_exe`, a linked host names
+    /// its own re-exec target or a PATH-resolved `lernie`. The library
+    /// resolves none of its own.
     pub driver_target: PathBuf,
     /// The `lernie config` `$EDITOR` hand-off (§2.2) — the interactive
     /// spawn the exec binding supplies as `cli::edit_in_editor`.
@@ -184,6 +189,28 @@ pub(crate) fn path_line(p: PathBuf) -> Outcome {
 }
 
 impl Command {
+    /// The §2.9 preludes this verb needs, in the order a binding must
+    /// perform them (ARCH §3.4 binding-preludes seam). A driver verb
+    /// that owns a step loop takes a process group so the §2.9 cascade
+    /// reaches its own adapter and tool subprocesses, and installs the
+    /// stopped-deposit handler; `dispatch` (child re-entry) takes a
+    /// group but drives nothing, so it installs no handler; every other
+    /// verb needs neither.
+    ///
+    /// The map lives here, not in a binding, so both bindings read one
+    /// tested fact rather than each keeping a match in step with it. The
+    /// library only *names* the mechanisms — invoking them is the
+    /// binding's act (§3.4 "Process effects stay at the binding").
+    pub fn preludes(&self) -> &'static [fn()] {
+        match self {
+            Command::Prompt(_) | Command::Advance(_) => {
+                &[prelude::become_pgid_leader, prelude::install_stop_handler]
+            }
+            Command::Dispatch(_) => &[prelude::become_pgid_leader],
+            _ => &[],
+        }
+    }
+
     /// Run the parsed verb against the binding's [`Fx`] (ARCH §3.4). One
     /// arm per verb, each delegating to its module's `run`; the verb owns
     /// its [`Error`] prefix and its [`Outcome`].

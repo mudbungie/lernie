@@ -137,7 +137,7 @@ fn cli_run_surfaces_a_scan_error_loudly() {
     // directory is not a workspace, and the operator verb propagates
     // the refusal (loud, not best-effort — §2.11 operator framing).
     let ws = TempDir::new().unwrap();
-    let err = cli_run(ws.path()).unwrap_err();
+    let err = cli_run(ws.path(), std::path::Path::new("true")).unwrap_err();
     assert!(matches!(err, ScanError::Layout(_)), "{err}");
 }
 
@@ -153,7 +153,7 @@ fn crash_stranding_is_healed_by_an_explicit_scan() {
     crate::workspace::fixture::spawn_root(&ws, PARENT);
     crate::workspace::fixture::spawn_agent(&ws, CHILD, &crate::workspace::agent_ref(PARENT));
 
-    let report = cli_run(&ws).unwrap();
+    let report = cli_run(&ws, std::path::Path::new("true")).unwrap();
     assert_eq!(report.swept, vec![CHILD.to_string()]);
     let deposited = inbox_dir(&ws, PARENT).join(format!("{CHILD}-001.md"));
     let body = std::fs::read_to_string(&deposited).unwrap();

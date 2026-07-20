@@ -5,7 +5,7 @@
 //! commit-count / elapsed-time measures are exercised end-to-end.
 
 use super::*;
-use crate::config::{CompactionConfig, IntermediateCompaction};
+use crate::config::workflow::{CompactionConfig, IntermediateCompaction};
 use crate::template::RealGit;
 use tempfile::TempDir;
 

@@ -1,7 +1,7 @@
 //! Unit tests for the harness-owned retry driver (ARCH §2.10, §4.4).
 
 use super::*;
-use crate::config::{Backoff, RetryConfig};
+use crate::config::workflow::{Backoff, RetryConfig};
 use crate::prompt::Error;
 use crate::provider::segment::{self, Outcome};
 use brazen::{CanonicalError, ContentKind, Delta, ErrorKind, Event, FinishReason, Role};

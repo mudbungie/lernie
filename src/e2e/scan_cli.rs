@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
-fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 const INHERITED_GIT_ENV: &[&str] = &[
@@ -92,7 +92,7 @@ fn scan_verb_heals_a_crash_stranded_child() {
     // still in the inbox for this test to read. The flush's real
     // driver launch is exercised end-to-end in `advance_cli.rs`.
     let parent_inbox = ws.path().join("inbox").join(PARENT);
-    let _held = lernie::prompt::inbox::try_acquire(&parent_inbox)
+    let _held = crate::prompt::inbox::try_acquire(&parent_inbox)
         .unwrap()
         .expect("free");
     let out = Command::new(lernie_bin())

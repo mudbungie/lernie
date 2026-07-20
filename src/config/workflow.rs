@@ -164,6 +164,7 @@ pub enum CompactionTrigger {
 impl Workflow {
     /// Read, parse, and validate `workflow.yaml` at `path`. Each action
     /// string is parsed against the closed action set.
+    #[allow(dead_code)] // file-loader reached only by tests; runtime parses from git-show strings (§3.4 narrowing, bl-231c)
     pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),
@@ -219,6 +220,7 @@ impl Workflow {
 
     /// Pre-parse every action string into a typed [`Action`]. Intended for
     /// callers that want the typed view without re-validating.
+    #[allow(dead_code)] // exercised by tests only; not yet on a verb's runtime path (§3.4 narrowing)
     pub fn typed_events(&self) -> BTreeMap<Event, Vec<Action>> {
         self.events
             .iter()

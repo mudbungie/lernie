@@ -1,8 +1,8 @@
 //! Integration tests for `workflow.yaml` parsing and validation.
 
-use lernie::config::action::{Action, DispatchMode};
-use lernie::config::error::LoadError;
-use lernie::config::workflow::{Backoff, Budgets, CompactionTrigger, Event, RetryConfig, Workflow};
+use crate::config::action::{Action, DispatchMode};
+use crate::config::error::LoadError;
+use crate::config::workflow::{Backoff, Budgets, CompactionTrigger, Event, RetryConfig, Workflow};
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;

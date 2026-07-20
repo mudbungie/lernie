@@ -1,0 +1,144 @@
+//! Product and operator verbs driven against a constructed
+//! [`Fx`](crate::cmd::Fx): `scan`, `bundle`, `replay`, `advance`,
+//! `tool`. Same discipline as [`super::verbs`]: a hermetic success path
+//! where one exists plus a cheap early-error path. `replay`'s product
+//! (its scratch path) and the `advance` successor `exec` are pinned by
+//! the `tests/*_cli.rs` binary tests.
+
+use super::{assert_prefixed, noop_editor, with_fx};
+use crate::cmd::{Outcome, advance, bundle, replay, scan, tool};
+use crate::workspace::fixture;
+use tempfile::TempDir;
+
+#[test]
+fn scan_prints_its_report() {
+    let (_h, ws) = fixture::workspace();
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        scan::run(scan::Args { workspace: ws }, fx)
+    });
+    let Outcome::Line(line) = r.unwrap() else {
+        panic!("scan prints its report")
+    };
+    assert!(line.contains("silent deaths"), "{line}");
+}
+
+#[test]
+fn scan_reports_a_non_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        scan::run(
+            scan::Args {
+                workspace: tmp.path().to_path_buf(),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "scan");
+}
+
+#[test]
+fn bundle_writes_an_archive() {
+    let (_h, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, "20260101-a1");
+    let out = TempDir::new().unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        bundle::run(
+            bundle::Args {
+                workspace: ws.clone(),
+                agent: "20260101-a1".into(),
+                out_dir: out.path().to_path_buf(),
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Quiet));
+}
+
+#[test]
+fn bundle_reports_an_unknown_agent() {
+    let (_h, ws) = fixture::workspace();
+    let out = TempDir::new().unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        bundle::run(
+            bundle::Args {
+                workspace: ws.clone(),
+                agent: "ghost".into(),
+                out_dir: out.path().to_path_buf(),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "bundle");
+}
+
+#[test]
+fn replay_reports_a_missing_archive() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        replay::run(
+            replay::Args {
+                archive: tmp.path().join("nope.bundle"),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "replay");
+}
+
+#[test]
+fn advance_on_an_empty_workspace_is_quiet() {
+    let (_h, ws) = fixture::workspace();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        advance::run(
+            advance::Args {
+                workspace: ws.clone(),
+                agent: "20260101-a1".into(),
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Quiet));
+}
+
+#[test]
+fn advance_reports_a_non_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        advance::run(
+            advance::Args {
+                workspace: tmp.path().to_path_buf(),
+                agent: "a".into(),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "advance");
+}
+
+#[test]
+fn tool_runs_a_builtin_and_returns_its_exit_code() {
+    let (r, out, _e) = with_fx("lernie", br#"{"command":"true"}"#, &noop_editor, |fx| {
+        tool::run(
+            tool::Args {
+                name: "bash".into(),
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Code(0)));
+    // The bash built-in produced no stdout for `true`.
+    assert!(out.is_empty(), "{out:?}");
+}
+
+#[test]
+fn tool_reports_an_unknown_builtin_with_its_prefix() {
+    let (r, ..) = with_fx("lernie", b"{}", &noop_editor, |fx| {
+        tool::run(
+            tool::Args {
+                name: "no-such-tool".into(),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "tool no-such-tool");
+}

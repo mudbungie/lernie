@@ -12,9 +12,9 @@
 //!    concatenated after stdout in `tool_result.content`,
 //!    `output.json.exit_code != 0`.
 
-use lernie::prompt::clock::SystemClock;
-use lernie::prompt::tool::spawn::BinaryResolver;
-use lernie::prompt::tool::{
+use crate::prompt::clock::SystemClock;
+use crate::prompt::tool::spawn::BinaryResolver;
+use crate::prompt::tool::{
     INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool, ToolCall, ToolExecutor, ToolInputRecord,
     ToolOutputRecord,
 };
@@ -24,7 +24,7 @@ use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
 
 fn lernie_bin() -> PathBuf {
-    PathBuf::from(env!("CARGO_BIN_EXE_lernie"))
+    crate::test_support::lernie_binary()
 }
 
 /// Resolver that pins the in-process route to the cargo-built lernie

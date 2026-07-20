@@ -55,6 +55,15 @@ pub trait BinaryResolver {
 /// Real-process resolver: `std::env::current_exe()` is the actively
 /// running binary's path on every platform we care about; PATH is
 /// inherited via the default [`BinaryResolver::which_on_path`].
+///
+/// PHASE-3 (bl-231c follow-on): this is the one `current_exe` left in
+/// the library — the §3.3 tool-resolution third hop (`<lernie> tool
+/// <name>`), a *separate* seam from the §2.11/§6 driver-target family
+/// (`cmd::Fx::driver_target`), which no longer touches `current_exe`.
+/// Unify it with the injected driver target when `SpawnTool::new` is
+/// re-signed to take the binding's binary path (a change that migrates
+/// this module's ~18 `SpawnTool::new` unit-test call sites, out of
+/// scope for the command-surface port).
 pub struct CurrentExeResolver;
 
 impl BinaryResolver for CurrentExeResolver {
@@ -77,6 +86,7 @@ impl<'a> SpawnTool<'a> {
 
     /// Override the SIGTERM-to-SIGKILL grace. Tests use a sub-second
     /// deadline so the cascade is observable without a 5s wait.
+    #[cfg(test)] // test-only builder
     pub fn with_deadline(mut self, d: Duration) -> Self {
         self.deadline = d;
         self
@@ -85,6 +95,7 @@ impl<'a> SpawnTool<'a> {
     /// Override the in-process binary resolver — used by tests to
     /// inject a known-bad or known-good lernie path without depending
     /// on `std::env::current_exe()`'s value under cargo.
+    #[cfg(test)] // test-only builder
     pub fn with_resolver(mut self, r: Box<dyn BinaryResolver + 'a>) -> Self {
         self.binary_resolver = r;
         self

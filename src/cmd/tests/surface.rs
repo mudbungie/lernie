@@ -1,0 +1,152 @@
+//! The argv surface and binding types: `Cli` round-trips for every verb
+//! (byte-for-byte parse parity, §3.4), the [`Error`] Display shape, the
+//! [`Outcome`] handoff mapping, and the [`prelude`] re-exports.
+
+use crate::cmd::{Cli, Command, Error, Outcome, advance, prelude};
+use crate::prompt::dispatch::advance::AdvanceOutcome;
+use crate::prompt::dispatch::advance::cli::AdvanceHandoff;
+use clap::Parser;
+use std::path::PathBuf;
+
+fn parse(args: &[&str]) -> Command {
+    Cli::try_parse_from(args).expect("parses").command
+}
+
+#[test]
+fn new_parses_optional_path() {
+    assert!(matches!(parse(&["lernie", "new"]), Command::New(a) if a.path.is_none()));
+    let Command::New(a) = parse(&["lernie", "new", "/w"]) else {
+        panic!()
+    };
+    assert_eq!(a.path.unwrap(), PathBuf::from("/w"));
+}
+
+#[test]
+fn config_parses_name_and_flags() {
+    let Command::Config(a) = parse(&[
+        "lernie", "config", "/ws", "strict", "--from", "src", "--orphan",
+    ]) else {
+        panic!()
+    };
+    assert_eq!(a.workspace, PathBuf::from("/ws"));
+    assert_eq!(a.name.unwrap(), "strict");
+    assert_eq!(a.from.unwrap(), "src");
+    assert!(a.orphan);
+    // Minimal form: bare workspace, defaults elsewhere.
+    let Command::Config(b) = parse(&["lernie", "config", "/ws"]) else {
+        panic!()
+    };
+    assert!(b.name.is_none() && b.from.is_none() && !b.orphan);
+}
+
+#[test]
+fn prompt_parses_repo_and_message() {
+    let Command::Prompt(a) = parse(&["lernie", "prompt", "/r", "hello there"]) else {
+        panic!()
+    };
+    assert_eq!(a.repo, PathBuf::from("/r"));
+    assert_eq!(a.message, "hello there");
+}
+
+#[test]
+fn dispatch_parses_positional_and_goal() {
+    let Command::Dispatch(a) = parse(&[
+        "lernie", "dispatch", "worker", "/r", "br", "--goal", "do it",
+    ]) else {
+        panic!()
+    };
+    assert_eq!((a.role.as_str(), a.branch.as_str()), ("worker", "br"));
+    assert_eq!(a.goal.unwrap(), "do it");
+    let Command::Dispatch(b) = parse(&["lernie", "dispatch", "compactor", "/r", "br"]) else {
+        panic!()
+    };
+    assert!(b.goal.is_none());
+}
+
+#[test]
+fn stop_parses_stop_children_flag() {
+    let Command::Stop(a) = parse(&["lernie", "stop", "/r", "br", "--stop-children"]) else {
+        panic!()
+    };
+    assert!(a.stop_children);
+    let Command::Stop(b) = parse(&["lernie", "stop", "/r", "br"]) else {
+        panic!()
+    };
+    assert!(!b.stop_children);
+}
+
+#[test]
+fn message_scan_bundle_replay_advance_parse() {
+    let Command::Message(m) = parse(&["lernie", "message", "/ws", "ag", "hi"]) else {
+        panic!()
+    };
+    assert_eq!((m.agent.as_str(), m.content.as_str()), ("ag", "hi"));
+    let Command::Scan(s) = parse(&["lernie", "scan", "/ws"]) else {
+        panic!()
+    };
+    assert_eq!(s.workspace, PathBuf::from("/ws"));
+    let Command::Bundle(b) = parse(&["lernie", "bundle", "/ws", "ag", "/out"]) else {
+        panic!()
+    };
+    assert_eq!(b.out_dir, PathBuf::from("/out"));
+    let Command::Replay(rep) = parse(&["lernie", "replay", "/a"]) else {
+        panic!()
+    };
+    assert_eq!(rep.archive, PathBuf::from("/a"));
+    let Command::Advance(v) = parse(&["lernie", "advance", "/ws", "ag"]) else {
+        panic!()
+    };
+    assert_eq!(
+        (v.workspace, v.agent.as_str()),
+        (PathBuf::from("/ws"), "ag")
+    );
+}
+
+#[test]
+fn tool_and_prime_parse() {
+    assert!(matches!(parse(&["lernie", "tool", "bash"]), Command::Tool(t) if t.name == "bash"));
+    assert!(matches!(parse(&["lernie", "prime"]), Command::Prime(_)));
+}
+
+#[test]
+fn error_display_is_the_prefixed_stderr_shape() {
+    assert_eq!(Error::new("new", "boom").to_string(), "lernie new: boom");
+    assert_eq!(
+        Error::new(format!("dispatch {}", "worker"), "bad role").to_string(),
+        "lernie dispatch worker: bad role"
+    );
+    assert_eq!(
+        Error::new(format!("tool {}", "bash"), "no such").to_string(),
+        "lernie tool bash: no such"
+    );
+    // Debug is derivable; exercise it so the derive is covered.
+    assert!(format!("{:?}", Error::new("scan", "x")).contains("scan"));
+}
+
+#[test]
+fn advance_outcome_maps_both_handoff_arms() {
+    let exec = advance::outcome_of(AdvanceHandoff::Exec(std::process::Command::new("true")));
+    assert!(matches!(exec, Outcome::Exec(_)));
+    let done = advance::outcome_of(AdvanceHandoff::Done(AdvanceOutcome::NothingToDo));
+    assert!(matches!(done, Outcome::Quiet));
+}
+
+#[test]
+fn noop_editor_is_a_silent_ok() {
+    // The shared no-op `$EDITOR` hand-off is invoked directly (only the
+    // `config` verb calls an editor, and it uses the writing one).
+    super::noop_editor(std::path::Path::new("/unused")).unwrap();
+}
+
+#[test]
+fn prelude_reexports_the_binding_mechanisms() {
+    // The §3.4 binding preludes are re-exported here for the binding to
+    // invoke; reference each so the seam is proven wired. `stop_flag` is
+    // side-effect-free to read; the two effecting mechanisms are only
+    // named (the binding calls them, tests must not mutate the runner's
+    // pgid or signal disposition — those are exercised in `prompt::stop`).
+    let _leader: fn() = prelude::become_pgid_leader;
+    let _handler: fn() = prelude::install_stop_handler;
+    let flag: &std::sync::atomic::AtomicBool = prelude::stop_flag();
+    let _ = flag.load(std::sync::atomic::Ordering::SeqCst);
+}

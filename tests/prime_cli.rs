@@ -57,3 +57,17 @@ fn prime_founds_a_fresh_nested_home_idempotently() {
     assert_eq!(fs::read_to_string(&models).unwrap(), "models: {}\n");
     assert!(h.join("skills/bash/SKILL.md").is_file());
 }
+
+#[test]
+fn prime_reports_a_seeding_failure_loudly() {
+    // A `LERNIE_HOME` whose parent is a regular file cannot be created
+    // (`ENOTDIR`), so seeding fails: the binding prints the uniform
+    // `lernie prime: …` stderr shape and exits non-zero (§3.4).
+    let tmp = TempDir::new().unwrap();
+    let file = tmp.path().join("not-a-dir");
+    fs::write(&file, b"x").unwrap();
+    let out = prime(&file.join("home"));
+    assert!(!out.status.success(), "seeding under a file must fail");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("lernie prime:"), "got {stderr:?}");
+}

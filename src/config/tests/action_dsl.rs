@@ -1,6 +1,6 @@
 //! Integration tests for the workflow action DSL parser.
 
-use lernie::config::action::{Action, DispatchMode};
+use crate::config::action::{Action, DispatchMode};
 
 #[test]
 fn parses_zero_arg_actions() {

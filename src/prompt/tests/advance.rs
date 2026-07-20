@@ -4,7 +4,8 @@
 //! protocol by epitaph value. Real filesystem, stub git/adapter/tools.
 
 use super::fixtures::*;
-use crate::config::{Capabilities, Model, Workflow};
+use crate::config::models::Capabilities;
+use crate::config::{Model, Workflow};
 use crate::prompt::Error;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, Launcher, inbox_dir, try_acquire};

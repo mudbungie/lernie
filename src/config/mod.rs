@@ -8,6 +8,9 @@
 //! `dispatch(<role>)` action must name a role declared in the
 //! per-repo `roles:` section.
 
+#[cfg(test)]
+mod tests;
+
 pub mod action;
 pub mod cross;
 pub mod error;
@@ -18,16 +21,11 @@ pub mod schemas;
 pub mod version;
 pub mod workflow;
 
-pub use action::{Action, DispatchMode};
+pub use action::Action;
 pub use error::{LoadError, Warning};
-pub use manifest::{Manifest, OverflowPolicy, RoleRules};
-pub use models::{Capabilities, Model, Models};
-pub use per_repo_providers::{PerRepoProviders, RoleAssignment};
-pub use version::Version;
-pub use workflow::{
-    Backoff, Budgets, CompactionConfig, CompactionTrigger, Event, IntermediateCompaction,
-    RetryConfig, Workflow,
-};
+pub use models::{Model, Models};
+pub use per_repo_providers::PerRepoProviders;
+pub use workflow::{Budgets, CompactionConfig, CompactionTrigger, Event, RetryConfig, Workflow};
 
 use std::path::Path;
 
@@ -49,6 +47,10 @@ impl ModelsConfig {
     /// come from the global file (capability advice). The per-repo
     /// file is hard-erroring: a legacy `providers:`/`models:` block
     /// fails the load rather than warning.
+    // Runtime loads through `load_with_per_repo`; this file-pair variant is
+    // reached only by tests (config machinery pending full runtime wiring —
+    // see config/manifest.rs), off any verb's path since the §3.4 narrowing.
+    #[allow(dead_code)]
     pub fn load(
         global_path: &Path,
         per_repo_path: &Path,

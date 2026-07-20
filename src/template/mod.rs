@@ -191,3 +191,5 @@ fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {
 mod tests;
 #[cfg(test)]
 mod tests_realgit;
+#[cfg(test)]
+mod tests_scaffold;

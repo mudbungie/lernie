@@ -51,7 +51,7 @@ pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use child_dispatch::ChildDispatchRequest;
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
-pub use tool::{ExecError, SpawnTool, ToolCall, ToolExecutor, ToolOutcome};
+pub use tool::{ExecError, SpawnTool, ToolExecutor};
 
 use crate::template::GitRunner;
 use std::path::{Path, PathBuf};
@@ -109,6 +109,10 @@ pub fn brazen_pin() -> &'static str {
 /// than brazen's: wire-level distinctions are brazen's, surfaced in-band
 /// as the `CanonicalError` this enum folds into [`Error::AdapterError`].
 #[derive(Debug, Error)]
+// `AdapterError` deliberately keeps the suffix; renaming would churn every
+// call site for no clarity. The lint only surfaced once the §3.4 narrowing
+// made this enum non-exported.
+#[allow(clippy::enum_variant_names)]
 pub enum Error {
     #[error("config: {0}")]
     Config(#[from] crate::config::LoadError),

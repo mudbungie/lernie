@@ -15,8 +15,8 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
-fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 const INHERITED_GIT_ENV: &[&str] = &[
@@ -98,13 +98,13 @@ roles:
     model: claude-haiku-4-5
 ";
     // Config-commit amendment (§2.2) over the shipped authoring core.
-    lernie::template::authoring::author(
+    crate::template::authoring::author(
         dest,
         &dest.join(".no-pools"),
         "default",
-        lernie::template::authoring::Origin::Advance,
+        crate::template::authoring::Origin::Advance,
         |dir| fs::write(dir.join("providers.yaml"), yaml),
-        &lernie::template::RealGit::new(),
+        &crate::template::RealGit::new(),
     )
     .unwrap();
 }

@@ -75,12 +75,14 @@ pub fn run(
     repo: &Path,
     branch: &str,
     goal: Option<&str>,
+    driver_target: &Path,
 ) -> Result<(), DispatchCliError> {
-    // The production launcher detach-spawns `lernie advance` (§2.11); its
-    // construction is pure (resolves `current_exe`, no spawn), so the
-    // spawn-free wiring is covered here and the launch decision is tested
-    // through [`run_with`] against an injected launcher.
-    let launcher = AdvanceLauncher::current().map_err(crate::prompt::Error::from)?;
+    // The production launcher detach-spawns `lernie advance` (§2.11) at
+    // `driver_target` — the running-binary path the exec binding injects
+    // (`cmd::Fx::driver_target`, §3.4); the library resolves none itself.
+    // The launch decision is tested through [`run_with`] against an
+    // injected launcher.
+    let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     run_with(role, repo, branch, goal, &launcher)
 }
 
@@ -239,14 +241,14 @@ mod tests {
         // Through the public `run` (the AdvanceLauncher wiring): validation
         // passes, then the missing `--goal` is refused before any fork.
         let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        let err = run("worker", &repo, "p1", None).unwrap_err();
+        let err = run("worker", &repo, "p1", None, Path::new("true")).unwrap_err();
         assert_eq!(err.to_string(), "--goal is required for role \"worker\"");
     }
 
     #[test]
     fn compactor_rejects_a_goal() {
         let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        let err = run(ROLE_COMPACTOR, &repo, "p1", Some("g")).unwrap_err();
+        let err = run(ROLE_COMPACTOR, &repo, "p1", Some("g"), Path::new("true")).unwrap_err();
         assert_eq!(
             err.to_string(),
             "--goal is not accepted for role \"compactor\""

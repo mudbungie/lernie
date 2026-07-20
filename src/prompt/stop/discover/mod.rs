@@ -49,6 +49,7 @@ impl Default for ProcFsFinder {
 
 impl ProcFsFinder {
     /// Override the procfs root — tests point at a fixture tree.
+    #[cfg(test)] // test-only builder
     pub fn with_root(proc_root: std::path::PathBuf) -> Self {
         Self { proc_root }
     }

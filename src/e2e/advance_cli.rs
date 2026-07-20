@@ -20,8 +20,8 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
-fn lernie_bin() -> &'static str {
-    env!("CARGO_BIN_EXE_lernie")
+fn lernie_bin() -> std::path::PathBuf {
+    crate::test_support::lernie_binary()
 }
 
 const HAPPY_SSE: &str = concat!(
@@ -137,13 +137,13 @@ fn scaffold(dest: &Path, harness: &Path) {
     );
     // Config-commit amendment (§2.2): point roles at the fixture row,
     // over the shipped authoring core rather than hand-rolled worktrees.
-    lernie::template::authoring::author(
+    crate::template::authoring::author(
         dest,
         &dest.join(".no-pools"),
         "default",
-        lernie::template::authoring::Origin::Advance,
+        crate::template::authoring::Origin::Advance,
         |dir| fs::write(dir.join("providers.yaml"), ROLES_YAML),
-        &lernie::template::RealGit::new(),
+        &crate::template::RealGit::new(),
     )
     .unwrap();
 }

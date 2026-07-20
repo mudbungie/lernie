@@ -56,10 +56,15 @@ coverage:
 	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
 	  exit 1; \
 	fi
-	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'crates/*/src/main.rs'
+	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
 
+# Regenerate schemas/ from the crate's schema types. The generator is the
+# `config::schemas` module; `make schemas` drives it through the in-crate
+# golden test's update flow (UPDATE_SCHEMAS=1 rewrites schemas/ in place
+# instead of asserting byte-identity). The same test, run without the env
+# var, is the CI guard that schemas/ never drifts from the source.
 schemas:
-	cargo run --quiet --bin gen-schemas -- schemas
+	UPDATE_SCHEMAS=1 cargo test --quiet --lib schemas_golden
 
 new-workspace:
 	@test -n "$(DEST)" || { echo "usage: make new-workspace DEST=<path>"; exit 1; }

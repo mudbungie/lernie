@@ -7,10 +7,10 @@
 //! `workflow.yaml`, `providers.yaml`, `version`, `souls/`) and the
 //! `descriptions/**` snapshot.
 
-use lernie::config::manifest::{Manifest, OverflowPolicy};
-use lernie::config::per_repo_providers::PerRepoProviders;
-use lernie::config::version::Version;
-use lernie::config::workflow::Workflow;
+use crate::config::manifest::{Manifest, OverflowPolicy};
+use crate::config::per_repo_providers::PerRepoProviders;
+use crate::config::version::Version;
+use crate::config::workflow::Workflow;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
@@ -35,7 +35,7 @@ fn scrub_git_env(cmd: &mut Command) {
 }
 
 fn lernie_bin() -> PathBuf {
-    PathBuf::from(env!("CARGO_BIN_EXE_lernie"))
+    crate::test_support::lernie_binary()
 }
 
 fn scaffold(dest: &Path) -> String {

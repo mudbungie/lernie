@@ -29,7 +29,7 @@ mod subprocess;
 #[cfg(test)]
 mod tests;
 
-pub use spawn::{BinaryResolver, CurrentExeResolver, SpawnTool};
+pub use spawn::SpawnTool;
 
 /// SIGTERM-to-SIGKILL grace pinned by ARCH §3.3 (mirrors §4.4). The
 /// tool has 5 seconds after SIGTERM to flush state and exit cleanly

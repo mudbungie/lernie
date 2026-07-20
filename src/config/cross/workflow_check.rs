@@ -12,6 +12,8 @@ use crate::config::workflow::Workflow;
 /// Validate `dispatch(<role>)` actions in `workflow.yaml` against the
 /// per-repo `providers.yaml` `roles:` section. Assumes `workflow`
 /// already passed `Workflow::load`.
+// Cross-check exercised by tests; not yet wired into a verb's runtime path (§3.4 narrowing, bl-231c).
+#[allow(dead_code)]
 pub fn check_workflow_against_roles(
     workflow: &Workflow,
     per_repo: &PerRepoProviders,

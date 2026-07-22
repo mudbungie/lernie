@@ -21,12 +21,13 @@ use std::sync::atomic::AtomicBool;
 
 /// What the bin does after one hop: nothing, or exec the successor.
 #[derive(Debug)]
-#[allow(dead_code)] // `Done`'s payload is discarded by `cmd::advance::outcome_of`
-// and read only by tests — surface it or drop it (bl-4f6d)
 pub enum AdvanceHandoff {
     /// The hop completed in this process — a no-op, an already-driven
-    /// exit, or a terminal event whose exit protocol already ran.
-    Done(AdvanceOutcome),
+    /// exit, or a terminal event whose exit protocol already ran. The
+    /// hop's outcome carries no product here: `cmd::advance::outcome_of`
+    /// maps every completed hop to a product-less `Outcome::Quiet`
+    /// (§3.4), so nothing downstream reads it.
+    Done,
     /// The step emitted `tool_use`: exec this prepared successor
     /// command (§6 exec baton). Only `exec` remains — the lease fd is
     /// already inheritable and published in the command's environment.
@@ -72,7 +73,7 @@ fn cli_run_with(
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
     let lease = match baton::take_lease(lease_env, &inbox_dir) {
         Ok(Some(lease)) => lease,
-        Ok(None) => return Ok(AdvanceHandoff::Done(AdvanceOutcome::AlreadyDriven)),
+        Ok(None) => return Ok(AdvanceHandoff::Done),
         Err(baton::LeaseError::Acquire(source)) => {
             return Err(Error::ExecutorLock {
                 path: inbox_dir,
@@ -120,7 +121,7 @@ fn handoff(
         AdvanceOutcome::ToolsPending(lease) => Ok(AdvanceHandoff::Exec(baton::successor_command(
             exe, workspace, agent_id, lease,
         )?)),
-        done => Ok(AdvanceHandoff::Done(done)),
+        _ => Ok(AdvanceHandoff::Done),
     }
 }
 
@@ -154,10 +155,7 @@ mod tests {
     fn empty_workspace_is_nothing_to_do_via_production_wiring() {
         let (_h, ws) = crate::workspace::fixture::workspace();
         let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
-        assert!(matches!(
-            out,
-            AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
-        ));
+        assert!(matches!(out, AdvanceHandoff::Done));
     }
 
     #[test]
@@ -165,10 +163,7 @@ mod tests {
         let (_h, ws) = crate::workspace::fixture::workspace();
         let _held = test_lease(&inbox_dir(&ws, "20260101-a1"));
         let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
-        assert!(matches!(
-            out,
-            AdvanceHandoff::Done(AdvanceOutcome::AlreadyDriven)
-        ));
+        assert!(matches!(out, AdvanceHandoff::Done));
     }
 
     #[test]
@@ -213,10 +208,7 @@ mod tests {
             &AtomicBool::new(false),
         )
         .unwrap();
-        assert!(matches!(
-            out,
-            AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
-        ));
+        assert!(matches!(out, AdvanceHandoff::Done));
     }
 
     #[test]
@@ -269,9 +261,6 @@ mod tests {
             AdvanceOutcome::NothingToDo,
         )
         .unwrap();
-        assert!(matches!(
-            out,
-            AdvanceHandoff::Done(AdvanceOutcome::NothingToDo)
-        ));
+        assert!(matches!(out, AdvanceHandoff::Done));
     }
 }

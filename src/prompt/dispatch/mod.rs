@@ -38,6 +38,7 @@ use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::workflow_actions;
 use super::{Deps, Error};
+use crate::config::manifest::RoleRules;
 use crate::config::{Budgets, Model, RetryConfig, Workflow};
 use assembler::assemble;
 use brazen::Content;
@@ -51,8 +52,8 @@ use step_commit::{
 use tool_step::run_tool_calls;
 
 /// Per-request `max_tokens` output cap — one model call's output ceiling,
-/// distinct from the §6 cumulative spend budgets ([`Budgets`]). Moves to
-/// manifest config when that surface lands.
+/// distinct from the §6 spend budgets ([`Budgets`]) and from the §5.2
+/// manifest's `budget_tokens` (an assembled-context budget, no output cap).
 const DEFAULT_MAX_TOKENS: u32 = 4096;
 
 /// Inputs resolved by [`super::run`] before branch work starts.
@@ -60,22 +61,23 @@ pub(super) struct Resolved<'a> {
     pub(super) model: &'a Model,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: &'a str,
-    /// The role's declared tool names (§4.3 `tools:`). Composed against
-    /// the branch's `descriptions/tools/*.json` schemas into the typed
-    /// request's `tools` array (§3.3) so the model is told its toolset.
+    /// The role's declared tool names (§4.3 `tools:`), composed against
+    /// the branch's committed schemas into the request's `tools` (§3.3).
     pub(super) tools: &'a [String],
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
     pub(super) binary: OsString,
     /// Harness-owned retry policy from `workflow.yaml` (§2.10, §6).
     pub(super) retry: RetryConfig,
-    /// Per-conversation spend limits from `workflow.yaml` (§6). Checked
-    /// at every model-call boundary before the adapter is invoked.
+    /// Per-conversation spend limits from `workflow.yaml` (§6), checked
+    /// at every model-call boundary.
     pub(super) budgets: Budgets,
-    /// The full workflow (§6): the root driver evaluates its per-step hooks
-    /// and lifecycle bindings from here, the same seams `lernie advance`
-    /// runs — the §6 prompt→advance collapse (both drivers, one evaluation).
+    /// The full workflow (§6): per-step hooks and lifecycle bindings, the
+    /// same seams `lernie advance` runs (the §6 prompt→advance collapse).
     pub(super) workflow: &'a Workflow,
+    /// The role's §5.2 context-assembly rules (`manifest.yaml`, §2.2);
+    /// `None` (no entry for the role) assembles the transcript alone.
+    pub(super) manifest: Option<&'a RoleRules>,
     /// True under an `adapter:` override — the MessageStart.v handshake
     /// governs in place of the version guard (§4.4).
     pub(super) expect_handshake: bool,
@@ -110,9 +112,9 @@ pub(super) fn run_exchange(
 
     spawn_branch(repo, &worktree_path, &conv_id, deps)?;
 
-    // The initial user message enters through the front door (§2.4, §2.11):
-    // deposited into this agent's own inbox and delivered by the step-1
-    // drain — the same path any reprompt takes, no bespoke delivery.
+    // The initial user message enters through the front door (§2.4,
+    // §2.11): deposited into this agent's own inbox, delivered by the
+    // step-1 drain — the same path any reprompt takes.
     inbox::deposit(repo, &conv_id, inbox::USER_SENDER, user_message, deps.clock)?;
 
     let system_with_goal = prepend_goal(user_message, &resolved.soul);
@@ -130,9 +132,8 @@ pub(super) fn run_exchange(
     let mut exhausted = false;
     // §2.9 step 3: set when a check point sees the SIGTERM handler flag.
     let mut stopped = false;
-    // §3.3/§4.3: the role's declared tools composed against the schemas
-    // committed under `descriptions/tools/` (§2.10), once at step 1 and
-    // cloned into every step's request (git-inherited, stable mid-branch).
+    // §3.3/§4.3: declared tools composed against the committed schemas
+    // once at step 1, cloned per step (git-inherited, stable mid-branch).
     let mut tools: Vec<brazen::Tool> = Vec::new();
     loop {
         if step_seq == 1 {
@@ -143,15 +144,13 @@ pub(super) fn run_exchange(
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox
         // message into the transcript ahead of this step's read-state
-        // capture, so it is part of the commit the model call assembles
-        // from — and after the prior step's tool entries, so a message
+        // capture — after the prior step's tool entries, so a message
         // never wedges between paired tool blocks (§2.3).
         drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?;
 
-        // §6 prompt→advance collapse: the root interprets delivered child
-        // results (deliver_result / compaction_merge / verifier gate) at the
-        // same boundary `lernie advance` does — empty-inputs no-op for a
-        // root with no dispatched children.
+        // §6 prompt→advance collapse: interpret delivered child results
+        // (deliver_result / compaction_merge / verifier gate) at the same
+        // boundary `lernie advance` does — empty-inputs no-op for a root.
         child_result::interpret_pending(repo, &conv_id, &worktree_path, resolved.workflow, deps)?;
 
         let commit_sha = read_branch_tip(&worktree_path, deps)?;
@@ -177,8 +176,9 @@ pub(super) fn run_exchange(
         }
 
         // §2.3 / §5: assemble the model-facing history from the read-state
-        // commit's tree — one code path for running, retry, and replay.
-        let messages = assemble(&worktree_path)?;
+        // commit's tree — §5.2 head/body under the role's manifest rules,
+        // then the transcript tail — one path for running, retry, replay.
+        let messages = assemble(&worktree_path, resolved.manifest)?;
         let request = model_call::build_request(
             &resolved.model.model_id,
             &system_with_goal,

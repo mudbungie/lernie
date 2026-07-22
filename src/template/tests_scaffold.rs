@@ -128,9 +128,7 @@ fn providers_yaml_is_roles_only_and_validates() {
 fn manifest_yaml_is_role_keyed_per_arch_5_2() {
     let (_holder, ws) = scaffolded();
     let raw = show_control(&ws, "manifest.yaml");
-    let tmp = TempDir::new().unwrap();
-    std::fs::write(tmp.path().join("manifest.yaml"), &raw).unwrap();
-    let manifest = Manifest::load(&tmp.path().join("manifest.yaml")).unwrap();
+    let manifest = Manifest::parse(&raw, &parse_origin("manifest.yaml")).unwrap();
     assert!(manifest.roles.contains_key("worker"));
     assert!(manifest.roles.contains_key("compactor"));
     let worker = &manifest.roles["worker"];

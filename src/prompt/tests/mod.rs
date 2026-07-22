@@ -13,6 +13,7 @@ mod exit_launch;
 mod exit_race;
 mod fixtures;
 mod happy;
+mod manifest_wiring;
 mod multi_step;
 mod multi_step_terminal;
 mod pin;

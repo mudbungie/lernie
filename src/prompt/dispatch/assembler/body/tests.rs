@@ -1,0 +1,277 @@
+//! Unit tests for §5.2 head-and-body composition: selection (globs,
+//! structural skips, category order), the token budget, and each
+//! overflow policy. Token math throughout uses 4-byte-multiple contents
+//! so 1 token == 4 bytes exactly.
+
+use super::*;
+use crate::config::manifest::OverflowPolicy;
+use tempfile::TempDir;
+
+fn rules(pinned: &[&str], order: &[&str], budget: u32, overflow: OverflowPolicy) -> RoleRules {
+    RoleRules {
+        pinned: pinned.iter().map(|s| s.to_string()).collect(),
+        order: order.iter().map(|s| s.to_string()).collect(),
+        budget_tokens: budget,
+        overflow,
+    }
+}
+
+fn write(wt: &Path, rel: &str, bytes: &[u8]) {
+    let path = wt.join(rel);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(path, bytes).unwrap();
+}
+
+/// The `path` attribute of each rendered block, for order assertions.
+fn paths(blocks: &[String]) -> Vec<String> {
+    blocks
+        .iter()
+        .map(|b| {
+            let start = b.find('"').unwrap() + 1;
+            b[start..b[start..].find('"').unwrap() + start].to_string()
+        })
+        .collect()
+}
+
+#[test]
+fn no_manifest_rules_compose_nothing() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "summary/001.md", b"data");
+    assert!(compose(wt.path(), None).unwrap().is_empty());
+}
+
+#[test]
+fn an_absent_worktree_composes_nothing() {
+    let r = rules(&[], &["**"], 100, OverflowPolicy::Drop);
+    let out = compose(Path::new("/no/such/worktree"), Some(&r)).unwrap();
+    assert!(out.is_empty());
+}
+
+#[test]
+fn a_worktree_that_is_a_file_surfaces_io_error() {
+    let dir = TempDir::new().unwrap();
+    let file = dir.path().join("not-a-dir");
+    std::fs::write(&file, b"x").unwrap();
+    let r = rules(&[], &["**"], 100, OverflowPolicy::Drop);
+    assert!(matches!(
+        compose(&file, Some(&r)).unwrap_err(),
+        Error::Io(_)
+    ));
+}
+
+#[test]
+fn an_unreadable_selected_file_surfaces_io_error() {
+    // A dangling symlink walks as a file and fails the read (§5.1 — a
+    // worktree entry that cannot compose is declined, not skipped).
+    let wt = TempDir::new().unwrap();
+    std::os::unix::fs::symlink("/no/such/target", wt.path().join("dangling.md")).unwrap();
+    let r = rules(&["dangling.md"], &[], 100, OverflowPolicy::Drop);
+    assert!(matches!(
+        compose(wt.path(), Some(&r)).unwrap_err(),
+        Error::Io(_)
+    ));
+}
+
+#[test]
+fn structurally_homed_trees_never_compose_as_body_text() {
+    // goal.md/soul.md (system slot, §2.3), descriptions/** (tools
+    // array, §3.3), messages/** (transcript tail, §5.2), .git — all
+    // invisible even to a catch-all glob.
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "goal.md", b"goal");
+    write(wt.path(), "soul.md", b"soul");
+    write(wt.path(), "messages/001-user.md", b"hi");
+    write(wt.path(), "descriptions/tools/bash.json", b"{}");
+    write(wt.path(), ".git/config", b"[core]");
+    write(wt.path(), "notes.md", b"kept");
+    let r = rules(&["**"], &[], 100, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert_eq!(paths(&out), vec!["notes.md"]);
+    assert_eq!(out[0], "<file path=\"notes.md\">\nkept\n</file>");
+}
+
+#[test]
+fn body_fills_in_category_order_lexical_within_each() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "skills/z/SKILL.md", b"zzzz");
+    write(wt.path(), "skills/a/SKILL.md", b"aaaa");
+    write(wt.path(), "summary/002.md", b"s2s2");
+    write(wt.path(), "summary/001.md", b"s1s1");
+    let r = rules(&[], &["summary/**", "skills/**"], 100, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert_eq!(
+        paths(&out),
+        vec![
+            "summary/001.md",
+            "summary/002.md",
+            "skills/a/SKILL.md",
+            "skills/z/SKILL.md"
+        ]
+    );
+}
+
+#[test]
+fn a_pinned_file_never_reenters_through_order() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "notes.md", b"once");
+    let r = rules(&["notes.md"], &["**"], 100, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert_eq!(paths(&out), vec!["notes.md"]);
+}
+
+#[test]
+fn pinned_rides_over_budget_and_counts_toward_it() {
+    // §5.2: pinned is always included regardless of budget, and what it
+    // spends is gone — the body's allowance is the remainder.
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "notes.md", b"12345678"); // 2 tokens > budget 1
+    write(wt.path(), "docs/a.md", b"data");
+    let r = rules(&["notes.md"], &["docs/**"], 1, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert_eq!(paths(&out), vec!["notes.md"]);
+}
+
+#[test]
+fn a_fitting_body_passes_untouched() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"data");
+    write(wt.path(), "docs/b.md", b"data");
+    let r = rules(&[], &["docs/**"], 2, OverflowPolicy::Drop);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["docs/a.md", "docs/b.md"]
+    );
+}
+
+#[test]
+fn drop_oldest_summaries_sheds_lexically_first_until_the_body_fits() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "summary/001.md", b"12345678"); // 2 tokens
+    write(wt.path(), "summary/002.md", b"12345678"); // 2 tokens
+    write(wt.path(), "skills/a.md", b"data"); // 1 token
+    let r = rules(
+        &[],
+        &["summary/**", "skills/**"],
+        3,
+        OverflowPolicy::DropOldestSummaries,
+    );
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert_eq!(paths(&out), vec!["summary/002.md", "skills/a.md"]);
+}
+
+#[test]
+fn drop_oldest_summaries_with_none_left_lets_the_residue_ride() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "skills/a.md", b"12345678"); // 2 tokens > budget 1
+    let r = rules(&[], &["skills/**"], 1, OverflowPolicy::DropOldestSummaries);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["skills/a.md"]
+    );
+}
+
+#[test]
+fn truncate_cuts_the_overflowing_entry_at_a_char_boundary_and_stops() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"12345678"); // 2 tokens
+    write(wt.path(), "docs/b.md", "abc\u{e9}xxxx".as_bytes()); // 9 bytes, 3 tokens
+    write(wt.path(), "docs/c.md", b"data"); // would fit, never reached
+    let r = rules(&[], &["docs/**"], 3, OverflowPolicy::Truncate);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    // b's 1-token allowance is 4 bytes — inside the 2-byte é, backed
+    // off to the boundary at 3.
+    assert_eq!(
+        out,
+        vec![
+            "<file path=\"docs/a.md\">\n12345678\n</file>".to_string(),
+            "<file path=\"docs/b.md\">\nabc\n</file>".to_string(),
+        ]
+    );
+}
+
+#[test]
+fn truncate_with_no_allowance_left_drops_the_overflowing_entry() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"12345678"); // spends the whole budget
+    write(wt.path(), "docs/b.md", b"data");
+    let r = rules(&[], &["docs/**"], 2, OverflowPolicy::Truncate);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["docs/a.md"]
+    );
+}
+
+#[test]
+fn drop_stops_filling_at_the_first_entry_that_does_not_fit() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"12345678"); // 2 tokens
+    write(wt.path(), "docs/b.md", b"12345678"); // overflows at 3
+    write(wt.path(), "docs/c.md", b"data"); // would fit, never reached
+    let r = rules(&[], &["docs/**"], 3, OverflowPolicy::Drop);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["docs/a.md"]
+    );
+}
+
+#[test]
+fn legacy_drop_oldest_steps_sheds_nothing() {
+    // Step records live outside every worktree (§2.2): nothing to shed.
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"12345678");
+    let r = rules(&[], &["docs/**"], 1, OverflowPolicy::DropOldestSteps);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["docs/a.md"]
+    );
+}
+
+#[test]
+fn summarize_sheds_nothing_at_assembly() {
+    // Summarizing is the compaction procedure's act (§2.7); assembly is
+    // a pure function of the tree and rides the body whole.
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "docs/a.md", b"12345678");
+    let r = rules(&[], &["docs/**"], 1, OverflowPolicy::Summarize);
+    assert_eq!(
+        paths(&compose(wt.path(), Some(&r)).unwrap()),
+        vec!["docs/a.md"]
+    );
+}
+
+#[test]
+fn non_utf8_content_composes_lossily() {
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "blob.bin", &[0xff, b'o', b'k']);
+    let r = rules(&["blob.bin"], &[], 100, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    assert!(out[0].contains("\u{fffd}ok"));
+}
+
+#[test]
+fn glob_vocabulary_literals_star_and_doublestar() {
+    for (pattern, path, expect) in [
+        ("goal.md", "goal.md", true),
+        ("goal.md", "soul.md", false),
+        ("*.md", "notes.md", true),
+        ("*.md", "docs/notes.md", false),
+        ("docs/*", "docs/a.md", true),
+        ("docs/*", "docs/sub/a.md", false),
+        ("summary/**", "summary/001.md", true),
+        ("summary/**", "summary/a/b.md", true),
+        ("summary/**", "skills/a.md", false),
+        ("**/SKILL.md", "skills/x/SKILL.md", true),
+        ("**/SKILL.md", "skills/x/notes.md", false),
+        ("a*c", "abc", true),
+        ("a*c", "ac", true),
+        ("a*c", "abd", false),
+        ("a*b*c", "aXbYc", true),
+        ("abc", "ab", false),
+    ] {
+        assert_eq!(
+            glob_match(pattern, path),
+            expect,
+            "{pattern} vs {path} should be {expect}"
+        );
+    }
+}

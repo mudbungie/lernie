@@ -89,9 +89,10 @@ pub(super) fn step(
 
     let step_seq = next_step_seq(workspace, agent_id)?;
     let commit_sha = step_commit::read_branch_tip(worktree, deps)?;
-    // §2.3 / §5: assemble the model-facing history from the tree — one
-    // code path for running, retry, and replay.
-    let messages = assembler::assemble(worktree)?;
+    // §2.3 / §5: assemble the model-facing history from the tree — the
+    // §5.2 head/body under the role's manifest rules, then the
+    // transcript tail — one code path for running, retry, and replay.
+    let messages = assembler::assemble(worktree, resolved.manifest)?;
     let request = model_call::build_request(
         &resolved.model.model_id,
         &system_with_goal,

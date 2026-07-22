@@ -75,17 +75,20 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
     deps.launcher = &rec;
     let out = run(&ws, parent, None, &deps, &mut || Ok(worker_config())).unwrap();
 
-    assert!(matches!(
-        out,
-        AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)
-    ));
+    assert!(matches!(out, AdvanceOutcome::Terminal));
     // The child's work product transferred into the parent tree, and its
-    // result message delivered to the transcript, then a step answered.
+    // result message delivered to the transcript, then a step answered
+    // with a final response — asserted on the disk record (the step's
+    // committed response), not a carried payload.
     assert_eq!(
         std::fs::read_to_string(parent_wt.join("out.txt")).unwrap(),
         "result\n"
     );
     assert!(parent_wt.join(format!("messages/001-{child}.md")).exists());
+    assert!(
+        ws.join(format!("steps/{parent}/001/response.json"))
+            .exists()
+    );
 }
 
 #[test]

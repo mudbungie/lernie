@@ -8,7 +8,7 @@ use super::advance::{
 use super::fixtures::*;
 use crate::config::Budgets;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
-use crate::prompt::inbox::{self, Epitaph, inbox_dir};
+use crate::prompt::inbox::{self, inbox_dir};
 use crate::prompt::tool::ToolOutcome;
 use crate::prompt::{AdapterRunner, Deps, Error};
 use brazen::{Content, FinishReason};
@@ -67,14 +67,18 @@ fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
     deps.launcher = &rec;
     deps.stop = &stopped;
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
-    assert!(matches!(out, AdvanceOutcome::Terminal(Epitaph::Stopped)));
-    // §2.11 pin 2: stopped never relaunches; no compactor either (§2.9).
+    assert!(matches!(out, AdvanceOutcome::Terminal));
+    // A stop caught at entry — asserted on the disk record, not a
+    // carried payload: the step returned before writing any step record
+    // (unlike a final response), and §2.11 pin 2 held — stopped never
+    // relaunches, no compactor either (§2.9).
+    assert!(!ws.path().join("steps").exists());
     assert!(rec.calls.borrow().is_empty());
 }
 
 #[test]
 fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
-    let (ws, _wt) = workspace_with_tail(&terminal_tail());
+    let (ws, wt) = workspace_with_tail(&terminal_tail());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let stopped = AtomicBool::new(false);
@@ -94,13 +98,18 @@ fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
         launcher: &rec,
     };
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
-    assert!(matches!(out, AdvanceOutcome::Terminal(Epitaph::Stopped)));
+    assert!(matches!(out, AdvanceOutcome::Terminal));
+    // A stop mid-call, not a failure — asserted on the disk record: the
+    // branch never advanced to a new committed response (the half-stream
+    // was not sealed into the transcript), and no relaunch fired (§2.11
+    // pin 2). The stop signature is the absent trailing assistant entry.
+    assert!(!wt.join("messages/004-claude-sonnet-5.json").exists());
     assert!(rec.calls.borrow().is_empty());
 }
 
 #[test]
 fn a_stop_during_the_tool_window_never_rides_the_baton() {
-    let (ws, _wt) = workspace_with_tail(&terminal_tail());
+    let (ws, wt) = workspace_with_tail(&terminal_tail());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     inbox::deposit(ws.path(), AGENT, "user", "run it", &clock).unwrap();
     let tool_stream = stream_of(
@@ -128,9 +137,12 @@ fn a_stop_during_the_tool_window_never_rides_the_baton() {
         launcher: &rec,
     };
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
-    // Terminal(Stopped), never ToolsPending: the flag would evaporate
-    // across exec, so the hop terminates here (§6).
-    assert!(matches!(out, AdvanceOutcome::Terminal(Epitaph::Stopped)));
+    // Terminal, never ToolsPending: the flag would evaporate across exec,
+    // so the hop terminates here (§6). The tool ran and its result
+    // committed to the transcript (the disk record), but the stop kept it
+    // off the baton — no successor launch fired (§2.11 pin 2).
+    assert!(matches!(out, AdvanceOutcome::Terminal));
+    assert!(wt.join("messages/005-tool.json").exists());
     assert!(rec.calls.borrow().is_empty());
 }
 
@@ -150,11 +162,17 @@ fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
         ..Budgets::default()
     };
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(cfg.clone())).unwrap();
-    assert!(matches!(
-        out,
-        AdvanceOutcome::Terminal(Epitaph::BudgetExhausted)
-    ));
-    // §2.11 pin 2: budget-exhausted never relaunches.
+    assert!(matches!(out, AdvanceOutcome::Terminal));
+    // Budget exhaustion — asserted on the disk record it writes, not a
+    // carried payload: the `refs/lernie/budget-exhausted/<branch>` marker
+    // ref was updated at the boundary before any model call, and §2.11
+    // pin 2 held — budget-exhausted never relaunches.
+    assert!(git.runs.borrow().iter().any(|(_, args)| {
+        args.first().map(String::as_str) == Some("update-ref")
+            && args
+                .get(1)
+                .is_some_and(|r| r.starts_with("refs/lernie/budget-exhausted/"))
+    }));
     assert!(rec.calls.borrow().is_empty());
 }
 

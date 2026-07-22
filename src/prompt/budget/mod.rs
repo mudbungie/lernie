@@ -120,11 +120,12 @@ pub fn check(repo: &Path, branch: &str, budgets: &Budgets) -> Option<Exhausted> 
         }
     }
     if let Some(limit) = budgets.max_depth {
+        let limit = u64::from(limit);
         let actual = u64::from(derive::depth(branch));
-        if actual > u64::from(limit) {
+        if actual > limit {
             return Some(Exhausted {
                 axis: Axis::Depth,
-                limit: u64::from(limit),
+                limit,
                 actual,
             });
         }

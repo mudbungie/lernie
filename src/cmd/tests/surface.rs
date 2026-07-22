@@ -3,7 +3,6 @@
 //! [`Outcome`] handoff mapping, and the [`prelude`] re-exports.
 
 use crate::cmd::{Cli, Command, Error, Outcome, advance, prelude};
-use crate::prompt::dispatch::advance::AdvanceOutcome;
 use crate::prompt::dispatch::advance::cli::AdvanceHandoff;
 use clap::Parser;
 use std::path::PathBuf;
@@ -127,7 +126,7 @@ fn error_display_is_the_prefixed_stderr_shape() {
 fn advance_outcome_maps_both_handoff_arms() {
     let exec = advance::outcome_of(AdvanceHandoff::Exec(std::process::Command::new("true")));
     assert!(matches!(exec, Outcome::Exec(_)));
-    let done = advance::outcome_of(AdvanceHandoff::Done(AdvanceOutcome::NothingToDo));
+    let done = advance::outcome_of(AdvanceHandoff::Done);
     assert!(matches!(done, Outcome::Quiet));
 }
 

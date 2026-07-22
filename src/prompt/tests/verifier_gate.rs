@@ -195,14 +195,17 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         Ok(gate_cfg("verifier", "events: {}\n"))
     })
     .unwrap();
+    assert!(matches!(out, AdvanceOutcome::Terminal), "{out:?}");
+    // The verifier is a child, so its terminal epitaph IS deposited to
+    // disk (the parent's inbox) — the authoritative record the outcome no
+    // longer mirrors. Assert the deposited result names the final-response
+    // epitaph.
+    let deposited =
+        std::fs::read_to_string(inbox::inbox_dir(&ws, parent).join(format!("{verifier}-001.md")))
+            .unwrap();
     assert!(
-        matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)),
-        "{out:?}"
-    );
-    assert!(
-        inbox::inbox_dir(&ws, parent)
-            .join(format!("{verifier}-001.md"))
-            .exists()
+        deposited.contains("epitaph: final-response"),
+        "{deposited:?}"
     );
 
     // (3) Parent hop: interpret the verdict → deliver the held worker
@@ -223,10 +226,7 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         Ok(gate_cfg("worker", GATE_WORKFLOW))
     })
     .unwrap();
-    assert!(
-        matches!(out, AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)),
-        "{out:?}"
-    );
+    assert!(matches!(out, AdvanceOutcome::Terminal), "{out:?}");
 
     // The gate lifted: the worker's result is now in the parent transcript,
     // its work product transferred, and both inbox messages consumed.

@@ -35,7 +35,7 @@ mod hop;
 mod tests;
 
 use super::{assembler, child_result, driver, terminal};
-use crate::prompt::inbox::{self, Epitaph, ExecutorLock};
+use crate::prompt::inbox::{self, ExecutorLock};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Deps, Error};
 use brazen::{Content, Message, Role};
@@ -43,10 +43,6 @@ use std::path::Path;
 
 /// What one hop found and did — derived on the fly, nothing stored.
 #[derive(Debug)]
-// `Terminal`'s Epitaph is carried but read only by tests — the exit
-// protocol already wrote it to disk (§2.11). Surface it or drop it;
-// tracked as bl-4f6d.
-#[allow(dead_code)]
 pub enum AdvanceOutcome {
     /// Another executor holds the lock: the branch is already driven —
     /// the clean no-op of Writer/driver totality (§2.11).
@@ -56,8 +52,10 @@ pub enum AdvanceOutcome {
     /// exit-launch recursion.
     NothingToDo,
     /// The hop stepped to a terminal event and ran the §2.11 exit
-    /// protocol; the chain ends here.
-    Terminal(Epitaph),
+    /// protocol; the chain ends here. The epitaph is not carried — the
+    /// exit protocol already wrote it to disk (the deposited result
+    /// message, §2.11), its single authoritative home (PRINCIPLES SSOT).
+    Terminal,
     /// The step emitted `tool_use` and its tools ran: the successor hop
     /// must run. Carries the live lease for the §6 exec baton — the
     /// caller preps the successor command ([`cli`], `baton`) and execs.
@@ -180,7 +178,7 @@ pub(in crate::prompt) fn run(
                     )?;
                     drop(lock);
                     terminal::exit_launch(workspace, agent_id, epitaph, deps);
-                    Ok(AdvanceOutcome::Terminal(epitaph))
+                    Ok(AdvanceOutcome::Terminal)
                 }
             }
         }

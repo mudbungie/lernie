@@ -1,7 +1,8 @@
 +++
 title = "gate: docs — docs reflect current state"
 created = 1784337201
-updated = 1784525234
+updated = 1784698813
+claimant = "Prostheses-bad2"
 parent = "bl-06d5"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 

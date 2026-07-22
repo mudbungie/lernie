@@ -9,7 +9,7 @@ use crate::prompt::adapter::AdapterRunner;
 use crate::prompt::dispatch::Sleeper;
 use crate::prompt::inbox::{Epitaph, Launcher, deposit_result};
 use crate::prompt::tool::{ExecError, ToolCall, ToolExecutor, ToolOutcome};
-use crate::prompt::{NanoIdGen, SystemClock};
+use crate::prompt::{ChildDispatchRequest, NanoIdGen, SystemClock, child_dispatch};
 use crate::template::{GitRunner, RealGit};
 use crate::workspace::agent_worktree;
 use std::cell::RefCell;

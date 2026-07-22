@@ -29,6 +29,10 @@ case "$branch" in
     ;;
 esac
 
+# The 300-line cap is a repo INVARIANT, not a per-commit property: a file
+# can cross the cap in one commit and never be re-measured if we only look
+# at the staged set. So sweep every tracked code file in the whole tree
+# (git ls-files is cheap — a single index read, no working-tree walk).
 exempt='\.(md|txt|toml|yaml|yml|json|lock)$|(^|/)(Makefile|LICENSE|\.gitignore|\.githooks/)'
 while IFS= read -r file; do
   [ -z "$file" ] && continue
@@ -39,7 +43,7 @@ while IFS= read -r file; do
     echo "error: $file has $lines lines (>300 limit for code files)." >&2
     exit 1
   fi
-done < <(git diff --cached --name-only --diff-filter=ACMR)
+done < <(git ls-files)
 
 if [ -f Cargo.toml ] && command -v make >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
   echo "pre-commit: running 'make check' (fmt-check, clippy -D warnings, 100% coverage)..." >&2

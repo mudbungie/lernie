@@ -5,19 +5,25 @@
 //! module declaration).
 
 use super::{DEFAULT_CONFIG_REF, agent_ref, agent_worktree, repo_git};
+use crate::harness_root::Roots;
 use crate::template::authoring::{self, Origin};
 use crate::template::{GitRunner, RealGit, scaffold};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 /// A real workspace under a fresh tempdir (the `lernie new` core, with
-/// an empty descriptions pool). Returns `(holder, workspace_path)`.
+/// an empty descriptions pool and no template override). Returns
+/// `(holder, workspace_path)`.
 pub(crate) fn workspace() -> (TempDir, PathBuf) {
     let holder = TempDir::new().unwrap();
     let data_root = holder.path().join("data");
     std::fs::create_dir_all(&data_root).unwrap();
+    let roots = Roots {
+        config: holder.path().join("config"),
+        data: data_root,
+    };
     let ws = holder.path().join("ws");
-    scaffold(&ws, &data_root, &RealGit::new()).unwrap();
+    scaffold(&ws, &roots, &RealGit::new()).unwrap();
     (holder, ws)
 }
 

@@ -4,7 +4,18 @@
 //! `#[cfg(test)]` and non-`pub` at the crate root, so the parity checker
 //! (which counts only externally-public items) never sees it.
 
-use std::path::PathBuf;
+use crate::harness_root::Roots;
+use std::path::{Path, PathBuf};
+
+/// Roots pointing at nonexistent subdirs of `base` — no
+/// `template/` override under the config root, no data-root pools:
+/// the plain embedded-template scaffold shape most tests want.
+pub fn bare_roots(base: &Path) -> Roots {
+    Roots {
+        config: base.join("no-conf"),
+        data: base.join("no-pool"),
+    }
+}
 
 /// Resolve the cargo-built `lernie` binary from the running test binary.
 ///

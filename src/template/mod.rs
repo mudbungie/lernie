@@ -6,7 +6,8 @@
 //! `<dest>/repo.git` and authors the workspace's **first config
 //! commit** — an orphan root on `config/default` (§2.2) — as the
 //! harness-assisted act §2.2 describes: materialize a checkout, write
-//! the control files from the embedded template plus the
+//! the control files from the embedded template (overlaid by any
+//! `<config-root>/template/` override, §2.2) plus the
 //! `descriptions/**` snapshot from the data-root pools (§3.3), commit,
 //! and tear the checkout down. There is no `main` and no primary
 //! worktree: agents fork off the config branch's head (§2.3), and the
@@ -15,6 +16,7 @@
 pub mod authoring;
 pub mod descriptions;
 
+use crate::harness_root::Roots;
 use include_dir::{Dir, include_dir};
 use std::fs;
 use std::io;
@@ -26,6 +28,13 @@ use std::process::Command;
 /// `providers.yaml`, `version`, `souls/` — authored onto the orphan
 /// `config/default` root by [`scaffold`].
 pub static TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/template");
+
+/// Config-root subdir overriding the embedded [`TEMPLATE`] (ARCH §2.2):
+/// the seed set is the union of the embedded files with any same-named
+/// file under `<config-root>/template/` winning, extra files included.
+/// Absent dir = the embedded template alone. `lernie prime` never seeds
+/// it — absence is the default (policy lives in config, not code).
+pub const TEMPLATE_OVERRIDE_DIR: &str = "template";
 
 /// Errors [`scaffold`] can return.
 #[derive(Debug, thiserror::Error)]
@@ -124,14 +133,17 @@ const CONFIG_AUTHOR_DIR: &str = ".config-author";
 ///    workspace repository. No `main` is ever created (§2.2).
 /// 3. Author the first config commit (an orphan root, §2.2) through a
 ///    transient checkout: `git worktree add --orphan`, extract the
-///    embedded [`TEMPLATE`] control files, snapshot the
-///    descriptions-always tree from the `data_root` pools into
-///    `descriptions/{tools,skills}/` (ARCH §3.3 — an empty or absent
-///    pool yields an empty descriptions tree), `git add -A`, commit.
+///    embedded [`TEMPLATE`] control files, overlay the
+///    `<config-root>/template/` override ([`TEMPLATE_OVERRIDE_DIR`] —
+///    same-named files win, extra files are included, an absent dir
+///    changes nothing), snapshot the descriptions-always tree from the
+///    data-root pools into `descriptions/{tools,skills}/` (ARCH §3.3 —
+///    an empty or absent pool yields an empty descriptions tree),
+///    `git add -A`, commit.
 /// 4. Remove the authoring worktree. The workspace is left with exactly
 ///    one ref, `config/default`, whose head is the config commit every
 ///    fresh root agent forks off (§2.3) — the fork is the freeze.
-pub fn scaffold<G: GitRunner>(dest: &Path, data_root: &Path, git: &G) -> Result<(), ScaffoldError> {
+pub fn scaffold<G: GitRunner>(dest: &Path, roots: &Roots, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
     let repo = crate::workspace::repo_git(dest);
     let config_ref = crate::workspace::DEFAULT_CONFIG_REF;
@@ -150,9 +162,33 @@ pub fn scaffold<G: GitRunner>(dest: &Path, data_root: &Path, git: &G) -> Result<
     // no-op in production) — the same pattern as the subagent spawn.
     fs::create_dir_all(&author).map_err(ScaffoldError::Io)?;
     TEMPLATE.extract(&author).map_err(ScaffoldError::Io)?;
-    descriptions::snapshot(data_root, &author).map_err(ScaffoldError::Descriptions)?;
+    overlay(&roots.config.join(TEMPLATE_OVERRIDE_DIR), &author).map_err(ScaffoldError::Io)?;
+    descriptions::snapshot(&roots.data, &author).map_err(ScaffoldError::Descriptions)?;
     let msg = format!("config: init [{config_ref}]");
     commit_checkout(git, &repo, &author, &msg).map_err(ScaffoldError::Git)?;
+    Ok(())
+}
+
+/// Recursively copy `src` over `dst`, overwriting what exists — the
+/// override half of the seed-set union (ARCH §2.2). A missing `src` is
+/// the default (no override authored) and changes nothing; any other
+/// read failure surfaces.
+fn overlay(src: &Path, dst: &Path) -> io::Result<()> {
+    let entries = match fs::read_dir(src) {
+        Ok(entries) => entries,
+        Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => return Err(e),
+    };
+    for entry in entries {
+        let entry = entry?;
+        let to = dst.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            fs::create_dir_all(&to)?;
+            overlay(&entry.path(), &to)?;
+        } else {
+            fs::copy(entry.path(), &to)?;
+        }
+    }
     Ok(())
 }
 
@@ -189,6 +225,8 @@ fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_override;
 #[cfg(test)]
 mod tests_realgit;
 #[cfg(test)]

@@ -27,6 +27,6 @@ fn go(args: Args) -> Result<Outcome, Box<dyn std::error::Error>> {
     let dest = args
         .path
         .unwrap_or_else(|| roots.data.join("workspaces").join(NanoIdGen.short()));
-    template::scaffold(&dest, &roots.data, &RealGit::new())?;
+    template::scaffold(&dest, &roots, &RealGit::new())?;
     Ok(path_line(dest))
 }

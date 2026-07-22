@@ -1,0 +1,266 @@
+//! §5.2 head-and-body composition: the manifest-governed,
+//! non-transcript part of assembled context.
+//!
+//! The manifest role's `pinned` list selects the **head extras** —
+//! always included regardless of budget — and its `order` list fills
+//! the **body** in declared category order, lexically within each
+//! category (§5.5 "category-sorted body"), until the token budget's
+//! overflow policy kicks in. Each selected worktree file composes as
+//! one path-framed text block (§5.3 file path as hint).
+//!
+//! Three trees never compose here because their wire homes are
+//! structural (§5.1 consequences, §2.3, §3.3): `goal.md` and `soul.md`
+//! ride the system slot ("Goal and soul are pinned files, not sequence
+//! item zero", §2.3), `descriptions/**` rides the typed request's
+//! tools array (§3.3 tools-list assembly), and `messages/**` is the
+//! transcript tail — not an order category, always assembled last
+//! (§5.2).
+//!
+//! **The budget covers head + body, not the transcript.** §5.2 subjects
+//! only `order` entries to `budget_tokens` (pinned counts but is never
+//! shed); the transcript is deliberately outside it, so the body stays
+//! a pure function of inputs that change only at rebuild points (§5.5
+//! "Between rebuild points the body is stable") — a growing transcript
+//! never evicts a summary mid-branch. The transcript's pressure valve
+//! is compaction (§2.7, §6), not assembly.
+
+use crate::config::manifest::{OverflowPolicy, RoleRules};
+use crate::prompt::Error;
+use std::path::Path;
+
+/// Token estimate: ~4 bytes/token (the English-text heuristic,
+/// `docs/TAXONOMY.md` "Token and tokenizer"). The budget is an estimate
+/// by construction — lernie carries no provider tokenizer (§4.2 keeps
+/// provider facts out of the harness); framing overhead is not counted.
+const BYTES_PER_TOKEN: u64 = 4;
+
+/// Transcript home (§2.3): never head or body material.
+const TRANSCRIPT_DIR: &str = "messages";
+/// Pinned files whose wire home is the system slot (§2.3).
+const SYSTEM_SLOT: &[&str] = &["goal.md", "soul.md"];
+/// Pinned tree whose wire home is the tools array (§3.3).
+const DESCRIPTIONS_DIR: &str = "descriptions";
+/// The category `drop_oldest_summaries` sheds from (§2.7 —
+/// `summary/NNN.md`, zero-padded, so lexical order is age order).
+const SUMMARY_PREFIX: &str = "summary/";
+
+/// One selected worktree file.
+struct Entry {
+    /// Worktree-relative path (§5.3 — the hint the framing preserves).
+    path: String,
+    content: String,
+}
+
+impl Entry {
+    fn tokens(&self) -> u64 {
+        (self.content.len() as u64).div_ceil(BYTES_PER_TOKEN)
+    }
+}
+
+/// Compose the role's head extras and budgeted body as rendered text
+/// blocks, in assembly order. `None` (a role the manifest does not
+/// list) composes nothing — the general path with empty inputs.
+pub(super) fn compose(worktree: &Path, rules: Option<&RoleRules>) -> Result<Vec<String>, Error> {
+    let Some(rules) = rules else {
+        return Ok(Vec::new());
+    };
+    let files = walk(worktree)?;
+    let mut taken = vec![false; files.len()];
+    let head = select(worktree, &rules.pinned, &files, &mut taken)?;
+    let body = select(worktree, &rules.order, &files, &mut taken)?;
+    // Pinned is always included and counts toward the budget (§5.2
+    // "regardless of budget"); what remains is the body's allowance.
+    let spent: u64 = head.iter().map(Entry::tokens).sum();
+    let allowance = u64::from(rules.budget_tokens).saturating_sub(spent);
+    let body = fit(body, allowance, rules.overflow);
+    Ok(head.into_iter().chain(body).map(render).collect())
+}
+
+/// §5.3 file path as hint: the worktree-relative path rides the
+/// assembled block as its frame.
+fn render(e: Entry) -> String {
+    format!("<file path=\"{}\">\n{}\n</file>", e.path, e.content)
+}
+
+/// Expand `patterns` (in declared order — category order is priority)
+/// against the walked file list, reading each selected file once.
+/// `taken` spans calls so a file matched by `pinned` never re-enters
+/// via `order`. Non-UTF-8 bytes compose lossily: assembled context is
+/// text, and declining a skill's stray binary asset would hold the
+/// whole branch hostage to it.
+fn select(
+    worktree: &Path,
+    patterns: &[String],
+    files: &[String],
+    taken: &mut [bool],
+) -> Result<Vec<Entry>, Error> {
+    let mut out = Vec::new();
+    for pattern in patterns {
+        for (i, file) in files.iter().enumerate() {
+            if taken[i] || !glob_match(pattern, file) {
+                continue;
+            }
+            taken[i] = true;
+            let bytes = std::fs::read(worktree.join(file)).map_err(Error::Io)?;
+            out.push(Entry {
+                path: file.clone(),
+                content: String::from_utf8_lossy(&bytes).into_owned(),
+            });
+        }
+    }
+    Ok(out)
+}
+
+/// Apply the role's overflow policy to a body whose estimate exceeds
+/// its allowance (§5.2 "order entries fill the body in declared order
+/// until overflow policy kicks in"). A fitting body passes untouched.
+fn fit(body: Vec<Entry>, allowance: u64, policy: OverflowPolicy) -> Vec<Entry> {
+    let total: u64 = body.iter().map(Entry::tokens).sum();
+    if total <= allowance {
+        return body;
+    }
+    match policy {
+        // Step records live outside every worktree (§2.2, §2.3): the
+        // legacy policy names material that cannot be present, so it
+        // sheds nothing and the body rides whole.
+        OverflowPolicy::DropOldestSteps => body,
+        // Summarizing is the compaction procedure's act (§2.7): assembly
+        // is a pure function of the tree (§5.1) and cannot invoke a
+        // model, so the body rides whole and the §6 compaction
+        // checkpoint is the mechanism that actually sheds.
+        OverflowPolicy::Summarize => body,
+        OverflowPolicy::DropOldestSummaries => drop_oldest_summaries(body, allowance),
+        OverflowPolicy::Truncate => cut(body, allowance, true),
+        OverflowPolicy::Drop => cut(body, allowance, false),
+    }
+}
+
+/// Shed lexically-first `summary/**` entries — oldest first (§2.7
+/// zero-padded names) — until the body fits or none remain; a residual
+/// overflow with no summaries left rides.
+fn drop_oldest_summaries(mut body: Vec<Entry>, allowance: u64) -> Vec<Entry> {
+    let mut total: u64 = body.iter().map(Entry::tokens).sum();
+    while total > allowance {
+        let oldest = body
+            .iter()
+            .enumerate()
+            .filter(|(_, e)| e.path.starts_with(SUMMARY_PREFIX))
+            .min_by(|a, b| a.1.path.cmp(&b.1.path))
+            .map(|(i, _)| i);
+        let Some(i) = oldest else {
+            break;
+        };
+        total -= body[i].tokens();
+        body.remove(i);
+    }
+    body
+}
+
+/// Fill in declared order until the first entry that does not fit; the
+/// overflowing entry is truncated to the remaining allowance
+/// (`truncate: true`) or dropped whole (`false`), and later entries
+/// never fill past the kick-in point.
+fn cut(body: Vec<Entry>, allowance: u64, truncate: bool) -> Vec<Entry> {
+    let mut kept = Vec::new();
+    let mut remaining = allowance;
+    for mut e in body {
+        let t = e.tokens();
+        if t <= remaining {
+            remaining -= t;
+            kept.push(e);
+            continue;
+        }
+        if truncate && remaining > 0 {
+            // t > remaining guarantees the byte cut lands short of the
+            // content's end; back off to a char boundary.
+            let mut n = usize::try_from(remaining * BYTES_PER_TOKEN).expect("fits: n < len");
+            while !e.content.is_char_boundary(n) {
+                n -= 1;
+            }
+            e.content.truncate(n);
+            kept.push(e);
+        }
+        break;
+    }
+    kept
+}
+
+/// Every file in the worktree, as sorted worktree-relative paths —
+/// minus the structurally-homed trees ([`skip`]). An absent worktree
+/// walks empty. Lexical sort is the §5.5 category sort.
+fn walk(worktree: &Path) -> Result<Vec<String>, Error> {
+    let mut out = Vec::new();
+    descend(worktree, "", &mut out)?;
+    out.sort();
+    Ok(out)
+}
+
+fn descend(dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Error> {
+    let rd = match std::fs::read_dir(dir) {
+        Ok(rd) => rd,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => return Err(Error::Io(e)),
+    };
+    for entry in rd {
+        let entry = entry.map_err(Error::Io)?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let rel = if prefix.is_empty() {
+            name
+        } else {
+            format!("{prefix}/{name}")
+        };
+        if skip(&rel) {
+            continue;
+        }
+        if entry.file_type().map_err(Error::Io)?.is_dir() {
+            descend(&entry.path(), &rel, out)?;
+        } else {
+            out.push(rel);
+        }
+    }
+    Ok(())
+}
+
+/// Trees context assembly composes through structural homes rather than
+/// body text (module doc): the transcript tail, the system slot, the
+/// tools array — plus `.git`, which is git's, not the tree's.
+fn skip(rel: &str) -> bool {
+    rel == ".git" || rel == TRANSCRIPT_DIR || rel == DESCRIPTIONS_DIR || SYSTEM_SLOT.contains(&rel)
+}
+
+/// Minimal §5.2 glob over `/`-separated worktree-relative paths:
+/// literal segments, `*` within a segment, `**` spanning any number of
+/// segments — the full vocabulary the spec's manifests use; nothing
+/// fancier is coined here.
+fn glob_match(pattern: &str, path: &str) -> bool {
+    let pat: Vec<&str> = pattern.split('/').collect();
+    let segs: Vec<&str> = path.split('/').collect();
+    match_segments(&pat, &segs)
+}
+
+fn match_segments(pat: &[&str], segs: &[&str]) -> bool {
+    match pat.split_first() {
+        None => segs.is_empty(),
+        Some((&"**", rest)) => (0..=segs.len()).any(|i| match_segments(rest, &segs[i..])),
+        Some((p, rest)) => segs.split_first().is_some_and(|(s, tail)| {
+            match_one(p.as_bytes(), s.as_bytes()) && match_segments(rest, tail)
+        }),
+    }
+}
+
+/// `*`-wildcard match within one path segment, byte-wise (byte slicing
+/// keeps the recursion UTF-8-agnostic).
+fn match_one(pat: &[u8], seg: &[u8]) -> bool {
+    match pat.iter().position(|&b| b == b'*') {
+        None => pat == seg,
+        Some(i) => {
+            let (pre, rest) = (&pat[..i], &pat[i + 1..]);
+            seg.len() >= pre.len()
+                && seg[..pre.len()] == *pre
+                && (pre.len()..=seg.len()).any(|k| match_one(rest, &seg[k..]))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;

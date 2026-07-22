@@ -1,25 +1,18 @@
-//! `<conv-repo>/manifest.yaml` — context assembly rules per ARCH §5.2.
+//! `manifest.yaml` — context assembly rules per ARCH §5.2.
 //!
 //! Role-keyed since v0.3: each role declares its own pinned + ordered
 //! includes, budget, and overflow policy. Paths are relative to the
-//! branch's worktree (§5.1).
-
-// The manifest's consumer is §5.2 context assembly, which is not built:
-// `prompt::dispatch::assembler` composes context from `messages/` alone —
-// no pinned head, no manifest `order`, no budget, no overflow policy. So
-// this file parses and validates a control file the template really ships
-// into every config commit, and nothing reads it yet. That is a missing
-// feature (tracked: bl-e0cb), not test scaffolding, so `allow(dead_code)`
-// is the honest marker rather than `#[cfg(test)]`. When §5.2 lands this
-// needs a `parse(raw, origin)` seam like its siblings — control is read
-// from the config commit's tree, never a worktree file (§2.2).
-#![allow(dead_code)]
+//! branch's worktree (§5.1). The runtime consumer is
+//! `prompt::dispatch::assembler` (§5.2 context assembly), handed one
+//! role's [`RoleRules`] by `prompt::resolve`, which reads this file from
+//! the governing config commit's tree — never a worktree file (§2.2) —
+//! hence the content-in-hand [`Manifest::parse`] seam and no path-taking
+//! loader, like its control-file siblings.
 
 use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::Path;
 
 /// Top-level `manifest.yaml` shape.
@@ -61,20 +54,19 @@ pub enum OverflowPolicy {
 }
 
 impl Manifest {
-    /// Read, parse, and shape-check `manifest.yaml` at `path`. Path
+    /// Parse and shape-check a `manifest.yaml` body already in hand
+    /// (ARCH §2.2 — control is read from the config commit's tree, so
+    /// there is no path-taking loader). `origin` is the content's one
+    /// true address — `<commit>:manifest.yaml` — used in errors. Path
     /// existence of pinned/ordered entries is intentionally not checked:
     /// `goal.md`, `soul.md`, and `summary/**` are written at dispatch
     /// time (ARCH §2.3, §2.7).
-    pub fn load(path: &Path) -> Result<Self, LoadError> {
-        let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
-            path: path.to_path_buf(),
+    pub fn parse(raw: &str, origin: &Path) -> Result<Self, LoadError> {
+        let parsed: Self = serde_yaml_ng::from_str(raw).map_err(|source| LoadError::Yaml {
+            path: origin.to_path_buf(),
             source,
         })?;
-        let parsed: Self = serde_yaml_ng::from_str(&raw).map_err(|source| LoadError::Yaml {
-            path: path.to_path_buf(),
-            source,
-        })?;
-        parsed.validate(path)?;
+        parsed.validate(origin)?;
         Ok(parsed)
     }
 
@@ -126,13 +118,11 @@ fn check_path_shape(file: &Path, key: &str, value: &str) -> Result<(), LoadError
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
-    use tempfile::NamedTempFile;
 
-    fn write_yaml(s: &str) -> NamedTempFile {
-        let mut f = NamedTempFile::new().unwrap();
-        f.write_all(s.as_bytes()).unwrap();
-        f
+    /// Parse a manifest body against a fixed test origin (the §2.2
+    /// `<commit>:<path>` label a real control read supplies).
+    fn parse(s: &str) -> Result<Manifest, LoadError> {
+        Manifest::parse(s, Path::new("deadbeef:manifest.yaml"))
     }
 
     const ARCH_EXAMPLE: &str = r#"
@@ -158,8 +148,7 @@ roles:
 
     #[test]
     fn parses_arch_example() {
-        let f = write_yaml(ARCH_EXAMPLE);
-        let m = Manifest::load(f.path()).unwrap();
+        let m = parse(ARCH_EXAMPLE).unwrap();
         assert_eq!(m.roles.len(), 2);
         let worker = &m.roles["worker"];
         assert_eq!(worker.budget_tokens, 150_000);
@@ -188,8 +177,7 @@ roles:
             let yaml = format!(
                 "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: {variant}\n"
             );
-            let f = write_yaml(&yaml);
-            assert!(Manifest::load(f.path()).is_ok(), "variant {variant} failed");
+            assert!(parse(&yaml).is_ok(), "variant {variant} failed");
         }
     }
 
@@ -197,24 +185,22 @@ roles:
     fn empty_roles_section_is_ok() {
         // An empty manifest is structurally valid; cross-checks elsewhere
         // catch the (likely) real bug — no roles wired.
-        let f = write_yaml("roles: {}\n");
-        let m = Manifest::load(f.path()).unwrap();
+        let m = parse("roles: {}\n").unwrap();
         assert!(m.roles.is_empty());
     }
 
     #[test]
     fn missing_roles_section_loads_empty() {
-        let f = write_yaml("# nothing yet\n");
-        let m = Manifest::load(f.path()).unwrap();
+        let m = parse("# nothing yet\n").unwrap();
         assert!(m.roles.is_empty());
     }
 
     #[test]
     fn rejects_absolute_pinned_path() {
-        let f = write_yaml(
+        let err = parse(
             "roles:\n  r:\n    pinned: [/etc/secret]\n    order: []\n    budget_tokens: 1\n    overflow: drop\n",
-        );
-        let err = Manifest::load(f.path()).unwrap_err();
+        )
+        .unwrap_err();
         match err {
             LoadError::Invalid { key, .. } => assert_eq!(key, "roles.r.pinned[0]"),
             other => panic!("expected Invalid, got {other:?}"),
@@ -223,10 +209,10 @@ roles:
 
     #[test]
     fn rejects_parent_dir_in_order() {
-        let f = write_yaml(
+        let err = parse(
             "roles:\n  r:\n    pinned: []\n    order: [\"../escape/**\"]\n    budget_tokens: 1\n    overflow: drop\n",
-        );
-        let err = Manifest::load(f.path()).unwrap_err();
+        )
+        .unwrap_err();
         match err {
             LoadError::Invalid { key, message, .. } => {
                 assert_eq!(key, "roles.r.order[0]");
@@ -238,19 +224,19 @@ roles:
 
     #[test]
     fn rejects_empty_path() {
-        let f = write_yaml(
+        let err = parse(
             "roles:\n  r:\n    pinned: [\"\"]\n    order: []\n    budget_tokens: 1\n    overflow: drop\n",
-        );
-        let err = Manifest::load(f.path()).unwrap_err();
+        )
+        .unwrap_err();
         assert!(matches!(err, LoadError::Invalid { .. }));
     }
 
     #[test]
     fn rejects_zero_budget() {
-        let f = write_yaml(
+        let err = parse(
             "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 0\n    overflow: drop\n",
-        );
-        let err = Manifest::load(f.path()).unwrap_err();
+        )
+        .unwrap_err();
         match err {
             LoadError::Invalid { key, .. } => assert_eq!(key, "roles.r.budget_tokens"),
             other => panic!("expected Invalid, got {other:?}"),
@@ -258,15 +244,12 @@ roles:
     }
 
     #[test]
-    fn surfaces_io_and_yaml_errors() {
-        assert!(matches!(
-            Manifest::load(Path::new("/no/such/manifest.yaml")),
-            Err(LoadError::Io { .. })
-        ));
-        let f = write_yaml("not yaml: [");
-        assert!(matches!(
-            Manifest::load(f.path()),
-            Err(LoadError::Yaml { .. })
-        ));
+    fn surfaces_yaml_errors_with_the_origin() {
+        match parse("not yaml: [").unwrap_err() {
+            LoadError::Yaml { path, .. } => {
+                assert_eq!(path, Path::new("deadbeef:manifest.yaml"));
+            }
+            other => panic!("expected Yaml, got {other:?}"),
+        }
     }
 }

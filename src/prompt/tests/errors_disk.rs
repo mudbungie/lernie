@@ -15,18 +15,18 @@ use super::fixtures::*;
 use crate::prompt::Error;
 
 /// Indexes on the StubGit's run log. Control resolution runs first
-/// (§2.2): 0 config-head rev-parse, 1-4 the four `show` control reads —
+/// (§2.2): 0 config-head rev-parse, 1-5 the five `show` control reads —
 /// `version` (the §10 schema-version guard, read before anything it could
-/// misparse), then providers, workflow, soul. Branch work follows: 5
-/// worktree add, 6 the dispatch commit's control-file removal (§2.3
-/// step 2), 7 dispatch add, 8 dispatch commit, 9 the step-1 drain
-/// stray-probe (`git status`, §2.11), 10 user-message delivery add, 11
-/// user-message delivery commit (§2.11 — the initial message is
-/// delivered through the front door before step 1's read state is
-/// captured), 12 rev-parse. Pinned as constants so the
+/// misparse), then providers, workflow, manifest (§5.2), soul. Branch
+/// work follows: 6 worktree add, 7 the dispatch commit's control-file
+/// removal (§2.3 step 2), 8 dispatch add, 9 dispatch commit, 10 the
+/// step-1 drain stray-probe (`git status`, §2.11), 11 user-message
+/// delivery add, 12 user-message delivery commit (§2.11 — the initial
+/// message is delivered through the front door before step 1's read
+/// state is captured), 13 rev-parse. Pinned as constants so the
 /// transcript/terminal op-index labels stay readable.
-pub(super) const WORKTREE_ADD_INDEX: usize = 5;
-const REV_PARSE_INDEX: usize = 12;
+pub(super) const WORKTREE_ADD_INDEX: usize = 6;
+const REV_PARSE_INDEX: usize = 13;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the model-output entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream).

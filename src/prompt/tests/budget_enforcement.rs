@@ -131,7 +131,8 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
 fn budget_ref_write_failure_surfaces_as_a_git_error() {
     // Indices below are relative to the first post-control op; control
     // resolution (§2.2) precedes them with a config-head rev-parse and
-    // four `show` reads (`version` first, the §10 schema-version guard).
+    // five `show` reads (`version` first, the §10 schema-version guard;
+    // manifest.yaml last before the soul, §5.2).
     // The marker `update-ref` is git op #13 in the exhaustion path (0
     // worktree add, 1 dispatch add, 2 dispatch commit, 3 step-1 drain
     // stray-probe, 4/5 user-message delivery add+commit, 6 step-1
@@ -149,7 +150,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(19);
+    let git = StubGit::failing_at(20);
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 

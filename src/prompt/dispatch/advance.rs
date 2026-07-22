@@ -144,7 +144,12 @@ pub(in crate::prompt) fn run(
         cfg = Some(resolved);
     }
 
-    match warrant(&assembler::assemble(&worktree)?) {
+    // Warrant derives from the transcript tail alone (§2.3, §6): the
+    // §5.2 head/body sits ahead of the tail and must not read as
+    // user-side mail warranting a model call — and the transcript-only
+    // composition keeps a no-op hop config-free (lazy resolution,
+    // above).
+    match warrant(&assembler::transcript(&worktree)?) {
         Warrant::NothingDue => Ok(AdvanceOutcome::NothingToDo),
         Warrant::Unpaired => Err(Error::UnpairedToolUse {
             branch: agent_id.to_string(),

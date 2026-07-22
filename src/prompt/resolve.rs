@@ -16,6 +16,7 @@
 //! acquire, nothing due) exits before any config is read (§6).
 
 use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
+use crate::config::manifest::{Manifest, RoleRules};
 use crate::config::version::Version;
 use crate::config::{Model, ModelsConfig, Workflow, cross};
 use crate::prompt::{AdapterRunner, adapter, brazen_pin, dispatch};
@@ -30,6 +31,10 @@ const WORKFLOW_FILE: &str = "workflow.yaml";
 /// The config's schema version (ARCH §10), read from the config commit
 /// (§2.2) like every other control file.
 const VERSION_FILE: &str = "version";
+
+/// Control file declaring the per-role context-assembly rules (ARCH
+/// §5.2), read from the config commit (§2.2).
+const MANIFEST_FILE: &str = "manifest.yaml";
 
 /// Which config commit governs the resolution (ARCH §2.2).
 pub(super) enum ConfigSource<'a> {
@@ -69,6 +74,13 @@ pub(super) struct WorkerConfig {
     /// derives both from it rather than mirroring them into their own
     /// fields (`docs/PRINCIPLES.md` Single source of truth).
     pub(super) workflow: Workflow,
+    /// The role's context-assembly rules from the config's
+    /// `manifest.yaml` `roles:` map (§5.2), read from the same config
+    /// commit. `None` when the manifest lists no entry for this role —
+    /// assembly then composes the transcript alone, the general path
+    /// with empty inputs (a manifest role entry is not part of role
+    /// validity, §4.3).
+    pub(super) manifest: Option<RoleRules>,
     /// True under an `adapter:` override — the MessageStart.v handshake
     /// governs in place of the version guard (§4.4).
     pub(super) expect_handshake: bool,
@@ -88,6 +100,7 @@ impl WorkerConfig {
             retry: self.workflow.retry,
             budgets: self.workflow.budgets,
             workflow: &self.workflow,
+            manifest: self.manifest.as_ref(),
             expect_handshake: self.expect_handshake,
         }
     }
@@ -156,6 +169,14 @@ pub(super) fn resolve_worker(
     // not at the hop that finally reaches the binding.
     cross::check_workflow_against_roles(&workflow, &cfg.per_repo)?;
 
+    // §5.2: the role's context-assembly rules, read from the same config
+    // commit. The role-keyed lookup is total — a role the manifest does
+    // not list resolves `None` and assembles transcript-only.
+    let manifest_raw = read_control(workspace, &commit, MANIFEST_FILE, deps)?;
+    let manifest = Manifest::parse(&manifest_raw, &control_origin(&commit, MANIFEST_FILE))?
+        .roles
+        .remove(role.as_str());
+
     let soul_rel = format!("{SOULS_DIR}/{role}.md");
     let soul = read_control(workspace, &commit, &soul_rel, deps)?;
 
@@ -167,6 +188,7 @@ pub(super) fn resolve_worker(
         soul,
         binary,
         workflow,
+        manifest,
         expect_handshake,
     })
 }

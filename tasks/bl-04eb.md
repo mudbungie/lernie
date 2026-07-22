@@ -1,7 +1,8 @@
 +++
 title = "smoke.sh says 'conversation id' — a retired structural term (ARCH 2.1); it is an agent id"
 created = 1784525272
-updated = 1784525272
+updated = 1784698236
+claimant = "Prostheses-smoke"
 parent = "bl-06d5"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

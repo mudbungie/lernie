@@ -181,10 +181,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
     let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     deps.launcher = &rec;
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
-    assert!(matches!(
-        out,
-        AdvanceOutcome::Terminal(inbox::Epitaph::FinalResponse)
-    ));
+    assert!(matches!(out, AdvanceOutcome::Terminal));
     // Delivered at the boundary, then answered by the new step.
     let delivered = std::fs::read_to_string(wt.join("messages/003-user.md")).unwrap();
     assert!(delivered.contains("again"), "got {delivered:?}");
@@ -195,8 +192,10 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
             .join(format!("steps/{AGENT}/001/response.json"))
             .exists()
     );
-    // Exit protocol: no terminal compaction (§2.7 — the stage is
-    // deleted); the final-response self-launch fired.
+    // The terminal event is a final response — asserted on the disk
+    // record, not a carried payload: the exit protocol's self-launch
+    // fired (§2.11 pin 2 — only a final response relaunches), and no
+    // terminal compaction ran (§2.7 — the stage is deleted).
     assert_eq!(*rec.calls.borrow(), vec![AGENT.to_string()]);
     // The lease was released before the launch: reacquirable again.
     assert!(eventually_free(ws.path(), AGENT));

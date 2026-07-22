@@ -35,6 +35,6 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
 pub(crate) fn outcome_of(handoff: AdvanceHandoff) -> Outcome {
     match handoff {
         AdvanceHandoff::Exec(cmd) => Outcome::Exec(cmd),
-        AdvanceHandoff::Done(_) => Outcome::Quiet,
+        AdvanceHandoff::Done => Outcome::Quiet,
     }
 }

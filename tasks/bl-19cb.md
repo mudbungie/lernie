@@ -1,7 +1,8 @@
 +++
 title = "child_result.rs is 302 lines — over the 300-line code cap on main"
 created = 1784525372
-updated = 1784525374
+updated = 1784698006
+claimant = "Prostheses-19cb"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Noticed by bl-9e2d (not caused by it — present on main at 70ac772, untouched by that ball's diff).

@@ -784,9 +784,13 @@ See `bl skill` for the full guide.
 1. **No direct commits to mainline.** `main` and `master` are rejected unless
    the commit is the tail of a merge (`MERGE_MSG`/`SQUASH_MSG` present), which
    is how `bl close` lands squash-merges.
-2. **300-line cap on code files.** Docs (`*.md`, `*.txt`), config (`*.toml`,
-   `*.yaml`, `*.yml`, `*.json`, `*.lock`), `Makefile`, `.gitignore`,
-   `LICENSE`, and anything under `.githooks/` are exempt.
+2. **300-line cap on code files.** The cap is a repo *invariant*, not a
+   per-commit property, so the hook sweeps **every tracked code file in the
+   tree** (`git ls-files`), not just the staged set — a file that crosses the
+   cap in one commit and is untouched afterward is still caught. Docs (`*.md`,
+   `*.txt`), config (`*.toml`, `*.yaml`, `*.yml`, `*.json`, `*.lock`),
+   `Makefile`, `.gitignore`, `LICENSE`, and anything under `.githooks/` are
+   exempt.
 3. **`make check`** on every commit that touches a Cargo project: `fmt-check`
    (formatting), `lint` (`clippy -D warnings`), and `coverage` (`cargo
    tarpaulin --fail-under 100`). The hook invokes `make check` rather than

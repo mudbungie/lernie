@@ -1,7 +1,8 @@
 +++
 title = "Manifest has no runtime caller because §5.2 context assembly is unimplemented: the assembler ignores manifest.yaml"
 created = 1784525323
-updated = 1784525326
+updated = 1784698014
+claimant = "Prostheses-e0cb"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Surfaced by bl-9e2d. `Manifest`/`RoleRules`/`OverflowPolicy` and `Manifest::load` parse and validate `manifest.yaml` (ARCH §5.2 context-assembly rules: per-role `pinned`, `order`, `budget_tokens`, `overflow`), and the template ships a populated manifest into every config commit — but nothing reads it at runtime. `src/prompt/dispatch/assembler.rs` assembles context from `messages/` alone: no pinned head, no manifest `order` over `summary/**`/`skills/**`, no token budget, no overflow policy. So the type is held by `#![allow(dead_code)]` in src/config/manifest.rs.

@@ -15,7 +15,8 @@ use tempfile::TempDir;
 fn workspace() -> (TempDir, PathBuf) {
     let holder = TempDir::new().unwrap();
     let ws = holder.path().join("ws");
-    scaffold(&ws, &holder.path().join("no-pool"), &RealGit::new()).unwrap();
+    let roots = crate::test_support::bare_roots(holder.path());
+    scaffold(&ws, &roots, &RealGit::new()).unwrap();
     (holder, ws)
 }
 

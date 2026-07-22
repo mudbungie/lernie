@@ -84,7 +84,7 @@ fn scaffold_happy_path_authors_the_first_config_commit() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("ws");
     let git = StubGit::ok();
-    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
+    scaffold(&dest, &crate::test_support::bare_roots(holder.path()), &git).unwrap();
 
     let repo = dest.join("repo.git");
     let author = dest.join(".config-author");
@@ -133,7 +133,7 @@ fn scaffold_with_real_git_yields_exactly_one_config_ref() {
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("ws");
     let git = RealGit::new();
-    scaffold(&dest, &holder.path().join("no-pool"), &git).unwrap();
+    scaffold(&dest, &crate::test_support::bare_roots(holder.path()), &git).unwrap();
 
     let repo = dest.join("repo.git");
     let refs = git
@@ -157,7 +157,11 @@ fn scaffold_surfaces_descriptions_producer_failure() {
     fs::create_dir_all(data_root.join("skills/broken")).unwrap();
     fs::write(data_root.join("skills/broken/SKILL.md"), "no frontmatter\n").unwrap();
     let git = StubGit::ok();
-    let err = scaffold(&holder.path().join("ws"), &data_root, &git).unwrap_err();
+    let roots = crate::harness_root::Roots {
+        config: holder.path().join("no-conf"),
+        data: data_root,
+    };
+    let err = scaffold(&holder.path().join("ws"), &roots, &git).unwrap_err();
     assert!(matches!(err, ScaffoldError::Descriptions(_)), "got {err:?}");
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 2, "init + worktree add only: {runs:?}");
@@ -170,7 +174,7 @@ fn scaffold_propagates_init_failure() {
     let dest = holder.path().join("conv");
     let err = scaffold(
         &dest,
-        &holder.path().join("no-pool"),
+        &crate::test_support::bare_roots(holder.path()),
         &StubGit::failing_at(0),
     )
     .unwrap_err();
@@ -186,7 +190,7 @@ fn scaffold_propagates_each_git_failure_arm() {
         let dest = holder.path().join("ws");
         let err = scaffold(
             &dest,
-            &holder.path().join("no-pool"),
+            &crate::test_support::bare_roots(holder.path()),
             &StubGit::failing_at(idx),
         )
         .unwrap_err();
@@ -200,7 +204,7 @@ fn scaffold_refuses_non_empty_dest() {
     fs::write(holder.path().join("x"), b"x").unwrap();
     let err = scaffold(
         holder.path(),
-        &holder.path().join("no-pool"),
+        &crate::test_support::bare_roots(holder.path()),
         &StubGit::ok(),
     )
     .unwrap_err();
@@ -228,7 +232,12 @@ fn scaffold_surfaces_author_extract_io_error() {
     }
     let holder = TempDir::new().unwrap();
     let dest = holder.path().join("ws");
-    let err = scaffold(&dest, &holder.path().join("no-pool"), &SquattingGit).unwrap_err();
+    let err = scaffold(
+        &dest,
+        &crate::test_support::bare_roots(holder.path()),
+        &SquattingGit,
+    )
+    .unwrap_err();
     assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
 }
 
@@ -242,7 +251,7 @@ fn scaffold_surfaces_repo_dir_creation_failure() {
     fs::write(&blocker, b"file").unwrap();
     let err = scaffold(
         &blocker.join("ws"),
-        &holder.path().join("no-pool"),
+        &crate::test_support::bare_roots(holder.path()),
         &StubGit::ok(),
     )
     .unwrap_err();

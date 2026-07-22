@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check schemas new-workspace eval install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -86,6 +86,30 @@ fmt-check:
 	cargo fmt --check
 
 check: fmt-check lint coverage
+
+# `make smoke` — the live-wire smoke test (README "First-run smoke test").
+# The FIRST real model call the project makes: `lernie new` + one live
+# `lernie prompt` against the SHIPPED defaults (worker role, anthropic /
+# claude-sonnet-5) through the real `bz` data plane, with the verdict read
+# from observable state (exit 0, a committed transcript on the agent ref, a
+# step record with no wire error and real assistant text). Deliberately NOT
+# in `check` or the close gate: it needs a configured `bz` credential for
+# the anthropic provider (`bz --login --provider anthropic`, or set
+# ANTHROPIC_API_KEY / BRAZEN_API_KEY) and spends money. It is the only check
+# that proves the authored default model id resolves on the wire — `make
+# check` mocks the wire and structurally cannot.
+#
+# Override the target with BOTH SMOKE_PROVIDER and SMOKE_MODEL (both-or-
+# neither; unset => the shipped default above, credential note included):
+#   make smoke SMOKE_PROVIDER=local SMOKE_MODEL=<a-pulled-ollama-model>
+#   make smoke SMOKE_PROVIDER=codex SMOKE_MODEL=gpt-5.4
+# Local ollama needs no credential, only a served model; the credential
+# note applies to the anthropic default alone.
+smoke:
+	@cargo build --quiet --bin lernie
+	@LERNIE_BIN="$(CURDIR)/target/debug/lernie" \
+	 SMOKE_PROVIDER="$(SMOKE_PROVIDER)" SMOKE_MODEL="$(SMOKE_MODEL)" \
+	 bash scripts/smoke.sh
 
 install-hooks:
 	git config core.hooksPath .githooks

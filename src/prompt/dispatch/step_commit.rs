@@ -64,8 +64,10 @@ pub(super) fn spawn_branch(
 }
 
 /// Prepend the branch's goal to the role's soul so it sits at the head of
-/// assembled context (ARCH §2.8); manifest-driven assembly replaces the
-/// inline `<goal>` framing later.
+/// assembled context (ARCH §2.8). The system slot *is* the pinned-head
+/// wire home for `goal.md`/`soul.md` (§2.3 "Goal and soul are pinned
+/// files", §5.2): manifest-driven assembly composes them through here,
+/// never as body text.
 pub(super) fn prepend_goal(goal: &str, soul: &str) -> String {
     format!("<goal>\n{goal}\n</goal>\n\n{soul}")
 }

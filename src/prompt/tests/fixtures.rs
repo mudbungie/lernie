@@ -73,6 +73,12 @@ pub(super) const VALID_WORKFLOW_YAML: &str = "events: {}\n";
 /// [`crate::prompt::resolve`] passes.
 pub(super) const VALID_VERSION: &str = "1\n";
 
+/// Minimal `manifest.yaml` (ARCH §5.2). An empty `roles:` map is valid
+/// and resolves no rules for any role, so assembly composes the
+/// transcript alone; tests that exercise §5.2 head/body composition
+/// scaffold their own role entries.
+pub(super) const VALID_MANIFEST_YAML: &str = "roles: {}\n";
+
 /// Lay out a stub-git workspace (§2.2): a `repo.git/` marker (so the
 /// layout guard passes), plus the control files [`StubGit`]'s `show`
 /// emulation serves as the config commit's tree — `version`,
@@ -94,6 +100,7 @@ pub(super) fn scaffold_repo_with_workflow(
     std::fs::write(tmp.path().join("version"), VALID_VERSION).unwrap();
     std::fs::write(tmp.path().join("providers.yaml"), per_repo_yaml).unwrap();
     std::fs::write(tmp.path().join("workflow.yaml"), workflow_yaml).unwrap();
+    std::fs::write(tmp.path().join("manifest.yaml"), VALID_MANIFEST_YAML).unwrap();
     if let Some(body) = worker_soul {
         let souls = tmp.path().join("souls");
         std::fs::create_dir_all(&souls).unwrap();

@@ -26,14 +26,14 @@ fn write_json(worktree: &Path, name: &str, blocks: &[Content]) {
 #[test]
 fn absent_messages_dir_assembles_no_messages() {
     let dir = TempDir::new().unwrap();
-    assert!(assemble(dir.path()).unwrap().is_empty());
+    assert!(assemble(dir.path(), None).unwrap().is_empty());
 }
 
 #[test]
 fn empty_messages_dir_assembles_no_messages() {
     let dir = TempDir::new().unwrap();
     std::fs::create_dir_all(dir.path().join(MESSAGES_DIR)).unwrap();
-    assert!(assemble(dir.path()).unwrap().is_empty());
+    assert!(assemble(dir.path(), None).unwrap().is_empty());
 }
 
 #[test]
@@ -41,14 +41,17 @@ fn messages_path_that_is_a_file_surfaces_io_error() {
     // A file where `messages/` is expected → read_dir fails non-NotFound.
     let dir = TempDir::new().unwrap();
     std::fs::write(dir.path().join(MESSAGES_DIR), b"not a dir").unwrap();
-    assert!(matches!(assemble(dir.path()).unwrap_err(), Error::Io(_)));
+    assert!(matches!(
+        assemble(dir.path(), None).unwrap_err(),
+        Error::Io(_)
+    ));
 }
 
 #[test]
 fn user_message_composes_as_a_user_text_block_verbatim() {
     let dir = TempDir::new().unwrap();
     write(dir.path(), "001-user.md", b"list files");
-    let msgs = assemble(dir.path()).unwrap();
+    let msgs = assemble(dir.path(), None).unwrap();
     assert_eq!(msgs.len(), 1);
     assert_eq!(msgs[0].role, Role::User);
     assert_eq!(msgs[0].content, vec![Content::Text("list files".into())]);
@@ -79,7 +82,7 @@ fn replay_from_a_recorded_tree_yields_the_alternating_wire_history() {
         }],
     );
 
-    let msgs = assemble(dir.path()).unwrap();
+    let msgs = assemble(dir.path(), None).unwrap();
     assert_eq!(msgs.len(), 3);
     assert_eq!(msgs[0].role, Role::User);
     assert_eq!(msgs[1].role, Role::Assistant);
@@ -113,7 +116,7 @@ fn consecutive_same_side_entries_group_into_one_message() {
     write_json(dir.path(), "003-tool.json", &[tool_result("a")]);
     write_json(dir.path(), "004-tool.json", &[tool_result("b")]);
 
-    let msgs = assemble(dir.path()).unwrap();
+    let msgs = assemble(dir.path(), None).unwrap();
     assert_eq!(msgs.len(), 3);
     // The two tool entries grouped into one user message, in seq order.
     assert_eq!(msgs[2].role, Role::User);
@@ -139,7 +142,7 @@ fn entries_sort_by_numeric_prefix_and_ignore_non_conforming_names() {
     write(dir.path(), "001-user.md", b"first");
     write(dir.path(), "notes.txt", b"ignored");
 
-    let msgs = assemble(dir.path()).unwrap();
+    let msgs = assemble(dir.path(), None).unwrap();
     assert_eq!(msgs.len(), 2);
     assert_eq!(msgs[0].content, vec![Content::Text("first".into())]);
     assert_eq!(msgs[1].role, Role::Assistant);
@@ -152,4 +155,48 @@ fn tool_result(id: &str) -> Content {
         content: vec![Content::Text("out".into())],
         is_error: false,
     }
+}
+
+/// A worker-shaped manifest entry ordering `summary/**` (§5.2).
+fn summary_rules() -> crate::config::manifest::RoleRules {
+    crate::config::manifest::RoleRules {
+        pinned: vec![],
+        order: vec!["summary/**".into()],
+        budget_tokens: 100,
+        overflow: crate::config::manifest::OverflowPolicy::Drop,
+    }
+}
+
+#[test]
+fn body_blocks_lead_the_history_and_group_with_the_first_user_entry() {
+    // §5.5 part order: the manifest body assembles ahead of the
+    // transcript tail, user-side, grouping with the first delivered
+    // message into one alternating wire message.
+    let dir = TempDir::new().unwrap();
+    std::fs::create_dir_all(dir.path().join("summary")).unwrap();
+    std::fs::write(dir.path().join("summary/001.md"), "the summary").unwrap();
+    write(dir.path(), "001-user.md", b"go");
+
+    let msgs = assemble(dir.path(), Some(&summary_rules())).unwrap();
+    assert_eq!(msgs.len(), 1);
+    assert_eq!(msgs[0].role, Role::User);
+    assert_eq!(msgs[0].content.len(), 2);
+    assert!(
+        matches!(&msgs[0].content[0], Content::Text(t) if t.contains("summary/001.md") && t.contains("the summary"))
+    );
+    assert!(matches!(&msgs[0].content[1], Content::Text(t) if t == "go"));
+}
+
+#[test]
+fn transcript_composes_the_tail_alone() {
+    // The §6 warrant view: body material present in the tree, none of
+    // it in the composition.
+    let dir = TempDir::new().unwrap();
+    std::fs::create_dir_all(dir.path().join("summary")).unwrap();
+    std::fs::write(dir.path().join("summary/001.md"), "the summary").unwrap();
+    write(dir.path(), "001-user.md", b"go");
+
+    let msgs = transcript(dir.path()).unwrap();
+    assert_eq!(msgs.len(), 1);
+    assert_eq!(msgs[0].content, vec![Content::Text("go".into())]);
 }

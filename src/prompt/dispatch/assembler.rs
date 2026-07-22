@@ -1,27 +1,40 @@
-//! Assemble the model-facing wire history from the committed transcript
+//! Assemble the model-facing wire history from the branch's worktree
 //! (ARCH §2.3, §5).
 //!
 //! Context assembly has exactly one input: the read-state commit's tree
-//! (§5.1), materialized as the branch's worktree. This module reads
-//! `messages/` from that tree, sorts by the filename's `NNN` prefix —
-//! order lives in the name, no git-log walk and no index (§2.3) — and
-//! composes each entry into a wire [`Message`] by its origin token:
+//! (§5.1), materialized as the branch's worktree. [`assemble`] composes
+//! the §5.5 parts that ride the message array, in order:
 //!
-//! - `NNN-<sender>.md` — a delivered message (§2.11): user-role text.
-//! - `NNN-<model-id>.json` — one step's model output: the canonical
-//!   [`Content`] blocks verbatim, as an assistant-role message. The
-//!   origin token names the model that authored the entry (§2.3, §4.3);
-//!   any token but the reserved `tool` composes assistant-side.
-//! - `NNN-tool.json` — one tool call's `tool_result` block(s): user-role
-//!   content in the following wire message.
+//! 1. **Head and body** ([`body`], §5.2): the manifest role's `pinned`
+//!    extras and `order` categories, budgeted, as path-framed user-side
+//!    text blocks. (The pinned files with structural wire homes —
+//!    `goal.md`/`soul.md` in the system slot, §2.3; `descriptions/**`
+//!    in the tools array, §3.3 — compose through those homes, not
+//!    here.)
+//! 2. **Transcript tail** (§2.3): `messages/` sorted by the filename's
+//!    `NNN` prefix — order lives in the name, no git-log walk and no
+//!    index — each entry composed by its origin token:
+//!    - `NNN-<sender>.md` — a delivered message (§2.11): user-role text.
+//!    - `NNN-<model-id>.json` — one step's model output: the canonical
+//!      [`Content`] blocks verbatim, as an assistant-role message. The
+//!      origin token names the model that authored the entry (§2.3,
+//!      §4.3); any token but the reserved `tool` composes
+//!      assistant-side.
+//!    - `NNN-tool.json` — one tool call's `tool_result` block(s):
+//!      user-role content in the following wire message.
 //!
 //! Consecutive same-side entries group into one alternating wire
 //! message, so every `tool_use` block is matched by a `tool_result` in
 //! the immediately following user message *by construction* (§2.3, §2.5
 //! pairing). Running, retry, and replay all call this one function
 //! against one input — a commit's tree — so "replay" is not a mode
-//! (§2.3 *Crash and recovery*).
+//! (§2.3 *Crash and recovery*). [`transcript`] composes part 2 alone —
+//! the §6 warrant derivation reads the transcript tail and must not see
+//! body material (and must stay config-free for lazy resolution).
 
+mod body;
+
+use crate::config::manifest::RoleRules;
 use crate::prompt::Error;
 use brazen::{Content, Message, Role};
 use std::path::{Path, PathBuf};
@@ -52,11 +65,35 @@ impl Side {
     }
 }
 
-/// Assemble the wire message history from the transcript under
+/// Assemble the full §5.2/§5.5 wire message history: the manifest
+/// role's head-and-body blocks ([`body`]), then the transcript tail.
+/// `rules` is the role's manifest entry from the governing config
+/// commit (§2.2); a role the manifest does not list assembles
+/// transcript-only — the general path with empty inputs, not a special
+/// case.
+pub(super) fn assemble(worktree: &Path, rules: Option<&RoleRules>) -> Result<Vec<Message>, Error> {
+    let mut messages: Vec<Message> = Vec::new();
+    for text in body::compose(worktree, rules)? {
+        push_grouped(&mut messages, Side::User, vec![Content::Text(text)]);
+    }
+    append_transcript(&mut messages, worktree)?;
+    Ok(messages)
+}
+
+/// Assemble the transcript tail alone (§2.3): the §6 warrant derivation
+/// reads only the tail's wire side, before any config is resolved, so
+/// head/body material must not lead the history it inspects.
+pub(super) fn transcript(worktree: &Path) -> Result<Vec<Message>, Error> {
+    let mut messages: Vec<Message> = Vec::new();
+    append_transcript(&mut messages, worktree)?;
+    Ok(messages)
+}
+
+/// Append the wire messages of the transcript under
 /// `<worktree>/messages/` (ARCH §2.3, §5). An absent or empty directory
-/// yields no messages — the general path with empty inputs, not a
+/// appends nothing — the general path with empty inputs, not a
 /// bootstrap special case.
-pub(super) fn assemble(worktree: &Path) -> Result<Vec<Message>, Error> {
+fn append_transcript(messages: &mut Vec<Message>, worktree: &Path) -> Result<(), Error> {
     let dir = worktree.join(MESSAGES_DIR);
     let mut entries: Vec<(u32, PathBuf)> = match std::fs::read_dir(&dir) {
         Ok(rd) => {
@@ -74,12 +111,11 @@ pub(super) fn assemble(worktree: &Path) -> Result<Vec<Message>, Error> {
     };
     entries.sort_by_key(|(seq, _)| *seq);
 
-    let mut messages: Vec<Message> = Vec::new();
     for (_, path) in entries {
         let (side, content) = compose_entry(&path)?;
-        push_grouped(&mut messages, side, content);
+        push_grouped(messages, side, content);
     }
-    Ok(messages)
+    Ok(())
 }
 
 /// The `NNN` counter of a `messages/NNN-<origin>.<ext>` path (the prefix

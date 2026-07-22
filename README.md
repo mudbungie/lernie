@@ -168,6 +168,57 @@ workspace is therefore a live `lernie prompt` (see the quick start
 above): it is the cheapest — and, by that stance, only — check that the
 authored id actually resolves on the wire.
 
+`make smoke` automates exactly this:
+
+```
+make smoke     # scaffold a throwaway workspace + one live 'lernie prompt'
+```
+
+It founds a throwaway harness root with `lernie prime` — from the assets
+**embedded in the binary**, the same front door `make install` uses, so
+the shipped install path is exercised too — scaffolds a workspace with
+`lernie new`, then runs one live `lernie prompt` against the **shipped
+defaults** — worker role, provider `anthropic`, model `claude-sonnet-5` —
+through the real `bz` data plane.
+The verdict is read from **observable state, never the agent's own
+claim**: the `lernie prompt` exit code is 0, the agent ref
+(`agents/<id>`) carries a committed transcript entry, and the off-worktree
+step record (`steps/<id>/001/`) holds a response with **no wire error and
+real assistant text**. That last pair is the point: an auth-failed run
+still creates the branch and a step record whose response terminates in a
+clean `end` — the failure rides an `error` event ahead of it — so
+branch-exists and step-exists alone would pass a broken wire. `make smoke`
+requires exit 0 **and** no `error` event **and** an assistant
+`content_delta`.
+
+By default `make smoke` runs the **shipped default** — provider
+`anthropic`, model `claude-sonnet-5` — which needs a configured `bz`
+credential for the `anthropic` provider (`bz --login --provider
+anthropic`, or set `ANTHROPIC_API_KEY` / `BRAZEN_API_KEY`) and spends real
+money. To run the same live check against **any other `bz` provider row**,
+set **both** `SMOKE_PROVIDER` and `SMOKE_MODEL` (both-or-neither — one
+alone is a usage error; unset leaves the shipped default byte-for-byte):
+
+```
+make smoke SMOKE_PROVIDER=local SMOKE_MODEL=<a-pulled-ollama-model>
+make smoke SMOKE_PROVIDER=codex SMOKE_MODEL=gpt-5.4
+```
+
+The override is laid into the throwaway config root through the same front
+doors a real install uses — a `providers.yaml` override under
+`<config-root>/template/` (the config-root override) plus a `models.yaml`
+placed in the config root before `lernie prime` (its seed-if-absent
+contract, ARCH §4.2) — so there is no new `lernie` flag or verb. Local
+`ollama` (bz's `local` provider row) needs no credential, only a model
+that is actually pulled and served; the credential note above applies to
+the `anthropic` default alone.
+
+`make smoke` is deliberately **not** part of `make check` or the close
+gate: `make check` mocks the wire (httpmock Anthropic SSE), so it can
+never catch a shipped default that fails on the real provider — which is
+exactly how the fake id `claude-sonnet-4-7` once shipped unnoticed. It
+runs only on demand.
+
 ## Authoring config commits
 
 `lernie new` authors a workspace's *first* config commit. Every later
@@ -759,6 +810,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
 | `make check`          | `fmt-check` + `lint` + `coverage`                     |
 | `make ci`             | Alias for `check`                                     |
+| `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
 | `make install-hooks`  | Point git at `.githooks/`                             |
 | `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |

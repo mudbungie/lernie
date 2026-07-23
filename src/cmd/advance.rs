@@ -22,8 +22,14 @@ pub struct Args {
 /// [`Outcome::Exec`](super::Outcome::Exec), everything else is
 /// product-less ([`AdvanceHandoff::Done`] → [`Outcome::Quiet`], §3.4).
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
-    let handoff = cli::cli_run(&args.workspace, &args.agent, &fx.driver_target, fx.stop)
-        .map_err(|e| Error::new("advance", e))?;
+    let handoff = cli::cli_run(
+        &args.workspace,
+        &args.agent,
+        &fx.driver_target,
+        fx.adapter_target.as_deref(),
+        fx.stop,
+    )
+    .map_err(|e| Error::new("advance", e))?;
     Ok(outcome_of(handoff))
 }
 

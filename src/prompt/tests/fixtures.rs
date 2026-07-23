@@ -145,6 +145,7 @@ pub(super) fn valid_deps<'a>(
         id_gen: id,
         tool_executor,
         config_root,
+        adapter_target: None,
         stop: never_stopped(),
         launcher: no_launch(),
     }

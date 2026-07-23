@@ -81,8 +81,10 @@ pub(super) struct WorkerConfig {
     /// with empty inputs (a manifest role entry is not part of role
     /// validity, §4.3).
     pub(super) manifest: Option<RoleRules>,
-    /// True under an `adapter:` override — the MessageStart.v handshake
-    /// governs in place of the version guard (§4.4).
+    /// True under a named adapter target — a `models.yaml` `adapter:`
+    /// override or a binding-injected host target (`cmd::Fx::adapter_target`,
+    /// §3.4) — where the MessageStart.v handshake governs in place of the
+    /// version guard (§4.4).
     pub(super) expect_handshake: bool,
 }
 
@@ -151,12 +153,17 @@ pub(super) fn resolve_worker(
         .expect("cross-check passed, so role.model is in models.yaml")
         .clone();
 
-    // Adapter resolution (§4.2): the optional `adapter:` override, else
-    // `bz` on PATH. The version guard runs only for the default binary;
-    // an override is governed by the in-band MessageStart.v handshake.
+    // Adapter resolution (§4.2/§4.4), one order (most-specific first): the
+    // optional `models.yaml` `adapter:` override, else the binding-injected
+    // host target (`cmd::Fx::adapter_target`, §3.4), else `bz` on PATH. The
+    // version guard runs only for the default `bz`; a named target — config
+    // override or host assertion — is identity the caller vouches for (one
+    // trust class), so it skips the guard and the in-band MessageStart.v
+    // handshake governs instead.
     let adapter_override = cfg.global.adapter.as_deref();
-    let binary = adapter::resolve_binary(adapter_override);
-    let expect_handshake = adapter_override.is_some();
+    let host = deps.adapter_target;
+    let binary = adapter::resolve_binary(adapter_override, host);
+    let expect_handshake = adapter_override.is_some() || host.is_some();
     if !expect_handshake {
         check_bz_version(deps.adapter, &binary)?;
     }

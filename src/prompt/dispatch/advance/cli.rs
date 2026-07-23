@@ -47,6 +47,7 @@ pub fn cli_run(
     workspace: &Path,
     agent_id: &str,
     driver_target: &Path,
+    adapter_target: Option<&Path>,
     stop: &AtomicBool,
 ) -> Result<AdvanceHandoff, Error> {
     cli_run_with(
@@ -54,6 +55,7 @@ pub fn cli_run(
         agent_id,
         std::env::var_os(baton::LOCK_FD_ENV).as_deref(),
         driver_target,
+        adapter_target,
         stop,
     )
 }
@@ -67,6 +69,7 @@ fn cli_run_with(
     agent_id: &str,
     lease_env: Option<&OsStr>,
     driver_target: &Path,
+    adapter_target: Option<&Path>,
     stop: &AtomicBool,
 ) -> Result<AdvanceHandoff, Error> {
     crate::workspace::require(workspace)?;
@@ -99,6 +102,7 @@ fn cli_run_with(
         id_gen: &NanoIdGen,
         tool_executor: &tool_executor,
         config_root: &roots.config,
+        adapter_target,
         stop,
         launcher: &launcher,
     };
@@ -147,14 +151,21 @@ mod tests {
         // Pre-v1 clean break (§2.2, §10): the guard fires before any
         // lease or inbox work.
         let ws = TempDir::new().unwrap();
-        let err = cli_run(ws.path(), "20260101-a1", td(), &AtomicBool::new(false)).unwrap_err();
+        let err = cli_run(
+            ws.path(),
+            "20260101-a1",
+            td(),
+            None,
+            &AtomicBool::new(false),
+        )
+        .unwrap_err();
         assert!(matches!(err, Error::Layout(_)), "{err}");
     }
 
     #[test]
     fn empty_workspace_is_nothing_to_do_via_production_wiring() {
         let (_h, ws) = crate::workspace::fixture::workspace();
-        let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
+        let out = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap();
         assert!(matches!(out, AdvanceHandoff::Done));
     }
 
@@ -162,7 +173,7 @@ mod tests {
     fn held_lock_is_already_driven() {
         let (_h, ws) = crate::workspace::fixture::workspace();
         let _held = test_lease(&inbox_dir(&ws, "20260101-a1"));
-        let out = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap();
+        let out = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap();
         assert!(matches!(out, AdvanceHandoff::Done));
     }
 
@@ -171,7 +182,7 @@ mod tests {
         let (_h, ws) = crate::workspace::fixture::workspace();
         std::fs::create_dir_all(ws.join("inbox")).unwrap();
         std::fs::write(inbox_dir(&ws, "20260101-a1"), b"not a dir").unwrap();
-        let err = cli_run(&ws, "20260101-a1", td(), &AtomicBool::new(false)).unwrap_err();
+        let err = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap_err();
         assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
     }
 
@@ -184,6 +195,7 @@ mod tests {
             "20260101-a1",
             Some(OsStr::new("not-an-fd")),
             td(),
+            None,
             &AtomicBool::new(false),
         )
         .unwrap_err();
@@ -205,6 +217,7 @@ mod tests {
             "20260101-a1",
             Some(OsStr::new(&fd)),
             td(),
+            None,
             &AtomicBool::new(false),
         )
         .unwrap();
@@ -223,7 +236,7 @@ mod tests {
         let agent = "20260101-a1";
         let wt = crate::workspace::fixture::spawn_root(&ws, agent);
         inbox::deposit(&ws, agent, "user", "hi", &SystemClock).unwrap();
-        let err = cli_run(&ws, agent, td(), &AtomicBool::new(false)).unwrap_err();
+        let err = cli_run(&ws, agent, td(), None, &AtomicBool::new(false)).unwrap_err();
         assert!(!err.to_string().is_empty());
         // The delivery commit landed ahead of the failed resolution.
         assert!(wt.join("messages/001-user.md").exists());

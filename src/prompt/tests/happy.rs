@@ -249,3 +249,39 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
     assert_eq!(calls[0].0, OsStr::new("/opt/alt-bz"));
     assert_eq!(calls[0].1, vec!["--json", "--provider", "anthropic"]);
 }
+
+#[test]
+fn run_under_injected_adapter_target_skips_version_guard_and_uses_the_target() {
+    // A binding-injected adapter target (`cmd::Fx::adapter_target`, §3.4) —
+    // an embedding host naming itself as the provider adapter — is used
+    // verbatim and, like a `models.yaml` `adapter:` override, skips the
+    // load-time version guard; the MessageStart.v handshake governs (§4.4).
+    // There is no `adapter:` override here, so the injection is the sole
+    // named target — the host-asserted-identity case.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let harness = scaffold_harness_root();
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
+    let git = StubGit::ok();
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
+    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
+
+    let injected = std::path::PathBuf::from("/opt/host-bz");
+    let mut deps = valid_deps(
+        &adapter,
+        &sleeper,
+        &git,
+        &clock,
+        &id,
+        &tool_executor,
+        harness.path(),
+    );
+    deps.adapter_target = Some(&injected);
+    run(repo.path(), "hi", &deps).unwrap();
+
+    // Exactly one adapter call — the model call — against the injected
+    // target; no `--version` guard call.
+    let calls = adapter.observed.borrow().clone();
+    assert_eq!(calls.len(), 1);
+    assert_eq!(calls[0].0, OsStr::new("/opt/host-bz"));
+    assert_eq!(calls[0].1, vec!["--json", "--provider", "anthropic"]);
+}

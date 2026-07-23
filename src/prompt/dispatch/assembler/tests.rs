@@ -70,6 +70,7 @@ fn replay_from_a_recorded_tree_yields_the_alternating_wire_history() {
             id: "toolu_1".into(),
             name: "bash".into(),
             input: json!({"cmd": "ls"}),
+            signature: None,
         }],
     );
     write_json(
@@ -105,11 +106,13 @@ fn consecutive_same_side_entries_group_into_one_message() {
                 id: "a".into(),
                 name: "bash".into(),
                 input: json!({}),
+                signature: None,
             },
             Content::ToolUse {
                 id: "b".into(),
                 name: "read_file".into(),
                 input: json!({}),
+                signature: None,
             },
         ],
     );

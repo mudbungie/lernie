@@ -102,6 +102,7 @@ pub(super) fn error_stream(kind: ErrorKind, message: &str) -> Vec<u8> {
         kind,
         message: message.to_string(),
         provider_detail: None,
+        retry_after_seconds: None,
     })));
     out.extend(line(&Event::End));
     out

@@ -135,6 +135,8 @@ impl StagingWriter {
             Block::Thinking(text) => Content::Thinking {
                 text,
                 signature: None,
+                id: None,
+                encrypted_content: None,
             },
             Block::ToolUse { id, name, json } => {
                 let input = if json.is_empty() {
@@ -142,7 +144,12 @@ impl StagingWriter {
                 } else {
                     serde_json::from_str(&json).map_err(Error::AdapterJson)?
                 };
-                Content::ToolUse { id, name, input }
+                Content::ToolUse {
+                    id,
+                    name,
+                    input,
+                    signature: None,
+                }
             }
             Block::Skip => return Ok(()),
         };
@@ -185,7 +192,7 @@ impl StagingWriter {
 fn open_block(kind: &ContentKind) -> Block {
     match kind {
         ContentKind::Text {} => Block::Text(String::new()),
-        ContentKind::Thinking {} => Block::Thinking(String::new()),
+        ContentKind::Thinking { .. } => Block::Thinking(String::new()),
         ContentKind::ToolUse { id, name } => Block::ToolUse {
             id: id.clone(),
             name: name.clone(),

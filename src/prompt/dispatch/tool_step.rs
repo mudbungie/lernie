@@ -56,7 +56,10 @@ pub(super) fn run_tool_calls(
 ) -> Result<bool, Error> {
     let step_dir_abs = conv_repo.join(step_dir_rel_str);
     for block in assistant_content {
-        let Content::ToolUse { id, name, input } = block else {
+        let Content::ToolUse {
+            id, name, input, ..
+        } = block
+        else {
             continue;
         };
         let outcome =

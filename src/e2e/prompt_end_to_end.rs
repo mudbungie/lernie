@@ -73,7 +73,7 @@ models:
 /// the harness never sees key material (§4.1).
 pub fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {
     let toml = format!(
-        "timeout_connect = 5\ntimeout_response = 10\ntimeout_idle = 10\n\
+        "timeout = 10\n\
          [[provider]]\nname = \"test\"\nbase_url = \"{endpoint}\"\n\
          protocol = \"anthropic_messages\"\nauth = \"none\"\n\
          body_defaults = {{ max_tokens = 64 }}\n"

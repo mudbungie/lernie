@@ -65,11 +65,14 @@ mod tests {
             Content::Thinking {
                 text: "ignored".into(),
                 signature: None,
+                id: None,
+                encrypted_content: None,
             },
             Content::ToolUse {
                 id: "t1".into(),
                 name: "bash".into(),
                 input: json!({}),
+                signature: None,
             },
             Content::Text("world".into()),
         ];
@@ -82,6 +85,7 @@ mod tests {
             id: "t1".into(),
             name: "bash".into(),
             input: json!({}),
+            signature: None,
         }];
         assert_eq!(terminal_text(&blocks), None);
         assert_eq!(terminal_text(&[]), None);

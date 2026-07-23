@@ -47,6 +47,7 @@ fn assistant_tail_with_unmatched_tool_use_is_the_non_replayable_state() {
                     id: "t1".into(),
                     name: "bash".into(),
                     input: json!({"command": "true"}),
+                    signature: None,
                 },
             ],
         ),

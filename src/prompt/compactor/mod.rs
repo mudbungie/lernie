@@ -58,7 +58,7 @@ pub const COMPACTOR_ROLE: &str = "compactor";
 /// structural property (§2.7).
 pub fn builtin_tool_schemas() -> Vec<Tool> {
     vec![
-        Tool {
+        Tool::Custom {
             name: tools::WRITE_SUMMARY.to_string(),
             description: Some(
                 "Write a signal-preserving summary to the next summary/<NNN>.md \
@@ -76,8 +76,9 @@ pub fn builtin_tool_schemas() -> Vec<Tool> {
                 "required": ["content"],
                 "additionalProperties": false
             }),
+            strict: None,
         },
-        Tool {
+        Tool::Custom {
             name: tools::MARK_FOR_DELETION.to_string(),
             description: Some(
                 "Nominate a branch-relative path for removal (deletion-only: this \
@@ -95,6 +96,7 @@ pub fn builtin_tool_schemas() -> Vec<Tool> {
                 "required": ["path"],
                 "additionalProperties": false
             }),
+            strict: None,
         },
     ]
 }
@@ -147,12 +149,22 @@ mod tests {
     #[test]
     fn builtin_tool_schemas_are_the_two_named_tools_with_required_inputs() {
         let schemas = builtin_tool_schemas();
-        let names: Vec<&str> = schemas.iter().map(|t| t.name.as_str()).collect();
+        let custom = |t: &Tool| match t {
+            Tool::Custom {
+                name,
+                description,
+                input_schema,
+                ..
+            } => (name.clone(), description.clone(), input_schema.clone()),
+            _ => panic!("builtin tools are Custom"),
+        };
+        let parts: Vec<_> = schemas.iter().map(custom).collect();
+        let names: Vec<&str> = parts.iter().map(|(n, _, _)| n.as_str()).collect();
         assert_eq!(names, vec![tools::WRITE_SUMMARY, tools::MARK_FOR_DELETION]);
         // Each carries a description and a required input field, so the
         // model is told the tool's shape (§2.7 injected toolset).
-        assert!(schemas.iter().all(|t| t.description.is_some()));
-        assert_eq!(schemas[0].input_schema["required"][0], "content");
-        assert_eq!(schemas[1].input_schema["required"][0], "path");
+        assert!(parts.iter().all(|(_, d, _)| d.is_some()));
+        assert_eq!(parts[0].2["required"][0], "content");
+        assert_eq!(parts[1].2["required"][0], "path");
     }
 }

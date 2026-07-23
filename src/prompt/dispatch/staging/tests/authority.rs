@@ -115,6 +115,7 @@ fn non_content_events_do_not_touch_the_entry() {
                 kind: ErrorKind::Transport,
                 message: "ignored here".into(),
                 provider_detail: None,
+                retry_after_seconds: None,
             }),
             Event::End,
         ],

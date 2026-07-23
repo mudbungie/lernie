@@ -73,7 +73,7 @@ fn appends_text_thinking_and_tool_use_blocks_in_order() {
             start(0, ContentKind::Text {}),
             delta(0, Delta::TextDelta("t".into())),
             stop(0),
-            start(1, ContentKind::Thinking {}),
+            start(1, ContentKind::Thinking { id: None }),
             delta(1, Delta::ThinkingDelta("mull".into())),
             stop(1),
             start(
@@ -95,11 +95,14 @@ fn appends_text_thinking_and_tool_use_blocks_in_order() {
             Content::Thinking {
                 text: "mull".into(),
                 signature: None,
+                id: None,
+                encrypted_content: None,
             },
             Content::ToolUse {
                 id: "toolu_1".into(),
                 name: "bash".into(),
                 input: json!({"cmd": "ls"}),
+                signature: None,
             },
         ]
     );
@@ -129,6 +132,7 @@ fn empty_tool_use_json_seals_an_empty_object_input() {
             id: "t".into(),
             name: "noop".into(),
             input: json!({}),
+            signature: None,
         }]
     );
 }
@@ -149,7 +153,12 @@ fn redacted_and_forward_compat_kinds_contribute_nothing() {
     feed_all(
         &mut w,
         &[
-            start(0, ContentKind::RedactedThinking {}),
+            start(
+                0,
+                ContentKind::RedactedThinking {
+                    data: String::new(),
+                },
+            ),
             stop(0),
             start(1, ContentKind::Other(json!({"exotic": {}}))),
             delta(1, Delta::Other(json!({"exotic_delta": "x"}))),

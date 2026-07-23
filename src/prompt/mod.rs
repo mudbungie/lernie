@@ -233,6 +233,15 @@ pub struct Deps<'a> {
     pub id_gen: &'a dyn IdGen,
     pub tool_executor: &'a dyn ToolExecutor,
     pub config_root: &'a Path,
+    /// The binding-injected adapter target (`cmd::Fx::adapter_target`,
+    /// ARCH §3.4): an embedding host naming itself (or another binary) as
+    /// the provider adapter, the same injection philosophy as
+    /// `driver_target` — the library resolves no binary of its own. `None`
+    /// (the exec binding's default) leaves today's resolution intact: the
+    /// `models.yaml` `adapter:` override, else `bz` on PATH (§4.2). When
+    /// set it sits below an explicit override in the one resolution order
+    /// and, like an override, skips the load-time version guard (§4.4).
+    pub adapter_target: Option<&'a Path>,
     /// The executor's SIGTERM flag (ARCH §2.9 step 3), observed at the
     /// step-loop check points. Production wires the process-wide
     /// [`dispatch::stop_flag`] after [`dispatch::install_stop_handler`];

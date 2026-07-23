@@ -136,6 +136,15 @@ pub struct Fx<'a> {
     /// its own re-exec target or a PATH-resolved `lernie`. The library
     /// resolves none of its own.
     pub driver_target: PathBuf,
+    /// The provider-adapter target (ARCH §4.4), injected the same way as
+    /// [`Self::driver_target`]: the library resolves no binary of its own,
+    /// the binding names it. `None` — the exec binding's default — leaves
+    /// today's resolution intact (the `models.yaml` `adapter:` override,
+    /// else `bz` on PATH, §4.2). An embedding host that re-execs *itself*
+    /// as the adapter names its own target here; like an explicit override,
+    /// a named target skips the load-time version guard and the in-band
+    /// `MessageStart.v` handshake governs (§4.4).
+    pub adapter_target: Option<PathBuf>,
     /// The `lernie config` `$EDITOR` hand-off (§2.2) — the interactive
     /// spawn the exec binding supplies as `cli::edit_in_editor`.
     pub editor: &'a dyn Fn(&Path) -> std::io::Result<()>,

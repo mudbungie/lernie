@@ -73,6 +73,7 @@ fn deps<'a>(
         id_gen: id,
         tool_executor: tools,
         config_root: cfg_root,
+        adapter_target: None,
         stop,
         launcher,
     }

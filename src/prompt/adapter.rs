@@ -42,13 +42,18 @@ use std::thread;
 /// §4.2 / §4.4).
 pub const BZ_BIN: &str = "bz";
 
-/// Resolve the adapter binary. `adapter_override` is the optional
-/// `adapter:` path from `models.yaml` (§4.2): when set, that binary is
-/// used verbatim (the version guard is skipped and the in-band
-/// `MessageStart.v` handshake governs, §4.4); otherwise `bz` resolves
-/// against `PATH`.
-pub fn resolve_binary(adapter_override: Option<&Path>) -> OsString {
-    match adapter_override {
+/// Resolve the adapter binary. One resolution order, most-specific
+/// first: the `models.yaml` `adapter:` override (§4.2), else the
+/// binding-injected `host` target (`cmd::Fx::adapter_target` — an
+/// embedding host naming itself as the adapter, the same injection
+/// philosophy as `driver_target`, §3.4), else `bz` on `PATH`. Both named
+/// targets are used verbatim, and both skip the load-time version guard
+/// in favor of the in-band `MessageStart.v` handshake (§4.4): a named
+/// target — config override or host assertion — is identity the caller
+/// vouches for, one trust class. The version guard runs only for the
+/// default `PATH`-resolved `bz`, when both are `None`.
+pub fn resolve_binary(adapter_override: Option<&Path>, host: Option<&Path>) -> OsString {
+    match adapter_override.or(host) {
         Some(path) => path.as_os_str().to_os_string(),
         None => OsString::from(BZ_BIN),
     }
@@ -179,13 +184,40 @@ mod tests {
 
     #[test]
     fn resolve_binary_defaults_to_bz_on_path() {
-        assert_eq!(resolve_binary(None), OsString::from("bz"));
+        assert_eq!(resolve_binary(None, None), OsString::from("bz"));
     }
 
     #[test]
     fn resolve_binary_uses_the_adapter_override_verbatim() {
         let over = PathBuf::from("/opt/alt-bz");
-        assert_eq!(resolve_binary(Some(&over)), OsString::from("/opt/alt-bz"));
+        assert_eq!(
+            resolve_binary(Some(&over), None),
+            OsString::from("/opt/alt-bz")
+        );
+    }
+
+    #[test]
+    fn resolve_binary_uses_the_injected_host_target_verbatim() {
+        // No `adapter:` override: the binding-injected host target is used
+        // verbatim, above the `bz`-on-PATH default (an embedding host
+        // naming itself as the adapter, §3.4).
+        let host = PathBuf::from("/opt/host-bz");
+        assert_eq!(
+            resolve_binary(None, Some(&host)),
+            OsString::from("/opt/host-bz")
+        );
+    }
+
+    #[test]
+    fn resolve_binary_prefers_the_override_over_the_injected_host_target() {
+        // Both named: the explicit `adapter:` override wins the one
+        // resolution order (most-specific first), the host target next.
+        let over = PathBuf::from("/opt/alt-bz");
+        let host = PathBuf::from("/opt/host-bz");
+        assert_eq!(
+            resolve_binary(Some(&over), Some(&host)),
+            OsString::from("/opt/alt-bz")
+        );
     }
 
     #[test]

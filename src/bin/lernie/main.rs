@@ -56,6 +56,10 @@ fn main() -> ExitCode {
         let mut stderr = io::stderr().lock();
         let mut fx = Fx {
             driver_target,
+            // The exec binding names no adapter of its own: resolution
+            // stays the models.yaml `adapter:` override, else `bz` on PATH
+            // (§4.2/§4.4). Only an embedding host names itself here.
+            adapter_target: None,
             editor: &editor,
             tool_stdin: &mut stdin,
             tool_stdout: &mut stdout,

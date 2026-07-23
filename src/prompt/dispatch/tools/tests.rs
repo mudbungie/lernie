@@ -21,6 +21,20 @@ fn write_skill(worktree: &Path, name: &str, frontmatter_body: &str) {
     fs::write(dir.join(format!("{name}.md")), frontmatter_body).unwrap();
 }
 
+/// Destructure a composed `Tool::Custom` into (name, description, input_schema).
+/// The composer only ever emits `Custom` tools (§3.3), so a `Provider` here is a bug.
+fn custom(t: &Tool) -> (&str, Option<&str>, &Value) {
+    match t {
+        Tool::Custom {
+            name,
+            description,
+            input_schema,
+            ..
+        } => (name.as_str(), description.as_deref(), input_schema),
+        _ => panic!("composed tools are Custom"),
+    }
+}
+
 const BASH_SCHEMA: &str = r#"{
   "type": "object",
   "properties": { "command": { "type": "string" } },
@@ -35,16 +49,17 @@ fn declared_tool_with_schema_carries_it_verbatim() {
     let tools = compose(wt.path(), &["bash".to_string()]).unwrap();
 
     assert_eq!(tools.len(), 1);
-    assert_eq!(tools[0].name, "bash");
+    let (name, description, input_schema) = custom(&tools[0]);
+    assert_eq!(name, "bash");
     // §3.3: the schema file is the `input_schema`, verbatim.
     assert_eq!(
-        tools[0].input_schema,
+        *input_schema,
         serde_json::from_str::<Value>(BASH_SCHEMA).unwrap()
     );
     // A schema present without its skill frontmatter composes with a
     // `None` description — the transient producer-ordering state §3.3
     // sanctions — rather than being dropped.
-    assert_eq!(tools[0].description, None);
+    assert_eq!(description, None);
 }
 
 #[test]
@@ -60,12 +75,10 @@ fn skill_frontmatter_populates_the_tool_description() {
     let tools = compose(wt.path(), &["bash".to_string()]).unwrap();
     // §3.3 point 3: the tool entry's `description` is its skill's
     // frontmatter `description`.
+    let (_, description, input_schema) = custom(&tools[0]);
+    assert_eq!(description, Some("Run a shell command."));
     assert_eq!(
-        tools[0].description.as_deref(),
-        Some("Run a shell command.")
-    );
-    assert_eq!(
-        tools[0].input_schema,
+        *input_schema,
         serde_json::from_str::<Value>(BASH_SCHEMA).unwrap()
     );
 }
@@ -129,7 +142,7 @@ fn intersection_keeps_only_available_schemas_in_declared_order() {
     let tools = compose(wt.path(), &declared).unwrap();
 
     // `missing` has no schema and is dropped; the rest keep declared order.
-    let names: Vec<&str> = tools.iter().map(|t| t.name.as_str()).collect();
+    let names: Vec<&str> = tools.iter().map(|t| custom(t).0).collect();
     assert_eq!(names, vec!["bash", "read_file"]);
 }
 
@@ -167,7 +180,7 @@ fn schema_value_shape_is_preserved() {
     );
     let tools = compose(wt.path(), &["x".to_string()]).unwrap();
     assert_eq!(
-        tools[0].input_schema,
+        *custom(&tools[0]).2,
         json!({"type":"object","properties":{"a":{"type":"number"}}})
     );
 }

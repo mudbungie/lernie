@@ -680,7 +680,7 @@ stdin (canonical request, JSON) → bz → stdout (v=1 event stream, NDJSON, one
 The harness execs `bz --json --provider <row>` once per attempt, pipes a
 typed `brazen::CanonicalRequest` on stdin, and appends bz's stdout
 verbatim to the step's `response.json`. lernie links the `brazen` crate
-(`brazen = "=0.0.2"`) for the canonical *types* only — the data plane
+(`brazen = "=0.0.3"`) for the canonical *types* only — the data plane
 always crosses the subprocess boundary (§3.4). Two facts follow:
 
 - **Retry is the harness's.** brazen never retries — one `bz` process,
@@ -695,7 +695,7 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
   lernie references a row by name and never sees credential material
   (§4.1). A load-time guard (`bz --version` == the linked crate version)
   rejects a mismatched binary; `make install` installs the pin with
-  `cargo install brazen --version =0.0.2`.
+  `cargo install brazen --version =0.0.3`.
 
 ### Adding a provider
 
@@ -812,7 +812,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.2` (the ARCH §4.4 version pin); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.3` (the ARCH §4.4 version pin); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow

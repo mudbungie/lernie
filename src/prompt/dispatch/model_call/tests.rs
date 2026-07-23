@@ -88,6 +88,7 @@ fn error_stream(kind: ErrorKind) -> Vec<u8> {
         kind,
         message: "boom".into(),
         provider_detail: None,
+        retry_after_seconds: None,
     })));
     out.extend(line(&Event::End));
     out
@@ -131,20 +132,19 @@ fn drive(replies: Vec<io::Result<Vec<u8>>>, retry: RetryConfig, hs: bool) -> (Dr
 }
 
 fn ends(bytes: &[u8]) -> usize {
-    bytes
-        .split(|b| *b == b'\n')
-        .filter(|l| *l == br#"{"type":"end"}"#)
-        .count()
+    let is_end = |l: &&[u8]| *l == br#"{"type":"end"}"#;
+    bytes.split(|b| *b == b'\n').filter(is_end).count()
 }
 
 #[test]
 fn build_request_is_a_typed_canonical_request() {
     // Message pass-through is asserted in the e2e test; here we pin the
     // typed shape and the composed `tools` array (§3.3).
-    let tool = brazen::Tool {
+    let tool = brazen::Tool::Custom {
         name: "bash".into(),
         description: None,
         input_schema: serde_json::json!({"type": "object"}),
+        strict: None,
     };
     let req = build_request("claude-sonnet-5", "sys", vec![], vec![tool.clone()], 4096);
     assert_eq!(req.model, "claude-sonnet-5");

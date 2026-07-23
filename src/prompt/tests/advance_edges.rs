@@ -228,6 +228,7 @@ fn unpaired_tool_use_is_declined_loudly() {
                 id: "t1".into(),
                 name: "bash".into(),
                 input: serde_json::json!({"command": "true"}),
+                signature: None,
             }]),
         ),
     ];

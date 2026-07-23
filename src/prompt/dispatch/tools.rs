@@ -70,10 +70,11 @@ pub(super) fn compose(worktree: &Path, declared: &[String]) -> Result<Vec<Tool>,
                 path,
                 source,
             })?;
-        tools.push(Tool {
+        tools.push(Tool::Custom {
             name: name.clone(),
             description: read_description(worktree, name)?,
             input_schema,
+            strict: None,
         });
     }
     Ok(tools)

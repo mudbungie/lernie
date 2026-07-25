@@ -1,7 +1,7 @@
 +++
 title = "overflow: summarize is inert at assembly — wire it to trigger the §6 compaction checkpoint"
 created = 1784698286
-updated = 1784959174
+updated = 1784959179
 claimant = "Aphid"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

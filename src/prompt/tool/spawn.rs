@@ -23,6 +23,8 @@ use super::{
     ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, tool_call_dir,
 };
 use crate::prompt::Clock;
+use crate::prompt::step::STEPS_DIR;
+use crate::workspace;
 use std::ffi::{OsStr, OsString};
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
@@ -130,6 +132,11 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         step_dir: &Path,
         stop: &AtomicBool,
     ) -> Result<ToolOutcome, ExecError> {
+        let caller = Caller::from_step_dir(step_dir).ok_or_else(|| ExecError::NoWorktree {
+            name: call.name.to_string(),
+            step_dir: step_dir.to_path_buf(),
+        })?;
+
         let dir = tool_call_dir(step_dir, call.id);
         std::fs::create_dir_all(&dir).map_err(|source| ExecError::Io {
             dir: dir.clone(),
@@ -145,7 +152,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
 
         let (binary, args) = self.resolve(call.name);
         let stdin = serde_json::to_vec(call.input).expect("Value is always serializable");
-        let extra_env = harness_env_for(step_dir);
+        let extra_env = caller.env();
 
         let binary_ref = &binary;
         let req = SpawnArgs {
@@ -153,6 +160,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             args: &args,
             stdin_bytes: &stdin,
             extra_env: &extra_env,
+            cwd: &caller.worktree,
             stop,
             deadline: self.deadline,
             etxtbsy_budget: self.etxtbsy_budget,
@@ -186,25 +194,57 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
     }
 }
 
-/// Env vars the harness conveys to every tool subprocess per ARCH §3.3
-/// (the env-var bullet on the stdio contract). Names are pinned in
-/// [`super::builtin::dispatch`] (the dispatch built-in is the v0.4
-/// reader); tools that do not need them ignore them. Both are derived
-/// from `step_dir = <conv-repo>/steps/<conv-id>/<NNN>` so the executor
-/// stays the single source of truth and no caller has to hand them in.
-fn harness_env_for(step_dir: &Path) -> Vec<(&'static str, std::ffi::OsString)> {
-    let mut env: Vec<(&'static str, std::ffi::OsString)> = Vec::new();
-    // step_dir = <conv-repo>/steps/<conv-id>/<NNN>; ascend three to
-    // reach the conv-repo, two for the conv-id segment.
-    if let Some(conv_id_dir) = step_dir.parent() {
-        if let Some(conv_id) = conv_id_dir.file_name() {
-            env.push((super::ENV_CONV_BRANCH, conv_id.to_owned()));
-        }
-        if let Some(conv_repo) = conv_id_dir.parent().and_then(Path::parent) {
-            env.push((super::ENV_CONV_REPO, conv_repo.as_os_str().to_owned()));
-        }
+/// The calling agent, derived from the executor's `step_dir` —
+/// `<workspace>/steps/<agent-id>/<NNN>` (ARCH §2.2). One derivation
+/// feeds both halves of the §3.3 subprocess contract, the environment
+/// and the working directory, so the cwd a tool runs in and the
+/// worktree its `LERNIE_CONV_*` vars name cannot disagree. No caller
+/// hands these in: the executor is the single source of truth for what
+/// a tool call is on behalf of.
+struct Caller {
+    /// `<workspace>` — `LERNIE_CONV_REPO`.
+    workspace: PathBuf,
+    /// The agent id (== full hyphenated descent, §2.3) —
+    /// `LERNIE_CONV_BRANCH`.
+    agent_id: String,
+    /// `<workspace>/agents/<agent-id>` — the cwd of every subprocess
+    /// this call spawns (§3.3 *Working directory*).
+    worktree: PathBuf,
+}
+
+impl Caller {
+    /// Read the workspace root and agent id back out of `step_dir`,
+    /// and materialize the worktree path they name. `None` when
+    /// `step_dir` is not the §2.2 shape or the worktree it names is not
+    /// a live directory — the executor declines the call rather than
+    /// running the tool in an inherited cwd.
+    fn from_step_dir(step_dir: &Path) -> Option<Self> {
+        // step_dir = <workspace>/steps/<agent-id>/<NNN>; ascend one for
+        // the agent-id segment, three to reach the workspace root.
+        let agent_dir = step_dir.parent()?;
+        let agent_id = agent_dir.file_name()?.to_str()?.to_string();
+        let workspace = agent_dir
+            .parent()
+            .filter(|p| p.ends_with(STEPS_DIR))?
+            .parent()?;
+        let worktree = workspace::agent_worktree(workspace, &agent_id);
+        worktree.is_dir().then(|| Self {
+            workspace: workspace.to_path_buf(),
+            agent_id,
+            worktree,
+        })
     }
-    env
+
+    /// The env vars the harness conveys to every tool subprocess per
+    /// ARCH §3.3 (the environment bullet). Names are pinned in
+    /// [`super`] so the executor (the writer) and the built-ins that
+    /// read them cannot drift; tools that do not need them ignore them.
+    fn env(&self) -> Vec<(&'static str, OsString)> {
+        vec![
+            (super::ENV_CONV_BRANCH, OsString::from(&self.agent_id)),
+            (super::ENV_CONV_REPO, self.workspace.as_os_str().to_owned()),
+        ]
+    }
 }
 
 /// Build the §3.3 / §2.10 "killed by a signal that was not the

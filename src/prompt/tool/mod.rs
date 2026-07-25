@@ -153,6 +153,19 @@ pub enum ExecError {
         harness-level fault per ARCH §2.10"
     )]
     KilledBySignal { name: String, signal: i32 },
+    /// The calling agent's worktree — the working directory every tool
+    /// subprocess runs in (§3.3 *Working directory*) — could not be
+    /// resolved from `step_dir`: either the path is not the §2.2
+    /// `<workspace>/steps/<agent-id>/<NNN>` shape, or the worktree it
+    /// names is not a live directory. Declined rather than falling back
+    /// to the harness's inherited cwd: a tool left in whatever directory
+    /// its launcher happened to be sitting in writes its side effects
+    /// outside the agent's branch entirely.
+    #[error(
+        "no worktree for tool {name:?}: cannot resolve the calling agent's worktree \
+        from step dir {step_dir:?} (ARCH §3.3 Working directory)"
+    )]
+    NoWorktree { name: String, step_dir: PathBuf },
     /// Landing `input.json` or `output.json` failed (disk full,
     /// permission, etc.). The executor uses temp-path + atomic rename
     /// so a failure here never leaves a half-written file in `git

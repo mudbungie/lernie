@@ -8,9 +8,10 @@
 //! 1. **Head and body** ([`body`], §5.2): the manifest role's `pinned`
 //!    extras and `order` categories, budgeted, as path-framed user-side
 //!    text blocks. (The pinned files with structural wire homes —
-//!    `goal.md`/`soul.md` in the system slot, §2.3; `descriptions/**`
-//!    in the tools array, §3.3 — compose through those homes, not
-//!    here.)
+//!    `goal.md`/`soul.md` in the system slot, §2.3; tool schemas and
+//!    the skill descriptions their tools claim in the tools array,
+//!    §3.3 — compose through those homes, not here; the standalone
+//!    skill descriptions no tool claims compose as head blocks.)
 //! 2. **Transcript tail** (§2.3): `messages/` sorted by the filename's
 //!    `NNN` prefix — order lives in the name, no git-log walk and no
 //!    index — each entry composed by its origin token:

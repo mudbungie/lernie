@@ -74,20 +74,38 @@ fn an_unreadable_selected_file_surfaces_io_error() {
 
 #[test]
 fn structurally_homed_trees_never_compose_as_body_text() {
-    // goal.md/soul.md (system slot, §2.3), descriptions/** (tools
-    // array, §3.3), messages/** (transcript tail, §5.2), .git — all
-    // invisible even to a catch-all glob.
+    // goal.md/soul.md (system slot, §2.3), descriptions/tools/** and
+    // the skill descriptions those tools claim (tools array, §3.3),
+    // messages/** (transcript tail, §5.2), .git — all invisible even to
+    // a catch-all glob.
     let wt = TempDir::new().unwrap();
     write(wt.path(), "goal.md", b"goal");
     write(wt.path(), "soul.md", b"soul");
     write(wt.path(), "messages/001-user.md", b"hi");
     write(wt.path(), "descriptions/tools/bash.json", b"{}");
+    write(wt.path(), "descriptions/skills/bash.md", b"name: bash");
     write(wt.path(), ".git/config", b"[core]");
     write(wt.path(), "notes.md", b"kept");
     let r = rules(&["**"], &[], 100, OverflowPolicy::Drop);
     let out = compose(wt.path(), Some(&r)).unwrap();
     assert_eq!(paths(&out), vec!["notes.md"]);
     assert_eq!(out[0], "<file path=\"notes.md\">\nkept\n</file>");
+}
+
+#[test]
+fn a_standalone_skills_description_composes_as_a_head_block() {
+    // §3.3 Description-always: a skill no tool claims has no tools-array
+    // home, so `descriptions/**` carries it as ordinary head text — the
+    // agent can discover it and elect `load_skill`.
+    let wt = TempDir::new().unwrap();
+    write(wt.path(), "descriptions/tools/bash.json", b"{}");
+    write(wt.path(), "descriptions/skills/bash.md", b"tool");
+    write(wt.path(), "descriptions/skills/git.md", b"alone");
+    write(wt.path(), "descriptions/skills/README", b"n/a");
+    let r = rules(&["descriptions/**"], &[], 100, OverflowPolicy::Drop);
+    let out = compose(wt.path(), Some(&r)).unwrap();
+    let kept = ["descriptions/skills/README", "descriptions/skills/git.md"];
+    assert_eq!(paths(&out), kept);
 }
 
 #[test]

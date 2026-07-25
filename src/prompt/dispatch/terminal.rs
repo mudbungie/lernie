@@ -29,16 +29,34 @@
 //!
 //! [`exit_launch`] is the closing act of the §2.11 exit protocol: after
 //! [`super::run_exchange`] releases the executor lock, a driver is
-//! spawned at the exiting agent itself, fire-and-forget. The launch is
-//! decided by epitaph value (§2.11 pin 2): a final response launches;
-//! `stopped` never does (a relaunch would resurrect the branch the
-//! operator just killed); `budget-exhausted` never does (an epitaph-spam
-//! cycle against a hard ceiling).
+//! spawned at the exiting agent itself, fire-and-forget, and the result
+//! deposit that just landed in the parent's inbox is followed by a
+//! driver at the **parent** ([`revive_parent`]). Both launches are
+//! decided by one epitaph value (§2.11 pin 2): a final response
+//! launches; `stopped` never does (a relaunch would resurrect the branch
+//! the operator just killed, and waking the parent would hand it a stop
+//! to undo one level up); `budget-exhausted` never does (an epitaph-spam
+//! cycle against a hard ceiling — one the parent shares, since the
+//! ceiling is derived over the whole tree, §6).
+//!
+//! **Two launches, one sequence.** §2.11's terminal sequence — deposit
+//! into the parent's inbox → release own lock → spawn a driver at own
+//! agent → exit — names only the self-directed launch, because the
+//! parent-side one is not the exit protocol's: it is the *deposit's*,
+//! the same "a deposit into a quiescent agent starts a driver" rule
+//! `lernie message` obeys (Writer/driver totality — a writer deposits,
+//! probes, and launches). The terminal deposit is that writer act with
+//! the parent as recipient, so it rides the same seam
+//! ([`crate::prompt::inbox::probe_and_launch`], not a second copy of the
+//! probe/spawn logic) and it runs *after* the exiting executor releases
+//! its own lock: from then on the exiting process has no authority over
+//! its own branch, and a revived parent that immediately messages or
+//! stops its child meets no lingering lease.
 //!
 //! [`deposit_result`]: crate::prompt::inbox::deposit_result
 
 use super::super::budget;
-use super::super::inbox::Epitaph;
+use super::super::inbox::{self, Epitaph};
 use super::super::{Deps, Error};
 use super::result_deposit::deposit_terminal;
 use crate::config::Budgets;
@@ -96,13 +114,14 @@ pub(super) fn finish(
     }
 }
 
-/// The self-directed launch closing the §2.11 exit protocol, called
-/// *after* the executor lock is released: spawn a driver at this agent,
-/// fire-and-forget, by epitaph value (§2.11 pin 2). Fire-and-forget is
-/// literal — a launch failure is logged and swallowed, never propagated:
-/// it falls into the accepted crash class (§2.11), where the stranding
-/// is late, not lost, and the next touch (a reprompt, or a hand-run
-/// `lernie scan`) heals it.
+/// The launches closing the §2.11 exit protocol, called *after* the
+/// executor lock is released: a driver at this agent (the self-directed
+/// launch) and a driver at the parent the result deposit just landed in
+/// ([`revive_parent`]), both fire-and-forget and both by epitaph value
+/// (§2.11 pin 2). Fire-and-forget is literal — a launch failure is
+/// logged and swallowed, never propagated: it falls into the accepted
+/// crash class (§2.11), where the stranding is late, not lost, and the
+/// next touch (a reprompt, or a hand-run `lernie scan`) heals it.
 pub(super) fn exit_launch(workspace: &Path, agent_id: &str, epitaph: Epitaph, deps: &Deps<'_>) {
     // §2.11 pin 2: only a final response launches — stopped and
     // budget-exhausted never relaunch. (`died` never reaches an exit
@@ -112,5 +131,27 @@ pub(super) fn exit_launch(workspace: &Path, agent_id: &str, epitaph: Epitaph, de
     }
     if let Err(e) = deps.launcher.launch(workspace, agent_id) {
         eprintln!("lernie: exit launch for {agent_id}: {e} (accepted crash class, §2.11)");
+    }
+    revive_parent(workspace, agent_id, deps);
+}
+
+/// Start a driver at the parent whose inbox this agent's result message
+/// just landed in (§2.11 "a deposit into a quiescent agent starts a
+/// driver" — revival-on-deposit, §2.5). The parent's address is derived
+/// from this agent's id ([`inbox::parent_of`], the id *is* the address),
+/// so a parentless root skips it exactly as the deposit did.
+///
+/// This is the writer's post-deposit probe, unmodified and unduplicated:
+/// [`inbox::probe_and_launch`] — the seam `lernie message` runs — so a
+/// parent whose lease is held gets nothing (its own executor drains at
+/// its next boundary, §2.11 Delivery) and a quiescent one gets exactly
+/// one detached `lernie advance`, whose warrant is decided under the
+/// lock like any other driver's.
+fn revive_parent(workspace: &Path, agent_id: &str, deps: &Deps<'_>) {
+    let Some(parent) = inbox::parent_of(agent_id) else {
+        return;
+    };
+    if let Err(e) = inbox::probe_and_launch(workspace, &parent, deps.launcher) {
+        eprintln!("lernie: revival launch for {parent}: {e} (accepted crash class, §2.11)");
     }
 }

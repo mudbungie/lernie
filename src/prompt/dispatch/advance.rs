@@ -22,7 +22,8 @@
 //!    carries the live lease out for the caller to exec the successor
 //!    (§6 exec baton, [`cli`]); a terminal event ends the chain through
 //!    the §2.11 exit protocol (deposit at the terminal event → release →
-//!    epitaph-valued launch → return).
+//!    epitaph-valued launches, at own agent and at the parent the
+//!    deposit revived → return).
 //!
 //! Config resolution is **lazy** (the `resolve` closure): a no-op hop
 //! exits before any config file is read or any `bz --version` guard
@@ -164,10 +165,10 @@ pub(in crate::prompt) fn run(
                     // `run_exchange`'s tail (§2.11): finish by epitaph
                     // value, evaluate the workflow's terminal-lifecycle
                     // bindings (§6 — the epitaph names the event), release
-                    // own lock, then the self-directed launch — after
-                    // release this process has no authority; spawn and
-                    // return are its only acts. No terminal compaction is
-                    // dispatched (§2.7 — the stage is deleted).
+                    // own lock, then the self-directed launch and the
+                    // parent revival — after release this process has no
+                    // authority; spawn and return are its only acts. No
+                    // terminal compaction (§2.7 — the stage is deleted).
                     terminal::finish(workspace, agent_id, &worktree, epitaph, deps)?;
                     crate::prompt::workflow_actions::run_terminal_bindings(
                         &cfg.workflow,

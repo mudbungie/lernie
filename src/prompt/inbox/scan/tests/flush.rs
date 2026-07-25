@@ -9,14 +9,14 @@ use super::*;
 fn flush_launches_only_free_pending_inboxes() {
     let ws = TempDir::new().unwrap();
     // a1: pending + free → launched. a2: held lock → skipped. a3: only a
-    // temp stray → no pending, skipped. No agent branches, so no sweep.
+    // temp stray → no pending, skipped. All three are real agents.
     deposit_msg(ws.path(), "a1", "user-001.md");
     deposit_msg(ws.path(), "a2", "user-001.md");
     deposit_msg(ws.path(), "a3", ".user-001.md.tmp");
     let _held = try_acquire(&inbox_dir(ws.path(), "a2"))
         .unwrap()
         .expect("free");
-    let git = StubGit::with_branches(&[]);
+    let git = StubGit::with_branches(&["a1", "a2", "a3"]);
     let launcher = StubLauncher::default();
     let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
     assert_eq!(report.flushed, vec!["a1".to_string()]);
@@ -90,7 +90,7 @@ fn probe_error_is_surfaced() {
 fn launch_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
     deposit_msg(ws.path(), "a1", "user-001.md");
-    let git = StubGit::with_branches(&[]);
+    let git = StubGit::with_branches(&["a1"]);
     let err = scan(ws.path(), &git, &FixedClock, &FailLauncher).unwrap_err();
     assert!(matches!(err, ScanError::Flush { .. }), "{err}");
 }
@@ -166,7 +166,34 @@ fn crash_stranding_is_healed_by_an_explicit_scan() {
     // The operator-facing summary renders the §8 counts.
     assert_eq!(
         report.to_string(),
-        "silent deaths: 1; died deposits swept: 1; drivers launched: 1"
+        "silent deaths: 1; died deposits swept: 1; drivers launched: 1; \
+         inboxes with no agent branch: 0"
+    );
+}
+
+#[test]
+fn an_inbox_with_no_agent_branch_is_reported_never_launched() {
+    // The `agents/*` refs are the registry (§2.3, §8): an inbox
+    // directory whose name has no ref names no agent, so the flush must
+    // not launch a driver for it — one would die on `invalid reference`
+    // on this pass and on every pass after it. It is reported as debris
+    // and left in place (the scanner deletes nothing).
+    let ws = TempDir::new().unwrap();
+    deposit_msg(ws.path(), "no-such-agent", "user-001.md");
+    let git = StubGit::with_branches(&[]);
+    let launcher = StubLauncher::default();
+    let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
+    assert!(report.flushed.is_empty(), "no driver is launched");
+    assert!(launcher.calls().is_empty(), "nothing is spawned");
+    assert_eq!(
+        report.inboxes_without_branch,
+        vec!["no-such-agent".to_string()]
+    );
+    assert!(
+        inbox_dir(ws.path(), "no-such-agent")
+            .join("user-001.md")
+            .exists(),
+        "the scanner deletes nothing"
     );
 }
 

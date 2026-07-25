@@ -162,6 +162,8 @@ fn stop_reports_a_non_workspace() {
 #[test]
 fn message_deposits_and_probes() {
     let (_h, ws) = fixture::workspace();
+    // The recipient must exist (§2.11): fork its branch first.
+    fixture::spawn_root(&ws, "20260101-a1");
     let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
         message::run(
             message::Args {

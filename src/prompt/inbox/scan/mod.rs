@@ -23,7 +23,9 @@
 //! 2. **Inbox flush** (§2.11): list `inbox/*/`; every agent with pending
 //!    files and a free lock gets a driver *launched* — never drained: the
 //!    scanner moves no files and commits nothing, only the lock-holding
-//!    executor delivers. An agent whose lock is held is left alone.
+//!    executor delivers. An agent whose lock is held is left alone, and
+//!    so is an inbox directory with no `agents/*` ref — it names no
+//!    agent, so it is counted as debris rather than driven ([`flush`]).
 //!
 //! The sweep runs first, so its own deposits are picked up by the flush
 //! that follows in the same pass.
@@ -101,6 +103,9 @@ pub struct ScanReport {
     pub swept: Vec<String>,
     /// Agent ids the flush launched a driver for, in sorted order.
     pub flushed: Vec<String>,
+    /// Inbox directories carrying pending files for a name with no
+    /// `agents/*` ref — debris, reported and left alone (see [`flush`]).
+    pub inboxes_without_branch: Vec<String>,
 }
 
 /// Run the workspace-wide scan under `workspace` (§2.11, §8): the
@@ -116,8 +121,12 @@ pub fn scan(
     launcher: &dyn Launcher,
 ) -> Result<ScanReport, ScanError> {
     let mut report = ScanReport::default();
-    sweep(workspace, git, clock, &mut report)?;
-    flush(workspace, launcher, &mut report)?;
+    // The candidate set is derived once from the `agents/*` refs (§8
+    // enumeration seam) and serves both halves: the sweep walks it, the
+    // flush intersects the inbox listing with it.
+    let agents = agent_branches(workspace, git)?;
+    sweep(workspace, git, clock, &agents, &mut report)?;
+    flush(workspace, launcher, &agents, &mut report)?;
     Ok(report)
 }
 
@@ -145,10 +154,12 @@ impl std::fmt::Display for ScanReport {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "silent deaths: {}; died deposits swept: {}; drivers launched: {}",
+            "silent deaths: {}; died deposits swept: {}; drivers launched: {}; \
+             inboxes with no agent branch: {}",
             self.silent_deaths,
             self.swept.len(),
-            self.flushed.len()
+            self.flushed.len(),
+            self.inboxes_without_branch.len()
         )
     }
 }
@@ -159,9 +170,10 @@ fn sweep(
     workspace: &std::path::Path,
     git: &dyn GitRunner,
     clock: &dyn Clock,
+    agents: &[String],
     report: &mut ScanReport,
 ) -> Result<(), ScanError> {
-    for branch in agent_branches(workspace, git)? {
+    for branch in agents.iter().cloned() {
         // A live executor holds the branch's inbox lock — it is either
         // working (never a silent death) or will drain at its own next
         // boundary. The probe lease is released the instant it is taken.
@@ -201,13 +213,27 @@ fn sweep(
 /// lock gets a driver *launched*. The scanner moves nothing and commits
 /// nothing — only the lock-holding executor delivers. An agent whose lock
 /// is held is left alone. Enumerated in sorted order for determinism.
+///
+/// The listing is intersected with `agents` — the `agents/*` refs, the
+/// §8 enumeration seam and the one registry of who exists (§2.3). An
+/// inbox directory whose name has no ref belongs to no agent, so there
+/// is nothing to drive: launching would fork a driver that dies on
+/// `invalid reference: agents/<name>` and would do so on every pass
+/// forever. It is counted as debris the operator can delete
+/// ([`ScanReport::inboxes_without_branch`]) and otherwise left alone —
+/// the scanner deletes nothing, exactly as it moves nothing.
 fn flush(
     workspace: &std::path::Path,
     launcher: &dyn Launcher,
+    agents: &[String],
     report: &mut ScanReport,
 ) -> Result<(), ScanError> {
     for agent in inbox_agents(workspace)? {
         if !has_pending(&inbox_dir(workspace, &agent)) {
+            continue;
+        }
+        if !agents.contains(&agent) {
+            report.inboxes_without_branch.push(agent);
             continue;
         }
         // Reuse the writer's own probe-and-launch seam (§2.11): a free

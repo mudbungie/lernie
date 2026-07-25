@@ -17,6 +17,7 @@ pub struct Args {
 /// Deposit then probe-and-launch — product-less on success (§3.4). The
 /// detached-launch target is [`Fx::driver_target`](super::Fx::driver_target).
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
+    crate::name::require_agent_id(&args.agent).map_err(|e| Error::new("message", e))?;
     inbox::cli_run(
         &args.workspace,
         &args.agent,

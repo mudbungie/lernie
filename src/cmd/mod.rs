@@ -14,6 +14,15 @@
 //! are the [`prelude`] the binding runs. `src/bin/lernie` is the exec
 //! binding; an embedding consumer is the other. Both parse the *same*
 //! [`Cli`] and drive the *same* [`Command::run`].
+//!
+//! **An agent id is validated where it enters.** Every verb that takes
+//! an agent id from outside — `message`, `advance`, `stop`, `dispatch`,
+//! `bundle` — calls [`crate::name::require_agent_id`] before touching
+//! disk, so an id that is not a single path component never reaches a
+//! `join` (§2.3; see [`crate::name`] for why `Path::join` makes that
+//! load-bearing). This surface is the only way in — both bindings enter
+//! here, and a model's `message` / `dispatch` tool re-enters through it
+//! (§3.4) — so one guard per verb covers every supplier.
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;

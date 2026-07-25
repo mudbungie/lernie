@@ -22,6 +22,7 @@ pub struct Args {
 /// [`Outcome::Exec`](super::Outcome::Exec), everything else is
 /// product-less ([`AdvanceHandoff::Done`] → [`Outcome::Quiet`], §3.4).
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
+    crate::name::require_agent_id(&args.agent).map_err(|e| Error::new("advance", e))?;
     let handoff = cli::cli_run(
         &args.workspace,
         &args.agent,

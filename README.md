@@ -511,7 +511,10 @@ Built-ins:
   calling agent's id, taken from the harness-set `LERNIE_CONV_BRANCH`
   (never model-supplied), so provenance cannot be forged. It goes
   through the front door — `lernie message` (below) — like `dispatch`
-  goes through `lernie dispatch`. **Shipped state:** the deposit lands
+  goes through `lernie dispatch`, so it inherits the front door's
+  recipient guards: an id that is not a single path component, or one
+  with no `agents/*` ref, comes back as an `is_error` result naming the
+  decline instead of a silently lost message. **Shipped state:** the deposit lands
   and the step-boundary drain delivers it (bl-1129) — the next driver to
   step the branch moves the inbox file into `messages/` as a transcript
   entry at its next boundary. A deposit into a *quiescent* agent is
@@ -540,6 +543,15 @@ driver to deliver it (ARCH §2.11, §3.4). The sender is read from
 `LERNIE_CONV_BRANCH` — the calling agent's id when the `message` tool
 re-enters the verb, else `user` for a bare invocation.
 
+- **The recipient is guarded before anything is written.** The id must
+  be a single path component (ARCH §2.3) — `..`, a `/`, or an absolute
+  path is declined, never sanitized, because `Path::join` would honour
+  it and write outside the workspace — and an `agents/<id>` ref must
+  exist for it: a message is addressed to an *existing* agent (§2.11),
+  so a deposit no drain would ever come for is refused (`lernie
+  message: no agent "…" …`, exit 1) rather than left in an inbox
+  directory nothing will ever read. The id guard is the same rule at every verb taking an agent id
+  from outside — `message`, `advance`, `stop`, `dispatch`, `bundle`.
 - The deposit is a create-only file at `<workspace>/inbox/<agent>/
   <sender>-<NNN>.md` (temp-path + atomic rename), with `from:` /
   `deposited_at:` frontmatter and the content as its body. `<NNN>` is
@@ -637,8 +649,13 @@ touch, by design):
 - **Inbox flush.** Every agent with pending inbox files and a free lock
   gets a driver **launched** — never drained: the scanner moves no files
   and commits nothing; only an agent's own lock-holding executor
-  delivers. An agent whose lock is held is left alone. The sweep's own
-  deposits are picked up by the flush that follows in the same pass.
+  delivers. An agent whose lock is held is left alone. The inbox listing
+  is intersected with the `agents/*` refs — the one registry of who
+  exists — so an inbox directory with no matching ref is reported
+  (`inboxes with no agent branch: N`) and left in place rather than
+  driven: a driver launched for a name with no branch dies on `invalid
+  reference` on this pass and every pass after. The sweep's own deposits
+  are picked up by the flush that follows in the same pass.
 
 **Shipped state.** The scan (silent-death sweep + inbox flush) ships
 behind `lernie scan` and *only* there — driver startup (`lernie prompt`,

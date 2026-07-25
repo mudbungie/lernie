@@ -106,7 +106,10 @@ pub fn run<R: Read, W: Write>(
     stdin.read_to_end(&mut buf).map_err(Error::StdinRead)?;
     let input: Input = serde_json::from_slice(&buf).map_err(Error::InvalidJson)?;
     let name = input.name;
-    if !is_component(&name) {
+    // A skill name must address exactly one directory in the pool — the
+    // shared single-component rule (`crate::name`), the same guard the
+    // command surface runs over an agent id.
+    if !crate::name::is_component(&name) {
         return Err(Error::BadName(name));
     }
 
@@ -138,19 +141,6 @@ pub fn run<R: Read, W: Write>(
         source,
     })?;
     emit(stdout, STATUS_LOADED, rel)
-}
-
-/// A skill name must address exactly one directory in the pool — no path
-/// separators, no `.`/`..`, no NUL. A name that escapes the pool or the
-/// worktree is declined, never sanitized (PRINCIPLES decline illegal
-/// operations): the name is a fact, not a slot to munge.
-fn is_component(name: &str) -> bool {
-    !name.is_empty()
-        && name != "."
-        && name != ".."
-        && !name.contains('/')
-        && !name.contains('\\')
-        && !name.contains('\0')
 }
 
 /// The data-root skills pool `<data-root>/skills/` (§3.3). Resolved from

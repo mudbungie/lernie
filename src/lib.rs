@@ -5,7 +5,7 @@
 //! **entry** per verb, the binding seam ([`cmd::Fx`], [`cmd::Outcome`],
 //! [`cmd::Error`]), and the binding preludes ([`cmd::prelude`]). Nothing
 //! else is public. That is the parity invariant (§3.4, CI-enforced by
-//! `tests/command_surface_parity.rs`): the library surface *is* the
+//! `tests/command_surface_parity/`): the library surface *is* the
 //! command surface — the crate exposes nothing public that is not a
 //! verb's entry, its arguments, its products, or the binding preludes,
 //! and no verb lacks its entry.

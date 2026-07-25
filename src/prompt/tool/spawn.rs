@@ -37,6 +37,7 @@ pub struct SpawnTool<'a> {
     clock: &'a dyn Clock,
     driver_target: &'a Path,
     deadline: Duration,
+    etxtbsy_budget: Duration,
     path_lookup: Box<dyn PathLookup + 'a>,
 }
 
@@ -70,8 +71,20 @@ impl<'a> SpawnTool<'a> {
             clock,
             driver_target,
             deadline: super::DEFAULT_TOOL_DEADLINE,
+            etxtbsy_budget: super::subprocess::ETXTBSY_RETRY_BUDGET,
             path_lookup: Box::new(EnvPath),
         }
+    }
+
+    /// Override how long a spawn rides out `ETXTBSY`. A test that means
+    /// to exercise the retry arm sets a budget its fixture's hold
+    /// cannot outlast, and one that means to exercise the give-up arm
+    /// sets a budget no hold can fit inside — neither then depends on
+    /// which of two clocks the machine favours that minute (bl-7a3f).
+    #[cfg(test)] // test-only builder
+    pub fn with_etxtbsy_budget(mut self, d: Duration) -> Self {
+        self.etxtbsy_budget = d;
+        self
     }
 
     /// Override the SIGTERM-to-SIGKILL grace. Tests use a sub-second
@@ -142,6 +155,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             extra_env: &extra_env,
             stop,
             deadline: self.deadline,
+            etxtbsy_budget: self.etxtbsy_budget,
             tool_name: call.name,
         };
         let started_at = self.clock.now_iso8601();

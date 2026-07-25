@@ -8,13 +8,15 @@
 //! overflow policy kicks in. Each selected worktree file composes as
 //! one path-framed text block (§5.3 file path as hint).
 //!
-//! Three trees never compose here because their wire homes are
-//! structural (§5.1 consequences, §2.3, §3.3): `goal.md` and `soul.md`
-//! ride the system slot ("Goal and soul are pinned files, not sequence
-//! item zero", §2.3), `descriptions/**` rides the typed request's
-//! tools array (§3.3 tools-list assembly), and `messages/**` is the
-//! transcript tail — not an order category, always assembled last
-//! (§5.2).
+//! Material whose wire home is structural never composes here (§5.1
+//! consequences, §2.3, §3.3): `goal.md` and `soul.md` ride the system
+//! slot ("Goal and soul are pinned files, not sequence item zero",
+//! §2.3), `descriptions/tools/**` — and every skill description a tool
+//! claims ([`tool_backed`]) — rides the tools array (§3.3 tools-list
+//! assembly), and `messages/**` is the transcript tail, always last
+//! (§5.2). The rest of `descriptions/**` is Description-always'
+//! standalone-skill remainder (§3.3): no structural home, so it composes
+//! here as ordinary path-framed blocks — the general path, not a case.
 //!
 //! **The budget covers head + body, not the transcript.** §5.2 subjects
 //! only `order` entries to `budget_tokens` (pinned counts but is never
@@ -38,8 +40,11 @@ const BYTES_PER_TOKEN: u64 = 4;
 const TRANSCRIPT_DIR: &str = "messages";
 /// Pinned files whose wire home is the system slot (§2.3).
 const SYSTEM_SLOT: &[&str] = &["goal.md", "soul.md"];
-/// Pinned tree whose wire home is the tools array (§3.3).
-const DESCRIPTIONS_DIR: &str = "descriptions";
+/// Committed tool schemas (§3.3): their wire home is the tools array.
+const TOOLS_DESC_DIR: &str = "descriptions/tools";
+/// Committed skill frontmatter (§3.3 Description-always), one
+/// `<name>.md` per available skill.
+const SKILLS_DESC_PREFIX: &str = "descriptions/skills/";
 /// The category `drop_oldest_summaries` sheds from (§2.7 —
 /// `summary/NNN.md`, zero-padded, so lexical order is age order).
 const SUMMARY_PREFIX: &str = "summary/";
@@ -190,12 +195,12 @@ fn cut(body: Vec<Entry>, allowance: u64, truncate: bool) -> Vec<Entry> {
 /// walks empty. Lexical sort is the §5.5 category sort.
 fn walk(worktree: &Path) -> Result<Vec<String>, Error> {
     let mut out = Vec::new();
-    descend(worktree, "", &mut out)?;
+    descend(worktree, worktree, "", &mut out)?;
     out.sort();
     Ok(out)
 }
 
-fn descend(dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Error> {
+fn descend(worktree: &Path, dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Error> {
     let rd = match std::fs::read_dir(dir) {
         Ok(rd) => rd,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
@@ -209,11 +214,11 @@ fn descend(dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Error>
         } else {
             format!("{prefix}/{name}")
         };
-        if skip(&rel) {
+        if skip(worktree, &rel) {
             continue;
         }
         if entry.file_type().map_err(Error::Io)?.is_dir() {
-            descend(&entry.path(), &rel, out)?;
+            descend(worktree, &entry.path(), &rel, out)?;
         } else {
             out.push(rel);
         }
@@ -221,11 +226,32 @@ fn descend(dir: &Path, prefix: &str, out: &mut Vec<String>) -> Result<(), Error>
     Ok(())
 }
 
-/// Trees context assembly composes through structural homes rather than
+/// What context assembly composes through a structural home rather than
 /// body text (module doc): the transcript tail, the system slot, the
 /// tools array — plus `.git`, which is git's, not the tree's.
-fn skip(rel: &str) -> bool {
-    rel == ".git" || rel == TRANSCRIPT_DIR || rel == DESCRIPTIONS_DIR || SYSTEM_SLOT.contains(&rel)
+fn skip(worktree: &Path, rel: &str) -> bool {
+    rel == ".git"
+        || rel == TRANSCRIPT_DIR
+        || rel == TOOLS_DESC_DIR
+        || SYSTEM_SLOT.contains(&rel)
+        || tool_backed(worktree, rel)
+}
+
+/// Whether `rel` is a skill description a tool claims: a
+/// `descriptions/skills/<name>.md` with a `descriptions/tools/<name>.json`
+/// beside it. Its frontmatter `description` is that tool's `tools:` entry
+/// description (§3.3 point 3) — its wire home — so composing it as text
+/// too would send it twice. Everything else under `descriptions/skills/`
+/// is the standalone remainder (§3.3), homed in the head. The tree is
+/// the sole input, as §5.1 requires: the role's `tools:` list selects
+/// among tool-backed skills; a skill no tool claims has no such selector.
+fn tool_backed(worktree: &Path, rel: &str) -> bool {
+    let stem = rel
+        .strip_prefix(SKILLS_DESC_PREFIX)
+        .and_then(|f| f.strip_suffix(".md"));
+    let Some(name) = stem else { return false };
+    let schema = format!("{name}.json");
+    worktree.join(TOOLS_DESC_DIR).join(schema).exists()
 }
 
 /// Minimal §5.2 glob over `/`-separated worktree-relative paths:

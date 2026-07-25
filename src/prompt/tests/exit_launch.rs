@@ -39,13 +39,19 @@ impl Launcher for ProbingLauncher {
     }
 }
 
-/// Bounded retries for the probes here and in [`super::exit_race`]. The
-/// §2.11 ordering under test released the fd before launching, but a
+/// Bounded retries for every executor-lock probe in these tests — here,
+/// in [`super::exit_race`], and in [`super::advance`]. The §2.11 ordering
+/// under test released the fd before launching, but a
 /// concurrent test thread's `Command` spawn can fork while that fd was
 /// still open and hold the inherited duplicate for the fork→exec window
 /// (all fds are CLOEXEC, so exec drops it microseconds later). A genuine
 /// ordering bug holds the lock forever and still fails; the fork window
 /// clears in a retry or two.
+///
+/// A count, not a duration: the budget must not shrink because the
+/// machine is busy, and the give-up arm must be reached by the same
+/// number of iterations on every run — a wall-clock deadline makes the
+/// retry sleep's coverage load-dependent (see [`super::advance::free_within`]).
 pub(super) const PROBE_RETRIES: u32 = 60;
 
 /// Probe the executor lock with the bounded retry above.

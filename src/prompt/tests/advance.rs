@@ -3,6 +3,7 @@
 //! stub adapter, the exec-baton `ToolsPending` handoff, and the exit
 //! protocol by epitaph value. Real filesystem, stub git/adapter/tools.
 
+use super::exit_launch::PROBE_RETRIES;
 use super::fixtures::*;
 use crate::config::models::Capabilities;
 use crate::config::{Model, Workflow};
@@ -95,37 +96,42 @@ fn no_resolve_is_a_tripwire() {
 }
 
 /// Probe until the lease frees, retrying across the fork→exec
-/// fd-inheritance window (the established pattern — a parallel test's
-/// spawned child can briefly hold an inherited copy of a dropped fd;
-/// a real contender holds for the whole window).
+/// fd-inheritance window on the shared [`PROBE_RETRIES`] budget (the
+/// established pattern — a parallel test's spawned child can briefly
+/// hold an inherited copy of a dropped fd; a real contender holds for
+/// the whole window).
 pub(super) fn eventually_free(ws: &Path, agent: &str) -> bool {
-    free_within(ws, agent, std::time::Duration::from_secs(2))
+    free_within(ws, agent, PROBE_RETRIES)
 }
 
-/// [`eventually_free`] with the give-up deadline injected, so the
+/// [`eventually_free`] with the retry budget injected, so the
 /// retry-and-give-up arms are directly exercisable.
-pub(super) fn free_within(ws: &Path, agent: &str, deadline: std::time::Duration) -> bool {
-    let end = std::time::Instant::now() + deadline;
-    loop {
+///
+/// The budget is a count of attempts, never a wall-clock deadline. A
+/// deadline expires on machine load rather than on evidence: with
+/// several agents measuring coverage at once, the first probe can
+/// return *after* a short deadline has already passed, so the retry
+/// sleep below never runs and the 100% floor reports one uncovered
+/// line on a diff that touched nothing (the bl-1c2e flake). A count
+/// makes both arms structural — a lease held for the whole budget
+/// sleeps `retries - 1` times whatever else the machine is doing.
+pub(super) fn free_within(ws: &Path, agent: &str, retries: u32) -> bool {
+    for attempt in 0..retries {
+        if attempt > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
         if try_acquire(&inbox_dir(ws, agent)).unwrap().is_some() {
             return true;
         }
-        if std::time::Instant::now() >= end {
-            return false;
-        }
-        std::thread::sleep(std::time::Duration::from_millis(5));
     }
+    false
 }
 
 #[test]
 fn free_within_gives_up_on_a_genuinely_held_lease() {
     let ws = TempDir::new().unwrap();
     let _held = try_acquire(&inbox_dir(ws.path(), AGENT)).unwrap().unwrap();
-    assert!(!free_within(
-        ws.path(),
-        AGENT,
-        std::time::Duration::from_millis(20)
-    ));
+    assert!(!free_within(ws.path(), AGENT, 2));
 }
 
 #[test]

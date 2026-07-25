@@ -856,6 +856,25 @@ See `bl skill` for the full guide.
    the count, weakening the floor. `make coverage` aborts with an install
    hint if the local tarpaulin version drifts.
 
+A floor of exactly 100% only holds if every line's coverage is caused by the
+code's own structure and not by winning a race, so **no line may be reachable
+only while a clock has not yet run out.** With several agents measuring
+coverage at once, whichever side of such a race the machine happens to pick
+that minute decides the verdict, and the gate reports an uncovered line on a
+diff that touched nothing. Two shapes to write around:
+
+- *A retry budget is a count of attempts, never a wall-clock deadline.*
+  `PROBE_RETRIES` (`src/prompt/tests/exit_launch.rs`) is the one budget every
+  executor-lock probe shares; a deadline expires on load rather than on
+  evidence, so under load the give-up arm can be taken on the first pass and
+  the retry arm never runs at all.
+- *A poll loop waits because its child is still running, not because a flag
+  has yet to land.* `wait_with_cascade` (`.../builtin/bash/mod.rs`) and
+  `wait_with_stop` (`.../tool/subprocess.rs`) therefore sleep between the
+  reap and the flag read: the interval is entered for as long as the child
+  lives, instead of only while a stop scheduled milliseconds out has not
+  arrived yet.
+
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.
 

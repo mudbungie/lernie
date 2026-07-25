@@ -31,7 +31,13 @@ const POLL_INTERVAL: Duration = Duration::from_millis(50);
 /// child reaching `exec` is bounded by the kernel's exec
 /// transition; a few tens of milliseconds covers worst-case under
 /// heavy parallel-test load.
-const ETXTBSY_RETRY_BUDGET: Duration = Duration::from_millis(200);
+/// Injected per-executor ([`super::SpawnTool::with_etxtbsy_budget`])
+/// so a test can decide which arm it is exercising instead of racing
+/// this value with its own fixture hold: pitting a hold measured on
+/// one clock against a budget measured on another makes the verdict a
+/// property of machine load, and the loser is whichever agent's close
+/// gate is running (bl-1c2e, bl-7a3f).
+pub(super) const ETXTBSY_RETRY_BUDGET: Duration = Duration::from_millis(200);
 
 /// Backoff between `ETXTBSY` retries. Short enough that the race
 /// window closes quickly; not so short that we busy-spin the kernel.
@@ -60,6 +66,8 @@ pub(super) struct SpawnArgs<'a> {
     pub(super) extra_env: &'a [(&'a str, OsString)],
     pub(super) stop: &'a AtomicBool,
     pub(super) deadline: Duration,
+    /// How long [`spawn_with_etxtbsy_retry`] rides out `ETXTBSY`.
+    pub(super) etxtbsy_budget: Duration,
     pub(super) tool_name: &'a str,
 }
 
@@ -68,7 +76,7 @@ pub(super) struct SpawnArgs<'a> {
 /// [`POLL_INTERVAL`]; when set, sends SIGTERM and waits up to
 /// `deadline` before SIGKILL.
 pub(super) fn spawn_and_capture(req: &SpawnArgs<'_>) -> Result<Captured, ExecError> {
-    let mut child = spawn_with_etxtbsy_retry(req.binary, req.args, req.extra_env, req.tool_name)?;
+    let mut child = spawn_with_etxtbsy_retry(req)?;
 
     let stdin_data = req.stdin_bytes.to_vec();
     let mut child_stdin = child.stdin.take().expect("stdin is piped");
@@ -112,20 +120,15 @@ pub(super) fn spawn_and_capture(req: &SpawnArgs<'_>) -> Result<Captured, ExecErr
 /// sub-millisecond, occasionally tens of ms under load. A short retry
 /// budget keeps the harness robust without masking real spawn
 /// failures.
-fn spawn_with_etxtbsy_retry(
-    binary: &OsString,
-    args: &[OsString],
-    extra_env: &[(&str, OsString)],
-    tool_name: &str,
-) -> Result<Child, ExecError> {
-    let deadline = Instant::now() + ETXTBSY_RETRY_BUDGET;
+fn spawn_with_etxtbsy_retry(req: &SpawnArgs<'_>) -> Result<Child, ExecError> {
+    let deadline = Instant::now() + req.etxtbsy_budget;
     loop {
-        let mut cmd = Command::new(binary);
-        cmd.args(args)
+        let mut cmd = Command::new(req.binary);
+        cmd.args(req.args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
-        for (k, v) in extra_env {
+        for (k, v) in req.extra_env {
             cmd.env(k, v);
         }
         match cmd.spawn() {
@@ -135,7 +138,7 @@ fn spawn_with_etxtbsy_retry(
             }
             Err(source) => {
                 return Err(ExecError::Spawn {
-                    name: tool_name.to_string(),
+                    name: req.tool_name.to_string(),
                     source,
                 });
             }
@@ -148,15 +151,21 @@ fn spawn_with_etxtbsy_retry(
 /// [`ExitStatus`] the kernel reports — a tool that exits cleanly
 /// inside the deadline reports its real exit code (and is therefore
 /// not flagged `KilledBySignal` upstream).
+/// The reap comes *before* the flag read, and the poll interval between
+/// them, for the reason spelled out on `builtin::bash::wait_with_cascade`:
+/// a running child is what puts us in the interval, so the line is
+/// reached because of the child rather than because a stop had not
+/// landed yet — the latter is a race the machine's load decides, and it
+/// costs the 100% floor a line (bl-1c2e).
 fn wait_with_stop(child: &mut Child, stop: &AtomicBool, deadline: Duration) -> ExitStatus {
     loop {
         if let Some(status) = try_reap(child) {
             return status;
         }
+        thread::sleep(POLL_INTERVAL);
         if stop.load(Ordering::SeqCst) {
             return cascade_terminate(child, deadline);
         }
-        thread::sleep(POLL_INTERVAL);
     }
 }
 

@@ -1,7 +1,8 @@
 +++
 title = "Switch crates.io publishing to trusted publishing (OIDC), drop CARGO_REGISTRY_TOKEN"
 created = 1784959015
-updated = 1784959015
+updated = 1784959016
+claimant = "Scanner"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 The trusted publisher for crate `lernie` is registered on crates.io (owner mudbungie, repo lernie, workflow release-plz.yml, no environment). Move .github/workflows/release-plz.yml off the stored-secret model:

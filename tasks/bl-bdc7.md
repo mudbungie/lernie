@@ -1,7 +1,7 @@
 +++
 title = "Validate agent id at the inbox boundary; lernie message errors on a nonexistent agent"
 created = 1784955529
-updated = 1784956027
+updated = 1784958210
 claimant = "Ivory"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

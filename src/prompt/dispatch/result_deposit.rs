@@ -9,11 +9,16 @@
 //! For a *root* agent it is a structural no-op — a root has no parent
 //! inbox, so [`crate::prompt::inbox::deposit_child_result`] deposits
 //! nothing and the root's terminal response answers the user instead
-//! (§2.4). The shipped harness runs only root step loops
-//! ([`super::run_exchange`]); the child step loop that makes these
-//! deposits fire is a later milestone (the worker path stops at the
-//! dispatch commit today, `worker.rs`). The call sites are wired now so
-//! that loop returns for free when it lands.
+//! (§2.4). Both drivers reach it for real: the root step loop
+//! ([`super::run_exchange`]) and a dispatched child's `lernie advance`
+//! hop ([`super::advance`], §6).
+//!
+//! **The deposit does not launch.** Waking the parent this deposit
+//! revives (§2.11 revival-on-deposit) is the exit protocol's closing
+//! act, not the deposit's return value: it happens once, after the
+//! depositing executor releases its own lock, and by epitaph value —
+//! [`super::terminal::exit_launch`] / `revive_parent`. Keeping it there
+//! keeps this a pure return and keeps the launch decision in one place.
 
 use super::super::inbox::{self, Epitaph};
 use super::super::{Deps, Error};

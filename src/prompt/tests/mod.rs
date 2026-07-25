@@ -16,6 +16,7 @@ mod happy;
 mod manifest_wiring;
 mod multi_step;
 mod multi_step_terminal;
+mod parent_revival;
 mod pin;
 mod stop_deposit;
 mod streams;

@@ -154,6 +154,16 @@ pub(crate) fn run_with<R: Read, W: Write, E: Write>(
 
 /// Poll the child's wait status against the cancel flag. On flag,
 /// SIGTERM the entire process group, wait `deadline`, then SIGKILL.
+///
+/// The wait comes *before* the flag read, not after: a running child is
+/// then what puts us in the poll interval, which is a property of the
+/// child rather than of when a stop happened to land. Read the flag
+/// first and this interval is only entered while the flag is still
+/// unset — so on a loaded machine, where a stop scheduled milliseconds
+/// out is already set by the first pass, the interval is never entered
+/// and the 100% floor loses a line on a diff that touched nothing
+/// (bl-1c2e). It costs at most one poll interval of stop latency, which
+/// is the granularity the loop already promises.
 fn wait_with_cascade(
     child: &mut std::process::Child,
     pgid: i32,
@@ -164,10 +174,10 @@ fn wait_with_cascade(
         if let Some(status) = child.try_wait().map_err(Error::Wait)? {
             return Ok(status);
         }
+        thread::sleep(POLL_INTERVAL);
         if stop.load(Ordering::SeqCst) {
             return cascade_terminate(child, pgid, deadline);
         }
-        thread::sleep(POLL_INTERVAL);
     }
 }
 

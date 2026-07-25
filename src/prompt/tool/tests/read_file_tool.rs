@@ -16,6 +16,7 @@
 //!    stderr concatenated after stdout in `tool_result.content`,
 //!    `output.json.exit_code != 0`.
 
+use super::fixtures::StepDir;
 use crate::prompt::clock::SystemClock;
 use crate::prompt::tool::spawn::PathLookup;
 use crate::prompt::tool::{
@@ -45,22 +46,16 @@ impl PathLookup for NoPath {
 
 struct Fixture {
     _harness_root: TempDir,
-    step: TempDir,
-    step_path: PathBuf,
+    step: StepDir,
 }
 
 impl Fixture {
     fn new() -> Self {
         let harness = TempDir::new().expect("harness root tempdir");
         std::fs::create_dir_all(harness.path().join("tools")).unwrap();
-        let step = TempDir::new().expect("step tempdir");
-        // Mirror the §2.2/§2.3 layout: <worktree>/steps/<conv-id>/<NNN>/.
-        let step_path = step.path().join("steps").join("convid").join("001");
-        std::fs::create_dir_all(&step_path).unwrap();
         Self {
             _harness_root: harness,
-            step,
-            step_path,
+            step: StepDir::new(),
         }
     }
 
@@ -76,7 +71,7 @@ fn executor<'a>(harness: &'a Path, clock: &'a SystemClock, lernie: &'a Path) -> 
 #[test]
 fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
     let fixture = Fixture::new();
-    let target = fixture.step.path().join("greeting.txt");
+    let target = fixture.step.worktree.join("greeting.txt");
     let body = b"hello from read_file\n";
     std::fs::write(&target, body).unwrap();
 
@@ -90,7 +85,7 @@ fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
                 name: "read_file",
                 input: &json!({ "path": target }),
             },
-            &fixture.step_path,
+            &fixture.step.path,
             &AtomicBool::new(false),
         )
         .expect("execute succeeds");
@@ -99,7 +94,8 @@ fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
     assert_eq!(outcome.content, body);
 
     let dir = fixture
-        .step_path
+        .step
+        .path
         .join(STEP_TOOLS_SUBDIR)
         .join("toolu_rf_ok");
     let input: ToolInputRecord =
@@ -118,9 +114,39 @@ fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
 }
 
 #[test]
+fn read_file_resolves_a_relative_path_against_the_agents_worktree() {
+    // The §3.3 *Working directory* contract read from the other side: a
+    // path the model spells relative resolves inside the calling agent's
+    // worktree, because that is the cwd the executor pins the subprocess
+    // to. Before the cwd was pinned this read whatever file happened to
+    // sit in the operator's shell directory.
+    let fixture = Fixture::new();
+    let body = b"relative read\n";
+    std::fs::write(fixture.step.worktree.join("in-worktree.txt"), body).unwrap();
+
+    let clock = SystemClock;
+    let lernie = lernie_bin();
+    let exec = executor(fixture.harness_path(), &clock, &lernie);
+    let outcome = exec
+        .execute(
+            ToolCall {
+                id: "toolu_rf_rel",
+                name: "read_file",
+                input: &json!({ "path": "in-worktree.txt" }),
+            },
+            &fixture.step.path,
+            &AtomicBool::new(false),
+        )
+        .expect("execute succeeds");
+
+    assert!(!outcome.is_error, "relative read resolves: {outcome:?}");
+    assert_eq!(outcome.content, body);
+}
+
+#[test]
 fn read_file_failure_concats_stderr_and_marks_is_error() {
     let fixture = Fixture::new();
-    let missing = fixture.step.path().join("does-not-exist.txt");
+    let missing = fixture.step.worktree.join("does-not-exist.txt");
 
     let clock = SystemClock;
     let lernie = lernie_bin();
@@ -132,7 +158,7 @@ fn read_file_failure_concats_stderr_and_marks_is_error() {
                 name: "read_file",
                 input: &json!({ "path": missing }),
             },
-            &fixture.step_path,
+            &fixture.step.path,
             &AtomicBool::new(false),
         )
         .expect("execute returns Ok even when the tool exits non-zero");
@@ -145,7 +171,8 @@ fn read_file_failure_concats_stderr_and_marks_is_error() {
     );
 
     let dir = fixture
-        .step_path
+        .step
+        .path
         .join(STEP_TOOLS_SUBDIR)
         .join("toolu_rf_err");
     let output: ToolOutputRecord =

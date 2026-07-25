@@ -25,6 +25,16 @@ Stdout from the command is surfaced as the `content` of the matching
 concatenated after stdout and `is_error` is set, so the model sees
 the failure message in the next step's request.
 
+## Working directory
+
+The shell starts in **your own worktree** — the branch checkout the
+harness materialized for you — so relative paths resolve there and
+`pwd` reports it. Anything you write, edit, or delete under it is
+committed onto your branch alongside the tool result (ARCH §3.3), which
+is how your work leaves the conversation as a product. There is no need
+to `cd` anywhere first, and paths outside the worktree are not yours to
+act on.
+
 ## When to use
 
 - Listing or inspecting files and directories: `ls`, `find`, `tree`.

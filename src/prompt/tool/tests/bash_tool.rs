@@ -12,6 +12,7 @@
 //!    concatenated after stdout in `tool_result.content`,
 //!    `output.json.exit_code != 0`.
 
+use super::fixtures::StepDir;
 use crate::prompt::clock::SystemClock;
 use crate::prompt::tool::spawn::PathLookup;
 use crate::prompt::tool::{
@@ -41,21 +42,16 @@ impl PathLookup for NoPath {
 
 struct Fixture {
     _harness_root: TempDir,
-    _step: TempDir,
-    step_path: PathBuf,
+    step: StepDir,
 }
 
 impl Fixture {
     fn new() -> Self {
         let harness = TempDir::new().expect("harness root tempdir");
         std::fs::create_dir_all(harness.path().join("tools")).unwrap();
-        let step = TempDir::new().expect("step tempdir");
-        let step_path = step.path().join("steps").join("convid").join("001");
-        std::fs::create_dir_all(&step_path).unwrap();
         Self {
             _harness_root: harness,
-            _step: step,
-            step_path,
+            step: StepDir::new(),
         }
     }
 
@@ -82,7 +78,7 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
                 name: "bash",
                 input: &json!({ "command": "printf hello-from-bash" }),
             },
-            &fixture.step_path,
+            &fixture.step.path,
             &AtomicBool::new(false),
         )
         .expect("execute succeeds");
@@ -91,7 +87,8 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
     assert_eq!(outcome.content, b"hello-from-bash");
 
     let dir = fixture
-        .step_path
+        .step
+        .path
         .join(STEP_TOOLS_SUBDIR)
         .join("toolu_bash_ok");
     let input: ToolInputRecord =
@@ -110,6 +107,48 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
 }
 
 #[test]
+fn bash_writes_land_in_the_agents_worktree_not_the_launchers_cwd() {
+    // The §3.3 *Working directory* contract, end to end through the real
+    // `lernie tool bash` re-entry: the shell the built-in forks inherits
+    // the cwd the executor pinned, so `> out.txt` lands on the agent's
+    // branch. Before the pin it landed in whatever directory the harness
+    // process was launched from — the operator's shell (bl-2503).
+    let fixture = Fixture::new();
+    let launcher_cwd = std::env::current_dir().expect("cwd");
+
+    let clock = SystemClock;
+    let lernie = lernie_bin();
+    let exec = executor(fixture.harness_path(), &clock, &lernie);
+    let outcome = exec
+        .execute(
+            ToolCall {
+                id: "toolu_bash_cwd",
+                name: "bash",
+                input: &json!({ "command": "echo hello > out.txt; pwd" }),
+            },
+            &fixture.step.path,
+            &AtomicBool::new(false),
+        )
+        .expect("execute succeeds");
+
+    assert!(!outcome.is_error, "write should succeed: {outcome:?}");
+    let reported = String::from_utf8_lossy(&outcome.content).trim().to_string();
+    assert_eq!(
+        std::fs::canonicalize(reported).unwrap(),
+        std::fs::canonicalize(&fixture.step.worktree).unwrap(),
+        "the shell runs in the agent's worktree",
+    );
+    assert_eq!(
+        std::fs::read_to_string(fixture.step.worktree.join("out.txt")).unwrap(),
+        "hello\n",
+    );
+    assert!(
+        !launcher_cwd.join("out.txt").exists(),
+        "nothing may land in the launcher's cwd {launcher_cwd:?}",
+    );
+}
+
+#[test]
 fn bash_failure_concats_stderr_and_marks_is_error() {
     let fixture = Fixture::new();
 
@@ -125,7 +164,7 @@ fn bash_failure_concats_stderr_and_marks_is_error() {
                     "command": "printf prelude; printf complaint 1>&2; exit 7"
                 }),
             },
-            &fixture.step_path,
+            &fixture.step.path,
             &AtomicBool::new(false),
         )
         .expect("execute returns Ok even when the shell exits non-zero");
@@ -142,7 +181,8 @@ fn bash_failure_concats_stderr_and_marks_is_error() {
     );
 
     let dir = fixture
-        .step_path
+        .step
+        .path
         .join(STEP_TOOLS_SUBDIR)
         .join("toolu_bash_err");
     let output: ToolOutputRecord =

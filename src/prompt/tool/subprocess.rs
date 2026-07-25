@@ -11,10 +11,16 @@
 //! Errors on the stdin writer are intentionally swallowed: the §3.3
 //! contract only requires stdin be *offered* to the tool; whether the
 //! tool reads it is the tool's choice.
+//!
+//! Every child is spawned with an explicit [`SpawnArgs::cwd`] — the
+//! calling agent's worktree, resolved by the executor (§3.3 *Working
+//! directory*). This layer never lets a tool inherit the harness's own
+//! working directory.
 
 use super::ExecError;
 use std::ffi::OsString;
 use std::io::{Read, Write};
+use std::path::Path;
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -64,6 +70,12 @@ pub(super) struct SpawnArgs<'a> {
     /// `LERNIE_CONV_REPO`, `LERNIE_CONV_BRANCH` — to tools through
     /// env vars rather than the model-facing input schema).
     pub(super) extra_env: &'a [(&'a str, OsString)],
+    /// Working directory for the child — the calling agent's worktree
+    /// per ARCH §3.3 (*Working directory*). Never inherited: a tool
+    /// left in the harness's own cwd would write its side effects into
+    /// whatever directory the operator's shell was pointing at instead
+    /// of onto the agent's branch.
+    pub(super) cwd: &'a Path,
     pub(super) stop: &'a AtomicBool,
     pub(super) deadline: Duration,
     /// How long [`spawn_with_etxtbsy_retry`] rides out `ETXTBSY`.
@@ -125,6 +137,7 @@ fn spawn_with_etxtbsy_retry(req: &SpawnArgs<'_>) -> Result<Child, ExecError> {
     loop {
         let mut cmd = Command::new(req.binary);
         cmd.args(req.args)
+            .current_dir(req.cwd)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());

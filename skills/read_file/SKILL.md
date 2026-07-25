@@ -15,8 +15,9 @@ full.
 { "path": "<filesystem path>" }
 ```
 
-`path` is a string. Relative paths resolve against the agent's current
-working directory.
+`path` is a string. Relative paths resolve against your own worktree —
+the branch checkout the harness runs every tool in (ARCH §3.3) — so
+`messages/001-user.md` reads your own copy, not some other agent's.
 
 ## Output
 

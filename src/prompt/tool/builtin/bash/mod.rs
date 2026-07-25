@@ -7,6 +7,14 @@
 //! exits, encoded as `128 + signo` (POSIX) when the shell was killed
 //! by a signal.
 //!
+//! The shell inherits this process's working directory, which the
+//! executor pinned to the calling agent's worktree before spawning
+//! `lernie tool bash` (§3.3 *Working directory*). That inheritance is
+//! the whole mechanism: the cwd is resolved once, where the tool call's
+//! identity is known, so a shell command's side effects land on the
+//! agent's branch and ride the tool commit (§2.3). Nothing here
+//! re-derives it.
+//!
 //! The shell runs in its own process group so a SIGTERM the harness
 //! sends to `lernie tool bash` can be forwarded to the entire spawned
 //! tree (§2.9 cascade). The internal SIGTERM-then-SIGKILL grace fits

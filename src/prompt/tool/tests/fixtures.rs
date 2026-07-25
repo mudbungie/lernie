@@ -84,22 +84,34 @@ pub(super) fn write_script(path: &Path, body: &str) {
     std::fs::set_permissions(path, perm).expect("chmod");
 }
 
-/// Per-test step directory. Mirrors the v0.3.1 layout
-/// `<conv-repo>/steps/<conv-id>/<NNN>/` (ARCH §2.2 / §2.3 — at the
-/// conv-repo root, outside every worktree) so the executor lands
-/// `tools/<tool-id>/` underneath. `_root` is held only for its
-/// `Drop` — the tempdir cleanup happens when [`StepDir`] goes out
-/// of scope.
+/// Per-test workspace slice. Mirrors the v0.3.1 layout — the step
+/// directory `<workspace>/steps/<agent-id>/<NNN>/` (ARCH §2.2 / §2.3 —
+/// at the workspace root, outside every worktree) so the executor lands
+/// `tools/<tool-id>/` underneath, plus the calling agent's worktree at
+/// `<workspace>/agents/<agent-id>/`, which the executor derives from the
+/// step dir and runs every tool subprocess in (§3.3 *Working
+/// directory*). `_root` is held only for its `Drop` — the tempdir
+/// cleanup happens when [`StepDir`] goes out of scope.
 pub(super) struct StepDir {
     _root: TempDir,
     pub(super) path: PathBuf,
+    pub(super) worktree: PathBuf,
 }
+
+/// The agent id every [`StepDir`] is namespaced under.
+pub(super) const AGENT_ID: &str = "convid";
 
 impl StepDir {
     pub(super) fn new() -> Self {
         let root = TempDir::new().expect("step tempdir");
-        let path = root.path().join("steps").join("convid").join("001");
+        let path = root.path().join("steps").join(AGENT_ID).join("001");
         std::fs::create_dir_all(&path).expect("mkdir step");
-        Self { _root: root, path }
+        let worktree = crate::workspace::agent_worktree(root.path(), AGENT_ID);
+        std::fs::create_dir_all(&worktree).expect("mkdir worktree");
+        Self {
+            _root: root,
+            path,
+            worktree,
+        }
     }
 }

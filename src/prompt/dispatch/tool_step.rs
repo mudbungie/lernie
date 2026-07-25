@@ -20,6 +20,9 @@
 //! Living in a sibling module keeps `super`'s `run_exchange` body under
 //! the repo's 300-line code-file cap.
 
+#[cfg(test)]
+mod tests;
+
 use super::stop_signal;
 use super::transcript;
 use crate::prompt::Deps;

@@ -1,9 +1,13 @@
 //! The §2.11 exit protocol at the step loop's terminal seam: deposit →
-//! release own lock → spawn a driver at own agent → exit. Pin 2 (launch
-//! by epitaph value: final response launches, `stopped` and
-//! `budget-exhausted` never), the post-release no-authority ordering
-//! (the launcher observes a free lock and an already-landed deposit),
-//! and the parentless case (deposit no-ops, launch still fires). The
+//! release own lock → spawn a driver at own agent *and* at the parent
+//! the deposit revived → exit. Pin 2 (launch by epitaph value: final
+//! response launches, `stopped` and `budget-exhausted` never — at the
+//! parent as much as at the exiting agent), the post-release
+//! no-authority ordering (the launcher observes a free lock and an
+//! already-landed deposit), and the parentless case (deposit no-ops,
+//! self-launch still fires, nothing is revived). The child-path
+//! revival — a real `lernie advance` child terminal waking a real
+//! parent — is [`super::parent_revival`]. The
 //! fire-and-forget swallow, the helper negatives, and the real-git exit
 //! race live in [`super::exit_race`] — split for the per-file line cap.
 
@@ -83,7 +87,7 @@ pub(super) fn deposit_files(workspace: &Path) -> Vec<String> {
 }
 
 #[test]
-fn final_response_exit_launches_own_agent_after_release_and_deposit() {
+fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&stream_of(brazen::FinishReason::Stop, &[Block::Text("hi")]));
@@ -105,14 +109,22 @@ fn final_response_exit_launches_own_agent_after_release_and_deposit() {
 
     run(repo.path(), "go", &deps).unwrap();
     let calls = launcher.calls.borrow();
-    // One launch, at the exiting agent itself.
-    assert_eq!(calls.len(), 1);
+    // Two launches: the self-directed one, then the parent whose inbox
+    // the terminal deposit just landed in (§2.11 revival-on-deposit).
+    assert_eq!(calls.len(), 2);
     let (ws, agent, lock_free, deposited) = &calls[0];
     assert_eq!(ws, repo.path());
     assert_eq!(agent, "ct-1-deadbeef");
     // §2.11 ordering: deposit → release → launch. The launcher sees both.
     assert!(*lock_free, "the lock must be released before the launch");
     assert!(*deposited, "the result deposit must land before the launch");
+    // The parent is addressed by derivation alone — this agent's id
+    // minus its last descent segment (§2.11) — and its lease is free,
+    // so the probe launched rather than leaving the result undelivered.
+    let (pws, parent, parent_free, _) = &calls[1];
+    assert_eq!(pws, repo.path());
+    assert_eq!(parent, "ct");
+    assert!(*parent_free, "the parent was quiescent, so it is launched");
 }
 
 /// A hyphen-free compact stamp makes the conv-id a two-token *root*
@@ -167,7 +179,10 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
 #[test]
 fn stopped_exit_never_launches() {
     // §2.11 pin 2: `stopped` → never (a relaunch would resurrect the
-    // branch the operator just killed).
+    // branch the operator just killed) — and never at the parent
+    // either: waking it would hand it a stop to undo one level up.
+    // The conv-id here is child-shaped (parent `ct`), so a parent-side
+    // launch would show up in the recorder.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
@@ -198,7 +213,11 @@ fn stopped_exit_never_launches() {
 
 #[test]
 fn budget_exhausted_exit_never_launches() {
-    // §2.11 pin 2: `budget-exhausted` → never (epitaph-spam cycle).
+    // §2.11 pin 2: `budget-exhausted` → never (epitaph-spam cycle) —
+    // at the parent too, since the ceiling is derived over the whole
+    // tree (§6), so a revived parent would exhaust on its own next
+    // check and deposit again. The conv-id is child-shaped (parent
+    // `ct`): a parent-side launch would be recorded.
     const EXHAUSTING: &str = "events: {}\nbudgets:\n  max_total_tokens: 8\n";
     let repo = scaffold_repo_with_workflow(VALID_PER_REPO_PROVIDERS_YAML, EXHAUSTING, Some("body"));
     let harness = scaffold_harness_root();

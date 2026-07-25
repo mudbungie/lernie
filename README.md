@@ -587,7 +587,8 @@ graceful-exit crack — a deposit landing after an executor's final drain
 but before its lock release — is closed by the **exit protocol**
 (§2.11, bl-5846): one terminal sequence, no agent kinds — deposit the
 result message (a structural no-op for a parentless agent) → release
-own lock → spawn a driver at own agent, fire-and-forget → exit. Two
+own lock → spawn a driver at own agent, fire-and-forget → probe-and-
+launch at the parent the deposit just landed in → exit. Two
 pins terminate the recursion: a driver that acquires and finds nothing
 to deliver exits silently (no step, no epitaph, no further launch —
 `dispatch::driver::drive` is that entry), and the launch is decided by
@@ -596,6 +597,21 @@ epitaph value — a final response launches; `stopped` and
 seam as the writer probe, so it is the same detached `lernie advance`
 spawn (§6); the decision logic, ordering, driver entry, and the spawn
 itself are live and tested.
+
+The parent-side step is what makes **revival-on-deposit** real
+(bl-4a6c): a child that returns to a quiescent — even torn-down —
+parent starts that parent's driver itself, through the *same*
+`probe_and_launch` the `lernie message` verb uses (one probe, no
+second copy), so the parent rematerializes, delivers the result, and
+steps with no `lernie scan` in the path. A parent whose lease is held
+gets nothing launched: its running executor delivers at its next step
+boundary. The epitaph decision governs this launch too, one level up:
+a `stopped` child would otherwise wake its parent to react to — perhaps
+re-dispatch around — the very branch the operator killed, and a
+`budget-exhausted` child's ceiling is the whole tree's (§6), so the
+woken parent would exhaust on its own next check and deposit again. In
+both cases the result still lands in the inbox and waits for the next
+explicit touch.
 
 Crashes are accepted as a failure class (§2.11): everything is on disk,
 so a hard death strands results and messages *late*, never lost, and

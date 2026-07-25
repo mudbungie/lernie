@@ -11,8 +11,8 @@
 //! Every terminal deposits a result message ([`result_deposit`], §2.6,
 //! no-op for a root), evaluates the terminal-lifecycle bindings (§6,
 //! [`workflow_actions`]), then runs the §2.11 exit protocol (deposit →
-//! release lock → epitaph-valued self-launch → exit, [`terminal`],
-//! [`driver`]). No terminal compaction (§2.7 — the stage is deleted).
+//! release lock → epitaph-valued launches, at own agent and at the
+//! parent the deposit revived → exit, [`terminal`], [`driver`]).
 
 pub mod advance;
 mod assembler;
@@ -290,9 +290,9 @@ pub(super) fn run_exchange(
     )?;
 
     // Exit protocol (§2.11): the result deposit landed at the terminal
-    // event above; now release own lock, then spawn a driver at own
-    // agent, fire-and-forget, and exit. After release this process has
-    // no authority — spawn and exit are its only remaining acts.
+    // event above; now release own lock, then spawn a driver at own agent
+    // and — the deposit's own probe-and-launch — at the parent it revived.
+    // After release this process has no authority: spawn and exit only.
     drop(executor_lock);
     terminal::exit_launch(repo, &conv_id, epitaph, deps);
 

@@ -18,6 +18,7 @@ pub struct Args {
 
 /// Signal the pgid(s) — product-less on success (§3.4).
 pub fn run(args: Args, _fx: &mut Fx) -> Result<Outcome, Error> {
+    crate::name::require_agent_id(&args.branch).map_err(|e| Error::new("stop", e))?;
     stop::cli_run(&args.repo, &args.branch, args.stop_children)
         .map_err(|e| Error::new("stop", e))?;
     Ok(Outcome::Quiet)

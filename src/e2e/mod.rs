@@ -11,6 +11,7 @@
 
 mod advance_cli;
 mod bundle_replay_cli;
+mod message_cli;
 mod prompt_end_to_end;
 mod prompt_retry;
 mod scan_cli;

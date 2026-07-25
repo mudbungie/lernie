@@ -32,17 +32,9 @@ pub struct GitInspector;
 
 impl BranchInspector for GitInspector {
     fn exists(&self, repo: &Path, branch: &str, git: &dyn GitRunner) -> io::Result<bool> {
-        let refspec = format!("refs/heads/{}", crate::workspace::agent_ref(branch));
-        // `rev-parse --verify` exits 0 when the ref resolves, non-
-        // zero otherwise. `GitRunner::run` surfaces non-zero as `Err`
-        // — translate that to the boolean we want.
-        match git.run(
-            &crate::workspace::repo_git(repo),
-            &["rev-parse", "--verify", "--quiet", &refspec],
-        ) {
-            Ok(()) => Ok(true),
-            Err(_) => Ok(false),
-        }
+        // The question has one home ([`crate::workspace::agent_exists`]);
+        // this impl is only the trait seam over it.
+        Ok(crate::workspace::agent_exists(repo, branch, git))
     }
 }
 

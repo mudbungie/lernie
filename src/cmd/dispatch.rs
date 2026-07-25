@@ -21,6 +21,8 @@ pub struct Args {
 /// success (§3.4). The failure prefix is `dispatch <role>`, as today.
 /// The detached-launch target is [`Fx::driver_target`](super::Fx::driver_target).
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
+    crate::name::require_agent_id(&args.branch)
+        .map_err(|e| Error::new(format!("dispatch {}", args.role), e))?;
     dispatch_cli::run(
         &args.role,
         &args.repo,

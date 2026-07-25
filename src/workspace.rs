@@ -71,6 +71,23 @@ pub fn agent_ref(agent_id: &str) -> String {
     format!("{AGENT_REF_PREFIX}{agent_id}")
 }
 
+/// Does the agent exist? — `git rev-parse --verify refs/heads/agents/<id>`
+/// against the bare repo (§2.3: the ref namespace *is* the registry, so
+/// existence is a query, never a stored fact). The one home of the
+/// question every verb addressing an existing agent asks: `lernie stop`
+/// before signaling (via [`crate::prompt::stop::inspector`]) and
+/// `lernie message` before depositing (§2.11 — "a message is content
+/// addressed to an *existing* agent"). A non-zero exit is the answer
+/// `false`, which also covers an id git refuses as a ref name.
+pub fn agent_exists(workspace: &Path, agent_id: &str, git: &dyn GitRunner) -> bool {
+    let refspec = format!("refs/heads/{}", agent_ref(agent_id));
+    git.run(
+        &repo_git(workspace),
+        &["rev-parse", "--verify", "--quiet", &refspec],
+    )
+    .is_ok()
+}
+
 /// Layout guard failures (§2.2; pre-v1 clean break, §10).
 #[derive(Debug, thiserror::Error)]
 pub enum LayoutError {

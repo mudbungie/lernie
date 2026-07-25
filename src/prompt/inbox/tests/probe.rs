@@ -135,6 +135,7 @@ fn cli_run_deposits_via_production_deps() {
     // (the launch path is exercised by the launcher tests below and the
     // advance CLI integration test).
     let (_h, ws) = crate::workspace::fixture::workspace();
+    crate::workspace::fixture::spawn_root(&ws, "a1");
     let ws = ws.as_path();
     let _held = try_acquire(&inbox_dir(ws, "a1")).unwrap().expect("free");
     cli_run(ws, "a1", "hi", Path::new("true")).unwrap();
@@ -144,6 +145,24 @@ fn cli_run_deposits_via_production_deps() {
         .filter(|e| e.file_name().to_string_lossy().ends_with(".md"))
         .collect();
     assert_eq!(files.len(), 1, "exactly one deposit landed");
+}
+
+#[test]
+fn cli_run_declines_a_recipient_with_no_branch() {
+    // §2.11: a message is addressed to an *existing* agent. A deposit no
+    // drain would ever come for is declined loudly — the alternative is
+    // silent message loss into a directory nothing reads.
+    let (_h, ws) = crate::workspace::fixture::workspace();
+    let err = cli_run(ws.as_path(), "a1", "hi", Path::new("true")).unwrap_err();
+    let MessageError::UnknownAgent(id) = &err else {
+        panic!("an unknown recipient is its own decline: {err}")
+    };
+    assert_eq!(id, "a1");
+    assert!(err.to_string().contains("existing agent"), "{err}");
+    assert!(
+        !inbox_dir(ws.as_path(), "a1").exists(),
+        "the decline creates no inbox directory"
+    );
 }
 
 #[test]

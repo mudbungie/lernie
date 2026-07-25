@@ -38,6 +38,7 @@ pub mod cmd;
 mod config;
 mod harness_root;
 mod install;
+mod name;
 mod prompt;
 mod provider;
 mod skill;

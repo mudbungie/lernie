@@ -1,6 +1,7 @@
 //! Command-surface tests (ARCH §3.4). [`surface`] pins the clap argv
 //! shape and the binding types ([`Outcome`], [`Error`], [`prelude`]);
-//! [`verbs`] drives each [`Command`] entry against a constructed [`Fx`].
+//! [`verbs`] drives each [`Command`] entry against a constructed [`Fx`];
+//! [`agent_id`] pins the per-verb agent-id guard (§2.3).
 //! The provider-driven happy paths (`prompt` product, the `advance`
 //! successor `exec`, `prime` success) are pinned by the `tests/*_cli.rs`
 //! end-to-end binary tests; here the cheap early-error paths cover the
@@ -11,6 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 
+mod agent_id;
 mod dispatching;
 mod surface;
 mod verbs;

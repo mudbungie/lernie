@@ -367,9 +367,9 @@ dependencies = [
 
 [[package]]
 name = "brazen"
-version = "0.0.3"
+version = "0.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12b128d183880c76a28555fb2ac479e374089058b677dc5f708cf6df5b875e12"
+checksum = "be2007d2dd4898cf7dfd89723cf3a0f6e5ef138ad45dfc5aacf46b5ee0ef2fcc"
 dependencies = [
  "base64 0.22.1",
  "libc",

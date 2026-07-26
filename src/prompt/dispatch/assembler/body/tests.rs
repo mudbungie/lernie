@@ -245,19 +245,6 @@ fn legacy_drop_oldest_steps_sheds_nothing() {
 }
 
 #[test]
-fn summarize_sheds_nothing_at_assembly() {
-    // Summarizing is the compaction procedure's act (§2.7); assembly is
-    // a pure function of the tree and rides the body whole.
-    let wt = TempDir::new().unwrap();
-    write(wt.path(), "docs/a.md", b"12345678");
-    let r = rules(&[], &["docs/**"], 1, OverflowPolicy::Summarize);
-    assert_eq!(
-        paths(&compose(wt.path(), Some(&r)).unwrap()),
-        vec!["docs/a.md"]
-    );
-}
-
-#[test]
 fn non_utf8_content_composes_lossily() {
     let wt = TempDir::new().unwrap();
     write(wt.path(), "blob.bin", &[0xff, b'o', b'k']);

@@ -14,6 +14,7 @@
 //! fork *is* the freeze (§2.2).
 
 pub mod authoring;
+pub(crate) mod checkout;
 pub mod descriptions;
 
 use crate::harness_root::Roots;
@@ -122,10 +123,6 @@ const INHERITED_GIT_ENV: &[&str] = &[
     "GIT_ALTERNATE_OBJECT_DIRECTORIES",
 ];
 
-/// Transient checkout directory used while authoring the first config
-/// commit; removed (as a git worktree) once the commit lands.
-const CONFIG_AUTHOR_DIR: &str = ".config-author";
-
 /// Create a new workspace at `dest` per ARCH §2.2:
 ///
 /// 1. Refuse if `dest` already exists and is non-empty.
@@ -151,11 +148,14 @@ pub fn scaffold<G: GitRunner>(dest: &Path, roots: &Roots, git: &G) -> Result<(),
     let init_args = ["init", "--bare", "-b", config_ref];
     git.run(&repo, &init_args).map_err(ScaffoldError::Git)?;
 
-    let author = dest.join(CONFIG_AUTHOR_DIR);
+    let author = checkout::path(dest);
     let author_str = author.to_string_lossy().to_string();
     let mut add_args = vec!["worktree", "add", "--orphan", "-b", config_ref];
     add_args.push(author_str.as_str());
-    git.run(&repo, &add_args).map_err(ScaffoldError::Git)?;
+    // The guard tears the checkout down on every exit path below, so a
+    // failed first commit leaves no half-authored checkout behind.
+    let checkout = checkout::Checkout::add(git, &repo, &author, &add_args, None)
+        .map_err(ScaffoldError::Git)?;
 
     // `git worktree add` creates the directory in production; the
     // explicit `create_dir_all` is for stub-git tests (and a harmless
@@ -165,7 +165,11 @@ pub fn scaffold<G: GitRunner>(dest: &Path, roots: &Roots, git: &G) -> Result<(),
     overlay(&roots.config.join(TEMPLATE_OVERRIDE_DIR), &author).map_err(ScaffoldError::Io)?;
     descriptions::snapshot(&roots.data, &author).map_err(ScaffoldError::Descriptions)?;
     let msg = format!("config: init [{config_ref}]");
-    commit_checkout(git, &repo, &author, &msg).map_err(ScaffoldError::Git)?;
+    // Always `true` here: the embedded template always writes files, so
+    // the first commit's stage is never empty (the decline is
+    // [`authoring`]'s case, where the origin's tree already exists).
+    commit_checkout(git, &author, &msg).map_err(ScaffoldError::Git)?;
+    checkout.landed().map_err(ScaffoldError::Git)?;
     Ok(())
 }
 
@@ -192,21 +196,29 @@ fn overlay(src: &Path, dst: &Path) -> io::Result<()> {
     Ok(())
 }
 
-/// Stage everything in an authoring checkout, commit it with `msg`, and
-/// remove the checkout worktree — the shared tail of config-commit
-/// authoring (ARCH §2.2), used by both [`scaffold`] (the first config
-/// commit) and [`authoring::author`] (every later one). Each git step's
-/// failure rides `io::Error`; the caller maps it to its own error kind.
-pub(crate) fn commit_checkout<G: GitRunner>(
-    git: &G,
-    repo: &Path,
-    author: &Path,
-    msg: &str,
-) -> io::Result<()> {
-    let author_str = author.to_string_lossy().to_string();
+/// Stage everything in an authoring checkout and commit it with `msg` —
+/// the shared tail of config-commit authoring (ARCH §2.2), used by both
+/// [`scaffold`] (the first config commit) and [`authoring::author`]
+/// (every later one). Each git step's failure rides `io::Error`; the
+/// caller maps it to its own error kind.
+///
+/// Returns whether a commit landed: an **empty stage** is the pass whose
+/// edit changed nothing, which authors no commit and moves no branch
+/// (§2.2). Asking the index (`status --porcelain`) rather than reading
+/// git's refusal off a failed `commit` keeps that outcome a decision this
+/// code makes, not a message it parses. Teardown is not here — it belongs
+/// to the caller's [`checkout::Checkout`] guard, which runs on every exit
+/// path including this one.
+pub(crate) fn commit_checkout<G: GitRunner>(git: &G, author: &Path, msg: &str) -> io::Result<bool> {
     git.run(author, &["add", "-A"])?;
+    if git
+        .run_capture(author, &["status", "--porcelain"])?
+        .is_empty()
+    {
+        return Ok(false);
+    }
     git.run(author, &["commit", "-m", msg])?;
-    git.run(repo, &["worktree", "remove", author_str.as_str()])
+    Ok(true)
 }
 
 fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {

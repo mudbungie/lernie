@@ -75,7 +75,12 @@ impl GitRunner for StubGit {
     }
 
     fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        self.run(dest, args).map(|_| String::new())
+        // The stub's checkout always reports dirty, so scaffold's commit
+        // step runs (the empty-stage decline is `authoring`'s case).
+        self.run(dest, args).map(|()| match args.first() {
+            Some(&"status") => "A  version".to_string(),
+            _ => String::new(),
+        })
     }
 }
 
@@ -105,9 +110,10 @@ fn scaffold_happy_path_authors_the_first_config_commit() {
 
     // Git sequence (§2.2): bare init with config/default as the initial
     // branch (no `main` is ever created), the orphan authoring
-    // checkout, the config commit, and the checkout teardown.
+    // checkout, the staged-anything question, the config commit, and the
+    // checkout teardown.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 5);
+    assert_eq!(runs.len(), 6);
     assert_eq!(runs[0].0, repo);
     assert_eq!(runs[0].1, vec!["init", "--bare", "-b", "config/default"]);
     assert_eq!(runs[1].0, repo);
@@ -117,12 +123,14 @@ fn scaffold_happy_path_authors_the_first_config_commit() {
     assert_eq!(runs[2].0, author);
     assert_eq!(runs[2].1, vec!["add", "-A"]);
     assert_eq!(runs[3].0, author);
+    assert_eq!(runs[3].1, vec!["status", "--porcelain"]);
+    assert_eq!(runs[4].0, author);
     assert_eq!(
-        runs[3].1,
+        runs[4].1,
         vec!["commit", "-m", "config: init [config/default]"]
     );
-    assert_eq!(runs[4].0, repo);
-    assert_eq!(runs[4].1[..2], ["worktree", "remove"]);
+    assert_eq!(runs[5].0, repo);
+    assert_eq!(runs[5].1[..3], ["worktree", "remove", "--force"]);
 }
 
 #[test]
@@ -163,8 +171,10 @@ fn scaffold_surfaces_descriptions_producer_failure() {
     };
     let err = scaffold(&holder.path().join("ws"), &roots, &git).unwrap_err();
     assert!(matches!(err, ScaffoldError::Descriptions(_)), "got {err:?}");
+    // init + worktree add, then the guard's teardown — nothing committed.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 2, "init + worktree add only: {runs:?}");
+    assert_eq!(runs.len(), 3, "{runs:?}");
+    assert_eq!(runs[2].1[..3], ["worktree", "remove", "--force"]);
     assert!(runs.iter().all(|(_, a)| a[0] != "commit"));
 }
 
@@ -183,9 +193,11 @@ fn scaffold_propagates_init_failure() {
 
 #[test]
 fn scaffold_propagates_each_git_failure_arm() {
-    // Indexes: 0 init, 1 worktree add, 2 add -A, 3 commit, 4 worktree
-    // remove — each surfaces as ScaffoldError::Git.
-    for idx in 1..=4 {
+    // Indexes: 0 init, 1 worktree add, 2 add -A, 3 status, 4 commit,
+    // 5 worktree remove — each surfaces as ScaffoldError::Git. The last
+    // is the teardown, which `Checkout::landed` reports on the success
+    // path (only the failure paths swallow it).
+    for idx in 1..=5 {
         let holder = TempDir::new().unwrap();
         let dest = holder.path().join("ws");
         let err = scaffold(

@@ -24,11 +24,11 @@ pub(super) const AGENT: &str = "20260101-a1";
 /// Recording [`Launcher`] for exit-launch assertions.
 #[derive(Default)]
 pub(super) struct RecLauncher {
-    pub(super) calls: RefCell<Vec<String>>,
+    pub(super) invocations: RefCell<Vec<String>>,
 }
 impl Launcher for RecLauncher {
     fn launch(&self, _ws: &Path, agent: &str) -> io::Result<()> {
-        self.calls.borrow_mut().push(agent.to_string());
+        self.invocations.borrow_mut().push(agent.to_string());
         Ok(())
     }
 }
@@ -202,7 +202,7 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
     // record, not a carried payload: the exit protocol's self-launch
     // fired (§2.11 pin 2 — only a final response relaunches), and no
     // terminal compaction ran (§2.7 — the stage is deleted).
-    assert_eq!(*rec.calls.borrow(), vec![AGENT.to_string()]);
+    assert_eq!(*rec.invocations.borrow(), vec![AGENT.to_string()]);
     // The lease was released before the launch: reacquirable again.
     assert!(eventually_free(ws.path(), AGENT));
 }
@@ -232,12 +232,12 @@ fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
     };
     // The tool ran and its result committed (§2.3): the successor's
     // warrant will find the tail user-side.
-    assert_eq!(tools.calls.borrow().len(), 1);
+    assert_eq!(tools.invocations.borrow().len(), 1);
     assert!(wt.join("messages/005-tool.json").exists());
     // The lease rides the baton: held while the outcome lives.
     assert!(try_acquire(&inbox_dir(ws.path(), AGENT)).unwrap().is_none());
     drop(lease);
     assert!(eventually_free(ws.path(), AGENT));
     // No exit protocol on a handoff: no launch.
-    assert!(rec.calls.borrow().is_empty());
+    assert!(rec.invocations.borrow().is_empty());
 }

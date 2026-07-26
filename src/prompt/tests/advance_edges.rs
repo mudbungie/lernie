@@ -73,7 +73,7 @@ fn a_stop_flag_at_entry_terminates_stopped_without_launching() {
     // (unlike a final response), and §2.11 pin 2 held — stopped never
     // relaunches, no compactor either (§2.9).
     assert!(!ws.path().join("steps").exists());
-    assert!(rec.calls.borrow().is_empty());
+    assert!(rec.invocations.borrow().is_empty());
 }
 
 #[test]
@@ -105,7 +105,7 @@ fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
     // was not sealed into the transcript), and no relaunch fired (§2.11
     // pin 2). The stop signature is the absent trailing assistant entry.
     assert!(!wt.join("messages/004-claude-sonnet-5.json").exists());
-    assert!(rec.calls.borrow().is_empty());
+    assert!(rec.invocations.borrow().is_empty());
 }
 
 #[test]
@@ -145,7 +145,7 @@ fn a_stop_during_the_tool_window_never_rides_the_baton() {
     // off the baton — no successor launch fired (§2.11 pin 2).
     assert!(matches!(out, AdvanceOutcome::Terminal));
     assert!(wt.join("messages/005-tool.json").exists());
-    assert!(rec.calls.borrow().is_empty());
+    assert!(rec.invocations.borrow().is_empty());
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn budget_exhaustion_at_the_boundary_terminates_without_a_model_call() {
                 .get(1)
                 .is_some_and(|r| r.starts_with("refs/lernie/budget-exhausted/"))
     }));
-    assert!(rec.calls.borrow().is_empty());
+    assert!(rec.invocations.borrow().is_empty());
 }
 
 #[test]

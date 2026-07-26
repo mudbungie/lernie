@@ -11,20 +11,20 @@ use std::path::PathBuf;
 /// `lernie advance`. `fail` makes `launch` return an error so the
 /// post-deposit error arm is exercised deterministically.
 struct RecordingLauncher {
-    calls: RefCell<Vec<(PathBuf, String)>>,
+    invocations: RefCell<Vec<(PathBuf, String)>>,
     fail: bool,
 }
 
 impl RecordingLauncher {
     fn ok() -> Self {
         Self {
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
             fail: false,
         }
     }
     fn failing() -> Self {
         Self {
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
             fail: true,
         }
     }
@@ -32,7 +32,7 @@ impl RecordingLauncher {
 
 impl Launcher for RecordingLauncher {
     fn launch(&self, workspace: &Path, agent_id: &str) -> io::Result<()> {
-        self.calls
+        self.invocations
             .borrow_mut()
             .push((workspace.to_path_buf(), agent_id.to_string()));
         if self.fail {
@@ -114,9 +114,9 @@ fn forks_the_child_pins_the_goal_and_deposits_through_the_front_door() {
     assert!(body.contains("from: 20260101-p1"), "{body}");
 
     // The front door launched the child's driver exactly once, at its id.
-    let calls = launcher.calls.borrow();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0], (ws.clone(), child.clone()));
+    let invocations = launcher.invocations.borrow();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0], (ws.clone(), child.clone()));
 }
 
 #[test]
@@ -157,7 +157,7 @@ fn a_broken_child_inbox_surfaces_as_deposit() {
     .unwrap_err();
     assert!(matches!(err, Error::Deposit(_)), "got {err:?}");
     // The fork still happened — the failure is post-fork (§2.5 order).
-    assert!(launcher.calls.borrow().is_empty());
+    assert!(launcher.invocations.borrow().is_empty());
 }
 
 #[test]
@@ -194,7 +194,7 @@ fn missing_soul_is_surfaced_as_control_read_before_any_spawn() {
     assert!(matches!(err, Error::ControlRead { .. }), "got {err:?}");
     // Only the parent exists — no child branch was spawned.
     assert_eq!(workspace::agent_ids(&ws, &g).unwrap().len(), 1);
-    assert!(launcher.calls.borrow().is_empty());
+    assert!(launcher.invocations.borrow().is_empty());
 }
 
 #[test]

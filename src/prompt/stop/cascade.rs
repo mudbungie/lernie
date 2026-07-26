@@ -105,7 +105,7 @@ pub fn cascade(pgids: &[i32], signaler: &dyn Signaler, deadline: Duration, poll:
 #[cfg(test)]
 #[derive(Default)]
 pub(crate) struct RecordingSignaler {
-    pub(crate) calls: std::sync::Mutex<Vec<(&'static str, i32)>>,
+    pub(crate) invocations: std::sync::Mutex<Vec<(&'static str, i32)>>,
     pub(crate) alive_polls_remaining: std::sync::atomic::AtomicI32,
 }
 
@@ -113,22 +113,22 @@ pub(crate) struct RecordingSignaler {
 impl RecordingSignaler {
     pub(crate) fn new(alive_polls: i32) -> Self {
         Self {
-            calls: std::sync::Mutex::new(Vec::new()),
+            invocations: std::sync::Mutex::new(Vec::new()),
             alive_polls_remaining: std::sync::atomic::AtomicI32::new(alive_polls),
         }
     }
     pub(crate) fn took(&self) -> Vec<(&'static str, i32)> {
-        self.calls.lock().unwrap().clone()
+        self.invocations.lock().unwrap().clone()
     }
 }
 
 #[cfg(test)]
 impl Signaler for RecordingSignaler {
     fn term(&self, pgid: i32) {
-        self.calls.lock().unwrap().push(("term", pgid));
+        self.invocations.lock().unwrap().push(("term", pgid));
     }
     fn kill(&self, pgid: i32) {
-        self.calls.lock().unwrap().push(("kill", pgid));
+        self.invocations.lock().unwrap().push(("kill", pgid));
     }
     fn alive(&self, _pid: i32) -> bool {
         let prev = self
@@ -147,9 +147,9 @@ mod tests {
         // 1 alive poll → cascade asks once, sees dead, returns.
         let s = RecordingSignaler::new(0);
         cascade(&[42], &s, Duration::from_secs(60), Duration::from_millis(1));
-        let calls = s.took();
+        let invocations = s.took();
         // SIGTERM only — no SIGKILL because it drained.
-        assert_eq!(calls, vec![("term", 42)]);
+        assert_eq!(invocations, vec![("term", 42)]);
     }
 
     #[test]
@@ -162,10 +162,13 @@ mod tests {
             Duration::from_millis(20),
             Duration::from_millis(1),
         );
-        let calls = s.took();
-        assert_eq!(calls.first(), Some(&("term", 42)));
-        assert!(calls.iter().any(|&(sig, _)| sig == "kill"));
-        let kill_count = calls.iter().filter(|&&(sig, _)| sig == "kill").count();
+        let invocations = s.took();
+        assert_eq!(invocations.first(), Some(&("term", 42)));
+        assert!(invocations.iter().any(|&(sig, _)| sig == "kill"));
+        let kill_count = invocations
+            .iter()
+            .filter(|&&(sig, _)| sig == "kill")
+            .count();
         assert_eq!(kill_count, 1);
     }
 
@@ -178,8 +181,8 @@ mod tests {
             Duration::from_secs(60),
             Duration::from_millis(1),
         );
-        let calls = s.took();
-        let term_targets: Vec<i32> = calls
+        let invocations = s.took();
+        let term_targets: Vec<i32> = invocations
             .iter()
             .filter(|(sig, _)| *sig == "term")
             .map(|(_, pgid)| *pgid)
@@ -262,9 +265,11 @@ mod tests {
         // SIGKILL.)
         let s = RecordingSignaler::new(2);
         cascade(&[42], &s, Duration::from_secs(60), Duration::from_millis(1));
-        let calls = s.took();
-        let kills: Vec<&(&'static str, i32)> =
-            calls.iter().filter(|(sig, _)| *sig == "kill").collect();
+        let invocations = s.took();
+        let kills: Vec<&(&'static str, i32)> = invocations
+            .iter()
+            .filter(|(sig, _)| *sig == "kill")
+            .collect();
         // alive returns true for 2 polls (loop sleeps), then false →
         // cascade returns without firing SIGKILL.
         assert!(kills.is_empty());

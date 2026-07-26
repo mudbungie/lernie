@@ -22,12 +22,12 @@ use std::sync::atomic::AtomicBool;
 pub(super) type ObservedCall = (PathBuf, String, String, serde_json::Value);
 
 /// Returns `(content=replies[name].unwrap_or("stub:<name>"),
-/// is_error=false)` per call. `fail_on(name)` short-circuits the call
+/// is_error=false)` per tool call. `fail_on(name)` short-circuits the tool call
 /// with [`ExecError::Spawn`] instead — exercises the loop's
 /// tool-failure surface.
 #[derive(Default)]
 pub(super) struct StubToolExecutor {
-    pub(super) calls: RefCell<Vec<ObservedCall>>,
+    pub(super) invocations: RefCell<Vec<ObservedCall>>,
     replies: HashMap<String, String>,
     fail_on: Option<String>,
     /// When set, `execute` on this tool name returns
@@ -85,7 +85,7 @@ impl ToolExecutor for StubToolExecutor {
         step_dir: &Path,
         stop: &AtomicBool,
     ) -> Result<ToolOutcome, ExecError> {
-        self.calls.borrow_mut().push((
+        self.invocations.borrow_mut().push((
             step_dir.to_path_buf(),
             call.id.to_string(),
             call.name.to_string(),

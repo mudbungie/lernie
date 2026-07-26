@@ -35,7 +35,7 @@ fn loop_terminates_on_non_tool_use_finish() {
         ),
     )
     .unwrap();
-    assert!(tool_executor.calls.borrow().is_empty());
+    assert!(tool_executor.invocations.borrow().is_empty());
 }
 
 #[test]

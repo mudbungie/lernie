@@ -72,7 +72,7 @@ The terms form a containment ladder: a **workspace** (one git repository) holds 
 
 - **"call"** without a qualifier — use model call, tool call, or API call.
 - **"turn"** — incompatible vendor meanings (`docs/TAXONOMY.md` §1).
-- **"session"** — underdefined, per-framework overloaded, and colliding with the transport/connection sense (`docs/TAXONOMY.md` §3). Stays banned.
+- **"session"** — underdefined, per-framework overloaded, and colliding with the transport/connection sense (`docs/TAXONOMY.md` §3). Stays banned as an interaction-span term; its only sanctioned use here is the POSIX process-session sense — the `setsid` session a detached spawn leads (§2.11).
 - **"compression"** — reserved for model-weights quantization; the harness operation is compaction.
 - **"exchange"** as a *structural* term — it is the UX span defined in the table (no branch, no merge, no lifecycle); structural claims belong to the underlying agent.
 - **"thread"** as an agent-instance term — considered and rejected: the running instance is an **agent** (agent-as-instance already names it), and "thread" is spoken for by §3.1 ("Processes, not threads," the OS-thread sense) and the field's server-side message-container sense (`docs/TAXONOMY.md` §3). Its only sanctioned use here is the §3.1 OS-concurrency sense.

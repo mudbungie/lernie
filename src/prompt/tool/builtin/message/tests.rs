@@ -28,7 +28,7 @@ fn env(repo: &Path, branch: &str) -> StubEnv {
 /// clean deposit.
 #[derive(Default)]
 struct StubSender {
-    calls: RefCell<Vec<(PathBuf, String, String, String)>>,
+    invocations: RefCell<Vec<(PathBuf, String, String, String)>>,
 }
 impl Sender for StubSender {
     fn send(
@@ -38,7 +38,7 @@ impl Sender for StubSender {
         content: &str,
         sender: &str,
     ) -> Result<SendOutput, io::Error> {
-        self.calls.borrow_mut().push((
+        self.invocations.borrow_mut().push((
             workspace.to_path_buf(),
             agent.to_string(),
             content.to_string(),
@@ -92,14 +92,14 @@ fn happy_path_forwards_args_and_writes_deposited() {
     let payload: serde_json::Value = serde_json::from_slice(&stdout).unwrap();
     assert_eq!(payload["status"], "deposited");
 
-    let calls = sender.calls.borrow();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, repo.path());
-    assert_eq!(calls[0].1, "p1-child");
-    assert_eq!(calls[0].2, "steer left");
+    let invocations = sender.invocations.borrow();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0].0, repo.path());
+    assert_eq!(invocations[0].1, "p1-child");
+    assert_eq!(invocations[0].2, "steer left");
     // Sender identity is the harness-set LERNIE_CONV_BRANCH, not model
     // input — un-forgeable provenance (§2.11).
-    assert_eq!(calls[0].3, "p1");
+    assert_eq!(invocations[0].3, "p1");
 }
 
 #[test]

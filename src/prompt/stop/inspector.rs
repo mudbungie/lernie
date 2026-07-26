@@ -88,12 +88,12 @@ mod tests {
                 .exists(&PathBuf::from("/w"), "br", &git)
                 .unwrap()
         );
-        let calls = git.invocations.borrow();
+        let invocations = git.invocations.borrow();
         // The §8 ref namespace: the id maps to `agents/<id>` at the git
         // boundary, and the question is asked of the bare repo.git.
-        assert_eq!(calls[0].0, PathBuf::from("/w/repo.git"));
+        assert_eq!(invocations[0].0, PathBuf::from("/w/repo.git"));
         assert_eq!(
-            calls[0].1,
+            invocations[0].1,
             vec!["rev-parse", "--verify", "--quiet", "refs/heads/agents/br"]
         );
     }

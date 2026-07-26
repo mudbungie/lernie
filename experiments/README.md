@@ -27,7 +27,18 @@ experiment is deployable in under 60 seconds end-to-end (v0.10). The
 
 | Name | What it is |
 |---|---|
-| `baseline` | The default workflow (`template/workflow.yaml`): the v0.9 baseline harness against which variants are measured (§9.1, ~40% ± 5% pass@1 target). |
+| `baseline` | The default workflow: a **symlink** to `template/workflow.yaml`, the v0.9 baseline harness against which variants are measured (§9.1, ~40% ± 5% pass@1 target). |
+
+**The baseline is the template, not a copy of it.** An experiment is a diff
+against the shipped default, so the baseline's diff is empty — and an empty
+diff has nothing to store. `experiments/baseline/workflow.yaml` is therefore
+a symlink to `template/workflow.yaml` (the same idiom as this repo's
+`CLAUDE.md -> AGENTS.md`, bl-621d): one fact, one home, and `--config
+baseline` resolves through it unchanged. A hand-copy would be a second home
+for the default workflow, free to drift — which it had already begun to do
+(both copies carried the dead `spawn_root_agent` verb bl-0e79 subtracted).
+Editing the baseline is editing the default; that is a `template/` change,
+and a variant of the default is a new directory here.
 
 Variants that beat baseline on a failure category by a statistically
 significant pass@1 margin are the v0.11 milestone (ARCH §12); they slot in

@@ -10,6 +10,22 @@ fn input_for(path: &std::path::Path) -> Vec<u8> {
     serde_json::json!({ "path": path }).to_string().into_bytes()
 }
 
+/// A temp file whose `stat` size is exactly `size`, allocated sparsely
+/// (seek past the end, write one byte) so an over-cap fixture costs no
+/// real disk. Returns the holder — dropping it removes the file.
+fn sparse_file(size: u64) -> NamedTempFile {
+    use std::io::{Seek, SeekFrom, Write};
+    let f = NamedTempFile::new().unwrap();
+    let mut handle = std::fs::OpenOptions::new()
+        .write(true)
+        .open(f.path())
+        .unwrap();
+    handle.seek(SeekFrom::Start(size - 1)).unwrap();
+    handle.write_all(&[0u8]).unwrap();
+    handle.sync_all().unwrap();
+    f
+}
+
 #[test]
 fn happy_path_reads_file_to_stdout() {
     let f = NamedTempFile::new().unwrap();
@@ -87,26 +103,45 @@ fn directory_path_surfaces_read_or_open_error() {
 
 #[test]
 fn oversized_file_surfaces_too_large() {
-    // Construct a file just over the cap and confirm the hard-reject
-    // path. Use seek-and-write so we don't actually allocate 1 MiB+ of
-    // bytes for the test.
-    use std::io::{Seek, SeekFrom, Write};
-    let f = NamedTempFile::new().unwrap();
-    let mut handle = std::fs::OpenOptions::new()
-        .write(true)
-        .open(f.path())
-        .unwrap();
-    handle.seek(SeekFrom::Start(MAX_BYTES + 1)).unwrap();
-    handle.write_all(&[0u8]).unwrap();
-    handle.sync_all().unwrap();
-    drop(handle);
+    // Construct a file well over the cap and confirm the hard-reject
+    // path. Use seek-and-write so we don't actually allocate the bytes.
+    // The size is deliberately far above `cap + 1` — the capped read's
+    // own length — so the reported size can only come from `stat`.
+    let true_size = MAX_BYTES * 7 + 3;
+    let f = sparse_file(true_size);
 
     let mut stdin = Cursor::new(input_for(f.path()));
     let mut stdout = Vec::new();
     let err = run(&mut stdin, &mut stdout).unwrap_err();
     let msg = err.to_string();
-    assert!(matches!(err, Error::TooLarge { .. }), "{msg}");
-    assert!(msg.contains("cap"), "{msg}");
+    assert!(
+        matches!(err, Error::TooLarge { size, cap, .. } if size == true_size && cap == MAX_BYTES),
+        "{msg}",
+    );
+    assert!(msg.contains(&format!("is {true_size} bytes")), "{msg}");
+    assert!(msg.contains(&format!("cap {MAX_BYTES}")), "{msg}");
+}
+
+#[test]
+fn oversize_sizes_are_the_files_own_not_the_capped_read_length() {
+    // Two different oversize files must report two different sizes:
+    // the pre-fix message fabricated `cap + 1` for every one of them.
+    let msg_for = |size: u64| {
+        let f = sparse_file(size);
+        let mut stdin = Cursor::new(input_for(f.path()));
+        let mut stdout = Vec::new();
+        run(&mut stdin, &mut stdout).unwrap_err().to_string()
+    };
+    let small = msg_for(MAX_BYTES + 1);
+    let large = msg_for(MAX_BYTES * 4);
+    assert!(
+        small.contains(&format!("is {} bytes", MAX_BYTES + 1)),
+        "{small}"
+    );
+    assert!(
+        large.contains(&format!("is {} bytes", MAX_BYTES * 4)),
+        "{large}"
+    );
 }
 
 #[test]

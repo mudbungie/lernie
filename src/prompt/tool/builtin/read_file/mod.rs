@@ -59,7 +59,10 @@ pub enum Error {
     },
     /// The file's size exceeds [`MAX_BYTES`]. Reported as a hard
     /// rejection rather than a truncation so the agent sees the cap
-    /// and chooses a different tactic.
+    /// and chooses a different tactic. `size` is the file's **true**
+    /// size (`stat` on the open fd), not the capped read's length —
+    /// an agent deciding between `head -c` and a different tactic
+    /// needs the real magnitude.
     #[error(
         "file {path} is {size} bytes (cap {cap}); use a streaming tool",
         path = path.display()
@@ -94,19 +97,30 @@ pub fn run<R: Read, W: Write>(stdin: &mut R, stdout: &mut W) -> Result<(), Error
         path: path.clone(),
         source,
     })?;
-    // `take(MAX_BYTES + 1)` lets us enforce the cap without a separate
+    // `take(MAX_BYTES + 1)` enforces the cap on the happy path with no
     // `metadata` call: a file at the cap reads MAX_BYTES bytes and
     // succeeds; anything larger trips the post-read length check
-    // below. One `read_to_end` is enough to distinguish.
+    // below, which then (and only then) stats for the true size.
     let mut content = Vec::new();
-    file.take(MAX_BYTES + 1)
+    let mut capped = file.take(MAX_BYTES + 1);
+    capped
         .read_to_end(&mut content)
         .map_err(|source| Error::Read {
             path: path.clone(),
             source,
         })?;
-    let size = content.len() as u64;
-    if size > MAX_BYTES {
+    let read = content.len() as u64;
+    if read > MAX_BYTES {
+        // The capped read only proves the file is over the cap — its
+        // length is `cap + 1` by construction, so reporting it would
+        // fabricate the same size for every oversize file. `stat` the
+        // already-open fd for the true size, floored at what we read:
+        // a stream whose metadata understates its content (procfs
+        // reports len 0) still reports at least the bytes seen.
+        let size = capped
+            .get_ref()
+            .metadata()
+            .map_or(read, |m| m.len().max(read));
         let cap = MAX_BYTES;
         return Err(Error::TooLarge { path, cap, size });
     }

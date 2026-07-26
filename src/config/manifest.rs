@@ -39,19 +39,14 @@ pub struct RoleRules {
 /// change.
 ///
 /// Every variant here is an act assembly can perform on the tree it was
-/// handed (ARCH §5.2) — model-driven shedding is the compaction
-/// checkpoint's, declared once in `workflow.yaml` `compaction:` (§6), and
-/// is deliberately absent from this vocabulary.
-///
-/// `DropOldestSteps` is retained for backward compatibility with
-/// pre-v0.3.1 manifests; new manifests should prefer
-/// `DropOldestSummaries` since step records no longer appear in
-/// context-assembly order (ARCH §2.3 — they live outside every
-/// worktree).
+/// handed (ARCH §5.2), on material that tree can hold — model-driven
+/// shedding is the compaction checkpoint's, declared once in
+/// `workflow.yaml` `compaction:` (§6), and is deliberately absent from
+/// this vocabulary, as is `drop_oldest_steps`, which named step records
+/// that live outside every worktree (§2.2, §2.3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum OverflowPolicy {
-    DropOldestSteps,
     DropOldestSummaries,
     Truncate,
     Drop,
@@ -171,12 +166,7 @@ roles:
 
     #[test]
     fn accepts_each_overflow_variant() {
-        for variant in [
-            "drop_oldest_steps",
-            "drop_oldest_summaries",
-            "truncate",
-            "drop",
-        ] {
+        for variant in ["drop_oldest_summaries", "truncate", "drop"] {
             let yaml = format!(
                 "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: {variant}\n"
             );
@@ -198,6 +188,29 @@ roles:
         match err {
             LoadError::Yaml { source, .. } => {
                 assert!(source.to_string().contains("summarize"), "{source}")
+            }
+            other => panic!("expected Yaml, got {other:?}"),
+        }
+    }
+
+    /// `drop_oldest_steps` was subtracted from the vocabulary (bl-7846),
+    /// on the same argument that retired `summarize`: it named step
+    /// records, which live outside every worktree (ARCH §2.2, §2.3), so
+    /// assembly could never shed anything for it. Declining says so —
+    /// and serde's expected-variant list names `drop_oldest_summaries`,
+    /// the successor an over-budget body actually wants — where riding
+    /// silently kept the word and dropped the behaviour.
+    #[test]
+    fn rejects_retired_drop_oldest_steps_overflow() {
+        let err = parse(
+            "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: drop_oldest_steps\n",
+        )
+        .unwrap_err();
+        match err {
+            LoadError::Yaml { source, .. } => {
+                let msg = source.to_string();
+                assert!(msg.contains("drop_oldest_steps"), "{msg}");
+                assert!(msg.contains("drop_oldest_summaries"), "{msg}");
             }
             other => panic!("expected Yaml, got {other:?}"),
         }

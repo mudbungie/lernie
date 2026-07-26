@@ -14,10 +14,9 @@
   },
   "definitions": {
     "OverflowPolicy": {
-      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.\n\nEvery variant here is an act assembly can perform on the tree it was handed (ARCH §5.2) — model-driven shedding is the compaction checkpoint's, declared once in `workflow.yaml` `compaction:` (§6), and is deliberately absent from this vocabulary.\n\n`DropOldestSteps` is retained for backward compatibility with pre-v0.3.1 manifests; new manifests should prefer `DropOldestSummaries` since step records no longer appear in context-assembly order (ARCH §2.3 — they live outside every worktree).",
+      "description": "Closed set of overflow strategies. Adding one is intentionally a code change.\n\nEvery variant here is an act assembly can perform on the tree it was handed (ARCH §5.2), on material that tree can hold — model-driven shedding is the compaction checkpoint's, declared once in `workflow.yaml` `compaction:` (§6), and is deliberately absent from this vocabulary, as is `drop_oldest_steps`, which named step records that live outside every worktree (§2.2, §2.3).",
       "type": "string",
       "enum": [
-        "drop_oldest_steps",
         "drop_oldest_summaries",
         "truncate",
         "drop"

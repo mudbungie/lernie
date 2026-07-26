@@ -92,7 +92,7 @@ impl AdapterRunner for DepositMidCall<'_> {
         args: &[&str],
         _stdin: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         let bytes = if args.contains(&"--version") {
             version_line()
         } else {
@@ -109,7 +109,7 @@ impl AdapterRunner for DepositMidCall<'_> {
         for line in bytes.split(|b| *b == b'\n').filter(|l| !l.is_empty()) {
             on_line(line)?;
         }
-        Ok(())
+        Ok(Vec::new())
     }
 }
 

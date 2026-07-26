@@ -3,8 +3,9 @@
 //!
 //! Malformed JSONL surfaces as [`Error::AdapterJson`]; a stream with no
 //! trailing `end` (killed mid-stream) surfaces as
-//! [`Error::AdapterHalfStream`]; a tool_use block whose `json_delta`
-//! buffer is not valid JSON surfaces as `AdapterJson`.
+//! [`Error::AdapterHalfStream`], quoting the adapter's stderr tail when
+//! it had anything to say; a tool_use block whose `json_delta` buffer is
+//! not valid JSON surfaces as `AdapterJson`.
 
 use super::fixtures::*;
 use crate::prompt::Error;
@@ -24,7 +25,22 @@ fn run_surfaces_half_stream_as_adapter_half_stream() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(b"");
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::AdapterHalfStream));
+    assert!(matches!(err, Error::AdapterHalfStream { .. }));
+}
+
+#[test]
+fn run_surfaces_the_adapter_stderr_when_it_never_reached_the_contract() {
+    // The startup-failure shape (Foxglove finding 9): `bz` dies on a
+    // malformed brazen config, so stdout carries no events at all and
+    // the cause exists only on stderr. Without the capture this reads as
+    // a bare mid-stream kill and the operator learns nothing.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy_with_stderr(b"", b"bz: config.toml: expected `=`\n");
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    assert!(matches!(err, Error::AdapterHalfStream { .. }));
+    let text = err.to_string();
+    assert!(text.contains("bz: config.toml: expected `=`"), "{text}");
+    assert!(text.contains("stderr.log"), "{text}");
 }
 
 #[test]

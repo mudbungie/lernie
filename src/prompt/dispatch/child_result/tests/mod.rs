@@ -28,7 +28,7 @@ impl AdapterRunner for NoAdapter {
         _a: &[&str],
         _s: &[u8],
         _o: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         unreachable!("adapter is never reached on the interpreter path")
     }
 }

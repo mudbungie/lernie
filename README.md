@@ -222,19 +222,6 @@ contract, ARCH §4.2) — so there is no new `lernie` flag or verb. Local
 that is actually pulled and served; the credential note above applies to
 the `anthropic` default alone.
 
-**What `SMOKE_PROVIDER=local` does and does not prove.** bz's `local`
-row (protocol `ollama_chat`) rejects a canonical `tool_result` block:
-the second step of any tool-using run comes back as
-`{"type":"error","kind":"parse_input","message":"user accepts only text
-content"}`. So the local recipe validates the **tool-free path only** —
-one model call, assistant text, a committed transcript entry. It cannot
-exercise a tool step, a compactor (whose whole toolset is
-`write_summary`/`mark_for_deletion`), or any multi-step loop that runs a
-tool. This is a brazen-side gap in that provider row, not a lernie one,
-and is filed there as brazen `bl-fba7`; to smoke a tool-using path,
-point `SMOKE_PROVIDER`/`SMOKE_MODEL` at a row whose protocol carries
-tool results.
-
 `make smoke` is deliberately **not** part of `make check` or the close
 gate: `make check` mocks the wire (httpmock Anthropic SSE), so it can
 never catch a shipped default that fails on the real provider — which is
@@ -289,15 +276,14 @@ after it govern under the new head (fork is the freeze, §2.2).
 lernie prompt /path/to/my-conversation 'hello'
 ```
 
-`lernie prompt` is the root-agent path (ARCH §2.3, §2.6, §2.7,
+`lernie prompt` is the root-conversation path (ARCH §2.3, §2.6, §2.7,
 §2.8, §2.10). Each invocation spawns its own `agents/<conv-id>` branch
 off the default config branch's head (§2.2–§2.3 — there is no `main`),
-drives each step's model call through brazen's `bz` (§4.4), and steps
-until a terminal event. **There is no terminal compaction stage** (§2.7):
-compaction runs only at the checkpoints `workflow.yaml` declares, and a
-branch with no configured trigger never compacts. Merge-back is gone
-(§2.6): the root branch persists on its own ref (§2.4), and a child
-returns by depositing a result message into its parent's inbox (§2.6):
+drives the model call through brazen's `bz` (§4.4), and runs the
+terminal compactor off the tip — the compaction merge lands into the
+conversation's own branch. Merge-back is gone (§2.6): the root branch
+persists on its own ref (§2.4), and a child returns by depositing a
+result message into its parent's inbox (§2.6):
 
 1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
    §2.2) and guard the workspace layout (a non-workspace, or the
@@ -389,16 +375,6 @@ returns by depositing a result message into its parent's inbox (§2.6):
    (§2.10). `tool_use`/`tool_result` pairing holds by construction: a
    tool result commits immediately after its emitting step's model-output
    entry, so it always lands in the immediately following user message.
-   Closing each tool step, the executor reads the **compaction
-   checkpoint clock** (§2.7, §6) — `compaction.intermediate.trigger` in
-   `workflow.yaml`: `every_n_commits`, `every_t_seconds`, or the
-   agent-elected `on_flush`, all derived from git (commits and elapsed
-   seconds since the last compaction merge, or the branch root when none
-   has landed — never a stored counter). When it is due, the
-   `worker_flush: dispatch(compactor)` binding forks a compactor off the
-   branch tip — the checkpoint commit `C` — and the branch keeps
-   stepping straight through it; no quiescence is imposed. Omit the
-   `compaction:` block and the branch never compacts.
 7. **Terminal return (§2.6, §2.3 step 5).** Every terminal event —
    normal completion (`final-response`), budget exhaustion
    (`budget-exhausted`, §6), and stop (`stopped`, §2.9 — the executor's
@@ -413,52 +389,29 @@ returns by depositing a result message into its parent's inbox (§2.6):
    fork-point→terminal **work-product transfer** as one commit before its
    delivery commit, filtered to work products; a diff that fails to apply
    is declined at `refs/lernie/conflicted/<agent-id>` (§2.6).
-8. **Exit protocol (§2.11).** With the terminal deposit landed, the
-   executor runs the branch's terminal `workflow.yaml` bindings
-   (`branch_stopped` → `mark_abandoned` / `notify_ui`, §6), releases the
-   executor lock, and only then spawns a driver at its own agent and —
-   the deposit's own probe-and-launch — at the parent the deposit just
-   revived. Both launches are fire-and-forget and both are decided by
-   epitaph *value*: a final response launches, `stopped` and
-   `budget-exhausted` never do. **No terminal compactor is dispatched**
-   (§2.7): the v0.3 terminal-compaction stage is deleted, along with the
-   `Dispatcher` re-entry that existed only to run it. Compaction is a
-   checkpoint event (step 6), never an exit stage. **Merge-back is gone
-   (§2.6):** the root branch persists on its own ref (§2.4); nothing
-   merges back, and the agent's worktree is not torn down (quiescence,
-   not teardown, §2.3 step 6).
+8. On a normal completion, dispatch the terminal compactor (§2.7) off the
+   conversation tip by re-entering the binary as `lernie dispatch
+   compactor <repo> <conv-id>` (§3.4). The compactor spawns branch
+   `<conv-id>-<cmp-id>` (hyphenated descent per §2.2) off the tip, writes
+   a placeholder `summary/001.md`, and lands the **compaction merge** —
+   a plain `--no-ff` merge into the conversation branch, the one merge
+   left in the system (§2.6), conflict-free with no rebase or alignment.
+   The compactor is a stub — it does not call a model; the shape exists so
+   v0.4+ can layer real semantics without moving call sites. **Merge-back
+   is gone (§2.6):** the root branch persists on its own ref (§2.4);
+   nothing merges anywhere, and the conversation worktree is not torn
+   down (quiescence, not teardown, §2.3 step 6).
 9. Print the agent id (the bare conv-id) on stdout.
 
-After `lernie prompt` returns, inspect the agent against the bare
-workspace repository:
+After `lernie prompt` returns, inspect the conversation against the
+bare workspace repository:
 
 ```
 cd /path/to/my-workspace
 git -C repo.git log --oneline --decorate agents/<conv-id> -4
-git -C repo.git ls-tree --name-only agents/<conv-id> messages/
-git -C repo.git show "agents/<conv-id>:messages/002-<model-id>.json"
-ls steps/<conv-id>/
+git -C repo.git show --stat agents/<conv-id>  # the compaction merge commit
+git -C repo.git show agents/<conv-id>:summary/001.md # terminal summary
 ```
-
-The log is the dispatch commit followed by one `transcript NNN:` commit
-per entry, its subject naming that entry's **origin token** — `user`, a
-sender's agent id, `tool`, or the authoring model's id:
-
-```
-f265de7 (agents/…) transcript 002: qwen3.5:9b […]
-7ae527e transcript 001: user […]
-f643a50 step 001: dispatch […]
-6f4bd05 (config/default) config: init [config/default]
-```
-
-`ls-tree` lists the transcript itself (`messages/001-user.md`,
-`messages/002-<model-id>.json`, …) and `show` prints one entry — a
-model-output entry is a JSON array of canonical `Content` blocks, e.g.
-`[{"type":"text","text":"pong"}]`. `ls steps/<conv-id>/` lists the
-off-worktree step records, one numbered directory per step, each holding
-`request.json`, `response.json`, and `meta.json`. There is **no merge
-commit and no `summary/`** on a branch that never reached a compaction
-checkpoint (step 6) — those appear only once a compactor has returned.
 
 The root branch persists unmerged by design (§2.4), so the health metric
 is no longer branch count but silent deaths and undelivered returns
@@ -571,14 +524,13 @@ Built-ins:
   result comes back as a **deposit into the parent's inbox** carrying
   an epitaph (§2.6, §2.11), so `await`/`check` had nothing left to
   observe and are gone. The return path — the result-message deposit
-  and the delivery-time work-product transfer — is built and live
-  (bl-4ce8, bl-9f53, bl-c33b, §2.6), and **children run full step
-  loops**: the dispatch's own front-door deposit finds the fresh child
-  quiescent and launches the ordinary driver, `lernie advance` (§6) —
-  there is no child-specific loop and no worker path — which steps the
-  child to a terminal event, deposits its epitaph result (final-response,
-  budget-exhausted, or stop) into the parent's inbox, and revives the
-  parent, which delivers the result at its next step boundary.
+  and the delivery-time work-product transfer — is now built (bl-4ce8,
+  bl-9f53, §2.6); the epitaph deposits (final-response, budget-exhausted,
+  and stop — the executor-side SIGTERM handler, §2.9) are wired at the
+  root's terminal events but fire for a child only once children run a
+  step loop (`worker.rs` still stops at the dispatch commit), so today
+  `dispatch` spawns the child and returns its address while the child does
+  not yet reach a terminal event.
 - **`message`** — deposits content into an *existing* agent's inbox
   (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
   by its agent id (its branch name / hyphenated descent). Unlike
@@ -738,10 +690,11 @@ behind `lernie scan` and *only* there — driver startup (`lernie prompt`,
 `lernie dispatch`, `lernie advance`) runs no workspace scan. The flush
 and the exit launch reuse the same driver-launch seam as `lernie
 message`, and the spawn is real: each seam decides *when* a driver is
-needed and detach-spawns `lernie advance` (§6) for it. Children run full
-step loops (bl-c33b), so a `died` child is a state a real run reaches; the
-derivation is additionally exercised against constructed on-disk states,
-since a hard crash is not reproducible on demand.
+needed and detach-spawns `lernie advance` (§6) for it. Because a child
+does not yet
+run a step loop (the worker path stops at the dispatch commit), a real
+"died child" cannot arise from a run today — the derivation is exercised
+against constructed on-disk states.
 
 **Namespace note.** The candidate enumeration is the `agents/*` ref
 namespace, exactly as ARCH §8 writes it (a root is `agents/<conv-id>`,
@@ -751,48 +704,29 @@ structurally by the prefix — there is no `main` (§2.2).
 ## Dispatching subagents directly
 
 `lernie dispatch <role> <repo> <branch> [--goal <text>]` is the §3.4
-re-entry point every child dispatch uses. It is **writer-shaped, not an
-executor** (ARCH §2.1): it forks the child branch, lands the dispatch
-commit, and deposits the dispatch message through the same front door
-every sender uses — the driver that deposit launches is the ordinary
-`lernie advance` (§6). The role name is positional and the role set is
-**open** (§4.3): a role is dispatchable iff the calling branch's
-governing config commit lists it under `providers.yaml` `roles:` and
-carries `souls/<role>.md`. The CLI enumerates no role names, so a
-verifier, a critic, or a role you author needs no CLI change; validity
-is checked *before* the fork, so a rejected role leaves no branch debris.
+re-entry point every subagent uses. The role name is positional, so
+the surface generalizes across the v0.3 compactor, the v0.4 worker,
+and future roles (verifier, critic, …) without a CLI shape change.
 
-- `lernie dispatch compactor <workspace> <conv-id>` forks a
-  compactor-souled child off that agent's tip — exactly what a due
-  compaction checkpoint does (§2.7), run by hand. The compactor is an
-  **ordinary child that makes a real model call** through `bz`; it is not
-  a stub, and it does not merge anything itself. Its goal is
-  procedure-generated, so passing `--goal` is rejected. Its toolset is
-  the deletion-only pair injected for the compactor role alone (never a
-  `providers.yaml` `tools:` list): `write_summary`, which writes the next
-  `summary/<NNN>.md` on the compactor's branch, and `mark_for_deletion`,
-  a staged `git rm` that can remove but never write content — so the
-  worst case is lost information, never corrupted information. The
-  **compaction merge** lands later and elsewhere: when the compactor's
-  result message is delivered, the dispatching agent's own executor
-  interprets its `compactor_return: compaction_merge` binding (§6) and
-  merges the compactor branch `--no-ff` — the one merge left in the
-  system (§2.6). A compactor that ends on any other epitaph lands no
-  merge; the branch simply continues uncompacted.
+- `lernie dispatch compactor <workspace> <conv-id>` runs the same
+  terminal-compaction routine `lernie prompt` triggers internally.
+  Useful for re-compacting a conversation branch that still exists as
+  a ref, or for testing the compactor path independently. The
+  compactor's goal is built-in boilerplate; passing `--goal` is
+  rejected. The command runs the compaction + the compaction merge
+  into the conversation branch — the one merge in the system (§2.6).
 - `lernie dispatch worker <workspace> <parent-id> --goal <text>`
-  spawns a worker child off the parent's tip. The new id is
+  spawns a worker subagent off the parent's tip. The new id is
   `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref
   `agents/<parent>-<sub-id>` (§2.3), its worktree
   `agents/<parent>-<sub-id>/`; `goal.md` carries the supplied text and
   `soul.md` is read from the parent's governing config commit
   (`souls/worker.md`, §2.2), both committed as the dispatch commit
-  (§2.3 step 2). The child then **runs a full step loop** under the
-  `lernie advance` driver its dispatch deposit launched, and at its
-  terminal event deposits a result message — epitaph, terminal ref, and
-  the terminal response iff it spoke — into the parent's inbox, reviving
-  the parent if it had gone quiescent (§2.6, §2.11). The v0.4 "Phase 1
-  stops at the dispatch commit" worker path (`worker.rs`) is **deleted**,
-  not extended (bl-c33b).
+  (§2.3 step 2). v0.4 Phase 1 stops there — the worker's own step loop
+  is a later milestone. The inbox result-return path it will use is
+  already built (result-message deposit + work-product transfer, bl-4ce8,
+  §2.6); it fires once the child runs a step loop and reaches a terminal
+  event.
 
 ## Providers
 
@@ -815,7 +749,13 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
   (`CanonicalError::retryable()`, the linked crate's single home for the
   fact) the harness re-invokes `bz` up to the `workflow.yaml` attempt cap
   (§2.10). Each attempt appends one segment to `response.json`; the last
-  is authoritative.
+  is authoritative. Each attempt's `bz` stderr appends to the step's
+  `stderr.log` beside it — empty on an ordinary run, because brazen
+  speaks its failures in-band on stdout. A `bz` that dies *before* it can
+  (a malformed brazen config) leaves an empty stream that reads exactly
+  like a mid-stream kill, so the half-stream error quotes that capture's
+  tail; with a stop pending it stays quiet, because the stop check point
+  (§2.9) discards the outcome before anything is rendered.
 - **Auth and endpoints are brazen's.** Provider *rows* (endpoint,
   protocol, auth mode, model aliases) live in brazen's own config
   (`~/.config/brazen/config.toml`; `bz --dump-config`, `bz --login`).

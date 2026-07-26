@@ -37,6 +37,9 @@ pub(super) fn version_line() -> Vec<u8> {
 /// [`version_line`]; adapter-override tests skip that.
 pub(super) struct StubAdapter {
     replies: RefCell<VecDeque<AdapterReply>>,
+    /// Per-invocation stderr captures (§2.3). An exhausted queue is the
+    /// ordinary case: an adapter that says nothing there.
+    stderr: RefCell<VecDeque<Vec<u8>>>,
     pub(super) observed: RefCell<Vec<AdapterCall>>,
 }
 
@@ -47,6 +50,7 @@ impl StubAdapter {
     {
         Self {
             replies: RefCell::new(replies.into_iter().collect()),
+            stderr: RefCell::new(VecDeque::new()),
             observed: RefCell::new(Vec::new()),
         }
     }
@@ -58,6 +62,15 @@ impl StubAdapter {
             AdapterReply::Ok(version_line()),
             AdapterReply::Ok(model_stream.to_vec()),
         ])
+    }
+
+    /// [`Self::happy`] with the model call's `bz` also writing to
+    /// stderr — the startup-failure shape when the stream is empty.
+    pub(super) fn happy_with_stderr(model_stream: &[u8], stderr: &[u8]) -> Self {
+        let stub = Self::happy(model_stream);
+        // The version guard runs first and says nothing on stderr.
+        *stub.stderr.borrow_mut() = [Vec::new(), stderr.to_vec()].into();
+        stub
     }
 
     pub(super) fn reply_ok(bytes: &[u8]) -> AdapterReply {
@@ -75,7 +88,7 @@ impl AdapterRunner for StubAdapter {
         args: &[&str],
         stdin_bytes: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         self.observed.borrow_mut().push((
             binary.clone(),
             args.iter().map(|s| (*s).to_owned()).collect(),
@@ -92,7 +105,7 @@ impl AdapterRunner for StubAdapter {
             }
             on_line(line)?;
         }
-        Ok(())
+        Ok(self.stderr.borrow_mut().pop_front().unwrap_or_default())
     }
 }
 

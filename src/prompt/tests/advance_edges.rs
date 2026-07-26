@@ -29,9 +29,9 @@ impl AdapterRunner for StopMidCallAdapter<'_> {
         _args: &[&str],
         _stdin: &[u8],
         _on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         self.flag.store(true, Ordering::SeqCst);
-        Ok(()) // zero lines: a half-stream, no terminal `end`
+        Ok(Vec::new()) // zero lines: a half-stream, no terminal `end`
     }
 }
 

@@ -200,7 +200,11 @@ fn error_display_includes_context() {
         message: "m".into(),
     }
     .to_string();
-    let _: String = Error::AdapterHalfStream.to_string();
+    let _: String = Error::AdapterHalfStream {
+        stderr_log: "steps/c/001/stderr.log".into(),
+        tail: "(empty)".into(),
+    }
+    .to_string();
     let _: String = Error::VersionSkew {
         found: "9.9.9".into(),
         expected: "0.0.2".into(),

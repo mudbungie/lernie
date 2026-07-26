@@ -82,21 +82,21 @@ impl AdapterRunner for FlipMidCall<'_> {
         args: &[&str],
         _stdin: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         if args.contains(&"--version") {
             for line in version_line().split(|b| *b == b'\n') {
                 if !line.is_empty() {
                     on_line(line)?;
                 }
             }
-            return Ok(());
+            return Ok(Vec::new());
         }
         // The model call: SIGTERM lands now. Emit a `message_start` and
         // stop — no `end`, the stop signature — then set the flag so the
         // executor's next check point reads the stop.
         on_line(br#"{"type":"message_start","v":1,"role":"assistant"}"#)?;
         self.flag.store(true, Ordering::SeqCst);
-        Ok(())
+        Ok(Vec::new())
     }
 }
 

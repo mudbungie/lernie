@@ -14,6 +14,8 @@
 //!   from a signal not under harness control" §2.10 fault.
 //! - [`errors`]: failure modes of resolution, spawn, and disk-record
 //!   I/O.
+//! - [`etxtbsy`]: the "text file busy" retry envelope around a spawn,
+//!   both arms, on waits that cannot be closed by machine load.
 //! - [`bash_tool`], [`read_file_tool`]: end-to-end through the
 //!   cargo-built `lernie` binary (the §3.3 third hop), injected as the
 //!   driver target via [`crate::test_support::lernie_binary`].
@@ -21,6 +23,7 @@
 mod bash_tool;
 mod cascade;
 mod errors;
+mod etxtbsy;
 mod fixtures;
 mod happy;
 mod read_file_tool;

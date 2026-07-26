@@ -98,13 +98,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
 
     // Adapter called twice: the version guard (`bz --version`) then the
     // model call (`bz --json --provider anthropic`, request on stdin).
-    let calls = adapter.observed.borrow().clone();
-    assert_eq!(calls.len(), 2, "version guard + model call");
-    let (binary, args, stdin) = calls[0].clone();
+    let invocations = adapter.observed.borrow().clone();
+    assert_eq!(invocations.len(), 2, "version guard + model call");
+    let (binary, args, stdin) = invocations[0].clone();
     assert_eq!(binary, OsStr::new("bz"));
     assert_eq!(args, vec!["--version"]);
     assert!(stdin.is_empty());
-    let (binary, args, stdin) = calls[1].clone();
+    let (binary, args, stdin) = invocations[1].clone();
     assert_eq!(binary, OsStr::new("bz"));
     assert_eq!(args, vec!["--json", "--provider", "anthropic"]);
     // The model-call stdin matches request.json byte-for-byte in
@@ -244,10 +244,10 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
 
     // Exactly one adapter call — the model call — against the override
     // binary; no `--version` guard call.
-    let calls = adapter.observed.borrow().clone();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, OsStr::new("/opt/alt-bz"));
-    assert_eq!(calls[0].1, vec!["--json", "--provider", "anthropic"]);
+    let invocations = adapter.observed.borrow().clone();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0].0, OsStr::new("/opt/alt-bz"));
+    assert_eq!(invocations[0].1, vec!["--json", "--provider", "anthropic"]);
 }
 
 #[test]
@@ -280,8 +280,8 @@ fn run_under_injected_adapter_target_skips_version_guard_and_uses_the_target() {
 
     // Exactly one adapter call — the model call — against the injected
     // target; no `--version` guard call.
-    let calls = adapter.observed.borrow().clone();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, OsStr::new("/opt/host-bz"));
-    assert_eq!(calls[0].1, vec!["--json", "--provider", "anthropic"]);
+    let invocations = adapter.observed.borrow().clone();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0].0, OsStr::new("/opt/host-bz"));
+    assert_eq!(invocations[0].1, vec!["--json", "--provider", "anthropic"]);
 }

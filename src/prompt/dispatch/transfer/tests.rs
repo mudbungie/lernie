@@ -193,12 +193,12 @@ struct StubGit {
     apply_fails: bool,
     fail_commit: bool,
     fail_update_ref: bool,
-    calls: RefCell<Vec<String>>,
+    invocations: RefCell<Vec<String>>,
 }
 
 impl GitRunner for StubGit {
     fn run(&self, _dest: &std::path::Path, args: &[&str]) -> io::Result<()> {
-        self.calls.borrow_mut().push(args[0].to_string());
+        self.invocations.borrow_mut().push(args[0].to_string());
         match args[0] {
             "diff" => {
                 if self.fail_diff {
@@ -219,7 +219,7 @@ impl GitRunner for StubGit {
         }
     }
     fn run_capture(&self, _dest: &std::path::Path, args: &[&str]) -> io::Result<String> {
-        self.calls.borrow_mut().push(args[0].to_string());
+        self.invocations.borrow_mut().push(args[0].to_string());
         // Only merge-base is captured; return a plausible fork sha.
         Ok("f0f0f0f0".to_string())
     }
@@ -289,5 +289,5 @@ fn apply_declines_and_surfaces_update_ref_failure() {
         "got {err:?}"
     );
     // The decline path was taken: apply ran, then update-ref.
-    assert!(git.calls.borrow().iter().any(|c| c == "update-ref"));
+    assert!(git.invocations.borrow().iter().any(|c| c == "update-ref"));
 }

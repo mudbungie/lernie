@@ -20,7 +20,7 @@ fn flush_launches_only_free_pending_inboxes() {
     let launcher = StubLauncher::default();
     let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
     assert_eq!(report.flushed, vec!["a1".to_string()]);
-    assert_eq!(launcher.calls(), vec!["a1".to_string()]);
+    assert_eq!(launcher.invocations(), vec!["a1".to_string()]);
 }
 
 #[test]
@@ -184,7 +184,7 @@ fn an_inbox_with_no_agent_branch_is_reported_never_launched() {
     let launcher = StubLauncher::default();
     let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
     assert!(report.flushed.is_empty(), "no driver is launched");
-    assert!(launcher.calls().is_empty(), "nothing is spawned");
+    assert!(launcher.invocations().is_empty(), "nothing is spawned");
     assert_eq!(
         report.inboxes_without_branch,
         vec!["no-such-agent".to_string()]

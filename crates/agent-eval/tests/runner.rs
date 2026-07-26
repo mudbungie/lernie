@@ -32,11 +32,11 @@ impl Agent for FakeAgent {
 /// Records every bundle request.
 #[derive(Default)]
 struct RecordingBundler {
-    calls: Mutex<Vec<PathBuf>>,
+    invocations: Mutex<Vec<PathBuf>>,
 }
 impl Bundler for RecordingBundler {
     fn bundle(&self, _target: &BundleTarget, dest: &Path) -> io::Result<()> {
-        self.calls.lock().unwrap().push(dest.to_path_buf());
+        self.invocations.lock().unwrap().push(dest.to_path_buf());
         Ok(())
     }
 }
@@ -90,10 +90,10 @@ fn evaluate_covers_all_run_shapes() {
     assert!((m.overall.pass_at_1 - 0.25).abs() < 1e-9);
 
     // Only the bundleable failing task was archived — once per run.
-    let calls = bundler.calls.lock().unwrap();
-    assert_eq!(calls.len(), 5);
-    assert!(calls.iter().all(|p| p.starts_with(bundle_dir.path())));
-    let first = calls[0].file_name().unwrap().to_str().unwrap();
+    let invocations = bundler.invocations.lock().unwrap();
+    assert_eq!(invocations.len(), 5);
+    assert!(invocations.iter().all(|p| p.starts_with(bundle_dir.path())));
+    let first = invocations[0].file_name().unwrap().to_str().unwrap();
     assert!(first.starts_with("fail-bundle-"));
 }
 

@@ -51,7 +51,7 @@ pub(super) struct StubGit {
     ls_tree: HashMap<String, String>,
     tips: HashMap<String, String>,
     fail_op: Option<&'static str>,
-    calls: RefCell<Vec<Vec<String>>>,
+    invocations: RefCell<Vec<Vec<String>>>,
 }
 
 impl StubGit {
@@ -80,7 +80,7 @@ impl GitRunner for StubGit {
         unreachable!("scan issues only run_capture")
     }
     fn run_capture(&self, _dest: &std::path::Path, args: &[&str]) -> io::Result<String> {
-        self.calls
+        self.invocations
             .borrow_mut()
             .push(args.iter().map(|s| (*s).to_string()).collect());
         match args.first().copied() {
@@ -130,16 +130,16 @@ impl GitRunner for StubGit {
 /// Capturing [`Launcher`]; records each launched agent.
 #[derive(Default)]
 pub(super) struct StubLauncher {
-    calls: RefCell<Vec<String>>,
+    invocations: RefCell<Vec<String>>,
 }
 impl StubLauncher {
-    pub(super) fn calls(&self) -> Vec<String> {
-        self.calls.borrow().clone()
+    pub(super) fn invocations(&self) -> Vec<String> {
+        self.invocations.borrow().clone()
     }
 }
 impl Launcher for StubLauncher {
     fn launch(&self, _workspace: &std::path::Path, agent_id: &str) -> io::Result<()> {
-        self.calls.borrow_mut().push(agent_id.to_string());
+        self.invocations.borrow_mut().push(agent_id.to_string());
         Ok(())
     }
 }

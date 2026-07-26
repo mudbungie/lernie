@@ -89,7 +89,7 @@ fn render(e: Entry) -> String {
 
 /// Expand `patterns` (in declared order — category order is priority)
 /// against the walked file list, reading each selected file once.
-/// `taken` spans calls so a file matched by `pinned` never re-enters
+/// `taken` spans invocations so a file matched by `pinned` never re-enters
 /// via `order`. Non-UTF-8 bytes compose lossily: assembled context is
 /// text, and declining a skill's stray binary asset would hold the
 /// whole branch hostage to it.

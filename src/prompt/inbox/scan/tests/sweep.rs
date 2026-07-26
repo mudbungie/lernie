@@ -26,7 +26,7 @@ fn sweep_deposits_died_for_a_child_that_never_returned() {
     // The flush that follows launches a driver for the freshly-filled
     // parent inbox — never for the child (nothing pending there).
     assert_eq!(report.flushed, vec![PARENT.to_string()]);
-    assert_eq!(launcher.calls(), vec![PARENT.to_string()]);
+    assert_eq!(launcher.invocations(), vec![PARENT.to_string()]);
 }
 
 #[test]

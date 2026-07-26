@@ -31,7 +31,7 @@ pub(super) fn env(repo: &Path, branch: &str) -> StubEnv {
 /// Stub spawner records the call args and returns a canned outcome.
 pub(super) struct StubSpawner {
     pub(super) out: DispatchOutput,
-    pub(super) calls: RefCell<Vec<(String, PathBuf, String, String)>>,
+    pub(super) invocations: RefCell<Vec<(String, PathBuf, String, String)>>,
 }
 
 impl StubSpawner {
@@ -42,7 +42,7 @@ impl StubSpawner {
                 stderr: String::new(),
                 exit: 0,
             },
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
         }
     }
     pub(super) fn failing(stderr: &str, exit: i32) -> Self {
@@ -52,7 +52,7 @@ impl StubSpawner {
                 stderr: stderr.to_string(),
                 exit,
             },
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
         }
     }
     pub(super) fn empty_stdout() -> Self {
@@ -62,7 +62,7 @@ impl StubSpawner {
                 stderr: String::new(),
                 exit: 0,
             },
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
         }
     }
 }
@@ -75,7 +75,7 @@ impl Spawner for StubSpawner {
         branch: &str,
         goal: &str,
     ) -> Result<DispatchOutput, io::Error> {
-        self.calls.borrow_mut().push((
+        self.invocations.borrow_mut().push((
             role.to_string(),
             repo.to_path_buf(),
             branch.to_string(),

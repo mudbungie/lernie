@@ -14,27 +14,33 @@
 //! Inspection is then the ordinary frontend over the scratch workspace
 //! (§3.5) — **replay is not a mode** (§2.3); it is plumbing plus a verb.
 //!
-//! With the workspace substrate (§2.2), the governing config commit is
-//! an ancestor of every agent branch, so it travels inside the bundle's
-//! ancestry exactly as §9.2 promises — no config sidecar. (The bundle's
-//! *refs* are the `agents/*` subtree only; the config commit rides as a
-//! reachable object, and the agent's governing commit is re-derivable
-//! from the dispatch commit's parent.)
+//! **The governing lineage rides as refs.** Control is read from the
+//! governing config commit, and that commit is *derived* — the nearest
+//! ancestor of the agent's branch reachable from a `config/*` ref
+//! ([`workspace::governing_config`], §2.2). A bundle of the `agents/*`
+//! subtree alone carries that commit as a reachable object but names no
+//! `config/*` ref, so the replayed workspace has nothing to take the
+//! merge-base *against* and every verb declines. The bundle therefore
+//! carries the subtree's governing lineage — the `config/*` refs whose
+//! history reaches it ([`workspace::config_lineage`]) — beside the
+//! agent refs. Still no sidecar: the refs are the single source, and the
+//! replayed repo derives its governing config by the same computation
+//! over the same candidate set as the workspace it came from.
 
 use crate::template::GitRunner;
 use crate::workspace;
+use slices::{SLICES, copy_dir_all, copy_matching};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+mod slices;
 #[cfg(test)]
 mod tests;
 
 /// The bundle filename inside an archive directory (§9.2 "One `git
 /// bundle`").
 pub const BUNDLE_FILE: &str = "agents.bundle";
-/// The diagnostic slice directory names carried beside the bundle (§2.2).
-const SLICES: [&str; 2] = ["steps", "inbox"];
 
 /// Every way [`bundle`] or [`replay`] can fail.
 #[derive(Debug, thiserror::Error)]
@@ -63,9 +69,11 @@ pub enum ArchiveError {
 }
 
 /// Archive the agent subtree rooted at `agent_id` into `out_dir` (§9.2):
-/// one `git bundle` of `agents/<agent_id>` and its hyphen-descendants (with
-/// all ancestry they reach — the governing config commit included, §2.2),
-/// plus the `steps/<id>*` and `inbox/<id>*` slices.
+/// one `git bundle` of `agents/<agent_id>`, its hyphen-descendants, and
+/// the subtree's governing config lineage (§2.2 — the `config/*` refs
+/// whose history reaches the subtree, so the replayed workspace derives
+/// its governing config exactly as this one does), plus the
+/// `steps/<id>*` and `inbox/<id>*` slices.
 /// The layout is guarded first ([`workspace::require`], §10) — the retired
 /// layout is declined before any git op, like every verb. The bundle's
 /// refs are then enumerated with `git branch --list` against the bare
@@ -80,10 +88,11 @@ pub fn bundle(
 ) -> Result<(), ArchiveError> {
     workspace::require(ws)?;
     let repo = workspace::repo_git(ws);
-    let refs = subtree_refs(&repo, agent_id, git)?;
+    let mut refs = subtree_refs(&repo, agent_id, git)?;
     if refs.is_empty() {
         return Err(ArchiveError::UnknownAgent(agent_id.to_owned()));
     }
+    refs.extend(governing_lineage(ws, agent_id, git)?);
     fs::create_dir_all(out_dir)?;
     let bundle_path = out_dir.join(BUNDLE_FILE);
     let bundle_str = bundle_path.to_string_lossy().into_owned();
@@ -202,8 +211,27 @@ fn subtree_refs(
         .collect())
 }
 
+/// The `config/*` refs the bundle must carry beside the subtree: the
+/// governing lineage of its root ([`workspace::config_lineage`], §2.2).
+/// Every hyphen-descendant forks off a commit of the root's branch
+/// (§2.3), so the root's lineage is the whole subtree's.
+fn governing_lineage(
+    ws: &Path,
+    agent_id: &str,
+    git: &dyn GitRunner,
+) -> Result<Vec<String>, ArchiveError> {
+    let lineage =
+        workspace::config_lineage(ws, agent_id, git).map_err(|source| ArchiveError::Git {
+            op: "config lineage",
+            source,
+        })?;
+    Ok(lineage.into_iter().map(|(head, _)| head).collect())
+}
+
 /// The agent ids a bundle carries (the `refs/heads/agents/` prefix
-/// stripped, §2.3), via `git bundle list-heads`.
+/// stripped, §2.3), via `git bundle list-heads`. The bundle's other
+/// refs — the governing config lineage — are not agents and are not
+/// counted: the primary id is derived over agent refs alone.
 fn bundle_heads(
     dir: &Path,
     bundle_path: &Path,
@@ -221,12 +249,7 @@ fn bundle_heads(
         .filter_map(|l| {
             let refname = l.split_whitespace().nth(1)?;
             let short = refname.strip_prefix("refs/heads/").unwrap_or(refname);
-            Some(
-                short
-                    .strip_prefix(workspace::AGENT_REF_PREFIX)
-                    .unwrap_or(short)
-                    .to_owned(),
-            )
+            Some(short.strip_prefix(workspace::AGENT_REF_PREFIX)?.to_owned())
         })
         .collect())
 }
@@ -258,43 +281,4 @@ fn run(
 ) -> Result<(), ArchiveError> {
     git.run(dest, args)
         .map_err(|source| ArchiveError::Git { op, source })
-}
-
-/// Copy each entry of `src_root` named `<agent_id>` or `<agent_id>-*`
-/// into `dst_root`. A missing `src_root` (no slice for this run) is a
-/// clean no-op; `dst_root` is created only when something matches.
-fn copy_matching(src_root: &Path, dst_root: &Path, agent_id: &str) -> io::Result<()> {
-    if !src_root.is_dir() {
-        return Ok(());
-    }
-    let prefix = format!("{agent_id}-");
-    for entry in fs::read_dir(src_root)? {
-        let entry = entry?;
-        let name = entry.file_name();
-        let name_s = name.to_string_lossy();
-        if *name_s == *agent_id || name_s.starts_with(&prefix) {
-            copy_entry(&entry.path(), &dst_root.join(&name))?;
-        }
-    }
-    Ok(())
-}
-
-/// Recursively copy a directory tree.
-fn copy_dir_all(src: &Path, dst: &Path) -> io::Result<()> {
-    fs::create_dir_all(dst)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        copy_entry(&entry.path(), &dst.join(entry.file_name()))?;
-    }
-    Ok(())
-}
-
-/// Copy one filesystem entry — recursing for directories, `fs::copy` for
-/// files.
-fn copy_entry(src: &Path, dst: &Path) -> io::Result<()> {
-    if src.is_dir() {
-        copy_dir_all(src, dst)
-    } else {
-        fs::copy(src, dst).map(|_| ())
-    }
 }

@@ -19,12 +19,16 @@ fn bundle_writes_bundle_and_matching_slices() {
 
     bundle(ws.path(), AGENT, out.path(), &git).unwrap();
 
-    // The bundle-create ref list is the enumerated subtree.
+    // The bundle-create ref list is the enumerated subtree plus the
+    // governing lineage (§9.2 — the replayed workspace needs a `config/*`
+    // ref to take the merge-base against).
     let runs = git.runs.borrow();
     assert_eq!(runs[0][0], "bundle");
     assert_eq!(runs[0][1], "create");
     assert!(runs[0].contains(&"agents/20260101-p1".to_owned()));
     assert!(runs[0].contains(&"agents/20260101-p1-20260102-c1".to_owned()));
+    assert!(runs[0].contains(&"refs/heads/config/default".to_owned()));
+    assert!(runs[0].contains(&"refs/heads/config/strict".to_owned()));
     // The matching slice copied; the unrelated sibling did not.
     assert!(out.path().join("steps/20260101-p1/001/meta.json").exists());
     assert!(!out.path().join("steps/20260101-other").exists());
@@ -72,6 +76,39 @@ fn bundle_surfaces_bundle_create_failure() {
             err,
             ArchiveError::Git {
                 op: "bundle create",
+                ..
+            }
+        ),
+        "{err:?}"
+    );
+}
+
+#[test]
+fn bundle_carries_only_config_lineages_that_reach_the_subtree() {
+    // Both config branches are orphans to this agent (no merge-base), so
+    // neither governs it and neither rides — the bundle is the subtree
+    // alone, exactly as before the lineage landed.
+    let ws = ws_tmp();
+    let out = tmp();
+    let git = StubGit::new(REFS).no_lineage();
+
+    bundle(ws.path(), AGENT, out.path(), &git).unwrap();
+
+    let runs = git.runs.borrow();
+    assert!(!runs[0].iter().any(|a| a.starts_with("refs/heads/config/")));
+}
+
+#[test]
+fn bundle_surfaces_a_lineage_enumeration_failure() {
+    let ws = ws_tmp();
+    let out = tmp();
+    let git = StubGit::new(REFS).fail_lineage();
+    let err = bundle(ws.path(), AGENT, out.path(), &git).unwrap_err();
+    assert!(
+        matches!(
+            err,
+            ArchiveError::Git {
+                op: "config lineage",
                 ..
             }
         ),

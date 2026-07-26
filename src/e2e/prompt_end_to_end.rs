@@ -51,7 +51,7 @@ fn git_capture(dest: &Path, args: &[&str]) -> String {
 /// Global `<harness-root>/models.yaml` (ARCH §4.2) — capabilities only;
 /// endpoints/auth are brazen's. Both roles' models point at the fixture
 /// `test` provider row so the cross-check passes.
-fn write_global_models(harness: &Path) {
+pub fn write_global_models(harness: &Path) {
     let yaml = "\
 models:
   claude-sonnet-5:
@@ -109,7 +109,7 @@ roles:
     .unwrap();
 }
 
-fn scaffold_repo(dest: &Path, harness: &Path) {
+pub fn scaffold_repo(dest: &Path, harness: &Path) {
     let out = Command::new(lernie_bin())
         .arg("new")
         .arg(dest)
@@ -125,7 +125,7 @@ fn scaffold_repo(dest: &Path, harness: &Path) {
 }
 
 /// Anthropic-native SSE happy stream; `bz` normalizes to `v=1` events.
-const HAPPY_SSE: &str = concat!(
+pub const HAPPY_SSE: &str = concat!(
     "event: message_start\n",
     "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_e2e\",\"model\":\"claude-sonnet-5\",\"stop_reason\":null,\"content\":[],\"usage\":{\"input_tokens\":2,\"output_tokens\":0}}}\n\n",
     "event: content_block_start\n",

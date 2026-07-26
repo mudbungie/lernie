@@ -20,12 +20,12 @@ fn happy_path_writes_handle_json_and_forwards_args() {
     assert_eq!(payload["status"], "in_progress");
     assert_eq!(payload["handle"], "p1-conv-ct9-feedface");
 
-    let calls = spawner.calls.borrow();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].0, "worker");
-    assert_eq!(calls[0].1, repo);
-    assert_eq!(calls[0].2, "p1-conv");
-    assert_eq!(calls[0].3, "do the thing");
+    let invocations = spawner.invocations.borrow();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0].0, "worker");
+    assert_eq!(invocations[0].1, repo);
+    assert_eq!(invocations[0].2, "p1-conv");
+    assert_eq!(invocations[0].3, "do the thing");
 }
 
 #[test]

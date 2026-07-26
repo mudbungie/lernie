@@ -73,7 +73,7 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     let worktree = worktree_path(repo.path());
 
     // Executor saw one call in step 1 with the emitted tool_use.
-    let tool_calls = tool_executor.calls.borrow().clone();
+    let tool_calls = tool_executor.invocations.borrow().clone();
     assert_eq!(tool_calls.len(), 1);
     let (step_dir, tid, name, input) = &tool_calls[0];
     assert_eq!(step_dir, &repo.path().join("steps/ct-1-deadbeef/001"));
@@ -202,12 +202,12 @@ fn loop_runs_three_steps_when_two_completions_in_a_row_are_tool_use() {
     assert!(step3_resp.exists());
     assert!(!repo.path().join("steps/ct-1-deadbeef/004").exists());
 
-    let calls = tool_executor.calls.borrow().clone();
-    assert_eq!(calls.len(), 2);
-    assert!(calls[0].0.ends_with("steps/ct-1-deadbeef/001"));
-    assert!(calls[1].0.ends_with("steps/ct-1-deadbeef/002"));
-    assert_eq!(calls[0].1, "toolu_01");
-    assert_eq!(calls[1].1, "toolu_02");
+    let invocations = tool_executor.invocations.borrow().clone();
+    assert_eq!(invocations.len(), 2);
+    assert!(invocations[0].0.ends_with("steps/ct-1-deadbeef/001"));
+    assert!(invocations[1].0.ends_with("steps/ct-1-deadbeef/002"));
+    assert_eq!(invocations[0].1, "toolu_01");
+    assert_eq!(invocations[1].1, "toolu_02");
 }
 
 #[test]
@@ -253,11 +253,14 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
     )
     .unwrap();
 
-    let calls = tool_executor.calls.borrow().clone();
-    assert_eq!(calls.len(), 2);
+    let invocations = tool_executor.invocations.borrow().clone();
+    assert_eq!(invocations.len(), 2);
     let pair = |c: &(_, String, String, _)| (c.1.clone(), c.2.clone());
-    assert_eq!(pair(&calls[0]), ("toolu_a".into(), "bash".into()));
-    assert_eq!(pair(&calls[1]), ("toolu_b".into(), "read_file".into()));
+    assert_eq!(pair(&invocations[0]), ("toolu_a".into(), "bash".into()));
+    assert_eq!(
+        pair(&invocations[1]),
+        ("toolu_b".into(), "read_file".into())
+    );
 
     let req2: Value = serde_json::from_slice(
         &std::fs::read(repo.path().join("steps/ct-1-deadbeef/002/request.json")).unwrap(),

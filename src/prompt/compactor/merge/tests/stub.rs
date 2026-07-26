@@ -10,7 +10,7 @@ use super::*;
 /// index, and the filter's `diff --cached` capture answers `diff` —
 /// `Some(paths)` for the classes it reports, `None` to fail the capture.
 struct StubGit {
-    calls: RefCell<Vec<Vec<String>>>,
+    invocations: RefCell<Vec<Vec<String>>>,
     fail_at: usize,
     diff: Option<String>,
 }
@@ -19,7 +19,7 @@ impl StubGit {
     /// sequence is merge, add, commit.
     fn failing_at(idx: usize) -> Self {
         Self {
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
             fail_at: idx,
             diff: Some(String::new()),
         }
@@ -41,8 +41,8 @@ impl StubGit {
 }
 impl GitRunner for StubGit {
     fn run(&self, _dest: &Path, args: &[&str]) -> std::io::Result<()> {
-        let idx = self.calls.borrow().len();
-        self.calls
+        let idx = self.invocations.borrow().len();
+        self.invocations
             .borrow_mut()
             .push(args.iter().map(|s| (*s).to_owned()).collect());
         if idx == self.fail_at {
@@ -66,14 +66,14 @@ impl GitRunner for StubGit {
 
 #[test]
 fn add_failure_surfaces_as_git_error() {
-    // calls: 0=merge, 1=add(fail).
+    // invocations: 0=merge, 1=add(fail).
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &StubGit::failing_at(1)).unwrap_err();
     assert_git_op(err, "compaction merge add");
 }
 
 #[test]
 fn commit_failure_surfaces_as_git_error() {
-    // calls: 0=merge, 1=add, 2=commit(fail) — nothing to filter.
+    // invocations: 0=merge, 1=add, 2=commit(fail) — nothing to filter.
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &StubGit::failing_at(2)).unwrap_err();
     assert_git_op(err, "compaction merge commit");
 }
@@ -91,7 +91,7 @@ fn filter_diff_failure_surfaces_as_git_error() {
 
 #[test]
 fn filter_restore_failure_surfaces_as_git_error() {
-    // calls: 0=merge, 1=add, 2=rm(fail) — the filter's restore of an
+    // invocations: 0=merge, 1=add, 2=rm(fail) — the filter's restore of an
     // addition the compactor's dialog contributed.
     let stub = StubGit::with_filtered(2, "messages/003-goal.md\n");
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &stub).unwrap_err();

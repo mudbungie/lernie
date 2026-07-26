@@ -229,7 +229,7 @@ extern "C" fn on_sigterm(_signo: libc::c_int) {
 }
 
 /// Install [`on_sigterm`] once per process. Idempotent — repeated
-/// calls (e.g. from a future second built-in invocation) are no-ops.
+/// invocations (e.g. from a second built-in added later) are no-ops.
 fn install_sigterm_handler() {
     HANDLER_INSTALLED.get_or_init(|| {
         // SAFETY: `on_sigterm` only stores to an `AtomicBool`, which

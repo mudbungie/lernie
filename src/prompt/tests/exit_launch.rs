@@ -24,7 +24,7 @@ use std::sync::atomic::AtomicBool;
 /// the terminal deposit already landed (the parent inbox holds it).
 #[derive(Default)]
 pub(super) struct ProbingLauncher {
-    pub(super) calls: RefCell<Vec<(PathBuf, String, bool, bool)>>,
+    pub(super) invocations: RefCell<Vec<(PathBuf, String, bool, bool)>>,
 }
 
 impl Launcher for ProbingLauncher {
@@ -33,7 +33,7 @@ impl Launcher for ProbingLauncher {
         let deposited = deposit_files(workspace)
             .iter()
             .any(|n| n.contains("epitaph"));
-        self.calls.borrow_mut().push((
+        self.invocations.borrow_mut().push((
             workspace.to_path_buf(),
             agent_id.to_string(),
             lock_free,
@@ -108,11 +108,11 @@ fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     deps.launcher = &launcher;
 
     run(repo.path(), "go", &deps).unwrap();
-    let calls = launcher.calls.borrow();
+    let invocations = launcher.invocations.borrow();
     // Two launches: the self-directed one, then the parent whose inbox
     // the terminal deposit just landed in (§2.11 revival-on-deposit).
-    assert_eq!(calls.len(), 2);
-    let (ws, agent, lock_free, deposited) = &calls[0];
+    assert_eq!(invocations.len(), 2);
+    let (ws, agent, lock_free, deposited) = &invocations[0];
     assert_eq!(ws, repo.path());
     assert_eq!(agent, "ct-1-deadbeef");
     // §2.11 ordering: deposit → release → launch. The launcher sees both.
@@ -121,7 +121,7 @@ fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     // The parent is addressed by derivation alone — this agent's id
     // minus its last descent segment (§2.11) — and its lease is free,
     // so the probe launched rather than leaving the result undelivered.
-    let (pws, parent, parent_free, _) = &calls[1];
+    let (pws, parent, parent_free, _) = &invocations[1];
     assert_eq!(pws, repo.path());
     assert_eq!(parent, "ct");
     assert!(*parent_free, "the parent was quiescent, so it is launched");
@@ -171,9 +171,9 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
         "a root deposits no result"
     );
     // …and the one unconditional sequence still launches (no agent kinds).
-    let calls = launcher.calls.borrow();
-    assert_eq!(calls.len(), 1);
-    assert_eq!(calls[0].1, "ct1-deadbeef");
+    let invocations = launcher.invocations.borrow();
+    assert_eq!(invocations.len(), 1);
+    assert_eq!(invocations[0].1, "ct1-deadbeef");
 }
 
 #[test]
@@ -206,7 +206,7 @@ fn stopped_exit_never_launches() {
 
     run(repo.path(), "go", &deps).unwrap();
     assert!(
-        launcher.calls.borrow().is_empty(),
+        launcher.invocations.borrow().is_empty(),
         "stopped must not launch"
     );
 }
@@ -256,7 +256,7 @@ fn budget_exhausted_exit_never_launches() {
         "the exhaustion deposit landed"
     );
     assert!(
-        launcher.calls.borrow().is_empty(),
+        launcher.invocations.borrow().is_empty(),
         "exhausted must not launch"
     );
 }
@@ -290,7 +290,7 @@ fn an_errored_executor_never_launches() {
 
     run(repo.path(), "go", &deps).unwrap_err();
     assert!(
-        launcher.calls.borrow().is_empty(),
+        launcher.invocations.borrow().is_empty(),
         "an error must not launch"
     );
 }

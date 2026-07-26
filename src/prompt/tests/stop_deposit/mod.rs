@@ -189,7 +189,7 @@ fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
     let branch = run(repo.path(), "hi", &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     // The tool was entered before the stop felled it.
-    assert_eq!(tool_executor.calls.borrow().len(), 1);
+    assert_eq!(tool_executor.invocations.borrow().len(), 1);
     // No terminal compactor for a stopped branch (§2.9), and the result
     // deposited on the way out carries the `stopped` epitaph.
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));

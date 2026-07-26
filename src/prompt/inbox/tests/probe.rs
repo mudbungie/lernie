@@ -25,11 +25,11 @@ impl Clock for FixedClock {
 /// Recording [`Launcher`] — captures each launch request.
 #[derive(Default)]
 struct StubLauncher {
-    calls: RefCell<Vec<String>>,
+    invocations: RefCell<Vec<String>>,
 }
 impl Launcher for StubLauncher {
     fn launch(&self, _workspace: &Path, agent_id: &str) -> io::Result<()> {
-        self.calls.borrow_mut().push(agent_id.to_string());
+        self.invocations.borrow_mut().push(agent_id.to_string());
         Ok(())
     }
 }
@@ -48,7 +48,7 @@ fn probe_launches_a_driver_when_quiescent() {
     let launcher = StubLauncher::default();
     let out = probe_and_launch(ws.path(), "a1", &launcher).unwrap();
     assert_eq!(out, ProbeOutcome::Launched);
-    assert_eq!(*launcher.calls.borrow(), vec!["a1".to_string()]);
+    assert_eq!(*launcher.invocations.borrow(), vec!["a1".to_string()]);
 }
 
 #[test]
@@ -61,7 +61,10 @@ fn probe_is_busy_when_an_executor_holds_the_lock() {
     let launcher = StubLauncher::default();
     let out = probe_and_launch(ws.path(), "a1", &launcher).unwrap();
     assert_eq!(out, ProbeOutcome::Busy);
-    assert!(launcher.calls.borrow().is_empty(), "no launch while driven");
+    assert!(
+        launcher.invocations.borrow().is_empty(),
+        "no launch while driven"
+    );
 }
 
 #[test]
@@ -86,7 +89,7 @@ fn cli_message_deposits_then_launches() {
     let out = cli_message(ws.path(), "a1", "hello", "user", &FixedClock, &launcher).unwrap();
     assert_eq!(out, ProbeOutcome::Launched);
     assert!(inbox_dir(ws.path(), "a1").join("user-001.md").exists());
-    assert_eq!(*launcher.calls.borrow(), vec!["a1".to_string()]);
+    assert_eq!(*launcher.invocations.borrow(), vec!["a1".to_string()]);
 }
 
 #[test]

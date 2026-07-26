@@ -48,7 +48,7 @@ impl Clock for DescentClock {
 /// launcher, so its own exit protocol stops the in-process recursion
 /// (the real chain terminates on pin 1's no-op driver instead).
 struct RevivingLauncher {
-    calls: RefCell<Vec<String>>,
+    invocations: RefCell<Vec<String>>,
     target: String,
     outcome: RefCell<Option<String>>,
 }
@@ -56,7 +56,7 @@ struct RevivingLauncher {
 impl RevivingLauncher {
     fn new(target: &str) -> Self {
         Self {
-            calls: RefCell::new(Vec::new()),
+            invocations: RefCell::new(Vec::new()),
             target: target.to_string(),
             outcome: RefCell::new(None),
         }
@@ -65,7 +65,7 @@ impl RevivingLauncher {
 
 impl Launcher for RevivingLauncher {
     fn launch(&self, ws: &Path, agent: &str) -> io::Result<()> {
-        self.calls.borrow_mut().push(agent.to_string());
+        self.invocations.borrow_mut().push(agent.to_string());
         if agent != self.target || self.outcome.borrow().is_some() {
             return Ok(());
         }
@@ -157,7 +157,10 @@ fn a_child_final_response_revives_the_parent_which_delivers_and_steps() {
 
     // Two launches from the child's exit protocol, in order: itself
     // (pin 1's no-op driver), then the parent it just revived.
-    assert_eq!(*launcher.calls.borrow(), vec![child.clone(), parent.into()]);
+    assert_eq!(
+        *launcher.invocations.borrow(),
+        vec![child.clone(), parent.into()]
+    );
     assert_eq!(
         launcher.outcome.borrow().as_deref(),
         Some("Terminal"),
@@ -191,7 +194,7 @@ fn a_parent_with_a_held_lease_gets_no_second_driver() {
     advance_child(&ws, &child, &launcher);
 
     assert_eq!(
-        *launcher.calls.borrow(),
+        *launcher.invocations.borrow(),
         vec![child.clone()],
         "only the self-directed launch: the parent is already driven"
     );
@@ -255,7 +258,7 @@ fn a_stopped_child_deposits_without_reviving_the_parent() {
         "the stopped result reached the parent's inbox"
     );
     assert!(
-        rec.calls.borrow().is_empty(),
+        rec.invocations.borrow().is_empty(),
         "neither the branch nor its parent is relaunched"
     );
 }
@@ -290,7 +293,7 @@ fn an_exhausted_child_deposits_without_reviving_the_parent() {
         "the exhaustion result reached the parent's inbox"
     );
     assert!(
-        rec.calls.borrow().is_empty(),
+        rec.invocations.borrow().is_empty(),
         "neither the branch nor its parent is relaunched"
     );
 }

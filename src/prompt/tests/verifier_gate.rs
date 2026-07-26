@@ -156,7 +156,7 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
     );
     // A verifier child was launched off the worker's terminal ref.
     let verifier = rec
-        .calls
+        .invocations
         .borrow()
         .iter()
         .find(|a| **a != worker)

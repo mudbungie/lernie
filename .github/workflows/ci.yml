@@ -54,5 +54,34 @@ jobs:
         with:
           tool: cargo-tarpaulin@0.35.2
 
+      - name: Resolve the pinned brazen version
+        # The pin's one home is the `brazen = "=<version>"` dependency in
+        # Cargo.toml. `make brazen-pin` derives it there (Makefile
+        # BRAZEN_PIN), the same line the crate's load-time version guard
+        # reads (ARCH §4.4). Never write the number in this file: a copy
+        # here would drift from the manifest, and CI would then install a
+        # `bz` the guard rejects.
+        id: brazen
+        run: echo "pin=$(make --no-print-directory brazen-pin)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the brazen adapter binary
+        # Keyed on the pin alone — `cargo install brazen --version =<pin>`
+        # is reproducible, so a hit is exactly the binary the pin names.
+        # Deliberately no restore-keys: a `bz` left over from an older pin
+        # would fail the version guard, and a cold miss costs one cargo
+        # install. Only the binary is cached; the registry/git caches are
+        # the step above, and cargo-tarpaulin has its own installer.
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/bin/bz
+          key: ${{ runner.os }}-bz-${{ steps.brazen.outputs.pin }}
+
+      - name: Install the provider adapter (bz)
+        # `make ci` runs the e2e tests, which exec the REAL `bz` against a
+        # mock endpoint; without it on PATH they die with "adapter
+        # subprocess: No such file or directory". No-ops on a cache hit
+        # (install-bz compares `bz --version` against the pin).
+        run: make install-bz
+
       - name: make ci
         run: make ci

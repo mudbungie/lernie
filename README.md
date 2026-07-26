@@ -7,7 +7,7 @@ Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 Promise suite (the user stories 0.0.1 is evaluated against): [`docs/USER_STORIES.md`](docs/USER_STORIES.md).
 
-CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
+CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`, after `make install-bz` puts the pinned provider adapter `bz` on `PATH` — the e2e tests exec the real binary. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
 
 ## One command surface, two bindings
 
@@ -960,7 +960,9 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `cargo install brazen --version =0.0.3` (the ARCH §4.4 version pin); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
+| `make install-bz`     | Install the provider adapter `bz` at the version Cargo.toml pins (ARCH §4.4); a no-op when the `bz` on `PATH` already matches. Required by the e2e tests, which exec the real binary |
+| `make brazen-pin`     | Print that pinned version and nothing else — CI keys its `bz` cache on it so no workflow file names a version |
+| `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `make install-bz` at the version Cargo.toml pins (the ARCH §4.4 version pin — the number's one home); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml`, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
 
 ### Workflow

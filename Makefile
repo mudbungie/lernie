@@ -1,4 +1,4 @@
-.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-bz brazen-pin install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -132,9 +132,39 @@ install-hooks:
 	git config core.hooksPath .githooks
 	@echo "hooks: core.hooksPath -> .githooks"
 
+# Print the brazen pin on stdout, and nothing else. Exists so a consumer
+# that needs the version as a *value* reads it from the pin's one home
+# (the `brazen = "="` line in Cargo.toml, via BRAZEN_PIN above) instead
+# of copying the number: `.github/workflows/ci.yml` keys its `bz` cache
+# on `make brazen-pin`, so bumping the dependency bumps the cache too and
+# no workflow file ever names a version.
+brazen-pin:
+	@echo "$(BRAZEN_PIN)"
+
+# Install the provider adapter `bz` (ARCH §4.4) at the pinned version.
+# Idempotent and cheap: a no-op when the `bz` already on PATH reports the
+# pin, so a warm CI cache and a re-run of `make install` both cost
+# nothing. The load-time version guard demands an EXACT match, so a `bz`
+# at any other version — newer included — is replaced, not kept.
+#
+# Anything that runs the test suite needs this: the e2e tests exec the
+# real `bz` against a mock endpoint, and without it on PATH they fail
+# with "adapter subprocess: No such file or directory".
+install-bz:
+	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
+	@have=$$(bz --version 2>/dev/null | awk '{print $$NF}'); \
+	if [ "$$have" = "$(BRAZEN_PIN)" ]; then \
+	  echo "provider adapter: bz $(BRAZEN_PIN) already on PATH"; \
+	else \
+	  echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"; \
+	  cargo install brazen --version "=$(BRAZEN_PIN)" --locked; \
+	fi
+
 # `make install` lays down the harness root skeleton on first run and is
-# idempotent on subsequent runs. Binaries are re-installed unconditionally
-# (a fresh build is the point); config files are guarded with `test -e` so
+# idempotent on subsequent runs. The binaries built from this tree are
+# re-installed unconditionally (a fresh build is the point) while the
+# crates.io-pinned `bz` is left alone when it already matches the pin
+# (see `install-bz`); config files are guarded with `test -e` so
 # rotated credentials and hand-edited entries survive a re-install.
 install: release
 	@mkdir -p "$(INSTALL_BIN)"
@@ -142,9 +172,7 @@ install: release
 		install -m 0755 "target/release/$$bin" "$(INSTALL_BIN)/$$bin"; \
 		echo "installed $(INSTALL_BIN)/$$bin"; \
 	done
-	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
-	@echo "installing the provider adapter: cargo install brazen --version =$(BRAZEN_PIN)"
-	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked
+	@$(MAKE) --no-print-directory install-bz
 	@# Found the harness root via the freshly-installed binary (ARCH §2.2):
 	@# `lernie prime` seeds the default models.yaml, the tool/skill pools,
 	@# and the workflows/ + workspaces/ dirs, seed-if-absent throughout —

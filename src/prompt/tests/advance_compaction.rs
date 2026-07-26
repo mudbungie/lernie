@@ -4,7 +4,9 @@
 //! [`super::advance`] so that file stays under the per-file line cap; the
 //! shared helpers (`worker_config`, `AGENT`, `RecLauncher`, …) live there.
 
-use super::advance::{AGENT, RecLauncher, terminal_tail, worker_config, workspace_with_tail};
+use super::advance::{
+    AGENT, RecLauncher, model_entry, terminal_tail, worker_config, workspace_with_tail,
+};
 use super::fixtures::*;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox;
@@ -88,6 +90,143 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
     assert!(
         ws.join(format!("steps/{parent}/001/response.json"))
             .exists()
+    );
+}
+
+#[test]
+fn a_compaction_merge_lands_the_product_and_the_next_step_assembles_clean() {
+    // §2.6/§2.7 filtered compaction merge, end to end on the hop. A
+    // compactor is an ordinary child, so its branch carries its own
+    // dispatch `goal.md`/`soul.md` and its own transcript — ending, here,
+    // on a failed tool entry whose `tool_result` has no `tool_use`
+    // anywhere on the dispatching branch. Only the summary and the
+    // nominated deletion cross; the parent's next step then assembles a
+    // clean history instead of wedging on the imported entries.
+    use crate::prompt::child_dispatch::{ChildDispatchRequest, run as dispatch_child};
+    use crate::prompt::inbox::deposit_result;
+    use crate::template::{GitRunner, RealGit};
+    use crate::workspace::{agent_worktree, fixture};
+    use brazen::Content;
+
+    let (_h, ws) = fixture::workspace();
+    let parent = AGENT;
+    let parent_wt = fixture::spawn_root(&ws, parent);
+    let git = RealGit::new();
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
+    let rec = RecLauncher::default();
+
+    // The dispatching branch's transcript at the checkpoint commit C.
+    std::fs::create_dir_all(parent_wt.join("messages")).unwrap();
+    std::fs::write(parent_wt.join("messages/001-user.md"), "old\n").unwrap();
+    git.run(&parent_wt, &["add", "-A"]).unwrap();
+    git.run(&parent_wt, &["commit", "-m", "checkpoint"])
+        .unwrap();
+
+    // A compactor forked off C: summary written, superseded entry
+    // nominated, and its own dialog accumulated alongside.
+    let req = ChildDispatchRequest {
+        repo: &ws,
+        parent_branch: parent,
+        parent_worktree: &parent_wt,
+        role: "compactor",
+        goal: "compact",
+        fork_point: None,
+    };
+    let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();
+    let cwt = agent_worktree(&ws, &child);
+    std::fs::create_dir_all(cwt.join("summary")).unwrap();
+    std::fs::write(cwt.join("summary/001.md"), "digest\n").unwrap();
+    let dialog = [
+        ("002-goal.md", "compact the branch".to_string()),
+        (
+            // The compactor's own model (§4.3 role config), so the name
+            // cannot be confused with the parent's own step output.
+            "003-claude-haiku-5.json",
+            model_entry(&[Content::Text("looking".into())]),
+        ),
+        (
+            "004-tool.json",
+            serde_json::to_string(&[Content::ToolResult {
+                tool_use_id: "toolu_ghost".into(),
+                content: vec![Content::Text("no such path".into())],
+                is_error: true,
+            }])
+            .unwrap(),
+        ),
+    ];
+    for (name, body) in &dialog {
+        std::fs::write(cwt.join("messages").join(name), body).unwrap();
+    }
+    git.run(&cwt, &["rm", "-q", "--", "messages/001-user.md"])
+        .unwrap();
+    git.run(&cwt, &["add", "-A"]).unwrap();
+    git.run(&cwt, &["commit", "-m", "compaction"]).unwrap();
+    let tip = git.run_capture(&cwt, &["rev-parse", "HEAD"]).unwrap();
+    deposit_result(
+        &ws,
+        parent,
+        &child,
+        inbox::Epitaph::FinalResponse,
+        tip.trim(),
+        Some("compacted"),
+        &clock,
+    )
+    .unwrap();
+    // A steering deposit warrants the parent's next step (§2.3).
+    inbox::deposit(&ws, parent, "user", "carry on", &clock).unwrap();
+
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
+    let (sleeper, tools, stub_git) = (
+        StubSleeper::default(),
+        StubToolExecutor::ok(),
+        StubGit::ok(),
+    );
+    let mut deps = valid_deps(&adapter, &sleeper, &stub_git, &clock, &id, &tools, &ws);
+    deps.git = &git;
+    deps.launcher = &rec;
+    let out = run(&ws, parent, None, &deps, &mut || Ok(worker_config())).unwrap();
+
+    assert!(matches!(out, AdvanceOutcome::Terminal), "the step ran");
+    // The compaction product landed: summary in, superseded entry out.
+    assert_eq!(
+        std::fs::read_to_string(parent_wt.join("summary/001.md")).unwrap(),
+        "digest\n"
+    );
+    assert!(!parent_wt.join("messages/001-user.md").exists());
+    // Zero compactor transcript entries, and the parent's own goal stands.
+    for (name, _) in &dialog {
+        assert!(
+            !parent_wt.join("messages").join(name).exists(),
+            "compactor entry {name} crossed the merge"
+        );
+    }
+    assert!(
+        !std::fs::read_to_string(parent_wt.join("goal.md"))
+            .unwrap()
+            .contains("compact the branch")
+    );
+    // The compactor's record is its own ref (§2.6).
+    assert!(
+        git.run_capture(
+            &parent_wt,
+            &[
+                "cat-file",
+                "-e",
+                &format!("agents/{child}:messages/004-tool.json")
+            ]
+        )
+        .is_ok()
+    );
+    // The next step assembled clean: no orphaned tool_result reached the
+    // wire history the parent sent.
+    let req: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(ws.join(format!("steps/{parent}/001/request.json"))).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !req["messages"].to_string().contains("toolu_ghost"),
+        "{}",
+        req["messages"]
     );
 }
 

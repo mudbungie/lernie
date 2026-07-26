@@ -6,6 +6,13 @@
 //! `workflow.yaml`, which the agent invocation is handed as the config
 //! to run under. A missing variant is a loud failure, never a silent
 //! fallback (`docs/PRINCIPLES.md` Decline illegal operations).
+//!
+//! The `baseline` experiment is the shipped default *itself*: an empty
+//! diff has nothing to store, so `experiments/baseline/workflow.yaml`
+//! symlinks `template/workflow.yaml` (see `experiments/README.md`). That
+//! is a fact about the repo's experiments directory, not about this
+//! resolver — one file under two names resolves like any other, so
+//! "the baseline is the template" costs no code here.
 
 use std::path::{Path, PathBuf};
 

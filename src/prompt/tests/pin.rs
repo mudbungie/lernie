@@ -10,6 +10,32 @@ fn pin_derives_from_the_embedded_manifest() {
     assert!(pin.chars().next().is_some_and(|c| c.is_ascii_digit()));
 }
 
+/// The pin has one home and TWO readers, and they must agree: the crate's
+/// [`brazen_pin`] (which the load-time version guard compares `bz
+/// --version` against, §4.4) and the Makefile's `BRAZEN_PIN` (which names
+/// the pin-keyed `bz` the test targets put first on `PATH`, and the
+/// version `make install` lays down). Were the two spellings to drift,
+/// every e2e test would fail the guard against a `bz` the Makefile itself
+/// installed — the exact confusion this pins shut.
+#[test]
+fn the_makefile_derives_the_same_pin() {
+    let out = std::process::Command::new("make")
+        // Drop the outer make's flags: this runs under `make coverage`,
+        // and an inherited jobserver would warn on a recursive make.
+        .env_remove("MAKEFLAGS")
+        .env_remove("MFLAGS")
+        .args(["--no-print-directory", "-C", env!("CARGO_MANIFEST_DIR")])
+        .arg("brazen-pin")
+        .output()
+        .expect("spawn `make brazen-pin`");
+    assert!(
+        out.status.success(),
+        "make brazen-pin: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert_eq!(String::from_utf8(out.stdout).unwrap().trim(), brazen_pin());
+}
+
 #[test]
 fn parse_reads_the_inline_source_spelling() {
     let manifest = "[dependencies]\nbrazen = \"=0.0.9\"\nserde = \"1\"\n";

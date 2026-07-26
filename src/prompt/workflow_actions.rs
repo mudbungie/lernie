@@ -102,9 +102,17 @@ fn run_event(
 }
 
 /// Execute one action at a terminal-lifecycle `event`. The shipped subset
-/// is the two ref marks; any other closed-set action is declined loudly
-/// (its executor is a tracked follow-on).
-fn execute(
+/// is the two ref marks; every remaining member of the closed set is
+/// declined loudly, its executor a tracked follow-on of the §6
+/// shipped-state note.
+///
+/// The match is **exhaustive by construction** — no `_` arm. That is the
+/// totality guarantee for the vocabulary: a new [`Action`] variant cannot
+/// be added without landing here and deciding, on the spot, whether it
+/// executes or is an acknowledged deferral. Vocabulary that can reach
+/// neither arm (`spawn_root_agent`, `spawn_exchange`) is not in the enum
+/// at all — it is declined at parse (`config::action`).
+pub(super) fn execute(
     action: &Action,
     event: Event,
     worktree: &Path,
@@ -114,8 +122,11 @@ fn execute(
     match action {
         Action::MarkAbandoned => mark_ref(ABANDONED_REF_PREFIX, worktree, agent_id, git),
         Action::NotifyUi => mark_ref(NOTIFY_REF_PREFIX, worktree, agent_id, git),
-        other => Err(Error::ActionUnsupported {
-            action: format!("{other:?}"),
+        deferred @ (Action::Dispatch { .. }
+        | Action::GateReturnOn { .. }
+        | Action::DeliverResult
+        | Action::CompactionMerge) => Err(Error::ActionUnsupported {
+            action: format!("{deferred:?}"),
             event: event.as_str(),
         }),
     }

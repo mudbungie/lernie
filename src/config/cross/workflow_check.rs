@@ -103,7 +103,6 @@ events:
             r#"
 events:
   user_message:
-    - spawn_exchange
     - compaction_merge
     - deliver_result
     - mark_abandoned

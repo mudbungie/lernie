@@ -23,3 +23,4 @@ mod streams;
 mod stubs;
 mod tool_stub;
 mod verifier_gate;
+mod workflow_vocabulary;

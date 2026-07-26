@@ -11,6 +11,8 @@
 //! the deposit therefore lands a real file under `inbox/ct/` rather than
 //! no-opping, letting these tests assert the `stopped` epitaph directly.
 
+mod mid_call;
+
 use super::fixtures::*;
 use crate::prompt::adapter::AdapterRunner;
 use crate::prompt::step::step_dir_rel;

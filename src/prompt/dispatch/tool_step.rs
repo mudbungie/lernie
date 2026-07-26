@@ -74,7 +74,7 @@ pub(super) fn run_tool_calls(
                 // §2.9 step 3: a tool group-killed by the executor's own
                 // SIGTERM, with the stop flag set, is the stop — cease the loop
                 // for the stopped-deposit exit, not an error.
-                Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(deps) => {
+                Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(deps.stop) => {
                     return Ok(true);
                 }
                 Err(source) => {

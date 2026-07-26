@@ -46,7 +46,7 @@ pub(super) fn step(
     deps: &Deps<'_>,
 ) -> Result<StepOutcome, Error> {
     // §2.9 step-3 check point: a stop delivered before the model call.
-    if stop_signal::stopped(deps) {
+    if stop_signal::stopped(deps.stop) {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }
     let resolved = cfg.as_resolved();
@@ -84,6 +84,7 @@ pub(super) fn step(
         binary: &resolved.binary,
         provider_row: resolved.provider_row,
         retry: resolved.retry,
+        stop: deps.stop,
         expect_handshake: resolved.expect_handshake,
     };
 
@@ -110,9 +111,10 @@ pub(super) fn step(
     let started_at = deps.clock.now_iso8601();
     let response_path = workspace.join(&step_dir_rel_str).join(RESPONSE_FILE);
     let call_outcome = model_call::run(&call, &request_bytes, &response_path);
-    // §2.9 step-3 check point: a stop during the call killed `bz` — with
-    // the flag set the `AdapterHalfStream` is a stop, not a failure.
-    if stop_signal::stopped(deps) {
+    // §2.9 step-3 check point: a stop during the call killed `bz` — the
+    // flag classifies, not the error's shape ([`model_call`]). Same rule
+    // as `run_exchange`.
+    if stop_signal::stopped(deps.stop) {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }
     call_outcome?;
@@ -174,7 +176,7 @@ pub(super) fn step(
         &step_dir_rel_str,
         &assistant_content,
         deps,
-    )? || stop_signal::stopped(deps)
+    )? || stop_signal::stopped(deps.stop)
     {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }

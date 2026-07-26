@@ -501,6 +501,15 @@ exits cleanly. Catching shields nobody: the kernel already delivered to
 `bz` and the tools. For a root the deposit is a no-op (no parent inbox);
 the observable is the clean exit.
 
+Because the model call is where the wall time goes, that is where a stop
+usually lands — so the clean exit is the ordinary case, not the rare one.
+The **flag classifies, not the error's shape**: a kill lands wherever the
+adapter was, leaving a half-stream, a torn JSON line, or a provider error
+depending on the instant, and with a stop pending each is read as the
+stop. With no stop pending the same faults still propagate non-zero, so a
+genuinely dying adapter is never hidden. The retry loop respects the flag
+too: a stop is never followed by another `bz` invocation.
+
 Behavior:
 
 - **Idempotent.** A branch with no live writer (already stopped, or the

@@ -6,9 +6,15 @@
 //! per-category pass@1 and pass@5 (ARCH §9.1).
 //!
 //! `--agent` names the external harness-driver the runner invokes per run
-//! (the injectable agent seam, §9.3); `--bundle-dir` archives failing
-//! runs for triage via `lernie bundle` (§9.2). This file is thin wiring
-//! over the library (`lib.rs`); all logic and its coverage live there.
+//! (the injectable agent seam, §9.3). It is **required and unsupplied**:
+//! no driver binary ships with lernie, so an end-to-end evaluation run
+//! needs one you write against the contract in the repo README ("Run the
+//! suite"). Clap therefore rejects a missing `--agent` up front rather
+//! than letting the runner die on a failed spawn per task.
+//!
+//! `--bundle-dir` archives failing runs for triage via `lernie bundle`
+//! (§9.2). This file is thin wiring over the library (`lib.rs`); all
+//! logic and its coverage live there.
 
 use agent_eval::agent::{CommandAgent, CommandBundler};
 use agent_eval::runner::{self, EvalConfig};
@@ -37,7 +43,9 @@ struct Cli {
     #[arg(long, default_value = "experiments")]
     experiments_dir: PathBuf,
     /// External harness-driver invoked per run (the agent seam, §9.3).
-    #[arg(long, default_value = "lernie-eval-agent")]
+    /// Required: no driver ships with lernie — supply your own (the
+    /// contract it must honour is in the repo README, "Run the suite").
+    #[arg(long)]
     agent: String,
     /// Archive failing runs here for triage via `lernie bundle` (§9.2).
     #[arg(long)]

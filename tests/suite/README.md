@@ -6,9 +6,16 @@ This directory is the single source of truth for what an experiment is measured
 against (§9.3) — experiments and the suite version live in the repo together.
 
 The runner that executes the suite (`agent-eval --config <experiment> --suite
-<suite> --runs N`, §9.3 / v0.10) has **shipped** as the separate crate
-`crates/agent-eval`. This directory is its input; `crates/agent-eval/src/suite.rs`
-loads it and `tests/suite.rs` enforces its well-formedness.
+<suite> --runs N --agent <driver-cmd>`, §9.3 / v0.10) has **shipped** as the
+separate crate `crates/agent-eval`. This directory is its input;
+`crates/agent-eval/src/suite.rs` loads it and `tests/suite.rs` enforces its
+well-formedness.
+
+The runner is not yet *runnable end to end*, though: `--agent` names an
+external harness-driver program and **no such driver ships with lernie**
+(deferred as bl-2e28). So this data has never been measured against a live model;
+what is proven today is its well-formedness and the runner's own logic
+(exercised against a faked agent).
 
 ## Layout
 

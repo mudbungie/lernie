@@ -123,10 +123,19 @@ new-workspace:
 	@cargo run --quiet --bin lernie -- new "$(DEST)"
 
 # Run the evaluation runner (ARCH §9.3): experiment × suite × N.
-#   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 [AGENT=<cmd>]
+#   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 AGENT=<driver-cmd>
+# AGENT is REQUIRED and has no default: the runner drives the agent under
+# test through an external harness-driver program (the §9.3 agent seam),
+# and no such driver ships with lernie. Write one against the contract in
+# README "Run the suite" and pass it here. There is deliberately no stand-in
+# default — a made-up one only moves the failure from this line to a failed
+# spawn once per task.
 eval:
-	@test -n "$(CONFIG)" || { echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> [AGENT=<cmd>]"; exit 1; }
-	@cargo run --quiet -p agent-eval -- --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" $(if $(AGENT),--agent "$(AGENT)",)
+	@test -n "$(CONFIG)" -a -n "$(AGENT)" || { \
+	  echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>"; \
+	  echo "AGENT is required: no harness driver ships with lernie (README, \"Run the suite\")"; \
+	  exit 1; }
+	@cargo run --quiet -p agent-eval -- --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" --agent "$(AGENT)"
 
 lint:
 	cargo clippy --all-targets -- -D warnings

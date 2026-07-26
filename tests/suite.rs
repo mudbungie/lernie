@@ -1,9 +1,13 @@
 //! Well-formedness gate for the evaluation task suite (ARCH §9.1, v0.9).
 //!
 //! The suite itself is data under `tests/suite/` (one YAML file per failure
-//! category). The runner that executes it is deferred (§9.3 / v0.10); this
-//! test is the only reader today. It pins the structural contract the runner
-//! will rely on: 50 uniquely-identified tasks, each with a prompt and a
+//! category). The runner that executes it shipped (`crates/agent-eval`,
+//! §9.3) and reads this directory through `agent_eval::suite`, but the
+//! external harness-driver it invokes per run does not exist yet, so no
+//! end-to-end evaluation run has been performed against this data — this
+//! test is its only *executed* reader today. It pins the structural
+//! contract the runner relies on: 50 uniquely-identified tasks, each with
+//! a prompt and a
 //! machine-checkable `check`, tagged only with the seven §9.1 categories, its
 //! file's category as its primary tag, and — the §9.1 statistical-power
 //! target — at least ten tasks per category (reached via secondary tags,

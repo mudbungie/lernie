@@ -141,6 +141,40 @@ fn governing_config_picks_the_nearest_config_ancestor() {
 }
 
 #[test]
+fn config_lineage_names_the_ref_the_merge_base_is_taken_against() {
+    let (_h, ws) = workspace();
+    let g = git();
+    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
+    // Advance config/default past the fork (a later user config edit,
+    // §2.3): its head stops being an ancestor of the agent, but it is
+    // still the ref the governing commit is derived *against* — so it
+    // is the ref an archive must carry (§9.2).
+    let later = ws.join("later");
+    let later_str = later.to_string_lossy().to_string();
+    g.run(
+        &repo_git(&ws),
+        &["worktree", "add", later_str.as_str(), DEFAULT_CONFIG_REF],
+    )
+    .unwrap();
+    std::fs::write(later.join("later.md"), "x").unwrap();
+    g.run(&later, &["add", "later.md"]).unwrap();
+    g.run(&later, &["commit", "-m", "config: later"]).unwrap();
+
+    let lineage = config_lineage(&ws, "20260101-r1", &g).unwrap();
+    assert_eq!(lineage.len(), 1);
+    assert_eq!(lineage[0].0, "refs/heads/config/default");
+    assert_eq!(
+        lineage[0].1,
+        governing_config(&ws, "20260101-r1", &g).unwrap()
+    );
+    assert_ne!(
+        lineage[0].1,
+        config_head(&ws, DEFAULT_CONFIG_REF, &g).unwrap(),
+        "the head advanced past the governing commit"
+    );
+}
+
+#[test]
 fn governing_config_skips_unrelated_config_lineages() {
     let (_h, ws) = workspace();
     let g = git();

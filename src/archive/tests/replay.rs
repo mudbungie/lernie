@@ -40,6 +40,20 @@ fn replay_reconstructs_scratch_and_restores_slices() {
 }
 
 #[test]
+fn replay_derives_the_primary_over_agent_refs_alone() {
+    // The bundle also names the governing lineage (§9.2). A `config/*`
+    // head is not an agent: it must not be mistaken for the shortest
+    // agent id, nor read as a head sharing no subtree root.
+    let arch = archive_with_bundle();
+    let base = tmp();
+    let git = StubGit::new(&format!("{HEADS}sha3 refs/heads/config/default\n"));
+
+    let scratch = replay(arch.path(), base.path(), &git).unwrap();
+
+    assert_eq!(scratch, base.path().join(AGENT));
+}
+
+#[test]
 fn replay_rejects_missing_bundle() {
     let arch = tmp();
     let base = tmp();

@@ -760,10 +760,19 @@ lernie ships as a composable component, and anything that composes it
 **Archive a run.** A "run" is an agent subtree, not a whole workspace (§9.2).
 `lernie bundle <workspace> <agent> <out-dir>` writes the subtree — the
 `agents/<agent>` branch and its `agents/<agent>-*` hyphen-descendants (§2.3),
-with all the ancestry those refs reach, the governing config commit included
-(§2.2) — as one `git bundle`, and copies the matching `steps/<id>*` and
-`inbox/<id>*` diagnostic slices beside it. One bundle plus two slices is the
-whole run.
+with all the ancestry those refs reach — plus the subtree's **governing
+lineage**: every `config/*` ref whose history reaches it (§2.2). Both go into
+one `git bundle`, and the matching `steps/<id>*` and `inbox/<id>*` diagnostic
+slices are copied beside it. One bundle plus two slices is the whole run.
+
+The config refs are not decoration. An agent's control files are read from its
+*governing config commit*, which is derived — the nearest ancestor of the
+branch reachable from a `config/*` ref (§2.2). Ancestry alone carries that
+commit as an object but names no ref to take the merge-base against, so a
+replay of the agent refs alone yields a workspace no verb can drive. Carrying
+the refs (never a sidecar file — the refs are the single source) makes the
+replayed repo derive its governing config by the same computation, over the
+same candidate set, as the workspace it came from.
 
 ```
 lernie bundle /path/to/workspace <agent-id> /path/to/archive
@@ -775,9 +784,14 @@ the subtree's root agent), fetches every branch out of the bundle into a
 fresh bare `repo.git`, materializes the primary's worktree under `agents/`,
 restores the slices, and prints the scratch path. Point the ordinary frontend
 at it — replay is not a mode (§2.3). Set `LERNIE_HOME` to an isolated
-directory to keep the replay sandboxed. The governing config rides the
-bundle's ancestry (§2.2): the config commit is an ancestor of every agent
-branch, so no config sidecar exists.
+directory to keep the replay sandboxed; the harness root it points at still
+supplies the machine-local pieces a config only *names* (`models.yaml` and the
+brazen provider rows, §4.2/§4.4).
+
+A replayed workspace is an ordinary workspace: `lernie prompt <scratch> "…"`
+forks a fresh root off the config head that rode the bundle, and `lernie
+message` / `lernie advance` drive the replayed agent on its own governing
+config commit.
 
 ```
 LERNIE_HOME=/tmp/replay lernie replay /path/to/archive

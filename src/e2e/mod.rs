@@ -14,6 +14,7 @@ mod bundle_replay_cli;
 mod message_cli;
 mod prompt_end_to_end;
 mod prompt_retry;
+mod replay_drive;
 mod scan_cli;
 mod stop_cli;
 mod stop_common;

@@ -8,6 +8,40 @@ edition = "2024"
 description = "A git-backed agent harness"
 license = "MIT"
 repository = "https://github.com/mudbungie/lernie"
+keywords = ["agent", "llm", "git", "harness", "cli"]
+categories = ["development-tools", "command-line-utilities"]
+# The floor is the crate's own source, not the edition: edition 2024 needs
+# 1.85, but `let` chains (used in `src/prompt/mod.rs` and elsewhere) only
+# stabilized in 1.88. Verified by building the workspace under each:
+# 1.85 fails with E0658 `let` expressions in this position are unstable;
+# 1.88 builds clean. Without this line an old-rustc user gets that E0658
+# wall instead of cargo's one-line "requires rustc 1.88" message.
+rust-version = "1.88"
+
+# Repo-development files, kept out of the published tarball. What stays is
+# what a consumer builds and reads: `src/`, the embedded asset trees
+# (`template/`, `schemas/`, `skills/`, `install/models.yaml` — the
+# `include_dir!`/`include_str!` inputs, whose absence is a build failure),
+# `README.md`, `LICENSE`, `Cargo.lock`. Everything below serves the git
+# checkout only: `rust-toolchain.toml` would force a source builder onto
+# this repo's exact pinned toolchain, and `tests/` are repo-side gates
+# (including `tests/suite/`, the evaluation task data read by the
+# workspace-internal `agent-eval`, never by the published crate).
+exclude = [
+    "/.balls",
+    "/.githooks",
+    "/.github",
+    "/AGENTS.md",
+    "/CLAUDE.md",
+    "/Makefile",
+    "/docs",
+    "/experiments",
+    "/release-plz.toml",
+    "/rust-toolchain.toml",
+    "/scripts",
+    "/tarpaulin.toml",
+    "/tests",
+]
 
 [dependencies]
 brazen = "=0.0.3"

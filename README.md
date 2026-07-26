@@ -7,7 +7,7 @@ Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 Promise suite (the user stories 0.0.1 is evaluated against): [`docs/USER_STORIES.md`](docs/USER_STORIES.md).
 
-CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`. The e2e tests exec the real provider adapter `bz`, which the test targets install themselves at the pinned version (see **[The pinned adapter under test](#the-pinned-adapter-under-test)**). The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
+CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`. The e2e tests exec the real provider adapter `bz`, which the test targets install themselves at the pinned version (see **[The pinned adapter under test](#the-pinned-adapter-under-test)**). The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`. That pin binds this git checkout only; it is excluded from the published crate, whose supported floor is the declared `rust-version = "1.88"` (the crate's `let` chains, not edition 2024's 1.85).
 
 ## One command surface, two bindings
 
@@ -915,7 +915,7 @@ ARCH §9.3) executes an experiment against the suite N times per task and report
 pass@1 (with 95% Wilson intervals) and pass@5, overall and per category:
 
 ```
-agent-eval --config baseline --suite tests/suite --runs 5
+agent-eval --config baseline --suite tests/suite --runs 5 --agent <driver-cmd>
 ```
 
 `--config <name>` names an experiment — a `workflow.yaml` variant under
@@ -923,12 +923,38 @@ agent-eval --config baseline --suite tests/suite --runs 5
 Per run the runner seeds a fresh isolated `LERNIE_HOME` and working directory,
 runs the task `setup`, invokes the agent, then runs the task `check` — **exit 0
 is the sole pass signal** (§9.1), so success is observable state, never the
-agent's own claim. The agent invocation is `--agent <cmd>` (an external
-harness-driver receiving the prompt, with `LERNIE_HOME`/`LERNIE_EXPERIMENT` in
-the env); `--bundle-dir <dir>` archives failing runs for triage via `lernie
-bundle` (§9.2). The runner is fully tested against a faked agent, so it needs no
-live model to validate — a live-model run of the full suite is a separate,
-deliberately manual step.
+agent's own claim. `--bundle-dir <dir>` archives failing runs for triage via
+`lernie bundle` (§9.2). The runner is fully tested against a faked agent, so it
+needs no live model to validate.
+
+**You must supply the driver.** `--agent <cmd>` is required and **no driver
+program ships with lernie** — the runner is complete, the thing it drives is
+not, so no end-to-end evaluation run is possible out of the box. Writing one is
+tracked as deferred work. The contract a driver must honour, per run:
+
+| Given | How |
+|---|---|
+| the task prompt | argv[1] |
+| the isolated harness root for this run | `LERNIE_HOME` in the env |
+| the experiment's `workflow.yaml` | `LERNIE_EXPERIMENT` in the env |
+| where to report back | `LERNIE_EVAL_REPORT` in the env — a file path |
+| the working directory | cwd (shared with the task's `setup` and `check`) |
+
+`LERNIE_EXPERIMENT` is a hand-off, not a hook: **nothing in the harness reads
+that variable.** The harness takes its `workflow.yaml` from the workspace's
+config commit (§2.2), never from the environment, so *applying* the experiment
+is the driver's job — it must author the named `workflow.yaml` into the
+workspace's config commit before prompting. Until a driver does that, an
+experiment never reaches the harness at all, which is why §9.3's "a new
+experiment is a config diff, no code changes" is not yet exercised end to end.
+
+`LERNIE_EVAL_REPORT` names a file the driver **may** write with exactly two
+lines — the workspace path, then the agent id — which is what `lernie bundle`
+needs to archive the run if it fails (§9.2). It is the driver's only channel
+back to the runner. Writing nothing, or anything malformed, only makes a failing
+run un-bundleable; it is never an error, and it never affects pass/fail, which
+is the task `check` alone. The driver's own exit code is likewise ignored.
+Failure to *spawn* the driver, by contrast, is a hard error naming the program.
 
 ## Contributing
 
@@ -965,7 +991,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
-| `make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n>` [`AGENT=<cmd>`] | Run the `agent-eval` suite runner (ARCH §9.3): experiment × suite × N (see **Task suite** above) |
+| `make eval CONFIG=<exp> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>` | Run the evaluation runner (ARCH §9.3): experiment × suite × N (see **Task suite** above). `AGENT` is required and has no default — no harness driver ships with lernie (see "Run the suite") |
 | `make check`          | `fmt-check` + `lint` + `coverage` + `test-install`    |
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
@@ -1037,6 +1063,23 @@ bl close  <task-id> -m "..."    # squash-merges into main; run from the repo roo
 ```
 
 See `bl skill` for the full guide.
+
+### What gets published
+
+`cargo package` ships the crate, not the repo. `Cargo.toml`'s `exclude` keeps
+out everything that serves this git checkout only — `docs/`, `tests/`,
+`experiments/`, `scripts/`, `.github/`, `.githooks/`, `.balls/`, `Makefile`,
+`tarpaulin.toml`, `release-plz.toml`, `AGENTS.md`, `CLAUDE.md`, and
+`rust-toolchain.toml` (which would otherwise force a source builder onto this
+repo's exact pinned toolchain). What remains is `src/`, `README.md`, `LICENSE`,
+`Cargo.lock`, and the embedded asset trees `template/`, `schemas/`, `skills/`,
+`install/models.yaml` — those four are `include_dir!`/`include_str!` inputs, so
+excluding any of them is a build failure, not a smaller tarball. Verify a change
+to the list with `cargo package --list` and then `cargo package`, which
+compiles the extracted tarball.
+
+`crates/agent-eval` is `publish = false`: it is workspace-internal and is not
+part of the published crate at all.
 
 ### Pre-commit hook
 

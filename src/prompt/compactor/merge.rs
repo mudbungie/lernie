@@ -27,11 +27,32 @@
 //! move: a clean merge is already fully staged (the add is a no-op), and
 //! a modify/delete conflict leaves the live version in the worktree,
 //! which the add stages — resolving the conflict by keeping ours.
+//!
+//! **Filtered to the compaction product** (§2.6, §2.7). A compactor is an
+//! ordinary child, so its branch also grew its *own* context since `C`:
+//! the `goal.md` and `soul.md` its dispatch commit rewrote, and the
+//! transcript entries under `messages/**` its step loop appended. None of
+//! that is the dispatching branch's context — it is the compactor's
+//! private dialog, whose record is its own ref. What the merge is
+//! specified to land is exactly what the two-tool toolset produces
+//! (§2.7): the new `summary/<NNN>.md` and the nominated deletions. So the
+//! staged merge is filtered before it commits — every path the merge
+//! would *add or rewrite* outside `summary/` is restored to the
+//! dispatching branch's own version, while deletions (the whole point of
+//! compaction) pass untouched. This is the §2.6 work-product transfer's
+//! principle in mirror image: that channel admits work products and
+//! excludes branch-scoped context; this one admits the branch's own
+//! context product and excludes the compactor's private dialog.
 
 use super::Error;
 use crate::template::GitRunner;
 use crate::workspace;
 use std::path::Path;
+
+/// The compaction product's sole *addition* surface (ARCH §2.7): the
+/// summary `write_summary` writes. A git exclude pathspec — the same
+/// filtering mechanism the work-product transfer uses (§2.6).
+const SUMMARY_EXCLUDE: &str = ":(exclude)summary";
 
 /// Outcome of a compaction merge attempt against the dispatching branch.
 #[derive(Debug, PartialEq, Eq)]
@@ -100,12 +121,92 @@ pub fn merge(
             op: "compaction merge add",
             source,
         })?;
+    filter_to_product(parent_worktree, git)?;
     git.run(parent_worktree, &["commit", "--no-edit", "-m", &subject])
         .map_err(|source| Error::Git {
             op: "compaction merge commit",
             source,
         })?;
     Ok(MergeOutcome::Merged)
+}
+
+/// Drop the compactor's private dialog from the staged merge (module
+/// docs, §2.6/§2.7). The comparison is the staged merge result against
+/// `HEAD` — still the dispatching branch's own tip under `--no-commit` —
+/// so its three classes name themselves: a path **added** outside
+/// `summary/` is a compactor transcript entry, a path **rewritten**
+/// outside `summary/` is its `goal.md`/`soul.md` (or a filename collision
+/// git resolved into a conflict), and a path **deleted** is the
+/// compaction the merge exists to land. Both non-deletion classes are
+/// restored to the dispatching branch's version — an addition by removal,
+/// a rewrite by checkout — leaving only the summary and the deletions.
+fn filter_to_product(parent_worktree: &Path, git: &dyn GitRunner) -> Result<(), Error> {
+    let added = staged_outside_summary(parent_worktree, "A", git)?;
+    run_on_paths(parent_worktree, &["rm", "-q", "-f", "--"], &added, git)?;
+    let rewritten = staged_outside_summary(parent_worktree, "M", git)?;
+    run_on_paths(
+        parent_worktree,
+        &["checkout", "HEAD", "--"],
+        &rewritten,
+        git,
+    )
+}
+
+/// Paths the staged merge would land outside `summary/` under diff class
+/// `filter` (`A` added, `M` rewritten), relative to the dispatching
+/// branch's tip. `--no-renames` keeps the classes exhaustive: an
+/// add/delete pair must not collapse into an `R` that escapes both.
+fn staged_outside_summary(
+    parent_worktree: &Path,
+    filter: &str,
+    git: &dyn GitRunner,
+) -> Result<Vec<String>, Error> {
+    let filter_arg = format!("--diff-filter={filter}");
+    let out = git
+        .run_capture(
+            parent_worktree,
+            &[
+                "diff",
+                "--cached",
+                "--name-only",
+                "--no-renames",
+                &filter_arg,
+                "HEAD",
+                "--",
+                SUMMARY_EXCLUDE,
+            ],
+        )
+        .map_err(|source| Error::Git {
+            op: "compaction merge filter",
+            source,
+        })?;
+    Ok(out
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect())
+}
+
+/// Run `args` extended with `paths`, or nothing at all when `paths` is
+/// empty — the general path with empty inputs (`docs/PRINCIPLES.md`), not
+/// a special case: git would read a pathspec-less `rm` as an error.
+fn run_on_paths(
+    parent_worktree: &Path,
+    args: &[&str],
+    paths: &[String],
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+    let mut argv: Vec<&str> = args.to_vec();
+    argv.extend(paths.iter().map(String::as_str));
+    git.run(parent_worktree, &argv)
+        .map_err(|source| Error::Git {
+            op: "compaction merge filter",
+            source,
+        })
 }
 
 /// True iff a merge is in progress in `parent_worktree` — i.e. `MERGE_HEAD`

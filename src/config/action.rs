@@ -1,7 +1,6 @@
 //! Workflow actions: a small DSL embedded in YAML strings.
 //!
 //! Examples (from `docs/ARCHITECTURE.md` §6):
-//! - `spawn_exchange`
 //! - `dispatch(worker)`
 //! - `dispatch(worker, with: verifier.feedback)`
 //! - `dispatch(compactor, mode: intermediate)`
@@ -21,8 +20,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Action {
-    SpawnExchange,
-    SpawnRootAgent,
     Dispatch {
         role: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -61,16 +58,42 @@ impl Action {
         let trimmed = src.trim();
         let (name, args) = split_call(trimmed)?;
         match name {
-            "spawn_exchange" => no_args(name, &args).map(|_| Action::SpawnExchange),
-            "spawn_root_agent" => no_args(name, &args).map(|_| Action::SpawnRootAgent),
             "deliver_result" => no_args(name, &args).map(|_| Action::DeliverResult),
             "compaction_merge" => no_args(name, &args).map(|_| Action::CompactionMerge),
             "mark_abandoned" => no_args(name, &args).map(|_| Action::MarkAbandoned),
             "notify_ui" => no_args(name, &args).map(|_| Action::NotifyUi),
             "dispatch" => parse_dispatch(&args),
             "gate_return_on" => parse_gate_return_on(&args),
-            other => Err(format!("unknown action {other:?}")),
+            other => Err(retired(other)
+                .map(|why| format!("action {other:?} was retired: {why}; remove the binding"))
+                .unwrap_or_else(|| format!("unknown action {other:?}"))),
         }
+    }
+}
+
+/// Why a once-parsed action name is no longer vocabulary, or `None` if the
+/// name was never in the closed set. Retired names are **declined** here
+/// rather than accepted and silently ignored, so a config carrying stale
+/// vocabulary fails at load with the reason (`docs/PRINCIPLES.md` "Decline
+/// illegal operations"; the `manifest.yaml` `overflow: summarize`
+/// subtraction is the same idiom).
+fn retired(name: &str) -> Option<&'static str> {
+    match name {
+        // ARCH §2.4: "Reprompt is a message" — a user message resumes the
+        // agent's own branch, and a *new* root agent is forked explicitly
+        // off a config branch's head (§2.4, §3.4 CLI as control plane).
+        // No binding ever spawns one, so the hop can never reach this.
+        "spawn_root_agent" => Some(
+            "a user message resumes the agent's own branch and a new root agent \
+             is forked explicitly, so no binding spawns one (ARCH §2.4)",
+        ),
+        // ARCH §2.4: an exchange "is a UX span, not a structure … It owns
+        // no branch, no merge, no lifecycle." There is nothing to spawn.
+        "spawn_exchange" => Some(
+            "an exchange is a UX span that owns no branch, merge, or lifecycle, \
+             so there is nothing to spawn (ARCH §2.4)",
+        ),
+        _ => None,
     }
 }
 

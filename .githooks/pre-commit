@@ -5,9 +5,11 @@
 #   1. No direct commits to mainline (main/master). Squash-merges from `bl review`
 #      are permitted; detected via presence of MERGE_MSG or SQUASH_MSG.
 #   2. No source file over 300 lines (docs and config exempt).
-#   3. `make check` — the repo's gate: fmt-check, clippy (-D warnings), and
-#      100% coverage (cargo tarpaulin --fail-under 100). The Makefile is the
-#      single source of what the gate is; this hook invokes `make check`
+#   3. `make check` — the repo's gate: fmt-check, clippy (-D warnings),
+#      100% coverage (cargo tarpaulin --fail-under 100), and the install
+#      contract (cargo test --test install, uninstrumented — tarpaulin skips
+#      it). The Makefile is the single source of what the gate is; this hook
+#      invokes `make check`
 #      rather than re-listing the commands, so the close gate can never drift
 #      from `make check`. rust-toolchain.toml pins the toolchain, so the
 #      fmt/clippy verdict is identical here, in CI, and for every agent.
@@ -46,6 +48,6 @@ while IFS= read -r file; do
 done < <(git ls-files)
 
 if [ -f Cargo.toml ] && command -v make >/dev/null 2>&1 && command -v cargo >/dev/null 2>&1; then
-  echo "pre-commit: running 'make check' (fmt-check, clippy -D warnings, 100% coverage)..." >&2
+  echo "pre-commit: running 'make check' (fmt-check, clippy -D warnings, 100% coverage, install contract)..." >&2
   make check
 fi

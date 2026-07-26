@@ -1,4 +1,4 @@
-.PHONY: all build release test coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-verify uninstall ci clean
+.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-verify uninstall ci clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -47,6 +47,23 @@ release:
 test:
 	cargo test --workspace
 
+# The install contract end-to-end (tests/install.rs). It shells out to
+# `make install` — a release build plus `cargo install brazen` — which
+# contends with tarpaulin's `target/` lock, so the test carries
+# `cfg_attr(tarpaulin, ignore)` and `make coverage` never runs it. This
+# target is where it runs instead: uninstrumented, and part of `check`
+# below, so the pre-commit/close gate exercises the first thing every
+# user touches — including the `include_dir!` embedded-asset seam
+# (src/install.rs, src/template/mod.rs) as a real release binary sees it.
+# It is the tree's only tarpaulin-ignored test; a future sibling belongs
+# on this line, not in a new target.
+#
+# Cost, accepted deliberately: ~45s warm, and it re-installs `bz` at the
+# `brazen` pin (§4.4) onto the cargo bin — so a locally installed `bz`
+# newer than the pin is rolled back to what this tree links.
+test-install:
+	cargo test --test install
+
 TARPAULIN_PIN := 0.35.2
 
 coverage:
@@ -85,7 +102,7 @@ fmt:
 fmt-check:
 	cargo fmt --check
 
-check: fmt-check lint coverage
+check: fmt-check lint coverage test-install
 
 # `make smoke` — the live-wire smoke test (README "First-run smoke test").
 # The FIRST real model call the project makes: `lernie new` + one live

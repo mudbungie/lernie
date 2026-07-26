@@ -7,7 +7,7 @@ Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 Promise suite (the user stories 0.0.1 is evaluated against): [`docs/USER_STORIES.md`](docs/USER_STORIES.md).
 
-CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate) on every push and pull request to `main`. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
+CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
 
 ## One command surface, two bindings
 
@@ -883,13 +883,14 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make build`          | `cargo build`                                         |
 | `make release`        | `cargo build --release`                               |
 | `make test`           | `cargo test`                                          |
+| `make test-install`   | `cargo test --test install` — the install contract end-to-end, uninstrumented (it is `cfg_attr(tarpaulin, ignore)`, so `coverage` skips it); ~45s warm, and it re-installs `bz` at the `brazen` pin |
 | `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine)      |
 | `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
 | `make fmt`            | `cargo fmt`                                           |
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
-| `make check`          | `fmt-check` + `lint` + `coverage`                     |
+| `make check`          | `fmt-check` + `lint` + `coverage` + `test-install`    |
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
 | `make install-hooks`  | Point git at `.githooks/`                             |
@@ -925,12 +926,19 @@ See `bl skill` for the full guide.
    `Makefile`, `.gitignore`, `LICENSE`, and anything under `.githooks/` are
    exempt.
 3. **`make check`** on every commit that touches a Cargo project: `fmt-check`
-   (formatting), `lint` (`clippy -D warnings`), and `coverage` (`cargo
-   tarpaulin --fail-under 100`). The hook invokes `make check` rather than
-   re-listing the commands, so the close gate is always exactly what `make
-   check` is — the Makefile is the single source. Formatting and lint drift
-   therefore cannot land invisibly. The toolchain is pinned in
-   `rust-toolchain.toml` and the tarpaulin version in `tarpaulin.toml` (also
+   (formatting), `lint` (`clippy -D warnings`), `coverage` (`cargo tarpaulin
+   --fail-under 100`), and `test-install` (`cargo test --test install`). The
+   hook invokes `make check` rather than re-listing the commands, so the close
+   gate is always exactly what `make check` is — the Makefile is the single
+   source. Formatting and lint drift therefore cannot land invisibly.
+   `test-install` is a separate step because the install test shells out to a
+   release build and `cargo install brazen`, which contend with tarpaulin's
+   `target/` lock; it is `cfg_attr(tarpaulin, ignore)`, so without its own
+   uninstrumented step the install contract — the first thing every user
+   touches — would never run at the gate at all. It costs ~45s warm and rolls a
+   locally installed `bz` back to the `brazen` pin this tree links. The
+   toolchain is pinned in `rust-toolchain.toml` and the tarpaulin version in
+   `tarpaulin.toml` (also
    `.github/workflows/ci.yml`) so `fmt-check`, `lint`, and the coverage
    denominator mean the same thing locally and on CI — newer tarpaulin
    releases have silently dropped inline `#[cfg(test)] mod tests;` files from

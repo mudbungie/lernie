@@ -5,24 +5,46 @@
 //! (`lernie <prefix>: …`). Detached launches use `"true"` as the driver
 //! target (spawned, harmless).
 
-use super::{assert_prefixed, noop_editor, with_fx, writing_editor};
+use super::{assert_prefixed, noop_editor, with_fx, with_lernie_home, writing_editor};
 use crate::cmd::{Outcome, config, dispatch, message, new, prompt, stop};
-use crate::workspace::fixture;
+use crate::template::{GitRunner, RealGit};
+use crate::workspace::{fixture, repo_git};
+use std::path::Path;
 use tempfile::TempDir;
+
+/// Run `lernie new <dest>` against a scratch harness root — the verb
+/// founds the root it resolves (§2.2), so every in-process run must
+/// point `LERNIE_HOME` away from the developer's own install.
+fn run_new(home: &Path, dest: &Path) -> Result<Outcome, crate::cmd::Error> {
+    with_lernie_home(home, || {
+        with_fx("lernie", b"", &noop_editor, |fx| {
+            new::run(
+                new::Args {
+                    path: Some(dest.to_path_buf()),
+                },
+                fx,
+            )
+        })
+        .0
+    })
+}
+
+/// Every path in the workspace's first config commit.
+fn config_tree(dest: &Path) -> String {
+    RealGit::new()
+        .run_capture(
+            &repo_git(dest),
+            &["ls-tree", "-r", "--name-only", "config/default"],
+        )
+        .unwrap()
+}
 
 #[test]
 fn new_scaffolds_and_prints_the_destination() {
+    let home = TempDir::new().unwrap();
     let tmp = TempDir::new().unwrap();
     let dest = tmp.path().join("ws");
-    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
-        new::run(
-            new::Args {
-                path: Some(dest.clone()),
-            },
-            fx,
-        )
-    });
-    let Outcome::Line(line) = r.unwrap() else {
+    let Outcome::Line(line) = run_new(home.path(), &dest).unwrap() else {
         panic!("new prints its destination")
     };
     assert_eq!(line, dest.display().to_string());
@@ -30,15 +52,66 @@ fn new_scaffolds_and_prints_the_destination() {
 }
 
 #[test]
+fn new_founds_an_unseeded_root_so_the_config_commit_carries_descriptions() {
+    // A fresh `LERNIE_HOME` with no `lernie prime` run against it: the
+    // verb founds the pools through prime's own seed-if-absent routine
+    // (§2.2), so the first config commit carries the control files *and*
+    // a populated `descriptions/**` (§3.3 descriptions-always) instead
+    // of silently authoring a toolless config.
+    let home = TempDir::new().unwrap();
+    let tmp = TempDir::new().unwrap();
+    let dest = tmp.path().join("ws");
+    run_new(home.path(), &dest).unwrap();
+
+    // The pools were founded under the previously-empty home …
+    assert!(home.path().join("tools/read_file.json").is_file());
+    assert!(home.path().join("skills/read_file/SKILL.md").is_file());
+    // … and the commit's tree carries the snapshot beside the controls.
+    let tree = config_tree(&dest);
+    for path in [
+        "manifest.yaml",
+        "providers.yaml",
+        "workflow.yaml",
+        "version",
+        "descriptions/tools/read_file.json",
+        "descriptions/skills/read_file.md",
+    ] {
+        assert!(tree.contains(path), "{path} missing from:\n{tree}");
+    }
+}
+
+#[test]
+fn new_over_a_seeded_root_keeps_the_curated_pool_entry() {
+    // Founding never clobbers (§2.2 seed-if-absent), so a hand-edited
+    // pool entry is what the config commit snapshots.
+    let home = TempDir::new().unwrap();
+    std::fs::create_dir_all(home.path().join("tools")).unwrap();
+    std::fs::write(home.path().join("tools/read_file.json"), r#"{"mine":1}"#).unwrap();
+    let tmp = TempDir::new().unwrap();
+    let dest = tmp.path().join("ws");
+    run_new(home.path(), &dest).unwrap();
+
+    assert_eq!(
+        std::fs::read_to_string(home.path().join("tools/read_file.json")).unwrap(),
+        r#"{"mine":1}"#
+    );
+    let shown = RealGit::new()
+        .run_capture(
+            &repo_git(&dest),
+            &["show", "config/default:descriptions/tools/read_file.json"],
+        )
+        .unwrap();
+    assert_eq!(shown, r#"{"mine":1}"#);
+}
+
+#[test]
 fn new_reports_a_scaffold_failure() {
+    let home = TempDir::new().unwrap();
     let tmp = TempDir::new().unwrap();
     let dest = tmp.path().join("ws");
     std::fs::create_dir_all(&dest).unwrap();
     std::fs::write(dest.join("occupied"), b"x").unwrap();
-    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
-        new::run(new::Args { path: Some(dest) }, fx)
-    });
-    assert_prefixed(r.unwrap_err(), "new");
+    assert_prefixed(run_new(home.path(), &dest).unwrap_err(), "new");
 }
 
 #[test]

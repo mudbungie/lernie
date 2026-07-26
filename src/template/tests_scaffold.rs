@@ -39,11 +39,10 @@ fn lernie_bin() -> PathBuf {
 }
 
 fn scaffold(dest: &Path) -> String {
-    // Point the harness root at a throwaway empty dir so the
-    // descriptions-always producer (ARCH §3.3) sees empty pools and the
-    // scaffold shape stays deterministic regardless of the dev host's
-    // installed pools. `descriptions_are_snapshotted_from_the_pool`
-    // covers the populated case.
+    // Point the harness root at a throwaway dir: `new` founds the root
+    // it resolves (ARCH §2.2), so the descriptions-always producer
+    // (§3.3) sees the shipped pools rather than the dev host's, and the
+    // dev host's own install is left alone.
     let home = TempDir::new().unwrap();
     let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
@@ -257,9 +256,15 @@ fn binary_refuses_non_empty_destination() {
     let dest = holder.path().join("occupied");
     std::fs::create_dir(&dest).unwrap();
     std::fs::write(dest.join("preexisting"), b"x").unwrap();
+    let home = TempDir::new().unwrap();
     let mut cmd = Command::new(lernie_bin());
     scrub_git_env(&mut cmd);
-    let out = cmd.arg("new").arg(&dest).output().unwrap();
+    let out = cmd
+        .arg("new")
+        .arg(&dest)
+        .env("LERNIE_HOME", home.path())
+        .output()
+        .unwrap();
     assert!(
         !out.status.success(),
         "binary should refuse non-empty destination"

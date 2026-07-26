@@ -140,7 +140,15 @@ Or via the Makefile wrapper:
 make new-workspace DEST=/path/to/my-workspace
 ```
 
-The binary runs `git init --bare -b config/default <dest>/repo.git`,
+The binary **founds the harness root first** — it runs the same
+seed-if-absent routine `lernie prime` is (ARCH §2.2), so a data root
+nobody primed gains the `tools/` and `skills/` pools before they are
+read, and a primed install is untouched (nothing is clobbered, no flag
+is involved). That is what keeps the next step honest: the pools are an
+input to the config commit, so an unprimed root would otherwise author a
+commit with an empty `descriptions/**` and hand every agent forked off
+it an empty toolset. It then runs
+`git init --bare -b config/default <dest>/repo.git`,
 materializes a transient authoring checkout, extracts the template's
 control files into it, snapshots the data-root pools into
 `descriptions/{tools,skills}/` (ARCH §3.3 descriptions-always), commits
@@ -491,9 +499,11 @@ Each built-in is the triple §3.3 pins:
 Built-ins:
 
 - **`read_file`** — read the entire contents of a file at a given
-  path. Rejects files larger than 1 MiB; v0.4+ adds the
-  oversized-output auto-dispatch shim (ARCH §3.3 / §12). Try it
-  directly: `echo '{"path":"README.md"}' | lernie tool read_file`.
+  path. Rejects files larger than 1 MiB, reporting the file's **true**
+  size (`stat`, not the capped read's length) so the agent can judge
+  the magnitude it is up against; v0.4+ adds the oversized-output
+  auto-dispatch shim (ARCH §3.3 / §12). Try it directly:
+  `echo '{"path":"README.md"}' | lernie tool read_file`.
 - **`bash`** — runs a shell command via `sh -c` and returns its
   stdout. The shell runs in its own process group so a SIGTERM the
   harness sends is forwarded to the entire spawned tree (§2.9

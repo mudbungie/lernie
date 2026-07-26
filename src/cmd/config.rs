@@ -6,6 +6,7 @@
 
 use super::{Error, Fx, Outcome};
 use crate::harness_root;
+use crate::template::authoring::Pass;
 use crate::template::{self, RealGit};
 use std::path::PathBuf;
 
@@ -23,15 +24,19 @@ pub struct Args {
 }
 
 /// Materialize, edit via [`Fx::editor`](super::Fx::editor), and commit —
-/// product-less on success (§3.4). Failures — root resolution or the
-/// authoring pass — carry the `config` prefix through one conversion.
+/// product-less when the commit lands (§3.4). A **declined pass** — an
+/// edit that changed nothing — is not a failure: it exits 0 and reports
+/// the branch that did not move as the verb's one stdout line, which is
+/// also the machine-readable signal (empty stdout = a commit landed).
+/// Failures — root resolution or the authoring pass — carry the `config`
+/// prefix through one conversion.
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
     go(args, fx).map_err(|e| Error::new("config", e))
 }
 
 fn go(args: Args, fx: &mut Fx) -> Result<Outcome, Box<dyn std::error::Error>> {
     let roots = harness_root::resolve()?;
-    template::authoring::from_cli(
+    let pass = template::authoring::from_cli(
         &args.workspace,
         &roots.data,
         args.name.as_deref(),
@@ -40,5 +45,10 @@ fn go(args: Args, fx: &mut Fx) -> Result<Outcome, Box<dyn std::error::Error>> {
         fx.editor,
         &RealGit::new(),
     )?;
-    Ok(Outcome::Quiet)
+    Ok(match pass {
+        Pass::Landed => Outcome::Quiet,
+        Pass::Declined { target } => Outcome::Line(format!(
+            "{target} unchanged: the edit changed nothing, so no config commit was authored"
+        )),
+    })
 }

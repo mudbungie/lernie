@@ -1,5 +1,8 @@
-//! The retry driver's cases (ARCH §2.10, §4.4): attempt segments,
-//! retry classification, and the stream-framing errors.
+//! The retry driver's segment, attempt-cap, and handshake contract
+//! (ARCH §2.10, §4.4): attempt segments, retry classification, and the
+//! stream-framing errors. The §2.9 stop bound on the same loop lives in
+//! `stop.rs`, the §2.3 stderr capture in `stderr.rs`; the shared
+//! scaffolding in `mod.rs`.
 
 use super::*;
 

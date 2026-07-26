@@ -16,9 +16,20 @@ mod replay;
 
 /// A `GitRunner` that records `run` invocations and replays a canned
 /// `run_capture` output, with injectable failures on either channel.
+/// The ancestry probes the governing lineage makes (`for-each-ref` over
+/// `refs/heads/config/`, then `merge-base` per head) answer from their
+/// own canned fields, so a test states branch enumeration and config
+/// lineage separately.
 pub(super) struct StubGit {
-    /// Canned stdout returned by every `run_capture`.
+    /// Canned stdout returned by every un-specialized `run_capture`.
     capture_out: String,
+    /// Canned `for-each-ref refs/heads/config/` output.
+    config_refs: String,
+    /// When true, the `merge-base` probe fails — the no-shared-ancestry
+    /// case, which contributes no lineage ref.
+    no_lineage: bool,
+    /// When true, the `for-each-ref` lineage enumeration itself fails.
+    fail_lineage: bool,
     /// When true, `run_capture` fails.
     fail_capture: bool,
     /// Zero-based `run` index to fail at (`None` = never).
@@ -31,11 +42,22 @@ impl StubGit {
     pub(super) fn new(capture_out: &str) -> Self {
         Self {
             capture_out: capture_out.to_owned(),
+            config_refs: CONFIG_REFS.to_owned(),
+            no_lineage: false,
+            fail_lineage: false,
             fail_capture: false,
             fail_run_at: None,
             runs: RefCell::new(Vec::new()),
             run_idx: Cell::new(0),
         }
+    }
+    pub(super) fn no_lineage(mut self) -> Self {
+        self.no_lineage = true;
+        self
+    }
+    pub(super) fn fail_lineage(mut self) -> Self {
+        self.fail_lineage = true;
+        self
     }
     pub(super) fn fail_capture(mut self) -> Self {
         self.fail_capture = true;
@@ -60,11 +82,16 @@ impl GitRunner for StubGit {
             Ok(())
         }
     }
-    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
+    fn run_capture(&self, _dest: &Path, args: &[&str]) -> io::Result<String> {
         if self.fail_capture {
-            Err(io::Error::other("stub capture fail"))
-        } else {
-            Ok(self.capture_out.clone())
+            return Err(io::Error::other("stub capture fail"));
+        }
+        match args.first().copied() {
+            Some("for-each-ref") if self.fail_lineage => Err(io::Error::other("stub lineage fail")),
+            Some("for-each-ref") => Ok(self.config_refs.clone()),
+            Some("merge-base") if self.no_lineage => Err(io::Error::other("no merge base")),
+            Some("merge-base") => Ok("basesha".to_owned()),
+            _ => Ok(self.capture_out.clone()),
         }
     }
 }
@@ -89,6 +116,10 @@ pub(super) fn write(path: &Path, body: &str) {
 
 pub(super) const REFS: &str = "agents/20260101-p1\nagents/20260101-p1-20260102-c1\n";
 pub(super) const AGENT: &str = "20260101-p1";
+/// The workspace's config branches, as `for-each-ref` prints them —
+/// the governing lineage the bundle must carry beside the subtree
+/// (§9.2).
+pub(super) const CONFIG_REFS: &str = "refs/heads/config/default\nrefs/heads/config/strict\n";
 
 #[test]
 fn error_messages_render() {

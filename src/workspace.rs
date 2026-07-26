@@ -152,10 +152,46 @@ pub fn agent_ids(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<String
         .collect())
 }
 
+/// The **governing lineage** of `agent_id`'s branch: every `config/*`
+/// ref whose history reaches the branch, paired with the ancestor it
+/// contributes (`git merge-base <agent-ref> <head>`). A config lineage
+/// sharing no ancestor with the agent — a fresh orphan config — reaches
+/// the branch through nothing and is absent from the result.
+///
+/// This is the candidate set [`governing_config`] folds to one commit,
+/// and the ref set `archive::bundle` carries (§9.2): a config branch
+/// that advanced past the fork is *not* an ancestor of the agent, yet
+/// it is the ref the merge-base is taken against, so the lineage
+/// travels **at its heads** and a replayed workspace re-derives over
+/// the same candidate set rather than an approximation of it.
+pub fn config_lineage(
+    workspace: &Path,
+    agent_id: &str,
+    git: &dyn GitRunner,
+) -> io::Result<Vec<(String, String)>> {
+    let repo = repo_git(workspace);
+    let heads = git.run_capture(
+        &repo,
+        &["for-each-ref", "--format=%(refname)", "refs/heads/config/"],
+    )?;
+    let target = agent_ref(agent_id);
+    Ok(heads
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .filter_map(|head| {
+            let base = git
+                .run_capture(&repo, &["merge-base", &target, head])
+                .ok()?;
+            Some((head.to_owned(), base))
+        })
+        .collect())
+}
+
 /// Derive the **governing config commit** of `agent_id`'s branch: the
-/// nearest ancestor reachable from any `config/*` ref (§2.2). For each
-/// config head, `git merge-base <agent-ref> <head>` yields the shared
-/// ancestor on that lineage; the governing commit is the *descendant*
+/// nearest ancestor reachable from any `config/*` ref (§2.2). Each ref
+/// of the governing lineage ([`config_lineage`]) contributes the shared
+/// ancestor on its lineage; the governing commit is the *descendant*
 /// among the candidates (nearest to the agent's tip). Derived from
 /// ancestry, never stored. Loud when no config lineage reaches the
 /// branch, and loud when two candidates are incomparable — both mean a
@@ -167,18 +203,8 @@ pub fn governing_config(
     git: &dyn GitRunner,
 ) -> io::Result<String> {
     let repo = repo_git(workspace);
-    let heads = git.run_capture(
-        &repo,
-        &["for-each-ref", "--format=%(refname)", "refs/heads/config/"],
-    )?;
-    let target = agent_ref(agent_id);
     let mut best: Option<String> = None;
-    for head in heads.lines().map(str::trim).filter(|l| !l.is_empty()) {
-        // A config lineage sharing no ancestor with the agent (a fresh
-        // orphan config) contributes no candidate.
-        let Ok(base) = git.run_capture(&repo, &["merge-base", &target, head]) else {
-            continue;
-        };
+    for (_, base) in config_lineage(workspace, agent_id, git)? {
         best = Some(match best {
             None => base,
             Some(prev) if prev == base => prev,
@@ -187,7 +213,8 @@ pub fn governing_config(
     }
     best.ok_or_else(|| {
         io::Error::other(format!(
-            "no config/* ancestor for {target} — every agent forks off a config commit (§2.2)"
+            "no config/* ancestor for {} — every agent forks off a config commit (§2.2)",
+            agent_ref(agent_id)
         ))
     })
 }

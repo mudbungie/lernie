@@ -44,8 +44,40 @@ build:
 release:
 	cargo build --workspace --release
 
-test:
-	cargo test --workspace
+# Test determinism: the pinned adapter, not whatever `bz` is on PATH.
+#
+# The e2e tests exec the REAL `bz`, and the load-time version guard (§4.4)
+# demands the pin EXACTLY. Resolving it from `PATH` made every test run
+# depend on machine-global mutable state (`~/.cargo/bin/bz`): one agent
+# installing a different brazen version failed another worktree's gate
+# on five-plus e2e tests, indistinguishable at a glance from a code
+# regression. So the test targets below resolve `bz` from a cache keyed on
+# the pin and put that directory FIRST on `PATH` — a worktree's tests always
+# run the worktree's pin, whatever the machine's `bz` happens to be. This is
+# test determinism only: runtime resolution for real use (§4.4 — `adapter:`
+# override, injected target, else `bz` on `PATH`) is untouched, and so is
+# `make install`, which still puts the pinned `bz` on the user's `PATH`.
+#
+# The version is BRAZEN_PIN above — Cargo.toml's `brazen = "="` line, the
+# number's one home, the same line the code-side guard reads. The directory
+# is NAMED after it, so a pin bump is a cache miss and nothing else; nothing
+# is ever overwritten in place, which is what keeps a shared cache safe for
+# parallel worktrees.
+#
+# Cost: cold, one `cargo install` per pin per machine (the cache is under
+# XDG_CACHE_HOME, so sibling worktrees share it and only the first pays).
+# Warm, one `stat` — the recipe is a file target, so make skips it outright.
+XDG_CACHE_HOME ?= $(HOME)/.cache
+BZ_TEST_ROOT   := $(XDG_CACHE_HOME)/lernie/bz/$(BRAZEN_PIN)
+BZ_TEST_PATH   := $(BZ_TEST_ROOT)/bin:$(PATH)
+
+$(BZ_TEST_ROOT)/bin/bz:
+	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
+	@echo "test adapter: installing bz $(BRAZEN_PIN) into $(BZ_TEST_ROOT)"
+	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked --root "$(BZ_TEST_ROOT)"
+
+test: $(BZ_TEST_ROOT)/bin/bz
+	PATH="$(BZ_TEST_PATH)" cargo test --workspace
 
 # The install contract end-to-end (tests/install.rs). It shells out to
 # `make install` — a release build plus `cargo install brazen` — which
@@ -60,20 +92,23 @@ test:
 #
 # Cost, accepted deliberately: ~45s warm, and it re-installs `bz` at the
 # `brazen` pin (§4.4) onto the cargo bin — so a locally installed `bz`
-# newer than the pin is rolled back to what this tree links.
+# newer than the pin is rolled back to what this tree links. That is the
+# install contract's own business and no longer anyone else's: the e2e
+# tests read the pin-keyed cache (BZ_TEST_ROOT above), so this rollback
+# cannot fail a sibling worktree's gate.
 test-install:
 	cargo test --test install
 
 TARPAULIN_PIN := 0.35.2
 
-coverage:
+coverage: $(BZ_TEST_ROOT)/bin/bz
 	@have=$$(cargo tarpaulin --version 2>/dev/null | awk '{print $$NF}'); \
 	if [ "$$have" != "$(TARPAULIN_PIN)" ]; then \
 	  echo "tarpaulin $(TARPAULIN_PIN) required (have: $${have:-none}); see tarpaulin.toml" >&2; \
 	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
 	  exit 1; \
 	fi
-	cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
+	PATH="$(BZ_TEST_PATH)" cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
 
 # Regenerate schemas/ from the crate's schema types. The generator is the
 # `config::schemas` module; `make schemas` drives it through the in-crate
@@ -147,9 +182,9 @@ brazen-pin:
 # nothing. The load-time version guard demands an EXACT match, so a `bz`
 # at any other version — newer included — is replaced, not kept.
 #
-# Anything that runs the test suite needs this: the e2e tests exec the
-# real `bz` against a mock endpoint, and without it on PATH they fail
-# with "adapter subprocess: No such file or directory".
+# This is the USER-facing install, not a test prerequisite: `make test`
+# and `make coverage` feed the e2e tests their own pin-keyed `bz` (see
+# BZ_TEST_ROOT above) and no longer care what is on the cargo bin.
 install-bz:
 	@test -n "$(BRAZEN_PIN)" || { echo 'could not derive the brazen pin from Cargo.toml (expected a `brazen = "=<version>"` line)' >&2; exit 1; }
 	@have=$$(bz --version 2>/dev/null | awk '{print $$NF}'); \

@@ -7,7 +7,7 @@ Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).
 Vocabulary reference: [`docs/TAXONOMY.md`](docs/TAXONOMY.md).
 Promise suite (the user stories 0.0.1 is evaluated against): [`docs/USER_STORIES.md`](docs/USER_STORIES.md).
 
-CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`, after `make install-bz` puts the pinned provider adapter `bz` on `PATH` — the e2e tests exec the real binary. The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
+CI runs `make ci` (`fmt-check` + `lint` + `coverage` with the 100% gate + `test-install`) on every push and pull request to `main`. The e2e tests exec the real provider adapter `bz`, which the test targets install themselves at the pinned version (see **[The pinned adapter under test](#the-pinned-adapter-under-test)**). The Rust toolchain is pinned in `rust-toolchain.toml` — CI, the pre-commit gate, and every contributor build under the same `rustc`/`rustfmt`/`clippy`.
 
 ## One command surface, two bindings
 
@@ -957,9 +957,9 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 |-----------------------|-------------------------------------------------------|
 | `make build`          | `cargo build`                                         |
 | `make release`        | `cargo build --release`                               |
-| `make test`           | `cargo test`                                          |
+| `make test`           | `cargo test`, with the pinned `bz` first on `PATH` (below) |
 | `make test-install`   | `cargo test --test install` — the install contract end-to-end, uninstrumented (it is `cfg_attr(tarpaulin, ignore)`, so `coverage` skips it); ~45s warm, and it re-installs `bz` at the `brazen` pin |
-| `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine); hard-gated on tarpaulin **0.35.2** exactly (`TARPAULIN_PIN` in the `Makefile` — its one home; any other version aborts with the `cargo install cargo-tarpaulin --version 0.35.2 --locked` fix-it line) |
+| `make coverage`       | `cargo tarpaulin --fail-under 100` (llvm engine), same pinned `PATH` (below); hard-gated on tarpaulin **0.35.2** exactly (`TARPAULIN_PIN` in the `Makefile` — its one home; any other version aborts with the `cargo install cargo-tarpaulin --version 0.35.2 --locked` fix-it line) |
 | `make lint`           | `cargo clippy --all-targets -- -D warnings`           |
 | `make fmt`            | `cargo fmt`                                           |
 | `make fmt-check`      | `cargo fmt --check`                                   |
@@ -970,10 +970,59 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |
 | `make install-hooks`  | Point git at `.githooks/`                             |
-| `make install-bz`     | Install the provider adapter `bz` at the version Cargo.toml pins (ARCH §4.4); a no-op when the `bz` on `PATH` already matches. Required by the e2e tests, which exec the real binary |
+| `make install-bz`     | Install the provider adapter `bz` on your `PATH` at the version Cargo.toml pins (ARCH §4.4); a no-op when the `bz` there already matches. For *running* lernie — the tests feed themselves (below) |
 | `make brazen-pin`     | Print that pinned version and nothing else — CI keys its `bz` cache on it so no workflow file names a version |
 | `make install` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Release-build; drop `lernie`/`agent-eval` into `$INSTALL_PREFIX/bin` (default: `~/.local/bin`); install the provider adapter `bz` via `make install-bz` at the version Cargo.toml pins (the ARCH §4.4 version pin — the number's one home); then invoke `lernie prime` to found the harness root — config root (default `~/.config/lernie`) with a default `models.yaml` and an empty `workflows/` templates dir, data root (default `~/.local/share/lernie`) with the `tools/`/`skills/` pools and the `workspaces/` tree — seed-if-absent (ARCH §2.2); `LERNIE_HOME` collapses both |
 | `make uninstall` [`INSTALL_PREFIX=<p>` `LERNIE_HOME=<h>`] | Remove the installed binaries; leaves the harness homes (config + data roots) in place |
+
+### The pinned adapter under test
+
+The e2e tests exec the **real** `bz` (against a mock HTTP endpoint, not a
+provider), and lernie's load-time version guard (ARCH §4.4) demands the
+pinned version *exactly*. The pin's one home is the `brazen = "=<version>"`
+line in `Cargo.toml`.
+
+**The trap.** `bz` normally resolves from `PATH` — that is
+`~/.cargo/bin/bz`, machine-global mutable state shared by every checkout and
+every agent on the box. Anyone running `make install` (or `make
+test-install`, which runs it) rewrites that binary at *their* tree's pin. If
+your tree pins a different version, your next test run dies in five-plus e2e
+tests with
+
+```
+bz version "0.0.4" does not match the linked brazen crate "0.0.3"
+```
+
+which looks nothing like "someone else installed a binary" and everything
+like a regression you just wrote.
+
+**The cure.** `make test` and `make coverage` do not use the `PATH` `bz` at
+all. They depend on `$XDG_CACHE_HOME/lernie/bz/<pin>/bin/bz` — installed
+from crates.io on first use — and put that directory *first* on `PATH` for
+the run, so the tests always exercise the pin **this** tree names, whatever
+the machine's `bz` happens to be. The version comes from `BRAZEN_PIN` in the
+`Makefile`, derived from `Cargo.toml`; the cache directory is named after
+it, so bumping the pin is a cache miss and nothing else, and a stale entry is
+never overwritten in place. Cost: one `cargo install` (~25s) per pin per
+machine — sibling worktrees share the cache — and nothing at all when warm,
+since it is an ordinary make file prerequisite.
+
+Two consequences worth knowing:
+
+- **Bare `cargo test` is still exposed.** It inherits your `PATH` and so
+  runs whatever `bz` is installed there. Use `make test`; if you must run
+  `cargo test` directly, `make install-bz` first to line the global binary up
+  with the tree's pin.
+- **Runtime resolution is unchanged.** This is test determinism only —
+  `lernie` itself still resolves the adapter per ARCH §4.4 (the `models.yaml`
+  `adapter:` override, else a binding-injected target, else `bz` on `PATH`),
+  and `make install` still puts the pinned `bz` on your `PATH` for real use.
+
+`the_makefile_derives_the_same_pin` (`src/prompt/tests/pin.rs`) keeps the two
+readers of that one line honest: the Makefile's `BRAZEN_PIN` (which names the
+cached binary) and the crate's `brazen_pin()` (which the version guard
+compares against) must agree, or the tests would fail the guard against a
+binary the Makefile itself installed.
 
 ### Workflow
 

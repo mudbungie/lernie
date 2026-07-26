@@ -64,24 +64,27 @@ jobs:
         id: brazen
         run: echo "pin=$(make --no-print-directory brazen-pin)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache the brazen adapter binary
+      - name: Cache the brazen adapter binaries
         # Keyed on the pin alone — `cargo install brazen --version =<pin>`
         # is reproducible, so a hit is exactly the binary the pin names.
         # Deliberately no restore-keys: a `bz` left over from an older pin
         # would fail the version guard, and a cold miss costs one cargo
-        # install. Only the binary is cached; the registry/git caches are
-        # the step above, and cargo-tarpaulin has its own installer.
+        # install. Two homes, both pin-derived and both populated by `make
+        # ci` itself, so neither needs an install step here:
+        #   - ~/.cache/lernie/bz/<pin> is what the TEST targets exec (the
+        #     Makefile's BZ_TEST_ROOT — pin-keyed, put first on PATH so the
+        #     e2e tests never depend on the ambient `bz`, README "The
+        #     pinned adapter under test"). `make coverage` installs it.
+        #   - ~/.cargo/bin/bz is the ambient install `make test-install`
+        #     lays down while exercising the install contract.
+        # Only the binaries are cached; the registry/git caches are the step
+        # above, and cargo-tarpaulin has its own installer.
         uses: actions/cache@v5
         with:
-          path: ~/.cargo/bin/bz
-          key: ${{ runner.os }}-bz-${{ steps.brazen.outputs.pin }}
-
-      - name: Install the provider adapter (bz)
-        # `make ci` runs the e2e tests, which exec the REAL `bz` against a
-        # mock endpoint; without it on PATH they die with "adapter
-        # subprocess: No such file or directory". No-ops on a cache hit
-        # (install-bz compares `bz --version` against the pin).
-        run: make install-bz
+          path: |
+            ~/.cache/lernie/bz
+            ~/.cargo/bin/bz
+          key: ${{ runner.os }}-bz-homes-${{ steps.brazen.outputs.pin }}
 
       - name: make ci
         run: make ci

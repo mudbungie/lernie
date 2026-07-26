@@ -233,18 +233,6 @@ fn drop_stops_filling_at_the_first_entry_that_does_not_fit() {
 }
 
 #[test]
-fn legacy_drop_oldest_steps_sheds_nothing() {
-    // Step records live outside every worktree (§2.2): nothing to shed.
-    let wt = TempDir::new().unwrap();
-    write(wt.path(), "docs/a.md", b"12345678");
-    let r = rules(&[], &["docs/**"], 1, OverflowPolicy::DropOldestSteps);
-    assert_eq!(
-        paths(&compose(wt.path(), Some(&r)).unwrap()),
-        vec!["docs/a.md"]
-    );
-}
-
-#[test]
 fn non_utf8_content_composes_lossily() {
     let wt = TempDir::new().unwrap();
     write(wt.path(), "blob.bin", &[0xff, b'o', b'k']);

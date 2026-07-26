@@ -121,6 +121,9 @@ fn agent_spawn_failure_is_an_error() {
         })
         .unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::NotFound);
+    // Actionable: the message names the program that failed to spawn.
+    let msg = err.to_string();
+    assert!(msg.contains("--agent agent-eval-no-such-binary-xyz"));
 }
 
 #[test]

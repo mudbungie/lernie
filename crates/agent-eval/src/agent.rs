@@ -62,6 +62,12 @@ pub trait Bundler {
 /// Production [`Agent`]: invoke an external harness-driver program with
 /// the prompt on argv, `workdir` as the working directory, and
 /// `LERNIE_HOME` / `LERNIE_EXPERIMENT` / `LERNIE_EVAL_REPORT` in the env.
+///
+/// `LERNIE_EXPERIMENT` is a hand-off, not a hook: the harness reads no
+/// such variable — it takes its `workflow.yaml` from the workspace's
+/// config commit (ARCH §2.2) — so *applying* the experiment is the
+/// driver's own work. The contract is spelled out in the repo README,
+/// "Run the suite".
 pub struct CommandAgent {
     program: OsString,
 }
@@ -85,7 +91,17 @@ impl Agent for CommandAgent {
             .env("LERNIE_HOME", d.lernie_home)
             .env("LERNIE_EXPERIMENT", d.experiment)
             .env("LERNIE_EVAL_REPORT", &report)
-            .status()?;
+            .status()
+            // Failing to spawn is a harness fault, and the one thing the
+            // operator needs to see is *which* program did not run — no
+            // driver ships with lernie, so "not found" here is the
+            // expected first encounter, not an exotic error.
+            .map_err(|e| {
+                io::Error::new(
+                    e.kind(),
+                    format!("--agent {}: {e}", Path::new(&self.program).display()),
+                )
+            })?;
         Ok(AgentOutcome {
             target: read_target(&report),
         })

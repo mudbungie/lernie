@@ -56,6 +56,19 @@ impl PgidFinder for StubFinder {
     }
 }
 
+/// A [`PgidFinder`] that resolves the stop process's **own** process
+/// group — the pathological reading the §2.9 self-group guard exists to
+/// refuse (discovery reading a not-yet-detached executor's inherited
+/// group). Read at probe time rather than baked in, so it names
+/// whatever group the test binary is actually standing in.
+pub(super) struct OwnGroupFinder;
+impl PgidFinder for OwnGroupFinder {
+    fn find_holder_pgid(&self, _: &Path) -> io::Result<Option<i32>> {
+        // SAFETY: `getpgrp` takes no arguments and cannot fail.
+        Ok(Some(unsafe { libc::getpgrp() }))
+    }
+}
+
 pub(super) struct ErrFinder;
 impl PgidFinder for ErrFinder {
     fn find_holder_pgid(&self, _: &Path) -> io::Result<Option<i32>> {

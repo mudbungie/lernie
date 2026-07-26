@@ -492,6 +492,17 @@ holding the agent's inbox-directory lock fd open — the executor lock
 execution when no `response.json` is open — no sidecar pid file. Linux
 only.
 
+The pgid that scan produces is **vetted before anything is signalled**,
+because a pid is discovered before its group has settled: between a
+driver's fork and the `setpgid`/`setsid` it runs at startup, `/proc`
+still reports the group it inherited from its spawner — your shell job.
+So a pgid is trusted only once it equals the holder's own pid (a group
+leader's does, and every driver becomes one), re-read a bounded number of
+times while it does not, and refused rather than signalled if it never
+settles; a stop that signals nothing is re-runnable, one that signals
+your shell is not. `lernie stop` additionally refuses any group it is
+itself standing in (§2.9).
+
 The group signal reaches every member independently: `bz` installs no
 handler and dies at once (leaving the missing-`end` signature, §4.4),
 while the **executor catches its own copy** — SIGTERM is catchable — and,

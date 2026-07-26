@@ -816,7 +816,7 @@ stdin (canonical request, JSON) → bz → stdout (v=1 event stream, NDJSON, one
 The harness execs `bz --json --provider <row>` once per attempt, pipes a
 typed `brazen::CanonicalRequest` on stdin, and appends bz's stdout
 verbatim to the step's `response.json`. lernie links the `brazen` crate
-(`brazen = "=0.0.3"`) for the canonical *types* only — the data plane
+(`brazen = "=0.0.4"`) for the canonical *types* only — the data plane
 always crosses the subprocess boundary (§3.4). Two facts follow:
 
 - **Retry is the harness's.** brazen never retries — one `bz` process,
@@ -837,7 +837,7 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
   lernie references a row by name and never sees credential material
   (§4.1). A load-time guard (`bz --version` == the linked crate version)
   rejects a mismatched binary; `make install` installs the pin with
-  `cargo install brazen --version =0.0.3`.
+  `cargo install brazen --version =0.0.4`.
 
 ### Adding a provider
 
@@ -1016,7 +1016,7 @@ your tree pins a different version, your next test run dies in five-plus e2e
 tests with
 
 ```
-bz version "0.0.4" does not match the linked brazen crate "0.0.3"
+bz version "0.0.3" does not match the linked brazen crate "0.0.4"
 ```
 
 which looks nothing like "someone else installed a binary" and everything

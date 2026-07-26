@@ -5,14 +5,6 @@ use crate::config::action::{Action, DispatchMode};
 #[test]
 fn parses_zero_arg_actions() {
     assert_eq!(
-        Action::parse("spawn_exchange").unwrap(),
-        Action::SpawnExchange
-    );
-    assert_eq!(
-        Action::parse("spawn_root_agent").unwrap(),
-        Action::SpawnRootAgent
-    );
-    assert_eq!(
         Action::parse("compaction_merge").unwrap(),
         Action::CompactionMerge
     );
@@ -77,6 +69,29 @@ fn parses_gate_return_on() {
 fn rejects_unknown_action() {
     let e = Action::parse("teleport(worker)").unwrap_err();
     assert!(e.contains("unknown action"), "got: {e}");
+}
+
+/// `spawn_root_agent` and `spawn_exchange` were subtracted from the
+/// vocabulary (bl-0e79): ARCH §2.4 leaves no circumstance a hop could fire
+/// them from — a user message resumes the agent's own branch, a new root
+/// agent is forked explicitly, and an exchange "owns no branch, no merge,
+/// no lifecycle". A config still naming one is declined with the reason,
+/// never accepted and silently ignored — the same idiom as the retired
+/// `overflow: summarize` (bl-a1a1).
+#[test]
+fn declines_retired_spawn_vocabulary_with_a_reason() {
+    let e = Action::parse("spawn_root_agent").unwrap_err();
+    assert!(e.contains("was retired"), "got: {e}");
+    assert!(e.contains("ARCH §2.4"), "got: {e}");
+    assert!(e.contains("remove the binding"), "got: {e}");
+
+    let e = Action::parse("spawn_exchange").unwrap_err();
+    assert!(e.contains("was retired"), "got: {e}");
+    assert!(e.contains("UX span"), "got: {e}");
+
+    // Retirement is by name, not by shape: the arity check never runs.
+    let e = Action::parse("spawn_exchange(now)").unwrap_err();
+    assert!(e.contains("was retired"), "got: {e}");
 }
 
 #[test]

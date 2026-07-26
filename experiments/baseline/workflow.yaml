@@ -1,6 +1,5 @@
 events:
   user_message:
-    - spawn_root_agent
     - dispatch(worker)
   worker_return:
     - deliver_result

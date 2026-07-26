@@ -19,7 +19,6 @@ fn parse(raw: &str) -> Result<Workflow, LoadError> {
 const ARCH_EXAMPLE: &str = r#"
 events:
   user_message:
-    - spawn_root_agent
     - dispatch(worker)
   worker_return:
     - dispatch(verifier)
@@ -49,7 +48,7 @@ compaction:
 fn parses_arch_example() {
     let w = parse(ARCH_EXAMPLE).unwrap();
     let typed = w.typed_events();
-    assert_eq!(typed[&Event::UserMessage].len(), 2);
+    assert_eq!(typed[&Event::UserMessage].len(), 1);
     assert_eq!(
         typed[&Event::WorkerFlush][0],
         Action::Dispatch {
@@ -115,13 +114,13 @@ fn partial_budgets_leaves_the_other_axes_unbounded() {
 
 #[test]
 fn workflow_without_compaction_is_ok() {
-    let w = parse("events:\n  user_message:\n    - spawn_exchange\n").unwrap();
+    let w = parse("events:\n  user_message:\n    - notify_ui\n").unwrap();
     assert!(w.compaction.is_none());
 }
 
 #[test]
 fn rejects_unknown_event() {
-    let err = parse("events:\n  user_request:\n    - spawn_exchange\n").unwrap_err();
+    let err = parse("events:\n  user_request:\n    - notify_ui\n").unwrap_err();
     assert!(matches!(err, LoadError::Yaml { .. }));
 }
 

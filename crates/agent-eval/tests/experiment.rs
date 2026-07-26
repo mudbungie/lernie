@@ -24,9 +24,18 @@ fn missing_experiment_errors() {
 }
 
 #[test]
-fn resolves_the_shipped_baseline() {
-    // The repo ships experiments/baseline/workflow.yaml (§9.3).
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../experiments");
-    let exp = experiment::resolve("baseline", &root).unwrap();
+fn the_shipped_baseline_resolves_to_the_template_itself() {
+    // The repo ships experiments/baseline/workflow.yaml (§9.3) — and it
+    // is the template, not a copy of it: an experiment is a diff against
+    // the shipped default, so the baseline's diff is empty and the path
+    // is a symlink to `template/workflow.yaml`. Resolution is unaffected
+    // (no fallback, no special case); canonicalizing both names proves
+    // there is one file, so the baseline cannot drift from the default.
+    let repo = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let exp = experiment::resolve("baseline", &repo.join("experiments")).unwrap();
     assert!(exp.workflow.is_file());
+    assert_eq!(
+        exp.workflow.canonicalize().unwrap(),
+        repo.join("template/workflow.yaml").canonicalize().unwrap(),
+    );
 }

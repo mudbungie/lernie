@@ -40,6 +40,13 @@ const DEFERRED: &[&str] = &["CompactionMerge", "DeliverResult", "Dispatch"];
 /// Every `workflow.yaml` this repo ships, as (origin, contents): the
 /// embedded default template (`src/template` — the exact bytes
 /// `new-workspace` writes) and the §9.3 experiment configs.
+///
+/// The walk over `experiments/` is what keeps the sweep total as
+/// variants land. It currently re-reads the template through
+/// `experiments/baseline/workflow.yaml`, which is a symlink to it (the
+/// baseline experiment *is* the default, `experiments/README.md`) — a
+/// harmless second pass over identical bytes, and the reason baseline
+/// can no longer drift into vocabulary the interpreter cannot run.
 fn shipped_workflows() -> Vec<(PathBuf, String)> {
     let template = TEMPLATE
         .get_file("workflow.yaml")

@@ -931,6 +931,9 @@ agent-eval --config baseline --suite tests/suite --runs 5 --agent <driver-cmd>
 
 `--config <name>` names an experiment — a `workflow.yaml` variant under
 `experiments/<name>/` (a config diff, no code changes; see `experiments/README.md`).
+`baseline` is the shipped default itself: its `workflow.yaml` is a symlink to
+`template/workflow.yaml`, because an experiment is a diff against the default and
+the baseline's diff is empty.
 Per run the runner seeds a fresh isolated `LERNIE_HOME` and working directory,
 runs the task `setup`, invokes the agent, then runs the task `check` — **exit 0
 is the sole pass signal** (§9.1), so success is observable state, never the

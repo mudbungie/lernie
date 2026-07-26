@@ -125,6 +125,7 @@ pub(super) fn run_exchange(
         binary: &resolved.binary,
         provider_row: resolved.provider_row,
         retry: resolved.retry,
+        stop: deps.stop,
         expect_handshake: resolved.expect_handshake,
     };
 
@@ -157,7 +158,7 @@ pub(super) fn run_exchange(
 
         // §2.9 step 3 check point: a stop between steps (or during a prior
         // step's tool work) is caught here, before the next model call.
-        if stop_signal::stopped(deps) {
+        if stop_signal::stopped(deps.stop) {
             stopped = true;
             break;
         }
@@ -196,11 +197,10 @@ pub(super) fn run_exchange(
         let started_at = deps.clock.now_iso8601();
         let response_path = repo.join(&step_dir_rel_str).join(RESPONSE_FILE);
         let call_outcome = model_call::run(&call, &request_bytes, &response_path);
-        // §2.9 step 3 check point: a stop delivered during the call killed
-        // `bz`, leaving `response.json` without a trailing `end` (the stop
-        // signature, untouched here) — surfacing as `AdapterHalfStream`.
-        // With the flag set it is a stop, not a failure: swallow and exit.
-        if stop_signal::stopped(deps) {
+        // §2.9 step 3 check point: a stop during the call killed `bz`. The
+        // flag classifies, not the error's shape ([`model_call`]) — swallow
+        // whatever it surfaced (on-disk signature untouched) and exit.
+        if stop_signal::stopped(deps.stop) {
             stopped = true;
             break;
         }

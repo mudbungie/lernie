@@ -5,6 +5,7 @@
 //! stdout and everything to stderr. Without the capture that reads as a
 //! bare half-stream (§2.9) and the real complaint is lost.
 
+use super::super::stderr::{TAIL_CHARS as STDERR_TAIL_CHARS, tail as stderr_tail};
 use super::*;
 
 /// Drive one model call whose attempts carry the given stderr captures,

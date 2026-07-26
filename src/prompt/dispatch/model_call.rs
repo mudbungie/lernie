@@ -18,18 +18,26 @@
 //! Each attempt's stdout is appended verbatim as one segment; the last
 //! segment is authoritative (§4.4).
 //!
-//! **The adapter's stderr lands beside it (§2.3).** Every attempt's
-//! captured stderr appends to `stderr.log` in the same step directory —
-//! empty on an ordinary run, since brazen speaks its failures in-band on
-//! stdout (§4.4). Bytes there mean the adapter died *outside* the
-//! contract with an empty stream: the shape a bare
-//! [`Error::AdapterHalfStream`] misreports as a mid-stream kill, so that
-//! error quotes the failing attempt's stderr tail. It stays quiet under
-//! a stop (§2.9), needing no flag of its own: a stop-pending half-stream
-//! is the *expected* signature, and the caller's §2.9 check point
-//! discards the outcome unrendered.
+//! **The stop flag bounds the loop, and classifies its outcome (§2.9).**
+//! A pending stop ends the loop instead of launching another `bz`: a
+//! process spawned after the group SIGTERM is outside the cascade's
+//! reach, so retrying through a stop would spend a whole further model
+//! call — the window that dominates a stop's observed latency. And the
+//! error this module hands back under a pending stop means nothing on
+//! its own: a kill lands wherever the adapter was, so the stop leaves
+//! [`Error::AdapterHalfStream`] on a clean line boundary,
+//! [`Error::AdapterJson`] on a torn one, or an `AdapterError` from an
+//! attempt that had already failed — indistinguishable from the genuine
+//! article by shape. The flag is the only reliable witness, so the
+//! callers' §2.9 step-3 check points discard *whatever* came back when
+//! it is set, and propagate it as a fault when it is not.
+//!
+//! The adapter's stderr rides beside the call — see [`stderr`].
+
+mod stderr;
 
 use super::staging::{StagingWriter, staging_path_for};
+use super::stop_signal;
 use crate::config::RetryConfig;
 use crate::prompt::Error;
 use crate::prompt::adapter::AdapterRunner;
@@ -40,6 +48,7 @@ use std::ffi::OsString;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 /// How one attempt's segment settled — the framing the retry loop acts
@@ -57,36 +66,6 @@ enum SegmentOutcome {
     /// (§2.9 signature), or an adapter that never reached the contract.
     /// The stderr tail tells a human which; the flag tells the harness.
     HalfStream { stderr_tail: String },
-}
-
-/// How much of an attempt's stderr the half-stream error quotes — big
-/// enough for a config-parse complaint, small enough that an error line
-/// never becomes a log dump. The whole capture is on disk.
-const STDERR_TAIL_CHARS: usize = 400;
-
-/// The trailing [`STDERR_TAIL_CHARS`] characters of an attempt's
-/// stderr, newlines flattened so the error stays one line, with a
-/// leading `…` when there is more on disk. `(empty)` when the adapter
-/// said nothing — itself diagnostic: an empty stderr with an empty
-/// stream is a genuine mid-stream kill.
-fn stderr_tail(bytes: &[u8]) -> String {
-    let text = String::from_utf8_lossy(bytes);
-    let trimmed = text.trim();
-    if trimmed.is_empty() {
-        return "(empty)".to_string();
-    }
-    let start = trimmed
-        .char_indices()
-        .rev()
-        .take(STDERR_TAIL_CHARS)
-        .last()
-        .map_or(0, |(i, _)| i);
-    let tail = trimmed[start..].replace('\n', " | ");
-    if start > 0 {
-        format!("…{tail}")
-    } else {
-        tail
-    }
 }
 
 /// Injected sleep so the retry backoff is real in production and a
@@ -112,6 +91,9 @@ pub(super) struct ModelCall<'a> {
     pub(super) binary: &'a OsString,
     pub(super) provider_row: &'a str,
     pub(super) retry: RetryConfig,
+    /// The §2.9 stop flag (`Deps::stop`), read at the retry loop's
+    /// launch-another-`bz` decision — see [`run`].
+    pub(super) stop: &'a AtomicBool,
     /// True under an `adapter:` override (§4.2): the version guard is
     /// skipped and the in-band `MessageStart.v == EVENT_SCHEMA_VERSION`
     /// handshake governs the completed segment instead (§4.4).
@@ -147,7 +129,8 @@ pub(super) fn build_request(
 /// (the model-output transcript entry, §2.3) and `Ok(())` returns — the
 /// call's *content* has its one home in that entry, never a return
 /// value. A non-retryable / budget-exhausted `Error`, a half-stream
-/// kill, or a malformed event surfaces as a harness [`Error`].
+/// kill, or a malformed event surfaces as a harness [`Error`] — which,
+/// with a stop pending, the caller reads as the stop (§2.9 step 3).
 pub(super) fn run(
     call: &ModelCall<'_>,
     request_bytes: &[u8],
@@ -190,10 +173,25 @@ pub(super) fn run(
                 // §4.4 segment authority: an `Error`-terminated segment
                 // contributes nothing — truncate its blocks from staging.
                 staging.truncate_segment()?;
-                if err.retryable() && attempt < max {
+                // §2.10 retry, bounded by the §2.9 stop: the loop must
+                // not launch a further `bz` once a stop is pending. That
+                // process would be spawned *after* the group SIGTERM, so
+                // nothing would fell it and the stop would cost a whole
+                // additional model call — the window that dominates wall
+                // time. Read on both sides of the backoff: the flag can
+                // be set during the attempt (the group signal reaches the
+                // executor and `bz` together) or during the sleep itself
+                // (`thread::sleep` restarts over EINTR, so the handler's
+                // flag is the only evidence it was interrupted). The
+                // error returned instead is discarded by the caller's
+                // §2.9 step-3 check point, which settles the branch as
+                // stopped.
+                if err.retryable() && attempt < max && !stop_signal::stopped(call.stop) {
                     call.sleeper.sleep(call.retry.backoff.delay(attempt));
-                    attempt += 1;
-                    continue;
+                    if !stop_signal::stopped(call.stop) {
+                        attempt += 1;
+                        continue;
+                    }
                 }
                 drop(response_file);
                 return Err(Error::AdapterError {
@@ -278,7 +276,7 @@ fn run_attempt(
     }
     if !ended {
         return Ok(SegmentOutcome::HalfStream {
-            stderr_tail: stderr_tail(&stderr),
+            stderr_tail: stderr::tail(&stderr),
         });
     }
     Ok(SegmentOutcome::Complete { handshake_v })

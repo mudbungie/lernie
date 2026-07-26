@@ -20,7 +20,6 @@
 //! `bash` built-in already uses (`tool::builtin::bash`) — a minimal
 //! `libc::signal` registration, no new dependency.
 
-use super::Deps;
 use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -57,11 +56,11 @@ pub fn flag() -> &'static AtomicBool {
 }
 
 /// Whether a stop has been requested — the injected flag observed at a
-/// step-loop check point (§2.9 step 3). Reads [`Deps::stop`] so the path
-/// is exercised deterministically with a constructed flag, never the
-/// process-wide static, in tests.
-pub(super) fn stopped(deps: &Deps<'_>) -> bool {
-    deps.stop.load(Ordering::SeqCst)
+/// check point (§2.9 step 3). Callers pass [`Deps::stop`](super::Deps),
+/// so every check point is exercised deterministically with a
+/// constructed flag, never the process-wide static, in tests.
+pub(super) fn stopped(flag: &AtomicBool) -> bool {
+    flag.load(Ordering::SeqCst)
 }
 
 #[cfg(test)]

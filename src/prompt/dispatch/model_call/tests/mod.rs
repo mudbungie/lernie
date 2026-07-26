@@ -1,10 +1,13 @@
 //! Unit tests for the harness-owned retry driver (ARCH §2.10, §4.4).
 //!
 //! This module is the scaffolding — stubs, stream builders, and the
-//! `drive` harness; the cases live beside it.
+//! `drive` harness; the cases live beside it, split by concern:
+//! [`cases`] for the retry/segment/handshake contract, [`stderr`] for
+//! the §2.3 stderr capture, [`stop`] for the §2.9 bound on the loop.
 
 mod cases;
 mod stderr;
+mod stop;
 
 use super::*;
 use crate::config::workflow::{Backoff, RetryConfig};
@@ -16,6 +19,7 @@ use std::collections::VecDeque;
 use std::ffi::OsString;
 use std::io;
 use std::path::Path;
+use std::sync::atomic::Ordering;
 
 /// FIFO stub adapter: each `run` pops one scripted reply and replays its
 /// NDJSON bytes line-by-line, recording the stdin it saw. `stderrs` is
@@ -79,6 +83,21 @@ impl Sleeper for RecSleeper {
     }
 }
 
+/// A [`Sleeper`] that raises the stop flag *while* the backoff sleeps —
+/// the §2.9 SIGTERM landing inside the retry pause (`thread::sleep`
+/// restarts over EINTR, so the flag is the only evidence).
+struct StoppingSleeper<'a> {
+    flag: &'a AtomicBool,
+    slept: RefCell<Vec<Duration>>,
+}
+
+impl Sleeper for StoppingSleeper<'_> {
+    fn sleep(&self, dur: Duration) {
+        self.slept.borrow_mut().push(dur);
+        self.flag.store(true, Ordering::SeqCst);
+    }
+}
+
 fn line(e: &Event) -> Vec<u8> {
     let mut v = serde_json::to_vec(e).unwrap();
     v.push(b'\n');
@@ -129,18 +148,34 @@ fn run_at(path: &Path, replies: Vec<io::Result<Vec<u8>>>, retry: RetryConfig, hs
 
 fn run_with(path: &Path, adapter: StubAdapter, retry: RetryConfig, hs: bool) -> Driven {
     let sleeper = RecSleeper::default();
+    let stop = AtomicBool::new(false);
+    let (result, stdins) = run_injected(path, adapter, retry, hs, &sleeper, &stop);
+    let sleeps = sleeper.0.borrow().len();
+    (result, sleeps, stdins)
+}
+
+/// The one construction point for a [`ModelCall`] under test: the
+/// sleeper and the §2.9 stop flag are the injected axes.
+fn run_injected(
+    path: &Path,
+    adapter: StubAdapter,
+    retry: RetryConfig,
+    hs: bool,
+    sleeper: &dyn Sleeper,
+    stop: &AtomicBool,
+) -> (Result<(), Error>, Vec<Vec<u8>>) {
     let bin = OsString::from("bz");
     let call = ModelCall {
         adapter: &adapter,
-        sleeper: &sleeper,
+        sleeper,
         binary: &bin,
         provider_row: "test",
         retry,
+        stop,
         expect_handshake: hs,
     };
     let result = super::run(&call, b"{}", path);
-    let sleeps = sleeper.0.borrow().len();
-    (result, sleeps, adapter.stdins.into_inner())
+    (result, adapter.stdins.into_inner())
 }
 
 /// Run against a fresh tempdir; returns the driven result + response bytes.

@@ -119,6 +119,13 @@ fn select(
 /// Apply the role's overflow policy to a body whose estimate exceeds
 /// its allowance (§5.2 "order entries fill the body in declared order
 /// until overflow policy kicks in"). A fitting body passes untouched.
+///
+/// Every policy in the vocabulary is an act on the tree in hand.
+/// Model-driven shedding is not one of them and never was: assembly is
+/// a pure function of the tree (§5.1) and cannot invoke a model, so it
+/// belongs to the §6 compaction checkpoint, declared once in
+/// `workflow.yaml` `compaction:` (§5.2 — the retired `summarize`
+/// policy).
 fn fit(body: Vec<Entry>, allowance: u64, policy: OverflowPolicy) -> Vec<Entry> {
     let total: u64 = body.iter().map(Entry::tokens).sum();
     if total <= allowance {
@@ -129,11 +136,6 @@ fn fit(body: Vec<Entry>, allowance: u64, policy: OverflowPolicy) -> Vec<Entry> {
         // legacy policy names material that cannot be present, so it
         // sheds nothing and the body rides whole.
         OverflowPolicy::DropOldestSteps => body,
-        // Summarizing is the compaction procedure's act (§2.7): assembly
-        // is a pure function of the tree (§5.1) and cannot invoke a
-        // model, so the body rides whole and the §6 compaction
-        // checkpoint is the mechanism that actually sheds.
-        OverflowPolicy::Summarize => body,
         OverflowPolicy::DropOldestSummaries => drop_oldest_summaries(body, allowance),
         OverflowPolicy::Truncate => cut(body, allowance, true),
         OverflowPolicy::Drop => cut(body, allowance, false),

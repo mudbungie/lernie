@@ -38,6 +38,11 @@ pub struct RoleRules {
 /// Closed set of overflow strategies. Adding one is intentionally a code
 /// change.
 ///
+/// Every variant here is an act assembly can perform on the tree it was
+/// handed (ARCH §5.2) — model-driven shedding is the compaction
+/// checkpoint's, declared once in `workflow.yaml` `compaction:` (§6), and
+/// is deliberately absent from this vocabulary.
+///
 /// `DropOldestSteps` is retained for backward compatibility with
 /// pre-v0.3.1 manifests; new manifests should prefer
 /// `DropOldestSummaries` since step records no longer appear in
@@ -49,7 +54,6 @@ pub enum OverflowPolicy {
     DropOldestSteps,
     DropOldestSummaries,
     Truncate,
-    Summarize,
     Drop,
 }
 
@@ -171,13 +175,31 @@ roles:
             "drop_oldest_steps",
             "drop_oldest_summaries",
             "truncate",
-            "summarize",
             "drop",
         ] {
             let yaml = format!(
                 "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: {variant}\n"
             );
             assert!(parse(&yaml).is_ok(), "variant {variant} failed");
+        }
+    }
+
+    /// `summarize` was subtracted from the vocabulary (bl-a1a1): every
+    /// remaining policy is an act assembly can perform on the tree it
+    /// holds, and model-driven shedding is the `workflow.yaml`
+    /// `compaction:` clock's alone (ARCH §5.2, §6). A manifest still
+    /// naming it is declined rather than silently treated as a no-op.
+    #[test]
+    fn rejects_retired_summarize_overflow() {
+        let err = parse(
+            "roles:\n  r:\n    pinned: []\n    order: []\n    budget_tokens: 1\n    overflow: summarize\n",
+        )
+        .unwrap_err();
+        match err {
+            LoadError::Yaml { source, .. } => {
+                assert!(source.to_string().contains("summarize"), "{source}")
+            }
+            other => panic!("expected Yaml, got {other:?}"),
         }
     }
 

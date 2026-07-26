@@ -17,6 +17,17 @@
 //! segment never reads as `failed` while the loop is still pending.
 //! Each attempt's stdout is appended verbatim as one segment; the last
 //! segment is authoritative (§4.4).
+//!
+//! **The adapter's stderr lands beside it (§2.3).** Every attempt's
+//! captured stderr appends to `stderr.log` in the same step directory —
+//! empty on an ordinary run, since brazen speaks its failures in-band on
+//! stdout (§4.4). Bytes there mean the adapter died *outside* the
+//! contract with an empty stream: the shape a bare
+//! [`Error::AdapterHalfStream`] misreports as a mid-stream kill, so that
+//! error quotes the failing attempt's stderr tail. It stays quiet under
+//! a stop (§2.9), needing no flag of its own: a stop-pending half-stream
+//! is the *expected* signature, and the caller's §2.9 check point
+//! discards the outcome unrendered.
 
 use super::staging::{StagingWriter, staging_path_for};
 use crate::config::RetryConfig;
@@ -43,8 +54,39 @@ enum SegmentOutcome {
     /// via [`CanonicalError::retryable`] (§2.10).
     Failed(CanonicalError),
     /// The stream ended without a trailing `end` — killed mid-stream
-    /// (§2.9 signature).
-    HalfStream,
+    /// (§2.9 signature), or an adapter that never reached the contract.
+    /// The stderr tail tells a human which; the flag tells the harness.
+    HalfStream { stderr_tail: String },
+}
+
+/// How much of an attempt's stderr the half-stream error quotes — big
+/// enough for a config-parse complaint, small enough that an error line
+/// never becomes a log dump. The whole capture is on disk.
+const STDERR_TAIL_CHARS: usize = 400;
+
+/// The trailing [`STDERR_TAIL_CHARS`] characters of an attempt's
+/// stderr, newlines flattened so the error stays one line, with a
+/// leading `…` when there is more on disk. `(empty)` when the adapter
+/// said nothing — itself diagnostic: an empty stderr with an empty
+/// stream is a genuine mid-stream kill.
+fn stderr_tail(bytes: &[u8]) -> String {
+    let text = String::from_utf8_lossy(bytes);
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return "(empty)".to_string();
+    }
+    let start = trimmed
+        .char_indices()
+        .rev()
+        .take(STDERR_TAIL_CHARS)
+        .last()
+        .map_or(0, |(i, _)| i);
+    let tail = trimmed[start..].replace('\n', " | ");
+    if start > 0 {
+        format!("…{tail}")
+    } else {
+        tail
+    }
 }
 
 /// Injected sleep so the retry backoff is real in production and a
@@ -119,13 +161,24 @@ pub(super) fn run(
     // model-output transcript entry under construction, sealed and renamed
     // by the caller once the call settles complete.
     let mut response_file = File::create(response_path)?;
+    // The adapter's diagnostic channel (§2.3), created unconditionally:
+    // 0 bytes is the ordinary record, not an absence to special-case.
+    let stderr_path = response_path.with_file_name(crate::prompt::step::STDERR_FILE);
+    let mut stderr_file = File::create(&stderr_path)?;
     let mut staging = StagingWriter::create(&staging_path_for(response_path))?;
     let args = ["--json", "--provider", call.provider_row];
     let max = call.retry.max_attempts.max(1);
     let mut attempt = 1;
     loop {
         staging.begin_segment();
-        let outcome = run_attempt(call, &args, request_bytes, &mut response_file, &mut staging)?;
+        let outcome = run_attempt(
+            call,
+            &args,
+            request_bytes,
+            &mut response_file,
+            &mut stderr_file,
+            &mut staging,
+        )?;
         match outcome {
             SegmentOutcome::Complete { handshake_v } => {
                 check_handshake(call.expect_handshake, handshake_v)?;
@@ -148,11 +201,14 @@ pub(super) fn run(
                     message: err.message,
                 });
             }
-            SegmentOutcome::HalfStream => {
+            SegmentOutcome::HalfStream { stderr_tail } => {
                 // Killed mid-stream (§2.9): nothing settled, so staging
                 // is left as debris the step's re-run overwrites (§2.3).
                 drop(response_file);
-                return Err(Error::AdapterHalfStream);
+                return Err(Error::AdapterHalfStream {
+                    stderr_log: stderr_path,
+                    tail: stderr_tail,
+                });
             }
         }
     }
@@ -173,6 +229,7 @@ fn run_attempt(
     args: &[&str],
     request_bytes: &[u8],
     response_file: &mut File,
+    stderr_file: &mut File,
     staging: &mut StagingWriter,
 ) -> Result<SegmentOutcome, Error> {
     let mut feed_err: Option<serde_json::Error> = None;
@@ -180,7 +237,8 @@ fn run_attempt(
     let mut error: Option<CanonicalError> = None;
     let mut ended = false;
     let mut handshake_v: Option<u8> = None;
-    call.adapter
+    let stderr = call
+        .adapter
         .run(call.binary, args, request_bytes, &mut |line| {
             response_file.write_all(line)?;
             response_file.write_all(b"\n")?;
@@ -206,6 +264,7 @@ fn run_attempt(
             Ok(())
         })
         .map_err(Error::AdapterSpawn)?;
+    stderr_file.write_all(&stderr)?;
     if let Some(e) = feed_err {
         return Err(Error::AdapterJson(e));
     }
@@ -218,7 +277,9 @@ fn run_attempt(
         return Ok(SegmentOutcome::Failed(err));
     }
     if !ended {
-        return Ok(SegmentOutcome::HalfStream);
+        return Ok(SegmentOutcome::HalfStream {
+            stderr_tail: stderr_tail(&stderr),
+        });
     }
     Ok(SegmentOutcome::Complete { handshake_v })
 }

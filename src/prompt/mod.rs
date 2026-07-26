@@ -147,8 +147,11 @@ pub enum Error {
     AdapterJson(#[source] serde_json::Error),
     #[error("provider error ({kind}): {message}")]
     AdapterError { kind: String, message: String },
-    #[error("adapter stream ended without a terminal `end` (killed mid-stream, §2.9)")]
-    AdapterHalfStream,
+    #[error(
+        "adapter stream ended without a terminal `end` (killed mid-stream, §2.9); \
+         adapter stderr tail: {tail} (full capture: {stderr_log})"
+    )]
+    AdapterHalfStream { stderr_log: PathBuf, tail: String },
     #[error(
         "bz version {found:?} does not match the linked brazen crate {expected:?} \
          (§4.4 — install the pinned binary: cargo install brazen --version ={expected})"

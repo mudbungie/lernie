@@ -22,6 +22,13 @@
 //!   harness as the adapter writes them. Writer-closes-fd is the
 //!   `IN_CLOSE_WRITE` end-of-stream signal (§3.5). Diagnostic-only;
 //!   the harness never reads it back (§2.3).
+//! - `stderr.log` — the adapter subprocess's stderr, appended across
+//!   the model call's attempts. Empty on an ordinary run: brazen
+//!   speaks its failures in-band on stdout (§4.4), so bytes here mean
+//!   the adapter failed *outside* that contract — a startup failure
+//!   with nothing on stdout at all. Diagnostic-only; the tail quoted in
+//!   a half-stream error comes from the live capture, never a read-back
+//!   (§2.3).
 //! - `tools/<tool-id>/` — per-tool-call records (`input.json`,
 //!   `output.json`); diagnostic raw capture, written but never read at
 //!   runtime (§2.3 Diagnostic-only contract). A tool result's runtime
@@ -46,6 +53,12 @@ pub const REQUEST_FILE: &str = "request.json";
 /// fd (§3.5 IN_CLOSE_WRITE). Diagnostic-only; harness never reads it
 /// back (§2.3).
 pub const RESPONSE_FILE: &str = "response.json";
+/// The adapter subprocess's stderr for a model call, appended per
+/// attempt beside `response.json` (§2.3). Empty on an ordinary run —
+/// brazen surfaces failures in-band on stdout (§4.4) — so a non-empty
+/// file is the signature of an adapter that died outside that contract.
+/// Diagnostic-only: written, never read back (§2.3).
+pub const STDERR_FILE: &str = "stderr.log";
 /// Step metadata: branch-tip sha at step-start plus timestamps
 /// (§2.3). Readable by the harness — it carries the commit a
 /// replay re-assembles against, which is the load-bearing piece.

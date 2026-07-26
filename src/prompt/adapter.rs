@@ -25,6 +25,18 @@
 //! the closed fd is the stop signature, handled by classification, not
 //! this runner.
 //!
+//! **Stderr is the adapter's diagnostic channel**, and the run's
+//! product beside the stdout stream. An adapter that dies *before* it
+//! can speak the in-band contract — a malformed brazen config, an
+//! unreadable credstore — says so only there, so discarding it turns a
+//! startup failure into an empty stdout stream indistinguishable from a
+//! mid-stream kill (§2.9). The runner captures it whole and hands it
+//! back; the caller lands it in the step record and quotes its tail
+//! when the stream ends without a terminal `end` (§2.3, §4.4). It is
+//! read concurrently with stdout on its own thread, so a chatty adapter
+//! filling the stderr pipe buffer can never deadlock against the
+//! harness tailing stdout.
+//!
 //! **No env forwarding.** Auth and endpoints are entirely brazen's
 //! (§4.4): its config resolves via `--config` / `BRAZEN_CONFIG` / XDG,
 //! and the harness sets `BRAZEN_CONFIG` only under test isolation — as
@@ -32,7 +44,7 @@
 //! threads. The child inherits the harness environment unchanged.
 
 use std::ffi::OsString;
-use std::io::{self, BufRead, BufReader, Write};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
@@ -71,13 +83,19 @@ pub fn resolve_binary(adapter_override: Option<&Path>, host: Option<&Path>) -> O
 pub trait AdapterRunner {
     /// Spawn `binary` with `args`, write `stdin_bytes` to its stdin
     /// (closing it after), and route each stdout line through `on_line`.
+    ///
+    /// Returns the child's **stderr, captured whole** — the adapter's
+    /// diagnostic channel, empty on an ordinary run. It is a return
+    /// value rather than a second callback because its one consumer
+    /// wants it entire: the step record's `stderr.log` and the tail
+    /// quoted in a half-stream error (§2.3, §4.4).
     fn run(
         &self,
         binary: &OsString,
         args: &[&str],
         stdin_bytes: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()>;
+    ) -> io::Result<Vec<u8>>;
 }
 
 /// Default [`AdapterRunner`]. Uses [`Command`] with PATH lookup and
@@ -93,12 +111,12 @@ impl AdapterRunner for SpawnAdapter {
         args: &[&str],
         stdin_bytes: &[u8],
         on_line: &mut dyn FnMut(&[u8]) -> io::Result<()>,
-    ) -> io::Result<()> {
+    ) -> io::Result<Vec<u8>> {
         let mut child = Command::new(binary)
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::null())
+            .stderr(Stdio::piped())
             .spawn()?;
         // Stdin in a thread so a slow / large request never deadlocks
         // against the child's stdout pipe-buffer fill (the harness
@@ -110,6 +128,16 @@ impl AdapterRunner for SpawnAdapter {
         let stdin_thread = thread::spawn(move || {
             let _ = stdin.write_all(&stdin_owned);
             // Drop closes the fd, signaling EOF.
+        });
+
+        // Stderr on its own thread for the same reason: the harness is
+        // busy tailing stdout, and a full stderr pipe buffer would
+        // otherwise block the child mid-stream.
+        let mut stderr = child.stderr.take().expect("stderr is piped");
+        let stderr_thread = thread::spawn(move || {
+            let mut captured = Vec::new();
+            let _ = stderr.read_to_end(&mut captured);
+            captured
         });
 
         let stdout = child.stdout.take().expect("stdout is piped");
@@ -129,9 +157,10 @@ impl AdapterRunner for SpawnAdapter {
         }
 
         stdin_thread.join().expect("stdin writer thread panicked");
+        let captured = stderr_thread.join().expect("stderr reader thread panicked");
         // Exit status is diagnostic only (§4.4) — never surfaced.
         let _ = child.wait()?;
-        Ok(())
+        Ok(captured)
     }
 }
 
@@ -146,6 +175,8 @@ pub fn capture_stdout(
     args: &[&str],
 ) -> io::Result<String> {
     let mut out: Vec<u8> = Vec::new();
+    // The guard reads stdout only; a `--version` probe's stderr has no
+    // step record to land in and nothing to say (§4.4).
     runner.run(binary, args, b"", &mut |line| {
         if !out.is_empty() {
             out.push(b'\n');
@@ -164,125 +195,4 @@ fn strip_trailing_lf(buf: &[u8]) -> &[u8] {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::path::PathBuf;
-
-    fn collect_lines<R: AdapterRunner>(
-        runner: &R,
-        bin: &OsString,
-        args: &[&str],
-        stdin: &[u8],
-    ) -> io::Result<Vec<Vec<u8>>> {
-        let mut lines: Vec<Vec<u8>> = Vec::new();
-        runner.run(bin, args, stdin, &mut |line| {
-            lines.push(line.to_vec());
-            Ok(())
-        })?;
-        Ok(lines)
-    }
-
-    #[test]
-    fn resolve_binary_defaults_to_bz_on_path() {
-        assert_eq!(resolve_binary(None, None), OsString::from("bz"));
-    }
-
-    #[test]
-    fn resolve_binary_uses_the_adapter_override_verbatim() {
-        let over = PathBuf::from("/opt/alt-bz");
-        assert_eq!(
-            resolve_binary(Some(&over), None),
-            OsString::from("/opt/alt-bz")
-        );
-    }
-
-    #[test]
-    fn resolve_binary_uses_the_injected_host_target_verbatim() {
-        // No `adapter:` override: the binding-injected host target is used
-        // verbatim, above the `bz`-on-PATH default (an embedding host
-        // naming itself as the adapter, §3.4).
-        let host = PathBuf::from("/opt/host-bz");
-        assert_eq!(
-            resolve_binary(None, Some(&host)),
-            OsString::from("/opt/host-bz")
-        );
-    }
-
-    #[test]
-    fn resolve_binary_prefers_the_override_over_the_injected_host_target() {
-        // Both named: the explicit `adapter:` override wins the one
-        // resolution order (most-specific first), the host target next.
-        let over = PathBuf::from("/opt/alt-bz");
-        let host = PathBuf::from("/opt/host-bz");
-        assert_eq!(
-            resolve_binary(Some(&over), Some(&host)),
-            OsString::from("/opt/alt-bz")
-        );
-    }
-
-    #[test]
-    fn spawn_adapter_emits_one_callback_per_stdout_line() {
-        let bin = OsString::from("printf");
-        let lines = collect_lines(&SpawnAdapter, &bin, &["a\nbb\nccc\n"], b"").unwrap();
-        assert_eq!(lines, vec![b"a".to_vec(), b"bb".to_vec(), b"ccc".to_vec()]);
-    }
-
-    #[test]
-    fn spawn_adapter_handles_crlf_terminators() {
-        let bin = OsString::from("printf");
-        let lines = collect_lines(&SpawnAdapter, &bin, &["x\r\ny\r\n"], b"").unwrap();
-        assert_eq!(lines, vec![b"x".to_vec(), b"y".to_vec()]);
-    }
-
-    #[test]
-    fn spawn_adapter_pipes_stdin_to_child() {
-        let bin = OsString::from("cat");
-        let lines = collect_lines(&SpawnAdapter, &bin, &[], b"hello\n").unwrap();
-        assert_eq!(lines, vec![b"hello".to_vec()]);
-    }
-
-    #[test]
-    fn spawn_adapter_reports_spawn_failure() {
-        let bin = OsString::from("/no/such/bz-nonesuch");
-        let err = collect_lines(&SpawnAdapter, &bin, &[], b"").unwrap_err();
-        assert_eq!(err.kind(), io::ErrorKind::NotFound);
-    }
-
-    #[test]
-    fn spawn_adapter_ignores_nonzero_exit() {
-        // `false` exits 1 with no stdout; the runner treats the exit as
-        // diagnostic (§4.4) and returns Ok with no lines.
-        let bin = OsString::from("false");
-        let lines = collect_lines(&SpawnAdapter, &bin, &[], b"").unwrap();
-        assert!(lines.is_empty());
-    }
-
-    #[test]
-    fn spawn_adapter_propagates_callback_error() {
-        let bin = OsString::from("printf");
-        let err = SpawnAdapter
-            .run(&bin, &["one\ntwo\n"], b"", &mut |_| {
-                Err(io::Error::other("callback bailed"))
-            })
-            .unwrap_err();
-        assert!(err.to_string().contains("callback bailed"));
-    }
-
-    #[test]
-    fn capture_stdout_rejoins_lines() {
-        // Single line: the version-guard shape.
-        let bin = OsString::from("printf");
-        let out = capture_stdout(&SpawnAdapter, &bin, &["bz 0.0.2\n"]).unwrap();
-        assert_eq!(out, "bz 0.0.2");
-        // Multiple lines rejoin with `\n` (exercises the separator path).
-        let out = capture_stdout(&SpawnAdapter, &bin, &["first\nsecond\n"]).unwrap();
-        assert_eq!(out, "first\nsecond");
-    }
-
-    #[test]
-    fn capture_stdout_surfaces_spawn_failure() {
-        let bin = OsString::from("/no/such/bz-nonesuch");
-        let err = capture_stdout(&SpawnAdapter, &bin, &["--version"]).unwrap_err();
-        assert_eq!(err.kind(), io::ErrorKind::NotFound);
-    }
-}
+mod tests;

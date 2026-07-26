@@ -19,9 +19,10 @@ mod verbs;
 mod verbs_more;
 
 /// Serializes `LERNIE_HOME` mutation. The harness-root env (§2.2) is
-/// process-global; `prime` is the one verb whose in-process test must
-/// point it at a scratch dir (it seeds real files), and Rust 2024's
-/// `set_var` is `unsafe` for exactly this reason.
+/// process-global; `prime` — and `new`, which founds the root through
+/// prime's routine — are the verbs whose in-process tests must point it
+/// at a scratch dir (they seed real files), and Rust 2024's `set_var` is
+/// `unsafe` for exactly this reason.
 static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 /// Run `f` with `LERNIE_HOME` set to `home`, then clear it. Serialized

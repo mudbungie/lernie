@@ -2,7 +2,8 @@
 //! arm of the exhaustive match (§3.4) exercised through the parsed
 //! `Command`, plus `prime` — whose success seeds real files and so is
 //! driven against a scratch `LERNIE_HOME`, and whose failure pins the
-//! one-conversion `lernie prime: …` shape.
+//! one-conversion `lernie prime: …` shape. `new` founds the harness root
+//! through prime's routine (§2.2), so it runs against a scratch home too.
 
 use super::{assert_prefixed, noop_editor, with_fx, with_lernie_home};
 use crate::cmd::{
@@ -25,9 +26,12 @@ fn command_run_dispatches_every_non_prime_arm() {
     // A non-workspace path — every driver/archive verb hits its cheap
     // early guard against it; `new` scaffolds a fresh scratch dest.
     let ne = || d.path().to_path_buf();
-    assert!(dispatched(Command::New(new::Args {
-        path: Some(d.path().join("w")),
-    })));
+    let home = TempDir::new().unwrap();
+    assert!(with_lernie_home(home.path(), || dispatched(Command::New(
+        new::Args {
+            path: Some(d.path().join("w")),
+        }
+    ))));
     assert!(!dispatched(Command::Config(config::Args {
         workspace: ne(),
         name: None,

@@ -3,7 +3,7 @@
 //! orchestration narrative.
 
 use super::fixtures::{
-    ErrFinder, ErrInspector, NoopGit, StubFinder, StubInspector, touch_inbox_dir,
+    ErrFinder, ErrInspector, NoopGit, OwnGroupFinder, StubFinder, StubInspector, touch_inbox_dir,
 };
 use crate::prompt::stop::{Error, cascade, run};
 use crate::template::GitRunner;
@@ -139,6 +139,53 @@ fn cli_run_returns_branch_missing_against_a_real_workspace() {
     assert!(
         matches!(err, Error::BranchMissing(ref b) if b == "no-such-branch"),
         "{err}"
+    );
+}
+
+#[test]
+fn run_refuses_to_signal_the_stop_process_own_group() {
+    // The §2.9 belt-and-braces guard, and the whole point of bl-5f0c:
+    // discovery hands back the group this very process stands in —
+    // what a `/proc` read of a not-yet-detached executor returns,
+    // since it still reports the group it inherited from its spawner.
+    // `kill(-that, SIGTERM)` is the operator's shell job in production
+    // and was, twice, this test binary's own coverage run. `run` must
+    // refuse before the cascade and send nothing at all.
+    //
+    // Pinning ourselves as a group leader first makes `getpgrp()`
+    // stable for the rest of the process, so the stub's probe-time
+    // reading and `run`'s own cannot disagree even if a sibling test
+    // exercises `become_pgid_leader` in parallel.
+    super::super::become_pgid_leader();
+    // SAFETY: `getpgrp` takes no arguments and cannot fail.
+    let own = unsafe { libc::getpgrp() };
+
+    let dir = TempDir::new().unwrap();
+    touch_inbox_dir(dir.path(), "br");
+    let signaler = cascade::RecordingSignaler::new(0);
+    let err = run(
+        dir.path(),
+        "br",
+        false,
+        &StubInspector { exists: true },
+        &OwnGroupFinder,
+        &signaler,
+        Duration::from_millis(1),
+        &NoopGit,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(err, Error::SelfGroup { pgid } if pgid == own),
+        "{err}"
+    );
+    assert!(
+        signaler.took().is_empty(),
+        "refusal must precede the cascade — not one signal may escape"
+    );
+    let rendered = err.to_string();
+    assert!(
+        rendered.contains("nothing was signalled"),
+        "the error must tell the operator no signal landed: {rendered}"
     );
 }
 

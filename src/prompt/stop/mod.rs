@@ -37,6 +37,15 @@
 //! classification already read — and, unlike the `response.json`
 //! model-call fd, it is open across tool execution and between-step
 //! gaps too, so a stop lands whenever an executor is alive (§2.9).
+//!
+//! **A discovered pgid is vetted twice before anything is signalled**
+//! (§2.9). [`discover`] refuses a pgid that is not its holder's own pid
+//! — a settled executor is a group leader, and a non-leader reading is
+//! the group the executor *inherited from its spawner*. [`vet_targets`]
+//! then refuses any pgid this process itself belongs to. The two are
+//! one hazard seen from both ends: `kill(-pgid, SIGTERM)` against an
+//! unsettled reading fells the operator's shell job in production, and
+//! did fell the coverage runner under `make check`.
 
 use crate::prompt::inbox::INBOX_DIR;
 use crate::template::{GitRunner, RealGit};
@@ -82,6 +91,14 @@ pub enum Error {
     },
     #[error("scan /proc: {0}")]
     Proc(#[source] io::Error),
+    #[error(
+        "refusing to signal process group {pgid}: it is this process's own group, \
+         so the SIGTERM would fell whatever launched `lernie stop` — an operator's \
+         shell job, or a test runner — rather than an executor (ARCH §2.9). \
+         Discovery resolved a pgid that no detached executor can legitimately own; \
+         nothing was signalled."
+    )]
+    SelfGroup { pgid: i32 },
     #[error("walk inbox directory: {0}")]
     InboxWalk(#[source] io::Error),
 }
@@ -137,9 +154,38 @@ pub fn run(
     if pgids.is_empty() {
         return Ok(());
     }
+    vet_targets(&pgids, own_pgid())?;
 
     cascade(&pgids, signaler, deadline, POLL_INTERVAL);
     Ok(())
+}
+
+/// This process's own process group. `lernie stop` never makes itself a
+/// group leader, so this is whatever launched it: an operator's shell
+/// job, or the test runner under `make check`.
+// SAFETY: `getpgrp` takes no arguments, reads only the caller's own
+// kernel state, and cannot fail.
+fn own_pgid() -> i32 {
+    unsafe { libc::getpgrp() }
+}
+
+/// Belt-and-braces last stop before the cascade: refuse to signal a
+/// group the stop process itself belongs to (ARCH §2.9).
+///
+/// Discovery already refuses a pgid that is not its holder's own pid,
+/// so reaching here with `own` in the set means that invariant was
+/// somehow satisfied by a group we are standing in — impossible for a
+/// detached executor, and catastrophic if signalled: `kill(-own, ...)`
+/// reaches the invoking shell's job (production) or the coverage
+/// runner (`make check`), which is exactly the observed failure this
+/// guard closes off. Refuse the whole sweep rather than filter: a stop
+/// that resolved a bogus target has not established what it *would*
+/// have hit, and a half-performed kill is worse than none.
+fn vet_targets(pgids: &[i32], own: i32) -> Result<(), Error> {
+    match pgids.iter().find(|&&pgid| pgid == own) {
+        Some(&pgid) => Err(Error::SelfGroup { pgid }),
+        None => Ok(()),
+    }
 }
 
 /// CLI entry point for `lernie stop` (ARCH §3.4 — kept in the lib so

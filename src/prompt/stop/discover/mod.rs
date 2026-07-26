@@ -17,18 +17,43 @@
 //! the directory scan only when actually called. See [`super::tests`]
 //! for fixture usage.
 //!
+//! **A discovered pgid is only trusted once it equals the holder's own
+//! pid** (§2.9 "Discovery trusts a pgid only from a group leader"). Every
+//! driver makes itself a process-group leader at startup — `setpgid(0, 0)`
+//! for `lernie prompt`, `setsid` for a detached `lernie advance` — so a
+//! settled executor's pgid *is* its pid. Before that lands, `/proc/<pid>/stat`
+//! still reports the group the executor **inherited from whoever spawned
+//! it**: the operator's shell in production, the coverage runner under
+//! `make check`. Signalling that reading kills the wrong tree, so a
+//! non-leader reading is read as *not yet*, retried a bounded number of
+//! times, and then refused rather than signalled.
+//!
 //! Linux only — `/proc` is not portable to Darwin or Windows. ARCH
 //! §2.9 calls Linux out as the verified platform; portability deltas
 //! are a v0.6+ concern.
 
 use std::io;
 use std::path::Path;
+use std::time::Duration;
+
+/// How many times a discovered holder's `/proc/<pid>/stat` is re-read
+/// after a non-leader reading, waiting for its `setpgid`/`setsid` to
+/// land, before the reading is refused. A **count**, not a wall-clock
+/// deadline: the race this rides out only happens under load, and a
+/// deadline measured under load reports the load rather than the race
+/// (bl-1c2e, bl-7a3f).
+const LEADER_RETRIES: u32 = 50;
+
+/// Backoff between those re-reads. Sized for a fork/exec transition,
+/// not for a scheduling stall — the attempt count is the budget.
+const LEADER_BACKOFF: Duration = Duration::from_millis(10);
 
 /// "Find the pgid of the process holding `inbox_dir`'s fd open" — the
 /// executor lock (§2.11). `None` means no holder found: the executor has
 /// already exited or has not yet acquired the lock. The pgid (== leader
 /// pid for a setpgid'd harness, ARCH §2.9 cascade) is what
-/// [`super::cascade`] signals.
+/// [`super::cascade`] signals; an `Err` means a holder was found whose
+/// pgid never became its own pid, which is refused rather than signalled.
 pub trait PgidFinder {
     fn find_holder_pgid(&self, inbox_dir: &Path) -> io::Result<Option<i32>>;
 }
@@ -37,12 +62,16 @@ pub trait PgidFinder {
 #[derive(Debug, Clone)]
 pub struct ProcFsFinder {
     proc_root: std::path::PathBuf,
+    leader_retries: u32,
+    leader_backoff: Duration,
 }
 
 impl Default for ProcFsFinder {
     fn default() -> Self {
         Self {
             proc_root: std::path::PathBuf::from("/proc"),
+            leader_retries: LEADER_RETRIES,
+            leader_backoff: LEADER_BACKOFF,
         }
     }
 }
@@ -51,7 +80,52 @@ impl ProcFsFinder {
     /// Override the procfs root — tests point at a fixture tree.
     #[cfg(test)] // test-only builder
     pub fn with_root(proc_root: std::path::PathBuf) -> Self {
-        Self { proc_root }
+        Self {
+            proc_root,
+            ..Self::default()
+        }
+    }
+
+    /// Override the leader-invariant retry budget — tests that assert
+    /// the refusal want the retries exhausted without the production
+    /// wait, and tests that assert the retry want a budget no plausible
+    /// scheduling stall can outlast (bl-7a3f).
+    #[cfg(test)] // test-only builder
+    pub fn with_leader_retry(self, retries: u32, backoff: Duration) -> Self {
+        Self {
+            leader_retries: retries,
+            leader_backoff: backoff,
+            ..self
+        }
+    }
+
+    /// The pgid of `pid`, accepted only once it equals `pid` itself.
+    ///
+    /// A process-group leader's pgid is its own pid, and every executor
+    /// makes itself one at startup (§2.9). Any other reading names a
+    /// group the executor merely inherited — its spawner's — and
+    /// `kill(-pgid, ...)` against it would fell the spawner's whole
+    /// tree. Re-read a bounded number of times (the invariant is
+    /// normally true on the first read; the retry covers the window
+    /// between fork and the child's own `setpgid`), then refuse.
+    fn leader_pgid(&self, pid: i32) -> io::Result<i32> {
+        let mut pgid = read_pgid(&self.proc_root, pid)?;
+        let mut retries = self.leader_retries;
+        while pgid != pid && retries > 0 {
+            std::thread::sleep(self.leader_backoff);
+            pgid = read_pgid(&self.proc_root, pid)?;
+            retries -= 1;
+        }
+        if pgid == pid {
+            return Ok(pgid);
+        }
+        Err(io::Error::other(format!(
+            "pid {pid} holds the agent's inbox lock but reports process group \
+             {pgid} instead of its own pid: it is not a group leader, so that \
+             group is one lernie stop does not own (the executor's \
+             setpgid/setsid has not landed, or failed — ARCH §2.9). Refusing to \
+             signal it; re-run `lernie stop` once the executor has settled."
+        )))
     }
 }
 
@@ -75,7 +149,7 @@ impl PgidFinder for ProcFsFinder {
                 continue;
             };
             if pid_holds(&entry.path(), &target) {
-                return Ok(Some(read_pgid(&self.proc_root, pid)?));
+                return self.leader_pgid(pid).map(Some);
             }
         }
         Ok(None)

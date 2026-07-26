@@ -1,7 +1,8 @@
 //! [`super::author`] tests: the three origins end-to-end with real git,
-//! and every failure arm — the layout guard, git declines, the Io arms
-//! (checkout dir, template extract), the descriptions refresh, the edit
-//! step, and the empty-commit decline.
+//! and the failure arms that need no stub — the layout guard, git's own
+//! declines, the descriptions refresh, and the edit step. The teardown
+//! and declined-pass contract is [`super::tests_teardown`]; the stubbed
+//! Io arms are [`super::tests_stub`].
 
 use super::{Error, Origin, author, from_cli};
 use crate::template::{GitRunner, RealGit, scaffold};
@@ -12,7 +13,7 @@ use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
 /// A scaffolded workspace with an empty pool. Returns `(holder, ws)`.
-fn workspace() -> (TempDir, PathBuf) {
+pub(super) fn workspace() -> (TempDir, PathBuf) {
     let holder = TempDir::new().unwrap();
     let ws = holder.path().join("ws");
     let roots = crate::test_support::bare_roots(holder.path());
@@ -21,7 +22,7 @@ fn workspace() -> (TempDir, PathBuf) {
 }
 
 /// An `edit` closure that writes each `(rel, content)` file.
-fn write_files(files: &[(&str, &str)]) -> impl FnOnce(&Path) -> io::Result<()> {
+pub(super) fn write_files(files: &[(&str, &str)]) -> impl FnOnce(&Path) -> io::Result<()> {
     let owned: Vec<(String, String)> = files
         .iter()
         .map(|(r, c)| (r.to_string(), c.to_string()))
@@ -36,7 +37,7 @@ fn write_files(files: &[(&str, &str)]) -> impl FnOnce(&Path) -> io::Result<()> {
     }
 }
 
-fn show(ws: &Path, spec: &str) -> io::Result<String> {
+pub(super) fn show(ws: &Path, spec: &str) -> io::Result<String> {
     RealGit::new().run_capture(&repo_git(ws), &["show", spec])
 }
 
@@ -166,23 +167,6 @@ fn advancing_a_missing_branch_is_a_git_decline() {
     )
     .unwrap_err();
     assert!(matches!(err, Error::Git(_)), "got {err:?}");
-}
-
-#[test]
-fn a_no_op_edit_is_declined_as_an_empty_commit() {
-    let (holder, ws) = workspace();
-    // An advance whose edit writes nothing leaves the checkout identical
-    // to the branch head (no template extract on advance, empty pool):
-    // git refuses the empty commit and the branch does not move.
-    let err = author(
-        &ws,
-        &holder.path().join("no-pool"),
-        "default",
-        Origin::Advance,
-        write_files(&[]),
-        &RealGit::new(),
-    );
-    assert!(matches!(err, Err(Error::Git(_))), "got {err:?}");
 }
 
 #[test]

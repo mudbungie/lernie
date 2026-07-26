@@ -239,9 +239,26 @@ refreshes the `descriptions/**` snapshot from the data-root pools (ARCH
 the control files (`workflow.yaml`, `providers.yaml`, `manifest.yaml`,
 `souls/`, `version`), commits, and tears the checkout down. `<name>`
 defaults to `default`. `--from` and `--orphan` are mutually exclusive and
-only apply when creating a new branch. An authoring pass that changes
-nothing is declined (git's empty-commit refusal) — the branch does not
-move. This is the **only** act that advances a config branch (ARCH §2.3);
+only apply when creating a new branch.
+
+**Declining is fine, and leaves nothing behind.** Save no change and the
+pass is *declined*: there is nothing to commit, so no commit is authored,
+the branch does not move, and a `--from` / `--orphan` branch the pass
+would have created is not left behind. That is a success — `lernie
+config` exits 0 and prints the one line
+
+```
+config/default unchanged: the edit changed nothing, so no config commit was authored
+```
+
+so empty stdout means a commit landed. The transient checkout is torn
+down on every exit path (a decline, a git decline, an editor that fails),
+so the next `lernie config` always runs. Only a hard kill mid-pass can
+leave the checkout behind, and the next pass clears it before starting
+(ARCH §2.11 "the next touch heals") — at the cost of the killed pass's
+unsaved edit, which was never committed.
+
+This is the **only** act that advances a config branch (ARCH §2.3);
 agents forked before it keep their governing config, and agents forked
 after it govern under the new head (fork is the freeze, §2.2).
 

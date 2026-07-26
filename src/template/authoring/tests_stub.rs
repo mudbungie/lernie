@@ -3,7 +3,7 @@
 //! extraction) and the commit-step git failure. Split from
 //! [`super::tests`] for the per-file line cap.
 
-use super::{Error, Origin, author};
+use super::{Error, Origin, Pass, author};
 use crate::template::{GitRunner, RealGit, scaffold};
 use std::fs;
 use std::io;
@@ -44,11 +44,16 @@ impl<F: Fn(&Path)> GitRunner for StubGit<F> {
         Ok(())
     }
     fn run_capture(&self, dest: &Path, args: &[&str]) -> io::Result<String> {
-        self.run(dest, args).map(|_| String::new())
+        // The stub's checkout always reports dirty, so these arms reach
+        // the commit step rather than taking the empty-stage decline.
+        self.run(dest, args).map(|()| match args.first() {
+            Some(&"status") => "A  version".to_string(),
+            _ => String::new(),
+        })
     }
 }
 
-fn run_orphan<F: Fn(&Path)>(ws: &Path, no_pool: &Path, git: &StubGit<F>) -> Result<(), Error> {
+fn run_orphan<F: Fn(&Path)>(ws: &Path, no_pool: &Path, git: &StubGit<F>) -> Result<Pass, Error> {
     author(ws, no_pool, "scratch", Origin::Orphan, noop, git)
 }
 
@@ -104,6 +109,10 @@ fn stub_run_capture_delegates_to_run() {
         fail_commit: true,
     };
     let holder = TempDir::new().unwrap();
-    assert_eq!(git.run_capture(holder.path(), &["status"]).unwrap(), "");
+    assert_eq!(
+        git.run_capture(holder.path(), &["status"]).unwrap(),
+        "A  version"
+    );
+    assert_eq!(git.run_capture(holder.path(), &["add"]).unwrap(), "");
     assert!(git.run_capture(holder.path(), &["commit"]).is_err());
 }

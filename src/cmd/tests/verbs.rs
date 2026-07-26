@@ -59,6 +59,29 @@ fn config_authors_a_commit() {
 }
 
 #[test]
+fn config_reports_a_declined_pass_as_a_clean_line() {
+    // An editor that saves nothing, twice: the first pass still lands
+    // the §3.3 descriptions refresh, the second changes nothing at all
+    // and is declined — a success (no error, no wedged checkout) that
+    // names the branch that did not move.
+    let (_h, ws) = fixture::workspace();
+    let args = || config::Args {
+        workspace: ws.clone(),
+        name: None,
+        from: None,
+        orphan: false,
+    };
+    let (first, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
+    first.unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
+    let Outcome::Line(line) = r.unwrap() else {
+        panic!("a declined pass reports the branch that did not move")
+    };
+    assert!(line.starts_with("config/default unchanged: "), "{line}");
+    assert!(!ws.join(".config-author").exists());
+}
+
+#[test]
 fn config_reports_a_non_workspace() {
     let tmp = TempDir::new().unwrap();
     let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {

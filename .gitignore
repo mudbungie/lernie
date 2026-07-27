@@ -8,3 +8,12 @@
 
 /target
 lcov.info
+
+# Gate-run scratch at the repo root. `cargo tarpaulin` drops the build
+# script's `build_rs_cov.profraw` here, and agents commonly tee `make check`
+# into check.log / its status into check.exit. This has to be ignored rather
+# than merely cleaned up: `bl close` stages every untracked file in the
+# worktree, so unignored debris rides onto main (check.exit did, in 6cf98c1).
+*.profraw
+check.log
+check.exit

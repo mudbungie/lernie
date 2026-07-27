@@ -1,20 +1,20 @@
 +++
 title = "tests/install.rs mutates the machine-global bz, breaking concurrent agents' gates"
 created = 1784957523
-updated = 1785124119
+updated = 1785125239
 claimant = "Gimbal"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
-`tests/install.rs::make_install_lays_down_skeleton_idempotently` shells out to `make install`, whose recipe runs `cargo install brazen --version =$(BRAZEN_PIN)` — a write to the machine-global `~/.cargo/bin/bz`, derived from THAT worktree's Cargo.toml pin.
+RESOLVED. `tests/install.rs` no longer writes the machine-global `~/.cargo/bin/bz`.
 
-Under agent fan-out this is a cross-worktree side channel. During bl-8c92 (bumping the pin 0.0.3 -> 0.0.4) a sibling agent's plain `cargo test` run reinstalled bz 0.0.3 from its own still-0.0.3 worktree, mid-flight, and five of this ball's e2e tests failed with `bz version "0.0.3" does not match the linked brazen crate "0.0.4"`. The workaround was to hold a copy of the 0.0.4 binary and restore it on a 10s poll for the duration of the gate — not something a gate should need.
+**The seam.** `run_install` (the test's own `make install` invocation) sets `CARGO_INSTALL_ROOT` to `<worktree>/target/install-test-cargo-root`. That is cargo's own documented root override — precedence is `--root` flag, then `CARGO_INSTALL_ROOT`, then `install.root` config, then `CARGO_HOME` — so `install-bz`'s `cargo install brazen --version "=$(BRAZEN_PIN)" --locked` lands the pinned `bz` in the per-worktree root instead of on the user's cargo bin. The recipe is untouched: no `--root`, no test-only branch, no new make variable. `make install` run by a user is byte-identical.
 
-The test is `#[cfg_attr(tarpaulin, ignore)]`, so `make check` does not trigger it; `make test` / bare `cargo test --workspace` does.
+The isolation rides on the TEST, not on a make target, so it holds under every runner — `cargo test --test install`, bare `cargo test --workspace`, `make test`, `make test-install` — which is what the report demanded (the reported breakage came from a plain `cargo test` run, which no Makefile-side fix would have covered).
 
-The hazard is structural, not incidental: a per-machine singleton (`~/.cargo/bin/bz`) is written by a test, while the version guard (src/prompt/resolve.rs, ARCH §4.4) makes every e2e test depend on that singleton matching the local pin. Two worktrees at different pins cannot both pass their gate on one box.
+The root is persistent per worktree rather than a `TempDir` so cargo's "already installed" short-circuit keeps re-runs free; `target/` is gitignored.
 
-Candidate directions (undecided):
-- point `make install`'s `cargo install` at a test-local `--root` when invoked from the test, so it never touches the user's cargo bin (the test asserts the harness-owned layout only — it does not assert anything about where bz landed);
-- or drop the `cargo install brazen` step from what the test exercises.
+**Proof.** Forced the install path by shadowing `bz` on `PATH` with a shim reporting `0.0.1` (so `install-bz`'s pin guard mismatches and the real `cargo install` runs), then ran `cargo test --test install`: passed in 145s, brazen 0.0.4 compiled and installed into `target/install-test-cargo-root/bin/bz` (`.crates.toml` lists `brazen 0.0.4`), while `~/.cargo/bin/bz` kept its exact sha256 (`b6506c4d9ff6...`) and mtime (2026-07-25 01:53:24). Unforced (machine `bz` already at the pin) the guard short-circuits and nothing is installed at all — the install test step took 0.39s in the gate.
 
-Filed from bl-8c92; not fixed there (that ball was the pin bump).
+Docs updated to match: the Makefile `test-install` comment block (which previously documented the rollback as deliberately accepted), the README test-determinism section, and the README pre-commit/`make check` description.
+
+Gate: `make check` exit=0 — fmt-check, clippy, 100.00% coverage (4678/4678 lines), `test-install` ok. Two earlier gate attempts died on load-induced infrastructure flakes under fleet load ~90 (tarpaulin `ECHILD: No child processes`, then a SIGTERM at Error 143), neither an assertion failure; the clean run is the record.

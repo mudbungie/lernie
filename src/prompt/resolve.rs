@@ -270,8 +270,8 @@ fn control_origin(commit: &str, path: &str) -> PathBuf {
 /// declined (PRINCIPLES "Decline illegal operations") rather than
 /// silently downgraded.
 fn check_bz_version(adapter: &dyn AdapterRunner, binary: &OsString) -> Result<(), Error> {
-    let out =
-        adapter::capture_stdout(adapter, binary, &["--version"]).map_err(Error::AdapterSpawn)?;
+    let out = adapter::capture_stdout(adapter, binary, &["--version"])
+        .map_err(|e| adapter::spawn_error(binary, e))?;
     // `bz --version` prints e.g. `bz 0.0.2`; the version is the last
     // whitespace token.
     let found = out.split_whitespace().last().unwrap_or("").to_string();

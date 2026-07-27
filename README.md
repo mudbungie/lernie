@@ -1206,8 +1206,9 @@ commit, fix the underlying issue rather than skipping.
 
 `.githooks/reference-transaction` pushes `main` to `origin` the moment local
 `main` advances. Landing and publishing are one act: a `bl close` reaches
-GitHub, which runs CI, which runs release-plz. `origin/main` cannot silently
-fall months behind local `main` again.
+GitHub and the push triggers the Release-plz workflow, which contains CI as a
+called job (`needs: ci`) and only publishes once it is green. `origin/main`
+cannot silently fall months behind local `main` again.
 
 **Why a `reference-transaction` hook and not `post-commit`.** Nothing lands on
 this repo's `main` through `git commit`. `bl close` delivers by plumbing —

@@ -1,7 +1,8 @@
 +++
 title = "0.0.1 ships two binary distribution channels (crates.io, GitHub release tarball) that the README documents no path for: no cargo install line, no bz step, and the tarball carries no docs at all"
 created = 1785130186
-updated = 1785130186
+updated = 1785130728
+claimant = "stanchion"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

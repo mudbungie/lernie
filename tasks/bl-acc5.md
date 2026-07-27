@@ -2,6 +2,7 @@
 title = "Correct bl-9253's close record: the published 0.0.1 tarball is CLEAN — no check.exit"
 created = 1785130057
 updated = 1785130123
+claimant = "Tumult"
 priority = 1
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

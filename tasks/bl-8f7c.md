@@ -1,7 +1,8 @@
 +++
 title = "release-binaries resolves the tag via git describe from the pinned push sha — races main and misses the just-cut tag"
 created = 1785129927
-updated = 1785129927
+updated = 1785129928
+claimant = "Quoin"
 priority = 9
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

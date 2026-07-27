@@ -6,9 +6,44 @@
 //! the `tests/*_cli.rs` binary tests.
 
 use super::{assert_prefixed, noop_editor, with_fx};
-use crate::cmd::{Outcome, advance, bundle, replay, scan, tool};
+use crate::cmd::{Outcome, advance, bundle, message, replay, scan, tool};
 use crate::workspace::fixture;
 use tempfile::TempDir;
+
+#[test]
+fn message_advises_on_a_quiescent_branch_whose_latest_call_failed() {
+    // bl-ee80: messaging a branch whose latest model call failed stays
+    // legal — it is the retry-after-fix path (§2.9-shape resume) — but
+    // the verb warns on stderr so the sender learns the branch was not
+    // merely idle. Deposit, launch, and exit code are untouched.
+    let (_h, ws) = fixture::workspace();
+    let agent = "20260101-a9";
+    fixture::spawn_root(&ws, agent);
+    let step = ws.join("steps").join(agent).join("001");
+    std::fs::create_dir_all(&step).unwrap();
+    std::fs::write(
+        step.join("response.json"),
+        "{\"type\":\"error\",\"kind\":\"parse_input\",\"message\":\"bad\"}\n{\"type\":\"end\"}\n",
+    )
+    .unwrap();
+    assert!(message::branch_failed(&ws, agent), "failed shape derived");
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        message::run(
+            message::Args {
+                workspace: ws.clone(),
+                agent: agent.into(),
+                content: "are you there?".into(),
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Quiet), "never declined");
+    // The advisory names the branch and points at its record.
+    let note = message::failed_branch_note(agent);
+    assert!(note.contains("latest model call failed"), "{note}");
+    assert!(note.contains(&format!("steps/{agent}/")), "{note}");
+    assert!(note.contains("lernie scan"), "{note}");
+}
 
 #[test]
 fn scan_prints_its_report() {

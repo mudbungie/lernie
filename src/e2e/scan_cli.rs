@@ -130,6 +130,50 @@ fn scan_verb_surfaces_a_broken_workspace_loudly() {
 }
 
 #[test]
+fn scan_names_a_root_whose_model_call_failed() {
+    // bl-ee80 live-wire shape: a root's model call errors non-retryably
+    // — the segment closes cleanly (`error` then `end`), so a
+    // no-terminal-`end` test reads the branch as idle while it can never
+    // advance (§2.10). The sweep classifies it dead from the same
+    // framing tail, and — a root having no parent inbox for a deposit —
+    // surfaces it *by name* in the operator summary.
+    let ws = workspace_with_crashed_child();
+    // Hold the child's lock so only the root's own death is in view (a
+    // driven branch is never swept) and no deposit fills the parent's
+    // inbox — the flush then launches nothing from this pass.
+    let child_inbox = ws.path().join("inbox").join(CHILD);
+    let _held = crate::prompt::inbox::try_acquire(&child_inbox)
+        .unwrap()
+        .expect("free");
+    let step = ws.path().join("steps").join(PARENT).join("001");
+    std::fs::create_dir_all(&step).unwrap();
+    std::fs::write(
+        step.join("response.json"),
+        "{\"type\":\"error\",\"kind\":\"parse_input\",\"message\":\"user accepts only text content\"}\n{\"type\":\"end\"}\n",
+    )
+    .unwrap();
+    let out = Command::new(lernie_bin())
+        .arg("scan")
+        .arg(ws.path())
+        .output()
+        .expect("spawn lernie scan");
+    assert!(
+        out.status.success(),
+        "lernie scan: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    assert!(
+        stdout.contains(&format!("silent deaths: 1 ({PARENT})")),
+        "got {stdout:?}"
+    );
+    assert!(
+        !died_deposit(ws.path()).exists(),
+        "a root gets no deposit — the name is the surfacing"
+    );
+}
+
+#[test]
 fn prompt_hot_path_runs_no_workspace_scan() {
     // The same crashed-child workspace, touched by a driver instead of
     // the operator verb. `lernie prompt` fails fast here (LERNIE_HOME has

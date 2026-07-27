@@ -13,7 +13,7 @@ fn sweep_deposits_died_for_a_child_that_never_returned() {
     let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
 
     assert_eq!(report.swept, vec![CHILD.to_string()]);
-    assert_eq!(report.silent_deaths, 1);
+    assert_eq!(report.silent_deaths, vec![CHILD.to_string()]);
     // The deposit is a message *from the child* in the parent's inbox.
     let deposited = inbox_dir(ws.path(), PARENT).join(format!("{CHILD}-001.md"));
     let body = std::fs::read_to_string(&deposited).unwrap();
@@ -43,7 +43,7 @@ fn sweep_is_idempotent_across_a_double_scan() {
     // now false — no re-deposit, and exactly one died file remains.
     let second = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
     assert!(second.swept.is_empty(), "no re-deposit on re-scan");
-    assert_eq!(second.silent_deaths, 0);
+    assert!(second.silent_deaths.is_empty());
     let count = std::fs::read_dir(inbox_dir(ws.path(), PARENT))
         .unwrap()
         .flatten()
@@ -65,7 +65,7 @@ fn child_with_a_delivered_transcript_message_is_not_swept() {
         report.swept.is_empty(),
         "delivered return counts as returned"
     );
-    assert_eq!(report.silent_deaths, 0);
+    assert!(report.silent_deaths.is_empty());
 }
 
 #[test]
@@ -76,7 +76,7 @@ fn child_with_an_undelivered_inbox_message_is_not_swept() {
     let git = StubGit::with_branches(&["main", PARENT, CHILD]);
     let report = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap();
     assert!(report.swept.is_empty());
-    assert_eq!(report.silent_deaths, 0);
+    assert!(report.silent_deaths.is_empty());
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn a_driven_child_is_never_swept() {
     let git = StubGit::with_branches(&["main", PARENT, CHILD]);
     let report = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap();
     assert!(report.swept.is_empty(), "held lock is not a silent death");
-    assert_eq!(report.silent_deaths, 0);
+    assert!(report.silent_deaths.is_empty());
 }
 
 #[test]
@@ -101,8 +101,32 @@ fn a_root_is_counted_but_never_deposited() {
     let report = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap();
     assert!(report.swept.is_empty(), "a root has no parent inbox");
     assert_eq!(
-        report.silent_deaths, 1,
-        "died-mid-work root is a silent death"
+        report.silent_deaths,
+        vec![PARENT.to_string()],
+        "died-mid-work root is a silent death, surfaced by name"
+    );
+}
+
+#[test]
+fn a_root_with_a_failed_model_call_is_a_named_silent_death() {
+    // bl-ee80: a non-retryable (or retries-exhausted) model-call error
+    // ends its segment cleanly — an `Error` then the terminal `end` — so
+    // the branch looks idle to a no-terminal-`end` test while being
+    // permanently unable to advance (§2.10: the model call never settled
+    // complete, no transcript entry committed). The sweep classifies it
+    // dead from the same framing tail and, the root having no parent
+    // inbox to deposit into, its *name* in the report is the surfacing.
+    let ws = TempDir::new().unwrap();
+    write_response(ws.path(), PARENT, "001", FAILED);
+    let git = StubGit::with_branches(&["main", PARENT]);
+    let report = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap();
+    assert!(report.swept.is_empty(), "a root gets no deposit");
+    assert_eq!(report.silent_deaths, vec![PARENT.to_string()]);
+    assert!(
+        report
+            .to_string()
+            .contains(&format!("silent deaths: 1 ({PARENT})")),
+        "{report}"
     );
 }
 
@@ -114,6 +138,15 @@ fn died_mid_work_reads_the_latest_step_response() {
     // Step 1 completed cleanly; step 2 was killed — the latest governs.
     write_response(ws.path(), PARENT, "001", COMPLETE);
     write_response(ws.path(), PARENT, "002", KILLED);
+    assert!(died_mid_work(ws.path(), PARENT));
+}
+
+#[test]
+fn a_failed_latest_response_is_a_death() {
+    // §2.10: an `Error`-terminated final segment (with its clean `end`)
+    // is equally dead — the model call never settled complete.
+    let ws = TempDir::new().unwrap();
+    write_response(ws.path(), PARENT, "001", FAILED);
     assert!(died_mid_work(ws.path(), PARENT));
 }
 

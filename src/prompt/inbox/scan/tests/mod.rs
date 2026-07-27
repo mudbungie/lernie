@@ -170,3 +170,6 @@ pub(super) fn write_response(ws: &std::path::Path, branch: &str, seq: &str, body
 pub(super) const COMPLETE: &str = "{\"type\":\"finish\",\"reason\":\"stop\"}\n{\"type\":\"end\"}\n";
 /// A killed segment: content with no terminal `End` line.
 pub(super) const KILLED: &str = "{\"type\":\"finish\",\"reason\":\"stop\"}\n";
+/// A failed segment (§2.10): a non-retryable `Error` closed by its clean
+/// terminal `End` — the bl-ee80 shape a no-terminal-`end` test misses.
+pub(super) const FAILED: &str = "{\"type\":\"error\",\"kind\":\"parse_input\",\"message\":\"user accepts only text content\"}\n{\"type\":\"end\"}\n";

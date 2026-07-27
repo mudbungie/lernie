@@ -96,7 +96,9 @@ fn make_install_lays_down_skeleton_idempotently() {
 
     // Path binaries land under INSTALL_PREFIX/bin.
     let bin = prefix.path().join("bin");
-    assert!(bin.join("lernie").is_file(), "lernie missing from bin/");
+    for b in ["lernie", "agent-eval", "lernie-eval-agent"] {
+        assert!(bin.join(b).is_file(), "{b} missing from bin/");
+    }
 
     // Default global models.yaml (ARCH §4.2) — capabilities, no auth.
     let models = home.path().join("models.yaml");

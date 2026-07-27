@@ -79,12 +79,13 @@ enum Warrant {
 
 /// Derive warrant from the assembled wire history (§6): the alternation
 /// grouping (§2.3) makes the tail's role the whole answer — committed
-/// tool results compose user-side, so "all tools resolved" and "mail
-/// delivered" are the same observation.
+/// tool results compose tool-side (canonical `Role::Tool`, §2.3) and
+/// delivered mail user-side, so either non-assistant tail is the same
+/// observation: a model call is due.
 fn warrant(messages: &[Message]) -> Warrant {
     match messages.last() {
         None => Warrant::NothingDue,
-        Some(m) if m.role == Role::User => Warrant::ModelCallDue,
+        Some(m) if matches!(m.role, Role::User | Role::Tool) => Warrant::ModelCallDue,
         Some(m)
             if m.content
                 .iter()

@@ -33,17 +33,23 @@ pub enum ExperimentError {
 
 /// Resolve `config` to `<experiments_root>/<config>/workflow.yaml`,
 /// erroring if that file does not exist.
+///
+/// The path is canonicalized: it rides to the harness driver as
+/// `LERNIE_EXPERIMENT` (the `agent` seam), and the driver runs with the
+/// per-run working directory as its cwd — a root-relative path like
+/// `experiments/baseline/workflow.yaml` would name nothing from there.
+/// Canonicalizing also walks the baseline's symlink to the template,
+/// which resolves the same one file it names.
 pub fn resolve(config: &str, experiments_root: &Path) -> Result<Experiment, ExperimentError> {
-    let workflow = experiments_root.join(config).join("workflow.yaml");
-    if workflow.is_file() {
-        Ok(Experiment {
+    let named = experiments_root.join(config).join("workflow.yaml");
+    match named.canonicalize() {
+        Ok(workflow) if workflow.is_file() => Ok(Experiment {
             name: config.to_string(),
             workflow,
-        })
-    } else {
-        Err(ExperimentError::Missing {
+        }),
+        _ => Err(ExperimentError::Missing {
             name: config.to_string(),
-            path: workflow,
-        })
+            path: named,
+        }),
     }
 }

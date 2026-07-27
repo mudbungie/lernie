@@ -28,6 +28,7 @@ experiment is deployable in under 60 seconds end-to-end (v0.10). The
 | Name | What it is |
 |---|---|
 | `baseline` | The default workflow: a **symlink** to `template/workflow.yaml`, the v0.9 baseline harness against which variants are measured (§9.1, ~40% ± 5% pass@1 target). |
+| `single-attempt` | The default with the harness-owned retry loop disabled (`retry.max_attempts: 1`, ARCH §2.10/§6): isolates how much of baseline reliability the retry loop contributes. Also the repo's smallest non-empty config diff — the reference subject for the driver's experiment-application path (§9.3, bl-2e28). |
 
 **The baseline is the template, not a copy of it.** An experiment is a diff
 against the shipped default, so the baseline's diff is empty — and an empty

@@ -66,8 +66,9 @@ pub trait Bundler {
 /// `LERNIE_EXPERIMENT` is a hand-off, not a hook: the harness reads no
 /// such variable — it takes its `workflow.yaml` from the workspace's
 /// config commit (ARCH §2.2) — so *applying* the experiment is the
-/// driver's own work. The contract is spelled out in the repo README,
-/// "Run the suite".
+/// driver's own work, which the shipped `lernie-eval-agent` performs
+/// through `lernie config`. The contract is spelled out in the repo
+/// README, "Run the suite".
 pub struct CommandAgent {
     program: OsString,
 }
@@ -93,9 +94,9 @@ impl Agent for CommandAgent {
             .env("LERNIE_EVAL_REPORT", &report)
             .status()
             // Failing to spawn is a harness fault, and the one thing the
-            // operator needs to see is *which* program did not run — no
-            // driver ships with lernie, so "not found" here is the
-            // expected first encounter, not an exotic error.
+            // operator needs to see is *which* program did not run —
+            // e.g. the shipped `lernie-eval-agent` before `make install`
+            // has put it on PATH.
             .map_err(|e| {
                 io::Error::new(
                     e.kind(),

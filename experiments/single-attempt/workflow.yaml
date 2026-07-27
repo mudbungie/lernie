@@ -1,0 +1,39 @@
+# single-attempt (ARCH §9.3): the shipped default with the harness-owned
+# retry loop (ARCH §2.10, §6) disabled — max_attempts 1 is a single `bz`
+# invocation per step, no re-invoke on a retryable in-band error.
+#
+# The measurement question: how much of baseline reliability (pass@1) is
+# the retry loop absorbing provider flakiness, versus real harness
+# capability? A variant differing from baseline only here isolates that
+# axis. This is also the repo's smallest non-empty config diff — a
+# real experiment the driver must land in the workspace's config commit
+# for it to take force (§2.2), which makes it the natural subject for
+# demonstrating the §9.3 "a new experiment is a config diff; no code
+# changes" path end to end.
+events:
+  user_message:
+    - dispatch(worker)
+  worker_return:
+    - deliver_result
+  worker_flush:
+    - dispatch(compactor)
+  compactor_return:
+    - compaction_merge
+  branch_stopped:
+    - mark_abandoned
+    - notify_ui
+
+compaction:
+  intermediate:
+    trigger: every_n_commits
+    n: 20
+
+# The diff against template/workflow.yaml: one attempt per model call.
+retry:
+  max_attempts: 1
+  backoff: exponential
+
+budgets:
+  max_total_tokens: 2000000
+  max_wall_seconds: 3600
+  max_depth: 4

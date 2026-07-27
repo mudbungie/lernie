@@ -11,11 +11,13 @@ separate crate `crates/agent-eval`. This directory is its input;
 `crates/agent-eval/src/suite.rs` loads it and `tests/suite.rs` enforces its
 well-formedness.
 
-The runner is not yet *runnable end to end*, though: `--agent` names an
-external harness-driver program and **no such driver ships with lernie**
-(deferred as bl-2e28). So this data has never been measured against a live model;
-what is proven today is its well-formedness and the runner's own logic
-(exercised against a faked agent).
+The harness driver `--agent` names has shipped too (`lernie-eval-agent`,
+`crates/lernie-eval-agent`), so the suite runs end to end against a live
+model: `make eval CONFIG=<experiment> SUITE=tests/suite RUNS=<n>
+AGENT=lernie-eval-agent` (see the repo README, "Run the suite"). The repo's
+own gates still prove only well-formedness and runner logic (against a faked
+agent) — a measured score is a property of a live run, never asserted by
+tests.
 
 ## Layout
 

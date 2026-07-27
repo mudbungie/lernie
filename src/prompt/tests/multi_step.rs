@@ -97,15 +97,16 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
         "---\nfrom: user\ndeposited_at: iso-1\n---\nlist files"
     );
 
-    // Step 2 request: §2.5 pairing — assistant tool_use + user
-    // tool_result (whose content is a canonical `Content` array).
+    // Step 2 request: §2.5 pairing — assistant tool_use + tool-side
+    // tool_result (canonical `Role::Tool`, whose content is a canonical
+    // `Content` array; the provider protocol projects the role, §2.3).
     let req2: Value =
         serde_json::from_slice(&std::fs::read(step2_dir.join("request.json")).unwrap()).unwrap();
     let msgs = req2["messages"].as_array().unwrap();
     assert_eq!(msgs.len(), 3);
     assert_eq!(msgs[1]["role"], "assistant");
     assert_eq!(msgs[1]["content"][0]["id"], "toolu_01");
-    assert_eq!(msgs[2]["role"], "user");
+    assert_eq!(msgs[2]["role"], "tool");
     assert_eq!(msgs[2]["content"][0]["tool_use_id"], "toolu_01");
     assert_eq!(msgs[2]["content"][0]["content"][0]["text"], "files: a b");
 

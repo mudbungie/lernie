@@ -1170,10 +1170,10 @@ fall months behind local `main` again.
 **Why a `reference-transaction` hook and not `post-commit`.** Nothing lands on
 this repo's `main` through `git commit`. `bl close` delivers by plumbing —
 `git commit-tree`, then `git update-ref refs/heads/main` — which fires no
-commit hook and no merge hook at all; `main`'s history is squash commits end
-to end, with zero merge commits. Git's `reference-transaction` hook is the one
-event every landing path shares: the plumbing delivery, a `git merge --no-ff`,
-and a plain commit alike all end in an update of `refs/heads/main`.
+commit hook and no merge hook at all — every commit `bl` has landed on `main`
+arrived that way. Git's `reference-transaction` hook is the one event every
+landing path shares: the plumbing delivery, a `git merge --no-ff`, and a plain
+commit alike all end in an update of `refs/heads/main`.
 
 The hook acts only on the `committed` state of a transaction that moves
 `refs/heads/main` to a new value, and only when an `origin` remote exists.

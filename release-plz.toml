@@ -43,3 +43,14 @@ commit_parsers = [
 name = "agent-eval"
 release = false
 publish = false
+
+# lernie-eval-agent is internal-only for the same reason (`publish = false`
+# in crates/lernie-eval-agent/Cargo.toml) — the eval harness driver, the
+# agent-eval runner's counterpart (README "Run the suite"). Both keys, for
+# the reason spelled out above: `release = false` alone still leaves
+# release-plz's publishability validator disagreeing with Cargo.toml, which
+# aborts `release-plz release` for every crate.
+[[package]]
+name = "lernie-eval-agent"
+release = false
+publish = false

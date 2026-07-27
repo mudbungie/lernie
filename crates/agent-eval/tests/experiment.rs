@@ -11,7 +11,21 @@ fn resolves_present_experiment() {
 
     let exp = experiment::resolve("baseline", d.path()).unwrap();
     assert_eq!(exp.name, "baseline");
-    assert_eq!(exp.workflow, dir.join("workflow.yaml"));
+    // Canonicalized: the path rides to the driver as LERNIE_EXPERIMENT,
+    // whose cwd is the per-run workdir — it must be absolute.
+    assert_eq!(
+        exp.workflow,
+        dir.join("workflow.yaml").canonicalize().unwrap()
+    );
+    assert!(exp.workflow.is_absolute());
+}
+
+#[test]
+fn a_directory_named_workflow_yaml_is_missing() {
+    let d = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(d.path().join("odd/workflow.yaml")).unwrap();
+    let err = experiment::resolve("odd", d.path()).unwrap_err();
+    assert!(matches!(err, ExperimentError::Missing { .. }));
 }
 
 #[test]

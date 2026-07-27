@@ -60,7 +60,8 @@ fn user_message_composes_as_a_user_text_block_verbatim() {
 #[test]
 fn replay_from_a_recorded_tree_yields_the_alternating_wire_history() {
     // A recorded multi-step transcript assembled cold: user →
-    // assistant(tool_use) → the tool result, exactly the §2.5 pairing.
+    // assistant(tool_use) → the tool result (canonical Role::Tool,
+    // §2.3), exactly the §2.5 pairing.
     let dir = TempDir::new().unwrap();
     write(dir.path(), "001-user.md", b"go");
     write_json(
@@ -88,14 +89,15 @@ fn replay_from_a_recorded_tree_yields_the_alternating_wire_history() {
     assert_eq!(msgs[0].role, Role::User);
     assert_eq!(msgs[1].role, Role::Assistant);
     assert!(matches!(msgs[1].content[0], Content::ToolUse { .. }));
-    assert_eq!(msgs[2].role, Role::User);
+    assert_eq!(msgs[2].role, Role::Tool);
     assert!(matches!(msgs[2].content[0], Content::ToolResult { .. }));
 }
 
 #[test]
 fn consecutive_same_side_entries_group_into_one_message() {
     // Two tool results after one assistant step fold into a single
-    // user message carrying both `tool_result` blocks (§2.3 grouping).
+    // tool-side message carrying both `tool_result` blocks (§2.3
+    // grouping); each brazen protocol projects it into its dialect.
     let dir = TempDir::new().unwrap();
     write(dir.path(), "001-user.md", b"do two");
     write_json(
@@ -121,8 +123,8 @@ fn consecutive_same_side_entries_group_into_one_message() {
 
     let msgs = assemble(dir.path(), None).unwrap();
     assert_eq!(msgs.len(), 3);
-    // The two tool entries grouped into one user message, in seq order.
-    assert_eq!(msgs[2].role, Role::User);
+    // The two tool entries grouped into one tool message, in seq order.
+    assert_eq!(msgs[2].role, Role::Tool);
     assert_eq!(msgs[2].content.len(), 2);
     assert!(
         matches!(&msgs[2].content[0], Content::ToolResult { tool_use_id, .. } if tool_use_id == "a")

@@ -21,10 +21,10 @@ LERNIE_CONFIG_HOME := $(XDG_CONFIG_HOME)/lernie
 LERNIE_DATA_HOME   := $(XDG_DATA_HOME)/lernie
 endif
 
-# Binaries that resolve via `PATH`: the harness CLI and the eval runner.
-# The desktop frontend lives in its own repo (yog) and
-# installs from there.
-PATH_BINARIES     := lernie agent-eval
+# Binaries that resolve via `PATH`: the harness CLI, the eval runner,
+# and the eval harness driver (README "Run the suite"). The desktop
+# frontend lives in its own repo (yog) and installs from there.
+PATH_BINARIES     := lernie agent-eval lernie-eval-agent
 # The provider adapter is brazen's `bz` (ARCH §4.4) — one binary for
 # every provider, installed from crates.io at the exact version the
 # lernie crate links (the load-time version guard, §4.4). The pin's one
@@ -124,18 +124,19 @@ new-workspace:
 	@cargo run --quiet --bin lernie -- new "$(DEST)"
 
 # Run the evaluation runner (ARCH §9.3): experiment × suite × N.
-#   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 AGENT=<driver-cmd>
-# AGENT is REQUIRED and has no default: the runner drives the agent under
-# test through an external harness-driver program (the §9.3 agent seam),
-# and no such driver ships with lernie. Write one against the contract in
-# README "Run the suite" and pass it here. There is deliberately no stand-in
-# default — a made-up one only moves the failure from this line to a failed
-# spawn once per task.
+#   make eval CONFIG=baseline SUITE=tests/suite RUNS=5 AGENT=target/debug/lernie-eval-agent
+# AGENT is REQUIRED and has no default: which driver runs the agent under
+# test (the §9.3 agent seam) is an experiment-defining input — a hidden
+# default would silently bind every measurement to it. The shipped driver
+# is `lernie-eval-agent` (built here; installed on PATH by `make install`);
+# it execs `lernie` from PATH per run, so have `make install` done first.
+# Any program honouring the contract in README "Run the suite" works.
 eval:
 	@test -n "$(CONFIG)" -a -n "$(AGENT)" || { \
 	  echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>"; \
-	  echo "AGENT is required: no harness driver ships with lernie (README, \"Run the suite\")"; \
+	  echo "AGENT is required; the shipped driver is lernie-eval-agent (README, \"Run the suite\")"; \
 	  exit 1; }
+	@cargo build --quiet -p lernie-eval-agent
 	@cargo run --quiet -p agent-eval -- --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" --agent "$(AGENT)"
 
 lint:

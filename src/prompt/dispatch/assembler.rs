@@ -43,9 +43,11 @@ use std::path::{Path, PathBuf};
 /// Branch-scoped transcript directory (ARCH §2.3 — `messages/NNN-…`).
 const MESSAGES_DIR: &str = "messages";
 /// The one reserved `.json` origin token (§2.3): a `tool` entry composes
-/// user-side as `tool_result` content. Every other `.json` token is a
-/// model id and composes assistant-side; every `.md` sender composes
-/// user-side.
+/// tool-side as `tool_result` content — canonical [`Role::Tool`], which
+/// each brazen protocol projects into its own dialect (the anthropic
+/// projection folds it into a `"user"` message; ollama/openai fan it out
+/// to `role:"tool"` messages). Every other `.json` token is a model id
+/// and composes assistant-side; every `.md` sender composes user-side.
 const TOOL_ORIGIN: &str = "tool";
 
 /// Which wire side an entry composes onto (§2.3). Grouping is by side,
@@ -55,6 +57,7 @@ const TOOL_ORIGIN: &str = "tool";
 enum Side {
     User,
     Assistant,
+    Tool,
 }
 
 impl Side {
@@ -62,6 +65,7 @@ impl Side {
         match self {
             Side::User => Role::User,
             Side::Assistant => Role::Assistant,
+            Side::Tool => Role::Tool,
         }
     }
 }
@@ -145,7 +149,7 @@ fn compose_entry(path: &Path) -> Result<(Side, Vec<Content>), Error> {
     Ok((entry_side(path), blocks))
 }
 
-/// A `.json` entry composes user-side (a `tool_result`) iff its origin
+/// A `.json` entry composes tool-side (a `tool_result`) iff its origin
 /// token is the reserved `tool` (§2.3); every other token is a model id
 /// (the entry's author) and composes assistant-side as model output. The
 /// origin token is the stem past its `NNN-` counter prefix — model ids
@@ -158,7 +162,7 @@ fn entry_side(path: &Path) -> Side {
         .unwrap_or_default();
     let origin = stem.split_once('-').map(|x| x.1).unwrap_or_default();
     if origin == TOOL_ORIGIN {
-        Side::User
+        Side::Tool
     } else {
         Side::Assistant
     }

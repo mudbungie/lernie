@@ -959,7 +959,7 @@ ARCH §9.3) executes an experiment against the suite N times per task and report
 pass@1 (with 95% Wilson intervals) and pass@5, overall and per category:
 
 ```
-agent-eval --config baseline --suite tests/suite --runs 5 --agent <driver-cmd>
+agent-eval --config baseline --suite tests/suite --runs 5 --agent lernie-eval-agent
 ```
 
 `--config <name>` names an experiment — a `workflow.yaml` variant under
@@ -974,26 +974,35 @@ agent's own claim. `--bundle-dir <dir>` archives failing runs for triage via
 `lernie bundle` (§9.2). The runner is fully tested against a faked agent, so it
 needs no live model to validate.
 
-**You must supply the driver.** `--agent <cmd>` is required and **no driver
-program ships with lernie** — the runner is complete, the thing it drives is
-not, so no end-to-end evaluation run is possible out of the box. Writing one is
-tracked as deferred work. The contract a driver must honour, per run:
+**The shipped driver is `lernie-eval-agent`** (`crates/lernie-eval-agent`,
+workspace-internal like the runner; installed on `PATH` by `make install`).
+`--agent <cmd>` stays required with no default: which driver runs the agent
+under test is an experiment-defining input, so it is named explicitly. Per run
+the shipped driver seeds the run's isolated `LERNIE_HOME` from the machine's
+lernie config root (`models.yaml` plus the `template/` config-root override —
+the wire is machine-local by design, §4.2/§9.2, and those two front doors are
+how a machine points evaluation runs at its own provider rows), then drives
+the harness exclusively through the front door, exec'ing `lernie` from `PATH`:
+`lernie new`, `lernie config` (applying the experiment — below), and one
+`lernie prompt` carrying the task prompt grounded in the shared working
+directory. The contract any driver must honour, per run:
 
 | Given | How |
 |---|---|
 | the task prompt | argv[1] |
 | the isolated harness root for this run | `LERNIE_HOME` in the env |
-| the experiment's `workflow.yaml` | `LERNIE_EXPERIMENT` in the env |
+| the experiment's `workflow.yaml` | `LERNIE_EXPERIMENT` in the env — an absolute path |
 | where to report back | `LERNIE_EVAL_REPORT` in the env — a file path |
 | the working directory | cwd (shared with the task's `setup` and `check`) |
 
 `LERNIE_EXPERIMENT` is a hand-off, not a hook: **nothing in the harness reads
 that variable.** The harness takes its `workflow.yaml` from the workspace's
 config commit (§2.2), never from the environment, so *applying* the experiment
-is the driver's job — it must author the named `workflow.yaml` into the
-workspace's config commit before prompting. Until a driver does that, an
-experiment never reaches the harness at all, which is why §9.3's "a new
-experiment is a config diff, no code changes" is not yet exercised end to end.
+is the driver's job. The shipped driver does it through `lernie config`, with
+`$EDITOR` set to copy the experiment over the authoring checkout's
+`workflow.yaml` — the experiment lands as an ordinary config commit, exactly
+the "config diff, no code changes" §9.3 promises (for `baseline` the diff is
+empty and the authoring pass declines: the default is already in force).
 
 `LERNIE_EVAL_REPORT` names a file the driver **may** write with exactly two
 lines — the workspace path, then the agent id — which is what `lernie bundle`
@@ -1040,7 +1049,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
-| `make eval CONFIG=<exp> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>` | Run the evaluation runner (ARCH §9.3): experiment × suite × N (see **Task suite** above). `AGENT` is required and has no default — no harness driver ships with lernie (see "Run the suite") |
+| `make eval CONFIG=<exp> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>` | Run the evaluation runner (ARCH §9.3): experiment × suite × N (see **Task suite** above). `AGENT` is required and has no default — the shipped driver is `lernie-eval-agent` (see "Run the suite"), and naming it is deliberate: the driver is an experiment-defining input |
 | `make check`          | `fmt-check` + `lint` + `coverage` + `test-install`    |
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |

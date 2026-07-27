@@ -22,7 +22,18 @@ custom_minor_increment_regex = '(^|\s)\[minor\](\s|$)'
 custom_major_increment_regex = '(^|\s)\[major\](\s|$)'
 
 [changelog]
+#
+# Entry uniformity: every task carries `tests` / `docs` / `alignment` gate
+# subtasks (AGENTS.md), and each one closes as its own commit on `main` with a
+# gate-shaped subject — `alignment [bl-xxxx]`, `docs gate: …`, `v0.3 tests
+# gate: …`. Those record verification, not product, so the first parser skips
+# them and the changelog stays one bullet per shipped change. The pattern
+# deliberately requires a `:` or a `[bl-` right after the gate label, so a real
+# subject that merely opens with the word (`tests/install.rs mutates …`,
+# `docs/ARCHITECTURE.md …`) is not swallowed; a gate close written in free prose
+# still has to be pruned by hand.
 commit_parsers = [
+    { message = '(?i)^(gate:|(v[0-9][0-9.]* )?(docs|tests|alignment)( gate)?( green)? *(:|\[bl-))', skip = true },
     { message = ".*", group = "Changes" },
 ]
 

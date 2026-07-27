@@ -1,7 +1,8 @@
 +++
 title = "Lost wakeup in the 2.11 deposit-probe-launch protocol: a deposit racing a driver's last inbox read is stranded forever"
 created = 1785130626
-updated = 1785130626
+updated = 1785131150
+claimant = "Gudgeon"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 A deposit can be permanently stranded: the depositing writer sees `Busy` and declines to launch, while the lease-holder it deferred to has *already taken its last look at the inbox*. Nothing drives the agent again until a hand-run `lernie scan`. PROVEN by intervention, not inference (see below).

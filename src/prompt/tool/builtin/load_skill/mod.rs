@@ -131,10 +131,11 @@ pub fn run<R: Read, W: Write>(
 
     let src = skills_pool(env)?.join(&name);
     if !src.is_dir() {
-        return Err(Error::Unknown {
-            name,
-            available: available(&skills_pool(env)?),
-        });
+        // Struct literal kept on one line: the same llvm-engine
+        // attribution quirk as the chain above marks a multi-line
+        // `return Err(...)` literal's head line uncovered.
+        let available = available(&skills_pool(env)?);
+        return Err(Error::Unknown { name, available });
     }
     copy_dir(&src, &dest).map_err(|source| Error::Copy {
         name: name.clone(),

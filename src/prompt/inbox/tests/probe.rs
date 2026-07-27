@@ -177,6 +177,18 @@ fn advance_launcher_spawns_detached_and_returns_at_once() {
 }
 
 #[test]
+fn detach_into_own_session_never_fails() {
+    // The pre-exec hook, called in-process: `setsid` from a process
+    // that already leads a group reports EPERM, which the hook ignores
+    // by contract — the driver spawn proceeds grouped either way. The
+    // in-process call is what puts the hook's lines in the coverage
+    // numerator (counters incremented in the forked child are lost at
+    // exec).
+    super::super::detach_into_own_session().unwrap();
+    super::super::detach_into_own_session().unwrap();
+}
+
+#[test]
 fn advance_launcher_surfaces_a_spawn_failure() {
     let launcher = AdvanceLauncher::with_exe("/no/such/lernie-binary".into());
     let err = launcher.launch(Path::new("/tmp"), "a1").unwrap_err();

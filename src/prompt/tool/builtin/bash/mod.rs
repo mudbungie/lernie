@@ -114,18 +114,14 @@ pub(crate) fn run_with<R: Read, W: Write, E: Write>(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    // SAFETY: `setpgid(0, 0)` is async-signal-safe and is the only
-    // syscall executed between fork and exec. Setting the child's
-    // pgid in the child itself is the canonical way to win the
-    // race: any descendant the spawned shell forks inherits the new
-    // pgid, so the cascade's `kill(-pgid, ...)` reaches the entire
-    // tree.
+    // SAFETY: [`enter_own_process_group`] is async-signal-safe (a
+    // single `setpgid` syscall) and is the only code executed between
+    // fork and exec. Setting the child's pgid in the child itself is
+    // the canonical way to win the race: any descendant the spawned
+    // shell forks inherits the new pgid, so the cascade's
+    // `kill(-pgid, ...)` reaches the entire tree.
     unsafe {
-        cmd.pre_exec(|| {
-            // SAFETY: see above.
-            libc::setpgid(0, 0);
-            Ok(()) // LCOV_EXCL_LINE
-        });
+        cmd.pre_exec(enter_own_process_group);
     }
     let mut child = cmd.spawn().map_err(Error::Spawn)?;
 
@@ -158,6 +154,22 @@ pub(crate) fn run_with<R: Read, W: Write, E: Write>(
         .or_else(|| status.signal().map(|sig| 128 + sig))
         .unwrap_or(1);
     Ok(exit_code)
+}
+
+/// The spawned shell's between-fork-and-exec hook: make the child the
+/// leader of its own fresh process group so the cascade's group kill
+/// reaches every descendant. `setpgid(0, 0)` on a process that already
+/// leads its group is an idempotent success, so this is directly
+/// callable in-process — which is also how its lines are covered:
+/// coverage counters incremented in the forked child die with the
+/// `exec`, so only an in-process call can land in the numerator.
+fn enter_own_process_group() -> io::Result<()> {
+    // SAFETY: `setpgid` with constant zero arguments touches only the
+    // calling process's own group membership.
+    unsafe {
+        libc::setpgid(0, 0);
+    }
+    Ok(())
 }
 
 /// Poll the child's wait status against the cancel flag. On flag,

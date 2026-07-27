@@ -194,6 +194,9 @@ fn already_gated(
     Ok(false)
 }
 
+#[cfg(test)]
+mod tests;
+
 /// `git merge-base --is-ancestor <a> <d>`: exit 0 (an `Ok`) iff `a` is an
 /// ancestor of `d`. A non-zero exit (or a bad ref) is `Err` — read as "not
 /// an ancestor", never propagated.

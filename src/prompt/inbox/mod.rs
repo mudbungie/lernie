@@ -157,20 +157,31 @@ impl Launcher for AdvanceLauncher {
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null());
-        // SAFETY: `setsid()` is async-signal-safe and is the only call
-        // between fork and exec; failure (already a session leader —
-        // impossible post-fork) is ignored, the spawn proceeds grouped.
+        // SAFETY: [`detach_into_own_session`] is async-signal-safe (a
+        // single `setsid` syscall) and is the only code executed
+        // between fork and exec.
         unsafe {
             use std::os::unix::process::CommandExt;
-            cmd.pre_exec(|| {
-                // SAFETY: see above.
-                libc::setsid();
-                Ok(()) // LCOV_EXCL_LINE
-            });
+            cmd.pre_exec(detach_into_own_session);
         }
         cmd.spawn()?;
         Ok(())
     }
+}
+
+/// The driver spawn's between-fork-and-exec hook: detach the child from
+/// the launching agent's process group so a §2.9 cascade against the
+/// parent never reaps the driver. `setsid` failure (caller already a
+/// group leader) is ignored — the spawn proceeds grouped, which only
+/// widens the cascade. Called in-process by its test: counters
+/// incremented in the forked child die with the `exec`.
+fn detach_into_own_session() -> std::io::Result<()> {
+    // SAFETY: `setsid` takes no arguments and touches only the calling
+    // process's own group and terminal membership.
+    unsafe {
+        libc::setsid();
+    }
+    Ok(())
 }
 
 /// Outcome of the post-deposit probe (§2.11 *A deposit into a quiescent

@@ -108,7 +108,7 @@ coverage: $(BZ_TEST_ROOT)/bin/bz
 	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
 	  exit 1; \
 	fi
-	PATH="$(BZ_TEST_PATH)" cargo tarpaulin --workspace --fail-under 100 --skip-clean --engine llvm --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
+	PATH="$(BZ_TEST_PATH)" cargo tarpaulin --workspace --fail-under 100 --skip-clean --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
 
 # Regenerate schemas/ from the crate's schema types. The generator is the
 # `config::schemas` module; `make schemas` drives it through the in-crate

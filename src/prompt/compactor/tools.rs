@@ -146,6 +146,20 @@ mod tests {
         assert_eq!(rel, "summary/003.md");
     }
 
+    #[test]
+    fn write_summary_skips_a_non_utf8_file_name() {
+        // A stem `to_str` cannot decode is skipped like any other
+        // operator-dropped stray, never a numbering fault.
+        use std::os::unix::ffi::OsStrExt;
+        let wt = tmpdir();
+        let dir = wt.path().join("summary");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join(std::ffi::OsStr::from_bytes(b"\xFF\xFE")), "").unwrap();
+        std::fs::write(dir.join("004.md"), "").unwrap();
+        let rel = write_summary(wt.path(), "x").unwrap();
+        assert_eq!(rel, "summary/005.md");
+    }
+
     /// A real repo on `agents/p1` with one tracked file, for the
     /// deletion-only `git rm` path.
     fn repo_with(rel: &str) -> tempfile::TempDir {

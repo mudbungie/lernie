@@ -74,6 +74,16 @@ fn spawn_adapter_emits_one_callback_per_stdout_line() {
 }
 
 #[test]
+fn spawn_adapter_skips_blank_lines() {
+    // A blank stdout line is not a message frame — the per-line
+    // dispatch skips it rather than handing the callback an empty
+    // slice (§4.4 one JSON message per line).
+    let bin = OsString::from("printf");
+    let lines = collect_lines(&SpawnAdapter, &bin, &["a\n\nb\n"], b"").unwrap();
+    assert_eq!(lines, vec![b"a".to_vec(), b"b".to_vec()]);
+}
+
+#[test]
 fn spawn_adapter_handles_crlf_terminators() {
     let bin = OsString::from("printf");
     let lines = collect_lines(&SpawnAdapter, &bin, &["x\r\ny\r\n"], b"").unwrap();

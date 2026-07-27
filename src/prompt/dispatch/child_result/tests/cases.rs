@@ -113,6 +113,23 @@ fn has_pending_result_is_false_without_a_result_message() {
 }
 
 #[test]
+fn interpret_pending_skips_a_steering_deposit() {
+    // The same steering-vs-result split inside the interpreter itself:
+    // a deposit with no `terminal_ref:` is not a child result, so the
+    // interpreter loads nothing and touches no dep (all of Fx's deps
+    // are unreachable stubs — reaching one would panic).
+    let (_h, ws) = fixture::workspace();
+    let parent = "20260101-p8";
+    let wt = fixture::spawn_root(&ws, parent);
+    crate::prompt::inbox::deposit(&ws, parent, "user", "hi", &SystemClock).unwrap();
+    let fx = Fx::new();
+    let wf = workflow("events: {}\n");
+    interpret_pending(&ws, parent, &wt, &wf, &fx.deps()).unwrap();
+    // The steering message is left where it was deposited, undrained.
+    assert!(!has_pending_result(&ws, parent).unwrap());
+}
+
+#[test]
 fn run_flush_dispatches_a_compactor_when_the_checkpoint_is_due() {
     // §2.7/§6: a `compaction:` clock due at the boundary runs worker_flush
     // → dispatch(compactor), forking a compactor off the tip C.

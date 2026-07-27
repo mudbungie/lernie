@@ -44,13 +44,29 @@
 #   `src/e2e/prompt_end_to_end.rs` test chains two subprocess binaries
 #   (`lernie new` + `lernie prompt`) under instrumentation, which inflates
 #   wall-clock time well past the per-test default.
+# - `engine = "Llvm"` is load-bearing and THIS FILE is its only home
+#   (bl-6f1b). A `--engine llvm` on the command line is silently
+#   discarded whenever this file exists: tarpaulin builds its configs
+#   from the file and `Config::merge` never carries `engine` over from
+#   the CLI, so the engine falls back to the platform default — ptrace
+#   on Linux. Under ptrace, every `Command::spawn` in the bash-tool
+#   tests vforks a shell child that tarpaulin auto-attaches
+#   (PTRACE_O_TRACEVFORK) but never registers (its PTRACE_EVENT_VFORK
+#   handler skips the pid map when follow-exec is off), so a breakpoint
+#   trap in that child goes unserviced and the run dies with `Failed to
+#   find process for pid: …` → `A segfault occurred while executing
+#   tests`. The race is timing-sensitive: it fired reliably on warm
+#   2-core CI runners and essentially never on a 16-core box. The llvm
+#   engine spawns tests as plain children — no ptrace, no race — and
+#   bl-7e33 measured its profraw merge inert (bullet above), so the
+#   100% floor means the same thing under it.
 # - `args = ["--test-threads=1"]` pins serial test execution: the
 #   bash-tool cascade tests deliver SIGTERM/SIGKILL to spawned shell
-#   process groups, and tarpaulin's ptrace state machine races
-#   against parallel teardown of those groups (`Failed to find
-#   process for pid: …` → segfault). Serial execution sidesteps the
-#   race; the 100% workspace coverage floor stays the same.
+#   process groups, and serial teardown keeps those groups from
+#   interleaving. (The llvm engine would force one test thread anyway
+#   — rust#91092 — this line just says so out loud.)
 [default]
+engine = "Llvm"
 exclude-files = ["src/bin/*", "src/bin/lernie/*", "src/e2e/*", "crates/*/src/main.rs"]
 ignore-panics = true
 timeout = "300s"

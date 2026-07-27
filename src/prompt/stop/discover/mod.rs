@@ -140,11 +140,9 @@ impl PgidFinder for ProcFsFinder {
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(None),
             Err(e) => return Err(e),
         };
-        for entry in std::fs::read_dir(&self.proc_root)? {
-            let entry = match entry {
-                Ok(e) => e,
-                Err(_) => continue, // racing with kernel pid teardown
-            };
+        // `filter_map(Result::ok)` drops entries that error mid-walk
+        // (racing with kernel pid teardown).
+        for entry in std::fs::read_dir(&self.proc_root)?.filter_map(Result::ok) {
             let Some(pid) = parse_pid_dir_name(&entry.file_name()) else {
                 continue;
             };
@@ -172,11 +170,9 @@ fn pid_holds(proc_pid: &Path, target: &Path) -> bool {
         // pids we can't introspect simply don't match.
         Err(_) => return false,
     };
-    for entry in entries {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
-        };
+    // As above: entries that error mid-walk (raced teardown) are
+    // skipped, not fatal.
+    for entry in entries.filter_map(Result::ok) {
         // `read_link` on `/proc/<pid>/fd/<n>` returns the target
         // path; `metadata`/`canonicalize` would dereference and may
         // fail for sockets, pipes, etc. — read_link side-steps that.

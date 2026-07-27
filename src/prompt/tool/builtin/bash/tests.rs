@@ -242,6 +242,18 @@ fn signal_handler_sets_flag() {
 }
 
 #[test]
+fn enter_own_process_group_is_an_idempotent_success() {
+    // The pre-exec hook, called in-process: `setpgid(0, 0)` makes the
+    // caller its own group leader, and repeating it on a leader is a
+    // no-op success. The cascade tests above prove the group semantics
+    // end-to-end; this call is what puts the hook's own lines in the
+    // coverage numerator (counters incremented in the forked child are
+    // lost at exec).
+    enter_own_process_group().unwrap();
+    enter_own_process_group().unwrap();
+}
+
+#[test]
 fn broken_writer_flush_is_inert() {
     // The `Write` trait requires `flush`; the impl is a no-op so the
     // stdout / stderr failure-path tests can re-use one writer.

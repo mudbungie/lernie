@@ -104,3 +104,110 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
         "nothing is left dirty between sibling tool calls (§3.3)"
     );
 }
+
+/// A recording executor: run_tool_calls hands it only `tool_use` blocks,
+/// so the names it sees are the loop's block filter, observable.
+struct Recorder(std::cell::RefCell<Vec<String>>);
+
+impl ToolExecutor for Recorder {
+    fn execute(
+        &self,
+        call: ToolCall<'_>,
+        _step_dir: &std::path::Path,
+        _stop: &AtomicBool,
+    ) -> Result<crate::prompt::tool::ToolOutcome, crate::prompt::tool::ExecError> {
+        self.0.borrow_mut().push(call.name.to_string());
+        Ok(crate::prompt::tool::ToolOutcome {
+            content: b"ok".to_vec(),
+            is_error: false,
+        })
+    }
+}
+
+#[test]
+fn run_tool_calls_executes_only_the_tool_use_blocks() {
+    // A model turn interleaves prose with its tool calls (§3.3); only
+    // the `tool_use` blocks reach the executor, and the loop reports
+    // "continue" (no stop observed).
+    struct NoAdapter;
+    impl crate::prompt::adapter::AdapterRunner for NoAdapter {
+        fn run(
+            &self,
+            _b: &std::ffi::OsString,
+            _a: &[&str],
+            _s: &[u8],
+            _o: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
+        ) -> std::io::Result<Vec<u8>> {
+            unreachable!("adapter is never reached")
+        }
+    }
+    struct NoSleeper;
+    impl crate::prompt::dispatch::Sleeper for NoSleeper {
+        fn sleep(&self, _d: std::time::Duration) {
+            unreachable!("sleeper is never reached")
+        }
+    }
+    struct NoLauncher;
+    impl crate::prompt::inbox::Launcher for NoLauncher {
+        fn launch(&self, _ws: &std::path::Path, _agent: &str) -> std::io::Result<()> {
+            unreachable!("launcher is never reached")
+        }
+    }
+
+    let agent_id = "agent-6f1b";
+    let ws = TempDir::new().unwrap();
+    let worktree = crate::workspace::agent_worktree(ws.path(), agent_id);
+    std::fs::create_dir_all(&worktree).unwrap();
+    let git = RealGit::new();
+    let branch = crate::workspace::agent_ref(agent_id);
+    git.run(&worktree, &["init", "-b", &branch]).unwrap();
+    git.run(&worktree, &["config", "user.email", "t@t"])
+        .unwrap();
+    git.run(&worktree, &["config", "user.name", "t"]).unwrap();
+    std::fs::create_dir_all(worktree.join("messages")).unwrap();
+    std::fs::write(worktree.join("messages/001-model.json"), b"[]").unwrap();
+    git.run(&worktree, &["add", "-A"]).unwrap();
+    git.run(&worktree, &["commit", "-m", "dispatch"]).unwrap();
+    let step_dir_rel = format!("steps/{agent_id}/001");
+    std::fs::create_dir_all(ws.path().join(&step_dir_rel)).unwrap();
+
+    let recorder = Recorder(std::cell::RefCell::new(Vec::new()));
+    let stop = AtomicBool::new(false);
+    let clock = SystemClock;
+    let id_gen = crate::prompt::NanoIdGen;
+    let cfg = TempDir::new().unwrap();
+    let deps = crate::prompt::Deps {
+        adapter: &NoAdapter,
+        sleeper: &NoSleeper,
+        git: &git,
+        clock: &clock,
+        id_gen: &id_gen,
+        tool_executor: &recorder,
+        config_root: cfg.path(),
+        adapter_target: None,
+        stop: &stop,
+        launcher: &NoLauncher,
+    };
+    let content = vec![
+        Content::Text("running the check".into()),
+        Content::ToolUse {
+            id: "t1".into(),
+            name: "bash".into(),
+            input: json!({"command": "true"}),
+            signature: None,
+        },
+    ];
+    let stopped = super::run_tool_calls(
+        ws.path(),
+        &worktree,
+        agent_id,
+        &step_dir_rel,
+        &content,
+        &deps,
+    )
+    .unwrap();
+    assert!(!stopped, "no stop was requested");
+    assert_eq!(*recorder.0.borrow(), vec!["bash".to_string()]);
+    // The single tool result was committed as the next transcript entry.
+    assert!(worktree.join("messages/002-tool.json").exists());
+}

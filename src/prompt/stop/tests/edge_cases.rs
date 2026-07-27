@@ -62,6 +62,23 @@ fn collect_inbox_dirs_returns_empty_when_inbox_root_missing() {
 }
 
 #[test]
+fn collect_inbox_dirs_skips_a_non_utf8_entry() {
+    // An inbox entry whose name `to_str` cannot decode can never match
+    // a branch name — skipped, not fatal.
+    use std::os::unix::ffi::OsStrExt;
+    let dir = TempDir::new().unwrap();
+    touch_inbox_dir(dir.path(), "br");
+    let stray = dir
+        .path()
+        .join(super::fixtures::INBOX_DIR)
+        .join(std::ffi::OsStr::from_bytes(b"\xFF\xFE"));
+    std::fs::create_dir_all(&stray).unwrap();
+    let v = super::super::collect_inbox_dirs(dir.path(), "br", true).unwrap();
+    assert_eq!(v.len(), 1, "only the named branch: {v:?}");
+    assert!(v[0].ends_with("inbox/br"));
+}
+
+#[test]
 fn collect_inbox_dirs_gates_descendants_on_stop_children() {
     // Same on-disk tree, both flag values: default is self-only; the
     // flag folds in the `br-*` descendant. Pins the opt-in boundary

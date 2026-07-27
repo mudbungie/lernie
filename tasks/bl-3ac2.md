@@ -1,7 +1,8 @@
 +++
 title = "commit-identity guard test + changelog normalization"
 created = 1785125363
-updated = 1785129712
+updated = 1785132884
+claimant = "waxier-lfin"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Follow-on to the 2026-07-26 main history rewrite (identity normalization: every author+committer on main is now mudbungie <mudbungie@gmail.com>; all Co-Authored-By trailers stripped; old tip 2c942f9 -> new tip cd8aa45, tree-identical).

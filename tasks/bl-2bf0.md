@@ -1,7 +1,8 @@
 +++
 title = "e2e::advance_cli baton test outruns its 120s evidence-poll bound when the box runs several full suites at once"
 created = 1785130071
-updated = 1785130071
+updated = 1785130161
+claimant = "Cotter"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Observed by Halyard2 during bl-7318's post-fix determinism run (2026-07-26), run 25 of 30: `e2e::advance_cli::message_launches_a_detached_advance_chain_that_batons_through_tools` panicked with `timed out waiting for "/tmp/.tmpqCSG6p/conv/agents/<id>/messages/003-user.md"` (src/e2e/advance_cli.rs:156). That iteration's whole `cargo test --lib` took 120.97s against a normal 6-13s: 40 synthetic spinners plus TWO sibling `cargo tarpaulin --workspace` runs from other agents' gates, load ~58-83 on 16 cores. The other 29 iterations passed; bl-7318's own two target tests passed 30/30 in the same batch.

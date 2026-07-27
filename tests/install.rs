@@ -6,7 +6,8 @@
 //! layout matches what the runtime resolvers expect. The provider
 //! adapter is brazen's `bz`, installed by `cargo install brazen` onto
 //! the user's cargo bin (§4.4) — not into the harness root — so this
-//! test asserts the harness-owned layout only.
+//! test asserts the harness-owned layout only, and redirects that one
+//! write away from the user's cargo bin (see `run_install`).
 
 // Tarpaulin sets `--cfg=tarpaulin` at compile time; the test below uses
 // `cfg_attr(tarpaulin, ignore)` to skip itself under instrumented runs.
@@ -20,12 +21,33 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
+/// Where this test lets `make install`'s `cargo install brazen` land.
+///
+/// `install-bz` (the Makefile) installs the pinned `bz` with no `--root`,
+/// so cargo's default root — the user's `CARGO_HOME`, i.e.
+/// `~/.cargo/bin/bz` — is a machine-global singleton. A test may not
+/// write it: sibling worktrees at different `brazen` pins would take
+/// turns rolling each other's `bz` back, and the load-time version guard
+/// (§4.4) then fails the OTHER worktree's e2e gate with what reads like a
+/// code regression. So the test redirects the write with cargo's own
+/// `CARGO_INSTALL_ROOT` (its documented root override, ahead of
+/// `CARGO_HOME` and behind an explicit `--root`) — no test-only branch in
+/// the recipe, and `make install` run by a user is unchanged.
+///
+/// The root is per-worktree and persistent rather than a `TempDir`, so
+/// cargo's "already installed" short-circuit keeps re-runs free; it lives
+/// under `target/`, which is already this tree's scratch space.
+fn bz_install_root() -> PathBuf {
+    repo_root().join("target/install-test-cargo-root")
+}
+
 fn run_install(prefix: &Path, home: &Path) {
     let out = Command::new("make")
         .current_dir(repo_root())
         .arg("install")
         .arg(format!("INSTALL_PREFIX={}", prefix.display()))
         .arg(format!("LERNIE_HOME={}", home.display()))
+        .env("CARGO_INSTALL_ROOT", bz_install_root())
         .env("GIT_AUTHOR_NAME", "lernie-test")
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")

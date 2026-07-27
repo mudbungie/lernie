@@ -90,12 +90,13 @@ test: $(BZ_TEST_ROOT)/bin/bz
 # It is the tree's only tarpaulin-ignored test; a future sibling belongs
 # on this line, not in a new target.
 #
-# Cost, accepted deliberately: ~45s warm, and it re-installs `bz` at the
-# `brazen` pin (§4.4) onto the cargo bin — so a locally installed `bz`
-# newer than the pin is rolled back to what this tree links. That is the
-# install contract's own business and no longer anyone else's: the e2e
-# tests read the pin-keyed cache (BZ_TEST_ROOT above), so this rollback
-# cannot fail a sibling worktree's gate.
+# Cost: ~45s warm. The test writes NO machine-global state: it runs the
+# real `install-bz` below, but with `CARGO_INSTALL_ROOT` pointed at a
+# per-worktree root under `target/`, so the pinned `bz` lands there
+# instead of on the user's cargo bin (tests/install.rs::bz_install_root).
+# The isolation lives on the test's own `make` invocation, not in a
+# test-only branch here, so it holds under `cargo test` and `make test`
+# alike and `make install` for a user is unchanged.
 test-install:
 	cargo test --test install
 

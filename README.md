@@ -1026,10 +1026,9 @@ line in `Cargo.toml`.
 
 **The trap.** `bz` normally resolves from `PATH` — that is
 `~/.cargo/bin/bz`, machine-global mutable state shared by every checkout and
-every agent on the box. Anyone running `make install` (or `make
-test-install`, which runs it) rewrites that binary at *their* tree's pin. If
-your tree pins a different version, your next test run dies in five-plus e2e
-tests with
+every agent on the box. Anyone running `make install` rewrites that binary at
+*their* tree's pin. If your tree pins a different version, your next test run
+dies in five-plus e2e tests with
 
 ```
 bz version "0.0.3" does not match the linked brazen crate "0.0.4"
@@ -1055,6 +1054,10 @@ Two consequences worth knowing:
   runs whatever `bz` is installed there. Use `make test`; if you must run
   `cargo test` directly, `make install-bz` first to line the global binary up
   with the tree's pin.
+- **No test writes the global `bz`.** `make install` does — that is its job —
+  but the install test that runs it (`tests/install.rs`) points
+  `CARGO_INSTALL_ROOT` at a per-worktree root under `target/`, so the pinned
+  `bz` lands there and `~/.cargo/bin/bz` is never touched by a test run.
 - **Runtime resolution is unchanged.** This is test determinism only —
   `lernie` itself still resolves the adapter per ARCH §4.4 (the `models.yaml`
   `adapter:` override, else a binding-injected target, else `bz` on `PATH`),
@@ -1122,8 +1125,11 @@ part of the published crate at all.
    release build and `cargo install brazen`, which contend with tarpaulin's
    `target/` lock; it is `cfg_attr(tarpaulin, ignore)`, so without its own
    uninstrumented step the install contract — the first thing every user
-   touches — would never run at the gate at all. It costs ~45s warm and rolls a
-   locally installed `bz` back to the `brazen` pin this tree links. The
+   touches — would never run at the gate at all. It costs ~45s warm and leaves
+   the machine-global `~/.cargo/bin/bz` alone: the test redirects `make
+   install`'s `cargo install brazen` into a per-worktree root under `target/`
+   with `CARGO_INSTALL_ROOT`, so a sibling worktree at another pin is never
+   rolled over. The
    toolchain is pinned in `rust-toolchain.toml` and the tarpaulin version in
    `tarpaulin.toml` (also
    `.github/workflows/ci.yml`) so `fmt-check`, `lint`, and the coverage

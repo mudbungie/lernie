@@ -50,7 +50,10 @@ fn branch_enumeration_error_is_surfaced() {
 #[test]
 fn transcript_read_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&[CHILD]).failing("ls-tree");
+    // PARENT is scripted too, and must be: the sweep asks git about a
+    // parent only when the registry holds it (bl-025b), so a child whose
+    // parent has no ref reaches no transcript read at all.
+    let git = StubGit::with_branches(&[PARENT, CHILD]).failing("ls-tree");
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(
         err,
@@ -64,7 +67,9 @@ fn transcript_read_error_is_surfaced() {
 #[test]
 fn branch_tip_read_error_is_surfaced() {
     let ws = TempDir::new().unwrap();
-    let git = StubGit::with_branches(&[CHILD]).failing("rev-parse");
+    // Same reason as above: the tip is read for the *deposit*, which only
+    // a child with a registered parent earns.
+    let git = StubGit::with_branches(&[PARENT, CHILD]).failing("rev-parse");
     let err = scan(ws.path(), &git, &FixedClock, &StubLauncher::default()).unwrap_err();
     assert!(matches!(
         err,

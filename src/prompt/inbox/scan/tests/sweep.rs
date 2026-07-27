@@ -130,6 +130,53 @@ fn a_root_with_a_failed_model_call_is_a_named_silent_death() {
     );
 }
 
+#[test]
+fn a_branch_whose_derived_parent_has_no_ref_is_treated_as_a_root() {
+    // bl-025b. `parent_of` is string arithmetic over the hyphenated
+    // descent; whether that address names an agent is a query against
+    // the `agents/*` registry. An odd-token branch (or one whose parent
+    // ref was deleted) derives an address that holds no ref. Before the
+    // intersection the sweep asked git for `agents/<that>` anyway and
+    // the 128 aborted the WHOLE pass — sweep and flush both — so mail
+    // pending elsewhere went unflushed. It is nobody's child: no parent
+    // inbox, so nothing to deposit and nothing to ask.
+    let ws = TempDir::new().unwrap();
+    let orphan = format!("{PARENT}-c0ffee");
+    // The one-token suffix makes three tokens; `parent_of` strips two.
+    assert_eq!(parent_of(&orphan).as_deref(), Some("20260101"));
+    deposit_msg(ws.path(), PARENT, "user-001.md");
+    let git = StubGit::with_branches(&[PARENT, orphan.as_str()]);
+    let launcher = StubLauncher::default();
+    let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
+
+    assert!(report.swept.is_empty(), "no parent inbox to deposit into");
+    assert!(
+        report.silent_deaths.is_empty(),
+        "alive-and-quiet, like a root"
+    );
+    assert!(
+        !git.asked_ls_tree_for("20260101"),
+        "no git question about a ref the registry does not hold"
+    );
+    // The pass survives to its second half: the flush still runs.
+    assert_eq!(report.flushed, vec![PARENT.to_string()]);
+    assert_eq!(launcher.invocations(), vec![PARENT.to_string()]);
+}
+
+#[test]
+fn an_absent_parent_inbox_reads_as_no_undelivered_return() {
+    // `returned`'s inbox half is total over a missing directory — the
+    // general path with empty inputs, not a bootstrap case. Asserted at
+    // the predicate's own level because the sweep cannot reach it: the
+    // registry intersection (bl-025b) means the parent is always an
+    // enumerated agent, a refname sorts before every id extending it, and
+    // that earlier iteration's lock probe `create_dir_all`s the inbox. An
+    // *unreadable* one still lands here in production, so the arm stays.
+    let ws = TempDir::new().unwrap();
+    assert!(!inbox_dir(ws.path(), PARENT).exists());
+    assert!(!returned(ws.path(), &StubGit::default(), PARENT, CHILD).unwrap());
+}
+
 // ---- died_mid_work derivation over steps/ ----
 
 #[test]

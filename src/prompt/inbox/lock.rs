@@ -14,21 +14,54 @@
 //! treated independently), so `try_acquire` is a true mutual-exclusion
 //! probe: the caller who wins holds the lease, everyone else observes
 //! `None` and steps aside (Writer/driver totality, §2.11).
+//!
+//! **Release is explicit `LOCK_UN`, not a bare close.** The lock rides
+//! the *open file description*, and closing one fd for it releases the
+//! lease only once **every** fd naming that description is gone. Spawning
+//! a subprocess transiently makes more of them: `fork`/`clone` copies the
+//! whole fd table, and close-on-exec fires at `execve`, not at the fork —
+//! so between a spawn and its exec, a child that has nothing to do with
+//! this branch holds the lease too. Any spawn anywhere in the process
+//! (git, the provider adapter, a tool, a detached launch) opens that
+//! window, and a lease released by close inside it stays kernel-held
+//! until the unrelated child execs. A subsequent probe then reads
+//! `EWOULDBLOCK` and the caller concludes *another executor drives this
+//! branch* — a lie that turns a driver into a silent no-op (§2.11
+//! Writer/driver totality) and a sweep candidate into a live agent (§8).
+//! `flock(fd, LOCK_UN)` clears the lock from the description itself, so
+//! every copy of it loses the lease at once; [`ExecutorLock`]'s `Drop`
+//! makes that the only way a lease is ever given up. Nothing is written
+//! either way — the release is still pure kernel state, and process death
+//! still releases (the kernel drops the description with its last fd).
 
 use std::fs::File;
 use std::io;
 use std::os::fd::AsRawFd;
 use std::path::Path;
 
-/// A held executor lease. Dropping it closes the underlying fd, which
-/// releases the `flock`; nothing is written on release. The `File` is
-/// the whole state — the guard exists only to tie the kernel lease to a
-/// Rust lifetime.
+/// A held executor lease. Dropping it releases the `flock` explicitly
+/// (`LOCK_UN`) and then closes the fd; nothing is written on release. The
+/// `File` is the whole state — the guard exists only to tie the kernel
+/// lease to a Rust lifetime.
 #[derive(Debug)]
 pub struct ExecutorLock {
     // Held solely to keep the fd (and thus the lease) alive; read only
     // by the §6 exec baton, which publishes the number as LERNIE_LOCK_FD.
     fd: File,
+}
+
+impl Drop for ExecutorLock {
+    /// Release the lease on the open file description, not merely on this
+    /// fd (module docs): a concurrent spawn's pre-`exec` child shares the
+    /// description, and a close-only release would leave the lease held
+    /// until that unrelated child execs.
+    fn drop(&mut self) {
+        // SAFETY: `flock` takes a valid fd (owned by `self.fd`, alive
+        // until this guard's fields drop) and a flag constant; it has no
+        // memory effects. `LOCK_UN` on an fd whose lock is already gone
+        // is a no-op, so there is no failure to surface.
+        unsafe { libc::flock(self.fd.as_raw_fd(), libc::LOCK_UN) };
+    }
 }
 
 impl ExecutorLock {

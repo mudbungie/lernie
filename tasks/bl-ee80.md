@@ -1,7 +1,7 @@
 +++
 title = "A non-retryable in-band model-call error silently strands a root agent's branch forever — no epitaph, undetected by lernie scan, exit 0 on the follow-up"
 created = 1785124361
-updated = 1785125510
+updated = 1785129438
 claimant = "Marlin"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["user-story"]
@@ -113,3 +113,24 @@ Shipped:
 Distinct from brazen bl-fba7 (the ollama tool_result rejection): this
 fix is provider-agnostic surfacing; the provider gap remains tracked
 there.
+
+## Landing (Oakum, 2026-07-26)
+
+Landed on `main` inside commit **6d4412b** (titled for bl-1c94; it
+carries both balls' work). CI run 30220130316 is **green**.
+
+Verified present in that commit: `step::latest_step_outcome` (the one
+framing-only read); `scan::derive::died_mid_work` matching
+`NoTerminal | Failed`; `ScanReport.silent_deaths` as a `Vec<String>` of
+ids rendered as `silent deaths: N (<id>, ...)`; the `lernie message`
+stderr advisory (`branch_failed` / `failed_branch_note`, deposit and
+exit code untouched); tests
+`a_root_with_a_failed_model_call_is_a_named_silent_death`,
+`a_failed_latest_response_is_a_death`, e2e
+`scan_names_a_root_whose_model_call_failed`,
+`message_advises_on_a_quiescent_branch_whose_latest_call_failed`; README
+messaging/scan sections and ARCH §2.10 amended.
+
+The code landed but the store-side close never completed (Marlin's
+session ended first). This close is bookkeeping only — an empty
+delivery over content already on `main`.

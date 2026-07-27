@@ -6,6 +6,35 @@
 
 use crate::harness_root::Roots;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+
+/// Serializes `LERNIE_HOME` mutation. The harness-root env (§2.2) is
+/// process-global; every in-process test that must point it at a scratch
+/// dir (`prime`/`new`, which found real files; `config`, whose
+/// `harness_root::resolve` call is unmocked; `archive::replay_cli`'s
+/// `LERNIE_HOME`-scoped scratch base) funnels through [`with_lernie_home`]
+/// so the mutation is the *one* place a parallel `cargo test --lib` run
+/// can race — the lock, not the caller's own scope, is what makes it
+/// safe. Rust 2024's `set_var` is `unsafe` for exactly this reason.
+static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+/// Run `f` with `LERNIE_HOME` set to `home`, then clear it. Serialized
+/// against every other `LERNIE_HOME` mutation via [`ENV_LOCK`] — the
+/// single guarded critical section, so a reader of the ambient env (e.g.
+/// `harness_root::resolve` called from inside `f`) never observes another
+/// test's home mid-flight. Tests never pre-set the var, so the restore is
+/// an unconditional clear — not a save/restore of a prior value.
+pub fn with_lernie_home<R>(home: &Path, f: impl FnOnce() -> R) -> R {
+    let _guard = ENV_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    // SAFETY: guarded by ENV_LOCK; no other thread reads/writes the var
+    // concurrently while the guard is held.
+    unsafe { std::env::set_var("LERNIE_HOME", home) };
+    let r = f();
+    unsafe { std::env::remove_var("LERNIE_HOME") };
+    r
+}
 
 /// Roots pointing at nonexistent subdirs of `base` — no
 /// `template/` override under the config root, no data-root pools:

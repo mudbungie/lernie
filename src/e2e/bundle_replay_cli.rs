@@ -271,8 +271,9 @@ fn replay_rejects_missing_bundle() {
 
 /// In-process coverage of `archive::replay_cli` (the lib wiring the bin
 /// delegates to): it resolves the scratch base under `LERNIE_HOME`'s data
-/// root and lands the scratch workspace there. Env is scoped per call and
-/// `--test-threads=1` (tarpaulin.toml) keeps it serial.
+/// root and lands the scratch workspace there. `LERNIE_HOME` is
+/// process-global (§2.2); [`crate::test_support::with_lernie_home`] is
+/// the one lock-guarded mutation every in-process scratch home shares.
 #[test]
 fn replay_cli_lands_under_lernie_home() {
     let ws = workspace();
@@ -287,10 +288,9 @@ fn replay_cli_lands_under_lernie_home() {
     .expect("bundle");
 
     let home = TempDir::new().unwrap();
-    // SAFETY: single-threaded test run (tarpaulin.toml `--test-threads=1`).
-    unsafe { std::env::set_var("LERNIE_HOME", home.path()) };
-    let scratch = crate::archive::replay_cli(&arch_dir).expect("replay_cli");
-    unsafe { std::env::remove_var("LERNIE_HOME") };
+    let scratch = crate::test_support::with_lernie_home(home.path(), || {
+        crate::archive::replay_cli(&arch_dir).expect("replay_cli")
+    });
 
     assert_eq!(scratch, home.path().join("replays").join(PARENT));
     assert!(scratch.join("repo.git").is_dir());

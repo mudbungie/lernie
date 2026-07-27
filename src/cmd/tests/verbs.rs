@@ -116,17 +116,19 @@ fn new_reports_a_scaffold_failure() {
 
 #[test]
 fn config_authors_a_commit() {
+    // `config::run` resolves the harness root itself, unmocked — a
+    // scratch `LERNIE_HOME` (§2.2, process-global) keeps it off the real
+    // install and off other tests' own scratch homes.
     let (_h, ws) = fixture::workspace();
-    let (r, ..) = with_fx("lernie", b"", &writing_editor, |fx| {
-        config::run(
-            config::Args {
-                workspace: ws.clone(),
-                name: None,
-                from: None,
-                orphan: false,
-            },
-            fx,
-        )
+    let args = config::Args {
+        workspace: ws,
+        name: None,
+        from: None,
+        orphan: false,
+    };
+    let home = TempDir::new().unwrap();
+    let (r, ..) = with_lernie_home(home.path(), || {
+        with_fx("lernie", b"", &writing_editor, |fx| config::run(args, fx))
     });
     assert!(matches!(r.unwrap(), Outcome::Quiet));
 }
@@ -136,7 +138,9 @@ fn config_reports_a_declined_pass_as_a_clean_line() {
     // An editor that saves nothing, twice: the first pass still lands
     // the §3.3 descriptions refresh, the second changes nothing at all
     // and is declined — a success (no error, no wedged checkout) that
-    // names the branch that did not move.
+    // names the branch that did not move. Both passes share one scratch
+    // `LERNIE_HOME` (see `config_authors_a_commit`) so the two resolves
+    // see the same data root instead of racing another test's window.
     let (_h, ws) = fixture::workspace();
     let args = || config::Args {
         workspace: ws.clone(),
@@ -144,12 +148,16 @@ fn config_reports_a_declined_pass_as_a_clean_line() {
         from: None,
         orphan: false,
     };
-    let (first, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
-    first.unwrap();
-    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
-    let Outcome::Line(line) = r.unwrap() else {
-        panic!("a declined pass reports the branch that did not move")
-    };
+    let home = TempDir::new().unwrap();
+    let line = with_lernie_home(home.path(), || {
+        let (first, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
+        first.unwrap();
+        let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| config::run(args(), fx));
+        let Outcome::Line(line) = r.unwrap() else {
+            panic!("a declined pass reports the branch that did not move")
+        };
+        line
+    });
     assert!(line.starts_with("config/default unchanged: "), "{line}");
     assert!(!ws.join(".config-author").exists());
 }

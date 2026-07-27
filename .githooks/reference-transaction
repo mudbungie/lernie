@@ -4,9 +4,8 @@
 # Why `reference-transaction` and not `post-commit`/`post-merge`: nothing
 # lands on this repo's `main` through `git commit`. `bl close` delivers by
 # plumbing — `commit-tree` then `update-ref` — which fires no commit hook and
-# no merge hook at all (199 of 199 commits on `main` arrived that way; zero
-# are merge commits). The ref transaction is the one event every landing path
-# shares: squash delivery, `git merge --no-ff`, and a plain commit alike.
+# no merge hook at all. The ref transaction is the one event every landing
+# path shares: squash delivery, `git merge --no-ff`, and a plain commit alike.
 #
 # Never blocks. Git ABORTS a ref transaction when this hook exits non-zero in
 # the `prepared` state, so every path here exits 0 — hence no `set -e`, which

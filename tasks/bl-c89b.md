@@ -1,7 +1,8 @@
 +++
 title = "lernie dispatch skips the shared id/workspace guard: raw git argv on a missing workspace, config-derivation voice on a missing agent, raw sha on an unknown role"
 created = 1785133371
-updated = 1785133371
+updated = 1785133580
+claimant = "flop-55e0"
 priority = 1
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

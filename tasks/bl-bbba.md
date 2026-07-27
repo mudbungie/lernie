@@ -13,6 +13,10 @@ on = "close"
 [[blockers]]
 id = "bl-c553"
 on = "close"
+
+[[blockers]]
+id = "bl-7032"
+on = "close"
 +++
 ## Repro
 

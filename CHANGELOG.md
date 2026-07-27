@@ -13,6 +13,28 @@ than product and are not listed — they live in git and in the balls store.
 
 ## [Unreleased]
 
+## [0.0.2](https://github.com/mudbungie/lernie/compare/v0.0.1...v0.0.2) - 2026-07-27
+
+### Changes
+
+- Lost wakeup in the 2.11 deposit-probe-launch protocol: a deposit racing a driver's last inbox read is stranded forever [bl-9c8f]
+- record the 2026-07-27 live walk — upgrade live-verified items from unit-only/unchecked, note the two non-findings [bl-be70]
+- lernie dispatch skips the shared id/workspace guard: raw git argv on a missing workspace, config-derivation voice on a missing agent, raw sha on an unknown role [bl-c89b]
+- lernie config editor-failure decline names neither the $EDITOR value tried nor the fix [bl-79ea]
+- lernie config --from <nonexistent> dumps the raw git argv and the internal .config-author path instead of naming the missing lineage [bl-55e0]
+- The built-in tool set is undiscoverable from the CLI: 'lernie tool --help' shows a bare <NAME> and the unknown-tool decline lists nothing, while load_skill's sibling decline names its whole pool [bl-4bd1]
+- lernie new pointed at an existing FILE says 'I/O error: Not a directory (os error 20)' — the destination guard covers non-empty dirs but not non-dirs [bl-8efa]
+- README does not document the opt-in commit-identity guard shipped in tests/commit_hygiene.rs [bl-303d]
+- commit-identity guard test + changelog normalization [bl-3ac2]
+- lernie scan aborts the entire pass with a raw git error when any agents/* branch's derived parent has no ref (filed upstream as 'exit 1 for a root with pending mail' — that repro is exit 0) [bl-025b]
+- :advance_cli baton test outruns its 120s evidence-poll bound when the box runs several full suites at once [bl-2bf0]
+- 0.0.1 ships two binary distribution channels (crates.io, GitHub release tarball) that the README documents no path for: no cargo install line, no bz step, and the tarball carries no docs at all [bl-33ef]
+- A missing bz surfaces as 'adapter subprocess: No such file or directory (os error 2)' — the one error every binary-install user hits names neither bz nor the fix [bl-63c1]
+- lernie advance on a nonexistent agent exits 0 silently AND mkdirs an orphan inbox — the id-existence guard is missing at exactly the verb README says has it [bl-bbba]
+- README release-chain sentence describes the pre-bl-a124 containment: 'bl close reaches GitHub, which runs CI, which runs release-plz' is now inverted [bl-19d5]
+- parent_revival and sweep_deposits_died flake under load (post bl-6987 sweep) [bl-7318]
+- print the linked brazen pin in lernie --version (e.g. "lernie 0.0.1 (brazen 0.0.4)") [bl-c1b9]
+
 ## [0.0.1](https://github.com/mudbungie/lernie/compare/v0.0.0...v0.0.1) - 2026-07-26
 
 ### Changes

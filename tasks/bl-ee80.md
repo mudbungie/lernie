@@ -1,8 +1,7 @@
 +++
 title = "A non-retryable in-band model-call error silently strands a root agent's branch forever — no epitaph, undetected by lernie scan, exit 0 on the follow-up"
 created = 1785124361
-updated = 1785129438
-claimant = "Marlin"
+updated = 1785129439
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["user-story"]
 +++

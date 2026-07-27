@@ -1,10 +1,24 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
+  # Deliberately NO push arm. On a push to main this workflow still runs —
+  # once, as the workflow_call'd instance inside release-plz.yml's run (its
+  # `ci` job does `uses: ./.github/workflows/ci.yml`, and its release job
+  # `needs:` that instance). A push arm here would run the identical jobs a
+  # second time per push for nothing. Pull requests still get CI directly
+  # via the pull_request arm. Consequence: this workflow has no runs of its
+  # own on main, so anything that reads them (e.g. a status badge) must
+  # point at release-plz.yml instead — the README badge does.
   pull_request:
     branches: [main]
+  # Makes this workflow reusable so release-plz.yml can run it inside its
+  # own push-triggered run. That placement is load-bearing: crates.io
+  # trusted publishing refuses OIDC tokens minted under a workflow_run
+  # trigger, and a called workflow executes as part of the CALLER's run, so
+  # the release's OIDC claim carries trigger=push and workflow
+  # release-plz.yml — the identity crates.io is configured to trust. See
+  # release-plz.yml's header.
+  workflow_call:
 
 jobs:
   ci:

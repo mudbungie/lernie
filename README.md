@@ -336,7 +336,11 @@ returns by depositing a result message into its parent's inbox (§2.6):
    terminal `end`. On a retryable in-band `Error`
    (`CanonicalError::retryable()`, never re-derived) the harness
    re-invokes `bz` with the identical request, up to the `workflow.yaml`
-   attempt cap with exponential backoff. brazen never retries; auth and
+   attempt cap with exponential backoff — floored by the failed
+   attempt's `Retry-After` pacing hint
+   (`CanonicalError::retry_after_seconds`) when it carries one, so the
+   config schedule governs and the provider's hint can only lengthen it
+   (§4.4). brazen never retries; auth and
    endpoints are entirely its own. The `response.json` fd is held open
    across every attempt and backoff sleep — its close is the §3.5
    IN_CLOSE_WRITE completion signal. As the events stream, the harness

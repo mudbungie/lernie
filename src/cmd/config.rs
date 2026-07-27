@@ -13,7 +13,9 @@ use std::path::PathBuf;
 /// `lernie config <workspace> [<name>] [--from <source>] [--orphan]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root.
     pub workspace: PathBuf,
+    /// Config branch to author on (`config/<name>`); defaults to `default`.
     pub name: Option<String>,
     /// Fork a new branch off `config/<source>` instead of advancing.
     #[arg(long)]

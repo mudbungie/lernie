@@ -7,6 +7,7 @@ use std::path::PathBuf;
 /// `lernie replay <archive>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Directory `lernie bundle` wrote the archive into.
     pub archive: PathBuf,
 }
 

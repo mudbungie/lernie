@@ -31,6 +31,34 @@ pub mod load_skill;
 pub mod message;
 pub mod read_file;
 
+/// Built-in tool name: run a shell command (§3.3).
+const BASH: &str = "bash";
+/// Built-in tool name: spawn a subagent (§2.5).
+const DISPATCH: &str = "dispatch";
+/// Built-in tool name: copy a pooled skill body into the worktree (§3.3
+/// Body-on-demand).
+const LOAD_SKILL: &str = "load_skill";
+/// Built-in tool name: deposit into an existing agent's inbox (§2.11).
+const MESSAGE: &str = "message";
+/// Built-in tool name: read a file's bytes (§3.3).
+const READ_FILE: &str = "read_file";
+
+/// The closed set of built-in tool names `lernie tool <name>` answers to,
+/// sorted — the one list behind both the [`Error::Unknown`] decline and
+/// the `<NAME>` argument's CLI help (PRINCIPLES single source of truth).
+/// The compactor pair (`write_summary` / `mark_for_deletion`) is
+/// deliberately absent: it is injected for the compactor role alone
+/// (§2.7), never a name a general agent or an operator elects, so it is
+/// routed but not advertised.
+pub const NAMES: [&str; 5] = [BASH, DISPATCH, LOAD_SKILL, MESSAGE, READ_FILE];
+
+/// [`NAMES`] rendered for a human: the pool named in the unknown-tool
+/// decline and in `lernie tool --help`, in the same voice `load_skill`
+/// names its own pool with (§3.3 "declined … naming the available pool").
+pub fn pool() -> String {
+    NAMES.join(", ")
+}
+
 /// Reasons [`run`] can fail. Each in-process tool surfaces its own
 /// error variant; an unknown tool name is the dispatcher-level case.
 #[derive(Debug, Error)]
@@ -38,8 +66,11 @@ pub enum Error {
     /// The lernie binary was invoked as `lernie tool <name>` for a
     /// `<name>` that isn't a built-in. The harness only routes here
     /// after external resolution misses (§3.3), so this is "no tool
-    /// of that name exists at all".
-    #[error("unknown built-in tool: {0:?}")]
+    /// of that name exists at all". The decline names the available pool
+    /// ([`NAMES`]) — the same idiom `load_skill` declines an unknown skill
+    /// with (§3.3), so the model (or the operator typing the subcommand by
+    /// hand) is told what it *could* have said.
+    #[error("unknown built-in tool: {0:?}; available: {available}", available = pool())]
     Unknown(String),
     /// `read_file` failed; carries the inner reason for the operator's
     /// `eprintln!`. The §3.3 stdio contract concats stderr after
@@ -122,25 +153,25 @@ pub fn run_with<R: Read, W: Write, E: Write>(
     spawner: &dyn dispatch::Spawner,
     sender: &dyn message::Sender,
 ) -> Result<i32, Error> {
-    if name == "read_file" {
+    if name == READ_FILE {
         return read_file::run(stdin, stdout)
             .map(|()| 0)
             .map_err(Error::ReadFile);
     }
-    if name == "bash" {
+    if name == BASH {
         return bash::run(stdin, stdout, stderr).map_err(Error::Bash);
     }
-    if name == "dispatch" {
+    if name == DISPATCH {
         return dispatch::run(stdin, stdout, env, spawner)
             .map(|()| 0)
             .map_err(Error::Dispatch);
     }
-    if name == "message" {
+    if name == MESSAGE {
         return message::run(stdin, stdout, env, sender)
             .map(|()| 0)
             .map_err(Error::Message);
     }
-    if name == "load_skill" {
+    if name == LOAD_SKILL {
         return load_skill::run(stdin, stdout, env)
             .map(|()| 0)
             .map_err(Error::LoadSkill);

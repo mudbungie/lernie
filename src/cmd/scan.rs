@@ -8,6 +8,7 @@ use std::path::PathBuf;
 /// `lernie scan <workspace>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root to sweep.
     pub workspace: PathBuf,
 }
 

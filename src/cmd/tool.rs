@@ -11,7 +11,20 @@ use crate::prompt::tool::builtin;
 /// `lernie tool <name>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    // The help text is rendered from [`builtin::NAMES`], the same list the
+    // unknown-tool decline names — one pool, two surfaces. The name is *not*
+    // a `value_parser` over that set: the compactor pair (`write_summary` /
+    // `mark_for_deletion`, §2.7) is routed but unadvertised, so a clap
+    // possible-values gate would refuse the compactor's own re-entry, and
+    // clap's parse error would replace the §3.3 decline (stderr concatenated
+    // into `tool_result.content`) with its own voice and exit code.
+    #[arg(help = name_help())]
     pub name: String,
+}
+
+/// The `<NAME>` argument's help line — the built-in pool, named.
+fn name_help() -> String {
+    format!("Built-in tool to run; one of: {}", builtin::pool())
 }
 
 /// Delegate to [`builtin::run`] over the injected stdio; the process

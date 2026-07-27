@@ -9,7 +9,9 @@ use std::path::PathBuf;
 /// `lernie stop <repo> <branch> [--stop-children]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root.
     pub repo: PathBuf,
+    /// Agent id (== branch name) whose executor to signal.
     pub branch: String,
     /// Also stop the agent's whole subagent subtree (§2.9).
     #[arg(long)]

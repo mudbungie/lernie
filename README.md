@@ -642,6 +642,19 @@ Each built-in is the triple §3.3 pins:
   the tool's description in `tools: [...]`; the body explains when to
   reach for it.
 
+The pool is discoverable from the CLI itself — `lernie tool --help`
+names it, and a name that is not in it is declined non-zero naming it
+too, the same way `load_skill` declines an unknown skill (ARCH §3.3):
+
+```
+$ lernie tool --help
+Arguments:
+  <NAME>  Built-in tool to run; one of: bash, dispatch, load_skill, message, read_file
+
+$ echo '{}' | lernie tool nosuchtool
+lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: bash, dispatch, load_skill, message, read_file
+```
+
 Built-ins:
 
 - **`read_file`** — read the entire contents of a file at a given

@@ -1045,7 +1045,12 @@ commit as an object but names no ref to take the merge-base against, so a
 replay of the agent refs alone yields a workspace no verb can drive. Carrying
 the refs (never a sidecar file — the refs are the single source) makes the
 replayed repo derive its governing config by the same computation, over the
-same candidate set, as the workspace it came from.
+same candidate set, as the workspace it came from. "Every ref whose history
+reaches it" is broader than "every ancestor": a **sibling** config lineage
+that shares only a common root with the bundled subtree is still a
+merge-base *candidate*, so it rides too — carrying a ref that turns out not
+to be the nearest one is how the bundle stays a faithful copy of the
+computation, not a leak.
 
 ```
 lernie bundle /path/to/workspace <agent-id> /path/to/archive

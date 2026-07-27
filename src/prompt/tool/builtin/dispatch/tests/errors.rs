@@ -4,6 +4,7 @@
 
 use super::super::*;
 use super::fixtures::{ErrSpawner, StubEnv, StubSpawner, env, fake_repo, input_for};
+use crate::prompt::role::validate::Invalid;
 use std::collections::HashMap;
 use std::io::Cursor;
 use tempfile::TempDir;
@@ -102,7 +103,10 @@ fn missing_workspace_surfaces_governing_config_error() {
     let mut stdout = Vec::new();
     let env = env(repo.path(), "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
-    assert!(matches!(err, Error::GoverningConfig { .. }), "{err}");
+    assert!(
+        matches!(err, Error::Role(Invalid::Governing { .. })),
+        "{err}"
+    );
 }
 
 #[test]
@@ -116,7 +120,7 @@ fn malformed_providers_yaml_surfaces_config_error() {
     let mut stdout = Vec::new();
     let env = env(&repo, "p9");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
-    assert!(matches!(err, Error::Config(_)), "{err}");
+    assert!(matches!(err, Error::Role(Invalid::Config(_))), "{err}");
 }
 
 #[test]
@@ -127,7 +131,7 @@ fn unknown_role_surfaces_rolemissing() {
     let env = env(&repo, "p1");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     match err {
-        Error::RoleMissing { role, .. } => assert_eq!(role, "verifier"),
+        Error::Role(Invalid::RoleMissing { ref role, .. }) => assert_eq!(role, "verifier"),
         other => panic!("expected RoleMissing, got {other}"),
     }
 }
@@ -145,12 +149,12 @@ fn role_listed_but_soul_missing_surfaces_soulmissing() {
     let env = env(&repo, "p9");
     let err = run(&mut stdin, &mut stdout, &env, &StubSpawner::ok("ignored")).unwrap_err();
     match err {
-        Error::SoulMissing { path } => {
-            assert!(
-                path.to_string_lossy().ends_with("souls/verifier.md"),
-                "{}",
-                path.display()
-            )
+        Error::Role(Invalid::SoulMissing {
+            ref role,
+            ref agent,
+        }) => {
+            assert_eq!(role, "verifier");
+            assert_eq!(agent, "p9");
         }
         other => panic!("expected SoulMissing, got {other}"),
     }

@@ -35,7 +35,7 @@ pub enum AdvanceHandoff {
 }
 
 /// Run one production hop: guard the target's existence
-/// ([`crate::workspace::agent_exists`], §2.3 — before any lease, so a
+/// ([`crate::workspace::require_agent`], §2.3 — before any lease, so a
 /// refusal writes nothing), take the lease (adopting a predecessor's
 /// [`baton::LOCK_FD_ENV`] fd from the live environment, else
 /// acquiring), drive [`run`] with the real components, and prepare the
@@ -81,9 +81,12 @@ fn cli_run_with(
     // very orphan directory `lernie scan` reports as debris. Not folded
     // into the §2.11 lost-lease no-op (`Ok(Done)`): that is a live agent
     // already driven, this is an operator typo, and it exits 1.
-    if !crate::workspace::agent_exists(workspace, agent_id, &crate::template::RealGit::new()) {
-        return Err(Error::UnknownAgent(agent_id.to_owned()));
-    }
+    crate::workspace::require_agent(
+        workspace,
+        agent_id,
+        "a hop drives an existing agent (ARCH §2.3: the `agents/*` refs are the registry)",
+        &crate::template::RealGit::new(),
+    )?;
     let inbox_dir = inbox::inbox_dir(workspace, agent_id);
     let lease = match baton::take_lease(lease_env, &inbox_dir) {
         Ok(Some(lease)) => lease,

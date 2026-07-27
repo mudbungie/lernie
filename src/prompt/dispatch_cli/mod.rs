@@ -1,9 +1,16 @@
-//! CLI handler for `lernie dispatch <role>` (ARCH §3.4) — the front
-//! door's role-validity pre-flight, the per-role `--goal` rule, and the
-//! hand-off into the child-dispatch primitive. Lives in the lib (not the
-//! bin) so the bin stays a thin shim under the repo's 300-line cap and
-//! the wiring is unit-testable — the same discipline as `stop::cli_run`
-//! and `inbox::cli_run`.
+//! CLI handler for `lernie dispatch <role>` (ARCH §3.4) — the shared id
+//! guard, the front door's role-validity pre-flight, the per-role
+//! `--goal` rule, and the hand-off into the child-dispatch primitive.
+//! Lives in the lib (not the bin) so the bin stays a thin shim under the
+//! repo's 300-line cap and the wiring is unit-testable — the same
+//! discipline as `stop::cli_run` and `inbox::cli_run`.
+//!
+//! **The id guard is the same rule at every verb taking an agent id from
+//! outside** — `message`, `advance`, `stop`, `dispatch`, `bundle`
+//! (README). `dispatch` runs it through the same two shared functions the
+//! others do: [`crate::workspace::require`] for the workspace layout
+//! (§2.2) and [`crate::workspace::require_agent`] for the dispatching
+//! parent (§2.3), both ahead of any governing-config derivation.
 //!
 //! **The role set is open (§4.3).** This CLI enumerates no role names:
 //! validity is the single-home config check ([`crate::prompt::role::validate`])
@@ -21,6 +28,7 @@ use crate::prompt::inbox::{AdvanceLauncher, Launcher};
 use crate::prompt::role;
 use crate::prompt::{NanoIdGen, SystemClock, child_dispatch};
 use crate::template::RealGit;
+use crate::workspace;
 use std::path::Path;
 
 /// Role name for the compactor child (§2.7): the one role whose goal is
@@ -32,10 +40,15 @@ const ROLE_COMPACTOR: &str = COMPACTOR_ROLE;
 /// uniform `lernie dispatch <role>:` failure line.
 #[derive(Debug)]
 pub enum DispatchCliError {
+    /// The workspace-layout guard declined the path — the shared
+    /// [`crate::workspace::require`] voice every id-taking verb uses.
+    Layout(workspace::LayoutError),
+    /// The dispatching parent has no `agents/*` ref — the shared
+    /// [`crate::workspace::require_agent`] voice (§2.3).
+    UnknownParent(workspace::UnknownAgent),
     /// The role is not dispatchable against the calling branch's
     /// governing config commit (not in `providers.yaml`, or its soul is
-    /// missing) — the open-set membership failure (§4.3), naming the
-    /// config commit consulted.
+    /// missing) — the open-set membership failure (§4.3).
     InvalidRole(role::validate::Invalid),
     /// `--goal` omitted for a role that requires one (every role but the
     /// compactor).
@@ -49,6 +62,8 @@ pub enum DispatchCliError {
 impl std::fmt::Display for DispatchCliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Layout(e) => write!(f, "{e}"),
+            Self::UnknownParent(e) => write!(f, "{e}"),
             Self::InvalidRole(inv) => write!(f, "{inv}"),
             Self::GoalRequired(r) => write!(f, "--goal is required for role {r:?}"),
             Self::GoalForbidden(r) => write!(f, "--goal is not accepted for role {r:?}"),
@@ -97,6 +112,22 @@ fn run_with(
     goal: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
+    // The shared id guard, ahead of everything (§2.2, §2.3): the
+    // workspace layout, then the dispatching parent's existence. It is
+    // the same sequence `message`, `advance`, `stop` and `bundle` run,
+    // through the same two functions — so a missing workspace or a
+    // mistyped parent is declined in the product's voice here too,
+    // instead of surfacing as a raw git failure from the governing-config
+    // derivation below (bl-c89b).
+    workspace::require(repo).map_err(DispatchCliError::Layout)?;
+    workspace::require_agent(
+        repo,
+        parent_branch,
+        "a child forks off an existing parent (ARCH §2.5)",
+        &RealGit::new(),
+    )
+    .map_err(DispatchCliError::UnknownParent)?;
+
     // Open-set validity precedes the fork (§4.3): a role absent from the
     // governing config commit (unlisted, or missing its soul) is refused
     // before any branch is created, so a rejected role leaves no debris.
@@ -122,8 +153,8 @@ fn run_with(
 /// Fork `role`'s child off `parent_branch` and start it through the front
 /// door (§2.5), printing the child id so the `dispatch` built-in captures
 /// it as the `tool_result` address (§3.3 — stdout carries one product).
-/// Workspace validity was already established by the pre-flight validation
-/// (governing config resolution), so no separate `require` guard remains.
+/// The workspace and the parent were established by [`run_with`]'s shared
+/// guard, so nothing is re-checked here.
 fn dispatch_child(
     repo: &Path,
     parent_branch: &str,
@@ -146,124 +177,4 @@ fn dispatch_child(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::workspace::fixture;
-    use tempfile::TempDir;
-
-    /// A real scaffolded workspace (the `lernie new` core) with a parent
-    /// agent branch + worktree — the state `lernie dispatch` is invoked
-    /// against in production (§3.4). The default config lists `worker` and
-    /// `compactor` with their souls, so both validate off this parent.
-    fn scaffolded_repo_with_parent(parent: &str) -> (TempDir, std::path::PathBuf) {
-        let (holder, repo) = fixture::workspace();
-        fixture::spawn_root(&repo, parent);
-        (holder, repo)
-    }
-
-    /// A [`Launcher`] that swallows launches — the fork + front-door
-    /// deposit is under test, not the real `lernie advance` spawn.
-    struct NoopLauncher;
-    impl Launcher for NoopLauncher {
-        fn launch(&self, _workspace: &Path, _agent_id: &str) -> std::io::Result<()> {
-            Ok(())
-        }
-    }
-
-    /// Count sub-agent worktrees forked under `parent`'s id prefix.
-    fn sub_count(repo: &Path, parent: &str) -> usize {
-        std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))
-            .unwrap()
-            .flatten()
-            .filter(|e| {
-                e.file_name()
-                    .to_string_lossy()
-                    .starts_with(&format!("{parent}-"))
-            })
-            .count()
-    }
-
-    #[test]
-    fn compactor_dispatch_forks_an_ordinary_compactor_child() {
-        // §2.7: the compactor is an ordinary child dispatch — a branch
-        // off the dispatching tip with the compactor soul pinned and a
-        // boilerplate goal deposited, run by the front door.
-        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run_with(ROLE_COMPACTOR, &repo, "20260101-p1", None, &NoopLauncher).unwrap();
-        assert_eq!(sub_count(&repo, "20260101-p1"), 1);
-    }
-
-    #[test]
-    fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
-        let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-        run_with(
-            "worker",
-            &repo,
-            "20260101-p1",
-            Some("do the thing"),
-            &NoopLauncher,
-        )
-        .unwrap();
-        assert_eq!(sub_count(&repo, "20260101-p1"), 1);
-    }
-
-    #[test]
-    fn any_config_role_dispatches_open_set() {
-        // The v0.7 criterion through the front door: a third role the
-        // config defines (a verifier — zero code) is dispatchable exactly
-        // like the template roles. No name list gates it.
-        let (_holder, repo) = fixture::workspace();
-        let yaml = "roles:\n  worker:\n    provider: anthropic\n    model: sonnet\n  \
-                    verifier:\n    provider: anthropic\n    model: sonnet\n";
-        fixture::amend_config(
-            &repo,
-            &[("providers.yaml", yaml), ("souls/verifier.md", "v\n")],
-        );
-        fixture::spawn_root(&repo, "p9");
-        run_with("verifier", &repo, "p9", Some("judge it"), &NoopLauncher).unwrap();
-        assert_eq!(sub_count(&repo, "p9"), 1);
-    }
-
-    #[test]
-    fn undefined_role_is_a_config_validation_failure() {
-        let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        let err = run_with("no-such-role", &repo, "p1", Some("g"), &NoopLauncher).unwrap_err();
-        assert!(matches!(err, DispatchCliError::InvalidRole(_)), "{err}");
-        assert!(
-            err.to_string()
-                .contains("role \"no-such-role\" is not defined in"),
-            "{err}"
-        );
-    }
-
-    #[test]
-    fn worker_requires_a_goal() {
-        // Through the public `run` (the AdvanceLauncher wiring): validation
-        // passes, then the missing `--goal` is refused before any fork.
-        let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        let err = run("worker", &repo, "p1", None, Path::new("true")).unwrap_err();
-        assert_eq!(err.to_string(), "--goal is required for role \"worker\"");
-    }
-
-    #[test]
-    fn compactor_rejects_a_goal() {
-        let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        let err = run(ROLE_COMPACTOR, &repo, "p1", Some("g"), Path::new("true")).unwrap_err();
-        assert_eq!(
-            err.to_string(),
-            "--goal is not accepted for role \"compactor\""
-        );
-    }
-
-    #[test]
-    fn inner_errors_render_through_the_shared_display() {
-        // Validation passes, but the fork itself fails: with the parent's
-        // worktree removed, `git worktree add` (run in it) errors, flowing
-        // through `From<Error>` and the shared `Display`.
-        let (_holder, repo) = scaffolded_repo_with_parent("p1");
-        std::fs::remove_dir_all(repo.join(crate::workspace::AGENTS_DIR).join("p1")).unwrap();
-        let err = run_with("worker", &repo, "p1", Some("g"), &NoopLauncher).unwrap_err();
-        assert!(matches!(err, DispatchCliError::Inner(_)), "{err}");
-        assert!(!err.to_string().is_empty());
-    }
-}
+mod tests;

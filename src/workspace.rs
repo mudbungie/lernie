@@ -16,7 +16,9 @@
 //!
 //! This module owns the path/ref arithmetic and the ancestry
 //! derivation; it holds no state and performs no writes beyond what the
-//! injected [`GitRunner`] is asked to run.
+//! injected [`GitRunner`] is asked to run. The two guards every verb
+//! runs before any of it — *is this a workspace*, *does this agent
+//! exist* — are [`guard`], re-exported here.
 
 use crate::template::GitRunner;
 use std::io;
@@ -69,57 +71,6 @@ pub fn agent_worktree(workspace: &Path, agent_id: &str) -> PathBuf {
 /// the prefix is applied only at the git boundary.
 pub fn agent_ref(agent_id: &str) -> String {
     format!("{AGENT_REF_PREFIX}{agent_id}")
-}
-
-/// Does the agent exist? — `git rev-parse --verify refs/heads/agents/<id>`
-/// against the bare repo (§2.3: the ref namespace *is* the registry, so
-/// existence is a query, never a stored fact). The one home of the
-/// question every verb addressing an existing agent asks: `lernie stop`
-/// before signaling (via [`crate::prompt::stop::inspector`]) and
-/// `lernie message` before depositing (§2.11 — "a message is content
-/// addressed to an *existing* agent"). A non-zero exit is the answer
-/// `false`, which also covers an id git refuses as a ref name.
-pub fn agent_exists(workspace: &Path, agent_id: &str, git: &dyn GitRunner) -> bool {
-    let refspec = format!("refs/heads/{}", agent_ref(agent_id));
-    git.run(
-        &repo_git(workspace),
-        &["rev-parse", "--verify", "--quiet", &refspec],
-    )
-    .is_ok()
-}
-
-/// Layout guard failures (§2.2; pre-v1 clean break, §10).
-#[derive(Debug, thiserror::Error)]
-pub enum LayoutError {
-    /// The retired per-conversation layout: a `root/` primary worktree
-    /// with untracked control files at the repo root. Pre-v1 there is
-    /// no migration (§10 clean-break note): the refusal is loud and
-    /// names both what was found and what the current layout is.
-    #[error(
-        "{0} uses the retired per-conversation layout (a `root/` primary worktree with \
-         control files at the repo root); the current layout is one repo per workspace — \
-         `<workspace>/repo.git` (bare) with `config/*` branches and `agents/*` refs \
-         (ARCH §2.2). Pre-v1 clean break (§10): no migration — create a fresh workspace \
-         with `lernie new` and re-author its config"
-    )]
-    OldLayout(PathBuf),
-    /// No `repo.git` and no old-layout signature: not a workspace.
-    #[error("{0} is not a workspace (no repo.git) — create one with `lernie new` (ARCH §2.2)")]
-    NotAWorkspace(PathBuf),
-}
-
-/// Require `workspace` to be a current-layout workspace: `repo.git`
-/// present. The retired per-conversation layout is refused with a
-/// clear, actionable error (pre-v1 clean break); anything else is not
-/// a workspace at all.
-pub fn require(workspace: &Path) -> Result<(), LayoutError> {
-    if repo_git(workspace).is_dir() {
-        return Ok(());
-    }
-    if workspace.join("root").join(".git").exists() {
-        return Err(LayoutError::OldLayout(workspace.to_path_buf()));
-    }
-    Err(LayoutError::NotAWorkspace(workspace.to_path_buf()))
 }
 
 /// Resolve a config branch's head commit sha (§2.3 *Fresh start* fork
@@ -272,6 +223,9 @@ pub fn control_exists(workspace: &Path, commit: &str, path: &str, git: &dyn GitR
     git.run(&repo_git(workspace), &["cat-file", "-e", &spec])
         .is_ok()
 }
+
+mod guard;
+pub use guard::{LayoutError, UnknownAgent, agent_exists, require, require_agent};
 
 #[cfg(test)]
 pub(crate) mod fixture;

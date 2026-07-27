@@ -1,0 +1,11 @@
++++
+title = "docs gate: bl-19d5 README release-chain fix"
+created = 1785130182
+updated = 1785130182
+parent = "bl-19d5"
+root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-19d5"
+on = "claim"
++++

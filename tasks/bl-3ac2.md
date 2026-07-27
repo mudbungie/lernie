@@ -1,7 +1,7 @@
 +++
 title = "commit-identity guard test + changelog normalization"
 created = 1785125363
-updated = 1785132977
+updated = 1785133098
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 DELIVERED (waxier-lrw, 2026-07-27). Follow-on to the 2026-07-26 main history rewrite (every author+committer on main is `mudbungie <mudbungie@gmail.com>`; all Co-Authored-By trailers stripped; old tip 2c942f9 -> cd8aa45, tree-identical).
@@ -12,7 +12,6 @@ DELIVERED (waxier-lrw, 2026-07-27). Follow-on to the 2026-07-26 main history rew
 
 3. release-plz.toml `[changelog].commit_parsers` — a first parser `{ message = '(?i)^(gate:|(v[0-9][0-9.]* )?(docs|tests|alignment)( gate)?( green)? *(:|\[bl-))', skip = true }` so FUTURE generated changelogs come out uniform without hand-editing. The pattern requires a `:` or `[bl-` right after the gate label, so real subjects that merely open with the word (`tests/install.rs mutates …`) are not swallowed; a gate close written in free prose still needs hand-pruning. Known and accepted consequence: a release window containing only gate commits generates no entries.
 
-4. Two hygiene fixes found while closing bl-53e3, in scope as commit hygiene:
-   - `check.exit` was committed onto main by that close (6cf98c1) — `bl close` stages EVERY untracked file in the worktree, so an agent's `make check` scratch rides onto main. Removed here.
-   - .gitignore now ignores `*.profraw` (tarpaulin's root `build_rs_cov.profraw`, which also aborted a close on the 300-line cap: "build_rs_cov.profraw has 5538 lines"), `check.log`, `check.exit`. Ignoring is the fix, not cleaning: the close stages what is not ignored.
-   - README gained a `### Commit-identity guard (opt-in, per machine)` subsection under Contributing documenting the marker and the bot carve-out.
+4. README gained a `### Commit-identity guard (opt-in, per machine)` subsection under Contributing: the marker path, the arming/disarming rule, and the `github-actions[bot]` carve-out. The guard's policy lives outside the repo, so the repo has to say where.
+
+5. Gate-run debris, found while closing bl-53e3 and since landed by OTHERS — nothing owed here: `check.exit` rode onto main in that close (6cf98c1) because `bl close` stages every untracked file in the worktree, and tarpaulin's root `build_rs_cov.profraw` had already aborted a close on the 300-line cap ("build_rs_cov.profraw has 5538 lines"). Both are fixed on main by 38efef3 [bl-c786], which ignores `*.profraw` / `check.log` / `check.exit` and deletes the tracked file. Ignoring is the fix, not cleaning: the close stages whatever is not ignored.

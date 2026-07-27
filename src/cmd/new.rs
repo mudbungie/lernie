@@ -21,6 +21,8 @@ use std::path::PathBuf;
 /// `lernie new [<path>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to create the workspace at; defaults to a fresh
+    /// `<data-root>/workspaces/<id>`.
     pub path: Option<PathBuf>,
 }
 

@@ -10,8 +10,11 @@ use std::path::PathBuf;
 /// `lernie dispatch <role> <repo> <branch> [--goal <text>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Role to fork the child as (`souls/<role>.md` + a `roles:` entry).
     pub role: String,
+    /// Path to the workspace (conversation repo) root.
     pub repo: PathBuf,
+    /// Agent id of the dispatching parent (== branch name).
     pub branch: String,
     #[arg(long)]
     pub goal: Option<String>,

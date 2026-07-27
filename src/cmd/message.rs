@@ -22,8 +22,11 @@ use std::path::{Path, PathBuf};
 /// `lernie message <workspace> <agent> <content>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root.
     pub workspace: PathBuf,
+    /// Agent id (== branch name) to deposit into.
     pub agent: String,
+    /// Message body to deposit in the recipient's inbox.
     pub content: String,
 }
 

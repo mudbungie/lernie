@@ -8,8 +8,11 @@ use std::path::PathBuf;
 /// `lernie bundle <workspace> <agent> <out-dir>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root.
     pub workspace: PathBuf,
+    /// Agent id (== branch name) whose subtree to archive.
     pub agent: String,
+    /// Directory to write the archive into.
     pub out_dir: PathBuf,
 }
 

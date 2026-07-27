@@ -169,6 +169,47 @@ fn cli_version_pairs_lernie_and_the_brazen_pin() {
     assert_eq!(Cli::command().get_version(), Some(v));
 }
 
+/// Every verb's positionals render with help text. A blank `<NAME>` /
+/// `<WORKSPACE>` is the CLI declining to answer a question the README
+/// invites the user to ask of it; `advance` already documented its pair,
+/// and this holds the rest to the same bar. The US-23 parity checker
+/// asserts the argument *set*, so documenting them changes nothing it
+/// reads.
+#[test]
+fn every_positional_argument_documents_itself() {
+    let cli = Cli::command();
+    for sub in cli.get_subcommands() {
+        for arg in sub.get_positionals() {
+            assert!(
+                arg.get_help().is_some(),
+                "{} <{}> renders blank in --help",
+                sub.get_name(),
+                arg.get_id()
+            );
+        }
+    }
+}
+
+/// `lernie tool --help` names the built-in pool, and names it from the
+/// same [`builtin::NAMES`] the unknown-tool decline renders — one list,
+/// two surfaces (PRINCIPLES single source of truth). The compactor pair
+/// (§2.7) is routed but unadvertised: it is injected for the compactor
+/// role, never a name to elect, so it must not leak into the help.
+#[test]
+fn tool_name_help_names_the_built_in_pool() {
+    let cli = Cli::command();
+    let tool = cli
+        .get_subcommands()
+        .find(|s| s.get_name() == "tool")
+        .expect("tool verb");
+    let arg = tool.get_positionals().next().expect("<NAME> positional");
+    let help = arg.get_help().expect("help").to_string();
+    for name in crate::prompt::tool::builtin::NAMES {
+        assert!(help.contains(name), "{help}");
+    }
+    assert!(!help.contains("write_summary"), "{help}");
+}
+
 #[test]
 fn preludes_are_named_per_verb_by_the_surface() {
     // The §2.9 prelude-per-verb map (ARCH §3.4 binding-preludes seam) is

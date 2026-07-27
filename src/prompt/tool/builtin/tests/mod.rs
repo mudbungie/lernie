@@ -18,21 +18,11 @@ pub(super) fn route<R: Read, W: Write, E: Write>(
     run(name, Path::new("lernie"), stdin, stdout, stderr)
 }
 
-/// The `bash` and compactor-tool routing arms, split out to keep this
-/// file under the repo's per-file line cap.
+/// The `bash` and compactor-tool routing arms, and the advertised pool,
+/// split out to keep this file under the repo's per-file line cap.
+mod pool;
 mod routing_bash;
 mod routing_compaction;
-
-#[test]
-fn unknown_tool_name_surfaces_unknown_variant() {
-    let mut stdin = Cursor::new(Vec::<u8>::new());
-    let mut stdout = Vec::new();
-    let mut stderr = Vec::new();
-    let err = route("not_a_tool", &mut stdin, &mut stdout, &mut stderr).unwrap_err();
-    let msg = err.to_string();
-    assert!(msg.contains("not_a_tool"), "{msg}");
-    assert!(msg.contains("unknown"), "{msg}");
-}
 
 #[test]
 fn read_file_routed_to_inner_module() {

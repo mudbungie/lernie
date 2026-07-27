@@ -13,7 +13,9 @@ use std::path::PathBuf;
 /// `lernie prompt <repo> <message>`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
+    /// Path to the workspace (conversation repo) root.
     pub repo: PathBuf,
+    /// Opening message for the new root conversation.
     pub message: String,
 }
 

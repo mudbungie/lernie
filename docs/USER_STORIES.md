@@ -112,13 +112,14 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 - **acceptance**
   - Advance: `config/<name>` gains exactly one commit; `descriptions/**` is refreshed from the data-root pools in the same pass.
   - `--from <src>`: a new `config/<name>` exists and `git merge-base config/<name> config/<src>` **succeeds**.
+  - `--from <src>` naming a lineage the workspace does not have → exit 1, nothing authored, and the decline names the missing lineage and the pool that does exist: `lernie config: no config lineage "nosuch" in this workspace — existing lineages: default, scratch, strict`. The source is resolved *before* the transient checkout, so no `.config-author` is created and no `config/<name>` ref is left behind.
   - `--orphan`: a new `config/<name>` exists and `git merge-base` against any other config branch **fails**.
   - `--from` with `--orphan` → exit 1.
   - An authoring pass that changes nothing is **declined** and the branch does not move — README: *"An authoring pass that changes nothing is declined (git's empty-commit refusal) — the branch does not move."*
   - No agent branch moves; this is the only act that advances a config branch (ARCH §2.3 branch advancement).
 - **status** **fulfilled (0.0.1 walk).** Advance, `--from`, and `--orphan` are proven through the real binary with a scripted `$EDITOR` by `tests/config_cli.rs::config_verb_advances_forks_and_orphans_via_editor`, including the `merge-base` succeeds/fails pair. The two clauses that were unit-only — the `--from`/`--orphan` exclusion and the empty-commit decline — were **both observed hands-on through the binary** by the 0.0.1 walk: the flag pair exits 1, and an authoring pass that changes nothing is declined with the branch not moving. As with US-04, what remains is an evidence gap rather than a shortfall: the automated proofs are still the unit tests (`src/template/authoring/tests.rs::a_no_op_edit_is_declined_as_an_empty_commit`, `::from_cli_declines_from_and_orphan_together`).
 
-  **Separately found by the same walk and still open:** `lernie config --from <nonexistent>` dumps the raw git argv and the internal `.config-author` path instead of naming the missing lineage. Filed as bl-55e0.
+  **Separately found by the same walk and now closed:** `lernie config --from <nonexistent>` used to dump the raw git argv and the internal `.config-author` path instead of naming the missing lineage (bl-55e0). The source lineage is now resolved ahead of the checkout and declined in the product's voice, proven through the binary by `tests/config_cli.rs::config_verb_advances_forks_and_orphans_via_editor` and by unit tests in `src/template/authoring/tests_lineage.rs`.
 
 ---
 

@@ -86,6 +86,13 @@ pub enum Error {
     /// fork of a source or a fresh lineage, never both.
     #[error("pass --from <source> or --orphan, not both")]
     Conflict,
+    /// `--from <source>` named a lineage the workspace does not have.
+    /// Resolved *before* the transient checkout is materialized, so the
+    /// decline leaves nothing behind and says nothing about git plumbing,
+    /// the `.config-author` checkout, or the `config/` ref namespace the
+    /// CLI otherwise hides — it names the lineages that do exist (§2.3).
+    #[error("no config lineage {0:?} in this workspace — existing lineages: {1}")]
+    NoSuchLineage(String, String),
 }
 
 /// Resolve the [`Origin`] from `lernie config`'s flags and run [`author`]
@@ -114,7 +121,8 @@ pub fn from_cli<G: GitRunner>(
 }
 
 /// Author one config commit onto `config/<name>` (ARCH §2.2). Guards the
-/// workspace layout, materializes the checkout per `origin`, refreshes
+/// workspace layout, resolves a fork's source lineage
+/// ([`require_source`]), materializes the checkout per `origin`, refreshes
 /// the `descriptions/**` snapshot from the `data_root` pools (§3.3), runs
 /// `edit` against the checkout, commits, and tears the checkout down.
 ///
@@ -138,6 +146,7 @@ pub fn author<G: GitRunner>(
     git: &G,
 ) -> Result<Pass, Error> {
     workspace::require(workspace)?;
+    require_source(workspace, &origin, git)?;
     let repo = workspace::repo_git(workspace);
     let author = checkout::path(workspace);
     let target = config_ref(name);
@@ -161,10 +170,31 @@ pub fn author<G: GitRunner>(
     Ok(Pass::Landed)
 }
 
+/// Resolve a fork's source lineage before anything is materialized — the
+/// same order the agent verbs resolve `agents/<id>` in, and for the same
+/// reason: a well-formed name that names nothing is the *product's*
+/// decline, naming the pool it was not found in
+/// ([`crate::name::pool`]), not git's report of an invalid reference.
+/// Advance and orphan name no source, so they pass through.
+fn require_source<G: GitRunner>(workspace: &Path, origin: &Origin, git: &G) -> Result<(), Error> {
+    let Origin::Fork { source } = origin else {
+        return Ok(());
+    };
+    let names = workspace::config_names(workspace, git).map_err(Error::Git)?;
+    if names.iter().any(|n| n == source) {
+        return Ok(());
+    }
+    Err(Error::NoSuchLineage(
+        (*source).to_owned(),
+        crate::name::pool(&names),
+    ))
+}
+
 /// Create the authoring checkout at `author` for the given origin: check
 /// out the existing branch (advance), branch off a source head (fork), or
-/// open a fresh orphan branch (orphan). Wrong-existence cases are git's
-/// to decline (invalid reference / branch already exists). Fork and
+/// open a fresh orphan branch (orphan). A fork's source was resolved by
+/// [`require_source`]; the remaining wrong-existence cases are git's to
+/// decline (invalid reference / branch already exists). Fork and
 /// orphan create `target`, so the guard owns that ref until the commit
 /// lands; advance moves a branch that already exists, which a failed pass
 /// must never delete.
@@ -209,6 +239,8 @@ fn commit_message(name: &str, origin: &Origin) -> String {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_lineage;
 #[cfg(test)]
 mod tests_stub;
 #[cfg(test)]

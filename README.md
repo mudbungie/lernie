@@ -335,7 +335,13 @@ refreshes the `descriptions/**` snapshot from the data-root pools (ARCH
 the control files (`workflow.yaml`, `providers.yaml`, `manifest.yaml`,
 `souls/`, `version`), commits, and tears the checkout down. `<name>`
 defaults to `default`. `--from` and `--orphan` are mutually exclusive and
-only apply when creating a new branch.
+only apply when creating a new branch. A `--from <src>` naming a lineage
+the workspace does not have is resolved *before* the checkout is
+materialized, and declined by name:
+
+```
+lernie config: no config lineage "nosuch" in this workspace — existing lineages: default, strict
+```
 
 **Declining is fine, and leaves nothing behind.** Save no change and the
 pass is *declined*: there is nothing to commit, so no commit is authored,

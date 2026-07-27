@@ -2,7 +2,8 @@
 //! and the failure arms that need no stub — the layout guard, git's own
 //! declines, the descriptions refresh, and the edit step. The teardown
 //! and declined-pass contract is [`super::tests_teardown`]; the stubbed
-//! Io arms are [`super::tests_stub`].
+//! Io arms are [`super::tests_stub`]; the `--from` source resolution is
+//! [`super::tests_lineage`].
 
 use super::{Error, Origin, author, from_cli};
 use crate::template::{GitRunner, RealGit, scaffold};

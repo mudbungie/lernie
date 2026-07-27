@@ -1,7 +1,7 @@
 +++
 title = "A non-retryable in-band model-call error silently strands a root agent's branch forever — no epitaph, undetected by lernie scan, exit 0 on the follow-up"
 created = 1785124361
-updated = 1785125326
+updated = 1785125510
 claimant = "Marlin"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["user-story"]
@@ -66,3 +66,50 @@ non-retryable error should get *some* on-disk, user-visible signal (the
 docs don't promise a specific one, but "the user has to manually read
 steps/<id>/NNN/response.json to learn their conversation died" is not a
 promise README or ARCH make anywhere either).
+
+## Resolution (Bosun, 2026-07-26): reframe chosen and shipped
+
+Delivered together with bl-1c94 on work/bl-1c94 (commit "Epitaph-gate
+compaction_merge; classify failed model calls as silent deaths
+[bl-1c94][bl-ee80]"); this ball closes empty against that landing.
+
+**Reframe: the record was already truthful — the derivation read half
+of it.** brazen's segment contract records the failure exactly
+(`Error` event, then the segment's clean terminal `end`), and
+`provider::segment::classify` already distinguishes `Failed` from
+`Complete` and `NoTerminal`. The executor fabricates nothing (option
+(a) was rejected: suppressing the segment terminator would falsify the
+§4.4 record to satisfy a consumer — the classic two-representations
+drift). The bug was that the silent-death derivation tested only
+"closed without a terminal `end`", i.e. read the framing tail for one
+of its two death shapes. The one invariant that dissolves the special
+case, root and child alike: **a branch with no live executor whose
+latest step never settled complete (§2.3) is dead** — `NoTerminal`
+(killed/stopped mid-stream, §2.9) and `Failed` (retries exhausted or
+non-retryable, §2.10) are both "never settled complete". No root-only
+mechanism, no second detection path, no new on-disk state.
+
+Shipped:
+- `step::latest_step_outcome` — the single framing-only read (latest
+  step dir + `classify`), shared by scan and the message verb.
+- `scan::derive::died_mid_work` classifies `NoTerminal | Failed`.
+- `ScanReport.silent_deaths` is now the candidate **ids** (count
+  derives as len, SSOT): a dead root gets no `died` deposit (no parent
+  inbox), so its NAME in the `lernie scan` summary
+  (`silent deaths: 1 (<id>)`) is its whole surfacing, pointing the
+  operator at `steps/<id>/`.
+- `lernie message` on a dead root: **queues-with-warning**, never
+  errors. Docs imply queueing (ARCH §2.9: a message into a
+  stopped/dead branch is THE resume path — refusing would block
+  retry-after-fix; §2.11 declines a deposit only for a nonexistent
+  agent). The verb prints a stderr advisory when the recipient is
+  quiescent and its latest call `Failed` (exit code and stdout
+  untouched). ARCH §2.10 now records the derived-flag semantics and
+  the advisory; README's messaging + scan sections updated.
+- Tests: scan sweep unit (`Failed` root counted and named; `Failed` is
+  died-mid-work), e2e `scan_names_a_root_whose_model_call_failed`
+  (Wharf's exact live-wire shape), cmd advisory test.
+
+Distinct from brazen bl-fba7 (the ollama tool_result rejection): this
+fix is provider-agnostic surfacing; the provider gap remains tracked
+there.

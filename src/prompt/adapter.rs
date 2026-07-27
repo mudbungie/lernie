@@ -43,6 +43,7 @@
 //! an inherited process env, never a per-call value the harness
 //! threads. The child inherits the harness environment unchanged.
 
+use super::Error;
 use std::ffi::OsString;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::path::Path;
@@ -185,6 +186,25 @@ pub fn capture_stdout(
         Ok(())
     })?;
     Ok(String::from_utf8_lossy(&out).into_owned())
+}
+
+/// Classify a failure to *launch* the adapter (§4.4) — the one
+/// classification the harness makes over a spawn `io::Error`, and the
+/// reason both spawn seams (the version guard's `--version` probe and
+/// every model call) route through here rather than mapping the errno
+/// straight onto [`Error::AdapterSpawn`]. `NotFound` means the binary
+/// is simply not there, which is actionable, so it earns the version
+/// guard's voice ([`Error::AdapterMissing`]); everything else is a real
+/// spawn failure with nothing to advise.
+pub(super) fn spawn_error(binary: &OsString, source: io::Error) -> Error {
+    match source.kind() {
+        io::ErrorKind::NotFound => Error::AdapterMissing {
+            binary: binary.to_string_lossy().into_owned(),
+            pin: super::brazen_pin().to_string(),
+            source,
+        },
+        _ => Error::AdapterSpawn(source),
+    }
 }
 
 /// Strip a single trailing `\n` (and the `\r` of a `\r\n` pair) from

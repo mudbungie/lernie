@@ -107,12 +107,29 @@ fn run_surfaces_version_skew() {
 }
 
 #[test]
-fn run_surfaces_version_guard_spawn_failure() {
+fn run_names_a_missing_adapter_and_the_command_that_installs_it() {
+    // The first real command of every binary-install user: no `bz` on
+    // PATH. The refusal must carry what the version guard carries —
+    // the binary, the section, and the literal fix-it command at the
+    // linked pin — with the errno as trailing detail, not the headline.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::scripted([StubAdapter::reply_err(io::ErrorKind::NotFound, "no bz")]);
     let git = StubGit::ok();
     let err = run_with_stubs(repo.path(), "hi", &adapter, &git).unwrap_err();
-    assert!(matches!(err, Error::AdapterSpawn(_)));
+    assert!(matches!(err, Error::AdapterMissing { .. }), "{err}");
+    let s = err.to_string();
+    assert!(
+        s.starts_with("provider adapter \"bz\" not found (§4.4 —"),
+        "{s}"
+    );
+    assert!(
+        s.contains(&format!(
+            "cargo install brazen --version ={} --locked",
+            crate::prompt::brazen_pin()
+        )),
+        "{s}"
+    );
+    assert!(s.ends_with("): no bz"), "the errno trails as detail: {s}");
     assert!(git.runs.borrow().iter().all(|(_, a)| a[0] != "worktree"));
 }
 

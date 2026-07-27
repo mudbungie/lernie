@@ -36,6 +36,7 @@ pub mod compactor;
 pub mod dispatch;
 pub mod dispatch_cli;
 pub mod inbox;
+mod pin;
 mod resolve;
 pub mod role;
 pub mod step;
@@ -51,6 +52,7 @@ pub use adapter::{AdapterRunner, SpawnAdapter};
 pub use child_dispatch::ChildDispatchRequest;
 pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
+pub use pin::brazen_pin;
 pub use tool::{ExecError, SpawnTool, ToolExecutor};
 
 use crate::template::GitRunner;
@@ -71,39 +73,6 @@ const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// the optional `adapter:` override (ARCH §4.2). Lives at the harness
 /// root.
 const GLOBAL_MODELS_FILE: &str = "models.yaml";
-
-/// The crate manifest, embedded so [`brazen_pin`] derives from the
-/// pin's one home (`Cargo.toml`) instead of mirroring it.
-const MANIFEST: &str = include_str!("../../Cargo.toml");
-
-/// The exact brazen pin in a manifest — the version inside
-/// `brazen = "=<pin>"`, in either the inline spelling of the source
-/// `Cargo.toml` or the `[dependencies.brazen]` / `version = "=<pin>"`
-/// table spelling cargo normalizes published manifests into. `None`
-/// when the manifest carries no exact brazen pin.
-fn parse_brazen_pin(manifest: &str) -> Option<&str> {
-    let mut in_brazen_table = false;
-    for line in manifest.lines().map(str::trim) {
-        if let Some(rest) = line.strip_prefix("brazen = \"=") {
-            return rest.strip_suffix('"');
-        }
-        if line.starts_with('[') {
-            in_brazen_table = line == "[dependencies.brazen]";
-        } else if in_brazen_table && let Some(rest) = line.strip_prefix("version = \"=") {
-            return rest.strip_suffix('"');
-        }
-    }
-    None
-}
-
-/// The exact brazen crate version lernie links, read from the
-/// `brazen = "=<pin>"` dependency in the embedded `Cargo.toml` — the
-/// number's one home (the `make install` pin derives from the same
-/// line). The load-time version guard rejects a `bz` whose `--version`
-/// differs (§4.4 "Version skew is guarded").
-pub fn brazen_pin() -> &'static str {
-    parse_brazen_pin(MANIFEST).expect("Cargo.toml pins brazen as `brazen = \"=<version>\"`")
-}
 
 /// Every way [`run`] can fail. The taxonomy is intentionally narrower
 /// than brazen's: wire-level distinctions are brazen's, surfaced in-band
@@ -137,6 +106,26 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("adapter subprocess: {0}")]
     AdapterSpawn(#[source] std::io::Error),
+    /// The adapter binary is not there. `NotFound` at the spawn is the
+    /// one launch failure the user can act on, and the first real
+    /// command of every binary-install user hits it — neither `cargo
+    /// install lernie` nor the release tarball lays down `bz`. So it
+    /// gets the version guard's voice rather than a bare errno: the
+    /// binary, the fact, the section, and the literal fix-it command
+    /// carrying the linked pin ([`brazen_pin`], the number's one home).
+    /// The errno trails as detail.
+    #[error(
+        "provider adapter {binary:?} not found (§4.4 — the default adapter is `bz` on \
+         PATH; install the pinned binary: cargo install brazen --version ={pin} --locked, \
+         or name an adapter you have with `adapter:` in the harness root's models.yaml): \
+         {source}"
+    )]
+    AdapterMissing {
+        binary: String,
+        pin: String,
+        #[source]
+        source: std::io::Error,
+    },
     #[error("tool {tool}: {source}")]
     ToolExec {
         tool: String,

@@ -2,7 +2,8 @@
 //! `Cargo.toml` — and [`crate::prompt::brazen_pin`] derives from it
 //! (§4.4 "Version skew is guarded"; PRINCIPLES: single source of truth).
 
-use crate::prompt::{brazen_pin, parse_brazen_pin};
+use crate::prompt::brazen_pin;
+use crate::prompt::pin::parse_brazen_pin;
 
 #[test]
 fn pin_derives_from_the_embedded_manifest() {

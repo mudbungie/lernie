@@ -263,7 +263,7 @@ fn run_attempt(
             }
             Ok(())
         })
-        .map_err(Error::AdapterSpawn)?;
+        .map_err(|e| crate::prompt::adapter::spawn_error(call.binary, e))?;
     stderr_file.write_all(&stderr)?;
     if let Some(e) = feed_err {
         return Err(Error::AdapterJson(e));

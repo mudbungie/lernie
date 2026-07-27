@@ -139,13 +139,25 @@ fn malformed_event_line_surfaces_adapter_json_error() {
 }
 
 #[test]
-fn spawn_failure_surfaces_adapter_spawn_error() {
+fn a_missing_adapter_surfaces_as_adapter_missing_at_the_model_call_too() {
+    // The model-call seam classifies a launch failure exactly as the
+    // version guard does: an override or host target that is not there
+    // fails here rather than at the guard (which the override skips,
+    // §4.4), so the actionable voice must reach both.
     let ((r, _, _), _) = drive(
         vec![Err(io::Error::new(io::ErrorKind::NotFound, "no bz"))],
         retry(3),
         false,
     );
-    assert!(matches!(r, Err(Error::AdapterSpawn(_))));
+    let Err(err) = r else {
+        panic!("expected a spawn failure")
+    };
+    assert!(matches!(err, Error::AdapterMissing { .. }), "{err}");
+    assert!(
+        err.to_string()
+            .starts_with("provider adapter \"bz\" not found"),
+        "{err}"
+    );
 }
 
 #[test]

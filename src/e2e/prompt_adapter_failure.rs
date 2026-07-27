@@ -1,7 +1,14 @@
-//! End-to-end: an adapter that fails at startup says why (ARCH §2.3
-//! step record, §4.4).
+//! End-to-end: an adapter that is missing, or that fails at startup,
+//! says why (ARCH §2.3 step record, §4.4).
 //!
-//! Real `bz`, pointed at a malformed brazen config: it dies before it
+//! **Absent.** The first real command of every user who did not install
+//! from the repo — neither `cargo install lernie` nor the release
+//! tarball lays `bz` down. Asserted through the real binary on a `PATH`
+//! carrying `git` and no `bz` at all: the refusal must name the adapter,
+//! the pin, and the command that installs it, with the errno trailing.
+//!
+//! **Present but broken.** Real `bz`, pointed at a malformed brazen
+//! config: it dies before it
 //! can emit a single `v=1` event, so stdout is empty and the whole
 //! complaint is on stderr. On disk that is indistinguishable from a
 //! mid-stream kill (§2.9) — the operator-visible difference is the
@@ -10,8 +17,62 @@
 
 use super::prompt_end_to_end::{scaffold_repo, write_global_models};
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
+
+/// A `bin` directory holding `git` and nothing else, for use as a whole
+/// `PATH`: the harness shells `git`, so a bare empty `PATH` would fail
+/// for the wrong reason, and naming a system directory would risk
+/// picking up whatever `bz` the machine happens to carry. `git` is
+/// located by walking the live `PATH` — the same lookup the child would
+/// have done — and symlinked in.
+fn path_without_bz(holder: &Path) -> PathBuf {
+    let bin = holder.join("bin");
+    fs::create_dir_all(&bin).unwrap();
+    let git = std::env::split_paths(&std::env::var_os("PATH").unwrap())
+        .map(|d| d.join("git"))
+        .find(|p| p.is_file())
+        .expect("git on PATH");
+    std::os::unix::fs::symlink(git, bin.join("git")).unwrap();
+    bin
+}
+
+#[test]
+fn a_missing_bz_names_the_adapter_the_pin_and_the_install_command() {
+    let holder = TempDir::new().unwrap();
+    let harness = holder.path().join("harness");
+    fs::create_dir_all(&harness).unwrap();
+    write_global_models(&harness);
+    let dest = holder.path().join("conv");
+    scaffold_repo(&dest, &harness);
+
+    let out = Command::new(crate::test_support::lernie_binary())
+        .arg("prompt")
+        .arg(&dest)
+        .arg("ping")
+        .env("LERNIE_HOME", &harness)
+        .env("PATH", path_without_bz(holder.path()))
+        .output()
+        .expect("spawn lernie prompt");
+    assert_eq!(out.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    // The whole thread back to the fix, in the version guard's voice:
+    // the verb prefix, the binary, the section, and the command — with
+    // the errno trailing as detail rather than standing alone.
+    assert!(
+        stderr.contains("lernie prompt: provider adapter \"bz\" not found (§4.4 —"),
+        "{stderr}"
+    );
+    assert!(
+        stderr.contains(&format!(
+            "cargo install brazen --version ={} --locked",
+            crate::prompt::brazen_pin()
+        )),
+        "{stderr}"
+    );
+    assert!(stderr.contains("No such file or directory"), "{stderr}");
+}
 
 #[test]
 fn a_bz_that_dies_at_startup_surfaces_its_stderr() {

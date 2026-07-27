@@ -1,7 +1,8 @@
 +++
 title = 'print the linked brazen pin in lernie --version (e.g. "lernie 0.0.1 (brazen 0.0.4)")'
 created = 1785124352
-updated = 1785124352
+updated = 1785129660
+claimant = "Ferrule"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

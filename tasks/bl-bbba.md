@@ -9,6 +9,10 @@ root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 [[blockers]]
 id = "bl-3c44"
 on = "close"
+
+[[blockers]]
+id = "bl-c553"
+on = "close"
 +++
 ## Repro
 

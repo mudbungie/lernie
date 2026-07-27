@@ -39,7 +39,7 @@ pub struct SpawnTool<'a> {
     clock: &'a dyn Clock,
     driver_target: &'a Path,
     deadline: Duration,
-    etxtbsy_budget: Duration,
+    etxtbsy_budget: u32,
     path_lookup: Box<dyn PathLookup + 'a>,
 }
 
@@ -73,19 +73,21 @@ impl<'a> SpawnTool<'a> {
             clock,
             driver_target,
             deadline: super::DEFAULT_TOOL_DEADLINE,
-            etxtbsy_budget: super::subprocess::ETXTBSY_RETRY_BUDGET,
+            etxtbsy_budget: super::subprocess::ETXTBSY_RETRY_ATTEMPTS,
             path_lookup: Box::new(EnvPath),
         }
     }
 
-    /// Override how long a spawn rides out `ETXTBSY`. A test that means
-    /// to exercise the retry arm sets a budget its fixture's hold
-    /// cannot outlast, and one that means to exercise the give-up arm
-    /// sets a budget no hold can fit inside — neither then depends on
-    /// which of two clocks the machine favours that minute (bl-7a3f).
+    /// Override how many spawn attempts ride out `ETXTBSY` — an attempt
+    /// count, never a wall-clock deadline (README's determinism rule,
+    /// bl-edf6). A test that means to exercise the retry arm sets a
+    /// count its fixture's hold cannot outlast, and one that means to
+    /// exercise the give-up arm sets a small count against a permanent
+    /// hold — both arms are then structural, with no clock in the
+    /// verdict at all (bl-7a3f).
     #[cfg(test)] // test-only builder
-    pub fn with_etxtbsy_budget(mut self, d: Duration) -> Self {
-        self.etxtbsy_budget = d;
+    pub fn with_etxtbsy_budget(mut self, attempts: u32) -> Self {
+        self.etxtbsy_budget = attempts;
         self
     }
 

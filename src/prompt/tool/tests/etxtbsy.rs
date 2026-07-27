@@ -6,11 +6,13 @@
 //! transition and not a real spawn failure. Both arms of that loop are
 //! exercised here, plus the fixture's own exec.
 //!
-//! Every wait in this file is sized far past what it is waiting on, or
-//! injected outright. A test that pits a fixture hold measured on one
-//! clock against a budget measured on another reports machine load,
-//! not code: under parallel-agent tarpaulin runs the loser is whoever's
-//! close gate happens to be running (bl-1c2e, bl-7a3f).
+//! Every budget in this file is a **count of attempts** (README's
+//! determinism rule, bl-edf6), injected and sized so the arm under test
+//! is the one that structurally runs. A test that pits a fixture hold
+//! measured on one clock against a budget measured on another reports
+//! machine load, not code: under parallel-agent tarpaulin runs the
+//! loser is whoever's close gate happens to be running (bl-1c2e,
+//! bl-7a3f).
 
 use super::super::{ExecError, SpawnTool, ToolCall, ToolExecutor};
 use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target, write_script};
@@ -30,19 +32,22 @@ fn write_script_helper_is_round_tripped_by_the_fixture() {
     // fork can briefly inherit this thread's not-yet-CLOEXEC write
     // fd to the script — same race the production retry was added
     // to mask.
-    // The envelope is far longer than the shipped budget for the same
+    // The envelope is far larger than the shipped budget for the same
     // reason the tests below inject theirs (bl-7a3f): nothing here
-    // asserts a duration, so a production-sized wait would turn a
-    // sibling fork under load into a spurious `panic!`.
-    use std::time::{Duration, Instant};
+    // asserts a duration, so a production-sized budget would turn a
+    // sibling fork under load into a spurious `panic!`. And it is an
+    // attempt count, not a deadline (README's determinism rule):
+    // machine load cannot spend attempts, only ETXTBSY readings can.
+    use std::time::Duration;
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("hi.sh");
     write_script(&path, "echo hi");
-    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut attempt: u32 = 1;
     let out = loop {
         match std::process::Command::new(&path).output() {
             Ok(o) => break o,
-            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && Instant::now() < deadline => {
+            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && attempt < 10_000 => {
+                attempt += 1;
                 std::thread::sleep(Duration::from_millis(2));
             }
             Err(e) => panic!("exec failed: {e}"),
@@ -59,11 +64,12 @@ fn spawn_retries_past_transient_etxtbsy() {
     // hold and the tool exec succeeds.
     //
     // The budget is injected, and injected enormous, on purpose: the
-    // shipped 200 ms against a 40 ms hold is two clocks racing, and a
+    // shipped envelope against a 40 ms hold is two clocks racing, and a
     // loaded machine stretching the holder past the budget turned this
     // into a spurious close-gate failure for whoever was committing
-    // (bl-7a3f). A budget no plausible hold can outlast makes the arm
-    // under test the one that runs.
+    // (bl-7a3f). A million attempts, each with a 2 ms sleep floor, is a
+    // budget no plausible hold can outlast — and being a count, load
+    // stretches it rather than spending it (bl-edf6).
     use std::fs::OpenOptions;
     use std::sync::{Arc, Barrier};
     use std::thread;
@@ -84,8 +90,7 @@ fn spawn_retries_past_transient_etxtbsy() {
 
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock, driver_target())
-        .with_etxtbsy_budget(Duration::from_secs(30));
+    let exec = SpawnTool::new(root.path(), &clock, driver_target()).with_etxtbsy_budget(1_000_000);
     let outcome = exec
         .execute(
             ToolCall {
@@ -96,7 +101,7 @@ fn spawn_retries_past_transient_etxtbsy() {
             &step.path,
             &AtomicBool::new(false),
         )
-        .expect("a 30s retry budget rides out the hold on any machine");
+        .expect("a million-attempt budget rides out the hold on any machine");
     holder.join().unwrap();
     assert!(!outcome.is_error);
     assert_eq!(outcome.content, b"unblocked\n");
@@ -106,17 +111,19 @@ fn spawn_retries_past_transient_etxtbsy() {
 fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
     // Same setup as the retry-success test, mirrored: the holder keeps
     // the fd open until the executor has already given up. The
-    // executor surfaces `ExecError::Spawn` once retries time out.
+    // executor surfaces `ExecError::Spawn` once the attempt budget is
+    // exhausted.
     //
     // This is also the test that covers the retry *arm* — the sleep
-    // between attempts — and it is the one that can do so without a
-    // race. The hold here is permanent, so every attempt is guaranteed
-    // to see ETXTBSY, and a budget of a whole second cannot expire
-    // inside the straight-line microseconds between computing the
-    // deadline and the first failed spawn. Its sibling holds the fd for
-    // a fixed 40 ms and so only meets ETXTBSY when the spawn lands
-    // inside that window: fine for asserting the outcome, useless as
-    // the sole cover for a line (bl-1c2e).
+    // between attempts — and with a count budget that cover is
+    // structural, not probabilistic: the hold is permanent, so every
+    // attempt is guaranteed to see ETXTBSY, and a budget of 3 attempts
+    // runs the retry arm exactly twice before the third attempt gives
+    // up — the same iteration count on every run, whatever the machine
+    // is doing (bl-edf6). Its sibling holds the fd for a fixed 40 ms
+    // and so only meets ETXTBSY when the spawn lands inside that
+    // window: fine for asserting the outcome, useless as the sole
+    // cover for a line (bl-1c2e).
     use std::fs::OpenOptions;
     use std::sync::{Arc, Barrier};
     use std::thread;
@@ -141,8 +148,7 @@ fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
 
     let clock = FixedClock::default();
     let step = StepDir::new();
-    let exec = SpawnTool::new(root.path(), &clock, driver_target())
-        .with_etxtbsy_budget(Duration::from_secs(1));
+    let exec = SpawnTool::new(root.path(), &clock, driver_target()).with_etxtbsy_budget(3);
     let err = exec
         .execute(
             ToolCall {
@@ -153,7 +159,7 @@ fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
             &step.path,
             &AtomicBool::new(false),
         )
-        .expect_err("retry budget should expire before the holder releases");
+        .expect_err("the attempt budget exhausts against a permanent hold");
     stop_holder.store(true, std::sync::atomic::Ordering::SeqCst);
     holder.join().unwrap();
     match err {

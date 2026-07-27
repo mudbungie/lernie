@@ -26,24 +26,24 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
+/// Maximum number of spawn attempts riding out `ETXTBSY` before
+/// treating it as a real spawn failure. A **count**, never a wall-clock
+/// deadline (README, "A retry budget is a count of attempts"): a
+/// deadline expires on machine load rather than on evidence, so under
+/// load the give-up arm could be taken while the racing sibling's
+/// fork→exec window was still open. 100 attempts spaced
+/// [`ETXTBSY_RETRY_INTERVAL`] apart give the same ~200 ms envelope the
+/// old deadline did on an idle machine, and a *longer* one on a loaded
+/// machine — which is exactly when the window stretches.
+/// Injected per-executor ([`super::SpawnTool::with_etxtbsy_budget`])
+/// so a test can decide which arm it is exercising instead of racing
+/// this value with its own fixture hold (bl-1c2e, bl-7a3f, bl-edf6).
+pub(super) const ETXTBSY_RETRY_ATTEMPTS: u32 = 100;
+
 /// Cadence for the stop-flag polling loop. Small enough that a UI
 /// cancel feels instant; large enough that an idle harness costs
 /// nothing measurable.
 const POLL_INTERVAL: Duration = Duration::from_millis(50);
-
-/// Maximum time to spend retrying past `ETXTBSY` before treating it
-/// as a real spawn failure. The race window between a sibling
-/// process forking with the binary still open for write and that
-/// child reaching `exec` is bounded by the kernel's exec
-/// transition; a few tens of milliseconds covers worst-case under
-/// heavy parallel-test load.
-/// Injected per-executor ([`super::SpawnTool::with_etxtbsy_budget`])
-/// so a test can decide which arm it is exercising instead of racing
-/// this value with its own fixture hold: pitting a hold measured on
-/// one clock against a budget measured on another makes the verdict a
-/// property of machine load, and the loser is whichever agent's close
-/// gate is running (bl-1c2e, bl-7a3f).
-pub(super) const ETXTBSY_RETRY_BUDGET: Duration = Duration::from_millis(200);
 
 /// Backoff between `ETXTBSY` retries. Short enough that the race
 /// window closes quickly; not so short that we busy-spin the kernel.
@@ -78,8 +78,9 @@ pub(super) struct SpawnArgs<'a> {
     pub(super) cwd: &'a Path,
     pub(super) stop: &'a AtomicBool,
     pub(super) deadline: Duration,
-    /// How long [`spawn_with_etxtbsy_retry`] rides out `ETXTBSY`.
-    pub(super) etxtbsy_budget: Duration,
+    /// How many spawn attempts [`spawn_with_etxtbsy_retry`] makes
+    /// before surfacing `ETXTBSY` — an attempt count, never a deadline.
+    pub(super) etxtbsy_budget: u32,
     pub(super) tool_name: &'a str,
 }
 
@@ -129,11 +130,13 @@ pub(super) fn spawn_and_capture(req: &SpawnArgs<'_>) -> Result<Captured, ExecErr
 /// `exec` to release it (CLOEXEC fires at exec, not fork). The kernel
 /// rejects the parallel exec until that child transitions, which is
 /// bounded by the kernel's own exec scheduling — typically
-/// sub-millisecond, occasionally tens of ms under load. A short retry
-/// budget keeps the harness robust without masking real spawn
-/// failures.
+/// sub-millisecond, occasionally tens of ms under load. A bounded
+/// attempt count keeps the harness robust without masking real spawn
+/// failures: the budget is spent by attempts, not by the wall clock,
+/// so machine load cannot spend it (README's determinism rule,
+/// bl-edf6).
 fn spawn_with_etxtbsy_retry(req: &SpawnArgs<'_>) -> Result<Child, ExecError> {
-    let deadline = Instant::now() + req.etxtbsy_budget;
+    let mut attempt: u32 = 1;
     loop {
         let mut cmd = Command::new(req.binary);
         cmd.args(req.args)
@@ -146,7 +149,8 @@ fn spawn_with_etxtbsy_retry(req: &SpawnArgs<'_>) -> Result<Child, ExecError> {
         }
         match cmd.spawn() {
             Ok(child) => return Ok(child),
-            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && Instant::now() < deadline => {
+            Err(e) if e.raw_os_error() == Some(libc::ETXTBSY) && attempt < req.etxtbsy_budget => {
+                attempt += 1;
                 thread::sleep(ETXTBSY_RETRY_INTERVAL);
             }
             Err(source) => {

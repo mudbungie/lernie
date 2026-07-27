@@ -195,7 +195,7 @@ mod tests {
     /// reaps via `child.wait()` AFTER probing because `alive`
     /// (== `kill(pid, 0)`) returns true for a zombie process —
     /// the kernel keeps the entry until the parent waits.
-    fn spawn_in_own_pgid(args: &[&str]) -> std::process::Child {
+    fn spawn_in_own_pgid(args: &[&str], stdout: std::process::Stdio) -> std::process::Child {
         use std::os::unix::process::CommandExt as _;
         use std::process::{Command, Stdio};
         let (program, rest) = args.split_first().expect("non-empty argv");
@@ -203,7 +203,7 @@ mod tests {
             Command::new(program)
                 .args(rest)
                 .stdin(Stdio::null())
-                .stdout(Stdio::null())
+                .stdout(stdout)
                 .stderr(Stdio::null())
                 .pre_exec(|| {
                     libc::setpgid(0, 0);
@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn real_signaler_term_kills_then_alive_reports_dead_after_reap() {
-        let mut child = spawn_in_own_pgid(&["sleep", "60"]);
+        let mut child = spawn_in_own_pgid(&["sleep", "60"], std::process::Stdio::null());
         let pid = child.id() as i32;
         let s = RealSignaler;
         assert!(
@@ -232,11 +232,29 @@ mod tests {
 
     #[test]
     fn real_signaler_kill_uncatchable_takes_down_sigterm_handler() {
-        let mut child = spawn_in_own_pgid(&["sh", "-c", "trap '' TERM; while :; do sleep 1; done"]);
+        use std::io::BufRead as _;
+        let mut child = spawn_in_own_pgid(
+            &[
+                "sh",
+                "-c",
+                "trap '' TERM; echo ready; while :; do sleep 1; done",
+            ],
+            std::process::Stdio::piped(),
+        );
         let pid = child.id() as i32;
+        // The trap install is observable, not timed: the shell echoes
+        // only after `trap` has run, so the SIGTERM below can never
+        // race the default disposition. (A timed flip — term, sleep,
+        // assert alive — lost that race under load: the signal could
+        // land before the trap and fell the fixture.) With the trap
+        // provably in place, TERM structurally cannot kill the child,
+        // so no settle-wait is needed before the aliveness assert.
+        let mut out = std::io::BufReader::new(child.stdout.take().expect("stdout is piped"));
+        let mut line = String::new();
+        out.read_line(&mut line).expect("read fixture handshake");
+        assert_eq!(line.trim(), "ready", "fixture reached its post-trap echo");
         let s = RealSignaler;
         s.term(pid);
-        thread::sleep(Duration::from_millis(50));
         assert!(s.alive(pid), "TERM is trapped; child should still be alive");
         s.kill(pid);
         child.wait().unwrap();

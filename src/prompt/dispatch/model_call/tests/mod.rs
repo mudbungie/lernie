@@ -120,12 +120,18 @@ fn text_stream(text: &str, reason: FinishReason) -> Vec<u8> {
 }
 
 fn error_stream(kind: ErrorKind) -> Vec<u8> {
+    paced_error_stream(kind, None)
+}
+
+/// `error_stream` carrying the provider's `Retry-After` pacing hint
+/// (§4.4) — the floor the retry loop applies to its config backoff.
+fn paced_error_stream(kind: ErrorKind, retry_after_seconds: Option<u32>) -> Vec<u8> {
     let mut out = line(&Event::message_start(None, None, Role::Assistant));
     out.extend(line(&Event::Error(CanonicalError {
         kind,
         message: "boom".into(),
         provider_detail: None,
-        retry_after_seconds: None,
+        retry_after_seconds,
     })));
     out.extend(line(&Event::End));
     out

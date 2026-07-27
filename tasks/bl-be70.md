@@ -1,7 +1,8 @@
 +++
 title = "USER_STORIES.md: record the 2026-07-27 live walk — upgrade live-verified items from unit-only/unchecked, note the two non-findings"
 created = 1785133371
-updated = 1785133371
+updated = 1785133609
+claimant = "flop-79ea"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

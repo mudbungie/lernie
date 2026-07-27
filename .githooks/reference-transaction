@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Lernie auto-push hook: every advance of local `main` reaches `origin`.
+#
+# Why `reference-transaction` and not `post-commit`/`post-merge`: nothing
+# lands on this repo's `main` through `git commit`. `bl close` delivers by
+# plumbing — `commit-tree` then `update-ref` — which fires no commit hook and
+# no merge hook at all (199 of 199 commits on `main` arrived that way; zero
+# are merge commits). The ref transaction is the one event every landing path
+# shares: squash delivery, `git merge --no-ff`, and a plain commit alike.
+#
+# Never blocks. Git ABORTS a ref transaction when this hook exits non-zero in
+# the `prepared` state, so every path here exits 0 — hence no `set -e`, which
+# could exit non-zero mid-hook and roll back the very commit it was watching.
+# A push failure warns on stderr and nothing more, and `timeout` bounds an
+# offline push instead of hanging the caller.
+#
+# No recursion: the push updates `refs/remotes/origin/main`, which this hook
+# sees and skips.
+
+[ "${1-}" = committed ] || exit 0
+git remote get-url origin >/dev/null 2>&1 || exit 0
+
+while read -r old new ref; do
+  [ "$ref" = refs/heads/main ] || continue
+  [ "$new" = "$old" ] && continue          # pack-refs and other no-op writes
+  [[ "$new" =~ ^0+$ ]] && continue         # deletion: never push that
+  if ! timeout 30 git push --quiet origin main 2>/dev/null; then
+    echo "warning: auto-push of main to origin failed;" \
+         "run 'git push origin main' for the reason" >&2
+  fi
+  break
+done
+exit 0

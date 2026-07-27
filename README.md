@@ -983,7 +983,9 @@ make install-hooks
 ```
 
 Sets `core.hooksPath` to `.githooks`. Required on every fresh clone — git
-does not track `.git/config`, so the hook is not active until installed.
+does not track `.git/config`, so the hooks are not active until installed.
+That arms both the [pre-commit gate](#pre-commit-hook) and the
+[auto-push hook](#auto-push-hook).
 
 The Rust toolchain is pinned in `rust-toolchain.toml` (channel `1.95.0`, with
 `rustfmt`, `clippy`, and `llvm-tools-preview`). rustup reads it automatically
@@ -1067,7 +1069,8 @@ binary the Makefile itself installed.
 ### Workflow
 
 All changes land on `main` via `bl` squash-merges. Direct commits to `main` are
-rejected by the pre-commit hook.
+rejected by the pre-commit hook, and every landing on `main` is pushed to
+`origin` automatically (see **[Auto-push hook](#auto-push-hook)**).
 
 ```
 bl prime --as <you>
@@ -1150,6 +1153,42 @@ diff that touched nothing. Two shapes to write around:
 
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.
+
+### Auto-push hook
+
+`.githooks/reference-transaction` pushes `main` to `origin` the moment local
+`main` advances. Landing and publishing are one act: a `bl close` reaches
+GitHub, which runs CI, which runs release-plz. `origin/main` cannot silently
+fall months behind local `main` again.
+
+**Why a `reference-transaction` hook and not `post-commit`.** Nothing lands on
+this repo's `main` through `git commit`. `bl close` delivers by plumbing —
+`git commit-tree`, then `git update-ref refs/heads/main` — which fires no
+commit hook and no merge hook at all; `main`'s history is squash commits end
+to end, with zero merge commits. Git's `reference-transaction` hook is the one
+event every landing path shares: the plumbing delivery, a `git merge --no-ff`,
+and a plain commit alike all end in an update of `refs/heads/main`.
+
+The hook acts only on the `committed` state of a transaction that moves
+`refs/heads/main` to a new value, and only when an `origin` remote exists.
+Everything else — side branches, `refs/remotes/*` (including the ones its own
+push writes, so it cannot recurse), no-op rewrites like `git pack-refs`, and a
+deletion of `main` — falls through untouched.
+
+It cannot block or hang a landing. Git aborts a ref transaction when this hook
+exits non-zero in the `prepared` state, so every path in it exits 0 — which is
+also why it does not `set -e`. A push that fails prints one warning line on
+stderr and nothing else, and `timeout 30` bounds an offline push rather than
+stalling the commit behind a TCP timeout. Git runs `reference-transaction`
+hooks from 2.28 onward; on anything older the file is simply never invoked and
+`main` has to be pushed by hand.
+
+`tests/hooks.rs` exercises the shipped hook file itself against a local bare
+repository as `origin` — never the real remote — and covers all six behaviours
+above: a commit on `main` pushes, a `commit-tree` + `update-ref` delivery
+pushes, a `--no-ff` merge pushes, a side-branch commit pushes nothing, an
+unreachable `origin` warns without failing the commit, and a repo with no
+`origin` is silent.
 
 ## License
 

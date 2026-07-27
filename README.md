@@ -1328,6 +1328,25 @@ pushes, a `--no-ff` merge pushes, a side-branch commit pushes nothing, an
 unreachable `origin` warns without failing the commit, and a repo with no
 `origin` is silent.
 
+### Commit-identity guard (opt-in, per machine)
+
+`main`'s history carries exactly one human identity, `mudbungie
+<mudbungie@gmail.com>`, and no `Co-Authored-By` trailers — it was normalized to
+that on 2026-07-26. `tests/commit_hygiene.rs` keeps it that way, but only on a
+machine that asks for it: the test arms itself on the presence of
+`$XDG_CONFIG_HOME/lernie/enforce-commit-identity` (default
+`~/.config/lernie/enforce-commit-identity`), an empty marker file **outside** the
+repo. Absent — the default in public CI and in every clone — the test returns
+without asserting anything.
+
+Armed, it walks all of `refs/heads/main` and fails on any commit whose author or
+committer is neither `mudbungie <mudbungie@gmail.com>` nor
+`github-actions[bot]` (the bot stays allowed: release-plz authors the release
+commit as it), on any `Co-Authored-By` trailer, and on any mention of a
+throwaway or personal address in an identity or a message. The policy lives in
+the marker, not in the code: `rm` it and the guard is off, with no code edit and
+no flag. Create it with `touch ~/.config/lernie/enforce-commit-identity`.
+
 ## License
 
 MIT. See [`LICENSE`](LICENSE).

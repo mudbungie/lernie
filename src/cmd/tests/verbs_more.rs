@@ -1,9 +1,9 @@
 //! Product and operator verbs driven against a constructed
 //! [`Fx`](crate::cmd::Fx): `scan`, `bundle`, `replay`, `advance`,
-//! `tool`. Same discipline as [`super::verbs`]: a hermetic success path
-//! where one exists plus a cheap early-error path. `replay`'s product
-//! (its scratch path) and the `advance` successor `exec` are pinned by
-//! the `tests/*_cli.rs` binary tests.
+//! `tool`, `message`. Same discipline as [`super::verbs`]: a hermetic
+//! success path where one exists plus a cheap early-error path.
+//! `replay`'s product (its scratch path) and the `advance` successor
+//! `exec` are pinned by the `tests/*_cli.rs` binary tests.
 
 use super::{assert_prefixed, noop_editor, with_fx};
 use crate::cmd::{Outcome, advance, bundle, message, replay, scan, tool};
@@ -177,4 +177,38 @@ fn tool_reports_an_unknown_builtin_with_its_prefix() {
         )
     });
     assert_prefixed(r.unwrap_err(), "tool no-such-tool");
+}
+
+#[test]
+fn message_deposits_and_probes() {
+    let (_h, ws) = fixture::workspace();
+    // The recipient must exist (§2.11): fork its branch first.
+    fixture::spawn_root(&ws, "20260101-a1");
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        message::run(
+            message::Args {
+                workspace: ws.clone(),
+                agent: "20260101-a1".into(),
+                content: "hi".into(),
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Quiet));
+}
+
+#[test]
+fn message_reports_a_non_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        message::run(
+            message::Args {
+                workspace: tmp.path().to_path_buf(),
+                agent: "a".into(),
+                content: "c".into(),
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "message");
 }

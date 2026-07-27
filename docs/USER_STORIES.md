@@ -95,11 +95,12 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 - **commands** exec: `lernie new <occupied-path>`
 - **acceptance**
   - Non-empty destination → exit 1, stderr `lernie new: destination <path> already exists and is not empty`, and **nothing is written**.
+  - Destination exists and is not a directory (e.g. a plain file) → exit 1, stderr `lernie new: destination <path> already exists and is not a directory`, and **nothing is written**.
   - An existing *empty* directory is accepted.
   - The retired per-conversation layout is **refused with an actionable error, never migrated** — ARCH §10: *"The retired pre-substrate layout … is **refused, not migrated**: every verb's layout guard declines it with an actionable error naming what was found and what the current layout is."*
 - **status** **fulfilled (0.0.1 walk).** The non-empty refusal and the empty-directory acceptance were observed hands-on (exit 1 with that literal stderr; exit 0 respectively) and are covered by `src/template/tests_scaffold.rs::binary_refuses_non_empty_destination`. The **retired-layout refusal was then observed hands-on** by the 0.0.1 walk against a constructed retired-layout directory: the guard declined with the actionable error naming what was found and what the current layout is, exit 1, nothing written. The promise therefore holds in full; what remains is an *evidence* gap, not a shortfall — the automated proof for `new` specifically is still unit-only (`src/workspace/tests.rs::require_refuses_the_retired_layout_with_an_actionable_error`), with integration coverage only at `stop` and `bundle`.
 
-  **Separately found by the same walk and still open:** `lernie new` pointed at an existing **file** (not a directory) says `I/O error: Not a directory (os error 20)` — the destination guard covers non-empty directories but not non-directories. Filed as bl-8efa; not part of this story's acceptance as written.
+  The non-directory case (bl-8efa: an existing plain file said the bare `I/O error: Not a directory (os error 20)` instead of naming the path and the rule) is now the same guard's third arm, same voice, exit 1, nothing written — `src/template/tests_dest.rs::check_dest_rejects_a_plain_file`, `src/template/tests.rs::scaffold_refuses_a_plain_file_dest`, `src/cmd/tests/verbs.rs::new_at_an_existing_plain_file_names_the_rule_not_the_errno`, and observed hands-on.
 
 ### US-05 — the end user authors a later config commit
 

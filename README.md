@@ -1,6 +1,6 @@
 # lernie
 
-[![CI](https://github.com/mudbungie/lernie/actions/workflows/ci.yml/badge.svg)](https://github.com/mudbungie/lernie/actions/workflows/ci.yml)
+[![Release-plz](https://github.com/mudbungie/lernie/actions/workflows/release-plz.yml/badge.svg?branch=main)](https://github.com/mudbungie/lernie/actions/workflows/release-plz.yml)
 
 A git-backed agent harness. Design spec: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Principles catalog: [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md).

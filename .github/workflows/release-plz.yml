@@ -1,22 +1,35 @@
 name: Release-plz
 
-# Build-gated, hands-off release. Four jobs:
+# Build-gated, hands-off release. Five jobs, all in ONE push-triggered run:
 #
+#   * ci — the full CI workflow, executed here via
+#     `uses: ./.github/workflows/ci.yml` (workflow_call). A called workflow
+#     runs INSIDE the caller's run, and that placement is the point: crates.io
+#     trusted publishing REFUSES OIDC tokens minted under a `workflow_run`
+#     trigger ("due to security concerns"), which is how the release job used
+#     to be gated — CI green never published anything. Running CI as a called
+#     job instead keeps the OIDC claim at trigger=push / workflow
+#     release-plz.yml (the identity crates.io trusts) while the release job
+#     still hard-gates on it via `needs:`. ci.yml has no push arm of its own,
+#     so per push to main CI runs exactly once — here (PRs still trigger
+#     ci.yml directly).
 #   * release-plz PR (every push to main) — opens/updates ONE "release PR" that
 #     bumps the version in Cargo.toml and stages the CHANGELOG.md entry for it.
 #     It never publishes; it just keeps the next release queued. Merging that PR
-#     is the human control point.
-#   * release (when the CI workflow concludes `success` on main) — releases any
-#     version on main that is not out yet: tags it `v<version>`, cuts a GitHub
-#     Release and publishes it to crates.io. Gated on `workflow_run` of CI, so a
-#     release only ever ships a GREEN build — never an untested commit.
+#     is the human control point. It does not wait on the ci job — it touches
+#     no artifact that CI protects.
+#   * release (`needs: ci`, so only after CI in THIS run is green) — releases
+#     any version on main that is not out yet: tags it `v<version>`, cuts a
+#     GitHub Release and publishes it to crates.io. A release only ever ships
+#     a GREEN build — never an untested commit.
 #   * release-binaries — builds the `lernie` binary and attaches its linux-gnu archive to that
 #     Release. It runs in the SAME workflow run and `needs:` the release job,
 #     NOT as a separate `on: release` workflow — a Release created by the
 #     default GITHUB_TOKEN cannot trigger another workflow (GitHub's
 #     anti-recursion rule), so a separate binaries workflow would silently never
 #     fire without a PAT. `workflow_dispatch` with `binaries_tag` backfills an
-#     existing tag.
+#     existing tag (still behind the CI gate, like everything downstream of
+#     `needs: ci`).
 #   * prune-release-branches (right after the release-plz PR job) — deletes
 #     every `release-plz-*` branch that has no open PR. release-plz pushes a NEW
 #     timestamped branch each time it refreshes the release PR, and pushes it
@@ -26,9 +39,11 @@ name: Release-plz
 #     PR job, the current release PR is already open, which makes "has no open
 #     PR" an exact test for "superseded or orphaned".
 #
-# So the flow is: merge work to main -> CI runs -> the release PR is kept fresh;
-# merge the release PR -> CI runs -> on green the new version is released AND
-# its binaries build and upload.
+# So the flow is: merge work to main -> this run's ci job runs CI and the
+# release PR is kept fresh; merge the release PR -> the next run's ci job goes
+# green -> the new version is released AND its binaries build and upload.
+# `workflow_dispatch` is the manual escape hatch: same chain (ci -> release ->
+# binaries), triggered by hand.
 #
 # Bumps default to PATCH (0.0.1 -> 0.0.2). See release-plz.toml for the
 # `[minor]` / `[major]` opt-in markers.
@@ -63,12 +78,10 @@ name: Release-plz
 #     GITHUB_TOKEN cannot trigger workflows from its own pushes; the job falls
 #     back to it when RELEASE_PLZ_TOKEN is unset.
 
+# No `workflow_run` arm — crates.io refuses trusted publishing under it (see
+# the ci job above); the CI gate is the in-run `needs: ci` instead.
 on:
   push:
-    branches: [main]
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -82,14 +95,27 @@ permissions:
   pull-requests: write
 
 jobs:
+  ci:
+    name: CI
+    # The full CI workflow, run inside THIS run (see the header: the release
+    # job `needs:` this, and workflow_call placement is what keeps the OIDC
+    # claim publishable). Runs on both triggers — push and manual dispatch —
+    # so a dispatched release is gated exactly like an automatic one. Job-level
+    # `permissions` on a `uses:` job set the ceiling for every job in the
+    # called workflow; CI only checks out and builds, so read suffices.
+    if: github.repository_owner == 'mudbungie'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
   release-plz-pr:
     name: release-plz PR
     runs-on: ubuntu-latest
-    # Only a direct push to main maintains the release PR (not the CI
-    # workflow_run). Owner guard: never runs in a fork. Safe against fork-PR
+    # Only a direct push to main maintains the release PR (not a manual
+    # dispatch). Owner guard: never runs in a fork. Safe against fork-PR
     # abuse because none of this workflow's triggers are reachable from a fork
     # PR — a fork PR fires `pull_request` (not requested here), never
-    # `push`-to-main / `workflow_run` / `workflow_dispatch`, all of which need
+    # `push`-to-main / `workflow_dispatch`, both of which need
     # write access to upstream.
     if: github.repository_owner == 'mudbungie' && github.event_name == 'push'
     # Never run two release-PR updates at once — they would race on the branch.
@@ -113,6 +139,11 @@ jobs:
   release-plz-release:
     name: release-plz release
     runs-on: ubuntu-latest
+    # Release only on a GREEN build: `needs` on the called CI workflow above.
+    # If any CI job fails (or the ci job is skipped, as in a fork), this job
+    # is skipped — the implicit success() in `if` sees to it. This is the
+    # whole build gate; there is no workflow_run arm anymore.
+    needs: ci
     # Job-level permissions REPLACE the workflow-level block rather than adding
     # to it, so `contents: write` is restated here — the job needs it to push
     # the `v<version>` tag and cut the GitHub Release. `id-token: write` is the
@@ -122,12 +153,10 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    # Release only on a GREEN build: a CI run that concluded `success` on main,
-    # or a manual dispatch. A push event alone never reaches here.
-    if: >-
-      github.repository_owner == 'mudbungie' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'))
+    # Owner guard (redundant with the ci job's, kept as defense in depth).
+    # Both triggers release once CI is green: that is the point for push, and
+    # for workflow_dispatch it is the manual escape hatch.
+    if: github.repository_owner == 'mudbungie'
     concurrency:
       group: release-plz-release
       cancel-in-progress: false
@@ -140,9 +169,9 @@ jobs:
           fetch-depth: 0
           # Check out the BRANCH, not a bare SHA: release-plz runs `git rev-parse
           # @{upstream}` to find the current branch, which fails on a detached
-          # HEAD. `head_branch` is the branch CI ran on (main) for workflow_run;
-          # `ref_name` is main for a manual dispatch.
-          ref: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+          # HEAD. `ref_name` is main for both triggers (push to main, and a
+          # manual dispatch on main).
+          ref: ${{ github.ref_name }}
       - uses: dtolnay/rust-toolchain@stable
       - name: Run release-plz
         id: release
@@ -195,8 +224,8 @@ jobs:
   prune-release-branches:
     name: prune superseded release branches
     # `needs` with no `if` means: only after the release-PR job actually ran and
-    # succeeded. On the workflow_run/dispatch triggers that job is skipped, so
-    # this one is too — pruning only ever follows a PR refresh.
+    # succeeded. On workflow_dispatch that job is skipped, so this one is
+    # too — pruning only ever follows a PR refresh.
     needs: release-plz-pr
     # release-plz pushes a NEW timestamped `release-plz-*` branch every time it
     # refreshes the release PR and leaves the previous one behind. Worse, it

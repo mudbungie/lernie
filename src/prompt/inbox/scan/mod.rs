@@ -18,7 +18,9 @@
 //!    retries exhausted or a non-retryable error, §2.10) or, for a child,
 //!    never deposited a result message (no message from the child in the
 //!    parent's inbox *and* none delivered in the parent's transcript —
-//!    the sender-namespaced derivation, §2.11). For each hard-crashed
+//!    the sender-namespaced derivation, §2.11) — *child* meaning the
+//!    derived parent address holds an `agents/*` ref, the same
+//!    registry intersection the flush applies below. For each hard-crashed
 //!    **child** in that set, deposit the `died`-epitaph result message on
 //!    the child's behalf ([`deposit_result`], sender = the child — the
 //!    sweep is the scribe, not the author, §8). Every candidate — root or
@@ -199,18 +201,29 @@ fn sweep(
             continue;
         }
         let died = died_mid_work(workspace, &branch);
+        // The parent's *address* is derived from the id (§2.11), but
+        // whether it names an agent is a query against the `agents/*`
+        // registry (§2.3) — the same intersection [`flush`] applies to
+        // the inbox listing, here on the sweep's half. §8 scopes this
+        // condition to "for a *child*", and a branch whose derived
+        // address holds no ref is nobody's child: it has no parent inbox
+        // to deposit into, exactly like a root. Without the query the
+        // sweep asked git about a ref that is not there and the whole
+        // pass died on git's 128 (bl-025b) — reachable from any branch
+        // with an odd token count or a deleted parent.
+        let parent = parent_of(&branch).filter(|p| agents.contains(p));
         // "for a child, never deposited" — the deposit condition, and the
         // idempotence hinge: a prior sweep's own deposit is a message
         // *from the child*, so a re-scan sees it and does not re-deposit.
-        let child_never = match parent_of(&branch) {
-            Some(parent) => !returned(workspace, git, &parent, &branch)?,
+        let child_never = match &parent {
+            Some(parent) => !returned(workspace, git, parent, &branch)?,
             None => false,
         };
         if died || child_never {
             report.silent_deaths.push(branch.clone());
         }
         if child_never {
-            let parent = parent_of(&branch).expect("child_never implies a parent");
+            let parent = parent.expect("child_never implies a parent");
             let tip = branch_tip(workspace, git, &branch)?;
             deposit_result(
                 workspace,

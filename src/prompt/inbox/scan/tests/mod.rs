@@ -16,11 +16,11 @@ mod flush;
 mod sweep;
 
 use super::derive::{
-    died_mid_work, has_pending, is_message_from, is_pending_deposit, transcript_line_from,
+    died_mid_work, has_pending, is_message_from, is_pending_deposit, returned, transcript_line_from,
 };
 use super::{ScanError, ScanReport, cli_run, scan};
 use crate::prompt::Clock;
-use crate::prompt::inbox::{INBOX_DIR, Launcher, inbox_dir, try_acquire};
+use crate::prompt::inbox::{INBOX_DIR, Launcher, inbox_dir, parent_of, try_acquire};
 use crate::prompt::step::{RESPONSE_FILE, STEPS_DIR};
 use crate::template::GitRunner;
 use std::cell::RefCell;
@@ -72,6 +72,16 @@ impl StubGit {
     pub(super) fn failing(mut self, op: &'static str) -> Self {
         self.fail_op = Some(op);
         self
+    }
+    /// Was an `ls-tree` ever issued against `agents/<branch>`? The
+    /// sweep's registry intersection (bl-025b) is proven by the question
+    /// it declines to ask, so the recorded argv is the assertion.
+    pub(super) fn asked_ls_tree_for(&self, branch: &str) -> bool {
+        let want = format!("agents/{branch}");
+        self.invocations
+            .borrow()
+            .iter()
+            .any(|a| a.first().map(String::as_str) == Some("ls-tree") && a.contains(&want))
     }
 }
 

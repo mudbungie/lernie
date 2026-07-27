@@ -30,6 +30,16 @@ commit_parsers = [
 # crates/agent-eval/Cargo.toml) — the workspace's eval runner, not a shipped
 # artifact. Keep release-plz off it entirely: no version bump, no tag, no
 # GitHub Release, no crates.io publish.
+#
+# Both keys are required: `release = false` only tells release-plz to skip
+# version-bump/tag/GitHub-Release for this package, but release-plz validates
+# `publish` independently against Cargo.toml's own `publish` field regardless
+# of `release`. Without `publish = false` here, `release-plz release` aborts
+# with "has `publish = false` ... but it has `publish = true` in the
+# release-plz configuration" before publishing anything, for any crate.
+# Cargo.toml stays the single source of truth on publishability; this key
+# exists only so release-plz's own validator agrees with it.
 [[package]]
 name = "agent-eval"
 release = false
+publish = false

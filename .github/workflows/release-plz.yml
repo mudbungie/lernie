@@ -160,9 +160,16 @@ jobs:
     concurrency:
       group: release-plz-release
       cancel-in-progress: false
-    # Tell the binaries job whether a release actually happened.
+    # Tell the binaries job whether a release actually happened, and WHICH tag
+    # it cut. The tag must be handed off here, not re-derived downstream: this
+    # job checks out the BRANCH tip (which may have advanced past the run's
+    # pinned sha while CI ran), so the new tag can be a descendant of
+    # github.sha — invisible to any ancestor walk (`git describe`) from the
+    # binaries job's own checkout. The action's `releases` output is the one
+    # authoritative record of what was tagged.
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
+      tag: ${{ steps.released.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -182,6 +189,17 @@ jobs:
           # Publishing is authenticated by trusted publishing (`id-token: write`
           # above), not by a stored registry secret.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract the released tag
+        # `releases` is the action's JSON record of what it just released,
+        # e.g. [{"package_name":"lernie","prs":[],"tag":"v0.0.1","version":
+        # "0.0.1"}]. One crate in this workspace releases, so .[0].tag is it.
+        # Via env, not inline interpolation, so the JSON never touches the
+        # shell as code.
+        id: released
+        if: steps.release.outputs.releases_created == 'true'
+        env:
+          RELEASES: ${{ steps.release.outputs.releases }}
+        run: echo "tag=$(jq -r '.[0].tag' <<<"$RELEASES")" >> "$GITHUB_OUTPUT"
 
   release-binaries:
     name: lernie x86_64-unknown-linux-gnu
@@ -201,11 +219,21 @@ jobs:
       - name: Resolve + check out the release tag
         id: tag
         shell: bash
+        env:
+          # Manual backfill input wins; otherwise the tag the release job just
+          # cut, handed off via its `tag` output. Never re-derived here with
+          # `git describe`: this job checks out the run's pinned sha, and the
+          # release job tags the branch TIP — which can be a descendant of
+          # that sha (main advanced during CI), so an ancestor walk from here
+          # misses the tag. Exactly that raced on the v0.0.1 publish.
+          BACKFILL_TAG: ${{ github.event.inputs.binaries_tag }}
+          RELEASED_TAG: ${{ needs.release-plz-release.outputs.tag }}
         run: |
-          tag="${{ github.event.inputs.binaries_tag }}"
-          [ -n "$tag" ] || tag="$(git describe --tags --abbrev=0)"
+          tag="${BACKFILL_TAG:-$RELEASED_TAG}"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           # Build the tagged (released) code, not whatever main's tip is now.
+          # The tag ref (and its commit) arrived with the fetch-depth-0
+          # checkout, which ran after the release job pushed it (`needs`).
           git checkout "$tag"
       - uses: dtolnay/rust-toolchain@stable
       # Builds `cargo build --release`, archives the binaries as

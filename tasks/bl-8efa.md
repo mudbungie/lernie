@@ -1,7 +1,8 @@
 +++
 title = "lernie new pointed at an existing FILE says 'I/O error: Not a directory (os error 20)' — the destination guard covers non-empty dirs but not non-dirs"
 created = 1785130176
-updated = 1785130176
+updated = 1785133161
+claimant = "flop-8efa"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

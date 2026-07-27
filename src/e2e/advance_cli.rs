@@ -249,9 +249,12 @@ fn advance_verb_surfaces_an_unusable_workspace_loudly() {
 }
 
 #[test]
-fn advance_on_a_quiescent_empty_agent_is_a_silent_noop() {
-    // A real workspace, an agent id with no branch and no mail: the
-    // driver acquires, finds nothing due, exits silently (§2.11 pin 1).
+fn advance_on_a_name_with_no_agent_ref_refuses_and_mints_no_inbox() {
+    // A real workspace and an id that names no agent: the §2.3
+    // existence guard refuses in the `lernie message` voice, exit 1 —
+    // and, because the guard runs ahead of the lease, `inbox/<name>/`
+    // is never created. Before the guard this exited 0 in silence and
+    // left the orphan directory behind.
     let holder = TempDir::new().unwrap();
     let harness = holder.path().join("harness");
     fs::create_dir_all(&harness).unwrap();
@@ -261,14 +264,24 @@ fn advance_on_a_quiescent_empty_agent_is_a_silent_noop() {
     let out = Command::new(lernie_bin())
         .args(["advance"])
         .arg(&dest)
-        .arg("20260101-a1")
+        .arg("ghost")
         .env("LERNIE_HOME", &harness)
         .output()
         .expect("spawn lernie advance");
+    assert_eq!(out.status.code(), Some(1));
+    assert!(out.stdout.is_empty(), "a refusal is stderr-only");
+    let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        out.status.success(),
-        "lernie advance: {}",
-        String::from_utf8_lossy(&out.stderr)
+        stderr.trim_end().ends_with(
+            "lernie advance: no agent \"ghost\" in this workspace — a hop drives an existing \
+             agent (ARCH §2.3: the `agents/*` refs are the registry); check the id against \
+             the workspace's `agents/*` refs, or start an agent with `lernie prompt` / \
+             `lernie dispatch`"
+        ),
+        "{stderr}"
     );
-    assert!(out.stdout.is_empty(), "a no-op driver is silent");
+    assert!(
+        !dest.join("inbox").join("ghost").exists(),
+        "the refusal mints no inbox directory"
+    );
 }

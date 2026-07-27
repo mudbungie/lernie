@@ -42,6 +42,8 @@ pub const TEMPLATE_OVERRIDE_DIR: &str = "template";
 pub enum ScaffoldError {
     #[error("destination {0} already exists and is not empty")]
     DestNotEmpty(PathBuf),
+    #[error("destination {0} already exists and is not a directory")]
+    DestNotDir(PathBuf),
     #[error("I/O error: {0}")]
     Io(#[source] io::Error),
     #[error("git error: {0}")]
@@ -231,12 +233,23 @@ fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {
             }
         }
         Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+        // `read_dir` raises the same `NotADirectory` errno whether `dest`
+        // itself is a non-directory (this ball's case) or `dest` doesn't
+        // exist but has a non-directory ancestor (a `create_dir_all`
+        // failure downstream, exercised by
+        // `scaffold_surfaces_repo_dir_creation_failure`) — ask about
+        // `dest` itself to tell the two apart.
+        Err(e) if e.kind() == io::ErrorKind::NotADirectory && dest.exists() => {
+            Err(ScaffoldError::DestNotDir(dest.to_path_buf()))
+        }
         Err(e) => Err(ScaffoldError::Io(e)),
     }
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_dest;
 #[cfg(test)]
 mod tests_override;
 #[cfg(test)]

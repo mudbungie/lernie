@@ -1,12 +1,13 @@
 //! Authoring and driver verbs driven against a constructed
 //! [`Fx`](crate::cmd::Fx): `new`, `config`, `prompt`, `dispatch`,
-//! `stop`, `message`. Each has a hermetic success path where one exists,
-//! plus a cheap early-error path pinning the one-conversion failure shape
+//! `stop`. Each has a hermetic success path where one exists, plus a
+//! cheap early-error path pinning the one-conversion failure shape
 //! (`lernie <prefix>: …`). Detached launches use `"true"` as the driver
-//! target (spawned, harmless).
+//! target (spawned, harmless). `message`'s pair lives in
+//! [`super::verbs_more`] beside its state-derivation edge case.
 
 use super::{assert_prefixed, noop_editor, with_fx, with_lernie_home, writing_editor};
-use crate::cmd::{Outcome, config, dispatch, message, new, prompt, stop};
+use crate::cmd::{Outcome, config, dispatch, new, prompt, stop};
 use crate::template::{GitRunner, RealGit};
 use crate::workspace::{fixture, repo_git};
 use std::path::Path;
@@ -112,6 +113,26 @@ fn new_reports_a_scaffold_failure() {
     std::fs::create_dir_all(&dest).unwrap();
     std::fs::write(dest.join("occupied"), b"x").unwrap();
     assert_prefixed(run_new(home.path(), &dest).unwrap_err(), "new");
+}
+
+#[test]
+fn new_at_an_existing_plain_file_names_the_rule_not_the_errno() {
+    // The adjacent guard case names the path and the rule ("already
+    // exists and is not empty"); a plain file must get the same voice
+    // rather than a bare `os error 20`, and nothing gets written.
+    let home = TempDir::new().unwrap();
+    let tmp = TempDir::new().unwrap();
+    let dest = tmp.path().join("afile");
+    std::fs::write(&dest, b"x").unwrap();
+    let err = run_new(home.path(), &dest).unwrap_err();
+    assert_eq!(
+        err.to_string(),
+        format!(
+            "lernie new: destination {} already exists and is not a directory",
+            dest.display()
+        )
+    );
+    assert_eq!(std::fs::read(&dest).unwrap(), b"x");
 }
 
 #[test]
@@ -263,36 +284,8 @@ fn stop_reports_a_non_workspace() {
     assert_prefixed(r.unwrap_err(), "stop");
 }
 
-#[test]
-fn message_deposits_and_probes() {
-    let (_h, ws) = fixture::workspace();
-    // The recipient must exist (§2.11): fork its branch first.
-    fixture::spawn_root(&ws, "20260101-a1");
-    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
-        message::run(
-            message::Args {
-                workspace: ws.clone(),
-                agent: "20260101-a1".into(),
-                content: "hi".into(),
-            },
-            fx,
-        )
-    });
-    assert!(matches!(r.unwrap(), Outcome::Quiet));
-}
-
-#[test]
-fn message_reports_a_non_workspace() {
-    let tmp = TempDir::new().unwrap();
-    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
-        message::run(
-            message::Args {
-                workspace: tmp.path().to_path_buf(),
-                agent: "a".into(),
-                content: "c".into(),
-            },
-            fx,
-        )
-    });
-    assert_prefixed(r.unwrap_err(), "message");
-}
+// `message`'s success/non-workspace pair lives in `verbs_more.rs`
+// alongside its state-derivation edge case — both already import
+// `message`, and moving them there keeps this file under the 300-line
+// cap without splitting a verb's tests across an arbitrary boundary
+// mid-verb.

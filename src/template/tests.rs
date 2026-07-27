@@ -2,38 +2,9 @@ use super::*;
 use std::cell::RefCell;
 use tempfile::TempDir;
 
-// --- check_dest --------------------------------------------------
-#[test]
-fn check_dest_allows_missing_path() {
-    let holder = TempDir::new().unwrap();
-    let missing = holder.path().join("nope");
-    check_dest(&missing).unwrap();
-}
-
-#[test]
-fn check_dest_allows_empty_directory() {
-    let holder = TempDir::new().unwrap();
-    check_dest(holder.path()).unwrap();
-}
-
-#[test]
-fn check_dest_rejects_non_empty_directory() {
-    let holder = TempDir::new().unwrap();
-    fs::write(holder.path().join("occupant"), b"x").unwrap();
-    let err = check_dest(holder.path()).unwrap_err();
-    assert!(matches!(err, ScaffoldError::DestNotEmpty(_)));
-}
-
-#[test]
-fn check_dest_surfaces_other_io_errors() {
-    // read_dir on a regular file fails with kind != NotFound, so the
-    // third arm of check_dest fires.
-    let holder = TempDir::new().unwrap();
-    let file = holder.path().join("actually-a-file");
-    fs::write(&file, b"not a dir").unwrap();
-    let err = check_dest(&file).unwrap_err();
-    assert!(matches!(err, ScaffoldError::Io(_)), "got {err:?}");
-}
+// check_dest itself is unit-tested in tests_dest.rs. What follows
+// exercises scaffold's orchestration via a stub GitRunner, including
+// how it surfaces check_dest's refusals.
 
 // --- scaffold orchestration via stub GitRunner -------------------
 /// Records every `git` subprocess run (including the `dest` arg so
@@ -221,6 +192,25 @@ fn scaffold_refuses_non_empty_dest() {
     )
     .unwrap_err();
     assert!(matches!(err, ScaffoldError::DestNotEmpty(_)));
+}
+
+#[test]
+fn scaffold_refuses_a_plain_file_dest() {
+    // Same guard as scaffold_refuses_non_empty_dest, one more condition:
+    // an existing plain file gets the same-voice refusal, not a bare
+    // errno, and nothing is written (no `repo.git` appears).
+    let holder = TempDir::new().unwrap();
+    let dest = holder.path().join("afile");
+    fs::write(&dest, b"x").unwrap();
+    let err = scaffold(
+        &dest,
+        &crate::test_support::bare_roots(holder.path()),
+        &StubGit::ok(),
+    )
+    .unwrap_err();
+    assert!(matches!(err, ScaffoldError::DestNotDir(_)), "got {err:?}");
+    assert_eq!(fs::read(&dest).unwrap(), b"x", "dest must be untouched");
+    assert!(!dest.join("repo.git").exists());
 }
 
 #[test]

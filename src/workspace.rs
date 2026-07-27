@@ -130,26 +130,39 @@ pub fn config_head(workspace: &Path, config_ref: &str, git: &dyn GitRunner) -> i
     git.run_capture(&repo_git(workspace), &["rev-parse", "--verify", &refspec])
 }
 
-/// Enumerate the workspace's agent ids: every `agents/*` ref, prefix
-/// stripped (§2.3 — the prefix is the kind, derived from the path).
-/// This is the §8 enumeration seam: scan/stop/budget candidate sets
-/// read agent branches from here, never "every branch except main".
-pub fn agent_ids(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<String>> {
+/// Enumerate the short names under one ref-namespace prefix, prefix
+/// stripped (§2.3 — the prefix is the kind, derived from the path, never
+/// recorded). The workspace keeps exactly two registries, and both are
+/// this one query: the ref namespace *is* the registry.
+fn ref_names(workspace: &Path, prefix: &str, git: &dyn GitRunner) -> io::Result<Vec<String>> {
+    let pattern = format!("refs/heads/{prefix}");
     let out = git.run_capture(
         &repo_git(workspace),
-        &[
-            "for-each-ref",
-            "--format=%(refname:short)",
-            "refs/heads/agents/",
-        ],
+        &["for-each-ref", "--format=%(refname:short)", &pattern],
     )?;
     Ok(out
         .lines()
         .map(str::trim)
-        .filter_map(|r| r.strip_prefix(AGENT_REF_PREFIX))
-        .filter(|id| !id.is_empty())
+        .filter_map(|r| r.strip_prefix(prefix))
+        .filter(|name| !name.is_empty())
         .map(str::to_string)
         .collect())
+}
+
+/// Enumerate the workspace's agent ids: every `agents/*` ref, prefix
+/// stripped (§2.3). This is the §8 enumeration seam: scan/stop/budget
+/// candidate sets read agent branches from here, never "every branch
+/// except main".
+pub fn agent_ids(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<String>> {
+    ref_names(workspace, AGENT_REF_PREFIX, git)
+}
+
+/// Enumerate the workspace's config lineage names: every `config/*` ref,
+/// prefix stripped (§2.3). The bare names are what a user names on the
+/// `lernie config` command line, so this is both the existence query for
+/// a `--from <source>` and the pool a decline names.
+pub fn config_names(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<String>> {
+    ref_names(workspace, CONFIG_REF_PREFIX, git)
 }
 
 /// The **governing lineage** of `agent_id`'s branch: every `config/*`

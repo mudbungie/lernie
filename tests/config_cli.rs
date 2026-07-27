@@ -70,6 +70,24 @@ fn run_config(ws: &Path, home: &Path, editor: &Path, extra: &[&str]) {
     );
 }
 
+/// `lernie config` expected to decline: returns its stderr, asserting a
+/// non-zero exit.
+fn run_config_declining(ws: &Path, home: &Path, editor: &Path, extra: &[&str]) -> String {
+    let out = Command::new(lernie_bin())
+        .arg("config")
+        .arg(ws)
+        .args(extra)
+        .env("LERNIE_HOME", home)
+        .env("EDITOR", editor)
+        .output()
+        .expect("spawn lernie config");
+    assert!(
+        !out.status.success(),
+        "lernie config {extra:?} must decline"
+    );
+    String::from_utf8_lossy(&out.stderr).trim().to_string()
+}
+
 fn new_workspace(ws: &Path, home: &Path) {
     let out = Command::new(lernie_bin())
         .arg("new")
@@ -132,5 +150,21 @@ fn config_verb_advances_forks_and_orphans_via_editor() {
             .status
             .success(),
         "orphan must share no ancestry with config/default"
+    );
+
+    // `--from` a lineage that does not exist: the shipped verb names the
+    // missing lineage and the pool that does exist, with no git plumbing,
+    // no `.config-author`, and no `config/` ref prefix in the message.
+    let stderr = run_config_declining(&ws, &home, &ed, &["x", "--from", "nosuch"]);
+    assert_eq!(
+        stderr,
+        "lernie config: no config lineage \"nosuch\" in this workspace — \
+         existing lineages: default, scratch, strict"
+    );
+    assert!(!ws.join(".config-author").exists());
+    assert!(
+        !git(&repo, &["show", "config/x:providers.yaml"])
+            .status
+            .success()
     );
 }

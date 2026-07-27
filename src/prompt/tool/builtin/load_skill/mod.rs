@@ -162,8 +162,9 @@ fn skills_pool(env: &dyn EnvLookup) -> Result<PathBuf, Error> {
 }
 
 /// Comma-joined, sorted list of the pool's skill directory names for the
-/// decline message. A missing or unreadable pool reads as `(none)` — the
-/// decline still names *that* there is nothing to load.
+/// decline message, rendered by the shared [`crate::name::pool`] idiom. A
+/// missing or unreadable pool reads as `(none)` — the decline still names
+/// *that* there is nothing to load.
 fn available(pool: &Path) -> String {
     let mut names: Vec<String> = match std::fs::read_dir(pool) {
         Ok(rd) => rd
@@ -174,11 +175,7 @@ fn available(pool: &Path) -> String {
         Err(_) => Vec::new(),
     };
     names.sort();
-    if names.is_empty() {
-        "(none)".to_string()
-    } else {
-        names.join(", ")
-    }
+    crate::name::pool(&names)
 }
 
 /// Recursively copy `src` into `dest`, creating `dest` and any parents.

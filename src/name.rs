@@ -17,6 +17,11 @@
 //! every binding, and every model-issued tool, re-enters through a verb),
 //! the tool entry for a skill name — so no interior code ever holds a
 //! name that cannot be joined safely.
+//!
+//! A name that is *well-formed but absent* is the other half of the same
+//! boundary: it is declined by naming the set it was not found in
+//! ([`pool`]), so the answer to "then what may I name?" travels with the
+//! refusal instead of the caller guessing.
 
 /// True iff `name` addresses exactly one path component: non-empty, not
 /// `.` or `..`, and free of `/`, `\`, and NUL.
@@ -48,9 +53,26 @@ pub fn require_agent_id(id: &str) -> Result<(), NotAnAgentId> {
     Err(NotAnAgentId(id.to_owned()))
 }
 
+/// Render the names that *do* exist, for a decline that names its pool:
+/// comma-joined in the order given, `(none)` when the pool is empty (the
+/// refusal still names *that* there is nothing to choose). One home for
+/// the idiom every "no such <thing>" decline shares — the data-root
+/// skills pool (§3.3), the workspace's config lineages (§2.3), and the
+/// governing config's role set (§4.3).
+pub fn pool<S: AsRef<str>>(names: &[S]) -> String {
+    if names.is_empty() {
+        return "(none)".to_string();
+    }
+    names
+        .iter()
+        .map(AsRef::as_ref)
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{is_component, require_agent_id};
+    use super::{is_component, pool, require_agent_id};
 
     #[test]
     fn a_plain_name_is_one_component() {
@@ -81,5 +103,15 @@ mod tests {
         assert!(msg.contains("\"../../victim/pwned\""), "{msg}");
         assert!(msg.contains("single path component"), "{msg}");
         assert!(msg.contains("§2.3"), "{msg}");
+    }
+
+    #[test]
+    fn a_pool_renders_joined_and_an_empty_pool_reads_as_none() {
+        assert_eq!(
+            pool(&["default", "strict", "lone"]),
+            "default, strict, lone"
+        );
+        assert_eq!(pool(&["only".to_string()]), "only");
+        assert_eq!(pool::<&str>(&[]), "(none)");
     }
 }

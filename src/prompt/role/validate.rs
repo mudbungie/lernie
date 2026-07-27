@@ -21,17 +21,24 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// Why a role is not dispatchable against a branch's governing config
-/// commit. Each variant **names the config commit consulted**, so a
-/// refusal points at the exact immutable tree that lacks the role.
+/// commit. A refusal names the control file the user knows and the agent
+/// whose config lineage governs it — never the commit sha and the
+/// `<commit>:<path>` git-show form, which are internal representation
+/// (`docs/PRINCIPLES.md`; bl-c89b).
 #[derive(Debug)]
 pub enum Invalid {
     /// The `roles:` block of the governing config's `providers.yaml`
-    /// does not list the role. `origin` is `<commit>:providers.yaml`.
-    RoleMissing { role: String, origin: PathBuf },
+    /// does not list the role. `defined` is the pool that *is* defined,
+    /// rendered by [`crate::name::pool`] — the same "name the pool"
+    /// idiom `load_skill` and `lernie tool` decline with.
+    RoleMissing {
+        role: String,
+        agent: String,
+        defined: String,
+    },
     /// The role is listed but its soul is absent from the same tree
-    /// (§4.3 — the name is the path, no override). `path` is
-    /// `<commit>:souls/<role>.md`.
-    SoulMissing { path: PathBuf },
+    /// (§4.3 — the name is the path, no override).
+    SoulMissing { role: String, agent: String },
     /// `providers.yaml` parsed but was malformed / legacy (§4.1).
     Config(LoadError),
     /// Deriving the governing config commit (§2.2) or reading a control
@@ -42,10 +49,21 @@ pub enum Invalid {
 impl std::fmt::Display for Invalid {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::RoleMissing { role, origin } => {
-                write!(f, "role {role:?} is not defined in {}", origin.display())
-            }
-            Self::SoulMissing { path } => write!(f, "soul {} does not exist", path.display()),
+            Self::RoleMissing {
+                role,
+                agent,
+                defined,
+            } => write!(
+                f,
+                "role {role:?} is not defined in the providers.yaml governing agent \
+                 {agent:?} — defined roles: {defined}"
+            ),
+            Self::SoulMissing { role, agent } => write!(
+                f,
+                "role {role:?} is defined but its soul {SOULS_DIR}/{role}.md is missing from \
+                 the config governing agent {agent:?} — a role is its `roles:` entry and its \
+                 soul (ARCH §4.3)"
+            ),
             Self::Config(e) => write!(f, "providers.yaml: {e}"),
             Self::Governing { branch, source } => {
                 write!(f, "governing config for {branch}: {source}")
@@ -53,6 +71,8 @@ impl std::fmt::Display for Invalid {
         }
     }
 }
+
+impl std::error::Error for Invalid {}
 
 /// Confirm `role` is dispatchable against `branch`'s governing config
 /// commit: listed in `providers.yaml` `roles:` **and** carrying
@@ -70,15 +90,19 @@ pub fn validate(repo: &Path, branch: &str, role: &str, git: &dyn GitRunner) -> R
     let origin = PathBuf::from(format!("{commit}:{PER_REPO_PROVIDERS_FILE}"));
     let providers = PerRepoProviders::parse(&providers_raw, &origin).map_err(Invalid::Config)?;
     if !providers.roles.contains_key(role) {
+        // `roles` is a BTreeMap, so the pool is already in name order.
+        let defined: Vec<&str> = providers.roles.keys().map(String::as_str).collect();
         return Err(Invalid::RoleMissing {
             role: role.to_string(),
-            origin,
+            agent: branch.to_string(),
+            defined: crate::name::pool(&defined),
         });
     }
     let soul_rel = format!("{SOULS_DIR}/{role}.md");
     if !workspace::control_exists(repo, &commit, &soul_rel, git) {
         return Err(Invalid::SoulMissing {
-            path: PathBuf::from(format!("{commit}:{soul_rel}")),
+            role: role.to_string(),
+            agent: branch.to_string(),
         });
     }
     Ok(())
@@ -124,13 +148,24 @@ mod tests {
         fixture::spawn_root(&ws, "p1");
         let err = validate(&ws, "p1", "ghost", &git()).unwrap_err();
         match &err {
-            Invalid::RoleMissing { role, origin } => {
+            Invalid::RoleMissing {
+                role,
+                agent,
+                defined,
+            } => {
                 assert_eq!(role, "ghost");
-                assert!(origin.to_string_lossy().ends_with(":providers.yaml"));
+                assert_eq!(agent, "p1");
+                assert_eq!(defined, "compactor, worker");
             }
             other => panic!("expected RoleMissing, got {other:?}"),
         }
-        assert!(err.to_string().contains("is not defined in"));
+        // bl-c89b: the product's voice — no commit sha, no `<sha>:path`
+        // git-show form — and it names the pool that IS defined.
+        assert_eq!(
+            err.to_string(),
+            "role \"ghost\" is not defined in the providers.yaml governing agent \"p1\" \
+             — defined roles: compactor, worker"
+        );
     }
 
     #[test]
@@ -141,12 +176,18 @@ mod tests {
         fixture::spawn_root(&ws, "p9");
         let err = validate(&ws, "p9", "verifier", &git()).unwrap_err();
         match &err {
-            Invalid::SoulMissing { path } => {
-                assert!(path.to_string_lossy().ends_with("souls/verifier.md"));
+            Invalid::SoulMissing { role, agent } => {
+                assert_eq!(role, "verifier");
+                assert_eq!(agent, "p9");
             }
             other => panic!("expected SoulMissing, got {other:?}"),
         }
-        assert!(err.to_string().contains("does not exist"));
+        assert_eq!(
+            err.to_string(),
+            "role \"verifier\" is defined but its soul souls/verifier.md is missing from \
+             the config governing agent \"p9\" — a role is its `roles:` entry and its \
+             soul (ARCH §4.3)"
+        );
     }
 
     #[test]

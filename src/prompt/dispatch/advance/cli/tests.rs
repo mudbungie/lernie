@@ -41,10 +41,7 @@ fn a_name_with_no_agent_ref_is_refused_before_the_lease() {
     // inbox directory the lease would have created never appears.
     let (_h, ws) = crate::workspace::fixture::workspace();
     let err = cli_run(&ws, "ghost", td(), None, &AtomicBool::new(false)).unwrap_err();
-    assert!(
-        matches!(err, Error::UnknownAgent(ref a) if a == "ghost"),
-        "{err}"
-    );
+    assert!(matches!(err, Error::UnknownAgent(_)), "{err}");
     assert!(err.to_string().starts_with("no agent \"ghost\""), "{err}");
     assert!(
         !inbox_dir(&ws, "ghost").exists(),

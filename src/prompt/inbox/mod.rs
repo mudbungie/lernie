@@ -227,16 +227,13 @@ pub enum MessageError {
     Layout(#[from] crate::workspace::LayoutError),
     #[error("probe executor lock: {0}")]
     Probe(#[source] io::Error),
-    /// The recipient has no `agents/*` ref. A message is addressed to an
-    /// *existing* agent (§2.11), so a deposit no drain would ever come
-    /// for is declined rather than made silently into a directory
-    /// nothing will read.
-    #[error(
-        "no agent {0:?} in this workspace — a message is addressed to an existing agent \
-         (ARCH §2.11); check the id against the workspace's `agents/*` refs, or start an \
-         agent with `lernie prompt` / `lernie dispatch`"
-    )]
-    UnknownAgent(String),
+    /// The recipient has no `agents/*` ref — the shared existence
+    /// decline ([`crate::workspace::require_agent`]). A message is
+    /// addressed to an *existing* agent (§2.11), so a deposit no drain
+    /// would ever come for is declined rather than made silently into a
+    /// directory nothing will read.
+    #[error(transparent)]
+    UnknownAgent(#[from] crate::workspace::UnknownAgent),
 }
 
 /// The `lernie message <workspace> <agent> <content>` verb (§2.11,
@@ -277,9 +274,12 @@ pub fn cli_run(
     driver_target: &Path,
 ) -> Result<ProbeOutcome, MessageError> {
     crate::workspace::require(workspace)?;
-    if !crate::workspace::agent_exists(workspace, agent, &crate::template::RealGit::new()) {
-        return Err(MessageError::UnknownAgent(agent.to_owned()));
-    }
+    crate::workspace::require_agent(
+        workspace,
+        agent,
+        "a message is addressed to an existing agent (ARCH §2.11)",
+        &crate::template::RealGit::new(),
+    )?;
     let sender =
         resolve_cli_sender(std::env::var_os(crate::prompt::tool::ENV_CONV_BRANCH).as_deref());
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());

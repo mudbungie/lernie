@@ -26,8 +26,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use thiserror::Error;
 
-use crate::config::LoadError;
-
 /// Wire shape of the input. `serde(deny_unknown_fields)` so a
 /// malformed `tool_use.input` surfaces as [`Error::InvalidJson`]
 /// rather than silently dropping fields the model meant to pass.
@@ -72,26 +70,14 @@ pub enum Error {
     /// failure.
     #[error("missing env var {0:?} (set by the harness per ARCH §3.3)")]
     MissingEnv(&'static str),
-    /// `providers.yaml` parsed but does not list the requested role
-    /// in its `roles:` block.
-    #[error("role {role:?} is not defined in {path}", path = path.display())]
-    RoleMissing { role: String, path: PathBuf },
-    /// Soul file for the requested role does not exist in the
-    /// governing config commit's tree.
-    #[error("soul {path} does not exist", path = path.display())]
-    SoulMissing { path: PathBuf },
-    /// Deriving the governing config commit (§2.2) or reading a control
-    /// file from its tree failed.
-    #[error("governing config for {branch}: {source}")]
-    GoverningConfig {
-        branch: String,
-        #[source]
-        source: io::Error,
-    },
-    /// `providers.yaml` parse / I/O surfaced via the harness's config
-    /// loader (constructed by the `From<role::validate::Invalid>` projection).
-    #[error("providers.yaml: {0}")]
-    Config(LoadError),
+    /// The open-set role verdict (§4.3): unlisted role, missing soul,
+    /// malformed `providers.yaml`, or a governing-config derivation
+    /// failure. Rendered by the single-home
+    /// [`crate::prompt::role::validate::Invalid`] itself rather than
+    /// restated here — one voice, whether the refusal reaches a model
+    /// through this tool or an operator through `lernie dispatch`.
+    #[error(transparent)]
+    Role(#[from] crate::prompt::role::validate::Invalid),
     /// `lernie dispatch <role>` failed to spawn (binary missing,
     /// fork limits, etc.).
     #[error("spawn lernie dispatch {role:?}: {source}")]
@@ -117,22 +103,6 @@ pub enum Error {
     /// Writing the JSON output to stdout failed.
     #[error("write to stdout: {0}")]
     Write(#[source] io::Error),
-}
-
-/// Project the single-home open-set verdict ([`crate::prompt::role::validate::Invalid`])
-/// onto this tool's surface, preserving the variant messages the model
-/// already sees (§3.3). The pre-spawn validity check has one home; this
-/// impl is the tool's view of it, never a second copy of the logic.
-impl From<crate::prompt::role::validate::Invalid> for Error {
-    fn from(inv: crate::prompt::role::validate::Invalid) -> Self {
-        use crate::prompt::role::validate::Invalid;
-        match inv {
-            Invalid::RoleMissing { role, origin } => Error::RoleMissing { role, path: origin },
-            Invalid::SoulMissing { path } => Error::SoulMissing { path },
-            Invalid::Config(e) => Error::Config(e),
-            Invalid::Governing { branch, source } => Error::GoverningConfig { branch, source },
-        }
-    }
 }
 
 /// Trait for invoking `lernie dispatch <role>`. Production wires

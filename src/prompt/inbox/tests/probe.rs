@@ -157,10 +157,11 @@ fn cli_run_declines_a_recipient_with_no_branch() {
     // silent message loss into a directory nothing reads.
     let (_h, ws) = crate::workspace::fixture::workspace();
     let err = cli_run(ws.as_path(), "a1", "hi", Path::new("true")).unwrap_err();
-    let MessageError::UnknownAgent(id) = &err else {
-        panic!("an unknown recipient is its own decline: {err}")
-    };
-    assert_eq!(id, "a1");
+    assert!(
+        matches!(err, MessageError::UnknownAgent(_)),
+        "an unknown recipient is its own decline: {err}"
+    );
+    assert!(err.to_string().starts_with("no agent \"a1\""), "{err}");
     assert!(err.to_string().contains("existing agent"), "{err}");
     assert!(
         !inbox_dir(ws.as_path(), "a1").exists(),

@@ -745,7 +745,11 @@ re-enters the verb, else `user` for a bare invocation.
   so a deposit no drain would ever come for is refused (`lernie
   message: no agent "…" …`, exit 1) rather than left in an inbox
   directory nothing will ever read. The id guard is the same rule at every verb taking an agent id
-  from outside — `message`, `advance`, `stop`, `dispatch`, `bundle`.
+  from outside — `message`, `advance`, `stop`, `dispatch`, `bundle` —
+  and literally the same code: one workspace-layout guard and one
+  existence guard, each carrying the calling verb's own clause for *why*
+  it needed an agent, so what differs between verbs is the cause, never
+  the phrasing or the remedy.
 - The deposit is a create-only file at `<workspace>/inbox/<agent>/
   <sender>-<NNN>.md` (temp-path + atomic rename), with `from:` /
   `deposited_at:` frontmatter and the content as its body. `<NNN>` is
@@ -902,6 +906,24 @@ governing config commit lists it under `providers.yaml` `roles:` and
 carries `souls/<role>.md`. The CLI enumerates no role names, so a
 verifier, a critic, or a role you author needs no CLI change; validity
 is checked *before* the fork, so a rejected role leaves no branch debris.
+
+The **id guard runs first**, through the same two functions `message`,
+`advance`, `stop` and `bundle` call: the workspace layout, then the
+dispatching parent's `agents/<id>` ref. So all three refusals are the
+product's, never git's:
+
+```
+lernie dispatch worker <no-such-ws> someagent --goal hi
+  → <path> is not a workspace (no repo.git) — create one with `lernie new` (ARCH §2.2)
+lernie dispatch worker <ws> nosuchparent --goal hi
+  → no agent "nosuchparent" in this workspace — a child forks off an existing parent (ARCH §2.5); …
+lernie dispatch verifier <ws> <agent> --goal hi
+  → role "verifier" is not defined in the providers.yaml governing agent "<agent>" — defined roles: compactor, worker
+```
+
+The role refusal names the pool that *is* defined — the same "name the
+pool" idiom `load_skill` and `lernie tool` decline with — and names the
+control file the user knows rather than the config commit's sha.
 
 - `lernie dispatch compactor <workspace> <conv-id>` forks a
   compactor-souled child off that agent's tip — exactly what a due

@@ -154,20 +154,13 @@ pub enum Error {
         #[source]
         source: std::io::Error,
     },
-    /// The hop's target has no `agents/*` ref. §2.3 makes the ref
-    /// namespace the registry, so a name that was never an agent is
-    /// declined at the verb — the same guard `lernie message` applies
-    /// before depositing, in the same voice. It fires *before* the
-    /// lease, so the refusal leaves no inbox directory behind, and it
-    /// is deliberately distinct from the §2.11 lost-lease no-op: that
-    /// one is a live agent already being driven, this one is no agent
-    /// at all.
-    #[error(
-        "no agent {0:?} in this workspace — a hop drives an existing agent (ARCH §2.3: \
-         the `agents/*` refs are the registry); check the id against the workspace's \
-         `agents/*` refs, or start an agent with `lernie prompt` / `lernie dispatch`"
-    )]
-    UnknownAgent(String),
+    /// The hop's target has no `agents/*` ref — the shared existence
+    /// decline ([`crate::workspace::require_agent`]), fired *before* the
+    /// lease so the refusal leaves no inbox directory behind. It is
+    /// deliberately distinct from the §2.11 lost-lease no-op: that one
+    /// is a live agent already being driven, this one is no agent at all.
+    #[error(transparent)]
+    UnknownAgent(#[from] crate::workspace::UnknownAgent),
     #[error("acquire executor lock on inbox {path}: {source}")]
     ExecutorLock {
         path: PathBuf,

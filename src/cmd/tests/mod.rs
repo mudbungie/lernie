@@ -8,8 +8,8 @@
 //! surface-layer wiring.
 
 use super::*;
+use crate::test_support::with_lernie_home;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
 use std::sync::atomic::AtomicBool;
 
 mod agent_id;
@@ -17,30 +17,6 @@ mod dispatching;
 mod surface;
 mod verbs;
 mod verbs_more;
-
-/// Serializes `LERNIE_HOME` mutation. The harness-root env (§2.2) is
-/// process-global; `prime` — and `new`, which founds the root through
-/// prime's routine — are the verbs whose in-process tests must point it
-/// at a scratch dir (they seed real files), and Rust 2024's `set_var` is
-/// `unsafe` for exactly this reason.
-static ENV_LOCK: Mutex<()> = Mutex::new(());
-
-/// Run `f` with `LERNIE_HOME` set to `home`, then clear it. Serialized
-/// against every other `LERNIE_HOME` mutation via [`ENV_LOCK`] (the
-/// coverage gate runs `--test-threads=1`, so this is the only in-process
-/// setter). Tests never pre-set the var, so the restore is an
-/// unconditional clear — not a save/restore of a prior value.
-fn with_lernie_home<R>(home: &Path, f: impl FnOnce() -> R) -> R {
-    let _guard = ENV_LOCK
-        .lock()
-        .unwrap_or_else(std::sync::PoisonError::into_inner);
-    // SAFETY: guarded by ENV_LOCK; no other thread reads/writes the var
-    // concurrently within the serialized coverage run.
-    unsafe { std::env::set_var("LERNIE_HOME", home) };
-    let r = f();
-    unsafe { std::env::remove_var("LERNIE_HOME") };
-    r
-}
 
 /// A no-op `$EDITOR` hand-off.
 fn noop_editor(_: &Path) -> std::io::Result<()> {

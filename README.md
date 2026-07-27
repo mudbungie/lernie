@@ -21,12 +21,52 @@ Parity between the two is enforced mechanically, not by convention. `tests/comma
 ## Quickstart
 
 ```
-make install              # lay down the XDG harness homes + binaries on PATH
+cargo install lernie --locked                    # or: make install, from a clone
+cargo install brazen --version =0.0.4 --locked   # the provider adapter, always needed
 lernie new ~/work/chat    # create a workspace (bare repo.git + config/default)
 ANTHROPIC_API_KEY=... lernie prompt ~/work/chat 'hello'
 ```
 
+Three install routes, not one — see **[Install](#install)** for what each
+lays down. Every route needs `bz`; only `make install` installs it.
+
 ## Install
+
+There are three routes, and they do not lay down the same things. All
+three need a second binary — the provider adapter `bz` — which only the
+Makefile route installs for you.
+
+| | `cargo install lernie` | release tarball | `make install` |
+|---|---|---|---|
+| binaries | `lernie` | `lernie` | `lernie`, `agent-eval`, `lernie-eval-agent` |
+| installs `bz` | no | no | yes, at the pin |
+| runs `lernie prime` | no | no | yes |
+| lands where | cargo's bin dir | wherever you unpack it | `$INSTALL_PREFIX/bin` |
+
+### From crates.io
+
+```
+cargo install lernie --locked
+cargo install brazen --version =0.0.4 --locked   # the pinned provider adapter
+lernie prime                                     # found the harness root
+```
+
+You get the `lernie` binary alone, in cargo's bin directory
+(`~/.cargo/bin` unless `--root`/`CARGO_INSTALL_ROOT` says otherwise) —
+no `agent-eval`, no `lernie-eval-agent`, no `bz`, and nothing runs after
+the build. The `lernie prime` line is optional but explicit: `prime`
+founds the harness root (below), and `lernie new` founds it too on its
+way to creating a workspace, so a user who skips `prime` is not stranded
+— only uninformed about where their state went.
+
+### From a GitHub release
+
+Each `v*` release carries `lernie-x86_64-unknown-linux-gnu.tar.gz`: the
+`lernie` binary, this README, and the license. Unpack it, put `lernie`
+on your `PATH`, then run the `cargo install brazen` and `lernie prime`
+lines above — the tarball ships no adapter and runs nothing.
+
+### From a clone, with make
 
 ```
 make install                                  # default: ~/.local/bin, XDG homes
@@ -36,9 +76,9 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
 
 `make install` runs a release build and then:
 
-1. Installs `lernie` and `agent-eval` into `$INSTALL_PREFIX/bin`
-   with `install -m 0755` (atomic overwrite, no symlinks). Make sure
-   that directory is on your `PATH`.
+1. Installs `lernie`, `agent-eval`, and `lernie-eval-agent` into
+   `$INSTALL_PREFIX/bin` with `install -m 0755` (atomic overwrite, no
+   symlinks). Make sure that directory is on your `PATH`.
 2. Installs the provider adapter — brazen's `bz` — with
    `cargo install brazen --version =<pin> --locked`, where the pin is
    the `brazen = "=<pin>"` dependency in `Cargo.toml` — its one home;
@@ -65,13 +105,48 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    and a throwaway `lernie new`. Failure aborts the install with a
    non-zero exit.
 
+Its closing banner prints what the other two routes leave you to find
+out: the install prefix, both harness roots, and the `bz` commands
+below.
+
+### The adapter is a second binary
+
+Nothing prompts without `bz`. It is brazen's one stateless binary for
+every provider (ARCH §4.4), it is **pinned exactly**, and lernie refuses
+a `bz` at any other version rather than downgrading silently:
+
+```
+cargo install brazen --version =0.0.4 --locked
+```
+
+The pin is not folklore you have to read this file for — the installed
+binary carries it: `lernie --version` prints the linked pin beside its
+own version, `lernie <version> (brazen 0.0.4)`. Its one home is the
+`brazen = "=<pin>"` line in `Cargo.toml`;
+the Makefile's `BRAZEN_PIN`, the load-time guard, `lernie --version`,
+and every pin printed in this file all derive from that line (a test
+holds them equal). With no `bz` at all, the first verb that drives a
+model call says so and hands you the command above.
+
 Provider endpoints, auth, and wire dialects live entirely in brazen's
 own config (`~/.config/brazen/config.toml`; inspect with
 `bz --dump-config`, authenticate with `bz --login --provider <id>`).
 lernie references a provider *row* by name and never sees credential
 material (ARCH §4.1).
 
-`make uninstall` removes the `lernie`/`agent-eval` binaries; `bz`
+### Where the state goes
+
+The harness root is the installation-global substrate (ARCH §2.2), split
+by XDG lifetime: `$XDG_CONFIG_HOME/lernie` (hand-edited declarations —
+`models.yaml`, `workflows/`) and `$XDG_DATA_HOME/lernie` (machine-
+populated pools and the `workspaces/` tree). `LERNIE_HOME=<dir>`
+collapses both to one directory, at install time and at runtime alike.
+`lernie prime` founds it, seed-if-absent throughout, so running it again
+— or after an upgrade — never clobbers a hand edit. Only `make install`
+runs `prime` for you; on the other two routes it is your first command,
+or `lernie new`'s side effect.
+
+`make uninstall` removes the three installed binaries; `bz`
 (installed via cargo) is removed with `cargo uninstall brazen`. The
 harness homes (the config and data roots, holding config and
 workspaces) stay put — clean them up manually if you want a true
@@ -1020,8 +1095,8 @@ Failure to *spawn* the driver, by contrast, is a hard error naming the program.
 ## Contributing
 
 The instructions below are for contributors building lernie from source.
-Users installing a release don't need any of this — `make install` from
-**Quickstart** is the user-facing entry point.
+Users installing a release don't need any of this — **[Install](#install)**
+covers the three user-facing routes, only one of which involves a clone.
 
 ### Contributor setup
 

@@ -240,12 +240,21 @@ jobs:
       # lernie-x86_64-unknown-linux-gnu.tar.gz and uploads it to the Release
       # for the resolved tag. Uploading assets with GITHUB_TOKEN is fine — only
       # *triggering a new workflow* from a token-made event is what GitHub blocks.
+      #
+      # `include:` puts README.md and LICENSE in the archive beside the
+      # binary. Until bl-33ef the tarball was one bare executable, so a
+      # release user had no install instructions at all — not the `bz`
+      # step, not the pin, not the harness-root note — while the crates.io
+      # user got the same README as the landing page. The docs ride with
+      # the artifact for the same reason the pin does: reachable from what
+      # you downloaded, not only from the repo you did not clone.
       - name: Build and upload lernie
         uses: taiki-e/upload-rust-binary-action@v1
         with:
           bin: lernie
           target: x86_64-unknown-linux-gnu
           archive: lernie-$target
+          include: README.md,LICENSE
           ref: refs/tags/${{ steps.tag.outputs.tag }}
           token: ${{ secrets.GITHUB_TOKEN }}
 

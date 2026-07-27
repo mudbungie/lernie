@@ -958,6 +958,8 @@ First-class metrics, written to commit trailers and event log. All counts are re
 
 ## 9. Testing and Replay
 
+**A test bound counts silence, not time (bl-2bf0).** The end-to-end tests observe a detached driver the only way a frontend can — by watching the workspace on disk (§3.5) — and their pass path is satisfied by observable state *however slowly it arrives*. A wall-clock deadline over that is therefore not a property of the code under test but of the machine, the same objection §2.9 raises against a deadline on the leader-pgid re-read ("a deadline measured under load reports the load") and answers with a retry *count*. The e2e analogue counts **consecutive probes that observed no change anywhere in the workspace tree** (`src/e2e/poll.rs`, the one primitive every e2e poll waits on): a live driver writes continuously — delivery commits, transcript entries, streamed `response.json` event lines, worktree churn — and a wedged or absent one writes nothing at all. A slow box only makes the pass path slower, never redder; the only verdict left is genuine silence, which is the hang the bound was always there to catch, and it is reported as such — *nothing is driving this workspace* — rather than as an expired stopwatch. The distinction is not academic: the 120s deadline this replaced hid a real stranded-deposit defect behind a timeout that read like machine load.
+
 ### 9.1 Task suite
 
 A task suite of 50–200 manually constructed tasks with machine-checkable success criteria. Target baseline pass rate: approximately 40%, with failure modes distributed across categories:

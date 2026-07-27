@@ -10,7 +10,8 @@
 
 use super::stop_common::{
     HAPPY_SSE, amend_config, git_command, lernie_bin, poll_for_conv_branch_with_diag,
-    poll_for_path, repo_git, scaffold_repo, spawn_prompt, write_brazen_config, write_global_models,
+    poll_for_path, reap, repo_git, scaffold_repo, spawn_prompt, write_brazen_config,
+    write_global_models,
 };
 use httpmock::Method::POST;
 use httpmock::MockServer;
@@ -49,9 +50,9 @@ fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
 
     let mut prompt_child = spawn_prompt(&dest, &harness, &brazen_config, "ping");
 
-    let branch = poll_for_conv_branch_with_diag(&dest, Duration::from_secs(15), &mut prompt_child);
+    let branch = poll_for_conv_branch_with_diag(&dest, &mut prompt_child);
     let step_dir = dest.join("steps").join(&branch).join("001");
-    poll_for_path(&step_dir.join("response.json"), Duration::from_secs(15));
+    poll_for_path(&dest, &step_dir.join("response.json"));
 
     let stop_out = Command::new(lernie_bin())
         .arg("stop")
@@ -200,12 +201,12 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
 
     let mut prompt_child = spawn_prompt(&dest, &harness, &brazen_config, "run a slow tool");
 
-    let branch = poll_for_conv_branch_with_diag(&dest, Duration::from_secs(15), &mut prompt_child);
+    let branch = poll_for_conv_branch_with_diag(&dest, &mut prompt_child);
 
     // Wait until the tool is actually running: the marker proves the
     // model call finished (step-1 response.json closed with `end`) and
     // the executor is inside the tool's long sleep.
-    poll_for_path(&marker, Duration::from_secs(20));
+    poll_for_path(&dest, &marker);
 
     // Discriminator: step-1 response.json ends with terminal `end`, so a
     // response.json-fd scan finds *no* open writer right now. Only the
@@ -245,8 +246,7 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
     // executor terminates promptly. Had discovery relied on the closed
     // response.json fd, no signal would have been sent and the harness
     // would still be sleeping.
-    let status = wait_with_timeout(&mut prompt_child, Duration::from_secs(15))
-        .expect("lernie prompt must terminate after the stop reaches it");
+    let status = reap(&dest, &mut prompt_child);
     // §2.9 step 3: the tool's group-SIGTERM death is classified as the
     // stop, so the executor deposits and exits *cleanly* — not the
     // non-zero exit a propagated `KilledBySignal` fault used to produce.
@@ -254,23 +254,4 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
         status.success(),
         "stop during a tool window must exit cleanly (the stopped-deposit exit, §2.9 step 3), got {status:?}"
     );
-}
-
-/// Reap `child`, bounded by `deadline`. Returns its exit status, or
-/// `None` (after killing it) if it outlived the deadline — a failed
-/// stop leaves the harness sleeping, which this catches.
-fn wait_with_timeout(
-    child: &mut std::process::Child,
-    deadline: Duration,
-) -> Option<std::process::ExitStatus> {
-    let until = std::time::Instant::now() + deadline;
-    while std::time::Instant::now() < until {
-        if let Some(status) = child.try_wait().expect("try_wait") {
-            return Some(status);
-        }
-        std::thread::sleep(Duration::from_millis(50));
-    }
-    let _ = child.kill();
-    let _ = child.wait();
-    None
 }

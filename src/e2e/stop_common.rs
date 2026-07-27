@@ -11,9 +11,9 @@
 
 use std::fs;
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::process::{Child, Command, ExitStatus, Stdio};
+
+use super::poll;
 
 pub fn lernie_bin() -> std::path::PathBuf {
     crate::test_support::lernie_binary()
@@ -147,20 +147,15 @@ roles:
 }
 
 /// Block until an agent branch exists under `agents/*` in the
-/// workspace's `repo.git`, or the deadline expires. The agent id is a
-/// bare root conv-id (`<ts>-<short-id>`, 25 chars per §2.3) — the only
-/// ref of that shape in a fresh workspace. Panics on early prompt exit
-/// (so the caller sees the prompt's stderr) or on timeout.
-pub fn poll_for_conv_branch_with_diag(
-    dest: &Path,
-    deadline: Duration,
-    prompt_child: &mut Child,
-) -> String {
+/// workspace's `repo.git`. The agent id is a bare root conv-id
+/// (`<ts>-<short-id>`, 25 chars per §2.3) — the only ref of that shape in
+/// a fresh workspace. Panics on early prompt exit (so the caller sees the
+/// prompt's stderr) or when the workspace falls silent ([`poll`]).
+pub fn poll_for_conv_branch_with_diag(dest: &Path, prompt_child: &mut Child) -> String {
     let repo = repo_git(dest);
-    let until = Instant::now() + deadline;
-    loop {
+    let found = poll::until(dest, || {
         if let Some(name) = scan_conv_branches(&repo) {
-            return name;
+            return Some(name);
         }
         if let Ok(Some(status)) = prompt_child.try_wait() {
             let mut buf = Vec::new();
@@ -173,22 +168,25 @@ pub fn poll_for_conv_branch_with_diag(
                 String::from_utf8_lossy(&buf)
             );
         }
-        if Instant::now() >= until {
-            let buf = drain_stderr(prompt_child);
-            let branches = git_command(&repo, &["for-each-ref"])
-                .output()
-                .expect("spawn git");
-            let _ = prompt_child.kill();
-            let _ = prompt_child.wait();
-            panic!(
-                "timeout waiting for an agents/* branch under {}; refs: {:?}; stderr: {}",
-                repo.display(),
-                String::from_utf8_lossy(&branches.stdout),
-                String::from_utf8_lossy(&buf)
-            );
-        }
-        thread::sleep(Duration::from_millis(50));
+        None
+    });
+    if let Some(name) = found {
+        return name;
     }
+    let buf = drain_stderr(prompt_child);
+    let branches = git_command(&repo, &["for-each-ref"])
+        .output()
+        .expect("spawn git");
+    let _ = prompt_child.kill();
+    let _ = prompt_child.wait();
+    panic!(
+        "no agents/* branch under {}, and {} went untouched for {:?}; refs: {:?}; stderr: {}",
+        repo.display(),
+        dest.display(),
+        poll::patience(),
+        String::from_utf8_lossy(&branches.stdout),
+        String::from_utf8_lossy(&buf)
+    );
 }
 
 fn drain_stderr(child: &mut Child) -> Vec<u8> {
@@ -232,14 +230,35 @@ fn scan_conv_branches(repo: &Path) -> Option<String> {
     None
 }
 
-pub fn poll_for_path(path: &Path, deadline: Duration) {
-    let until = Instant::now() + deadline;
-    while !path.exists() {
-        if Instant::now() >= until {
-            panic!("timeout waiting for {}", path.display());
-        }
-        thread::sleep(Duration::from_millis(50));
+/// Block until `path` exists, `dest` being the workspace whose activity
+/// is the liveness signal ([`poll`]).
+pub fn poll_for_path(dest: &Path, path: &Path) {
+    if poll::until(dest, || path.exists().then_some(())).is_none() {
+        panic!(
+            "{} never appeared, and {} went untouched for {:?}",
+            path.display(),
+            dest.display(),
+            poll::patience()
+        );
     }
+}
+
+/// Reap `child`, or — once `dest` has gone still around it ([`poll`]) —
+/// kill it and report the stall. A stop that failed to reach its target
+/// leaves the harness sleeping, which is what this catches; a stop that
+/// reached a *slow* machine is not that, so the bound is silence.
+pub fn reap(dest: &Path, child: &mut Child) -> ExitStatus {
+    let reaped = poll::until(dest, || child.try_wait().expect("try_wait"));
+    if let Some(status) = reaped {
+        return status;
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    panic!(
+        "lernie prompt outlived the stop, with {} untouched for {:?}",
+        dest.display(),
+        poll::patience()
+    );
 }
 
 pub fn spawn_prompt(

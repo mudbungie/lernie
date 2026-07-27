@@ -1,8 +1,7 @@
 +++
 title = "gate: docs"
 created = 1785124069
-updated = 1785124773
-claimant = "Capstan"
+updated = 1785125302
 parent = "bl-d32a"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 

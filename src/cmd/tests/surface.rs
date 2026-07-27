@@ -4,7 +4,7 @@
 
 use crate::cmd::{Cli, Command, Error, Outcome, advance, prelude};
 use crate::prompt::dispatch::advance::cli::AdvanceHandoff;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use std::path::PathBuf;
 
 fn parse(args: &[&str]) -> Command {
@@ -148,6 +148,25 @@ fn prelude_reexports_the_binding_mechanisms() {
     let _handler: fn() = prelude::install_stop_handler;
     let flag: &std::sync::atomic::AtomicBool = prelude::stop_flag();
     let _ = flag.load(std::sync::atomic::Ordering::SeqCst);
+}
+
+/// `lernie --version` (ARCH §4.4 "Version skew is guarded") prints both
+/// lernie's own version and the linked brazen pin, and the two readers of
+/// that one pin — `cli_version` here and the load-time guard's
+/// [`crate::prompt::brazen_pin`] — must agree by construction: a
+/// bijection, not a second hard-coded string.
+#[test]
+fn cli_version_pairs_lernie_and_the_brazen_pin() {
+    let v = crate::cmd::cli_version();
+    assert!(v.starts_with(env!("CARGO_PKG_VERSION")), "{v}");
+    let brazen = v
+        .strip_prefix(env!("CARGO_PKG_VERSION"))
+        .and_then(|rest| rest.strip_prefix(" (brazen "))
+        .and_then(|rest| rest.strip_suffix(')'))
+        .unwrap_or_else(|| panic!("unexpected cli_version shape: {v}"));
+    assert_eq!(brazen, crate::prompt::brazen_pin());
+    // Wired into the actual clap surface, not just computed and unused.
+    assert_eq!(Cli::command().get_version(), Some(v));
 }
 
 #[test]

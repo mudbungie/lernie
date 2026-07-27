@@ -48,10 +48,31 @@ mod tests;
 /// across both bindings — the argv shape here is the single source of
 /// truth for the CLI, pinned by the `tests/*_cli.rs` end-to-end tests.
 #[derive(clap::Parser, Debug)]
-#[command(name = "lernie", about = "Git-backed agent harness", version)]
+#[command(name = "lernie", about = "Git-backed agent harness", version = cli_version())]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Command,
+}
+
+/// `lernie --version`'s product: lernie's own package version paired with
+/// the exact brazen pin it links, e.g. `0.0.1 (brazen 0.0.4)` — printed by
+/// clap as `lernie 0.0.1 (brazen 0.0.4)`. The pin's one home is the
+/// `brazen = "=<version>"` line in `Cargo.toml`; [`crate::prompt::brazen_pin`]
+/// is the sole reader of it (the same fact the load-time version guard,
+/// `crate::prompt::resolve::check_bz_version`, ARCH §4.4, compares a live
+/// `bz --version` against), so this and the guard agree by construction —
+/// a bijection, never a second hard-coded string.
+fn cli_version() -> &'static str {
+    static VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    VERSION
+        .get_or_init(|| {
+            format!(
+                "{} (brazen {})",
+                env!("CARGO_PKG_VERSION"),
+                crate::prompt::brazen_pin()
+            )
+        })
+        .as_str()
 }
 
 /// Every verb, in a uniform shape: `Variant(<verb>::Args)`. The variant

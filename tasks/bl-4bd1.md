@@ -1,7 +1,8 @@
 +++
 title = "The built-in tool set is undiscoverable from the CLI: 'lernie tool --help' shows a bare <NAME> and the unknown-tool decline lists nothing, while load_skill's sibling decline names its whole pool"
 created = 1785130201
-updated = 1785130201
+updated = 1785133157
+claimant = "flop-4bd1"
 priority = 1
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

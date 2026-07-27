@@ -153,7 +153,7 @@ fn a_child_final_response_revives_the_parent_which_delivers_and_steps() {
     let launcher = RevivingLauncher::new(parent);
 
     let out = advance_child(&ws, &child, &launcher);
-    assert!(matches!(out, AdvanceOutcome::Terminal));
+    assert!(matches!(out, AdvanceOutcome::Terminal), "{out:?}");
 
     // Two launches from the child's exit protocol, in order: itself
     // (pin 1's no-op driver), then the parent it just revived.

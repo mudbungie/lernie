@@ -2,6 +2,7 @@
 
 use super::super::lock::{interpret_lock, lock_or_none, try_acquire};
 use std::io;
+use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
 #[test]
@@ -34,6 +35,43 @@ fn lock_releases_on_drop() {
     drop(first); // release the lease
     let again = try_acquire(&inbox).unwrap();
     assert!(again.is_some(), "dropping the guard frees the lock");
+}
+
+#[test]
+fn release_frees_the_lease_while_a_subprocess_still_holds_its_fd() {
+    // The release contract of `lock.rs`'s module docs. A lease rides an
+    // open file description, and every spawn in the process transiently
+    // copies the fd naming it — `fork`/`clone` duplicates the fd table
+    // and close-on-exec fires only at `execve`. Here that window is made
+    // permanent and observable rather than raced: close-on-exec is
+    // cleared, so the spawned child keeps the inherited fd for its whole
+    // life, and the child lives until this test closes its stdin. The
+    // lease must be free the instant its guard drops. Releasing by close
+    // alone it would not be — the description would outlive the guard,
+    // and the next probe would report the branch already driven.
+    let ws = TempDir::new().unwrap();
+    let inbox = ws.path().join("inbox").join("a1");
+    let held = try_acquire(&inbox).unwrap().expect("acquirable");
+    // SAFETY: F_SETFD takes a raw fd and a flag word, no memory effects;
+    // the fd is owned by `held` and alive across the call.
+    unsafe { libc::fcntl(held.as_raw_fd(), libc::F_SETFD, 0) };
+    let mut child = Command::new("/bin/sh")
+        .args(["-c", "read _line"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("a child that inherits the lease fd and outlives the guard");
+
+    drop(held);
+    let again = try_acquire(&inbox).unwrap();
+
+    drop(child.stdin.take()); // EOF -> the fd holder exits
+    child.wait().unwrap();
+    assert!(
+        again.is_some(),
+        "the lease is free the moment its guard drops, whoever else holds the fd"
+    );
 }
 
 #[test]

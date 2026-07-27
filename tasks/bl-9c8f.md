@@ -1,7 +1,8 @@
 +++
 title = "Lost wakeup in the 2.11 deposit-probe-launch protocol: a deposit racing a driver's last inbox read is stranded forever"
 created = 1785130626
-updated = 1785133272
+updated = 1785133308
+claimant = "flop-9c8f"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 STATE AT HANDOFF (Tumult, 2026-07-27, after agent Gudgeon died silently mid-close — recorded per user instruction; work NOT lost):

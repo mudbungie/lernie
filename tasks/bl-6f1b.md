@@ -1,7 +1,8 @@
 +++
 title = "CI on main is RED: cargo-tarpaulin segfaults somewhere in prompt::tool::builtin::bash::tests (moves between tests)"
 created = 1785124427
-updated = 1785124465
+updated = 1785124492
+claimant = "Fathom"
 priority = 9
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

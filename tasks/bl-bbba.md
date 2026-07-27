@@ -2,6 +2,7 @@
 title = "lernie advance on a nonexistent agent exits 0 silently AND mkdirs an orphan inbox — the id-existence guard is missing at exactly the verb README says has it"
 created = 1785130169
 updated = 1785130228
+claimant = "stanchion"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

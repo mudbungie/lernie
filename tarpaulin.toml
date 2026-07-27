@@ -23,7 +23,23 @@
 #   (which tarpaulin never counts in the denominator) only because the
 #   §3.4 narrowing made their private fixtures unreachable from an external
 #   test crate — so excluding them keeps the exact denominator they had as
-#   `tests/`. The production code they exercise stays fully counted.
+#   `tests/`. The production source they drive stays in the denominator —
+#   but see the next bullet: what a spawned binary executes never lands in
+#   the numerator, so every counted line needs an in-process test.
+# - Subprocess profraws are inert (measured, bl-7e33). Tarpaulin sets
+#   `LLVM_PROFILE_FILE=<target>/tarpaulin/profraws/<test-binary>_%m-%p.profraw`,
+#   every spawned `lernie` inherits it, and its profraw lands in the same
+#   pool the test binary's does; tarpaulin then merges the whole pool
+#   *by function name* and maps the result through the test binary's
+#   coverage map alone. Those foreign records cannot corrupt ours: the
+#   lib compiled `--cfg test` and the lib linked into the `lernie` bin
+#   carry different crate disambiguators, so no repo function shares a
+#   name across the two images (e.g. `prompt::budget::check` is
+#   `_RNvNtNtCs5GBNLOVA7gO_6lernie6prompt6budget5check` in one and
+#   `_RNvNtNtCslo6p4TyE50k_…` in the other). They also cannot help: a
+#   record no name in the coverage map matches is simply dropped. Hence
+#   the rule above — and hence there is nothing to gain by scrubbing
+#   `LLVM_PROFILE_FILE` at the spawn seam.
 # - `timeout` is bumped above tarpaulin's 60s default because the
 #   `src/e2e/prompt_end_to_end.rs` test chains two subprocess binaries
 #   (`lernie new` + `lernie prompt`) under instrumentation, which inflates

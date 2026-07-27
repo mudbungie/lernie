@@ -70,9 +70,37 @@ fn parses_explicit_retry_block() {
     assert_eq!(w.retry.max_attempts, 5);
     assert_eq!(w.retry.backoff, Backoff::Exponential);
     // Exponential backoff doubles from the first rung.
-    let d1 = w.retry.backoff.delay(1);
-    let d2 = w.retry.backoff.delay(2);
+    let d1 = w.retry.backoff.delay(1, None);
+    let d2 = w.retry.backoff.delay(2, None);
     assert!(d2 > d1 && d1 > Duration::ZERO);
+}
+
+#[test]
+fn absent_pacing_hint_leaves_the_config_schedule_alone() {
+    // ARCH §4.4: no `retry_after_seconds` → behavior is the pure
+    // config-driven schedule, keyed off the attempt number.
+    let b = Backoff::Exponential;
+    assert_eq!(b.delay(1, None), Duration::from_millis(250));
+    assert_eq!(b.delay(3, None), Duration::from_millis(1000));
+}
+
+#[test]
+fn pacing_hint_below_the_schedule_does_not_shrink_it() {
+    // The hint is a floor, never a shrink: 0s under a 250ms rung is
+    // indistinguishable from no hint at all.
+    let b = Backoff::Exponential;
+    assert_eq!(b.delay(1, Some(0)), b.delay(1, None));
+    // Rung 12 is 250ms << 2^11 = 512s, well past a 1s hint.
+    assert_eq!(b.delay(12, Some(1)), b.delay(12, None));
+    assert!(b.delay(12, Some(1)) > Duration::from_secs(1));
+}
+
+#[test]
+fn pacing_hint_above_the_schedule_wins() {
+    // A provider asking for 30s outranks the 250ms first rung.
+    let b = Backoff::Exponential;
+    assert_eq!(b.delay(1, Some(30)), Duration::from_secs(30));
+    assert_eq!(b.delay(2, Some(30)), Duration::from_secs(30));
 }
 
 #[test]

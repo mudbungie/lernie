@@ -185,9 +185,11 @@ pub(super) fn run(
                 // flag is the only evidence it was interrupted). The
                 // error returned instead is discarded by the caller's
                 // §2.9 step-3 check point, which settles the branch as
-                // stopped.
+                // stopped. The delay is the config schedule floored by
+                // the attempt's `Retry-After` pacing hint (§4.4).
                 if err.retryable() && attempt < max && !stop_signal::stopped(call.stop) {
-                    call.sleeper.sleep(call.retry.backoff.delay(attempt));
+                    let d = call.retry.backoff.delay(attempt, err.retry_after_seconds);
+                    call.sleeper.sleep(d);
                     if !stop_signal::stopped(call.stop) {
                         attempt += 1;
                         continue;

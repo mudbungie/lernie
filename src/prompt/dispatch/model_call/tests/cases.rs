@@ -57,6 +57,47 @@ fn retryable_error_then_clean_writes_two_segments() {
     assert_eq!(stdins[0], stdins[1], "identical re-issued request");
 }
 
+/// The delay the loop actually slept before its one retry, given a
+/// retryable failure carrying `hint` as its `Retry-After` (§4.4).
+fn slept_before_retry(hint: Option<u32>) -> Duration {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("steps/c/001/response.json");
+    let sleeper = RecSleeper::default();
+    let stop = AtomicBool::new(false);
+    let replies = vec![
+        Ok(paced_error_stream(
+            ErrorKind::Provider { status: 429 },
+            hint,
+        )),
+        Ok(text_stream("recovered", FinishReason::Stop)),
+    ];
+    let (r, _) = run_injected(
+        &path,
+        StubAdapter::new(replies),
+        retry(3),
+        false,
+        &sleeper,
+        &stop,
+    );
+    r.unwrap();
+    let slept = sleeper.0.borrow();
+    assert_eq!(slept.len(), 1, "one backoff drove the single retry");
+    slept[0]
+}
+
+/// §4.4: the pacing hint is a floor on the config schedule — the three
+/// readings, driven through the real retry loop.
+#[test]
+fn the_pacing_hint_floors_the_config_backoff() {
+    // Absent → the pure config schedule (first exponential rung).
+    let scheduled = slept_before_retry(None);
+    assert_eq!(scheduled, Duration::from_millis(250));
+    // Below → the config schedule is unchanged, never shrunk.
+    assert_eq!(slept_before_retry(Some(0)), scheduled);
+    // Above → the provider's hint wins.
+    assert_eq!(slept_before_retry(Some(7)), Duration::from_secs(7));
+}
+
 #[test]
 fn non_retryable_error_aborts_without_retry() {
     let ((r, sleeps, _), bytes) = drive(

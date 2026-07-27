@@ -96,16 +96,29 @@ pub enum Backoff {
 const BACKOFF_BASE_MS: u64 = 250;
 
 impl Backoff {
-    /// Delay to sleep before the retry that follows a failed `attempt`
-    /// (1-based). Exponential doubles per rung from [`BACKOFF_BASE_MS`],
-    /// saturating so a pathological attempt count cannot overflow.
-    pub fn delay(self, attempt: u32) -> std::time::Duration {
-        match self {
+    /// Effective delay before the retry that follows a failed `attempt`
+    /// (1-based): the config schedule, floored by the provider's pacing
+    /// hint (ARCH §4.4). Exponential doubles per rung from
+    /// [`BACKOFF_BASE_MS`], saturating so a pathological attempt count
+    /// cannot overflow.
+    ///
+    /// `retry_after_seconds` is the failed attempt's
+    /// `CanonicalError::retry_after_seconds` — the provider's
+    /// `Retry-After` header in whole seconds. It is a **floor, never a
+    /// shrink**: a hint below the schedule changes nothing, a hint above
+    /// it wins, and `None` (the header absent or unparseable) leaves the
+    /// schedule to govern alone.
+    pub fn delay(self, attempt: u32, retry_after_seconds: Option<u32>) -> std::time::Duration {
+        let scheduled = match self {
             Backoff::Exponential => {
                 let factor = 2u64.saturating_pow(attempt.saturating_sub(1));
                 std::time::Duration::from_millis(BACKOFF_BASE_MS.saturating_mul(factor))
             }
-        }
+        };
+        let hint = retry_after_seconds.map_or(std::time::Duration::ZERO, |s| {
+            std::time::Duration::from_secs(u64::from(s))
+        });
+        scheduled.max(hint)
     }
 }
 

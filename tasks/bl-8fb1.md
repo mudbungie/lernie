@@ -1,7 +1,8 @@
 +++
 title = "tests/install.rs mutates the machine-global bz, breaking concurrent agents' gates"
 created = 1784957523
-updated = 1784957523
+updated = 1785124119
+claimant = "Gimbal"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 `tests/install.rs::make_install_lays_down_skeleton_idempotently` shells out to `make install`, whose recipe runs `cargo install brazen --version =$(BRAZEN_PIN)` — a write to the machine-global `~/.cargo/bin/bz`, derived from THAT worktree's Cargo.toml pin.

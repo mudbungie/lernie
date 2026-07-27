@@ -27,6 +27,7 @@ use super::stop_signal;
 use super::transcript;
 use crate::prompt::Deps;
 use crate::prompt::Error;
+use crate::prompt::compactor;
 use crate::prompt::tool::{ExecError, ToolCall as ToolUse, ToolOutcome};
 use brazen::Content;
 use std::path::Path;
@@ -49,10 +50,20 @@ use std::path::Path;
 /// `KilledBySignal` with *no* stop pending is a genuine crash (SIGSEGV, …)
 /// and still surfaces as [`Error::ToolExec`] (§2.10). `Ok(false)` means
 /// every tool resolved and the loop continues.
+///
+/// `role` is the calling agent's role (§4.3). It gates what may be
+/// *called*, which the request's declaration does not imply: a request declares
+/// every tool its history names so the wire holds
+/// ([`super::tools::close_over_history`]), and a compactor's history
+/// names the dispatching branch's tools. A role reaching for a tool it
+/// may not run ([`compactor::refusal`]) is declined in-band — an
+/// `is_error` `tool_result` committed like any other, so the model reads
+/// the decline and steps on — and the executor is never entered.
 pub(super) fn run_tool_calls(
     conv_repo: &Path,
     worktree: &Path,
     conv_id: &str,
+    role: &str,
     step_dir_rel_str: &str,
     assistant_content: &[Content],
     deps: &Deps<'_>,
@@ -65,11 +76,16 @@ pub(super) fn run_tool_calls(
         else {
             continue;
         };
-        let outcome =
-            match deps
-                .tool_executor
-                .execute(ToolUse { id, name, input }, &step_dir_abs, deps.stop)
-            {
+        let outcome = match compactor::refusal(role, name) {
+            Some(decline) => ToolOutcome {
+                content: decline.into_bytes(),
+                is_error: true,
+            },
+            None => match deps.tool_executor.execute(
+                ToolUse { id, name, input },
+                &step_dir_abs,
+                deps.stop,
+            ) {
                 Ok(outcome) => outcome,
                 // §2.9 step 3: a tool group-killed by the executor's own
                 // SIGTERM, with the stop flag set, is the stop — cease the loop
@@ -83,7 +99,8 @@ pub(super) fn run_tool_calls(
                         source,
                     });
                 }
-            };
+            },
+        };
         let tool_result = outcome_to_tool_result(id, &outcome);
         transcript::commit_tool(worktree, conv_id, &tool_result, deps.git)?;
     }

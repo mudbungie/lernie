@@ -58,11 +58,13 @@ const DEFAULT_MAX_TOKENS: u32 = 4096;
 
 /// Inputs resolved by [`super::run`] before branch work starts.
 pub(super) struct Resolved<'a> {
+    /// The agent's role (§4.3) — governs what the request declares
+    /// ([`tools::compose`]) and what it may call ([`tool_step`]).
+    pub(super) role: &'a str,
     pub(super) model: &'a Model,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: &'a str,
-    /// The role's declared tool names (§4.3 `tools:`), composed against
-    /// the branch's committed schemas into the request's `tools` (§3.3).
+    /// The role's declared tool names (§4.3 `tools:`), composed by [`tools`].
     pub(super) tools: &'a [String],
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
@@ -133,14 +135,10 @@ pub(super) fn run_exchange(
     let mut exhausted = false;
     // §2.9 step 3: set when a check point sees the SIGTERM handler flag.
     let mut stopped = false;
-    // §3.3/§4.3: declared tools composed against the committed schemas
-    // once at step 1, cloned per step (git-inherited, stable mid-branch).
-    let mut tools: Vec<brazen::Tool> = Vec::new();
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
             commit_dispatch(&worktree_path, &conv_id, deps)?;
-            tools = tools::compose(&worktree_path, resolved.tools)?;
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox
@@ -180,11 +178,12 @@ pub(super) fn run_exchange(
         // commit's tree — §5.2 head/body under the role's manifest rules,
         // then the transcript tail — one path for running, retry, replay.
         let messages = assemble(&worktree_path, resolved.manifest)?;
+        let tools = tools::compose(&worktree_path, resolved.role, resolved.tools, &messages)?;
         let request = model_call::build_request(
             &resolved.model.model_id,
             &system_with_goal,
             messages,
-            tools.clone(),
+            tools,
             DEFAULT_MAX_TOKENS,
         );
         let request_value =
@@ -255,6 +254,7 @@ pub(super) fn run_exchange(
             repo,
             &worktree_path,
             &conv_id,
+            resolved.role,
             &step_dir_rel_str,
             &assistant_content,
             deps,

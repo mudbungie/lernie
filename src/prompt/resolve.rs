@@ -94,6 +94,7 @@ impl WorkerConfig {
     /// budgets derive from the one `workflow` home (§6).
     pub(super) fn as_resolved(&self) -> dispatch::Resolved<'_> {
         dispatch::Resolved {
+            role: &self.role,
             model: &self.model,
             provider_row: &self.provider_row,
             tools: &self.tools,

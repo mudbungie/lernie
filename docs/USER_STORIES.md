@@ -282,7 +282,7 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
   - linked: as US-17 with `role: "compactor"`
 - **acceptance**
   - exit 0; stdout is the compactor child's id.
-  - The compactor is an **ordinary child** with a real model call — not a stub. Its injected toolset is exactly `write_summary` and `mark_for_deletion`, available to that role alone and never declarable in a `providers.yaml` `tools:` list.
+  - The compactor is an **ordinary child** with a real model call — not a stub. Its injected toolset is exactly `write_summary` and `mark_for_deletion`, available to that role alone and never declarable in a `providers.yaml` `tools:` list. Its request additionally *declares* the tools its inherited transcript names, so the wire's referential integrity holds (ARCH §3.3 closure); it still cannot **call** them — a compactor reaching for an inherited tool is declined in-band and nothing executes.
   - `mark_for_deletion` can remove and never write content (a `git rm`) — deletion-only structurally, so the worst case is lost compaction, never corrupted work.
   - The **compaction merge** is a plain `--no-ff` merge into the dispatching branch — the one merge in the system. A work product the live branch rewrote since the checkpoint resolves **live-branch-wins** (the compactor's deletion is dropped).
   - Checkpoint triggers (`every_n_commits`, `every_t_seconds`, `on_flush`) are read from the config's `workflow.yaml`; a branch with no configured trigger never compacts; a malformed threshold fails closed.

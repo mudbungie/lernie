@@ -2,6 +2,7 @@ mod advance;
 mod advance_compaction;
 mod advance_edges;
 mod budget_enforcement;
+mod compaction_toolset;
 mod errors;
 mod errors_control;
 mod errors_disk;

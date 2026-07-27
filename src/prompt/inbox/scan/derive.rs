@@ -11,12 +11,12 @@
 
 use super::ScanError;
 use crate::prompt::inbox::{INBOX_DIR, inbox_dir, try_acquire};
-use crate::prompt::step::{RESPONSE_FILE, STEPS_DIR};
-use crate::provider::segment::{Outcome, classify};
+use crate::prompt::step::latest_step_outcome;
+use crate::provider::segment::Outcome;
 use crate::template::GitRunner;
 use crate::workspace;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// The transcript directory a delivered message lands in, as
 /// `messages/<NNN>-<sender>.md` (§2.11 *Delivery*). Read via `git
@@ -137,33 +137,21 @@ pub(super) fn transcript_line_from(line: &str, sender: &str) -> bool {
     }
 }
 
-/// Did `branch` die mid-work — is its latest step's `response.json` closed
-/// without a terminal `end` (§2.9, [`Outcome::NoTerminal`])? Reads only
-/// the framing tail via [`classify`], honoring the §2.3 diagnostic-only
-/// contract (framing-yes / content-no). No `steps/` tree (the shipped
-/// child shape) or no readable response ⇒ this signal is silent (`false`).
+/// Did `branch` die mid-work — did its latest step's model call never
+/// settle complete (§2.3)? Two on-disk shapes say so, and both are dead:
+/// `response.json` closed without a terminal `end` (killed or stopped
+/// mid-stream, §2.9, [`Outcome::NoTerminal`]) or its last segment
+/// terminated in an `Error` (retries exhausted or a non-retryable error,
+/// §2.10, [`Outcome::Failed`]) — either way no transcript entry
+/// committed and the branch cannot advance without a new touch. The one
+/// derivation is [`latest_step_outcome`] (a §2.3-sanctioned framing
+/// read); no `steps/` tree (the shipped child shape) or no readable
+/// response ⇒ this signal is silent (`None` ⇒ `false`).
 pub(super) fn died_mid_work(workspace: &Path, branch: &str) -> bool {
-    let steps = workspace.join(STEPS_DIR).join(branch);
-    let Some(latest) = latest_step_dir(&steps) else {
-        return false;
-    };
-    match std::fs::read(latest.join(RESPONSE_FILE)) {
-        Ok(bytes) => classify(&bytes) == Outcome::NoTerminal,
-        Err(_) => false,
-    }
-}
-
-/// The highest-numbered `steps/<branch>/<NNN>/` directory, or `None` when
-/// the tree is absent or holds no numeric step dir.
-fn latest_step_dir(steps: &Path) -> Option<PathBuf> {
-    let rd = std::fs::read_dir(steps).ok()?;
-    rd.flatten()
-        .filter_map(|e| {
-            let name = e.file_name().to_string_lossy().into_owned();
-            name.parse::<u32>().ok().map(|n| (n, e.path()))
-        })
-        .max_by_key(|(n, _)| *n)
-        .map(|(_, p)| p)
+    matches!(
+        latest_step_outcome(workspace, branch),
+        Some(Outcome::NoTerminal | Outcome::Failed)
+    )
 }
 
 /// The branch tip sha — the child's `terminal_ref:` for the sweep's

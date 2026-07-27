@@ -8,6 +8,10 @@
 //!   authoritative home, [`crate::prompt::role`]): `compactor` →
 //!   `compactor_return`; `verifier` → the approve/reject verdict split
 //!   ([`verifier`]); else `worker_return` (deliver, or the gate-hold).
+//!   The `compaction_merge` action is additionally gated on the result's
+//!   **epitaph value** (§2.6/§2.7): only a `final-response` compactor
+//!   merges; any other ending delivers like an ordinary child return
+//!   ([`execute_child`]).
 //! - **A checkpoint flush** ([`run_flush`]): a due `compaction:` clock at a
 //!   step boundary runs `worker_flush` → `dispatch(compactor)`. Its
 //!   machinery lives in the [`flush`] submodule; `run_flush` is re-exported
@@ -176,6 +180,17 @@ fn child_actions(workflow: &Workflow, event: Event) -> Vec<Action> {
 /// the gate ([`verifier::dispatch`]); `gate_return_on` is the hold itself
 /// (a no-op leaving the result in the inbox); `deliver_result` /
 /// `compaction_merge` are Ball-1. Other actions here are declined loudly.
+///
+/// **`compaction_merge` is epitaph-gated** (§2.6, §2.7): only a
+/// compactor that ended on `final-response` completed a compaction pass,
+/// so only that epitaph lands the merge. Any other value (`died`,
+/// `stopped`, `budget-exhausted`) means the pass never finished — its
+/// branch may hold partial `mark_for_deletion` state, and merging it is
+/// exactly the corrupted-context outcome the deletion-only toolset
+/// exists to rule out. Such a return lands no merge and is instead
+/// delivered like any child's (§2.7: "surfaced for user review like any
+/// other child failure"): the parent sees the epitaph in its transcript
+/// and the branch simply continues uncompacted.
 fn execute_child(
     action: &Action,
     event: Event,
@@ -191,12 +206,21 @@ fn execute_child(
         }
         Action::GateReturnOn { .. } => Ok(()),
         Action::DeliverResult => deliver_result(worktree, agent_id, cr, deps.git),
-        Action::CompactionMerge => compaction_merge(worktree, cr, deps.git),
+        Action::CompactionMerge if merge_qualifies(cr) => compaction_merge(worktree, cr, deps.git),
+        Action::CompactionMerge => deliver_result(worktree, agent_id, cr, deps.git),
         other => Err(Error::ActionUnsupported {
             action: format!("{other:?}"),
             event: event.as_str(),
         }),
     }
+}
+
+/// Does this compactor return qualify for the compaction merge? Only a
+/// `final-response` epitaph does (§2.6/§2.7 — "a compactor that ends on
+/// any other epitaph lands no merge"): the epitaph is the pinned manner
+/// of ending, and code branches on its value (§2.6).
+fn merge_qualifies(cr: &ChildResult) -> bool {
+    cr.epitaph == inbox::Epitaph::FinalResponse.as_str()
 }
 
 /// `deliver_result` (§2.6): apply the child's work-product transfer, then

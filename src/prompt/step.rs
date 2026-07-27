@@ -38,6 +38,7 @@
 //!   record, renamed out to the worktree at the model call's settling
 //!   `Finish`.
 
+use crate::provider::segment::{Outcome, classify};
 use serde::{Deserialize, Serialize};
 
 /// Top-level directory holding per-conversation step records, located
@@ -112,6 +113,34 @@ pub fn next_step_seq(conv_repo: &std::path::Path, conv_id: &str) -> std::io::Res
         }
     }
     Ok(max + 1)
+}
+
+/// The framing outcome of `agent`'s latest step's `response.json`, or
+/// `None` when no step tree, no numeric step, or no readable response
+/// exists (the general path with empty inputs). Reads only the §4.4
+/// framing tail via [`classify`] — a sanctioned framing read under the
+/// §2.3 diagnostic-only contract (framing-yes / content-no).
+///
+/// This is the single derivation behind every "did this branch's work
+/// end well?" question — the §8 silent-death sweep and the
+/// `lernie message` failed-branch advisory alike: a latest step that
+/// never settled complete (§2.3) — [`Outcome::NoTerminal`] (killed or
+/// stopped mid-work, §2.9) or [`Outcome::Failed`] (retries exhausted or
+/// a non-retryable error, §2.10) — committed no transcript entry, so
+/// the branch cannot advance without a new touch.
+pub fn latest_step_outcome(workspace: &std::path::Path, agent: &str) -> Option<Outcome> {
+    let steps = workspace.join(STEPS_DIR).join(agent);
+    let rd = std::fs::read_dir(steps).ok()?;
+    let latest = rd
+        .flatten()
+        .filter_map(|e| {
+            let name = e.file_name().to_string_lossy().into_owned();
+            name.parse::<u32>().ok().map(|n| (n, e.path()))
+        })
+        .max_by_key(|(n, _)| *n)
+        .map(|(_, p)| p)?;
+    let bytes = std::fs::read(latest.join(RESPONSE_FILE)).ok()?;
+    Some(classify(&bytes))
 }
 
 /// On-disk shape of `meta.json`. The `commit` field is the branch

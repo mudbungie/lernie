@@ -261,7 +261,8 @@ pub fn cli_message(
 /// existence ([`crate::workspace::agent_exists`]): §2.11 addresses a
 /// message to an *existing* agent, so a deposit that no drain could ever
 /// come for is declined loudly rather than written into a directory that
-/// nothing will ever read.
+/// nothing will ever read. Returns the probe outcome so the verb layer
+/// can advise on a branch whose latest model call failed (§2.10).
 /// Kept in the lib so the bin stays under the 300-line cap and the wiring
 /// is unit-testable — the same discipline as `stop::cli_run`. Resolves
 /// the sender from the live `LERNIE_CONV_BRANCH` ([`resolve_cli_sender`])
@@ -274,7 +275,7 @@ pub fn cli_run(
     agent: &str,
     content: &str,
     driver_target: &Path,
-) -> Result<(), MessageError> {
+) -> Result<ProbeOutcome, MessageError> {
     crate::workspace::require(workspace)?;
     if !crate::workspace::agent_exists(workspace, agent, &crate::template::RealGit::new()) {
         return Err(MessageError::UnknownAgent(agent.to_owned()));
@@ -282,8 +283,7 @@ pub fn cli_run(
     let sender =
         resolve_cli_sender(std::env::var_os(crate::prompt::tool::ENV_CONV_BRANCH).as_deref());
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
-    cli_message(workspace, agent, content, &sender, &SystemClock, &launcher)?;
-    Ok(())
+    cli_message(workspace, agent, content, &sender, &SystemClock, &launcher)
 }
 
 /// Resolve the deposit sender for a direct `lernie message` invocation

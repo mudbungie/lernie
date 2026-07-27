@@ -117,6 +117,20 @@ fn returned_child(
     work: (&str, &str),
     fx: &Fx,
 ) -> String {
+    returned_child_ep(ws, parent, role, goal, work, Epitaph::FinalResponse, fx)
+}
+
+/// [`returned_child`] with the deposited epitaph chosen by the test —
+/// the §2.6 epitaph-gate cases (a `died` compactor return, etc.).
+fn returned_child_ep(
+    ws: &Path,
+    parent: &str,
+    role: &str,
+    goal: &str,
+    work: (&str, &str),
+    epitaph: Epitaph,
+    fx: &Fx,
+) -> String {
     let parent_wt = agent_worktree(ws, parent);
     let req = ChildDispatchRequest {
         repo: ws,
@@ -140,16 +154,10 @@ fn returned_child(
         .git
         .run_capture(&child_wt, &["rev-parse", "HEAD"])
         .unwrap();
-    deposit_result(
-        ws,
-        parent,
-        &child,
-        Epitaph::FinalResponse,
-        tip.trim(),
-        Some("done"),
-        &fx.clock,
-    )
-    .unwrap();
+    // A `died` deposit mirrors the §8 sweep's: the child never spoke,
+    // so the result carries no body.
+    let response = (epitaph != Epitaph::Died).then_some("done");
+    deposit_result(ws, parent, &child, epitaph, tip.trim(), response, &fx.clock).unwrap();
     child
 }
 

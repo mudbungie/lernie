@@ -668,6 +668,16 @@ re-enters the verb, else `user` for a bare invocation.
   fire-and-forget. The driver outlives the `lernie message` process, so
   messaging is scriptable: the verb returns as soon as the deposit and
   spawn land, and delivery + stepping continue in the driver.
+- **A failed branch is named, never refused.** If the quiescent
+  recipient's latest model call failed (its last `response.json` segment
+  terminated in an `error` — retries exhausted or a non-retryable error,
+  ARCH §2.10), the deposit and launch proceed unchanged — messaging is
+  exactly how such a branch is retried once the cause is fixed — but the
+  verb prints a stderr advisory naming the branch and pointing at
+  `steps/<agent>/` and `lernie scan`, so a silent death (ARCH §2.3, §8)
+  is distinguishable from ordinary idleness at the verb that touches
+  it. Exit
+  code and stdout are untouched.
 
 ## Driving a branch: `lernie advance`
 
@@ -736,10 +746,18 @@ actions, no watcher (an idle workspace stays unswept until the next
 touch, by design):
 
 - **Silent-death sweep.** Every agent branch with no live executor (the
-  §2.11 executor-lock probe) that either died mid-work (its latest step's
-  `response.json` closed without a terminal `end`) or — for a child —
-  never deposited a result message is a *silent death* (the §8 health
-  count). For each hard-crashed **child** in that set, the sweep deposits
+  §2.11 executor-lock probe) that either died mid-work — its latest
+  step's model call never settled complete: `response.json` closed
+  without a terminal `end` (killed/stopped, §2.9), *or* its final
+  segment terminated in an `error` (retries exhausted or a non-retryable
+  error, §2.10 — that segment closes with a clean `end`, so
+  absence-of-`end` alone would misread the branch as idle) — or, for a
+  child, never deposited a result message is a *silent death* (the §8
+  health count). Each one is **named** in the report
+  (`silent deaths: 1 (<agent-id>)`): a dead **root** gets no deposit —
+  it has no parent inbox — so its name here is how an operator learns
+  which branch went quiet, and `steps/<agent-id>/` is where to read
+  why. For each hard-crashed **child** in that set, the sweep deposits
   a `died`-epitaph result message *on the child's behalf* (sender = the
   child — the sweep is the scribe, not the author), so the parent is
   revived rather than stalled. The "never deposited" test reads both the
@@ -802,7 +820,12 @@ is checked *before* the fork, so a rejected role leaves no branch debris.
   interprets its `compactor_return: compaction_merge` binding (§6) and
   merges the compactor branch `--no-ff` — the one merge left in the
   system (§2.6). A compactor that ends on any other epitaph lands no
-  merge; the branch simply continues uncompacted.
+  merge; the branch simply continues uncompacted — enforced where the
+  binding is interpreted: the delivered result's **epitaph value** gates
+  `compaction_merge`, and a `died`/`stopped`/`budget-exhausted`
+  compactor return is delivered like an ordinary child's result instead,
+  so the parent sees the epitaph and nothing of the compactor's branch
+  crosses (§2.6, §2.7).
 - `lernie dispatch worker <workspace> <parent-id> --goal <text>`
   spawns a worker child off the parent's tip. The new id is
   `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref

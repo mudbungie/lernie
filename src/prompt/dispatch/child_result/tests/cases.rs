@@ -3,7 +3,8 @@
 //! parent [`super`] module.
 
 use super::super::{has_pending_result, interpret_pending, run_flush};
-use super::{Fx, returned_child, workflow};
+use super::{Fx, returned_child, returned_child_ep, workflow};
+use crate::prompt::inbox::Epitaph;
 use crate::prompt::{ChildDispatchRequest, Error, SystemClock, child_dispatch};
 use crate::template::GitRunner;
 use crate::workspace::{agent_worktree, fixture};
@@ -71,6 +72,67 @@ fn a_compactor_result_lands_the_compaction_merge_and_consumes_the_message() {
     );
     // No transcript delivery for the compactor's result.
     assert!(!wt.join(format!("messages/001-{child}.md")).exists());
+}
+
+#[test]
+fn a_died_compactor_return_lands_no_merge_and_delivers_the_epitaph() {
+    // §2.6/§2.7 epitaph gate: a compactor ending on any epitaph but
+    // `final-response` lands NO merge (its branch may hold a partial
+    // pass); its result delivers like an ordinary child return instead.
+    let (_h, ws) = fixture::workspace();
+    let parent = "20260101-p9";
+    fixture::spawn_root(&ws, parent);
+    let fx = Fx::new();
+    let child = returned_child_ep(
+        &ws,
+        parent,
+        "compactor",
+        "compact",
+        ("summary/001.md", "partial\n"),
+        Epitaph::Died,
+        &fx,
+    );
+
+    let wt = agent_worktree(&ws, parent);
+    interpret_pending(&ws, parent, &wt, &workflow("events: {}\n"), &fx.deps()).unwrap();
+
+    // No merge landed; the compactor's tree never crossed (§2.6).
+    let log = fx.git.run_capture(&wt, &["log", "--format=%s"]).unwrap();
+    assert!(!log.contains("compaction merge"), "{log}");
+    assert!(!wt.join("summary/001.md").exists(), "no compactor tree");
+    // Delivered as an ordinary child return: the epitaph is reviewable
+    // in the parent's transcript (§2.7) and the inbox is drained.
+    let delivered = wt.join(format!("messages/001-{child}.md"));
+    let body = std::fs::read_to_string(&delivered).unwrap();
+    assert!(body.contains("epitaph: died"), "{body}");
+    assert!(!has_pending_result(&ws, parent).unwrap(), "inbox consumed");
+}
+
+#[test]
+fn a_stopped_compactor_return_lands_no_merge_under_an_explicit_binding() {
+    // The gate is on the action, not the default: an explicit
+    // `compactor_return: compaction_merge` binding is equally gated, so
+    // no workflow config can merge a compactor that did not finish.
+    let (_h, ws) = fixture::workspace();
+    let parent = "20260101-pa";
+    fixture::spawn_root(&ws, parent);
+    let fx = Fx::new();
+    let work = ("summary/001.md", "partial\n");
+    let child = returned_child_ep(
+        &ws,
+        parent,
+        "compactor",
+        "compact",
+        work,
+        Epitaph::Stopped,
+        &fx,
+    );
+    let wt = agent_worktree(&ws, parent);
+    let wf = workflow("events:\n  compactor_return:\n    - compaction_merge\n");
+    interpret_pending(&ws, parent, &wt, &wf, &fx.deps()).unwrap();
+    let log = fx.git.run_capture(&wt, &["log", "--format=%s"]).unwrap();
+    assert!(!log.contains("compaction merge"), "{log}");
+    assert!(wt.join(format!("messages/001-{child}.md")).exists());
 }
 
 #[test]

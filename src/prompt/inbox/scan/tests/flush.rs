@@ -163,11 +163,14 @@ fn crash_stranding_is_healed_by_an_explicit_scan() {
     // harness the spawned image is inert, so the report is the
     // deterministic observable — the real chain is `advance_cli.rs`).
     assert_eq!(report.flushed, vec![PARENT.to_string()]);
-    // The operator-facing summary renders the §8 counts.
+    // The operator-facing summary renders the §8 counts, naming each
+    // silent death (for a root the name is the whole surfacing).
     assert_eq!(
         report.to_string(),
-        "silent deaths: 1; died deposits swept: 1; drivers launched: 1; \
-         inboxes with no agent branch: 0"
+        format!(
+            "silent deaths: 1 ({CHILD}); died deposits swept: 1; drivers launched: 1; \
+             inboxes with no agent branch: 0"
+        )
     );
 }
 

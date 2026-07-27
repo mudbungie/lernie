@@ -12,14 +12,18 @@
 //!
 //! 1. **Silent-death sweep** (§8): enumerate agent branches with *no live
 //!    executor* (the [`try_acquire`] lock probe, released immediately)
-//!    that either died mid-work (the latest step's `response.json` closed
-//!    without a terminal `end`) or, for a child, never deposited a result
-//!    message (no message from the child in the parent's inbox *and* none
-//!    delivered in the parent's transcript — the sender-namespaced
-//!    derivation, §2.11). For each hard-crashed **child** in that set,
-//!    deposit the `died`-epitaph result message on the child's behalf
-//!    ([`deposit_result`], sender = the child — the sweep is the scribe,
-//!    not the author, §8).
+//!    that either died mid-work (the latest step's model call never
+//!    settled complete, §2.3: `response.json` closed without a terminal
+//!    `end`, §2.9, **or** its last segment terminated in an `Error` —
+//!    retries exhausted or a non-retryable error, §2.10) or, for a child,
+//!    never deposited a result message (no message from the child in the
+//!    parent's inbox *and* none delivered in the parent's transcript —
+//!    the sender-namespaced derivation, §2.11). For each hard-crashed
+//!    **child** in that set, deposit the `died`-epitaph result message on
+//!    the child's behalf ([`deposit_result`], sender = the child — the
+//!    sweep is the scribe, not the author, §8). Every candidate — root or
+//!    child — is *named* in the report: a dead root has no parent inbox
+//!    to deposit into, so the name is its whole surfacing.
 //! 2. **Inbox flush** (§2.11): list `inbox/*/`; every agent with pending
 //!    files and a free lock gets a driver *launched* — never drained: the
 //!    scanner moves no files and commits nothing, only the lock-holding
@@ -36,11 +40,12 @@
 //! structurally by the prefix, never by subtracting a reserved name
 //! (there is no `main`, §2.2).
 //!
-//! **Scope note.** A child does not yet run a step loop (`worker.rs` stops
-//! at the dispatch commit), so a real "died child" cannot arise from a run
-//! today; the derivation is exercised against constructed on-disk states.
-//! The derivation logic ([`derive`]) is fully unit-tested with the launch
-//! injected; this module is the sweep/flush orchestration over it.
+//! **Scope note.** Children run (bl-c33b, §2.5), but a hard crash
+//! (SIGKILL/OOM/panic mid-run) is impractical to reproduce
+//! deterministically, so the died derivation is exercised against
+//! constructed on-disk states — its honest unit (§2.11 shipped-state
+//! note). The derivation logic ([`derive`]) is fully unit-tested with the
+//! launch injected; this module is the sweep/flush orchestration over it.
 
 mod derive;
 
@@ -95,9 +100,15 @@ pub enum ScanError {
 /// `Display` is the operator-facing summary `lernie scan` prints.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ScanReport {
-    /// §8 silent-death count: candidate branches (no live executor that
-    /// died mid-work or, for a child, never deposited).
-    pub silent_deaths: usize,
+    /// §8 silent-death candidates, *by id*, in enumeration order: every
+    /// branch with no live executor that died mid-work (its latest step
+    /// never settled complete — no terminal `end`, §2.9, or an
+    /// `Error`-terminated final segment, §2.10) or, for a child, never
+    /// deposited. Named, not merely counted, because for a **root** the
+    /// name is the whole surfacing: it has no parent inbox for a `died`
+    /// deposit, so this report line is where an operator learns which
+    /// branch went quiet (the count derives as `len`, SSOT).
+    pub silent_deaths: Vec<String>,
     /// Child ids the sweep deposited a `died` result for, in enumeration
     /// order.
     pub swept: Vec<String>,
@@ -150,13 +161,20 @@ pub fn cli_run(
 
 impl std::fmt::Display for ScanReport {
     /// One operator-facing line: the §8 health counts plus what this
-    /// pass did about them.
+    /// pass did about them. The silent deaths are *named*: a dead root
+    /// gets no deposit (no parent inbox), so the name here is the one
+    /// place an operator learns which branch went quiet — the pointer to
+    /// its `steps/<id>/` record.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let named = match self.silent_deaths.is_empty() {
+            true => String::new(),
+            false => format!(" ({})", self.silent_deaths.join(", ")),
+        };
         write!(
             f,
-            "silent deaths: {}; died deposits swept: {}; drivers launched: {}; \
+            "silent deaths: {}{named}; died deposits swept: {}; drivers launched: {}; \
              inboxes with no agent branch: {}",
-            self.silent_deaths,
+            self.silent_deaths.len(),
             self.swept.len(),
             self.flushed.len(),
             self.inboxes_without_branch.len()
@@ -189,7 +207,7 @@ fn sweep(
             None => false,
         };
         if died || child_never {
-            report.silent_deaths += 1;
+            report.silent_deaths.push(branch.clone());
         }
         if child_never {
             let parent = parent_of(&branch).expect("child_never implies a parent");

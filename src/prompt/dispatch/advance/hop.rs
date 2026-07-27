@@ -14,7 +14,6 @@ use super::super::{
     stop_signal, terminal, tool_step, tools, transcript,
 };
 use crate::config::Event;
-use crate::prompt::compactor;
 use crate::prompt::inbox::Epitaph;
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, next_step_seq, step_dir_rel};
@@ -68,16 +67,6 @@ pub(super) fn step(
     // §2.8: the goal is the pinned worktree file, re-read per hop.
     let goal = std::fs::read_to_string(worktree.join(step_commit::GOAL_FILE))?;
     let system_with_goal = step_commit::prepend_goal(&goal, &resolved.soul);
-    // §3.3/§4.3: declared tools ∩ the branch's committed schemas —
-    // git-inherited and stable mid-branch, so per-hop recomposition
-    // yields what step 1 composed. §2.7/§6 role-aware resolution: the
-    // compactor role's built-in toolset (write_summary / mark_for_deletion)
-    // is injected here for that role alone — it is never a `providers.yaml`
-    // list and never rides `descriptions/**`.
-    let mut tools = tools::compose(worktree, resolved.tools)?;
-    if cfg.role == compactor::COMPACTOR_ROLE {
-        tools.extend(compactor::builtin_tool_schemas());
-    }
     let call = ModelCall {
         adapter: deps.adapter,
         sleeper: deps.sleeper,
@@ -94,6 +83,12 @@ pub(super) fn step(
     // §5.2 head/body under the role's manifest rules, then the
     // transcript tail — one code path for running, retry, and replay.
     let messages = assembler::assemble(worktree, resolved.manifest)?;
+    // Everything this request declares (§3.3, §4.3, §2.7 — see [`tools`]):
+    // the role's elected tools, the compactor's injected pair, and the
+    // closure over the assembled history. A compactor inherits the
+    // dispatching branch's transcript (§2.3), so that last part is not an
+    // edge case for it — it is the standing case.
+    let tools = tools::compose(worktree, resolved.role, resolved.tools, &messages)?;
     let request = model_call::build_request(
         &resolved.model.model_id,
         &system_with_goal,
@@ -173,6 +168,7 @@ pub(super) fn step(
         workspace,
         worktree,
         agent_id,
+        resolved.role,
         &step_dir_rel_str,
         &assistant_content,
         deps,

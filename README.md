@@ -814,7 +814,13 @@ is checked *before* the fork, so a rejected role leaves no branch debris.
   `providers.yaml` `tools:` list): `write_summary`, which writes the next
   `summary/<NNN>.md` on the compactor's branch, and `mark_for_deletion`,
   a staged `git rm` that can remove but never write content — so the
-  worst case is lost information, never corrupted information. The
+  worst case is lost information, never corrupted information. Its
+  request *declares* more than that pair: a compactor inherits the
+  dispatching branch's transcript, so the model call also names whatever
+  tools that transcript used — otherwise the provider refuses a request
+  whose history mentions a tool it was not told about. Declaring is not
+  permitting: a compactor reaching for one of those inherited tools gets
+  an error tool result naming its own two, and nothing runs. The
   **compaction merge** lands later and elsewhere: when the compactor's
   result message is delivered, the dispatching agent's own executor
   interprets its `compactor_return: compaction_merge` binding (§6) and

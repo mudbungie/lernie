@@ -101,6 +101,35 @@ pub fn builtin_tool_schemas() -> Vec<Tool> {
     ]
 }
 
+/// Why `role` may not call `tool`, or `None` when it may (ARCH §2.7).
+///
+/// **Declared is not callable.** A compactor's
+/// request declares more than its two tools: it inherits the dispatching
+/// branch's transcript by fork (§2.3 *Fork and inheritance*), so the
+/// `tool_use` / `tool_result` pairs of whatever tools that branch used
+/// are already in the history it ships, and the request must name them
+/// for the wire to hold ([`super::dispatch::tools::close_over_history`]).
+/// Being callable does not follow: the deletion-only guarantee of §2.7 —
+/// "the worst case is lost information, never corrupted information" —
+/// is structural only while `write_summary` / `mark_for_deletion` are
+/// the *only* tools a compactor can run. So a compactor reaching for an
+/// inherited tool is declined in-band, as an `is_error` `tool_result`
+/// the model reads (§3.3), never executed.
+///
+/// Every other role calls what it emits: the general path is `None`.
+pub fn refusal(role: &str, tool: &str) -> Option<String> {
+    if role != COMPACTOR_ROLE || tool == tools::WRITE_SUMMARY || tool == tools::MARK_FOR_DELETION {
+        return None;
+    }
+    Some(format!(
+        "{tool:?} is not callable by a compactor: it is declared only \
+         because the inherited transcript references it. The compactor \
+         toolset is {} and {} (ARCH §2.7, deletion-only).",
+        tools::WRITE_SUMMARY,
+        tools::MARK_FOR_DELETION,
+    ))
+}
+
 /// Boilerplate goal handed to a compactor at dispatch (ARCH §2.7). The
 /// dispatching branch name interpolates so the compactor knows which
 /// branch it is compacting; its inherited worktree (forked off the
@@ -166,5 +195,21 @@ mod tests {
         assert!(parts.iter().all(|(_, d, _)| d.is_some()));
         assert_eq!(parts[0].2["required"][0], "content");
         assert_eq!(parts[1].2["required"][0], "path");
+    }
+
+    #[test]
+    fn a_compactor_may_call_its_own_two_tools_and_nothing_else() {
+        assert_eq!(refusal(COMPACTOR_ROLE, tools::WRITE_SUMMARY), None);
+        assert_eq!(refusal(COMPACTOR_ROLE, tools::MARK_FOR_DELETION), None);
+        let declined = refusal(COMPACTOR_ROLE, "bash").expect("a foreign tool is declined");
+        assert!(declined.contains("\"bash\""), "{declined}");
+        assert!(declined.contains(tools::WRITE_SUMMARY), "{declined}");
+        assert!(declined.contains(tools::MARK_FOR_DELETION), "{declined}");
+    }
+
+    #[test]
+    fn every_other_role_calls_what_it_emits() {
+        assert_eq!(refusal("worker", "bash"), None);
+        assert_eq!(refusal("verifier", tools::WRITE_SUMMARY), None);
     }
 }

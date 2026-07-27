@@ -201,6 +201,7 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
         ws.path(),
         &worktree,
         agent_id,
+        crate::prompt::WORKER_ROLE,
         &step_dir_rel,
         &content,
         &deps,

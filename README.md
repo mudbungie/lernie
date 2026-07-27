@@ -683,7 +683,11 @@ re-enters the verb, else `user` for a bare invocation.
 
 `lernie advance <workspace> <agent>` is the §6 driver verb — the
 process every launch seam spawns, and the same verb an operator runs by
-hand. One invocation is one **hop**: take the lease (adopt the
+hand. One invocation is one **hop**: guard the id (a single path
+component, and an `agents/<id>` ref must exist — a name that is no
+agent is refused with `no agent "…"` and exit 1 before any lease, so
+an operator typo neither drives anything nor leaves an `inbox/<id>/`
+behind), take the lease (adopt the
 `LERNIE_LOCK_FD` fd published by a predecessor hop, else try-acquire
 the executor lock — losing it is a clean no-op), deliver pending inbox
 messages through the real drain (rematerializing a torn-down worktree
@@ -771,8 +775,9 @@ touch, by design):
   is intersected with the `agents/*` refs — the one registry of who
   exists — so an inbox directory with no matching ref is reported
   (`inboxes with no agent branch: N`) and left in place rather than
-  driven: a driver launched for a name with no branch dies on `invalid
-  reference` on this pass and every pass after. The sweep's own deposits
+  driven: a driver launched for a name with no branch is refused by the
+  existence guard (`lernie advance: no agent "…"`, exit 1) on this pass
+  and every pass after, writing nothing. The sweep's own deposits
   are picked up by the flush that follows in the same pass.
 
 **Shipped state.** The scan (silent-death sweep + inbox flush) ships

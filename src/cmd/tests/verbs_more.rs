@@ -121,8 +121,9 @@ fn replay_reports_a_missing_archive() {
 }
 
 #[test]
-fn advance_on_an_empty_workspace_is_quiet() {
+fn advance_on_a_quiescent_agent_is_quiet() {
     let (_h, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, "20260101-a1");
     let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
         advance::run(
             advance::Args {

@@ -24,14 +24,18 @@ fn stop_cascades_sigterm_and_leaves_response_without_terminal_end() {
     let server = MockServer::start();
     server.mock(|when, then| {
         when.method(POST).path("/v1/messages");
-        // Long delay — `bz` blocks on the HTTP response while the
+        // Long hold — `bz` blocks on the HTTP response while the
         // executor holds its inbox-directory lock fd (§2.11). `lernie
         // stop` discovers the pid by that lock fd (§2.9) and cuts the
         // cord; the open (empty) response.json is left without a
-        // terminal `end` as the on-disk stop signature.
+        // terminal `end` as the on-disk stop signature. The hold is
+        // sized far past the evidence-anchored work between the polls
+        // below and the stop (the sibling `stop_children.rs` margin):
+        // a hold the test's own progress can outrun under load would
+        // deliver HAPPY_SSE and fail the run on machine load, not code.
         then.status(200)
             .header("content-type", "text/event-stream")
-            .delay(Duration::from_secs(30))
+            .delay(Duration::from_secs(120))
             .body(HAPPY_SSE);
     });
 
@@ -155,7 +159,11 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
     // Marker the slow tool touches once it is actually executing — a
     // deterministic "we are in the tool window" signal (no sleep-race).
     let marker = holder.path().join("tool_running");
-    let command = format!("touch {} && sleep 30", marker.display());
+    // The sleep only has to outlast the marker-anchored work below
+    // (one file read plus one `lernie stop`); it is sized far past
+    // that so no scheduling stretch can let the tool exit on its own
+    // before the stop lands.
+    let command = format!("touch {} && sleep 120", marker.display());
 
     let server = MockServer::start();
     server.mock(|when, then| {
@@ -196,7 +204,7 @@ fn stop_lands_during_tool_execution_via_inbox_lock_fd() {
 
     // Wait until the tool is actually running: the marker proves the
     // model call finished (step-1 response.json closed with `end`) and
-    // the executor is inside `sleep 30`.
+    // the executor is inside the tool's long sleep.
     poll_for_path(&marker, Duration::from_secs(20));
 
     // Discriminator: step-1 response.json ends with terminal `end`, so a

@@ -97,12 +97,16 @@ fn state_counts_the_whole_branch_when_no_checkpoint_landed() {
     let wt = dir.path();
     init(wt);
     commit(wt, "root", "a.txt", "1");
+    // Anchor `now` on the root commit's own committer time (read back
+    // from git while it is HEAD), so the expected elapsed is exact.
+    // (Anchoring on the *second* commit's time assumed both commits
+    // land in the same wall second — two real `git commit` runs under
+    // load can straddle it.)
+    let root_ct = now_of(wt);
     commit(wt, "step", "b.txt", "2");
-    let s = state(wt, now_of(wt), false, &RealGit::new()).unwrap();
+    let s = state(wt, root_ct + 7, false, &RealGit::new()).unwrap();
     assert_eq!(s.commits_since_checkpoint, 2, "root + one step");
-    // now == the HEAD commit time; the root is the same wall second, so
-    // elapsed rounds to ~0 (≤1 guards a second-boundary straddle).
-    assert!(s.seconds_since_checkpoint <= 1);
+    assert_eq!(s.seconds_since_checkpoint, 7, "measured from the root");
     assert!(!s.flush_requested);
 }
 
@@ -113,11 +117,15 @@ fn state_measures_from_the_last_compaction_merge() {
     init(wt);
     commit(wt, "root", "a.txt", "1");
     commit(wt, "compaction merge [p1-cmp]", "summary/001.md", "x");
+    // Anchor `now` on the checkpoint commit's committer time (it is
+    // HEAD right here) so the expected elapsed is exact rather than a
+    // lower bound racing the wall clock.
+    let cmp_ct = now_of(wt);
     commit(wt, "step after", "b.txt", "2");
-    let s = state(wt, now_of(wt) + 42, true, &RealGit::new()).unwrap();
+    let s = state(wt, cmp_ct + 42, true, &RealGit::new()).unwrap();
     assert_eq!(s.commits_since_checkpoint, 1, "only the post-merge step");
     // Elapsed is measured from the checkpoint commit, not the root.
-    assert!(s.seconds_since_checkpoint >= 42);
+    assert_eq!(s.seconds_since_checkpoint, 42);
     assert!(s.flush_requested);
 }
 

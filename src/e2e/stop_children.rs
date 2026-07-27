@@ -24,8 +24,9 @@
 //!   process hierarchy, so the kernel group signal cannot leak across
 //!   and no CLI-level walk is performed.
 
+use super::poll;
 use super::stop_common::{
-    HAPPY_SSE, lernie_bin, poll_for_conv_branch_with_diag, poll_for_path, scaffold_repo,
+    HAPPY_SSE, lernie_bin, poll_for_conv_branch_with_diag, poll_for_path, reap, scaffold_repo,
     spawn_prompt, write_brazen_config, write_global_models,
 };
 use crate::prompt::inbox::inbox_dir;
@@ -34,13 +35,9 @@ use httpmock::Method::POST;
 use httpmock::MockServer;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, ExitStatus, Stdio};
-use std::time::{Duration, Instant};
+use std::process::{Child, Command, Stdio};
+use std::time::Duration;
 use tempfile::TempDir;
-
-/// Generous wall bound for every poll: long enough that a loaded machine
-/// never flakes, short enough that a real regression fails the run.
-const PATIENCE: Duration = Duration::from_secs(30);
 
 /// A live parent/child pair, both mid-model-call. Field order is drop
 /// order: the reaped `prompt` handle and the process-owning temp tree go
@@ -76,15 +73,20 @@ fn holder_pgid(dest: &Path, agent: &str) -> Option<i32> {
         .expect("scan /proc")
 }
 
+/// Block until nobody holds `agent`'s inbox lock. A dying executor writes
+/// as it goes (its truncated step record, its deposit, its commits), so
+/// [`poll`]'s silence bound covers this wait as it covers the others: the
+/// verdict is "the workspace stopped moving and the holder is still
+/// there", never "it took too long".
 fn poll_until_no_holder(dest: &Path, agent: &str) {
-    let until = Instant::now() + PATIENCE;
-    while let Some(pgid) = holder_pgid(dest, agent) {
-        assert!(
-            Instant::now() < until,
-            "executor for {agent} (pgid {pgid}) outlived the stop"
-        );
-        std::thread::sleep(Duration::from_millis(50));
-    }
+    let gone = poll::until(dest, || holder_pgid(dest, agent).is_none().then_some(()));
+    assert!(
+        gone.is_some(),
+        "executor for {agent} (pgid {:?}) outlived the stop, with {} untouched for {:?}",
+        holder_pgid(dest, agent),
+        dest.display(),
+        poll::patience()
+    );
 }
 
 /// `lernie stop <dest> <agent> [--stop-children]` through the CLI.
@@ -104,20 +106,6 @@ fn run_stop(dest: &Path, agent: &str, stop_children: bool) {
         "lernie stop: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-}
-
-/// Reap `child` within [`PATIENCE`], or kill it and report the timeout.
-fn wait_reap(child: &mut Child) -> ExitStatus {
-    let until = Instant::now() + PATIENCE;
-    while Instant::now() < until {
-        if let Some(status) = child.try_wait().expect("try_wait") {
-            return status;
-        }
-        std::thread::sleep(Duration::from_millis(50));
-    }
-    let _ = child.kill();
-    let _ = child.wait();
-    panic!("lernie prompt outlived the stop");
 }
 
 /// §2.9 on-disk stop signature: the file is closed and its last JSONL
@@ -165,8 +153,8 @@ fn live_family() -> Family {
     scaffold_repo(&dest, &harness);
 
     let mut prompt = spawn_prompt(&dest, &harness, &brazen_config, "ping");
-    let parent = poll_for_conv_branch_with_diag(&dest, PATIENCE, &mut prompt);
-    poll_for_path(&step_response(&dest, &parent), PATIENCE);
+    let parent = poll_for_conv_branch_with_diag(&dest, &mut prompt);
+    poll_for_path(&dest, &step_response(&dest, &parent));
 
     // Fork the child off the live parent. `lernie dispatch` is
     // writer-shaped (§2.1) — it forks, deposits, launches, and exits — so
@@ -192,7 +180,7 @@ fn live_family() -> Family {
         child.starts_with(&format!("{parent}-")),
         "hyphenated descent (§2.3): {child} must extend {parent}"
     );
-    poll_for_path(&step_response(&dest, &child), PATIENCE);
+    poll_for_path(&dest, &step_response(&dest, &child));
 
     // Two live executors, two distinct process groups (§2.9) — the
     // precondition both tests below discriminate on.
@@ -225,7 +213,7 @@ fn stop_children_fells_the_live_child_executor() {
 
     // The parent took the §2.9 step-3 exit: SIGTERM mid-model-call with a
     // stop pending is the stop, deposited (a root no-op) and exited 0.
-    let status = wait_reap(&mut fam.prompt);
+    let status = reap(&fam.dest, &mut fam.prompt);
     assert!(
         status.success(),
         "the stopped parent must exit cleanly (§2.9 step 3), got {status:?}"
@@ -242,7 +230,7 @@ fn stop_children_fells_the_live_child_executor() {
     // cleanly" is observable: a `stopped` result message from the child,
     // sender-namespaced, in the parent's inbox (§2.6, §2.11).
     let deposited = inbox_dir(&fam.dest, &fam.parent).join(format!("{}-001.md", fam.child));
-    poll_for_path(&deposited, PATIENCE);
+    poll_for_path(&fam.dest, &deposited);
     let body = fs::read_to_string(&deposited).unwrap();
     assert!(
         body.contains("epitaph: stopped") && body.contains(&format!("from: {}", fam.child)),
@@ -259,7 +247,7 @@ fn bare_stop_leaves_the_live_child_running() {
 
     run_stop(&fam.dest, &fam.parent, false);
 
-    let status = wait_reap(&mut fam.prompt);
+    let status = reap(&fam.dest, &mut fam.prompt);
     assert!(
         status.success(),
         "the stopped parent must exit cleanly (§2.9 step 3), got {status:?}"

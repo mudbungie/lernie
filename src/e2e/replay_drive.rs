@@ -18,9 +18,9 @@ use httpmock::MockServer;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::time::{Duration, Instant};
 use tempfile::TempDir;
 
+use super::poll;
 use super::prompt_end_to_end::{
     HAPPY_SSE, scaffold_repo, write_brazen_config, write_global_models,
 };
@@ -88,13 +88,16 @@ impl Fixture {
     }
 }
 
-/// Poll for `path`, up to `deadline` — the driver runs detached, so the
-/// test observes disk exactly like a frontend (§3.5).
-fn wait_for(path: &Path, deadline: Duration) {
-    let start = Instant::now();
-    while !path.exists() {
-        assert!(start.elapsed() < deadline, "timed out waiting for {path:?}");
-        std::thread::sleep(Duration::from_millis(100));
+/// Poll for `path` — the driver runs detached, so the test observes disk
+/// exactly like a frontend (§3.5). Bounded by [`poll`]'s silence, not by
+/// wall time: the driver may take as long as the box makes it take.
+fn wait_for(workspace: &Path, path: &Path) {
+    if poll::until(workspace, || path.exists().then_some(())).is_none() {
+        panic!(
+            "{path:?} never appeared, and {} went untouched for {:?} — nothing is driving it",
+            workspace.display(),
+            poll::patience()
+        );
     }
 }
 
@@ -162,18 +165,17 @@ fn a_replayed_agent_advances_on_its_governing_config() {
     // used to die with "no config/* ancestor for agents/<id>".
     fx.lernie(&["message", scratch.to_str().unwrap(), &agent, "again"]);
     let transcript = scratch.join("agents").join(&agent).join("messages");
-    let deadline = Duration::from_secs(120);
-    wait_for(&transcript.join("003-user.md"), deadline);
-    let start = Instant::now();
-    loop {
-        let landed = fs::read_dir(&transcript)
+    wait_for(&scratch, &transcript.join("003-user.md"));
+    let landed = poll::until(&scratch, || {
+        fs::read_dir(&transcript)
             .unwrap()
             .filter_map(Result::ok)
-            .any(|e| e.file_name().to_string_lossy().starts_with("004-"));
-        if landed {
-            break;
-        }
-        assert!(start.elapsed() < deadline, "no step landed on the replay");
-        std::thread::sleep(Duration::from_millis(100));
-    }
+            .any(|e| e.file_name().to_string_lossy().starts_with("004-"))
+            .then_some(())
+    });
+    assert!(
+        landed.is_some(),
+        "no step landed on the replay, and the scratch went untouched for {:?}",
+        poll::patience()
+    );
 }

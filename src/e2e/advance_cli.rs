@@ -17,8 +17,9 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::process::Command;
-use std::time::{Duration, Instant};
 use tempfile::TempDir;
+
+use super::poll;
 
 fn lernie_bin() -> std::path::PathBuf {
     crate::test_support::lernie_binary()
@@ -148,13 +149,17 @@ fn scaffold(dest: &Path, harness: &Path) {
     .unwrap();
 }
 
-/// Poll for `path` to exist, up to `deadline` — the driver chain runs
-/// detached, so the test observes disk, exactly like a frontend (§3.5).
-fn wait_for(path: &Path, deadline: Duration) {
-    let start = Instant::now();
-    while !path.exists() {
-        assert!(start.elapsed() < deadline, "timed out waiting for {path:?}");
-        std::thread::sleep(Duration::from_millis(100));
+/// Poll for `path` to exist — the driver chain runs detached, so the test
+/// observes disk, exactly like a frontend (§3.5). The bound is [`poll`]'s:
+/// the chain may take as long as the box makes it take, and only a
+/// motionless `workspace` fails.
+fn wait_for(workspace: &Path, path: &Path) {
+    if poll::until(workspace, || path.exists().then_some(())).is_none() {
+        panic!(
+            "{path:?} never appeared, and {} went untouched for {:?} — nothing is driving it",
+            workspace.display(),
+            poll::patience()
+        );
     }
 }
 
@@ -209,11 +214,10 @@ fn message_launches_a_detached_advance_chain_that_batons_through_tools() {
     // (005-tool) → exec successor with the lease riding LERNIE_LOCK_FD →
     // step 3 (006 final response).
     let messages = dest.join("agents").join(&conv).join("messages");
-    let deadline = Duration::from_secs(120);
-    wait_for(&messages.join("003-user.md"), deadline);
-    wait_for(&messages.join("004-claude-sonnet-5.json"), deadline);
-    wait_for(&messages.join("005-tool.json"), deadline);
-    wait_for(&messages.join("006-claude-sonnet-5.json"), deadline);
+    wait_for(&dest, &messages.join("003-user.md"));
+    wait_for(&dest, &messages.join("004-claude-sonnet-5.json"));
+    wait_for(&dest, &messages.join("005-tool.json"));
+    wait_for(&dest, &messages.join("006-claude-sonnet-5.json"));
 
     let tool_entry = fs::read_to_string(messages.join("005-tool.json")).unwrap();
     assert!(tool_entry.contains("BATON-OK"), "got {tool_entry:?}");
@@ -221,21 +225,24 @@ fn message_launches_a_detached_advance_chain_that_batons_through_tools() {
     // Both hops recorded their steps at the derived sequence; the
     // successor's response closed with a terminal `end` (§4.4).
     let step3 = dest.join(format!("steps/{conv}/003/response.json"));
-    wait_for(&step3, deadline);
-    let deadline_at = Instant::now() + deadline;
-    loop {
+    wait_for(&dest, &step3);
+    let ended = poll::until(&dest, || {
         let lines: Vec<serde_json::Value> = fs::read(&step3)
             .unwrap()
             .split(|b| *b == b'\n')
             .filter(|l| !l.is_empty())
             .map(|l| serde_json::from_slice(l).expect("valid JSON line"))
             .collect();
-        if lines.last().map(|e| e["type"] == "end").unwrap_or(false) {
-            break;
-        }
-        assert!(Instant::now() < deadline_at, "step 3 never completed");
-        std::thread::sleep(Duration::from_millis(100));
-    }
+        lines
+            .last()
+            .is_some_and(|e| e["type"] == "end")
+            .then_some(())
+    });
+    assert!(
+        ended.is_some(),
+        "step 3 never completed, and the workspace went untouched for {:?}",
+        poll::patience()
+    );
 }
 
 #[test]

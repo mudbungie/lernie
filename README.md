@@ -1279,6 +1279,15 @@ diff that touched nothing. Two shapes to write around:
   lives, instead of only while a stop scheduled milliseconds out has not
   arrived yet.
 
+The same objection reaches past coverage to the **verdict**, and the
+end-to-end tests answer it the same way: a poll waiting on a detached driver
+is bounded by *consecutive probes that saw no change in the workspace tree*,
+never by wall time (`src/e2e/poll.rs`, `docs/ARCHITECTURE.md` §9). A live
+driver writes continuously and a wedged one writes nothing, so a loaded box
+only makes the pass path slower — where a stopwatch would have turned a slow
+success red, and (as bl-2bf0 found) hid a real defect behind a timeout that
+read like machine load.
+
 There is no `--no-verify` escape hatch in the workflow. If the hook rejects a
 commit, fix the underlying issue rather than skipping.
 

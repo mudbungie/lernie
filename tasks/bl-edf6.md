@@ -1,7 +1,7 @@
 +++
 title = "ETXTBSY retry envelope is wall-clock; README's determinism rule says attempt count — conform the code"
 created = 1785124474
-updated = 1785125158
+updated = 1785125252
 claimant = "Keelson"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

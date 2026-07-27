@@ -37,6 +37,44 @@ fn the_makefile_derives_the_same_pin() {
     assert_eq!(String::from_utf8(out.stdout).unwrap().trim(), brazen_pin());
 }
 
+/// The README is the crates.io landing page, so it must carry the
+/// install command with a *literal* pin — a `<pin>` placeholder is not
+/// copy-pasteable. That makes it a third reader of the one home, and
+/// prose has drifted twice already (bl-143e, bl-8c92). So every version
+/// this file spells beside `brazen` is held equal to [`brazen_pin`]:
+/// bumping the pin without re-spelling the README fails the gate,
+/// which is the drift class shut rather than one instance fixed.
+#[test]
+fn every_brazen_version_the_readme_spells_is_the_pin() {
+    let readme =
+        std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/README.md")).unwrap();
+    // The three shapes the prose uses — the install command, the
+    // manifest line, and the `lernie --version` rendering — matched
+    // literally so an unrelated `=` near the word "brazen" cannot be
+    // mistaken for a version.
+    let spelled: Vec<&str> = ["brazen --version =", "brazen = \"=", "(brazen "]
+        .iter()
+        .flat_map(|lead| readme.match_indices(lead).map(|(i, l)| i + l.len()))
+        .map(|at| {
+            let rest = &readme[at..];
+            let end = rest
+                .find(|c: char| !c.is_ascii_digit() && c != '.')
+                .unwrap_or(rest.len());
+            &rest[..end]
+        })
+        // A `<pin>` placeholder captures empty — prose that points at
+        // the one home rather than spelling a number cannot drift.
+        .filter(|v: &&str| !v.is_empty())
+        .collect();
+    assert!(
+        spelled.len() >= 2,
+        "the README states the pin in both shapes"
+    );
+    for v in spelled {
+        assert_eq!(v, brazen_pin(), "a README brazen version drifted");
+    }
+}
+
 #[test]
 fn parse_reads_the_inline_source_spelling() {
     let manifest = "[dependencies]\nbrazen = \"=0.0.9\"\nserde = \"1\"\n";

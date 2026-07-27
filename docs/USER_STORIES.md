@@ -24,6 +24,8 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 
 **Verification environment for this pass.** `lernie 0.0.1`, worktree of `main` at `8d8638c`, `cargo build` (debug). Hands-on observations were made at `e3123ba` and re-checked against `8d8638c` after merging; where a later commit changed the answer, the story says so. Hands-on runs used a scratch harness root under `/tmp` (`LERNIE_HOME=<scratch>`) and a live wire through `bz` against the `local` (ollama) provider row, reached by the §4.2 `adapter:` override — see US-25 for why the ordinary path could not be used on this machine. Statuses attributed to tests name the test.
 
+**Second pass: the 0.0.1 outside-evaluation walk.** A later pass walked the *published* 0.0.1 from the public docs only — the crates.io crate, the `v0.0.1` release tarball, and a `make install INSTALL_PREFIX=<p>` from a fresh clone of `main` (`6a4a47d`) — each into an isolated prefix with isolated XDG homes. Statuses it changed say so inline and are marked **(0.0.1 walk)**. It filed six balls: bl-bbba (`advance` accepted a nonexistent agent), bl-63c1 (a missing `bz` named neither `bz` nor the fix), bl-33ef (the two binary distribution routes were undocumented), bl-8efa (`lernie new` at an existing *file*), bl-55e0 (`lernie config --from <nonexistent>` leaks git argv), bl-4bd1 (the built-in tool set is undiscoverable from the CLI).
+
 **Terminology.** All lernie terms below are used in the senses ARCH §2.1 and `docs/TAXONOMY.md` pin. The banned bare forms ("call", "turn", "session", "compression") do not appear.
 
 ---
@@ -34,19 +36,22 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 
 - **actor** operator
 - **scenario** A fresh machine with no lernie state. One command must produce runnable binaries and a founded harness root.
-- **commands** (exec binding only — installation is a Makefile act, not a verb)
+- **commands** (three routes; only the third is a Makefile act)
   ```
-  make install                            # ~/.local/bin, XDG homes
+  cargo install lernie --locked           # (a) crates.io
+  <the v* release tarball>                # (b) GitHub release asset
+  make install                            # (c) ~/.local/bin, XDG homes
   make install INSTALL_PREFIX=/usr/local
   make install LERNIE_HOME=/opt/lernie
   ```
 - **acceptance**
   - exit 0.
-  - `$INSTALL_PREFIX/bin/lernie` and `$INSTALL_PREFIX/bin/agent-eval` exist, mode `0755`.
+  - `$INSTALL_PREFIX/bin/lernie`, `$INSTALL_PREFIX/bin/agent-eval`, and `$INSTALL_PREFIX/bin/lernie-eval-agent` exist, mode `0755` — the three `PATH_BINARIES` the Makefile installs. *(The third was missing from this clause until the 0.0.1 walk counted them on disk.)*
   - `bz` resolves on `PATH` at the version `Cargo.toml`'s `brazen = "=<pin>"` names.
+  - Routes (a) and (b) lay down `lernie` alone and run nothing after it — no `bz`, no `prime`. That is acceptable *only if documented*, since both are publicly reachable artifacts: README §Install must state, per route, what is laid down, that `bz` at the pin is required for any prompting, the literal `cargo install brazen --version =<pin> --locked`, and where the harness root goes.
   - The harness root carries what US-02 asserts, because install founds it *through the verb* — README: *"**Founds the harness root by invoking `lernie prime`** — the single verb that seeds the installation substrate (ARCH §2.2), so the Makefile no longer duplicates the seeding."*
   - The install's own smoke step passes: `lernie --version` exits 0 and a throwaway `lernie new` exits 0.
-- **status** **unverified.** `tests/install.rs::make_install_lays_down_skeleton_idempotently` shells out to real `make install`, but it is `#[cfg_attr(tarpaulin, ignore)]` (`tests/install.rs:49`) — so as of the baseline commit it is skipped under `make check`, and this promise has no gate behind it. Not run in this pass either (it mutates the machine's real prefix and re-installs `bz` at the pin). *In flight:* bl-f01f adds an uninstrumented `test-install` step to `make check`, which would put this story under the gate — re-check this status once that lands.
+- **status** **fulfilled (0.0.1 walk).** Route (c) was walked hands-on in the `INSTALL_PREFIX` form and was flawless end to end: exit 0, three binaries at `0755`, `bz` recognised as already-at-pin by `install-bz`, `prime` run through the verb, `install-verify` passing, and a closing banner naming the PATH, both roots, and the `bz --dump-config` / `bz --login` follow-ups. `lernie --version` printed `lernie 0.0.1 (brazen 0.0.4)`. Routes (a) and (b) were walked into isolated prefixes too and both **worked** — `lernie --version`, `lernie new`, and the harness root founding all held — but each laid down `lernie` alone with **no documentation anywhere for the route**, so a first-time user hit `lernie prompt` and stopped dead at a missing `bz`. That was the gap, and it was a docs gap, not a mechanism gap: **RESOLVED (bl-33ef)** — README §Install now covers all three routes with what each lays down, the required `bz` at the pin with the literal install command, and where the harness root goes; the release tarball now carries `README.md` and `LICENSE` beside the binary; and `src/prompt/tests/pin.rs::every_brazen_version_the_readme_spells_is_the_pin` holds every pin the README spells equal to `brazen_pin()`, so the prose cannot drift (the third recurrence of that class — bl-143e, bl-8c92). The runtime half of the same stranding is bl-63c1 (US-24). `tests/install.rs::make_install_lays_down_skeleton_idempotently` is now under the gate too, via the uninstrumented `test-install` step in `make check` (bl-f01f landed).
 
 ### US-02 — `lernie prime` founds a harness root and never clobbers
 
@@ -92,7 +97,9 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
   - Non-empty destination → exit 1, stderr `lernie new: destination <path> already exists and is not empty`, and **nothing is written**.
   - An existing *empty* directory is accepted.
   - The retired per-conversation layout is **refused with an actionable error, never migrated** — ARCH §10: *"The retired pre-substrate layout … is **refused, not migrated**: every verb's layout guard declines it with an actionable error naming what was found and what the current layout is."*
-- **status** **partial.** The non-empty refusal and the empty-directory acceptance were observed hands-on (exit 1 with that literal stderr; exit 0 respectively) and are covered by `src/template/tests_scaffold.rs::binary_refuses_non_empty_destination`. The **retired-layout refusal has no integration test for `new` specifically** — it is unit-only (`src/workspace/tests.rs::require_refuses_the_retired_layout_with_an_actionable_error`) and integration-proven only for `stop` and `bundle`.
+- **status** **fulfilled (0.0.1 walk).** The non-empty refusal and the empty-directory acceptance were observed hands-on (exit 1 with that literal stderr; exit 0 respectively) and are covered by `src/template/tests_scaffold.rs::binary_refuses_non_empty_destination`. The **retired-layout refusal was then observed hands-on** by the 0.0.1 walk against a constructed retired-layout directory: the guard declined with the actionable error naming what was found and what the current layout is, exit 1, nothing written. The promise therefore holds in full; what remains is an *evidence* gap, not a shortfall — the automated proof for `new` specifically is still unit-only (`src/workspace/tests.rs::require_refuses_the_retired_layout_with_an_actionable_error`), with integration coverage only at `stop` and `bundle`.
+
+  **Separately found by the same walk and still open:** `lernie new` pointed at an existing **file** (not a directory) says `I/O error: Not a directory (os error 20)` — the destination guard covers non-empty directories but not non-directories. Filed as bl-8efa; not part of this story's acceptance as written.
 
 ### US-05 — the end user authors a later config commit
 
@@ -108,7 +115,9 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
   - `--from` with `--orphan` → exit 1.
   - An authoring pass that changes nothing is **declined** and the branch does not move — README: *"An authoring pass that changes nothing is declined (git's empty-commit refusal) — the branch does not move."*
   - No agent branch moves; this is the only act that advances a config branch (ARCH §2.3 branch advancement).
-- **status** **partial.** Advance, `--from`, and `--orphan` are proven through the real binary with a scripted `$EDITOR` by `tests/config_cli.rs::config_verb_advances_forks_and_orphans_via_editor`, including the `merge-base` succeeds/fails pair. The **empty-commit decline and the `--from`/`--orphan` exclusion are unit-only** (`src/template/authoring/tests.rs::a_no_op_edit_is_declined_as_an_empty_commit`, `::from_cli_declines_from_and_orphan_together`) — never exercised through the binary.
+- **status** **fulfilled (0.0.1 walk).** Advance, `--from`, and `--orphan` are proven through the real binary with a scripted `$EDITOR` by `tests/config_cli.rs::config_verb_advances_forks_and_orphans_via_editor`, including the `merge-base` succeeds/fails pair. The two clauses that were unit-only — the `--from`/`--orphan` exclusion and the empty-commit decline — were **both observed hands-on through the binary** by the 0.0.1 walk: the flag pair exits 1, and an authoring pass that changes nothing is declined with the branch not moving. As with US-04, what remains is an evidence gap rather than a shortfall: the automated proofs are still the unit tests (`src/template/authoring/tests.rs::a_no_op_edit_is_declined_as_an_empty_commit`, `::from_cli_declines_from_and_orphan_together`).
+
+  **Separately found by the same walk and still open:** `lernie config --from <nonexistent>` dumps the raw git argv and the internal `.config-author` path instead of naming the missing lineage. Filed as bl-55e0.
 
 ---
 
@@ -177,14 +186,16 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
 - **actor** an agent
 - **commands** `echo '{"agent":"<id>","content":"…"}' | lernie tool message`
 - **acceptance** exit 0 and stdout `{"status":"deposited"}`; a create-only file appears at `<ws>/inbox/<agent>/<sender>-<NNN>.md`; the sender is `LERNIE_CONV_BRANCH`, **never** the model's input — ARCH §2.11: *"The sender identity is taken from `LERNIE_CONV_BRANCH` (§3.3) — harness-derived, never model-supplied, so an agent cannot forge provenance."* No branch is created and no address is returned.
-- **status** **partial.** The deposit semantics, the unforgeable sender, and the JSON product are covered at unit level (`src/prompt/tool/builtin/message/tests.rs`, 13 tests, with the re-entry sender injected). **No test drives `lernie tool message` as a subprocess** — the tool shim itself is unexercised at integration level, though the verb it re-enters (US-13) is.
+- **status** **fulfilled (0.0.1 walk).** The deposit semantics, the unforgeable sender, and the JSON product are covered at unit level (`src/prompt/tool/builtin/message/tests.rs`, 13 tests, with the re-entry sender injected), and the 0.0.1 walk drove `lernie tool message` **as a real subprocess** against a live workspace: exit 0, the `{"status":"deposited"}` product on stdout, and the create-only inbox file on disk with the harness-derived sender. The shim is therefore observed, not merely inferred; the standing evidence gap is that no *test* drives it as a subprocess.
 
 ### US-12 — `load_skill`
 
 - **actor** an agent
 - **commands** `echo '{"name":"bash"}' | lernie tool load_skill`
 - **acceptance** exit 0 and stdout `{"status":"loaded","path":"skills/<name>"}` on a fresh copy, `already_loaded` when the worktree already holds it; the pooled body is **copied** (not symlinked) into `<ws>/agents/<id>/skills/<name>/`; the copy is committed with the tool result because a tool commit stages the whole worktree (`git add -A`); an unknown name or a non-single-component name is **declined** with `is_error`, naming the available pool — never fuzzy-matched, never sanitized (ARCH §3.3).
-- **status** **partial.** All of the above is unit-covered (`src/prompt/tool/builtin/load_skill/tests.rs`, 13 tests) and the pool seeding is integration-proven (`tests/prime_cli.rs`). **There is no integration test of `load_skill` at all** — neither the subprocess shim nor the worktree copy landing in a commit is exercised against the real binary.
+- **status** **fulfilled (0.0.1 walk).** All of the above is unit-covered (`src/prompt/tool/builtin/load_skill/tests.rs`, 13 tests) and the pool seeding is integration-proven (`tests/prime_cli.rs`). The 0.0.1 walk then drove `lernie tool load_skill` **as a real subprocess**: the `loaded` product with the `skills/<name>` path on a fresh copy, `already_loaded` on the repeat, and the copied body present in the agent's worktree. The standing evidence gap is that no *test* drives it against the real binary.
+
+  **Separately found by the same walk and still open:** the built-in tool set is undiscoverable from the CLI — `lernie tool --help` shows a bare `<NAME>` and the unknown-tool decline lists nothing, while `load_skill`'s sibling decline names its whole pool. Filed as bl-4bd1.
 
 ---
 

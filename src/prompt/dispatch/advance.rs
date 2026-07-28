@@ -50,7 +50,10 @@ pub enum AdvanceOutcome {
     AlreadyDriven,
     /// Nothing is due: empty inbox and a transcript tail with no model
     /// call pending — the §2.11 pin-1 silent exit, terminating the
-    /// exit-launch recursion.
+    /// exit-launch recursion. The exit honours the §2.11 release rule
+    /// ([`driver::release_then_reprobe`]): a deposit that raced this
+    /// hop's last inbox read is launched for after the release, so
+    /// "silent" never means "stranding".
     NothingToDo,
     /// The hop stepped to a terminal event and ran the §2.11 exit
     /// protocol; the chain ends here. The epitaph is not carried — the
@@ -124,10 +127,16 @@ pub(in crate::prompt) fn run(
         }
     };
 
-    driver::deliver(workspace, agent_id, deps.git)?;
+    // `delivery.left` is what this executor's last inbox read under the
+    // lease deliberately left pending — the §2.11 release rule's diff
+    // base for every voluntary release below (the two no-op exits and
+    // the terminal arm alike).
+    let delivery = driver::deliver(workspace, agent_id, deps.git)?;
+    let seen = delivery.left;
     let worktree = crate::workspace::agent_worktree(workspace, agent_id);
     if !worktree.exists() {
         // Torn down and no mail: quiescent, nothing due (§2.3 step 6).
+        driver::release_then_reprobe(lock, workspace, agent_id, &seen, deps.launcher);
         return Ok(AdvanceOutcome::NothingToDo);
     }
 
@@ -150,7 +159,14 @@ pub(in crate::prompt) fn run(
     // composition keeps a no-op hop config-free (lazy resolution,
     // above).
     match warrant(&assembler::transcript(&worktree)?) {
-        Warrant::NothingDue => Ok(AdvanceOutcome::NothingToDo),
+        Warrant::NothingDue => {
+            // §2.11 pin 1, closed by the release rule: the silent exit
+            // is silent only over an inbox this hop's own last read
+            // fully accounted for — a deposit that raced that read met a
+            // Busy writer probe and is owed its launch by us.
+            driver::release_then_reprobe(lock, workspace, agent_id, &seen, deps.launcher);
+            Ok(AdvanceOutcome::NothingToDo)
+        }
         Warrant::Unpaired => Err(Error::UnpairedToolUse {
             branch: agent_id.to_string(),
         }),
@@ -162,24 +178,22 @@ pub(in crate::prompt) fn run(
             match hop::step(workspace, agent_id, &worktree, &cfg, deps)? {
                 hop::StepOutcome::ToolsRan => Ok(AdvanceOutcome::ToolsPending(lock)),
                 hop::StepOutcome::Terminal(epitaph) => {
-                    // Terminal handling + exit protocol, exactly as
-                    // `run_exchange`'s tail (§2.11): finish by epitaph
-                    // value, evaluate the workflow's terminal-lifecycle
-                    // bindings (§6 — the epitaph names the event), release
-                    // own lock, then the self-directed launch and the
-                    // parent revival — after release this process has no
-                    // authority; spawn and return are its only acts. No
-                    // terminal compaction (§2.7 — the stage is deleted).
-                    terminal::finish(workspace, agent_id, &worktree, epitaph, deps)?;
-                    crate::prompt::workflow_actions::run_terminal_bindings(
-                        &cfg.workflow,
-                        epitaph,
-                        &worktree,
+                    // The shared §2.11 terminal tail ([`terminal::conclude`]
+                    // — the same sequence as `run_exchange`'s): finish by
+                    // epitaph value, terminal-lifecycle bindings (§6),
+                    // release through the release rule (a racing deposit
+                    // launches whatever the epitaph), then the
+                    // epitaph-valued exit launches. No terminal compaction
+                    // (§2.7 — the stage is deleted).
+                    terminal::conclude(
+                        workspace,
                         agent_id,
-                        deps.git,
+                        epitaph,
+                        &cfg.workflow,
+                        lock,
+                        &seen,
+                        deps,
                     )?;
-                    drop(lock);
-                    terminal::exit_launch(workspace, agent_id, epitaph, deps);
                     Ok(AdvanceOutcome::Terminal)
                 }
             }

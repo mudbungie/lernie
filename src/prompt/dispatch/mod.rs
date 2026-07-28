@@ -9,10 +9,11 @@
 //! loop ([`model_call`], §4.4), re-assemble history from the read-state
 //! commit ([`assembler`], §2.3, §5), and loop on a settled `tool_use`.
 //! Every terminal deposits a result message ([`result_deposit`], §2.6,
-//! no-op for a root), evaluates the terminal-lifecycle bindings (§6,
-//! [`workflow_actions`]), then runs the §2.11 exit protocol (deposit →
-//! release lock → epitaph-valued launches, at own agent and at the
-//! parent the deposit revived → exit, [`terminal`], [`driver`]).
+//! no-op for a root), then runs the shared §2.11 terminal tail
+//! (`terminal::conclude`): terminal-lifecycle bindings (§6), lease
+//! release through the §2.11 release rule (a deposit that raced the last
+//! drain is launched for, [`driver`]), and the epitaph-valued exit
+//! launches at own agent and at the parent the deposit revived.
 
 pub mod advance;
 mod assembler;
@@ -36,7 +37,6 @@ pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
-use super::workflow_actions;
 use super::{Deps, Error};
 use crate::config::manifest::RoleRules;
 use crate::config::{Budgets, Model, RetryConfig, Workflow};
@@ -135,6 +135,10 @@ pub(super) fn run_exchange(
     let mut exhausted = false;
     // §2.9 step 3: set when a check point sees the SIGTERM handler flag.
     let mut stopped = false;
+    // What the latest drain deliberately left pending — the §2.11
+    // release rule's diff base at the tail (every loop exit follows an
+    // assignment, so this is never unset).
+    let mut seen;
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
@@ -145,7 +149,7 @@ pub(super) fn run_exchange(
         // message into the transcript ahead of this step's read-state
         // capture — after the prior step's tool entries, so a message
         // never wedges between paired tool blocks (§2.3).
-        drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?;
+        seen = drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?.left;
 
         // §6 prompt→advance collapse: interpret delivered child results
         // (deliver_result / compaction_merge / verifier gate) at the same
@@ -269,32 +273,28 @@ pub(super) fn run_exchange(
         step_seq += 1;
     }
 
-    // Terminal handling (§2.9, §6): a stopped branch deposits its result
-    // on the way out; a final response deposited in the loop; an exhausted
-    // branch deposited at the boundary check. No terminal compaction is
-    // dispatched (§2.7 — the stage is deleted).
+    // The shared §2.11 terminal tail ([`terminal::conclude`] — the same
+    // sequence as the `lernie advance` hop's): finish by epitaph value
+    // (a stopped branch deposits its result on the way out; a final
+    // response deposited in the loop; an exhausted branch at the boundary
+    // check), terminal-lifecycle bindings (§6), release through the
+    // release rule (a deposit that raced this loop's last drain launches
+    // whatever the epitaph), then the epitaph-valued exit launches. No
+    // terminal compaction (§2.7 — the stage is deleted).
     let epitaph = match (stopped, exhausted) {
         (true, _) => Epitaph::Stopped,
         (false, true) => Epitaph::BudgetExhausted,
         (false, false) => Epitaph::FinalResponse,
     };
-    terminal::finish(repo, &conv_id, &worktree_path, epitaph, deps)?;
-    // §6 collapse: the root evaluates its terminal-lifecycle bindings
-    // (`branch_stopped` → mark_abandoned / notify_ui) too.
-    workflow_actions::run_terminal_bindings(
-        resolved.workflow,
-        epitaph,
-        &worktree_path,
+    terminal::conclude(
+        repo,
         &conv_id,
-        deps.git,
+        epitaph,
+        resolved.workflow,
+        executor_lock,
+        &seen,
+        deps,
     )?;
-
-    // Exit protocol (§2.11): the result deposit landed at the terminal
-    // event above; now release own lock, then spawn a driver at own agent
-    // and — the deposit's own probe-and-launch — at the parent it revived.
-    // After release this process has no authority: spawn and exit only.
-    drop(executor_lock);
-    terminal::exit_launch(repo, &conv_id, epitaph, deps);
 
     Ok(branch_name)
 }

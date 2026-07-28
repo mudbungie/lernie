@@ -27,17 +27,22 @@
 //! — the missing trailing `end` on the branch's own `response.json` —
 //! lives on a different tree and is untouched by this deposit.
 //!
-//! [`exit_launch`] is the closing act of the §2.11 exit protocol: after
-//! [`super::run_exchange`] releases the executor lock, a driver is
-//! spawned at the exiting agent itself, fire-and-forget, and the result
-//! deposit that just landed in the parent's inbox is followed by a
-//! driver at the **parent** ([`revive_parent`]). Both launches are
-//! decided by one epitaph value (§2.11 pin 2): a final response
-//! launches; `stopped` never does (a relaunch would resurrect the branch
-//! the operator just killed, and waking the parent would hand it a stop
-//! to undo one level up); `budget-exhausted` never does (an epitaph-spam
-//! cycle against a hard ceiling — one the parent shares, since the
-//! ceiling is derived over the whole tree, §6).
+//! [`conclude`] is the whole terminal tail, shared by both drivers. Its
+//! lease release runs the §2.11 **release rule**
+//! ([`super::driver::release_then_reprobe`]): a deposit that raced the
+//! executor's last inbox read is launched for whatever the epitaph — it
+//! is new work, and §2.9 makes messaging a stopped branch the resume
+//! path. [`exit_launch`] then closes the §2.11 exit protocol with the
+//! epitaph-*funded* launches: a driver spawned at the exiting agent
+//! itself, fire-and-forget, and — following the result deposit that just
+//! landed in the parent's inbox — a driver at the **parent**
+//! ([`revive_parent`]). Both are decided by one epitaph value (§2.11
+//! pin 2): a final response launches; `stopped` never does (a relaunch
+//! funded by nothing new would resurrect the branch the operator just
+//! killed, and waking the parent would hand it a stop to undo one level
+//! up); `budget-exhausted` never does (an epitaph-spam cycle against a
+//! hard ceiling — one the parent shares, since the ceiling is derived
+//! over the whole tree, §6).
 //!
 //! **Two launches, one sequence.** §2.11's terminal sequence — deposit
 //! into the parent's inbox → release own lock → spawn a driver at own
@@ -59,8 +64,39 @@ use super::super::budget;
 use super::super::inbox::{self, Epitaph};
 use super::super::{Deps, Error};
 use super::result_deposit::deposit_terminal;
-use crate::config::Budgets;
+use crate::config::{Budgets, Workflow};
 use std::path::Path;
+
+/// The whole §2.11 terminal tail — one sequence for both drivers
+/// ([`super::run_exchange`]'s tail and the `lernie advance` hop), so the
+/// two terminal lease releases are literally one code path: finish by
+/// epitaph value ([`finish`]), evaluate the workflow's terminal-lifecycle
+/// bindings (§6 — the epitaph names the event), release the lease through
+/// the §2.11 **release rule** ([`super::driver::release_then_reprobe`] —
+/// a deposit that raced this executor's last inbox read, `seen`, is
+/// launched for *regardless of the epitaph*: it is new work, and §2.9
+/// makes messaging a stopped branch the resume path), then the
+/// epitaph-valued launches at own agent and at the parent the result
+/// deposit revived ([`exit_launch`]). After the release this process has
+/// no authority: spawn and return are its only acts.
+pub(super) fn conclude(
+    workspace: &Path,
+    agent_id: &str,
+    epitaph: Epitaph,
+    workflow: &Workflow,
+    lock: inbox::ExecutorLock,
+    seen: &[super::drain::SeenDeposit],
+    deps: &Deps<'_>,
+) -> Result<(), Error> {
+    let worktree = crate::workspace::agent_worktree(workspace, agent_id);
+    finish(workspace, agent_id, &worktree, epitaph, deps)?;
+    crate::prompt::workflow_actions::run_terminal_bindings(
+        workflow, epitaph, &worktree, agent_id, deps.git,
+    )?;
+    super::driver::release_then_reprobe(lock, workspace, agent_id, seen, deps.launcher);
+    exit_launch(workspace, agent_id, epitaph, deps);
+    Ok(())
+}
 
 /// The §6 budget check at a model-call boundary: tokens/wall/depth derived
 /// live over the tree (no stored counter, PRINCIPLES SSOT). On exhaustion
@@ -100,7 +136,7 @@ pub(super) fn budget_exhausted(
 /// (§2.9 step 3). A final response deposited inside the loop and a
 /// `budget-exhausted` branch at the boundary check, so both are no-ops.
 /// No terminal compaction is dispatched (§2.7 — the stage is deleted).
-pub(super) fn finish(
+fn finish(
     repo: &Path,
     conv_id: &str,
     worktree: &Path,
@@ -118,11 +154,14 @@ pub(super) fn finish(
 /// executor lock is released: a driver at this agent (the self-directed
 /// launch) and a driver at the parent the result deposit just landed in
 /// ([`revive_parent`]), both fire-and-forget and both by epitaph value
-/// (§2.11 pin 2). Fire-and-forget is literal — a launch failure is
-/// logged and swallowed, never propagated: it falls into the accepted
-/// crash class (§2.11), where the stranding is late, not lost, and the
-/// next touch (a reprompt, or a hand-run `lernie scan`) heals it.
-pub(super) fn exit_launch(workspace: &Path, agent_id: &str, epitaph: Epitaph, deps: &Deps<'_>) {
+/// (§2.11 pin 2). These are the epitaph-*funded* launches — the launch a
+/// racing deposit funds is the release rule's, made in [`conclude`]
+/// before this runs, whatever the epitaph. Fire-and-forget is literal —
+/// a launch failure is logged and swallowed, never propagated: it falls
+/// into the accepted crash class (§2.11), where the stranding is late,
+/// not lost, and the next touch (a reprompt, or a hand-run `lernie
+/// scan`) heals it.
+fn exit_launch(workspace: &Path, agent_id: &str, epitaph: Epitaph, deps: &Deps<'_>) {
     // §2.11 pin 2: only a final response launches — stopped and
     // budget-exhausted never relaunch. (`died` never reaches an exit
     // path at all: a dead executor runs nothing.)

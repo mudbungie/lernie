@@ -125,7 +125,9 @@ fn read_body(path: &Path) -> Result<String, Error> {
 
 /// Split a result message into its `epitaph` frontmatter value and its
 /// body (the terminal response, `None` when the child never spoke).
-fn split_frontmatter(body: &str) -> (String, Option<String>) {
+/// `pub(super)` for the §2.11 release rule's warrant replay
+/// ([`super::driver`]), which reads a racing result's epitaph value.
+pub(super) fn split_frontmatter(body: &str) -> (String, Option<String>) {
     let mut lines = body.lines();
     if lines.next() != Some("---") {
         return (String::new(), None);

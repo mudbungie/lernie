@@ -195,10 +195,15 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
 
     let branch = run(&repo, "go", &deps).unwrap();
     assert_eq!(branch, agent);
-    // The driver won the freed lock and delivered the stranded deposit.
+    // Two launches, in sequence (§2.11): the release rule's — the late
+    // deposit is outside what the last drain deliberately left pending,
+    // so the tail's post-release re-read fires, and that driver wins the
+    // freed lock and delivers — then the exit protocol's unconditional
+    // self-launch, whose driver finds the inbox quiet again (racy
+    // launches are free).
     assert_eq!(
         *launcher.outcomes.borrow(),
-        vec![DriveOutcome::Delivered(1)]
+        vec![DriveOutcome::Delivered(1), DriveOutcome::NothingToDeliver]
     );
     // Delivered means committed: the transcript on the branch carries it
     // (001-user = initial message, 002-<model-id> = assistant, 003-user =

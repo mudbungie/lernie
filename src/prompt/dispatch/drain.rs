@@ -29,13 +29,24 @@ const MESSAGE_EXT: &str = "md";
 /// The whole drain runs inside the executor lock the step loop already
 /// holds, so [`transcript::next_seq`]'s max-present-plus-one counter is
 /// race-free (§2.3).
+///
+/// Returns what this drain did — delivery count, plus the identities of
+/// the deposits it deliberately left pending ([`Delivery::left`]). That
+/// left-set is the §2.11 release rule's diff base, this executor's last
+/// *accounted* inbox read under the lease
+/// ([`super::driver::release_then_reprobe`]): a pending deposit outside
+/// it raced the lease and warrants the releaser's launch.
 pub(super) fn drain(
     worktree: &Path,
     inbox: &Path,
     conv_id: &str,
     git: &dyn GitRunner,
-) -> Result<(), Error> {
+) -> Result<Delivery, Error> {
     recover_strays(worktree, conv_id, git)?;
+    let mut delivery = Delivery {
+        delivered: 0,
+        left: Vec::new(),
+    };
     for msg in pending(inbox)? {
         // A **result message** (§2.6, carrying a `terminal_ref:`) is a
         // lifecycle circumstance the §6 hop interprets by the returning
@@ -46,11 +57,56 @@ pub(super) fn drain(
         // inbox, `docs/PRINCIPLES.md` Single source of truth).
         let body = std::fs::read_to_string(&msg.path).map_err(Error::Io)?;
         if transfer::terminal_ref_of(&body).is_some() {
+            delivery.left.push(SeenDeposit {
+                name: msg.name,
+                mtime: msg.mtime,
+            });
             continue;
         }
         transcript::deliver_message(worktree, conv_id, &msg.sender, &msg.path, git)?;
+        delivery.delivered += 1;
     }
-    Ok(())
+    Ok(delivery)
+}
+
+/// What one [`drain`] did: how many messages moved as delivery commits,
+/// and which deposits it deliberately left pending.
+#[derive(Debug)]
+pub(super) struct Delivery {
+    /// Messages moved into the transcript as delivery commits (§2.11).
+    pub(super) delivered: usize,
+    /// The §2.11 release rule's seen-set: deposits this drain enumerated
+    /// and deliberately left (held results, `super::child_result`).
+    pub(super) left: Vec<SeenDeposit>,
+}
+
+/// The identity of a deposit a drain deliberately left pending — one
+/// element of the §2.11 release rule's seen-set. Identity is the
+/// `(name, mtime)` pair, never the name alone: delivery and result
+/// interpretation free a `<sender>-<NNN>` name for reuse (§2.11
+/// *Deposit* derives `NNN` from the current listing), and a reused name
+/// is a *new* deposit that must fire the rule — while a held file is
+/// untouched from enumeration to release, so both fields are stable
+/// exactly as long as the file is the one the drain saw.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct SeenDeposit {
+    name: String,
+    mtime: SystemTime,
+}
+
+impl SeenDeposit {
+    /// Construct from parts — the test seam for exercising the release
+    /// rule's arms without a full drain ([`super::driver`] tests).
+    #[cfg(test)]
+    pub(super) fn new(name: String, mtime: SystemTime) -> Self {
+        SeenDeposit { name, mtime }
+    }
+
+    /// Whether `pending` is the very deposit this identity names — same
+    /// name *and* same mtime (a reused name carries a fresh mtime).
+    pub(super) fn matches(&self, pending: &Pending) -> bool {
+        self.name == pending.name && self.mtime == pending.mtime
+    }
 }
 
 /// One deliverable inbox message, carrying the sort keys `(mtime, name)`
@@ -58,8 +114,12 @@ pub(super) fn drain(
 /// sequence).
 #[derive(Debug)]
 pub(super) struct Pending {
+    /// Advisory arrival-order key (§2.11) — and one half of the
+    /// [`SeenDeposit`] identity pair.
     mtime: SystemTime,
-    name: String,
+    /// The deposit filename (`<sender>-<NNN>.md`) — the other half of
+    /// the [`SeenDeposit`] identity pair.
+    pub(super) name: String,
     /// Absolute path of the inbox file — read by the §6 child-result
     /// interpreter ([`super::child_result`]) to route a result message.
     pub(super) path: PathBuf,

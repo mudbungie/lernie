@@ -72,8 +72,7 @@ pub(super) fn dispatch(
         goal: &goal,
         fork_point: Some(&worker.terminal_ref),
     };
-    child_dispatch::run(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
-    Ok(())
+    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
 }
 
 /// Execute a verifier-verdict action (§6): approve drains the held worker
@@ -137,7 +136,7 @@ fn reject(
         goal: &feedback,
         fork_point: None,
     };
-    child_dispatch::run(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
+    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
     if let Some(worker) = find_gated_worker(results, verifier_cr, worktree, deps.git) {
         consume(worker)?;
     }

@@ -28,6 +28,23 @@
 //! thereby a property of the dispatch primitive — a dispatch cannot fork
 //! without an inbox to deposit into — rather than of loop code.
 //!
+//! **One budget gate, every dispatch** (§6). `budgets:` is a ceiling on
+//! the conversation tree, and a dispatch is the only act that can deepen
+//! it — so the check belongs at the fork, not at the child's first model
+//! call, and there is exactly one fork in the system: [`run`]. Every
+//! caller reaches it — the `dispatch` built-in and `lernie dispatch`
+//! (model-initiated, §3.4) and the §6 workflow bindings
+//! `worker_flush → dispatch(compactor)` and the verifier gate
+//! (harness-initiated) — so `max_depth` cannot be enforced against one
+//! kind of dispatch and not the other. The two kinds differ only in what
+//! a refusal *means*, which is [`run_procedure`]'s single job.
+//!
+//! Without this, a `max_depth` breach was caught only when the child
+//! finally tried to step (`budget::check` at the model-call boundary),
+//! by which time the branch, its worktree and its inbox already existed —
+//! the shape of the runaway compaction cascade in bl-a9eb (yog bl-ebbd),
+//! where hundreds of branches were minted below a declared `max_depth: 4`.
+//!
 //! The goal is one input with two projections, both written at dispatch:
 //! `goal.md` (pinned standing context, §2.8) and the deposited dispatch
 //! message (the on-ramp the child's step-1 drain delivers). They carry
@@ -37,7 +54,9 @@
 
 use super::clock::{Clock, IdGen};
 use super::subagent::{SpawnRequest, spawn_subagent_branch};
-use super::{Error, SOULS_DIR};
+use super::{Error, SOULS_DIR, WORKFLOW_FILE};
+use crate::config::Workflow;
+use crate::prompt::budget;
 use crate::prompt::inbox::{self, Launcher};
 use crate::template::GitRunner;
 use crate::workspace;
@@ -81,6 +100,15 @@ pub struct ChildDispatchRequest<'a> {
 /// branch name and its address (§2.3, §2.11). `launcher` is injected so
 /// the post-deposit driver launch is testable without spawning a real
 /// `lernie advance`; production passes [`inbox::AdvanceLauncher`].
+///
+/// **The §6 budget gate lives here**, and only here (module docs): the
+/// declared `budgets:` are evaluated against the child's own prospective
+/// branch name *before* the fork, so a dispatch that would breach
+/// `max_depth` — or start work under a tree that has already spent its
+/// tokens or wall — is refused with [`Error::DispatchRefused`] and leaves
+/// no branch, no worktree and no inbox behind. Depth is positional and
+/// derives from the branch name alone (`budget::derive::depth`), so the
+/// check is exact for a branch that does not yet exist.
 pub fn run(
     req: &ChildDispatchRequest<'_>,
     git: &dyn GitRunner,
@@ -106,6 +134,18 @@ pub fn run(
                 source,
             }
         })?;
+    // §6 budget gate — the one enforcement point for *every* dispatch
+    // (see [`run`]'s docs). Evaluated against the child's own prospective
+    // branch name, so `max_depth` refuses the fork that would breach it
+    // rather than letting the branch exist and decline later.
+    if let Some(ex) = budget::check(req.repo, &sub_branch, &budgets(req, &commit, git)?) {
+        return Err(Error::DispatchRefused {
+            child: sub_branch,
+            parent: req.parent_branch.to_string(),
+            exhausted: ex,
+        });
+    }
+
     let soul_rel = format!("{SOULS_DIR}/{}.md", req.role);
     let soul = workspace::show_control(req.repo, &commit, &soul_rel, git).map_err(|source| {
         Error::ControlRead {
@@ -142,6 +182,54 @@ pub fn run(
     })?;
 
     Ok(sub_branch)
+}
+
+/// A **harness-initiated** dispatch: the §6 workflow bindings' own
+/// procedure dispatches (`worker_flush → dispatch(compactor)`, the
+/// verifier gate and its reject re-dispatch). It runs [`run`] — the same
+/// fork, the same front door, the same budget gate — and differs in one
+/// thing only: whose failure a refusal is. A model that asked for a child
+/// it cannot have must be told (the `dispatch` built-in re-emits the
+/// error as its `tool_result`); a *procedure* that cannot have one has
+/// simply reached the ceiling the operator declared, which is not the
+/// dispatching branch's failure. So the refusal is reported and the
+/// branch steps on, uncompacted or ungated — the §2.7 outcome for any
+/// compaction that does not land.
+///
+/// Every other error still propagates: only the budget refusal is a
+/// non-event here.
+pub fn run_procedure(
+    req: &ChildDispatchRequest<'_>,
+    git: &dyn GitRunner,
+    clock: &dyn Clock,
+    id_gen: &dyn IdGen,
+    launcher: &dyn Launcher,
+) -> Result<(), Error> {
+    match run(req, git, clock, id_gen, launcher) {
+        Err(refused @ Error::DispatchRefused { .. }) => {
+            eprintln!("lernie: {refused}");
+            Ok(())
+        }
+        other => other.map(drop),
+    }
+}
+
+/// The `budgets:` block governing this dispatch, read from the same
+/// frozen config commit the soul comes from (§2.2, §6). One home for the
+/// limits: the child inherits the parent's config through ancestry, so
+/// parent and child evaluate the identical declaration.
+fn budgets(
+    req: &ChildDispatchRequest<'_>,
+    commit: &str,
+    git: &dyn GitRunner,
+) -> Result<crate::config::Budgets, Error> {
+    let raw = workspace::show_control(req.repo, commit, WORKFLOW_FILE, git).map_err(|source| {
+        Error::ControlRead {
+            path: PathBuf::from(format!("{commit}:{WORKFLOW_FILE}")),
+            source,
+        }
+    })?;
+    Ok(Workflow::parse(&raw, &PathBuf::from(format!("{commit}:{WORKFLOW_FILE}")))?.budgets)
 }
 
 #[cfg(test)]

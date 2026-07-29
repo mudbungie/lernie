@@ -50,6 +50,7 @@ fn workspace() -> TempDir {
     git(&repo, &["init", "-q", "--bare", "-b", "config/default"]);
     git(&repo, &["config", "user.email", "t@test.invalid"]);
     git(&repo, &["config", "user.name", "t"]);
+    git(&repo, &["config", "core.hooksPath", "/dev/null"]);
     let author = ws.path().join(".author");
     git(
         &repo,

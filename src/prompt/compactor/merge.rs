@@ -28,6 +28,22 @@
 //! a modify/delete conflict leaves the live version in the worktree,
 //! which the add stages — resolving the conflict by keeping ours.
 //!
+//! **Anything else is refused, loudly.** `git add -A` is a *resolution*,
+//! and it is only a correct one for the single overlap class above. When
+//! git cannot merge a path on its own it writes `<<<<<<<` / `=======` /
+//! `>>>>>>>` into the working tree, and an unqualified `add -A` would
+//! stage that markup and commit it — into `summary/**`, which §5.2
+//! composes into every subsequent model call on this branch. That is not
+//! lost compaction, it is *corrupted context*, the one outcome §2.7
+//! promises can never happen. So the merge asks git which paths it had to
+//! mark ([`content_conflicts`], read from the index stages, not guessed)
+//! and, for any of them, aborts the merge and marks
+//! `refs/lernie/conflicted/<compactor-id>` instead — the §2.6 decline,
+//! the same escape hatch the work-product transfer uses. Nothing lands;
+//! the branch continues uncompacted. This is the third defect of
+//! bl-a9eb (yog bl-ebbd), where three unresolved conflicts were committed
+//! into a live `summary/001.md` at a root branch's tip.
+//!
 //! **Filtered to the compaction product** (§2.6, §2.7). A compactor is an
 //! ordinary child, so its branch also grew its *own* context since `C`:
 //! the `goal.md` and `soul.md` its dispatch commit rewrote, and the
@@ -44,9 +60,12 @@
 //! excludes branch-scoped context; this one admits the branch's own
 //! context product and excludes the compactor's private dialog.
 
+mod decline;
+
 use super::Error;
 use crate::template::GitRunner;
 use crate::workspace;
+use decline::{content_conflicts, decline};
 use std::path::Path;
 
 /// The compaction product's sole *addition* surface (ARCH §2.7): the
@@ -65,6 +84,12 @@ pub enum MergeOutcome {
     /// ref — nothing to land. The general path with an empty diff, not a
     /// bootstrap special case (`docs/PRINCIPLES.md`).
     NoOp,
+    /// Git could not merge a path on its own and wrote conflict markers
+    /// into it ([`content_conflicts`]) — the write-path guarantee this
+    /// merge is built on was violated, so the merge is **aborted**,
+    /// `refs/lernie/conflicted/<compactor-id>` is marked, and nothing
+    /// lands. Carries the offending paths for the operator-facing line.
+    Conflicted(Vec<String>),
 }
 
 /// Land the compactor branch `compactor_id` into the dispatching branch
@@ -78,6 +103,9 @@ pub enum MergeOutcome {
 /// A compactor whose ref is already an ancestor of `HEAD` (nothing to
 /// land) leaves no `MERGE_HEAD`; that is [`MergeOutcome::NoOp`], not an
 /// error. A merge that fails to even begin (a bad ref) surfaces loudly.
+/// A merge git had to write conflict markers into is
+/// [`MergeOutcome::Conflicted`]: aborted, marked, nothing committed
+/// ([`decline`]).
 pub fn merge(
     parent_worktree: &Path,
     compactor_id: &str,
@@ -110,6 +138,22 @@ pub fn merge(
             source,
         })?;
         return Ok(MergeOutcome::NoOp);
+    }
+
+    // Refuse before staging (module docs): `git add -A` is a resolution,
+    // and it can only be *applied* to the one conflict class this merge
+    // is specified to resolve. A path git had to write markers into is
+    // not that class — staging it would commit the markers into the live
+    // branch's own context.
+    let conflicted = content_conflicts(parent_worktree, git)?;
+    if !conflicted.is_empty() {
+        return decline(
+            parent_worktree,
+            compactor_id,
+            &compactor_ref,
+            conflicted,
+            git,
+        );
     }
 
     // Live-branch-wins (§2.6): stage the working-tree state. A clean merge

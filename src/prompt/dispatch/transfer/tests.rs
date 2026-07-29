@@ -51,6 +51,8 @@ fn init_repo() -> TempDir {
     let g = git();
     g.run(wt, &["init", "-b", "main"]).unwrap();
     g.run(wt, &["config", "user.email", "t@t"]).unwrap();
+    g.run(wt, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     g.run(wt, &["config", "user.name", "t"]).unwrap();
     std::fs::write(wt.join("base.txt"), "base\n").unwrap();
     g.run(wt, &["add", "-A"]).unwrap();

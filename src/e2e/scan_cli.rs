@@ -64,6 +64,7 @@ fn workspace_with_crashed_child() -> TempDir {
     git(&author, &["add", "-A"]);
     git(&author, &["config", "user.email", "t@test.invalid"]);
     git(&author, &["config", "user.name", "t"]);
+    git(&author, &["config", "core.hooksPath", "/dev/null"]);
     git(&author, &["commit", "-m", "config: init"]);
     git(&repo, &["worktree", "remove", author_str.as_str()]);
     git(

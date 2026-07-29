@@ -34,6 +34,8 @@ fn stale_agent(dest: &std::path::Path, id: &str) {
             "user.email=t@e",
             "-c",
             "user.name=T",
+            "-c",
+            "core.hooksPath=/dev/null",
             "commit",
             "-m",
             "dispatch",

@@ -35,7 +35,7 @@ pub mod merge;
 pub mod tools;
 
 pub use checkpoint::{due, state};
-pub use merge::merge;
+pub use merge::{MergeOutcome, merge};
 
 use super::Error;
 use brazen::Tool;

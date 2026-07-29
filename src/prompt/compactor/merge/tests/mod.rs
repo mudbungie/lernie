@@ -25,6 +25,8 @@ fn repo_at_checkpoint(files: &[(&str, &str)]) -> TempDir {
     let git = g();
     git.run(wt, &["init", "-b", "agents/p1"]).unwrap();
     git.run(wt, &["config", "user.email", "t@t"]).unwrap();
+    git.run(wt, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     git.run(wt, &["config", "user.name", "t"]).unwrap();
     for (rel, content) in files {
         write(wt, rel, content);
@@ -210,6 +212,75 @@ fn a_bad_compactor_ref_is_declined_loudly() {
     let dir = repo_at_checkpoint(&[("goal.md", "g\n")]);
     let err = merge(dir.path(), "does-not-exist", &g()).unwrap_err();
     assert_git_op(err, "compaction merge");
+}
+
+#[test]
+fn a_content_conflict_is_refused_and_marked_never_committed() {
+    // THE PIN (§2.6 decline): two compactors raced and both authored
+    // `summary/001.md`, so git has to write conflict markers into the one
+    // file §5.2 composes into every subsequent model call. The merge is
+    // refused: nothing is committed, the marked-up file never reaches the
+    // branch, and `refs/lernie/conflicted/p1-cmp` names the compactor's
+    // work. This is the corrupted-summary half of bl-a9eb (yog bl-ebbd).
+    let dir = repo_at_checkpoint(&[("messages/001-user.md", "hi\n")]);
+    let wt = dir.path();
+    compactor_branch(wt, ("summary/001.md", "compactor B digest\n"), &[]);
+    advance_live(wt, &[("summary/001.md", "compactor A digest\n")]);
+    let before = g().run_capture(wt, &["rev-parse", "HEAD"]).unwrap();
+
+    assert_eq!(
+        merge(wt, "p1-cmp", &g()).unwrap(),
+        MergeOutcome::Conflicted(vec!["summary/001.md".to_string()]),
+    );
+
+    // Nothing landed: HEAD is where it was, no merge is in progress, and
+    // the live summary is the live branch's own, marker-free.
+    assert_eq!(g().run_capture(wt, &["rev-parse", "HEAD"]).unwrap(), before);
+    assert_eq!(head_parents(wt), 1, "no merge commit");
+    let live = std::fs::read_to_string(wt.join("summary/001.md")).unwrap();
+    assert_eq!(live, "compactor A digest\n");
+    assert!(!live.contains("<<<<<<<"), "no conflict markers: {live}");
+    assert!(
+        g().run_capture(wt, &["rev-parse", "--verify", "-q", "MERGE_HEAD"])
+            .is_err(),
+        "the merge was aborted"
+    );
+
+    // Marked git-natively at the compactor's own tip (§2.6).
+    let marked = g()
+        .run_capture(wt, &["rev-parse", "refs/lernie/conflicted/p1-cmp"])
+        .unwrap();
+    let compactor_tip = g()
+        .run_capture(wt, &["rev-parse", "agents/p1-cmp"])
+        .unwrap();
+    assert_eq!(marked, compactor_tip);
+}
+
+#[test]
+fn a_modify_delete_overlap_is_not_a_content_conflict() {
+    // The boundary: the *expected* overlap class populates one side only,
+    // so it stays live-branch-wins and is never mistaken for a refusal
+    // (the same repo shape as `overlap_drops_work_product_deletion...`).
+    let dir = repo_at_checkpoint(&[("code.txt", "v1\n")]);
+    let wt = dir.path();
+    compactor_branch(wt, ("summary/001.md", "digest\n"), &["code.txt"]);
+    advance_live(wt, &[("code.txt", "v2\n")]);
+    g().run(
+        wt,
+        &[
+            "merge",
+            "--no-ff",
+            "--no-commit",
+            "--no-edit",
+            "agents/p1-cmp",
+        ],
+    )
+    .ok();
+    assert!(
+        content_conflicts(wt, &g()).unwrap().is_empty(),
+        "modify/delete carries no markers"
+    );
+    g().run(wt, &["merge", "--abort"]).unwrap();
 }
 
 /// Assert `err` is the git failure of operation `want`.

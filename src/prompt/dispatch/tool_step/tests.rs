@@ -43,6 +43,8 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
     git.run(&worktree, &["config", "user.email", "t@t"])
         .unwrap();
     git.run(&worktree, &["config", "user.name", "t"]).unwrap();
+    git.run(&worktree, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     std::fs::create_dir_all(worktree.join("messages")).unwrap();
     std::fs::write(worktree.join("messages/001-model.json"), b"[]").unwrap();
     git.run(&worktree, &["add", "-A"]).unwrap();
@@ -164,6 +166,8 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
     git.run(&worktree, &["config", "user.email", "t@t"])
         .unwrap();
     git.run(&worktree, &["config", "user.name", "t"]).unwrap();
+    git.run(&worktree, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     std::fs::create_dir_all(worktree.join("messages")).unwrap();
     std::fs::write(worktree.join("messages/001-model.json"), b"[]").unwrap();
     git.run(&worktree, &["add", "-A"]).unwrap();

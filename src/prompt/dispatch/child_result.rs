@@ -241,8 +241,25 @@ pub(super) fn deliver_result(
 /// `compaction_merge` (§2.6, the one merge): land the returning compactor
 /// branch `--no-ff` into this branch, then consume the trigger message
 /// (the merge commit is the record — never a transcript entry).
+///
+/// A merge git could not resolve is **declined** by
+/// [`compactor::merge`] — aborted and marked at
+/// `refs/lernie/conflicted/<compactor-id>` — and reported here for the
+/// operator. The trigger message is consumed either way: the compactor
+/// has returned, and re-reading its result would re-attempt a merge that
+/// is already recorded as refused.
 fn compaction_merge(worktree: &Path, cr: &ChildResult, git: &dyn GitRunner) -> Result<(), Error> {
-    compactor::merge(worktree, &cr.child_id, git)?;
+    if let compactor::MergeOutcome::Conflicted(paths) =
+        compactor::merge(worktree, &cr.child_id, git)?
+    {
+        eprintln!(
+            "lernie: compaction merge [{}] declined — git could not merge {} \
+             (marked refs/lernie/conflicted/{}, §2.6); the branch continues uncompacted",
+            cr.child_id,
+            paths.join(", "),
+            cr.child_id,
+        );
+    }
     std::fs::remove_file(&cr.path).map_err(Error::Io)
 }
 

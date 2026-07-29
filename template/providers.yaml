@@ -1,8 +1,21 @@
+# The first config commit's role assignments (ARCH §4.3). `worker` is the
+# role every root agent resolves ("roots are workers"), so its `tools:`
+# grant is what an interactive conversation can call out of the box — and
+# it is the whole tool pool this install ships (`lernie prime` seeds
+# `<data-root>/tools/`). Granting a subset here is drift, not minimalism:
+# a name added to the pool and forgotten here is grantless for everyone.
+# `src/install/tests.rs::the_shipped_worker_grant_is_the_whole_tool_pool`
+# holds the two in step. Narrowing a deployment is an operator edit of
+# this file (or a `<config-root>/template/` override) — policy lives in
+# the config, never in code.
 roles:
   worker:
     provider: anthropic
     model: claude-sonnet-5
-    tools: [bash, read_file, load_skill]
+    tools: [bash, dispatch, load_skill, message, read_file]
+  # The compactor declares none: its pair (`write_summary` /
+  # `mark_for_deletion`) is injected by the compaction procedure and is
+  # never declarable here (ARCH §2.7, §4.3).
   compactor:
     provider: anthropic
     model: claude-haiku-4-5

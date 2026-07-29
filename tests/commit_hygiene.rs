@@ -31,8 +31,19 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// The one human identity `main` is allowed to carry, name and email.
-const OWNER: (&str, &str) = ("mudbungie", "mudbungie@gmail.com");
+/// The one human identity `main` is allowed to carry.
+///
+/// The **email** is the identity; the name beside it is a display string
+/// nobody controls end to end. GitHub's merge button authors with the
+/// account's *profile* name against the same verified address — `Mud Bungie
+/// <mudbungie@gmail.com>` on the PR #2 merge (`ceee487`) — which is the same
+/// person by every fact that matters and which no local git config can
+/// change. Matching the pair made the guard fail on a merge the operator
+/// made through the web UI, so it matches the address and leaves the display
+/// name alone. Nothing is loosened that the guard was protecting: a foreign
+/// author has a foreign address, and the FORBIDDEN sweep below still reads
+/// names.
+const OWNER_EMAIL: &str = "mudbungie@gmail.com";
 
 /// GitHub's Actions bot stays allowed BY DESIGN: release-plz authors the
 /// version-bump/changelog commit as it and pushes that to `main`, so
@@ -41,6 +52,14 @@ const OWNER: (&str, &str) = ("mudbungie", "mudbungie@gmail.com");
 /// `<numeric-id>+github-actions[bot]@users.noreply.github.com`, and pinning
 /// that id would make the guard brittle for no gain.
 const CI_BOT_NAME: &str = "github-actions[bot]";
+
+/// The committer GitHub stamps on anything done through the web UI — the
+/// merge button included, which is how PR #2 landed (`ceee487`). It is the
+/// same class of allowance as [`CI_BOT_NAME`]: a GitHub-minted machine
+/// identity on an action only a repo admin can take, appearing beside the
+/// operator's own address in the author slot. Refusing it would mean either
+/// never merging a PR from the web or rewriting `main` after every merge.
+const WEB_UI_COMMITTER_EMAIL: &str = "noreply@github.com";
 
 /// Substrings that must appear in no identity and no message, lowercase for
 /// case-insensitive matching: the throwaway test identity the rewrite erased
@@ -94,7 +113,7 @@ fn main_history(root: &Path) -> Option<String> {
 }
 
 fn allowed(name: &str, email: &str) -> bool {
-    (name, email) == OWNER || name == CI_BOT_NAME
+    email == OWNER_EMAIL || email == WEB_UI_COMMITTER_EMAIL || name == CI_BOT_NAME
 }
 
 #[test]
@@ -133,15 +152,11 @@ fn main_carries_one_identity_and_no_coauthor_trailers() {
 
         assert!(
             allowed(an, ae),
-            "{sha}: author `{an} <{ae}>` is neither `{} <{}>` nor {CI_BOT_NAME}",
-            OWNER.0,
-            OWNER.1,
+            "{sha}: author `{an} <{ae}>` is not an allowed identity (<{OWNER_EMAIL}>, <{WEB_UI_COMMITTER_EMAIL}>, {CI_BOT_NAME})",
         );
         assert!(
             allowed(cn, ce),
-            "{sha}: committer `{cn} <{ce}>` is neither `{} <{}>` nor {CI_BOT_NAME}",
-            OWNER.0,
-            OWNER.1,
+            "{sha}: committer `{cn} <{ce}>` is not an allowed identity (<{OWNER_EMAIL}>, <{WEB_UI_COMMITTER_EMAIL}>, {CI_BOT_NAME})",
         );
         assert!(
             !message.to_lowercase().contains("co-authored-by"),

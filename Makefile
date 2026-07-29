@@ -76,8 +76,37 @@ $(BZ_TEST_ROOT)/bin/bz:
 	@echo "test adapter: installing bz $(BRAZEN_PIN) into $(BZ_TEST_ROOT)"
 	@cargo install brazen --version "=$(BRAZEN_PIN)" --locked --root "$(BZ_TEST_ROOT)"
 
-test: $(BZ_TEST_ROOT)/bin/bz
-	PATH="$(BZ_TEST_PATH)" cargo test --workspace
+# Test determinism, second axis: the machine's git configuration.
+#
+# The suite spawns real `git` everywhere — `RealGit`, the `lernie` binary
+# under `lernie new`, and the e2e fixtures — with a synthetic identity
+# (`user.email=t@t`, `GIT_AUTHOR_EMAIL=test@example.invalid`) so a commit
+# a test makes is hermetic. `~/.gitconfig` is machine-global mutable
+# state exactly as `~/.cargo/bin/bz` was: a global `core.hooksPath`, a
+# commit-msg hook enforcing the operator's own identity, a `commit.gpgsign`
+# — any of them reaches into every spawned git and vetoes those commits,
+# failing dozens of tests at once in a voice ("commit refused: AUTHOR
+# email is <test@example.invalid>") indistinguishable at a glance from a
+# code regression. One operator dotfile change should not decide whether
+# this repo's suite passes.
+#
+# So the test targets run git against a generated global config carrying
+# one thing — a synthetic identity, the fallback for the tests that never
+# set one — and no system config at all. Repo-local and per-command
+# settings still win over it, so a test that pins its own author is
+# unaffected; what stops reaching the suite is everything the operator's
+# file says beyond identity. Runtime behaviour for real use is untouched:
+# this appears on the test recipes only, never on `install`, `smoke`, or
+# anything a user runs.
+TEST_GIT_CONFIG := $(CURDIR)/target/test-gitconfig
+TEST_GIT_ENV    := GIT_CONFIG_GLOBAL=$(TEST_GIT_CONFIG) GIT_CONFIG_SYSTEM=/dev/null
+
+$(TEST_GIT_CONFIG):
+	@mkdir -p $(dir $@)
+	@printf '[user]\n\tname = lernie-test\n\temail = test@lernie.invalid\n' > $@
+
+test: $(BZ_TEST_ROOT)/bin/bz $(TEST_GIT_CONFIG)
+	$(TEST_GIT_ENV) PATH="$(BZ_TEST_PATH)" cargo test --workspace
 
 # The install contract end-to-end (tests/install.rs). It shells out to
 # `make install` — a release build plus `cargo install brazen` — which
@@ -97,19 +126,19 @@ test: $(BZ_TEST_ROOT)/bin/bz
 # The isolation lives on the test's own `make` invocation, not in a
 # test-only branch here, so it holds under `cargo test` and `make test`
 # alike and `make install` for a user is unchanged.
-test-install:
-	cargo test --test install
+test-install: $(TEST_GIT_CONFIG)
+	$(TEST_GIT_ENV) cargo test --test install
 
 TARPAULIN_PIN := 0.35.2
 
-coverage: $(BZ_TEST_ROOT)/bin/bz
+coverage: $(BZ_TEST_ROOT)/bin/bz $(TEST_GIT_CONFIG)
 	@have=$$(cargo tarpaulin --version 2>/dev/null | awk '{print $$NF}'); \
 	if [ "$$have" != "$(TARPAULIN_PIN)" ]; then \
 	  echo "tarpaulin $(TARPAULIN_PIN) required (have: $${have:-none}); see tarpaulin.toml" >&2; \
 	  echo "  cargo install cargo-tarpaulin --version $(TARPAULIN_PIN) --locked" >&2; \
 	  exit 1; \
 	fi
-	PATH="$(BZ_TEST_PATH)" cargo tarpaulin --workspace --fail-under 100 --skip-clean --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
+	$(TEST_GIT_ENV) PATH="$(BZ_TEST_PATH)" cargo tarpaulin --workspace --fail-under 100 --skip-clean --out Stdout --exclude-files 'src/bin/*' --exclude-files 'src/bin/lernie/*' --exclude-files 'src/e2e/*' --exclude-files 'crates/*/src/main.rs'
 
 # Regenerate schemas/ from the crate's schema types. The generator is the
 # `config::schemas` module; `make schemas` drives it through the in-crate

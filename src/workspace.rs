@@ -54,7 +54,12 @@ pub fn config_ref(name: &str) -> String {
 /// The harness-facing control paths the dispatch commit removes from an
 /// agent's tree when it forks off a config commit (§2.2 "Control is
 /// read from the config commit; worktrees hold only context").
-/// `descriptions/**` stays: it *is* context (§3.3).
+///
+/// `descriptions/**` is not among them — it *is* context (§3.3) — but it
+/// is not inherited whole either: the same commit prunes it to the
+/// forking role's `tools:` grant, which is a query on the tree rather
+/// than a fixed path list and so lives with the prune
+/// (`prompt::dispatch::step_commit::descriptors`), not here.
 pub const CONTROL_PATHS: &[&str] = &[
     "manifest.yaml",
     "workflow.yaml",

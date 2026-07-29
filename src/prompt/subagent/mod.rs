@@ -56,6 +56,14 @@ pub(crate) struct SpawnRequest<'a> {
     /// `None` for roles whose dispatch has no per-call soul (e.g. the
     /// v0.3 compactor stub: no model call, so no soul to compose).
     pub(crate) soul_text: Option<&'a str>,
+    /// The child role's `tools:` grant, read from the same governing
+    /// config commit the soul comes from (ARCH §4.3). The dispatch
+    /// commit prunes the inherited `descriptions/**` snapshot to it, so
+    /// the child's tree documents exactly what its wire array will
+    /// declare (§3.3, §5.1 — see
+    /// the dispatch commit's own prune). Empty is the
+    /// compactor's ordinary shape, not a missing value.
+    pub(crate) granted: &'a [String],
     /// Commit message subject for the dispatch commit. Each role
     /// keeps its own phrasing so `git log --oneline` legibly
     /// distinguishes the role at a glance — compactor uses
@@ -71,9 +79,11 @@ pub(crate) struct SpawnRequest<'a> {
 ///    the one workspace repository, §2.2). Ids are bare hyphenated
 ///    descents; the `agents/` ref prefix is applied here, at the git
 ///    boundary (§2.3).
-/// 2. Stage the removal of the config commit's control files (§2.2,
-///    §2.3 step 2) — a no-op for a fork off a parent's tip, whose tree
-///    already lost them (`--ignore-unmatch` keeps the primitive total).
+/// 2. Trim the forked tree to the child's context (§2.2, §2.3 step 2,
+///    §5.1): the config commit's control files leave, and so do the
+///    `descriptions/**` descriptors the child's role does not grant — a
+///    no-op on both counts for a fork off a parent's tip already trimmed
+///    the same way (`--ignore-unmatch` keeps the primitive total).
 /// 3. Write `goal.md` (and `soul.md` when supplied) to the new worktree.
 /// 4. `git add` the artifacts.
 /// 5. `git commit -m <commit_subject>` — the dispatch commit (§2.3
@@ -111,7 +121,7 @@ pub(crate) fn spawn_subagent_branch(
     // explicit `create_dir_all` is here for stub-git tests (and is a
     // harmless no-op in production since the directory already exists).
     std::fs::create_dir_all(req.sub_worktree)?;
-    crate::prompt::dispatch::remove_control_files(req.sub_worktree, git)?;
+    crate::prompt::dispatch::trim_to_context(req.sub_worktree, req.granted, git)?;
     std::fs::write(req.sub_worktree.join(GOAL_FILE), req.goal_text)?;
     if let Some(soul) = req.soul_text {
         std::fs::write(req.sub_worktree.join(SOUL_FILE), soul)?;

@@ -17,6 +17,8 @@
 //! the worktree and are not git-tracked (§2.3 — "Step records are
 //! not committed to git").
 
+mod descriptors;
+
 use crate::prompt::Deps;
 use crate::prompt::Error;
 use crate::prompt::step::{META_FILE, REQUEST_FILE, StepMeta};
@@ -98,9 +100,10 @@ pub(super) fn write_dispatch_files(
 pub(super) fn commit_dispatch(
     worktree_path: &Path,
     conv_id: &str,
+    granted: &[String],
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
-    remove_control_files(worktree_path, deps.git)?;
+    trim_to_context(worktree_path, granted, deps.git)?;
     deps.git
         .run(worktree_path, &["add", GOAL_FILE, SOUL_FILE])
         .map_err(|source| Error::Git { op: "add", source })?;
@@ -113,12 +116,28 @@ pub(super) fn commit_dispatch(
         })
 }
 
-/// Stage the removal of the config commit's control files from the
-/// agent's tree (§2.2): `git rm -r -q --ignore-unmatch -- <paths>`.
-/// `descriptions/**` is deliberately not among them — it *is* context
-/// (§3.3) and stays inherited.
-pub(crate) fn remove_control_files(
+/// Stage the trim that makes the forked tree exactly this agent's
+/// context (§2.2, §5.1) — one act with two halves, both `git rm
+/// --ignore-unmatch` so the primitive is total whatever the fork point
+/// carried:
+///
+/// 1. **Control leaves.** `manifest.yaml`, `workflow.yaml`,
+///    `providers.yaml`, `version`, `souls/` — control is read from the
+///    governing config commit, never from a worktree file (§2.2).
+/// 2. **Ungranted descriptors leave.** `descriptions/**` is snapshotted
+///    whole (one config commit serves every role), so the fork inherits
+///    schemas and skill blurbs for tools this role's `tools:` does not
+///    grant — worktree bytes that compose nowhere and read, to the model
+///    `bash`-exploring its own branch, as documentation for a tool it
+///    cannot call. [`descriptors::prune_ungranted`] removes exactly
+///    those; see that module for the reproduced failure it closes.
+///
+/// The halves are staged in this order because the second reads the
+/// worktree: control files are not descriptors, so neither sees the
+/// other's removals.
+pub(crate) fn trim_to_context(
     worktree_path: &Path,
+    granted: &[String],
     git: &dyn crate::template::GitRunner,
 ) -> Result<(), Error> {
     let mut args: Vec<&str> = vec!["rm", "-r", "-q", "--ignore-unmatch", "--"];
@@ -126,7 +145,8 @@ pub(crate) fn remove_control_files(
     git.run(worktree_path, &args).map_err(|source| Error::Git {
         op: "rm control files",
         source,
-    })
+    })?;
+    descriptors::prune_ungranted(worktree_path, granted, git)
 }
 
 /// Resolve the branch tip's sha at step-start. Recorded in

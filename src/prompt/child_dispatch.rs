@@ -5,9 +5,11 @@
 //! anywhere in it. [`run`] does three things, inline and synchronously:
 //!
 //! 1. **fork** the child branch off the parent's tip and land the
-//!    dispatch commit (§2.3 step 2) — `goal.md` + `soul.md` pinned, the
-//!    config's control files removed from the child's tree (§2.2). This
-//!    is [`super::subagent::spawn_subagent_branch`], shared with the
+//!    dispatch commit (§2.3 step 2) — `goal.md` + `soul.md` pinned, and
+//!    the tree trimmed to the child's context: the config's control
+//!    files leave (§2.2) and so do the `descriptions/**` descriptors the
+//!    child's role does not grant (§3.3, §5.1). This is
+//!    [`super::subagent::spawn_subagent_branch`], shared with the
 //!    compactor (§2.7).
 //! 2. **deposit** the dispatch message into the new agent's inbox
 //!    through the front door (§2.11): `deposit` then `probe_and_launch`,
@@ -54,8 +56,8 @@
 
 use super::clock::{Clock, IdGen};
 use super::subagent::{SpawnRequest, spawn_subagent_branch};
-use super::{Error, SOULS_DIR, WORKFLOW_FILE};
-use crate::config::Workflow;
+use super::{Error, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKFLOW_FILE};
+use crate::config::{PerRepoProviders, Workflow};
 use crate::prompt::budget;
 use crate::prompt::inbox::{self, Launcher};
 use crate::template::GitRunner;
@@ -154,6 +156,28 @@ pub fn run(
         }
     })?;
 
+    // The child's `tools:` grant (§4.3), read from the same governing
+    // config commit as the soul — one commit, one answer, no second copy
+    // of the grant anywhere. It is what the dispatch commit prunes the
+    // inherited `descriptions/**` snapshot to (§3.3, §5.1), so the
+    // child's tree documents exactly what its requests will declare. A
+    // role the config lists without a `tools:` list grants none, which is
+    // §4.3's own reading of an omitted list and the compactor's shape.
+    let providers_raw = workspace::show_control(req.repo, &commit, PER_REPO_PROVIDERS_FILE, git)
+        .map_err(|source| Error::ControlRead {
+            path: PathBuf::from(format!("{commit}:{PER_REPO_PROVIDERS_FILE}")),
+            source,
+        })?;
+    let providers = PerRepoProviders::parse(
+        &providers_raw,
+        Path::new(&format!("{commit}:{PER_REPO_PROVIDERS_FILE}")),
+    )?;
+    let granted = providers
+        .roles
+        .get(req.role)
+        .map(|assignment| assignment.tools.clone())
+        .unwrap_or_default();
+
     let commit_subject = format!("dispatch: {} [{sub_branch}]", req.role);
     spawn_subagent_branch(
         &SpawnRequest {
@@ -164,6 +188,7 @@ pub fn run(
             fork_point: req.fork_point,
             goal_text: req.goal,
             soul_text: Some(&soul),
+            granted: &granted,
             commit_subject: &commit_subject,
         },
         git,
@@ -234,3 +259,5 @@ fn budgets(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_grant;

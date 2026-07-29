@@ -4,6 +4,7 @@ mod advance_edges;
 mod advance_release;
 mod budget_enforcement;
 mod compaction_toolset;
+mod descriptor_prune;
 mod errors;
 mod errors_control;
 mod errors_disk;

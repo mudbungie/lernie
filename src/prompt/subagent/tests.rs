@@ -60,6 +60,10 @@ fn req<'a>(parent_wt: &'a Path, sub_wt: &'a Path, soul: Option<&'a str>) -> Spaw
         fork_point: None,
         goal_text: "do the thing\n",
         soul_text: soul,
+        // The stub worktrees carry no `descriptions/**`, so the grant
+        // half of the trim is a no-op here whatever it says (§3.3) —
+        // exercised on its own in `dispatch::descriptors::tests`.
+        granted: &[],
         commit_subject: "dispatch: worker [p1-ct-2-deadbeef]",
     }
 }
@@ -208,6 +212,7 @@ fn surfaces_io_failure_when_sub_worktree_is_a_file() {
         fork_point: None,
         goal_text: "g",
         soul_text: None,
+        granted: &[],
         commit_subject: "x",
     };
     let err = spawn_subagent_branch(&r, &git).unwrap_err();

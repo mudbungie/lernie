@@ -10,19 +10,19 @@ use std::path::PathBuf;
 /// A [`Launcher`] that records its launches instead of spawning a real
 /// `lernie advance`. `fail` makes `launch` return an error so the
 /// post-deposit error arm is exercised deterministically.
-struct RecordingLauncher {
-    invocations: RefCell<Vec<(PathBuf, String)>>,
+pub(super) struct RecordingLauncher {
+    pub(super) invocations: RefCell<Vec<(PathBuf, String)>>,
     fail: bool,
 }
 
 impl RecordingLauncher {
-    fn ok() -> Self {
+    pub(super) fn ok() -> Self {
         Self {
             invocations: RefCell::new(Vec::new()),
             fail: false,
         }
     }
-    fn failing() -> Self {
+    pub(super) fn failing() -> Self {
         Self {
             invocations: RefCell::new(Vec::new()),
             fail: true,
@@ -43,7 +43,7 @@ impl Launcher for RecordingLauncher {
     }
 }
 
-fn req<'a>(
+pub(super) fn req<'a>(
     repo: &'a Path,
     parent: &'a str,
     wt: &'a Path,

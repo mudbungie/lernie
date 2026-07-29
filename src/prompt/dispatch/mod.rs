@@ -32,7 +32,7 @@ mod transcript;
 mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
-pub(crate) use step_commit::remove_control_files;
+pub(crate) use step_commit::trim_to_context;
 pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
 use super::inbox::{self, Epitaph};
@@ -142,7 +142,7 @@ pub(super) fn run_exchange(
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
-            commit_dispatch(&worktree_path, &conv_id, deps)?;
+            commit_dispatch(&worktree_path, &conv_id, resolved.tools, deps)?;
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox

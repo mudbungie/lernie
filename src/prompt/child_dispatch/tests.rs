@@ -291,3 +291,5 @@ fn a_duplicate_sub_id_surfaces_as_worktree_add() {
         "got {err:?}"
     );
 }
+
+mod budget;

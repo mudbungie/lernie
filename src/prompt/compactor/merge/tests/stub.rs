@@ -97,3 +97,91 @@ fn filter_restore_failure_surfaces_as_git_error() {
     let err = merge(&PathBuf::from("/x"), "p1-cmp", &stub).unwrap_err();
     assert_git_op(err, "compaction merge filter");
 }
+
+/// Stub git for the **decline** path: `MERGE_HEAD` present and
+/// `ls-files -u` reporting one path at stages 1/2/3 — a content conflict.
+/// `run` fails at a chosen index (0 = merge, 1 = merge --abort,
+/// 2 = update-ref); `unmerged: None` fails the `ls-files` capture itself.
+struct ConflictGit {
+    invocations: RefCell<usize>,
+    fail_at: usize,
+    unmerged: Option<&'static str>,
+}
+impl ConflictGit {
+    fn failing_at(idx: usize) -> Self {
+        Self {
+            invocations: RefCell::new(0),
+            fail_at: idx,
+            unmerged: Some(
+                "100644 aaa 1\tsummary/001.md\n\
+                 100644 bbb 2\tsummary/001.md\n\
+                 100644 ccc 3\tsummary/001.md\n",
+            ),
+        }
+    }
+    fn unmerged_capture_failing() -> Self {
+        Self {
+            unmerged: None,
+            ..Self::failing_at(usize::MAX)
+        }
+    }
+}
+impl GitRunner for ConflictGit {
+    fn run(&self, _dest: &Path, _args: &[&str]) -> std::io::Result<()> {
+        let idx = *self.invocations.borrow();
+        *self.invocations.borrow_mut() = idx + 1;
+        if idx == self.fail_at {
+            Err(std::io::Error::other("stub fail"))
+        } else {
+            Ok(())
+        }
+    }
+    fn run_capture(&self, _dest: &Path, args: &[&str]) -> std::io::Result<String> {
+        if args.first() == Some(&"ls-files") {
+            return self
+                .unmerged
+                .map(str::to_owned)
+                .ok_or_else(|| std::io::Error::other("stub fail"));
+        }
+        Ok("deadbeefsha".into())
+    }
+}
+
+#[test]
+fn an_unmerged_listing_failure_surfaces_as_git_error() {
+    let err = merge(
+        &PathBuf::from("/x"),
+        "p1-cmp",
+        &ConflictGit::unmerged_capture_failing(),
+    )
+    .unwrap_err();
+    assert_git_op(err, "compaction merge unmerged");
+}
+
+#[test]
+fn an_abort_failure_surfaces_as_git_error() {
+    // invocations: 0=merge, 1=merge --abort(fail).
+    let err = merge(&PathBuf::from("/x"), "p1-cmp", &ConflictGit::failing_at(1)).unwrap_err();
+    assert_git_op(err, "compaction merge abort");
+}
+
+#[test]
+fn a_decline_mark_failure_surfaces_as_git_error() {
+    // invocations: 0=merge, 1=merge --abort, 2=update-ref(fail).
+    let err = merge(&PathBuf::from("/x"), "p1-cmp", &ConflictGit::failing_at(2)).unwrap_err();
+    assert_git_op(err, "compaction merge decline update-ref");
+}
+
+#[test]
+fn a_declined_merge_reports_the_conflicted_paths() {
+    let outcome = merge(
+        &PathBuf::from("/x"),
+        "p1-cmp",
+        &ConflictGit::failing_at(usize::MAX),
+    )
+    .unwrap();
+    assert_eq!(
+        outcome,
+        MergeOutcome::Conflicted(vec!["summary/001.md".to_string()])
+    );
+}

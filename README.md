@@ -478,8 +478,11 @@ returns by depositing a result message into its parent's inbox (§2.6):
    checkpoint clock** (§2.7, §6) — `compaction.intermediate.trigger` in
    `workflow.yaml`: `every_n_commits`, `every_t_seconds`, or the
    agent-elected `on_flush`, all derived from git (commits and elapsed
-   seconds since the last compaction merge, or the branch root when none
-   has landed — never a stored counter). When it is due, the
+   seconds since **this branch's own founding commit** — its dispatch
+   commit, or its last compaction merge if that is newer; never a stored
+   counter, and never the inherited history a fork brings with it). A
+   compactor is excluded from the eligible set outright: it *is* the
+   compaction, not a subject of one. When it is due, the
    `worker_flush: dispatch(compactor)` binding forks a compactor off the
    branch tip — the checkpoint commit `C` — and the branch keeps
    stepping straight through it; no quiescence is imposed. Omit the
@@ -952,7 +955,11 @@ control file the user knows rather than the config commit's sha.
   `compaction_merge`, and a `died`/`stopped`/`budget-exhausted`
   compactor return is delivered like an ordinary child's result instead,
   so the parent sees the epitaph and nothing of the compactor's branch
-  crosses (§2.6, §2.7).
+  crosses (§2.6, §2.7). A merge git cannot resolve on its own is
+  **declined** rather than committed: any path git wrote conflict
+  markers into aborts the merge and marks
+  `refs/lernie/conflicted/<compactor-id>`, so marked-up text can never
+  reach a `summary/**` file that is composed into the next model call.
 - `lernie dispatch worker <workspace> <parent-id> --goal <text>`
   spawns a worker child off the parent's tip. The new id is
   `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref

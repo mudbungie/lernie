@@ -15,7 +15,9 @@
 //! consumes. `lernie advance` resolves *lazily*: a no-op hop (lost
 //! acquire, nothing due) exits before any config is read (§6).
 
-use super::{Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE};
+use super::{
+    Deps, Error, GLOBAL_MODELS_FILE, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKER_ROLE, WORKFLOW_FILE,
+};
 use crate::config::manifest::{Manifest, RoleRules};
 use crate::config::version::Version;
 use crate::config::{Model, ModelsConfig, Workflow, cross};
@@ -23,10 +25,6 @@ use crate::prompt::{AdapterRunner, adapter, brazen_pin, dispatch};
 use crate::workspace;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-
-/// Control file binding workflow events to actions and declaring the
-/// retry policy (ARCH §6), read from the config commit (§2.2).
-const WORKFLOW_FILE: &str = "workflow.yaml";
 
 /// The config's schema version (ARCH §10), read from the config commit
 /// (§2.2) like every other control file.

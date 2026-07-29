@@ -54,6 +54,13 @@ fn scaffold(dest: &Path) -> String {
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")
         .env("GIT_COMMITTER_EMAIL", "test@example.invalid")
+        // A fixture identity is not this machine's, and a global
+        // `core.hooksPath` hook that enforces one would refuse every
+        // commit the spawned binary makes. Override the setting for
+        // this child only; a nonexistent path means no hooks.
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "core.hooksPath")
+        .env("GIT_CONFIG_VALUE_0", "/dev/null")
         .output()
         .expect("invoke lernie binary");
     assert!(
@@ -237,6 +244,13 @@ fn no_args_uses_harness_root_with_auto_id() {
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")
         .env("GIT_COMMITTER_EMAIL", "test@example.invalid")
+        // A fixture identity is not this machine's, and a global
+        // `core.hooksPath` hook that enforces one would refuse every
+        // commit the spawned binary makes. Override the setting for
+        // this child only; a nonexistent path means no hooks.
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "core.hooksPath")
+        .env("GIT_CONFIG_VALUE_0", "/dev/null")
         .output()
         .expect("invoke lernie binary");
     assert!(

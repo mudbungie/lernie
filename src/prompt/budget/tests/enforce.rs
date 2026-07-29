@@ -167,6 +167,8 @@ fn mark_exhausted_writes_a_readable_git_native_ref() {
     git.run(dir.path(), &["config", "user.email", "b@test.lernie"])
         .unwrap();
     git.run(dir.path(), &["config", "user.name", "b"]).unwrap();
+    git.run(dir.path(), &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     git.run(dir.path(), &["commit", "--allow-empty", "-m", "base"])
         .unwrap();
     mark_exhausted(dir.path(), "conv-x", &git).unwrap();

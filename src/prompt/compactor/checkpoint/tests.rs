@@ -20,6 +20,7 @@ fn st(commits: u32, seconds: u64, flush: bool) -> CheckpointState {
         commits_since_checkpoint: commits,
         seconds_since_checkpoint: seconds,
         flush_requested: flush,
+        is_compactor: false,
     }
 }
 
@@ -64,12 +65,36 @@ fn a_malformed_threshold_fails_closed() {
     ));
 }
 
+#[test]
+fn a_compactor_is_never_compaction_eligible() {
+    // The invariant: a compactor *is* the compaction, not a subject of
+    // one (§2.7). No trigger, at any count/elapsed/elected flush, admits
+    // it to the eligible set — this is what stops a compactor from
+    // dispatching a compactor (bl-a9eb / yog bl-ebbd).
+    let compactor = CheckpointState {
+        is_compactor: true,
+        ..st(9999, 9999, true)
+    };
+    for c in [
+        cfg(CompactionTrigger::EveryNCommits, Some(1)),
+        cfg(CompactionTrigger::EveryTSeconds, Some(1)),
+        cfg(CompactionTrigger::OnFlush, None),
+    ] {
+        assert!(!due(Some(&c), &compactor), "{:?}", c.intermediate.trigger);
+        // The same state on a non-compactor branch *is* due, so the
+        // exclusion is the only thing suppressing it.
+        assert!(due(Some(&c), &st(9999, 9999, true)));
+    }
+}
+
 // ---- real-git state derivation ---------------------------------------
 
 fn init(wt: &Path) {
     let g = RealGit::new();
     g.run(wt, &["init", "-b", "agents/p1"]).unwrap();
     g.run(wt, &["config", "user.email", "t@t"]).unwrap();
+    g.run(wt, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     g.run(wt, &["config", "user.name", "t"]).unwrap();
 }
 
@@ -104,7 +129,7 @@ fn state_counts_the_whole_branch_when_no_checkpoint_landed() {
     // load can straddle it.)
     let root_ct = now_of(wt);
     commit(wt, "step", "b.txt", "2");
-    let s = state(wt, root_ct + 7, false, &RealGit::new()).unwrap();
+    let s = state(wt, "p1", root_ct + 7, false, &RealGit::new()).unwrap();
     assert_eq!(s.commits_since_checkpoint, 2, "root + one step");
     assert_eq!(s.seconds_since_checkpoint, 7, "measured from the root");
     assert!(!s.flush_requested);
@@ -122,7 +147,7 @@ fn state_measures_from_the_last_compaction_merge() {
     // lower bound racing the wall clock.
     let cmp_ct = now_of(wt);
     commit(wt, "step after", "b.txt", "2");
-    let s = state(wt, cmp_ct + 42, true, &RealGit::new()).unwrap();
+    let s = state(wt, "p1", cmp_ct + 42, true, &RealGit::new()).unwrap();
     assert_eq!(s.commits_since_checkpoint, 1, "only the post-merge step");
     // Elapsed is measured from the checkpoint commit, not the root.
     assert_eq!(s.seconds_since_checkpoint, 42);
@@ -135,7 +160,7 @@ fn state_saturates_when_now_precedes_the_checkpoint() {
     let wt = dir.path();
     init(wt);
     commit(wt, "root", "a.txt", "1");
-    let s = state(wt, 0, false, &RealGit::new()).unwrap();
+    let s = state(wt, "p1", 0, false, &RealGit::new()).unwrap();
     assert_eq!(s.seconds_since_checkpoint, 0, "no negative elapsed time");
 }
 
@@ -143,8 +168,74 @@ fn state_saturates_when_now_precedes_the_checkpoint() {
 fn state_surfaces_a_git_failure() {
     // A non-repo directory: the first rev-parse/log fails loudly.
     let dir = TempDir::new().unwrap();
-    let err = state(dir.path(), 0, false, &RealGit::new()).unwrap_err();
+    let err = state(dir.path(), "p1", 0, false, &RealGit::new()).unwrap_err();
     assert!(matches!(err, Error::Git { .. }), "{err:?}");
+}
+
+#[test]
+fn state_measures_from_the_branchs_own_dispatch_commit_not_inherited_history() {
+    // The recursion of bl-a9eb (yog bl-ebbd) in miniature: a child forks
+    // off a parent that already has a long history, so counting from the
+    // *root* commit would read the parent's commits as the child's and
+    // trip `every_n_commits` on a seconds-old branch.
+    let dir = TempDir::new().unwrap();
+    let wt = dir.path();
+    init(wt);
+    for i in 0..25 {
+        commit(
+            wt,
+            &format!("inherited step {i}"),
+            &format!("m/{i}.md"),
+            "x",
+        );
+    }
+    commit(wt, "dispatch: compactor [p1-c1]", "goal.md", "g");
+    commit(wt, "step 001", "m/own.md", "x");
+    let s = state(wt, "p1-c1", now_of(wt), false, &RealGit::new()).unwrap();
+    assert_eq!(
+        s.commits_since_checkpoint, 1,
+        "only this branch's own commit, not the 26 it inherited"
+    );
+    let c = cfg(CompactionTrigger::EveryNCommits, Some(20));
+    assert!(
+        !due(Some(&c), &s),
+        "a seconds-old branch is below threshold"
+    );
+}
+
+#[test]
+fn state_reads_the_branch_role_from_its_own_dispatch_commit() {
+    let dir = TempDir::new().unwrap();
+    let wt = dir.path();
+    init(wt);
+    commit(wt, "root", "a.txt", "1");
+    commit(wt, "dispatch: compactor [p1-c1]", "goal.md", "g");
+    let s = state(wt, "p1-c1", now_of(wt), false, &RealGit::new()).unwrap();
+    assert!(s.is_compactor, "role derived from the dispatch subject");
+
+    // A worker dispatch off the same shape is not a compactor, and a
+    // descendant's dispatch commit never claims this branch's role: the
+    // pattern is anchored on the exact `[<agent-id>]` tail.
+    commit(wt, "dispatch: worker [p1-c1-w9]", "x.md", "x");
+    let child = state(wt, "p1-c1", now_of(wt), false, &RealGit::new()).unwrap();
+    assert!(child.is_compactor);
+    let worker = state(wt, "p1-c1-w9", now_of(wt), false, &RealGit::new()).unwrap();
+    assert!(!worker.is_compactor);
+}
+
+#[test]
+fn state_falls_back_to_the_root_when_a_branch_has_no_dispatch_commit() {
+    // The general path with empty inputs, not a bootstrap special case:
+    // a tree carrying no commit that names this agent measures from the
+    // branch root, exactly as before.
+    let dir = TempDir::new().unwrap();
+    let wt = dir.path();
+    init(wt);
+    commit(wt, "root", "a.txt", "1");
+    commit(wt, "step", "b.txt", "2");
+    let s = state(wt, "nobody", now_of(wt), false, &RealGit::new()).unwrap();
+    assert_eq!(s.commits_since_checkpoint, 2);
+    assert!(!s.is_compactor);
 }
 
 // ---- per-op git failures, via a stub -----------------------------------
@@ -184,20 +275,20 @@ fn op_of(err: Error) -> &'static str {
 #[test]
 fn state_tags_a_commit_count_failure_with_its_op() {
     let dir = TempDir::new().unwrap();
-    let err = state(dir.path(), 0, false, &FailOn("--count")).unwrap_err();
+    let err = state(dir.path(), "p1", 0, false, &FailOn("--count")).unwrap_err();
     assert_eq!(op_of(err), "checkpoint rev-list count");
 }
 
 #[test]
 fn state_tags_a_commit_time_failure_with_its_op() {
     let dir = TempDir::new().unwrap();
-    let err = state(dir.path(), 0, false, &FailOn("%ct")).unwrap_err();
+    let err = state(dir.path(), "p1", 0, false, &FailOn("%ct")).unwrap_err();
     assert_eq!(op_of(err), "checkpoint commit time");
 }
 
 #[test]
 fn state_tags_a_root_lookup_failure_with_its_op() {
     let dir = TempDir::new().unwrap();
-    let err = state(dir.path(), 0, false, &FailOn("--max-parents=0")).unwrap_err();
+    let err = state(dir.path(), "p1", 0, false, &FailOn("--max-parents=0")).unwrap_err();
     assert_eq!(op_of(err), "checkpoint root rev-list");
 }

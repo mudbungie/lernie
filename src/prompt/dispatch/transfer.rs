@@ -24,13 +24,9 @@
 
 use crate::prompt::Error;
 use crate::template::GitRunner;
+use crate::workspace::CONFLICTED_REF_PREFIX;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-
-/// Ref namespace for the declined-transfer mark (§2.6). The merge
-/// protocol that first wrote this ref is deleted; the namespace survives
-/// as the decline signal (§2.6 "the ref namespace itself survives").
-const CONFLICTED_REF_PREFIX: &str = "refs/lernie/conflicted/";
 
 /// Branch-scoped context paths excluded from the transfer (§2.6) — a
 /// child's context, which must never reach its parent's tree. Expressed

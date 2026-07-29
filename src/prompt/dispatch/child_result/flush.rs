@@ -25,7 +25,7 @@ pub(in crate::prompt::dispatch) fn run_flush(
     if workflow.compaction.is_none() {
         return Ok(());
     }
-    let state = compactor::state(worktree, deps.clock.now_unix(), false, deps.git)?;
+    let state = compactor::state(worktree, agent_id, deps.clock.now_unix(), false, deps.git)?;
     if !compactor::due(workflow.compaction.as_ref(), &state) {
         return Ok(());
     }
@@ -88,6 +88,5 @@ fn dispatch_compactor(
         goal: &goal,
         fork_point: None,
     };
-    child_dispatch::run(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
-    Ok(())
+    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
 }

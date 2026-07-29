@@ -168,6 +168,8 @@ mod tests {
         let g = RealGit::new();
         g.run(wt, &["init", "-b", "agents/p1"]).unwrap();
         g.run(wt, &["config", "user.email", "t@t"]).unwrap();
+        g.run(wt, &["config", "core.hooksPath", "/dev/null"])
+            .unwrap();
         g.run(wt, &["config", "user.name", "t"]).unwrap();
         let f = wt.join(rel);
         std::fs::create_dir_all(f.parent().unwrap()).unwrap();

@@ -29,6 +29,10 @@ fn git(dir: &Path) -> Command {
         .env("GIT_AUTHOR_EMAIL", "test@example.invalid")
         .env("GIT_COMMITTER_NAME", "lernie-test")
         .env("GIT_COMMITTER_EMAIL", "test@example.invalid");
+    // No `core.hooksPath` override here, deliberately: this suite's
+    // whole subject is a hook, and the fixture arms it by pointing
+    // the test repo's own `core.hooksPath` at a copy — which already
+    // shadows whatever the machine's global config points at.
     cmd
 }
 

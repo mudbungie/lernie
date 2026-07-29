@@ -49,6 +49,8 @@ fn worktree_repo(repo: &Path, branch: &str, file: &str) -> std::path::PathBuf {
     let g = RealGit::new();
     g.run(&wt, &["init", "-b", "agents/p1"]).unwrap();
     g.run(&wt, &["config", "user.email", "t@t"]).unwrap();
+    g.run(&wt, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
     g.run(&wt, &["config", "user.name", "t"]).unwrap();
     let f = wt.join(file);
     std::fs::create_dir_all(f.parent().unwrap()).unwrap();

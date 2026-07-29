@@ -69,6 +69,11 @@ pub(crate) const SOULS_DIR: &str = "souls";
 /// assignments (ARCH §4.3). Read from the governing config commit's
 /// tree (§2.2), never from a worktree file.
 const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
+/// Control file carrying the §6 event bindings, retry policy and
+/// budgets. Read from the governing config commit's tree (§2.2) by both
+/// the worker resolution ([`resolve`]) and the dispatch budget gate
+/// ([`child_dispatch`]) — one name, one home.
+pub(crate) const WORKFLOW_FILE: &str = "workflow.yaml";
 /// Global control file naming model capabilities / context windows and
 /// the optional `adapter:` override (ARCH §4.2). Lives at the harness
 /// root.
@@ -153,6 +158,21 @@ pub enum Error {
         op: &'static str,
         #[source]
         source: std::io::Error,
+    },
+    /// The §6 budget gate refused a dispatch before it forked
+    /// ([`child_dispatch::run`]) — the declared ceiling would be breached
+    /// by the child that does not exist yet. Distinct from the
+    /// `budget-exhausted` *terminal* state (§6, [`budget::mark_exhausted`]),
+    /// which retires a branch that already exists: nothing was created
+    /// here, so there is no branch to mark and no epitaph to deposit.
+    #[error(
+        "dispatch of {child} from {parent} refused: {exhausted} (§6 budgets — \
+         the limit is declared in the governing config's workflow.yaml)"
+    )]
+    DispatchRefused {
+        child: String,
+        parent: String,
+        exhausted: budget::Exhausted,
     },
     /// The hop's target has no `agents/*` ref — the shared existence
     /// decline ([`crate::workspace::require_agent`]), fired *before* the

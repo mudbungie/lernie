@@ -36,6 +36,14 @@ pub const CONFIG_REF_PREFIX: &str = "config/";
 /// The default config branch a fresh root agent forks off (§2.3 *Fresh
 /// start* — the head of a config branch; `lernie new` authors this one).
 pub const DEFAULT_CONFIG_REF: &str = "config/default";
+/// Ref-namespace prefix for the §2.6 **decline** mark,
+/// `refs/lernie/conflicted/<agent-id>`. One namespace, one home here in
+/// the ref-naming module, written by every operation that must refuse
+/// rather than guess: the declined work-product transfer
+/// (`prompt::dispatch::transfer`) and the conflicted compaction merge
+/// (`prompt::compactor::merge`). The UI renders it as `declined-transfer`
+/// alongside the orthogonal budget-exhausted mark (§3.5, §7.1).
+pub const CONFLICTED_REF_PREFIX: &str = "refs/lernie/conflicted/";
 
 /// A config branch ref, `config/<name>` (§2.3). The prefix is the kind
 /// (config vs agent), applied only at the git boundary — the bare name

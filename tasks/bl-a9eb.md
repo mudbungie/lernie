@@ -1,7 +1,8 @@
 +++
 title = "runaway recursive compaction dispatch: compactor branches re-trip every_n_commits, max_depth is unenforced at dispatch, and a conflicted compaction merge commits its markers"
 created = 1785287936
-updated = 1785287936
+updated = 1785287937
+claimant = "scorched-lernie-compact"
 priority = 5
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["bug"]

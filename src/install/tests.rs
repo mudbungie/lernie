@@ -186,6 +186,54 @@ fn prime_surfaces_a_pool_seed_error() {
     assert!(matches!(err, Error::Io { .. }), "got {err:?}");
 }
 
+/// The shipped `worker` grant is the shipped tool pool (yog bl-bd9d).
+///
+/// ARCH §4.3: *"A root records no role and resolves the `worker` default
+/// — roots are workers"*. So `template/providers.yaml`'s `worker` row is
+/// what every interactive conversation can call out of the box, and the
+/// pool seeded above is this install's own declaration of what it
+/// provides. A row granting a *subset* of the pool has no principle
+/// behind it, only drift: the shipped row read `[bash, read_file,
+/// load_skill]` while the pool shipped `message` and `dispatch` too, so
+/// no root agent in any workspace could message a sibling or dispatch a
+/// child — twice diagnosed live as a model fault before the config gap
+/// was found. Scrutiny, not mechanism: the list stays authored in the
+/// template (visible, overridable, severable) and this test is what
+/// keeps it from silently falling behind the pool again.
+#[test]
+fn the_shipped_worker_grant_is_the_whole_tool_pool() {
+    let raw = crate::template::TEMPLATE
+        .get_file("providers.yaml")
+        .expect("the template ships providers.yaml")
+        .contents_utf8()
+        .expect("providers.yaml is UTF-8");
+    let shipped = crate::config::PerRepoProviders::parse(raw, Path::new("template/providers.yaml"))
+        .expect("the shipped template parses");
+
+    let mut granted = shipped.roles["worker"].tools.clone();
+    granted.sort();
+    let mut pool: Vec<String> = TOOLS
+        .files()
+        .map(|f| {
+            f.path()
+                .file_stem()
+                .expect("a pooled schema has a stem")
+                .to_string_lossy()
+                .into_owned()
+        })
+        .collect();
+    pool.sort();
+
+    assert_eq!(
+        granted, pool,
+        "template/providers.yaml's worker `tools:` must grant every tool \
+         schemas/tools/ ships (ARCH §4.3)"
+    );
+    // The compactor is the deliberate exception: its pair is injected by
+    // the compaction procedure and is never declarable (§2.7, §4.3).
+    assert!(shipped.roles["compactor"].tools.is_empty());
+}
+
 #[test]
 fn prime_surfaces_a_config_seed_error() {
     // The config root itself is a regular file → `ensure_dir` of the

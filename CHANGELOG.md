@@ -13,6 +13,15 @@ than product and are not listed — they live in git and in the balls store.
 
 ## [Unreleased]
 
+## [0.0.3](https://github.com/mudbungie/lernie/compare/v0.0.2...v0.0.3) - 2026-07-30
+
+### Changes
+
+- lernie's brazen pin is =0.0.4 while crates.io has 0.0.5: releasing 0.0.3 as-is locks the skew into yog's dependency graph [bl-e4ef]
+- agent worktrees carry descriptors for tools the role cannot call: descriptions/** is snapshotted and inherited unfiltered by the grant [bl-18a9]
+- runaway recursive compaction dispatch: compactor branches re-trip every_n_commits, max_depth is unenforced at dispatch, and a conflicted compaction merge commits its markers [bl-a9eb]
+- shipped template grants the worker role only [bash, read_file, load_skill] — no root agent can message a sibling or dispatch a child out of the box [bl-38c2]
+
 ## [0.0.2](https://github.com/mudbungie/lernie/compare/v0.0.1...v0.0.2) - 2026-07-27
 
 ### Changes

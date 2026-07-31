@@ -293,3 +293,5 @@ fn apply_declines_and_surfaces_update_ref_failure() {
     // The decline path was taken: apply ran, then update-ref.
     assert!(git.invocations.borrow().iter().any(|c| c == "update-ref"));
 }
+
+mod descriptions;

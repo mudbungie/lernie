@@ -9,7 +9,13 @@
 //! **filtered to work products** — the child's branch-scoped context
 //! paths (`goal.md`, `soul.md`, `messages/**`, `summary/**`, `skills/**`)
 //! are excluded, because a child's context must never contaminate its
-//! parent's tree (§2.1, §2.6).
+//! parent's tree (§2.1, §2.6). `descriptions/**` is excluded alongside
+//! them: it is config-inherited context (§2.2), not branch-scoped, but
+//! the dispatch commit prunes it to the child's role grant (§3.3 "The
+//! fork prunes the snapshot to the role's grant") — a harness-driven
+//! deletion, not agent-authored work — so without the exclusion those
+//! deletions ride the fork-point→terminal diff back into the parent and
+//! disarm its own toolset (bl-475a).
 //!
 //! Conflict-free is by construction: sibling write paths are disjoint and
 //! children edit work products from the parent's own fork point (§2.5),
@@ -28,15 +34,21 @@ use crate::workspace::CONFLICTED_REF_PREFIX;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Branch-scoped context paths excluded from the transfer (§2.6) — a
-/// child's context, which must never reach its parent's tree. Expressed
-/// as git exclude pathspecs so `git diff` filters them out in one pass.
+/// Context paths excluded from the transfer (§2.6) — a child's context,
+/// which must never reach its parent's tree. `goal.md`, `soul.md`,
+/// `messages`, `summary`, and `skills` are branch-scoped (§2.2);
+/// `descriptions` is config-inherited (§2.2, §3.3) but pruned to the
+/// child's role grant on its dispatch commit, so it is excluded too —
+/// that prune is context management, not a work product (bl-475a).
+/// Expressed as git exclude pathspecs so `git diff` filters them out in
+/// one pass.
 const CONTEXT_EXCLUDES: &[&str] = &[
     ":(exclude)goal.md",
     ":(exclude)soul.md",
     ":(exclude)messages",
     ":(exclude)summary",
     ":(exclude)skills",
+    ":(exclude)descriptions",
 ];
 
 /// Parse `terminal_ref:` out of a deposited message's frontmatter, or

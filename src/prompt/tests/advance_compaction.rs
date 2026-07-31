@@ -18,6 +18,9 @@ use crate::prompt::resolve::WorkerConfig;
 fn compactor_config() -> WorkerConfig {
     WorkerConfig {
         role: "compactor".into(),
+        // The shipped compactor row grants no tools (§4.3): its toolset
+        // is the injected pair alone (§2.7).
+        tools: vec![],
         ..worker_config()
     }
 }

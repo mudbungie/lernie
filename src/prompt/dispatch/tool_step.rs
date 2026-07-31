@@ -23,6 +23,7 @@
 #[cfg(test)]
 mod tests;
 
+use super::Resolved;
 use super::stop_signal;
 use super::transcript;
 use crate::prompt::Deps;
@@ -51,19 +52,22 @@ use std::path::Path;
 /// and still surfaces as [`Error::ToolExec`] (§2.10). `Ok(false)` means
 /// every tool resolved and the loop continues.
 ///
-/// `role` is the calling agent's role (§4.3). It gates what may be
-/// *called*, which the request's declaration does not imply: a request declares
-/// every tool its history names so the wire holds
-/// ([`super::tools::close_over_history`]), and a compactor's history
-/// names the dispatching branch's tools. A role reaching for a tool it
-/// may not run ([`compactor::refusal`]) is declined in-band — an
-/// `is_error` `tool_result` committed like any other, so the model reads
-/// the decline and steps on — and the executor is never entered.
+/// `resolved` carries the calling agent's role and its `providers.yaml`
+/// `tools:` grant (§4.3) — the pair travels from the one resolution that
+/// reads both ([`crate::prompt::resolve`]), so a role and a grant that
+/// do not belong together cannot reach here. They gate what may be
+/// *called*, which the request's declaration does not imply: a request
+/// declares every tool its history names so the wire holds
+/// ([`super::tools::close_over_history`]), and an inherited transcript
+/// names whatever tools the dispatching branch used. A role reaching for
+/// a tool outside its effective toolset ([`refusal`]) is declined in-band
+/// — an `is_error` `tool_result` committed like any other, so the model
+/// reads the decline and steps on — and the executor is never entered.
 pub(super) fn run_tool_calls(
     conv_repo: &Path,
     worktree: &Path,
     conv_id: &str,
-    role: &str,
+    resolved: &Resolved<'_>,
     step_dir_rel_str: &str,
     assistant_content: &[Content],
     deps: &Deps<'_>,
@@ -76,7 +80,7 @@ pub(super) fn run_tool_calls(
         else {
             continue;
         };
-        let outcome = match compactor::refusal(role, name) {
+        let outcome = match refusal(resolved.role, resolved.tools, name) {
             Some(decline) => ToolOutcome {
                 content: decline.into_bytes(),
                 is_error: true,
@@ -105,6 +109,44 @@ pub(super) fn run_tool_calls(
         transcript::commit_tool(worktree, conv_id, &tool_result, deps.git)?;
     }
     Ok(false)
+}
+
+/// Why `role` may not call `tool`, or `None` when it may (ARCH §3.3
+/// *declaring is not permitting*, §4.3 *Toolset*).
+///
+/// A role's **effective toolset** is its `providers.yaml` `tools:` grant
+/// plus whatever its procedure injects ([`compactor::injected`] — the
+/// compactor's pair, empty for every other role). Its request declares
+/// more than that and must: the array is closed over the history it
+/// ships (§3.3), and a branch inherits its dispatcher's transcript by
+/// fork (§2.3), so the tools that dispatcher used are named in the
+/// history whether or not this role was granted them.
+///
+/// Permitting does not follow from declaring. If it did, a grant would
+/// widen itself the moment a dispatcher used a tool the child was
+/// denied — voiding exactly the boundaries a grant exists to draw: a
+/// read-only observer on an outward surface (§4.3) forked from a
+/// dispatcher that speaks there, or the compactor's deletion-only
+/// guarantee (§2.7). So the decline is in-band: an `is_error`
+/// `tool_result` naming the role's own toolset, which the model reads
+/// and steps on from, and the executor is never entered.
+fn refusal(role: &str, grant: &[String], tool: &str) -> Option<String> {
+    let injected = compactor::injected(role);
+    if grant.iter().any(|granted| granted == tool) || injected.contains(&tool) {
+        return None;
+    }
+    let mut effective: Vec<&str> = grant.iter().map(String::as_str).collect();
+    effective.extend(injected);
+    let toolset = if effective.is_empty() {
+        "empty".to_string()
+    } else {
+        effective.join(", ")
+    };
+    Some(format!(
+        "{tool:?} is not callable by a {role}: it is declared only because \
+         the inherited transcript references it. The {role} toolset is \
+         {toolset} (ARCH §3.3, declaring is not permitting)."
+    ))
 }
 
 /// Turn the executor's [`ToolOutcome`] into the canonical `ToolResult`

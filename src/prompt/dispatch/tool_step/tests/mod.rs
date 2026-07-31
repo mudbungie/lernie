@@ -5,11 +5,12 @@
 //! `-A`).
 //!
 //! The two halves are what [`super::run_tool_calls`] pairs for every
-//! call; asserting them over the *production* executor and real git is
+//! tool call; asserting them over the *production* executor and real git is
 //! the only way to see that the pairing actually captures the write —
 //! a tool left in the harness's inherited cwd wrote its file outside
 //! every worktree, where `git add -A` could never see it (bl-2503).
 
+use super::Resolved;
 use super::transcript::commit_tool;
 use crate::prompt::clock::SystemClock;
 use crate::prompt::tool::spawn::PathLookup;
@@ -107,6 +108,101 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
     );
 }
 
+/// What a role may *call* (ARCH §3.3 declaring is not permitting).
+mod permit;
+
+/// A materialized agent worktree on its own branch, carrying the step-1
+/// transcript entry, plus the workspace-root step directory — the disk
+/// shape [`super::run_tool_calls`] runs against.
+fn branch_with_step(ws: &TempDir, agent_id: &str, git: &RealGit) -> (PathBuf, String) {
+    let worktree = crate::workspace::agent_worktree(ws.path(), agent_id);
+    std::fs::create_dir_all(&worktree).unwrap();
+    let branch = crate::workspace::agent_ref(agent_id);
+    git.run(&worktree, &["init", "-b", &branch]).unwrap();
+    git.run(&worktree, &["config", "user.email", "t@t"])
+        .unwrap();
+    git.run(&worktree, &["config", "user.name", "t"]).unwrap();
+    git.run(&worktree, &["config", "core.hooksPath", "/dev/null"])
+        .unwrap();
+    std::fs::create_dir_all(worktree.join("messages")).unwrap();
+    std::fs::write(worktree.join("messages/001-model.json"), b"[]").unwrap();
+    git.run(&worktree, &["add", "-A"]).unwrap();
+    git.run(&worktree, &["commit", "-m", "dispatch"]).unwrap();
+    let step_dir_rel = format!("steps/{agent_id}/001");
+    std::fs::create_dir_all(ws.path().join(&step_dir_rel)).unwrap();
+    (worktree, step_dir_rel)
+}
+
+/// A step resolution (§4.3) to run a tool window against. The tool
+/// window reads two of its fields — the role and the `tools:` grant,
+/// which travel together ([`super::run_tool_calls`]) — so the fixture
+/// owns the rest, which no tool call enters.
+struct Resolution {
+    model: crate::config::Model,
+    workflow: crate::config::Workflow,
+}
+
+impl Resolution {
+    fn new() -> Self {
+        Self {
+            model: crate::config::Model {
+                provider: "anthropic".into(),
+                model_id: "claude-sonnet-5".into(),
+                capabilities: crate::config::models::Capabilities(vec![]),
+                context_window: 200_000,
+            },
+            workflow: crate::config::Workflow::parse(
+                "events: {}\n",
+                std::path::Path::new("workflow.yaml"),
+            )
+            .unwrap(),
+        }
+    }
+
+    fn of<'a>(&'a self, role: &'a str, grant: &'a [String]) -> Resolved<'a> {
+        Resolved {
+            role,
+            model: &self.model,
+            provider_row: "anthropic",
+            tools: grant,
+            soul: "be helpful".into(),
+            binary: "bz".into(),
+            retry: self.workflow.retry,
+            budgets: self.workflow.budgets,
+            workflow: &self.workflow,
+            manifest: None,
+            expect_handshake: false,
+        }
+    }
+}
+
+/// The step machinery a tool window never reaches: the adapter, the
+/// retry sleeper, and the exit launcher.
+struct NoAdapter;
+impl crate::prompt::adapter::AdapterRunner for NoAdapter {
+    fn run(
+        &self,
+        _b: &std::ffi::OsString,
+        _a: &[&str],
+        _s: &[u8],
+        _o: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
+    ) -> std::io::Result<Vec<u8>> {
+        unreachable!("adapter is never reached")
+    }
+}
+struct NoSleeper;
+impl crate::prompt::dispatch::Sleeper for NoSleeper {
+    fn sleep(&self, _d: std::time::Duration) {
+        unreachable!("sleeper is never reached")
+    }
+}
+struct NoLauncher;
+impl crate::prompt::inbox::Launcher for NoLauncher {
+    fn launch(&self, _ws: &std::path::Path, _agent: &str) -> std::io::Result<()> {
+        unreachable!("launcher is never reached")
+    }
+}
+
 /// A recording executor: run_tool_calls hands it only `tool_use` blocks,
 /// so the names it sees are the loop's block filter, observable.
 struct Recorder(std::cell::RefCell<Vec<String>>);
@@ -128,52 +224,13 @@ impl ToolExecutor for Recorder {
 
 #[test]
 fn run_tool_calls_executes_only_the_tool_use_blocks() {
-    // A model turn interleaves prose with its tool calls (§3.3); only
-    // the `tool_use` blocks reach the executor, and the loop reports
-    // "continue" (no stop observed).
-    struct NoAdapter;
-    impl crate::prompt::adapter::AdapterRunner for NoAdapter {
-        fn run(
-            &self,
-            _b: &std::ffi::OsString,
-            _a: &[&str],
-            _s: &[u8],
-            _o: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
-        ) -> std::io::Result<Vec<u8>> {
-            unreachable!("adapter is never reached")
-        }
-    }
-    struct NoSleeper;
-    impl crate::prompt::dispatch::Sleeper for NoSleeper {
-        fn sleep(&self, _d: std::time::Duration) {
-            unreachable!("sleeper is never reached")
-        }
-    }
-    struct NoLauncher;
-    impl crate::prompt::inbox::Launcher for NoLauncher {
-        fn launch(&self, _ws: &std::path::Path, _agent: &str) -> std::io::Result<()> {
-            unreachable!("launcher is never reached")
-        }
-    }
-
+    // A model's output interleaves prose with its tool calls (§3.3);
+    // only the `tool_use` blocks reach the executor, and the loop
+    // reports "continue" (no stop observed).
     let agent_id = "agent-6f1b";
     let ws = TempDir::new().unwrap();
-    let worktree = crate::workspace::agent_worktree(ws.path(), agent_id);
-    std::fs::create_dir_all(&worktree).unwrap();
     let git = RealGit::new();
-    let branch = crate::workspace::agent_ref(agent_id);
-    git.run(&worktree, &["init", "-b", &branch]).unwrap();
-    git.run(&worktree, &["config", "user.email", "t@t"])
-        .unwrap();
-    git.run(&worktree, &["config", "user.name", "t"]).unwrap();
-    git.run(&worktree, &["config", "core.hooksPath", "/dev/null"])
-        .unwrap();
-    std::fs::create_dir_all(worktree.join("messages")).unwrap();
-    std::fs::write(worktree.join("messages/001-model.json"), b"[]").unwrap();
-    git.run(&worktree, &["add", "-A"]).unwrap();
-    git.run(&worktree, &["commit", "-m", "dispatch"]).unwrap();
-    let step_dir_rel = format!("steps/{agent_id}/001");
-    std::fs::create_dir_all(ws.path().join(&step_dir_rel)).unwrap();
+    let (worktree, step_dir_rel) = branch_with_step(&ws, agent_id, &git);
 
     let recorder = Recorder(std::cell::RefCell::new(Vec::new()));
     let stop = AtomicBool::new(false);
@@ -201,11 +258,13 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
             signature: None,
         },
     ];
+    let resolution = Resolution::new();
+    let grant = ["bash".to_string()];
     let stopped = super::run_tool_calls(
         ws.path(),
         &worktree,
         agent_id,
-        crate::prompt::WORKER_ROLE,
+        &resolution.of(crate::prompt::WORKER_ROLE, &grant),
         &step_dir_rel,
         &content,
         &deps,

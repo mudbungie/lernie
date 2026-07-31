@@ -1147,15 +1147,12 @@ Failure to *spawn* the driver, by contrast, is a hard error naming the program.
 
 ## Fleet demo
 
-[`fleet/`](fleet/) is a consumer artifact, not part of the binary: it hosts an
-imported external design — a five-role agent fleet with dedicated watchers
-([`fleet/SPEC.md`](fleet/SPEC.md)) — entirely as lernie configuration. The
-roles are `providers.yaml` rows, the "one speaker per outward surface" rule is
-a per-role tool grant (and therefore structural), the watchers' poll loops
-become cron-deposited cycles, and Slack is mocked as an external tool triple.
-[`fleet/README.md`](fleet/README.md) carries the terms, the spec-concept →
-mechanism mapping, how to run it, and an honest GAPS list. `fleet/test.sh` is a
-live end-to-end over real model calls and is deliberately not on `make check`.
+The fleet demo now lives at `~/ops/fleet` — it was a consumer artifact, not
+part of the binary, and did not belong riding in the harness repo. It showed
+that lernie hosts a five-role agent fleet (coordinator, shepherd, sensor,
+builder, steward) entirely as configuration, with no harness change. The five
+harness defects it surfaced (bl-475a, bl-4231, bl-5a1f, bl-a900, bl-e3f5) are
+fixed and pinned as in-repo regression tests.
 
 ## Contributing
 

@@ -1,0 +1,35 @@
+events:
+  user_message:
+    - dispatch(worker)
+  worker_return:
+    - deliver_result
+  worker_flush:
+    - dispatch(compactor)
+  compactor_return:
+    - compaction_merge
+  branch_stopped:
+    - mark_abandoned
+    - notify_ui
+
+# Intermediate compaction checkpoints (ARCH §2.6–§2.7, §6). Identical to
+# `template/workflow.yaml`: the fleet demo changes budgets, nothing else.
+compaction:
+  intermediate:
+    trigger: every_n_commits
+    n: 20
+
+# Harness-owned retry policy for a step's model call (ARCH §2.10, §4.4).
+retry:
+  max_attempts: 3
+  backoff: exponential
+
+# Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Raised over
+# the template's: a coordinator is long-lived by design and the watchers
+# are woken repeatedly by cycle deposits, so the wall limit has to cover a
+# fleet's working span rather than one exchange. Depth 4 leaves the
+# coordinator → builder → sub-builder chain room without letting a runaway
+# dispatch tree recurse indefinitely.
+budgets:
+  max_total_tokens: 2000000
+  max_wall_seconds: 14400
+  max_depth: 4

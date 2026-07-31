@@ -18,6 +18,7 @@
 //! not committed to git").
 
 mod descriptors;
+mod unsettled;
 
 use crate::prompt::Deps;
 use crate::prompt::Error;
@@ -117,9 +118,9 @@ pub(super) fn commit_dispatch(
 }
 
 /// Stage the trim that makes the forked tree exactly this agent's
-/// context (§2.2, §5.1) — one act with two halves, both `git rm
-/// --ignore-unmatch` so the primitive is total whatever the fork point
-/// carried:
+/// context (§2.2, §5.1) — one act with three parts, each a `git rm` that
+/// is a no-op when the fork point carried nothing to remove, so the
+/// primitive is total whatever ref it forked off:
 ///
 /// 1. **Control leaves.** `manifest.yaml`, `workflow.yaml`,
 ///    `providers.yaml`, `version`, `souls/` — control is read from the
@@ -131,10 +132,17 @@ pub(super) fn commit_dispatch(
 ///    `bash`-exploring its own branch, as documentation for a tool it
 ///    cannot call. [`descriptors::prune_ungranted`] removes exactly
 ///    those; see that module for the reproduced failure it closes.
+/// 3. **The unsettled tool step leaves.** A tool-call dispatch forks
+///    *during* the parent's tool step (§2.5), so the inherited transcript
+///    can end in a `tool_use` block no `tool_result` entry answers — a
+///    tail that settles on the parent's branch and never on the child's,
+///    and that every provider refuses (§2.5 pairing).
+///    [`unsettled::prune_unsettled`] removes exactly it; see that module
+///    for the reproduced 400 it closes.
 ///
-/// The halves are staged in this order because the second reads the
-/// worktree: control files are not descriptors, so neither sees the
-/// other's removals.
+/// The parts are staged in this order because the later ones read the
+/// worktree: control files are neither descriptors nor transcript
+/// entries, so none sees another's removals.
 pub(crate) fn trim_to_context(
     worktree_path: &Path,
     granted: &[String],
@@ -146,7 +154,8 @@ pub(crate) fn trim_to_context(
         op: "rm control files",
         source,
     })?;
-    descriptors::prune_ungranted(worktree_path, granted, git)
+    descriptors::prune_ungranted(worktree_path, granted, git)?;
+    unsettled::prune_unsettled(worktree_path, git)
 }
 
 /// Resolve the branch tip's sha at step-start. Recorded in

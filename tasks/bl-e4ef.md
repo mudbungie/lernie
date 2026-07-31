@@ -8,6 +8,10 @@ root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 [[blockers]]
 id = "bl-f3bc"
 on = "close"
+
+[[blockers]]
+id = "bl-10d5"
+on = "close"
 +++
 crates.io: brazen 0.0.5 (2026-07-29), lernie latest 0.0.2 declaring `brazen =0.0.4`. Cargo.toml:47 on main still reads `brazen = "=0.0.4"`.
 

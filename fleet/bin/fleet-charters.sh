@@ -30,8 +30,8 @@ EOF
 
 builder_goal() {
   cat <<EOF
-Create the file fleet-note.md in your own worktree containing exactly the line 'hello from
-builder', commit it with bash, then bark deliverable -> path as your final response. Nothing else.
+Create the file fleet-note.md in your own worktree containing exactly the line 'hello from builder',
+commit it with bash, then bark deliverable -> path as your final response. Nothing else.
 EOF
 }
 

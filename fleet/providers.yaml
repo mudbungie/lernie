@@ -17,20 +17,18 @@
 roles:
   # The coordinator. Sole channel speaker; spawns and charters everyone.
   #
-  # Its grant is the UNION of every role's, and that is mechanical, not
-  # generous: a child forks off its parent's tip, and the parent's tree was
-  # already pruned to the parent's grant at *its* dispatch commit (ARCH
-  # §3.3 "the fork prunes the snapshot to the role's grant"). The tools
-  # array is the intersection of declaration and availability, so a tool
-  # whose descriptor is absent from the parent's tree is silently dropped
-  # from the child's request. **A role's grant must therefore be a subset
-  # of its dispatcher's.** Granting the coordinator `slack_read` costs
-  # nothing — the one-speaker rule is about `slack_post`, which no other
-  # role holds.
+  # Least privilege, restored: a child's descriptors derive from the
+  # governing config commit filtered to the child's own grant, never the
+  # dispatcher's tree (ARCH §3.3 "the fork derives the branch's descriptors
+  # from the config commit, filtered to the role's grant", bl-a900), so a
+  # role's grant is no longer capped by — or bled from — its dispatcher's.
+  # The coordinator holds exactly what the coordinator's job needs:
+  # `slack_post` for the one-speaker rule, not `slack_read` — the sensor
+  # reads the channel, the coordinator never does.
   worker:
     provider: codex
     model: gpt-5.4
-    tools: [bash, dispatch, load_skill, message, read_file, slack_post, slack_read]
+    tools: [bash, dispatch, load_skill, message, read_file, slack_post]
   # Fleet observer. `bash` for `lernie scan` and git; no product writes.
   shepherd:
     provider: codex

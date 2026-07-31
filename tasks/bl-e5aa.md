@@ -1,7 +1,8 @@
 +++
 title = "fleet: drop the bl-a900 grant-union workaround, update README/comments for the five landed fixes, re-run the live e2e green"
 created = 1785474464
-updated = 1785474464
+updated = 1785474473
+claimant = "Fixer-e5aa"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

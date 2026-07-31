@@ -1,7 +1,8 @@
 +++
 title = "declared-is-not-callable holds only for the compactor: tool_step::run_tool_calls consults compactor::refusal alone, so every other role can run tools its grant omits but its inherited transcript declares"
 created = 1785473896
-updated = 1785473896
+updated = 1785473917
+claimant = "Fixer-5a1f"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["bug"]

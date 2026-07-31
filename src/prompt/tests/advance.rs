@@ -45,7 +45,10 @@ pub(super) fn worker_config() -> WorkerConfig {
             context_window: 200_000,
         },
         provider_row: "anthropic".into(),
-        tools: vec![],
+        // The grant the fixtures' model output calls against (§4.3): a
+        // tool a role does not grant is declined at execution, never run
+        // (`dispatch/tool_step.rs::refusal`).
+        tools: vec!["bash".into()],
         soul: "be helpful".into(),
         binary: "bz".into(),
         workflow: Workflow::parse("events: {}\n", std::path::Path::new("workflow.yaml")).unwrap(),

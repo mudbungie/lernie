@@ -168,7 +168,7 @@ pub(super) fn step(
         workspace,
         worktree,
         agent_id,
-        resolved.role,
+        &resolved,
         &step_dir_rel_str,
         &assistant_content,
         deps,

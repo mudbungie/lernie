@@ -64,7 +64,7 @@ pub(super) struct Resolved<'a> {
     pub(super) model: &'a Model,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: &'a str,
-    /// The role's declared tool names (§4.3 `tools:`), composed by [`tools`].
+    /// The role's grant (§4.3 `tools:`): declared by [`tools`], and with any injected pair what [`tool_step`] permits.
     pub(super) tools: &'a [String],
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
@@ -258,7 +258,7 @@ pub(super) fn run_exchange(
             repo,
             &worktree_path,
             &conv_id,
-            resolved.role,
+            resolved,
             &step_dir_rel_str,
             &assistant_content,
             deps,

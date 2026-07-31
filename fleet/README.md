@@ -41,7 +41,7 @@ here follows it, and the vocabulary is defined below.
 | Bark | The child's terminal **final response**, deposited into the parent's inbox as a result message carrying `epitaph:` and `terminal_ref:` (ARCH §2.6). |
 | Close / merge / teardown | The **work-product transfer**: at result delivery the harness applies the child's fork-point→tip diff into the parent's worktree as one commit, filtered to work products, declining to `refs/lernie/conflicted/<id>` if it will not apply. There is no close verb and nothing for the child to merge (ARCH §2.6). |
 | Push verification (`origin` moved) | **N/A.** A workspace repository has no remote and is never pushed (ARCH §2.2). The failure class SPEC §2 calls the most expensive one does not exist on this substrate — which is a narrower claim than solving it, see GAPS. |
-| One speaker per outward surface | Per-role `tools:` grants, and therefore **structural**: `slack_post` is granted to `worker` alone, and the fork prunes every descriptor a role does not grant, so the sensor's model call has no way to name the tool (ARCH §3.3). |
+| One speaker per outward surface | Per-role `tools:` grants, and therefore **structural at both declaration and execution**: `slack_post` is granted to `worker` alone, the fork prunes every descriptor a role does not grant so the sensor's model call has no way to name the tool (ARCH §3.3), and even a tool the sensor's inherited transcript names but its grant omits is declined in-band rather than run (ARCH §3.3 *Declaring is not permitting*, bl-5a1f). |
 | Sensor read-only enumeration | Unnecessary — there is nothing to enumerate. The sensor holds `slack_read` and `message`; the grant is the enumeration. |
 | Slack channel | A mock: a flock-guarded NDJSON file at `<data-root>/slack/channel.ndjson`, behind the `slack_read` / `slack_post` tool triples in `tools/`. |
 | Identity disambiguation (§6.4) | Content, not author: the mock `slack_post` appends `[Sent using <@Claude>]`, and each persona signs its own line. Heuristic, exactly as in the SPEC. |
@@ -102,14 +102,16 @@ fleet/test.sh            # scenarios A–E, each printing PASS/FAIL
 ```
 
 Scenario A brings a fleet up, dispatches both watchers, and asserts the
-coordinator's grant survives their returns (the finding-2 repro); B seeds three
-channel lines and asserts the sensor relays one `EVIDENCE:` line while its
-request carries `slack_read` and cannot name `slack_post`; C charters a builder
-and asserts the work-product transfer landed in the coordinator's worktree; D
-runs a shepherd cycle; E asserts a new signed post reached the channel.
+coordinator's grant survives their returns (bl-475a: a parent's
+`descriptions/**` survives child returns); B seeds three channel lines and
+asserts the sensor relays one `EVIDENCE:` line while its request carries
+`slack_read` and cannot name `slack_post`; C charters a builder over the
+in-model `dispatch` tool and asserts its first model call is accepted
+(bl-4231: agent-initiated dispatch produces wire-valid children), then
+measures the work-product transfer on the CLI dispatch path; D runs a
+shepherd cycle; E asserts a new signed post reached the channel.
 
-Two of its assertions are expected to fail on this harness build — they are the
-repros for findings 2 and 3 below, not flaky scenarios.
+All assertions are expected to pass on this harness build.
 
 ## GAPS
 
@@ -152,64 +154,54 @@ Honest limits of this demo, none of them hidden by the tests:
   occasional spot-checks of a watcher's *interventions*, which is a mitigation
   and not a solution — the same standing the SPEC gives it.
 
-## Harness findings this demo surfaced
+## Harness defects this demo surfaced (fixed)
 
-Three facts about lernie that a heterogeneous fleet hits immediately and a
-single-role conversation never does. They are reported, not worked around in
-harness code; the first two shape the configuration above.
+Four facts about lernie that a heterogeneous fleet hit immediately and a
+single-role conversation never had — reported, not worked around in harness
+code, and since fixed on main. The demo's configuration and assertions now
+reflect the fixed contracts, not the defects.
 
-1. **A role's grant must be a subset of its dispatcher's.** A child forks off
-   its parent's tip, and the parent's tree was already pruned to the parent's
-   grant at its own dispatch commit (ARCH §3.3 *The fork prunes the snapshot to
-   the role's grant*). The tools array is the intersection of declaration and
-   availability, so a tool whose `descriptions/tools/<name>.json` is missing
-   from the parent's tree is **silently dropped** from the child's request.
-   Observed: a `sensor` granted `[slack_read, message]` off a coordinator that
-   did not grant `slack_read` composed a request with no `slack_read` at all
-   and no diagnostic anywhere. Hence the coordinator's union grant in
-   `providers.yaml`. Grants can only narrow down a dispatch chain.
+1. **Fixed (bl-a900).** A child's descriptors now derive from the governing
+   config commit filtered to the child's own grant, never the dispatcher's
+   tree (ARCH §3.3 *The fork derives the branch's descriptors from the config
+   commit, filtered to the role's grant*). Previously the fork pruned the
+   *parent's tree*, so a chain of dispatches intersected grant after grant and
+   a role's `tools:` could only narrow down the chain — a `sensor` granted
+   `[slack_read, message]` off a coordinator that did not itself grant
+   `slack_read` composed a request with no `slack_read` and no diagnostic.
+   That forced the coordinator's `tools:` in `providers.yaml` to be a union of
+   every descendant's grant. With the fix, grants no longer compose that way:
+   the coordinator holds exactly `slack_post` plus its own job's tools, and
+   `slack_read` is the sensor's alone.
 
-2. **A child's return deletes its parent's ungranted descriptors.** The
-   work-product transfer (ARCH §2.6) excludes `goal.md`, `soul.md`,
-   `messages/`, `summary/`, and `skills/` from the fork→tip diff, but **not**
-   `descriptions/**` — which §2.2 calls inherited config context, not a work
-   product. A child's dispatch commit prunes `descriptions/**` to its own
-   narrower grant, those deletions ride the diff, and the parent's own
-   descriptors are deleted by its child's return. Observed: a coordinator whose
-   step 001 declared five tools declared two from the step after its first
-   child returned, having silently lost `dispatch`, `read_file`, and
-   `slack_post`. It is unrecoverable on that branch — descriptors are inherited
-   at fork — so a long-lived coordinator is disarmed by the very children it
-   spawned. `fleet/test.sh` scenario A asserts against this and is the repro;
-   scenarios C and E each start a fresh coordinator so they measure their own
-   claim rather than this one.
+2. **Fixed (bl-475a).** The work-product transfer's `CONTEXT_EXCLUDES` now
+   also excludes `descriptions/**` from the fork-point→tip diff it applies,
+   alongside the branch-scoped paths (`goal.md`, `soul.md`, `messages/**`,
+   `summary/**`, `skills/**`). Previously a child's dispatch-commit prune of
+   `descriptions/**` to its own narrower grant rode the diff back into the
+   parent on return, deleting descriptors the parent itself was still
+   granted — a coordinator's declared toolset shrank every time a child
+   returned, with a second symptom on the *next* return (the already-applied
+   deletions no longer applying, declined at `refs/lernie/conflicted/<id>`).
+   `fleet/test.sh` scenario A asserts the coordinator's declared toolset is
+   identical before dispatching its watchers and after both have returned.
 
-   The same defect produces a second symptom on the *next* return: the
-   already-applied deletions no longer apply, `git apply` fails, and the
-   transfer is declined at `refs/lernie/conflicted/<child-id>` — so a watcher
-   woken twice leaves a conflicted ref behind on its second cycle.
+3. **Fixed (bl-4231).** A child of the in-model `dispatch` tool no longer
+   forks between the parent's `tool_use` commit and its `tool_result` commit,
+   so it no longer inherits a dangling `tool_use` and its first model call is
+   no longer refused (`"message":"No tool output found for function call
+   call_…"`). `fleet/test.sh` scenario C dispatches a builder through the
+   in-model tool and asserts its first model call is accepted, then separately
+   measures the work-product transfer via the CLI dispatch path.
 
-3. **A child of the in-model `dispatch` tool is born with an unanswerable
-   history.** The child branch forks off the parent's tip at the moment the
-   tool runs — which is *after* the parent committed the assistant message
-   carrying the `dispatch` `tool_use`, and *before* it commits the matching
-   `tool_result`. The child therefore inherits a dangling `tool_use`, and its
-   first model call is refused by the provider:
-   `{"type":"error","kind":{"provider":{"status":400}},"message":"No tool
-   output found for function call call_…"}`. The child dies having done
-   nothing, and its parent is told only that a child returned. The `lernie
-   dispatch` **CLI** path is unaffected — it forks after the parent's step has
-   settled — which is why `fleet/bin/fleet-up.sh` and `fleet/test.sh` dispatch
-   the watchers through the CLI, and why scenario C measures the work-product
-   transfer on that path while asserting separately against this one.
-
-4. **Declaration closure is not gated at execution for ordinary roles.** A
-   request declares every tool its *inherited* history names, so the wire holds
-   (`src/prompt/dispatch/tools.rs`) — and a child inherits its parent's
-   transcript. For the compactor, calling such a tool is refused in-band
-   (`compactor::refusal`); for every other role there is no such check, so a
-   declared-by-closure tool would actually run. A sensor dispatched after its
-   coordinator had used `slack_post` would therefore have `slack_post` in its
-   array and nothing stopping the call. The structural one-speaker property
-   holds only while the coordinator has not yet used the tool in the history
-   the child inherits — which is a weaker guarantee than the grant implies.
+4. **Fixed (bl-5a1f).** *Declaring is not permitting* now holds for every
+   role, not the compactor alone: a `tool_use` naming a tool outside the
+   calling role's grant is declined in-band, whatever the role's inherited
+   transcript names. Previously only the compactor had this execution-time
+   check; every other role could run a tool its grant omitted but its
+   inherited history declared — a sensor dispatched after its coordinator had
+   used `slack_post` would carry `slack_post` in its request array with
+   nothing stopping the call, so the one-speaker property held only until the
+   coordinator had used the guarded tool once. The one-speaker property is
+   now structural at execution as well as declaration (see the mapping table
+   above).

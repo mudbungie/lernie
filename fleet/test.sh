@@ -92,10 +92,10 @@ done
 await_or_dump "$WS" "$ROOT" 420 || say "note: coordinator still busy after child returns"
 
 # The coordinator's grant must survive its children returning. A child's
-# dispatch commit prunes `descriptions/**` to its own narrower grant, and
-# those deletions ride the fork→tip diff — so unless the work-product
-# transfer excludes `descriptions/**`, a child's return deletes its parent's
-# descriptors and the parent's tools array silently shrinks. This is the repro.
+# dispatch commit prunes `descriptions/**` to its own narrower grant; the
+# work-product transfer's `CONTEXT_EXCLUDES` now excludes `descriptions/**`
+# from the fork→tip diff it applies (bl-475a), so those deletions no longer
+# ride back into the parent. This is the regression guard for that fix.
 ROOT_LAST="$(find "$WS/steps/$ROOT" -maxdepth 1 -mindepth 1 -type d | sort | tail -1)"
 ROOT_TOOLS_AFTER="$(tools_declared "$WS" "$ROOT" "$(basename "$ROOT_LAST")" | tr '\n' ' ')"
 say "coordinator latest step declared: $ROOT_TOOLS_AFTER"
@@ -161,9 +161,9 @@ scan_evidence "after B"
 # builder commits a file, and the harness transfers it into the parent's
 # worktree at result delivery.
 #
-# On a FRESH coordinator, deliberately: scenario A's repro above revokes
-# `dispatch` from the bring-up coordinator, so chartering from it would
-# measure that defect again instead of the transfer. One claim per scenario.
+# On a FRESH coordinator, deliberately: one claim per scenario, so a failure
+# here can never be scenario A's regression guard tripping instead of this
+# scenario's own claim (the transfer).
 hr "scenario C: builder + work-product transfer"
 ROOT2="$("$LERNIE_BIN" prompt "$WS" "$(charter_builder_goal)" 2>"$RUN/prompt2.stderr")"
 say "second coordinator: $ROOT2"
@@ -178,10 +178,10 @@ fi
 if [ -n "$BUILDER" ]; then
   pass C "builder child ref exists ($BUILDER)"
   await_or_dump "$WS" "$BUILDER" 600 || fail C "builder did not settle"
-  # A child of the in-model `dispatch` tool forks between its parent's
-  # `tool_use` commit and the `tool_result` commit that answers it, so it
-  # inherits a dangling tool_use and its first model call is refused by the
-  # provider. This assertion is that repro.
+  # A child of the in-model `dispatch` tool used to fork between its
+  # parent's `tool_use` commit and the `tool_result` commit that answers it,
+  # inheriting a dangling tool_use that got its first model call refused by
+  # the provider. Fixed (bl-4231): this is the regression guard.
   if grep -q '"type":"error"' "$WS/steps/$BUILDER/001/response.json" 2>/dev/null; then
     fail C "the tool-dispatched builder's first model call was refused (dangling tool_use)"
     tail -c 600 "$WS/steps/$BUILDER/001/response.json"

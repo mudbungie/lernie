@@ -4,7 +4,7 @@
 //! Split from [`super::errors_disk`] for the per-file line cap; the
 //! op-index constants live there.
 
-use super::errors_disk::WORKTREE_ADD_INDEX;
+use super::errors_disk::{DISPATCH_ADD_INDEX, WORKTREE_ADD_INDEX};
 use super::fixtures::*;
 use crate::prompt::Error;
 
@@ -84,7 +84,7 @@ fn run_surfaces_dispatch_add_failure() {
         repo.path(),
         "hi",
         &adapter,
-        &StubGit::failing_at(WORKTREE_ADD_INDEX + 2),
+        &StubGit::failing_at(DISPATCH_ADD_INDEX),
     )
     .unwrap_err();
     assert!(matches!(err, Error::Git { op: "add", .. }));
@@ -98,7 +98,7 @@ fn run_surfaces_dispatch_commit_failure() {
         repo.path(),
         "hi",
         &adapter,
-        &StubGit::failing_at(WORKTREE_ADD_INDEX + 3),
+        &StubGit::failing_at(DISPATCH_ADD_INDEX + 1),
     )
     .unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));

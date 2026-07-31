@@ -7,8 +7,9 @@
 //! 1. **fork** the child branch off the parent's tip and land the
 //!    dispatch commit (§2.3 step 2) — `goal.md` + `soul.md` pinned, and
 //!    the tree trimmed to the child's context: the config's control
-//!    files leave (§2.2) and so do the `descriptions/**` descriptors the
-//!    child's role does not grant (§3.3, §5.1). This is
+//!    files leave (§2.2) and the `descriptions/**` descriptors are
+//!    derived from the governing config commit to the child's own
+//!    `tools:` grant (§3.3, §5.1). This is
 //!    [`super::subagent::spawn_subagent_branch`], shared with the
 //!    compactor (§2.7).
 //! 2. **deposit** the dispatch message into the new agent's inbox
@@ -58,8 +59,8 @@ use super::clock::{Clock, IdGen};
 use super::subagent::{SpawnRequest, spawn_subagent_branch};
 use super::{Error, PER_REPO_PROVIDERS_FILE, SOULS_DIR, WORKFLOW_FILE};
 use crate::config::{PerRepoProviders, Workflow};
-use crate::prompt::budget;
 use crate::prompt::inbox::{self, Launcher};
+use crate::prompt::{budget, dispatch};
 use crate::template::GitRunner;
 use crate::workspace;
 use std::path::{Path, PathBuf};
@@ -158,11 +159,12 @@ pub fn run(
 
     // The child's `tools:` grant (§4.3), read from the same governing
     // config commit as the soul — one commit, one answer, no second copy
-    // of the grant anywhere. It is what the dispatch commit prunes the
-    // inherited `descriptions/**` snapshot to (§3.3, §5.1), so the
-    // child's tree documents exactly what its requests will declare. A
-    // role the config lists without a `tools:` list grants none, which is
-    // §4.3's own reading of an omitted list and the compactor's shape.
+    // of the grant anywhere. It is what the dispatch commit derives the
+    // child's `descriptions/**` from, out of that same commit (§3.3,
+    // §5.1), so the child's tree documents exactly what its requests will
+    // declare whatever the dispatcher's own grant was. A role the config
+    // lists without a `tools:` list grants none, which is §4.3's own
+    // reading of an omitted list and the compactor's shape.
     let providers_raw = workspace::show_control(req.repo, &commit, PER_REPO_PROVIDERS_FILE, git)
         .map_err(|source| Error::ControlRead {
             path: PathBuf::from(format!("{commit}:{PER_REPO_PROVIDERS_FILE}")),
@@ -178,6 +180,17 @@ pub fn run(
         .map(|assignment| assignment.tools.clone())
         .unwrap_or_default();
 
+    let grant = dispatch::Grant {
+        role: req.role,
+        tools: &granted,
+        config_commit: &commit,
+    };
+    // Descriptor validity, pre-flighted like role validity and the §6
+    // budget gate: a grant naming a tool the governing config commit does
+    // not describe is refused *here*, in the parent's worktree, so the
+    // refusal leaves no branch, no worktree and no inbox behind (§3.3).
+    dispatch::require_described(req.parent_worktree, &grant, git)?;
+
     let commit_subject = format!("dispatch: {} [{sub_branch}]", req.role);
     spawn_subagent_branch(
         &SpawnRequest {
@@ -188,7 +201,7 @@ pub fn run(
             fork_point: req.fork_point,
             goal_text: req.goal,
             soul_text: Some(&soul),
-            granted: &granted,
+            grant: &grant,
             commit_subject: &commit_subject,
         },
         git,

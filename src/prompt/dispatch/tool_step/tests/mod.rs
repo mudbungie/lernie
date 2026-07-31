@@ -161,10 +161,13 @@ impl Resolution {
 
     fn of<'a>(&'a self, role: &'a str, grant: &'a [String]) -> Resolved<'a> {
         Resolved {
-            role,
+            grant: crate::prompt::dispatch::Grant {
+                role,
+                tools: grant,
+                config_commit: "c0ffee",
+            },
             model: &self.model,
             provider_row: "anthropic",
-            tools: grant,
             soul: "be helpful".into(),
             binary: "bz".into(),
             retry: self.workflow.retry,

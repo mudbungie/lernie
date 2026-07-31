@@ -47,6 +47,14 @@ impl GitRunner for StubGit {
     }
 }
 
+/// A grant of nothing against the stub's fixed config commit — the
+/// compactor's shape (§2.7), and all these stub trees can honour.
+const EMPTY_GRANT: crate::prompt::dispatch::Grant<'static> = crate::prompt::dispatch::Grant {
+    role: "worker",
+    tools: &[],
+    config_commit: "c0ffee",
+};
+
 fn tmpdir() -> tempfile::TempDir {
     tempfile::TempDir::new().unwrap()
 }
@@ -60,10 +68,11 @@ fn req<'a>(parent_wt: &'a Path, sub_wt: &'a Path, soul: Option<&'a str>) -> Spaw
         fork_point: None,
         goal_text: "do the thing\n",
         soul_text: soul,
-        // The stub worktrees carry no `descriptions/**`, so the grant
-        // half of the trim is a no-op here whatever it says (§3.3) —
-        // exercised on its own in `dispatch::descriptors::tests`.
-        granted: &[],
+        // The stub worktrees carry no `descriptions/**` and the grant is
+        // empty, so the descriptor half of the trim is a no-op here
+        // (§3.3) — exercised on its own in
+        // `dispatch::step_commit::descriptors::tests`.
+        grant: &EMPTY_GRANT,
         commit_subject: "dispatch: worker [p1-ct-2-deadbeef]",
     }
 }
@@ -212,7 +221,7 @@ fn surfaces_io_failure_when_sub_worktree_is_a_file() {
         fork_point: None,
         goal_text: "g",
         soul_text: None,
-        granted: &[],
+        grant: &EMPTY_GRANT,
         commit_subject: "x",
     };
     let err = spawn_subagent_branch(&r, &git).unwrap_err();

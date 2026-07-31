@@ -80,7 +80,7 @@ pub(super) fn run_tool_calls(
         else {
             continue;
         };
-        let outcome = match refusal(resolved.role, resolved.tools, name) {
+        let outcome = match refusal(resolved.grant.role, resolved.grant.tools, name) {
             Some(decline) => ToolOutcome {
                 content: decline.into_bytes(),
                 is_error: true,

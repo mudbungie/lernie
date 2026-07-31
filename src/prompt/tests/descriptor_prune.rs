@@ -1,8 +1,9 @@
-//! The dispatch commit prunes the inherited descriptor snapshot to the
-//! role's own grant (ARCH §3.3, §5.1, §2.3 step 2) — wired, at the root
-//! path, with the grant the role actually resolved.
+//! The dispatch commit derives the agent's descriptor tree from its
+//! governing config commit, filtered to the role's grant (ARCH §3.3,
+//! §5.1, §2.3 step 2) — wired, at the root path, with the grant *and the
+//! commit* the role actually resolved.
 //!
-//! The unit tests for the prune itself are
+//! The unit tests for the derivation itself are
 //! `crate::prompt::dispatch::step_commit::descriptors::tests`; this one proves the
 //! **wiring**: that `lernie prompt`'s dispatch commit passes the resolved
 //! `worker` toolset and not some other list. Its fixture grants
@@ -13,10 +14,11 @@
 //! declared.
 
 use super::fixtures::*;
+use super::stubs::STUB_SHA;
 use crate::prompt::run;
 
 #[test]
-fn the_dispatch_commit_stages_the_ungranted_descriptors_for_removal() {
+fn the_dispatch_commit_derives_the_tree_to_the_resolved_grant() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("system body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&happy_response_bytes());
@@ -87,5 +89,26 @@ fn the_dispatch_commit_stages_the_ungranted_descriptors_for_removal() {
         "only the ungranted tool's pair leaves: `bash` is granted \
          (fixtures grant [bash, read_file]) and `notes` is a standalone \
          skill no tool claims (§3.3 two wire homes)"
+    );
+
+    // And the granted pair is checked out from the resolved config
+    // commit — the tree the fork inherited is never the authority
+    // (bl-a900), so the same op runs whether or not it already carried
+    // the descriptors.
+    let checkout = runs
+        .iter()
+        .find(|(_, args)| args.first().is_some_and(|a| a == "checkout"))
+        .expect("the dispatch commit checks the grant out of the config commit");
+    assert_eq!(
+        checkout.1,
+        vec![
+            "checkout",
+            STUB_SHA,
+            "--",
+            "descriptions/tools/bash.json",
+            "descriptions/skills/bash.md",
+            "descriptions/tools/read_file.json",
+            "descriptions/skills/read_file.md",
+        ]
     );
 }

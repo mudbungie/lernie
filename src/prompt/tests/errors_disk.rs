@@ -19,14 +19,25 @@ use crate::prompt::Error;
 /// `version` (the §10 schema-version guard, read before anything it could
 /// misparse), then providers, workflow, manifest (§5.2), soul. Branch
 /// work follows: 6 worktree add, 7 the dispatch commit's control-file
-/// removal (§2.3 step 2), 8 dispatch add, 9 dispatch commit, 10 the
-/// step-1 drain stray-probe (`git status`, §2.11), 11 user-message
-/// delivery add, 12 user-message delivery commit (§2.11 — the initial
-/// message is delivered through the front door before step 1's read
-/// state is captured), 13 rev-parse. Pinned as constants so the
+/// removal (§2.3 step 2), then the descriptor derivation
+/// ([`DESCRIPTOR_OPS`]), then dispatch add, dispatch commit, the step-1
+/// drain stray-probe (`git status`, §2.11), user-message delivery add,
+/// user-message delivery commit (§2.11 — the initial message is
+/// delivered through the front door before step 1's read state is
+/// captured), and rev-parse. Pinned as constants so the
 /// transcript/terminal op-index labels stay readable.
 pub(super) const WORKTREE_ADD_INDEX: usize = 6;
-const REV_PARSE_INDEX: usize = 13;
+/// The dispatch commit's descriptor derivation (§3.3, bl-a900): one
+/// `cat-file -e` per granted tool's schema (the described-grant check),
+/// one per its claimed skill frontmatter, and the single `checkout` that
+/// lands the lot from the governing config commit — `2·|grant| + 1` for
+/// the fixtures' two-tool `worker` grant. No `rm` here: the stub
+/// worktree carries no inherited `descriptions/**` to strand.
+pub(super) const DESCRIPTOR_OPS: usize = 5;
+/// `git add goal.md soul.md` for the dispatch commit — the first op
+/// after the derivation.
+pub(super) const DISPATCH_ADD_INDEX: usize = WORKTREE_ADD_INDEX + 2 + DESCRIPTOR_OPS;
+const REV_PARSE_INDEX: usize = DISPATCH_ADD_INDEX + 5;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the model-output entry — `git add` then `commit` — before the loop
 /// terminates (no tool_use on the happy stream).

@@ -88,7 +88,12 @@ pub(super) fn step(
     // closure over the assembled history. A compactor inherits the
     // dispatching branch's transcript (§2.3), so that last part is not an
     // edge case for it — it is the standing case.
-    let tools = tools::compose(worktree, resolved.role, resolved.tools, &messages)?;
+    let tools = tools::compose(
+        worktree,
+        resolved.grant.role,
+        resolved.grant.tools,
+        &messages,
+    )?;
     let request = model_call::build_request(
         &resolved.model.model_id,
         &system_with_goal,

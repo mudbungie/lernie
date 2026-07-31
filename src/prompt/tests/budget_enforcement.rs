@@ -133,13 +133,15 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
     // resolution (§2.2) precedes them with a config-head rev-parse and
     // five `show` reads (`version` first, the §10 schema-version guard;
     // manifest.yaml last before the soul, §5.2).
-    // The marker `update-ref` is git op #13 in the exhaustion path (0
-    // worktree add, 1 dispatch add, 2 dispatch commit, 3 step-1 drain
-    // stray-probe, 4/5 user-message delivery add+commit, 6 step-1
-    // rev-parse, 7/8 step-1 model-output transcript add+commit, 9/10 the tool
-    // transcript add+commit, 11 step-2 drain stray-probe, 12 step-2
-    // rev-parse, 13 mark_exhausted update-ref). Failing it surfaces the §6
-    // exhaustion write's error arm.
+    // The marker `update-ref` is git op #18 in the exhaustion path (0
+    // worktree add, 1 control rm, 2-6 the descriptor derivation (§3.3 —
+    // four `cat-file -e` existence reads against the governing config
+    // commit and one `checkout`), 7 dispatch add, 8 dispatch commit, 9
+    // step-1 drain stray-probe, 10/11 user-message delivery add+commit,
+    // 12 step-1 rev-parse, 13/14 step-1 model-output transcript
+    // add+commit, 15/16 the tool transcript add+commit, 17 step-2 drain
+    // stray-probe, 18 step-2 rev-parse, 19 mark_exhausted update-ref).
+    // Failing it surfaces the §6 exhaustion write's error arm.
     let repo = scaffold_repo_with_workflow(
         VALID_PER_REPO_PROVIDERS_YAML,
         WORKFLOW_WITH_TOKEN_BUDGET,
@@ -150,7 +152,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(20);
+    let git = StubGit::failing_at(25);
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 

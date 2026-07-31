@@ -240,6 +240,8 @@ fn commit_message(name: &str, origin: &Origin) -> String {
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_descriptions;
+#[cfg(test)]
 mod tests_lineage;
 #[cfg(test)]
 mod tests_stub;

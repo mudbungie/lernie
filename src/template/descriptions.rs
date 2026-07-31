@@ -20,6 +20,23 @@
 //! mirror (`docs/PRINCIPLES.md`, single source of truth). An empty (or
 //! absent) pool yields an empty descriptions tree, which the composer
 //! (`crate::prompt::dispatch::tools`) reads as an empty toolset.
+//!
+//! **Validated at snapshot time, with the composer's own parsers
+//! (bl-e3f5).** A malformed pooled artifact — a `SKILL.md` frontmatter
+//! block whose YAML does not parse (the `description: foo: bar`
+//! plain-scalar trap), or a tool schema that is not valid JSON — used to
+//! pass this snapshot unparsed and surface only at the first prompt step,
+//! deep inside `crate::prompt::dispatch::tools::compose` (ARCH §3.3
+//! *Tools-list assembly*), after `lernie new` or `lernie config` had
+//! already authored the commit (and, for `new`, created the workspace).
+//! This pass now runs the frontmatter YAML through the same
+//! [`skill::parse`] the composer's `read_description` calls, and the
+//! schema JSON through the same `serde_json::from_slice` its
+//! `read_schema` calls — one parser per artifact kind, shared by producer
+//! and consumer, so a malformed pool file is refused here, before any
+//! commit lands, naming the offending pool file rather than silently
+//! shipping bytes prompt-time will later reject (single source of truth:
+//! `docs/PRINCIPLES.md`).
 
 use crate::skill;
 use std::fs;
@@ -49,6 +66,20 @@ pub enum Error {
     },
     #[error("skill {name}: {} has no YAML frontmatter block", SKILL_MANIFEST)]
     NoFrontmatter { name: String },
+    #[error("skill {name}: {path} frontmatter is malformed: {source}")]
+    SkillFrontmatter {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: serde_yaml_ng::Error,
+    },
+    #[error("tool {name}: {path} is not valid JSON: {source}")]
+    ToolSchema {
+        name: String,
+        path: PathBuf,
+        #[source]
+        source: serde_json::Error,
+    },
 }
 
 fn io_err(path: &Path, source: io::Error) -> Error {
@@ -68,8 +99,11 @@ pub fn snapshot(data_root: &Path, worktree: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-/// Copy every `<pool>/<name>.json` verbatim to
-/// `<worktree>/descriptions/tools/<name>.json` (§3.3 point 2).
+/// Copy every `<pool>/<name>.json` to `<worktree>/descriptions/tools/<name>.json`
+/// (§3.3 point 2), verbatim once validated: parsed with the same
+/// `serde_json::from_slice` the composer's `read_schema` runs at prompt
+/// time (bl-e3f5), so a malformed schema is declined here rather than
+/// snapshotted and rejected three steps later.
 fn copy_tool_schemas(pool: &Path, worktree: &Path) -> Result<(), Error> {
     let dest = worktree.join(DESCRIPTIONS_DIR).join(TOOLS_SUBDIR);
     for entry in read_pool(pool)? {
@@ -77,15 +111,30 @@ fn copy_tool_schemas(pool: &Path, worktree: &Path) -> Result<(), Error> {
         if !path.is_file() || path.extension().and_then(|e| e.to_str()) != Some(JSON_EXT) {
             continue;
         }
+        let raw = fs::read(&path).map_err(|e| io_err(&path, e))?;
+        let name = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        serde_json::from_slice::<serde_json::Value>(&raw).map_err(|source| Error::ToolSchema {
+            name,
+            path: path.clone(),
+            source,
+        })?;
         ensure_dir(&dest)?;
         let target = dest.join(entry.file_name());
-        fs::copy(&path, &target).map_err(|e| io_err(&target, e))?;
+        fs::write(&target, &raw).map_err(|e| io_err(&target, e))?;
     }
     Ok(())
 }
 
 /// Extract each `<pool>/<name>/SKILL.md`'s frontmatter and write it to
 /// `<worktree>/descriptions/skills/<name>.md` (§3.3 *Description-always*).
+/// The extracted body is parsed with the same [`skill::parse`] the
+/// composer's `read_description` runs at prompt time (bl-e3f5) — the
+/// fence-detection [`skill::frontmatter_yaml`] alone does not catch a
+/// malformed YAML body (e.g. an unquoted `description: foo: bar`, the
+/// plain-scalar trap), only a missing or unclosed fence.
 fn copy_skill_frontmatter(pool: &Path, worktree: &Path) -> Result<(), Error> {
     let dest = worktree.join(DESCRIPTIONS_DIR).join(SKILLS_SUBDIR);
     for entry in read_pool(pool)? {
@@ -103,6 +152,11 @@ fn copy_skill_frontmatter(pool: &Path, worktree: &Path) -> Result<(), Error> {
         let name = entry.file_name().to_string_lossy().into_owned();
         let body =
             skill::frontmatter_yaml(&raw).ok_or(Error::NoFrontmatter { name: name.clone() })?;
+        skill::parse(body).map_err(|source| Error::SkillFrontmatter {
+            name: name.clone(),
+            path: manifest.clone(),
+            source,
+        })?;
         ensure_dir(&dest)?;
         let target = dest.join(format!("{name}.md"));
         fs::write(&target, body).map_err(|e| io_err(&target, e))?;

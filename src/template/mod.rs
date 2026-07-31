@@ -249,6 +249,8 @@ fn check_dest(dest: &Path) -> Result<(), ScaffoldError> {
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod tests_descriptions;
+#[cfg(test)]
 mod tests_dest;
 #[cfg(test)]
 mod tests_override;

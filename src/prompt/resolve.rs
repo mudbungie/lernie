@@ -63,6 +63,12 @@ pub(super) struct WorkerConfig {
     pub(super) provider_row: String,
     /// The role's declared tool names (§4.3 `tools:`).
     pub(super) tools: Vec<String>,
+    /// The config commit every control file above was read from (§2.2) —
+    /// a config branch's head for a fresh root, the ancestry derivation
+    /// for an existing agent. Carried because the dispatch commit derives
+    /// the agent's `descriptions/**` from it (§3.3), and it must be the
+    /// *same* commit the grant came from.
+    pub(super) config_commit: String,
     pub(super) soul: String,
     /// The adapter binary (`bz` or the `adapter:` override, §4.2).
     pub(super) binary: OsString,
@@ -92,10 +98,13 @@ impl WorkerConfig {
     /// budgets derive from the one `workflow` home (§6).
     pub(super) fn as_resolved(&self) -> dispatch::Resolved<'_> {
         dispatch::Resolved {
-            role: &self.role,
+            grant: dispatch::Grant {
+                role: &self.role,
+                tools: &self.tools,
+                config_commit: &self.config_commit,
+            },
             model: &self.model,
             provider_row: &self.provider_row,
-            tools: &self.tools,
             soul: self.soul.clone(),
             binary: self.binary.clone(),
             retry: self.workflow.retry,
@@ -191,6 +200,7 @@ pub(super) fn resolve_worker(
         model,
         provider_row: assignment.provider.clone(),
         tools: assignment.tools.clone(),
+        config_commit: commit,
         soul,
         binary,
         workflow,

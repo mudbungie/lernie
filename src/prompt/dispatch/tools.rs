@@ -206,3 +206,5 @@ fn read_description(worktree: &Path, name: &str) -> Result<Option<String>, Error
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_derived;

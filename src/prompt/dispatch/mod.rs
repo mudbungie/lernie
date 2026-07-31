@@ -21,6 +21,7 @@ mod child_result;
 mod drain;
 pub mod driver;
 mod model_call;
+mod resolved;
 mod result_deposit;
 mod staging;
 mod step_commit;
@@ -32,18 +33,16 @@ mod transcript;
 mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
-pub(crate) use step_commit::trim_to_context;
+pub(super) use resolved::Resolved;
+pub(crate) use step_commit::{Grant, Undescribed, require_described, trim_to_context};
 pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
 use super::{Deps, Error};
-use crate::config::manifest::RoleRules;
-use crate::config::{Budgets, Model, RetryConfig, Workflow};
 use assembler::assemble;
 use brazen::Content;
 use model_call::ModelCall;
-use std::ffi::OsString;
 use std::path::Path;
 use step_commit::{
     commit_dispatch, prepend_goal, read_branch_tip, spawn_branch, write_dispatch_files, write_meta,
@@ -55,35 +54,6 @@ use tool_step::run_tool_calls;
 /// distinct from the §6 spend budgets ([`Budgets`]) and from the §5.2
 /// manifest's `budget_tokens` (an assembled-context budget, no output cap).
 const DEFAULT_MAX_TOKENS: u32 = 4096;
-
-/// Inputs resolved by [`super::run`] before branch work starts.
-pub(super) struct Resolved<'a> {
-    /// The agent's role (§4.3) — governs what the request declares
-    /// ([`tools::compose`]) and what it may call ([`tool_step`]).
-    pub(super) role: &'a str,
-    pub(super) model: &'a Model,
-    /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
-    pub(super) provider_row: &'a str,
-    /// The role's grant (§4.3 `tools:`): declared by [`tools`], and with any injected pair what [`tool_step`] permits.
-    pub(super) tools: &'a [String],
-    pub(super) soul: String,
-    /// The adapter binary (`bz` or the `adapter:` override, §4.2).
-    pub(super) binary: OsString,
-    /// Harness-owned retry policy from `workflow.yaml` (§2.10, §6).
-    pub(super) retry: RetryConfig,
-    /// Per-conversation spend limits from `workflow.yaml` (§6), checked
-    /// at every model-call boundary.
-    pub(super) budgets: Budgets,
-    /// The full workflow (§6): per-step hooks and lifecycle bindings, the
-    /// same seams `lernie advance` runs (the §6 prompt→advance collapse).
-    pub(super) workflow: &'a Workflow,
-    /// The role's §5.2 context-assembly rules (`manifest.yaml`, §2.2);
-    /// `None` (no entry for the role) assembles the transcript alone.
-    pub(super) manifest: Option<&'a RoleRules>,
-    /// True under an `adapter:` override — the MessageStart.v handshake
-    /// governs in place of the version guard (§4.4).
-    pub(super) expect_handshake: bool,
-}
 
 /// Drive one root conversation against an already-resolved config.
 /// Returns the branch name so the caller can surface it on stdout.
@@ -142,7 +112,7 @@ pub(super) fn run_exchange(
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
-            commit_dispatch(&worktree_path, &conv_id, resolved.tools, deps)?;
+            commit_dispatch(&worktree_path, &conv_id, resolved, deps)?;
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox
@@ -182,7 +152,12 @@ pub(super) fn run_exchange(
         // commit's tree — §5.2 head/body under the role's manifest rules,
         // then the transcript tail — one path for running, retry, replay.
         let messages = assemble(&worktree_path, resolved.manifest)?;
-        let tools = tools::compose(&worktree_path, resolved.role, resolved.tools, &messages)?;
+        let tools = tools::compose(
+            &worktree_path,
+            resolved.grant.role,
+            resolved.grant.tools,
+            &messages,
+        )?;
         let request = model_call::build_request(
             &resolved.model.model_id,
             &system_with_goal,

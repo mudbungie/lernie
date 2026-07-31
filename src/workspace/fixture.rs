@@ -11,8 +11,12 @@ use crate::template::{GitRunner, RealGit, scaffold};
 use std::path::{Path, PathBuf};
 use tempfile::TempDir;
 
-/// A real workspace under a fresh tempdir (the `lernie new` core, with
-/// an empty descriptions pool and no template override). Returns
+/// A real workspace under a fresh tempdir: the whole of `lernie new` —
+/// found the harness root, then scaffold (§2.2 *Founding is a step of
+/// `lernie new`*). Founding is what makes the first config commit's
+/// `descriptions/**` describe the tools the shipped `providers.yaml`
+/// grants (§3.3), so a fixture that skipped it would author the one
+/// state `new` cannot reach. No template override. Returns
 /// `(holder, workspace_path)`.
 pub(crate) fn workspace() -> (TempDir, PathBuf) {
     let holder = TempDir::new().unwrap();
@@ -22,6 +26,7 @@ pub(crate) fn workspace() -> (TempDir, PathBuf) {
         config: holder.path().join("config"),
         data: data_root,
     };
+    crate::install::prime(&roots).unwrap();
     let ws = holder.path().join("ws");
     scaffold(&ws, &roots, &RealGit::new()).unwrap();
     (holder, ws)

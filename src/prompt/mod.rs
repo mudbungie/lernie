@@ -3,13 +3,12 @@
 //! Each prompt spawns an `agents/<conv-id>` branch off the default
 //! config branch's head (§2.2–§2.3 — there is no `main`), commits the
 //! dispatch commit (§2.10) — which also removes the harness-facing
-//! control files from the agent's tree (§2.2) — drives the step loop
-//! through brazen's `bz` (§4.4), lands each step's response as attempt
-//! segments, and dispatches the terminal compactor off the tip — the
-//! compaction merge, the one merge left in the system (§2.6, §2.7).
-//! Merge-back is gone: the root branch persists on its own ref (§2.4),
-//! and a child returns by depositing a result message into its parent's
-//! inbox (§2.6).
+//! control files from the agent's tree (§2.2) and derives its
+//! `descriptions/**` from the governing config commit (§3.3) — drives
+//! the step loop through brazen's `bz` (§4.4), and lands each step's
+//! response as attempt segments. Merge-back is gone: the root branch
+//! persists on its own ref (§2.4), and a child returns by depositing a
+//! result message into its parent's inbox (§2.6).
 //!
 //! Provider plumbing follows ARCH §4.4: every model call execs `bz`
 //! (`bz --json --provider <row>`, canonical request on stdin, `v=1`
@@ -174,6 +173,10 @@ pub enum Error {
         parent: String,
         exhausted: budget::Exhausted,
     },
+    /// A grant the governing config commit does not describe (§3.3),
+    /// refused at the fork rather than composed into a smaller toolset.
+    #[error(transparent)]
+    GrantUndescribed(#[from] dispatch::Undescribed),
     /// The hop's target has no `agents/*` ref — the shared existence
     /// decline ([`crate::workspace::require_agent`]), fired *before* the
     /// lease so the refusal leaves no inbox directory behind. It is

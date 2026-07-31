@@ -1,0 +1,60 @@
+# Role assignments for the fleet demo (ARCH §4.3), laid into the
+# workspace's config commit by `fleet/bin/fleet-up.sh`.
+#
+# THE MAPPING: `worker` is the role every root agent resolves ("roots are
+# workers"), and a root agent is what `lernie prompt` creates. The fleet's
+# coordinator is therefore the `worker` role — not a role named
+# "coordinator" — because the coordinator is the one long-lived agent a
+# human addresses directly. Every other fleet role is a dispatched child:
+# `shepherd`, `sensor`, `builder`, `steward` are reachable only through
+# the coordinator's `dispatch` tool (the role set is open, ARCH §4.3).
+#
+# The tool grants are the structure, not the etiquette. SPEC §6.2's "one
+# speaker per outward surface" is enforced here: `slack_post` is granted
+# to `worker` alone, and the `sensor` — the agent pointed at that surface
+# — cannot name it in a model call at all, because the fork prunes every
+# descriptor its role does not grant (ARCH §3.3).
+roles:
+  # The coordinator. Sole channel speaker; spawns and charters everyone.
+  #
+  # Its grant is the UNION of every role's, and that is mechanical, not
+  # generous: a child forks off its parent's tip, and the parent's tree was
+  # already pruned to the parent's grant at *its* dispatch commit (ARCH
+  # §3.3 "the fork prunes the snapshot to the role's grant"). The tools
+  # array is the intersection of declaration and availability, so a tool
+  # whose descriptor is absent from the parent's tree is silently dropped
+  # from the child's request. **A role's grant must therefore be a subset
+  # of its dispatcher's.** Granting the coordinator `slack_read` costs
+  # nothing — the one-speaker rule is about `slack_post`, which no other
+  # role holds.
+  worker:
+    provider: codex
+    model: gpt-5.4
+    tools: [bash, dispatch, load_skill, message, read_file, slack_post, slack_read]
+  # Fleet observer. `bash` for `lernie scan` and git; no product writes.
+  shepherd:
+    provider: codex
+    model: gpt-5.4
+    tools: [bash, message, read_file]
+  # Outward-surface observer. Structurally read-only on the channel: it
+  # holds the reading instrument and the relay wire, and nothing else.
+  sensor:
+    provider: codex
+    model: gpt-5.4
+    tools: [slack_read, message]
+  # Ephemeral producer of deliverables.
+  builder:
+    provider: codex
+    model: gpt-5.4
+    tools: [bash, read_file, load_skill, message, dispatch]
+  # Sole writer of doctrine (the data-root skills pool), via `bash`.
+  steward:
+    provider: codex
+    model: gpt-5.4
+    tools: [bash, read_file, message]
+  # The compactor declares none: its pair (`write_summary` /
+  # `mark_for_deletion`) is injected by the compaction procedure and is
+  # never declarable here (ARCH §2.7, §4.3).
+  compactor:
+    provider: codex
+    model: gpt-5.4

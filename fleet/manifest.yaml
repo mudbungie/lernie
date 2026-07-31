@@ -1,0 +1,65 @@
+# Context-assembly rules per role (ARCH §5.2). A role the manifest does
+# not list composes no head extras and no body at all
+# (`assembler::body::compose` returns nothing for an unlisted role), so
+# every role `providers.yaml` defines needs an entry here — otherwise a
+# `builder` that elected a skill with `load_skill` would never see the
+# body it just loaded. Only `worker` and `compactor` are in
+# `template/manifest.yaml`; the four fleet child roles are added here.
+roles:
+  worker:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_summaries
+  shepherd:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_summaries
+  sensor:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_summaries
+  builder:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_summaries
+  steward:
+    pinned:
+      - goal.md
+      - soul.md
+      - descriptions/**
+    order:
+      - summary/**
+      - skills/**
+    budget_tokens: 150000
+    overflow: drop_oldest_summaries
+  compactor:
+    pinned:
+      - goal.md
+      - soul.md
+    order: []
+    budget_tokens: 50000
+    overflow: truncate

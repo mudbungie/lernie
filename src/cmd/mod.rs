@@ -55,8 +55,8 @@ pub struct Cli {
 }
 
 /// `lernie --version`'s product: lernie's own package version paired with
-/// the exact brazen pin it links, e.g. `0.0.1 (brazen 0.0.4)` — printed by
-/// clap as `lernie 0.0.1 (brazen 0.0.4)`. The pin's one home is the
+/// the exact brazen pin it links, e.g. `0.0.1 (brazen 0.0.5)` — printed by
+/// clap as `lernie 0.0.1 (brazen 0.0.5)`. The pin's one home is the
 /// `brazen = "=<version>"` line in `Cargo.toml`; [`crate::prompt::brazen_pin`]
 /// is the sole reader of it (the same fact the load-time version guard,
 /// `crate::prompt::resolve::check_bz_version`, ARCH §4.4, compares a live

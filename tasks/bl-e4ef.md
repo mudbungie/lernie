@@ -1,7 +1,8 @@
 +++
 title = "lernie's brazen pin is =0.0.4 while crates.io has 0.0.5: releasing 0.0.3 as-is locks the skew into yog's dependency graph"
 created = 1785459718
-updated = 1785459718
+updated = 1785459719
+claimant = "pedantic-lernie"
 priority = 5
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 

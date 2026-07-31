@@ -135,6 +135,55 @@ fn skill_manifest_without_frontmatter_is_a_loud_error() {
 }
 
 #[test]
+fn skill_manifest_with_malformed_yaml_frontmatter_is_a_loud_error() {
+    // A well-fenced frontmatter block whose YAML does not parse — the
+    // `description: foo: bar` plain-scalar trap (bl-e3f5): a bare `: `
+    // inside an unquoted scalar reads to a YAML parser as a second
+    // mapping key, "mapping values are not allowed in this context".
+    // `frontmatter_yaml` alone (fence detection) lets this through;
+    // `skill::parse` is what catches it.
+    let pool = Pool::new();
+    pool.skill(
+        "trap",
+        "---\nname: trap\ndescription: posts to slack: general\n---\n",
+    );
+    let wt = worktree();
+    let err = snapshot(pool.root(), wt.path()).unwrap_err();
+    match &err {
+        Error::SkillFrontmatter { name, path, .. } => {
+            assert_eq!(name, "trap");
+            assert!(path.ends_with("trap/SKILL.md"), "{path:?}");
+        }
+        other => panic!("expected SkillFrontmatter, got {other:?}"),
+    }
+    // Names the offending pool file and the parse error for the operator.
+    let msg = err.to_string();
+    assert!(msg.contains("SKILL.md"), "{msg}");
+    assert!(msg.contains("trap"), "{msg}");
+    // Nothing partial is left behind: the malformed skill's descriptor
+    // never lands, before or after the failing one alphabetically.
+    assert!(!wt.path().join("descriptions/skills/trap.md").exists());
+}
+
+#[test]
+fn tool_schema_malformed_json_is_a_loud_error() {
+    let pool = Pool::new();
+    pool.tool("broken", "{ not json");
+    let wt = worktree();
+    let err = snapshot(pool.root(), wt.path()).unwrap_err();
+    match &err {
+        Error::ToolSchema { name, path, .. } => {
+            assert_eq!(name, "broken");
+            assert!(path.ends_with("broken.json"), "{path:?}");
+        }
+        other => panic!("expected ToolSchema, got {other:?}"),
+    }
+    let msg = err.to_string();
+    assert!(msg.contains("broken.json"), "{msg}");
+    assert!(!wt.path().join("descriptions/tools/broken.json").exists());
+}
+
+#[test]
 fn snapshot_is_deterministic_across_many_artifacts() {
     let pool = Pool::new();
     pool.tool("bash", BASH_SCHEMA)

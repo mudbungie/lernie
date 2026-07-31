@@ -234,6 +234,40 @@ fn the_shipped_worker_grant_is_the_whole_tool_pool() {
     assert!(shipped.roles["compactor"].tools.is_empty());
 }
 
+/// `lernie prime` validates what it seeds: the embedded pools it ships —
+/// `schemas/tools/**` and `skills/**` — must parse with the same parsers
+/// [`crate::template::descriptions::snapshot`] now runs at snapshot time
+/// (bl-e3f5). This is the cheap insurance ARCH §2.2 asks for: a shipped
+/// asset that fails to parse would refuse *every* `lernie new` and
+/// `lernie config` on a fresh install, so it must never reach a release.
+#[test]
+fn shipped_skill_pool_frontmatter_parses() {
+    for sub in SKILLS.dirs() {
+        let manifest = sub
+            .files()
+            .find(|f| f.path().file_name().and_then(|n| n.to_str()) == Some("SKILL.md"))
+            .unwrap_or_else(|| panic!("{:?} ships no SKILL.md", sub.path()));
+        let raw = manifest
+            .contents_utf8()
+            .unwrap_or_else(|| panic!("{:?} is not UTF-8", manifest.path()));
+        let body = crate::skill::frontmatter_yaml(raw)
+            .unwrap_or_else(|| panic!("{:?} has no frontmatter block", manifest.path()));
+        crate::skill::parse(body)
+            .unwrap_or_else(|e| panic!("{:?} frontmatter is malformed: {e}", manifest.path()));
+    }
+}
+
+/// The shipped tool schema pool parses as JSON — same insurance as
+/// [`shipped_skill_pool_frontmatter_parses`], for the other artifact kind
+/// `descriptions::snapshot` validates (bl-e3f5).
+#[test]
+fn shipped_tool_schema_pool_parses() {
+    for file in TOOLS.files() {
+        serde_json::from_slice::<serde_json::Value>(file.contents())
+            .unwrap_or_else(|e| panic!("{:?} is not valid JSON: {e}", file.path()));
+    }
+}
+
 #[test]
 fn prime_surfaces_a_config_seed_error() {
     // The config root itself is a regular file → `ensure_dir` of the

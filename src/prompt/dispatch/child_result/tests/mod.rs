@@ -138,6 +138,7 @@ fn returned_child_ep(
         parent_worktree: &parent_wt,
         role,
         goal,
+        name: None,
         fork_point: None,
     };
     let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();

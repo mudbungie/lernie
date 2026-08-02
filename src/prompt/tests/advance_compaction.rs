@@ -50,6 +50,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         parent_worktree: &parent_wt,
         role: "worker",
         goal: "do it",
+        name: None,
         fork_point: None,
     };
     let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();
@@ -133,6 +134,7 @@ fn a_compaction_merge_lands_the_product_and_the_next_step_assembles_clean() {
         parent_worktree: &parent_wt,
         role: "compactor",
         goal: "compact",
+        name: None,
         fork_point: None,
     };
     let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();

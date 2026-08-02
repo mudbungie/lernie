@@ -55,6 +55,7 @@ pub(super) fn req<'a>(
         parent_worktree: wt,
         role: crate::prompt::WORKER_ROLE,
         goal,
+        name: None,
         fork_point: None,
     }
 }

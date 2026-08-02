@@ -6,7 +6,7 @@
   "properties": {
     "agent": {
       "type": "string",
-      "description": "Recipient agent id — its full hyphenated descent, which is also its branch name and its address (ARCH §2.3). A child's address is the id its dispatch returned; the parent's address is this agent's id minus its last descent segment. The message is deposited into that agent's inbox and delivered at its next step boundary (ARCH §2.11)."
+      "description": "The recipient: either an agent id or a unique agent display name (ARCH §2.3, §2.11). An id is the agent's full hyphenated descent, which is also its branch name — a child's is the id its dispatch returned, and the parent's is this agent's id minus its last descent segment. A display name is the optional name an agent was dispatched with; it resolves only when exactly one living agent wears it, and an ambiguous name is refused with the candidate ids rather than guessed. The message is deposited into that agent's inbox and delivered at its next step boundary (ARCH §2.11)."
     },
     "content": {
       "type": "string",

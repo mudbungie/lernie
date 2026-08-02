@@ -25,6 +25,7 @@ fn verifier_child(
         parent_worktree: &parent_wt,
         role: "verifier",
         goal: "judge",
+        name: None,
         fork_point: Some(worker_tip),
     };
     let v = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();

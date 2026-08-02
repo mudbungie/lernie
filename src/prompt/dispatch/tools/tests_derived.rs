@@ -31,6 +31,7 @@ fn dispatch_role(ws: &Path, parent: &str, role: &str) -> String {
             parent_worktree: &parent_wt,
             role,
             goal: "g",
+            name: None,
             fork_point: None,
         },
         &RealGit::new(),

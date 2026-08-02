@@ -208,6 +208,7 @@ fn prompt_reports_a_non_workspace() {
             prompt::Args {
                 repo: tmp.path().to_path_buf(),
                 message: "hi".into(),
+                name: None,
             },
             fx,
         )
@@ -226,6 +227,7 @@ fn dispatch_forks_a_child_through_the_front_door() {
                 repo: ws.clone(),
                 branch: "20260101-p1".into(),
                 goal: Some("do the thing".into()),
+                name: None,
             },
             fx,
         )
@@ -244,6 +246,7 @@ fn dispatch_reports_an_undefined_role_with_its_prefix() {
                 repo: ws.clone(),
                 branch: "p1".into(),
                 goal: Some("g".into()),
+                name: None,
             },
             fx,
         )

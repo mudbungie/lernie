@@ -73,7 +73,7 @@ fn a_failing_exit_launch_is_swallowed() {
     deps.launcher = &FailingLauncher;
 
     // The exchange still succeeds: the launch is fire-and-forget.
-    run(repo.path(), "go", &deps).unwrap();
+    run(repo.path(), "go", None, &deps).unwrap();
 }
 
 /// Adapter for the exit-race test: the version-guard probe replies
@@ -193,7 +193,7 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
         launcher: &launcher,
     };
 
-    let branch = run(&repo, "go", &deps).unwrap();
+    let branch = run(&repo, "go", None, &deps).unwrap();
     assert_eq!(branch, agent);
     // Two launches, in sequence (§2.11): the release rule's — the late
     // deposit is outside what the last drain deliberately left pending,

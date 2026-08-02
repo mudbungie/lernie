@@ -20,7 +20,8 @@ use crate::prompt::Error;
 /// misparse), then providers, workflow, manifest (§5.2), soul. Branch
 /// work follows: 6 worktree add, 7 the dispatch commit's control-file
 /// removal (§2.3 step 2), then the descriptor derivation
-/// ([`DESCRIPTOR_OPS`]), then dispatch add, dispatch commit, the step-1
+/// ([`DESCRIPTOR_OPS`]), then the settled-name stage ([`NAME_SETTLE_INDEX`],
+/// §2.3), then dispatch add, dispatch commit, the step-1
 /// drain stray-probe (`git status`, §2.11), user-message delivery add,
 /// user-message delivery commit (§2.11 — the initial message is
 /// delivered through the front door before step 1's read state is
@@ -34,9 +35,12 @@ pub(super) const WORKTREE_ADD_INDEX: usize = 6;
 /// the fixtures' two-tool `worker` grant. No `rm` here: the stub
 /// worktree carries no inherited `descriptions/**` to strand.
 pub(super) const DESCRIPTOR_OPS: usize = 5;
-/// `git add goal.md soul.md` for the dispatch commit — the first op
-/// after the derivation.
-pub(super) const DISPATCH_ADD_INDEX: usize = WORKTREE_ADD_INDEX + 2 + DESCRIPTOR_OPS;
+/// `git add name` — the trim's fourth part, staging the agent's own name
+/// fact over whatever the fork point carried (§2.3,
+/// [`crate::workspace::agent_name`]). The first op after the derivation.
+pub(super) const NAME_SETTLE_INDEX: usize = WORKTREE_ADD_INDEX + 2 + DESCRIPTOR_OPS;
+/// `git add goal.md soul.md` for the dispatch commit.
+pub(super) const DISPATCH_ADD_INDEX: usize = NAME_SETTLE_INDEX + 1;
 const REV_PARSE_INDEX: usize = DISPATCH_ADD_INDEX + 5;
 /// After the model call settles, the transcript writer (§2.3) commits
 /// the model-output entry — `git add` then `commit` — before the loop

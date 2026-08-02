@@ -277,7 +277,7 @@ pub fn cli_run(
     crate::workspace::require_agent(
         workspace,
         agent,
-        "a message is addressed to an existing agent (ARCH §2.11)",
+        "a message is addressed to an existing agent, by id or unique name (ARCH §2.11)",
         &crate::template::RealGit::new(),
     )?;
     let sender =

@@ -25,6 +25,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let branch = run(
         repo.path(),
         "hello",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -116,9 +117,10 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // config-head rev-parse + five `show` reads — `version` first, the
     // §10 schema-version guard, then providers/workflow/manifest/soul —
     // against repo.git)
-    // + 1 (branch spawn off config/default) + 8 (dispatch commit:
+    // + 1 (branch spawn off config/default) + 9 (dispatch commit:
     // control-file removal, the descriptor derivation's four `cat-file
-    // -e` existence reads and one `checkout` — §3.3 — then add, commit —
+    // -e` existence reads and one `checkout` — §3.3 — the settled-name
+    // stage (§2.3, `workspace::agent_name`), then add, commit —
     // §2.3 step 2) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
     // (rev-parse) + 2 (model-output transcript entry add + commit) + 1
@@ -126,7 +128,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // (§2.6): the root branch persists on its own ref. The version guard
     // runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 22);
+    assert_eq!(runs.len(), 23);
     for (dest, _args) in &runs[0..7] {
         assert_eq!(dest, &repo_git, "control + spawn run against repo.git");
     }
@@ -158,7 +160,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     );
     assert_eq!(args6[4], worktree.to_string_lossy().to_string());
     assert_eq!(args6[5], "config/default");
-    for (dest, _args) in &runs[7..22] {
+    for (dest, _args) in &runs[7..23] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside the worktree");
     }
     // Dispatch commit (§2.3 step 2): the config commit's control files
@@ -181,27 +183,31 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // 8-12 are the descriptor derivation (§3.3): the grant checked
     // against the governing config commit, then checked out of it —
     // asserted arg-for-arg in [`super::descriptor_prune`].
-    assert_eq!(runs[13].1, vec!["add", "goal.md", "soul.md"]);
-    assert_eq!(runs[14].1[0], "commit");
-    assert!(runs[14].1[2].contains("step 001: dispatch"));
-    assert!(runs[14].1[2].contains("[ct-1-deadbeef]"));
+    // 13 stages the settled name (§2.3): the trim's fourth part, always
+    // written — empty here, since this root was started without one.
+    assert_eq!(runs[13].1, vec!["add", "name"]);
+    assert_eq!(std::fs::read_to_string(worktree.join("name")).unwrap(), "");
+    assert_eq!(runs[14].1, vec!["add", "goal.md", "soul.md"]);
+    assert_eq!(runs[15].1[0], "commit");
+    assert!(runs[15].1[2].contains("step 001: dispatch"));
+    assert!(runs[15].1[2].contains("[ct-1-deadbeef]"));
     // The step-1 drain (§2.11 *Delivery*): a stray-recovery probe over
     // messages/ (clean here — no add/commit), then the initial user
     // message delivered from the inbox as the first transcript entry,
     // before step 1's read state is captured.
-    assert_eq!(runs[15].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[16].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[17].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[18].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[16].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[17].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[18].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[19].1, vec!["rev-parse", "HEAD"]);
 
     // The transcript writer commits the model-output entry (§2.3): the
     // sealed staging file is renamed to messages/002-<model-id>.json —
     // the origin token is the model that authored it (§2.3) — and
     // committed.
-    assert_eq!(runs[19].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
-    assert_eq!(runs[20].1[0], "commit");
-    assert!(runs[20].1[2].contains("transcript 002: claude-sonnet-5"));
-    assert!(runs[20].1[2].contains("[ct-1-deadbeef]"));
+    assert_eq!(runs[20].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
+    assert_eq!(runs[21].1[0], "commit");
+    assert!(runs[21].1[2].contains("transcript 002: claude-sonnet-5"));
+    assert!(runs[21].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
     // canonical model-output blocks (the "hi there" text block).
     let entry = worktree.join("messages/002-claude-sonnet-5.json");
@@ -216,8 +222,8 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // tip as its terminal ref (`rev-parse HEAD`); the deposit itself is a
     // structural no-op for a root (no parent inbox, §2.4), so it lands no
     // git op of its own and no merge-back follows.
-    assert_eq!(runs[21].0, worktree);
-    assert_eq!(runs[21].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[22].0, worktree);
+    assert_eq!(runs[22].1, vec!["rev-parse", "HEAD"]);
 }
 
 #[test]
@@ -235,6 +241,7 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
     run(
         repo.path(),
         "hi",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -281,7 +288,7 @@ fn run_under_injected_adapter_target_skips_version_guard_and_uses_the_target() {
         harness.path(),
     );
     deps.adapter_target = Some(&injected);
-    run(repo.path(), "hi", &deps).unwrap();
+    run(repo.path(), "hi", None, &deps).unwrap();
 
     // Exactly one adapter call — the model call — against the injected
     // target; no `--version` guard call.

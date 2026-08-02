@@ -10,13 +10,18 @@ use crate::prompt::{self, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock};
 use crate::template::RealGit;
 use std::path::PathBuf;
 
-/// `lernie prompt <repo> <message>`.
+/// `lernie prompt <repo> <message> [--name <name>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Path to the workspace (conversation repo) root.
     pub repo: PathBuf,
     /// Opening message for the new root conversation.
     pub message: String,
+    /// Display name for the new agent (ARCH §2.3): one unbroken word,
+    /// unique among the workspace's living agents, set here and never
+    /// rewritten. `lernie message` accepts it in place of the agent id.
+    #[arg(long)]
+    pub name: Option<String>,
 }
 
 /// Spawn the root agent branch and drive its step loop; print the agent
@@ -54,5 +59,5 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
         stop: fx.stop,
         launcher: &launcher,
     };
-    prompt::run(&args.repo, &args.message, &deps).map_err(Into::into)
+    prompt::run(&args.repo, &args.message, args.name.as_deref(), &deps).map_err(Into::into)
 }

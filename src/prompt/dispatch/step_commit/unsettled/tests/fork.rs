@@ -105,6 +105,7 @@ fn a_child_forked_mid_tool_step_assembles_a_wire_valid_first_history() {
             parent_worktree: &parent_wt,
             role: crate::prompt::WORKER_ROLE,
             goal: "summarize the repo\n",
+            name: None,
             fork_point: None,
         },
         &g,

@@ -36,7 +36,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Context paths excluded from the transfer (§2.6) — a child's context,
 /// which must never reach its parent's tree. `goal.md`, `soul.md`,
-/// `messages`, `summary`, and `skills` are branch-scoped (§2.2);
+/// `name`, `messages`, `summary`, and `skills` are branch-scoped (§2.2)
+/// — an agent's name is its own, and without the exclusion a child's
+/// dispatch-commit rewrite of it would ride the diff back and rename the
+/// parent (§2.3, `crate::workspace::agent_name`);
 /// `descriptions` is config-inherited (§2.2, §3.3) but pruned to the
 /// child's role grant on its dispatch commit, so it is excluded too —
 /// that prune is context management, not a work product (bl-475a).
@@ -45,6 +48,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const CONTEXT_EXCLUDES: &[&str] = &[
     ":(exclude)goal.md",
     ":(exclude)soul.md",
+    ":(exclude)name",
     ":(exclude)messages",
     ":(exclude)summary",
     ":(exclude)skills",

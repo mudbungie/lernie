@@ -4,7 +4,7 @@
 //! Split from [`super::errors_disk`] for the per-file line cap; the
 //! op-index constants live there.
 
-use super::errors_disk::{DISPATCH_ADD_INDEX, WORKTREE_ADD_INDEX};
+use super::errors_disk::{DISPATCH_ADD_INDEX, NAME_SETTLE_INDEX, WORKTREE_ADD_INDEX};
 use super::fixtures::*;
 use crate::prompt::Error;
 
@@ -102,4 +102,26 @@ fn run_surfaces_dispatch_commit_failure() {
     )
     .unwrap_err();
     assert!(matches!(err, Error::Git { op: "commit", .. }));
+}
+
+#[test]
+fn run_surfaces_name_settle_failure() {
+    // The trim's fourth part on the root path (§2.3): staging the
+    // settled `name` fails, reported in the dispatch commit's own voice.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(&happy_response_bytes());
+    let err = run_with_stubs(
+        repo.path(),
+        "hi",
+        &adapter,
+        &StubGit::failing_at(NAME_SETTLE_INDEX),
+    )
+    .unwrap_err();
+    assert!(matches!(
+        err,
+        Error::Git {
+            op: "settle the agent name",
+            ..
+        }
+    ));
 }

@@ -43,7 +43,15 @@ fn compactor_dispatch_forks_an_ordinary_compactor_child() {
     // off the dispatching tip with the compactor soul pinned and a
     // boilerplate goal deposited, run by the front door.
     let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
-    run_with(ROLE_COMPACTOR, &repo, "20260101-p1", None, &NoopLauncher).unwrap();
+    run_with(
+        ROLE_COMPACTOR,
+        &repo,
+        "20260101-p1",
+        None,
+        None,
+        &NoopLauncher,
+    )
+    .unwrap();
     assert_eq!(sub_count(&repo, "20260101-p1"), 1);
 }
 
@@ -55,6 +63,7 @@ fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         &repo,
         "20260101-p1",
         Some("do the thing"),
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -74,7 +83,15 @@ fn any_config_role_dispatches_open_set() {
         &[("providers.yaml", yaml), ("souls/verifier.md", "v\n")],
     );
     fixture::spawn_root(&repo, "p9");
-    run_with("verifier", &repo, "p9", Some("judge it"), &NoopLauncher).unwrap();
+    run_with(
+        "verifier",
+        &repo,
+        "p9",
+        Some("judge it"),
+        None,
+        &NoopLauncher,
+    )
+    .unwrap();
     assert_eq!(sub_count(&repo, "p9"), 1);
 }
 
@@ -94,6 +111,7 @@ fn a_path_that_is_not_a_workspace_is_the_shared_layout_decline() {
         holder.path(),
         "someagent",
         Some("hi"),
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -110,7 +128,15 @@ fn a_path_that_is_not_a_workspace_is_the_shared_layout_decline() {
 #[test]
 fn a_parent_with_no_agent_ref_is_the_shared_existence_decline() {
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run_with("worker", &repo, "nosuchparent", Some("hi"), &NoopLauncher).unwrap_err();
+    let err = run_with(
+        "worker",
+        &repo,
+        "nosuchparent",
+        Some("hi"),
+        None,
+        &NoopLauncher,
+    )
+    .unwrap_err();
     assert!(matches!(err, DispatchCliError::UnknownParent(_)), "{err}");
     assert_eq!(
         err.to_string(),
@@ -126,7 +152,7 @@ fn undefined_role_names_the_roles_that_are_defined() {
     // is named as the user knows it, and the pool that IS defined travels
     // with the refusal.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run_with("no-such-role", &repo, "p1", Some("g"), &NoopLauncher).unwrap_err();
+    let err = run_with("no-such-role", &repo, "p1", Some("g"), None, &NoopLauncher).unwrap_err();
     assert!(matches!(err, DispatchCliError::InvalidRole(_)), "{err}");
     assert_eq!(
         err.to_string(),
@@ -140,14 +166,22 @@ fn worker_requires_a_goal() {
     // Through the public `run` (the AdvanceLauncher wiring): validation
     // passes, then the missing `--goal` is refused before any fork.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run("worker", &repo, "p1", None, Path::new("true")).unwrap_err();
+    let err = run("worker", &repo, "p1", None, None, Path::new("true")).unwrap_err();
     assert_eq!(err.to_string(), "--goal is required for role \"worker\"");
 }
 
 #[test]
 fn compactor_rejects_a_goal() {
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run(ROLE_COMPACTOR, &repo, "p1", Some("g"), Path::new("true")).unwrap_err();
+    let err = run(
+        ROLE_COMPACTOR,
+        &repo,
+        "p1",
+        Some("g"),
+        None,
+        Path::new("true"),
+    )
+    .unwrap_err();
     assert_eq!(
         err.to_string(),
         "--goal is not accepted for role \"compactor\""
@@ -161,7 +195,7 @@ fn inner_errors_render_through_the_shared_display() {
     // through `From<Error>` and the shared `Display`.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
     std::fs::remove_dir_all(repo.join(crate::workspace::AGENTS_DIR).join("p1")).unwrap();
-    let err = run_with("worker", &repo, "p1", Some("g"), &NoopLauncher).unwrap_err();
+    let err = run_with("worker", &repo, "p1", Some("g"), None, &NoopLauncher).unwrap_err();
     assert!(matches!(err, DispatchCliError::Inner(_)), "{err}");
     assert!(!err.to_string().is_empty());
 }

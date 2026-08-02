@@ -54,6 +54,7 @@ fn the_dispatch_commit_derives_the_tree_to_the_resolved_grant() {
     run(
         repo.path(),
         "hello",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

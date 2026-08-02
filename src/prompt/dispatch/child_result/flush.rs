@@ -86,6 +86,7 @@ fn dispatch_compactor(
         parent_worktree: worktree,
         role: compactor::COMPACTOR_ROLE,
         goal: &goal,
+        name: None,
         fork_point: None,
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)

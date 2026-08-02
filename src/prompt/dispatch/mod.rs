@@ -60,6 +60,7 @@ const DEFAULT_MAX_TOKENS: u32 = 4096;
 pub(super) fn run_exchange(
     repo: &Path,
     user_message: &str,
+    name: Option<&str>,
     resolved: &Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
@@ -112,7 +113,7 @@ pub(super) fn run_exchange(
     loop {
         if step_seq == 1 {
             write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
-            commit_dispatch(&worktree_path, &conv_id, resolved, deps)?;
+            commit_dispatch(&worktree_path, &conv_id, name, resolved, deps)?;
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox

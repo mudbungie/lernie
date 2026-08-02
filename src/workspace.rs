@@ -16,9 +16,11 @@
 //!
 //! This module owns the path/ref arithmetic and the ancestry
 //! derivation; it holds no state and performs no writes beyond what the
-//! injected [`GitRunner`] is asked to run. The two guards every verb
-//! runs before any of it — *is this a workspace*, *does this agent
-//! exist* — are [`guard`], re-exported here.
+//! injected [`GitRunner`] is asked to run — the one exception is
+//! [`agent_name::settle`], which keeps the read and write halves of the
+//! agent-name fact in a single home. The two guards every verb runs
+//! before any of it — *is this a workspace*, *does this agent exist* —
+//! are [`guard`], re-exported here.
 
 use crate::template::GitRunner;
 use std::io;
@@ -245,8 +247,8 @@ pub fn control_exists(workspace: &Path, commit: &str, path: &str, git: &dyn GitR
         .is_ok()
 }
 
+pub mod agent_name;
 pub mod cwd;
-
 mod guard;
 pub use guard::{LayoutError, UnknownAgent, agent_exists, require, require_agent};
 

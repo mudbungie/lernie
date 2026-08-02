@@ -196,6 +196,7 @@ pub(super) fn run_with_stubs(
     crate::prompt::run(
         repo,
         msg,
+        None,
         &valid_deps(
             adapter,
             &sleeper,

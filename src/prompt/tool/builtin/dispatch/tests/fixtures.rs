@@ -28,10 +28,14 @@ pub(super) fn env(repo: &Path, branch: &str) -> StubEnv {
     StubEnv(m)
 }
 
+/// One recorded `lernie dispatch` invocation: role, repo, branch, goal,
+/// and the optional `--name` (§2.3).
+pub(super) type Invocation = (String, PathBuf, String, String, Option<String>);
+
 /// Stub spawner records the call args and returns a canned outcome.
 pub(super) struct StubSpawner {
     pub(super) out: DispatchOutput,
-    pub(super) invocations: RefCell<Vec<(String, PathBuf, String, String)>>,
+    pub(super) invocations: RefCell<Vec<Invocation>>,
 }
 
 impl StubSpawner {
@@ -74,12 +78,14 @@ impl Spawner for StubSpawner {
         repo: &Path,
         branch: &str,
         goal: &str,
+        name: Option<&str>,
     ) -> Result<DispatchOutput, io::Error> {
         self.invocations.borrow_mut().push((
             role.to_string(),
             repo.to_path_buf(),
             branch.to_string(),
             goal.to_string(),
+            name.map(str::to_owned),
         ));
         Ok(DispatchOutput {
             stdout: self.out.stdout.clone(),
@@ -99,6 +105,7 @@ impl Spawner for ErrSpawner {
         _repo: &Path,
         _branch: &str,
         _goal: &str,
+        _name: Option<&str>,
     ) -> Result<DispatchOutput, io::Error> {
         Err(io::Error::new(io::ErrorKind::NotFound, "no lernie binary"))
     }

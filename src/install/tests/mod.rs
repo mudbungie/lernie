@@ -7,6 +7,10 @@ use tempfile::TempDir;
 /// keep this file under the repo's per-file line cap.
 mod toolspec;
 
+/// The seeded `models.yaml` / `providers.yaml` provider names against
+/// brazen's actual resolved table (bl-9391), split out for the same reason.
+mod brazen_providers;
+
 /// `LERNIE_HOME`-style collapsed roots: config and data are one directory
 /// (ARCH §2.2) — the shape yog drives via `LERNIE_HOME=<dir> lernie prime`.
 fn collapsed(dir: &Path) -> Roots {

@@ -15,6 +15,7 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- guard the seeded `models.yaml`/`providers.yaml` provider names against brazen's actual resolved table in CI, so a shipped row brazen can't serve fails a test instead of an operator's first dispatch [bl-9391]
 - agent naming becomes a first-class fact: --name at prompt/dispatch, stored under the agent; message resolves id-or-unique-name [bl-c8ed]
 
 ## [0.0.3](https://github.com/mudbungie/lernie/compare/v0.0.2...v0.0.3) - 2026-07-30

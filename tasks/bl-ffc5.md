@@ -1,7 +1,8 @@
 +++
 title = "tool results omit the exit code and drop stderr on success — return both, always, like codex does"
 created = 1785647733
-updated = 1785647733
+updated = 1785650134
+claimant = "Gimbal"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

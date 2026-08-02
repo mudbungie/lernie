@@ -91,8 +91,8 @@ pub enum Error {
     /// decline leaves nothing behind and says nothing about git plumbing,
     /// the `.config-author` checkout, or the `config/` ref namespace the
     /// CLI otherwise hides — it names the lineages that do exist (§2.3).
-    #[error("no config lineage {0:?} in this workspace — existing lineages: {1}")]
-    NoSuchLineage(String, String),
+    #[error(transparent)]
+    NoSuchLineage(#[from] workspace::UnknownLineage),
 }
 
 /// Resolve the [`Origin`] from `lernie config`'s flags and run [`author`]
@@ -116,7 +116,7 @@ pub fn from_cli<G: GitRunner>(
         (None, false) => Origin::Advance,
         (Some(_), true) => return Err(Error::Conflict),
     };
-    let name = name.unwrap_or("default");
+    let name = name.unwrap_or(workspace::DEFAULT_CONFIG_NAME);
     author(workspace, data_root, name, origin, edit, git)
 }
 
@@ -174,20 +174,14 @@ pub fn author<G: GitRunner>(
 /// same order the agent verbs resolve `agents/<id>` in, and for the same
 /// reason: a well-formed name that names nothing is the *product's*
 /// decline, naming the pool it was not found in
-/// ([`crate::name::pool`]), not git's report of an invalid reference.
+/// ([`workspace::require_lineage`], the one home this shares with
+/// `lernie prompt --config`), not git's report of an invalid reference.
 /// Advance and orphan name no source, so they pass through.
 fn require_source<G: GitRunner>(workspace: &Path, origin: &Origin, git: &G) -> Result<(), Error> {
     let Origin::Fork { source } = origin else {
         return Ok(());
     };
-    let names = workspace::config_names(workspace, git).map_err(Error::Git)?;
-    if names.iter().any(|n| n == source) {
-        return Ok(());
-    }
-    Err(Error::NoSuchLineage(
-        (*source).to_owned(),
-        crate::name::pool(&names),
-    ))
+    workspace::require_lineage(workspace, source, git).map_err(Error::NoSuchLineage)
 }
 
 /// Create the authoring checkout at `author` for the given origin: check

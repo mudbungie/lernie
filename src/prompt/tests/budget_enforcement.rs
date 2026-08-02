@@ -50,6 +50,8 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
         repo.path(),
         "go",
         None,
+        None,
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -106,6 +108,8 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
         repo.path(),
         "go",
         None,
+        None,
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -131,8 +135,10 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
 
 #[test]
 fn budget_ref_write_failure_surfaces_as_a_git_error() {
-    // Indices below are relative to the first post-control op; control
-    // resolution (§2.2) precedes them with a config-head rev-parse and
+    // Indices below are relative to the first post-control op; the
+    // start's preamble precedes them with eight: the fork-point
+    // lineage query (§2.3), the `config/*` head enumeration and its
+    // merge-base (the governing-config ancestry derivation, §2.2), and
     // five `show` reads (`version` first, the §10 schema-version guard;
     // manifest.yaml last before the soul, §5.2).
     // The marker `update-ref` is git op #18 in the exhaustion path (0
@@ -154,13 +160,15 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(26);
+    let git = StubGit::failing_at(28);
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let err = run(
         repo.path(),
         "go",
+        None,
+        None,
         None,
         &valid_deps(
             &adapter,

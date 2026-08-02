@@ -221,9 +221,11 @@ fn governing_lineage(
     git: &dyn GitRunner,
 ) -> Result<Vec<String>, ArchiveError> {
     let lineage =
-        workspace::config_lineage(ws, agent_id, git).map_err(|source| ArchiveError::Git {
-            op: "config lineage",
-            source,
+        workspace::config_lineage(ws, &workspace::agent_ref(agent_id), git).map_err(|source| {
+            ArchiveError::Git {
+                op: "config lineage",
+                source,
+            }
         })?;
     Ok(lineage.into_iter().map(|(head, _)| head).collect())
 }

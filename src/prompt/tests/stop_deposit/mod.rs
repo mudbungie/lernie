@@ -60,7 +60,7 @@ fn stop_between_steps_deposits_stopped_and_skips_compaction() {
     );
     deps.stop = &stop;
 
-    let branch = run(repo.path(), "hi", None, &deps).unwrap();
+    let branch = run(repo.path(), "hi", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     // No terminal compactor for a stopped branch (§2.9, like exhausted).
     // The result deposited on the way out carries the `stopped` epitaph.
@@ -128,7 +128,7 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
     // The half-stream mid-call would surface as `AdapterHalfStream`, but
     // with the stop flag set the executor treats it as a stop: `run`
     // returns Ok, not an error.
-    let branch = run(repo.path(), "hi", None, &deps).unwrap();
+    let branch = run(repo.path(), "hi", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
 
@@ -186,7 +186,7 @@ fn stop_during_tool_execution_deposits_stopped_and_skips_compaction() {
     );
     deps.stop = &stop;
 
-    let branch = run(repo.path(), "hi", None, &deps).unwrap();
+    let branch = run(repo.path(), "hi", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     // The tool was entered before the stop felled it.
     assert_eq!(tool_executor.invocations.borrow().len(), 1);
@@ -218,6 +218,8 @@ fn tool_killed_without_stop_surfaces_as_tool_exec_error() {
     let err = run(
         repo.path(),
         "hi",
+        None,
+        None,
         None,
         &valid_deps(
             &adapter,

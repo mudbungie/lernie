@@ -28,6 +28,8 @@ fn run_with_harness(
         repo,
         msg,
         None,
+        None,
+        None,
         &valid_deps(
             adapter,
             &sleeper,
@@ -169,6 +171,8 @@ fn run_retries_on_retryable_error_then_completes() {
     crate::prompt::run(
         repo.path(),
         "hi",
+        None,
+        None,
         None,
         &valid_deps(
             &adapter,

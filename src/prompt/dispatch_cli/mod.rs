@@ -1,6 +1,27 @@
 //! CLI handler for `lernie dispatch <role>` (ARCH §3.4) — the shared id
-//! guard, the front door's role-validity pre-flight, the per-role
-//! `--goal` rule, and the hand-off into the child-dispatch primitive.
+//! guard, the fork-point guard, the front door's role-validity
+//! pre-flight, the per-role `--goal` rule, and the hand-off into the
+//! child-dispatch primitive.
+//!
+//! **`--from <ref>` is not a second kind of dispatch.** §2.3 makes any
+//! ref a legal fork point and §7.2 states that forking from history "is
+//! the ordinary fork with a historical ref argument … no distinct
+//! operation", so the flag reaches the *existing* `fork_point` field of
+//! [`ChildDispatchRequest`] — the one the §6 verifier gate already sets
+//! — and changes nothing else in the dispatch: the child's id stays
+//! `<parent>-<sub>` and its return address stays the dispatcher's
+//! (§2.6).
+//!
+//! What *does* follow the fork point is the child's **governing config
+//! commit**, and it must: §2.2 says an agent started by fork-back-in
+//! inherits its source's config the same way, and the child's own
+//! ancestry begins at that ref — so every later `lernie advance`
+//! resolves control from it (§6). Soul, `tools:` grant, `descriptions/**`,
+//! budgets and the role-validity pre-flight below are therefore read
+//! from that one commit, never from the fork point's *tree* (§3.3,
+//! §5.1). A dispatch naming no fork point forks off the parent's own
+//! branch, so this is the parent's config and nothing moves.
+//!
 //! Lives in the lib (not the bin) so the bin stays a thin shim under the
 //! repo's 300-line cap and the wiring is unit-testable — the same
 //! discipline as `stop::cli_run` and `inbox::cli_run`.
@@ -46,6 +67,10 @@ pub enum DispatchCliError {
     /// The dispatching parent has no `agents/*` ref — the shared
     /// [`crate::workspace::require_agent`] voice (§2.3).
     UnknownParent(workspace::UnknownAgent),
+    /// `--from` named a fork point the workspace does not have — the
+    /// shared [`crate::workspace::require_ref`] voice (§2.3), fired
+    /// before the fork so the refusal leaves no branch behind.
+    UnknownForkPoint(workspace::UnknownRef),
     /// The role is not dispatchable against the calling branch's
     /// governing config commit (not in `providers.yaml`, or its soul is
     /// missing) — the open-set membership failure (§4.3).
@@ -64,6 +89,7 @@ impl std::fmt::Display for DispatchCliError {
         match self {
             Self::Layout(e) => write!(f, "{e}"),
             Self::UnknownParent(e) => write!(f, "{e}"),
+            Self::UnknownForkPoint(e) => write!(f, "{e}"),
             Self::InvalidRole(inv) => write!(f, "{inv}"),
             Self::GoalRequired(r) => write!(f, "--goal is required for role {r:?}"),
             Self::GoalForbidden(r) => write!(f, "--goal is not accepted for role {r:?}"),
@@ -91,6 +117,7 @@ pub fn run(
     repo: &Path,
     branch: &str,
     goal: Option<&str>,
+    from: Option<&str>,
     name: Option<&str>,
     driver_target: &Path,
 ) -> Result<(), DispatchCliError> {
@@ -100,7 +127,7 @@ pub fn run(
     // The launch decision is tested through [`run_with`] against an
     // injected launcher.
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
-    run_with(role, repo, branch, goal, name, &launcher)
+    run_with(role, repo, branch, goal, from, name, &launcher)
 }
 
 /// [`run`] with the driver launcher injected — the same
@@ -112,6 +139,7 @@ fn run_with(
     repo: &Path,
     parent_branch: &str,
     goal: Option<&str>,
+    from: Option<&str>,
     name: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
@@ -131,11 +159,30 @@ fn run_with(
     )
     .map_err(DispatchCliError::UnknownParent)?;
 
+    // A named fork point is guarded by the same shared existence query
+    // (§2.3 *Any ref is a legal fork point*): `--from` takes the ref
+    // verbatim — a sibling's terminal ref, a historical commit, a
+    // stopped tip — so an absent one is declined here, in the parent's
+    // voice, rather than surfacing as a raw `git worktree add` failure
+    // after the budget gate has already run.
+    if let Some(rev) = from {
+        workspace::require_ref(
+            repo,
+            rev,
+            "a child forks off the ref you name (ARCH §2.3, §7.2)",
+            &RealGit::new(),
+        )
+        .map_err(DispatchCliError::UnknownForkPoint)?;
+    }
+
     // Open-set validity precedes the fork (§4.3): a role absent from the
     // governing config commit (unlisted, or missing its soul) is refused
     // before any branch is created, so a rejected role leaves no debris.
     // One home for the check (`role::validate`), never a name list here.
-    role::validate::validate(repo, parent_branch, role, &RealGit::new())
+    // Asked of the config that will govern the child — the fork point's
+    // when `--from` named one (§2.2 fork-back-in), the parent's
+    // otherwise. Same commit the soul and the grant are read from.
+    role::validate::validate(repo, parent_branch, from, role, &RealGit::new())
         .map_err(DispatchCliError::InvalidRole)?;
 
     // Resolve the per-role goal (§2.7): every role carries a per-call
@@ -150,7 +197,7 @@ fn run_with(
         goal.ok_or_else(|| DispatchCliError::GoalRequired(role.to_owned()))?
             .to_owned()
     };
-    dispatch_child(repo, parent_branch, role, &goal_text, name, launcher)
+    dispatch_child(repo, parent_branch, role, &goal_text, from, name, launcher)
 }
 
 /// Fork `role`'s child off `parent_branch` and start it through the front
@@ -163,6 +210,7 @@ fn dispatch_child(
     parent_branch: &str,
     role: &str,
     goal: &str,
+    fork_point: Option<&str>,
     name: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
@@ -174,7 +222,7 @@ fn dispatch_child(
         role,
         goal,
         name,
-        fork_point: None,
+        fork_point,
     };
     let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
     println!("{child}");
@@ -183,3 +231,5 @@ fn dispatch_child(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_fork_point;

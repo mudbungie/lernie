@@ -145,7 +145,8 @@ const INHERITED_GIT_ENV: &[&str] = &[
 pub fn scaffold<G: GitRunner>(dest: &Path, roots: &Roots, git: &G) -> Result<(), ScaffoldError> {
     check_dest(dest)?;
     let repo = crate::workspace::repo_git(dest);
-    let config_ref = crate::workspace::DEFAULT_CONFIG_REF;
+    let config_ref = crate::workspace::config_ref(crate::workspace::DEFAULT_CONFIG_NAME);
+    let config_ref = config_ref.as_str();
     fs::create_dir_all(&repo).map_err(ScaffoldError::Io)?;
     let init_args = ["init", "--bare", "-b", config_ref];
     git.run(&repo, &init_args).map_err(ScaffoldError::Git)?;

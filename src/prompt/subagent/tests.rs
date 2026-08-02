@@ -62,10 +62,9 @@ fn tmpdir() -> tempfile::TempDir {
 fn req<'a>(parent_wt: &'a Path, sub_wt: &'a Path, soul: Option<&'a str>) -> SpawnRequest<'a> {
     SpawnRequest {
         parent_worktree: parent_wt,
-        parent_branch: "p1",
         sub_branch: "p1-ct-2-deadbeef",
         sub_worktree: sub_wt,
-        fork_point: None,
+        fork_point: "agents/p1",
         goal_text: "do the thing\n",
         soul_text: soul,
         name: None,
@@ -222,10 +221,9 @@ fn surfaces_io_failure_when_sub_worktree_is_a_file() {
     let git = StubGit::ok();
     let r = SpawnRequest {
         parent_worktree: parent_dir.path(),
-        parent_branch: "p1",
         sub_branch: "p1-x",
         sub_worktree: &sub_wt,
-        fork_point: None,
+        fork_point: "agents/p1",
         goal_text: "g",
         soul_text: None,
         name: None,

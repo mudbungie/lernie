@@ -7,7 +7,8 @@ use super::{Error, Fx, Outcome};
 use crate::prompt::dispatch_cli;
 use std::path::PathBuf;
 
-/// `lernie dispatch <role> <repo> <branch> [--goal <text>] [--name <name>]`.
+/// `lernie dispatch <role> <repo> <branch> [--goal <text>] [--from <ref>]
+/// [--name <name>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Role to fork the child as (`souls/<role>.md` + a `roles:` entry).
@@ -18,6 +19,12 @@ pub struct Args {
     pub branch: String,
     #[arg(long)]
     pub goal: Option<String>,
+    /// Fork the child off this ref instead of the parent's tip (ARCH
+    /// §2.3, §7.2). The child stays `<parent>-<sub>`, so its return
+    /// address is unchanged (§2.6); its governing config follows the ref
+    /// (§2.2).
+    #[arg(long)]
+    pub from: Option<String>,
     /// Display name for the child (ARCH §2.3): one unbroken word, unique
     /// among the workspace's living agents, set here and never rewritten.
     /// `lernie message` accepts it in place of the child's agent id.
@@ -36,6 +43,7 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
         &args.repo,
         &args.branch,
         args.goal.as_deref(),
+        args.from.as_deref(),
         args.name.as_deref(),
         &fx.driver_target,
     )

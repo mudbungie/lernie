@@ -94,11 +94,18 @@ pub enum Command {
     Config(config::Args),
     /// Send one user message on a fresh root branch; prints the new
     /// agent's **id** (§2.3) — not its `--name`, which is the optional
-    /// display fact and never a product.
+    /// display fact and never a product. The branch forks off
+    /// `config/default`'s head by default; `--config <name>` starts on
+    /// another config lineage, `--from <ref>` off any ref at all — a
+    /// historical commit, a stopped tip (fork-from-history, ARCH §2.3,
+    /// §7.2). The two are exclusive.
     Prompt(prompt::Args),
     /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
     /// (§2.7) or `worker` (§2.5); future roles slot in by name. `--goal`
     /// is required for `worker`, rejected for `compactor` (§2.7).
+    /// `--from <ref>` forks the child off that ref instead of the
+    /// parent's tip (§2.3); its id, and so its return address, is
+    /// unchanged.
     Dispatch(dispatch::Args),
     /// Stop a conversation branch (ARCH §2.9 SIGTERM). Default stops the
     /// one agent; `--stop-children` also stops every descendant

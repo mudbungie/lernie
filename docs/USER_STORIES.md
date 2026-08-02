@@ -136,8 +136,8 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 - **actor** end user
 - **scenario** The first real model call in a fresh workspace.
 - **commands**
-  - exec: `lernie prompt /path/to/ws 'hello'`
-  - linked: `lernie::cmd::prompt::run(prompt::Args { repo, message }, &mut fx)` → `Outcome::Line(<agent-id>)`. The binding must first perform `Command::Prompt.preludes()` — `become_pgid_leader` and `install_stop_handler` — or US-17 cannot land on it.
+  - exec: `lernie prompt /path/to/ws 'hello'` — optionally `--config <name>` (start on `config/<name>` instead of `config/default`) or `--from <ref>` (start off any ref at all: a historical commit of any agent, a stopped tip, a config commit), never both.
+  - linked: `lernie::cmd::prompt::run(prompt::Args { repo, message, from, config }, &mut fx)` → `Outcome::Line(<agent-id>)`. The binding must first perform `Command::Prompt.preludes()` — `become_pgid_leader` and `install_stop_handler` — or US-17 cannot land on it.
 - **acceptance**
   - exit 0; **stdout is the bare agent id**, containing no `/` (the `agents/` prefix is the ref namespace, ARCH §2.3).
   - `refs/heads/agents/<id>` exists in `<ws>/repo.git`.
@@ -145,8 +145,14 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
   - The worktree at `<ws>/agents/<id>/` holds `goal.md`, `soul.md`, `descriptions/`, `messages/` — and **no** `providers.yaml`/`workflow.yaml`/`manifest.yaml`/`version` (ARCH §2.2: control is removed from the tree at the dispatch commit).
   - `messages/NNN-<model-id>.json` is a JSON array of canonical `Content` blocks; `messages/NNN-user.md` is the delivered user message. The origin token is the model id, not a role.
   - `config/default` does **not** advance.
+  - **The start's fork point is one ref, named two ways** (ARCH §2.3 *Any ref is a legal fork point*, §7.2 *forking from history is the ordinary fork with a historical ref argument — no distinct operation*). Naming neither flag is `--config default`, not a special case.
+    - `--from <ref>`: `agents/<new-id>` is a **new root** (no descent, so no parent inbox and no return address) whose branch has `<ref>` as an ancestor — provenance is the ancestry, no prefix marks a fork — and whose tree carries what that commit carried: the forked-from agent's transcript is inherited, and the new start's own message continues that sequence (`002-user.md` after an inherited `001-user.md`) rather than restarting it.
+    - `--config <name>`: the agent forks off `config/<name>`'s head **and is governed by it** — `soul.md` is that lineage's, the fork being the freeze (§2.2). This is what makes a lineage authored by US-05's `--from`/`--orphan` startable at all.
+    - An absent fork point is declined before any branch, worktree or inbox exists: `--config nosuch` → `no config lineage "nosuch" in this workspace — existing lineages: default` (the same decline, one home, that US-05's `lernie config --from` speaks); `--from nosuch` → `no ref or commit "nosuch" in this workspace — a root agent forks off the ref you name (ARCH §2.3, §7.2); …`; both flags together → exit 1, `pass --from <ref> or --config <name>, not both`.
   - The wire actually answered: no `{"type":"error"}` line in any `steps/<id>/*/response.json`, and at least one `{"type":"content_delta"}`.
 - **status** **fulfilled.** Observed hands-on over a live wire (local ollama via the §4.2 `adapter:` override): exit 0, id `20260725T001733Z-0bc74bb7` with no slash, the exact four-commit history above, `messages/002-qwen3.5:9b.json` = `[{"type":"text","text":"pong"}]`, control files absent from the worktree, `response.json` terminating `usage` → `finish` → `end` with no `error`. `src/e2e/prompt_end_to_end.rs::prompt_subcommand_persists_conversation_without_terminal_compaction` asserts the same over real `bz` against a mocked endpoint. **Reconfirmed hands-on on a fresh build by the 2026-07-27 evaluation walk (bl-be70):** the identical shape held — exact four-commit history, control files absent, `messages/002` JSON as specified, at least one `{"type":"content_delta"}` line present in `response.json`, and no `error` event.
+
+  **The fork point landed later (bl-a693)** and is proven through the real binary by `src/e2e/prompt_fork_point.rs`: a start off a mid-conversation commit of a running agent inherits its transcript and continues the numbering; a start on a second config lineage pins that lineage's soul; and each of the three declines above exits non-zero leaving the ref namespace byte-identical. Resolution itself is unit-covered in `src/prompt/fork_point/tests.rs`.
 
 ### US-07 — the frontend author reads step diagnostics without reading context
 
@@ -294,13 +300,14 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
 - **actor** an agent (via US-10) or an operator by hand
 - **scenario** Fan work out to a child and get its result back.
 - **commands**
-  - exec: `lernie dispatch worker <ws> <parent-id> --goal '<text>'`
-  - linked: `lernie::cmd::dispatch::run(dispatch::Args { role, repo, branch, goal }, &mut fx)`. Prelude: `become_pgid_leader`.
+  - exec: `lernie dispatch worker <ws> <parent-id> --goal '<text>'` — optionally `--from <ref>` to fork the child off that ref instead of the parent's tip.
+  - linked: `lernie::cmd::dispatch::run(dispatch::Args { role, repo, branch, goal, from }, &mut fx)`. Prelude: `become_pgid_leader`.
 - **acceptance**
   - exit 0; **stdout is the child's agent id** `<parent>-<sub-id>`.
   - `agents/<parent>-<sub-id>` exists, forked off the parent's tip, with a `dispatch: <role>` commit pinning `goal.md`, `soul.md` and `name` (the role's soul read from the governing config commit; `name` empty unless the dispatch supplied one, ARCH §2.3) and the control files removed.
-  - `--goal` is **required** for `worker` and **rejected** for `compactor`; a role absent from the config's `roles:` is refused, naming the roles that *are* defined and the control file (`providers.yaml`) rather than the governing commit's sha — `role "verifier" is not defined in the providers.yaml governing agent "<id>" — defined roles: compactor, worker`.
+  - `--goal` is **required** for `worker` and **rejected** for `compactor`; a role absent from the config's `roles:` is refused, naming the roles that *are* defined and the control file (`providers.yaml`) rather than the governing commit's sha — `role "verifier" is not defined in the providers.yaml that will govern a child of agent "<id>" — defined roles: compactor, worker`.
   - The **shared id guard runs first** (bl-c89b), through the same `workspace::require` / `workspace::require_agent` the other four id-taking verbs call: a path that is not a workspace exits 1 with `<path> is not a workspace (no repo.git) — create one with `lernie new` (ARCH §2.2)`, and a parent with no `agents/*` ref exits 1 with `no agent "<id>" in this workspace — a child forks off an existing parent (ARCH §2.5); …`. Neither reaches the governing-config derivation, so neither can surface a raw git argv.
+  - `--from <ref>` forks the child off that ref: its id stays `<parent>-<sub-id>`, so its return address is still the dispatcher's (§2.6). Its **governing config commit follows the fork point**, because that is where its own ancestry begins — ARCH §2.2: *"an agent started by fork-back-in (§2.3) inherits its source's config the same way"*. So the pinned soul, the `tools:` grant, `descriptions/**`, the §6 budgets and the role-validity pre-flight are all read from that commit — the same one every later `lernie advance` derives from the child's branch, which is what keeps dispatch-time artifacts and step-time resolution from answering to two different configs (§4.3). Never from the fork point's *tree* (§3.3). A fork point on another config lineage that does not define the role is therefore declined by name (`defined roles: worker`), and an absent ref is declined ahead of the fork — `no ref or commit "<ref>" in this workspace — a child forks off the ref you name (ARCH §2.3, §7.2); …` — leaving no branch debris, like the role check.
   - The child then **runs**: its branch gains a delivery commit for the dispatch message and at least one model-output transcript entry, and `steps/<child-id>/` appears.
   - At its terminal event the child deposits a result message into its parent's inbox carrying `epitaph:` and `terminal_ref:` frontmatter, with the terminal response as body **iff the agent spoke**.
   - At delivery, a message carrying `terminal_ref:` applies the fork-point→terminal **work-product transfer** as one commit before its delivery commit, filtered to work products; a diff that fails to apply is declined at `refs/lernie/conflicted/<agent-id>`.
@@ -386,7 +393,7 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
   for prelude in Command::Prompt(/* … */).preludes() { prelude(); }
   let mut fx = Fx { driver_target, adapter_target, editor, tool_stdin,
                     tool_stdout, tool_stderr, stop };
-  let outcome = prompt::run(prompt::Args { repo, message }, &mut fx)?;
+  let outcome = prompt::run(prompt::Args { repo, message, from, config }, &mut fx)?;
   ```
 - **acceptance**
   - `lernie::cmd` is the crate's **entire** public API — `src/lib.rs` exposes exactly `pub mod cmd;`.

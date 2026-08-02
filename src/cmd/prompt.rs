@@ -10,13 +10,22 @@ use crate::prompt::{self, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock};
 use crate::template::RealGit;
 use std::path::PathBuf;
 
-/// `lernie prompt <repo> <message> [--name <name>]`.
+/// `lernie prompt <repo> <message> [--from <ref>] [--config <name>]
+/// [--name <name>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Path to the workspace (conversation repo) root.
     pub repo: PathBuf,
     /// Opening message for the new root conversation.
     pub message: String,
+    /// Fork off this ref instead of a config lineage's head (ARCH §2.3,
+    /// §7.2): any commit of any agent, a stopped tip, a config commit.
+    #[arg(long)]
+    pub from: Option<String>,
+    /// Fork off `config/<name>`'s head instead of `config/default` (ARCH
+    /// §2.2). Mutually exclusive with `--from`.
+    #[arg(long)]
+    pub config: Option<String>,
     /// Display name for the new agent (ARCH §2.3): one unbroken word,
     /// unique among the workspace's living agents, set here and never
     /// rewritten. `lernie message` accepts it in place of the agent id.
@@ -59,5 +68,13 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
         stop: fx.stop,
         launcher: &launcher,
     };
-    prompt::run(&args.repo, &args.message, args.name.as_deref(), &deps).map_err(Into::into)
+    prompt::run(
+        &args.repo,
+        &args.message,
+        args.from.as_deref(),
+        args.config.as_deref(),
+        args.name.as_deref(),
+        &deps,
+    )
+    .map_err(Into::into)
 }

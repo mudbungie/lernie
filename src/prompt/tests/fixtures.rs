@@ -197,6 +197,8 @@ pub(super) fn run_with_stubs(
         repo,
         msg,
         None,
+        None,
+        None,
         &valid_deps(
             adapter,
             &sleeper,

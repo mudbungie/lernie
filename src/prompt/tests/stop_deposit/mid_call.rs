@@ -60,7 +60,7 @@ fn stop_in_the_retry_backoff_deposits_stopped_without_a_further_model_call() {
     deps.sleeper = &sleeper;
     deps.stop = &stop;
 
-    let branch = run(repo.path(), "hi", None, &deps).unwrap();
+    let branch = run(repo.path(), "hi", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     assert_eq!(sleeper.slept.borrow().len(), 1, "one backoff was entered");
     assert_eq!(
@@ -114,7 +114,7 @@ fn torn_line_with_a_stop_pending_deposits_stopped() {
     deps.adapter = &adapter;
     deps.stop = &stop;
 
-    let branch = run(repo.path(), "hi", None, &deps).unwrap();
+    let branch = run(repo.path(), "hi", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct-1-deadbeef");
     assert!(deposited_result(repo.path()).contains("epitaph: stopped"));
 

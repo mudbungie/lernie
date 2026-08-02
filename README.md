@@ -364,16 +364,24 @@ This is the **only** act that advances a config branch (ARCH §2.3);
 agents forked before it keep their governing config, and agents forked
 after it govern under the new head (fork is the freeze, §2.2).
 
+A lineage you author this way is **startable by name**: `lernie prompt
+<ws> '<message>' --config <name>` forks the root off `config/<name>`'s
+head instead of `config/default`'s, and the agent is governed by that
+lineage (§2.2). A lineage the workspace does not have is declined by
+name, with the pool that does exist.
+
 ## Sending a prompt
 
 ```
 lernie prompt /path/to/my-conversation 'hello'
 lernie prompt /path/to/my-conversation 'hello' --name pale-otter
+lernie prompt /path/to/my-conversation 'hello' --config strict
+lernie prompt /path/to/my-conversation 'try again' --from <ref>
 ```
 
 `lernie prompt` is the root-agent path (ARCH §2.3, §2.6, §2.7,
 §2.8, §2.10). Each invocation spawns its own `agents/<conv-id>` branch
-off the default config branch's head (§2.2–§2.3 — there is no `main`),
+off the ref the start names (§2.2–§2.3 — there is no `main`),
 drives each step's model call through brazen's `bz` (§4.4), and steps
 until a terminal event. **There is no terminal compaction stage** (§2.7):
 compaction runs only at the checkpoints `workflow.yaml` declares, and a
@@ -388,11 +396,15 @@ returns by depositing a result message into its parent's inbox (§2.6):
    optional `adapter:` override — §4.2) and, from the config commit's
    tree (`git show <config-commit>:providers.yaml`, §2.2),
    `providers.yaml` (`roles:` block — §4.3); cross-validate
-   `roles.worker.{provider,model}` against `models.yaml`. For a fresh
-   root the config commit is `config/default`'s head — the very commit
-   the new agent forks off; `lernie advance` derives an existing
-   agent's **governing config commit** from ancestry instead
-   (`git merge-base` against the `config/*` heads — never stored).
+   `roles.worker.{provider,model}` against `models.yaml`. Which config
+   commit is **one derivation for both readings** (§2.2): the nearest
+   `config/*` ancestor (`git merge-base` against the `config/*` heads —
+   never stored) of the ref in hand. A fresh root asks it of the ref it
+   is about to fork off — for the ordinary start that is
+   `config/default`'s head, which answers itself; for a `--from` start
+   it is that ref's own governing commit. `lernie advance` asks it of
+   an existing agent's branch. Either way the fork is the freeze, and
+   what it freezes is that commit — never the fork point's tree.
 2. Run the load-time version guard: `bz --version` must equal the
    linked brazen crate version (§4.4). Under an `adapter:` override the
    guard is skipped and the in-band `MessageStart.v` handshake governs.
@@ -400,7 +412,12 @@ returns by depositing a result message into its parent's inbox (§2.6):
    (§2.2, §4.3).
 3. Spawn branch `agents/<conv-id>` (§2.3 — the id is the bare
    hyphenated descent; the `agents/` prefix is the ref namespace) off
-   `config/default` and allocate a worktree at
+   the start's fork point — `config/default` by default, `config/<name>`
+   under `--config`, any ref at all under `--from` (§2.3 *Any ref is a
+   legal fork point*, §7.2 fork-from-history: a historical commit of any
+   agent, a stopped tip, a config commit; provenance is the ancestry, no
+   prefix marks a fork, and an absent one is declined before anything is
+   created) — and allocate a worktree at
    `<workspace>/agents/<conv-id>/` (§2.2). Write the branch goal to
    `goal.md` and the role soul to `soul.md`, remove the config commit's
    control files from the tree (§2.2 — the worktree holds only
@@ -969,8 +986,9 @@ structurally by the prefix — there is no `main` (§2.2).
 
 ## Dispatching subagents directly
 
-`lernie dispatch <role> <repo> <branch> [--goal <text>] [--name <name>]`
-is the §3.4 re-entry point every child dispatch uses. It is **writer-shaped, not an
+`lernie dispatch <role> <repo> <branch> [--goal <text>] [--from <ref>]
+[--name <name>]` is the §3.4 re-entry point every child dispatch uses.
+It is **writer-shaped, not an
 executor** (ARCH §2.1): it forks the child branch, lands the dispatch
 commit, and deposits the dispatch message through the same front door
 every sender uses — the driver that deposit launches is the ordinary
@@ -992,12 +1010,26 @@ lernie dispatch worker <no-such-ws> someagent --goal hi
 lernie dispatch worker <ws> nosuchparent --goal hi
   → no agent "nosuchparent" in this workspace — a child forks off an existing parent (ARCH §2.5); …
 lernie dispatch verifier <ws> <agent> --goal hi
-  → role "verifier" is not defined in the providers.yaml governing agent "<agent>" — defined roles: compactor, worker
+  → role "verifier" is not defined in the providers.yaml that will govern a child of agent "<agent>" — defined roles: compactor, worker
 ```
 
 The role refusal names the pool that *is* defined — the same "name the
 pool" idiom `load_skill` and `lernie tool` decline with — and names the
 control file the user knows rather than the config commit's sha.
+
+`--from <ref>` forks the child off that ref instead of the parent's tip
+— the ordinary fork with a ref argument (ARCH §2.3, §7.2), which is what
+the §6 verifier gate already does when it forks a judge off the worker's
+terminal ref. The child is still `<parent>-<sub>`, so its return address
+is still the dispatcher's (§2.6). Its **config follows the fork point**:
+control is read from that ref's governing config commit (§2.2 — "an
+agent started by fork-back-in inherits its source's config the same
+way"), which is the commit every later `lernie advance` resolves from
+the child's own branch, so the soul, the grant, the descriptors and the
+budgets cannot disagree with what the child's steps will read. A fork
+point whose lineage does not define the role is declined by name; an
+absent ref is declined by the same guard `--from` uses at `prompt`,
+ahead of the fork, so neither leaves branch debris.
 
 - `lernie dispatch compactor <workspace> <conv-id>` forks a
   compactor-souled child off that agent's tip — exactly what a due
@@ -1036,7 +1068,9 @@ control file the user knows rather than the config commit's sha.
   `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref
   `agents/<parent>-<sub-id>` (§2.3), its worktree
   `agents/<parent>-<sub-id>/`; `goal.md` carries the supplied text and
-  `soul.md` is read from the parent's governing config commit
+  `soul.md` is read from the governing config commit of the ref the
+  child forks off — the parent's own branch unless `--from` named
+  another (§2.2)
   (`souls/worker.md`, §2.2), both committed as the dispatch commit
   (§2.3 step 2). The child then **runs a full step loop** under the
   `lernie advance` driver its dispatch deposit launched, and at its

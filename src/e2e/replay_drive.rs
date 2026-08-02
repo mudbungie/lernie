@@ -156,8 +156,12 @@ fn a_replayed_agent_advances_on_its_governing_config() {
     // The derivation the driver runs: identical in the scratch and in
     // the workspace it came from (§2.2 — same computation, same
     // candidate set, same commit).
-    let source_gov = crate::workspace::governing_config(&fx.ws, &agent, &git).unwrap();
-    let scratch_gov = crate::workspace::governing_config(&scratch, &agent, &git).unwrap();
+    let source_gov =
+        crate::workspace::governing_config(&fx.ws, &crate::workspace::agent_ref(&agent), &git)
+            .unwrap();
+    let scratch_gov =
+        crate::workspace::governing_config(&scratch, &crate::workspace::agent_ref(&agent), &git)
+            .unwrap();
     assert_eq!(source_gov, scratch_gov);
 
     // And the verb-level proof: a message into the replayed agent's

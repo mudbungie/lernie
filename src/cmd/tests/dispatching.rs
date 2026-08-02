@@ -41,6 +41,8 @@ fn command_run_dispatches_every_non_prime_arm() {
     assert!(!dispatched(Command::Prompt(prompt::Args {
         repo: ne(),
         message: "m".into(),
+        from: None,
+        config: None,
         name: None,
     })));
     assert!(!dispatched(Command::Dispatch(dispatch::Args {
@@ -48,6 +50,7 @@ fn command_run_dispatches_every_non_prime_arm() {
         repo: ne(),
         branch: "b".into(),
         goal: Some("g".into()),
+        from: None,
         name: None,
     })));
     assert!(!dispatched(Command::Stop(stop::Args {

@@ -35,9 +35,12 @@ pub const AGENTS_DIR: &str = "agents";
 pub const AGENT_REF_PREFIX: &str = "agents/";
 /// Ref-namespace prefix for config branches: `config/<name>` (§2.3).
 pub const CONFIG_REF_PREFIX: &str = "config/";
-/// The default config branch a fresh root agent forks off (§2.3 *Fresh
-/// start* — the head of a config branch; `lernie new` authors this one).
-pub const DEFAULT_CONFIG_REF: &str = "config/default";
+/// The config lineage a fresh root agent forks off when the start names
+/// none (§2.3 *Fresh start* — the head of a config branch; `lernie new`
+/// authors this one, and `lernie config` advances it by default). The
+/// bare name is the vocabulary both command lines use; [`config_ref`]
+/// applies the prefix at the git boundary.
+pub const DEFAULT_CONFIG_NAME: &str = "default";
 /// The root every per-agent **mark** ref lives under:
 /// `refs/lernie/<kind>/<agent-id>`. The kinds spell their own prefixes
 /// where they are written (§2.6 `conflicted`, §6 `budget-exhausted`,
@@ -96,14 +99,6 @@ pub fn agent_ref(agent_id: &str) -> String {
     format!("{AGENT_REF_PREFIX}{agent_id}")
 }
 
-/// Resolve a config branch's head commit sha (§2.3 *Fresh start* fork
-/// point). Loud when the branch does not exist — a workspace with no
-/// `config/default` cannot dispatch a root agent.
-pub fn config_head(workspace: &Path, config_ref: &str, git: &dyn GitRunner) -> io::Result<String> {
-    let refspec = format!("refs/heads/{config_ref}");
-    git.run_capture(&repo_git(workspace), &["rev-parse", "--verify", &refspec])
-}
-
 /// Enumerate the short names under one ref-namespace prefix, prefix
 /// stripped (§2.3 — the prefix is the kind, derived from the path, never
 /// recorded). The workspace keeps exactly two registries, and both are
@@ -139,11 +134,16 @@ pub fn config_names(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<Str
     ref_names(workspace, CONFIG_REF_PREFIX, git)
 }
 
-/// The **governing lineage** of `agent_id`'s branch: every `config/*`
-/// ref whose history reaches the branch, paired with the ancestor it
-/// contributes (`git merge-base <agent-ref> <head>`). A config lineage
-/// sharing no ancestor with the agent — a fresh orphan config — reaches
-/// the branch through nothing and is absent from the result.
+/// The **governing lineage** of the revision `rev`: every `config/*`
+/// ref whose history reaches it, paired with the ancestor it
+/// contributes (`git merge-base <rev> <head>`). A config lineage sharing
+/// no ancestor with `rev` — a fresh orphan config — reaches it through
+/// nothing and is absent from the result.
+///
+/// `rev` is a revision, not an id: an agent's ref ([`agent_ref`]), a
+/// config branch, or any commit of either — the same set §2.3 admits as
+/// fork points, so one derivation answers for a branch that exists and
+/// for a fork point a branch is about to be cut from.
 ///
 /// This is the candidate set [`governing_config`] folds to one commit,
 /// and the ref set `archive::bundle` carries (§9.2): a config branch
@@ -153,7 +153,7 @@ pub fn config_names(workspace: &Path, git: &dyn GitRunner) -> io::Result<Vec<Str
 /// the same candidate set rather than an approximation of it.
 pub fn config_lineage(
     workspace: &Path,
-    agent_id: &str,
+    rev: &str,
     git: &dyn GitRunner,
 ) -> io::Result<Vec<(String, String)>> {
     let repo = repo_git(workspace);
@@ -161,7 +161,7 @@ pub fn config_lineage(
         &repo,
         &["for-each-ref", "--format=%(refname)", "refs/heads/config/"],
     )?;
-    let target = agent_ref(agent_id);
+    let target = rev.to_owned();
     Ok(heads
         .lines()
         .map(str::trim)
@@ -175,23 +175,28 @@ pub fn config_lineage(
         .collect())
 }
 
-/// Derive the **governing config commit** of `agent_id`'s branch: the
+/// Derive the **governing config commit** of the revision `rev`: the
 /// nearest ancestor reachable from any `config/*` ref (§2.2). Each ref
 /// of the governing lineage ([`config_lineage`]) contributes the shared
 /// ancestor on its lineage; the governing commit is the *descendant*
-/// among the candidates (nearest to the agent's tip). Derived from
-/// ancestry, never stored. Loud when no config lineage reaches the
-/// branch, and loud when two candidates are incomparable — both mean a
-/// defective workspace, declined rather than guessed (PRINCIPLES
-/// "Decline illegal operations").
-pub fn governing_config(
-    workspace: &Path,
-    agent_id: &str,
-    git: &dyn GitRunner,
-) -> io::Result<String> {
+/// among the candidates (nearest to `rev`). Derived from ancestry,
+/// never stored. Loud when no config lineage reaches `rev`, and loud
+/// when two candidates are incomparable — both mean a defective
+/// workspace, declined rather than guessed (PRINCIPLES "Decline illegal
+/// operations").
+///
+/// One derivation serves both readings of §2.2, because they are one
+/// question: an existing agent asks it of its own ref, and a fresh root
+/// asks it of the ref it is about to fork off (§2.3 *Any ref is a legal
+/// fork point*). A config branch's head answers itself — it is its own
+/// nearest config ancestor — so "fork off a config head" needs no
+/// second rule, and **fork is the freeze** holds whatever the fork
+/// point is: the grants derive from the governing config commit, never
+/// from the fork point's own tree (§3.3, §5.1).
+pub fn governing_config(workspace: &Path, rev: &str, git: &dyn GitRunner) -> io::Result<String> {
     let repo = repo_git(workspace);
     let mut best: Option<String> = None;
-    for (_, base) in config_lineage(workspace, agent_id, git)? {
+    for (_, base) in config_lineage(workspace, rev, git)? {
         best = Some(match best {
             None => base,
             Some(prev) if prev == base => prev,
@@ -200,8 +205,7 @@ pub fn governing_config(
     }
     best.ok_or_else(|| {
         io::Error::other(format!(
-            "no config/* ancestor for {} — every agent forks off a config commit (§2.2)",
-            agent_ref(agent_id)
+            "no config/* ancestor for {rev} — every agent forks off a config commit (§2.2)"
         ))
     })
 }
@@ -250,9 +254,14 @@ pub fn control_exists(workspace: &Path, commit: &str, path: &str, git: &dyn GitR
 pub mod agent_name;
 pub mod cwd;
 mod guard;
-pub use guard::{LayoutError, UnknownAgent, agent_exists, require, require_agent};
+pub use guard::{
+    LayoutError, UnknownAgent, UnknownLineage, UnknownRef, agent_exists, require, require_agent,
+    require_lineage, require_ref,
+};
 
 #[cfg(test)]
 pub(crate) mod fixture;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_guard;

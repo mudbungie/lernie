@@ -59,6 +59,7 @@ verb_table! {
     Message => message,
     Scan => scan,
     Bundle => bundle,
+    Delete => delete,
     Replay => replay,
     Advance => advance,
     Tool => tool,

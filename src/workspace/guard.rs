@@ -4,6 +4,12 @@
 //! exist* ([`require_agent`]). One home each, so the five id-taking verbs
 //! — `message`, `advance`, `stop`, `dispatch`, `bundle` — share the rule
 //! and the voice rather than each keeping a copy of both.
+//!
+//! The existence half is not universal, and the exception says why the
+//! rule holds: `lernie delete` (§9.2) guards the layout and the id's
+//! *shape* but admits an id no ref answers to, because absence is the
+//! postcondition it establishes — the other five decline an absent agent
+//! precisely because their act would silently do nothing.
 
 use super::{GitRunner, Path, PathBuf, agent_ref, repo_git};
 

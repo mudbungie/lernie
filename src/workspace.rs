@@ -36,6 +36,14 @@ pub const CONFIG_REF_PREFIX: &str = "config/";
 /// The default config branch a fresh root agent forks off (§2.3 *Fresh
 /// start* — the head of a config branch; `lernie new` authors this one).
 pub const DEFAULT_CONFIG_REF: &str = "config/default";
+/// The root every per-agent **mark** ref lives under:
+/// `refs/lernie/<kind>/<agent-id>`. The kinds spell their own prefixes
+/// where they are written (§2.6 `conflicted`, §6 `budget-exhausted`,
+/// `abandoned`, `notify`); this is the namespace they share, so a
+/// consumer that must reach *every* mark of an agent — the retention
+/// delete (§9.2) — enumerates the root instead of keeping a list of
+/// kinds that would go stale the day a fifth one lands.
+pub const MARK_REF_ROOT: &str = "refs/lernie/";
 /// Ref-namespace prefix for the §2.6 **decline** mark,
 /// `refs/lernie/conflicted/<agent-id>`. One namespace, one home here in
 /// the ref-naming module, written by every operation that must refuse

@@ -34,7 +34,10 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
+mod delete;
 mod slices;
+
+pub use delete::delete;
 #[cfg(test)]
 mod tests;
 
@@ -88,7 +91,10 @@ pub fn bundle(
 ) -> Result<(), ArchiveError> {
     workspace::require(ws)?;
     let repo = workspace::repo_git(ws);
-    let mut refs = subtree_refs(&repo, agent_id, git)?;
+    let mut refs = subtree_refs(&repo, agent_id, git).map_err(|source| ArchiveError::Git {
+        op: "branch --list",
+        source,
+    })?;
     if refs.is_empty() {
         return Err(ArchiveError::UnknownAgent(agent_id.to_owned()));
     }
@@ -180,29 +186,23 @@ pub fn replay_cli(archive: &Path) -> Result<PathBuf, ArchiveError> {
 
 /// Enumerate the subtree's branches: `agents/<agent_id>` and every
 /// `agents/<agent_id>-*` hyphen-descendant (§2.3), via
-/// `git branch --list` against the bare repo.git.
-fn subtree_refs(
-    repo: &Path,
-    agent_id: &str,
-    git: &dyn GitRunner,
-) -> Result<Vec<String>, ArchiveError> {
+/// `git branch --list` against the bare repo.git. Shared with the
+/// retention delete ([`delete`]), which cuts the same subtree — so the
+/// failure stays an `io::Error` and each caller tags it in its own
+/// error vocabulary.
+fn subtree_refs(repo: &Path, agent_id: &str, git: &dyn GitRunner) -> io::Result<Vec<String>> {
     let subtree_root = workspace::agent_ref(agent_id);
     let descendants = format!("{subtree_root}-*");
-    let out = git
-        .run_capture(
-            repo,
-            &[
-                "branch",
-                "--list",
-                "--format=%(refname:short)",
-                subtree_root.as_str(),
-                &descendants,
-            ],
-        )
-        .map_err(|source| ArchiveError::Git {
-            op: "branch --list",
-            source,
-        })?;
+    let out = git.run_capture(
+        repo,
+        &[
+            "branch",
+            "--list",
+            "--format=%(refname:short)",
+            subtree_root.as_str(),
+            &descendants,
+        ],
+    )?;
     Ok(out
         .lines()
         .map(str::trim)

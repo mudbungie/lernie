@@ -64,9 +64,12 @@ pub(super) fn step(
     // §6 per-step hook: `pre_step` fires before the model call is issued.
     workflow_actions::run_step_hook(&cfg.workflow, Event::PreStep, worktree, agent_id, deps.git)?;
 
-    // §2.8: the goal is the pinned worktree file, re-read per hop.
+    // §2.8 / §2.3: goal and name are pinned worktree files, re-read per
+    // hop — the system slot is composed from the tree, like every other
+    // part of the request (§5.1 one input), so nothing rides the baton.
     let goal = std::fs::read_to_string(worktree.join(step_commit::GOAL_FILE))?;
-    let system_with_goal = step_commit::prepend_goal(&goal, &resolved.soul);
+    let name = crate::workspace::agent_name::in_worktree(worktree);
+    let system_with_goal = step_commit::compose_system(&goal, name.as_deref(), &resolved.soul);
     let call = ModelCall {
         adapter: deps.adapter,
         sleeper: deps.sleeper,

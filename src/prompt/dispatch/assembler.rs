@@ -8,7 +8,8 @@
 //! 1. **Head and body** ([`body`], §5.2): the manifest role's `pinned`
 //!    extras and `order` categories, budgeted, as path-framed user-side
 //!    text blocks. (The pinned files with structural wire homes —
-//!    `goal.md`/`soul.md` in the system slot, §2.3; tool schemas and
+//!    `goal.md`, `name` and `soul.md` in the system slot, §2.3; tool
+//!    schemas and
 //!    the skill descriptions their tools claim in the tools array,
 //!    §3.3 — compose through those homes, not here; the standalone
 //!    skill descriptions no tool claims compose as head blocks.)

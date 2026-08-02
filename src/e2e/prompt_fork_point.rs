@@ -88,6 +88,14 @@ impl Fixture {
     }
 }
 
+/// The `system[0]` text of an agent's step-1 request — the system slot
+/// as it went on the wire (§2.3, §2.8, §4.4 typed request).
+fn system_slot(fx: &Fixture, agent: &str) -> String {
+    let path = fx.ws.join("steps").join(agent).join("001/request.json");
+    let request: serde_json::Value = serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+    request["system"][0]["text"].as_str().unwrap().to_string()
+}
+
 fn git(dest: &Path, args: &[&str]) -> String {
     let out = Command::new("git")
         .arg("-C")
@@ -186,6 +194,24 @@ fn a_start_forks_from_any_historical_commit_and_inherits_its_tree() {
         "pale-otter"
     );
     assert_eq!(git(&bare, &["show", &format!("{second_ref}:name")]), "");
+    // And the name reaches the model through the assembled context, not
+    // as prose on the user's message (§2.8): the system slot states it
+    // once, after the goal and before the soul, while the unnamed fork's
+    // slot says nothing about a name at all.
+    let named_system = system_slot(&fx, &first);
+    assert!(
+        named_system.contains("</goal>\n\nYour name is pale-otter.\n\n"),
+        "got {named_system:?}"
+    );
+    let unnamed_system = system_slot(&fx, &second);
+    assert!(
+        !unnamed_system.contains("Your name is"),
+        "got {unnamed_system:?}"
+    );
+    assert!(
+        unnamed_system.starts_with("<goal>"),
+        "got {unnamed_system:?}"
+    );
     // The config branch never advanced, and the config commit still
     // governs: the harness-facing control files are absent from the new
     // agent's tree (§2.2, §2.3 step 2).

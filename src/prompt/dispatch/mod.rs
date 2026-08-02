@@ -1,7 +1,8 @@
 //! Root-conversation branch orchestration (ARCH §2.3–§2.10).
 //!
 //! [`run_exchange`] executes a single root conversation: spawn branch
-//! `agents/<conv-id>` off the default config head (§2.2–§2.3); write the
+//! `agents/<conv-id>` off the start's fork point (§2.2–§2.3 — a config
+//! lineage's head by default, any ref with `--from`); write the
 //! step-1 dispatch commit (§2.2, §2.10); then the step loop (§2.5) —
 //! drain the inbox ([`drain`], §2.11), interpret delivered child results
 //! and the compaction checkpoint at each boundary (the §6 prompt→advance
@@ -55,11 +56,14 @@ use tool_step::run_tool_calls;
 /// manifest's `budget_tokens` (an assembled-context budget, no output cap).
 const DEFAULT_MAX_TOKENS: u32 = 4096;
 
-/// Drive one root conversation against an already-resolved config.
-/// Returns the branch name so the caller can surface it on stdout.
+/// Drive one root conversation against an already-resolved config,
+/// forked off `fork_point` (§2.3 — the ref the start named, resolved by
+/// [`super::fork_point`]). Returns the branch name so the caller can
+/// surface it on stdout.
 pub(super) fn run_exchange(
     repo: &Path,
     user_message: &str,
+    fork_point: &str,
     name: Option<&str>,
     resolved: &Resolved<'_>,
     deps: &Deps<'_>,
@@ -83,7 +87,7 @@ pub(super) fn run_exchange(
         None => return Ok(branch_name),
     };
 
-    spawn_branch(repo, &worktree_path, &conv_id, deps)?;
+    spawn_branch(repo, &worktree_path, &conv_id, fork_point, deps)?;
 
     // The initial user message enters through the front door (§2.4,
     // §2.11): deposited into this agent's own inbox, delivered by the

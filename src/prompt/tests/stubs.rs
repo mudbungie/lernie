@@ -186,7 +186,15 @@ impl GitRunner for StubGit {
                 std::fs::read_to_string(ws.join(path))
             }
             Some("rev-parse" | "merge-base") => Ok(STUB_SHA.to_string()),
-            Some("for-each-ref") => Ok("refs/heads/config/default".to_string()),
+            // The one workspace ref query, in its two formats (§2.3):
+            // `%(refname)` for the governing-lineage merge-bases,
+            // `%(refname:short)` for the lineage-name pool the
+            // `--config` / fork-point guards read.
+            Some("for-each-ref") => Ok(if args.contains(&"--format=%(refname:short)") {
+                "config/default".to_string()
+            } else {
+                "refs/heads/config/default".to_string()
+            }),
             _ => Ok(String::new()),
         }
     }

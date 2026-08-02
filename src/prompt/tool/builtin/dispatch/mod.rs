@@ -227,9 +227,12 @@ pub fn run<R: Read, W: Write>(
     // Open-set validity (§4.3), the single home shared with the CLI:
     // role listed in the governing config commit + soul present. The `?`
     // projects an `Invalid` verdict onto this tool's `Error` (below).
+    // No fork point: the `dispatch` tool's input is `{role, goal}`, so a
+    // model-issued dispatch always forks off its own branch (§2.5).
     crate::prompt::role::validate::validate(
         &repo_path,
         &branch_str,
+        None,
         &input.role,
         &crate::template::RealGit::new(),
     )?;

@@ -122,6 +122,14 @@ fn refs(ws: &Path) -> String {
         .args(["for-each-ref", "--format=%(refname)"])
         .output()
         .expect("git");
+    // Assert the enumeration itself: an unchecked failure here reads as
+    // "the ref is gone" at every call site, which is the opposite of
+    // what happened.
+    assert!(
+        out.status.success(),
+        "git for-each-ref: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 

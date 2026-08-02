@@ -25,6 +25,8 @@ fn loop_terminates_on_non_tool_use_finish() {
         repo.path(),
         "hi",
         None,
+        None,
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -59,6 +61,8 @@ fn loop_surfaces_tool_executor_failure_as_tool_exec_error() {
     let err = run(
         repo.path(),
         "hi",
+        None,
+        None,
         None,
         &valid_deps(
             &adapter,

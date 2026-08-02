@@ -17,6 +17,7 @@ mod message_cli;
 mod poll;
 mod prompt_adapter_failure;
 mod prompt_end_to_end;
+mod prompt_fork_point;
 mod prompt_retry;
 mod replay_drive;
 mod scan_cli;

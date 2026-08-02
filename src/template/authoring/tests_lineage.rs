@@ -87,5 +87,11 @@ fn an_unreadable_repo_surfaces_as_a_git_decline() {
         &RealGit::new(),
     )
     .unwrap_err();
-    assert!(matches!(err, Error::Git(_)), "got {err:?}");
+    assert!(
+        matches!(
+            err,
+            Error::NoSuchLineage(crate::workspace::UnknownLineage::Git(_))
+        ),
+        "got {err:?}"
+    );
 }

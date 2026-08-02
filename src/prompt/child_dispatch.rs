@@ -36,17 +36,17 @@
 //! it — so the check belongs at the fork, not at the child's first model
 //! call, and there is exactly one fork in the system: [`run`]. Every
 //! caller reaches it — the `dispatch` built-in and `lernie dispatch`
-//! (model-initiated, §3.4) and the §6 workflow bindings
+//! (model-initiated, §3.4), the §6 workflow bindings
 //! `worker_flush → dispatch(compactor)` and the verifier gate
 //! (harness-initiated) — so `max_depth` cannot be enforced against one
-//! kind of dispatch and not the other. The two kinds differ only in what
-//! a refusal *means*, which is [`run_procedure`]'s single job.
+//! kind and not the other. The two differ only in what a refusal
+//! *means*, which is [`run_procedure`]'s single job.
 //!
 //! Without this, a `max_depth` breach was caught only when the child
-//! finally tried to step (`budget::check` at the model-call boundary),
-//! by which time the branch, its worktree and its inbox already existed —
-//! the shape of the runaway compaction cascade in bl-a9eb (yog bl-ebbd),
-//! where hundreds of branches were minted below a declared `max_depth: 4`.
+//! finally tried to step (`budget::check` at the model-call boundary), by
+//! which time the branch, its worktree and its inbox already existed —
+//! the runaway compaction cascade of bl-a9eb (yog bl-ebbd), where
+//! hundreds of branches were minted below a declared `max_depth: 4`.
 //!
 //! The goal is one input with two projections, both written at dispatch:
 //! `goal.md` (pinned standing context, §2.8) and the deposited dispatch
@@ -70,8 +70,8 @@ use std::path::{Path, PathBuf};
 pub struct ChildDispatchRequest<'a> {
     /// Workspace repository root. Used for the child's worktree path
     /// (sibling under `agents/`, §2.2), for soul resolution
-    /// (`souls/worker.md` in the governing config commit), and as the
-    /// deposit target's workspace.
+    /// (`souls/<role>.md` in the governing config commit of the ref the
+    /// child forks off), and as the deposit target's workspace.
     pub repo: &'a Path,
     /// Dispatching branch name — the parent's full hyphenated descent
     /// (§2.3). The child forks off this branch's tip, its id is
@@ -81,11 +81,10 @@ pub struct ChildDispatchRequest<'a> {
     /// The dispatching branch's worktree — where `git worktree add` runs
     /// (any access point onto the one workspace repository, §2.2).
     pub parent_worktree: &'a Path,
-    /// The child's role (§2.5, §4.3): selects the pinned soul
-    /// (`souls/<role>.md` in the governing config commit) and labels the
-    /// dispatch commit. `worker` for an ordinary child, `compactor` for a
-    /// compaction dispatch (§2.7) — parent/child is provenance, the role
-    /// is what the child *is*.
+    /// The child's role (§2.5, §4.3): selects the pinned soul and labels
+    /// the dispatch commit. `worker` for an ordinary child, `compactor`
+    /// for a compaction dispatch (§2.7) — parent/child is provenance,
+    /// the role is what the child *is*.
     pub role: &'a str,
     /// The goal / dispatch message. Written verbatim to the child's
     /// `goal.md` and deposited as its first inbox message.
@@ -99,9 +98,11 @@ pub struct ChildDispatchRequest<'a> {
     pub name: Option<&'a str>,
     /// The ref the child forks off (ARCH §2.3). `None` is the ordinary
     /// child dispatch off the parent's tip (§2.5); `Some(ref)` forks off
-    /// another ref — a verifier off the worker's terminal ref (§6 gate) —
-    /// while the child id stays `<parent>-<sub>` (return address
-    /// unchanged).
+    /// another — a verifier off the worker's terminal ref (§6 gate), or
+    /// `lernie dispatch --from <ref>` (§7.2) — while the child id stays
+    /// `<parent>-<sub>` (return address unchanged). Either way the
+    /// child's **governing config commit derives from this ref** (§2.2
+    /// fork-back-in): its ancestry begins here.
     pub fork_point: Option<&'a str>,
 }
 
@@ -139,16 +140,22 @@ pub fn run(
     let sub_branch = format!("{}-{sub_id}", req.parent_branch);
     let sub_worktree = workspace::agent_worktree(req.repo, &sub_branch);
 
-    // Soul resolution (§2.2 / §4.3): read `souls/worker.md` from the
-    // dispatching branch's governing config commit, verbatim — the
-    // immutable commit is the load-bearing artifact, never a worktree
-    // file. A child inherits the parent's config through ancestry.
+    // The child's governing config commit (§2.2), derived from **the ref
+    // it forks off** — where its own ancestry begins, so it is also what
+    // every later `lernie advance` derives from the child's branch (§6),
+    // which is what keeps dispatch-time artifacts and step-time
+    // resolution one answer instead of two (§4.3: the *same* commit the
+    // grant came from). ARCH §2.2: "an agent started by fork-back-in
+    // (§2.3) inherits its source's config the same way." An ordinary
+    // dispatch forks off the parent's branch, so this is the parent's
+    // config and nothing moves. Soul, grant, descriptors and §6 budgets
+    // all read this commit — never a worktree file.
+    let parent_ref = workspace::agent_ref(req.parent_branch);
+    let fork_ref = req.fork_point.unwrap_or(&parent_ref);
     let commit =
-        workspace::governing_config(req.repo, req.parent_branch, git).map_err(|source| {
-            Error::Git {
-                op: "governing config",
-                source,
-            }
+        workspace::governing_config(req.repo, fork_ref, git).map_err(|source| Error::Git {
+            op: "governing config",
+            source,
         })?;
     // §6 budget gate — the one enforcement point for *every* dispatch
     // (see [`run`]'s docs). Evaluated against the child's own prospective
@@ -208,10 +215,12 @@ pub fn run(
     spawn_subagent_branch(
         &SpawnRequest {
             parent_worktree: req.parent_worktree,
-            parent_branch: req.parent_branch,
             sub_branch: &sub_branch,
             sub_worktree: &sub_worktree,
-            fork_point: req.fork_point,
+            // The one evaluation of "which ref this child forks
+            // off", shared with the governing-config derivation above so
+            // the branch and its config cannot come from different refs.
+            fork_point: fork_ref,
             goal_text: req.goal,
             name: req.name,
             soul_text: Some(&soul),
@@ -267,9 +276,10 @@ pub fn run_procedure(
 }
 
 /// The `budgets:` block governing this dispatch, read from the same
-/// frozen config commit the soul comes from (§2.2, §6). One home for the
-/// limits: the child inherits the parent's config through ancestry, so
-/// parent and child evaluate the identical declaration.
+/// frozen config commit the soul comes from (§2.2, §6) — the governing
+/// config of the ref the child forks off. One home for the limits: the
+/// child inherits *that* config through ancestry, so the ceiling this
+/// gate evaluates is the one the child's own later checks read.
 fn budgets(
     req: &ChildDispatchRequest<'_>,
     commit: &str,

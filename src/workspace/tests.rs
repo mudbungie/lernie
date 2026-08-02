@@ -5,10 +5,22 @@
 use super::fixture::{spawn_agent, workspace};
 use super::*;
 use crate::template::{GitRunner, RealGit};
-use tempfile::TempDir;
 
-fn git() -> RealGit {
+pub(super) fn git() -> RealGit {
     RealGit::new()
+}
+
+/// `config/default` — the ref the fixtures fork off (§2.3).
+pub(super) fn default_ref() -> String {
+    config_ref(DEFAULT_CONFIG_NAME)
+}
+
+/// A revision's commit sha — the fact the ancestry derivation must
+/// agree with.
+pub(super) fn head(ws: &std::path::Path, rev: &str) -> String {
+    git()
+        .run_capture(&repo_git(ws), &["rev-parse", "--verify", rev])
+        .unwrap()
 }
 
 #[test]
@@ -24,49 +36,11 @@ fn paths_and_refs_derive_from_the_id() {
 }
 
 #[test]
-fn require_accepts_a_current_workspace() {
-    let (_h, ws) = workspace();
-    require(&ws).unwrap();
-}
-
-#[test]
-fn require_refuses_the_retired_layout_with_an_actionable_error() {
-    let holder = TempDir::new().unwrap();
-    let old = holder.path().join("conv");
-    std::fs::create_dir_all(old.join("root/.git")).unwrap();
-    std::fs::write(old.join("providers.yaml"), "roles: {}\n").unwrap();
-    let err = require(&old).unwrap_err();
-    let msg = err.to_string();
-    // The refusal names what was found and what the current layout is
-    // (pre-v1 clean break, §10) — actionable, not just "no".
-    assert!(matches!(err, LayoutError::OldLayout(_)), "{msg}");
-    assert!(msg.contains("retired per-conversation layout"), "{msg}");
-    assert!(msg.contains("repo.git"), "{msg}");
-    assert!(msg.contains("lernie new"), "{msg}");
-}
-
-#[test]
-fn require_refuses_a_non_workspace() {
-    let holder = TempDir::new().unwrap();
-    let err = require(holder.path()).unwrap_err();
-    assert!(matches!(err, LayoutError::NotAWorkspace(_)));
-    assert!(err.to_string().contains("lernie new"));
-}
-
-#[test]
-fn config_head_resolves_and_is_loud_when_absent() {
-    let (_h, ws) = workspace();
-    let sha = config_head(&ws, DEFAULT_CONFIG_REF, &git()).unwrap();
-    assert_eq!(sha.len(), 40);
-    assert!(config_head(&ws, "config/nope", &git()).is_err());
-}
-
-#[test]
 fn agent_ids_enumerates_the_agents_namespace_only() {
     let (_h, ws) = workspace();
     // No agents yet: empty, and config/default is never a candidate.
     assert!(agent_ids(&ws, &git()).unwrap().is_empty());
-    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
+    spawn_agent(&ws, "20260101-r1", &default_ref());
     spawn_agent(&ws, "20260101-r1-20260102-c1", "agents/20260101-r1");
     let ids = agent_ids(&ws, &git()).unwrap();
     assert_eq!(ids, vec!["20260101-r1", "20260101-r1-20260102-c1"]);
@@ -75,9 +49,9 @@ fn agent_ids_enumerates_the_agents_namespace_only() {
 #[test]
 fn governing_config_is_the_fork_point_for_a_fresh_agent() {
     let (_h, ws) = workspace();
-    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
-    let gov = governing_config(&ws, "20260101-r1", &git()).unwrap();
-    assert_eq!(gov, config_head(&ws, DEFAULT_CONFIG_REF, &git()).unwrap());
+    spawn_agent(&ws, "20260101-r1", &default_ref());
+    let gov = governing_config(&ws, &agent_ref("20260101-r1"), &git()).unwrap();
+    assert_eq!(gov, head(&ws, &default_ref()));
 }
 
 #[test]
@@ -97,7 +71,7 @@ fn governing_config_picks_the_nearest_config_ancestor() {
             "-b",
             "config/strict",
             strict_str.as_str(),
-            DEFAULT_CONFIG_REF,
+            &default_ref(),
         ],
     )
     .unwrap();
@@ -107,14 +81,14 @@ fn governing_config_picks_the_nearest_config_ancestor() {
         .unwrap();
 
     spawn_agent(&ws, "20260101-r1", "config/strict");
-    let gov = governing_config(&ws, "20260101-r1", &git()).unwrap();
-    assert_eq!(gov, config_head(&ws, "config/strict", &g).unwrap());
+    let gov = governing_config(&ws, &agent_ref("20260101-r1"), &git()).unwrap();
+    assert_eq!(gov, head(&ws, "config/strict"));
     // Symmetric enumeration order: an agent still on config/default
     // resolves to config/default's head even with config/strict extant
     // (exercises the keep-the-nearer arm in both directions).
-    spawn_agent(&ws, "20260101-r2", DEFAULT_CONFIG_REF);
-    let gov2 = governing_config(&ws, "20260101-r2", &git()).unwrap();
-    assert_eq!(gov2, config_head(&ws, DEFAULT_CONFIG_REF, &g).unwrap());
+    spawn_agent(&ws, "20260101-r2", &default_ref());
+    let gov2 = governing_config(&ws, &agent_ref("20260101-r2"), &git()).unwrap();
+    assert_eq!(gov2, head(&ws, &default_ref()));
     // Reverse enumeration order: a config branch that sorts *before*
     // config/default (`config/aaa`) yields the nearer candidate first,
     // so the later, farther candidate must lose (the keep-`a` arm).
@@ -128,7 +102,7 @@ fn governing_config_picks_the_nearest_config_ancestor() {
             "-b",
             "config/aaa",
             aaa_str.as_str(),
-            DEFAULT_CONFIG_REF,
+            &default_ref(),
         ],
     )
     .unwrap();
@@ -136,15 +110,15 @@ fn governing_config_picks_the_nearest_config_ancestor() {
     g.run(&aaa_wt, &["add", "aaa.md"]).unwrap();
     g.run(&aaa_wt, &["commit", "-m", "config: aaa"]).unwrap();
     spawn_agent(&ws, "20260101-r3", "config/aaa");
-    let gov3 = governing_config(&ws, "20260101-r3", &git()).unwrap();
-    assert_eq!(gov3, config_head(&ws, "config/aaa", &g).unwrap());
+    let gov3 = governing_config(&ws, &agent_ref("20260101-r3"), &git()).unwrap();
+    assert_eq!(gov3, head(&ws, "config/aaa"));
 }
 
 #[test]
 fn config_lineage_names_the_ref_the_merge_base_is_taken_against() {
     let (_h, ws) = workspace();
     let g = git();
-    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
+    spawn_agent(&ws, "20260101-r1", &default_ref());
     // Advance config/default past the fork (a later user config edit,
     // §2.3): its head stops being an ancestor of the agent, but it is
     // still the ref the governing commit is derived *against* — so it
@@ -153,23 +127,23 @@ fn config_lineage_names_the_ref_the_merge_base_is_taken_against() {
     let later_str = later.to_string_lossy().to_string();
     g.run(
         &repo_git(&ws),
-        &["worktree", "add", later_str.as_str(), DEFAULT_CONFIG_REF],
+        &["worktree", "add", later_str.as_str(), &default_ref()],
     )
     .unwrap();
     std::fs::write(later.join("later.md"), "x").unwrap();
     g.run(&later, &["add", "later.md"]).unwrap();
     g.run(&later, &["commit", "-m", "config: later"]).unwrap();
 
-    let lineage = config_lineage(&ws, "20260101-r1", &g).unwrap();
+    let lineage = config_lineage(&ws, &agent_ref("20260101-r1"), &g).unwrap();
     assert_eq!(lineage.len(), 1);
     assert_eq!(lineage[0].0, "refs/heads/config/default");
     assert_eq!(
         lineage[0].1,
-        governing_config(&ws, "20260101-r1", &g).unwrap()
+        governing_config(&ws, &agent_ref("20260101-r1"), &g).unwrap()
     );
     assert_ne!(
         lineage[0].1,
-        config_head(&ws, DEFAULT_CONFIG_REF, &g).unwrap(),
+        head(&ws, &default_ref()),
         "the head advanced past the governing commit"
     );
 }
@@ -199,9 +173,9 @@ fn governing_config_skips_unrelated_config_lineages() {
     g.run(&orphan_wt, &["commit", "-m", "config: island"])
         .unwrap();
 
-    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
-    let gov = governing_config(&ws, "20260101-r1", &git()).unwrap();
-    assert_eq!(gov, config_head(&ws, DEFAULT_CONFIG_REF, &g).unwrap());
+    spawn_agent(&ws, "20260101-r1", &default_ref());
+    let gov = governing_config(&ws, &agent_ref("20260101-r1"), &git()).unwrap();
+    assert_eq!(gov, head(&ws, &default_ref()));
 }
 
 #[test]
@@ -226,7 +200,7 @@ fn governing_config_declines_an_agent_with_no_config_ancestor() {
     std::fs::write(wt.join("goal.md"), "g").unwrap();
     g.run(&wt, &["add", "goal.md"]).unwrap();
     g.run(&wt, &["commit", "-m", "orphan"]).unwrap();
-    let err = governing_config(&ws, "20260101-x1", &git()).unwrap_err();
+    let err = governing_config(&ws, &agent_ref("20260101-x1"), &git()).unwrap_err();
     assert!(err.to_string().contains("no config/* ancestor"));
 }
 
@@ -256,7 +230,7 @@ fn governing_config_declines_incomparable_candidates() {
     g.run(&orphan_wt, &["commit", "-m", "config: island"])
         .unwrap();
 
-    spawn_agent(&ws, "20260101-r1", DEFAULT_CONFIG_REF);
+    spawn_agent(&ws, "20260101-r1", &default_ref());
     let wt = agent_worktree(&ws, "20260101-r1");
     g.run(
         &wt,
@@ -269,14 +243,14 @@ fn governing_config_declines_incomparable_candidates() {
         ],
     )
     .unwrap();
-    let err = governing_config(&ws, "20260101-r1", &git()).unwrap_err();
+    let err = governing_config(&ws, &agent_ref("20260101-r1"), &git()).unwrap_err();
     assert!(err.to_string().contains("incomparable"), "{err}");
 }
 
 #[test]
 fn show_control_reads_from_the_config_commit_tree() {
     let (_h, ws) = workspace();
-    let sha = config_head(&ws, DEFAULT_CONFIG_REF, &git()).unwrap();
+    let sha = head(&ws, &default_ref());
     let raw = show_control(&ws, &sha, "providers.yaml", &git()).unwrap();
     assert!(raw.contains("roles:"), "{raw}");
     assert!(show_control(&ws, &sha, "no-such-file", &git()).is_err());
@@ -285,7 +259,7 @@ fn show_control_reads_from_the_config_commit_tree() {
 #[test]
 fn control_exists_answers_presence_in_the_tree() {
     let (_h, ws) = workspace();
-    let sha = config_head(&ws, DEFAULT_CONFIG_REF, &git()).unwrap();
+    let sha = head(&ws, &default_ref());
     assert!(control_exists(&ws, &sha, "souls/worker.md", &git()));
     assert!(!control_exists(&ws, &sha, "souls/nope.md", &git()));
 }

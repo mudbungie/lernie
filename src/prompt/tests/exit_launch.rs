@@ -107,7 +107,7 @@ fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     );
     deps.launcher = &launcher;
 
-    run(repo.path(), "go", None, &deps).unwrap();
+    run(repo.path(), "go", None, None, None, &deps).unwrap();
     let invocations = launcher.invocations.borrow();
     // Two launches: the self-directed one, then the parent whose inbox
     // the terminal deposit just landed in (§2.11 revival-on-deposit).
@@ -161,7 +161,7 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
         launcher: &launcher,
     };
 
-    let branch = run(repo.path(), "go", None, &deps).unwrap();
+    let branch = run(repo.path(), "go", None, None, None, &deps).unwrap();
     assert_eq!(branch, "ct1-deadbeef", "two tokens: a parentless root");
     // The deposit is a structural no-op — no result message anywhere…
     assert!(
@@ -204,7 +204,7 @@ fn stopped_exit_never_launches() {
     deps.stop = &stop;
     deps.launcher = &launcher;
 
-    run(repo.path(), "go", None, &deps).unwrap();
+    run(repo.path(), "go", None, None, None, &deps).unwrap();
     assert!(
         launcher.invocations.borrow().is_empty(),
         "stopped must not launch"
@@ -248,7 +248,7 @@ fn budget_exhausted_exit_never_launches() {
     );
     deps.launcher = &launcher;
 
-    run(repo.path(), "go", None, &deps).unwrap();
+    run(repo.path(), "go", None, None, None, &deps).unwrap();
     assert!(
         deposit_files(repo.path())
             .iter()
@@ -288,7 +288,7 @@ fn an_errored_executor_never_launches() {
     );
     deps.launcher = &launcher;
 
-    run(repo.path(), "go", None, &deps).unwrap_err();
+    run(repo.path(), "go", None, None, None, &deps).unwrap_err();
     assert!(
         launcher.invocations.borrow().is_empty(),
         "an error must not launch"

@@ -148,6 +148,7 @@ fn dispatch_declines_an_escaping_parent_id() {
                 repo: tmp.path().to_path_buf(),
                 branch: ESCAPING.into(),
                 goal: Some("g".into()),
+                from: None,
                 name: None,
             },
             fx,

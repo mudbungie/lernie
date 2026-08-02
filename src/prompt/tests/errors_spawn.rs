@@ -9,12 +9,24 @@ use super::fixtures::*;
 use crate::prompt::Error;
 
 #[test]
-fn run_surfaces_governing_config_read_failure() {
-    // The very first git op is the config-head resolution (§2.2);
-    // failing it surfaces as the governing-config error.
+fn run_surfaces_a_fork_point_query_failure() {
+    // The very first git op resolves the fork point (§2.3): the
+    // config-lineage pool the default start reads. Its failure is the
+    // fork point's, ahead of any control read.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(0)).unwrap_err();
+    assert!(matches!(err, Error::ForkPoint(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_governing_config_read_failure() {
+    // With the fork point resolved, the next op derives its governing
+    // config commit by ancestry (§2.2); failing it surfaces as the
+    // governing-config error.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(&happy_response_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
     assert!(
         matches!(
             err,

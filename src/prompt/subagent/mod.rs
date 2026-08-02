@@ -33,9 +33,6 @@ pub(crate) struct SpawnRequest<'a> {
     /// `git worktree add` runs (ARCH §2.2 — the conv-repo root itself
     /// is not a checkout in v0.3).
     pub(crate) parent_worktree: &'a Path,
-    /// Dispatching branch name (full hyphenated descent of the
-    /// parent's conv-id chain — ARCH §2.3).
-    pub(crate) parent_branch: &'a str,
     /// New subagent branch name. By convention `<parent>-<sub-id>`,
     /// where `<sub-id>` is `<ts>-<short-id>` (§2.2 hyphenated descent).
     pub(crate) sub_branch: &'a str,
@@ -44,13 +41,19 @@ pub(crate) struct SpawnRequest<'a> {
     /// isomorphic (§2.2).
     pub(crate) sub_worktree: &'a Path,
     /// The ref the new branch forks off (ARCH §2.3 *Any ref is a legal
-    /// fork point*). `None` is the default child dispatch — the parent's
-    /// own tip (§2.5). `Some(ref)` forks off another ref while still
-    /// naming the branch a child of `parent_branch`: a **verifier**
-    /// forks off the *worker's terminal ref* (§6 gate) so it inherits the
-    /// work it must judge, yet returns to the gating parent (its id, and
-    /// so its return address, stays `<parent>-<sub>`).
-    pub(crate) fork_point: Option<&'a str>,
+    /// fork point*) — the dispatching branch for an ordinary child
+    /// dispatch (§2.5), any other ref when the dispatch named one: a
+    /// **verifier** forks off the *worker's terminal ref* (§6 gate) so it
+    /// inherits the work it must judge, `lernie dispatch --from` off
+    /// whatever the caller named (§7.2). Either way the new branch is
+    /// still named a child of its dispatcher, so its id — and so its
+    /// return address — stays `<parent>-<sub>` (§2.6).
+    ///
+    /// Not an `Option`: the caller resolves the default, because it must
+    /// derive the child's governing config commit from this same ref
+    /// (§2.2, `child_dispatch::run`) and a second home for "which ref"
+    /// is exactly how the branch and its config come to disagree.
+    pub(crate) fork_point: &'a str,
     /// Goal text written to `<sub_worktree>/goal.md` and committed.
     pub(crate) goal_text: &'a str,
     /// The child's **name** (ARCH §2.3, §2.11) — its display fact,
@@ -104,11 +107,6 @@ pub(crate) fn spawn_subagent_branch(
 ) -> Result<(), Error> {
     let wt_str = req.sub_worktree.to_string_lossy().to_string();
     let sub_ref = crate::workspace::agent_ref(req.sub_branch);
-    // Fork point (§2.3): the parent's own tip by default, or an explicit
-    // ref (a verifier off the worker's terminal ref, §6). Either way the
-    // new branch is named a child of `parent_branch`.
-    let parent_ref = crate::workspace::agent_ref(req.parent_branch);
-    let start = req.fork_point.unwrap_or(parent_ref.as_str());
     git.run(
         req.parent_worktree,
         &[
@@ -117,7 +115,7 @@ pub(crate) fn spawn_subagent_branch(
             "-b",
             sub_ref.as_str(),
             wt_str.as_str(),
-            start,
+            req.fork_point,
         ],
     )
     .map_err(|source| Error::Git {

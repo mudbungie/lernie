@@ -3,10 +3,12 @@
 //!
 //! Control is read from a **config commit** (ARCH §2.2), never from a
 //! worktree file: `lernie prompt` (a fresh root) resolves against the
-//! head of the default config branch — the very commit the new agent is
-//! about to fork off — and `lernie advance` (the §6 hop) resolves the
-//! **governing config commit** of the existing agent's branch, derived
-//! from ancestry ([`crate::workspace::governing_config`]). The reads —
+//! **governing config commit of the ref it is about to fork off** — the
+//! config commit itself for the ordinary fresh start, its nearest
+//! `config/*` ancestor when the start forks from history (§2.3, §7.2) —
+//! and `lernie advance` (the §6 hop) resolves the governing config
+//! commit of the existing agent's branch. Both are the one ancestry
+//! derivation ([`crate::workspace::governing_config`]). The reads —
 //! `providers.yaml`, `workflow.yaml` policy, the role soul — go through
 //! `git show <commit>:<path>`; the global `models.yaml` and the adapter
 //! binary with its load-time version guard (§4.4) resolve as before.
@@ -36,9 +38,12 @@ const MANIFEST_FILE: &str = "manifest.yaml";
 
 /// Which config commit governs the resolution (ARCH §2.2).
 pub(super) enum ConfigSource<'a> {
-    /// A fresh root about to fork: the named config branch's head
-    /// (§2.3 *Fresh start* — the default fork point).
-    ConfigBranch(&'a str),
+    /// A fresh root about to fork off this ref (§2.3 *Any ref is a legal
+    /// fork point*): a config lineage's head, or any commit of any agent
+    /// (`--from`, §7.2). Either way the governing config commit is the
+    /// nearest `config/*` ancestor of that ref — a config head answers
+    /// itself — so the fork is the freeze whatever it forks off.
+    Fork(&'a str),
     /// An existing agent: its governing config commit, the nearest
     /// `config/*` ancestor of its branch (§2.2), derived from ancestry.
     Agent(&'a str),
@@ -221,7 +226,7 @@ fn agent_role(
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
     match source {
-        ConfigSource::ConfigBranch(_) => Ok(WORKER_ROLE.to_string()),
+        ConfigSource::Fork(_) => Ok(WORKER_ROLE.to_string()),
         ConfigSource::Agent(agent_id) => Ok(crate::prompt::role::derive(
             &workspace::repo_git(workspace),
             &workspace::agent_ref(agent_id),
@@ -232,21 +237,20 @@ fn agent_role(
     }
 }
 
-/// Resolve the governing config commit sha for the source (§2.2):
-/// a config branch's head for a fresh fork, the ancestry derivation for
-/// an existing agent.
+/// Resolve the governing config commit sha for the source (§2.2) — one
+/// ancestry derivation for both, asked of the fork point for a fresh
+/// root and of its own ref for an existing agent
+/// ([`workspace::governing_config`]).
 fn config_commit(
     workspace: &Path,
     source: &ConfigSource<'_>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
-    match source {
-        ConfigSource::ConfigBranch(config_ref) => {
-            workspace::config_head(workspace, config_ref, deps.git)
-        }
-        ConfigSource::Agent(agent_id) => workspace::governing_config(workspace, agent_id, deps.git),
-    }
-    .map_err(|source| Error::Git {
+    let rev = match source {
+        ConfigSource::Fork(fork_point) => (*fork_point).to_owned(),
+        ConfigSource::Agent(agent_id) => workspace::agent_ref(agent_id),
+    };
+    workspace::governing_config(workspace, &rev, deps.git).map_err(|source| Error::Git {
         op: "governing config",
         source,
     })

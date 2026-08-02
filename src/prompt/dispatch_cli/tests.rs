@@ -9,7 +9,7 @@ use tempfile::TempDir;
 /// agent branch + worktree — the state `lernie dispatch` is invoked
 /// against in production (§3.4). The default config lists `worker` and
 /// `compactor` with their souls, so both validate off this parent.
-fn scaffolded_repo_with_parent(parent: &str) -> (TempDir, std::path::PathBuf) {
+pub(super) fn scaffolded_repo_with_parent(parent: &str) -> (TempDir, std::path::PathBuf) {
     let (holder, repo) = fixture::workspace();
     fixture::spawn_root(&repo, parent);
     (holder, repo)
@@ -17,7 +17,7 @@ fn scaffolded_repo_with_parent(parent: &str) -> (TempDir, std::path::PathBuf) {
 
 /// A [`Launcher`] that swallows launches — the fork + front-door
 /// deposit is under test, not the real `lernie advance` spawn.
-struct NoopLauncher;
+pub(super) struct NoopLauncher;
 impl Launcher for NoopLauncher {
     fn launch(&self, _workspace: &Path, _agent_id: &str) -> std::io::Result<()> {
         Ok(())
@@ -25,7 +25,7 @@ impl Launcher for NoopLauncher {
 }
 
 /// Count sub-agent worktrees forked under `parent`'s id prefix.
-fn sub_count(repo: &Path, parent: &str) -> usize {
+pub(super) fn sub_count(repo: &Path, parent: &str) -> usize {
     std::fs::read_dir(repo.join(crate::workspace::AGENTS_DIR))
         .unwrap()
         .flatten()
@@ -49,6 +49,7 @@ fn compactor_dispatch_forks_an_ordinary_compactor_child() {
         "20260101-p1",
         None,
         None,
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -63,6 +64,7 @@ fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         &repo,
         "20260101-p1",
         Some("do the thing"),
+        None,
         None,
         &NoopLauncher,
     )
@@ -89,6 +91,7 @@ fn any_config_role_dispatches_open_set() {
         "p9",
         Some("judge it"),
         None,
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -112,6 +115,7 @@ fn a_path_that_is_not_a_workspace_is_the_shared_layout_decline() {
         "someagent",
         Some("hi"),
         None,
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -134,6 +138,7 @@ fn a_parent_with_no_agent_ref_is_the_shared_existence_decline() {
         "nosuchparent",
         Some("hi"),
         None,
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -152,11 +157,21 @@ fn undefined_role_names_the_roles_that_are_defined() {
     // is named as the user knows it, and the pool that IS defined travels
     // with the refusal.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run_with("no-such-role", &repo, "p1", Some("g"), None, &NoopLauncher).unwrap_err();
+    let err = run_with(
+        "no-such-role",
+        &repo,
+        "p1",
+        Some("g"),
+        None,
+        None,
+        &NoopLauncher,
+    )
+    .unwrap_err();
     assert!(matches!(err, DispatchCliError::InvalidRole(_)), "{err}");
     assert_eq!(
         err.to_string(),
-        "role \"no-such-role\" is not defined in the providers.yaml governing agent \"p1\" \
+        "role \"no-such-role\" is not defined in the providers.yaml that will govern a \
+         child of agent \"p1\" \
          — defined roles: compactor, worker"
     );
 }
@@ -166,7 +181,7 @@ fn worker_requires_a_goal() {
     // Through the public `run` (the AdvanceLauncher wiring): validation
     // passes, then the missing `--goal` is refused before any fork.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run("worker", &repo, "p1", None, None, Path::new("true")).unwrap_err();
+    let err = run("worker", &repo, "p1", None, None, None, Path::new("true")).unwrap_err();
     assert_eq!(err.to_string(), "--goal is required for role \"worker\"");
 }
 
@@ -178,6 +193,7 @@ fn compactor_rejects_a_goal() {
         &repo,
         "p1",
         Some("g"),
+        None,
         None,
         Path::new("true"),
     )
@@ -195,7 +211,7 @@ fn inner_errors_render_through_the_shared_display() {
     // through `From<Error>` and the shared `Display`.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
     std::fs::remove_dir_all(repo.join(crate::workspace::AGENTS_DIR).join("p1")).unwrap();
-    let err = run_with("worker", &repo, "p1", Some("g"), None, &NoopLauncher).unwrap_err();
+    let err = run_with("worker", &repo, "p1", Some("g"), None, None, &NoopLauncher).unwrap_err();
     assert!(matches!(err, DispatchCliError::Inner(_)), "{err}");
     assert!(!err.to_string().is_empty());
 }

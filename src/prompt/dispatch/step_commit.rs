@@ -37,15 +37,21 @@ pub(super) const GOAL_FILE: &str = "goal.md";
 /// the same reason `goal.md` does.
 pub(super) const SOUL_FILE: &str = "soul.md";
 
-/// `git worktree add -b agents/<id> <worktree_path> <config-ref>`, run
+/// `git worktree add -b agents/<id> <worktree_path> <fork-point>`, run
 /// against the workspace's bare `repo.git` (§2.2): fork the fresh root
-/// agent off the default config branch's head — the fork is the freeze
-/// (§2.2). Root id uniqueness per workspace is structural: the `-b`
-/// creation fails if the ref already exists.
+/// agent off the ref the start named — a config lineage's head, or any
+/// ref at all (§2.3 *Any ref is a legal fork point*, §7.2
+/// fork-from-history). The fork is the freeze (§2.2), and what it
+/// freezes is the *governing config commit* of that ref, which
+/// `resolved` already carries — so this call is the same operation with
+/// a different argument, never a second kind of start. Root id
+/// uniqueness per workspace is structural: the `-b` creation fails if
+/// the ref already exists.
 pub(super) fn spawn_branch(
     workspace: &Path,
     worktree_path: &Path,
     agent_id: &str,
+    fork_point: &str,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
     let wt_str = worktree_path.to_string_lossy().to_string();
@@ -59,7 +65,7 @@ pub(super) fn spawn_branch(
                 "-b",
                 branch_ref.as_str(),
                 wt_str.as_str(),
-                crate::workspace::DEFAULT_CONFIG_REF,
+                fork_point,
             ],
         )
         .map_err(|source| Error::Git {

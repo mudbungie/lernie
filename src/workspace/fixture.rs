@@ -4,7 +4,7 @@
 //! shapes production verbs run against. Test-only (`cfg(test)` on the
 //! module declaration).
 
-use super::{DEFAULT_CONFIG_REF, agent_ref, agent_worktree, repo_git};
+use super::{DEFAULT_CONFIG_NAME, agent_ref, agent_worktree, config_ref, repo_git};
 use crate::harness_root::Roots;
 use crate::template::authoring::{self, Origin};
 use crate::template::{GitRunner, RealGit, scaffold};
@@ -63,7 +63,7 @@ pub(crate) fn spawn_agent(ws: &Path, id: &str, start: &str) -> PathBuf {
 
 /// [`spawn_agent`] off the default config branch — the fresh-root shape.
 pub(crate) fn spawn_root(ws: &Path, id: &str) -> PathBuf {
-    spawn_agent(ws, id, DEFAULT_CONFIG_REF)
+    spawn_agent(ws, id, &config_ref(DEFAULT_CONFIG_NAME))
 }
 
 /// Advance `config/default` with the given control files — the
@@ -80,7 +80,7 @@ pub(crate) fn amend_config(ws: &Path, files: &[(&str, &str)]) {
     authoring::author(
         ws,
         &ws.join(".no-pools"),
-        "default",
+        DEFAULT_CONFIG_NAME,
         Origin::Advance,
         move |dir| {
             for (rel, content) in &owned {

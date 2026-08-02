@@ -12,6 +12,7 @@
 mod advance_cli;
 mod bundle_replay_cli;
 mod compaction_wire;
+mod delete_cli;
 mod message_cli;
 mod poll;
 mod prompt_adapter_failure;

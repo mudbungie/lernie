@@ -1088,6 +1088,50 @@ config commit.
 LERNIE_HOME=/tmp/replay lernie replay /path/to/archive
 ```
 
+**Delete a run.** `lernie delete <workspace> <agent> [--children] [--dry-run]`
+removes an agent and every slice of it (§9.2 *Retention and GC*): the
+`agents/<id>` ref, the worktree under `agents/<id>/`, the `steps/<id>/` and
+`inbox/<id>/` directories, and every `refs/lernie/<kind>/<id>` mark. `bundle`
+composes in front of it — **bundle-then-delete is the archive path**, delete
+outright is the other, and neither verb carries a flag for the other.
+
+```
+lernie delete /path/to/workspace <agent-id> --children --dry-run   # the plan
+lernie delete /path/to/workspace <agent-id> --children             # the act
+```
+
+Two refusals, both checked across the whole subtree before anything is
+removed:
+
+- **A subtree is never implied.** Bare, an agent with `<id>-*`
+  hyphen-descendants (§2.3) is declined, naming them; `--children` is the
+  explicit request for the whole subtree (the shape of `stop --stop-children`,
+  §2.9).
+- **A live driver is never reaped.** An agent whose executor holds the §2.11
+  lock is declined, naming the lock; `lernie stop` it first and delete once it
+  is quiescent.
+
+The verb's one product is the census of what dies, identical in both moods —
+so a frontend's confirmation dialog enumerates exactly what the receipt will
+later confirm:
+
+```
+would delete 20260101-p1; descendants: 1 (20260101-p1-20260102-c1); pending deposits: 2
+deleted 20260101-p1; descendants: 1 (20260101-p1-20260102-c1); pending deposits: 2
+```
+
+`pending deposits` counts undelivered mail addressed **to** the subtree, which
+dies with its inboxes; a message one of these agents *sent* already lives in
+the recipient's inbox and survives.
+
+**Re-running a delete is how a half-finished one finishes.** The target set is
+the union of the id's five homes rather than the ref list, so a delete
+interrupted anywhere leaves a state the next run completes, and a delete of an
+agent nothing remembers is a quiet success with an empty census — no
+partial-delete limbo, and no `--force` to reach for. Deletion is an operator
+act on the operator's own schedule: nothing expires on a timer, and the
+harness ships no default retention window.
+
 **Task suite.** The evaluation suite lives as data under `tests/suite/` — 50
 tasks with machine-checkable `check` scripts, tagged by the seven §9.1 failure
 categories (≥10 per category), format in `tests/suite/README.md`,

@@ -12,6 +12,7 @@ use std::cell::{Cell, RefCell};
 use std::io;
 
 mod bundle;
+mod delete;
 mod replay;
 
 /// A `GitRunner` that records `run` invocations and replays a canned

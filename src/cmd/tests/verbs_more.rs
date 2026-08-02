@@ -6,7 +6,7 @@
 //! `exec` are pinned by the `tests/*_cli.rs` binary tests.
 
 use super::{assert_prefixed, noop_editor, with_fx};
-use crate::cmd::{Outcome, advance, bundle, message, replay, scan, tool};
+use crate::cmd::{Outcome, advance, bundle, delete, message, replay, scan, tool};
 use crate::workspace::fixture;
 use tempfile::TempDir;
 
@@ -211,4 +211,35 @@ fn message_reports_a_non_workspace() {
         )
     });
     assert_prefixed(r.unwrap_err(), "message");
+}
+
+#[test]
+fn delete_prints_the_census_as_its_product() {
+    // The plan and the receipt are one sentence (§9.2): `--dry-run`
+    // yields the same [`Outcome::Line`] the real run does, in the
+    // conditional mood, having removed nothing.
+    let (_h, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, "20260101-a1");
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        delete::run(
+            delete::Args {
+                workspace: ws.clone(),
+                agent: "20260101-a1".into(),
+                children: false,
+                dry_run: true,
+            },
+            fx,
+        )
+    });
+    match r.unwrap() {
+        Outcome::Line(l) => assert_eq!(
+            l,
+            "would delete 20260101-a1; descendants: 0; pending deposits: 0"
+        ),
+        other => panic!("{other:?}"),
+    }
+    assert!(
+        ws.join("agents/20260101-a1").exists(),
+        "dry run removed nothing"
+    );
 }

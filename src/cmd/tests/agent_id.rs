@@ -6,7 +6,7 @@
 //! workspace, and an absolute id *replaces* it.
 
 use super::{assert_prefixed, noop_editor, with_fx};
-use crate::cmd::{advance, bundle, dispatch, message, stop};
+use crate::cmd::{advance, bundle, delete, dispatch, message, stop};
 use crate::workspace::fixture;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -169,4 +169,25 @@ fn bundle_declines_an_escaping_id() {
         )
     });
     assert_prefixed(r.unwrap_err(), "bundle");
+}
+
+#[test]
+fn delete_declines_an_escaping_id() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("true", b"", &noop_editor, |fx| {
+        delete::run(
+            delete::Args {
+                workspace: tmp.path().to_path_buf(),
+                agent: ESCAPING.into(),
+                children: false,
+                dry_run: false,
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "delete");
+    assert!(
+        !tmp.path().join("inbox").exists(),
+        "a declined id probes no lock and creates nothing"
+    );
 }

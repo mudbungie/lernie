@@ -17,7 +17,7 @@
 //!
 //! **An agent id is validated where it enters.** Every verb that takes
 //! an agent id from outside — `message`, `advance`, `stop`, `dispatch`,
-//! `bundle` — calls [`crate::name::require_agent_id`] before touching
+//! `bundle`, `delete` — calls [`crate::name::require_agent_id`] before touching
 //! disk, so an id that is not a single path component never reaches a
 //! `join` (§2.3; see [`crate::name`] for why `Path::join` makes that
 //! load-bearing). This surface is the only way in — both bindings enter
@@ -30,6 +30,7 @@ use std::sync::atomic::AtomicBool;
 pub mod advance;
 pub mod bundle;
 pub mod config;
+pub mod delete;
 pub mod dispatch;
 pub mod message;
 pub mod new;
@@ -112,6 +113,13 @@ pub enum Command {
     /// its hyphen-descendants plus the `steps/`/`inbox/` slices, under
     /// `<out-dir>`.
     Bundle(bundle::Args),
+    /// Remove an agent (ARCH §9.2 retention): its `agents/<id>` ref,
+    /// worktree, `steps/`/`inbox/` slices and `refs/lernie/*` marks.
+    /// Declines a subtree the bare form did not ask for and a live
+    /// driver's agent (§2.11); `--children` takes the whole subtree,
+    /// `--dry-run` prints the same census and removes nothing. Archive
+    /// first with `bundle` if you want it kept.
+    Delete(delete::Args),
     /// Replay an archive (ARCH §9.2) into a scratch workspace under
     /// `LERNIE_HOME`'s data root (`replays/<agent>/`); prints its path
     /// for the ordinary frontend (§3.5).
@@ -263,6 +271,7 @@ impl Command {
             Command::Message(a) => message::run(a, fx),
             Command::Scan(a) => scan::run(a, fx),
             Command::Bundle(a) => bundle::run(a, fx),
+            Command::Delete(a) => delete::run(a, fx),
             Command::Replay(a) => replay::run(a, fx),
             Command::Advance(a) => advance::run(a, fx),
             Command::Tool(a) => tool::run(a, fx),

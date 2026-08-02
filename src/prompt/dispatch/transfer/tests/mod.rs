@@ -295,3 +295,4 @@ fn apply_declines_and_surfaces_update_ref_failure() {
 }
 
 mod descriptions;
+mod name;

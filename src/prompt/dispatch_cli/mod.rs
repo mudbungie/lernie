@@ -192,7 +192,12 @@ fn run_with(
         if goal.is_some() {
             return Err(DispatchCliError::GoalForbidden(ROLE_COMPACTOR));
         }
-        compactor_goal(parent_branch)
+        // The boilerplate quotes the dispatching branch's own goal
+        // (§2.7), read from that branch's worktree.
+        compactor_goal(
+            &crate::workspace::agent_worktree(repo, parent_branch),
+            parent_branch,
+        )?
     } else {
         goal.ok_or_else(|| DispatchCliError::GoalRequired(role.to_owned()))?
             .to_owned()

@@ -140,7 +140,8 @@ roles:
     pinned:
       - goal.md
       - soul.md
-    order: []
+    order:
+      - summary/**
     budget_tokens: 50000
     overflow: truncate
 "#;
@@ -161,7 +162,12 @@ roles:
         assert_eq!(worker.order, vec!["summary/**", "skills/**"]);
         let compactor = &m.roles["compactor"];
         assert_eq!(compactor.overflow, OverflowPolicy::Truncate);
-        assert!(compactor.order.is_empty());
+        // ARCH §2.7 (bl-2c63): the summary chain composes here or
+        // nowhere — the compaction merge keeps a prior compactor's
+        // dialog off the dispatching branch's transcript (§2.6), so an
+        // uncomposed summary is one the next compactor destroys when it
+        // supersedes it. Work products stay out.
+        assert_eq!(compactor.order, vec!["summary/**"]);
     }
 
     #[test]

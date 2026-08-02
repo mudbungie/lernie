@@ -343,7 +343,15 @@ Compactor toolset (v1):
 - **`write_summary(content)`** — writes the compacted summary file on the compactor branch.
 - **`mark_for_deletion(path)`** — nominates a file on the compactor branch for removal. The harness applies the deletions at commit time.
 
-Giving the compactor no general filesystem write surface makes "deletion-only" structural rather than disciplinary: the worst case is lost information, never corrupted information. The pair is owned by this procedure, not by the role: it is injected by the step for the compactor role alone, never declared in a `providers.yaml` `tools:` list (§4.3 — the role stays a pure config-selection key; the instrument stays the merge's). The compactor has access to the dispatching branch's goal, passed through as `parent_goal`, and decides relevance against it. Its view of the dispatching branch's work needs no special channel: forked off the checkpoint commit (§2.6), its worktree carries that branch's transcript (§2.3), summaries, and work products, and it is composed from that tree like any other role's — through the `compactor` entry in `manifest.yaml` (§5.1: the tree bounds, the manifest selects). What the *shipped* entry selects is goal, soul, and the inherited transcript, and nothing else (§5.2: `pinned: [goal.md, soul.md]`, `order: []`) — so the summaries and work products in its tree are present but uncomposed, and its empty grant leaves it no read tool to reach them with. Widening the view is a config edit to that entry, not a code change. The compactor's boilerplate goal (`src/prompt/compactor/mod.rs`) nonetheless tells it to read both, and its empty grant leaves it no tool to reach them with either — a live disagreement between the prose and the shipped entry, tracked as **bl-2c63** and deliberately not settled by the docs correction that found it (bl-b415).
+Giving the compactor no general filesystem write surface makes "deletion-only" structural rather than disciplinary: the worst case is lost information, never corrupted information. The pair is owned by this procedure, not by the role: it is injected by the step for the compactor role alone, never declared in a `providers.yaml` `tools:` list (§4.3 — the role stays a pure config-selection key; the instrument stays the merge's). Its view of the dispatching branch's work needs no special channel: forked off the checkpoint commit (§2.6), its worktree carries that branch's transcript (§2.3), summaries, and work products, and it is composed from that tree like any other role's — through the `compactor` entry in `manifest.yaml` (§5.1: the tree bounds, the manifest selects). What the shipped entry selects is `summary/**`, alongside the unconditional transcript tail and the system slot (§5.2). Widening the view is a config edit to that entry, not a code change.
+
+**What the compactor is told to read is what it receives** (bl-2c63). The boilerplate goal (`src/prompt/compactor/mod.rs`) names three sources, and the shipped configuration delivers all three:
+
+- **The transcript**, which composes unconditionally (§5.2) and needs no entry.
+- **The summary chain**, which composes through `order: [summary/**]` **or nowhere**. This category is not a deployment preference but what "signal-preserving" costs: each summary supersedes its predecessor and nominates it for deletion, and the compaction merge is filtered to the summary and the deletions alone (§2.6), so a prior compactor's reasoning never enters the dispatching branch's transcript. A summary the compactor cannot see is a summary it *destroys* when it supersedes it — lost signal dressed as compaction.
+- **The dispatching branch's goal**, which the compactor decides relevance against. It reaches the compactor by *quotation*: the compaction dispatch reads that branch's `goal.md` and interpolates it into the compactor's own boilerplate goal, which the system slot then composes (§2.3). No second channel and no new path — the child's own `goal.md` *is* that boilerplate, so the parent's goal has no other route in, and the source file is written once and never rewritten (§2.8), so the quote cannot drift from it.
+
+**And nothing else is named.** Work products are out of both the entry and the prose: they are "everything else" in the tree, with no honest glob, and a view of the branch's *history* is not a restatement of its outputs — the acts that produced them are already transcript entries, and §2.6 keeps the products themselves out of the compaction product entirely. Spent `skills/` bodies stay nominable without being composed: `load_skill` returns the worktree path it wrote (§3.3), so the transcript names every loaded body at a fraction of its bytes. So **the compactor gains no read tool**: with nothing it is told to read left uncomposed, a general filesystem-read surface would buy nothing and would put a grant on the one role whose empty grant is what makes its two-tool ceiling exact (`compactor::injected`).
 
 **Declared is not callable.** That inherited view is also inherited *history*: the compactor forks with the dispatching branch's transcript in its tree (§2.3 *Fork and inheritance*), and the checkpoint clock is read closing a tool step (§6), so the history a compactor ships to the provider routinely contains `tool_use` / `tool_result` pairs for tools that are not its two. A provider validates the request as a whole and refuses one whose history names a tool the `tools: [...]` array omits, so the compactor's request **declares** those inherited tools alongside its own pair (§3.3 *Tools-list assembly*, closure). It does not gain them: a compactor reaching for an inherited tool is declined in-band — an `is_error` `tool_result` naming its own two tools, the executor never entered — so "the compactor can only summarize and delete" stays structural. The alternative, rewriting or textualizing the inherited `tool_use` blocks to fit the two-tool array, is rejected outright: transcript entries are immutable (§2.3) and the wire framing is transcript-backed (§3.3), so it would make the model call disagree with the branch's own record.
 
@@ -836,7 +844,7 @@ The division is clean: **the worktree bounds what may compose; the manifest deci
 Consequences:
 
 - A file reaches the model only if it is **both** in the worktree and named by the role's manifest entry. Neither half alone suffices, so a new context-bearing path is not delivered by writing it into the tree: the roles that must see it have to pin or order it. An implementer reasoning about what a fork sees checks both.
-- Work products are ordinarily *not* in context. Under the shipped `worker` entry (pinned `goal.md`, `soul.md`, `descriptions/**`; order `summary/**`, `skills/**`, §5.2) a `feature.txt` the agent writes is in the tree and out of the prompt. (`name` is the exception that proves the split: it composes on every call, but through the system slot's structural home — §2.8 — not because any list names it.) The cost is small because an agent reaches its own files with `read_file` / `bash` at the moment it wants them; the cost is not zero for a role whose grant has no read tool (§2.7).
+- Work products are ordinarily *not* in context. Under the shipped `worker` entry (pinned `goal.md`, `soul.md`, `descriptions/**`; order `summary/**`, `skills/**`, §5.2) a `feature.txt` the agent writes is in the tree and out of the prompt. (`name` is the exception that proves the split: it composes on every call, but through the system slot's structural home — §2.8 — not because any list names it.) The cost is small because an agent reaches its own files with `read_file` / `bash` at the moment it wants them; the cost is not zero for a role whose grant has no read tool, which is why such a role's entry must name everything its goal tells it to read (the compactor, §2.7).
 - Agents curate their own context by `rm` (§5.3). Deletion is the direction that always works: a file removed from the tree drops out of every selection, whatever the manifest says. The primitive they need already exists in the filesystem.
 - The compactor's `mark_for_deletion` operates on worktree paths and takes effect on the next assembly.
 - Control files (`manifest.yaml`, `workflow.yaml`, `providers.yaml`, `souls/`, `version`) are read from the immutable config commit (§2.2) and are absent from every agent worktree — never composed. This is structural, not disciplinary: the path is not under the worktree root, so no pattern can reach it. (`steps/` and `inbox/` are outside the same way, by living at the workspace root, §2.2.)
@@ -874,14 +882,16 @@ roles:
     pinned:
       - goal.md
       - soul.md
-    order: []
+    order:
+      - summary/**
     # The compactor's inherited worktree — forked off the checkpoint
     # commit — carries the dispatching branch's transcript, summaries,
-    # and work products (§2.3, §2.6, §2.7), but this entry selects only
-    # goal, soul and the unconditional transcript tail: with `order`
-    # empty, the summaries and work products in that tree compose
-    # nowhere (§5.1). Selection is per-role policy; a deployment that
-    # wants them in view adds the category here.
+    # and work products (§2.3, §2.6, §2.7); this entry selects the
+    # summary chain, and the transcript tail rides unconditionally.
+    # Together they are the branch's history, which is the compactor's
+    # whole subject (§2.7). The work products in that tree compose
+    # nowhere (§5.1), deliberately. Selection is per-role policy; a
+    # deployment that wants more in view adds the category here.
     budget_tokens: 50000
     overflow: truncate
 ```

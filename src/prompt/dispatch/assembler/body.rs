@@ -9,9 +9,11 @@
 //! one path-framed text block (§5.3 file path as hint).
 //!
 //! Material whose wire home is structural never composes here (§5.1
-//! consequences, §2.3, §3.3): `goal.md` and `soul.md` ride the system
-//! slot ("Goal and soul are pinned files, not sequence item zero",
-//! §2.3), `descriptions/tools/**` — and every skill description a tool
+//! consequences, §2.3, §3.3): `goal.md`, `name` and `soul.md` ride the
+//! system slot ("Goal and soul are pinned files, not sequence item
+//! zero", §2.3 — the name as the identity line
+//! [`crate::prompt::dispatch::step_commit::compose_system`] derives),
+//! `descriptions/tools/**` — and every skill description a tool
 //! claims ([`tool_backed`]) — rides the tools array (§3.3 tools-list
 //! assembly), and `messages/**` is the transcript tail, always last
 //! (§5.2). The rest of `descriptions/**` is Description-always'
@@ -38,8 +40,12 @@ const BYTES_PER_TOKEN: u64 = 4;
 
 /// Transcript home (§2.3): never head or body material.
 const TRANSCRIPT_DIR: &str = "messages";
-/// Pinned files whose wire home is the system slot (§2.3).
-const SYSTEM_SLOT: &[&str] = &["goal.md", "soul.md"];
+/// Pinned files whose wire home is the system slot (§2.3): the goal, the
+/// agent's `name` — composed there as the identity line
+/// ([`crate::prompt::dispatch::step_commit::compose_system`]) — and the
+/// role's soul. Naming one of these in a role's `pinned` or `order`
+/// therefore adds nothing; it must not send it twice.
+const SYSTEM_SLOT: &[&str] = &["goal.md", "name", "soul.md"];
 /// Committed tool schemas (§3.3): their wire home is the tools array.
 const TOOLS_DESC_DIR: &str = "descriptions/tools";
 /// Committed skill frontmatter (§3.3 Description-always), one

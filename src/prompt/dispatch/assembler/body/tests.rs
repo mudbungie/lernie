@@ -74,12 +74,14 @@ fn an_unreadable_selected_file_surfaces_io_error() {
 
 #[test]
 fn structurally_homed_trees_never_compose_as_body_text() {
-    // goal.md/soul.md (system slot, §2.3), descriptions/tools/** and
-    // the skill descriptions those tools claim (tools array, §3.3),
-    // messages/** (transcript tail, §5.2), .git — all invisible even to
-    // a catch-all glob.
+    // goal.md/name/soul.md (system slot, §2.3 — the name as the identity
+    // line §2.8 derives), descriptions/tools/** and the skill
+    // descriptions those tools claim (tools array, §3.3), messages/**
+    // (transcript tail, §5.2), .git — all invisible even to a catch-all
+    // glob, so nothing with a structural home is ever sent twice.
     let wt = TempDir::new().unwrap();
     write(wt.path(), "goal.md", b"goal");
+    write(wt.path(), "name", b"pale-otter\n");
     write(wt.path(), "soul.md", b"soul");
     write(wt.path(), "messages/001-user.md", b"hi");
     write(wt.path(), "descriptions/tools/bash.json", b"{}");

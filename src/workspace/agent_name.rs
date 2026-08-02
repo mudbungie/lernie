@@ -116,6 +116,20 @@ pub fn read(workspace: &Path, agent_id: &str, git: &dyn GitRunner) -> Option<Str
     (!out.is_empty()).then_some(out)
 }
 
+/// The name committed in `worktree`, or `None` for an unnamed agent —
+/// the read **context assembly** makes (ARCH §2.3, §5.1). Same single
+/// fact as [`read`], reached by the route each caller is entitled to:
+/// [`read`] answers *about* an agent from outside, off the `agents/*`
+/// registry, while the system slot is composed for the agent whose tree
+/// is in hand and must stay a pure function of that tree, so it reads
+/// the file (§5.1 — one input; replay resolves the same bytes). Two
+/// queries on one home, never a second copy.
+pub fn in_worktree(worktree: &Path) -> Option<String> {
+    let body = std::fs::read_to_string(worktree.join(NAME_FILE)).ok()?;
+    let name = body.trim();
+    (!name.is_empty()).then(|| name.to_owned())
+}
+
 /// Every named agent in the workspace, as `(agent id, name)` — the
 /// `agents/*` enumeration (§2.3) with each ref's name read out of its own
 /// tree. Unnamed agents are simply absent: the general path with empty

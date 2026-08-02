@@ -46,8 +46,8 @@ use brazen::Content;
 use model_call::ModelCall;
 use std::path::Path;
 use step_commit::{
-    commit_dispatch, prepend_goal, read_branch_tip, spawn_branch, write_dispatch_files, write_meta,
-    write_request,
+    commit_dispatch, compose_system, read_branch_tip, spawn_branch, write_dispatch_files,
+    write_meta, write_request,
 };
 use tool_step::run_tool_calls;
 
@@ -94,7 +94,12 @@ pub(super) fn run_exchange(
     // step-1 drain — the same path any reprompt takes.
     inbox::deposit(repo, &conv_id, inbox::USER_SENDER, user_message, deps.clock)?;
 
-    let system_with_goal = prepend_goal(user_message, &resolved.soul);
+    // The system slot (§2.3, §5.2): goal, identity, soul. The goal and
+    // the name are the ones this start was given — the same values the
+    // dispatch commit below writes to `goal.md` and `name`, so the slot
+    // and the tree state one fact, not two (§2.10 replay re-reads the
+    // tree and reproduces this byte-for-byte).
+    let system_with_goal = compose_system(user_message, name, &resolved.soul);
 
     let call = ModelCall {
         adapter: deps.adapter,

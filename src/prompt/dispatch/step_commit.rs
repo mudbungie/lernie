@@ -18,6 +18,8 @@
 //! not committed to git").
 
 mod descriptors;
+#[cfg(test)]
+mod tests;
 mod unsettled;
 
 pub(crate) use descriptors::{Grant, Undescribed, require_described};
@@ -74,13 +76,24 @@ pub(super) fn spawn_branch(
         })
 }
 
-/// Prepend the branch's goal to the role's soul so it sits at the head of
-/// assembled context (ARCH §2.8). The system slot *is* the pinned-head
-/// wire home for `goal.md`/`soul.md` (§2.3 "Goal and soul are pinned
-/// files", §5.2): manifest-driven assembly composes them through here,
-/// never as body text.
-pub(super) fn prepend_goal(goal: &str, soul: &str) -> String {
-    format!("<goal>\n{goal}\n</goal>\n\n{soul}")
+/// Compose the system slot: the branch's goal, the agent's identity when
+/// it has a name, then the role's soul. The system slot *is* the
+/// pinned-head wire home for `goal.md`, `name` and `soul.md` (§2.3 "Goal
+/// and soul are pinned files", §5.2 structural wire homes): assembly
+/// composes all three through here, never as body text.
+///
+/// The goal leads, so it stays pinned at the head of every model call on
+/// the branch (§2.8). The identity line is **derived here from the name
+/// fact, never stored a second time** (§2.3 — the `name` file is the one
+/// home; `docs/PRINCIPLES.md` single source of truth), and it states the
+/// name and nothing else: no instruction rides an identity (§2.8 — the
+/// name is who the agent is, not what it is to do). An unnamed agent
+/// states nothing, and its slot is byte-identical to what a nameless
+/// harness composed — the general path with empty inputs, not a second
+/// shape.
+pub(super) fn compose_system(goal: &str, name: Option<&str>, soul: &str) -> String {
+    let identity = name.map_or_else(String::new, |n| format!("Your name is {n}.\n\n"));
+    format!("<goal>\n{goal}\n</goal>\n\n{identity}{soul}")
 }
 
 /// Step 1: write `goal.md` + `soul.md` to the worktree root. Step

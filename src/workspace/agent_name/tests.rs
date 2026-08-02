@@ -2,7 +2,9 @@
 //! dispatch commit, read back out of the ref, unique at creation, and
 //! resolved id-or-unique-name with ambiguity refused.
 
-use super::{Unavailable, is_id_timestamp, named, read, require_available, resolve, settle};
+use super::{
+    Unavailable, in_worktree, is_id_timestamp, named, read, require_available, resolve, settle,
+};
 use crate::template::{GitRunner, RealGit};
 use crate::workspace::fixture;
 use std::path::Path;
@@ -34,6 +36,31 @@ fn a_settled_name_reads_back_off_the_ref_and_an_unnamed_agent_reads_as_none() {
         vec![(ID_A.to_string(), "pale-otter".to_string())],
         "the enumeration carries the named agents and only those",
     );
+}
+
+#[test]
+fn the_tree_read_and_the_ref_read_answer_the_same_one_fact() {
+    let (_h, ws) = fixture::workspace();
+    let git = RealGit::new();
+    let named_wt = fixture::spawn_root(&ws, ID_A);
+    // An unsettled worktree has no `name` file at all — the read is
+    // total over that too, no "not yet dispatched" special case.
+    assert_eq!(in_worktree(&named_wt), None, "an absent file is unnamed");
+    settle(&named_wt, Some("pale-otter"), &git).unwrap();
+    git.run(&named_wt, &["commit", "-m", "settle name"])
+        .unwrap();
+    let unnamed_wt = fixture::spawn_root(&ws, ID_B);
+    settle(&unnamed_wt, None, &git).unwrap();
+    git.run(&unnamed_wt, &["commit", "-m", "settle name"])
+        .unwrap();
+
+    // The stored blob carries `settle`'s trailing newline; the tree read
+    // hands back the name itself, exactly as the ref read does — one
+    // fact, two routes, no disagreement for the system slot to inherit.
+    assert_eq!(in_worktree(&named_wt).as_deref(), Some("pale-otter"));
+    assert_eq!(in_worktree(&named_wt), read(&ws, ID_A, &git));
+    assert_eq!(in_worktree(&unnamed_wt), None, "an empty blob is unnamed");
+    assert_eq!(in_worktree(&unnamed_wt), read(&ws, ID_B, &git));
 }
 
 #[test]

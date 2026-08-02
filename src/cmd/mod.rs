@@ -92,7 +92,9 @@ pub enum Command {
     /// to `default`. `--from <source>` forks a new `config/<name>` off
     /// `config/<source>`; `--orphan` starts a fresh lineage.
     Config(config::Args),
-    /// Send one user message on a fresh root branch; prints its name.
+    /// Send one user message on a fresh root branch; prints the new
+    /// agent's **id** (§2.3) — not its `--name`, which is the optional
+    /// display fact and never a product.
     Prompt(prompt::Args),
     /// Dispatch a subagent (ARCH §2.5, §3.4). `<role>` is `compactor`
     /// (§2.7) or `worker` (§2.5); future roles slot in by name. `--goal`

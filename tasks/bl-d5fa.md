@@ -1,8 +1,13 @@
 +++
 title = "bound tool output committed to the transcript: head+tail cap with an honest truncation marker"
 created = 1785649530
-updated = 1785649530
+updated = 1785649843
+priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-ffc5"
+on = "claim"
 +++
 Source: codex comparison survey 2026-08-01 (openai/codex @ 2b5bdcf). VERIFY premises against the tree before editing.
 

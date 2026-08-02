@@ -1,12 +1,16 @@
 +++
 title = "the agent's name reaches the model through the assembled context, not as prose prepended to the first user message"
 created = 1785649286
-updated = 1785649286
+updated = 1785650226
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]
 id = "bl-c8ed"
+on = "claim"
+
+[[blockers]]
+id = "bl-b415"
 on = "claim"
 +++
 ## Operator ruling (2026-08-01, filed from yog operation)

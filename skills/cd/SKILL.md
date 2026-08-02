@@ -27,7 +27,8 @@ in (ARCH §3.3 *Working directory*).
 
 That is where the next tool call starts, and the one after it, until you
 `cd` again. Nothing else changes — no environment, no shell state, no
-files.
+files. The object arrives in the result envelope, after its
+`Exit code: N` line (below).
 
 ## Why this and not `cd` inside bash
 
@@ -76,6 +77,9 @@ the work is; write your product in your worktree.
   tool calls resume in your worktree rather than failing — you are never
   stranded somewhere that no longer exists.
 
-The tool's stderr is concatenated after stdout into the
-`tool_result.content` on failure (ARCH §3.3 stdio contract), so the exact
-reason reaches you in the next step's request.
+Every result is a §3.3 **result envelope**: an `Exit code: N` line
+first, then the output described above, then — whenever the tool wrote
+any, on success as well as failure — its stderr under a
+`--- stderr ---` marker. So the exact reason for a decline reaches you
+in the next step's request, and the stated code tells you which decline
+it was.

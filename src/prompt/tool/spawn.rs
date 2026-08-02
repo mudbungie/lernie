@@ -24,7 +24,7 @@ use caller::Caller;
 use super::subprocess::{SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
-    ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, tool_call_dir,
+    ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, envelope, tool_call_dir,
 };
 use crate::prompt::Clock;
 use crate::template::{GitRunner, RealGit};
@@ -191,11 +191,8 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             None => return Err(killed_by_signal(call.name, &captured.status)),
         };
 
-        let mut content = captured.stdout.clone();
+        let content = envelope::render(exit_code, &captured.stdout, &captured.stderr);
         let is_error = exit_code != 0;
-        if is_error {
-            content.extend_from_slice(&captured.stderr);
-        }
 
         let output_record = ToolOutputRecord {
             stdout: String::from_utf8_lossy(&captured.stdout).into_owned(),

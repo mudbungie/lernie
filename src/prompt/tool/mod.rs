@@ -26,6 +26,7 @@ use std::time::Duration;
 use thiserror::Error;
 
 pub mod builtin;
+mod envelope;
 pub mod spawn;
 mod subprocess;
 
@@ -90,9 +91,14 @@ pub struct ToolCall<'a> {
 /// "Wire `tool_result` framing is application-layer".
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ToolOutcome {
-    /// Bytes destined for the `tool_result.content` field. Stdout
-    /// always; per §3.3 stderr is concatenated *after* stdout when the
-    /// tool exits non-zero so the agent sees the failure message.
+    /// Bytes destined for the `tool_result.content` field. For a tool
+    /// the executor ran, this is the §3.3 *result envelope*
+    /// ([`envelope::render`]): the exit code stated, the child's stdout,
+    /// and its stderr under a marker whenever the child wrote any —
+    /// success included. A call declined before the executor was entered
+    /// (§3.3 *declaring is not permitting*) carries the harness's own
+    /// decline text instead: no child ran, so there is no exit code to
+    /// state and none is invented.
     pub content: Vec<u8>,
     /// Maps to `tool_result.is_error` per §3.3: `false` for exit 0,
     /// `true` otherwise.

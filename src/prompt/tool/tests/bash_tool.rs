@@ -8,11 +8,11 @@
 //! 2. `is_error` is `false` on a zero-exit command.
 //! 3. The per-call disk record lands at `<step>/tools/<tool-id>/`
 //!    with `input.json` and `output.json` per §3.3 "Disk record".
-//! 4. A failure mode (`false`) round-trips: `is_error: true`, stderr
-//!    concatenated after stdout in `tool_result.content`,
+//! 4. A failure mode (`false`) round-trips: `is_error: true`, the exit
+//!    code stated and stderr under its marker in `tool_result.content`,
 //!    `output.json.exit_code != 0`.
 
-use super::fixtures::StepDir;
+use super::fixtures::{StepDir, after_header};
 use crate::prompt::clock::SystemClock;
 use crate::prompt::tool::spawn::PathLookup;
 use crate::prompt::tool::{
@@ -84,7 +84,7 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
         .expect("execute succeeds");
 
     assert!(!outcome.is_error, "happy-path is_error should be false");
-    assert_eq!(outcome.content, b"hello-from-bash");
+    assert_eq!(outcome.content, b"Exit code: 0\nhello-from-bash");
 
     let dir = fixture
         .step
@@ -132,7 +132,9 @@ fn bash_writes_land_in_the_agents_worktree_not_the_launchers_cwd() {
         .expect("execute succeeds");
 
     assert!(!outcome.is_error, "write should succeed: {outcome:?}");
-    let reported = String::from_utf8_lossy(&outcome.content).trim().to_string();
+    let reported = String::from_utf8_lossy(after_header(&outcome.content))
+        .trim()
+        .to_string();
     assert_eq!(
         std::fs::canonicalize(reported).unwrap(),
         std::fs::canonicalize(&fixture.step.worktree).unwrap(),
@@ -149,7 +151,7 @@ fn bash_writes_land_in_the_agents_worktree_not_the_launchers_cwd() {
 }
 
 #[test]
-fn bash_failure_concats_stderr_and_marks_is_error() {
+fn bash_failure_states_its_exit_code_and_marks_stderr() {
     let fixture = Fixture::new();
 
     let clock = SystemClock;
@@ -177,7 +179,7 @@ fn bash_failure_concats_stderr_and_marks_is_error() {
     );
     assert!(
         content.contains("complaint"),
-        "stderr fragment should be concatenated after stdout: {content:?}",
+        "stderr fragment should follow stdout under its marker: {content:?}",
     );
 
     let dir = fixture

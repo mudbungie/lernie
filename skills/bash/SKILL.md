@@ -1,6 +1,6 @@
 ---
 name: bash
-description: "Run one shell command on this machine and read back what it printed. The shell is local: lernie is a command-line program the user runs, and your command executes on that same machine — their filesystem, their network, their user account. There is no server, container, or remote sandbox between you and it, so a question about this host (its IP, its disk, its toolchain) is answerable by just running the command. It is not an interactive terminal and there is no prompt waiting for you: each tool call runs exactly one `sh -c '<command>'` with stdin closed and no TTY, waits for it to exit, and hands back its output. Shell state does not carry over — a `cd`, an `export`, or a shell function is gone by the next tool call, so chain what must share state into one command string (`cd sub && make`) or use the `cd` tool to move for real — but files the command writes stay. Every command starts in your current working directory, which is your worktree unless you moved it with the `cd` tool; what you write in your worktree is committed onto your branch, what you write outside it is not. You get stdout; if the command exits non-zero its stderr is appended and the result is flagged as an error. Use it for filesystem inspection (`ls`, `find`, `head`), text processing (`grep`, `sed`, `awk`), version-control queries (`git log`), builds and tests, and anything else a dedicated tool does not cover."
+description: "Run one shell command on this machine and read back what it printed. The shell is local: lernie is a command-line program the user runs, and your command executes on that same machine — their filesystem, their network, their user account. There is no server, container, or remote sandbox between you and it, so a question about this host (its IP, its disk, its toolchain) is answerable by just running the command. It is not an interactive terminal and there is no prompt waiting for you: each tool call runs exactly one `sh -c '<command>'` with stdin closed and no TTY, waits for it to exit, and hands back its output. Shell state does not carry over — a `cd`, an `export`, or a shell function is gone by the next tool call, so chain what must share state into one command string (`cd sub && make`) or use the `cd` tool to move for real — but files the command writes stay. Every command starts in your current working directory, which is your worktree unless you moved it with the `cd` tool; what you write in your worktree is committed onto your branch, what you write outside it is not. The result always opens with a literal `Exit code: N` line — read it, since 1 (ran and failed), 127 (no such command) and 143 (cancelled) call for different next moves — followed by stdout, followed by stderr under a `--- stderr ---` marker whenever the command wrote any, on success as well as failure; no `2>&1` needed to see warnings from a command that succeeded. Use it for filesystem inspection (`ls`, `find`, `head`), text processing (`grep`, `sed`, `awk`), version-control queries (`git log`), builds and tests, and anything else a dedicated tool does not cover."
 ---
 
 # bash
@@ -69,11 +69,31 @@ are committed onto your branch.
 
 ## Output
 
-Stdout from the command is surfaced as the `content` of the matching
-`tool_result` block. When the command exits non-zero, stderr is
-concatenated after stdout and `is_error` is set, so the model sees
-the failure message in the next step's request. On a zero exit stderr
-is *not* surfaced — redirect it (`2>&1`) when you need to read it.
+The `content` of the matching `tool_result` block is the command's
+**result envelope** (ARCH §3.3) — always the same three parts, in order:
+
+```
+Exit code: 0
+<everything the command wrote to stdout>
+--- stderr ---
+<everything it wrote to stderr>
+```
+
+- **The exit code is always stated**, on the first line, on success as
+  well as failure. Read it: `1` means the command ran and failed, `127`
+  means it does not exist (a typo, or a tool that is not installed),
+  `143` means the harness cancelled it. Those are three different next
+  moves, and the `is_error` flag alone cannot tell them apart.
+- **Stdout follows verbatim.**
+- **Stderr follows under `--- stderr ---` whenever the command wrote
+  any**, including on a zero exit — so compiler warnings, deprecation
+  notices and progress logs from a *successful* command reach you. The
+  marker line is absent when stderr was empty. You do not need `2>&1`
+  to see stderr; use it only when you want the two interleaved in their
+  original order, which separate capture cannot preserve.
+
+`is_error` is set on any non-zero exit, but treat the stated exit code
+as the authoritative fact — it survives every provider's wire format.
 
 ## When to use
 
@@ -98,8 +118,8 @@ is *not* surfaced — redirect it (`2>&1`) when you need to read it.
 
 ## Failure modes
 
-- Non-zero exit from the command — `is_error: true`; stderr appended
-  to stdout in `tool_result.content`.
+- Non-zero exit from the command — `is_error: true`, the code stated on
+  the envelope's first line, stderr under its marker.
 - Malformed input JSON (missing `command`, wrong type, extra fields)
   → `is_error: true` with the message on stderr.
 - SIGTERM cascade — when the *harness* is cancelled (`lernie stop`,
@@ -107,9 +127,9 @@ is *not* surfaced — redirect it (`2>&1`) when you need to read it.
   by `sh`, then SIGKILL after the grace period. That is a
   cancellation, not a timeout: nothing kills a command for merely
   taking a long time. The reaped child's signal is reported as
-  `128 + signo` (POSIX convention), so a clean cancel surfaces as exit
-  code 143.
+  `128 + signo` (POSIX convention), so a clean cancel surfaces on the
+  envelope's first line as `Exit code: 143`.
 
-The tool's stdio contract follows ARCH §3.3 verbatim — stdout is the
-result on success, stderr concatenates on failure, and `is_error`
-mirrors the exit code.
+The tool's stdio contract follows ARCH §3.3 verbatim — the result
+envelope states the exit code, carries stdout, and marks off stderr
+whenever there is any, with `is_error` mirroring the exit code.

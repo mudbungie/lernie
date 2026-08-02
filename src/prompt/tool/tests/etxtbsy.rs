@@ -15,7 +15,9 @@
 //! bl-7a3f).
 
 use super::super::{ExecError, SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target, write_script};
+use super::fixtures::{
+    FixedClock, HarnessRoot, StepDir, after_header, driver_target, write_script,
+};
 use serde_json::json;
 use std::sync::atomic::AtomicBool;
 use tempfile::TempDir;
@@ -104,7 +106,7 @@ fn spawn_retries_past_transient_etxtbsy() {
         .expect("a million-attempt budget rides out the hold on any machine");
     holder.join().unwrap();
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"unblocked\n");
+    assert_eq!(after_header(&outcome.content), b"unblocked\n");
 }
 
 #[test]

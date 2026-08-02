@@ -15,6 +15,7 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- every tool result now carries a result envelope — the exit code stated on its first line, stdout, then stderr under a `--- stderr ---` marker whenever the tool wrote any, on success as well as failure; a model can tell exit 1 from 127 from 143, and a warning from a command that exited 0 is no longer dropped [bl-ffc5]
 - guard the seeded `models.yaml`/`providers.yaml` provider names against brazen's actual resolved table in CI, so a shipped row brazen can't serve fails a test instead of an operator's first dispatch [bl-9391]
 - agent naming becomes a first-class fact: --name at prompt/dispatch, stored under the agent; message resolves id-or-unique-name [bl-c8ed]
 

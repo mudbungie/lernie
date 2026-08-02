@@ -97,7 +97,28 @@ fn the_bash_description_says_where_it_runs_and_what_survives() {
             "use the `cd` tool to move for real",
             "your worktree unless you moved it with the `cd` tool",
             "what you write outside it is not",
-            "if the command exits non-zero its stderr is appended",
+        ],
+        "bash tool description",
+    );
+}
+
+/// The §3.3 *result envelope* (bl-ffc5) is a promise about the wire, so
+/// the description must make it: a model told only `is_error` cannot
+/// tell exit 1 from exit 127 from the cancel's 143, and stderr on a
+/// zero exit — the compiler warning, the deprecation notice — used to
+/// be dropped entirely, leaving `2>&1` as the only way to see it. Codex
+/// states the code in the content for the same reason, and gpt-5.x is
+/// tuned to read it there. What the description promises here is what
+/// `prompt::tool::envelope::render` delivers; the two are pinned apart
+/// on purpose, so a change to either without the other fails.
+#[test]
+fn the_bash_description_promises_the_result_envelope() {
+    asserts(
+        &wire_description("bash"),
+        &[
+            "`Exit code: N` line",
+            "`--- stderr ---` marker",
+            "on success as well as failure",
         ],
         "bash tool description",
     );
@@ -141,6 +162,8 @@ fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
             "no TTY",
             "starts in your current working directory",
             "discarded when it exits",
+            "states the exit code on its first line",
+            "`--- stderr ---` marker",
         ],
         "bash command-property description",
     );

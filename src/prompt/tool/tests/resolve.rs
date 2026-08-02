@@ -4,7 +4,9 @@
 
 use super::super::spawn::{EnvPath, PathLookup, which_in_path_env};
 use super::super::{SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target, write_script};
+use super::fixtures::{
+    FixedClock, HarnessRoot, StepDir, after_header, driver_target, write_script,
+};
 use serde_json::json;
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -40,7 +42,7 @@ fn resolves_external_from_harness_root_first() {
         .unwrap();
     assert!(installed.is_file(), "installed script vanished");
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"from-harness-root\n");
+    assert_eq!(after_header(&outcome.content), b"from-harness-root\n");
 }
 
 #[test]
@@ -109,7 +111,7 @@ fn resolves_external_via_path_when_harness_root_misses() {
         )
         .unwrap();
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"hit-via-path\n");
+    assert_eq!(after_header(&outcome.content), b"hit-via-path\n");
 }
 
 #[test]
@@ -141,5 +143,5 @@ fn falls_back_to_the_injected_driver_target_when_external_missing() {
     // built per §3.3 ("addressed as `lernie tool <name>`") against the
     // *injected* target — not `current_exe`, which under this test
     // binary (and under a linked host) is a different image entirely.
-    assert_eq!(outcome.content, b"tool greet\n");
+    assert_eq!(after_header(&outcome.content), b"tool greet\n");
 }

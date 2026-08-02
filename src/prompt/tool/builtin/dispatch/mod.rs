@@ -1,7 +1,7 @@
 //! `dispatch` built-in (ARCH §2.5, §3.3, §3.4).
 //!
 //! Stdin is the `tool_use.input` block as JSON: `{ "role": <string>,
-//! "goal": <string> }`. The conversation context (which workspace,
+//! "goal": <string>, "name": <string|absent> }`. The conversation context (which workspace,
 //! which calling branch) arrives via the `LERNIE_CONV_REPO` and
 //! `LERNIE_CONV_BRANCH` env vars the executor sets per ARCH §3.3 — it
 //! is not in the model-facing input schema because the model does not
@@ -34,6 +34,12 @@ use thiserror::Error;
 struct Input {
     role: String,
     goal: String,
+    /// The child's optional display name (ARCH §2.3, §2.11), forwarded
+    /// as `lernie dispatch --name`. Absent is the ordinary case; a name
+    /// that is malformed or already worn is declined by the verb, so the
+    /// model sees the refusal verbatim (§3.3) and no child is created.
+    #[serde(default)]
+    name: Option<String>,
 }
 
 /// Wire shape of the output — the `tool_result.content` payload the
@@ -109,15 +115,16 @@ pub enum Error {
 /// [`SubprocessSpawner`]; tests inject a stub that fabricates the
 /// stdout (sub-branch name) without spawning a real subprocess.
 pub trait Spawner {
-    /// Run `lernie dispatch <role> <repo> <branch> --goal <goal>` and
-    /// return the captured stdout (which Phase 1's CLI sets to the
-    /// new sub-branch name on the worker role).
+    /// Run `lernie dispatch <role> <repo> <branch> --goal <goal>
+    /// [--name <name>]` and return the captured stdout (which Phase 1's
+    /// CLI sets to the new sub-branch name on the worker role).
     fn dispatch(
         &self,
         role: &str,
         repo: &Path,
         branch: &str,
         goal: &str,
+        name: Option<&str>,
     ) -> Result<DispatchOutput, io::Error>;
 }
 
@@ -160,13 +167,17 @@ impl Spawner for SubprocessSpawner {
         repo: &Path,
         branch: &str,
         goal: &str,
+        name: Option<&str>,
     ) -> Result<DispatchOutput, io::Error> {
-        let out = Command::new(&self.exe)
-            .args(["dispatch", role])
+        let mut cmd = Command::new(&self.exe);
+        cmd.args(["dispatch", role])
             .arg(repo)
             .arg(branch)
-            .args(["--goal", goal])
-            .output()?;
+            .args(["--goal", goal]);
+        if let Some(name) = name {
+            cmd.args(["--name", name]);
+        }
+        let out = cmd.output()?;
         Ok(DispatchOutput {
             stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
             stderr: String::from_utf8_lossy(&out.stderr).into_owned(),
@@ -224,7 +235,13 @@ pub fn run<R: Read, W: Write>(
     )?;
 
     let captured = dispatcher
-        .dispatch(&input.role, &repo_path, &branch_str, &input.goal)
+        .dispatch(
+            &input.role,
+            &repo_path,
+            &branch_str,
+            &input.goal,
+            input.name.as_deref(),
+        )
         .map_err(|source| Error::Spawn {
             role: input.role.clone(),
             source,

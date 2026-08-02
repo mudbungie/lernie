@@ -1,26 +1,33 @@
 ---
 name: message
-description: Deposit a message into an existing agent's inbox — the user, your parent, a child you dispatched, a sibling, or yourself. The message is delivered at the recipient's next step boundary; if the recipient is quiescent, the deposit wakes it. Use to steer a running child, report upward to a parent, or leave yourself a note — content addressed to an agent that already exists, not a new dispatch.
+description: Deposit a message into an existing agent's inbox — the user, your parent, a child you dispatched, a sibling, or yourself. Address the recipient by its agent id or by its unique display name. The message is delivered at the recipient's next step boundary; if the recipient is quiescent, the deposit wakes it. Use to steer a running child, report upward to a parent, or leave yourself a note — content addressed to an agent that already exists, not a new dispatch.
 ---
 
 # message
 
 Deposits content into an existing agent's inbox (ARCH §2.11). Unlike
 `dispatch`, it starts no new agent and creates no branch — the recipient
-must already exist, addressed by its agent id. Delivery happens at the
-recipient's next step boundary; a message to a quiescent agent revives
-it. The deposit is synchronous and returns immediately.
+must already exist, addressed by its agent id or by its display name.
+Delivery happens at the recipient's next step boundary; a message to a
+quiescent agent revives it. The deposit is synchronous and returns
+immediately.
 
 ## Input
 
 ```json
-{ "agent": "<agent-id>", "content": "<message text>" }
+{ "agent": "<agent-id-or-name>", "content": "<message text>" }
 ```
 
-- `agent` — the recipient's id (its full hyphenated descent, which is
-  also its branch name and address). A child's id is the handle its
-  dispatch returned; your parent's id is your own id minus its last
-  segment; your own id is a legal recipient (a note to self).
+- `agent` — the recipient, addressed either way:
+  - **by id** — its full hyphenated descent, which is also its branch
+    name. A child's id is the handle its dispatch returned; your
+    parent's id is your own id minus its last segment; your own id is a
+    legal recipient (a note to self).
+  - **by display name** — the name an agent was dispatched with, if it
+    has one. It resolves only when exactly one living agent wears it; a
+    name worn by two is refused, naming the candidate ids, and never
+    guessed. Names and ids never collide: a name can never begin like an
+    id.
 - `content` — the message body, delivered verbatim as a user-role
   entry in the recipient's transcript.
 

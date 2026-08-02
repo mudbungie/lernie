@@ -3,7 +3,8 @@
 //! Every dispatched subagent — compactor (§2.7), worker (§2.5) — starts
 //! with the same on-disk shape: a branch off the parent's tip, a sibling
 //! worktree at `<conv-repo>/<full-descent>/` (§2.2), `goal.md` (and, for
-//! roles with a per-call soul, `soul.md`) at the worktree root, all
+//! roles with a per-call soul, `soul.md`) at the worktree root, the
+//! agent's `name` settled by the trim (§2.3), all
 //! committed as the dispatch commit. ARCH §2.5 calls dispatch "the
 //! primitive"; this module is its in-process realization, shared between
 //! the role-specific entry points.
@@ -52,6 +53,13 @@ pub(crate) struct SpawnRequest<'a> {
     pub(crate) fork_point: Option<&'a str>,
     /// Goal text written to `<sub_worktree>/goal.md` and committed.
     pub(crate) goal_text: &'a str,
+    /// The child's **name** (ARCH §2.3, §2.11) — its display fact,
+    /// settled onto `<sub_worktree>/name` by the dispatch commit's trim
+    /// ([`crate::prompt::dispatch::trim_to_context`]). `None` for an
+    /// unnamed child, which is every harness-initiated dispatch: a
+    /// compactor and a verifier are procedure children, not agents an
+    /// operator speaks to by name.
+    pub(crate) name: Option<&'a str>,
     /// Soul text written to `<sub_worktree>/soul.md` when supplied.
     /// `None` for roles whose dispatch has no per-call soul (e.g. the
     /// v0.3 compactor stub: no model call, so no soul to compose).
@@ -121,7 +129,7 @@ pub(crate) fn spawn_subagent_branch(
     // explicit `create_dir_all` is here for stub-git tests (and is a
     // harmless no-op in production since the directory already exists).
     std::fs::create_dir_all(req.sub_worktree)?;
-    crate::prompt::dispatch::trim_to_context(req.sub_worktree, req.grant, git)?;
+    crate::prompt::dispatch::trim_to_context(req.sub_worktree, req.grant, req.name, git)?;
     std::fs::write(req.sub_worktree.join(GOAL_FILE), req.goal_text)?;
     if let Some(soul) = req.soul_text {
         std::fs::write(req.sub_worktree.join(SOUL_FILE), soul)?;

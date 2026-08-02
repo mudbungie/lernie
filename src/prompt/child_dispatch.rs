@@ -90,6 +90,13 @@ pub struct ChildDispatchRequest<'a> {
     /// The goal / dispatch message. Written verbatim to the child's
     /// `goal.md` and deposited as its first inbox message.
     pub goal: &'a str,
+    /// The child's optional **name** (ARCH §2.3, §2.11): the display
+    /// fact, committed to the child's `name` on its dispatch commit and
+    /// immutable thereafter, exactly like the goal (§2.8). Checked for
+    /// availability before the fork, below, so a taken or malformed name
+    /// leaves no branch behind. `None` for every harness-initiated
+    /// dispatch (compactor, verifier) — those are procedure children.
+    pub name: Option<&'a str>,
     /// The ref the child forks off (ARCH §2.3). `None` is the ordinary
     /// child dispatch off the parent's tip (§2.5); `Some(ref)` forks off
     /// another ref — a verifier off the worker's terminal ref (§6 gate) —
@@ -119,6 +126,12 @@ pub fn run(
     id_gen: &dyn IdGen,
     launcher: &dyn Launcher,
 ) -> Result<String, Error> {
+    // Name availability, pre-flighted like role validity and the §6
+    // budget gate (§2.3): the fact's own home enforces its uniqueness, and
+    // a refusal here leaves no branch, no worktree and no inbox behind.
+    if let Some(name) = req.name {
+        crate::workspace::agent_name::require_available(req.repo, name, git)?;
+    }
     let sub_id = format!("{}-{}", clock.now_compact(), id_gen.short());
     // Hyphenated descent (§2.3): the child's id and worktree share the
     // `<parent>-<sub-id>` name; the `agents/` ref prefix is applied at
@@ -200,6 +213,7 @@ pub fn run(
             sub_worktree: &sub_worktree,
             fork_point: req.fork_point,
             goal_text: req.goal,
+            name: req.name,
             soul_text: Some(&soul),
             grant: &grant,
             commit_subject: &commit_subject,

@@ -70,6 +70,7 @@ pub(super) fn dispatch(
         parent_worktree: worktree,
         role: VERIFIER_ROLE,
         goal: &goal,
+        name: None,
         fork_point: Some(&worker.terminal_ref),
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
@@ -134,6 +135,7 @@ fn reject(
         parent_worktree: worktree,
         role: WORKER_ROLE,
         goal: &feedback,
+        name: None,
         fork_point: None,
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;

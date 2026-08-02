@@ -49,6 +49,7 @@ fn exhausted_conversation_stops_before_next_model_call_and_marks_the_ref() {
     let branch = run(
         repo.path(),
         "go",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -104,6 +105,7 @@ fn unbounded_workflow_never_triggers_a_budget_stop() {
     run(
         repo.path(),
         "go",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -152,13 +154,14 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(25);
+    let git = StubGit::failing_at(26);
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 
     let err = run(
         repo.path(),
         "go",
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

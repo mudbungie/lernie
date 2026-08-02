@@ -114,6 +114,7 @@ fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, String) {
             parent_worktree: &parent_wt,
             role: "worker",
             goal: "do it",
+            name: None,
             fork_point: None,
         },
         &RealGit::new(),

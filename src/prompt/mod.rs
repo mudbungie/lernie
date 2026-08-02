@@ -55,6 +55,7 @@ pub use pin::brazen_pin;
 pub use tool::{ExecError, SpawnTool, ToolExecutor};
 
 use crate::template::GitRunner;
+use crate::workspace::agent_name as name_fact;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -177,6 +178,9 @@ pub enum Error {
     /// refused at the fork rather than composed into a smaller toolset.
     #[error(transparent)]
     GrantUndescribed(#[from] dispatch::Undescribed),
+    /// A `--name` malformed, id-shaped or taken (§2.3) — refused pre-fork.
+    #[error(transparent)]
+    NameUnavailable(#[from] crate::workspace::agent_name::Unavailable),
     /// The hop's target has no `agents/*` ref — the shared existence
     /// decline ([`crate::workspace::require_agent`]), fired *before* the
     /// lease so the refusal leaves no inbox directory behind. It is
@@ -286,9 +290,11 @@ pub struct Deps<'a> {
 /// §2.3), run the load-time version guard, spawn the agent branch, and
 /// drive the step loop through `bz`. Returns the agent id (the full
 /// hyphenated descent — the branch ref is `agents/<id>`, ARCH §2.3).
-pub fn run(repo: &Path, user_message: &str, deps: &Deps<'_>) -> Result<String, Error> {
+/// `name` is the root's display name (§2.3), checked at the fork pre-flight.
+pub fn run(repo: &Path, msg: &str, name: Option<&str>, deps: &Deps<'_>) -> Result<String, Error> {
     crate::workspace::require(repo)?;
+    name.map_or(Ok(()), |n| name_fact::require_available(repo, n, deps.git))?;
     let source = resolve::ConfigSource::ConfigBranch(crate::workspace::DEFAULT_CONFIG_REF);
     let cfg = resolve::resolve_worker(repo, source, deps)?;
-    dispatch::run_exchange(repo, user_message, &cfg.as_resolved(), deps)
+    dispatch::run_exchange(repo, msg, name, &cfg.as_resolved(), deps)
 }

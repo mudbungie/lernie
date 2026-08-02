@@ -63,6 +63,7 @@ impl dispatch::Spawner for StubSpawner {
         _repo: &std::path::Path,
         _branch: &str,
         _goal: &str,
+        _name: Option<&str>,
     ) -> std::io::Result<dispatch::DispatchOutput> {
         Ok(dispatch::DispatchOutput {
             stdout: "p1-sub\n".to_string(),

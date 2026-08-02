@@ -26,6 +26,27 @@ fn happy_path_writes_handle_json_and_forwards_args() {
     assert_eq!(invocations[0].1, repo);
     assert_eq!(invocations[0].2, "p1-conv");
     assert_eq!(invocations[0].3, "do the thing");
+    assert_eq!(
+        invocations[0].4, None,
+        "no `name` key means an unnamed child"
+    );
+}
+
+#[test]
+fn an_optional_name_input_is_forwarded_to_the_verb() {
+    // §2.3: the tool's `name` input is the same fact `lernie dispatch
+    // --name` carries — the built-in adds no policy of its own, it only
+    // forwards, and the verb enforces availability.
+    let (_h, repo) = fake_repo("worker");
+    let raw = serde_json::json!({ "role": "worker", "goal": "g", "name": "pale-otter" });
+    let mut stdin = Cursor::new(raw.to_string().into_bytes());
+    let mut stdout = Vec::new();
+    let env = env(&repo, "p1");
+    let spawner = StubSpawner::ok("p1-sub");
+
+    run(&mut stdin, &mut stdout, &env, &spawner).unwrap();
+    let invocations = spawner.invocations.borrow();
+    assert_eq!(invocations[0].4.as_deref(), Some("pale-otter"));
 }
 
 #[test]
@@ -59,8 +80,9 @@ fn subprocess_spawner_with_exe_returns_captured_output() {
     // job is to capture and surface, regardless of what the child
     // produced.
     let s = SubprocessSpawner::with_exe(PathBuf::from("true"));
+    // With a name, so the `--name` arm of the argv build runs too.
     let out = s
-        .dispatch("worker", Path::new("/tmp"), "p1", "g")
+        .dispatch("worker", Path::new("/tmp"), "p1", "g", Some("pale-otter"))
         .expect("true exits cleanly");
     assert_eq!(out.exit, 0);
     assert!(out.stdout.is_empty());
@@ -73,7 +95,7 @@ fn subprocess_spawner_with_exe_returns_nonzero_for_failing_binary() {
     // exit code and empty stdio without inventing an io error.
     let s = SubprocessSpawner::with_exe(PathBuf::from("false"));
     let out = s
-        .dispatch("worker", Path::new("/tmp"), "p1", "g")
+        .dispatch("worker", Path::new("/tmp"), "p1", "g", None)
         .expect("false runs");
     assert_eq!(out.exit, 1);
 }
@@ -83,7 +105,7 @@ fn subprocess_spawner_with_exe_surfaces_spawn_error_for_missing_binary() {
     // No binary at the given path — Command::output returns io error.
     let s = SubprocessSpawner::with_exe(PathBuf::from("/no/such/lernie-binary"));
     let err = s
-        .dispatch("worker", Path::new("/tmp"), "p1", "g")
+        .dispatch("worker", Path::new("/tmp"), "p1", "g", None)
         .unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::NotFound);
 }

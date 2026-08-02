@@ -232,7 +232,7 @@ workspace is left with exactly one ref — the config commit every fresh
 root agent forks off (fork is the freeze, §2.2). The destination must
 either not exist or be an empty directory. With no path argument, the
 destination is `<data-root>/workspaces/<auto-id>/`; the created path is
-printed on stdout. `goal.md` and `soul.md` are intentionally not in the
+printed on stdout. `goal.md`, `soul.md` and `name` are intentionally not in the
 template — they are written per-branch at dispatch time (ARCH §2.3,
 §2.8), which also **removes the control files from the agent's tree**
 (§2.2: control is read from the config commit; worktrees hold only
@@ -368,6 +368,7 @@ after it govern under the new head (fork is the freeze, §2.2).
 
 ```
 lernie prompt /path/to/my-conversation 'hello'
+lernie prompt /path/to/my-conversation 'hello' --name pale-otter
 ```
 
 `lernie prompt` is the root-agent path (ARCH §2.3, §2.6, §2.7,
@@ -702,7 +703,8 @@ Built-ins:
 - **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously
-  (ARCH §2.5). Input is `{role, goal}`;
+  (ARCH §2.5). Input is `{role, goal}` plus an optional `name` (the
+  child's display name, ARCH §2.3);
   the role must resolve to `souls/<role>.md` and a `roles:` entry in
   `providers.yaml` — both read from the calling branch's governing
   config commit (§2.2). Reads the calling
@@ -725,7 +727,8 @@ Built-ins:
   parent, which delivers the result at its next step boundary.
 - **`message`** — deposits content into an *existing* agent's inbox
   (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
-  by its agent id (its branch name / hyphenated descent). Unlike
+  by its agent id (its branch name / hyphenated descent) or by the
+  unique display name it was dispatched with (ARCH §2.3). Unlike
   `dispatch` it starts no branch and returns no address — it deposits
   synchronously and returns `{"status":"deposited"}`. The sender is the
   calling agent's id, taken from the harness-set `LERNIE_CONV_BRANCH`
@@ -755,6 +758,42 @@ Built-ins:
   `commit_tool`), landing any tool's worktree side effects with its
   result entry (ARCH §2.3).
 
+## Naming an agent
+
+An agent may be dispatched with a **display name** — `lernie prompt
+--name`, `lernie dispatch --name`, or the `dispatch` tool's optional
+`name` input (ARCH §2.1, §2.3). It is what you say out loud;
+the **id** stays the identifier (branch name, worktree directory,
+`steps/` and `inbox/` keys) and never carries display semantics.
+
+```
+lernie prompt <ws> 'survey the crate' --name pale-otter
+lernie message <ws> pale-otter 'check the Makefile too'
+```
+
+- **One home, no registry.** The name is a `name` file committed on the
+  agent's own dispatch commit, beside `goal.md`. Reading it is `git show
+  agents/<id>:name`, so the `agents/*` refs stay the workspace's only
+  registry, worktree teardown cannot lose it, and `lernie delete`
+  recycles the name with no cleanup step at all — the ref goes, the blob
+  goes, the name is free. There is no index file anywhere.
+- **Every dispatch commit writes the file; empty means unnamed.** A fork
+  inherits its fork point's tree, so the commit overwrites the name
+  rather than deleting it — that is what keeps a child's dispatch from
+  riding the work-product transfer (§2.6) or the compaction merge (§2.7)
+  back into its parent and unnaming it.
+- **Set once, unique, never id-shaped.** A name is fixed at creation
+  like the goal. Creation refuses one a living agent already wears
+  (naming the holder), one that is not a single whitespace-free word,
+  and one that begins with an agent-id timestamp (`YYYYMMDDTHHMMSSZ`) —
+  which keeps names and ids disjoint, so `lernie message` never has to
+  guess which you meant. Every refusal happens before the fork, so it
+  leaves no branch behind.
+- **Ambiguity is refused, not resolved.** Creation-time uniqueness
+  cannot see a fork-back-in off an already-named commit, so two living
+  agents *can* end up wearing one name; addressing that name then fails
+  loudly, naming both ids.
+
 ## Messaging an existing agent directly
 
 `lernie message <workspace> <agent> <content>` deposits a message into
@@ -762,6 +801,15 @@ Built-ins:
 driver to deliver it (ARCH §2.11, §3.4). The sender is read from
 `LERNIE_CONV_BRANCH` — the calling agent's id when the `message` tool
 re-enters the verb, else `user` for a bare invocation.
+
+- **`<agent>` is an id or a unique name** (ARCH §2.3, §2.11). An exact
+  agent-id match wins; otherwise the needle is matched against the
+  display names the workspace's living agents wear (see *Naming an
+  agent* below), and a unique wearer resolves. A name worn by two
+  living agents is **refused with the candidate ids** — never guessed —
+  and a needle nothing answers to falls through to the ordinary
+  existence decline. This is the only verb that reads names: every other
+  id-taking verb addresses an id the harness itself printed.
 
 - **The recipient is guarded before anything is written.** The id must
   be a single path component (ARCH §2.3) — `..`, a `/`, or an absolute
@@ -921,8 +969,8 @@ structurally by the prefix — there is no `main` (§2.2).
 
 ## Dispatching subagents directly
 
-`lernie dispatch <role> <repo> <branch> [--goal <text>]` is the §3.4
-re-entry point every child dispatch uses. It is **writer-shaped, not an
+`lernie dispatch <role> <repo> <branch> [--goal <text>] [--name <name>]`
+is the §3.4 re-entry point every child dispatch uses. It is **writer-shaped, not an
 executor** (ARCH §2.1): it forks the child branch, lands the dispatch
 commit, and deposits the dispatch message through the same front door
 every sender uses — the driver that deposit launches is the ordinary

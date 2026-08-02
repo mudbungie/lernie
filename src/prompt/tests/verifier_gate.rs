@@ -107,6 +107,7 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         parent_worktree: &parent_wt,
         role: "worker",
         goal: "do it",
+        name: None,
         fork_point: None,
     };
     let worker = dispatch_child(&wreq, &git, &clock, &id, &rec).unwrap();

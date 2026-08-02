@@ -15,7 +15,7 @@ message on a later step as it completes (ARCH §2.5, §2.11).
 ## Input
 
 ```json
-{ "role": "<role-name>", "goal": "<goal text>" }
+{ "role": "<role-name>", "goal": "<goal text>", "name": "<display-name>" }
 ```
 
 - `role` — the subagent role. v0.4 Phase 2 supports `worker`; the role
@@ -23,6 +23,12 @@ message on a later step as it completes (ARCH §2.5, §2.11).
   have a soul at `souls/<role>.md`.
 - `goal` — the per-call goal text. Pinned at the head of every model
   call on the subagent's branch and not rewritten during execution.
+- `name` — optional display name for the child: one unbroken word,
+  unique among the workspace's living agents, set here and never
+  rewritten. It is what `message` accepts in place of the child's id, so
+  name a child you intend to speak to later. A malformed name, one that
+  begins like an agent id, or one already worn is refused and no child
+  is created.
 
 ## Output
 
@@ -61,8 +67,9 @@ step as a message from the subagent in your inbox (ARCH §2.11).
 
 - The handle is the subagent's branch name and its address; its
   result returns to you as a message on a later step (ARCH §2.11).
-- The harness writes the goal to `goal.md` and the role's soul to
-  `soul.md` on the subagent's first commit; the subagent's worktree
-  is at `<conv-repo>/<handle>/`.
+- The harness writes the goal to `goal.md`, the role's soul to
+  `soul.md`, and the display name (empty when unnamed) to `name` on the
+  subagent's first commit; the subagent's worktree is at
+  `<conv-repo>/<handle>/`.
 - Stopping a subagent is a separate user action through the UI;
   there is no `stop_dispatch` tool in v0.4.

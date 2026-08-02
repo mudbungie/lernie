@@ -78,7 +78,8 @@ impl From<Error> for DispatchCliError {
     }
 }
 
-/// Run `lernie dispatch <role> <repo> <branch> [--goal <text>]`
+/// Run `lernie dispatch <role> <repo> <branch> [--goal <text>]
+/// [--name <name>]`
 /// (ARCH §3.4). Role-validity and per-role `--goal` violations surface as
 /// `Err` for the bin's uniform non-zero exit. Any valid role is dispatched
 /// as an ordinary child ([`child_dispatch`], §2.5); roles differ only in
@@ -90,6 +91,7 @@ pub fn run(
     repo: &Path,
     branch: &str,
     goal: Option<&str>,
+    name: Option<&str>,
     driver_target: &Path,
 ) -> Result<(), DispatchCliError> {
     // The production launcher detach-spawns `lernie advance` (§2.11) at
@@ -98,7 +100,7 @@ pub fn run(
     // The launch decision is tested through [`run_with`] against an
     // injected launcher.
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
-    run_with(role, repo, branch, goal, &launcher)
+    run_with(role, repo, branch, goal, name, &launcher)
 }
 
 /// [`run`] with the driver launcher injected — the same
@@ -110,6 +112,7 @@ fn run_with(
     repo: &Path,
     parent_branch: &str,
     goal: Option<&str>,
+    name: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     // The shared id guard, ahead of everything (§2.2, §2.3): the
@@ -147,7 +150,7 @@ fn run_with(
         goal.ok_or_else(|| DispatchCliError::GoalRequired(role.to_owned()))?
             .to_owned()
     };
-    dispatch_child(repo, parent_branch, role, &goal_text, launcher)
+    dispatch_child(repo, parent_branch, role, &goal_text, name, launcher)
 }
 
 /// Fork `role`'s child off `parent_branch` and start it through the front
@@ -160,6 +163,7 @@ fn dispatch_child(
     parent_branch: &str,
     role: &str,
     goal: &str,
+    name: Option<&str>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
@@ -169,6 +173,7 @@ fn dispatch_child(
         parent_worktree: &parent_worktree,
         role,
         goal,
+        name,
         fork_point: None,
     };
     let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;

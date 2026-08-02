@@ -2,6 +2,18 @@
 //! executor lock (ARCH §2.11, §3.4). The sender is resolved from
 //! `LERNIE_CONV_BRANCH` inside [`crate::prompt::inbox::cli_run`].
 //!
+//! **The recipient is addressed by id or by unique name (§2.11).** This
+//! is the one verb that resolves a display name
+//! ([`crate::workspace::agent_name::resolve`]): a name is what an
+//! operator or a peer agent *speaks*, and speaking is what the message
+//! channel is for. Every other id-taking verb addresses an id the harness
+//! itself produced — `advance` is a launch target on the driver hot path,
+//! `dispatch` and `bundle` follow an id a dispatch printed, `delete`
+//! deliberately admits an id no ref answers to (§9.2) — so none of them
+//! is a place a name is spoken, and adding the scan there would buy a
+//! reading nobody uses. Adopting it elsewhere later is one call to the
+//! same function; it is not adopted speculatively.
+//!
 //! **The failed-branch advisory (§2.10).** Messaging a branch whose
 //! latest model call failed — retries exhausted, or a non-retryable
 //! error — stays legal, and *is* the recovery path (the §2.9-shape
@@ -24,7 +36,8 @@ use std::path::{Path, PathBuf};
 pub struct Args {
     /// Path to the workspace (conversation repo) root.
     pub workspace: PathBuf,
-    /// Agent id (== branch name) to deposit into.
+    /// Recipient: an agent id (== branch name), or the display name of a
+    /// unique living agent (ARCH §2.3, §2.11).
     pub agent: String,
     /// Message body to deposit in the recipient's inbox.
     pub content: String,
@@ -38,16 +51,21 @@ pub struct Args {
 /// means a live executor is still working it.
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
     crate::name::require_agent_id(&args.agent).map_err(|e| Error::new("message", e))?;
-    let failed = branch_failed(&args.workspace, &args.agent);
-    let probe = inbox::cli_run(
+    // Id-or-unique-name (§2.11): the shape guard above still runs first —
+    // a traversing needle is declined, never scanned — and everything
+    // downstream sees the resolved *id*, so the failed-branch advisory,
+    // the deposit and the probe all address one agent by one key.
+    let agent = crate::workspace::agent_name::resolve(
         &args.workspace,
         &args.agent,
-        &args.content,
-        &fx.driver_target,
+        &crate::template::RealGit::new(),
     )
     .map_err(|e| Error::new("message", e))?;
+    let failed = branch_failed(&args.workspace, &agent);
+    let probe = inbox::cli_run(&args.workspace, &agent, &args.content, &fx.driver_target)
+        .map_err(|e| Error::new("message", e))?;
     if failed && probe == ProbeOutcome::Launched {
-        eprintln!("{}", failed_branch_note(&args.agent));
+        eprintln!("{}", failed_branch_note(&agent));
     }
     Ok(Outcome::Quiet)
 }

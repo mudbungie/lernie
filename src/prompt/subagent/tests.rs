@@ -68,6 +68,7 @@ fn req<'a>(parent_wt: &'a Path, sub_wt: &'a Path, soul: Option<&'a str>) -> Spaw
         fork_point: None,
         goal_text: "do the thing\n",
         soul_text: soul,
+        name: None,
         // The stub worktrees carry no `descriptions/**` and the grant is
         // empty, so the descriptor half of the trim is a no-op here
         // (§3.3) — exercised on its own in
@@ -100,13 +101,16 @@ fn writes_goal_and_soul_when_soul_present() {
     // 1: control-file removal (total, --ignore-unmatch; §2.3 step 2)
     assert_eq!(runs[1].0, sub_wt);
     assert_eq!(runs[1].1[..5], ["rm", "-r", "-q", "--ignore-unmatch", "--"]);
-    // 2: add goal.md soul.md (in sub worktree)
+    // 2: stage the settled name — the trim's fourth part (§2.3)
     assert_eq!(runs[2].0, sub_wt);
-    assert_eq!(runs[2].1, vec!["add", "goal.md", "soul.md"]);
-    // 3: commit (in sub worktree)
+    assert_eq!(runs[2].1, vec!["add", "name"]);
+    // 3: add goal.md soul.md (in sub worktree)
     assert_eq!(runs[3].0, sub_wt);
-    assert_eq!(runs[3].1[0], "commit");
-    assert_eq!(runs[3].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
+    assert_eq!(runs[3].1, vec!["add", "goal.md", "soul.md"]);
+    // 4: commit (in sub worktree)
+    assert_eq!(runs[4].0, sub_wt);
+    assert_eq!(runs[4].1[0], "commit");
+    assert_eq!(runs[4].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
 
     assert_eq!(
         std::fs::read_to_string(sub_wt.join("goal.md")).unwrap(),
@@ -116,6 +120,9 @@ fn writes_goal_and_soul_when_soul_present() {
         std::fs::read_to_string(sub_wt.join("soul.md")).unwrap(),
         "you are worker\n"
     );
+    // An unnamed child still carries the fact's file, empty (§2.3 —
+    // one shape, so a fork never inherits its parent's name).
+    assert_eq!(std::fs::read_to_string(sub_wt.join("name")).unwrap(), "");
 }
 
 #[test]
@@ -128,7 +135,7 @@ fn writes_only_goal_when_soul_is_none() {
 
     let runs = git.runs.borrow();
     // The stage step adds only goal.md.
-    assert_eq!(runs[2].1, vec!["add", "goal.md"]);
+    assert_eq!(runs[3].1, vec!["add", "goal.md"]);
     assert!(
         !sub_dir.path().join("soul.md").exists(),
         "soul.md should not be written"
@@ -180,7 +187,7 @@ fn surfaces_control_rm_failure() {
 fn surfaces_add_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
-    let git = StubGit::failing_at(2);
+    let git = StubGit::failing_at(3);
     let err = spawn_subagent_branch(
         &req(parent_dir.path(), sub_dir.path(), Some("soul\n")),
         &git,
@@ -193,7 +200,7 @@ fn surfaces_add_failure() {
 fn surfaces_commit_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
-    let git = StubGit::failing_at(3);
+    let git = StubGit::failing_at(4);
     let err =
         spawn_subagent_branch(&req(parent_dir.path(), sub_dir.path(), None), &git).unwrap_err();
     assert!(
@@ -221,9 +228,32 @@ fn surfaces_io_failure_when_sub_worktree_is_a_file() {
         fork_point: None,
         goal_text: "g",
         soul_text: None,
+        name: None,
         grant: &EMPTY_GRANT,
         commit_subject: "x",
     };
     let err = spawn_subagent_branch(&r, &git).unwrap_err();
     assert!(matches!(err, Error::Io(_)), "got {err:?}");
+}
+
+#[test]
+fn surfaces_name_settle_failure() {
+    // The trim's fourth part (§2.3): staging the settled `name` fails,
+    // and the dispatch commit reports it in its own voice rather than
+    // as an anonymous git error.
+    let parent_dir = tmpdir();
+    let sub_dir = tmpdir();
+    let git = StubGit::failing_at(2);
+    let err =
+        spawn_subagent_branch(&req(parent_dir.path(), sub_dir.path(), None), &git).unwrap_err();
+    assert!(
+        matches!(
+            err,
+            Error::Git {
+                op: "settle the agent name",
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
 }

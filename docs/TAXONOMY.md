@@ -45,6 +45,17 @@ A reference document for someone building an AI harness. It maps the terms used 
 
 **lernie's stance:** lernie pins **agent** to the running-instance sense above — one living instantiation (a goal, a growing context, a step loop, a termination), Willison's "LLM runs tools in a loop toward a goal" reading — and makes it the structural primitive (`docs/ARCHITECTURE.md` §2.1). The *configuration* an agent forks from (souls, tool enablements, grants, workflow) is a **config**, never an "agent"; the OpenAI-SDK "agent = config object" sense is explicitly not lernie's.
 
+### Agent name vs agent id
+**Variants:** agent name, agent id, handle, address, session id.
+**Consensus (none — the field conflates the two).** Most frameworks give an agent exactly one string and let it serve as both label and key. In the OpenAI Agents SDK `Agent(name=…)` names a *configuration object*, not a running instance; in CrewAI the persona's `role` is the label; LangGraph identifies nodes by graph key; provider APIs identify a run by an opaque server-side id nobody speaks aloud. Where a framework does have both, the two are typically allowed to overlap, and resolution then guesses.
+
+**lernie's stance (authoritative definition in `docs/ARCHITECTURE.md` §2.1; mechanism in §2.3, addressing in §2.11).** lernie splits the two facts and lets neither stand in for the other:
+
+- an **id** is the *identifier* — the agent's full hyphenated descent, which is simultaneously its branch name, its worktree directory and its `steps/` / `inbox/` namespace keys. Every agent has one, it is minted at the fork, it is a path component, and it carries **no display semantics**: nothing derives a label from an id.
+- a **name** is the *display* discriminator — optional, one unbroken word, set at the dispatch that creates the agent and immutable thereafter, unique among the workspace's **living** agents and lawfully **recyclable** once retention (§9.2) deletes the ref that wore it. It is never a path component.
+
+Recyclability is the whole reason they are two facts: ids must never collide, names must be re-usable, and one string cannot be both. The two spaces are kept **disjoint by construction** (an id always begins with a compact `YYYYMMDDTHHMMSSZ` timestamp; a name that does is refused at creation), so addressing by "id or name" is a *reading*, never a tiebreak — and a name worn by two living agents is refused with its candidates rather than guessed. Neither term is a *handle* (nothing is polled) or a *session* (a banned term, §3 below).
+
 ### Role
 **Variants:** agent role, message role, role prompting, role-based access control (RBAC).
 **Consensus (none — the senses are unrelated):** the field uses "role" for at least three different things, each owned by a different layer:

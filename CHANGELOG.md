@@ -13,6 +13,10 @@ than product and are not listed — they live in git and in the balls store.
 
 ## [Unreleased]
 
+### Changes
+
+- agent naming becomes a first-class fact: --name at prompt/dispatch, stored under the agent; message resolves id-or-unique-name [bl-c8ed]
+
 ## [0.0.3](https://github.com/mudbungie/lernie/compare/v0.0.2...v0.0.3) - 2026-07-30
 
 ### Changes

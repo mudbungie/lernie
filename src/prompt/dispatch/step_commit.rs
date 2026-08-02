@@ -93,8 +93,9 @@ pub(super) fn write_dispatch_files(
 
 /// Step 1's dispatch commit (§2.3 step 2): remove the harness-facing
 /// control files from the agent's tree (§2.2 — control is read from the
-/// governing config commit; the worktree holds only context), `git add
-/// goal.md soul.md`, then commit on the agent branch. The removal is
+/// governing config commit; the worktree holds only context) and settle
+/// the agent's `name` (§2.3), `git add goal.md soul.md`, then commit on
+/// the agent branch. The removal is
 /// total, not conditional: `--ignore-unmatch` makes it a no-op when the
 /// fork point was not a config commit (a child forked off a parent's
 /// tip, whose tree already lost them). This is the only commit the
@@ -103,10 +104,11 @@ pub(super) fn write_dispatch_files(
 pub(super) fn commit_dispatch(
     worktree_path: &Path,
     conv_id: &str,
+    name: Option<&str>,
     resolved: &super::Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
-    trim_to_context(worktree_path, &resolved.grant, deps.git)?;
+    trim_to_context(worktree_path, &resolved.grant, name, deps.git)?;
     deps.git
         .run(worktree_path, &["add", GOAL_FILE, SOUL_FILE])
         .map_err(|source| Error::Git { op: "add", source })?;
@@ -120,7 +122,7 @@ pub(super) fn commit_dispatch(
 }
 
 /// Stage the trim that makes the forked tree exactly this agent's
-/// context (§2.2, §5.1) — one act with three parts, each a no-op when
+/// context (§2.2, §5.1) — one act with four parts, each a no-op when
 /// the fork point carried nothing to change, so the primitive is total
 /// whatever ref it forked off:
 ///
@@ -142,13 +144,19 @@ pub(super) fn commit_dispatch(
 ///    and that every provider refuses (§2.5 pairing).
 ///    [`unsettled::prune_unsettled`] removes exactly it; see that module
 ///    for the reproduced 400 it closes.
+/// 4. **The name is settled.** `name` (ARCH §2.3, §2.11) is this agent's
+///    display fact, and a fork inherits its fork point's — so the commit
+///    overwrites it with the agent's own, or with nothing when the agent
+///    is unnamed. Always a rewrite, never a deletion, for the reasons
+///    [`crate::workspace::agent_name`] gives.
 ///
 /// The parts are staged in this order because the later ones read the
 /// worktree: control files are neither descriptors nor transcript
-/// entries, so none sees another's writes.
+/// entries nor the name, so none sees another's writes.
 pub(crate) fn trim_to_context(
     worktree_path: &Path,
     grant: &Grant<'_>,
+    name: Option<&str>,
     git: &dyn crate::template::GitRunner,
 ) -> Result<(), Error> {
     let mut args: Vec<&str> = vec!["rm", "-r", "-q", "--ignore-unmatch", "--"];
@@ -158,7 +166,11 @@ pub(crate) fn trim_to_context(
         source,
     })?;
     descriptors::derive(worktree_path, grant, git)?;
-    unsettled::prune_unsettled(worktree_path, git)
+    unsettled::prune_unsettled(worktree_path, git)?;
+    crate::workspace::agent_name::settle(worktree_path, name, git).map_err(|source| Error::Git {
+        op: "settle the agent name",
+        source,
+    })
 }
 
 /// Resolve the branch tip's sha at step-start. Recorded in

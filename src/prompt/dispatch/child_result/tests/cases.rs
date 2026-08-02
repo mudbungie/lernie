@@ -240,9 +240,9 @@ fn write_models(fx: &Fx) {
 fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
     // §6 role-aware resolution: an existing agent's role is derived from
     // its dispatch commit subject (the single authoritative home). A
-    // dispatched compactor resolves `souls/compactor.md`, its `compactor`
-    // providers assignment (haiku, no declared tools — the injected
-    // built-in toolset is the step's, not `providers.yaml`'s).
+    // dispatched compactor resolves `souls/compactor.md` and its
+    // `compactor` providers assignment (haiku, no declared tools — the
+    // injected built-in toolset is the step's, not `providers.yaml`'s).
     use crate::prompt::resolve::{ConfigSource, resolve_worker};
     let (_h, ws) = fixture::workspace();
     let parent = "20260101-r1";
@@ -256,6 +256,7 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
         parent_worktree: &parent_wt,
         role: "compactor",
         goal: "compact",
+        name: None,
         fork_point: None,
     };
     let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
@@ -263,10 +264,7 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
     let cfg = resolve_worker(&ws, ConfigSource::Agent(&child), &fx.deps()).unwrap();
     assert_eq!(cfg.role, "compactor");
     assert_eq!(cfg.model.model_id, "claude-haiku-4-5");
-    assert!(
-        cfg.tools.is_empty(),
-        "compactor declares no providers.yaml tools"
-    );
+    assert!(cfg.tools.is_empty(), "compactor declares no such tools");
     assert!(cfg.soul.to_lowercase().contains("compact"), "{}", cfg.soul);
 }
 

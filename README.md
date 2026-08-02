@@ -675,7 +675,13 @@ Built-ins:
 - **`bash`** — runs a shell command via `sh -c` and returns its
   stdout. The shell runs in its own process group so a SIGTERM the
   harness sends is forwarded to the entire spawned tree (§2.9
-  cascade). Try it directly: `echo '{"command":"ls"}' | lernie tool bash`.
+  cascade). Its model-facing definition — `skills/bash/SKILL.md`
+  frontmatter and `schemas/tools/bash.json` — is deliberately explicit
+  that the shell is **local, non-interactive, and stateless between
+  tool calls**: a gpt-5.x agent read the older wording as a remote
+  interactive shell and told the user it could only see "the server's
+  IP" (bl-298c). Try it directly:
+  `echo '{"command":"ls"}' | lernie tool bash`.
 - **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously

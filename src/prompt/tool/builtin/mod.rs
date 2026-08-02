@@ -13,10 +13,13 @@
 //! inbox, ARCH §2.11). [`load_skill`] realizes Body-on-demand (§3.3):
 //! it copies a pooled skill directory into the worktree at
 //! `skills/<name>/`, committed with the tool result so the next
-//! assembly composes it. A dispatch returns the child's address
-//! immediately and never blocks; a message deposits synchronously and
-//! returns `{status: deposited}`; a load_skill copies and returns
-//! `{status: loaded|already_loaded}`. All derive the calling agent's
+//! assembly composes it. [`cd`] moves the calling agent's working
+//! directory for every later tool call (§3.3 *Working directory*),
+//! storing it as the agent's own mark. A dispatch returns the child's
+//! address immediately and never blocks; a message deposits
+//! synchronously and returns `{status: deposited}`; a load_skill copies
+//! and returns `{status: loaded|already_loaded}`; a cd returns
+//! `{cwd: <absolute path>}`. All derive the calling agent's
 //! identity from `LERNIE_CONV_BRANCH` (§3.3), never from model input.
 //! Adding a new one is a match arm in [`run`] plus a sibling module.
 
@@ -25,6 +28,7 @@ use std::path::Path;
 use thiserror::Error;
 
 pub mod bash;
+pub mod cd;
 pub mod compaction;
 pub mod dispatch;
 pub mod load_skill;
@@ -33,6 +37,9 @@ pub mod read_file;
 
 /// Built-in tool name: run a shell command (§3.3).
 const BASH: &str = "bash";
+/// Built-in tool name: move the calling agent's working directory (§3.3
+/// *Working directory*).
+const CD: &str = "cd";
 /// Built-in tool name: spawn a subagent (§2.5).
 const DISPATCH: &str = "dispatch";
 /// Built-in tool name: copy a pooled skill body into the worktree (§3.3
@@ -50,7 +57,7 @@ const READ_FILE: &str = "read_file";
 /// deliberately absent: it is injected for the compactor role alone
 /// (§2.7), never a name a general agent or an operator elects, so it is
 /// routed but not advertised.
-pub const NAMES: [&str; 5] = [BASH, DISPATCH, LOAD_SKILL, MESSAGE, READ_FILE];
+pub const NAMES: [&str; 6] = [BASH, CD, DISPATCH, LOAD_SKILL, MESSAGE, READ_FILE];
 
 /// [`NAMES`] rendered for a human: the pool named in the unknown-tool
 /// decline and in `lernie tool --help`, in the same voice `load_skill`
@@ -95,6 +102,13 @@ pub enum Error {
     /// contract as the other arms.
     #[error(transparent)]
     Message(#[from] message::Error),
+    /// `cd` failed (bad input JSON, missing env, a path that names no
+    /// directory, a mark that could not be stored, per [`cd::Error`],
+    /// ARCH §3.3 *Working directory*). A path the agent cannot move to
+    /// is a decline the model reads as an `is_error` `tool_result`; the
+    /// agent stays where it was. Same stderr-concat contract.
+    #[error(transparent)]
+    Cd(#[from] cd::Error),
     /// `load_skill` failed (bad input JSON, missing env, unknown skill,
     /// copy failure, etc., per [`load_skill::Error`]). An unknown skill
     /// is a decline that reaches the model as an `is_error` `tool_result`
@@ -170,6 +184,9 @@ pub fn run_with<R: Read, W: Write, E: Write>(
         return message::run(stdin, stdout, env, sender)
             .map(|()| 0)
             .map_err(Error::Message);
+    }
+    if name == CD {
+        return cd::run(stdin, stdout, env).map(|()| 0).map_err(Error::Cd);
     }
     if name == LOAD_SKILL {
         return load_skill::run(stdin, stdout, env)

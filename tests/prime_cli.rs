@@ -45,7 +45,14 @@ fn prime_founds_a_fresh_nested_home_idempotently() {
             .unwrap()
             .contains("claude-sonnet-5")
     );
-    for name in ["bash", "dispatch", "load_skill", "message", "read_file"] {
+    for name in [
+        "bash",
+        "cd",
+        "dispatch",
+        "load_skill",
+        "message",
+        "read_file",
+    ] {
         assert!(h.join("tools").join(format!("{name}.json")).is_file());
         assert!(h.join("skills").join(name).join("SKILL.md").is_file());
     }

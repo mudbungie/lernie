@@ -18,10 +18,11 @@ pub(super) fn route<R: Read, W: Write, E: Write>(
     run(name, Path::new("lernie"), stdin, stdout, stderr)
 }
 
-/// The `bash` and compactor-tool routing arms, and the advertised pool,
-/// split out to keep this file under the repo's per-file line cap.
+/// The `bash`, `cd` and compactor-tool routing arms, and the advertised
+/// pool, split out to keep this file under the repo's per-file line cap.
 mod pool;
 mod routing_bash;
+mod routing_cd;
 mod routing_compaction;
 
 #[test]

@@ -6,7 +6,7 @@
   "properties": {
     "command": {
       "type": "string",
-      "description": "The whole shell command to run, as one string. It is passed verbatim to `sh -c` on this machine, so pipes, redirection, globbing, `&&` and quoting all work and escaping is yours to get right. It runs non-interactively — stdin is /dev/null, there is no TTY, and it runs to completion; there is no prompt to answer and no way to send it input afterwards. It starts in your worktree, and its shell state (cwd, exported variables, functions) is discarded when it exits, so chain what must share state into this one string. Stdout becomes the tool result; stderr is concatenated after stdout when the command exits non-zero (ARCH §3.3 stdio contract)."
+      "description": "The whole shell command to run, as one string. It is passed verbatim to `sh -c` on this machine, so pipes, redirection, globbing, `&&` and quoting all work and escaping is yours to get right. It runs non-interactively — stdin is /dev/null, there is no TTY, and it runs to completion; there is no prompt to answer and no way to send it input afterwards. It starts in your current working directory — your worktree unless you moved it with the `cd` tool — and its shell state (cwd, exported variables, functions) is discarded when it exits, so chain what must share state into this one string, or use the `cd` tool to move for more than one call. Stdout becomes the tool result; stderr is concatenated after stdout when the command exits non-zero (ARCH §3.3 stdio contract)."
     }
   },
   "required": ["command"],

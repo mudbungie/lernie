@@ -39,7 +39,7 @@ pub const DEFAULT_CONFIG_REF: &str = "config/default";
 /// The root every per-agent **mark** ref lives under:
 /// `refs/lernie/<kind>/<agent-id>`. The kinds spell their own prefixes
 /// where they are written (§2.6 `conflicted`, §6 `budget-exhausted`,
-/// `abandoned`, `notify`); this is the namespace they share, so a
+/// `abandoned`, `notify`, §3.3 [`cwd`]); this is the namespace they share, so a
 /// consumer that must reach *every* mark of an agent — the retention
 /// delete (§9.2) — enumerates the root instead of keeping a list of
 /// kinds that would go stale the day a fifth one lands.
@@ -244,6 +244,8 @@ pub fn control_exists(workspace: &Path, commit: &str, path: &str, git: &dyn GitR
     git.run(&repo_git(workspace), &["cat-file", "-e", &spec])
         .is_ok()
 }
+
+pub mod cwd;
 
 mod guard;
 pub use guard::{LayoutError, UnknownAgent, agent_exists, require, require_agent};

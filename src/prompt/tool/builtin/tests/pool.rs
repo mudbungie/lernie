@@ -18,7 +18,7 @@ fn unknown_tool_name_surfaces_unknown_variant() {
     assert_eq!(
         err.to_string(),
         "unknown built-in tool: \"not_a_tool\"; available: \
-         bash, dispatch, load_skill, message, read_file"
+         bash, cd, dispatch, load_skill, message, read_file"
     );
 }
 
@@ -27,7 +27,7 @@ fn unknown_tool_name_surfaces_unknown_variant() {
 /// injects for the compactor role alone and no one elects by name.
 #[test]
 fn pool_is_the_sorted_advertised_name_set() {
-    assert_eq!(pool(), "bash, dispatch, load_skill, message, read_file");
+    assert_eq!(pool(), "bash, cd, dispatch, load_skill, message, read_file");
     let mut sorted = NAMES;
     sorted.sort_unstable();
     assert_eq!(NAMES, sorted);

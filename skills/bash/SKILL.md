@@ -1,6 +1,6 @@
 ---
 name: bash
-description: "Run one shell command on this machine and read back what it printed. The shell is local: lernie is a command-line program the user runs, and your command executes on that same machine — their filesystem, their network, their user account. There is no server, container, or remote sandbox between you and it, so a question about this host (its IP, its disk, its toolchain) is answerable by just running the command. It is not an interactive terminal and there is no prompt waiting for you: each tool call runs exactly one `sh -c '<command>'` with stdin closed and no TTY, waits for it to exit, and hands back its output. Shell state does not carry over — a `cd`, an `export`, or a shell function is gone by the next tool call — but files the command writes stay, in your worktree, which is where every command starts. You get stdout; if the command exits non-zero its stderr is appended and the result is flagged as an error. Use it for filesystem inspection (`ls`, `find`, `head`), text processing (`grep`, `sed`, `awk`), version-control queries (`git log`), builds and tests, and anything else a dedicated tool does not cover."
+description: "Run one shell command on this machine and read back what it printed. The shell is local: lernie is a command-line program the user runs, and your command executes on that same machine — their filesystem, their network, their user account. There is no server, container, or remote sandbox between you and it, so a question about this host (its IP, its disk, its toolchain) is answerable by just running the command. It is not an interactive terminal and there is no prompt waiting for you: each tool call runs exactly one `sh -c '<command>'` with stdin closed and no TTY, waits for it to exit, and hands back its output. Shell state does not carry over — a `cd`, an `export`, or a shell function is gone by the next tool call, so chain what must share state into one command string (`cd sub && make`) or use the `cd` tool to move for real — but files the command writes stay. Every command starts in your current working directory, which is your worktree unless you moved it with the `cd` tool; what you write in your worktree is committed onto your branch, what you write outside it is not. You get stdout; if the command exits non-zero its stderr is appended and the result is flagged as an error. Use it for filesystem inspection (`ls`, `find`, `head`), text processing (`grep`, `sed`, `awk`), version-control queries (`git log`), builds and tests, and anything else a dedicated tool does not cover."
 ---
 
 # bash
@@ -28,13 +28,15 @@ ifconfig.me` reports the operator's own public IP because it *is* the
 operator's network. Answer from it plainly rather than hedging about
 "the tool's execution environment"; there is only one environment.
 
-**In your own worktree.** The shell starts in the branch checkout the
-harness materialized for you, so relative paths resolve there and `pwd`
-reports it. Anything you write, edit, or delete under it is committed
-onto your branch alongside the tool result (ARCH §3.3), which is how
-your work leaves the conversation as a product. There is no need to
-`cd` anywhere first, and paths outside the worktree are not yours to
-act on.
+**In your current working directory.** The shell starts wherever you
+currently are, so relative paths resolve there and `pwd` reports it. To
+begin with that is your own worktree — the branch checkout the harness
+materialized for you — and it stays that way unless you move with the
+`cd` tool (ARCH §3.3). Anything you write, edit, or delete **under your
+worktree** is committed onto your branch alongside the tool result, which
+is how your work leaves the conversation as a product. Writes outside it
+are real but uncommitted: off your branch, and invisible to whoever
+dispatched you.
 
 ## It is not an interactive shell
 
@@ -58,8 +60,11 @@ The shell process does not survive the tool call, so **shell state does
 not either**. `cd /tmp` in one tool call does not move the next one;
 `export FOO=1`, `set -x`, shell functions, and aliases are all gone.
 Chain them inside a single `command` string (`cd sub && make`) when you
-need them together. What *does* persist is the filesystem: files the
-command creates or edits in the worktree are still there next time, and
+need them together. To move for more than one call, use the **`cd`
+tool** — that is the one piece of "shell state" the harness keeps for
+you, because it is not shell state at all but a fact about you (ARCH
+§3.3). What *does* persist besides it is the filesystem: files the
+command creates or edits in your worktree are still there next time, and
 are committed onto your branch.
 
 ## Output
@@ -86,6 +91,8 @@ is *not* surfaced — redirect it (`2>&1`) when you need to read it.
 
 - Reading a single file in full: `read_file` is the cheaper, more
   predictable surface.
+- Moving somewhere for several calls in a row: `cd` does it once,
+  instead of a `cd X &&` prefix on every command.
 - Anything interactive — there is no stdin and no TTY, so a command
   that expects either will hang or fail rather than prompt.
 

@@ -108,7 +108,15 @@ fn workspace() -> TempDir {
 }
 
 fn refs(ws: &Path) -> String {
-    let out = Command::new("git")
+    // Scrubbed like every other git spawn here: under a git hook (the
+    // pre-commit gate is one) `GIT_DIR` is set and overrides `-C`, so an
+    // unscrubbed listing reports the *outer* repo's refs and every
+    // assertion over this string reads the wrong repository.
+    let mut cmd = Command::new("git");
+    for var in INHERITED_GIT_ENV {
+        cmd.env_remove(var);
+    }
+    let out = cmd
         .arg("-C")
         .arg(ws.join("repo.git"))
         .args(["for-each-ref", "--format=%(refname)"])

@@ -17,14 +17,17 @@
 //!    a PATH-resolved `lernie` — never the host binary itself, which
 //!    carries no `tool` verb of its own.
 
+mod caller;
+
+use caller::Caller;
+
 use super::subprocess::{SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
     ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, tool_call_dir,
 };
 use crate::prompt::Clock;
-use crate::prompt::step::STEPS_DIR;
-use crate::workspace;
+use crate::template::{GitRunner, RealGit};
 use std::ffi::{OsStr, OsString};
 use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
@@ -41,6 +44,7 @@ pub struct SpawnTool<'a> {
     deadline: Duration,
     etxtbsy_budget: u32,
     path_lookup: Box<dyn PathLookup + 'a>,
+    git: Box<dyn GitRunner + 'a>,
 }
 
 /// Indirection for the §3.3 second hop so tests can drive the PATH
@@ -75,6 +79,7 @@ impl<'a> SpawnTool<'a> {
             deadline: super::DEFAULT_TOOL_DEADLINE,
             etxtbsy_budget: super::subprocess::ETXTBSY_RETRY_ATTEMPTS,
             path_lookup: Box::new(EnvPath),
+            git: Box::new(RealGit::new()),
         }
     }
 
@@ -107,6 +112,14 @@ impl<'a> SpawnTool<'a> {
         self
     }
 
+    /// Override the git runner the working-directory mark is read through
+    /// (§3.3) — tests drive the moved-cwd arms without founding a repo.
+    #[cfg(test)] // test-only builder
+    pub fn with_git(mut self, g: Box<dyn GitRunner + 'a>) -> Self {
+        self.git = g;
+        self
+    }
+
     /// Apply the §3.3 resolution order. Returns `(binary, args)` so
     /// the caller can spawn it without re-deciding the in-process
     /// case. Total: the third hop is the injected driver target, so
@@ -134,10 +147,11 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         step_dir: &Path,
         stop: &AtomicBool,
     ) -> Result<ToolOutcome, ExecError> {
-        let caller = Caller::from_step_dir(step_dir).ok_or_else(|| ExecError::NoWorktree {
-            name: call.name.to_string(),
-            step_dir: step_dir.to_path_buf(),
-        })?;
+        let caller =
+            Caller::resolve(step_dir, &*self.git).ok_or_else(|| ExecError::NoWorktree {
+                name: call.name.to_string(),
+                step_dir: step_dir.to_path_buf(),
+            })?;
 
         let dir = tool_call_dir(step_dir, call.id);
         std::fs::create_dir_all(&dir).map_err(|source| ExecError::Io {
@@ -162,7 +176,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             args: &args,
             stdin_bytes: &stdin,
             extra_env: &extra_env,
-            cwd: &caller.worktree,
+            cwd: &caller.cwd,
             stop,
             deadline: self.deadline,
             etxtbsy_budget: self.etxtbsy_budget,
@@ -193,59 +207,6 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         atomic_write_json(&dir, OUTPUT_FILE, &output_record)?;
 
         Ok(ToolOutcome { content, is_error })
-    }
-}
-
-/// The calling agent, derived from the executor's `step_dir` —
-/// `<workspace>/steps/<agent-id>/<NNN>` (ARCH §2.2). One derivation
-/// feeds both halves of the §3.3 subprocess contract, the environment
-/// and the working directory, so the cwd a tool runs in and the
-/// worktree its `LERNIE_CONV_*` vars name cannot disagree. No caller
-/// hands these in: the executor is the single source of truth for what
-/// a tool call is on behalf of.
-struct Caller {
-    /// `<workspace>` — `LERNIE_CONV_REPO`.
-    workspace: PathBuf,
-    /// The agent id (== full hyphenated descent, §2.3) —
-    /// `LERNIE_CONV_BRANCH`.
-    agent_id: String,
-    /// `<workspace>/agents/<agent-id>` — the cwd of every subprocess
-    /// this call spawns (§3.3 *Working directory*).
-    worktree: PathBuf,
-}
-
-impl Caller {
-    /// Read the workspace root and agent id back out of `step_dir`,
-    /// and materialize the worktree path they name. `None` when
-    /// `step_dir` is not the §2.2 shape or the worktree it names is not
-    /// a live directory — the executor declines the call rather than
-    /// running the tool in an inherited cwd.
-    fn from_step_dir(step_dir: &Path) -> Option<Self> {
-        // step_dir = <workspace>/steps/<agent-id>/<NNN>; ascend one for
-        // the agent-id segment, three to reach the workspace root.
-        let agent_dir = step_dir.parent()?;
-        let agent_id = agent_dir.file_name()?.to_str()?.to_string();
-        let workspace = agent_dir
-            .parent()
-            .filter(|p| p.ends_with(STEPS_DIR))?
-            .parent()?;
-        let worktree = workspace::agent_worktree(workspace, &agent_id);
-        worktree.is_dir().then(|| Self {
-            workspace: workspace.to_path_buf(),
-            agent_id,
-            worktree,
-        })
-    }
-
-    /// The env vars the harness conveys to every tool subprocess per
-    /// ARCH §3.3 (the environment bullet). Names are pinned in
-    /// [`super`] so the executor (the writer) and the built-ins that
-    /// read them cannot drift; tools that do not need them ignore them.
-    fn env(&self) -> Vec<(&'static str, OsString)> {
-        vec![
-            (super::ENV_CONV_BRANCH, OsString::from(&self.agent_id)),
-            (super::ENV_CONV_REPO, self.workspace.as_os_str().to_owned()),
-        ]
     }
 }
 

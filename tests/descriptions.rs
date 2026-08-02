@@ -148,7 +148,14 @@ fn an_unseeded_harness_root_is_founded_by_new_so_descriptions_are_never_empty() 
         .output()
         .unwrap();
     let tree = String::from_utf8(listed.stdout).unwrap();
-    for name in ["bash", "dispatch", "load_skill", "message", "read_file"] {
+    for name in [
+        "bash",
+        "cd",
+        "dispatch",
+        "load_skill",
+        "message",
+        "read_file",
+    ] {
         assert!(
             tree.contains(&format!("descriptions/tools/{name}.json")),
             "{name} schema missing from:\n{tree}"

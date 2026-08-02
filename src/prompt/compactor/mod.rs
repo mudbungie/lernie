@@ -131,7 +131,12 @@ pub fn injected(role: &str) -> &'static [&'static str] {
 /// dispatching branch name interpolates so the compactor knows which
 /// branch it is compacting; its inherited worktree (forked off the
 /// checkpoint commit) carries that branch's transcript, summaries, and
-/// work products — the worktree invariant *is* its view (§2.7, §5.1).
+/// work products, composed through the `compactor` manifest entry like
+/// any other role's (§2.7, §5.1 — the tree bounds, the manifest
+/// selects). The shipped entry selects goal, soul and the transcript
+/// tail only, so the summaries and work products named below are in the
+/// tree but not in the view, and the empty grant leaves no read tool to
+/// reach them with (§5.2, §2.7) — tracked as bl-2c63.
 pub fn compactor_goal(parent_branch: &str) -> String {
     format!(
         "You are the compactor for branch `{parent_branch}`.\n\

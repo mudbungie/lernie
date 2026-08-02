@@ -34,9 +34,10 @@
 //! **What the cut leaves is exact.** A non-granted tool's descriptors
 //! compose **nowhere**: the body walk skips `descriptions/tools/**` and
 //! every tool-claimed skill description (§3.3 *two wire homes*), and the
-//! tools array carries only what the role declared. They would be
-//! worktree bytes with no wire home — the one thing §5.1 says does not
-//! exist — reachable by `bash`, which is how the failure was found (yog
+//! tools array carries only what the role declared. Uncomposed worktree
+//! bytes are ordinary — the manifest is the inclusion list (§5.1) — but
+//! these ones purported to describe the callable set, and they are
+//! reachable by `bash`, which is how the failure was found (yog
 //! bl-55b1): an agent read `descriptions/tools/message.json`, concluded
 //! the environment supported messaging, and spent many steps discovering
 //! that its wire array said otherwise. After the cut,

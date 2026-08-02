@@ -3,6 +3,10 @@ use crate::harness_root::Roots;
 use std::collections::BTreeMap;
 use tempfile::TempDir;
 
+/// What the shipped `bash` definition promises the model, split out to
+/// keep this file under the repo's per-file line cap.
+mod toolspec;
+
 /// `LERNIE_HOME`-style collapsed roots: config and data are one directory
 /// (ARCH §2.2) — the shape yog drives via `LERNIE_HOME=<dir> lernie prime`.
 fn collapsed(dir: &Path) -> Roots {

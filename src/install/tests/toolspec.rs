@@ -1,0 +1,139 @@
+//! The shipped `bash` definition is what the model is TOLD the shell is
+//! (ARCH §3.3): the `SKILL.md` frontmatter `description` becomes the
+//! wire `tools[].description` and `schemas/tools/bash.json` becomes the
+//! wire `input_schema`, both verbatim
+//! (`src/prompt/dispatch/tools.rs::compose`). Nothing downstream can
+//! correct them, so the claims below are pinned here.
+//!
+//! Why these four claims and not prose taste (bl-298c): a gpt-5.x agent
+//! read the older wording — *"Run a shell command via `sh -c` and return
+//! its stdout"* — as a **remote interactive shell**. Asked for the
+//! user's IP it answered *"the shell available to me would only show the
+//! server's IP, not yours"*, then *"it runs on the remote agent
+//! environment—not on your device"*, and after being told outright that
+//! the tool was local it ran `curl` and still hedged: *"If this Bash
+//! tool truly runs on your local device/network, that is your
+//! public-facing IP. Otherwise, it belongs to the tool's execution
+//! environment."* Every hedge is a fact the definition never stated.
+//!
+//! Codex — the harness these models are tuned against — never shows the
+//! failure, and its *description* is not why: `shell_command` reads only
+//! "Runs a shell command and returns its output." It answers the
+//! question somewhere else, by injecting an `<environment_context>`
+//! block (cwd, shell, date, timezone) and a sandbox-mode developer
+//! message ahead of the request. lernie injects no such frame — a
+//! branch's assembled body is its goal, soul and transcript, all
+//! operator-authored (§5.1) — so the tool definition is the only place
+//! left that can state it, and it must: **local**, **non-interactive**,
+//! **rooted in the agent's worktree**, **stateless between tool calls**.
+
+/// The frontmatter `description` the shipped `<name>` skill ships —
+/// byte-for-byte the string that reaches the wire.
+fn wire_description(name: &str) -> String {
+    let raw = super::SKILLS
+        .get_file(format!("{name}/SKILL.md"))
+        .expect("the skill pool ships this skill")
+        .contents_utf8()
+        .expect("SKILL.md is UTF-8");
+    let body = crate::skill::frontmatter_yaml(raw).expect("SKILL.md has frontmatter");
+    crate::skill::parse(body)
+        .expect("frontmatter parses")
+        .description
+}
+
+/// The shipped schema for `<name>`, parsed.
+fn wire_schema(name: &str) -> serde_json::Value {
+    let raw = super::TOOLS
+        .get_file(format!("{name}.json"))
+        .expect("the tool pool ships this schema")
+        .contents();
+    serde_json::from_slice(raw).expect("the shipped schema is JSON")
+}
+
+/// A claim is pinned by the phrase that makes it, so rewording that
+/// drops the claim fails here rather than silently regressing.
+fn asserts(text: &str, phrases: &[&str], what: &str) {
+    for phrase in phrases {
+        assert!(
+            text.contains(phrase),
+            "the {what} no longer says {phrase:?} (bl-298c) — it reads:\n{text}"
+        );
+    }
+}
+
+#[test]
+fn the_bash_description_says_the_shell_is_local() {
+    // The vision-kiwi failure exactly: "server", "remote", "your
+    // device" are the model's own words for a gap this must close.
+    asserts(
+        &wire_description("bash"),
+        &[
+            "The shell is local",
+            "on that same machine",
+            "no server, container, or remote sandbox",
+        ],
+        "bash tool description",
+    );
+}
+
+#[test]
+fn the_bash_description_says_the_shell_is_non_interactive() {
+    asserts(
+        &wire_description("bash"),
+        &["not an interactive terminal", "stdin closed and no TTY"],
+        "bash tool description",
+    );
+}
+
+#[test]
+fn the_bash_description_says_where_it_runs_and_what_survives() {
+    asserts(
+        &wire_description("bash"),
+        &[
+            "Shell state does not carry over",
+            "in your worktree",
+            "if the command exits non-zero its stderr is appended",
+        ],
+        "bash tool description",
+    );
+}
+
+#[test]
+fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
+    // Schema shape is deliberately unchanged (bl-298c). Codex — the
+    // harness gpt-5.x is tuned against — declares `shell_command` with
+    // `command` as a *single string* ("Shell script to run in the
+    // user's default shell"), not the argv array its retired `shell`
+    // tool used, so lernie's one-string shape is already the shape
+    // those models see. Its extra params are ones lernie cannot honour:
+    // `workdir` is fixed by construction (§3.3 pins cwd to the agent's
+    // worktree) and `timeout_ms` has no implementation — the executor
+    // imposes no wall-clock limit. The executor's `Input` struct
+    // (`prompt::tool::builtin::bash`) is `deny_unknown_fields`, so a
+    // schema that grew either would be a promise the tool refuses at
+    // runtime. The prose was the defect, not the shape.
+    let schema = wire_schema("bash");
+    let props = &schema["properties"];
+    assert_eq!(props["command"]["type"], "string");
+    assert_eq!(schema["required"], serde_json::json!(["command"]));
+    assert_eq!(schema["additionalProperties"], serde_json::json!(false));
+    assert_eq!(
+        props.as_object().expect("properties is an object").len(),
+        1,
+        "bash takes one input; a second would need executor support"
+    );
+    asserts(
+        props["command"]["description"]
+            .as_str()
+            .expect("command carries a description"),
+        &[
+            "on this machine",
+            "runs non-interactively",
+            "stdin is /dev/null",
+            "no TTY",
+            "starts in your worktree",
+            "discarded when it exits",
+        ],
+        "bash command-property description",
+    );
+}

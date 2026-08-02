@@ -1,7 +1,7 @@
 +++
 title = "bound tool output committed to the transcript: head+tail cap with an honest truncation marker"
 created = 1785649530
-updated = 1785649843
+updated = 1785650387
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
@@ -22,3 +22,6 @@ The bash tool captures and returns stdout/stderr UNBOUNDED (src/prompt/tool/buil
 The full bytes ALREADY have a home: steps/<agent>/<NNN>/tools/<tool-id>/output.json (ARCH §2.3 diagnostic layer, outside every worktree). So the transcript entry becomes a bounded projection and nothing is lost — transcript = model-facing, steps = audit; single source of truth holds. The marker must state original byte/line counts and where the full record lives. Byte counts only — lernie has no tokenizer; never fabricate token counts.
 
 Cap value and head/tail split are config (workflow.yaml or manifest territory — decide; policy must stay severable). This is the floor; the specced auto-dispatch shim remains a separate, later ball.
+
+## Interaction with the bl-ffc5 result envelope (landed 9ef365e, 2026-08-02)
+Every tool result is now an envelope rendered by src/prompt/tool/envelope.rs::render — a mandatory `Exit code: N` header, stdout verbatim, then an optional `--- stderr ---` block whenever the child wrote any (success included). A naive head+tail cap over the whole content would sever the header or the stderr marker. Cap the STREAMS, not the envelope: bound stdout and stderr independently (each with its own honest truncation marker), then render the envelope around the bounded streams — the header and marker are structure, never cappable content.

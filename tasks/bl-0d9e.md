@@ -1,7 +1,8 @@
 +++
 title = "lernie delete <workspace> <agent> [--children] — agents have no lawful removal verb; yog needs one"
 created = 1785645947
-updated = 1785645947
+updated = 1785646033
+claimant = "delete-builder"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

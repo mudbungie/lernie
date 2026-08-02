@@ -37,9 +37,10 @@ pub mod tools;
 pub use checkpoint::{due, state};
 pub use merge::{MergeOutcome, merge};
 
-use super::Error;
+use super::{Error, subagent};
 use brazen::Tool;
 use serde_json::json;
+use std::path::Path;
 
 /// Role name of the compactor child (ARCH §2.7). Its soul is
 /// `souls/compactor.md` in the governing config commit, and its toolset is
@@ -127,34 +128,51 @@ pub fn injected(role: &str) -> &'static [&'static str] {
     }
 }
 
-/// Boilerplate goal handed to a compactor at dispatch (ARCH §2.7). The
-/// dispatching branch name interpolates so the compactor knows which
-/// branch it is compacting; its inherited worktree (forked off the
-/// checkpoint commit) carries that branch's transcript, summaries, and
-/// work products, composed through the `compactor` manifest entry like
-/// any other role's (§2.7, §5.1 — the tree bounds, the manifest
-/// selects). The shipped entry selects goal, soul and the transcript
-/// tail only, so the summaries and work products named below are in the
-/// tree but not in the view, and the empty grant leaves no read tool to
-/// reach them with (§5.2, §2.7) — tracked as bl-2c63.
-pub fn compactor_goal(parent_branch: &str) -> String {
-    format!(
+/// Boilerplate goal handed to a compactor at dispatch (ARCH §2.7), read
+/// off the **dispatching branch's worktree** so the compactor's own goal
+/// can quote that branch's goal verbatim.
+///
+/// Every source it names is one the compactor actually receives (§2.7,
+/// bl-2c63). Its inherited worktree — forked off the checkpoint commit —
+/// carries the dispatching branch's whole tree, but only what the
+/// `compactor` manifest entry selects composes (§5.1: the tree bounds,
+/// the manifest selects), and that is the unconditional transcript tail
+/// plus `order: [summary/**]` (§5.2). Work products are deliberately
+/// neither composed nor named here: the acts that produced them are
+/// already transcript entries, and the compaction product is a view of
+/// the branch's *history* (§2.6 filter). The dispatching branch's goal
+/// is the third source, and it has no other route in — the child's own
+/// `goal.md` is this text — so it is quoted inline, fixed at dispatch
+/// from a file that is never rewritten (§2.8), which is why the quote
+/// cannot drift from its source.
+pub fn compactor_goal(parent_worktree: &Path, parent_branch: &str) -> Result<String, Error> {
+    let parent_goal = std::fs::read_to_string(parent_worktree.join(subagent::GOAL_FILE))?;
+    Ok(format!(
         "You are the compactor for branch `{parent_branch}`.\n\
          \n\
-         Read the branch's transcript, prior summaries under `summary/`, and\n\
-         work products, and produce a signal-preserving, minimal view of the\n\
-         branch's history using the `write_summary` tool. The harness writes it\n\
-         to the next `summary/<NNN>.md` on this branch.\n\
+         In your context is that branch's transcript and its prior summaries\n\
+         under `summary/`. Read them and produce a signal-preserving, minimal\n\
+         view of the branch's history using the `write_summary` tool. The\n\
+         harness writes it to the next `summary/<NNN>.md` on this branch. Carry\n\
+         a prior summary's signal forward into what you write before you\n\
+         nominate it for deletion: once deleted, its content is gone from the\n\
+         branch's context for good.\n\
          \n\
          Use `mark_for_deletion` to nominate superseded files — stale transcript\n\
          entries under `messages/`, a prior `summary/` you are replacing, spent\n\
-         `skills/` bodies. Your toolset is deletion-only: you can remove and\n\
-         summarize, never rewrite, so the worst case is lost information, never\n\
-         corrupted information. A work product the live branch has rewritten\n\
+         `skills/` bodies the transcript shows loaded and finished with. Your\n\
+         toolset is deletion-only: you can remove and summarize, never rewrite,\n\
+         so the worst case is lost information, never corrupted\n\
+         information. A work product the live branch has rewritten\n\
          since you forked is kept regardless of your nomination (live-branch-wins).\n\
          \n\
-         Decide relevance against the branch's goal at `goal.md`.\n"
-    )
+         Judge relevance against the dispatching branch's own goal, not your own\n\
+         preferences:\n\
+         \n\
+         <dispatching-branch-goal>\n\
+         {parent_goal}\n\
+         </dispatching-branch-goal>\n"
+    ))
 }
 
 #[cfg(test)]
@@ -163,13 +181,41 @@ mod tests {
 
     #[test]
     fn compactor_goal_names_the_branch_and_both_tools() {
-        let g = compactor_goal("20260101-p1");
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("goal.md"), "ship the widget").unwrap();
+        let g = compactor_goal(dir.path(), "20260101-p1").unwrap();
         assert!(g.contains("`20260101-p1`"), "{g}");
         assert!(g.contains("write_summary"));
         assert!(g.contains("mark_for_deletion"));
-        assert!(g.contains("goal.md"));
         assert!(g.contains("summary/<NNN>.md"));
         assert!(g.contains("live-branch-wins"));
+    }
+
+    #[test]
+    fn compactor_goal_quotes_the_dispatching_branchs_goal_and_names_only_reachable_sources() {
+        // bl-2c63: every source the boilerplate names is one the compactor
+        // receives — the transcript tail, `summary/**` (its manifest entry's
+        // one `order` category, §5.2), and the dispatching branch's goal,
+        // which reaches it only by this quote (its own `goal.md` is this
+        // text). Work products are named nowhere: nothing composes them and
+        // the role has no read tool (§2.7).
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("goal.md"), "ship the widget").unwrap();
+        let g = compactor_goal(dir.path(), "20260101-p1").unwrap();
+        assert!(
+            g.contains("<dispatching-branch-goal>\nship the widget\n</dispatching-branch-goal>"),
+            "{g}"
+        );
+        assert!(g.contains("summary/"));
+        assert!(g.contains("messages/"));
+        assert!(!g.contains("work products"), "{g}");
+    }
+
+    #[test]
+    fn compactor_goal_declines_a_dispatching_branch_with_no_goal() {
+        let dir = tempfile::tempdir().unwrap();
+        let err = compactor_goal(dir.path(), "20260101-p1").unwrap_err();
+        assert!(matches!(err, Error::Io(_)), "{err:?}");
     }
 
     #[test]

@@ -79,7 +79,9 @@ fn dispatch_compactor(
     worktree: &Path,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
-    let goal = compactor::compactor_goal(agent_id);
+    // The boilerplate goal quotes the dispatching branch's own goal
+    // (§2.7), read from the worktree we are forking off.
+    let goal = compactor::compactor_goal(worktree, agent_id)?;
     let req = ChildDispatchRequest {
         repo: workspace,
         parent_branch: agent_id,

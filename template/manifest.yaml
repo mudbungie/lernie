@@ -13,6 +13,18 @@ roles:
     pinned:
       - goal.md
       - soul.md
-    order: []
+    # The compactor's subject is the branch's history, and history has
+    # exactly two homes: the transcript (always composed, never an
+    # `order` category) and the summary chain. The chain composes here
+    # or nowhere — the compaction merge is filtered to the summary and
+    # the deletions (ARCH §2.6), so a prior compactor's reasoning never
+    # reaches the dispatching branch's transcript. A summary it cannot
+    # see is a summary it destroys when it supersedes it, so this
+    # category is what "signal-preserving" costs, not a preference.
+    # Work products stay out: their creation is already in the
+    # transcript, and they are "everything else" with no honest glob
+    # (§2.7, §5.1).
+    order:
+      - summary/**
     budget_tokens: 50000
     overflow: truncate

@@ -12,11 +12,11 @@
 //! 3. The per-call disk record lands at `<step>/tools/<tool-id>/`
 //!    with `input.json` (the `tool_use` block) and `output.json`
 //!    (stdout/stderr/exit/timestamps) per §3.3 "Disk record".
-//! 4. A failure mode (`TooLarge`) round-trips: `is_error: true`,
-//!    stderr concatenated after stdout in `tool_result.content`,
-//!    `output.json.exit_code != 0`.
+//! 4. A failure mode (`TooLarge`) round-trips: `is_error: true`, the
+//!    stderr message under the envelope's marker in
+//!    `tool_result.content`, `output.json.exit_code != 0`.
 
-use super::fixtures::StepDir;
+use super::fixtures::{StepDir, after_header};
 use crate::prompt::clock::SystemClock;
 use crate::prompt::tool::spawn::PathLookup;
 use crate::prompt::tool::{
@@ -91,7 +91,7 @@ fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
         .expect("execute succeeds");
 
     assert!(!outcome.is_error, "happy-path is_error should be false");
-    assert_eq!(outcome.content, body);
+    assert_eq!(after_header(&outcome.content), body);
 
     let dir = fixture
         .step
@@ -140,11 +140,11 @@ fn read_file_resolves_a_relative_path_against_the_agents_worktree() {
         .expect("execute succeeds");
 
     assert!(!outcome.is_error, "relative read resolves: {outcome:?}");
-    assert_eq!(outcome.content, body);
+    assert_eq!(after_header(&outcome.content), body);
 }
 
 #[test]
-fn read_file_failure_concats_stderr_and_marks_is_error() {
+fn read_file_failure_states_its_exit_code_and_marks_stderr() {
     let fixture = Fixture::new();
     let missing = fixture.step.worktree.join("does-not-exist.txt");
 

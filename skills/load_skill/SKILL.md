@@ -23,7 +23,8 @@ must be a single directory name — no slashes, no `..`.
 
 ## Output
 
-A JSON object on `tool_result.content`:
+A JSON object, carried in the result envelope below after its
+`Exit code: N` line:
 
 ```json
 { "status": "loaded", "path": "skills/<name>" }
@@ -65,6 +66,9 @@ descriptions, decide what you will need, and load it up front.
 - A name with a path separator or `..` → rejected as not a single
   directory name.
 
-The tool's stderr is concatenated after stdout into the
-`tool_result.content` on failure (ARCH §3.3 stdio contract), so you see
-the exact reason in the next step's request.
+Every result is a §3.3 **result envelope**: an `Exit code: N` line
+first, then the output described above, then — whenever the tool wrote
+any, on success as well as failure — its stderr under a
+`--- stderr ---` marker. So the exact reason for a decline reaches you
+in the next step's request, and the stated code tells you which decline
+it was.

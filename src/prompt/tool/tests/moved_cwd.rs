@@ -5,7 +5,7 @@
 //! stubbed so the executor's three arms are structural.
 
 use super::super::{SpawnTool, ToolCall, ToolExecutor};
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, after_header, driver_target};
 use crate::template::GitRunner;
 use serde_json::json;
 use std::io;
@@ -41,7 +41,11 @@ fn where_the_tool_ran(git: Box<dyn GitRunner>, step: &StepDir) -> PathBuf {
             &AtomicBool::new(false),
         )
         .unwrap();
-    PathBuf::from(String::from_utf8(outcome.content).unwrap().trim())
+    PathBuf::from(
+        String::from_utf8(after_header(&outcome.content).to_vec())
+            .unwrap()
+            .trim(),
+    )
 }
 
 #[test]

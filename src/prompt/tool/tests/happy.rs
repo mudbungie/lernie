@@ -1,12 +1,16 @@
-//! End-to-end stdio + on-disk record assertions: happy path,
-//! non-zero-exit + stderr concat, and the exact shape of `input.json`
-//! / `output.json` per ARCH §3.3 "Disk record".
+//! End-to-end stdio + on-disk record assertions: the §3.3 *result
+//! envelope* the model reads (exit code stated, stdout, then a marked
+//! stderr block whenever the child wrote one — success included), and
+//! the exact shape of `input.json` / `output.json` per §3.3 "Disk
+//! record". The two are deliberately different views of one call: the
+//! envelope is what the model saw, the record is what the subprocess
+//! emitted.
 
 use super::super::{
     ENV_CONV_BRANCH, ENV_CONV_REPO, INPUT_FILE, OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool,
     ToolCall, ToolExecutor, ToolInputRecord, ToolOutputRecord,
 };
-use super::fixtures::{FixedClock, HarnessRoot, StepDir, driver_target};
+use super::fixtures::{FixedClock, HarnessRoot, StepDir, after_header, driver_target};
 use serde_json::json;
 use std::sync::atomic::AtomicBool;
 
@@ -29,7 +33,7 @@ fn happy_path_writes_input_and_output_records() {
         )
         .unwrap();
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"hello ");
+    assert_eq!(outcome.content, b"Exit code: 0\nhello ");
 
     let dir = step.path.join(STEP_TOOLS_SUBDIR).join("toolu_01");
     let input: ToolInputRecord =
@@ -48,7 +52,7 @@ fn happy_path_writes_input_and_output_records() {
 }
 
 #[test]
-fn non_zero_exit_marks_is_error_and_concats_stderr_after_stdout() {
+fn non_zero_exit_states_its_code_and_marks_the_stderr_block() {
     let root = HarnessRoot::new();
     root.install(
         "fail",
@@ -73,8 +77,12 @@ exit 7
         )
         .unwrap();
     assert!(outcome.is_error);
-    // §3.3: stderr concatenated after stdout when exit non-zero.
-    assert_eq!(outcome.content, b"out-line\nerr-line\n");
+    // §3.3: the code is *stated*, not merely flagged — exit 7 is
+    // distinguishable from exit 127, which `is_error` alone made one bit.
+    assert_eq!(
+        outcome.content,
+        b"Exit code: 7\nout-line\n--- stderr ---\nerr-line\n"
+    );
 
     let dir = step.path.join(STEP_TOOLS_SUBDIR).join("toolu_2");
     let output: ToolOutputRecord =
@@ -85,9 +93,10 @@ exit 7
 }
 
 #[test]
-fn exit_zero_keeps_stderr_off_the_wire_content() {
-    // §3.3: stderr is captured to disk regardless of exit, but only
-    // joined into the wire `tool_result.content` when the tool failed.
+fn exit_zero_still_surfaces_stderr() {
+    // The bl-ffc5 defect: stderr on a zero exit used to be dropped from
+    // the wire content, so a warning on an otherwise successful command
+    // was invisible to the agent unless it thought to redirect `2>&1`.
     let root = HarnessRoot::new();
     root.install(
         "noisy",
@@ -111,7 +120,10 @@ echo "quiet result"
         )
         .unwrap();
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"quiet result\n");
+    assert_eq!(
+        outcome.content,
+        b"Exit code: 0\nquiet result\n--- stderr ---\nloud diagnostic\n"
+    );
     let dir = step.path.join(STEP_TOOLS_SUBDIR).join("tu_n");
     let output: ToolOutputRecord =
         serde_json::from_slice(&std::fs::read(dir.join(OUTPUT_FILE)).unwrap()).unwrap();
@@ -140,7 +152,7 @@ fn stdin_payload_is_offered_verbatim_to_the_tool() {
             &AtomicBool::new(false),
         )
         .unwrap();
-    let echoed: serde_json::Value = serde_json::from_slice(&outcome.content).unwrap();
+    let echoed: serde_json::Value = serde_json::from_slice(after_header(&outcome.content)).unwrap();
     assert_eq!(echoed, input);
 }
 
@@ -166,7 +178,7 @@ fn tool_that_ignores_stdin_still_succeeds() {
         )
         .unwrap();
     assert!(!outcome.is_error);
-    assert_eq!(outcome.content, b"done\n");
+    assert_eq!(after_header(&outcome.content), b"done\n");
 }
 
 #[test]
@@ -208,7 +220,10 @@ fn executor_sets_conv_repo_and_conv_branch_env_vars_on_tool_subprocess() {
         .parent()
         .unwrap();
     let expected = format!("{}\nconvid", conv_repo.display());
-    assert_eq!(String::from_utf8(outcome.content).unwrap(), expected);
+    assert_eq!(
+        String::from_utf8(after_header(&outcome.content).to_vec()).unwrap(),
+        expected
+    );
 
     // Sanity: pin the constant names so a rename trips this test.
     assert_eq!(ENV_CONV_REPO, "LERNIE_CONV_REPO");

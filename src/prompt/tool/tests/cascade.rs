@@ -77,9 +77,11 @@ while true; do sleep 0.05; done
             )
             .unwrap();
         assert!(outcome.is_error, "exit 9 → is_error true");
-        // §3.3: stderr concatenated after stdout when exit non-zero;
-        // here stderr is empty, content is just stdout.
-        assert_eq!(outcome.content, b"bye\n");
+        // §3.3 result envelope: the code the tool chose for itself is
+        // stated, so a SIGTERM the tool caught and handled is legible as
+        // exit 9 rather than as the cancel's own 143. Stderr is empty
+        // here, so no marked block follows.
+        assert_eq!(outcome.content, b"Exit code: 9\nbye\n");
     });
 }
 

@@ -16,7 +16,7 @@ pub struct Args {
     // a `value_parser` over that set: the compactor pair (`write_summary` /
     // `mark_for_deletion`, §2.7) is routed but unadvertised, so a clap
     // possible-values gate would refuse the compactor's own re-entry, and
-    // clap's parse error would replace the §3.3 decline (stderr concatenated
+    // clap's parse error would replace the §3.3 decline (its stderr carried
     // into `tool_result.content`) with its own voice and exit code.
     #[arg(help = name_help())]
     pub name: String,

@@ -57,9 +57,9 @@ struct Output<'a> {
 const STATUS_IN_PROGRESS: &str = "in_progress";
 
 /// Every way [`run`] can fail. Each variant prints its own stderr
-/// message; per ARCH §3.3 stderr is concatenated after stdout into
-/// `tool_result.content` when exit is non-zero, so the model sees the
-/// failure verbatim.
+/// message; per ARCH §3.3 the result envelope carries stderr into
+/// `tool_result.content` under its marker, so the model sees the
+/// failure verbatim alongside the stated exit code.
 #[derive(Debug, Error)]
 pub enum Error {
     /// Stdin handed back bytes that did not parse as the documented

@@ -21,8 +21,10 @@ the branch checkout the harness runs every tool in (ARCH §3.3) — so
 
 ## Output
 
-Raw bytes from the file, surfaced as the `content` of the matching
-`tool_result` block. Empty files yield an empty `tool_result.content`.
+Raw bytes from the file, carried in the `content` of the matching
+`tool_result` block after the envelope's `Exit code: N` line (below).
+An empty file yields no bytes of its own — the envelope line is then the
+whole result, which is how you tell an empty file from a failed read.
 
 ## When to use
 
@@ -47,6 +49,9 @@ Raw bytes from the file, surfaced as the `content` of the matching
   observed size and the cap.
 - Malformed input JSON → exit non-zero, `is_error: true`.
 
-The tool's stderr is concatenated after stdout into the
-`tool_result.content` on failure (ARCH §3.3 stdio contract), so the
-model sees the exact reason in the next step's request.
+Every result is a §3.3 **result envelope**: an `Exit code: N` line
+first, then the output described above, then — whenever the tool wrote
+any, on success as well as failure — its stderr under a
+`--- stderr ---` marker. So the exact reason for a decline reaches you
+in the next step's request, and the stated code tells you which decline
+it was.

@@ -18,6 +18,20 @@ pub(super) fn driver_target() -> &'static Path {
     Path::new("lernie")
 }
 
+/// The bytes a §3.3 *result envelope* carries after its `Exit code: N`
+/// header — for tests whose subject is what the tool printed rather than
+/// how the result is framed. The framing itself is pinned by
+/// `super::super::envelope`'s own tests and, end to end, by
+/// [`super::happy`]; re-stating it in every unrelated assertion would
+/// make one shape twenty places to edit.
+pub(super) fn after_header(content: &[u8]) -> &[u8] {
+    let header_end = content
+        .iter()
+        .position(|byte| *byte == b'\n')
+        .expect("a result envelope opens with its exit-code line");
+    &content[header_end + 1..]
+}
+
 /// Deterministic [`Clock`] — `started_at` / `ended_at` come back as
 /// `iso-1` and `iso-2` so the on-disk record's timestamps are
 /// observable in assertions without dragging the wall clock in.

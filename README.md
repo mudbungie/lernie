@@ -657,8 +657,8 @@ Each built-in is the triple §3.3 pins:
 
 - **Binary** — the `lernie tool <name>` subcommand. Reads
   `tool_use.input` JSON from stdin, writes raw bytes to stdout, exits
-  0 on success or non-zero on failure (stderr is concatenated after
-  stdout into `tool_result.content` when `is_error` is set).
+  0 on success or non-zero on failure; the harness renders the three
+  into the §3.3 *result envelope* that becomes `tool_result.content`.
 - **JSON schema** — at [`schemas/tools/<name>.json`](schemas/tools/),
   seeded to `<data-root>/tools/<name>.json` by `lernie prime` (which
   `make install` invokes, ARCH §2.2). Sent verbatim as the
@@ -691,7 +691,10 @@ Built-ins:
   auto-dispatch shim (ARCH §3.3 / §12). Try it directly:
   `echo '{"path":"README.md"}' | lernie tool read_file`.
 - **`bash`** — runs a shell command via `sh -c` and returns its
-  stdout. The shell runs in its own process group so a SIGTERM the
+  §3.3 *result envelope*: the exit code stated on the first line, then
+  stdout, then stderr under a `--- stderr ---` marker whenever the
+  command wrote any — on success as well as failure, so a warning from
+  a command that exited 0 is not lost (bl-ffc5). The shell runs in its own process group so a SIGTERM the
   harness sends is forwarded to the entire spawned tree (§2.9
   cascade). Its model-facing definition — `skills/bash/SKILL.md`
   frontmatter and `schemas/tools/bash.json` — is deliberately explicit

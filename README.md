@@ -658,10 +658,10 @@ too, the same way `load_skill` declines an unknown skill (ARCH §3.3):
 ```
 $ lernie tool --help
 Arguments:
-  <NAME>  Built-in tool to run; one of: bash, dispatch, load_skill, message, read_file
+  <NAME>  Built-in tool to run; one of: bash, cd, dispatch, load_skill, message, read_file
 
 $ echo '{}' | lernie tool nosuchtool
-lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: bash, dispatch, load_skill, message, read_file
+lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: bash, cd, dispatch, load_skill, message, read_file
 ```
 
 Built-ins:
@@ -677,11 +677,28 @@ Built-ins:
   harness sends is forwarded to the entire spawned tree (§2.9
   cascade). Its model-facing definition — `skills/bash/SKILL.md`
   frontmatter and `schemas/tools/bash.json` — is deliberately explicit
-  that the shell is **local, non-interactive, and stateless between
-  tool calls**: a gpt-5.x agent read the older wording as a remote
-  interactive shell and told the user it could only see "the server's
-  IP" (bl-298c). Try it directly:
+  that the shell is **local, non-interactive, rooted in the agent's
+  current working directory, and stateless between tool calls**: a
+  gpt-5.x agent read the older wording as a remote interactive shell and
+  told the user it could only see "the server's IP" (bl-298c). A `cd`
+  inside the command moves only that one shell — to move for more than
+  one call, use `cd` below. Try it directly:
   `echo '{"command":"ls"}' | lernie tool bash`.
+- **`cd`** — moves the calling agent's working directory for every
+  later tool call (ARCH §3.3 *Working directory*). Input is `{path}`; a
+  relative path resolves against where the agent currently is, `..` and
+  symlinks resolve, and the result is `{"cwd":"<absolute path>"}`. A path
+  that names nothing or names a file is declined and the agent stays put.
+  The cwd is **one mutable per-agent fact**, stored as the agent's own
+  mark `refs/lernie/cwd/<agent-id>` — the same per-agent mark namespace
+  as `conflicted` / `budget-exhausted`, so it is reaped with the agent by
+  `lernie delete` and crosses no fork. The default is the agent's
+  worktree, so an agent that never calls `cd` behaves exactly as before.
+  Nothing is fenced off — `bash` could already reach outside with an
+  absolute path — but the tool commit stages only the worktree, so writes
+  made elsewhere are real and **uncommitted**: off the branch, invisible
+  to a parent, absent from replay. Try it directly:
+  `echo '{"path":"/tmp"}' | lernie tool cd`.
 - **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously

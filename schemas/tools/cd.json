@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cd",
+  "description": "Input schema for the lernie built-in `cd` tool (ARCH §3.3 Working directory). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "The directory to move to. A relative path resolves against your current working directory; an absolute path is taken as given; `..` and symlinks are resolved, and the absolute result is what comes back. It must already exist and be a directory — a path that names nothing, or names a file, is declined and you stay where you were. The move persists: every later tool call of yours starts there, until you cd again."
+    }
+  },
+  "required": ["path"],
+  "additionalProperties": false
+}

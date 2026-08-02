@@ -8,12 +8,20 @@
 //! by a signal.
 //!
 //! The shell inherits this process's working directory, which the
-//! executor pinned to the calling agent's worktree before spawning
-//! `lernie tool bash` (§3.3 *Working directory*). That inheritance is
-//! the whole mechanism: the cwd is resolved once, where the tool call's
-//! identity is known, so a shell command's side effects land on the
-//! agent's branch and ride the tool commit (§2.3). Nothing here
-//! re-derives it.
+//! executor pinned to the calling agent's **current** working directory
+//! before spawning `lernie tool bash` (§3.3 *Working directory*): the
+//! agent's worktree by default, or wherever its own [`super::cd`] call
+//! last moved it. That inheritance is the whole mechanism: the cwd is
+//! resolved once, where the tool call's identity is known. Nothing here
+//! re-derives it, and nothing here can change it — a `cd` inside the
+//! spawned shell dies with that shell, which is why moving is a tool
+//! call and not a command.
+//!
+//! Side effects therefore ride the tool commit only while the agent is
+//! *in* its worktree: the commit stages the worktree (§2.3, §3.3
+//! `git add -A`), so a shell writing outside it writes off the record.
+//! The `cd` tool definition says so; nothing here enforces it (§3.6
+//! defers bounding a tool's authority to the v1.1 sandbox).
 //!
 //! The shell runs in its own process group so a SIGTERM the harness
 //! sends to `lernie tool bash` can be forwarded to the entire spawned

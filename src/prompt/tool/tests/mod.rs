@@ -14,6 +14,9 @@
 //!   from a signal not under harness control" §2.10 fault.
 //! - [`errors`]: failure modes of resolution, spawn, and disk-record
 //!   I/O.
+//! - [`moved_cwd`]: the working-directory mark at the spawn boundary —
+//!   the worktree as default cwd, a `cd` that moved it, and a mark whose
+//!   directory has since gone.
 //! - [`etxtbsy`]: the "text file busy" retry envelope around a spawn,
 //!   both arms, on waits that cannot be closed by machine load.
 //! - [`bash_tool`], [`read_file_tool`]: end-to-end through the
@@ -26,6 +29,7 @@ mod errors;
 mod etxtbsy;
 mod fixtures;
 mod happy;
+mod moved_cwd;
 mod read_file_tool;
 mod resolve;
 mod types;

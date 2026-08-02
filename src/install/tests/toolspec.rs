@@ -25,7 +25,10 @@
 //! branch's assembled body is its goal, soul and transcript, all
 //! operator-authored (§5.1) — so the tool definition is the only place
 //! left that can state it, and it must: **local**, **non-interactive**,
-//! **rooted in the agent's worktree**, **stateless between tool calls**.
+//! **rooted in the agent's current working directory** — its worktree
+//! until the agent moves with the `cd` tool (§3.3 *Working directory*),
+//! and only worktree writes are committed — **stateless between tool
+//! calls**.
 
 /// The frontmatter `description` the shipped `<name>` skill ships —
 /// byte-for-byte the string that reaches the wire.
@@ -91,7 +94,9 @@ fn the_bash_description_says_where_it_runs_and_what_survives() {
         &wire_description("bash"),
         &[
             "Shell state does not carry over",
-            "in your worktree",
+            "use the `cd` tool to move for real",
+            "your worktree unless you moved it with the `cd` tool",
+            "what you write outside it is not",
             "if the command exits non-zero its stderr is appended",
         ],
         "bash tool description",
@@ -106,9 +111,12 @@ fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
     // user's default shell"), not the argv array its retired `shell`
     // tool used, so lernie's one-string shape is already the shape
     // those models see. Its extra params are ones lernie cannot honour:
-    // `workdir` is fixed by construction (§3.3 pins cwd to the agent's
-    // worktree) and `timeout_ms` has no implementation — the executor
-    // imposes no wall-clock limit. The executor's `Input` struct
+    // `workdir` has no lernie meaning because the cwd is not a per-call
+    // parameter at all — it is one mutable fact about the agent, moved by
+    // an explicit `cd` tool call and read at every spawn (§3.3 *Working
+    // directory*), so a per-call override would be a second home for it.
+    // `timeout_ms` has no implementation — the executor imposes no
+    // wall-clock limit. The executor's `Input` struct
     // (`prompt::tool::builtin::bash`) is `deny_unknown_fields`, so a
     // schema that grew either would be a promise the tool refuses at
     // runtime. The prose was the defect, not the shape.
@@ -131,7 +139,7 @@ fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
             "runs non-interactively",
             "stdin is /dev/null",
             "no TTY",
-            "starts in your worktree",
+            "starts in your current working directory",
             "discarded when it exits",
         ],
         "bash command-property description",

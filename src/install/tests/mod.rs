@@ -35,7 +35,14 @@ fn tree(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     out
 }
 
-const POOL_ENTRIES: [&str; 5] = ["bash", "dispatch", "load_skill", "message", "read_file"];
+const POOL_ENTRIES: [&str; 6] = [
+    "bash",
+    "cd",
+    "dispatch",
+    "load_skill",
+    "message",
+    "read_file",
+];
 
 #[test]
 fn seeds_a_fresh_collapsed_home() {

@@ -166,3 +166,48 @@ fn an_unknown_name_gets_the_shared_existence_decline_and_it_mentions_names() {
     assert!(msg.contains("no agent \"grey-heron\""), "{msg}");
     assert!(msg.contains("by id or unique name"), "{msg}");
 }
+
+#[test]
+fn a_child_of_a_named_parent_is_unnamed_not_its_parents_namesake() {
+    // The regression the always-written file exists to make impossible
+    // (§2.3): a child forks off its parent's tip and so inherits the
+    // parent's `name` blob. Its own dispatch commit settles the fact, so
+    // the name does not propagate down the tree and uniqueness holds.
+    let (_h, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, PARENT);
+    dispatch_child(&ws, Some("pale-otter")).unwrap();
+    let named = child_of(&ws);
+
+    // A grandchild off the *named* child, dispatched with no name.
+    with_fx("true", b"", &noop_editor, |fx| {
+        dispatch::run(
+            dispatch::Args {
+                role: "worker".into(),
+                repo: ws.clone(),
+                branch: named.clone(),
+                goal: Some("go".into()),
+                name: None,
+            },
+            fx,
+        )
+    })
+    .0
+    .unwrap();
+
+    let git = RealGit::new();
+    let grandchild = agent_ids(&ws, &git)
+        .unwrap()
+        .into_iter()
+        .find(|id| id.starts_with(&format!("{named}-")))
+        .expect("the grandchild forked");
+    assert_eq!(
+        agent_name::read(&ws, &grandchild, &git),
+        None,
+        "an unnamed child does not wear the name it inherited",
+    );
+    assert_eq!(
+        agent_name::read(&ws, &named, &git).as_deref(),
+        Some("pale-otter"),
+        "and its parent keeps its own",
+    );
+}

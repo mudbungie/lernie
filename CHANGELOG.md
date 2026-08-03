@@ -21,6 +21,7 @@ merges.
 
 ### Changes
 
+- commit the provider's token usage with the model output it belongs to: a `messages/NNN-<model>.json` entry is now an API-shaped `{"content":[…],"usage":{…}}` object (the bare block array stays lawful and unmigrated), so a transcript reader states real token counts from the committed bytes alone [bl-718e]
 - the hand-maintained changelog becomes the single authority: release-plz no longer writes CHANGELOG.md (`changelog_update = false`), the bl-1923 subject-protection preprocessor is deleted (release-plz preprocesses twice, so it doubled — 'fleet: fleet: drop …'), and `make promote-changelog VERSION=x.y.z` stamps [Unreleased] as the release section [bl-7558]
 - record every result deposit at a durable `refs/lernie/returned/<child>` mark so `lernie scan` never fabricates a `died` epitaph for a compactor (or any child) whose return was consumed [bl-2c06]
 - qualify the bare-'call' usages the 8/01-02 doc edits introduced, define tool window / grant gate / checkpoint origin, fix ARCH's rm cross-ref to §5.4, drop the cache-pin overload [bl-81ce]

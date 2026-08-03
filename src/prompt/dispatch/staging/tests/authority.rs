@@ -1,6 +1,7 @@
 //! Segment-authority behavior of the staging sink (ARCH §4.4): an
 //! `Error` segment truncates, a `Pause` segment accumulates, `Finish`
-//! seals. Also the raw byte shape (array brackets/commas) and the
+//! seals — for the segment's blocks and for its usage report alike
+//! (§2.3 *Usage rides the entry*). Also the sealed object's raw shape and the
 //! ignore-paths for stray deltas / non-content events.
 
 use super::*;
@@ -107,7 +108,6 @@ fn non_content_events_do_not_touch_the_entry() {
             start(0, ContentKind::Text {}),
             delta(0, Delta::TextDelta("x".into())),
             stop(0),
-            Event::Usage(Usage::default()),
             Event::Finish {
                 reason: FinishReason::Stop,
             },
@@ -125,9 +125,10 @@ fn non_content_events_do_not_touch_the_entry() {
 
 #[test]
 fn sealed_file_is_valid_json_after_multiple_segments() {
-    // Guards the raw byte shape (the array brackets/commas) independent
-    // of the Content round-trip: a truncated segment then a two-block
-    // segment must seal to a well-formed two-element array.
+    // Guards the raw byte shape (the entry object, its array brackets and
+    // commas) independent of the Content round-trip: a truncated segment
+    // then a two-block segment must seal to a well-formed object
+    // wrapping a two-element `content` array.
     let dir = TempDir::new().unwrap();
     let (mut w, path) = new_writer(&dir);
     w.begin_segment();
@@ -150,6 +151,89 @@ fn sealed_file_is_valid_json_after_multiple_segments() {
     let parsed: Value = serde_json::from_str(&raw).unwrap();
     assert_eq!(
         parsed,
-        json!([{"type":"text","text":"one"},{"type":"text","text":"two"}])
+        json!({"content": [{"type":"text","text":"one"},{"type":"text","text":"two"}]})
     );
+}
+
+/// A `usage` event carrying `input`/`output` counters.
+fn usage(input: Option<u32>, output: Option<u32>) -> Event {
+    let mut u = Usage::default();
+    u.input_tokens = input;
+    u.output_tokens = output;
+    Event::Usage(u)
+}
+
+/// The sealed entry's `usage` sibling, or `Value::Null` when it has none.
+fn sealed_usage(w: StagingWriter, path: &std::path::Path) -> Value {
+    let parsed: Value = serde_json::from_slice(&sealed_bytes(w, path)).unwrap();
+    parsed.get("usage").cloned().unwrap_or(Value::Null)
+}
+
+#[test]
+fn the_sealed_entry_carries_the_providers_usage_report() {
+    // The provider states one report in installments (§2.3 *Usage rides the entry*): the
+    // entry seals both counters, recorded verbatim — never summed.
+    let dir = TempDir::new().unwrap();
+    let (mut w, path) = new_writer(&dir);
+    w.begin_segment();
+    feed_all(
+        &mut w,
+        &[
+            usage(Some(120), Some(0)),
+            start(0, ContentKind::Text {}),
+            delta(0, Delta::TextDelta("x".into())),
+            stop(0),
+            usage(None, Some(37)),
+            Event::Finish {
+                reason: FinishReason::Stop,
+            },
+            Event::End,
+        ],
+    );
+    assert_eq!(
+        sealed_usage(w, &path),
+        json!({"input_tokens": 120, "output_tokens": 37})
+    );
+}
+
+#[test]
+fn a_call_the_provider_reported_no_usage_for_seals_without_the_sibling() {
+    // Absence is the general path, not an error: a usage-free entry is
+    // exactly what every entry looked like before the counters rode along.
+    let dir = TempDir::new().unwrap();
+    let (mut w, path) = new_writer(&dir);
+    w.begin_segment();
+    feed_all(&mut w, &[start(0, ContentKind::Text {}), stop(0)]);
+    assert_eq!(sealed_usage(w, &path), Value::Null);
+}
+
+#[test]
+fn a_truncated_segments_usage_is_discarded_with_its_blocks() {
+    // §4.4: an `Error`-terminated segment contributes nothing — its
+    // counters are billed from `response.json` (§6, §8), never from the
+    // committed output's own report.
+    let dir = TempDir::new().unwrap();
+    let (mut w, path) = new_writer(&dir);
+    w.begin_segment();
+    feed_all(&mut w, &[usage(Some(999), Some(999))]);
+    w.truncate_segment().unwrap();
+    w.begin_segment();
+    feed_all(&mut w, &[usage(Some(4), Some(1))]);
+    assert_eq!(
+        sealed_usage(w, &path),
+        json!({"input_tokens": 4, "output_tokens": 1})
+    );
+}
+
+#[test]
+fn a_retried_calls_entry_reports_only_the_sealing_segment() {
+    // The counters of a superseded attempt do not leak into the report,
+    // even without an explicit truncate: each segment starts fresh.
+    let dir = TempDir::new().unwrap();
+    let (mut w, path) = new_writer(&dir);
+    w.begin_segment();
+    feed_all(&mut w, &[usage(Some(50), Some(9))]);
+    w.begin_segment();
+    feed_all(&mut w, &[usage(Some(60), None)]);
+    assert_eq!(sealed_usage(w, &path), json!({"input_tokens": 60}));
 }

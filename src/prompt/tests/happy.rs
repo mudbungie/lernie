@@ -210,12 +210,18 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert!(runs[23].1[2].contains("transcript 002: claude-sonnet-5"));
     assert!(runs[23].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
-    // canonical model-output blocks (the "hi there" text block).
+    // canonical model-output blocks (the "hi there" text block) plus the
+    // provider's own token usage (§2.3 *Usage rides the entry*) — so a transcript reader
+    // states real counts from the committed bytes alone.
     let entry = worktree.join("messages/002-claude-sonnet-5.json");
-    let blocks: serde_json::Value =
+    let committed: serde_json::Value =
         serde_json::from_slice(&std::fs::read(&entry).unwrap()).unwrap();
-    assert_eq!(blocks[0]["type"], "text");
-    assert_eq!(blocks[0]["text"], "hi there");
+    assert_eq!(committed["content"][0]["type"], "text");
+    assert_eq!(committed["content"][0]["text"], "hi there");
+    assert_eq!(
+        committed["usage"],
+        serde_json::json!({"input_tokens": 5, "output_tokens": 3})
+    );
     // The staging file left by rename — no debris under steps/.
     assert!(!step_dir.join("staging.json").exists());
 

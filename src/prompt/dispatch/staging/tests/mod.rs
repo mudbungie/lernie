@@ -1,10 +1,12 @@
 //! Unit tests for the transcript writer's staging sink (ARCH §2.3).
 //!
-//! The file is parsed back as `Vec<Content>` rather than compared as
-//! raw bytes, so the assertions ride brazen's canonical vocabulary and
-//! cannot drift from its serialization. Block-content behavior lives
-//! here; segment-authority behavior (truncate / accumulate / seal) lives
-//! in [`authority`].
+//! The file is parsed back through the entry shape's one reader
+//! ([`super::entry::blocks`]) rather than compared as raw bytes, so the
+//! assertions ride brazen's canonical vocabulary and cannot drift from
+//! its serialization. Block-content behavior lives here;
+//! segment-authority behavior (truncate / accumulate / seal) and the
+//! sealed object's own shape — including the usage sibling — live in
+//! [`authority`].
 
 mod authority;
 
@@ -31,10 +33,15 @@ fn feed_all(w: &mut StagingWriter, events: &[Event]) {
     }
 }
 
-/// Seal `w` and parse the staging file back as a canonical block list.
+/// Seal `w` and read the staging file back as a canonical block list.
 fn sealed_blocks(w: StagingWriter, path: &std::path::Path) -> Vec<Content> {
+    entry::blocks(&sealed_bytes(w, path))
+}
+
+/// Seal `w` and return the entry's bytes.
+fn sealed_bytes(w: StagingWriter, path: &std::path::Path) -> Vec<u8> {
     w.seal().unwrap();
-    serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap()
+    std::fs::read(path).unwrap()
 }
 
 fn new_writer(dir: &TempDir) -> (StagingWriter, std::path::PathBuf) {

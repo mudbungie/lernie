@@ -473,8 +473,10 @@ returns by depositing a result message into its parent's inbox (§2.6):
    transcript), never read back. When the model call completes, the
    sealed file is renamed into the worktree as
    `messages/NNN-<model-id>.json` — its origin token is the model that
-   authored it (§2.3), the body a JSON array of canonical `Content`
-   blocks — and committed. `NNN` is the branch's transcript counter,
+   authored it (§2.3), the body an API-shaped object carrying the
+   canonical `Content` blocks under `content` plus the provider's token
+   `usage` beside them (§2.3 *Usage rides the entry*; a bare block array
+   with no usage is equally lawful and still parses) — and committed. `NNN` is the branch's transcript counter,
    max-present-plus-one from the `messages/` listing, evaluated at
    commit time. The initial user message now enters through the front
    door like any other (§2.11): the executor deposits it into the agent's
@@ -579,8 +581,13 @@ f643a50 step 001: dispatch […]
 
 `ls-tree` lists the transcript itself (`messages/001-user.md`,
 `messages/002-<model-id>.json`, …) and `show` prints one entry — a
-model-output entry is a JSON array of canonical `Content` blocks, e.g.
-`[{"type":"text","text":"pong"}]`. `ls steps/<conv-id>/` lists the
+model-output entry wraps the canonical `Content` blocks in `content` and
+states the provider's token counts beside them, e.g.
+`{"content":[{"type":"text","text":"pong"}],"usage":{"input_tokens":812,"output_tokens":3}}`,
+so token counts read off the committed bytes with no `steps/` lookup
+(§2.3 *Usage rides the entry*). A bare `[{"type":"text",…}]` array — every
+tool entry, and every model entry written before usage rode along — is
+equally lawful. `ls steps/<conv-id>/` lists the
 off-worktree step records, one numbered directory per step, each holding
 `request.json`, `response.json`, and `meta.json`. There is **no
 `summary/`** on a branch that never reached a compaction checkpoint

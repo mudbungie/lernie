@@ -17,6 +17,7 @@
 //! (§2.3) — what makes replay bit-identical rather than a lossy
 //! re-rendering.
 
+use super::entry;
 use crate::prompt::Error;
 use crate::template::GitRunner;
 use brazen::Content;
@@ -113,8 +114,7 @@ pub(super) fn commit_assistant(
     std::fs::rename(staging_path, &dest)?;
     commit_entry(worktree, conv_id, seq, &[&rel], model_id, git)?;
     let bytes = std::fs::read(&dest)?;
-    // Harness-sealed staging, so always a valid canonical array (§2.3).
-    Ok(serde_json::from_slice(&bytes).expect("model-output entry is a canonical Content array"))
+    Ok(entry::blocks(&bytes))
 }
 
 /// Commit one resolved tool call's canonical `tool_result` block as
@@ -173,11 +173,7 @@ pub(super) fn committed_result_ids(
             continue;
         }
         let bytes = std::fs::read(&path)?;
-        // Harness-written (`commit_tool`), so always a canonical array —
-        // the writer's invariant (§2.3), same as the assembler's read.
-        let blocks: Vec<Content> =
-            serde_json::from_slice(&bytes).expect("tool entry is a canonical Content array");
-        for block in blocks {
+        for block in entry::blocks(&bytes) {
             if let Content::ToolResult { tool_use_id, .. } = block {
                 ids.insert(tool_use_id);
             }

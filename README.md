@@ -698,14 +698,29 @@ too, the same way `load_skill` declines an unknown skill (ARCH §3.3):
 ```
 $ lernie tool --help
 Arguments:
-  <NAME>  Built-in tool to run; one of: bash, cd, dispatch, load_skill, message, read_file
+  <NAME>  Built-in tool to run; one of: apply_patch, bash, cd, dispatch, load_skill, message, read_file
 
 $ echo '{}' | lernie tool nosuchtool
-lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: bash, cd, dispatch, load_skill, message, read_file
+lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: apply_patch, bash, cd, dispatch, load_skill, message, read_file
 ```
 
 Built-ins:
 
+- **`apply_patch`** — the structured edit path (ARCH §3.3 *The patch
+  tool*): one patch envelope (codex's `apply_patch` grammar, `*** Begin
+  Patch` … `*** End Patch`) carrying add/delete/update/rename across
+  multiple files, applied **atomically** — every operation is validated
+  and every post-state computed in memory before any write lands, so a
+  patch that cannot apply in full applies not at all. Hunks locate
+  their context by the four-rung **matching ladder** (exact →
+  ignore-trailing-whitespace → ignore-edge-whitespace →
+  unicode-normalized, mirroring `git apply`'s fuzz) and the target must
+  be unique at the winning rung: ambiguity and stale context are loud
+  typed declines naming file, hunk, and reason — never a guessed edit;
+  `@@ <enclosing symbol>` anchor lines disambiguate repeated blocks.
+  Success returns a JSON report with each hunk's winning rung, landing
+  line, and (under fuzz) the lines actually replaced. Try it directly:
+  `echo '{"input":"*** Begin Patch\n*** Add File: hi.txt\n+hello\n*** End Patch"}' | lernie tool apply_patch`.
 - **`read_file`** — read the entire contents of a file at a given
   path. Rejects files larger than 1 MiB, reporting the file's **true**
   size (`stat`, not the capped read's length) so the agent can judge

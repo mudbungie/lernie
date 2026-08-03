@@ -21,6 +21,7 @@ pub(super) fn route<R: Read, W: Write, E: Write>(
 /// The `bash`, `cd` and compactor-tool routing arms, and the advertised
 /// pool, split out to keep this file under the repo's per-file line cap.
 mod pool;
+mod routing_apply_patch;
 mod routing_bash;
 mod routing_cd;
 mod routing_compaction;

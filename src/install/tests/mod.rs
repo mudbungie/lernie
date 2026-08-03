@@ -43,7 +43,8 @@ fn tree(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     out
 }
 
-const POOL_ENTRIES: [&str; 6] = [
+const POOL_ENTRIES: [&str; 7] = [
+    "apply_patch",
     "bash",
     "cd",
     "dispatch",

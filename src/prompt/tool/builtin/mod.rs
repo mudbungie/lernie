@@ -19,7 +19,10 @@
 //! address immediately and never blocks; a message deposits
 //! synchronously and returns `{status: deposited}`; a load_skill copies
 //! and returns `{status: loaded|already_loaded}`; a cd returns
-//! `{cwd: <absolute path>}`. All derive the calling agent's
+//! `{cwd: <absolute path>}`. [`apply_patch`] is the structured edit
+//! path (§3.3 *The patch tool*): one atomic multi-file envelope,
+//! located through the matching ladder, applied all-or-nothing.
+//! All derive the calling agent's
 //! identity from `LERNIE_CONV_BRANCH` (§3.3), never from model input.
 //! Adding a new one is a match arm in [`run`] plus a sibling module.
 
@@ -27,6 +30,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 use thiserror::Error;
 
+pub mod apply_patch;
 pub mod bash;
 pub mod cd;
 pub mod compaction;
@@ -35,6 +39,9 @@ pub mod load_skill;
 pub mod message;
 pub mod read_file;
 
+/// Built-in tool name: atomic multi-file structured edit (§3.3 *The
+/// patch tool*).
+const APPLY_PATCH: &str = "apply_patch";
 /// Built-in tool name: run a shell command (§3.3).
 const BASH: &str = "bash";
 /// Built-in tool name: move the calling agent's working directory (§3.3
@@ -57,7 +64,15 @@ const READ_FILE: &str = "read_file";
 /// deliberately absent: it is injected for the compactor role alone
 /// (§2.7), never a name a general agent or an operator elects, so it is
 /// routed but not advertised.
-pub const NAMES: [&str; 6] = [BASH, CD, DISPATCH, LOAD_SKILL, MESSAGE, READ_FILE];
+pub const NAMES: [&str; 7] = [
+    APPLY_PATCH,
+    BASH,
+    CD,
+    DISPATCH,
+    LOAD_SKILL,
+    MESSAGE,
+    READ_FILE,
+];
 
 /// [`NAMES`] rendered for a human: the pool named in the unknown-tool
 /// decline and in `lernie tool --help`, in the same voice `load_skill`
@@ -85,6 +100,14 @@ pub enum Error {
     /// so the message reaches the model verbatim.
     #[error(transparent)]
     ReadFile(#[from] read_file::Error),
+    /// `apply_patch` refused or failed (bad input JSON, an envelope that
+    /// did not parse, stale or ambiguous context, a write fault, per
+    /// [`apply_patch::Error`], §3.3 *The patch tool*). A refused patch
+    /// is a decline the model reads as an `is_error` `tool_result`
+    /// carrying the exact reason; nothing was written. Same
+    /// stderr-concat contract as the other arms.
+    #[error(transparent)]
+    ApplyPatch(#[from] apply_patch::Error),
     /// `bash` failed at the harness layer (bad input JSON, spawn
     /// failure, broken pipe, etc.). In-band shell failures — the
     /// command ran and exited non-zero — are *not* this variant; they
@@ -171,6 +194,11 @@ pub fn run_with<R: Read, W: Write, E: Write>(
         return read_file::run(stdin, stdout)
             .map(|()| 0)
             .map_err(Error::ReadFile);
+    }
+    if name == APPLY_PATCH {
+        return apply_patch::run(stdin, stdout)
+            .map(|()| 0)
+            .map_err(Error::ApplyPatch);
     }
     if name == BASH {
         return bash::run(stdin, stdout, stderr).map_err(Error::Bash);

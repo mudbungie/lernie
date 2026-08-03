@@ -1,30 +1,84 @@
-//! Coverage for the report renderer (ARCH §9.1, §9.3).
+//! Coverage for the report renderer (ARCH §9.1, §9.3; bl-36fa): the
+//! quality sections, the efficiency aggregates with the missing-≠-zero
+//! rendering, and the reproducibility block in both its known and
+//! unknown shapes.
 
+use agent_eval::metrics::RunMetrics;
+use agent_eval::record::{Provenance, Record, RunRecord, TaskRecord};
 use agent_eval::report;
-use agent_eval::stats::{self, TaskResult};
 
-#[rustfmt::skip]
-fn task(id: &str, cats: &[&str], outcomes: &[bool]) -> TaskResult {
-    let categories = cats.iter().map(|s| s.to_string()).collect();
-    TaskResult { id: id.to_string(), categories, outcomes: outcomes.to_vec() }
+fn run(pass: bool, wall_ms: u64, metrics: Option<RunMetrics>) -> RunRecord {
+    RunRecord {
+        pass,
+        wall_ms,
+        metrics,
+    }
+}
+
+fn task(id: &str, cats: &[&str], runs: Vec<RunRecord>) -> TaskRecord {
+    TaskRecord {
+        id: id.to_string(),
+        categories: cats.iter().map(|s| s.to_string()).collect(),
+        runs,
+    }
+}
+
+fn full_metrics() -> RunMetrics {
+    RunMetrics {
+        attempts: 2,
+        tool_invocations: 4,
+        input_tokens: Some(100),
+        output_tokens: Some(40),
+        cache_read_tokens: Some(10),
+        cache_write_tokens: None,
+        models: vec!["m1".to_string()],
+        providers: vec!["acme".to_string()],
+    }
+}
+
+fn known_provenance() -> Provenance {
+    Provenance {
+        experiment: "baseline".to_string(),
+        workflow: "/x/workflow.yaml".to_string(),
+        suite: "tests/suite".to_string(),
+        suite_revision: Some("abc123+dirty".to_string()),
+        fixture_digest: Some("00ff".to_string()),
+        driver: "fake-driver".to_string(),
+        driver_version: Some("fake-driver 1.0".to_string()),
+        runs_per_task: 5,
+    }
 }
 
 #[test]
 fn render_includes_all_sections() {
-    let results = vec![
-        task(
-            "a",
-            &["early_termination"],
-            &[true, true, false, false, true],
-        ),
-        task(
-            "b",
-            &["scope_reduction"],
-            &[false, false, false, false, false],
-        ),
-    ];
-    let m = stats::compute(&results);
-    let text = report::render("baseline", &m);
+    let record = Record {
+        provenance: known_provenance(),
+        tasks: vec![
+            task(
+                "a",
+                &["early_termination"],
+                vec![
+                    run(true, 2000, Some(full_metrics())),
+                    run(true, 1000, Some(full_metrics())),
+                    run(false, 1000, None),
+                    run(false, 1000, None),
+                    run(true, 5000, None),
+                ],
+            ),
+            task(
+                "b",
+                &["scope_reduction"],
+                vec![
+                    run(false, 0, None),
+                    run(false, 0, None),
+                    run(false, 0, None),
+                    run(false, 0, None),
+                    run(false, 0, None),
+                ],
+            ),
+        ],
+    };
+    let text = report::render(&record);
 
     assert!(text.contains("experiment: baseline"));
     assert!(text.contains("tasks: 2"));
@@ -38,4 +92,43 @@ fn render_includes_all_sections() {
     // pass@1 line carries a percentage and a bracketed interval.
     assert!(text.contains('%'));
     assert!(text.contains('['));
+
+    // Efficiency: wall over all 10 runs (10s/10 = 1.0s); the derived
+    // means over the 2 disclosed runs; cache_write never reported.
+    assert!(text.contains("runs with workspace metrics: 2/10"));
+    assert!(text.contains("outer wall/run: 1.0s"));
+    assert!(text.contains("attempts/run: 2.0"));
+    assert!(text.contains("tool invocations/run: 4.0"));
+    assert!(text.contains("input 200"));
+    assert!(text.contains("cache_write —"));
+
+    // Reproducibility: every probed input reported.
+    assert!(text.contains("suite: tests/suite @ abc123+dirty"));
+    assert!(text.contains("starting fixture: sha256:00ff"));
+    assert!(text.contains("experiment: baseline (/x/workflow.yaml)"));
+    assert!(text.contains("driver: fake-driver (fake-driver 1.0)"));
+    assert!(text.contains("models: m1   providers: acme"));
+}
+
+#[test]
+fn unknowns_render_as_unknown_never_as_zero() {
+    let record = Record {
+        provenance: Provenance {
+            suite_revision: None,
+            fixture_digest: None,
+            driver_version: None,
+            ..known_provenance()
+        },
+        tasks: vec![task("a", &["early_termination"], vec![run(false, 0, None)])],
+    };
+    let text = report::render(&record);
+    assert!(text.contains("@ revision unknown"));
+    assert!(text.contains("starting fixture: unknown"));
+    assert!(text.contains("(version unreported)"));
+    assert!(text.contains("models: unreported   providers: unreported"));
+    // No run disclosed a workspace: every derived metric is missing.
+    assert!(text.contains("runs with workspace metrics: 0/1"));
+    assert!(text.contains("attempts/run: —"));
+    assert!(text.contains("tool invocations/run: —"));
+    assert!(text.contains("input —  output —  cache_read —  cache_write —"));
 }

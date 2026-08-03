@@ -160,13 +160,16 @@ new-workspace:
 # is `lernie-eval-agent` (built here; installed on PATH by `make install`);
 # it execs `lernie` from PATH per run, so have `make install` done first.
 # Any program honouring the contract in README "Run the suite" works.
+# RECORD=<path> (optional) saves the machine-readable evaluation record
+# (bl-36fa) — the input `agent-eval compare <baseline> <candidate>` takes.
+# A live-model eval is always this explicit operator command, never CI.
 eval:
 	@test -n "$(CONFIG)" -a -n "$(AGENT)" || { \
-	  echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>"; \
+	  echo "usage: make eval CONFIG=<experiment> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd> [RECORD=<out.json>]"; \
 	  echo "AGENT is required; the shipped driver is lernie-eval-agent (README, \"Run the suite\")"; \
 	  exit 1; }
 	@cargo build --quiet -p lernie-eval-agent
-	@cargo run --quiet -p agent-eval -- --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" --agent "$(AGENT)"
+	@cargo run --quiet -p agent-eval -- run --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" --agent "$(AGENT)" $(if $(RECORD),--record "$(RECORD)")
 
 lint:
 	cargo clippy --all-targets -- -D warnings

@@ -1,9 +1,16 @@
-//! The `agent-eval` binary (ARCH §9.3, v0.10).
+//! The `agent-eval` binary (ARCH §9.3, v0.10; bl-36fa).
 //!
-//! `agent-eval --config <experiment> --suite <suite> --runs N` executes
-//! the experiment (`experiments/<config>/workflow.yaml`) against the
-//! suite (a task directory) N times per task and prints per-task /
-//! per-category pass@1 and pass@5 (ARCH §9.1).
+//! `agent-eval run --config <experiment> --suite <suite> --runs N
+//! --agent <driver>` executes the experiment
+//! (`experiments/<config>/workflow.yaml`) against the suite (a task
+//! directory) N times per task and prints quality (pass@1/pass@5, §9.1),
+//! efficiency (outer wall, attempts, tool invocations, usage), and the
+//! reproducibility inputs. `--record <path>` additionally saves the
+//! machine-readable evaluation record.
+//!
+//! `agent-eval compare <baseline.json> <candidate.json>` renders the
+//! baseline → candidate deltas from two saved records — no run happens;
+//! comparison never invokes a driver or a model.
 //!
 //! `--agent` names the external harness-driver the runner invokes per run
 //! (the injectable agent seam, §9.3). It is **required with no default**:
@@ -19,9 +26,10 @@
 //! logic and its coverage live there.
 
 use agent_eval::agent::{CommandAgent, CommandBundler};
+use agent_eval::record::{Provenance, Record};
 use agent_eval::runner::{self, EvalConfig};
-use agent_eval::{experiment, report, suite};
-use clap::Parser;
+use agent_eval::{compare, experiment, report, repro, suite};
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -32,6 +40,25 @@ use std::process::ExitCode;
     version
 )]
 struct Cli {
+    #[command(subcommand)]
+    cmd: Cmd,
+}
+
+#[derive(Subcommand)]
+enum Cmd {
+    /// Run experiment × suite × N and report quality + efficiency.
+    Run(RunArgs),
+    /// Compare two saved records: baseline → candidate deltas.
+    Compare {
+        /// The baseline evaluation record (`run --record`).
+        baseline: PathBuf,
+        /// The candidate evaluation record.
+        candidate: PathBuf,
+    },
+}
+
+#[derive(Parser)]
+struct RunArgs {
     /// Experiment name: `experiments/<config>/workflow.yaml` (§9.3).
     #[arg(long)]
     config: String,
@@ -56,11 +83,22 @@ struct Cli {
     /// The `lernie` binary used to bundle failing runs (§9.2).
     #[arg(long, default_value = "lernie")]
     lernie: String,
+    /// Save the machine-readable evaluation record here (bl-36fa) — the
+    /// input `agent-eval compare` consumes.
+    #[arg(long)]
+    record: Option<PathBuf>,
 }
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
-    match run(cli) {
+    let result = match cli.cmd {
+        Cmd::Run(args) => run(args),
+        Cmd::Compare {
+            baseline,
+            candidate,
+        } => run_compare(&baseline, &candidate),
+    };
+    match result {
         Ok(text) => {
             print!("{text}");
             ExitCode::SUCCESS
@@ -72,18 +110,18 @@ fn main() -> ExitCode {
     }
 }
 
-fn run(cli: Cli) -> Result<String, Box<dyn std::error::Error>> {
+fn run(cli: RunArgs) -> Result<String, Box<dyn std::error::Error>> {
     let experiment = experiment::resolve(&cli.config, &cli.experiments_dir)?;
     let tasks = suite::load(&cli.suite)?;
     let base = tempfile::tempdir()?;
 
-    let agent = CommandAgent::new(cli.agent);
-    let bundler = CommandBundler::new(cli.lernie);
+    let agent = CommandAgent::new(&cli.agent);
+    let bundler = CommandBundler::new(&cli.lernie);
     let cfg = EvalConfig {
         runs: cli.runs,
         bundle_dir: cli.bundle_dir,
     };
-    let metrics = runner::evaluate(
+    let task_records = runner::evaluate(
         &tasks,
         &experiment,
         base.path(),
@@ -91,5 +129,30 @@ fn run(cli: Cli) -> Result<String, Box<dyn std::error::Error>> {
         Some(&bundler),
         &cfg,
     )?;
-    Ok(report::render(&experiment.name, &metrics))
+    let record = Record {
+        provenance: Provenance {
+            experiment: experiment.name.clone(),
+            workflow: experiment.workflow.display().to_string(),
+            suite: cli.suite.display().to_string(),
+            suite_revision: repro::suite_revision(&cli.suite),
+            fixture_digest: repro::fixture_digest(&cli.suite),
+            driver: cli.agent.clone(),
+            driver_version: repro::driver_version(&cli.agent),
+            runs_per_task: cli.runs,
+        },
+        tasks: task_records,
+    };
+    if let Some(path) = &cli.record {
+        record.save(path)?;
+    }
+    Ok(report::render(&record))
+}
+
+fn run_compare(
+    baseline: &PathBuf,
+    candidate: &PathBuf,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let baseline = Record::load(baseline)?;
+    let candidate = Record::load(candidate)?;
+    Ok(compare::render(&baseline, &candidate))
 }

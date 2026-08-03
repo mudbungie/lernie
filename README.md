@@ -1245,11 +1245,28 @@ well-formedness enforced by `tests/suite.rs`.
 
 **Run the suite.** The `agent-eval` runner (a separate crate, `crates/agent-eval`,
 ARCH §9.3) executes an experiment against the suite N times per task and reports
-pass@1 (with 95% Wilson intervals) and pass@5, overall and per category:
+quality — pass@1 (with 95% Wilson intervals) and pass@5, overall and per
+category — plus efficiency (outer wall time per run; and, for runs whose driver
+reported a workspace, model attempts, tool invocations, and the four canonical
+usage counters) and the run's reproducibility inputs (bl-36fa):
 
 ```
-agent-eval --config baseline --suite tests/suite --runs 5 --agent lernie-eval-agent
+agent-eval run --config baseline --suite tests/suite --runs 5 --agent lernie-eval-agent
 ```
+
+`--record <out.json>` also saves the machine-readable evaluation record, and
+
+```
+agent-eval compare baseline.json candidate.json
+```
+
+renders per-task, per-category, and total baseline → candidate deltas from two
+saved records — quality and efficiency side by side, each record carrying its
+own reproducibility inputs (suite revision, starting fixture identity,
+experiment, driver command + version, observed models/providers, run count).
+`compare` runs nothing: no driver, no model. A metric one side never reported
+is `—`, never a fabricated zero, and no price is ever inferred — lernie has no
+tokenizer and reports only provider-reported counters.
 
 `--config <name>` names an experiment — a `workflow.yaml` variant under
 `experiments/<name>/` (a config diff, no code changes; see `experiments/README.md`).
@@ -1284,6 +1301,12 @@ directory. The contract any driver must honour, per run:
 | where to report back | `LERNIE_EVAL_REPORT` in the env — a file path |
 | the working directory | cwd (shared with the task's `setup` and `check`) |
 
+One non-run invocation exists beside the contract (bl-36fa): the runner probes
+`<driver> --version` (as argv[1], with none of the run env) once per
+evaluation and records the first stdout line among the reproducibility
+inputs. A driver should answer with one identifying line and exit; one that
+fails or prints nothing is recorded as `version unreported`, never guessed at.
+
 `LERNIE_EXPERIMENT` is a hand-off, not a hook: **nothing in the harness reads
 that variable.** The harness takes its `workflow.yaml` from the workspace's
 config commit (§2.2), never from the environment, so *applying* the experiment
@@ -1296,8 +1319,12 @@ empty and the authoring pass declines: the default is already in force).
 `LERNIE_EVAL_REPORT` names a file the driver **may** write with exactly two
 lines — the workspace path, then the agent id — which is what `lernie bundle`
 needs to archive the run if it fails (§9.2). It is the driver's only channel
-back to the runner. Writing nothing, or anything malformed, only makes a failing
-run un-bundleable; it is never an error, and it never affects pass/fail, which
+back to the runner, and it is also where the run's efficiency metrics come
+from (bl-36fa): a disclosed workspace lets the runner read attempts, tool
+invocations, usage counters, and observed models off its `steps/` slice.
+Writing nothing, or anything malformed, only makes a failing
+run un-bundleable and its metrics unreported (`—`, distinct from 0); it is
+never an error, and it never affects pass/fail, which
 is the task `check` alone. The driver's own exit code is likewise ignored.
 Failure to *spawn* the driver, by contrast, is a hard error naming the program.
 
@@ -1347,7 +1374,7 @@ first use — no manual `rustup` step. This is what keeps `fmt-check` and
 | `make fmt-check`      | `cargo fmt --check`                                   |
 | `make schemas`        | Regenerate `schemas/*.json` from the Rust types       |
 | `make new-workspace DEST=<path>` | Create a workspace (bare repo.git + first config commit from `template/`) |
-| `make eval CONFIG=<exp> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd>` | Run the evaluation runner (ARCH §9.3): experiment × suite × N (see **Task suite** above). `AGENT` is required and has no default — the shipped driver is `lernie-eval-agent` (see "Run the suite"), and naming it is deliberate: the driver is an experiment-defining input |
+| `make eval CONFIG=<exp> SUITE=<dir> RUNS=<n> AGENT=<driver-cmd> [RECORD=<out.json>]` | Run the evaluation runner (ARCH §9.3): experiment × suite × N (see **Task suite** above). `AGENT` is required and has no default — the shipped driver is `lernie-eval-agent` (see "Run the suite"), and naming it is deliberate: the driver is an experiment-defining input. `RECORD` saves the evaluation record `agent-eval compare` consumes (bl-36fa). Always an explicit operator command — a live-model eval names its run count and spends money, so it is never CI |
 | `make check`          | `fmt-check` + `lint` + `coverage` + `test-install`    |
 | `make ci`             | Alias for `check`                                     |
 | `make smoke`          | Live-wire smoke test: one real `lernie prompt` against the shipped defaults (override with `SMOKE_PROVIDER`/`SMOKE_MODEL`); the default needs a `bz` anthropic credential and spends money; NOT part of `check` |

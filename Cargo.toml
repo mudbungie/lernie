@@ -1,6 +1,14 @@
 [workspace]
 members = [".", "crates/agent-eval", "crates/lernie-eval-agent"]
 
+# The brazen version pin's ONE home (README "The pinned adapter under
+# test"; Makefile BRAZEN_PIN seds this line). Both the lernie core and
+# the workspace-internal `agent-eval` (which reads the same `v=1` event
+# vocabulary off `response.json`, ARCH §9.3) inherit it via
+# `workspace = true`, so the pin cannot drift between them.
+[workspace.dependencies]
+brazen = "=0.0.5"
+
 [package]
 name = "lernie"
 version = "0.0.3"
@@ -44,7 +52,7 @@ exclude = [
 ]
 
 [dependencies]
-brazen = "=0.0.5"
+brazen = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 include_dir = "0.7"
 libc = "0.2"

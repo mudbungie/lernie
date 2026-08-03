@@ -128,14 +128,14 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // stage (§2.3, `workspace::agent_name`), then add, commit —
     // §2.3 step 2) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
-    // (rev-parse) + 2 (model-output transcript entry add + commit) + 1
-    // (terminal result-deposit rev-parse, §2.6) + 1 (the deposit's
-    // durable returned-mark `update-ref`, §8 — this rig's compact ids
-    // make the agent parse as a child, so the deposit is real).
-    // Merge-back is gone (§2.6): the root branch persists on its own
-    // ref. The version guard runs no git.
+    // (rev-parse) + 2 (model-output transcript entry add + commit). The
+    // terminal result deposit adds none: the last prompter is `user`
+    // (the on-ramp message this same drain delivered), so the reply
+    // addresses no inbox and neither the branch-tip read nor the
+    // returned mark runs (§2.6). Merge-back is gone (§2.6): the root
+    // branch persists on its own ref. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 26);
+    assert_eq!(runs.len(), 24);
     for (dest, _args) in &runs[0..9] {
         assert_eq!(dest, &repo_git, "control + spawn run against repo.git");
     }
@@ -173,7 +173,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     );
     assert_eq!(args8[4], worktree.to_string_lossy().to_string());
     assert_eq!(args8[5], "config/default");
-    for (dest, _args) in &runs[9..25] {
+    for (dest, _args) in &runs[9..24] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside the worktree");
     }
     // Dispatch commit (§2.3 step 2): the config commit's control files
@@ -225,10 +225,9 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // The staging file left by rename — no debris under steps/.
     assert!(!step_dir.join("staging.json").exists());
 
-    // The terminal result deposit (§2.6, §2.3 step 5) reads the branch
-    // tip as its terminal ref (`rev-parse HEAD`); the deposit itself is a
-    // structural no-op for a root (no parent inbox, §2.4), so it lands no
-    // git op of its own and no merge-back follows.
-    assert_eq!(runs[24].0, worktree);
-    assert_eq!(runs[24].1, vec!["rev-parse", "HEAD"]);
+    // The terminal result deposit (§2.6, §2.3 step 5) is one structural
+    // no-op here — the operator prompted this agent, so its reply is
+    // read in this conversation and addresses no inbox — so the entry
+    // commit is the last git op and no merge-back follows.
+    assert_eq!(runs.len(), 24);
 }

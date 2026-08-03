@@ -1,9 +1,11 @@
 //! Result-message deposit tests (ARCH §2.6, §2.11): the `epitaph:` /
-//! `terminal_ref:` frontmatter, the body-iff-spoke rule, parent
-//! derivation, and the root no-op.
+//! `terminal_ref:` frontmatter, the body-iff-spoke rule, and the
+//! dispatcher-address derivation an obituary is sent to. *Which* inbox a
+//! terminal event addresses is the executor's rule and is tested at its
+//! own seam (`prompt::dispatch::result_deposit`).
 
 use super::super::deposit::{Epitaph, deposit_result, returned_ref};
-use super::super::{deposit_child_result, inbox_dir, parent_of};
+use super::super::{inbox_dir, parent_of};
 use crate::prompt::Clock;
 use crate::template::GitRunner;
 use std::cell::RefCell;
@@ -119,48 +121,6 @@ fn parent_of_strips_the_last_descent_segment() {
     // Degenerate short ids still obey the two-token rule.
     assert_eq!(parent_of("a-b"), None);
     assert_eq!(parent_of("solo"), None);
-}
-
-#[test]
-fn deposit_child_result_is_a_noop_for_a_root() {
-    let ws = TempDir::new().unwrap();
-    let out = deposit_child_result(
-        ws.path(),
-        "20260711T000000Z-a1b2c3d4",
-        Epitaph::FinalResponse,
-        "tip",
-        Some("hi"),
-        &FixedClock,
-        &RecGit::default(),
-    )
-    .unwrap();
-    assert!(out.is_none(), "a root has no parent inbox");
-    assert!(!inbox_dir(ws.path(), "20260711T000000Z-a1b2c3d4").exists());
-}
-
-#[test]
-fn deposit_child_result_deposits_into_parent_for_a_child() {
-    let ws = TempDir::new().unwrap();
-    let child = "20260711T000000Z-a1b2c3d4-20260711T000001Z-e5f6a7b8";
-    let parent = "20260711T000000Z-a1b2c3d4";
-    let out = deposit_child_result(
-        ws.path(),
-        child,
-        Epitaph::Stopped,
-        "tip9",
-        None,
-        &FixedClock,
-        &RecGit::default(),
-    )
-    .unwrap()
-    .expect("a child deposits");
-
-    assert_eq!(
-        out,
-        inbox_dir(ws.path(), parent).join(format!("{child}-001.md"))
-    );
-    assert!(read(&out).contains("epitaph: stopped"));
-    assert!(read(&out).contains("terminal_ref: tip9"));
 }
 
 #[test]

@@ -9,7 +9,7 @@
 //! the step loop through brazen's `bz` (§4.4), and lands each step's
 //! response as attempt segments. Merge-back is gone: the root branch
 //! persists on its own ref (§2.4), and a child returns by depositing a
-//! result message into its parent's inbox (§2.6).
+//! result message at the address its epitaph names (§2.6).
 //!
 //! Provider plumbing follows ARCH §4.4: every model call execs `bz`
 //! (`bz --json --provider <row>`, canonical request on stdin, `v=1`

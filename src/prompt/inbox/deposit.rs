@@ -14,7 +14,7 @@
 //! with itself, so the target name never pre-exists; temp-path + rename
 //! then guarantees no reader observes a half-written file.
 
-use super::{inbox_dir, parent_of};
+use super::inbox_dir;
 use crate::prompt::Clock;
 use crate::template::GitRunner;
 use std::io;
@@ -166,8 +166,12 @@ impl Epitaph {
     }
 }
 
-/// Deposit a **result message** (ARCH §2.6) from a terminated child
-/// (`child_id`) into its parent's inbox (`parent_id`) under `workspace`.
+/// Deposit a **result message** (ARCH §2.6) from a terminated agent
+/// (`child_id`) into `recipient_id`'s inbox under `workspace`. Who the
+/// recipient *is* is decided by the epitaph's value at the executor's
+/// own seam ([`crate::prompt::dispatch`] — a reply answers the last
+/// prompter, an obituary reports to the dispatcher); this deposit takes
+/// the address and writes the file.
 /// This is an ordinary [`deposit`] whose frontmatter additionally
 /// carries the two pinned fields — `epitaph:` (always) and
 /// `terminal_ref:` (always, the sha of the child's branch tip at
@@ -192,7 +196,7 @@ impl Epitaph {
 #[allow(clippy::too_many_arguments)] // one deposit, every pinned fact it renders
 pub fn deposit_result(
     workspace: &Path,
-    parent_id: &str,
+    recipient_id: &str,
     child_id: &str,
     epitaph: Epitaph,
     terminal_ref: &str,
@@ -200,7 +204,7 @@ pub fn deposit_result(
     clock: &dyn Clock,
     git: &dyn GitRunner,
 ) -> Result<PathBuf, DepositError> {
-    let dir = inbox_dir(workspace, parent_id);
+    let dir = inbox_dir(workspace, recipient_id);
     std::fs::create_dir_all(&dir).map_err(|e| io_err(&dir, e))?;
     let seq = next_sequence(&dir, child_id).map_err(|e| io_err(&dir, e))?;
     let filename = message_filename(child_id, seq);
@@ -232,37 +236,6 @@ fn mark_returned(
         child: child_id.to_string(),
         source,
     })
-}
-
-/// Deposit a child's result message (§2.6) on its own behalf, into its
-/// parent's inbox — the total return step (§2.3 step 5). A no-op
-/// returning `Ok(None)` when `agent_id` is a root ([`parent_of`] is
-/// `None`): a root has no parent inbox, its terminal response answers
-/// the user instead (§2.4). Otherwise deposits and returns the created
-/// path.
-pub fn deposit_child_result(
-    workspace: &Path,
-    agent_id: &str,
-    epitaph: Epitaph,
-    terminal_ref: &str,
-    terminal_response: Option<&str>,
-    clock: &dyn Clock,
-    git: &dyn GitRunner,
-) -> Result<Option<PathBuf>, DepositError> {
-    match parent_of(agent_id) {
-        None => Ok(None),
-        Some(parent) => deposit_result(
-            workspace,
-            &parent,
-            agent_id,
-            epitaph,
-            terminal_ref,
-            terminal_response,
-            clock,
-            git,
-        )
-        .map(Some),
-    }
 }
 
 /// Render a result message (§2.6, §2.11): the ordinary `from:` /

@@ -5,8 +5,9 @@
 //! goal, soul) and for the diagnostic step record (request, response,
 //! meta), the dispatch commit's `git add` / `git commit`, the
 //! branch-tip capture (`git rev-parse`), the model-output transcript
-//! entry commit, and the terminal result-deposit's branch-tip read
-//! (§2.6). Merge-back is gone (§2.6), so its rebase / merge / remove
+//! entry commit. The terminal result deposit contributes no git op to a
+//! user-prompted root: its reply addresses no inbox (§2.6), so the
+//! branch-tip read never runs. Merge-back is gone (§2.6), so its rebase / merge / remove
 //! arms are gone with it, and terminal compaction is deleted (§2.7), so
 //! no compactor dispatch follows a final response. Config and adapter
 //! failure paths live in [`super::errors`].
@@ -51,11 +52,6 @@ const REV_PARSE_INDEX: usize = DISPATCH_ADD_INDEX + 5;
 /// terminates (no tool_use on the happy stream).
 const TRANSCRIPT_ADD_INDEX: usize = REV_PARSE_INDEX + 1;
 const TRANSCRIPT_COMMIT_INDEX: usize = TRANSCRIPT_ADD_INDEX + 1;
-/// The terminal event deposits a result message (§2.6, §2.3 step 5),
-/// which reads the branch tip (`git rev-parse HEAD`) as its terminal
-/// ref. It is the last git op before the loop breaks; the deposit itself
-/// is a no-op for a root (no parent inbox, §2.4).
-const TERMINAL_REV_PARSE_INDEX: usize = TRANSCRIPT_COMMIT_INDEX + 1;
 
 #[test]
 fn run_surfaces_worktree_create_failure() {
@@ -197,9 +193,6 @@ git_op_failure_test!(
     TRANSCRIPT_COMMIT_INDEX,
     "transcript commit"
 );
-// The terminal result-deposit's branch-tip read (§2.6, §2.3 step 5).
-git_op_failure_test!(
-    run_surfaces_terminal_deposit_rev_parse_failure,
-    TERMINAL_REV_PARSE_INDEX,
-    "rev-parse"
-);
+// No terminal git op follows: this root was prompted by the user, so its
+// reply addresses no inbox and the deposit — branch-tip read included —
+// never runs (§2.6, `dispatch::result_deposit::recipient`).

@@ -11,7 +11,7 @@
 //! agent with its own pgid (each executor takes its own pgid at
 //! startup, root and child alike, §2.9) and is **not** touched — it
 //! outlives the parent and later deposits its result into the stopped
-//! parent's inbox, which revives the parent (§2.11).
+//! parent's inbox — a stop is an obituary, addressed by descent (§2.6).
 //!
 //! **`--stop-children`: walk the id namespace.** The agent→agent cascade
 //! is opt-in. Descent is encoded in the hyphenated agent id (§2.3), so

@@ -15,7 +15,7 @@
 //! `(mtime, filename)` — so the same inbox always yields the same
 //! committed sequence and replay agrees with the live run.
 
-use super::{transcript, transfer};
+use super::transcript;
 use crate::prompt::Error;
 use crate::template::GitRunner;
 use std::path::{Path, PathBuf};
@@ -48,15 +48,17 @@ pub(super) fn drain(
         left: Vec::new(),
     };
     for msg in pending(inbox)? {
-        // A **result message** (§2.6, carrying a `terminal_ref:`) is a
-        // lifecycle circumstance the §6 hop interprets by the returning
-        // child's role — deliver_result, land_compaction, or a gate-hold
-        // (`super::child_result`) — not an ordinary steering message. The
-        // drain leaves it in the inbox for that interpreter and delivers
-        // only ordinary messages here (the hold is a disk query over the
-        // inbox, `docs/PRINCIPLES.md` Single source of truth).
+        // A **result message from this agent's own child** (§2.6,
+        // carrying a `terminal_ref:`) is a lifecycle circumstance the §6
+        // hop interprets by the returning child's role — deliver_result,
+        // land_compaction, or a gate-hold (`super::child_result`) — not an
+        // ordinary steering message. The drain leaves it in the inbox for
+        // that interpreter and delivers everything else here, a sibling's
+        // reply included (`child_result::own_result_ref` carries the
+        // reasoning; the hold is a disk query over the inbox,
+        // `docs/PRINCIPLES.md` Single source of truth).
         let body = std::fs::read_to_string(&msg.path).map_err(Error::Io)?;
-        if transfer::terminal_ref_of(&body).is_some() {
+        if super::child_result::own_result_ref(conv_id, &msg.sender, &body).is_some() {
             delivery.left.push(SeenDeposit {
                 name: msg.name,
                 mtime: msg.mtime,

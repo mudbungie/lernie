@@ -251,3 +251,46 @@ fn run_flush_declines_an_unsupported_flush_action() {
     let err = run_flush(&ws, parent, &wt, &wf, &fx.deps()).unwrap_err();
     assert!(matches!(err, Error::ActionUnsupported { .. }), "{err:?}");
 }
+
+#[test]
+fn a_reply_from_an_agent_this_one_never_dispatched_is_not_a_child_result() {
+    // §2.6: the return is the *dispatcher's* business — the work-product
+    // transfer diffs against the fork the dispatcher made, and the §6
+    // bindings act on a child it dispatched. A reply carrying the same
+    // frontmatter from an agent under another lineage has neither
+    // relationship, so the interpreter does not see it at all; the drain
+    // delivers it as the ordinary message it is.
+    let (_h, ws) = fixture::workspace();
+    let parent = "20260101-p9";
+    fixture::spawn_root(&ws, parent);
+    let fx = Fx::new();
+    // A nephew by the id arithmetic: its dispatcher is `20260101-p9-x1`,
+    // not `parent`.
+    let stranger = "20260101-p9-x1-20260102-y2";
+    let wt = agent_worktree(&ws, parent);
+    let tip = fx.git.run_capture(&wt, &["rev-parse", "HEAD"]).unwrap();
+    crate::prompt::inbox::deposit_result(
+        &ws,
+        parent,
+        stranger,
+        Epitaph::FinalResponse,
+        tip.trim(),
+        Some("hi"),
+        &SystemClock,
+        &fx.git,
+    )
+    .unwrap();
+
+    assert!(
+        !has_pending_result(&ws, parent).unwrap(),
+        "not a circumstance the §6 interpreter answers to"
+    );
+    interpret_pending(&ws, parent, &wt, &workflow("events: {}\n"), &fx.deps()).unwrap();
+    assert!(
+        crate::prompt::inbox::inbox_dir(&ws, parent)
+            .join(format!("{stranger}-001.md"))
+            .exists(),
+        "left for the drain, untouched"
+    );
+    assert!(!wt.join(format!("messages/001-{stranger}.md")).exists());
+}

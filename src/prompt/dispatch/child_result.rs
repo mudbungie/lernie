@@ -14,8 +14,8 @@
 //!   ([`execute_child`]).
 //! - **A checkpoint flush** ([`run_flush`]): a due `compaction:` clock at a
 //!   step boundary runs `worker_flush` → `dispatch(compactor)`. Its
-//!   machinery lives in the [`flush`] submodule; `run_flush` is re-exported
-//!   here so the hop addresses one `child_result::` surface.
+//!   machinery lives in the [`flush`] submodule, re-exported here so the
+//!   hop addresses one `child_result::` surface.
 //!
 //! **Two passes** (§6 gate): verifier verdicts run *before* worker/compactor
 //! results, so an approving verifier drains the held worker result and the
@@ -34,8 +34,7 @@ use std::path::{Path, PathBuf};
 
 /// A pending result message (§2.6) awaiting interpretation: the returning
 /// child's id (the deposit `<sender>`), its terminal ref, epitaph, the
-/// terminal response iff the child spoke, and the inbox file path (moved
-/// on delivery, removed on merge/consume).
+/// terminal response iff the child spoke, and the inbox file path.
 pub(super) struct ChildResult {
     pub(super) child_id: String,
     pub(super) terminal_ref: String,
@@ -44,13 +43,32 @@ pub(super) struct ChildResult {
     pub(super) path: PathBuf,
 }
 
+/// The terminal ref of a pending deposit that is a **result message this
+/// agent must interpret** (§2.6), else `None`. Two conditions: it carries
+/// a `terminal_ref:`, *and* its sender is this agent's own child.
+///
+/// §2.6's return is the **dispatcher's** business — the transfer diffs
+/// the child's fork point (`merge-base(HEAD, terminal_ref)`) against the
+/// dispatcher's own tree, and the §6 bindings act on a child this agent
+/// dispatched. A **reply** delivered anywhere else (a sibling's answer,
+/// §2.11) has neither: §2.5's disjoint-write-path guarantee says nothing
+/// about a foreign lineage, whose diff would drag that lineage's commits
+/// into this tree. It delivers as the ordinary message it is, frontmatter
+/// model-visible — how the sender ended, and where its work lives.
+pub(super) fn own_result_ref(agent_id: &str, sender: &str, body: &str) -> Option<String> {
+    if inbox::parent_of(sender).as_deref() != Some(agent_id) {
+        return None;
+    }
+    transfer::terminal_ref_of(body)
+}
+
 /// Whether `agent_id`'s inbox holds any result message (§2.6) — the cheap
 /// disk query the hop uses to decide whether to resolve the workflow at
-/// all (a no-op hop has none and resolves nothing, §6 lazy resolution).
+/// all (§6 lazy resolution).
 pub(super) fn has_pending_result(workspace: &Path, agent_id: &str) -> Result<bool, Error> {
     let dir = inbox::inbox_dir(workspace, agent_id);
     for msg in drain::pending(&dir)? {
-        if transfer::terminal_ref_of(&read_body(&msg.path)?).is_some() {
+        if own_result_ref(agent_id, &msg.sender, &read_body(&msg.path)?).is_some() {
             return Ok(true);
         }
     }
@@ -71,7 +89,7 @@ pub(super) fn interpret_pending(
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
     let dir = inbox::inbox_dir(workspace, agent_id);
-    let results = load_results(&dir)?;
+    let results = load_results(agent_id, &dir)?;
     let events: Vec<Event> = results
         .iter()
         .map(|cr| child_event(worktree, cr, deps.git))
@@ -98,12 +116,14 @@ pub(super) fn interpret_pending(
 }
 
 /// Parse every pending result message in `dir` into a [`ChildResult`];
-/// ordinary steering messages (no `terminal_ref:`) are skipped.
-fn load_results(dir: &Path) -> Result<Vec<ChildResult>, Error> {
+/// anything [`own_result_ref`] does not classify as this agent's own
+/// child's return — an ordinary steering message, a sibling's reply — is
+/// skipped, and the drain delivers it as the message it is.
+fn load_results(agent_id: &str, dir: &Path) -> Result<Vec<ChildResult>, Error> {
     let mut out = Vec::new();
     for msg in drain::pending(dir)? {
         let body = read_body(&msg.path)?;
-        let Some(terminal_ref) = transfer::terminal_ref_of(&body) else {
+        let Some(terminal_ref) = own_result_ref(agent_id, &msg.sender, &body) else {
             continue;
         };
         let (epitaph, response) = split_frontmatter(&body);

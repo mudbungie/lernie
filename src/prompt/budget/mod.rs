@@ -25,7 +25,7 @@
 //! `refs/lernie/budget-exhausted/<branch>` ([`mark_exhausted`]) — the
 //! same git-native marking pattern as the §2.6-step-6 conflicted ref.
 //! No new event type, no `response.json` marker — a ref plus a stop,
-//! which deposits a result message into the parent's inbox like any
+//! which deposits an obituary into the dispatcher's inbox (§2.6) like any
 //! other terminal event (ARCH §6, §2.11).
 //!
 //! **`max_depth` and the root (flagged, ARCH §6).** §6 does not spell out
@@ -48,7 +48,7 @@ use std::path::Path;
 /// (`refs/lernie/budget-exhausted/<branch>`, ARCH §6 — mirrors the
 /// §2.6-step-6 conflicted ref). The single home of the prefix; the
 /// terminal budget-exhausted state it marks is surfaced as a result
-/// deposit into the parent's inbox (§2.11) like any other.
+/// deposit into the dispatcher's inbox (§2.6 obituary, §2.11) like any other.
 pub const BUDGET_EXHAUSTED_REF_PREFIX: &str = "refs/lernie/budget-exhausted/";
 
 /// Which declared limit a conversation crossed.

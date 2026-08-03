@@ -30,7 +30,7 @@ use tempfile::TempDir;
 /// A hyphen-free compact stamp (§2.3): agent ids stay clean two-token
 /// descent segments, so `inbox::parent_of`'s token arithmetic derives
 /// the parent the deposit actually landed in.
-struct DescentClock;
+pub(super) struct DescentClock;
 impl Clock for DescentClock {
     fn now_iso8601(&self) -> String {
         "iso".into()
@@ -99,7 +99,7 @@ impl Launcher for RevivingLauncher {
 /// A real workspace with a root parent and a dispatched worker child,
 /// the child's inbox holding its dispatch message (§2.5 front door).
 /// Returns `(holder, workspace, parent id, parent worktree, child id)`.
-fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, String) {
+pub(super) fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, String) {
     use crate::prompt::child_dispatch::{ChildDispatchRequest, run as dispatch_child};
     use crate::workspace::fixture;
 
@@ -128,7 +128,7 @@ fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, String) {
 
 /// Advance the child to its terminal event under `launcher` — one hop:
 /// deliver the dispatch message, step, final response, exit protocol.
-fn advance_child(ws: &Path, child: &str, launcher: &dyn Launcher) -> AdvanceOutcome {
+pub(super) fn advance_child(ws: &Path, child: &str, launcher: &dyn Launcher) -> AdvanceOutcome {
     let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&happy_response_bytes())]);
     let (sleeper, tools, stub_git) = (
         StubSleeper::default(),

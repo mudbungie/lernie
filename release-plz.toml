@@ -16,51 +16,39 @@
 #
 # `features_always_increment_minor` is left at its default (false), so even a
 # Conventional-Commit `feat:` lands as a patch bump below 1.0.0.
+#
+# CHANGELOG.md is hand-maintained and release-plz never writes it
+# (`changelog_update = false`). One authority, two reasons (bl-7558):
+#
+#   * Docs-only deliveries are invisible to generation. A delivery that
+#     touches no packaged file (e.g. bl-3c76, a design doc) produces no
+#     commit release-plz attributes to the crate, so a generated changelog
+#     silently omits it. The hand-kept `[Unreleased]` list is the only
+#     record that can be complete, which makes it load-bearing — and two
+#     writers on one file drift (the 0.0.4 release PR staged a generated
+#     section on top of the manual one: every bullet twice).
+#
+#   * Generation itself proved untrustworthy for this repo's
+#     non-conventional subjects. release-plz runs every commit through
+#     git-cliff's processing TWICE — once in its own ChangelogBuilder and
+#     again inside git-cliff's Changelog — so `commit_preprocessors` apply
+#     twice, and the parser strips a leading `word:` token from any subject
+#     that happens to parse as a Conventional Commit (`fleet: drop …`
+#     rendered as `drop …`, bl-1923). The bl-1923 compensation (duplicate
+#     the token, let the parser eat the copy) was correct for one pass and
+#     doubled under two (`fleet: fleet: drop …`, bl-7558). Subtraction, not
+#     a third layer: no generation, no parser, nothing to compensate.
+#
+# So the release PR bumps versions only. Each delivery adds its own bullet
+# under `## [Unreleased]` (CHANGELOG.md's header states the format), and at
+# release time `make promote-changelog VERSION=x.y.z` stamps that section as
+# the new version — see the Makefile target and the release-plz.yml header
+# for the ordering.
 [workspace]
 semver_check = false
+changelog_update = false
 custom_minor_increment_regex = '(^|\s)\[minor\](\s|$)'
 custom_major_increment_regex = '(^|\s)\[major\](\s|$)'
-
-[changelog]
-#
-# Subject protection: subjects here are non-conventional (see the header
-# comment above), but git-cliff still runs every message through the
-# Conventional-Commits parser, and any leading `word:` / `word::` token —
-# `e2e::advance_cli …`, `fleet: drop …` — parses as a type and is stripped
-# from the rendered bullet (0.0.2 shipped `- :advance_cli baton test …`,
-# bl-1923). release-plz exposes no knob to turn that parser off, so this
-# preprocessor duplicates the leading token instead: `e2e::x` becomes
-# `e2e: e2e::x`, the parser consumes exactly the injected copy, and the
-# bullet renders the original subject verbatim. The token class
-# `[^\s():!]+:` mirrors git-conventional's type grammar (a run of anything
-# but whitespace/parens/colon/bang, then `:`), so every subject the pattern
-# rewrites is guaranteed to parse and be re-stripped — nothing can render
-# doubled. Subjects whose first colon comes later (`… reach the CLI: --from
-# …`) never parsed as conventional and are left alone. `word(scope):` and
-# `word!:` shapes stay unprotected (type still eaten) — no subject in this
-# history uses them. The gate skip-parsers below keep matching: duplication
-# preserves the first token and its colon. release-plz's own `chore:
-# release vX` commits are excluded by package-equality when commits are
-# collected, upstream of preprocessing, so duplicating `chore:` cannot leak
-# them into the changelog.
-commit_preprocessors = [
-    { pattern = '^([^\s():!]+:)', replace = '${1} ${1}' },
-]
-
-#
-# Entry uniformity: every task carries `tests` / `docs` / `alignment` gate
-# subtasks (AGENTS.md), and each one closes as its own commit on `main` with a
-# gate-shaped subject — `alignment [bl-xxxx]`, `docs gate: …`, `v0.3 tests
-# gate: …`. Those record verification, not product, so the first parser skips
-# them and the changelog stays one bullet per shipped change. The pattern
-# deliberately requires a `:` or a `[bl-` right after the gate label, so a real
-# subject that merely opens with the word (`tests/install.rs mutates …`,
-# `docs/ARCHITECTURE.md …`) is not swallowed; a gate close written in free prose
-# still has to be pruned by hand.
-commit_parsers = [
-    { message = '(?i)^(gate:|(v[0-9][0-9.]* )?(docs|tests|alignment)( gate)?( green)? *(:|\[bl-))', skip = true },
-    { message = ".*", group = "Changes" },
-]
 
 # agent-eval is an internal-only crate (`publish = false` in
 # crates/agent-eval/Cargo.toml) — the workspace's eval runner, not a shipped

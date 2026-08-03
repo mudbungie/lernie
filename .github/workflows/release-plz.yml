@@ -14,9 +14,16 @@ name: Release-plz
 #     so per push to main CI runs exactly once — here (PRs still trigger
 #     ci.yml directly).
 #   * release-plz PR (every push to main) — opens/updates ONE "release PR" that
-#     bumps the version in Cargo.toml and stages the CHANGELOG.md entry for it.
-#     It never publishes; it just keeps the next release queued. Merging that PR
-#     is the human control point. It does not wait on the ci job — it touches
+#     bumps the version in Cargo.toml/Cargo.lock, and nothing else: CHANGELOG.md
+#     is hand-maintained and release-plz never writes it (`changelog_update =
+#     false` in release-plz.toml — rationale there, bl-7558). It never
+#     publishes; it just keeps the next release queued. Merging that PR is the
+#     human control point — and BEFORE merging it, land `make promote-changelog
+#     VERSION=<the version the PR proposes>` on main (via the normal task-
+#     worktree flow), which stamps the accumulated [Unreleased] section as that
+#     version. The GitHub Release body is empty by consequence (release-plz
+#     takes it from the changelog only when it manages the changelog);
+#     CHANGELOG.md in the tagged tree is the record. It does not wait on the ci job — it touches
 #     no artifact that CI protects.
 #   * release (`needs: ci`, so only after CI in THIS run is green) — releases
 #     any version on main that is not out yet: tags it `v<version>`, cuts a
@@ -40,8 +47,9 @@ name: Release-plz
 #     PR" an exact test for "superseded or orphaned".
 #
 # So the flow is: merge work to main -> this run's ci job runs CI and the
-# release PR is kept fresh; merge the release PR -> the next run's ci job goes
-# green -> the new version is released AND its binaries build and upload.
+# release PR is kept fresh; when releasing, land the promote-changelog commit
+# (above), then merge the release PR -> the next run's ci job goes green -> the
+# new version is released AND its binaries build and upload.
 # `workflow_dispatch` is the manual escape hatch: same chain (ci -> release ->
 # binaries), triggered by hand.
 #

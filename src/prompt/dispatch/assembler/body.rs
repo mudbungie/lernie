@@ -113,13 +113,41 @@ fn select(
             }
             taken[i] = true;
             let bytes = std::fs::read(worktree.join(file)).map_err(Error::Io)?;
+            let content = String::from_utf8_lossy(&bytes).into_owned();
+            if marked_summary(file, &content) {
+                return Err(Error::SummaryConflictMarkers { path: file.clone() });
+            }
             out.push(Entry {
                 path: file.clone(),
-                content: String::from_utf8_lossy(&bytes).into_owned(),
+                content,
             });
         }
     }
     Ok(out)
+}
+
+/// §5.2 marker guard, the read-path half of the §2.6 marker-freedom
+/// promise: `summary/**`'s only sanctioned writer is `write_summary`,
+/// and the compaction merge declines any content conflict before
+/// committing ([`crate::prompt::compactor::merge`]), so a summary
+/// carrying a git conflict-marker line is a violated invariant however
+/// it arrived — a pre-guard tree, an operator hand-edit, a payload
+/// quoting the literal strings — and composing it would send corrupted
+/// context as if it were the branch's history (§2.7). Matched are the
+/// two labelled marker lines git writes (`<<<<<<< <label>`,
+/// `>>>>>>> <label>`); a bare `=======` never trips the guard — git
+/// never writes one without the flanking labelled pair, and it is a
+/// legitimate setext heading underline in model-authored markdown.
+/// Other categories are authored content under no such promise and
+/// compose unguarded: refusing a skill asset that documents merge
+/// conflicts would hold the branch hostage to a stray asset, the same
+/// argument that keeps non-UTF-8 composition lossy rather than fatal
+/// ([`select`]).
+fn marked_summary(path: &str, content: &str) -> bool {
+    path.starts_with(SUMMARY_PREFIX)
+        && content
+            .lines()
+            .any(|l| l.starts_with("<<<<<<< ") || l.starts_with(">>>>>>> "))
 }
 
 /// Apply the role's overflow policy to a body whose estimate exceeds
@@ -261,39 +289,8 @@ fn tool_backed(worktree: &Path, rel: &str) -> bool {
     worktree.join(TOOLS_DESC_DIR).join(schema).exists()
 }
 
-/// Minimal §5.2 glob over `/`-separated worktree-relative paths:
-/// literal segments, `*` within a segment, `**` spanning any number of
-/// segments — the full vocabulary the spec's manifests use; nothing
-/// fancier is coined here.
-fn glob_match(pattern: &str, path: &str) -> bool {
-    let pat: Vec<&str> = pattern.split('/').collect();
-    let segs: Vec<&str> = path.split('/').collect();
-    match_segments(&pat, &segs)
-}
-
-fn match_segments(pat: &[&str], segs: &[&str]) -> bool {
-    match pat.split_first() {
-        None => segs.is_empty(),
-        Some((&"**", rest)) => (0..=segs.len()).any(|i| match_segments(rest, &segs[i..])),
-        Some((p, rest)) => segs.split_first().is_some_and(|(s, tail)| {
-            match_one(p.as_bytes(), s.as_bytes()) && match_segments(rest, tail)
-        }),
-    }
-}
-
-/// `*`-wildcard match within one path segment, byte-wise (byte slicing
-/// keeps the recursion UTF-8-agnostic).
-fn match_one(pat: &[u8], seg: &[u8]) -> bool {
-    match pat.iter().position(|&b| b == b'*') {
-        None => pat == seg,
-        Some(i) => {
-            let (pre, rest) = (&pat[..i], &pat[i + 1..]);
-            seg.len() >= pre.len()
-                && seg[..pre.len()] == *pre
-                && (pre.len()..=seg.len()).any(|k| match_one(rest, &seg[k..]))
-        }
-    }
-}
+mod glob;
+use glob::glob_match;
 
 #[cfg(test)]
 mod tests;

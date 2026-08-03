@@ -15,11 +15,35 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- partial compaction with rebase-forward: zero-downtime compression of a commit span [bl-bc9c]
+- connection points in the tool-call path: a gate seam, and controls shipped as knobs [bl-de6d]
+- design the MCP client bridge as an external tool: one adapter binary opens the integration ecosystem (docs/DESIGN_MCP_BRIDGE.md) [bl-3c76]
 - retire the global models table: `install/models.yaml` ships mechanism only (the optional `adapter:` override — no model ids, capabilities, or context windows in git), a role's `providers.yaml` assignment is the whole model binding, and the roles-against-models cross-check is deleted; a leftover `models:` block in an operator's file parses as inert [bl-35e2]
+- a multi-tool tool: structured tool calls as arguments, with execution metadata [bl-8ee7]
+- an apply_patch-class edit tool: atomic multi-file patch with fuzzy context matching [bl-ae6b]
+- caller-supplied pinned documents reach prompt and dispatch [bl-fb5c]
+- agent-eval reports quality, wall time, attempts, tools, and usage [bl-36fa]
+- assembler read path trusts composed bytes: refuse a composed entry carrying literal conflict-marker lines [bl-c867]
+- bound tool output committed to the transcript: head+tail cap with an honest truncation marker [bl-d5fa]
+- protect leading 'word:' subjects from release-plz's conventional-commit parser, which rendered 'e2e::advance_cli …' as ':advance_cli …' in the 0.0.2 changelog [bl-1923]
+- give the compactor a read tool and compose the summaries and work products its manifest entry names [bl-2c63]
+- the agent's name reaches the model through the assembled context, not as prose prepended to the first user message [bl-d55f]
+- correct ARCH §5.1's worktree invariant: the manifest IS the inclusion filter, and a worktree file no role names composes into nothing [bl-b415]
 - every tool result now carries a result envelope — the exit code stated on its first line, stdout, then stderr under a `--- stderr ---` marker whenever the tool wrote any, on success as well as failure; a model can tell exit 1 from 127 from 143, and a warning from a command that exited 0 is no longer dropped [bl-ffc5]
 - fork-from-history and config-branch selection reach the CLI: --from <ref> on prompt/dispatch, --config <name> on prompt [bl-a693]
 - guard the seeded `models.yaml`/`providers.yaml` provider names against brazen's actual resolved table in CI, so a shipped row brazen can't serve fails a test instead of an operator's first dispatch [bl-9391]
 - agent naming becomes a first-class fact: --name at prompt/dispatch, stored under the agent; message resolves id-or-unique-name [bl-c8ed]
+- agents get a cd tool: a builtin that changes the agent's own working directory for all subsequent tool calls [bl-a501]
+- lernie delete <workspace> <agent> [--children]: agents gain a lawful removal verb [bl-0d9e]
+- clarify the bash tool spec for models — local, non-interactive, worktree-rooted, stateless between tool calls — aligned with codex's shell tool [bl-298c]
+- extract fleet/ to ~/ops/fleet: the demo is a consumer artifact and does not belong in the harness repo; README keeps a pointer [bl-b892]
+- fleet: drop the bl-a900 grant-union workaround, update README/comments for the five landed fixes, re-run the live e2e green [bl-e5aa]
+- a child role's tool grant is no longer silently capped by its dispatcher's: the fork prune reads the child's own grant, so a granted tool with no descriptor in the parent's tree still reaches the child's request [bl-a900]
+- model-tool dispatch no longer forks the child between the parent's tool_use commit and its tool_result commit, so a child cannot inherit a dangling tool_use [bl-4231]
+- declared-is-not-callable now holds for every role: tool_step::run_tool_calls refuses any tool outside the caller's grant, not just the compactor's [bl-5a1f]
+- validate pooled skill frontmatter at prime/new/config snapshot time, so a malformed SKILL.md cannot poison existing workspaces [bl-e3f5]
+- work-product transfer no longer deletes the parent's descriptions/**: transfer.rs CONTEXT_EXCLUDES carries 'descriptions' [bl-475a]
+- fleet: role-separated agent fleet (coordinator/shepherd/sensor/builder/steward) demo on lernie — souls, role grants, mock slack tool triples, live e2e test [bl-7780]
 
 ## [0.0.3](https://github.com/mudbungie/lernie/compare/v0.0.2...v0.0.3) - 2026-07-30
 

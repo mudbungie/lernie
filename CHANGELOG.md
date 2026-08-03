@@ -16,6 +16,7 @@ than product and are not listed — they live in git and in the balls store.
 ### Changes
 
 - every tool result now carries a result envelope — the exit code stated on its first line, stdout, then stderr under a `--- stderr ---` marker whenever the tool wrote any, on success as well as failure; a model can tell exit 1 from 127 from 143, and a warning from a command that exited 0 is no longer dropped [bl-ffc5]
+- fork-from-history and config-branch selection reach the CLI: --from <ref> on prompt/dispatch, --config <name> on prompt [bl-a693]
 - guard the seeded `models.yaml`/`providers.yaml` provider names against brazen's actual resolved table in CI, so a shipped row brazen can't serve fails a test instead of an operator's first dispatch [bl-9391]
 - agent naming becomes a first-class fact: --name at prompt/dispatch, stored under the agent; message resolves id-or-unique-name [bl-c8ed]
 
@@ -42,7 +43,7 @@ than product and are not listed — they live in git and in the balls store.
 - README does not document the opt-in commit-identity guard shipped in tests/commit_hygiene.rs [bl-303d]
 - commit-identity guard test + changelog normalization [bl-3ac2]
 - lernie scan aborts the entire pass with a raw git error when any agents/* branch's derived parent has no ref (filed upstream as 'exit 1 for a root with pending mail' — that repro is exit 0) [bl-025b]
-- :advance_cli baton test outruns its 120s evidence-poll bound when the box runs several full suites at once [bl-2bf0]
+- e2e::advance_cli baton test outruns its 120s evidence-poll bound when the box runs several full suites at once [bl-2bf0]
 - 0.0.1 ships two binary distribution channels (crates.io, GitHub release tarball) that the README documents no path for: no cargo install line, no bz step, and the tarball carries no docs at all [bl-33ef]
 - A missing bz surfaces as 'adapter subprocess: No such file or directory (os error 2)' — the one error every binary-install user hits names neither bz nor the fix [bl-63c1]
 - lernie advance on a nonexistent agent exits 0 silently AND mkdirs an orphan inbox — the id-existence guard is missing at exactly the verb README says has it [bl-bbba]

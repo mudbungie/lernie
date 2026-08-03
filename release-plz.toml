@@ -23,6 +23,31 @@ custom_major_increment_regex = '(^|\s)\[major\](\s|$)'
 
 [changelog]
 #
+# Subject protection: subjects here are non-conventional (see the header
+# comment above), but git-cliff still runs every message through the
+# Conventional-Commits parser, and any leading `word:` / `word::` token —
+# `e2e::advance_cli …`, `fleet: drop …` — parses as a type and is stripped
+# from the rendered bullet (0.0.2 shipped `- :advance_cli baton test …`,
+# bl-1923). release-plz exposes no knob to turn that parser off, so this
+# preprocessor duplicates the leading token instead: `e2e::x` becomes
+# `e2e: e2e::x`, the parser consumes exactly the injected copy, and the
+# bullet renders the original subject verbatim. The token class
+# `[^\s():!]+:` mirrors git-conventional's type grammar (a run of anything
+# but whitespace/parens/colon/bang, then `:`), so every subject the pattern
+# rewrites is guaranteed to parse and be re-stripped — nothing can render
+# doubled. Subjects whose first colon comes later (`… reach the CLI: --from
+# …`) never parsed as conventional and are left alone. `word(scope):` and
+# `word!:` shapes stay unprotected (type still eaten) — no subject in this
+# history uses them. The gate skip-parsers below keep matching: duplication
+# preserves the first token and its colon. release-plz's own `chore:
+# release vX` commits are excluded by package-equality when commits are
+# collected, upstream of preprocessing, so duplicating `chore:` cannot leak
+# them into the changelog.
+commit_preprocessors = [
+    { pattern = '^([^\s():!]+:)', replace = '${1} ${1}' },
+]
+
+#
 # Entry uniformity: every task carries `tests` / `docs` / `alignment` gate
 # subtasks (AGENTS.md), and each one closes as its own commit on `main` with a
 # gate-shaped subject — `alignment [bl-xxxx]`, `docs gate: …`, `v0.3 tests

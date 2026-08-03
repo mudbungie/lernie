@@ -55,7 +55,9 @@ use std::path::Path;
 /// `resolved` carries the calling agent's role and its `providers.yaml`
 /// `tools:` grant (§4.3) — the pair travels from the one resolution that
 /// reads both ([`crate::prompt::resolve`]), so a role and a grant that
-/// do not belong together cannot reach here. They gate what may be
+/// do not belong together cannot reach here. Its workflow also supplies
+/// the `tool_output:` bounded-projection policy (§3.3, §6), handed to
+/// every `execute` so the executor caps the streams it renders. They gate what may be
 /// *called*, which the request's declaration does not imply: a request
 /// declares every tool its history names so the wire holds
 /// ([`super::tools::close_over_history`]), and an inherited transcript
@@ -89,6 +91,7 @@ pub(super) fn run_tool_calls(
                 ToolUse { id, name, input },
                 &step_dir_abs,
                 deps.stop,
+                resolved.workflow.tool_output,
             ) {
                 Ok(outcome) => outcome,
                 // §2.9 step 3: a tool group-killed by the executor's own

@@ -69,6 +69,7 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
             },
             &step_dir,
             &AtomicBool::new(false),
+            None,
         )
         .expect("bash executes");
     assert!(!outcome.is_error, "write should succeed: {outcome:?}");
@@ -110,6 +111,7 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
 
 /// What a role may *call* (ARCH §3.3 declaring is not permitting).
 mod permit;
+mod policy;
 
 /// A materialized agent worktree on its own branch, carrying the step-1
 /// transcript entry, plus the workspace-root step directory — the disk
@@ -134,9 +136,10 @@ fn branch_with_step(ws: &TempDir, agent_id: &str, git: &RealGit) -> (PathBuf, St
 }
 
 /// A step resolution (§4.3) to run a tool window against. The tool
-/// window reads two of its fields — the role and the `tools:` grant,
-/// which travel together ([`super::run_tool_calls`]) — so the fixture
-/// owns the rest, which no tool call enters.
+/// window reads the role, the `tools:` grant (they travel together,
+/// [`super::run_tool_calls`]), and the workflow's `tool_output:`
+/// policy (§3.3, [`policy`]) — the fixture owns the rest, which no
+/// tool call enters.
 struct Resolution {
     model: crate::config::Model,
     workflow: crate::config::Workflow,
@@ -206,9 +209,10 @@ impl crate::prompt::inbox::Launcher for NoLauncher {
     }
 }
 
-/// A recording executor: run_tool_calls hands it only `tool_use` blocks,
-/// so the names it sees are the loop's block filter, observable.
-struct Recorder(std::cell::RefCell<Vec<String>>);
+/// A recording executor: run_tool_calls hands it only `tool_use` blocks
+/// (the loop's block filter) together with the governing workflow's
+/// `tool_output:` policy (§3.3 bounded projection) — both observable.
+struct Recorder(std::cell::RefCell<Vec<(String, Option<crate::config::ToolOutputBound>)>>);
 
 impl ToolExecutor for Recorder {
     fn execute(
@@ -216,8 +220,11 @@ impl ToolExecutor for Recorder {
         call: ToolCall<'_>,
         _step_dir: &std::path::Path,
         _stop: &AtomicBool,
+        output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<crate::prompt::tool::ToolOutcome, crate::prompt::tool::ExecError> {
-        self.0.borrow_mut().push(call.name.to_string());
+        self.0
+            .borrow_mut()
+            .push((call.name.to_string(), output_bound));
         Ok(crate::prompt::tool::ToolOutcome {
             content: b"ok".to_vec(),
             is_error: false,
@@ -274,7 +281,9 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
     )
     .unwrap();
     assert!(!stopped, "no stop was requested");
-    assert_eq!(*recorder.0.borrow(), vec!["bash".to_string()]);
+    // One call reached the executor; this workflow declares no
+    // `tool_output:` block, so the projection policy travels as absent.
+    assert_eq!(*recorder.0.borrow(), vec![("bash".to_string(), None)]);
     // The single tool result was committed as the next transcript entry.
     assert!(worktree.join("messages/002-tool.json").exists());
 }

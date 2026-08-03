@@ -45,6 +45,7 @@ impl crate::prompt::tool::ToolExecutor for StopMidToolExecutor<'_> {
         _call: crate::prompt::tool::ToolCall<'_>,
         _step_dir: &std::path::Path,
         _stop: &AtomicBool,
+        _output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, crate::prompt::ExecError> {
         self.flag.store(true, Ordering::SeqCst);
         Ok(ToolOutcome {

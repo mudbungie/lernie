@@ -24,8 +24,10 @@ use caller::Caller;
 use super::subprocess::{SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
-    ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, envelope, tool_call_dir,
+    ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, bound, envelope,
+    tool_call_dir,
 };
+use crate::config::ToolOutputBound;
 use crate::prompt::Clock;
 use crate::template::{GitRunner, RealGit};
 use std::ffi::{OsStr, OsString};
@@ -146,6 +148,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         call: ToolCall<'_>,
         step_dir: &Path,
         stop: &AtomicBool,
+        output_bound: Option<ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError> {
         let caller =
             Caller::resolve(step_dir, &*self.git).ok_or_else(|| ExecError::NoWorktree {
@@ -191,7 +194,15 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             None => return Err(killed_by_signal(call.name, &captured.status)),
         };
 
-        let content = envelope::render(exit_code, &captured.stdout, &captured.stderr);
+        // §3.3 bounded transcript projection: the streams are bounded
+        // *before* the envelope is rendered around them — the envelope's
+        // header and stderr marker are structure, never cappable
+        // content. The marker points at the workspace-relative record so
+        // the transcript stays host-path-free.
+        let record = caller.record_rel(&dir).join(OUTPUT_FILE);
+        let stdout = bound::apply(&captured.stdout, "stdout", output_bound, &record);
+        let stderr = bound::apply(&captured.stderr, "stderr", output_bound, &record);
+        let content = envelope::render(exit_code, &stdout, &stderr);
         let is_error = exit_code != 0;
 
         let output_record = ToolOutputRecord {

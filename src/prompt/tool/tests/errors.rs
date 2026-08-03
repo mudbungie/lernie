@@ -31,6 +31,7 @@ fn spawn_error_when_resolved_binary_is_not_executable() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap_err();
     match err {
@@ -63,6 +64,7 @@ fn io_error_when_step_dir_is_a_file() {
             },
             &bogus_step,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap_err();
     match err {
@@ -88,6 +90,7 @@ fn declined_step_dir(step_dir: &std::path::Path) -> ExecError {
         },
         step_dir,
         &AtomicBool::new(false),
+        None,
     )
     .unwrap_err()
 }

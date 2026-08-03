@@ -73,7 +73,7 @@ fn an_ungranted_tool_is_declined_in_band_and_the_granted_one_still_runs() {
 
     assert!(!stopped);
     // Only the granted tool reached the executor.
-    assert_eq!(*recorder.0.borrow(), vec!["slack_read".to_string()]);
+    assert_eq!(*recorder.0.borrow(), vec![("slack_read".to_string(), None)]);
     // The decline landed as an ordinary transcript entry naming the grant.
     let entry = std::fs::read_to_string(worktree.join("messages/002-tool.json")).unwrap();
     let blocks: Vec<Content> = serde_json::from_str(&entry).unwrap();

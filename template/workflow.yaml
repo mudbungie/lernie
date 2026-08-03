@@ -30,6 +30,18 @@ retry:
   max_attempts: 3
   backoff: exponential
 
+# Bounded transcript projection of tool output (ARCH §3.3, §6). Each
+# stream of a tool result (stdout and stderr independently) is bounded
+# to its first head_bytes and last tail_bytes before the result envelope
+# is rendered; the omitted middle is replaced by a marker stating the
+# original byte/line counts and where the full record lives
+# (steps/<agent-id>/<NNN>/tools/<tool-id>/output.json — always complete).
+# Counts are bytes, never tokens. Omit the block and tool output reaches
+# the transcript unbounded.
+tool_output:
+  head_bytes: 16384
+  tail_bytes: 16384
+
 # Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked at
 # every model-call boundary before the adapter is invoked; spend, wall,
 # and depth are derived from disk each check — no stored counter. Omit a

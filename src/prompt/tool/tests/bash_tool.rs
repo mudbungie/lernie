@@ -80,6 +80,7 @@ fn bash_through_executor_returns_stdout_and_lands_disk_record() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute succeeds");
 
@@ -128,6 +129,7 @@ fn bash_writes_land_in_the_agents_worktree_not_the_launchers_cwd() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute succeeds");
 
@@ -168,6 +170,7 @@ fn bash_failure_states_its_exit_code_and_marks_stderr() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute returns Ok even when the shell exits non-zero");
 

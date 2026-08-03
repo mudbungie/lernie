@@ -6,6 +6,7 @@
 
 use crate::config::action::Action;
 use crate::config::error::LoadError;
+use crate::config::tool_output::ToolOutputBound;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -31,6 +32,13 @@ pub struct Workflow {
     /// limit unbounded.
     #[serde(default)]
     pub budgets: Budgets,
+    /// Per-stream byte bound on the transcript projection of a tool
+    /// result (ARCH §3.3 *Bounded transcript projection*, bl-d5fa).
+    /// Omitted → tool output reaches the transcript unbounded; the
+    /// shipped default lives in `template/workflow.yaml`
+    /// ([`ToolOutputBound`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_output: Option<ToolOutputBound>,
 }
 
 /// Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each

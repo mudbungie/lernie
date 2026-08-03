@@ -19,6 +19,8 @@ merges.
 
 ## [Unreleased]
 
+## [0.0.6](https://github.com/mudbungie/lernie/compare/v0.0.5...v0.0.6) - 2026-08-02
+
 ### Changes
 
 - address a terminating agent's result message by its epitaph: a **reply** (final response) answers whoever last prompted it — derived from the branch's own transcript, so an operator's question in a child's conversation is answered there and deposits nothing — while an **obituary** (stopped, budget-exhausted, died) still reports to the dispatcher; the §2.11 exit protocol now revives the recipient it deposited into, and the §2.6 work-product transfer and §6 delivered-child-result bindings apply only in the dispatcher's inbox [bl-a96a]

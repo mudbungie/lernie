@@ -8,6 +8,10 @@ root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 [[blockers]]
 id = "bl-eb84"
 on = "close"
+
+[[blockers]]
+id = "bl-1d7f"
+on = "close"
 +++
 Diagnosed from a live yog session, 2026-08-02 (yog dev workspace,
 `~/.local/share/yog/workspaces/dev`). Evidence is on-disk bytes, cited below.

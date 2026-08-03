@@ -12,6 +12,10 @@ on = "close"
 [[blockers]]
 id = "bl-1d7f"
 on = "close"
+
+[[blockers]]
+id = "bl-78d9"
+on = "close"
 +++
 Diagnosed from a live yog session, 2026-08-02 (yog dev workspace,
 `~/.local/share/yog/workspaces/dev`). Evidence is on-disk bytes, cited below.

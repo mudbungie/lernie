@@ -18,6 +18,7 @@
 //! not committed to git").
 
 mod descriptors;
+pub(crate) mod inherited;
 #[cfg(test)]
 mod tests;
 mod unsettled;
@@ -164,8 +165,10 @@ pub(super) fn commit_dispatch(
 ///    [`descriptors::derive`] does it, and declines a grant the commit
 ///    does not describe; see that module for the failures it closes.
 /// 3. **The unsettled tool step leaves.** A tool-call dispatch forks
-///    *during* the parent's tool step (§2.5), so the inherited transcript
-///    can end in a `tool_use` block no `tool_result` entry answers — a
+///    *during* the parent's tool step (§2.5), so a retained inherited
+///    transcript — a fork-back-in root's own resumed conversation, or
+///    the compactor's subject ([`inherited::prune_inherited_dialog`])
+///    — can end in a `tool_use` block no `tool_result` entry answers — a
 ///    tail that settles on the parent's branch and never on the child's,
 ///    and that every provider refuses (§2.5 pairing).
 ///    [`unsettled::prune_unsettled`] removes exactly it; see that module

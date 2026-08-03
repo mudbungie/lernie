@@ -3,6 +3,11 @@
 //! tail, and its first model-facing history must still be one the wire
 //! accepts (ARCH §2.5 pairing, §2.3 *Fork and inheritance*).
 //!
+//! The dispatched role is the **compactor** — since bl-5a36 the one
+//! child whose tree retains the inherited transcript at all
+//! ([`super::super::super::inherited`]); every other child's dialog
+//! prune removes the tail wholesale, transcript and all.
+//!
 //! The same predicate is asserted twice — unanswered on the parent's tip
 //! (the fork point genuinely carries the defect shape) and empty on the
 //! child's tree (the dispatch commit made its record honest).
@@ -103,7 +108,7 @@ fn a_child_forked_mid_tool_step_assembles_a_wire_valid_first_history() {
             repo: &ws,
             parent_branch: PARENT,
             parent_worktree: &parent_wt,
-            role: crate::prompt::WORKER_ROLE,
+            role: crate::prompt::compactor::COMPACTOR_ROLE,
             goal: "summarize the repo\n",
             name: None,
             fork_point: None,

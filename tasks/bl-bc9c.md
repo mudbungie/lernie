@@ -1,7 +1,8 @@
 +++
 title = "partial compaction with rebase-forward: zero-downtime compression of a commit span"
 created = 1785650728
-updated = 1785650728
+updated = 1785724641
+claimant = "Kevel"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Operator design (2026-08-01, codex-comparison follow-up), verbatim: "this is a place we can accelerate, actually. The nature of lernie allows us to do a partial compaction. We pick a commit, and compress everything before it (or in a span of commits), then as the conversation proceeds ahead, we can rebase the conversation after the compaction point on top of the compaction. this lets us do zero-downtime compaction."

@@ -52,6 +52,10 @@ pub(super) struct StubGit {
     tips: HashMap<String, String>,
     fail_op: Option<&'static str>,
     invocations: RefCell<Vec<Vec<String>>>,
+    /// The durable returned marks (`refs/lernie/returned/<child>`, §8):
+    /// pre-scripted via [`Self::marked`] and written through `update-ref`
+    /// by the sweep's own deposit, read back through `show-ref`.
+    marks: RefCell<HashMap<String, String>>,
 }
 
 impl StubGit {
@@ -73,6 +77,14 @@ impl StubGit {
         self.fail_op = Some(op);
         self
     }
+    /// Pre-script the durable returned mark for `child` (§8) — the state
+    /// a consumed result deposit leaves behind.
+    pub(super) fn marked(self, child: &str, sha: &str) -> Self {
+        self.marks
+            .borrow_mut()
+            .insert(format!("refs/lernie/returned/{child}"), sha.to_string());
+        self
+    }
     /// Was an `ls-tree` ever issued against `agents/<branch>`? The
     /// sweep's registry intersection (bl-025b) is proven by the question
     /// it declines to ask, so the recorded argv is the assertion.
@@ -86,8 +98,28 @@ impl StubGit {
 }
 
 impl GitRunner for StubGit {
-    fn run(&self, _dest: &std::path::Path, _args: &[&str]) -> io::Result<()> {
-        unreachable!("scan issues only run_capture")
+    fn run(&self, _dest: &std::path::Path, args: &[&str]) -> io::Result<()> {
+        self.invocations
+            .borrow_mut()
+            .push(args.iter().map(|s| (*s).to_string()).collect());
+        match args.first().copied() {
+            // The returned-mark probe: exit 0 iff the ref exists.
+            Some("show-ref") => {
+                let refname = args.last().copied().unwrap_or_default();
+                if self.marks.borrow().contains_key(refname) {
+                    Ok(())
+                } else {
+                    Err(io::Error::other("no such ref"))
+                }
+            }
+            // The sweep's own deposit writes the mark it later reads.
+            Some("update-ref") => {
+                let (name, sha) = (args[1].to_string(), args[2].to_string());
+                self.marks.borrow_mut().insert(name, sha);
+                Ok(())
+            }
+            other => unreachable!("unexpected git run op {other:?}"),
+        }
     }
     fn run_capture(&self, _dest: &std::path::Path, args: &[&str]) -> io::Result<String> {
         self.invocations

@@ -43,6 +43,7 @@ fn no_op_hop_with_held_result(race: bool) -> (tempfile::TempDir, RecLauncher, Ad
         "abc123",
         None,
         &clock,
+        &StubGit::ok(),
     )
     .unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());

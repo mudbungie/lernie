@@ -68,6 +68,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         tip.trim(),
         Some("done"),
         &clock,
+        &git,
     )
     .unwrap();
 
@@ -177,6 +178,7 @@ fn a_compaction_landing_lands_the_product_and_the_next_step_assembles_clean() {
         tip.trim(),
         Some("compacted"),
         &clock,
+        &git,
     )
     .unwrap();
     // A steering deposit warrants the parent's next step (§2.3).

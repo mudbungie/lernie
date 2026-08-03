@@ -14,10 +14,27 @@
 //! with itself, so the target name never pre-exists; temp-path + rename
 //! then guarantees no reader observes a half-written file.
 
-use super::inbox_dir;
+use super::{inbox_dir, parent_of};
 use crate::prompt::Clock;
+use crate::template::GitRunner;
 use std::io;
 use std::path::{Path, PathBuf};
+
+/// Ref-namespace prefix for the durable **returned** mark,
+/// `refs/lernie/returned/<child-id>` → the child's terminal ref — written
+/// by [`deposit_result`] the moment a result message lands (ARCH §2.6,
+/// §8). The fact's one durable home: the message file is consumed by
+/// delivery or by a compaction landing, and even its delivered transcript
+/// entry can be squashed away by a later compaction — so "this child
+/// deposited a result" must outlive every downstream trace, or the §8
+/// sweep re-derives a death for a child that returned cleanly. Shares
+/// [`crate::workspace::MARK_REF_ROOT`], so §9.2 retention recycles it.
+pub const RETURNED_REF_PREFIX: &str = "refs/lernie/returned/";
+
+/// The child's returned-mark ref, `refs/lernie/returned/<child-id>`.
+pub fn returned_ref(child_id: &str) -> String {
+    format!("{RETURNED_REF_PREFIX}{child_id}")
+}
 
 /// Extension of a deposited message file.
 const MESSAGE_EXT: &str = "md";
@@ -34,6 +51,15 @@ pub enum DepositError {
     #[error("inbox i/o at {path}: {source}")]
     Io {
         path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    /// The returned mark could not be written after the result file
+    /// landed. Surfaced loudly: an unmarked return is exactly the state
+    /// the §8 sweep would later misread as a silent death.
+    #[error("mark refs/lernie/returned/{child}: {source}")]
+    Mark {
+        child: String,
         #[source]
         source: io::Error,
     },
@@ -156,7 +182,14 @@ impl Epitaph {
 /// never a model `message` tool call ("Return is not a verb",
 /// `docs/PRINCIPLES.md`). Total and reusable — the normal terminal
 /// paths (§2.9, §6) and the §8 silent-death sweep (bl-d148) all deposit
-/// through it.
+/// through it — which is what makes it the one seam where the durable
+/// **returned mark** is written ([`RETURNED_REF_PREFIX`]): every result
+/// deposit, whoever makes it, leaves the mark, so the §8 sweep's
+/// returned derivation survives the message's later consumption. The
+/// mark lands *after* the file: in the crash window between the two the
+/// file itself is the evidence (the sweep reads the inbox first), so
+/// neither ordering half can strand or double-deposit.
+#[allow(clippy::too_many_arguments)] // one deposit, every pinned fact it renders
 pub fn deposit_result(
     workspace: &Path,
     parent_id: &str,
@@ -165,6 +198,7 @@ pub fn deposit_result(
     terminal_ref: &str,
     terminal_response: Option<&str>,
     clock: &dyn Clock,
+    git: &dyn GitRunner,
 ) -> Result<PathBuf, DepositError> {
     let dir = inbox_dir(workspace, parent_id);
     std::fs::create_dir_all(&dir).map_err(|e| io_err(&dir, e))?;
@@ -178,7 +212,57 @@ pub fn deposit_result(
         terminal_response,
     );
     atomic_create(&dir, &filename, body.as_bytes())?;
+    mark_returned(workspace, child_id, terminal_ref, git)?;
     Ok(dir.join(filename))
+}
+
+/// Write the durable returned mark `refs/lernie/returned/<child-id>` at
+/// the child's terminal ref (module docs on [`RETURNED_REF_PREFIX`]).
+fn mark_returned(
+    workspace: &Path,
+    child_id: &str,
+    terminal_ref: &str,
+    git: &dyn GitRunner,
+) -> Result<(), DepositError> {
+    git.run(
+        &crate::workspace::repo_git(workspace),
+        &["update-ref", &returned_ref(child_id), terminal_ref],
+    )
+    .map_err(|source| DepositError::Mark {
+        child: child_id.to_string(),
+        source,
+    })
+}
+
+/// Deposit a child's result message (§2.6) on its own behalf, into its
+/// parent's inbox — the total return step (§2.3 step 5). A no-op
+/// returning `Ok(None)` when `agent_id` is a root ([`parent_of`] is
+/// `None`): a root has no parent inbox, its terminal response answers
+/// the user instead (§2.4). Otherwise deposits and returns the created
+/// path.
+pub fn deposit_child_result(
+    workspace: &Path,
+    agent_id: &str,
+    epitaph: Epitaph,
+    terminal_ref: &str,
+    terminal_response: Option<&str>,
+    clock: &dyn Clock,
+    git: &dyn GitRunner,
+) -> Result<Option<PathBuf>, DepositError> {
+    match parent_of(agent_id) {
+        None => Ok(None),
+        Some(parent) => deposit_result(
+            workspace,
+            &parent,
+            agent_id,
+            epitaph,
+            terminal_ref,
+            terminal_response,
+            clock,
+            git,
+        )
+        .map(Some),
+    }
 }
 
 /// Render a result message (§2.6, §2.11): the ordinary `from:` /

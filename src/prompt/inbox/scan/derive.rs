@@ -53,21 +53,41 @@ pub(super) fn is_driven(workspace: &Path, branch: &str) -> Result<bool, ScanErro
     }
 }
 
-/// Has the child `child` returned a result to `parent`? True when a
-/// message from the child exists in the parent's inbox (undelivered) *or*
-/// in the parent's transcript (delivered) — the sender-namespaced
-/// derivation across both homes (§2.11). Either presence means the return
-/// already happened, so the sweep must not deposit again.
+/// Has the child `child` returned a result to `parent`? The durable
+/// answer is the **returned mark** `refs/lernie/returned/<child>` that
+/// every result deposit writes ([`crate::prompt::inbox::deposit::RETURNED_REF_PREFIX`])
+/// — the message file and even its delivered transcript entry are
+/// consumable (a compaction landing removes the trigger without a
+/// transcript entry, and a later compaction can squash a delivered
+/// `messages/NNN-<child>.md` away), so their absence proves nothing.
+/// The two legacy reads — a message from the child in the parent's inbox
+/// (undelivered) or in its transcript (delivered) — remain as the
+/// deposit-crash-window belt and for workspaces predating the mark. Any
+/// presence means the return already happened, so the sweep must not
+/// deposit again.
 pub(super) fn returned(
     workspace: &Path,
     git: &dyn GitRunner,
     parent: &str,
     child: &str,
 ) -> Result<bool, ScanError> {
-    if has_inbox_message(workspace, parent, child) {
+    if returned_mark_exists(workspace, git, child) || has_inbox_message(workspace, parent, child) {
         return Ok(true);
     }
     transcript_has(workspace, git, parent, child)
+}
+
+/// Does the durable returned mark exist for `child`? A `show-ref
+/// --verify --quiet` probe against the bare repo.git; any failure —
+/// including an absent ref's exit 1 — reads as "no mark", falling
+/// through to the legacy evidence reads.
+fn returned_mark_exists(workspace: &Path, git: &dyn GitRunner, child: &str) -> bool {
+    let mark = crate::prompt::inbox::deposit::returned_ref(child);
+    git.run(
+        &workspace::repo_git(workspace),
+        &["show-ref", "--verify", "--quiet", &mark],
+    )
+    .is_ok()
 }
 
 /// Is there an undelivered message *from* `child` in `parent`'s inbox — a

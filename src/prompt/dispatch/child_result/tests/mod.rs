@@ -160,7 +160,17 @@ fn returned_child_ep(
     // A `died` deposit mirrors the §8 sweep's: the child never spoke,
     // so the result carries no body.
     let response = (epitaph != Epitaph::Died).then_some("done");
-    deposit_result(ws, parent, &child, epitaph, tip.trim(), response, &fx.clock).unwrap();
+    deposit_result(
+        ws,
+        parent,
+        &child,
+        epitaph,
+        tip.trim(),
+        response,
+        &fx.clock,
+        &fx.git,
+    )
+    .unwrap();
     child
 }
 

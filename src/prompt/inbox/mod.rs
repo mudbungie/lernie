@@ -30,7 +30,7 @@ pub mod scan;
 #[cfg(test)]
 mod tests;
 
-pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
+pub use deposit::{DepositError, Epitaph, deposit, deposit_child_result, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
 pub use scan::scan;
 
@@ -68,36 +68,6 @@ pub fn parent_of(agent_id: &str) -> Option<String> {
         return None;
     }
     Some(tokens[..tokens.len() - 2].join("-"))
-}
-
-/// Deposit a child's **result message** (§2.6) on its own behalf, into
-/// its parent's inbox — the total return step (§2.3 step 5). A no-op
-/// returning `Ok(None)` when `agent_id` is a root ([`parent_of`] is
-/// `None`): a root has no parent inbox, its terminal response answers
-/// the user instead (§2.4). Otherwise deposits and returns the created
-/// path. The deposit is executor-side, never a model tool call ("Return
-/// is not a verb", `docs/PRINCIPLES.md`).
-pub fn deposit_child_result(
-    workspace: &Path,
-    agent_id: &str,
-    epitaph: Epitaph,
-    terminal_ref: &str,
-    terminal_response: Option<&str>,
-    clock: &dyn Clock,
-) -> Result<Option<PathBuf>, DepositError> {
-    match parent_of(agent_id) {
-        None => Ok(None),
-        Some(parent) => deposit_result(
-            workspace,
-            &parent,
-            agent_id,
-            epitaph,
-            terminal_ref,
-            terminal_response,
-            clock,
-        )
-        .map(Some),
-    }
 }
 
 /// Launches a driver for a quiescent agent — the one launch seam shared

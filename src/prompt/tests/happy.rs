@@ -129,11 +129,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // §2.3 step 2) + 1 (drain
     // stray-probe, §2.11) + 2 (user-message delivery commit, §2.11) + 1
     // (rev-parse) + 2 (model-output transcript entry add + commit) + 1
-    // (terminal result-deposit rev-parse, §2.6). Merge-back is gone
-    // (§2.6): the root branch persists on its own ref. The version guard
-    // runs no git.
+    // (terminal result-deposit rev-parse, §2.6) + 1 (the deposit's
+    // durable returned-mark `update-ref`, §8 — this rig's compact ids
+    // make the agent parse as a child, so the deposit is real).
+    // Merge-back is gone (§2.6): the root branch persists on its own
+    // ref. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 25);
+    assert_eq!(runs.len(), 26);
     for (dest, _args) in &runs[0..9] {
         assert_eq!(dest, &repo_git, "control + spawn run against repo.git");
     }

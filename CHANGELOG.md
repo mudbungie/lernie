@@ -15,6 +15,7 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- record every result deposit at a durable `refs/lernie/returned/<child>` mark so `lernie scan` never fabricates a `died` epitaph for a compactor (or any child) whose return was consumed [bl-2c06]
 - qualify the bare-'call' usages the 8/01-02 doc edits introduced, define tool window / grant gate / checkpoint origin, fix ARCH's rm cross-ref to §5.4, drop the cache-pin overload [bl-81ce]
 - retire the compaction-merge story from PRINCIPLES, USER_STORIES, README, and the ARCH shipped-state notes: rebase-forward is the landing, nothing merges [bl-10a2]
 - back-fill the 24 missing [Unreleased] bullets for the v0.0.3..main deliveries [bl-0b1f]

@@ -233,6 +233,7 @@ fn sweep(
                 &tip,
                 None,
                 clock,
+                git,
             )?;
             report.swept.push(branch);
         }

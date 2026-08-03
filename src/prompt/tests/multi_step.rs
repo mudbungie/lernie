@@ -125,21 +125,21 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // query, §2.3; then control resolution, §2.2 — the `config/*` head
     // enumeration and its merge-base, plus five `show` reads, `version`
     // first for the §10 schema-version guard, manifest.yaml before the
-    // soul, §5.2) + 10 (step 1 setup:
-    // spawn, control rm, the descriptor derivation's five ops — four
-    // `cat-file -e` existence reads against the governing config commit
-    // and one `checkout`, §3.3 — the settled-name stage (§2.3), add,
-    // commit) + 1 (step-1 drain stray-probe) + 2
-    // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
-    // (step-1 model-output transcript entry add+commit) + 1 (the tool
-    // window's unconditional hold-mark probe, §3.3 *Tool control* — the
-    // mark, not the config, asserts a park) + 2 (the tool
-    // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
-    // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 1
-    // (terminal result-deposit rev-parse, §2.6) = 32. Merge-back is gone
-    // (§2.6). The version guard runs no git.
+    // soul, §5.2) + 10 (step 1 setup: spawn, control rm, the descriptor
+    // derivation's five ops — four `cat-file -e` existence reads against
+    // the governing config commit and one `checkout`, §3.3 — the
+    // settled-name stage (§2.3), add, commit) + 1 (step-1 drain
+    // stray-probe) + 2 (user-message delivery add+commit) + 1 (step 1
+    // rev-parse) + 2 (step-1 model-output transcript entry add+commit)
+    // + 1 (the tool window's unconditional hold-mark probe, §3.3 *Tool
+    // control*) + 2 (the tool transcript entry add+commit) + 1 (step-2
+    // drain stray-probe) + 1 (step 2 rev-parse) + 2 (step-2 model-output
+    // entry add+commit) + 1 (terminal result-deposit rev-parse, §2.6) +
+    // 1 (its durable returned-mark `update-ref`, §8 — this rig's compact
+    // ids make the agent parse as a child, so the deposit is real) = 33.
+    // Merge-back is gone (§2.6). The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 32);
+    assert_eq!(runs.len(), 33);
     assert_eq!(runs[15].1, vec!["add", "name"]);
     assert_eq!(runs[16].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[17].1[2].contains("step 001: dispatch"));

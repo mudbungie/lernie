@@ -43,6 +43,7 @@ fn verifier_child(
             vtip.trim(),
             Some(response),
             &fx.clock,
+            &fx.git,
         )
         .unwrap();
     }

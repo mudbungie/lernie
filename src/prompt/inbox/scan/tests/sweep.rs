@@ -220,3 +220,61 @@ fn no_steps_tree_is_not_a_death() {
     std::fs::create_dir_all(ws.path().join(STEPS_DIR).join(CHILD).join("001")).unwrap();
     assert!(!died_mid_work(ws.path(), CHILD));
 }
+
+// ---- the durable returned mark (bl-2c06) ----
+
+#[test]
+fn a_marked_child_is_not_swept_after_its_message_was_consumed() {
+    // The bl-2c06 defect, pinned: a compactor returned final-response,
+    // its deposit was interpreted (land_compaction) and the message file
+    // consumed with no transcript entry — the on-disk state here (no
+    // inbox file, no messages/NNN-<child>.md) is exactly what the sweep
+    // used to misread as a silent death, depositing a false `died`
+    // epitaph into the parent. The durable mark the deposit wrote is the
+    // evidence that survives the consumption.
+    let ws = TempDir::new().unwrap();
+    let git = StubGit::with_branches(&["main", PARENT, CHILD]).marked(CHILD, "cafef00d");
+    let launcher = StubLauncher::default();
+    let report = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
+
+    assert!(report.swept.is_empty(), "a marked return is never re-swept");
+    assert!(report.silent_deaths.is_empty());
+    assert!(
+        !inbox_dir(ws.path(), PARENT)
+            .join(format!("{CHILD}-001.md"))
+            .exists(),
+        "no false died deposit"
+    );
+    assert!(launcher.invocations().is_empty());
+}
+
+#[test]
+fn the_sweeps_own_deposit_writes_the_mark_it_later_reads() {
+    // Idempotence now rides the mark as well as the file: the sweep's
+    // died deposit goes through the one deposit_result seam, so even if
+    // the deposited file is later delivered and compacted away, a
+    // re-scan still sees the return.
+    let ws = TempDir::new().unwrap();
+    let git = StubGit::with_branches(&["main", PARENT, CHILD]).tip(CHILD, "cafef00d");
+    let launcher = StubLauncher::default();
+    let first = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
+    assert_eq!(first.swept, vec![CHILD.to_string()]);
+
+    // Erase every message-level trace, as delivery-then-compaction would.
+    std::fs::remove_file(inbox_dir(ws.path(), PARENT).join(format!("{CHILD}-001.md"))).unwrap();
+    let second = scan(ws.path(), &git, &FixedClock, &launcher).unwrap();
+    assert!(
+        second.swept.is_empty(),
+        "the mark alone blocks a re-deposit"
+    );
+    assert!(second.silent_deaths.is_empty());
+}
+
+#[test]
+fn returned_reads_the_mark_ahead_of_inbox_and_transcript() {
+    let ws = TempDir::new().unwrap();
+    let marked = StubGit::default().marked(CHILD, "cafef00d");
+    assert!(returned(ws.path(), &marked, PARENT, CHILD).unwrap());
+    let unmarked = StubGit::default();
+    assert!(!returned(ws.path(), &unmarked, PARENT, CHILD).unwrap());
+}

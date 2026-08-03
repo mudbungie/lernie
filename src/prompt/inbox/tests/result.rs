@@ -2,11 +2,37 @@
 //! `terminal_ref:` frontmatter, the body-iff-spoke rule, parent
 //! derivation, and the root no-op.
 
-use super::super::deposit::{Epitaph, deposit_result};
+use super::super::deposit::{Epitaph, deposit_result, returned_ref};
 use super::super::{deposit_child_result, inbox_dir, parent_of};
 use crate::prompt::Clock;
+use crate::template::GitRunner;
+use std::cell::RefCell;
+use std::io;
 use std::path::Path;
 use tempfile::TempDir;
+
+/// Recording [`GitRunner`]: every `run` invocation's args, so a test
+/// asserts the returned-mark `update-ref` (its one git effect) without a
+/// real repo. `fail` makes `run` error, for the Mark-arm test.
+#[derive(Default)]
+struct RecGit {
+    runs: RefCell<Vec<Vec<String>>>,
+    fail: bool,
+}
+impl GitRunner for RecGit {
+    fn run(&self, _dest: &Path, args: &[&str]) -> io::Result<()> {
+        self.runs
+            .borrow_mut()
+            .push(args.iter().map(|a| a.to_string()).collect());
+        if self.fail {
+            return Err(io::Error::other("update-ref refused"));
+        }
+        Ok(())
+    }
+    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
+        unreachable!("result deposit never captures git output")
+    }
+}
 
 struct FixedClock;
 impl Clock for FixedClock {
@@ -41,6 +67,7 @@ fn result_message_carries_epitaph_ref_and_body_when_spoke() {
         "abc123",
         Some("all done\n"),
         &FixedClock,
+        &RecGit::default(),
     )
     .unwrap();
 
@@ -67,6 +94,7 @@ fn result_message_omits_body_when_agent_never_spoke() {
         "def456",
         None,
         &FixedClock,
+        &RecGit::default(),
     )
     .unwrap();
     // The file ends at the closing frontmatter delimiter — no body.
@@ -103,6 +131,7 @@ fn deposit_child_result_is_a_noop_for_a_root() {
         "tip",
         Some("hi"),
         &FixedClock,
+        &RecGit::default(),
     )
     .unwrap();
     assert!(out.is_none(), "a root has no parent inbox");
@@ -121,6 +150,7 @@ fn deposit_child_result_deposits_into_parent_for_a_child() {
         "tip9",
         None,
         &FixedClock,
+        &RecGit::default(),
     )
     .unwrap()
     .expect("a child deposits");
@@ -131,4 +161,68 @@ fn deposit_child_result_deposits_into_parent_for_a_child() {
     );
     assert!(read(&out).contains("epitaph: stopped"));
     assert!(read(&out).contains("terminal_ref: tip9"));
+}
+
+#[test]
+fn a_result_deposit_writes_the_durable_returned_mark() {
+    // The mark is the fact's one durable home (§8): message file and
+    // delivered transcript entry are both consumable, so the deposit
+    // itself records that the child returned — for every epitaph.
+    let ws = TempDir::new().unwrap();
+    let git = RecGit::default();
+    deposit_result(
+        ws.path(),
+        "parent",
+        "parent-child",
+        Epitaph::Died,
+        "tipsha",
+        None,
+        &FixedClock,
+        &git,
+    )
+    .unwrap();
+    assert_eq!(
+        *git.runs.borrow(),
+        vec![vec![
+            "update-ref".to_string(),
+            returned_ref("parent-child"),
+            "tipsha".to_string(),
+        ]]
+    );
+    assert_eq!(returned_ref("x-y"), "refs/lernie/returned/x-y");
+}
+
+#[test]
+fn a_failed_mark_write_surfaces_after_the_file_landed() {
+    // Ordering: file first, mark second — in the crash window the file
+    // itself is the sweep's evidence. A mark failure is loud (an
+    // unmarked return is what the sweep would misread as a death), and
+    // the deposited file remains.
+    let ws = TempDir::new().unwrap();
+    let git = RecGit {
+        fail: true,
+        ..RecGit::default()
+    };
+    let err = deposit_result(
+        ws.path(),
+        "parent",
+        "parent-child",
+        Epitaph::FinalResponse,
+        "tipsha",
+        Some("done"),
+        &FixedClock,
+        &git,
+    )
+    .unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("mark refs/lernie/returned/parent-child"),
+        "unexpected error: {err}"
+    );
+    assert!(
+        inbox_dir(ws.path(), "parent")
+            .join("parent-child-001.md")
+            .exists(),
+        "the deposit itself must survive a failed mark"
+    );
 }

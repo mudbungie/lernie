@@ -28,6 +28,19 @@ fn seen_of(path: &Path) -> SeenDeposit {
 /// A root-shaped agent id (two hyphen-free tokens, §2.3).
 const AGENT: &str = "20260101-a1";
 
+/// A no-op [`crate::template::GitRunner`] for deposits into a bare
+/// `TempDir` workspace: the returned-mark `update-ref` has no repo.git
+/// to land in here, and these tests read only the inbox files.
+struct OkGit;
+impl crate::template::GitRunner for OkGit {
+    fn run(&self, _dest: &Path, _args: &[&str]) -> io::Result<()> {
+        Ok(())
+    }
+    fn run_capture(&self, _dest: &Path, _args: &[&str]) -> io::Result<String> {
+        Ok(String::new())
+    }
+}
+
 /// Recording [`Launcher`]: what the release rule fired, and at whom.
 #[derive(Default)]
 struct RecLauncher {
@@ -162,6 +175,7 @@ fn a_racing_result_is_completed_per_its_own_epitaph_warrant() {
             "abc123",
             None,
             &SystemClock,
+            &OkGit,
         )
         .unwrap();
         let rec = RecLauncher::default();

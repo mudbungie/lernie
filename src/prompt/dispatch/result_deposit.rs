@@ -54,7 +54,15 @@ pub(super) fn deposit_terminal(
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
     let terminal_ref = read_branch_tip(worktree, deps)?;
-    inbox::deposit_child_result(repo, conv_id, epitaph, &terminal_ref, response, deps.clock)?;
+    inbox::deposit_child_result(
+        repo,
+        conv_id,
+        epitaph,
+        &terminal_ref,
+        response,
+        deps.clock,
+        deps.git,
+    )?;
     Ok(())
 }
 

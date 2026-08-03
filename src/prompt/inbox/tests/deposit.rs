@@ -119,14 +119,16 @@ fn deposit_surfaces_io_error_when_inbox_home_blocked() {
     let ws = TempDir::new().unwrap();
     std::fs::write(ws.path().join("inbox"), b"not a dir").unwrap();
     let err = deposit(ws.path(), "a1", "user", "hi", &FixedClock).unwrap_err();
-    let DepositError::Io { .. } = err;
+    assert!(matches!(err, DepositError::Io { .. }), "{err}");
 }
 
 #[test]
 fn atomic_create_surfaces_write_error() {
     // Parent directory absent → the temp write fails.
     let err = atomic_create(Path::new("/no/such/dir"), "user-001.md", b"x").unwrap_err();
-    let DepositError::Io { path, .. } = err;
+    let DepositError::Io { path, .. } = err else {
+        panic!("expected Io, got {err}");
+    };
     assert!(path.ends_with(".user-001.md.tmp"), "{}", path.display());
 }
 
@@ -139,6 +141,8 @@ fn atomic_create_surfaces_rename_error() {
     std::fs::create_dir(&blocking).unwrap();
     std::fs::write(blocking.join("occupied"), b"x").unwrap();
     let err = atomic_create(dir, "user-001.md", b"x").unwrap_err();
-    let DepositError::Io { path, .. } = err;
+    let DepositError::Io { path, .. } = err else {
+        panic!("expected Io, got {err}");
+    };
     assert!(path.ends_with("user-001.md"), "{}", path.display());
 }

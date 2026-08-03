@@ -254,6 +254,7 @@ pub fn control_exists(workspace: &Path, commit: &str, path: &str, git: &dyn GitR
 pub mod agent_name;
 pub mod cwd;
 mod guard;
+pub mod hold;
 pub use guard::{
     LayoutError, UnknownAgent, UnknownLineage, UnknownRef, agent_exists, require, require_agent,
     require_lineage, require_ref,

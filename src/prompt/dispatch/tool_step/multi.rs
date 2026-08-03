@@ -39,10 +39,14 @@
 //! nesting adds no expressive power to a flat list and would compound
 //! the attribution scheme for nothing.
 
-use super::{Resolved, refusal, stop_signal};
+mod inner;
+
+use inner::{Inner, run_inner};
+
+use super::Resolved;
 use crate::prompt::Deps;
 use crate::prompt::Error;
-use crate::prompt::tool::{ExecError, ToolCall, ToolOutcome};
+use crate::prompt::tool::ToolOutcome;
 use serde::Deserialize;
 use serde_json::Value;
 use std::path::Path;
@@ -127,6 +131,8 @@ pub(super) fn fan_out(
     input: &Value,
     step_dir_abs: &Path,
     resolved: &Resolved<'_>,
+    conv_repo: &Path,
+    conv_id: &str,
     deps: &Deps<'_>,
 ) -> Result<Fanout, Error> {
     let envelope = match Envelope::deserialize(input) {
@@ -143,7 +149,15 @@ pub(super) fn fan_out(
             entries.push(skipped(inv, failed, total));
             continue;
         }
-        let entry = match run_inner(outer_id, idx + 1, inv, step_dir_abs, resolved, deps)? {
+        let inner = Inner {
+            outer_id,
+            k: idx + 1,
+            inv,
+            step_dir_abs,
+            conv_repo,
+            conv_id,
+        };
+        let entry = match run_inner(&inner, resolved, deps)? {
             Some(entry) => entry,
             None => return Ok(Fanout::Stopped),
         };
@@ -153,61 +167,6 @@ pub(super) fn fan_out(
         entries.push(entry);
     }
     Ok(Fanout::Outcome(render(&entries)))
-}
-
-/// Run one inner invocation through the top-level controls: the depth
-/// refusal, the grant gate, then the executor with the derived id
-/// `<outer-id>-<k>` (its diagnostic record's directory name). `None`
-/// means the §2.9 stop was observed — same reading as the top-level
-/// window: the executor's own group SIGTERM with the stop flag set is
-/// the stop, not a fault.
-fn run_inner(
-    outer_id: &str,
-    k: usize,
-    inv: &Invocation,
-    step_dir_abs: &Path,
-    resolved: &Resolved<'_>,
-    deps: &Deps<'_>,
-) -> Result<Option<Entry>, Error> {
-    if inv.name == NAME {
-        return Ok(Some(Entry {
-            name: inv.name.clone(),
-            status: DECLINED,
-            text: format!(
-                "{NAME:?} may not contain itself (depth 1): \
-                 list the nested invocations in this envelope directly."
-            ),
-        }));
-    }
-    if let Some(decline) = refusal(resolved.grant.role, resolved.grant.tools, &inv.name) {
-        return Ok(Some(Entry {
-            name: inv.name.clone(),
-            status: DECLINED,
-            text: decline,
-        }));
-    }
-    let inner_id = format!("{outer_id}-{k}");
-    match deps.tool_executor.execute(
-        ToolCall {
-            id: &inner_id,
-            name: &inv.name,
-            input: &inv.input,
-        },
-        step_dir_abs,
-        deps.stop,
-        resolved.workflow.tool_output,
-    ) {
-        Ok(outcome) => Ok(Some(Entry {
-            name: inv.name.clone(),
-            status: if outcome.is_error { FAILED } else { OK },
-            text: String::from_utf8_lossy(&outcome.content).into_owned(),
-        })),
-        Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(deps.stop) => Ok(None),
-        Err(source) => Err(Error::ToolExec {
-            tool: inv.name.clone(),
-            source,
-        }),
-    }
 }
 
 /// The entry for an invocation `abort` skipped: it never ran, so it has

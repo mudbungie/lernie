@@ -6,6 +6,7 @@
 
 use crate::config::action::Action;
 use crate::config::error::LoadError;
+use crate::config::tool_control::ToolControl;
 use crate::config::tool_output::ToolOutputBound;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -39,6 +40,13 @@ pub struct Workflow {
     /// ([`ToolOutputBound`]).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_output: Option<ToolOutputBound>,
+    /// The tool-control seam (ARCH §3.3 *Tool control*, §6): the
+    /// adjudicator consulted before every granted tool invocation
+    /// executes — pass, refuse, or hold. Omitted → no control is
+    /// consulted and the tool window is unchanged; no control is
+    /// shipped ([`ToolControl`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_control: Option<ToolControl>,
 }
 
 /// Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each
@@ -207,6 +215,15 @@ impl Workflow {
         }
         if let Some(compaction) = &self.compaction {
             validate_compaction(path, compaction)?;
+        }
+        if let Some(control) = &self.tool_control
+            && control.command.trim().is_empty()
+        {
+            return Err(LoadError::Invalid {
+                path: path.to_path_buf(),
+                key: "tool_control.command".into(),
+                message: "must name the control executable (ARCH §3.3 Tool control)".into(),
+            });
         }
         Ok(())
     }

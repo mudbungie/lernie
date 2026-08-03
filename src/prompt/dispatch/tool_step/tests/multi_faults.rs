@@ -8,7 +8,7 @@ use super::multi::{Fixture, Scripted, outcome_text};
 use super::{Resolution, branch_with_step};
 use crate::prompt::Error;
 use crate::prompt::dispatch::tool_step::multi::fan_out;
-use crate::prompt::dispatch::tool_step::run_tool_calls;
+use crate::prompt::dispatch::tool_step::{ToolWindow, run_tool_calls};
 use brazen::Content;
 use serde_json::json;
 use std::sync::atomic::AtomicBool;
@@ -34,6 +34,8 @@ fn an_ungranted_inner_invocation_is_declined_and_never_reaches_the_executor() {
         &input,
         step_dir.path(),
         &resolution.of("sensor", &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();
@@ -66,6 +68,8 @@ fn a_nested_multi_tool_is_declined_at_depth_one() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();
@@ -94,6 +98,8 @@ fn a_malformed_envelope_is_declined_in_band_and_nothing_runs() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();
@@ -135,7 +141,7 @@ fn a_stop_mid_envelope_ceases_the_loop_and_commits_nothing() {
         "gamma".into(),
     ];
     let resolution = Resolution::new();
-    let stopped = run_tool_calls(
+    let window = run_tool_calls(
         ws.path(),
         &worktree,
         agent_id,
@@ -145,7 +151,7 @@ fn a_stop_mid_envelope_ceases_the_loop_and_commits_nothing() {
         &deps,
     )
     .unwrap();
-    assert!(stopped, "the stop ceases the loop");
+    assert!(matches!(window, ToolWindow::Stopped), "the stop ceases");
     assert_eq!(exec.log.borrow().len(), 2, "the third entry never ran");
     assert!(!worktree.join("messages/002-tool.json").exists());
 }
@@ -170,6 +176,8 @@ fn a_harness_fault_in_an_inner_invocation_propagates_as_tool_exec() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap_err();
@@ -199,6 +207,8 @@ fn a_kill_with_no_stop_pending_is_a_genuine_fault() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap_err();

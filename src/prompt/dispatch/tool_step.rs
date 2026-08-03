@@ -26,6 +26,7 @@
 //! the repo's 300-line code-file cap.
 
 mod multi;
+mod seam;
 #[cfg(test)]
 mod tests;
 
@@ -36,8 +37,25 @@ use crate::prompt::Deps;
 use crate::prompt::Error;
 use crate::prompt::compactor;
 use crate::prompt::tool::{ExecError, ToolCall as ToolUse, ToolOutcome};
+use crate::workspace::hold;
 use brazen::Content;
 use std::path::Path;
+
+/// How one tool window ended (§3.3).
+#[derive(Debug)]
+pub(in crate::prompt) enum ToolWindow {
+    /// Every block resolved and committed; the next model call is due.
+    Completed,
+    /// The §2.9 stop cascade landed in the window: the caller runs the
+    /// clean stopped exit.
+    Stopped,
+    /// The configured control held an invocation before it executed
+    /// (§3.3 *Tool control*): the hold mark is written, nothing after
+    /// the held block ran or committed, and the caller parks the branch
+    /// — no terminal, no `tool_result` — until a later drive
+    /// re-adjudicates ([`super::advance`]).
+    Held,
+}
 
 /// Drive every `tool_use` block in `assistant_content` through the
 /// executor in emission order, committing each result as a transcript
@@ -51,12 +69,23 @@ use std::path::Path;
 /// a model-call window: the tool subprocesses are the executor's limbs and
 /// take the group SIGTERM (§2.9 steps 1-2). A tool cut down that way
 /// returns [`ExecError::KilledBySignal`]; with the stop flag set that is
-/// the stop, not a harness fault — this returns `Ok(true)` so
+/// the stop, not a harness fault — this returns [`ToolWindow::Stopped`] so
 /// [`super::run_exchange`] ceases the loop for the clean stopped-deposit
 /// exit ([`super::terminal::finish`]), never an error propagation. A
 /// `KilledBySignal` with *no* stop pending is a genuine crash (SIGSEGV, …)
-/// and still surfaces as [`Error::ToolExec`] (§2.10). `Ok(false)` means
-/// every tool resolved and the loop continues.
+/// and still surfaces as [`Error::ToolExec`] (§2.10).
+/// [`ToolWindow::Completed`] means every block resolved and the loop
+/// continues.
+///
+/// Between the grant gate and the executor sits the **tool-control
+/// seam** ([`seam`], §3.3 *Tool control*): when the governing workflow
+/// names a control, every invocation the grant permits is adjudicated —
+/// pass enters the executor unchanged, refuse commits the control's
+/// reason as an in-band `is_error` `tool_result`, and hold writes the
+/// hold mark ([`hold`]) and ceases the window ([`ToolWindow::Held`])
+/// with nothing executed or committed at or past the held block. The
+/// grant gate runs first: a control adjudicates only what the role may
+/// call at all — grants are structure, controls are policy.
 ///
 /// `resolved` carries the calling agent's role and its `providers.yaml`
 /// `tools:` grant (§4.3) — the pair travels from the one resolution that
@@ -71,7 +100,7 @@ use std::path::Path;
 /// a tool outside its effective toolset ([`refusal`]) is declined in-band
 /// — an `is_error` `tool_result` committed like any other, so the model
 /// reads the decline and steps on — and the executor is never entered.
-pub(super) fn run_tool_calls(
+pub(in crate::prompt) fn run_tool_calls(
     conv_repo: &Path,
     worktree: &Path,
     conv_id: &str,
@@ -79,8 +108,20 @@ pub(super) fn run_tool_calls(
     step_dir_rel_str: &str,
     assistant_content: &[Content],
     deps: &Deps<'_>,
-) -> Result<bool, Error> {
+) -> Result<ToolWindow, Error> {
     let step_dir_abs = conv_repo.join(step_dir_rel_str);
+    let control = resolved.workflow.tool_control.as_ref();
+    // A hold mark in play means this window is a resume (§3.3 *Tool
+    // control*): blocks whose results already committed are skipped —
+    // derived from the transcript, never a stored cursor — and the mark
+    // lifts the moment its invocation re-adjudicates to any verdict but
+    // hold. Both reads are gated on a configured control, so the
+    // control-less window pays nothing and changes nothing.
+    let mut marked = control.and_then(|_| hold::read(conv_repo, conv_id, deps.git));
+    let committed = match marked {
+        Some(_) => transcript::committed_result_ids(worktree)?,
+        None => Default::default(),
+    };
     for block in assistant_content {
         let Content::ToolUse {
             id, name, input, ..
@@ -88,47 +129,111 @@ pub(super) fn run_tool_calls(
         else {
             continue;
         };
+        if committed.contains(id) {
+            continue;
+        }
         let outcome = match refusal(resolved.grant.role, resolved.grant.tools, name) {
             Some(decline) => ToolOutcome {
                 content: decline.into_bytes(),
                 is_error: true,
             },
-            // The multi-tool ([`multi`]): the one tool the loop answers
-            // itself. Gated by the same refusal above — `multi_tool`
-            // must be in the grant to fan out — and each of its inner
-            // invocations re-enters the same refusal + executor pair,
-            // so the envelope bypasses nothing.
-            None if name == multi::NAME => {
-                match multi::fan_out(id, input, &step_dir_abs, resolved, deps)? {
-                    multi::Fanout::Outcome(outcome) => outcome,
-                    multi::Fanout::Stopped => return Ok(true),
+            None => {
+                let gate = seam::adjudicate(
+                    control,
+                    resolved.grant.role,
+                    id,
+                    name,
+                    input,
+                    conv_repo,
+                    conv_id,
+                    deps.stop,
+                )?;
+                // The mark asserts "held before execution — nothing ran"
+                // (`workspace::hold`), so it must lift *before* the once-
+                // held invocation can enter the executor or decline; a
+                // control fault (`Err` above) leaves it standing, keeping
+                // the branch parked rather than stranded.
+                if matches!(gate, seam::Gate::Proceed | seam::Gate::Refuse(_))
+                    && marked.as_ref().is_some_and(|m| m.tool_use_id == *id)
+                {
+                    hold::clear(conv_repo, conv_id, deps.git).map_err(|source| Error::Git {
+                        op: "hold mark clear",
+                        source,
+                    })?;
+                    marked = None;
+                }
+                match gate {
+                    seam::Gate::Stopped => return Ok(ToolWindow::Stopped),
+                    seam::Gate::Hold(reason) => {
+                        let held = hold::Held {
+                            tool_use_id: id.clone(),
+                            tool: name.clone(),
+                            reason,
+                        };
+                        hold::write(conv_repo, conv_id, &held, deps.git).map_err(|source| {
+                            Error::Git {
+                                op: "hold mark write",
+                                source,
+                            }
+                        })?;
+                        return Ok(ToolWindow::Held);
+                    }
+                    seam::Gate::Refuse(reason) => ToolOutcome {
+                        content: seam::refusal_text(name, &reason).into_bytes(),
+                        is_error: true,
+                    },
+                    // The multi-tool ([`multi`]): the one tool the loop
+                    // answers itself. Gated by the same refusal above —
+                    // `multi_tool` must be in the grant to fan out — and
+                    // adjudicated like any tool (the control saw the whole
+                    // envelope as this invocation's input); each inner
+                    // invocation then re-enters the same refusal *and*
+                    // control pair inside `fan_out`, so the envelope
+                    // bypasses nothing (§3.3 *The multi-tool*, No bypass).
+                    seam::Gate::Proceed if name == multi::NAME => {
+                        match multi::fan_out(
+                            id,
+                            input,
+                            &step_dir_abs,
+                            resolved,
+                            conv_repo,
+                            conv_id,
+                            deps,
+                        )? {
+                            multi::Fanout::Outcome(outcome) => outcome,
+                            multi::Fanout::Stopped => return Ok(ToolWindow::Stopped),
+                        }
+                    }
+                    seam::Gate::Proceed => match deps.tool_executor.execute(
+                        ToolUse { id, name, input },
+                        &step_dir_abs,
+                        deps.stop,
+                        resolved.workflow.tool_output,
+                    ) {
+                        Ok(outcome) => outcome,
+                        // §2.9 step 3: a tool group-killed by the executor's
+                        // own SIGTERM, with the stop flag set, is the stop —
+                        // cease the loop for the stopped-deposit exit, not an
+                        // error.
+                        Err(ExecError::KilledBySignal { .. })
+                            if stop_signal::stopped(deps.stop) =>
+                        {
+                            return Ok(ToolWindow::Stopped);
+                        }
+                        Err(source) => {
+                            return Err(Error::ToolExec {
+                                tool: name.clone(),
+                                source,
+                            });
+                        }
+                    },
                 }
             }
-            None => match deps.tool_executor.execute(
-                ToolUse { id, name, input },
-                &step_dir_abs,
-                deps.stop,
-                resolved.workflow.tool_output,
-            ) {
-                Ok(outcome) => outcome,
-                // §2.9 step 3: a tool group-killed by the executor's own
-                // SIGTERM, with the stop flag set, is the stop — cease the loop
-                // for the stopped-deposit exit, not an error.
-                Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(deps.stop) => {
-                    return Ok(true);
-                }
-                Err(source) => {
-                    return Err(Error::ToolExec {
-                        tool: name.clone(),
-                        source,
-                    });
-                }
-            },
         };
         let tool_result = outcome_to_tool_result(id, &outcome);
         transcript::commit_tool(worktree, conv_id, &tool_result, deps.git)?;
     }
-    Ok(false)
+    Ok(ToolWindow::Completed)
 }
 
 /// Why `role` may not call `tool`, or `None` when it may (ARCH §3.3

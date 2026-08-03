@@ -47,6 +47,17 @@
         }
       ]
     },
+    "tool_control": {
+      "description": "The tool-control seam (ARCH §3.3 *Tool control*, §6): the adjudicator consulted before every granted tool invocation executes — pass, refuse, or hold. Omitted → no control is consulted and the tool window is unchanged; no control is shipped ([`ToolControl`]).",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ToolControl"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tool_output": {
       "description": "Per-stream byte bound on the transcript projection of a tool result (ARCH §3.3 *Bounded transcript projection*, bl-d5fa). Omitted → tool output reaches the transcript unbounded; the shipped default lives in `template/workflow.yaml` ([`ToolOutputBound`]).",
       "anyOf": [
@@ -160,6 +171,20 @@
           "minimum": 0.0
         }
       }
+    },
+    "ToolControl": {
+      "description": "The `tool_control:` block: the control binary the seam consults.",
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "description": "The control executable — an absolute path or a name resolved on `PATH` at spawn (the §4.2 `adapter:` override idiom: config names a binary, the OS resolves it). Invoked with no arguments; the invocation under adjudication arrives as JSON on stdin (§3.3 *Tool control*). Must be non-empty (validated at load).",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "ToolOutputBound": {
       "description": "The `tool_output:` block. Both fields are byte counts — lernie has no tokenizer, so bytes are the only honest unit (§3.3). `Copy` because it is two words of policy handed down the executor path by value.",

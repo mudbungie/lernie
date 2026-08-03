@@ -27,6 +27,7 @@ use thiserror::Error;
 
 mod bound;
 pub mod builtin;
+pub mod control;
 mod envelope;
 pub mod spawn;
 mod subprocess;

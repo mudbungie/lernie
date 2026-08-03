@@ -60,7 +60,7 @@ fn an_ungranted_tool_is_declined_in_band_and_the_granted_one_still_runs() {
     ];
     let grant = ["slack_read".to_string(), "message".to_string()];
     let resolution = Resolution::new();
-    let stopped = run_tool_calls(
+    let window = run_tool_calls(
         ws.path(),
         &worktree,
         agent_id,
@@ -71,7 +71,10 @@ fn an_ungranted_tool_is_declined_in_band_and_the_granted_one_still_runs() {
     )
     .unwrap();
 
-    assert!(!stopped);
+    assert!(matches!(
+        window,
+        crate::prompt::dispatch::tool_step::ToolWindow::Completed
+    ));
     // Only the granted tool reached the executor.
     assert_eq!(*recorder.0.borrow(), vec![("slack_read".to_string(), None)]);
     // The decline landed as an ordinary transcript entry naming the grant.

@@ -27,6 +27,8 @@ mod pinned;
 mod stop_deposit;
 mod streams;
 mod stubs;
+mod tool_control;
+mod tool_control_resume;
 mod tool_stub;
 mod verifier_gate;
 mod workflow_vocabulary;

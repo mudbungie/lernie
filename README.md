@@ -582,9 +582,12 @@ f643a50 step 001: dispatch […]
 model-output entry is a JSON array of canonical `Content` blocks, e.g.
 `[{"type":"text","text":"pong"}]`. `ls steps/<conv-id>/` lists the
 off-worktree step records, one numbered directory per step, each holding
-`request.json`, `response.json`, and `meta.json`. There is **no merge
-commit and no `summary/`** on a branch that never reached a compaction
-checkpoint (step 6) — those appear only once a compactor has returned.
+`request.json`, `response.json`, and `meta.json`. There is **no
+`summary/`** on a branch that never reached a compaction checkpoint
+(step 6) — and no merge commit ever: once a compactor has returned, what
+appears is a single-parent `compaction base [<compactor-id>]` commit
+carrying the summary, with the compacted span squashed behind it and the
+later commits replayed on top (§2.6 rebase-forward).
 
 The root branch persists unmerged by design (§2.4), so the health metric
 is no longer branch count but silent deaths and undelivered returns

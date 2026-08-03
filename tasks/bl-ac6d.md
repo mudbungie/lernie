@@ -2,6 +2,7 @@
 title = "release 0.0.5 carrying the fork-dialog prune (bl-5a36) to crates.io"
 created = 1785732134
 updated = 1785732135
+claimant = "release-driver"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 
 [[blockers]]

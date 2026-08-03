@@ -115,6 +115,14 @@ as the authoritative fact — it survives every provider's wire format.
   instead of a `cd X &&` prefix on every command.
 - Anything interactive — there is no stdin and no TTY, so a command
   that expects either will hang or fail rather than prompt.
+- **Waiting for another agent.** `sleep` is never how you wait for a
+  dispatched child's result or a reply to a message: both arrive as
+  deposits into your inbox, and a deposit revives a quiescent agent
+  (ARCH §2.11). A sleep buys you nothing a step boundary does not buy
+  better, and costs a model call to learn nothing. End your step
+  instead (`dispatch` skill, *Waiting*). Sleeping to let a *local*
+  process settle — a server you just backgrounded — is a different
+  thing and is fine.
 
 ## Failure modes
 

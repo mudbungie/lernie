@@ -15,6 +15,9 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- qualify the bare-'call' usages the 8/01-02 doc edits introduced, define tool window / grant gate / checkpoint origin, fix ARCH's rm cross-ref to §5.4, drop the cache-pin overload [bl-81ce]
+- retire the compaction-merge story from PRINCIPLES, USER_STORIES, README, and the ARCH shipped-state notes: rebase-forward is the landing, nothing merges [bl-10a2]
+- back-fill the 24 missing [Unreleased] bullets for the v0.0.3..main deliveries [bl-0b1f]
 - partial compaction with rebase-forward: zero-downtime compression of a commit span [bl-bc9c]
 - connection points in the tool-call path: a gate seam, and controls shipped as knobs [bl-de6d]
 - design the MCP client bridge as an external tool: one adapter binary opens the integration ecosystem (docs/DESIGN_MCP_BRIDGE.md) [bl-3c76]

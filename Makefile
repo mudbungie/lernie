@@ -1,4 +1,4 @@
-.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-bz brazen-pin install-verify uninstall ci clean
+.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-bz brazen-pin install-verify uninstall ci promote-changelog clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -286,6 +286,24 @@ uninstall:
 	@echo "note: 'bz' (brazen) was installed via cargo; remove with 'cargo uninstall brazen'."
 
 ci: check
+
+# The release step release-plz no longer performs (changelog_update = false in
+# release-plz.toml — CHANGELOG.md is hand-maintained, the rationale is in that
+# file's header, bl-7558): stamp the accumulated `## [Unreleased]` section as
+# the released version, with compare link and date, and open a fresh empty
+# [Unreleased] above it. VERSION is the version the open release PR proposes —
+# the PR is the authority, this target just names what it says. Run it in a
+# task worktree and merge to main BEFORE merging the release PR (worktree
+# discipline is CLAUDE.md's; the ordering keeps the tagged tree's changelog
+# already stamped). Refuses a VERSION the file already has, so a re-run is a
+# no-op failure, not a duplicate section.
+promote-changelog:
+	@test -n "$(VERSION)" || { echo "usage: make promote-changelog VERSION=x.y.z"; exit 1; }
+	@! grep -q '^## \[$(VERSION)\]' CHANGELOG.md || { echo "CHANGELOG.md already has [$(VERSION)]"; exit 1; }
+	@prev=$$(grep -o -m1 '^## \[[0-9][^]]*\]' CHANGELOG.md | tr -d '#[] '); \
+	test -n "$$prev" || { echo "no previous '## [x.y.z]' heading in CHANGELOG.md"; exit 1; }; \
+	sed -i 's|^## \[Unreleased\]$$|## [Unreleased]\n\n## [$(VERSION)](https://github.com/mudbungie/lernie/compare/v'"$$prev"'...v$(VERSION)) - '"$$(date +%F)"'|' CHANGELOG.md
+	@echo "promoted [Unreleased] -> [$(VERSION)]"
 
 clean:
 	cargo clean

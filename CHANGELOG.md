@@ -9,12 +9,19 @@ One bullet per shipped change, imperative mood, with the `[bl-xxxx]` task id as
 the trail back to the task that delivered it. Verification-gate closes (the
 `tests` / `docs` / `alignment` subtasks every task carries) are process rather
 than product and are not listed — they live in git and in the balls store.
-`release-plz.toml` skips them, so generated entries obey the same rule.
+
+This file is hand-maintained and is the only changelog authority: release-plz
+never writes it (`changelog_update = false` in `release-plz.toml` — the
+rationale lives in that file's header, bl-7558). Every delivery adds its own
+bullet under `## [Unreleased]`; at release time `make promote-changelog
+VERSION=x.y.z` stamps that section as the new version, before the release PR
+merges.
 
 ## [Unreleased]
 
 ### Changes
 
+- the hand-maintained changelog becomes the single authority: release-plz no longer writes CHANGELOG.md (`changelog_update = false`), the bl-1923 subject-protection preprocessor is deleted (release-plz preprocesses twice, so it doubled — 'fleet: fleet: drop …'), and `make promote-changelog VERSION=x.y.z` stamps [Unreleased] as the release section [bl-7558]
 - record every result deposit at a durable `refs/lernie/returned/<child>` mark so `lernie scan` never fabricates a `died` epitaph for a compactor (or any child) whose return was consumed [bl-2c06]
 - qualify the bare-'call' usages the 8/01-02 doc edits introduced, define tool window / grant gate / checkpoint origin, fix ARCH's rm cross-ref to §5.4, drop the cache-pin overload [bl-81ce]
 - retire the compaction-merge story from PRINCIPLES, USER_STORIES, README, and the ARCH shipped-state notes: rebase-forward is the landing, nothing merges [bl-10a2]

@@ -33,8 +33,8 @@ pub struct SchemaFile {
 /// The two harness config files have distinct on-disk names now:
 /// `providers.json` is the per-repo `<conv-repo>/providers.yaml` shape
 /// (only `roles:`), and `models.json` is the harness-root
-/// `<harness-root>/models.yaml` shape (capabilities, context windows,
-/// optional `adapter:` override — no endpoints or auth, which are
+/// `<harness-root>/models.yaml` shape (the optional `adapter:` override
+/// alone, bl-35e2 — no models table, no endpoints or auth, which are
 /// brazen's). See ARCH §4.1/§4.2.
 pub fn all() -> Vec<SchemaFile> {
     vec![

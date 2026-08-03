@@ -39,12 +39,15 @@ fn prime_founds_a_fresh_nested_home_idempotently() {
     assert_ok_silent(&prime(h));
     assert!(h.join("workflows").is_dir());
     assert!(h.join("workspaces").is_dir());
+    // The seeded models.yaml is mechanism only (bl-35e2): present, but
+    // naming no model.
     let models = h.join("models.yaml");
+    let body = fs::read_to_string(&models).unwrap();
     assert!(
-        fs::read_to_string(&models)
-            .unwrap()
-            .contains("claude-sonnet-5")
+        body.contains("adapter:"),
+        "the adapter override is documented"
     );
+    assert!(!body.contains("claude-"), "no model id ships (bl-35e2)");
     for name in [
         "bash",
         "cd",
@@ -59,9 +62,9 @@ fn prime_founds_a_fresh_nested_home_idempotently() {
 
     // Idempotency: a hand-edited models.yaml survives a second run, and
     // nothing else the second run touched changed.
-    fs::write(&models, "models: {}\n").unwrap();
+    fs::write(&models, "adapter: /opt/bz\n").unwrap();
     assert_ok_silent(&prime(h));
-    assert_eq!(fs::read_to_string(&models).unwrap(), "models: {}\n");
+    assert_eq!(fs::read_to_string(&models).unwrap(), "adapter: /opt/bz\n");
     assert!(h.join("skills/bash/SKILL.md").is_file());
 }
 

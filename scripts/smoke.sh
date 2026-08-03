@@ -19,12 +19,11 @@
 # (both-or-neither; one alone is a usage error) to run the same live
 # `lernie prompt` against any `bz` provider row instead of the shipped
 # default. Unset leaves today's behavior byte-for-byte. The override is
-# laid into the throwaway config root through the same front doors a real
+# laid into the throwaway config root through the same front door a real
 # install uses — a `providers.yaml` override in `<config-root>/template/`
-# (the bl-e795 config-root override), plus a `models.yaml` placed in the
-# config root before `lernie prime` (the §4.2 seed-if-absent contract) — so
-# no new `lernie` flag or verb exists. Local ollama needs no credential,
-# only a served model:
+# (the bl-e795 config-root override; the role assignment is the whole
+# model binding, bl-35e2) — so no new `lernie` flag or verb exists. Local
+# ollama needs no credential, only a served model:
 #   make smoke SMOKE_PROVIDER=local  SMOKE_MODEL=<a-pulled-ollama-model>
 #   make smoke SMOKE_PROVIDER=codex  SMOKE_MODEL=gpt-5.4
 #
@@ -78,42 +77,31 @@ HOME_DIR="$ROOT/home"
 WS="$ROOT/ws"
 
 # When an override is set, lay it into the throwaway config root BEFORE
-# `lernie prime`, through the front doors a real install already uses — no
-# new `lernie` flag or verb. Two config files select the worker's target:
-# per-repo `providers.yaml` names the role's provider ROW + model NAME
+# `lernie prime`, through the front door a real install already uses — no
+# new `lernie` flag or verb. One config file selects the worker's target:
+# per-repo `providers.yaml` names the role's provider ROW + model id
 # (config-commit control, overridable via `<config-root>/template/`, the
-# bl-e795 override), and the global `models.yaml` maps that name to a
-# `bz` provider row + `model_id` (config-root global, seed-if-absent by
-# `lernie prime`, §4.2). Both must agree — the load-time cross-check (§4.3)
-# rejects a role whose provider row differs from its model's. So we write
-# both, keyed to the same throwaway `smoke-model` id.
+# bl-e795 override). That assignment is the whole binding (bl-35e2): the
+# global `models.yaml` carries no models table, and the id's validity is
+# exactly what the live call below verifies.
 if [ -n "$SMOKE_PROVIDER" ]; then
   mkdir -p "$HOME_DIR/template"
-  cat > "$HOME_DIR/models.yaml" <<YAML
-models:
-  smoke-model:
-    provider: $SMOKE_PROVIDER
-    model_id: $SMOKE_MODEL
-    capabilities: [tool_use_native, streaming]
-    context_window: 200000
-YAML
   cat > "$HOME_DIR/template/providers.yaml" <<YAML
 roles:
   worker:
     provider: $SMOKE_PROVIDER
-    model: smoke-model
+    model: $SMOKE_MODEL
     tools: []
   compactor:
     provider: $SMOKE_PROVIDER
-    model: smoke-model
+    model: $SMOKE_MODEL
 YAML
 fi
 
 # Found the harness root through the verb — the single source of truth for
 # what a ready installation carries (models.yaml + tool/skill pools, ARCH
 # §2.2), seeded from assets embedded in the binary. This is exactly what
-# `make install` does, so `make smoke` covers the real shipped path. Any
-# override models.yaml written above is preserved: prime is seed-if-absent.
+# `make install` does, so `make smoke` covers the real shipped path.
 export LERNIE_HOME="$HOME_DIR"
 "$LERNIE_BIN" prime || fail "lernie prime exited non-zero"
 

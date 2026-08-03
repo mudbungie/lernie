@@ -265,7 +265,8 @@ install: release
 	@echo "config root: $(LERNIE_CONFIG_HOME)   data root: $(LERNIE_DATA_HOME)"
 	@echo "  (LERNIE_HOME collapses both; else \$$XDG_CONFIG_HOME / \$$XDG_DATA_HOME)"
 	@echo "provider endpoints/auth live in brazen's config: bz --dump-config / bz --login."
-	@echo "declare model capabilities in $(LERNIE_CONFIG_HOME)/models.yaml — see ARCH §4.2/§4.4."
+	@echo "pick each role's provider row + model id in a repo's providers.yaml (or the"
+	@echo "  $(LERNIE_CONFIG_HOME)/template/ override) — see ARCH §4.3/§4.4."
 
 # Smoke-test the freshly installed binaries: `lernie --version` proves the
 # CLI loads, `lernie new` exercises workspace creation (bare repo.git +

@@ -1,21 +1,21 @@
-//! `<harness-root>/models.yaml` — model capabilities and context
-//! windows (ARCH §4.2), plus the optional `adapter:` binary override
-//! (§4.2, §4.4 Extensibility).
+//! `<harness-root>/models.yaml` — the optional `adapter:` binary
+//! override (ARCH §4.2, §4.4 Extensibility). Mechanism only.
 //!
-//! v0.6 folds the bespoke provider layer into brazen (§4.4): endpoints,
-//! auth, and wire dialects are brazen's facts, declared in brazen's own
-//! config as named provider *rows*. lernie references a row by name and
-//! never reads endpoint or credential material (§4.1). So the global
-//! file no longer carries a `providers:` map — it carries only the
-//! facts lernie's behavior relies on and brazen does not own: per-model
-//! capabilities and context windows. `provider:` on a model is a brazen
-//! row name, unvalidated here (a missing row is a brazen load-time
-//! failure at call time, §4.1).
+//! The file once carried a `models:` table (per-model capabilities and
+//! context windows) that nothing in the harness acted on and that
+//! shipped model policy in git — the bl-3157 class of bug: a hand-typed
+//! model id validated only against another hand-typed line. bl-35e2
+//! retired the table: a role's `providers.yaml` assignment (§4.3) is the
+//! single home of the (provider row, model id) pointer, id validity is
+//! brazen's fact caught at the first live model call (§4.2), and this
+//! file carries only what remains lernie's — which adapter binary to
+//! run. A leftover `models:` block in an operator's file is ignored on
+//! parse (serde's default for unknown keys), so existing installs load
+//! unchanged.
 
-use crate::config::error::{LoadError, Warning};
+use crate::config::error::LoadError;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -29,77 +29,23 @@ pub struct Models {
     /// handshake governs instead (§4.4).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub adapter: Option<PathBuf>,
-    #[serde(default)]
-    pub models: BTreeMap<String, Model>,
-}
-
-/// One model: `(provider row, model_id, capabilities, context_window)`
-/// (ARCH §4.2). `provider` is a brazen provider-row name — the entire
-/// provider surface lernie sees (§4.1); endpoint and auth resolve inside
-/// brazen at call time.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct Model {
-    pub provider: String,
-    pub model_id: String,
-    pub capabilities: Capabilities,
-    pub context_window: u32,
-}
-
-/// Capability names declared on a model. Names are extend-only (§4.2): the
-/// loader seeds a known registry and warns (does not fail) on names outside
-/// it, so a new provider may declare new capabilities without blocking.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct Capabilities(pub Vec<String>);
-
-/// Capability names seeded from the arch examples. Unknown names produce a
-/// warning, never an error.
-pub fn known_capabilities() -> BTreeSet<&'static str> {
-    [
-        "tool_use_native",
-        "prompt_caching",
-        "streaming",
-        "stop_sequences",
-    ]
-    .into_iter()
-    .collect()
 }
 
 impl Models {
-    /// Read, parse, and shallow-validate `models.yaml` at `path`.
-    /// Cross-file references (`roles.*.{provider,model}`) are validated
-    /// separately via [`crate::config::cross`].
-    pub fn load(path: &Path) -> Result<(Self, Vec<Warning>), LoadError> {
+    /// Read and parse `models.yaml` at `path`. A comments-only or empty
+    /// file (the shipped template names nothing) parses as the default —
+    /// no override, `bz` on `PATH`.
+    pub fn load(path: &Path) -> Result<Self, LoadError> {
         let raw = fs::read_to_string(path).map_err(|source| LoadError::Io {
             path: path.to_path_buf(),
             source,
         })?;
-        let parsed: Self = serde_yaml_ng::from_str(&raw).map_err(|source| LoadError::Yaml {
-            path: path.to_path_buf(),
-            source,
-        })?;
-        let warnings = parsed.collect_warnings(path);
-        Ok((parsed, warnings))
-    }
-
-    fn collect_warnings(&self, path: &Path) -> Vec<Warning> {
-        let known = known_capabilities();
-        let mut out = Vec::new();
-        for (name, model) in &self.models {
-            for cap in &model.capabilities.0 {
-                if !known.contains(cap.as_str()) {
-                    out.push(Warning::new(
-                        path,
-                        format!("models.{name}.capabilities"),
-                        format!(
-                            "capability {cap:?} is not in the seeded registry; \
-                             add it if intended (extend-only)"
-                        ),
-                    ));
-                }
-            }
-        }
-        out
+        let parsed: Option<Self> =
+            serde_yaml_ng::from_str(&raw).map_err(|source| LoadError::Yaml {
+                path: path.to_path_buf(),
+                source,
+            })?;
+        Ok(parsed.unwrap_or_default())
     }
 }
 
@@ -115,51 +61,32 @@ mod tests {
         f
     }
 
-    const ARCH_EXAMPLE: &str = r#"
-models:
-  claude-sonnet-5:
-    provider: anthropic
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 1000000
-"#;
-
-    #[test]
-    fn parses_arch_example() {
-        let f = write_yaml(ARCH_EXAMPLE);
-        let (m, warnings) = Models::load(f.path()).unwrap();
-        assert!(warnings.is_empty());
-        assert!(m.adapter.is_none());
-        assert_eq!(m.models.len(), 1);
-        assert_eq!(m.models["claude-sonnet-5"].provider, "anthropic");
-        assert_eq!(m.models["claude-sonnet-5"].context_window, 1_000_000);
-    }
-
     #[test]
     fn parses_adapter_override() {
-        let yaml = r#"
-adapter: /usr/local/bin/bz
-models: {}
-"#;
-        let f = write_yaml(yaml);
-        let (m, _) = Models::load(f.path()).unwrap();
+        let f = write_yaml("adapter: /usr/local/bin/bz\n");
+        let m = Models::load(f.path()).unwrap();
         assert_eq!(m.adapter.as_deref(), Some(Path::new("/usr/local/bin/bz")));
     }
 
     #[test]
-    fn warns_on_unknown_capability() {
-        let yaml = r#"
-models:
-  acme-llm:
-    provider: acme
-    model_id: llm-1
-    capabilities: [time_travel]
-    context_window: 8000
-"#;
-        let f = write_yaml(yaml);
-        let (_, warnings) = Models::load(f.path()).unwrap();
-        assert_eq!(warnings.len(), 1);
-        assert!(warnings[0].message.contains("time_travel"));
+    fn comments_only_file_parses_as_default() {
+        // The shipped template is comments-only (bl-35e2: git carries no
+        // model policy), which YAML parses as null — the default shape.
+        let f = write_yaml("# no override; `bz` on PATH governs\n");
+        let m = Models::load(f.path()).unwrap();
+        assert!(m.adapter.is_none());
+    }
+
+    #[test]
+    fn retired_models_table_is_ignored() {
+        // Pre-bl-35e2 files (and yog's picker-written entries) carry a
+        // `models:` block; it is inert, never a parse error.
+        let f = write_yaml(
+            "models:\n  m:\n    provider: p\n    model_id: m\n    \
+             capabilities: []\n    context_window: 1\n",
+        );
+        let m = Models::load(f.path()).unwrap();
+        assert!(m.adapter.is_none());
     }
 
     #[test]

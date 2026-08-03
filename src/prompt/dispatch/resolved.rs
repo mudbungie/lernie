@@ -7,7 +7,7 @@
 
 use super::Grant;
 use crate::config::manifest::RoleRules;
-use crate::config::{Budgets, Model, RetryConfig, Workflow};
+use crate::config::{Budgets, RetryConfig, Workflow};
 use std::ffi::OsString;
 
 /// Inputs resolved by [`super::run`] before branch work starts.
@@ -18,7 +18,9 @@ pub(in crate::prompt) struct Resolved<'a> {
     /// call ([`tool_step`]) *and* the grant selects the descriptors the
     /// dispatch commit derives from that commit (§3.3).
     pub(in crate::prompt) grant: Grant<'a>,
-    pub(in crate::prompt) model: &'a Model,
+    /// The model id the role's assignment names (§4.3) — rides the
+    /// canonical request verbatim; validity is brazen's fact (§4.2).
+    pub(in crate::prompt) model_id: &'a str,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(in crate::prompt) provider_row: &'a str,
     pub(in crate::prompt) soul: String,

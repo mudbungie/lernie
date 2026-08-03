@@ -2,15 +2,17 @@
 //! frozen at conversation creation (ARCH §4.3).
 //!
 //! The conversation-repo file carries only the `roles:` section: which
-//! provider name and which model id each role dispatches to. Endpoint
-//! and auth resolve inside brazen at call time (never a harness file);
-//! model capabilities live in the global `<harness-root>/models.yaml`
-//! and rotate independently (ARCH §4.1).
+//! provider row name and which model id each role dispatches to — the
+//! single home of that pointer (bl-35e2). Endpoint and auth resolve
+//! inside brazen at call time (never a harness file, ARCH §4.1); model
+//! id validity is the wire's fact, caught at the first live model call
+//! (§4.2).
 //!
 //! A legacy `providers:` or `models:` block (the v0.2 shape) is a hard
-//! load error: those sections belong to the global file only, and a
-//! per-repo file carrying them is structurally wrong rather than just
-//! noisy. (Phase 1 of the v0.3 layout migration warned; Phase 4
+//! load error: neither section exists any more — provider rows are
+//! brazen's config, and the global models table is retired (bl-35e2) —
+//! so a per-repo file carrying one is structurally wrong rather than
+//! just noisy. (Phase 1 of the v0.3 layout migration warned; Phase 4
 //! escalated to error once the v0.2 template was retired.)
 
 use crate::config::error::LoadError;
@@ -27,12 +29,12 @@ pub struct PerRepoProviders {
 }
 
 /// One role's assignment: which provider (by brazen row name) and which
-/// model (by id in the global `models.yaml`), plus the role's enabled
-/// tools (ARCH §4.3). `provider`/`model` are validated cross-file in
-/// [`crate::config::cross::check_roles_against_models`]; endpoint and
-/// auth resolve inside brazen at call time (§4.1 — no `auth_env` /
-/// `endpoint_env` here). `tools` selects which tools the role's agent
-/// may call (§3.3); omitted or empty means none.
+/// model (by wire id), plus the role's enabled tools (ARCH §4.3). This
+/// pointer is the whole model binding (bl-35e2) — no global table
+/// mediates it; id validity is caught at the first live model call
+/// (§4.2). Endpoint and auth resolve inside brazen at call time (§4.1 —
+/// no `auth_env` / `endpoint_env` here). `tools` selects which tools
+/// the role's agent may call (§3.3); omitted or empty means none.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct RoleAssignment {
     pub provider: String,
@@ -62,9 +64,10 @@ impl PerRepoProviders {
                         path: path.to_path_buf(),
                         key: (*legacy).to_string(),
                         message: format!(
-                            "{legacy:?} block belongs in the global \
-                             <harness-root>/models.yaml; the per-repo file must \
-                             only carry the 'roles:' section (ARCH §4.1)",
+                            "{legacy:?} block is retired: provider rows are \
+                             brazen's config and models are named directly on \
+                             roles; the per-repo file must only carry the \
+                             'roles:' section (ARCH §4.1, §4.3)",
                         ),
                     });
                 }
@@ -147,7 +150,7 @@ roles:
         match err {
             LoadError::Invalid { key, message, .. } => {
                 assert_eq!(key, "providers");
-                assert!(message.contains("harness-root"));
+                assert!(message.contains("retired"));
             }
             other => panic!("expected Invalid, got {other:?}"),
         }

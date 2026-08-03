@@ -82,23 +82,9 @@ fn drain_http_request(stream: &mut TcpStream) {
 }
 
 fn write_global_models(harness: &Path) {
-    fs::write(
-        harness.join("models.yaml"),
-        "\
-models:
-  claude-sonnet-5:
-    provider: test
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native]
-    context_window: 200000
-  claude-haiku-4-5:
-    provider: test
-    model_id: claude-haiku-4-5
-    capabilities: [tool_use_native]
-    context_window: 200000
-",
-    )
-    .unwrap();
+    // The shipped shape (bl-35e2): no `adapter:` override, no models —
+    // the roles' provider row and model ids are the assignment's alone.
+    fs::write(harness.join("models.yaml"), "# no adapter override\n").unwrap();
 }
 
 fn write_brazen_config(dir: &Path, endpoint: &str) -> std::path::PathBuf {

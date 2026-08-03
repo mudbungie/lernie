@@ -5,8 +5,7 @@
 
 use super::exit_launch::PROBE_RETRIES;
 use super::fixtures::*;
-use crate::config::models::Capabilities;
-use crate::config::{Model, Workflow};
+use crate::config::Workflow;
 use crate::prompt::Error;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, Launcher, inbox_dir, try_acquire};
@@ -38,12 +37,7 @@ impl Launcher for RecLauncher {
 pub(super) fn worker_config() -> WorkerConfig {
     WorkerConfig {
         role: "worker".into(),
-        model: Model {
-            provider: "anthropic".into(),
-            model_id: "claude-sonnet-5".into(),
-            capabilities: Capabilities(vec![]),
-            context_window: 200_000,
-        },
+        model_id: "claude-sonnet-5".into(),
         provider_row: "anthropic".into(),
         // The grant the fixtures' model output calls against (§4.3): a
         // tool a role does not grant is declined at execution, never run

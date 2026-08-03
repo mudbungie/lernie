@@ -1,15 +1,15 @@
-//! Guards the shipped seed data — `install/models.yaml` (embedded as
-//! [`super::MODELS_YAML`]) and `template/providers.yaml` (embedded in
-//! [`crate::template::TEMPLATE`]) — against brazen's ACTUAL resolved
-//! provider table (bl-9391).
+//! Guards the shipped seed data — `template/providers.yaml` (embedded
+//! in [`crate::template::TEMPLATE`]) — against brazen's ACTUAL resolved
+//! provider table (bl-9391). (`install/models.yaml` names no provider
+//! any more — bl-35e2 — so the template roles are the only shipped
+//! provider names left to guard.)
 //!
-//! The drift this pins against: a `provider:` name shipped in either seed
+//! The drift this pins against: a `provider:` name shipped in the seed
 //! file that brazen's pinned build does not resolve surfaces only at an
 //! operator's first dispatch ("unknown provider `x`"), never at build or
-//! test time — `check_roles_against_models` deliberately does not
-//! validate the row itself (`src/config/cross/roles_check.rs`: "brazen's
-//! fact, resolved at call time"), so nothing else in the suite catches a
-//! typo'd or renamed row.
+//! test time — the row's existence is brazen's fact, resolved at call
+//! time (ARCH §4.1) — so nothing else in the suite catches a typo'd or
+//! renamed row.
 //!
 //! [`brazen_builtin_provider_names`] answers "what does brazen actually
 //! resolve?" by driving brazen's own `run::list_providers` — the engine
@@ -26,7 +26,6 @@ use std::path::Path;
 
 use brazen::{AmbientSpec, Args, Cred, CredStore, EnvSnapshot, ProvidersIo};
 
-use crate::config::models::Models;
 use crate::config::per_repo_providers::PerRepoProviders;
 
 /// A `CredStore` that resolves nothing. `list_providers` only asks it
@@ -94,14 +93,6 @@ fn brazen_builtin_provider_names() -> BTreeSet<String> {
         .collect()
 }
 
-/// The `provider:` value of every model the seeded `models.yaml` declares.
-fn seeded_model_providers() -> Vec<String> {
-    let file = tempfile::NamedTempFile::new().unwrap();
-    std::fs::write(file.path(), super::MODELS_YAML).unwrap();
-    let (models, _warnings) = Models::load(file.path()).unwrap();
-    models.models.values().map(|m| m.provider.clone()).collect()
-}
-
 /// The `provider:` value of every role the embedded `template/providers.yaml`
 /// declares — the file `lernie new` authors onto a fresh conversation repo.
 fn seeded_role_providers() -> Vec<String> {
@@ -116,18 +107,6 @@ fn seeded_role_providers() -> Vec<String> {
         .values()
         .map(|a| a.provider.clone())
         .collect()
-}
-
-#[test]
-fn seeded_models_yaml_names_only_real_brazen_providers() {
-    let known = brazen_builtin_provider_names();
-    for provider in seeded_model_providers() {
-        assert!(
-            known.contains(&provider),
-            "install/models.yaml names provider {provider:?}, which brazen's \
-             pinned built-in table does not resolve (known rows: {known:?})"
-        );
-    }
 }
 
 #[test]

@@ -814,6 +814,23 @@ Built-ins:
   result — a tool commit now stages the whole worktree (`git add -A`,
   `commit_tool`), landing any tool's worktree side effects with its
   result entry (ARCH §2.3).
+- **`multi_tool`** — fans one model round trip into N tool executions
+  (ARCH §3.3 *The multi-tool*). Input is `{invocations: [{name,
+  input}, ...], on_failure}`: the same `{name, input}` shapes the
+  individual tools declare, run **serially in list order** — a later
+  entry sees every earlier entry's side effects — with `on_failure:
+  "abort"` (default: a failed or declined entry skips the rest) or
+  `"run_all"`. All results return together in the envelope's single
+  `tool_result`, attributed per entry (`[k/N] <name>:
+  ok|failed|declined|skipped`); incremental delivery has no wire home
+  (one result per `tool_use` id on every protocol), and nesting is
+  declined at depth 1. Each inner invocation passes the same grant gate
+  and executor as a top-level one and lands its own diagnostic record
+  under a derived id (`<outer-id>-<k>`). The one built-in with no
+  `lernie tool` subcommand: its binary *is* the step loop
+  (`src/prompt/dispatch/tool_step/multi.rs`), so it does not appear in
+  the `lernie tool --help` pool above, while its schema/skill pair
+  installs and grants like any other tool's.
 
 ## Naming an agent
 

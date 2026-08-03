@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "multi_tool",
+  "description": "Input schema for the lernie built-in `multi_tool` tool (ARCH §3.3 *The multi-tool*). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model call's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "invocations": {
+      "type": "array",
+      "description": "The inner tool invocations to run, in order. Each entry is exactly the {name, input} a top-level tool invocation would carry: `name` a tool from your own toolset, `input` that tool's own input object. They run strictly one after another in this order — never in parallel — so a later entry sees every earlier entry's side effects (a file written, a `cd` move). All results come back together in this one tool result, attributed per entry as `[k/N] <name>: ok|failed|declined|skipped`; nothing is returned early. `multi_tool` itself may not appear here (depth 1): a nested envelope is declined for that entry.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The inner tool's name, exactly as you would spell it in a top-level tool invocation. A name outside your own toolset is declined for this entry alone, the same way a top-level refusal reads."
+          },
+          "input": {
+            "type": "object",
+            "description": "The inner tool's input object, matching that tool's own input schema. Omitted means {}."
+          }
+        },
+        "required": ["name"],
+        "additionalProperties": false
+      }
+    },
+    "on_failure": {
+      "type": "string",
+      "enum": ["abort", "run_all"],
+      "description": "What a failed entry (a non-zero exit or a decline) does to the entries after it. `abort` (the default) skips every later entry, reporting each as skipped — right when the list is a dependent sequence. `run_all` runs every entry regardless and reports each outcome — right when the entries are independent."
+    }
+  },
+  "required": ["invocations"],
+  "additionalProperties": false
+}

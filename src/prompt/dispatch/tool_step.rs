@@ -17,9 +17,15 @@
 //! The sequential loop *is* the sibling-tool serialization §3.3
 //! requires, and the counter read (`next_seq`) rides inside it.
 //!
+//! One name the loop answers itself: the multi-tool ([`multi`], §3.3
+//! *The multi-tool*), whose input is a list of inner tool invocations
+//! the loop fans out through the same refusal gate and executor —
+//! aggregated into the envelope's single committed `tool_result`.
+//!
 //! Living in a sibling module keeps `super`'s `run_exchange` body under
 //! the repo's 300-line code-file cap.
 
+mod multi;
 #[cfg(test)]
 mod tests;
 
@@ -87,6 +93,17 @@ pub(super) fn run_tool_calls(
                 content: decline.into_bytes(),
                 is_error: true,
             },
+            // The multi-tool ([`multi`]): the one tool the loop answers
+            // itself. Gated by the same refusal above — `multi_tool`
+            // must be in the grant to fan out — and each of its inner
+            // invocations re-enters the same refusal + executor pair,
+            // so the envelope bypasses nothing.
+            None if name == multi::NAME => {
+                match multi::fan_out(id, input, &step_dir_abs, resolved, deps)? {
+                    multi::Fanout::Outcome(outcome) => outcome,
+                    multi::Fanout::Stopped => return Ok(true),
+                }
+            }
             None => match deps.tool_executor.execute(
                 ToolUse { id, name, input },
                 &step_dir_abs,

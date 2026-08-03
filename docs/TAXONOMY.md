@@ -352,6 +352,13 @@ lernie coins **capability grant** (or **grant**) and **capability manifest** as 
 
 This is neither the MCP "capability" (a protocol feature flag negotiated at init, §4 above) nor the marketing "Skills grant capability" sense. lernie's grant is a host-authority envelope enforced by the wasmtime/WASI host; its manifest is derived from the artifact, never declared in config — the config carries only the grant.
 
+### Multi-tool envelope / inner invocation (lernie-specific coinage)
+lernie coins two paired terms for its `multi_tool` built-in (`docs/ARCHITECTURE.md` §3.3 *The multi-tool*):
+- **Multi-tool envelope** (or **envelope**, where the multi-tool is in scope) — one `multi_tool` tool invocation: a `tool_use` block whose input carries a list of inner invocations plus execution metadata (`on_failure`). One envelope is one wire-level tool invocation, one committed `tool_result` transcript entry, and one tool commit. Distinct from the §3.3 **result envelope**, which is the model-facing rendering of any one finished tool invocation — an inner invocation's rendering *is* a result envelope, nested inside the multi-tool envelope's aggregate.
+- **Inner invocation** — one `{name, input}` entry in an envelope's `invocations` list: the same shape a top-level `tool_use` block carries, run through the same grant gate and executor, with a diagnostic record of its own under a derived id (`<envelope tool_use.id>-<k>`). It is not a wire-level tool invocation: the model minted no id for it and no per-entry `tool_result` exists.
+
+Not to be confused with the vendors' **parallel tool calls** (§4 above, `disable_parallel_tool_use` / `parallel_tool_calls`), where the *model* emits several sibling `tool_use` blocks in one assistant message and each gets its own wire-level result. An envelope is one block; its fan-out is application-layer, serial, and attributed inside a single result.
+
 ### Model Context Protocol (MCP)
 Introduced by Anthropic in late 2024 and now the lingua franca for tool integration; defines a **client–host–server** architecture over JSON Remote Procedure Call 2.0 (JSON-RPC 2.0). The official spec: **"MCP follows a client-host-server architecture where each host can run multiple client instances."**
 

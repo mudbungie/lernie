@@ -109,6 +109,9 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
     );
 }
 
+/// The multi-tool envelope (ARCH §3.3 *The multi-tool*).
+mod multi;
+mod multi_faults;
 /// What a role may *call* (ARCH §3.3 declaring is not permitting).
 mod permit;
 mod policy;

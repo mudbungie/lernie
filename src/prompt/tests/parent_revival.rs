@@ -21,11 +21,10 @@ use crate::config::Workflow;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, Launcher, inbox_dir, try_acquire};
 use crate::prompt::resolve::WorkerConfig;
-use crate::prompt::{Clock, Deps};
+use crate::prompt::{Clock, Deps, PinnedDocs};
 use crate::template::RealGit;
-use std::cell::RefCell;
-use std::io;
 use std::path::{Path, PathBuf};
+use std::{cell::RefCell, io};
 use tempfile::TempDir;
 
 /// A hyphen-free compact stamp (§2.3): agent ids stay clean two-token
@@ -116,6 +115,7 @@ fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, String) {
             goal: "do it",
             name: None,
             fork_point: None,
+            pins: PinnedDocs::none(),
         },
         &RealGit::new(),
         &DescentClock,

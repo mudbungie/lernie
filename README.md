@@ -377,7 +377,25 @@ lernie prompt /path/to/my-conversation 'hello'
 lernie prompt /path/to/my-conversation 'hello' --name pale-otter
 lernie prompt /path/to/my-conversation 'hello' --config strict
 lernie prompt /path/to/my-conversation 'try again' --from <ref>
+lernie prompt /path/to/my-conversation 'hello' --pin AGENTS.md=./AGENTS.md
 ```
+
+`--pin <dest>=<src>` (repeatable) freezes `<src>`'s exact bytes at
+worktree-relative `<dest>` on the dispatch commit, beside `goal.md` and
+`soul.md` (ARCH §2.5 caller-supplied pinned documents) — standing
+context a caller pins without rewriting the goal or authoring a config
+commit. Split is at the first `=`, so a source path may contain `=`; a
+destination may not. The mechanism carries no filename policy — which
+files count as project instructions is the caller's concern — but a
+destination is validated before anything exists: it must be one
+collision-free relative path, no `..`/absolute/`.git`, and no
+harness-owned name (`goal.md`, `soul.md`, `name`, the control files,
+`descriptions/`, `messages/`, `summary/`). Pins are ordinary blobs on
+the dispatch commit (`git show agents/<id>:<dest>` is the provenance),
+descendants inherit them by ordinary fork, and whether one composes
+into assembled context is the governing manifest's §5.2 question — name
+a destination its globs see. `lernie dispatch` takes the identical
+flag.
 
 `lernie prompt` is the root-agent path (ARCH §2.3, §2.6, §2.7,
 §2.8, §2.10). Each invocation spawns its own `agents/<conv-id>` branch
@@ -419,10 +437,10 @@ returns by depositing a result message into its parent's inbox (§2.6):
    prefix marks a fork, and an absent one is declined before anything is
    created) — and allocate a worktree at
    `<workspace>/agents/<conv-id>/` (§2.2). Write the branch goal to
-   `goal.md` and the role soul to `soul.md`, remove the config commit's
-   control files from the tree (§2.2 — the worktree holds only
-   context), and commit — that commit's tree is step 1's read state
-   (§2.10).
+   `goal.md`, the role soul to `soul.md`, and any `--pin`ned documents
+   at their destinations (below), remove the config commit's control
+   files from the tree (§2.2 — the worktree holds only context), and
+   commit — that commit's tree is step 1's read state (§2.10).
 4. Build a typed `brazen::CanonicalRequest` (linked crate — the
    fail-open `extra` map stays unreachable), mirror it to
    `<workspace>/steps/<conv-id>/001/request.json` (a diagnostic
@@ -994,7 +1012,8 @@ structurally by the prefix — there is no `main` (§2.2).
 ## Dispatching subagents directly
 
 `lernie dispatch <role> <repo> <branch> [--goal <text>] [--from <ref>]
-[--name <name>]` is the §3.4 re-entry point every child dispatch uses.
+[--name <name>] [--pin <dest>=<src>]...` is the §3.4 re-entry point
+every child dispatch uses.
 It is **writer-shaped, not an
 executor** (ARCH §2.1): it forks the child branch, lands the dispatch
 commit, and deposits the dispatch message through the same front door
@@ -1037,6 +1056,12 @@ budgets cannot disagree with what the child's steps will read. A fork
 point whose lineage does not define the role is declined by name; an
 absent ref is declined by the same guard `--from` uses at `prompt`,
 ahead of the fork, so neither leaves branch debris.
+
+`--pin <dest>=<src>` is exactly `lernie prompt`'s (above, one
+mechanism): the child's dispatch commit snapshots the named bytes
+beside `goal.md` + `soul.md`, refusals fire before the fork, and the
+harness-initiated dispatches (compactor, verifier) pin nothing — the
+same path with empty inputs.
 
 - `lernie dispatch compactor <workspace> <conv-id>` forks a
   compactor-souled child off that agent's tip — exactly what a due

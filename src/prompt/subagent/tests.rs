@@ -67,6 +67,7 @@ fn req<'a>(parent_wt: &'a Path, sub_wt: &'a Path, soul: Option<&'a str>) -> Spaw
         fork_point: "agents/p1",
         goal_text: "do the thing\n",
         soul_text: soul,
+        pins: crate::prompt::PinnedDocs::none(),
         name: None,
         // The stub worktrees carry no `descriptions/**` and the grant is
         // empty, so the descriptor half of the trim is a no-op here
@@ -227,6 +228,7 @@ fn surfaces_io_failure_when_sub_worktree_is_a_file() {
         goal_text: "g",
         soul_text: None,
         name: None,
+        pins: crate::prompt::PinnedDocs::none(),
         grant: &EMPTY_GRANT,
         commit_subject: "x",
     };

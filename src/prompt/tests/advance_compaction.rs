@@ -52,6 +52,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         goal: "do it",
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     };
     let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();
     let child_wt = agent_worktree(&ws, &child);
@@ -136,6 +137,7 @@ fn a_compaction_merge_lands_the_product_and_the_next_step_assembles_clean() {
         goal: "compact",
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     };
     let child = dispatch_child(&req, &git, &clock, &id, &rec).unwrap();
     let cwt = agent_worktree(&ws, &child);

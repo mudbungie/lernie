@@ -75,9 +75,11 @@ fn verb_arguments(verb: &str) -> BTreeMap<String, Argument> {
 }
 
 /// The arity a field's type declares: `bool` is a flag, `Option<_>` an
-/// optional value, anything else a required one. A type outside that
-/// mapping simply disagrees with clap's reading of it, which is exactly
-/// the divergence this test exists to report.
+/// optional value, `Vec<_>` a repeatable optional one (clap's
+/// zero-or-more reading — `prompt`/`dispatch` `--pin`), anything else a
+/// required one. A type outside that mapping simply disagrees with
+/// clap's reading of it, which is exactly the divergence this test
+/// exists to report.
 fn field_shape(ty: &syn::Type) -> Shape {
     let head = match ty {
         syn::Type::Path(p) => p
@@ -91,7 +93,7 @@ fn field_shape(ty: &syn::Type) -> Shape {
     };
     match head.as_str() {
         "bool" => Shape::Flag,
-        "Option" => Shape::Optional,
+        "Option" | "Vec" => Shape::Optional,
         _ => Shape::Required,
     }
 }
@@ -163,7 +165,8 @@ fn every_verb_argument_is_a_field_of_its_entrys_args() {
 fn the_field_reading_covers_every_argument_shape() {
     let src = "struct Args { pub positional: PathBuf, pub optional: Option<String>, \
                #[arg(long)] pub flag: bool, #[clap(short, long = \"renamed\")] pub named: u8, \
-               #[arg(value_parser = parser)] pub plain: String }";
+               #[arg(value_parser = parser)] pub plain: String, \
+               #[arg(long)] pub many: Vec<String> }";
     let mut items = syn::parse_file(src).unwrap().items;
     let Item::Struct(s) = items.remove(0) else {
         panic!("a struct")
@@ -178,6 +181,7 @@ fn the_field_reading_covers_every_argument_shape() {
         ("flag".to_string(), (Shape::Flag, true)),
         ("named".to_string(), (Shape::Required, true)),
         ("plain".to_string(), (Shape::Required, false)),
+        ("many".to_string(), (Shape::Optional, true)),
     ]);
     assert_eq!(got, want, "argument-shape reading drift");
 }

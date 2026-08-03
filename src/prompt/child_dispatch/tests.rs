@@ -57,6 +57,7 @@ pub(super) fn req<'a>(
         goal,
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     }
 }
 

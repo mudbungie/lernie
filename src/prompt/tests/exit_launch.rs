@@ -9,7 +9,9 @@
 //! revival — a real `lernie advance` child terminal waking a real
 //! parent — is [`super::parent_revival`]. The
 //! fire-and-forget swallow, the helper negatives, and the real-git exit
-//! race live in [`super::exit_race`] — split for the per-file line cap.
+//! race live in [`super::exit_race`], and the never-launch epitaphs
+//! (`stopped`, `budget-exhausted`, the errored executor) in
+//! [`super::exit_launch_never`] — split for the per-file line cap.
 
 use super::fixtures::*;
 use crate::prompt::inbox::{Launcher, inbox_dir, try_acquire};
@@ -17,7 +19,6 @@ use crate::prompt::{Clock, Deps, run};
 use std::cell::RefCell;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicBool;
 
 /// Records each launch with what the §2.11 ordering guarantees at that
 /// instant: the executor lock already released (a probe succeeds) and
@@ -86,6 +87,21 @@ pub(super) fn deposit_files(workspace: &Path) -> Vec<String> {
     out
 }
 
+/// [`run`] as every start in this file issues it — a plain root start
+/// (no fork point, no name, no pins); what varies here is only the
+/// §2.11 exit-launch behaviour under test.
+pub(super) fn plain_run(repo: &Path, deps: &Deps<'_>) -> Result<String, crate::prompt::Error> {
+    run(
+        repo,
+        "go",
+        None,
+        None,
+        None,
+        crate::prompt::PinnedDocs::none(),
+        deps,
+    )
+}
+
 #[test]
 fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
@@ -107,7 +123,7 @@ fn final_response_exit_launches_own_agent_and_revives_the_parent() {
     );
     deps.launcher = &launcher;
 
-    run(repo.path(), "go", None, None, None, &deps).unwrap();
+    plain_run(repo.path(), &deps).unwrap();
     let invocations = launcher.invocations.borrow();
     // Two launches: the self-directed one, then the parent whose inbox
     // the terminal deposit just landed in (§2.11 revival-on-deposit).
@@ -161,7 +177,7 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
         launcher: &launcher,
     };
 
-    let branch = run(repo.path(), "go", None, None, None, &deps).unwrap();
+    let branch = plain_run(repo.path(), &deps).unwrap();
     assert_eq!(branch, "ct1-deadbeef", "two tokens: a parentless root");
     // The deposit is a structural no-op — no result message anywhere…
     assert!(
@@ -174,123 +190,4 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
     let invocations = launcher.invocations.borrow();
     assert_eq!(invocations.len(), 1);
     assert_eq!(invocations[0].1, "ct1-deadbeef");
-}
-
-#[test]
-fn stopped_exit_never_launches() {
-    // §2.11 pin 2: `stopped` → never (a relaunch would resurrect the
-    // branch the operator just killed) — and never at the parent
-    // either: waking it would hand it a stop to undo one level up.
-    // The conv-id here is child-shaped (parent `ct`), so a parent-side
-    // launch would show up in the recorder.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let harness = scaffold_harness_root();
-    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&version_line())]);
-    let git = StubGit::ok();
-    let (clock, id) = (FixedClock::default(), FixedIdGen);
-    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
-    let stop = AtomicBool::new(true);
-    let launcher = ProbingLauncher::default();
-
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tool_executor,
-        harness.path(),
-    );
-    deps.stop = &stop;
-    deps.launcher = &launcher;
-
-    run(repo.path(), "go", None, None, None, &deps).unwrap();
-    assert!(
-        launcher.invocations.borrow().is_empty(),
-        "stopped must not launch"
-    );
-}
-
-#[test]
-fn budget_exhausted_exit_never_launches() {
-    // §2.11 pin 2: `budget-exhausted` → never (epitaph-spam cycle) —
-    // at the parent too, since the ceiling is derived over the whole
-    // tree (§6), so a revived parent would exhaust on its own next
-    // check and deposit again. The conv-id is child-shaped (parent
-    // `ct`): a parent-side launch would be recorded.
-    const EXHAUSTING: &str = "events: {}\nbudgets:\n  max_total_tokens: 8\n";
-    let repo = scaffold_repo_with_workflow(VALID_PER_REPO_PROVIDERS_YAML, EXHAUSTING, Some("body"));
-    let harness = scaffold_harness_root();
-    let adapter = StubAdapter::scripted([
-        StubAdapter::reply_ok(&version_line()),
-        StubAdapter::reply_ok(&stream_of(
-            brazen::FinishReason::ToolUse,
-            &[Block::ToolUse {
-                id: "toolu_01",
-                name: "bash",
-                input: serde_json::json!({"cmd": "ls"}),
-            }],
-        )),
-    ]);
-    let git = StubGit::ok();
-    let (clock, id) = (FixedClock::default(), FixedIdGen);
-    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
-    let launcher = ProbingLauncher::default();
-
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tool_executor,
-        harness.path(),
-    );
-    deps.launcher = &launcher;
-
-    run(repo.path(), "go", None, None, None, &deps).unwrap();
-    assert!(
-        deposit_files(repo.path())
-            .iter()
-            .any(|b| b.contains("epitaph: budget-exhausted")),
-        "the exhaustion deposit landed"
-    );
-    assert!(
-        launcher.invocations.borrow().is_empty(),
-        "exhausted must not launch"
-    );
-}
-
-#[test]
-fn an_errored_executor_never_launches() {
-    // An executor error is not a terminal event: it deposits nothing and
-    // launches nothing — the accepted crash class (§2.11); the next
-    // touch heals.
-    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
-    let harness = scaffold_harness_root();
-    let adapter = StubAdapter::scripted([
-        StubAdapter::reply_ok(&version_line()),
-        StubAdapter::reply_err(io::ErrorKind::ConnectionRefused, "no provider"),
-    ]);
-    let git = StubGit::ok();
-    let (clock, id) = (FixedClock::default(), FixedIdGen);
-    let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
-    let launcher = ProbingLauncher::default();
-
-    let mut deps = valid_deps(
-        &adapter,
-        &sleeper,
-        &git,
-        &clock,
-        &id,
-        &tool_executor,
-        harness.path(),
-    );
-    deps.launcher = &launcher;
-
-    run(repo.path(), "go", None, None, None, &deps).unwrap_err();
-    assert!(
-        launcher.invocations.borrow().is_empty(),
-        "an error must not launch"
-    );
 }

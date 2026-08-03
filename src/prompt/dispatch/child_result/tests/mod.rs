@@ -141,6 +141,7 @@ fn returned_child_ep(
         goal,
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     };
     let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
     // Simulate the child doing its work and committing (§2.3).

@@ -39,6 +39,7 @@ mod error;
 pub mod fork_point;
 pub mod inbox;
 mod pin;
+pub mod pinned_doc;
 mod resolve;
 pub mod role;
 pub mod step;
@@ -56,6 +57,7 @@ pub use clock::{Clock, IdGen, NanoIdGen, SystemClock};
 pub use dispatch::{RealSleeper, Sleeper, install_stop_handler, stop_flag};
 pub use error::Error;
 pub use pin::brazen_pin;
+pub use pinned_doc::{PinnedDoc, PinnedDocs};
 pub use tool::{ExecError, SpawnTool, ToolExecutor};
 
 use crate::template::GitRunner;
@@ -129,18 +131,22 @@ pub struct Deps<'a> {
 /// point's governing config commit, run the load-time version guard,
 /// spawn the agent branch off it, and drive the step loop through `bz`.
 /// Returns the agent id (the full hyphenated descent — the branch ref is
-/// `agents/<id>`, ARCH §2.3).
+/// `agents/<id>`, ARCH §2.3). `pins` are the caller-supplied pinned
+/// documents ([`pinned_doc`], §2.5) the dispatch commit snapshots beside
+/// `goal.md` and `soul.md`; a pin-less start passes
+/// [`PinnedDocs::none`].
 pub fn run(
     repo: &Path,
     msg: &str,
     from: Option<&str>,
     config: Option<&str>,
     name: Option<&str>,
+    pins: &PinnedDocs,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
     crate::workspace::require(repo)?;
     let fork_point = fork_point::resolve(repo, from, config, deps.git)?;
     name.map_or(Ok(()), |n| name_fact::require_available(repo, n, deps.git))?;
     let cfg = resolve::resolve_worker(repo, resolve::ConfigSource::Fork(&fork_point), deps)?;
-    dispatch::run_exchange(repo, msg, &fork_point, name, &cfg.as_resolved(), deps)
+    dispatch::run_exchange(repo, msg, &fork_point, name, pins, &cfg.as_resolved(), deps)
 }

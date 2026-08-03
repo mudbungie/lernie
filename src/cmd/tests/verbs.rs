@@ -7,7 +7,7 @@
 //! [`super::verbs_more`] beside its state-derivation edge case.
 
 use super::{assert_prefixed, noop_editor, with_fx, with_lernie_home, writing_editor};
-use crate::cmd::{Outcome, config, dispatch, new, prompt, stop};
+use crate::cmd::{Outcome, config, dispatch, new, prompt};
 use crate::template::{GitRunner, RealGit};
 use crate::workspace::{fixture, repo_git};
 use std::path::Path;
@@ -211,6 +211,7 @@ fn prompt_reports_a_non_workspace() {
                 from: None,
                 config: None,
                 name: None,
+                pin: vec![],
             },
             fx,
         )
@@ -231,6 +232,7 @@ fn dispatch_forks_a_child_through_the_front_door() {
                 goal: Some("do the thing".into()),
                 from: None,
                 name: None,
+                pin: vec![],
             },
             fx,
         )
@@ -251,6 +253,7 @@ fn dispatch_reports_an_undefined_role_with_its_prefix() {
                 goal: Some("g".into()),
                 from: None,
                 name: None,
+                pin: vec![],
             },
             fx,
         )
@@ -258,41 +261,6 @@ fn dispatch_reports_an_undefined_role_with_its_prefix() {
     assert_prefixed(r.unwrap_err(), "dispatch no-such");
 }
 
-#[test]
-fn stop_is_idempotent_with_no_executor() {
-    let (_h, ws) = fixture::workspace();
-    fixture::spawn_root(&ws, "20260101-a1");
-    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
-        stop::run(
-            stop::Args {
-                repo: ws.clone(),
-                branch: "20260101-a1".into(),
-                stop_children: false,
-            },
-            fx,
-        )
-    });
-    assert!(matches!(r.unwrap(), Outcome::Quiet));
-}
-
-#[test]
-fn stop_reports_a_non_workspace() {
-    let tmp = TempDir::new().unwrap();
-    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
-        stop::run(
-            stop::Args {
-                repo: tmp.path().to_path_buf(),
-                branch: "b".into(),
-                stop_children: false,
-            },
-            fx,
-        )
-    });
-    assert_prefixed(r.unwrap_err(), "stop");
-}
-
-// `message`'s success/non-workspace pair lives in `verbs_more.rs`
-// alongside its state-derivation edge case — both already import
-// `message`, and moving them there keeps this file under the 300-line
-// cap without splitting a verb's tests across an arbitrary boundary
-// mid-verb.
+// `message`'s success/non-workspace pair and `stop`'s idempotence /
+// non-workspace pair live in `verbs_more.rs` — whole verbs move there
+// when this file nears the 300-line cap, never a split mid-verb.

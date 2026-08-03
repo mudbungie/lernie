@@ -144,3 +144,17 @@ fn zero_run_tasks_compare_without_dividing() {
     let text = compare::render(&empty("a"), &empty("b"));
     assert!(text.contains("pass 0.00 → 0.00 (Δ +0.00)"));
 }
+
+#[test]
+fn zero_run_tasks_render_no_nan_anywhere() {
+    // The total block aggregates over the shared set through
+    // `stats::summarize`; a zero-run task must read as unmeasured, not
+    // as a 0/0 rate rendered "NaN%".
+    let empty = |driver: &str| Record {
+        provenance: provenance(driver),
+        tasks: vec![task("t", "early_termination", vec![])],
+    };
+    let text = compare::render(&empty("a"), &empty("b"));
+    assert!(!text.contains("NaN"), "NaN leaked into the report:\n{text}");
+    assert!(text.contains("pass@1: 0.0% [0.0%, 0.0%] → 0.0% [0.0%, 0.0%]"));
+}

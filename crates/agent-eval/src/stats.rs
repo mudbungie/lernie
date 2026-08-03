@@ -80,34 +80,36 @@ pub struct Summary {
 }
 
 /// Summarize a set of tasks: mean-of-means pass@1 with a pooled Wilson
-/// interval, and the pass@5 task fraction. An empty set is all-zero.
+/// interval, and the pass@5 task fraction. An empty set is all-zero,
+/// and a task with zero runs is *unmeasured* — it joins neither mean
+/// (0/0 is NaN, not a rate; a fabricated NaN in a report is worse than
+/// the fabricated zero the compare contract already rules out) — so a
+/// set holding only unmeasured tasks summarizes all-zero too.
 pub fn summarize(tasks: &[&TaskResult]) -> Summary {
-    if tasks.is_empty() {
-        return Summary {
-            num_tasks: 0,
-            pass_at_1: 0.0,
-            pass_at_1_ci: Interval { lo: 0.0, hi: 0.0 },
-            pass_at_5: 0.0,
-        };
-    }
     let mut rate_sum = 0.0;
     let mut pooled_succ = 0u64;
     let mut pooled_trials = 0u64;
     let mut any_pass = 0usize;
+    let mut measured = 0usize;
     for t in tasks {
         let n = t.outcomes.len() as u64;
-        rate_sum += t.passes() as f64 / n as f64;
         pooled_succ += t.passes();
         pooled_trials += n;
+        if n == 0 {
+            continue;
+        }
+        measured += 1;
+        rate_sum += t.passes() as f64 / n as f64;
         if t.any_pass_k() {
             any_pass += 1;
         }
     }
+    let denom = measured.max(1) as f64;
     Summary {
         num_tasks: tasks.len(),
-        pass_at_1: rate_sum / tasks.len() as f64,
+        pass_at_1: rate_sum / denom,
         pass_at_1_ci: wilson(pooled_succ, pooled_trials, Z_95),
-        pass_at_5: any_pass as f64 / tasks.len() as f64,
+        pass_at_5: any_pass as f64 / denom,
     }
 }
 

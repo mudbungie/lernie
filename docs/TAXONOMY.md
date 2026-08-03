@@ -311,7 +311,8 @@ The runtime side of context engineering: writing, selecting, compressing, isolat
 Lernie's compaction (ARCH §2.6–§2.7) lands by **rebase-forward**, and these terms are defined by that mechanism:
 
 - **Compaction point** — the commit the compactor forks off: the dispatching branch's tip at dispatch, or `HEAD~keep_recent` behind it under a configured retained tail. Derived at return time from the compactor's dispatch-commit parent, never stored.
-- **Compaction span** — the commit range the pass covers: from the branch's checkpoint origin (its founding commit or previous compaction base, exclusive) up to the compaction point (inclusive). The landing squashes it out of the branch's history.
+- **Compaction span** — the commit range the pass covers: from the branch's checkpoint origin (exclusive) up to the compaction point (inclusive). The landing squashes it out of the branch's history.
+- **Checkpoint origin** — the commit the checkpoint clock measures from and the span's exclusive lower bound: the branch's founding commit — its dispatch commit, or its most recent compaction base once one has landed (`compactor::checkpoint::origin`). Always derived from git, never a stored counter.
 - **Compaction base** — the single commit that replaces the span: the tree at the compaction point with the compaction product applied (nominated deletions removed, the new summary added), subject `compaction base [<compactor-id>]`. The checkpoint clock's origin and the prompt-cache rebuild point.
 - **Rebase-forward** — the landing itself: mint the base, then replay every commit after the compaction point on top of it and move the branch to the replayed tip. Zero-downtime: the branch never idles and the retained tail survives verbatim. Replaces the retired **compaction merge** (the `--no-ff` merge-back landing); the workflow action is `land_compaction`, with `compaction_merge` parsing as the retired spelling.
 - **Retained tail** — the most recent commits kept out of the span (`compaction.intermediate.keep_recent`), structurally outside the compactor's view.
@@ -362,6 +363,11 @@ lernie coins **capability grant** (or **grant**) and **capability manifest** as 
 - **Effective authority** = manifest ∩ grant, computed at load, gated by manifest ⊆ grant (a tool asking beyond its grant fails at load, loudly).
 
 This is neither the MCP "capability" (a protocol feature flag negotiated at init, §4 above) nor the marketing "Skills grant capability" sense. lernie's grant is a host-authority envelope enforced by the wasmtime/WASI host; its manifest is derived from the artifact, never declared in config — the config carries only the grant.
+
+### Tool window and grant gate (lernie-specific coinage)
+Two structural terms for the tool half of a step (`docs/ARCHITECTURE.md` §2.5, §3.3):
+- **Tool window** — the span of a step between a settled model-output entry carrying `tool_use` blocks and the commit of their `tool_result` entries: where the grant gate decides, any configured tool control adjudicates, and the tool executor runs. Contrast the model-call window — the adapter invocation that precedes it.
+- **Grant gate** — the *declaring is not permitting* check (`docs/ARCHITECTURE.md` §3.3, bl-5a1f), run inside the tool window before anything executes: a `tool_use` must name a tool in the calling role's grant plus its procedure-injected set; any other name returns an in-band error result and nothing runs. Declared-in-the-request is wider than callable by design — an inherited transcript forces declarations the gate never honours.
 
 ### Tool control (lernie-specific coinage)
 lernie coins **tool control** (or **control**) for the adjudicator its `workflow.yaml` `tool_control:` block places in front of tool execution (`docs/ARCHITECTURE.md` §3.3 *Tool control*, §6), with three companion terms:

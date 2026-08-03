@@ -127,8 +127,8 @@ operator-run, never harness-run) that:
 **No duplicate registry, by construction.** The data-root pool *is* the
 registry lernie already has; the pin step populates it and nothing else. The
 committed `descriptions/**` snapshot — taken by the existing config-authoring
-step, unchanged — is the cache pin: assembly reads the branch's own tree, so
-the tool pool a branch sees is a pure function of its fork point. Dynamic
+step, unchanged — is what freezes the pool a branch sees: assembly reads the
+branch's own tree, so that pool is a pure function of its fork point. Dynamic
 discovery happens exactly once, at pin time, as an operator act.
 
 **Cache stability falls out rather than being arranged.** Prompt assembly is
@@ -234,7 +234,7 @@ seam. One transport until one deployment proves it, per the ball's refusal.
 **The load-bearing ruling: one lernie tool name per pinned MCP tool — never a
 generic `mcp_call {server, tool, arguments}` multiplexer.** A multiplexer
 would collapse every downstream boundary to one bit: the role `tools:` grant
-(§4.3), the declaring-is-not-permitting refusal gate (bl-5a1f), the
+(§4.3), the grant gate (declaring is not permitting, bl-5a1f), the
 fork-time descriptor trim (bl-a900), and any future §3.6 / capability-boundary
 policy would all see "the MCP tool" where the operator means "post to Slack
 but do not delete channels." Per-tool naming keeps every one of those

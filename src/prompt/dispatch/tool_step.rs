@@ -115,9 +115,15 @@ pub(in crate::prompt) fn run_tool_calls(
     // control*): blocks whose results already committed are skipped —
     // derived from the transcript, never a stored cursor — and the mark
     // lifts the moment its invocation re-adjudicates to any verdict but
-    // hold. Both reads are gated on a configured control, so the
-    // control-less window pays nothing and changes nothing.
-    let mut marked = control.and_then(|_| hold::read(conv_repo, conv_id, deps.git));
+    // hold. The mark is read unconditionally: the mark, not the config,
+    // asserts the park, and a control since removed from the workflow
+    // must still see the resume skip committed results and lift the
+    // mark (an absent control adjudicates every invocation as pass) —
+    // re-running a committed block would double its side effects and
+    // commit a second `tool_result` for one `tool_use` id, breaking the
+    // §2.3 pairing. The committed-ids read stays gated on the mark, so
+    // an unparked window pays only the one ref probe.
+    let mut marked = hold::read(conv_repo, conv_id, deps.git);
     let committed = match marked {
         Some(_) => transcript::committed_result_ids(worktree)?,
         None => Default::default(),

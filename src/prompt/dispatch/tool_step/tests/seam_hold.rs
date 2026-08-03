@@ -250,3 +250,49 @@ fn committed_result_ids_reads_only_tool_entries_and_an_absent_dir_is_empty() {
     std::fs::write(broken.path().join("messages"), "not a dir").unwrap();
     assert!(committed_result_ids(broken.path()).is_err());
 }
+
+#[test]
+fn a_standing_mark_with_the_control_removed_still_skips_and_lifts() {
+    // The control that parked t2 was removed from the workflow between
+    // the park and this resume. The mark still governs the window: t1's
+    // committed result is skipped (re-running it would double its side
+    // effects and commit a second `tool_result` for one `tool_use` id),
+    // and the mark lifts — an absent control adjudicates as pass.
+    let rig = Rig::new("agent-nocontrol");
+    found_mark_repo(rig.ws.path());
+    let git = RealGit::new();
+    let t1_result = serde_json::to_string(&[Content::ToolResult {
+        tool_use_id: "t1".into(),
+        content: vec![Content::Text("done".into())],
+        is_error: false,
+    }])
+    .unwrap();
+    std::fs::write(rig.worktree.join("messages/002-tool.json"), t1_result).unwrap();
+    git.run(&rig.worktree, &["add", "-A"]).unwrap();
+    git.run(&rig.worktree, &["commit", "-m", "t1 result"])
+        .unwrap();
+    hold::write(
+        rig.ws.path(),
+        "agent-nocontrol",
+        &hold::Held {
+            tool_use_id: "t2".into(),
+            tool: "read_file".into(),
+            reason: "review".into(),
+        },
+        &git,
+    )
+    .unwrap();
+    // No tool_control in the resolution.
+    let resolution = Resolution::new();
+    let window = rig
+        .run(
+            "agent-nocontrol",
+            &resolution,
+            &[tool_use("t1", "bash"), tool_use("t2", "read_file")],
+            &git,
+        )
+        .unwrap();
+    assert!(matches!(window, ToolWindow::Completed));
+    assert_eq!(rig.executed(), vec!["read_file"], "t1 must not re-run");
+    assert_eq!(hold::read(rig.ws.path(), "agent-nocontrol", &git), None);
+}

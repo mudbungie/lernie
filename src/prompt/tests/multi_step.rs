@@ -129,16 +129,17 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // spawn, control rm, the descriptor derivation's five ops — four
     // `cat-file -e` existence reads against the governing config commit
     // and one `checkout`, §3.3 — the settled-name stage (§2.3), add,
-    // commit) + 1 (step-1 drain
-    // stray-probe) + 2
+    // commit) + 1 (step-1 drain stray-probe) + 2
     // (user-message delivery add+commit) + 1 (step 1 rev-parse) + 2
-    // (step-1 model-output transcript entry add+commit) + 2 (the tool
+    // (step-1 model-output transcript entry add+commit) + 1 (the tool
+    // window's unconditional hold-mark probe, §3.3 *Tool control* — the
+    // mark, not the config, asserts a park) + 2 (the tool
     // transcript entry add+commit) + 1 (step-2 drain stray-probe) + 1
     // (step 2 rev-parse) + 2 (step-2 model-output entry add+commit) + 1
-    // (terminal result-deposit rev-parse, §2.6) = 31. Merge-back is gone
+    // (terminal result-deposit rev-parse, §2.6) = 32. Merge-back is gone
     // (§2.6). The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 31);
+    assert_eq!(runs.len(), 32);
     assert_eq!(runs[15].1, vec!["add", "name"]);
     assert_eq!(runs[16].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[17].1[2].contains("step 001: dispatch"));
@@ -155,20 +156,23 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // output's origin token is the authoring model id (§2.3).
     assert_eq!(runs[22].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
     assert!(runs[23].1[2].contains("transcript 002: claude-sonnet-5"));
+    // The tool window opens with the unconditional hold-mark probe
+    // (§3.3 *Tool control* — the mark, not the config, asserts a park).
+    assert_eq!(runs[24].1[..2], ["cat-file", "blob"]);
     // A tool commit stages the whole worktree (`git add -A`, §2.3) so any
     // worktree side effect the tool produced lands with its result entry.
-    assert_eq!(runs[24].1, vec!["add", "-A"]);
-    assert!(runs[25].1[2].contains("transcript 003: tool"));
+    assert_eq!(runs[25].1, vec!["add", "-A"]);
+    assert!(runs[26].1[2].contains("transcript 003: tool"));
     // Step 2 opens with its own boundary drain (empty inbox → stray-probe
     // only), then the branch-tip capture (advanced by step 1's transcript
     // commits), then commits its own model-output entry (004).
-    assert_eq!(runs[26].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[27].1, vec!["rev-parse", "HEAD"]);
-    assert_eq!(runs[28].1, vec!["add", "messages/004-claude-sonnet-5.json"]);
-    assert!(runs[29].1[2].contains("transcript 004: claude-sonnet-5"));
+    assert_eq!(runs[27].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[28].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[29].1, vec!["add", "messages/004-claude-sonnet-5.json"]);
+    assert!(runs[30].1[2].contains("transcript 004: claude-sonnet-5"));
     // The terminal result deposit reads the branch tip (§2.6); no
     // merge-back follows.
-    assert_eq!(runs[30].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[31].1, vec!["rev-parse", "HEAD"]);
 
     // The tool entry on disk is the canonical tool_result block.
     let tool_entry = worktree.join("messages/003-tool.json");

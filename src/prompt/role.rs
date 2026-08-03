@@ -68,6 +68,41 @@ pub fn derive(
     Ok(parse_role(subject.trim()))
 }
 
+/// Sha of the dispatch commit that names `agent_id` (`dispatch: <role>
+/// [<agent-id>]`), reachable from `start` — the same single-home subject
+/// [`derive`] parses, read as a commit rather than a role. The compaction
+/// landing derives the **compaction point** from it (ARCH §2.6): the
+/// dispatch commit's parent is the commit the compactor forked off.
+/// `None` when no dispatch commit matches (a root, or not an agent ref).
+pub fn founding_sha(
+    dir: &Path,
+    start: &str,
+    agent_id: &str,
+    git: &dyn GitRunner,
+) -> Result<Option<String>, Error> {
+    let pattern = format!("^dispatch: .+ \\[{agent_id}\\]$");
+    let sha = git
+        .run_capture(
+            dir,
+            &[
+                "log",
+                "-n",
+                "1",
+                "--format=%H",
+                "-E",
+                "--grep",
+                pattern.as_str(),
+                start,
+            ],
+        )
+        .map_err(|source| Error::Git {
+            op: "founding sha log",
+            source,
+        })?;
+    let sha = sha.trim();
+    Ok((!sha.is_empty()).then(|| sha.to_string()))
+}
+
 /// Parse `<role>` out of a `dispatch: <role> [<id>]` subject, or `None`
 /// when the subject is empty or is not a dispatch commit (no prefix).
 fn parse_role(subject: &str) -> Option<String> {

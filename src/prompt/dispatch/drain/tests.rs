@@ -240,7 +240,7 @@ fn drain_delivers_pending_messages_in_mtime_order_committing_each() {
 fn drain_leaves_a_result_message_in_the_inbox_for_the_interpreter() {
     // A deposited message carrying `terminal_ref:` is a result message
     // (§2.6): it is a lifecycle circumstance the §6 hop interprets by the
-    // returning child's role (deliver_result / compaction_merge / a gate
+    // returning child's role (deliver_result / land_compaction / a gate
     // hold, `super::child_result`), not an ordinary steering message. The
     // drain leaves it untouched in the inbox — only the stray probe runs.
     let dir = TempDir::new().unwrap();

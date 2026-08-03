@@ -16,7 +16,7 @@ roles:
     # The compactor's subject is the branch's history, and history has
     # exactly two homes: the transcript (always composed, never an
     # `order` category) and the summary chain. The chain composes here
-    # or nowhere — the compaction merge is filtered to the summary and
+    # or nowhere — the compaction landing admits only the summary and
     # the deletions (ARCH §2.6), so a prior compactor's reasoning never
     # reaches the dispatching branch's transcript. A summary it cannot
     # see is a summary it destroys when it supersedes it, so this

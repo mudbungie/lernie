@@ -13,6 +13,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
 
+pub mod compaction;
+use compaction::validate_compaction;
+pub use compaction::{CompactionConfig, CompactionTrigger};
+
 /// Top-level `workflow.yaml` shape.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct Workflow {
@@ -164,31 +168,6 @@ impl Event {
     }
 }
 
-/// Optional `compaction:` block (ARCH §6).
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct CompactionConfig {
-    pub intermediate: IntermediateCompaction,
-}
-
-/// Configuration for intermediate compaction triggers.
-#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
-pub struct IntermediateCompaction {
-    pub trigger: CompactionTrigger,
-    /// Required when `trigger == every_n_commits` (commit count) or
-    /// `every_t_seconds` (seconds). Ignored for `on_flush`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub n: Option<u32>,
-}
-
-/// Closed set of intermediate-compaction triggers (ARCH §6).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum CompactionTrigger {
-    EveryNCommits,
-    EveryTSeconds,
-    OnFlush,
-}
-
 impl Workflow {
     /// Parse and validate workflow YAML already in hand — the
     /// governing-config read path (ARCH §2.2: control is read from the
@@ -264,22 +243,6 @@ impl Workflow {
     }
 }
 
-fn validate_compaction(path: &Path, c: &CompactionConfig) -> Result<(), LoadError> {
-    let needs_n = matches!(
-        c.intermediate.trigger,
-        CompactionTrigger::EveryNCommits | CompactionTrigger::EveryTSeconds
-    );
-    let has_n = c.intermediate.n.is_some_and(|n| n > 0);
-    if needs_n && !has_n {
-        return Err(LoadError::Invalid {
-            path: path.to_path_buf(),
-            key: "compaction.intermediate.n".into(),
-            message: "must be a positive integer for the chosen trigger".into(),
-        });
-    }
-    Ok(())
-}
-
 fn event_name(event: Event) -> &'static str {
     match event {
         Event::UserMessage => "user_message",
@@ -295,5 +258,4 @@ fn event_name(event: Event) -> &'static str {
     }
 }
 
-// Tests for `workflow.yaml` parsing live in `tests/workflow_yaml.rs` so this
-// file stays under the 300-line code-file limit.
+// Tests for `workflow.yaml` parsing live in `tests/workflow_yaml.rs`.

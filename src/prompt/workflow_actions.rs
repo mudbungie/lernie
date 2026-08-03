@@ -125,7 +125,7 @@ pub(super) fn execute(
         deferred @ (Action::Dispatch { .. }
         | Action::GateReturnOn { .. }
         | Action::DeliverResult
-        | Action::CompactionMerge) => Err(Error::ActionUnsupported {
+        | Action::LandCompaction) => Err(Error::ActionUnsupported {
             action: format!("{deferred:?}"),
             event: event.as_str(),
         }),

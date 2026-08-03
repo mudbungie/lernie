@@ -163,7 +163,7 @@ roles:
         let compactor = &m.roles["compactor"];
         assert_eq!(compactor.overflow, OverflowPolicy::Truncate);
         // ARCH §2.7 (bl-2c63): the summary chain composes here or
-        // nowhere — the compaction merge keeps a prior compactor's
+        // nowhere — the compaction landing keeps a prior compactor's
         // dialog off the dispatching branch's transcript (§2.6), so an
         // uncomposed summary is one the next compactor destroys when it
         // supersedes it. Work products stay out.

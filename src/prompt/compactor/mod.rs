@@ -1,5 +1,5 @@
 //! Compaction (ARCH §2.6, §2.7) — the model-driven compactor, its
-//! checkpoint triggers, and the compaction merge.
+//! checkpoint triggers, and the compaction landing (rebase-forward).
 //!
 //! A **compactor** is an *ordinary child agent* (§2.7): it is dispatched
 //! like any other child ([`super::child_dispatch`] with the `compactor`
@@ -10,18 +10,22 @@
 //! - its **toolset** ([`tools`]) — the fixed pair `write_summary` /
 //!   `mark_for_deletion`, built into the primitive and available to the
 //!   compactor role alone, making "deletion-only" structural (§2.7);
-//! - how its output **lands** ([`merge`]) — the compaction merge, the one
-//!   merge left in the system now that merge-back is gone (§2.6).
+//! - how its output **lands** ([`land`]) — the compaction landing, a
+//!   **rebase-forward**: the span before the compaction point squashes
+//!   into a compaction base and the live tail replays on top (§2.6).
+//!   Nothing merges anywhere anymore; the merge-back landing is retired
+//!   (bl-bc9c).
 //!
 //! [`checkpoint`] is the trigger evaluation: the executor reads it at a
 //! step boundary and, when a checkpoint is due, dispatches a compactor off
-//! the branch tip (the checkpoint commit `C`, §2.6). When the compactor
-//! returns with a *final-response* epitaph, the executor lands the merge;
-//! any other epitaph lands **no merge** and the branch continues
-//! uncompacted (§2.7). Both the boundary trigger read and the return-time
-//! merge are the same step-boundary seam the workflow-binding interpreter
-//! drives (§6) — [`checkpoint::due`] and [`merge::merge`] are the
-//! binding-shaped procedures it invokes.
+//! the **compaction point** — the branch tip, or `HEAD~keep_recent` when
+//! the workflow retains a recent tail (§2.6, §6). When the compactor
+//! returns with a *final-response* epitaph, the executor lands the
+//! rebase-forward; any other epitaph lands **nothing** and the branch
+//! continues uncompacted (§2.7). Both the boundary trigger read and the
+//! return-time landing are the same step-boundary seam the
+//! workflow-binding interpreter drives (§6) — [`checkpoint::due`] and
+//! [`land::land`] are the binding-shaped procedures it invokes.
 //!
 //! **There is no terminal-compaction stage** (§2.7): a child's result
 //! message carries its own terminal response (§2.6), not a compactor
@@ -31,11 +35,11 @@
 //! configured checkpoints during a branch's life.
 
 pub mod checkpoint;
-pub mod merge;
+pub mod land;
 pub mod tools;
 
 pub use checkpoint::{due, state};
-pub use merge::{MergeOutcome, merge};
+pub use land::{LandOutcome, land};
 
 use super::{Error, subagent};
 use brazen::Tool;

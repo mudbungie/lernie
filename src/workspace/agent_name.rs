@@ -25,7 +25,7 @@
 //! merely left alone: a child forks off its parent's tip (§2.5) and so
 //! inherits the parent's `name` blob, so the dispatch commit would have
 //! to delete it — and that deletion then rides the §2.6 work-product
-//! transfer and the §2.7 compaction merge straight back into the parent
+//! transfer and the §2.7 compaction landing straight back into the parent
 //! and unnames it. One always-written file dissolves all three cases at
 //! once: like `goal.md` and `soul.md` the name is overwritten in place at
 //! the dispatch commit and frozen thereafter (§2.3 *Goal and soul are

@@ -14,7 +14,7 @@
 //! harness commits the worktree side effect with the tool result under the
 //! commit-per-side-effect discipline (§2.3, §3.3 — `git add -A`), so a
 //! summary write or a staged deletion lands on the compactor branch and
-//! travels to the dispatching branch via the compaction merge (§2.6).
+//! travels to the dispatching branch via the compaction landing (§2.6).
 
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};

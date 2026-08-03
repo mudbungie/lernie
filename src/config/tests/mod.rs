@@ -13,4 +13,5 @@
 mod action_dsl;
 mod providers_split;
 mod schemas_golden;
+mod workflow_compaction;
 mod workflow_yaml;

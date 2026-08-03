@@ -6,18 +6,22 @@ events:
   worker_flush:
     - dispatch(compactor)
   compactor_return:
-    - compaction_merge
+    - land_compaction
   branch_stopped:
     - mark_abandoned
     - notify_ui
 
 # Intermediate compaction checkpoints (ARCH §2.6–§2.7, §6). The executor
 # reads this at each step boundary: when the trigger fires it dispatches a
-# compactor off the branch tip (the checkpoint commit C), whose return
-# lands the compaction merge (the `compactor_return: compaction_merge`
-# binding above). `trigger` is one of `every_n_commits`, `every_t_seconds`
-# (both take `n`), or `on_flush` (the agent-elected `flush`, no `n`). Omit
-# the whole block and the branch never compacts.
+# compactor off the compaction point — the branch tip, or `HEAD~keep_recent`
+# when `keep_recent` is set — and the compactor's return lands by
+# rebase-forward (the `compactor_return: land_compaction` binding above):
+# the span before the point squashes into a compaction base and the live
+# tail replays on top, zero downtime. `trigger` is one of
+# `every_n_commits`, `every_t_seconds` (both take `n`), or `on_flush` (the
+# agent-elected `flush`, no `n`). `keep_recent` (optional, default 0) keeps
+# the most recent commits out of the span; it must stay below `n` under
+# `every_n_commits`. Omit the whole block and the branch never compacts.
 compaction:
   intermediate:
     trigger: every_n_commits

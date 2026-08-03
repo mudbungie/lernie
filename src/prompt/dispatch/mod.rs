@@ -134,7 +134,7 @@ pub(super) fn run_exchange(
         seen = drain::drain(&worktree_path, &inbox, &conv_id, deps.git)?.left;
 
         // §6 prompt→advance collapse: interpret delivered child results
-        // (deliver_result / compaction_merge / verifier gate) at the same
+        // (deliver_result / land_compaction / verifier gate) at the same
         // boundary `lernie advance` does — empty-inputs no-op for a root.
         child_result::interpret_pending(repo, &conv_id, &worktree_path, resolved.workflow, deps)?;
 

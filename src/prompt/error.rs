@@ -173,14 +173,14 @@ pub enum Error {
     Deposit(#[from] inbox::DepositError),
     /// A selected `summary/**` entry carries git conflict-marker lines
     /// (§5.2 marker guard). The write path promises this can never
-    /// happen — the compaction merge declines any content conflict
-    /// before committing (§2.6) — so a marked summary is a violated
+    /// happen — the compaction landing declines any content conflict
+    /// during the replay (§2.6) — so a marked summary is a violated
     /// invariant, and composing it would send corrupted context into
     /// every subsequent model call on the branch (§2.7). Refused
     /// loudly, naming the path; recovery is §5.4 deletion or repair.
     #[error(
         "assembly refused {path}: it carries git conflict-marker lines, which the §2.6 \
-         compaction-merge decline promises summary/** never does; composing it would \
+         compaction-landing decline promises summary/** never does; composing it would \
          corrupt the branch's context (§2.7). Repair or delete the file (§5.4) to resume"
     )]
     SummaryConflictMarkers { path: String },

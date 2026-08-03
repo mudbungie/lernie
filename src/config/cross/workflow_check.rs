@@ -103,7 +103,7 @@ events:
             r#"
 events:
   user_message:
-    - compaction_merge
+    - land_compaction
     - deliver_result
     - mark_abandoned
     - notify_ui

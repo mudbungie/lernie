@@ -50,7 +50,7 @@ pub(super) fn drain(
     for msg in pending(inbox)? {
         // A **result message** (§2.6, carrying a `terminal_ref:`) is a
         // lifecycle circumstance the §6 hop interprets by the returning
-        // child's role — deliver_result, compaction_merge, or a gate-hold
+        // child's role — deliver_result, land_compaction, or a gate-hold
         // (`super::child_result`) — not an ordinary steering message. The
         // drain leaves it in the inbox for that interpreter and delivers
         // only ordinary messages here (the hold is a disk query over the

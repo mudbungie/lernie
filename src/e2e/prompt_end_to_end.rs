@@ -192,12 +192,12 @@ fn prompt_subcommand_persists_conversation_without_terminal_compaction() {
     // There is NO terminal compaction (§2.7 — the stage is deleted): a
     // final response does not dispatch a compactor, so the conversation
     // tip is the ordinary last transcript commit (a single parent), never
-    // a two-parent compaction merge, and no `summary/` lands on the branch.
+    // a compaction landing, and no `summary/` lands on the branch.
     let conv_parents = git_capture(&bare, &["log", "-1", "--pretty=%P", &branch_ref]);
     assert_eq!(
         conv_parents.split_whitespace().count(),
         1,
-        "conv tip is an ordinary commit, not a terminal-compaction merge (§2.7)"
+        "conv tip is an ordinary commit, not a terminal-compaction landing (§2.7)"
     );
     let summary_on_branch = git_command(&bare, &["show", &format!("{branch_ref}:summary/001.md")])
         .output()

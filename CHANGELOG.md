@@ -19,6 +19,8 @@ merges.
 
 ## [Unreleased]
 
+## [0.0.5](https://github.com/mudbungie/lernie/compare/v0.0.4...v0.0.5) - 2026-08-02
+
 ### Changes
 
 - prune the fork point's dialog (`messages/**`, `summary/**`, `skills/**`) from every child's dispatch commit, so a child never opens on its dispatcher's conversation and cannot re-execute the parent's last user instruction (the yog bl-d023 spawn-a-subagent runaway); the compactor keeps the dialog it exists to compact, and fork-back-in roots keep the conversation they resume [bl-5a36]

@@ -1,7 +1,8 @@
 +++
 title = "an apply_patch-class edit tool: atomic multi-file patch with fuzzy context matching"
 created = 1785649530
-updated = 1785649863
+updated = 1785724179
+claimant = "Trunnion"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

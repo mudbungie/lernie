@@ -93,3 +93,20 @@ fn compute_empty_results() {
     assert!(m.categories.is_empty());
     assert_eq!(m.overall.num_tasks, 0);
 }
+
+#[test]
+fn summarize_treats_zero_run_tasks_as_unmeasured_never_nan() {
+    // A task with zero runs has no rate (0/0): it joins neither mean.
+    let ran = task("ran", &["x"], &[true, false]);
+    let unran = task("unran", &["x"], &[]);
+    let refs = [&ran, &unran];
+    let s = stats::summarize(&refs);
+    assert_eq!(s.num_tasks, 2);
+    assert!((s.pass_at_1 - 0.5).abs() < 1e-9, "got {}", s.pass_at_1);
+    assert_eq!(s.pass_at_5, 1.0);
+    // A set holding only unmeasured tasks summarizes all-zero.
+    let only = [&unran];
+    let s = stats::summarize(&only);
+    assert!(s.pass_at_1 == 0.0 && s.pass_at_5 == 0.0);
+    assert!(!s.pass_at_1.is_nan());
+}

@@ -36,6 +36,7 @@ mod transfer;
 
 pub use model_call::{RealSleeper, Sleeper};
 pub(super) use resolved::Resolved;
+pub(crate) use step_commit::inherited::prune_inherited_dialog;
 pub(crate) use step_commit::{Grant, Undescribed, require_described, trim_to_context};
 pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
 pub(crate) use transcript::MESSAGES_DIR;

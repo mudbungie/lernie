@@ -100,7 +100,16 @@ pub(crate) struct SpawnRequest<'a> {
 ///    `descriptions/**` descriptors are derived from the governing
 ///    config commit to the child's own grant — checked out from it, not
 ///    inherited from the fork point (`--ignore-unmatch` keeps the
-///    removal half total whatever that point carried).
+///    removal half total whatever that point carried). Then the fork
+///    point's **inherited dialog** leaves (`messages/**`, `summary/**`,
+///    `skills/**` — branch-scoped, §2.2): a child's opening context is
+///    its goal, soul and pins plus what is deposited to it, never its
+///    dispatcher's conversation — except the compactor, whose subject
+///    that conversation is
+///    ([`crate::prompt::dispatch::prune_inherited_dialog`]). This part
+///    is the child spawn's own, not [`trim_to_context`]'s: a
+///    fork-back-in *root* resumes the conversation it forks (§7.2) and
+///    must keep it.
 /// 3. Write `goal.md` (and `soul.md` when supplied) to the new worktree,
 ///    plus any caller-supplied pinned documents at their validated
 ///    destinations (§2.5, [`crate::prompt::pinned_doc`]).
@@ -136,6 +145,7 @@ pub(crate) fn spawn_subagent_branch(
     // harmless no-op in production since the directory already exists).
     std::fs::create_dir_all(req.sub_worktree)?;
     crate::prompt::dispatch::trim_to_context(req.sub_worktree, req.grant, req.name, git)?;
+    crate::prompt::dispatch::prune_inherited_dialog(req.sub_worktree, req.grant.role, git)?;
     std::fs::write(req.sub_worktree.join(GOAL_FILE), req.goal_text)?;
     if let Some(soul) = req.soul_text {
         std::fs::write(req.sub_worktree.join(SOUL_FILE), soul)?;

@@ -104,13 +104,29 @@ fn writes_goal_and_soul_when_soul_present() {
     // 2: stage the settled name — the trim's fourth part (§2.3)
     assert_eq!(runs[2].0, sub_wt);
     assert_eq!(runs[2].1, vec!["add", "name"]);
-    // 3: add goal.md soul.md (in sub worktree)
+    // 3: the inherited-dialog prune — a child's opening context is
+    // never its dispatcher's conversation (§2.2, bl-5a36)
     assert_eq!(runs[3].0, sub_wt);
-    assert_eq!(runs[3].1, vec!["add", "goal.md", "soul.md"]);
-    // 4: commit (in sub worktree)
+    assert_eq!(
+        runs[3].1,
+        vec![
+            "rm",
+            "-r",
+            "-q",
+            "--ignore-unmatch",
+            "--",
+            "messages",
+            "summary",
+            "skills"
+        ]
+    );
+    // 4: add goal.md soul.md (in sub worktree)
     assert_eq!(runs[4].0, sub_wt);
-    assert_eq!(runs[4].1[0], "commit");
-    assert_eq!(runs[4].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
+    assert_eq!(runs[4].1, vec!["add", "goal.md", "soul.md"]);
+    // 5: commit (in sub worktree)
+    assert_eq!(runs[5].0, sub_wt);
+    assert_eq!(runs[5].1[0], "commit");
+    assert_eq!(runs[5].1[2], "dispatch: worker [p1-ct-2-deadbeef]");
 
     assert_eq!(
         std::fs::read_to_string(sub_wt.join("goal.md")).unwrap(),
@@ -135,7 +151,7 @@ fn writes_only_goal_when_soul_is_none() {
 
     let runs = git.runs.borrow();
     // The stage step adds only goal.md.
-    assert_eq!(runs[3].1, vec!["add", "goal.md"]);
+    assert_eq!(runs[4].1, vec!["add", "goal.md"]);
     assert!(
         !sub_dir.path().join("soul.md").exists(),
         "soul.md should not be written"
@@ -184,10 +200,32 @@ fn surfaces_control_rm_failure() {
 }
 
 #[test]
-fn surfaces_add_failure() {
+fn surfaces_dialog_prune_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
     let git = StubGit::failing_at(3);
+    let err = spawn_subagent_branch(
+        &req(parent_dir.path(), sub_dir.path(), Some("soul\n")),
+        &git,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            Error::Git {
+                op: "rm inherited dialog",
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
+}
+
+#[test]
+fn surfaces_add_failure() {
+    let parent_dir = tmpdir();
+    let sub_dir = tmpdir();
+    let git = StubGit::failing_at(4);
     let err = spawn_subagent_branch(
         &req(parent_dir.path(), sub_dir.path(), Some("soul\n")),
         &git,
@@ -200,7 +238,7 @@ fn surfaces_add_failure() {
 fn surfaces_commit_failure() {
     let parent_dir = tmpdir();
     let sub_dir = tmpdir();
-    let git = StubGit::failing_at(4);
+    let git = StubGit::failing_at(5);
     let err =
         spawn_subagent_branch(&req(parent_dir.path(), sub_dir.path(), None), &git).unwrap_err();
     assert!(

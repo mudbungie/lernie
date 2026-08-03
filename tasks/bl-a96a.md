@@ -1,9 +1,13 @@
 +++
 title = "a child's terminal response deposits to its dispatcher even when the turn was prompted by someone else"
 created = 1785733795
-updated = 1785733795
+updated = 1785734309
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-eb84"
+on = "close"
 +++
 Diagnosed from a live yog session, 2026-08-02 (yog dev workspace,
 `~/.local/share/yog/workspaces/dev`). Evidence is on-disk bytes, cited below.

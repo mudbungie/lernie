@@ -8,21 +8,31 @@
 //! claim. Setup, agent, and check share one working directory, as the
 //! suite format specifies (`tests/suite/README.md`).
 //!
+//! Beyond pass/fail, every run records its **outer wall time** — the
+//! runner's own measurement around the driver invocation — and, when the
+//! driver disclosed a workspace through `LERNIE_EVAL_REPORT`, the derived
+//! efficiency metrics ([`metrics::collect`], bl-36fa): attempts, tool
+//! invocations, and the four canonical usage counters. No disclosure
+//! means no metrics (`None`), never zeros.
+//!
 //! A failing run is optionally archived for triage (§9.2): when a bundle
 //! directory is configured and the agent disclosed a [`BundleTarget`],
 //! the run's subtree is bundled through the [`Bundler`] seam.
 //!
 //! Setup, agent invocation, and check are the only impure edges; the
-//! aggregation is [`stats::compute`]. Injecting the agent (and bundler)
+//! aggregation is [`crate::stats::compute`] over
+//! [`crate::record::task_results`]. Injecting the agent (and bundler)
 //! is what lets the whole path run in tests without live model traffic.
 
-use crate::agent::{Agent, Bundler, Dispatch};
+use crate::agent::{Agent, BundleTarget, Bundler, Dispatch};
 use crate::experiment::Experiment;
-use crate::stats::{self, Metrics, TaskResult};
+use crate::metrics;
+use crate::record::{RunRecord, TaskRecord};
 use crate::suite::Task;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Instant;
 
 /// Knobs for one evaluation.
 pub struct EvalConfig {
@@ -32,7 +42,7 @@ pub struct EvalConfig {
     pub bundle_dir: Option<PathBuf>,
 }
 
-/// Run the whole evaluation and aggregate the metrics.
+/// Run the whole evaluation, yielding every task's per-run observations.
 pub fn evaluate(
     tasks: &[Task],
     experiment: &Experiment,
@@ -40,23 +50,23 @@ pub fn evaluate(
     agent: &dyn Agent,
     bundler: Option<&dyn Bundler>,
     cfg: &EvalConfig,
-) -> io::Result<Metrics> {
-    let mut results = Vec::with_capacity(tasks.len());
+) -> io::Result<Vec<TaskRecord>> {
+    let mut records = Vec::with_capacity(tasks.len());
     for task in tasks {
-        let mut outcomes = Vec::with_capacity(cfg.runs);
+        let mut runs = Vec::with_capacity(cfg.runs);
         for run in 0..cfg.runs {
-            outcomes.push(run_once(task, experiment, base, agent, bundler, cfg, run)?);
+            runs.push(run_once(task, experiment, base, agent, bundler, cfg, run)?);
         }
-        results.push(TaskResult {
+        records.push(TaskRecord {
             id: task.id.clone(),
             categories: task.categories.clone(),
-            outcomes,
+            runs,
         });
     }
-    Ok(stats::compute(&results))
+    Ok(records)
 }
 
-/// One (task, run): seed, setup, agent, check → pass/fail.
+/// One (task, run): seed, setup, agent (timed), metrics, check.
 fn run_once(
     task: &Task,
     experiment: &Experiment,
@@ -65,7 +75,7 @@ fn run_once(
     bundler: Option<&dyn Bundler>,
     cfg: &EvalConfig,
     run: usize,
-) -> io::Result<bool> {
+) -> io::Result<RunRecord> {
     let dir = base.join(&task.id).join(run.to_string());
     let home = dir.join("home");
     let work = dir.join("work");
@@ -73,19 +83,30 @@ fn run_once(
     std::fs::create_dir_all(&work)?;
 
     // A failed `setup` means the run never got a fair start: count it a
-    // fail without invoking the agent or the check.
+    // fail without invoking the agent or the check. The driver never
+    // ran, so there is no wall to measure and nothing disclosed.
     if let Some(setup) = &task.setup
         && !run_shell(setup, &work)?
     {
-        return Ok(false);
+        return Ok(RunRecord {
+            pass: false,
+            wall_ms: 0,
+            metrics: None,
+        });
     }
 
+    let started = Instant::now();
     let outcome = agent.dispatch(&Dispatch {
         prompt: &task.prompt,
         workdir: &work,
         lernie_home: &home,
         experiment: &experiment.workflow,
     })?;
+    let wall_ms = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    let run_metrics = outcome
+        .target
+        .as_ref()
+        .map(|t: &BundleTarget| metrics::collect(&t.workspace, &t.agent_id, &home));
 
     let pass = run_shell(&task.check, &work)?;
     if !pass
@@ -95,7 +116,11 @@ fn run_once(
         let dest = dest_root.join(format!("{}-{run}", task.id));
         b.bundle(target, &dest)?;
     }
-    Ok(pass)
+    Ok(RunRecord {
+        pass,
+        wall_ms,
+        metrics: run_metrics,
+    })
 }
 
 /// Run a shell script in `cwd`; `true` iff it exits 0.

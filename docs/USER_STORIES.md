@@ -364,7 +364,7 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
 - **scenario** Evaluate harness *configuration*, holding tasks and models fixed (ARCH §9.3).
 - **commands** exec only (a separate binary crate, deliberately outside the harness):
   ```
-  agent-eval --config baseline --suite tests/suite --runs 5 \
+  agent-eval run --config baseline --suite tests/suite --runs 5 \
              [--experiments-dir <dir>] [--agent <cmd>] [--bundle-dir <dir>] [--lernie <bin>]
   ```
 - **acceptance**

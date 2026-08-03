@@ -9,7 +9,7 @@ experiments/
     └── workflow.yaml
 ```
 
-The evaluation runner (`agent-eval --config <name> --suite <suite> --runs
+The evaluation runner (`agent-eval run --config <name> --suite <suite> --runs
 N`, ARCH §9.3 / v0.10) resolves `--config <name>` to
 `experiments/<name>/workflow.yaml` and runs the suite (`tests/suite/`,
 §9.1) against it N times per task, reporting per-task and per-category

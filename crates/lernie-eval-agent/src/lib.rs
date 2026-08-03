@@ -41,6 +41,15 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+/// Answer the runner's version probe (bl-36fa): `--version` as
+/// argv\[1\] yields the driver's one identifying line, anything else
+/// yields `None` and the run contract proceeds. The probe is part of
+/// the README "Run the suite" contract — the runner records the line
+/// among an evaluation's reproducibility inputs.
+pub fn version_answer(arg1: Option<&str>) -> Option<String> {
+    (arg1 == Some("--version")).then(|| format!("lernie-eval-agent {}", env!("CARGO_PKG_VERSION")))
+}
+
 /// What one invocation receives from the runner — the README "Run the
 /// suite" driver contract, parsed and validated.
 #[derive(Debug)]

@@ -268,3 +268,15 @@ fn machine_config_root_prefers_xdg_then_home() {
     assert_eq!(machine_config_root(None, Some("".as_ref())), None);
     assert_eq!(machine_config_root(None, None), None);
 }
+
+#[test]
+fn version_answer_serves_the_probe_and_nothing_else() {
+    use lernie_eval_agent::version_answer;
+    let line = version_answer(Some("--version")).unwrap();
+    assert_eq!(
+        line,
+        format!("lernie-eval-agent {}", env!("CARGO_PKG_VERSION"))
+    );
+    assert_eq!(version_answer(Some("a real prompt")), None);
+    assert_eq!(version_answer(None), None);
+}

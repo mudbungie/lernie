@@ -90,6 +90,7 @@ fn dispatch_compactor(
         goal: &goal,
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
 }

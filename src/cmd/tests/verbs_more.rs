@@ -1,12 +1,12 @@
 //! Product and operator verbs driven against a constructed
 //! [`Fx`](crate::cmd::Fx): `scan`, `bundle`, `replay`, `advance`,
-//! `tool`, `message`. Same discipline as [`super::verbs`]: a hermetic
+//! `tool`, `message`, `stop`. Same discipline as [`super::verbs`]: a hermetic
 //! success path where one exists plus a cheap early-error path.
 //! `replay`'s product (its scratch path) and the `advance` successor
 //! `exec` are pinned by the `tests/*_cli.rs` binary tests.
 
 use super::{assert_prefixed, noop_editor, with_fx};
-use crate::cmd::{Outcome, advance, bundle, delete, message, replay, scan, tool};
+use crate::cmd::{Outcome, advance, bundle, delete, message, replay, scan, stop, tool};
 use crate::workspace::fixture;
 use tempfile::TempDir;
 
@@ -242,4 +242,37 @@ fn delete_prints_the_census_as_its_product() {
         ws.join("agents/20260101-a1").exists(),
         "dry run removed nothing"
     );
+}
+
+#[test]
+fn stop_is_idempotent_with_no_executor() {
+    let (_h, ws) = fixture::workspace();
+    fixture::spawn_root(&ws, "20260101-a1");
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        stop::run(
+            stop::Args {
+                repo: ws.clone(),
+                branch: "20260101-a1".into(),
+                stop_children: false,
+            },
+            fx,
+        )
+    });
+    assert!(matches!(r.unwrap(), Outcome::Quiet));
+}
+
+#[test]
+fn stop_reports_a_non_workspace() {
+    let tmp = TempDir::new().unwrap();
+    let (r, ..) = with_fx("lernie", b"", &noop_editor, |fx| {
+        stop::run(
+            stop::Args {
+                repo: tmp.path().to_path_buf(),
+                branch: "b".into(),
+                stop_children: false,
+            },
+            fx,
+        )
+    });
+    assert_prefixed(r.unwrap_err(), "stop");
 }

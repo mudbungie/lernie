@@ -16,6 +16,7 @@ use std::sync::atomic::AtomicBool;
 mod agent_id;
 mod dispatching;
 mod naming;
+mod pins;
 mod surface;
 mod verbs;
 mod verbs_more;

@@ -11,7 +11,7 @@ use crate::template::RealGit;
 use std::path::PathBuf;
 
 /// `lernie prompt <repo> <message> [--from <ref>] [--config <name>]
-/// [--name <name>]`.
+/// [--name <name>] [--pin <dest>=<src>]...`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Path to the workspace (conversation repo) root.
@@ -31,6 +31,13 @@ pub struct Args {
     /// rewritten. `lernie message` accepts it in place of the agent id.
     #[arg(long)]
     pub name: Option<String>,
+    /// Pin a caller-supplied document (ARCH §2.5): freeze `<src>`'s
+    /// exact bytes at worktree-relative `<dest>` on the dispatch commit,
+    /// beside `goal.md` and `soul.md`. Repeatable; validated — and
+    /// refused — before any branch or ref exists
+    /// ([`crate::prompt::pinned_doc`]).
+    #[arg(long = "pin", value_name = "DEST=SRC")]
+    pub pin: Vec<String>,
 }
 
 /// Spawn the root agent branch and drive its step loop; print the agent
@@ -49,6 +56,10 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
 /// [`Fx::driver_target`](super::Fx::driver_target); the stop flag is
 /// [`Fx::stop`](super::Fx::stop).
 fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
+    // Pins are validated and their sources read here, first — every
+    // refusal precedes the fork, so no branch, ref or inference exists
+    // when one fires (ARCH §2.5, [`crate::prompt::pinned_doc`]).
+    let pins = prompt::pinned_doc::load(&args.pin)?;
     let roots = harness_root::resolve()?;
     // The binding-injected driver target (§2.11 "injected at the binding,
     // not resolved by name") serves both re-entry seams: the §3.3 tool
@@ -74,6 +85,7 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
         args.from.as_deref(),
         args.config.as_deref(),
         args.name.as_deref(),
+        &pins,
         &deps,
     )
     .map_err(Into::into)

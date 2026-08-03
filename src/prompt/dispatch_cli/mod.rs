@@ -111,7 +111,10 @@ impl From<Error> for DispatchCliError {
 /// as an ordinary child ([`child_dispatch`], §2.5); roles differ only in
 /// the pinned soul (`souls/<role>.md`) and in where the goal comes from —
 /// a per-call `--goal` for every role but the compactor, whose goal is
-/// the §2.7 boilerplate.
+/// the §2.7 boilerplate. `pins` are the caller-supplied pinned documents
+/// (`--pin <dest>=<src>`, [`crate::prompt::pinned_doc`]), already
+/// validated and loaded by the CLI layer.
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     role: &str,
     repo: &Path,
@@ -119,6 +122,7 @@ pub fn run(
     goal: Option<&str>,
     from: Option<&str>,
     name: Option<&str>,
+    pins: &crate::prompt::PinnedDocs,
     driver_target: &Path,
 ) -> Result<(), DispatchCliError> {
     // The production launcher detach-spawns `lernie advance` (§2.11) at
@@ -127,13 +131,14 @@ pub fn run(
     // The launch decision is tested through [`run_with`] against an
     // injected launcher.
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
-    run_with(role, repo, branch, goal, from, name, &launcher)
+    run_with(role, repo, branch, goal, from, name, pins, &launcher)
 }
 
 /// [`run`] with the driver launcher injected — the same
 /// launcher-as-parameter discipline as `inbox::probe_and_launch`, so the
 /// fork + front-door deposit is exercisable without spawning a real
 /// `lernie advance`.
+#[allow(clippy::too_many_arguments)]
 fn run_with(
     role: &str,
     repo: &Path,
@@ -141,6 +146,7 @@ fn run_with(
     goal: Option<&str>,
     from: Option<&str>,
     name: Option<&str>,
+    pins: &crate::prompt::PinnedDocs,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     // The shared id guard, ahead of everything (§2.2, §2.3): the
@@ -202,7 +208,16 @@ fn run_with(
         goal.ok_or_else(|| DispatchCliError::GoalRequired(role.to_owned()))?
             .to_owned()
     };
-    dispatch_child(repo, parent_branch, role, &goal_text, from, name, launcher)
+    dispatch_child(
+        repo,
+        parent_branch,
+        role,
+        &goal_text,
+        from,
+        name,
+        pins,
+        launcher,
+    )
 }
 
 /// Fork `role`'s child off `parent_branch` and start it through the front
@@ -210,6 +225,7 @@ fn run_with(
 /// it as the `tool_result` address (§3.3 — stdout carries one product).
 /// The workspace and the parent were established by [`run_with`]'s shared
 /// guard, so nothing is re-checked here.
+#[allow(clippy::too_many_arguments)]
 fn dispatch_child(
     repo: &Path,
     parent_branch: &str,
@@ -217,6 +233,7 @@ fn dispatch_child(
     goal: &str,
     fork_point: Option<&str>,
     name: Option<&str>,
+    pins: &crate::prompt::PinnedDocs,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
@@ -228,6 +245,7 @@ fn dispatch_child(
         goal,
         name,
         fork_point,
+        pins,
     };
     let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
     println!("{child}");

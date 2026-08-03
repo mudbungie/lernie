@@ -96,17 +96,21 @@ pub(super) fn compose_system(goal: &str, name: Option<&str>, soul: &str) -> Stri
     format!("<goal>\n{goal}\n</goal>\n\n{identity}{soul}")
 }
 
-/// Step 1: write `goal.md` + `soul.md` to the worktree root. Step
-/// ≥2 has no dispatch artifact (the branch tip already reflects the
-/// model-read state per §2.10).
+/// Step 1: write `goal.md` + `soul.md` to the worktree root, plus any
+/// caller-supplied pinned documents at their validated destinations
+/// ([`crate::prompt::pinned_doc`], §2.5). Step ≥2 has no dispatch
+/// artifact (the branch tip already reflects the model-read state per
+/// §2.10).
 pub(super) fn write_dispatch_files(
     worktree_path: &Path,
     goal_text: &str,
     soul_text: &str,
+    pins: &crate::prompt::PinnedDocs,
 ) -> Result<(), Error> {
     std::fs::create_dir_all(worktree_path)?;
     std::fs::write(worktree_path.join(GOAL_FILE), goal_text)?;
     std::fs::write(worktree_path.join(SOUL_FILE), soul_text)?;
+    pins.write_into(worktree_path)?;
     Ok(())
 }
 
@@ -124,12 +128,15 @@ pub(super) fn commit_dispatch(
     worktree_path: &Path,
     conv_id: &str,
     name: Option<&str>,
+    pins: &crate::prompt::PinnedDocs,
     resolved: &super::Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<(), Error> {
     trim_to_context(worktree_path, &resolved.grant, name, deps.git)?;
+    let mut add_args: Vec<&str> = vec!["add", GOAL_FILE, SOUL_FILE];
+    add_args.extend(pins.iter().map(crate::prompt::PinnedDoc::dest));
     deps.git
-        .run(worktree_path, &["add", GOAL_FILE, SOUL_FILE])
+        .run(worktree_path, &add_args)
         .map_err(|source| Error::Git { op: "add", source })?;
     let msg = format!("step 001: dispatch [{conv_id}]");
     deps.git

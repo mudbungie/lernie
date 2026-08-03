@@ -50,6 +50,7 @@ fn compactor_dispatch_forks_an_ordinary_compactor_child() {
         None,
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap();
@@ -66,6 +67,7 @@ fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         Some("do the thing"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap();
@@ -92,6 +94,7 @@ fn any_config_role_dispatches_open_set() {
         Some("judge it"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap();
@@ -116,6 +119,7 @@ fn a_path_that_is_not_a_workspace_is_the_shared_layout_decline() {
         Some("hi"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap_err();
@@ -139,6 +143,7 @@ fn a_parent_with_no_agent_ref_is_the_shared_existence_decline() {
         Some("hi"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap_err();
@@ -164,6 +169,7 @@ fn undefined_role_names_the_roles_that_are_defined() {
         Some("g"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap_err();
@@ -181,7 +187,17 @@ fn worker_requires_a_goal() {
     // Through the public `run` (the AdvanceLauncher wiring): validation
     // passes, then the missing `--goal` is refused before any fork.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
-    let err = run("worker", &repo, "p1", None, None, None, Path::new("true")).unwrap_err();
+    let err = run(
+        "worker",
+        &repo,
+        "p1",
+        None,
+        None,
+        None,
+        crate::prompt::PinnedDocs::none(),
+        Path::new("true"),
+    )
+    .unwrap_err();
     assert_eq!(err.to_string(), "--goal is required for role \"worker\"");
 }
 
@@ -195,6 +211,7 @@ fn compactor_rejects_a_goal() {
         Some("g"),
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         Path::new("true"),
     )
     .unwrap_err();
@@ -211,7 +228,63 @@ fn inner_errors_render_through_the_shared_display() {
     // through `From<Error>` and the shared `Display`.
     let (_holder, repo) = scaffolded_repo_with_parent("p1");
     std::fs::remove_dir_all(repo.join(crate::workspace::AGENTS_DIR).join("p1")).unwrap();
-    let err = run_with("worker", &repo, "p1", Some("g"), None, None, &NoopLauncher).unwrap_err();
+    let err = run_with(
+        "worker",
+        &repo,
+        "p1",
+        Some("g"),
+        None,
+        None,
+        crate::prompt::PinnedDocs::none(),
+        &NoopLauncher,
+    )
+    .unwrap_err();
     assert!(matches!(err, DispatchCliError::Inner(_)), "{err}");
     assert!(!err.to_string().is_empty());
+}
+
+#[test]
+fn dispatch_pins_are_committed_on_the_child_dispatch_commit() {
+    // §2.5 caller-supplied pinned documents, the child-path twin of
+    // `prompt::tests::pinned`: exact bytes land at the caller-named
+    // destinations on the child's dispatch commit — inspectable from
+    // the ref alone (`git show`), no sidecar copy — and ordinary fork
+    // inheritance carries them from there.
+    let (_holder, repo) = scaffolded_repo_with_parent("20260101-p1");
+    let pins = crate::prompt::PinnedDocs::new(vec![
+        crate::prompt::PinnedDoc::new("AGENTS.md".into(), b"project law".to_vec()).unwrap(),
+        crate::prompt::PinnedDoc::new("docs/notes.md".into(), b"nested".to_vec()).unwrap(),
+    ])
+    .unwrap();
+    run_with(
+        "worker",
+        &repo,
+        "20260101-p1",
+        Some("do the thing"),
+        None,
+        None,
+        &pins,
+        &NoopLauncher,
+    )
+    .unwrap();
+
+    let agents = repo.join(crate::workspace::AGENTS_DIR);
+    let child = std::fs::read_dir(&agents)
+        .unwrap()
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .find(|n| n.starts_with("20260101-p1-"))
+        .unwrap();
+    // Committed, not merely written: read through the ref.
+    use crate::template::GitRunner;
+    let git = crate::template::RealGit::new();
+    let repo_git = crate::workspace::repo_git(&repo);
+    let show = |path: &str| {
+        git.run_capture(&repo_git, &["show", &format!("agents/{child}:{path}")])
+            .unwrap()
+    };
+    assert_eq!(show("AGENTS.md"), "project law");
+    assert_eq!(show("docs/notes.md"), "nested");
+    // Beside the ordinary dispatch artifacts, not instead of them.
+    assert_eq!(show("goal.md"), "do the thing");
 }

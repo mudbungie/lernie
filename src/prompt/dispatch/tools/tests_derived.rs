@@ -33,6 +33,7 @@ fn dispatch_role(ws: &Path, parent: &str, role: &str) -> String {
             goal: "g",
             name: None,
             fork_point: None,
+            pins: crate::prompt::PinnedDocs::none(),
         },
         &RealGit::new(),
         &crate::prompt::SystemClock,

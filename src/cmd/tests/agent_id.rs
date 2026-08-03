@@ -150,6 +150,7 @@ fn dispatch_declines_an_escaping_parent_id() {
                 goal: Some("g".into()),
                 from: None,
                 name: None,
+                pin: vec![],
             },
             fx,
         )

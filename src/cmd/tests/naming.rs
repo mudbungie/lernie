@@ -29,6 +29,7 @@ fn dispatch_child(ws: &Path, name: Option<&str>) -> Result<Outcome, super::Error
                 goal: Some("do the thing".into()),
                 from: None,
                 name: name.map(str::to_owned),
+                pin: vec![],
             },
             fx,
         )
@@ -102,6 +103,7 @@ fn a_name_a_living_agent_wears_is_refused_at_both_creation_verbs_and_forks_nothi
                 from: None,
                 config: None,
                 name: Some("pale-otter".into()),
+                pin: vec![],
             },
             fx,
         )
@@ -191,6 +193,7 @@ fn a_child_of_a_named_parent_is_unnamed_not_its_parents_namesake() {
                 goal: Some("go".into()),
                 from: None,
                 name: None,
+                pin: vec![],
             },
             fx,
         )

@@ -37,6 +37,7 @@ pub use model_call::{RealSleeper, Sleeper};
 pub(super) use resolved::Resolved;
 pub(crate) use step_commit::{Grant, Undescribed, require_described, trim_to_context};
 pub use stop_signal::{flag as stop_flag, install as install_stop_handler};
+pub(crate) use transcript::MESSAGES_DIR;
 
 use super::inbox::{self, Epitaph};
 use super::step::{RESPONSE_FILE, STAGING_FILE, StepMeta, step_dir_rel};
@@ -65,6 +66,7 @@ pub(super) fn run_exchange(
     user_message: &str,
     fork_point: &str,
     name: Option<&str>,
+    pins: &crate::prompt::PinnedDocs,
     resolved: &Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
@@ -121,8 +123,8 @@ pub(super) fn run_exchange(
     let mut seen;
     loop {
         if step_seq == 1 {
-            write_dispatch_files(&worktree_path, user_message, &resolved.soul)?;
-            commit_dispatch(&worktree_path, &conv_id, name, resolved, deps)?;
+            write_dispatch_files(&worktree_path, user_message, &resolved.soul, pins)?;
+            commit_dispatch(&worktree_path, &conv_id, name, pins, resolved, deps)?;
         }
 
         // Step-boundary drain (§2.11 *Delivery*): move each pending inbox

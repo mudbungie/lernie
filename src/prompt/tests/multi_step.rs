@@ -61,6 +61,7 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
         None,
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &valid_deps(
             &adapter,
             &sleeper,
@@ -200,6 +201,7 @@ fn loop_runs_three_steps_when_two_completions_in_a_row_are_tool_use() {
         None,
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &valid_deps(
             &adapter,
             &sleeper,
@@ -258,6 +260,7 @@ fn loop_runs_each_tool_use_block_in_one_step_in_emission_order() {
         None,
         None,
         None,
+        crate::prompt::PinnedDocs::none(),
         &valid_deps(
             &adapter,
             &sleeper,

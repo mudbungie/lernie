@@ -67,6 +67,12 @@ pub(crate) struct SpawnRequest<'a> {
     /// `None` for roles whose dispatch has no per-call soul (e.g. the
     /// v0.3 compactor stub: no model call, so no soul to compose).
     pub(crate) soul_text: Option<&'a str>,
+    /// Caller-supplied pinned documents (§2.5,
+    /// [`crate::prompt::pinned_doc`]), written at their validated
+    /// destinations and committed on the dispatch commit beside
+    /// `goal.md`. Harness-initiated dispatches pass
+    /// [`crate::prompt::PinnedDocs::none`].
+    pub(crate) pins: &'a crate::prompt::PinnedDocs,
     /// The child role, its `tools:` grant and the governing config
     /// commit both were read from (ARCH §4.3, §2.2). The dispatch commit
     /// derives the child's `descriptions/**` from that commit, filtered
@@ -95,7 +101,9 @@ pub(crate) struct SpawnRequest<'a> {
 ///    config commit to the child's own grant — checked out from it, not
 ///    inherited from the fork point (`--ignore-unmatch` keeps the
 ///    removal half total whatever that point carried).
-/// 3. Write `goal.md` (and `soul.md` when supplied) to the new worktree.
+/// 3. Write `goal.md` (and `soul.md` when supplied) to the new worktree,
+///    plus any caller-supplied pinned documents at their validated
+///    destinations (§2.5, [`crate::prompt::pinned_doc`]).
 /// 4. `git add` the artifacts.
 /// 5. `git commit -m <commit_subject>` — the dispatch commit (§2.3
 ///    step 2 / §2.10). Step 1 of the subagent's own step loop, when
@@ -132,11 +140,13 @@ pub(crate) fn spawn_subagent_branch(
     if let Some(soul) = req.soul_text {
         std::fs::write(req.sub_worktree.join(SOUL_FILE), soul)?;
     }
+    req.pins.write_into(req.sub_worktree)?;
 
     let mut add_args: Vec<&str> = vec!["add", GOAL_FILE];
     if req.soul_text.is_some() {
         add_args.push(SOUL_FILE);
     }
+    add_args.extend(req.pins.iter().map(crate::prompt::PinnedDoc::dest));
     git.run(req.sub_worktree, &add_args)
         .map_err(|source| Error::Git { op: "add", source })?;
 

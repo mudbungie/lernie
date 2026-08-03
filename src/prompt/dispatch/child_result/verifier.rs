@@ -72,6 +72,7 @@ pub(super) fn dispatch(
         goal: &goal,
         name: None,
         fork_point: Some(&worker.terminal_ref),
+        pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
 }
@@ -137,6 +138,7 @@ fn reject(
         goal: &feedback,
         name: None,
         fork_point: None,
+        pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
     if let Some(worker) = find_gated_worker(results, verifier_cr, worktree, deps.git) {

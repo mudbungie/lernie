@@ -55,6 +55,7 @@ fn a_child_forked_across_lineages_is_governed_by_the_config_it_forked_off() {
         Some("continue that work"),
         Some("agents/20260101-r2"),
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap();
@@ -121,6 +122,7 @@ fn role_validity_is_asked_of_the_config_that_will_govern_the_child() {
         None,
         Some("agents/20260101-r2"),
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap_err();
@@ -164,6 +166,7 @@ fn a_named_fork_point_forks_the_child_off_it_not_the_parents_tip() {
         Some("continue from there"),
         Some(&earlier),
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap();
@@ -204,6 +207,7 @@ fn an_absent_fork_point_is_declined_before_the_fork() {
         Some("g"),
         Some("agents/nope"),
         None,
+        crate::prompt::PinnedDocs::none(),
         &NoopLauncher,
     )
     .unwrap_err();

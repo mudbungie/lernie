@@ -23,7 +23,7 @@ use brazen::Content;
 use std::path::Path;
 
 /// Branch-scoped transcript directory (ARCH §2.3 — `messages/NNN-…`).
-pub(super) const MESSAGES_DIR: &str = "messages";
+pub(crate) const MESSAGES_DIR: &str = "messages";
 /// Zero-pad width of the transcript counter, matching the step-record
 /// convention (`steps/<id>/NNN`, `summary/NNN`).
 const SEQ_WIDTH: usize = 3;

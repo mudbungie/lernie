@@ -29,6 +29,7 @@ pub mod apply;
 pub mod parse;
 pub mod report;
 pub mod seek;
+pub mod splice;
 
 use serde::Deserialize;
 use std::io::{self, Read, Write};

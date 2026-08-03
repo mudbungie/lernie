@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "apply_patch",
+  "description": "Input schema for the lernie built-in `apply_patch` tool (ARCH §3.3 *The patch tool*). The harness sends this verbatim as the `input_schema` field of the tool's entry in the model request's `tools: [...]` array.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "string",
+      "description": "One patch envelope: starts with '*** Begin Patch', ends with '*** End Patch', and carries any number of '*** Add File: <path>', '*** Delete File: <path>', and '*** Update File: <path>' sections (an update may be followed by '*** Move to: <path>'). Update hunks use ' ' context, '-' removal, '+' addition lines; '@@' separates hunks, '@@ <enclosing symbol>' anchors a hunk inside a repeated block, '*** End of File' pins a hunk to the end of the file. Paths resolve against the current working directory."
+    }
+  },
+  "required": ["input"],
+  "additionalProperties": false
+}

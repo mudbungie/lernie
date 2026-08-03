@@ -42,6 +42,12 @@ reason — repair the patch and reinvoke.
   it to append, or to disambiguate a block that recurs earlier.
 - A hunk of only `+` lines (a pure insertion) needs an `@@` anchor or
   `*** End of File` to say where it lands.
+- Blank lines: inside an update body a bare blank line is an **empty
+  context line** — the file must have a blank line there, trailing
+  blanks included. In an add section a blank content line is a lone
+  `+`; a bare blank line there, or between file sections, refuses the
+  patch. Blank lines around the envelope, and directly after
+  `*** End of File`, are ignored.
 - Paths resolve against your current working directory (the `cd` tool
   moves it); absolute paths are taken as-is, but only worktree writes
   ride the tool commit — edits elsewhere are off the record.

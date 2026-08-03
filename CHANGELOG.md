@@ -19,6 +19,10 @@ merges.
 
 ## [Unreleased]
 
+### Changes
+
+- teach the wait and the do-it-yourself default in the prompt surfaces: the worker soul and the `dispatch` skill now state that ending a step is how you wait (a deposit revives a quiescent agent, ARCH §2.11) and that sleeping or re-checking is a paid model call that learns nothing, and that the goal is yours to execute — dispatch buys separation or parallelism, and reporting that you dispatched is not answering a goal; the `message` and `bash` skills carry the same wait rule at their own point of temptation, and the `dispatch` skill is re-voiced out of the retired "subagent"/"conversation" vocabulary (its `handle` field is named as the child's address, not something to poll) [bl-93e6]
+
 ## [0.0.5](https://github.com/mudbungie/lernie/compare/v0.0.4...v0.0.5) - 2026-08-02
 
 ### Changes

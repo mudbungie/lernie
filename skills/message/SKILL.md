@@ -67,3 +67,11 @@ quiescent recipient (ARCH §2.11).
   cannot interrupt in-flight work (stopping is a separate user action).
 - The message is delivered once and becomes an ordinary transcript
   entry the recipient (or a compactor) may later curate away.
+- **A reply is a deposit like any other, and you wait for it the same
+  way you wait for a dispatched child: by ending your step.** Do not
+  sleep and do not re-check — there is nothing to poll here either. Make
+  whatever other progress you have; when you have none, stop emitting
+  tool calls, and the reply either drains at your next step boundary or
+  revives you if you have gone quiescent (ARCH §2.11). Ending a step
+  that has no work left costs nothing; a sleep costs a model call and
+  learns nothing.

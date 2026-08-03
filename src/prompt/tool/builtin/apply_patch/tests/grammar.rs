@@ -1,5 +1,7 @@
-//! Grammar tests: every section kind, every decline, the tolerated
-//! sloppiness (blank lines), and nothing fuzzier than that.
+//! Grammar tests: every section kind, every decline, and the codex
+//! blank-line semantics ruled by reference (bl-fdbb) — empty context
+//! inside update bodies, ignored after `*** End of File`, tolerated
+//! around the envelope, declined everywhere else.
 
 use super::super::parse::{Error, FileOp, Hunk, parse};
 use super::{envelope, parsed};
@@ -47,23 +49,34 @@ fn add_delete_update_rename_in_one_envelope() {
 }
 
 #[test]
-fn blank_lines_around_and_between_sections_are_tolerated() {
-    let text = format!("\n\n{}\n\n", envelope("\n*** Delete File: x\n"));
+fn blank_lines_around_the_envelope_are_tolerated() {
+    let text = format!("\n\n{}\n\n", envelope("*** Delete File: x"));
     assert_eq!(parse(&text).unwrap().ops.len(), 1);
 }
 
+// bl-fdbb: codex declines a bare blank line between sections; it was
+// silently skipped here.
 #[test]
-fn blank_line_in_add_content_is_an_empty_content_line() {
-    let patch = parsed("*** Add File: a\n+one\n\n+three");
-    assert_eq!(
-        patch.ops[0],
-        FileOp::Add {
-            path: "a".into(),
-            lines: vec!["one".into(), String::new(), "three".into()],
-        }
-    );
+fn blank_line_between_sections_is_declined() {
+    let err = parse(&envelope("*** Delete File: x\n\n*** Add File: y\n+hi")).unwrap_err();
+    assert_eq!(err, Error::BlankLine { line: 3 });
+    assert!(err.to_string().contains("bare blank line"), "{err}");
 }
 
+// bl-fdbb: codex declines a bare blank line in an add body; it was
+// silently consumed as an empty content line (a trailing blank gave
+// the added file a phantom final newline).
+#[test]
+fn blank_line_in_add_body_is_declined() {
+    let err = parse(&envelope("*** Add File: a\n+one\n\n+three")).unwrap_err();
+    assert_eq!(err, Error::BlankLine { line: 4 });
+    let err = parse(&envelope("*** Add File: a\n+hello\n")).unwrap_err();
+    assert_eq!(err, Error::BlankLine { line: 4 });
+}
+
+// bl-fdbb: faithful codex parity — a bare blank line anywhere in an
+// update body, trailing included, is an empty context line the file
+// must actually contain.
 #[test]
 fn blank_line_in_update_body_is_an_empty_context_line() {
     let patch = parsed("*** Update File: a\n-x\n\n+y");
@@ -72,6 +85,26 @@ fn blank_line_in_update_body_is_an_empty_context_line() {
     };
     assert_eq!(hunks[0].old, ["x", ""]);
     assert_eq!(hunks[0].new, ["", "y"]);
+    let patch = parsed("*** Update File: a\n-x\n+y\n");
+    let FileOp::Update { hunks, .. } = &patch.ops[0] else {
+        panic!("update");
+    };
+    assert_eq!(hunks[0].old, ["x", ""]);
+    assert_eq!(hunks[0].new, ["y", ""]);
+}
+
+// bl-fdbb: codex ignores blank lines directly after `*** End of File`
+// (its own parser test carries `*** End of File\n\n*** End Patch`);
+// they used to open a phantom pure-context hunk here and decline.
+#[test]
+fn blank_lines_after_end_of_file_are_ignored() {
+    let patch = parsed("*** Update File: a\n+appended\n*** End of File\n");
+    let FileOp::Update { hunks, .. } = &patch.ops[0] else {
+        panic!("update");
+    };
+    assert_eq!(hunks.len(), 1);
+    assert!(hunks[0].eof);
+    assert_eq!(hunks[0].new, ["appended"]);
 }
 
 #[test]

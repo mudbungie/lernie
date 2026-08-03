@@ -14,8 +14,15 @@
 //!   disambiguation), ` `-prefixed lines are context, `-` removals, `+`
 //!   additions, and `*** End of File` pins the hunk to the file's end.
 //!
-//! A bare empty line inside a body is read as an empty context line —
-//! models routinely drop the lone space on blank lines. Everything else
+//! Blank-line semantics are codex's, ruled by reference against its
+//! parser (openai/codex, `codex-rs/apply-patch`), not by taste
+//! (bl-fdbb). Inside an update body a bare blank line is an empty
+//! context line — models routinely drop the lone space — and blank
+//! lines directly after `*** End of File` are ignored. Everywhere else
+//! codex declines a bare blank line, and so does this parser: an add
+//! body's blank content line must be written as a lone `+`, and blank
+//! lines between sections are declined, never skipped. Blank lines
+//! around the envelope itself are tolerated. Everything else
 //! unrecognized is a typed decline naming the line, never a guess.
 
 use thiserror::Error;
@@ -84,6 +91,12 @@ pub enum Error {
          lines start with ' ' (context), '-' (removal), '+' (addition), or '@@'"
     )]
     BadLine { line: usize, content: String },
+    #[error(
+        "line {line}: bare blank line; only an update body reads a blank \
+         line as empty context — in an add section write a lone '+' for \
+         a blank content line"
+    )]
+    BlankLine { line: usize },
     #[error("line {line}: {MOVE:?} must directly follow a {UPDATE:?} line")]
     MisplacedMove { line: usize },
     #[error("update of {path} has no hunks")]
@@ -129,7 +142,9 @@ pub fn parse(text: &str) -> Result<Patch, Error> {
         } else if line.strip_prefix(MOVE).is_some() {
             return Err(Error::MisplacedMove { line: i + 1 });
         } else if line.trim().is_empty() {
-            i += 1;
+            // codex declines blank lines between sections (and inside
+            // add bodies, which break on them and land here).
+            return Err(Error::BlankLine { line: i + 1 });
         } else {
             return Err(Error::BadLine {
                 line: i + 1,
@@ -152,15 +167,15 @@ fn is_section(line: &str) -> bool {
 }
 
 /// Collect an add section's `+`-prefixed content. Returns the op and the
-/// index of the first line past the section.
+/// index of the first line past the section. A bare blank line is not
+/// content (codex declines it — a blank content line is a lone `+`); it
+/// ends the section and the caller declines it as [`Error::BlankLine`].
 fn parse_add(path: &str, lines: &[&str], from: usize, until: usize) -> (FileOp, usize) {
     let mut content = Vec::new();
     let mut i = from;
     while i < until {
         if let Some(rest) = lines[i].strip_prefix('+') {
             content.push(rest.to_string());
-        } else if lines[i].is_empty() {
-            content.push(String::new());
         } else {
             break;
         }
@@ -204,29 +219,41 @@ fn parse_update(
         hunks.push(hunk);
         Ok(())
     };
+    let mut after_eof = false;
     while i < until && !is_section(lines[i]) && lines[i] != END {
         let line = lines[i];
         if line == EOF_MARK {
             cur.eof = true;
             flush(&mut cur)?;
+            after_eof = true;
+        } else if line.is_empty() {
+            // codex ignores blank lines directly after `*** End of
+            // File`; elsewhere in an update body a bare blank line is
+            // an empty context line.
+            if !after_eof {
+                cur.old.push(String::new());
+                cur.new.push(String::new());
+            }
         } else if line == "@@" {
             flush(&mut cur)?;
+            after_eof = false;
         } else if let Some(anchor) = line.strip_prefix("@@ ") {
             // An anchor after body lines opens the next hunk.
             if !cur.old.is_empty() || !cur.new.is_empty() {
                 flush(&mut cur)?;
             }
             cur.anchors.push(anchor.to_string());
+            after_eof = false;
         } else if let Some(rest) = line.strip_prefix('+') {
             cur.new.push(rest.to_string());
+            after_eof = false;
         } else if let Some(rest) = line.strip_prefix('-') {
             cur.old.push(rest.to_string());
+            after_eof = false;
         } else if let Some(rest) = line.strip_prefix(' ') {
             cur.old.push(rest.to_string());
             cur.new.push(rest.to_string());
-        } else if line.is_empty() {
-            cur.old.push(String::new());
-            cur.new.push(String::new());
+            after_eof = false;
         } else {
             return Err(Error::BadLine {
                 line: i + 1,

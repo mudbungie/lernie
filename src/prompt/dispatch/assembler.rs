@@ -36,6 +36,7 @@
 
 mod body;
 
+use super::entry;
 use crate::config::manifest::RoleRules;
 use crate::prompt::Error;
 use brazen::{Content, Message, Role};
@@ -143,11 +144,11 @@ fn compose_entry(path: &Path) -> Result<(Side, Vec<Content>), Error> {
         return Ok((Side::User, vec![Content::Text(body)]));
     }
     let bytes = std::fs::read(path).map_err(Error::Io)?;
-    // Harness-written (staging seal / `commit_tool`), so always a valid
-    // canonical `Content` array — the writer's invariant (§2.3).
-    let blocks: Vec<Content> =
-        serde_json::from_slice(&bytes).expect("transcript entry is a canonical Content array");
-    Ok((entry_side(path), blocks))
+    // The entry shape has one home (§2.3, `super::entry`): a bare block
+    // array or the `content` object, both harness-written, so the read
+    // cannot fail — and a model entry's `usage` sibling is telemetry for
+    // transcript readers, no part of the wire message.
+    Ok((entry_side(path), entry::blocks(&bytes)))
 }
 
 /// A `.json` entry composes tool-side (a `tool_result`) iff its origin

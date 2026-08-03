@@ -127,8 +127,8 @@ pub(super) fn build_request(
 /// attempt, request on stdin, each attempt's stdout appended verbatim to
 /// `response_path` as one segment. On success the staging sink is sealed
 /// (the model-output transcript entry, §2.3) and `Ok(())` returns — the
-/// call's *content* has its one home in that entry, never a return
-/// value. A non-retryable / budget-exhausted `Error`, a half-stream
+/// call's *content and usage* have their one home in that entry, never a
+/// return value. A non-retryable / budget-exhausted `Error`, a half-stream
 /// kill, or a malformed event surfaces as a harness [`Error`] — which,
 /// with a stop pending, the caller reads as the stop (§2.9 step 3).
 pub(super) fn run(
@@ -141,8 +141,8 @@ pub(super) fn run(
     }
     // One fd, held across every attempt and backoff sleep (§3.5). The
     // staging sink (§2.3) is the second stream off the same pass — the
-    // model-output transcript entry under construction, sealed and renamed
-    // by the caller once the call settles complete.
+    // model-output transcript entry under construction (content and usage
+    // alike), sealed and renamed by the caller once the call settles.
     let mut response_file = File::create(response_path)?;
     // The adapter's diagnostic channel (§2.3), created unconditionally:
     // 0 bytes is the ordinary record, not an absence to special-case.
@@ -215,8 +215,8 @@ pub(super) fn run(
 }
 
 /// One `bz` attempt: tee every stdout line to the open `response_file`
-/// (as a segment) and stream content into the `staging` sink (§2.3),
-/// tracking only the segment's *framing* — the terminal `end`, an
+/// (as a segment) and stream content and usage into the `staging` sink
+/// (§2.3), tracking only the segment's *framing* — the terminal `end`, an
 /// in-band `error`, and the first `message_start`'s handshake `v`
 /// (§4.4). Events after the terminal `end` are ignored (defensive — a
 /// buggy adapter emitting stray lines must not corrupt the entry). A
@@ -251,9 +251,9 @@ fn run_attempt(
                             Event::End => ended = true,
                             _ => {}
                         }
-                        // The terminal `end`/`error`/`finish` events are
-                        // no-ops in the sink (§2.3); post-terminal stray
-                        // lines are blocked by the `!ended` guard above.
+                        // Terminal `end`/`error`/`finish` are no-ops in the
+                        // sink (§2.3), `usage` is not — it rides the entry;
+                        // stray post-terminal lines the `!ended` guard blocks.
                         if let Err(e) = staging.feed(&event) {
                             staging_err = Some(e);
                         }

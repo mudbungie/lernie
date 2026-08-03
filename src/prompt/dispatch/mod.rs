@@ -21,6 +21,7 @@ mod assembler;
 mod child_result;
 mod drain;
 pub mod driver;
+mod entry;
 mod model_call;
 mod resolved;
 mod result_deposit;

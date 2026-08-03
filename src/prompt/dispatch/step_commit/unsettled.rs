@@ -44,6 +44,7 @@
 //! ref; all three settle to no git command at all.
 
 use crate::prompt::Error;
+use crate::prompt::dispatch::entry;
 use crate::template::GitRunner;
 use brazen::Content;
 use std::path::Path;
@@ -127,12 +128,11 @@ fn unsettled_from(worktree: &Path, entries: &[String]) -> Result<Option<usize>, 
     Ok((!pending.is_empty()).then_some(cut))
 }
 
-/// The canonical blocks of one `.json` transcript entry. Harness-written
-/// (the staging seal / `commit_tool`, §2.3), so a parse failure is a
-/// programmer error, not a reachable state.
+/// The canonical blocks of one `.json` transcript entry, through the
+/// entry shape's one home (§2.3, [`entry`]).
 fn blocks(worktree: &Path, rel: &str) -> Result<Vec<Content>, Error> {
     let bytes = std::fs::read(worktree.join(rel)).map_err(Error::Io)?;
-    Ok(serde_json::from_slice(&bytes).expect("transcript entry is a canonical Content array"))
+    Ok(entry::blocks(&bytes))
 }
 
 /// What a transcript entry is, derived from its path alone (§2.3

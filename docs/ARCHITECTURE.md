@@ -1197,6 +1197,7 @@ Named explicitly so they are not rediscovered later:
 - Adversarial sender defense — front-door messaging (§2.11) lets any sender deposit context into any live branch of the tree, including the root, so a prompt-injected child steering its parent is now one `message` deposit rather than a compaction escape. Provenance is unforgeable and the single-user assumption (§1.1) covers authorization, not influence; the recipient's uniform treatment of every sender (§2.11) is deliberate — uniformity is the feature — so defense is deferred and layered (sender-aware manifest budgets per §5.2, role-scoped send grants) rather than a change to the primitive.
 - Cross-conversation memory / shared context.
 - Oversized tool-output auto-dispatch (§3.3) — the parsing-subagent handoff lands alongside the subagent dispatch machinery. The §3.3 *bounded transcript projection* (bl-d5fa) is the shipped floor under it: oversized output is head+tail-bounded with an honest marker pointing at the full diagnostic record, not handed to a parser.
+- Model Context Protocol (MCP) integration — ruled a **deployment-owned** concern, permanently outside the core (bl-3c76): a bridge binary in the §3.3 `lernie-tool-<name>` slot, its tools pinned as ordinary triples into the data-root pools at operator time, credentials and wire protocol the bridge's own (the §4.4 brazen division of labor). No lernie code exists or is planned; the design and its refusals are `docs/DESIGN_MCP_BRIDGE.md`.
 
 ---
 

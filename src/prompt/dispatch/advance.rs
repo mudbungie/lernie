@@ -30,6 +30,7 @@
 //! runs, so the pin-1 recursion terminator costs nothing but the probe.
 
 pub mod cli;
+mod held;
 mod hop;
 
 #[cfg(test)]
@@ -39,6 +40,7 @@ use super::{assembler, child_result, driver, terminal};
 use crate::prompt::inbox::{self, ExecutorLock};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Deps, Error};
+use crate::workspace::hold;
 use brazen::{Content, Message, Role};
 use std::path::Path;
 
@@ -64,6 +66,12 @@ pub enum AdvanceOutcome {
     /// must run. Carries the live lease for the §6 exec baton — the
     /// caller preps the successor command ([`cli`], `baton`) and execs.
     ToolsPending(ExecutorLock),
+    /// The configured control held an invocation (§3.3 *Tool control*):
+    /// the branch is parked mid-tool-window — no terminal, no deposit,
+    /// the lease released. The whole state is disk-derived: the hold
+    /// mark ([`crate::workspace::hold`]) plus the unpaired tail. A later
+    /// drive of the same agent re-adjudicates ([`held`]).
+    Held,
 }
 
 /// What the transcript tail warrants (§6 hop step 3).
@@ -127,6 +135,20 @@ pub(in crate::prompt) fn run(
         }
     };
 
+    // A hold mark parks the branch mid-tool-window (§3.3 *Tool
+    // control*), and the held entry runs **before delivery** — mail
+    // delivered onto an unpaired tail would wedge between a `tool_use`
+    // and its `tool_result` (§2.3 pairing), so a parked branch queues
+    // its mail instead ([`held`]). A stale mark is cleared there and the
+    // ordinary hop continues below.
+    let lock = match hold::read(workspace, agent_id, deps.git) {
+        Some(mark) => match held::resume(workspace, agent_id, &mark, lock, deps, resolve)? {
+            held::Resumption::Done(outcome) => return Ok(outcome),
+            held::Resumption::Stale(lock) => lock,
+        },
+        None => lock,
+    };
+
     // `delivery.left` is what this executor's last inbox read under the
     // lease deliberately left pending — the §2.11 release rule's diff
     // base for every voluntary release below (the two no-op exits and
@@ -177,6 +199,13 @@ pub(in crate::prompt) fn run(
             };
             match hop::step(workspace, agent_id, &worktree, &cfg, deps)? {
                 hop::StepOutcome::ToolsRan => Ok(AdvanceOutcome::ToolsPending(lock)),
+                hop::StepOutcome::Held => {
+                    // Fresh park (§3.3 *Tool control*): the seam wrote
+                    // the mark; release through the release rule and
+                    // exit without a terminal.
+                    driver::release_then_reprobe(lock, workspace, agent_id, &seen, deps.launcher);
+                    Ok(AdvanceOutcome::Held)
+                }
                 hop::StepOutcome::Terminal(epitaph) => {
                     // The shared §2.11 terminal tail ([`terminal::conclude`]
                     // — the same sequence as `run_exchange`'s): finish by

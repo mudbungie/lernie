@@ -17,6 +17,7 @@ pub mod manifest;
 pub mod models;
 pub mod per_repo_providers;
 pub mod schemas;
+pub mod tool_control;
 pub mod tool_output;
 pub mod version;
 pub mod workflow;
@@ -25,6 +26,7 @@ pub use action::Action;
 pub use error::LoadError;
 pub use models::Models;
 pub use per_repo_providers::PerRepoProviders;
+pub use tool_control::ToolControl;
 pub use tool_output::ToolOutputBound;
 pub use workflow::{Budgets, CompactionConfig, CompactionTrigger, Event, RetryConfig, Workflow};
 

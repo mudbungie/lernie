@@ -109,6 +109,24 @@ impl SeenDeposit {
     }
 }
 
+/// Enumerate the inbox and account **everything** as deliberately left —
+/// the seen-set of a hop that delivers nothing by design: the held-branch
+/// entry (§3.3 *Tool control*), where delivering mail mid-tool-window
+/// would wedge a user entry between a `tool_use` and its eventual
+/// `tool_result` (§2.3 pairing). Every pending deposit is accounted, so
+/// the §2.11 release rule launches nothing for it — a parked branch
+/// queues its mail rather than relaunch-looping, and the next drive
+/// after release delivers it at the ordinary step boundary.
+pub(super) fn seen_all(inbox: &Path) -> Result<Vec<SeenDeposit>, Error> {
+    Ok(pending(inbox)?
+        .into_iter()
+        .map(|m| SeenDeposit {
+            name: m.name,
+            mtime: m.mtime,
+        })
+        .collect())
+}
+
 /// One deliverable inbox message, carrying the sort keys `(mtime, name)`
 /// (§2.11 — advisory arrival order made a deterministic committed
 /// sequence).

@@ -206,6 +206,33 @@ fn a_deposit_steps_the_branch_to_a_new_final_response() {
 }
 
 #[test]
+fn a_stop_felling_a_tool_mid_window_is_the_stopped_terminal() {
+    // §2.9 step 3 through the hop: the group SIGTERM fells the running
+    // tool with the stop flag set — the window reports the stop and the
+    // hop concludes the stopped terminal, never a fault.
+    let (ws, _wt) = workspace_with_tail(&terminal_tail());
+    let (clock, id) = (FixedClock::default(), FixedIdGen);
+    inbox::deposit(ws.path(), AGENT, "user", "run it", &clock).unwrap();
+    let tool_stream = stream_of(
+        FinishReason::ToolUse,
+        &[Block::ToolUse {
+            id: "t1",
+            name: "bash",
+            input: serde_json::json!({"command": "true"}),
+        }],
+    );
+    let adapter = StubAdapter::scripted([StubAdapter::reply_ok(&tool_stream)]);
+    let (sleeper, git) = (StubSleeper::default(), StubGit::ok());
+    let tools = StubToolExecutor::stop_killed_on("bash");
+    let stop = std::sync::atomic::AtomicBool::new(false);
+    let mut deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
+    deps.stop = &stop;
+    let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
+    assert!(matches!(out, AdvanceOutcome::Terminal), "got {out:?}");
+    assert!(eventually_free(ws.path(), AGENT));
+}
+
+#[test]
 fn a_tool_use_step_hands_off_as_tools_pending_with_the_lease_held() {
     let (ws, wt) = workspace_with_tail(&terminal_tail());
     let (clock, id) = (FixedClock::default(), FixedIdGen);

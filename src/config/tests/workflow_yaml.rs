@@ -169,6 +169,43 @@ fn rejects_unknown_tool_output_fields() {
 }
 
 #[test]
+fn parses_the_tool_control_block() {
+    // ARCH §3.3 *Tool control*: the seam's one config knob — the
+    // adjudicator binary the tool window consults (§6).
+    let w = parse("events: {}\ntool_control:\n  command: /opt/controls/guardian\n").unwrap();
+    assert_eq!(w.tool_control.unwrap().command, "/opt/controls/guardian");
+}
+
+#[test]
+fn omitted_tool_control_consults_nothing() {
+    // No `tool_control:` → no control in the path — the seam is
+    // severable, and no control ships (template/workflow.yaml omits it).
+    let w = parse("events: {}\n").unwrap();
+    assert!(w.tool_control.is_none());
+}
+
+#[test]
+fn rejects_an_empty_tool_control_command() {
+    let err = parse("events: {}\ntool_control:\n  command: \"  \"\n").unwrap_err();
+    match err {
+        LoadError::Invalid { key, message, .. } => {
+            assert_eq!(key, "tool_control.command");
+            assert!(message.contains("control executable"), "{message}");
+        }
+        other => panic!("expected Invalid, got {other:?}"),
+    }
+}
+
+#[test]
+fn rejects_unknown_tool_control_fields() {
+    // deny_unknown_fields: policy the seam does not understand (per-tool
+    // filters, args) belongs in the control, and a knob it would ignore
+    // is declined, never accepted.
+    let err = parse("events: {}\ntool_control:\n  command: c\n  tools: [bash]\n").unwrap_err();
+    assert!(matches!(err, LoadError::Yaml { .. }));
+}
+
+#[test]
 fn workflow_without_compaction_is_ok() {
     let w = parse("events:\n  user_message:\n    - notify_ui\n").unwrap();
     assert!(w.compaction.is_none());

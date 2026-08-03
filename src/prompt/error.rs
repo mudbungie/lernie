@@ -75,6 +75,25 @@ pub enum Error {
         #[source]
         source: ExecError,
     },
+    /// The configured tool control could not adjudicate — it would not
+    /// spawn, crashed, or broke the verdict protocol (§3.3 *Tool
+    /// control*). **Fails closed**: the invocation never executes and
+    /// the step aborts loudly. Closed because a control exists to keep
+    /// an invocation from running unreviewed — failing open would run
+    /// exactly what the operator asked to gate; loud rather than
+    /// in-band because a broken control is operator infrastructure the
+    /// model can neither see nor fix, and an in-band decline would
+    /// invite blind retries against it.
+    #[error(
+        "tool control {command:?} failed adjudicating {tool:?}: {detail} — a control that \
+         cannot answer fails closed: the invocation does not run and the step aborts \
+         (ARCH §3.3 Tool control); fix the control or remove the workflow's tool_control: block"
+    )]
+    ToolControl {
+        command: String,
+        tool: String,
+        detail: String,
+    },
     #[error("adapter emitted malformed v=1 event JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
     #[error("provider error ({kind}): {message}")]

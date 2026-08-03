@@ -1,13 +1,13 @@
 //! The multi-tool's fan-out semantics (ARCH §3.3 *The multi-tool*):
 //! one `tool_use` envelope, N inner invocations run serially in list
 //! order through the same executor as top-level ones, all results
-//! aggregated into the envelope's single committed `tool_result`.
-//! Declines and harness faults live in [`super::multi_faults`].
+//! aggregated into one committed `tool_result`. Declines and harness
+//! faults live in [`super::multi_faults`].
 
 use super::{NoAdapter, NoLauncher, NoSleeper, Resolution, branch_with_step};
 use crate::prompt::clock::SystemClock;
 use crate::prompt::dispatch::tool_step::multi::{Fanout, fan_out};
-use crate::prompt::dispatch::tool_step::run_tool_calls;
+use crate::prompt::dispatch::tool_step::{ToolWindow, run_tool_calls};
 use crate::prompt::tool::{ExecError, ToolCall, ToolExecutor, ToolOutcome};
 use crate::template::RealGit;
 use brazen::Content;
@@ -112,13 +112,10 @@ impl Fixture {
 
 /// The result text of a completed fan-out, or a panic on any other exit.
 pub(super) fn outcome_text(fanout: Fanout) -> (String, bool) {
-    let Fanout::Outcome(outcome) = fanout else {
+    let Fanout::Outcome(o) = fanout else {
         panic!("expected an aggregated outcome");
     };
-    (
-        String::from_utf8(outcome.content).unwrap(),
-        outcome.is_error,
-    )
+    (String::from_utf8(o.content).unwrap(), o.is_error)
 }
 
 #[test]
@@ -145,7 +142,7 @@ fn an_envelope_fans_out_serially_and_commits_one_aggregated_entry() {
     }];
     let grant = ["multi_tool".into(), "alpha".into(), "beta".into()];
     let resolution = Resolution::new();
-    let stopped = run_tool_calls(
+    let window = run_tool_calls(
         ws.path(),
         &worktree,
         agent_id,
@@ -155,14 +152,12 @@ fn an_envelope_fans_out_serially_and_commits_one_aggregated_entry() {
         &deps,
     )
     .unwrap();
-    assert!(!stopped);
-    assert_eq!(
-        *exec.log.borrow(),
-        vec![
-            ("t1-1".to_string(), "alpha".to_string(), json!({"x": 1})),
-            ("t1-2".to_string(), "beta".to_string(), json!({})),
-        ]
-    );
+    assert!(matches!(window, ToolWindow::Completed));
+    let want = vec![
+        ("t1-1".to_string(), "alpha".to_string(), json!({"x": 1})),
+        ("t1-2".to_string(), "beta".to_string(), json!({})),
+    ];
+    assert_eq!(*exec.log.borrow(), want);
     // One committed entry for the whole envelope — block-on-all.
     let entry = std::fs::read_to_string(worktree.join("messages/002-tool.json")).unwrap();
     assert!(!worktree.join("messages/003-tool.json").exists());
@@ -216,6 +211,8 @@ fn abort_is_the_default_and_skips_every_entry_after_a_failure() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();
@@ -260,6 +257,8 @@ fn run_all_runs_every_entry_despite_a_failure() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();
@@ -288,6 +287,8 @@ fn an_empty_envelope_is_the_general_path_with_empty_inputs() {
         &input,
         step_dir.path(),
         &resolution.of(crate::prompt::WORKER_ROLE, &grant),
+        step_dir.path(),
+        "agent-multi",
         &deps,
     )
     .unwrap();

@@ -146,6 +146,46 @@ pub(super) fn commit_tool(
     commit_entry(worktree, conv_id, seq, &["-A"], TOOL_ORIGIN, git)
 }
 
+/// The `tool_use` ids that already have a committed `tool_result` entry
+/// — every `messages/NNN-tool.json`'s block ids (§2.3). Read by the tool
+/// window only when a hold mark is in play (§3.3 *Tool control*): a
+/// resumed window re-runs its step's blocks and must skip the ones whose
+/// results landed before the park, without a stored cursor — the
+/// transcript is the record (PRINCIPLES, single source of truth). An
+/// absent `messages/` yields the empty set.
+pub(super) fn committed_result_ids(
+    worktree: &Path,
+) -> Result<std::collections::HashSet<String>, Error> {
+    let dir = worktree.join(MESSAGES_DIR);
+    let rd = match std::fs::read_dir(&dir) {
+        Ok(rd) => rd,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(Default::default()),
+        Err(e) => return Err(Error::Io(e)),
+    };
+    let mut ids = std::collections::HashSet::new();
+    for entry in rd {
+        let path = entry.map_err(Error::Io)?.path();
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy())
+            .unwrap_or_default();
+        if !name.ends_with(&format!("-{TOOL_ORIGIN}.json")) {
+            continue;
+        }
+        let bytes = std::fs::read(&path)?;
+        // Harness-written (`commit_tool`), so always a canonical array —
+        // the writer's invariant (§2.3), same as the assembler's read.
+        let blocks: Vec<Content> =
+            serde_json::from_slice(&bytes).expect("tool entry is a canonical Content array");
+        for block in blocks {
+            if let Content::ToolResult { tool_use_id, .. } = block {
+                ids.insert(tool_use_id);
+            }
+        }
+    }
+    Ok(ids)
+}
+
 /// `messages/NNN-<origin>.json` for `seq`, zero-padded to [`SEQ_WIDTH`].
 fn entry_rel(seq: u32, origin: &str) -> String {
     format!("{MESSAGES_DIR}/{seq:0w$}-{origin}.json", w = SEQ_WIDTH)

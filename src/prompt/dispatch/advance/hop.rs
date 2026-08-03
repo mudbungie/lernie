@@ -32,6 +32,11 @@ pub(super) enum StepOutcome {
     /// (§2.9), or budget exhaustion (§6, deposited at the boundary
     /// check). The caller runs the §2.11 exit protocol.
     Terminal(Epitaph),
+    /// The configured control held an invocation (§3.3 *Tool control*):
+    /// the branch parks mid-tool-window — no terminal, no deposit — and
+    /// the caller releases the lease and exits. The hold mark plus the
+    /// unpaired tail are the whole state.
+    Held,
 }
 
 /// Run one step against `worktree` (the branch's materialized tree,
@@ -168,11 +173,11 @@ pub(super) fn step(
     // §2.5 pairing: run each tool_use, committing its tool_result as a
     // transcript entry (§2.3); the successor re-assembles from the tree.
     // §2.9 step-3 check point: a stop landing in this tool-execution
-    // window (the group SIGTERM felled the running tool, `Ok(true)`) —
-    // or caught by the flag after the tools resolved — terminates here,
-    // never riding the baton into a successor (the flag would evaporate
-    // across exec).
-    if tool_step::run_tool_calls(
+    // window (the group SIGTERM felled the running tool) — or caught by
+    // the flag after the tools resolved — terminates here, never riding
+    // the baton into a successor (the flag would evaporate across exec).
+    // A window the control held (§3.3 *Tool control*) parks instead.
+    match tool_step::run_tool_calls(
         workspace,
         worktree,
         agent_id,
@@ -180,8 +185,12 @@ pub(super) fn step(
         &step_dir_rel_str,
         &assistant_content,
         deps,
-    )? || stop_signal::stopped(deps.stop)
-    {
+    )? {
+        tool_step::ToolWindow::Stopped => return Ok(StepOutcome::Terminal(Epitaph::Stopped)),
+        tool_step::ToolWindow::Held => return Ok(StepOutcome::Held),
+        tool_step::ToolWindow::Completed => {}
+    }
+    if stop_signal::stopped(deps.stop) {
         return Ok(StepOutcome::Terminal(Epitaph::Stopped));
     }
 

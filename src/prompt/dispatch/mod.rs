@@ -236,12 +236,15 @@ pub(super) fn run_exchange(
             break;
         }
 
-        // §2.5 pairing: run each tool_use, committing its tool_result as a
-        // transcript entry (§2.3); the next step re-assembles from the tree.
-        // §2.9 step 3 check point: a stop landing in this tool-execution
-        // window (the group SIGTERM felled the running tool) breaks here for
-        // the same stopped-deposit exit as the model-call window.
-        if run_tool_calls(
+        // §2.5 pairing: run each tool_use, committing its tool_result as
+        // a transcript entry (§2.3). A stop felling the window breaks for
+        // the same stopped-deposit exit as the model-call window (§2.9
+        // step 3); a window the configured control held (§3.3 *Tool
+        // control*) parks instead — no terminal, no deposit, the hold
+        // mark and the unpaired tail the whole state, the lease released
+        // through the §2.11 release rule for a later `lernie advance` to
+        // resume by re-adjudication.
+        let window = run_tool_calls(
             repo,
             &worktree_path,
             &conv_id,
@@ -249,9 +252,17 @@ pub(super) fn run_exchange(
             &step_dir_rel_str,
             &assistant_content,
             deps,
-        )? {
-            stopped = true;
-            break;
+        )?;
+        match window {
+            tool_step::ToolWindow::Stopped => {
+                stopped = true;
+                break;
+            }
+            tool_step::ToolWindow::Held => {
+                driver::release_then_reprobe(executor_lock, repo, &conv_id, &seen, deps.launcher);
+                return Ok(branch_name);
+            }
+            tool_step::ToolWindow::Completed => {}
         }
 
         // §6 collapse: the `compaction:` checkpoint clock, same seam as

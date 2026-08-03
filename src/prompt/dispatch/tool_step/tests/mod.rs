@@ -112,9 +112,15 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
 /// The multi-tool envelope (ARCH §3.3 *The multi-tool*).
 mod multi;
 mod multi_faults;
+/// The tool-control seam inside a multi-tool envelope.
+mod multi_seam;
 /// What a role may *call* (ARCH §3.3 declaring is not permitting).
 mod permit;
 mod policy;
+/// The tool-control seam (ARCH §3.3 *Tool control*).
+mod seam;
+/// The seam's hold-mark lifecycle.
+mod seam_hold;
 
 /// A materialized agent worktree on its own branch, carrying the step-1
 /// transcript entry, plus the workspace-root step directory — the disk
@@ -266,7 +272,7 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
     ];
     let resolution = Resolution::new();
     let grant = ["bash".to_string()];
-    let stopped = super::run_tool_calls(
+    let window = super::run_tool_calls(
         ws.path(),
         &worktree,
         agent_id,
@@ -276,7 +282,10 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
         &deps,
     )
     .unwrap();
-    assert!(!stopped, "no stop was requested");
+    assert!(
+        matches!(window, super::ToolWindow::Completed),
+        "no stop, no hold: the window completes"
+    );
     // One call reached the executor; this workflow declares no
     // `tool_output:` block, so the projection policy travels as absent.
     assert_eq!(*recorder.0.borrow(), vec![("bash".to_string(), None)]);

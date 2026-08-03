@@ -42,6 +42,14 @@ tool_output:
   head_bytes: 16384
   tail_bytes: 16384
 
+# Tool control (ARCH §3.3 *Tool control*, §6): an adjudicator binary
+# consulted before every granted tool invocation executes — it answers
+# pass, refuse, or hold (park for out-of-band review). Deliberately not
+# configured here: no control ships, and omitting the block leaves the
+# tool window unchanged. To wire one:
+# tool_control:
+#   command: /path/to/control
+
 # Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked at
 # every model-call boundary before the adapter is invoked; spend, wall,
 # and depth are derived from disk each check — no stored counter. Omit a

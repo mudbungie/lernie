@@ -941,7 +941,8 @@ messages through the real drain (rematerializing a torn-down worktree
 first), derive warrant from the transcript tail (ends user-side → a
 model call is due; ends assistant-side without `tool_use`, or empty →
 exit silently; assistant `tool_use` with uncommitted results → decline
-loudly, the one non-replayable state), run one step, and hand off: a
+loudly, the one non-replayable state — unless a hold mark parks it,
+see *The tool-control seam* below), run one step, and hand off: a
 step that emitted `tool_use` runs its tools and **exec's the successor
 `lernie advance`** with the lock fd deliberately inherited (close-on-
 exec cleared just before exec; the successor fstat-validates the fd
@@ -950,6 +951,31 @@ terminal event ends the chain through the §2.11 exit protocol. Because
 the successor is `exec`'d in the same process, the pid, process group,
 and flock lease all survive the hop — `lernie stop` lands on whichever
 hop is current, and no rival driver can wedge between hops.
+
+### The tool-control seam
+
+An optional `tool_control:` block in the governing `workflow.yaml`
+names an adjudicator binary the tool window consults **before every
+granted tool invocation executes** (ARCH §3.3 *Tool control*, §6):
+
+```yaml
+tool_control:
+  command: /path/to/control
+```
+
+The control gets the `tool_use` block plus the calling role and agent
+id as JSON on stdin and answers one JSON verdict on stdout — `pass`
+(the tool runs unchanged), `refuse` (it never runs; the reason reaches
+the model as an in-band error result), or `hold` (the invocation parks
+before execution for out-of-band review: a `refs/lernie/held/<agent>`
+mark records what parked and why, the branch exits without a terminal,
+and its mail queues). Release is re-adjudication: the next
+`lernie advance` of the agent consults the control freshly — skipping
+already-committed results — so whatever fact lifts the hold (an
+approval file, a verifier's verdict) is the control's own contract. A
+control that cannot answer **fails closed**: the invocation does not
+run and the step aborts loudly. No control ships — omit the block and
+no control is consulted; the seam is the shipped surface.
 
 ## The exit protocol and the operator scan
 

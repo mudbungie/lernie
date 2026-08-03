@@ -30,7 +30,7 @@ pub mod scan;
 #[cfg(test)]
 mod tests;
 
-pub use deposit::{DepositError, Epitaph, deposit, deposit_child_result, deposit_result};
+pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
 pub use scan::scan;
 

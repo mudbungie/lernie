@@ -1,9 +1,8 @@
 //! Unit tests for the step-boundary inbox drain (ARCH §2.11 *Delivery*).
 //!
-//! `pending` reads a real inbox directory; `recover_strays` and the full
-//! `drain` route their `git` verbs through a recording stub, so the
-//! on-disk moves and the exact `status`/`add`/`commit` argv are both
-//! observable without a live repo.
+//! `pending` reads a real inbox directory; `recover_strays` and `drain`
+//! route their `git` verbs through a recording stub, so the on-disk moves
+//! and the exact argv are observable without a live repo.
 
 use super::*;
 use crate::template::GitRunner;
@@ -14,9 +13,8 @@ use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tempfile::TempDir;
 
-/// Recording [`GitRunner`] with a scripted `status` reply and an optional
-/// failing run index (counted across `run` *and* `run_capture`, the order
-/// the drain issues them).
+/// Recording [`GitRunner`]: a scripted `status` reply and an optional
+/// failing run index (counted across `run` and `run_capture` alike).
 struct RecordGit {
     runs: RefCell<Vec<Vec<String>>>,
     status: String,
@@ -73,8 +71,7 @@ impl GitRunner for RecordGit {
 }
 
 /// Write a deposit file into `inbox` with the given name, body, and mtime
-/// so ordering is deterministic (the OS clock's resolution is not relied
-/// on).
+/// so ordering is deterministic (never the OS clock's resolution).
 fn deposit_file(inbox: &Path, name: &str, body: &str, mtime: SystemTime) {
     std::fs::create_dir_all(inbox).unwrap();
     let path = inbox.join(name);
@@ -108,15 +105,14 @@ fn pending_surfaces_a_non_not_found_read_error() {
 fn pending_sorts_by_mtime_then_filename_and_skips_non_deposits() {
     let dir = TempDir::new().unwrap();
     let inbox = dir.path().join("inbox/a");
-    // Later mtime, earliest-sorting name — sorts last (mtime dominates).
+    // Later mtime, earliest name — sorts last (mtime dominates).
     deposit_file(&inbox, "alice-001.md", "a", at(30));
-    // Same mtime pair, filename breaks the tie: bob before zed.
+    // Same mtime, filename breaks the tie: bob before zed.
     deposit_file(&inbox, "zed-9-002.md", "z", at(10));
     deposit_file(&inbox, "bob-001.md", "b", at(10));
-    // A hyphenated agent id keeps every hyphen but the numeric tail.
+    // A hyphenated id keeps every hyphen but the numeric tail.
     deposit_file(&inbox, "a-b-c-004.md", "c", at(20));
-    // Non-deposits: wrong extension, non-numeric tail, empty sender, and
-    // an in-flight temp file — none contribute.
+    // Non-deposits contribute nothing: bad extension, bad tail, no sender.
     deposit_file(&inbox, "notes.txt", "n", at(1));
     deposit_file(&inbox, "nope-x.md", "x", at(1));
     deposit_file(&inbox, "-001.md", "e", at(1));
@@ -164,8 +160,8 @@ fn recover_strays_commits_an_uncommitted_stray() {
 
 #[test]
 fn recover_strays_surfaces_status_add_and_commit_errors() {
+    // The three ops fail in turn: status (run 0), add (1), commit (2).
     let dir = TempDir::new().unwrap();
-    // status (run 0) fails.
     let err = recover_strays(dir.path(), "c", &RecordGit::failing_at("", 0)).unwrap_err();
     assert!(
         matches!(
@@ -177,7 +173,6 @@ fn recover_strays_surfaces_status_add_and_commit_errors() {
         ),
         "got {err:?}"
     );
-    // add (run 1) fails.
     let err =
         recover_strays(dir.path(), "c", &RecordGit::failing_at("?? messages/x", 1)).unwrap_err();
     assert!(
@@ -190,7 +185,6 @@ fn recover_strays_surfaces_status_add_and_commit_errors() {
         ),
         "got {err:?}"
     );
-    // commit (run 2) fails.
     let err =
         recover_strays(dir.path(), "c", &RecordGit::failing_at("?? messages/x", 2)).unwrap_err();
     assert!(
@@ -218,8 +212,7 @@ fn drain_delivers_pending_messages_in_mtime_order_committing_each() {
     let git = RecordGit::clean();
     drain(&worktree, &inbox, "conv-7", &git).unwrap();
 
-    // Both files moved out of the inbox into the transcript, frontmatter
-    // and body intact (the rename copies bytes untouched, §2.11).
+    // Both moved into the transcript, bytes untouched by the rename.
     assert!(!inbox.join("bob-001.md").exists());
     assert!(!inbox.join("alice-001.md").exists());
     let first = std::fs::read_to_string(worktree.join("messages/001-bob.md")).unwrap();
@@ -236,34 +229,63 @@ fn drain_delivers_pending_messages_in_mtime_order_committing_each() {
     assert!(runs[4][2].contains("transcript 002: alice"));
 }
 
+/// A result message's on-disk body (§2.6) from `sender`.
+fn result_body(sender: &str) -> String {
+    format!("---\nfrom: {sender}\nepitaph: final-response\nterminal_ref: abc123\n---\ndone")
+}
+
 #[test]
-fn drain_leaves_a_result_message_in_the_inbox_for_the_interpreter() {
-    // A deposited message carrying `terminal_ref:` is a result message
-    // (§2.6): it is a lifecycle circumstance the §6 hop interprets by the
-    // returning child's role (deliver_result / land_compaction / a gate
-    // hold, `super::child_result`), not an ordinary steering message. The
-    // drain leaves it untouched in the inbox — only the stray probe runs.
+fn drain_leaves_an_own_childs_result_message_in_the_inbox_for_the_interpreter() {
+    // A deposit carrying `terminal_ref:` *from this agent's own child* is
+    // a result message (§2.6): a §6 lifecycle circumstance, not steering.
     let dir = TempDir::new().unwrap();
     let worktree = dir.path().join("wt");
     std::fs::create_dir_all(&worktree).unwrap();
-    let inbox = dir.path().join("inbox/parent");
+    let inbox = dir.path().join("inbox/20260101-a1");
+    let child = "20260101-a1-20260102-b2";
     deposit_file(
         &inbox,
-        "parent-kid-001.md",
-        "---\nfrom: parent-kid\nepitaph: final-response\nterminal_ref: abc123\n---\ndone",
+        &format!("{child}-001.md"),
+        &result_body(child),
         at(10),
     );
 
     let git = RecordGit::clean();
-    drain(&worktree, &inbox, "parent", &git).unwrap();
+    drain(&worktree, &inbox, "20260101-a1", &git).unwrap();
 
-    // No delivery: only the clean stray probe ran (the result message is
-    // not moved), and the file stays in the inbox for the interpreter.
+    // No delivery: only the clean stray probe ran; the file stays put.
     let runs = git.runs.borrow();
     assert_eq!(runs.len(), 1);
     assert_eq!(runs[0], vec!["status", "--porcelain", "--", "messages"]);
-    assert!(inbox.join("parent-kid-001.md").exists());
-    assert!(!worktree.join("messages/001-parent-kid.md").exists());
+    assert!(inbox.join(format!("{child}-001.md")).exists());
+    assert!(!worktree.join(format!("messages/001-{child}.md")).exists());
+}
+
+#[test]
+fn drain_delivers_a_reply_from_an_agent_this_one_never_dispatched() {
+    // §2.6: the return — the transfer and the §6 bindings — is the
+    // *dispatcher's* business. A sibling's reply carries the same
+    // frontmatter but neither relationship, so it just delivers (§2.11).
+    let dir = TempDir::new().unwrap();
+    let worktree = dir.path().join("wt");
+    std::fs::create_dir_all(&worktree).unwrap();
+    let inbox = dir.path().join("inbox/20260101-a1-20260102-b2");
+    let sibling = "20260101-a1-20260102-c3";
+    deposit_file(
+        &inbox,
+        &format!("{sibling}-001.md"),
+        &result_body(sibling),
+        at(10),
+    );
+
+    let git = RecordGit::clean();
+    let delivery = drain(&worktree, &inbox, "20260101-a1-20260102-b2", &git).unwrap();
+
+    assert_eq!(delivery.delivered, 1);
+    assert!(delivery.left.is_empty(), "nothing is held for a §6 binding");
+    assert!(!inbox.join(format!("{sibling}-001.md")).exists());
+    let landed = std::fs::read_to_string(worktree.join(format!("messages/001-{sibling}.md")));
+    assert!(landed.unwrap().contains("epitaph: final-response"));
 }
 
 #[test]

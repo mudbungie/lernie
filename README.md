@@ -405,8 +405,9 @@ drives each step's model call through brazen's `bz` (§4.4), and steps
 until a terminal event. **There is no terminal compaction stage** (§2.7):
 compaction runs only at the checkpoints `workflow.yaml` declares, and a
 branch with no configured trigger never compacts. Merge-back is gone
-(§2.6): the root branch persists on its own ref (§2.4), and a child
-returns by depositing a result message into its parent's inbox (§2.6):
+(§2.6): the root branch persists on its own ref (§2.4), and an agent
+returns by depositing a result message at the address its epitaph names
+(§2.6):
 
 1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
    §2.2) and guard the workspace layout (a non-workspace, or the
@@ -531,16 +532,23 @@ returns by depositing a result message into its parent's inbox (§2.6):
    normal completion (`final-response`), budget exhaustion
    (`budget-exhausted`, §6), and stop (`stopped`, §2.9 — the executor's
    SIGTERM handler deposits on its way out) — deposits a **result
-   message** into the parent's inbox: an ordinary deposit whose
-   frontmatter adds `epitaph:`
+   message**: an ordinary deposit whose frontmatter adds `epitaph:`
    and `terminal_ref:` (the branch tip) and whose body is the terminal
-   response iff the agent spoke. For a root this is a structural no-op —
-   a root has no parent inbox; its response answers the user (§2.4). The
-   deposit is executor-side, never a model tool call ("Return is not a
-   verb"). At delivery, a message carrying `terminal_ref:` applies the
+   response iff the agent spoke. **The epitaph picks the inbox** (§2.6):
+   a `final-response` **reply** answers whoever last prompted this agent
+   — its own transcript's newest delivered message, which for the
+   dispatch step is the dispatcher — while a `stopped` /
+   `budget-exhausted` / `died` **obituary** goes to the dispatcher
+   whoever prompted last. A reply whose last prompter is the user
+   addresses nobody: it is read in this agent's own conversation, which
+   is also the ordinary root case (§2.4). The deposit is executor-side,
+   never a model tool call ("Return is not a verb"). At delivery **in the
+   dispatcher's inbox**, a result message applies the
    fork-point→terminal **work-product transfer** as one commit before its
    delivery commit, filtered to work products; a diff that fails to apply
-   is declined at `refs/lernie/conflicted/<agent-id>` (§2.6).
+   is declined at `refs/lernie/conflicted/<agent-id>` (§2.6). A reply
+   delivered anywhere else is an ordinary message — the transfer is
+   defined against the fork the dispatcher made and nobody else's.
 8. **Exit protocol (§2.11).** With the terminal deposit landed, the
    executor runs the branch's terminal `workflow.yaml` bindings
    (`branch_stopped` → `mark_abandoned` / `notify_ui`, §6), releases the
@@ -783,8 +791,9 @@ Built-ins:
   it returns is the child's *address* — there is no polling tool to
   pair with it. The substrate redesign (ARCH §2.5 "Dispatch returns
   the child's address") dissolved the handle/`await` pair: the child's
-  result comes back as a **deposit into the parent's inbox** carrying
-  an epitaph (§2.6, §2.11), so `await`/`check` had nothing left to
+  result comes back as a **deposit into this agent's inbox** carrying
+  an epitaph (§2.6, §2.11 — the dispatch is the child's first prompt, so
+  the reply comes back here), so `await`/`check` had nothing left to
   observe and are gone. The return path — the result-message deposit
   and the delivery-time work-product transfer — is built and live
   (bl-4ce8, bl-9f53, bl-c33b, §2.6), and **children run full step
@@ -792,8 +801,8 @@ Built-ins:
   quiescent and launches the ordinary driver, `lernie advance` (§6) —
   there is no child-specific loop and no worker path — which steps the
   child to a terminal event, deposits its epitaph result (final-response,
-  budget-exhausted, or stop) into the parent's inbox, and revives the
-  parent, which delivers the result at its next step boundary.
+  budget-exhausted, or stop) at the address §2.6 names, and revives that
+  recipient, which delivers the result at its next step boundary.
 - **`message`** — deposits content into an *existing* agent's inbox
   (ARCH §2.11). Input is `{agent, content}`; the recipient is addressed
   by its agent id (its branch name / hyphenated descent) or by the
@@ -1117,7 +1126,8 @@ control file the user knows rather than the config commit's sha.
 — the ordinary fork with a ref argument (ARCH §2.3, §7.2), which is what
 the §6 verifier gate already does when it forks a judge off the worker's
 terminal ref. The child is still `<parent>-<sub>`, so its return address
-is still the dispatcher's (§2.6). Its **config follows the fork point**:
+— where its obituary goes, and where its reply goes until somebody
+else prompts it — is still the dispatcher's (§2.6). Its **config follows the fork point**:
 control is read from that ref's governing config commit (§2.2 — "an
 agent started by fork-back-in inherits its source's config the same
 way"), which is the commit every later `lernie advance` resolves from
@@ -1183,8 +1193,9 @@ same path with empty inputs.
   (§2.3 step 2). The child then **runs a full step loop** under the
   `lernie advance` driver its dispatch deposit launched, and at its
   terminal event deposits a result message — epitaph, terminal ref, and
-  the terminal response iff it spoke — into the parent's inbox, reviving
-  the parent if it had gone quiescent (§2.6, §2.11). The v0.4 "Phase 1
+  the terminal response iff it spoke — at the address §2.6 names (the
+  dispatcher, unless somebody else has spoken to the child since),
+  reviving that recipient if it had gone quiescent (§2.6, §2.11). The v0.4 "Phase 1
   stops at the dispatch commit" worker path (`worker.rs`) is **deleted**,
   not extended (bl-c33b).
 

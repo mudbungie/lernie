@@ -134,12 +134,12 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     // + 1 (the tool window's unconditional hold-mark probe, §3.3 *Tool
     // control*) + 2 (the tool transcript entry add+commit) + 1 (step-2
     // drain stray-probe) + 1 (step 2 rev-parse) + 2 (step-2 model-output
-    // entry add+commit) + 1 (terminal result-deposit rev-parse, §2.6) +
-    // 1 (its durable returned-mark `update-ref`, §8 — this rig's compact
-    // ids make the agent parse as a child, so the deposit is real) = 33.
-    // Merge-back is gone (§2.6). The version guard runs no git.
+    // entry add+commit) = 31. The terminal result deposit adds none: the
+    // last prompter is `user` (the on-ramp message), so the reply
+    // addresses no inbox and neither the branch-tip read nor the returned
+    // mark runs (§2.6). Merge-back is gone. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 33);
+    assert_eq!(runs.len(), 31);
     assert_eq!(runs[15].1, vec!["add", "name"]);
     assert_eq!(runs[16].1, vec!["add", "goal.md", "soul.md"]);
     assert!(runs[17].1[2].contains("step 001: dispatch"));
@@ -170,9 +170,9 @@ fn loop_runs_two_steps_when_first_completion_is_tool_use() {
     assert_eq!(runs[28].1, vec!["rev-parse", "HEAD"]);
     assert_eq!(runs[29].1, vec!["add", "messages/004-claude-sonnet-5.json"]);
     assert!(runs[30].1[2].contains("transcript 004: claude-sonnet-5"));
-    // The terminal result deposit reads the branch tip (§2.6); no
-    // merge-back follows.
-    assert_eq!(runs[31].1, vec!["rev-parse", "HEAD"]);
+    // The terminal result deposit is one structural no-op — the operator
+    // prompted this agent, so its reply addresses no inbox (§2.6) — so
+    // the entry commit is the last git op and no merge-back follows.
 
     // The tool entry on disk is the canonical tool_result block.
     let tool_entry = worktree.join("messages/003-tool.json");

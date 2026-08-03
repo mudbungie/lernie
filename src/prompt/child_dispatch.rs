@@ -23,13 +23,17 @@
 //!    which the `dispatch` built-in re-emits as the `tool_result`.
 //!
 //! The child reports back with no executor logic keyed on being a child:
-//! at its terminal event `advance` deposits its result message into the
-//! **return address**, which for the shipped default is derived from the
-//! child's id (`inbox::parent_of` — the dispatcher's address, §2.6). A
-//! root records no dispatch and has no such address, so it sends nothing
-//! and answers the user instead (§2.4). Return totality (§2.3 step 5) is
-//! thereby a property of the dispatch primitive — a dispatch cannot fork
-//! without an inbox to deposit into — rather than of loop code.
+//! at its terminal event `advance` deposits its result message at the
+//! address its epitaph names (§2.6, `dispatch::result_deposit`) — a
+//! **reply** to whoever last prompted it, an **obituary** to the
+//! dispatcher derived from the child's id (`inbox::parent_of`). The
+//! dispatch message is the child's first prompt, so an ordinary child's
+//! reply reaches the dispatcher too, and today's shape is the reply
+//! rule's first case rather than a rule of its own. A root records no
+//! dispatch and, prompted by the user, addresses neither — it answers
+//! the user instead (§2.4). Return totality (§2.3 step 5) is thereby a
+//! property of the dispatch primitive — a dispatch cannot fork without
+//! an inbox to deposit into — rather than of loop code.
 //!
 //! **One budget gate, every dispatch** (§6). `budgets:` is a ceiling on
 //! the conversation tree, and a dispatch is the only act that can deepen

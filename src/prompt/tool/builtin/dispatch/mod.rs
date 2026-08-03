@@ -17,7 +17,8 @@
 //! address and re-emits it on its own stdout as the `tool_result`
 //! payload `{"status":"in_progress","handle":"<child-id>"}` — the child
 //! runs asynchronously and its result returns later as a deposit into
-//! the parent's inbox (§2.5, §2.6), never through this tool's return.
+//! this agent's inbox (§2.5, §2.6 — the dispatch is the child's first
+//! prompt), never through this tool's return.
 
 use serde::{Deserialize, Serialize};
 use std::ffi::OsString;
@@ -46,7 +47,7 @@ struct Input {
 /// agent sees on its next step. `status` is always `in_progress` here
 /// (ARCH §2.5 — dispatch returns the child's address immediately and
 /// never blocks; the child's terminal result arrives later as a
-/// deposit into the parent's inbox, §2.11, not via any polling call);
+/// deposit into this agent's inbox, §2.11, not via any polling call);
 /// `handle` is the subagent's full hyphenated descent branch
 /// (`<parent>-<sub-id>`, ARCH §2.2 / §2.3), which is also its address.
 #[derive(Debug, Serialize, PartialEq, Eq)]

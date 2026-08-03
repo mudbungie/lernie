@@ -107,7 +107,8 @@ impl Fx {
 }
 
 /// Fork a `role` child off `parent`, add a committed work file on the
-/// child branch, and deposit its result message into the parent's inbox.
+/// child branch, and deposit its result message into the dispatcher's
+/// inbox — where an ordinary child's reply goes (§2.6).
 /// Returns the child id. `work` is `(path, contents)` committed on the
 /// child so the transfer / merge has something to move.
 fn returned_child(

@@ -103,7 +103,7 @@ pub(super) fn plain_run(repo: &Path, deps: &Deps<'_>) -> Result<String, crate::p
 }
 
 #[test]
-fn final_response_exit_launches_own_agent_and_revives_the_parent() {
+fn a_user_prompted_final_response_launches_own_agent_and_revives_nobody() {
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let harness = scaffold_harness_root();
     let adapter = StubAdapter::happy(&stream_of(brazen::FinishReason::Stop, &[Block::Text("hi")]));
@@ -125,22 +125,21 @@ fn final_response_exit_launches_own_agent_and_revives_the_parent() {
 
     plain_run(repo.path(), &deps).unwrap();
     let invocations = launcher.invocations.borrow();
-    // Two launches: the self-directed one, then the parent whose inbox
-    // the terminal deposit just landed in (§2.11 revival-on-deposit).
-    assert_eq!(invocations.len(), 2);
+    // `lernie prompt` deposits the operator's message into the agent's
+    // own inbox and the step-1 drain delivers it (§2.11), so the last
+    // prompter is `user` — the reply is read in this agent's own
+    // conversation and addresses no inbox (§2.6). This id has a
+    // derivable dispatcher (`ct`), and it still gets nothing: the
+    // address is the transcript's answer, not the id's.
+    assert_eq!(invocations.len(), 1, "no recipient, so no revival");
     let (ws, agent, lock_free, deposited) = &invocations[0];
     assert_eq!(ws, repo.path());
     assert_eq!(agent, "ct-1-deadbeef");
-    // §2.11 ordering: deposit → release → launch. The launcher sees both.
+    // §2.11 ordering: release → launch (the self-directed launch is
+    // unconditional on a final response, whoever the reply addressed).
     assert!(*lock_free, "the lock must be released before the launch");
-    assert!(*deposited, "the result deposit must land before the launch");
-    // The parent is addressed by derivation alone — this agent's id
-    // minus its last descent segment (§2.11) — and its lease is free,
-    // so the probe launched rather than leaving the result undelivered.
-    let (pws, parent, parent_free, _) = &invocations[1];
-    assert_eq!(pws, repo.path());
-    assert_eq!(parent, "ct");
-    assert!(*parent_free, "the parent was quiescent, so it is launched");
+    assert!(!*deposited, "an operator-prompted reply deposits nothing");
+    assert!(!inbox_dir(repo.path(), "ct").exists(), "no parent inbox");
 }
 
 /// A hyphen-free compact stamp makes the conv-id a two-token *root*

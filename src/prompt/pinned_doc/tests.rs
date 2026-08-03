@@ -138,3 +138,38 @@ fn none_is_the_empty_set() {
     none.write_into(dir.path()).unwrap();
     assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 0);
 }
+
+#[test]
+fn write_into_refuses_a_symlinked_directory_component() {
+    // The inherited tree carries `docs -> <outside>`: writing
+    // `docs/x.md` through it would land the bytes outside the worktree.
+    let dir = tempfile::TempDir::new().unwrap();
+    let outside = tempfile::TempDir::new().unwrap();
+    std::os::unix::fs::symlink(outside.path(), dir.path().join("docs")).unwrap();
+    let pins = PinnedDocs::new(vec![
+        PinnedDoc::new("docs/x.md".into(), b"pinned".to_vec()).unwrap(),
+    ])
+    .unwrap();
+    let err = pins.write_into(dir.path()).unwrap_err();
+    assert!(err.to_string().contains("symlink"), "{err}");
+    assert!(err.to_string().contains("docs"), "{err}");
+    assert!(!outside.path().join("x.md").exists(), "the write escaped");
+}
+
+#[test]
+fn write_into_refuses_a_symlinked_final_path() {
+    // `evil.md -> <outside file>`: writing through it would silently
+    // overwrite the target while the commit snapshots only the symlink.
+    let dir = tempfile::TempDir::new().unwrap();
+    let outside = tempfile::TempDir::new().unwrap();
+    let target = outside.path().join("target.md");
+    std::fs::write(&target, b"original").unwrap();
+    std::os::unix::fs::symlink(&target, dir.path().join("evil.md")).unwrap();
+    let pins = PinnedDocs::new(vec![
+        PinnedDoc::new("evil.md".into(), b"pinned".to_vec()).unwrap(),
+    ])
+    .unwrap();
+    let err = pins.write_into(dir.path()).unwrap_err();
+    assert!(err.to_string().contains("symlink"), "{err}");
+    assert_eq!(std::fs::read(&target).unwrap(), b"original");
+}

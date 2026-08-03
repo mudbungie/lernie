@@ -152,9 +152,29 @@ impl PinnedDocs {
     /// Write every document under `worktree`, creating intermediate
     /// directories. Callers stage the same destinations into the
     /// dispatch commit's `git add`, so the snapshot is these bytes.
+    ///
+    /// A destination whose existing components — or whose final path —
+    /// are symlinks is refused: the worktree already carries the forked
+    /// tree, and a symlink there (agent- or template-authored, not the
+    /// pinning caller's doing) would carry the write outside the
+    /// worktree, voiding both the construction-time no-traversal rule
+    /// and the byte-exact snapshot (the commit would hold the unchanged
+    /// symlink, not the pinned bytes).
     pub(crate) fn write_into(&self, worktree: &Path) -> std::io::Result<()> {
         for doc in &self.0 {
-            let path = worktree.join(&doc.dest);
+            let mut path = worktree.to_path_buf();
+            for seg in doc.dest.split('/') {
+                path.push(seg);
+                let is_link =
+                    std::fs::symlink_metadata(&path).is_ok_and(|m| m.file_type().is_symlink());
+                if is_link {
+                    return Err(std::io::Error::other(format!(
+                        "pin destination {:?} passes through a symlink at {:?}; \
+                         refusing to write outside the worktree",
+                        doc.dest, seg
+                    )));
+                }
+            }
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent)?;
             }

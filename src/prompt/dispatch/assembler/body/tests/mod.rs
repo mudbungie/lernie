@@ -243,30 +243,4 @@ fn non_utf8_content_composes_lossily() {
     assert!(out[0].contains("\u{fffd}ok"));
 }
 
-#[test]
-fn glob_vocabulary_literals_star_and_doublestar() {
-    for (pattern, path, expect) in [
-        ("goal.md", "goal.md", true),
-        ("goal.md", "soul.md", false),
-        ("*.md", "notes.md", true),
-        ("*.md", "docs/notes.md", false),
-        ("docs/*", "docs/a.md", true),
-        ("docs/*", "docs/sub/a.md", false),
-        ("summary/**", "summary/001.md", true),
-        ("summary/**", "summary/a/b.md", true),
-        ("summary/**", "skills/a.md", false),
-        ("**/SKILL.md", "skills/x/SKILL.md", true),
-        ("**/SKILL.md", "skills/x/notes.md", false),
-        ("a*c", "abc", true),
-        ("a*c", "ac", true),
-        ("a*c", "abd", false),
-        ("a*b*c", "aXbYc", true),
-        ("abc", "ab", false),
-    ] {
-        assert_eq!(
-            glob_match(pattern, path),
-            expect,
-            "{pattern} vs {path} should be {expect}"
-        );
-    }
-}
+mod markers;

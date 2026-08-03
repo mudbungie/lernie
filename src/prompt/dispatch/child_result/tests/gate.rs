@@ -2,11 +2,11 @@
 //! idempotent `already_gated` hold, the not-due checkpoint, and the result
 //! frontmatter split. The shared real-git harness lives in [`super`].
 
-use super::super::{has_pending_result, interpret_pending, run_flush, split_frontmatter};
+use super::super::{has_pending_result, interpret_pending, split_frontmatter};
 use super::{Fx, returned_child, workflow};
 use crate::prompt::inbox::{Epitaph, deposit_result, inbox_dir};
 use crate::prompt::{ChildDispatchRequest, child_dispatch};
-use crate::template::{GitRunner, RealGit};
+use crate::template::GitRunner;
 use crate::workspace::{agent_worktree, fixture};
 
 /// Fork a verifier off `worker_tip` (as the §6 gate does) and, when
@@ -120,28 +120,14 @@ fn an_already_gated_worker_does_not_redispatch_a_verifier() {
 }
 
 #[test]
-fn run_flush_is_a_noop_when_the_clock_is_below_threshold() {
-    // A `compaction:` block present but not yet due (§2.7): the git state is
-    // derived, `due` is false, and no compactor is dispatched.
-    let (_h, ws) = fixture::workspace();
-    let parent = "20260101-g3";
-    let wt = fixture::spawn_root(&ws, parent);
-    let fx = Fx::new();
-    let wf = workflow(
-        "events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n    n: 1000000\n",
-    );
-    run_flush(&ws, parent, &wt, &wf, &fx.deps()).unwrap();
-    assert!(fx.launcher.launched.borrow().is_empty());
-}
-
-#[test]
-fn a_conflicting_compaction_merge_is_declined_and_lands_nothing() {
+fn a_conflicting_compaction_landing_is_declined_and_lands_nothing() {
     // §2.6 decline at the interpreter: the compactor wrote `summary/001.md`
     // and the live branch wrote its own before the return was delivered, so
-    // git must write conflict markers. The merge is refused — no merge
-    // commit, the live summary untouched and marker-free, the compactor
-    // marked at `refs/lernie/conflicted/<id>` — and the trigger message is
-    // still consumed. This is the corrupted-summary half of bl-a9eb.
+    // the replay hits an add/add both sides carry content for. The landing
+    // is refused — the rebase aborts, HEAD stands, the live summary is
+    // untouched and marker-free, the compactor is marked at
+    // `refs/lernie/conflicted/<id>` — and the trigger message is still
+    // consumed. This is the corrupted-summary half of bl-a9eb.
     let (_h, ws) = fixture::workspace();
     let parent = "20260101-g8";
     let wt = fixture::spawn_root(&ws, parent);
@@ -185,47 +171,6 @@ fn a_conflicting_compaction_merge_is_declined_and_lands_nothing() {
     assert!(
         !has_pending_result(&ws, parent).unwrap(),
         "trigger consumed"
-    );
-}
-
-#[test]
-fn run_flush_never_compacts_a_compactor_branch() {
-    // THE PIN (§2.7): a compactor is not a member of the
-    // compaction-eligible set. It is dispatched off a parent whose whole
-    // history it inherits, so under the old root-relative count it read
-    // the parent's commits as its own and re-tripped `every_n_commits`
-    // immediately — the 226-branch cascade of bl-a9eb (yog bl-ebbd).
-    // Both invariants are exercised here: the clock starts at the
-    // compactor's own dispatch commit, and the role excludes it outright.
-    let (_h, ws) = fixture::workspace();
-    fixture::amend_config(&ws, &[("souls/compactor.md", "c")]);
-    let parent = "20260101-g9";
-    let parent_wt = fixture::spawn_root(&ws, parent);
-    // Twenty commits of parent history for the compactor to inherit.
-    for i in 0..20 {
-        std::fs::write(parent_wt.join("goal.md"), format!("g{i}")).unwrap();
-        RealGit::new().run(&parent_wt, &["add", "-A"]).unwrap();
-        RealGit::new()
-            .run(&parent_wt, &["commit", "-m", "step"])
-            .unwrap();
-    }
-    // The parent IS due, and dispatching its compactor is the one launch.
-    let fx = Fx::new();
-    let wf = workflow(
-        "events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n    n: 1\n",
-    );
-    run_flush(&ws, parent, &parent_wt, &wf, &fx.deps()).unwrap();
-    let compactor = fx.launcher.launched.borrow()[0].clone();
-
-    // Now run the same boundary on the compactor itself: not due, no
-    // second-generation compactor, no cascade.
-    let compactor_wt = agent_worktree(&ws, &compactor);
-    run_flush(&ws, &compactor, &compactor_wt, &wf, &fx.deps()).unwrap();
-    assert_eq!(
-        fx.launcher.launched.borrow().len(),
-        1,
-        "a compactor dispatches no compactor: {:?}",
-        fx.launcher.launched.borrow()
     );
 }
 

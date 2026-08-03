@@ -128,8 +128,8 @@ fn select(
 
 /// §5.2 marker guard, the read-path half of the §2.6 marker-freedom
 /// promise: `summary/**`'s only sanctioned writer is `write_summary`,
-/// and the compaction merge declines any content conflict before
-/// committing ([`crate::prompt::compactor::merge`]), so a summary
+/// and the compaction landing declines any content conflict during
+/// the replay ([`crate::prompt::compactor::land`]), so a summary
 /// carrying a git conflict-marker line is a violated invariant however
 /// it arrived — a pre-guard tree, an operator hand-edit, a payload
 /// quoting the literal strings — and composing it would send corrupted

@@ -32,10 +32,10 @@ use std::path::{Path, PathBuf};
 /// Actions the shipped configs declare that the interpreter does not yet
 /// execute — each an acknowledged follow-on of the ARCH §6 shipped-state
 /// note (`worker_return`→verifier dispatch and the `gate_return_on`
-/// delivery-hold, `deliver_result`, `compaction_merge`). Growing this set
+/// delivery-hold, `deliver_result`, `land_compaction`). Growing this set
 /// is a deliberate edit with an executor landing behind it; a verb with
 /// no executor coming is not deferred, it is dead, and must not ship.
-const DEFERRED: &[&str] = &["CompactionMerge", "DeliverResult", "Dispatch"];
+const DEFERRED: &[&str] = &["DeliverResult", "Dispatch", "LandCompaction"];
 
 /// Every `workflow.yaml` this repo ships, as (origin, contents): the
 /// embedded default template (`src/template` — the exact bytes

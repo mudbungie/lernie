@@ -163,7 +163,7 @@ pub(in crate::prompt) fn run(
     }
 
     // §6 delivered-child-result circumstance: interpret any result message
-    // the drain left in the inbox (deliver_result / compaction_merge / a
+    // the drain left in the inbox (deliver_result / land_compaction / a
     // gate-hold, keyed on the returning child's role). This needs the
     // workflow, so resolve once when a result is pending — a no-op hop has
     // none and still resolves nothing (lazy resolution). The resolved

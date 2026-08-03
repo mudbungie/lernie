@@ -53,8 +53,8 @@ pub const MARK_REF_ROOT: &str = "refs/lernie/";
 /// `refs/lernie/conflicted/<agent-id>`. One namespace, one home here in
 /// the ref-naming module, written by every operation that must refuse
 /// rather than guess: the declined work-product transfer
-/// (`prompt::dispatch::transfer`) and the conflicted compaction merge
-/// (`prompt::compactor::merge`). The UI renders it as `declined-transfer`
+/// (`prompt::dispatch::transfer`) and the declined compaction landing
+/// (`prompt::compactor::land`). The UI renders it as `declined-transfer`
 /// alongside the orthogonal budget-exhausted mark (§3.5, §7.1).
 pub const CONFLICTED_REF_PREFIX: &str = "refs/lernie/conflicted/";
 

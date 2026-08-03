@@ -307,6 +307,17 @@ lernie also coins **epitaph** as a term of art (`docs/ARCHITECTURE.md` §2.6): a
 ### Context management
 The runtime side of context engineering: writing, selecting, compressing, isolating tokens as an agent runs. LangChain's widely-adopted taxonomy: "**write, select, compress, and isolate.**" — https://blog.langchain.com/context-engineering-for-agents/. Anthropic refers to "compaction" and "context resets" as concrete techniques in the Agent SDK.
 
+### Compaction landing vocabulary (lernie-specific coinage)
+Lernie's compaction (ARCH §2.6–§2.7) lands by **rebase-forward**, and these terms are defined by that mechanism:
+
+- **Compaction point** — the commit the compactor forks off: the dispatching branch's tip at dispatch, or `HEAD~keep_recent` behind it under a configured retained tail. Derived at return time from the compactor's dispatch-commit parent, never stored.
+- **Compaction span** — the commit range the pass covers: from the branch's checkpoint origin (its founding commit or previous compaction base, exclusive) up to the compaction point (inclusive). The landing squashes it out of the branch's history.
+- **Compaction base** — the single commit that replaces the span: the tree at the compaction point with the compaction product applied (nominated deletions removed, the new summary added), subject `compaction base [<compactor-id>]`. The checkpoint clock's origin and the prompt-cache rebuild point.
+- **Rebase-forward** — the landing itself: mint the base, then replay every commit after the compaction point on top of it and move the branch to the replayed tip. Zero-downtime: the branch never idles and the retained tail survives verbatim. Replaces the retired **compaction merge** (the `--no-ff` merge-back landing); the workflow action is `land_compaction`, with `compaction_merge` parsing as the retired spelling.
+- **Retained tail** — the most recent commits kept out of the span (`compaction.intermediate.keep_recent`), structurally outside the compactor's view.
+
+Note "compaction", not "compression": the latter is banned in the context-management sense (ARCH §2.1) — in this taxonomy compression belongs to LangChain's write/select/compress/isolate axis and to weight quantization, and lernie's mechanism deletes and summarizes rather than re-encodes.
+
 ---
 
 ## 4. Tools, function calling, MCP

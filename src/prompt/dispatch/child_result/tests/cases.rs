@@ -5,7 +5,7 @@
 use super::super::{has_pending_result, interpret_pending, run_flush};
 use super::{Fx, returned_child, returned_child_ep, workflow};
 use crate::prompt::inbox::Epitaph;
-use crate::prompt::{ChildDispatchRequest, Error, SystemClock, child_dispatch};
+use crate::prompt::{Error, SystemClock};
 use crate::template::GitRunner;
 use crate::workspace::{agent_worktree, fixture};
 
@@ -33,10 +33,11 @@ fn a_worker_result_delivers_by_default_transfer_plus_transcript() {
 }
 
 #[test]
-fn a_compactor_result_lands_the_compaction_merge_and_consumes_the_message() {
-    // §6 compactor_return baseline (unbound → compaction_merge): the
-    // compactor's summary merges into the parent tree, and the trigger
-    // message is removed (not delivered — the merge commit is the record).
+fn a_compactor_result_lands_the_compaction_and_consumes_the_message() {
+    // §6 compactor_return baseline (unbound → land_compaction): the
+    // compactor's summary lands on the parent branch as the compaction
+    // base, and the trigger message is removed (not delivered — the base
+    // commit is the record).
     let (_h, ws) = fixture::workspace();
     let parent = "20260101-p2";
     fixture::spawn_root(&ws, parent);
@@ -57,14 +58,26 @@ fn a_compactor_result_lands_the_compaction_merge_and_consumes_the_message() {
         std::fs::read_to_string(wt.join("summary/001.md")).unwrap(),
         "sum\n"
     );
-    // A merge commit landed on the parent branch.
+    // The compaction base landed on the parent branch — an ordinary
+    // single-parent commit, not a merge (§2.6 rebase-forward): with no
+    // live commits past the compaction point, the replay is empty and
+    // the branch tip *is* the base.
     let subj = fx
         .git
         .run_capture(&wt, &["log", "-1", "--format=%s"])
         .unwrap();
     assert!(
-        subj.contains(&format!("compaction merge [{child}]")),
+        subj.contains(&format!("compaction base [{child}]")),
         "{subj}"
+    );
+    let parents = fx
+        .git
+        .run_capture(&wt, &["rev-list", "--parents", "-n", "1", "HEAD"])
+        .unwrap();
+    assert_eq!(
+        parents.split_whitespace().count(),
+        2,
+        "one parent — nothing merges anywhere (§2.6): {parents}"
     );
     assert!(
         !has_pending_result(&ws, parent).unwrap(),
@@ -75,9 +88,9 @@ fn a_compactor_result_lands_the_compaction_merge_and_consumes_the_message() {
 }
 
 #[test]
-fn a_died_compactor_return_lands_no_merge_and_delivers_the_epitaph() {
+fn a_died_compactor_return_lands_nothing_and_delivers_the_epitaph() {
     // §2.6/§2.7 epitaph gate: a compactor ending on any epitaph but
-    // `final-response` lands NO merge (its branch may hold a partial
+    // `final-response` lands NOTHING (its branch may hold a partial
     // pass); its result delivers like an ordinary child return instead.
     let (_h, ws) = fixture::workspace();
     let parent = "20260101-p9";
@@ -96,9 +109,9 @@ fn a_died_compactor_return_lands_no_merge_and_delivers_the_epitaph() {
     let wt = agent_worktree(&ws, parent);
     interpret_pending(&ws, parent, &wt, &workflow("events: {}\n"), &fx.deps()).unwrap();
 
-    // No merge landed; the compactor's tree never crossed (§2.6).
+    // Nothing landed; the compactor's tree never crossed (§2.6).
     let log = fx.git.run_capture(&wt, &["log", "--format=%s"]).unwrap();
-    assert!(!log.contains("compaction merge"), "{log}");
+    assert!(!log.contains("compaction base"), "{log}");
     assert!(!wt.join("summary/001.md").exists(), "no compactor tree");
     // Delivered as an ordinary child return: the epitaph is reviewable
     // in the parent's transcript (§2.7) and the inbox is drained.
@@ -109,10 +122,12 @@ fn a_died_compactor_return_lands_no_merge_and_delivers_the_epitaph() {
 }
 
 #[test]
-fn a_stopped_compactor_return_lands_no_merge_under_an_explicit_binding() {
+fn a_stopped_compactor_return_lands_nothing_under_an_explicit_binding() {
     // The gate is on the action, not the default: an explicit
-    // `compactor_return: compaction_merge` binding is equally gated, so
-    // no workflow config can merge a compactor that did not finish.
+    // `compactor_return: compaction_merge` binding — the retired spelling,
+    // still parsing to `land_compaction` (frozen configs keep resolving) —
+    // is equally gated, so no workflow config can land a compactor that
+    // did not finish.
     let (_h, ws) = fixture::workspace();
     let parent = "20260101-pa";
     fixture::spawn_root(&ws, parent);
@@ -131,7 +146,7 @@ fn a_stopped_compactor_return_lands_no_merge_under_an_explicit_binding() {
     let wf = workflow("events:\n  compactor_return:\n    - compaction_merge\n");
     interpret_pending(&ws, parent, &wt, &wf, &fx.deps()).unwrap();
     let log = fx.git.run_capture(&wt, &["log", "--format=%s"]).unwrap();
-    assert!(!log.contains("compaction merge"), "{log}");
+    assert!(!log.contains("compaction base"), "{log}");
     assert!(wt.join(format!("messages/001-{child}.md")).exists());
 }
 
@@ -221,62 +236,6 @@ fn run_flush_is_a_noop_without_a_compaction_block() {
     let fx = Fx::new();
     run_flush(&ws, parent, &wt, &workflow("events: {}\n"), &fx.deps()).unwrap();
     assert!(fx.launcher.launched.borrow().is_empty());
-}
-
-/// A global `models.yaml` naming an `adapter:` override (so the version
-/// guard is skipped, §4.4). The roles' models are the per-repo
-/// assignment's alone (§4.3) — the global file carries no models table
-/// (bl-35e2). Written into `fx.cfg` so it is the resolve's config root.
-fn write_models(fx: &Fx) {
-    std::fs::write(fx.cfg.path().join("models.yaml"), "adapter: /bin/true\n").unwrap();
-}
-
-#[test]
-fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
-    // §6 role-aware resolution: an existing agent's role is derived from
-    // its dispatch commit subject (the single authoritative home). A
-    // dispatched compactor resolves `souls/compactor.md` and its
-    // `compactor` providers assignment (haiku, no declared tools — the
-    // injected built-in toolset is the step's, not `providers.yaml`'s).
-    use crate::prompt::resolve::{ConfigSource, resolve_worker};
-    let (_h, ws) = fixture::workspace();
-    let parent = "20260101-r1";
-    fixture::spawn_root(&ws, parent);
-    let fx = Fx::new();
-    write_models(&fx);
-    let parent_wt = agent_worktree(&ws, parent);
-    let req = ChildDispatchRequest {
-        repo: &ws,
-        parent_branch: parent,
-        parent_worktree: &parent_wt,
-        role: "compactor",
-        goal: "compact",
-        name: None,
-        fork_point: None,
-        pins: crate::prompt::PinnedDocs::none(),
-    };
-    let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
-
-    let cfg = resolve_worker(&ws, ConfigSource::Agent(&child), &fx.deps()).unwrap();
-    assert_eq!(cfg.role, "compactor");
-    assert_eq!(cfg.model_id, "claude-haiku-4-5");
-    assert!(cfg.tools.is_empty(), "compactor declares no such tools");
-    assert!(cfg.soul.to_lowercase().contains("compact"), "{}", cfg.soul);
-}
-
-#[test]
-fn resolve_defaults_a_root_agent_to_the_worker_role() {
-    // A root's dispatch subject lacks the `dispatch: <role>` prefix, so the
-    // role derives to `None` and the worker default applies (§6).
-    use crate::prompt::resolve::{ConfigSource, resolve_worker};
-    let (_h, ws) = fixture::workspace();
-    let root = "20260101-r2";
-    fixture::spawn_root(&ws, root);
-    let fx = Fx::new();
-    write_models(&fx);
-    let cfg = resolve_worker(&ws, ConfigSource::Agent(root), &fx.deps()).unwrap();
-    assert_eq!(cfg.role, "worker");
-    assert_eq!(cfg.model_id, "claude-sonnet-5");
 }
 
 #[test]

@@ -58,7 +58,7 @@ fn the_shipped_worker_grant_is_the_whole_tool_pool() {
 /// The grant above is empty by design, so the manifest entry is the
 /// compactor's *only* route to anything but the unconditional transcript
 /// tail (§5.1: the tree bounds, the manifest selects). The summary chain
-/// composes here or nowhere — the compaction merge is filtered to the
+/// composes here or nowhere — the compaction landing admits only the
 /// summary and the deletions (§2.6), so no prior compactor's reasoning
 /// ever lands in the dispatching branch's transcript — and a summary the
 /// next compactor cannot see is one it destroys when it supersedes it.

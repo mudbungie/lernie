@@ -99,8 +99,8 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
 }
 
 #[test]
-fn a_compaction_merge_lands_the_product_and_the_next_step_assembles_clean() {
-    // §2.6/§2.7 filtered compaction merge, end to end on the hop. A
+fn a_compaction_landing_lands_the_product_and_the_next_step_assembles_clean() {
+    // §2.6/§2.7 compaction landing (rebase-forward), end to end on the hop. A
     // compactor is an ordinary child, so its branch carries its own
     // dispatch `goal.md`/`soul.md` and its own transcript — ending, here,
     // on a failed tool entry whose `tool_result` has no `tool_use`
@@ -204,7 +204,7 @@ fn a_compaction_merge_lands_the_product_and_the_next_step_assembles_clean() {
     for (name, _) in &dialog {
         assert!(
             !parent_wt.join("messages").join(name).exists(),
-            "compactor entry {name} crossed the merge"
+            "compactor entry {name} crossed the landing"
         );
     }
     assert!(

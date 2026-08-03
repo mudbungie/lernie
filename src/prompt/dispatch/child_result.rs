@@ -8,9 +8,9 @@
 //!   authoritative home, [`crate::prompt::role`]): `compactor` →
 //!   `compactor_return`; `verifier` → the approve/reject verdict split
 //!   ([`verifier`]); else `worker_return` (deliver, or the gate-hold).
-//!   The `compaction_merge` action is additionally gated on the result's
+//!   The `land_compaction` action is additionally gated on the result's
 //!   **epitaph value** (§2.6/§2.7): only a `final-response` compactor
-//!   merges; any other ending delivers like an ordinary child return
+//!   lands; any other ending delivers like an ordinary child return
 //!   ([`execute_child`]).
 //! - **A checkpoint flush** ([`run_flush`]): a due `compaction:` clock at a
 //!   step boundary runs `worker_flush` → `dispatch(compactor)`. Its
@@ -168,7 +168,7 @@ fn child_actions(workflow: &Workflow, event: Event) -> Vec<Action> {
         return bound;
     }
     match event {
-        Event::CompactorReturn => vec![Action::CompactionMerge],
+        Event::CompactorReturn => vec![Action::LandCompaction],
         Event::VerifierReject => vec![Action::Dispatch {
             role: crate::prompt::WORKER_ROLE.to_string(),
             with: Some(verifier::FEEDBACK.to_string()),
@@ -181,18 +181,18 @@ fn child_actions(workflow: &Workflow, event: Event) -> Vec<Action> {
 /// Execute one worker/compactor-result action. `dispatch(verifier)` opens
 /// the gate ([`verifier::dispatch`]); `gate_return_on` is the hold itself
 /// (a no-op leaving the result in the inbox); `deliver_result` /
-/// `compaction_merge` are Ball-1. Other actions here are declined loudly.
+/// `land_compaction` are Ball-1. Other actions here are declined loudly.
 ///
-/// **`compaction_merge` is epitaph-gated** (§2.6, §2.7): only a
+/// **`land_compaction` is epitaph-gated** (§2.6, §2.7): only a
 /// compactor that ended on `final-response` completed a compaction pass,
-/// so only that epitaph lands the merge. Any other value (`died`,
-/// `stopped`, `budget-exhausted`) means the pass never finished — its
-/// branch may hold partial `mark_for_deletion` state, and merging it is
-/// exactly the corrupted-context outcome the deletion-only toolset
-/// exists to rule out. Such a return lands no merge and is instead
-/// delivered like any child's (§2.7: "surfaced for user review like any
-/// other child failure"): the parent sees the epitaph in its transcript
-/// and the branch simply continues uncompacted.
+/// so only that epitaph lands. Any other value (`died`, `stopped`,
+/// `budget-exhausted`) means the pass never finished — its branch may
+/// hold partial `mark_for_deletion` state, and landing it is exactly the
+/// corrupted-context outcome the deletion-only toolset exists to rule
+/// out. Such a return lands nothing and is instead delivered like any
+/// child's (§2.7: "surfaced for user review like any other child
+/// failure"): the parent sees the epitaph in its transcript and the
+/// branch simply continues uncompacted.
 fn execute_child(
     action: &Action,
     event: Event,
@@ -208,8 +208,10 @@ fn execute_child(
         }
         Action::GateReturnOn { .. } => Ok(()),
         Action::DeliverResult => deliver_result(worktree, agent_id, cr, deps.git),
-        Action::CompactionMerge if merge_qualifies(cr) => compaction_merge(worktree, cr, deps.git),
-        Action::CompactionMerge => deliver_result(worktree, agent_id, cr, deps.git),
+        Action::LandCompaction if landing_qualifies(cr) => {
+            land_compaction(worktree, agent_id, cr, deps.git)
+        }
+        Action::LandCompaction => deliver_result(worktree, agent_id, cr, deps.git),
         other => Err(Error::ActionUnsupported {
             action: format!("{other:?}"),
             event: event.as_str(),
@@ -217,11 +219,11 @@ fn execute_child(
     }
 }
 
-/// Does this compactor return qualify for the compaction merge? Only a
-/// `final-response` epitaph does (§2.6/§2.7 — "a compactor that ends on
-/// any other epitaph lands no merge"): the epitaph is the pinned manner
+/// Does this compactor return qualify for the compaction landing? Only a
+/// `final-response` epitaph does (§2.6/§2.7 — a compactor that ends on
+/// any other epitaph lands nothing): the epitaph is the pinned manner
 /// of ending, and code branches on its value (§2.6).
-fn merge_qualifies(cr: &ChildResult) -> bool {
+fn landing_qualifies(cr: &ChildResult) -> bool {
     cr.epitaph == inbox::Epitaph::FinalResponse.as_str()
 }
 
@@ -238,27 +240,38 @@ pub(super) fn deliver_result(
     transcript::deliver_message(worktree, agent_id, &cr.child_id, &cr.path, git)
 }
 
-/// `compaction_merge` (§2.6, the one merge): land the returning compactor
-/// branch `--no-ff` into this branch, then consume the trigger message
-/// (the merge commit is the record — never a transcript entry).
+/// `land_compaction` (§2.6): land the returning compactor's product by
+/// rebase-forward — the compaction base plus the replayed live tail —
+/// then consume the trigger message (the base commit is the record —
+/// never a transcript entry).
 ///
-/// A merge git could not resolve is **declined** by
-/// [`compactor::merge`] — aborted and marked at
-/// `refs/lernie/conflicted/<compactor-id>` — and reported here for the
-/// operator. The trigger message is consumed either way: the compactor
-/// has returned, and re-reading its result would re-attempt a merge that
-/// is already recorded as refused.
-fn compaction_merge(worktree: &Path, cr: &ChildResult, git: &dyn GitRunner) -> Result<(), Error> {
-    if let compactor::MergeOutcome::Conflicted(paths) =
-        compactor::merge(worktree, &cr.child_id, git)?
-    {
-        eprintln!(
-            "lernie: compaction merge [{}] declined — git could not merge {} \
+/// A replay git could not resolve is **declined** by [`compactor::land`]
+/// — aborted and marked at `refs/lernie/conflicted/<compactor-id>` — and
+/// reported here for the operator; a pass another landing overtook is
+/// **superseded** and reported without a mark (not a defect — the next
+/// checkpoint trigger fires afresh). The trigger message is consumed in
+/// every case: the compactor has returned, and re-reading its result
+/// would re-attempt a landing whose outcome is already recorded.
+fn land_compaction(
+    worktree: &Path,
+    agent_id: &str,
+    cr: &ChildResult,
+    git: &dyn GitRunner,
+) -> Result<(), Error> {
+    match compactor::land(worktree, agent_id, &cr.child_id, git)? {
+        compactor::LandOutcome::Conflicted(paths) => eprintln!(
+            "lernie: compaction landing [{}] declined — git could not replay {} \
              (marked refs/lernie/conflicted/{}, §2.6); the branch continues uncompacted",
             cr.child_id,
             paths.join(", "),
             cr.child_id,
-        );
+        ),
+        compactor::LandOutcome::Superseded => eprintln!(
+            "lernie: compaction landing [{}] superseded — a compaction landed since \
+             its fork point (§2.6); the branch continues",
+            cr.child_id,
+        ),
+        compactor::LandOutcome::Landed | compactor::LandOutcome::NoOp => {}
     }
     std::fs::remove_file(&cr.path).map_err(Error::Io)
 }

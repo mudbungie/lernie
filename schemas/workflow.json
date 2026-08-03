@@ -139,6 +139,15 @@
         "trigger"
       ],
       "properties": {
+        "keep_recent": {
+          "description": "Most recent commits kept out of the compaction span (ARCH §2.6): the compactor forks off `HEAD~keep_recent` — the compaction point — so the retained tail survives verbatim and replays on top of the landing. Omitted → `0`, the point is the tip. Must stay below `n` under `every_n_commits` (validated), else every landing re-arms.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0.0
+        },
         "n": {
           "description": "Required when `trigger == every_n_commits` (commit count) or `every_t_seconds` (seconds). Ignored for `on_flush`.",
           "type": [

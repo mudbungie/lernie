@@ -5,13 +5,17 @@
 //! commit-count / elapsed-time measures are exercised end-to-end.
 
 use super::*;
-use crate::config::workflow::{CompactionConfig, IntermediateCompaction};
+use crate::config::workflow::{CompactionConfig, compaction::IntermediateCompaction};
 use crate::template::RealGit;
 use tempfile::TempDir;
 
 fn cfg(trigger: CompactionTrigger, n: Option<u32>) -> CompactionConfig {
     CompactionConfig {
-        intermediate: IntermediateCompaction { trigger, n },
+        intermediate: IntermediateCompaction {
+            trigger,
+            n,
+            keep_recent: None,
+        },
     }
 }
 
@@ -136,19 +140,21 @@ fn state_counts_the_whole_branch_when_no_checkpoint_landed() {
 }
 
 #[test]
-fn state_measures_from_the_last_compaction_merge() {
+fn state_measures_from_the_last_compaction_base_or_retired_merge() {
+    // The clock reads the newest landing commit: a retired-mechanism merge
+    // subject still counts, and a later compaction base supersedes it.
     let dir = TempDir::new().unwrap();
     let wt = dir.path();
     init(wt);
     commit(wt, "root", "a.txt", "1");
-    commit(wt, "compaction merge [p1-cmp]", "summary/001.md", "x");
-    // Anchor `now` on the checkpoint commit's committer time (it is
-    // HEAD right here) so the expected elapsed is exact rather than a
-    // lower bound racing the wall clock.
+    commit(wt, "compaction merge [p1-old]", "summary/001.md", "x");
+    commit(wt, "compaction base [p1-cmp]", "summary/002.md", "y");
+    // Anchor `now` on the checkpoint commit's committer time (it is HEAD
+    // right here) so the expected elapsed is exact, not racing the clock.
     let cmp_ct = now_of(wt);
     commit(wt, "step after", "b.txt", "2");
     let s = state(wt, "p1", cmp_ct + 42, true, &RealGit::new()).unwrap();
-    assert_eq!(s.commits_since_checkpoint, 1, "only the post-merge step");
+    assert_eq!(s.commits_since_checkpoint, 1, "only the post-landing step");
     // Elapsed is measured from the checkpoint commit, not the root.
     assert_eq!(s.seconds_since_checkpoint, 42);
     assert!(s.flush_requested);

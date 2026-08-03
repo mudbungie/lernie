@@ -15,8 +15,9 @@
 //! - [`mark_for_deletion`] nominates a file for removal; the harness
 //!   applies the deletion at commit time. "Applied at commit time" is
 //!   realized by staging the removal (`git rm`) so the compactor step's
-//!   own commit carries it (§2.3), and the compaction merge (§2.6) then
-//!   lands it — subject to live-branch-wins on any work-product overlap.
+//!   own commit carries it (§2.3), and the compaction landing (§2.6)
+//!   then applies it to the base — subject to live-branch-wins on any
+//!   work-product overlap in the replay.
 //!
 //! The deletions are **deletion-only structural**: `git rm` can remove but
 //! never write content, so a compactor cannot corrupt a work product even

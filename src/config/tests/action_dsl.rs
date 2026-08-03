@@ -5,8 +5,15 @@ use crate::config::action::{Action, DispatchMode};
 #[test]
 fn parses_zero_arg_actions() {
     assert_eq!(
+        Action::parse("land_compaction").unwrap(),
+        Action::LandCompaction
+    );
+    // The retired spelling (the merge-back landing, replaced by
+    // rebase-forward, bl-bc9c) still parses: configs are frozen commits
+    // and a running workspace's vocabulary must keep resolving.
+    assert_eq!(
         Action::parse("compaction_merge").unwrap(),
-        Action::CompactionMerge
+        Action::LandCompaction
     );
     assert_eq!(
         Action::parse("deliver_result").unwrap(),

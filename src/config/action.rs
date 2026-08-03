@@ -6,7 +6,7 @@
 //! - `dispatch(compactor, mode: intermediate)`
 //! - `gate_return_on(verifier.approve)`
 //! - `deliver_result`
-//! - `compaction_merge`
+//! - `land_compaction`
 //! - `mark_abandoned`
 //! - `notify_ui`
 //!
@@ -36,9 +36,14 @@ pub enum Action {
     /// Deliver a (possibly gate-held) result message + work-product
     /// transfer (ARCH §2.6). Lifts a `gate_return_on` hold on approval.
     DeliverResult,
-    /// The one merge (ARCH §2.6): land a returning compactor's branch
-    /// `--no-ff` at a step boundary. Bound to `compactor_return`.
-    CompactionMerge,
+    /// Land a returning compactor's product by rebase-forward (ARCH
+    /// §2.6): squash the compaction span into a compaction base and
+    /// replay the live tail on top, at a step boundary. Bound to
+    /// `compactor_return`. The retired spelling `compaction_merge` still
+    /// parses to this action — the merge-back mechanism it named is gone
+    /// (bl-bc9c), but configs are frozen commits (§2.2) and a running
+    /// workspace's vocabulary must keep resolving.
+    LandCompaction,
     MarkAbandoned,
     NotifyUi,
 }
@@ -59,7 +64,11 @@ impl Action {
         let (name, args) = split_call(trimmed)?;
         match name {
             "deliver_result" => no_args(name, &args).map(|_| Action::DeliverResult),
-            "compaction_merge" => no_args(name, &args).map(|_| Action::CompactionMerge),
+            // `compaction_merge` is the retired spelling (see
+            // [`Action::LandCompaction`]) — parsed, never emitted.
+            "land_compaction" | "compaction_merge" => {
+                no_args(name, &args).map(|_| Action::LandCompaction)
+            }
             "mark_abandoned" => no_args(name, &args).map(|_| Action::MarkAbandoned),
             "notify_ui" => no_args(name, &args).map(|_| Action::NotifyUi),
             "dispatch" => parse_dispatch(&args),

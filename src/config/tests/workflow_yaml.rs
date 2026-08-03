@@ -30,7 +30,7 @@ events:
   worker_flush:
     - "dispatch(compactor, mode: intermediate)"
   compactor_return:
-    - compaction_merge
+    - land_compaction
   branch_stopped:
     - mark_abandoned
     - notify_ui
@@ -66,7 +66,7 @@ fn parses_arch_example() {
 #[test]
 fn parses_explicit_retry_block() {
     // Covers the RetryConfig + Backoff deserialize path (ARCH §6, §2.10).
-    let w = parse("events:\n  user_message:\n    - compaction_merge\nretry:\n  max_attempts: 5\n  backoff: exponential\n").unwrap();
+    let w = parse("events:\n  user_message:\n    - land_compaction\nretry:\n  max_attempts: 5\n  backoff: exponential\n").unwrap();
     assert_eq!(w.retry.max_attempts, 5);
     assert_eq!(w.retry.backoff, Backoff::Exponential);
     // Exponential backoff doubles from the first rung.
@@ -106,7 +106,7 @@ fn pacing_hint_above_the_schedule_wins() {
 #[test]
 fn omitted_retry_block_uses_the_default() {
     // No `retry:` → RetryConfig::default (3 attempts, exponential).
-    let w = parse("events:\n  user_message:\n    - compaction_merge\n").unwrap();
+    let w = parse("events:\n  user_message:\n    - land_compaction\n").unwrap();
     assert_eq!(w.retry, RetryConfig::default());
     assert_eq!(w.retry.max_attempts, 3);
     assert_eq!(w.retry.backoff, Backoff::Exponential);
@@ -124,7 +124,7 @@ fn parses_explicit_budgets_block() {
 #[test]
 fn omitted_budgets_block_is_all_unbounded() {
     // No `budgets:` → Budgets::default (every axis None = unbounded).
-    let w = parse("events:\n  user_message:\n    - compaction_merge\n").unwrap();
+    let w = parse("events:\n  user_message:\n    - land_compaction\n").unwrap();
     assert_eq!(w.budgets, Budgets::default());
     assert!(w.budgets.max_total_tokens.is_none());
     assert!(w.budgets.max_wall_seconds.is_none());
@@ -206,12 +206,6 @@ fn rejects_unknown_tool_control_fields() {
 }
 
 #[test]
-fn workflow_without_compaction_is_ok() {
-    let w = parse("events:\n  user_message:\n    - notify_ui\n").unwrap();
-    assert!(w.compaction.is_none());
-}
-
-#[test]
 fn rejects_unknown_event() {
     let err = parse("events:\n  user_request:\n    - notify_ui\n").unwrap_err();
     assert!(matches!(err, LoadError::Yaml { .. }));
@@ -227,34 +221,6 @@ fn rejects_unknown_action() {
         }
         other => panic!("expected Invalid, got {other:?}"),
     }
-}
-
-#[test]
-fn rejects_compaction_missing_n_for_count_trigger() {
-    let yaml = "events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n";
-    let err = parse(yaml).unwrap_err();
-    match err {
-        LoadError::Invalid { key, .. } => assert_eq!(key, "compaction.intermediate.n"),
-        other => panic!("expected Invalid, got {other:?}"),
-    }
-}
-
-#[test]
-fn rejects_compaction_missing_n_for_seconds_trigger() {
-    let yaml = "events: {}\ncompaction:\n  intermediate:\n    trigger: every_t_seconds\n";
-    assert!(matches!(parse(yaml), Err(LoadError::Invalid { .. })));
-}
-
-#[test]
-fn on_flush_trigger_does_not_need_n() {
-    let yaml = "events: {}\ncompaction:\n  intermediate:\n    trigger: on_flush\n";
-    assert!(parse(yaml).is_ok());
-}
-
-#[test]
-fn rejects_compaction_zero_n() {
-    let yaml = "events: {}\ncompaction:\n  intermediate:\n    trigger: every_n_commits\n    n: 0\n";
-    assert!(matches!(parse(yaml), Err(LoadError::Invalid { .. })));
 }
 
 const EVENT_NAMES: &[&str] = &[

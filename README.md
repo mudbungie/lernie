@@ -516,14 +516,15 @@ returns by depositing a result message into its parent's inbox (§2.6):
    `workflow.yaml`: `every_n_commits`, `every_t_seconds`, or the
    agent-elected `on_flush`, all derived from git (commits and elapsed
    seconds since **this branch's own founding commit** — its dispatch
-   commit, or its last compaction merge if that is newer; never a stored
+   commit, or its last compaction base if that is newer; never a stored
    counter, and never the inherited history a fork brings with it). A
    compactor is excluded from the eligible set outright: it *is* the
    compaction, not a subject of one. When it is due, the
    `worker_flush: dispatch(compactor)` binding forks a compactor off the
-   branch tip — the checkpoint commit `C` — and the branch keeps
-   stepping straight through it; no quiescence is imposed. Omit the
-   `compaction:` block and the branch never compacts.
+   **compaction point** — the branch tip, or `HEAD~keep_recent` behind
+   it when the config retains a recent tail (§2.6, §6) — and the branch
+   keeps stepping straight through it; no quiescence is imposed. Omit
+   the `compaction:` block and the branch never compacts.
 7. **Terminal return (§2.6, §2.3 step 5).** Every terminal event —
    normal completion (`final-response`), budget exhaustion
    (`budget-exhausted`, §6), and stop (`stopped`, §2.9 — the executor's
@@ -855,8 +856,8 @@ lernie message <ws> pale-otter 'check the Makefile too'
 - **Every dispatch commit writes the file; empty means unnamed.** A fork
   inherits its fork point's tree, so the commit overwrites the name
   rather than deleting it — that is what keeps a child's dispatch from
-  riding the work-product transfer (§2.6) or the compaction merge (§2.7)
-  back into its parent and unnaming it.
+  riding the work-product transfer (§2.6) back into its parent and
+  unnaming it.
 - **Set once, unique, never id-shaped.** A name is fixed at creation
   like the goal. Creation refuses one a living agent already wears
   (naming the holder), one that is not a single whitespace-free word,
@@ -1139,21 +1140,27 @@ same path with empty inputs.
   whose history mentions a tool it was not told about. Declaring is not
   permitting: a compactor reaching for one of those inherited tools gets
   an error tool result naming its own two, and nothing runs. The
-  **compaction merge** lands later and elsewhere: when the compactor's
-  result message is delivered, the dispatching agent's own executor
-  interprets its `compactor_return: compaction_merge` binding (§6) and
-  merges the compactor branch `--no-ff` — the one merge left in the
-  system (§2.6). A compactor that ends on any other epitaph lands no
-  merge; the branch simply continues uncompacted — enforced where the
-  binding is interpreted: the delivered result's **epitaph value** gates
-  `compaction_merge`, and a `died`/`stopped`/`budget-exhausted`
-  compactor return is delivered like an ordinary child's result instead,
-  so the parent sees the epitaph and nothing of the compactor's branch
-  crosses (§2.6, §2.7). A merge git cannot resolve on its own is
-  **declined** rather than committed: any path git wrote conflict
-  markers into aborts the merge and marks
-  `refs/lernie/conflicted/<compactor-id>`, so marked-up text can never
-  reach a `summary/**` file that is composed into the next model call.
+  **compaction landing** happens later and elsewhere: when the
+  compactor's result message is delivered, the dispatching agent's own
+  executor interprets its `compactor_return: land_compaction` binding
+  (§6) and lands the product by **rebase-forward** (§2.6) — the
+  compaction span squashes into a single compaction base (the summary
+  added, the nominated deletions applied, subject
+  `compaction base [<compactor-id>]`) and every commit after the
+  compaction point replays on top; nothing merges anywhere. A compactor
+  that ends on any other epitaph lands nothing; the branch simply
+  continues uncompacted — enforced where the binding is interpreted:
+  the delivered result's **epitaph value** gates `land_compaction`, and
+  a `died`/`stopped`/`budget-exhausted` compactor return is delivered
+  like an ordinary child's result instead, so the parent sees the
+  epitaph and nothing of the compactor's branch crosses (§2.6, §2.7). A
+  replay conflict git cannot resolve on its own is **declined** rather
+  than committed: a modify/delete on a work product the live branch
+  rewrote resolves live-branch-wins, any marker-writing conflict aborts
+  the rebase and marks `refs/lernie/conflicted/<compactor-id>`, and a
+  pass another landing overtook is superseded and lands nothing — so
+  marked-up text can never reach a `summary/**` file that is composed
+  into the next model call.
 - `lernie dispatch worker <workspace> <parent-id> --goal <text>`
   spawns a worker child off the parent's tip. The new id is
   `<parent>-<sub-id>` (hyphenated descent, §2.2), its ref

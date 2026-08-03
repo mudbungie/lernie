@@ -16,10 +16,19 @@
 //! uniquely. Content that drifted since the model last read it stops
 //! matching and the patch is refused with the exact reason, never
 //! applied over unseen changes.
+//!
+//! Written destinations also honor the write-time symlink discipline
+//! (bl-91f8, bl-2502): a destination that is itself a symlink —
+//! dangling or not — is declined for add, update, and rename targets,
+//! because `fs::write` follows the link and would land the bytes
+//! outside the authored path (a dangling link even reads as vacant to
+//! `exists()`, silently bypassing the add guard). Delete is exempt:
+//! `fs::remove_file` removes the link itself, never its target.
 
-use super::parse::{FileOp, Hunk, Patch};
-use super::report::{FileReport, HunkReport, Report, entry};
-use super::seek::{self, LADDER};
+use super::parse::{FileOp, Patch};
+use super::report::{FileReport, Report, entry};
+use super::seek;
+use super::splice::run_hunks;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -48,6 +57,17 @@ pub enum Error {
     /// The rename target of a `*** Move to:` already exists.
     #[error("move {path} to {to}: destination already exists")]
     MoveDestExists { path: String, to: String },
+    /// The destination path itself is a symlink — dangling or not. A
+    /// plain `exists()` follows links, so a dangling link reads as
+    /// vacant while the write would land through it, outside the
+    /// authored path: the write-time symlink discipline (bl-91f8)
+    /// declines instead (bl-2502).
+    #[error(
+        "{action} {path}: destination is a symlink; refusing to write \
+         through it — name the link's target directly, or delete the \
+         link first"
+    )]
+    SymlinkDest { action: &'static str, path: String },
     /// A hunk's anchor or context block was not found from the cursor
     /// on, at any rung of the matching ladder.
     #[error("update {path}, hunk {hunk}: {what} {source}")]
@@ -119,6 +139,7 @@ fn stage(op: &FileOp, root: &Path) -> Result<Staged, Error> {
     match op {
         FileOp::Add { path, lines } => {
             let abs = root.join(path);
+            refuse_symlink("add", &abs, path)?;
             if abs.exists() {
                 return Err(Error::AddExists { path: path.clone() });
             }
@@ -149,10 +170,12 @@ fn stage(op: &FileOp, root: &Path) -> Result<Staged, Error> {
             hunks,
         } => {
             let abs = root.join(path);
+            refuse_symlink("update", &abs, path)?;
             let text = read(&abs, path)?;
             let move_abs = match move_to {
                 Some(to) => {
                     let dest = root.join(to);
+                    refuse_symlink("move to", &dest, to)?;
                     if dest.exists() {
                         return Err(Error::MoveDestExists {
                             path: path.clone(),
@@ -174,6 +197,23 @@ fn stage(op: &FileOp, root: &Path) -> Result<Staged, Error> {
     }
 }
 
+/// Decline when the final path is itself a symlink — dangling or not —
+/// per the write-time symlink discipline (bl-91f8): `fs::write` follows
+/// the link, so the bytes would land outside the authored path while
+/// the guards (`exists()`, the staged read) reported on the target.
+/// Delete needs no guard: `fs::remove_file` removes the link itself,
+/// never its target.
+fn refuse_symlink(action: &'static str, abs: &Path, path: &str) -> Result<(), Error> {
+    let is_link = fs::symlink_metadata(abs).is_ok_and(|m| m.file_type().is_symlink());
+    if is_link {
+        return Err(Error::SymlinkDest {
+            action,
+            path: path.to_string(),
+        });
+    }
+    Ok(())
+}
+
 fn read(abs: &Path, path: &str) -> Result<String, Error> {
     fs::read_to_string(abs).map_err(|source| Error::Io {
         action: "read",
@@ -188,76 +228,6 @@ fn io_err(action: &'static str, abs: &Path) -> impl FnOnce(io::Error) -> Error {
         action,
         path,
         source,
-    }
-}
-
-/// Locate and splice every hunk, in order, cursor moving forward.
-fn run_hunks(text: &str, hunks: &[Hunk], path: &str) -> Result<(String, Vec<HunkReport>), Error> {
-    let had_nl = text.ends_with('\n');
-    let mut lines: Vec<String> = if text.is_empty() {
-        Vec::new()
-    } else {
-        text.split('\n').map(String::from).collect()
-    };
-    if had_nl {
-        lines.pop();
-    }
-    let mut cursor = 0usize;
-    let mut applied = Vec::new();
-    for (n, hunk) in hunks.iter().enumerate() {
-        let hunk_no = n + 1;
-        for anchor in &hunk.anchors {
-            let what = format!("anchor {anchor:?}");
-            let (pos, _) = seek::seek(&lines, std::slice::from_ref(anchor), cursor, false)
-                .map_err(located(path, hunk_no, what))?;
-            cursor = pos + 1;
-        }
-        if hunk.old.is_empty() && !hunk.eof && hunk.anchors.is_empty() {
-            return Err(Error::UnanchoredInsertion {
-                path: path.to_string(),
-                hunk: hunk_no,
-            });
-        }
-        // An empty needle (pure insertion) always locates — at the end
-        // under `eof`, else right after the anchor — so the miss arm is
-        // only reachable with context lines present.
-        let (pos, rung) = seek::seek(&lines, &hunk.old, cursor, hunk.eof).map_err(located(
-            path,
-            hunk_no,
-            "context".to_string(),
-        ))?;
-        let matched: Vec<String> = lines[pos..pos + hunk.old.len()].to_vec();
-        lines.splice(pos..pos + hunk.old.len(), hunk.new.iter().cloned());
-        cursor = pos + hunk.new.len();
-        applied.push(HunkReport {
-            rung: rung.label(),
-            line: pos + 1,
-            matched: (rung != LADDER[0]).then_some(matched),
-        });
-    }
-    let mut content = lines.join("\n");
-    if had_nl && !content.is_empty() {
-        content.push('\n');
-    }
-    Ok((content, applied))
-}
-
-/// Convert a seek miss into the right decline, with its location facts.
-fn located(path: &str, hunk: usize, what: String) -> impl FnOnce(seek::Error) -> Error {
-    let path = path.to_string();
-    move |source| match source {
-        seek::Error::NotFound => Error::NotFound {
-            path,
-            hunk,
-            what,
-            source,
-        },
-        seek::Error::Ambiguous { .. } => Error::Ambiguous {
-            path,
-            hunk,
-            what,
-            source,
-        },
     }
 }
 

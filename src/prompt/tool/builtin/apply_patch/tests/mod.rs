@@ -10,6 +10,7 @@ mod applier_io;
 mod grammar;
 mod ladder;
 mod stdio;
+mod symlink;
 
 /// Wrap a body in the envelope markers.
 pub(super) fn envelope(body: &str) -> String {

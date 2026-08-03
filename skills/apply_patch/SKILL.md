@@ -51,6 +51,11 @@ reason — repair the patch and reinvoke.
 - Paths resolve against your current working directory (the `cd` tool
   moves it); absolute paths are taken as-is, but only worktree writes
   ride the tool commit — edits elsewhere are off the record.
+- A destination that is itself a symlink — dangling or not — refuses
+  the patch for add, update, and rename targets: the write would land
+  through the link, outside the path you named. Name the link's target
+  directly, or delete the link first (delete removes the link itself,
+  never its target).
 
 ## Matching
 

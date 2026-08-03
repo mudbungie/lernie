@@ -1,7 +1,8 @@
 +++
 title = "a multi-tool tool: structured tool calls as arguments, with execution metadata"
 created = 1785650728
-updated = 1785650728
+updated = 1785724430
+claimant = "Gudgeon"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Operator design (2026-08-01, codex-comparison follow-up), verbatim: "bash overwhelms my tools because my tool list is tiny. It will expand. I think the simple answer is literally a multi-tool tool that takes other structured tool calls as arguments, as well as some execution metadata (return answers as they come or block on all being complete, abort on any failures, that kinda thing). In many cases, though, yes. Bash will do."

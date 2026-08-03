@@ -1,32 +1,21 @@
 //! End-to-end integration: load both halves of the model config — a
 //! scratch `<harness-root>/models.yaml` and a scratch per-repo
-//! `<conv-repo>/providers.yaml` with a `roles:` section — and confirm
-//! the cross-validation lands.
+//! `<conv-repo>/providers.yaml` with a `roles:` section.
 //!
-//! v0.6 folds the bespoke provider layer into brazen (ARCH §4.4): the
-//! global file is `models.yaml` (capabilities / context windows / the
-//! optional `adapter:` override — no endpoints or auth, which are
-//! brazen's). The test exercises the loader independently of the
-//! dispatch path so regressions in cross-validation land visibly.
+//! The global file carries only the optional `adapter:` override
+//! (bl-35e2 — no models table, no endpoints or auth, which are
+//! brazen's); the role assignment is the single home of the (provider
+//! row, model id) pointer, so there is no cross-file resolution to
+//! check. The test exercises the loader independently of the dispatch
+//! path so regressions in the split land visibly.
 
-use crate::config::{LoadError, ModelsConfig, Warning};
+use crate::config::{LoadError, ModelsConfig};
 use crate::harness_root;
 use std::path::PathBuf;
 use tempfile::TempDir;
 
-const GLOBAL_MODELS: &str = r#"
-models:
-  claude-sonnet-5:
-    provider: anthropic
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native, prompt_caching, streaming]
-    context_window: 200000
-  claude-haiku-4-5:
-    provider: anthropic
-    model_id: claude-haiku-4-5
-    capabilities: [tool_use_native, prompt_caching, streaming]
-    context_window: 200000
-"#;
+/// The shipped-template shape: comments only, no override, no models.
+const GLOBAL_MODELS: &str = "# adapter: /path/to/bz-compatible-binary\n";
 
 const PER_REPO_ROLES: &str = r#"
 roles:
@@ -51,7 +40,7 @@ struct Scratch {
 }
 
 impl Scratch {
-    fn load(&self) -> Result<(ModelsConfig, Vec<Warning>), LoadError> {
+    fn load(&self) -> Result<ModelsConfig, LoadError> {
         ModelsConfig::load_with_per_repo(
             &self.global_path,
             &self.per_repo_raw,
@@ -73,12 +62,10 @@ fn scratch(global: &str, per_repo: &str) -> Scratch {
 }
 
 #[test]
-fn loads_both_halves_and_cross_validates() {
+fn loads_both_halves() {
     let s = scratch(GLOBAL_MODELS, PER_REPO_ROLES);
-    let (cfg, warnings) = s.load().unwrap();
-    assert!(warnings.is_empty(), "unexpected warnings: {warnings:?}");
+    let cfg = s.load().unwrap();
     assert!(cfg.global.adapter.is_none());
-    assert_eq!(cfg.global.models.len(), 2);
     assert_eq!(cfg.per_repo.roles.len(), 2);
     assert_eq!(cfg.per_repo.roles["worker"].model, "claude-sonnet-5");
     assert_eq!(
@@ -88,34 +75,25 @@ fn loads_both_halves_and_cross_validates() {
 }
 
 #[test]
+fn adapter_override_rides_the_global_half() {
+    let s = scratch("adapter: /opt/bz\n", PER_REPO_ROLES);
+    let cfg = s.load().unwrap();
+    assert_eq!(
+        cfg.global.adapter.as_deref(),
+        Some(std::path::Path::new("/opt/bz"))
+    );
+}
+
+#[test]
 fn legacy_blocks_in_per_repo_are_a_load_error() {
     // A v0.2-shaped per-repo file carrying providers:/models: blocks
-    // hard-errors at load — those belong to the global file only.
-    let per_repo_with_legacy = format!("{GLOBAL_MODELS}\n{PER_REPO_ROLES}");
+    // hard-errors at load — a conversation repo never declares either.
+    let per_repo_with_legacy = format!("models: {{}}\n{PER_REPO_ROLES}");
     let s = scratch(GLOBAL_MODELS, &per_repo_with_legacy);
     let err = s.load().unwrap_err();
     match err {
         LoadError::Invalid { key, .. } => assert_eq!(key, "models"),
         other => panic!("expected Invalid, got {other:?}"),
-    }
-}
-
-#[test]
-fn cross_validation_failure_surfaces_at_load() {
-    let bad_per_repo = r#"
-roles:
-  worker:
-    provider: anthropic
-    model: claude-sonnet-9000
-"#;
-    let s = scratch(GLOBAL_MODELS, bad_per_repo);
-    let err = s.load().unwrap_err();
-    match err {
-        LoadError::UnresolvedRef { key, message } => {
-            assert_eq!(key, "roles.worker.model");
-            assert!(message.contains("claude-sonnet-9000"));
-        }
-        other => panic!("expected UnresolvedRef, got {other:?}"),
     }
 }
 

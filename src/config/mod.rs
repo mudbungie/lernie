@@ -1,12 +1,11 @@
 //! Configuration files for a conversation repo.
 //!
 //! Each submodule owns one file per ARCH §2.2 — see [`version`],
-//! [`providers`] (global, at the harness root), [`per_repo_providers`]
-//! (per-repo `roles:` section), [`manifest`], [`workflow`]. [`cross`]
-//! enforces references across files: `roles.*.{provider,model}` must
-//! resolve against the global `providers.yaml`, and a workflow's
-//! `dispatch(<role>)` action must name a role declared in the
-//! per-repo `roles:` section.
+//! [`models`] (global, at the harness root — the optional `adapter:`
+//! override), [`per_repo_providers`] (per-repo `roles:` section),
+//! [`manifest`], [`workflow`]. [`cross`] enforces references across
+//! files: a workflow's `dispatch(<role>)` action must name a role
+//! declared in the per-repo `roles:` section.
 
 #[cfg(test)]
 mod tests;
@@ -23,8 +22,8 @@ pub mod version;
 pub mod workflow;
 
 pub use action::Action;
-pub use error::{LoadError, Warning};
-pub use models::{Model, Models};
+pub use error::LoadError;
+pub use models::Models;
 pub use per_repo_providers::PerRepoProviders;
 pub use tool_output::ToolOutputBound;
 pub use workflow::{Budgets, CompactionConfig, CompactionTrigger, Event, RetryConfig, Workflow};
@@ -32,12 +31,11 @@ pub use workflow::{Budgets, CompactionConfig, CompactionTrigger, Event, RetryCon
 use std::path::Path;
 
 /// The two halves of the model configuration loaded together: the
-/// global `models.yaml` (capabilities, context windows, and the
-/// optional `adapter:` override — owned by the harness root, ARCH §4.2)
-/// and the per-repo `roles:` section (frozen at conversation creation,
-/// ARCH §4.3). Cross-references are validated as part of the load — a
-/// successful return means every role resolves to a model defined
-/// globally whose provider row matches (§4.3).
+/// global `models.yaml` (the optional `adapter:` override — owned by
+/// the harness root, ARCH §4.2) and the per-repo `roles:` section
+/// (frozen at conversation creation, ARCH §4.3). The role assignment is
+/// the single home of the (provider row, model id) pointer; id validity
+/// is brazen's fact, caught at the first live model call (§4.2).
 #[derive(Debug)]
 pub struct ModelsConfig {
     pub global: Models,
@@ -54,10 +52,9 @@ impl ModelsConfig {
         global_path: &Path,
         per_repo_raw: &str,
         per_repo_origin: &Path,
-    ) -> Result<(Self, Vec<Warning>), LoadError> {
-        let (global, warnings) = Models::load(global_path)?;
+    ) -> Result<Self, LoadError> {
+        let global = Models::load(global_path)?;
         let per_repo = PerRepoProviders::parse(per_repo_raw, per_repo_origin)?;
-        cross::check_roles_against_models(&per_repo, &global)?;
-        Ok((Self { global, per_repo }, warnings))
+        Ok(Self { global, per_repo })
     }
 }

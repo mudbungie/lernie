@@ -10,44 +10,6 @@
         "string",
         "null"
       ]
-    },
-    "models": {
-      "default": {},
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/Model"
-      }
-    }
-  },
-  "definitions": {
-    "Model": {
-      "description": "One model: `(provider row, model_id, capabilities, context_window)` (ARCH §4.2). `provider` is a brazen provider-row name — the entire provider surface lernie sees (§4.1); endpoint and auth resolve inside brazen at call time.",
-      "type": "object",
-      "required": [
-        "capabilities",
-        "context_window",
-        "model_id",
-        "provider"
-      ],
-      "properties": {
-        "capabilities": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "context_window": {
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0.0
-        },
-        "model_id": {
-          "type": "string"
-        },
-        "provider": {
-          "type": "string"
-        }
-      }
     }
   }
 }

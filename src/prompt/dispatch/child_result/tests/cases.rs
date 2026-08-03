@@ -224,16 +224,11 @@ fn run_flush_is_a_noop_without_a_compaction_block() {
 }
 
 /// A global `models.yaml` naming an `adapter:` override (so the version
-/// guard is skipped, §4.4) and carrying both the worker's sonnet and the
-/// compactor's haiku (§4.2). Written into `fx.cfg` so it is the resolve's
-/// config root.
+/// guard is skipped, §4.4). The roles' models are the per-repo
+/// assignment's alone (§4.3) — the global file carries no models table
+/// (bl-35e2). Written into `fx.cfg` so it is the resolve's config root.
 fn write_models(fx: &Fx) {
-    let yaml = "adapter: /bin/true\nmodels:\n  \
-        claude-sonnet-5: {provider: anthropic, model_id: claude-sonnet-5, \
-        capabilities: [tool_use_native], context_window: 200000}\n  \
-        claude-haiku-4-5: {provider: anthropic, model_id: claude-haiku-4-5, \
-        capabilities: [tool_use_native], context_window: 200000}\n";
-    std::fs::write(fx.cfg.path().join("models.yaml"), yaml).unwrap();
+    std::fs::write(fx.cfg.path().join("models.yaml"), "adapter: /bin/true\n").unwrap();
 }
 
 #[test]
@@ -264,7 +259,7 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
 
     let cfg = resolve_worker(&ws, ConfigSource::Agent(&child), &fx.deps()).unwrap();
     assert_eq!(cfg.role, "compactor");
-    assert_eq!(cfg.model.model_id, "claude-haiku-4-5");
+    assert_eq!(cfg.model_id, "claude-haiku-4-5");
     assert!(cfg.tools.is_empty(), "compactor declares no such tools");
     assert!(cfg.soul.to_lowercase().contains("compact"), "{}", cfg.soul);
 }
@@ -281,7 +276,7 @@ fn resolve_defaults_a_root_agent_to_the_worker_role() {
     write_models(&fx);
     let cfg = resolve_worker(&ws, ConfigSource::Agent(root), &fx.deps()).unwrap();
     assert_eq!(cfg.role, "worker");
-    assert_eq!(cfg.model.model_id, "claude-sonnet-5");
+    assert_eq!(cfg.model_id, "claude-sonnet-5");
 }
 
 #[test]

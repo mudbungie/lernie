@@ -107,24 +107,25 @@ fn make_install_lays_down_skeleton_idempotently() {
         assert!(bin.join(b).is_file(), "{b} missing from bin/");
     }
 
-    // Default global models.yaml (ARCH §4.2) — capabilities, no auth.
+    // Default global models.yaml (ARCH §4.2) — mechanism only (bl-35e2):
+    // no models table, no model id, no auth material in the seed.
     let models = home.path().join("models.yaml");
     let body = std::fs::read_to_string(&models).unwrap();
-    assert!(body.contains("provider: anthropic"));
-    assert!(body.contains("claude-sonnet-5"));
+    assert!(!body.contains("models:"), "no models table ships (bl-35e2)");
+    assert!(!body.contains("claude-"), "no model id ships (bl-35e2)");
     assert!(
         !body.contains("ANTHROPIC_API_KEY"),
         "auth material must not live in models.yaml (§4.1)"
     );
 
     // Idempotency: hand-edit config, re-run, verify it survives.
-    std::fs::write(&models, "models: {}\n").unwrap();
+    std::fs::write(&models, "adapter: /opt/bz\n").unwrap();
 
     run_install(prefix.path(), home.path());
 
     assert_eq!(
         std::fs::read_to_string(&models).unwrap(),
-        "models: {}\n",
+        "adapter: /opt/bz\n",
         "models.yaml was clobbered by re-install"
     );
 }

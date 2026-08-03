@@ -17,8 +17,8 @@
 //! loop (§2.10). Auth and endpoints are entirely brazen's; the harness
 //! references a provider *row* by name and never sees credential
 //! material (§4.1). Config: the global `<harness-root>/models.yaml`
-//! carries capabilities / context windows / the optional `adapter:`
-//! override (§4.2); the config commit's `providers.yaml` carries the
+//! carries only the optional `adapter:` override (§4.2, bl-35e2); the
+//! config commit's `providers.yaml` carries the whole
 //! role → (provider row, model, tools) mapping (§4.3), read from the
 //! governing config commit (§2.2). Retry policy (attempt cap + backoff)
 //! is `workflow.yaml`'s (§6).
@@ -79,9 +79,8 @@ const PER_REPO_PROVIDERS_FILE: &str = "providers.yaml";
 /// the worker resolution ([`resolve`]) and the dispatch budget gate
 /// ([`child_dispatch`]) — one name, one home.
 pub(crate) const WORKFLOW_FILE: &str = "workflow.yaml";
-/// Global control file naming model capabilities / context windows and
-/// the optional `adapter:` override (ARCH §4.2). Lives at the harness
-/// root.
+/// Global control file naming the optional `adapter:` override (ARCH
+/// §4.2, bl-35e2 — no models table). Lives at the harness root.
 const GLOBAL_MODELS_FILE: &str = "models.yaml";
 
 /// Dependencies [`run`] orchestrates over. Held as `&dyn` so the

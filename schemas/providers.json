@@ -14,7 +14,7 @@
   },
   "definitions": {
     "RoleAssignment": {
-      "description": "One role's assignment: which provider (by brazen row name) and which model (by id in the global `models.yaml`), plus the role's enabled tools (ARCH §4.3). `provider`/`model` are validated cross-file in [`crate::config::cross::check_roles_against_models`]; endpoint and auth resolve inside brazen at call time (§4.1 — no `auth_env` / `endpoint_env` here). `tools` selects which tools the role's agent may call (§3.3); omitted or empty means none.",
+      "description": "One role's assignment: which provider (by brazen row name) and which model (by wire id), plus the role's enabled tools (ARCH §4.3). This pointer is the whole model binding (bl-35e2) — no global table mediates it; id validity is caught at the first live model call (§4.2). Endpoint and auth resolve inside brazen at call time (§4.1 — no `auth_env` / `endpoint_env` here). `tools` selects which tools the role's agent may call (§3.3); omitted or empty means none.",
       "type": "object",
       "required": [
         "model",

@@ -47,23 +47,11 @@ pub fn git_run(dest: &Path, args: &[&str]) {
     );
 }
 
-/// Global `<harness-root>/models.yaml` (ARCH §4.2). Both roles' models
-/// point at the fixture `test` brazen row (endpoints/auth are brazen's).
+/// Global `<harness-root>/models.yaml` (ARCH §4.2) — the shipped shape:
+/// no `adapter:` override, no models (bl-35e2). The roles' provider row
+/// (`test`) and model ids are the per-repo assignment's alone (§4.3).
 pub fn write_global_models(harness: &Path) {
-    let yaml = "\
-models:
-  claude-sonnet-5:
-    provider: test
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native]
-    context_window: 200000
-  claude-haiku-4-5:
-    provider: test
-    model_id: claude-haiku-4-5
-    capabilities: [tool_use_native]
-    context_window: 200000
-";
-    fs::write(harness.join("models.yaml"), yaml).unwrap();
+    fs::write(harness.join("models.yaml"), "# no adapter override\n").unwrap();
 }
 
 /// A brazen config (§4.4) with a keyless `test` provider row whose

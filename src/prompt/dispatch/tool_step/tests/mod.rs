@@ -144,19 +144,12 @@ fn branch_with_step(ws: &TempDir, agent_id: &str, git: &RealGit) -> (PathBuf, St
 /// policy (§3.3, [`policy`]) — the fixture owns the rest, which no
 /// tool call enters.
 struct Resolution {
-    model: crate::config::Model,
     workflow: crate::config::Workflow,
 }
 
 impl Resolution {
     fn new() -> Self {
         Self {
-            model: crate::config::Model {
-                provider: "anthropic".into(),
-                model_id: "claude-sonnet-5".into(),
-                capabilities: crate::config::models::Capabilities(vec![]),
-                context_window: 200_000,
-            },
             workflow: crate::config::Workflow::parse(
                 "events: {}\n",
                 std::path::Path::new("workflow.yaml"),
@@ -172,7 +165,7 @@ impl Resolution {
                 tools: grant,
                 config_commit: "c0ffee",
             },
-            model: &self.model,
+            model_id: "claude-sonnet-5",
             provider_row: "anthropic",
             soul: "be helpful".into(),
             binary: "bz".into(),

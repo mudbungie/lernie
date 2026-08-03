@@ -22,7 +22,7 @@ use super::{
 };
 use crate::config::manifest::{Manifest, RoleRules};
 use crate::config::version::Version;
-use crate::config::{Model, ModelsConfig, Workflow, cross};
+use crate::config::{ModelsConfig, Workflow, cross};
 use crate::prompt::{AdapterRunner, adapter, brazen_pin, dispatch};
 use crate::workspace;
 use std::ffi::OsString;
@@ -63,7 +63,11 @@ pub(super) struct WorkerConfig {
     /// built-in compactor toolset is injected (§2.7, the step composes it
     /// for the `compactor` role alone).
     pub(super) role: String,
-    pub(super) model: Model,
+    /// The model id the role's `providers.yaml` assignment names (§4.3)
+    /// — the single home of the pointer; it rides the canonical request
+    /// verbatim, and its validity is brazen's fact, caught at the first
+    /// live model call (§4.2).
+    pub(super) model_id: String,
     /// brazen provider-row name passed as `bz --provider <row>` (§4.4).
     pub(super) provider_row: String,
     /// The role's declared tool names (§4.3 `tools:`).
@@ -108,7 +112,7 @@ impl WorkerConfig {
                 tools: &self.tools,
                 config_commit: &self.config_commit,
             },
-            model: &self.model,
+            model_id: &self.model_id,
             provider_row: &self.provider_row,
             soul: self.soul.clone(),
             binary: self.binary.clone(),
@@ -147,24 +151,21 @@ pub(super) fn resolve_worker(
 
     let global_path = deps.config_root.join(GLOBAL_MODELS_FILE);
     let providers_raw = read_control(workspace, &commit, PER_REPO_PROVIDERS_FILE, deps)?;
-    let (cfg, _warnings) = ModelsConfig::load_with_per_repo(
+    let cfg = ModelsConfig::load_with_per_repo(
         &global_path,
         &providers_raw,
         &control_origin(&commit, PER_REPO_PROVIDERS_FILE),
     )?;
 
+    // The role assignment is the whole model binding (§4.3): the
+    // provider row name goes to `bz --provider`, the model id rides the
+    // canonical request verbatim. Id validity is brazen's fact, caught
+    // at the first live model call (§4.2) — no global table mediates.
     let assignment = cfg
         .per_repo
         .roles
         .get(role.as_str())
         .ok_or_else(|| Error::RoleMissing(role.clone()))?;
-    // Cross-check inside the load guarantees this resolves.
-    let model = cfg
-        .global
-        .models
-        .get(&assignment.model)
-        .expect("cross-check passed, so role.model is in models.yaml")
-        .clone();
 
     // Adapter resolution (§4.2/§4.4), one order (most-specific first): the
     // optional `models.yaml` `adapter:` override, else the binding-injected
@@ -202,7 +203,7 @@ pub(super) fn resolve_worker(
 
     Ok(WorkerConfig {
         role,
-        model,
+        model_id: assignment.model.clone(),
         provider_row: assignment.provider.clone(),
         tools: assignment.tools.clone(),
         config_commit: commit,

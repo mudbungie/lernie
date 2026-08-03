@@ -1,4 +1,4 @@
-//! Error and warning types surfaced by the configuration loaders.
+//! Error types surfaced by the configuration loaders.
 
 use std::path::PathBuf;
 use thiserror::Error;
@@ -33,31 +33,9 @@ pub enum LoadError {
         message: String,
     },
 
-    /// A reference across files did not resolve (e.g. `agents.worker.model`
-    /// names a model not declared in `providers.yaml`).
+    /// A reference across files did not resolve (e.g. a workflow
+    /// `dispatch(<role>)` binding names a role `providers.yaml` does not
+    /// declare).
     #[error("config: unresolved reference at {key}: {message}")]
     UnresolvedRef { key: String, message: String },
-}
-
-/// A non-fatal observation surfaced by the loaders. The file parsed and is
-/// usable, but the caller should know.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Warning {
-    pub file: PathBuf,
-    pub key: String,
-    pub message: String,
-}
-
-impl Warning {
-    pub fn new(
-        file: impl Into<PathBuf>,
-        key: impl Into<String>,
-        message: impl Into<String>,
-    ) -> Self {
-        Self {
-            file: file.into(),
-            key: key.into(),
-            message: message.into(),
-        }
-    }
 }

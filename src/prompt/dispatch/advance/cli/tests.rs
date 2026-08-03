@@ -119,11 +119,12 @@ fn adopted_lease_env_drives_the_hop() {
 #[test]
 fn a_warranted_hop_delivers_then_consults_the_resolver() {
     // A real branch with pending mail: the hop delivers (real git),
-    // finds the tail user-side, and consults the production
-    // resolver — loud against the test-machine harness root, whose
-    // global models.yaml does not carry the template's models. That
-    // the delivery landed before the resolution failed is the §6
-    // lazy-resolution ordering, observed on disk.
+    // finds the tail user-side, and consults the production resolver —
+    // loud against the test-machine harness root (a missing global
+    // models.yaml, a version-skewed `bz`, or a credential-less spawn,
+    // whichever the machine hits first). That the delivery landed
+    // before the hop failed is the §6 lazy-resolution ordering,
+    // observed on disk.
     let (_h, ws) = crate::workspace::fixture::workspace();
     let agent = "20260101-a1";
     let wt = crate::workspace::fixture::spawn_root(&ws, agent);

@@ -43,16 +43,10 @@ impl IdGen for FixedIdGen {
     }
 }
 
-/// Global `<harness-root>/models.yaml` (ARCH §4.2) — capabilities and
-/// context windows only; endpoints and auth are brazen's (§4.1).
-pub(super) const VALID_GLOBAL_MODELS_YAML: &str = r#"
-models:
-  claude-sonnet-5:
-    provider: anthropic
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native]
-    context_window: 200000
-"#;
+/// Global `<harness-root>/models.yaml` (ARCH §4.2) — the shipped shape:
+/// comments only, no `adapter:` override, no models (bl-35e2); the
+/// role's `providers.yaml` assignment is the whole model binding (§4.3).
+pub(super) const VALID_GLOBAL_MODELS_YAML: &str = "# adapter: /path/to/override\n";
 
 /// Per-repo `<conv-repo>/providers.yaml` (ARCH §4.3).
 pub(super) const VALID_PER_REPO_PROVIDERS_YAML: &str = r#"

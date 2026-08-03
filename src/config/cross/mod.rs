@@ -1,14 +1,14 @@
 //! Cross-config validation: references that span files.
 //!
-//! - `roles.<role>.{provider,model}` in the per-repo `providers.yaml`
-//!   must resolve against the global `models.yaml`, and the named
-//!   model's provider row must match the role's declared provider — see
-//!   [`check_roles_against_models`].
 //! - Workflow `dispatch(<role>)` actions are checked against the
 //!   per-repo `roles:` section — see [`check_workflow_against_roles`].
+//!
+//! There is no roles-against-models check any more (bl-35e2): the
+//! global `models.yaml` carries no `models:` table, a role's
+//! `providers.yaml` assignment is the single home of its (provider row,
+//! model id) pointer, and id validity is brazen's fact caught at the
+//! first live model call (ARCH §4.2).
 
-mod roles_check;
 mod workflow_check;
 
-pub use roles_check::check_roles_against_models;
 pub use workflow_check::check_workflow_against_roles;

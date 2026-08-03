@@ -59,21 +59,6 @@ fn run_surfaces_global_models_yaml_load_error() {
 }
 
 #[test]
-fn run_surfaces_cross_check_failure() {
-    // role.model names a model not declared in models.yaml.
-    let bad_per_repo = r#"
-roles:
-  worker:
-    provider: anthropic
-    model: nonexistent-model
-"#;
-    let repo = scaffold_repo(bad_per_repo, Some("body"));
-    let err =
-        run_with_stubs(repo.path(), "hi", &unreachable_adapter(), &StubGit::ok()).unwrap_err();
-    assert!(matches!(err, Error::Config(_)));
-}
-
-#[test]
 fn run_rejects_when_worker_role_missing() {
     let no_worker = r#"
 roles:

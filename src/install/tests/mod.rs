@@ -60,10 +60,21 @@ fn seeds_a_fresh_collapsed_home() {
     let h = home.path();
 
     // Config lifetime (§2.2): workflows/ + the default models.yaml (§4.2).
+    // The seed is mechanism only (bl-35e2): it must parse as the default
+    // shape (no adapter override) and name no model, no provider, and no
+    // auth material — model policy never ships in git.
     assert!(h.join("workflows").is_dir());
     let models = fs::read_to_string(h.join("models.yaml")).unwrap();
-    assert!(models.contains("provider: anthropic"));
-    assert!(models.contains("claude-sonnet-5"));
+    let parsed = crate::config::models::Models::load(&h.join("models.yaml")).unwrap();
+    assert!(parsed.adapter.is_none(), "the seed activates no override");
+    assert!(
+        !models.contains("models:"),
+        "no models table in the shipped seed (bl-35e2)"
+    );
+    assert!(
+        !models.to_lowercase().contains("claude-"),
+        "no model id in the shipped seed (bl-35e2)"
+    );
     assert!(
         !models.contains("ANTHROPIC_API_KEY"),
         "auth material must not live in models.yaml (§4.1)"

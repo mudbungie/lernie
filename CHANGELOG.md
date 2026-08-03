@@ -15,6 +15,7 @@ than product and are not listed — they live in git and in the balls store.
 
 ### Changes
 
+- retire the global models table: `install/models.yaml` ships mechanism only (the optional `adapter:` override — no model ids, capabilities, or context windows in git), a role's `providers.yaml` assignment is the whole model binding, and the roles-against-models cross-check is deleted; a leftover `models:` block in an operator's file parses as inert [bl-35e2]
 - every tool result now carries a result envelope — the exit code stated on its first line, stdout, then stderr under a `--- stderr ---` marker whenever the tool wrote any, on success as well as failure; a model can tell exit 1 from 127 from 143, and a warning from a command that exited 0 is no longer dropped [bl-ffc5]
 - fork-from-history and config-branch selection reach the CLI: --from <ref> on prompt/dispatch, --config <name> on prompt [bl-a693]
 - guard the seeded `models.yaml`/`providers.yaml` provider names against brazen's actual resolved table in CI, so a shipped row brazen can't serve fails a test instead of an operator's first dispatch [bl-9391]

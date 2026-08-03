@@ -90,8 +90,8 @@ make install LERNIE_HOME=/opt/lernie          # collapse both homes -> /opt/lern
    verb that seeds the installation substrate (ARCH §2.2), so the
    Makefile no longer duplicates the seeding. `prime` resolves the roots
    (XDG split, collapsed by `LERNIE_HOME`) and lays down the default
-   `models.yaml` under the **config root** (model capabilities + context
-   windows — no endpoints or auth, which are brazen's), the `tools/` and
+   `models.yaml` under the **config root** (mechanism only: the optional
+   `adapter:` override — no models, endpoints, or auth), the `tools/` and
    `skills/` pools and the `workspaces/` tree under the **data root**,
    and the empty `workflows/` templates dir. It is **seed-if-absent
    throughout**: a second run changes nothing, and a hand-edited
@@ -181,10 +181,11 @@ installs). Three distinct on-disk locations:
 
 - **Config root** — hand-edited declarations, `$XDG_CONFIG_HOME/lernie`
   (default `~/.config/lernie`). Holds the global
-  [`models.yaml`](docs/ARCHITECTURE.md#42-model-abstraction) (model
-  capabilities + context windows, plus an optional `adapter:` binary
-  override — §4.2) and the `workflows/` templates. Provider endpoints
-  and auth live in brazen's config, not here (§4.1).
+  [`models.yaml`](docs/ARCHITECTURE.md#42-model-abstraction) (the
+  optional `adapter:` binary override — §4.2; no model policy) and the
+  `workflows/` templates. Provider endpoints and auth live in brazen's
+  config, not here (§4.1); each role's model is named in a repo's
+  `providers.yaml` (§4.3).
 - **Data root** — machine-populated pools, `$XDG_DATA_HOME/lernie`
   (default `~/.local/share/lernie`). Holds the `tools/` and `skills/`
   pools plus the `workspaces/` tree. Shared across every workspace.
@@ -289,10 +290,10 @@ make smoke SMOKE_PROVIDER=codex SMOKE_MODEL=gpt-5.4
 ```
 
 The override is laid into the throwaway config root through the same front
-doors a real install uses — a `providers.yaml` override under
-`<config-root>/template/` (the config-root override) plus a `models.yaml`
-placed in the config root before `lernie prime` (its seed-if-absent
-contract, ARCH §4.2) — so there is no new `lernie` flag or verb. Local
+door a real install uses — a `providers.yaml` override under
+`<config-root>/template/` (the config-root override; the role assignment
+is the whole model binding, ARCH §4.2/§4.3) — so there is no new `lernie`
+flag or verb. Local
 `ollama` (bz's `local` provider row) needs no credential, only a model
 that is actually pulled and served; the credential note above applies to
 the `anthropic` default alone.
@@ -410,11 +411,11 @@ returns by depositing a result message into its parent's inbox (§2.6):
 1. Resolve the harness root (`LERNIE_HOME`, else XDG homes, ARCH
    §2.2) and guard the workspace layout (a non-workspace, or the
    retired per-conversation layout, is refused — §2.2, §10). Load
-   `<config-root>/models.yaml` (capabilities + context windows +
-   optional `adapter:` override — §4.2) and, from the config commit's
-   tree (`git show <config-commit>:providers.yaml`, §2.2),
-   `providers.yaml` (`roles:` block — §4.3); cross-validate
-   `roles.worker.{provider,model}` against `models.yaml`. Which config
+   `<config-root>/models.yaml` (the optional `adapter:` override —
+   §4.2) and, from the config commit's tree
+   (`git show <config-commit>:providers.yaml`, §2.2),
+   `providers.yaml` (`roles:` block — §4.3); the role's
+   `{provider, model}` pointer is the whole model binding. Which config
    commit is **one derivation for both readings** (§2.2): the nearest
    `config/*` ancestor (`git merge-base` against the `config/*` heads —
    never stored) of the ref in hand. A fresh root asks it of the ref it
@@ -1183,9 +1184,9 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
 ### Adding a provider
 
 - **A new provider on a supported protocol** is a brazen config row — no
-  code anywhere. Add the row (`bz` config), reference its name as a
-  model's `provider:` in `<config-root>/models.yaml`, and point a role
-  at that model in `<repo>/providers.yaml`.
+  code anywhere. Add the row (`bz` config), then point a role at it in
+  `<repo>/providers.yaml` (`provider:` = the row name, `model:` = the
+  wire model id — the whole binding, §4.3).
 - **A new wire protocol or auth mode** is a contribution to brazen.
 - **An alternate adapter binary** that honors the same pipe contract
   slots in via the optional `adapter:` path in `models.yaml` (§4.2); the

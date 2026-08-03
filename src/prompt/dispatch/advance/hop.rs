@@ -98,7 +98,7 @@ pub(super) fn step(
         &messages,
     )?;
     let request = model_call::build_request(
-        &resolved.model.model_id,
+        resolved.model_id,
         &system_with_goal,
         messages,
         tools,
@@ -138,7 +138,7 @@ pub(super) fn step(
     let assistant_content = transcript::commit_assistant(
         worktree,
         agent_id,
-        &resolved.model.model_id,
+        resolved.model_id,
         &staging_path,
         deps.git,
     )?;

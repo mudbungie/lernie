@@ -1,30 +1,23 @@
 # Global config-root models.yaml (ARCH §4.2; the config root is
 # $XDG_CONFIG_HOME/lernie, default ~/.config/lernie — ARCH §2.2).
 #
-# Holds the facts lernie's behavior relies on and brazen does not own:
-# per-model capabilities and context windows. `provider:` on each model
-# is a brazen provider-row NAME (§4.1) — endpoints, auth, and wire
-# dialects live in brazen's own config (`~/.config/brazen/config.toml`;
-# `bz --dump-config` / `bz --login`), never here. Per-repo providers.yaml
-# files reference a model by id; this file rotates independently of any
-# conversation repo.
+# Mechanism only — this file ships no model policy (bl-35e2). Which
+# providers exist, their endpoints, auth, and the login workflow are
+# brazen's (`bz --login --provider <row>`, `bz --dump-config`; rows are
+# declared in ~/.config/brazen/config.toml and brazen's built-in
+# defaults). Which model each role uses is the conversation repo's
+# `providers.yaml` `roles:` section (ARCH §4.3) — authored per repo,
+# overridable install-wide via `<config-root>/template/providers.yaml`.
+# A model id is validated by the wire at the first live model call
+# (ARCH §4.2), never against a table here.
 #
-# An optional `adapter:` line (an absolute path to a bz-contract-compatible
-# binary) overrides the default `bz` on PATH (§4.2 / §4.4). Omit it to use
-# the pinned `bz` the load-time version guard checks.
+# The one thing this file can declare is an optional `adapter:` line —
+# an absolute path to a bz-contract-compatible binary that overrides the
+# default `bz` on PATH (§4.2 / §4.4). Omit it to use the pinned `bz` the
+# load-time version guard checks.
 #
-# `make install` lays this down only if no models.yaml already exists at
-# the config root, so re-running install never clobbers hand-edited
-# entries.
-
-models:
-  claude-sonnet-5:
-    provider: anthropic
-    model_id: claude-sonnet-5
-    capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 1000000
-  claude-haiku-4-5:
-    provider: anthropic
-    model_id: claude-haiku-4-5
-    capabilities: [tool_use_native, prompt_caching, streaming, stop_sequences]
-    context_window: 200000
+# adapter: /path/to/bz-compatible-binary
+#
+# `lernie prime` / `make install` lay this down only if no models.yaml
+# already exists at the config root, so re-running install never
+# clobbers a hand-edited file.

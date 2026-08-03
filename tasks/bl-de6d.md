@@ -1,7 +1,8 @@
 +++
 title = "connection points in the tool-call path: a gate seam, and controls shipped as knobs"
 created = 1785650728
-updated = 1785651094
+updated = 1785724357
+claimant = "Cleat"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 Operator ruling (2026-08-01, codex-comparison follow-up), verbatim: "big gap. there is the part that says, appropriately, that this is all workflow tooling. you could build a workflow with controls. but, it doesn't ship out of the box, and it would be worth it to do so, even as knobs. and, I don't think I have the hooks in place to put it in the way of tool calls, which is a big leverage point around what should get reviewed. Needs more connection points."

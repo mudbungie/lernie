@@ -38,6 +38,7 @@ fn resolves_external_from_harness_root_first() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(installed.is_file(), "installed script vanished");
@@ -108,6 +109,7 @@ fn resolves_external_via_path_when_harness_root_misses() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);
@@ -136,6 +138,7 @@ fn falls_back_to_the_injected_driver_target_when_external_missing() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);

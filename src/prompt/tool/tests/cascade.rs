@@ -74,6 +74,7 @@ while true; do sleep 0.05; done
                 },
                 &step.path,
                 &stop,
+                None,
             )
             .unwrap();
         assert!(outcome.is_error, "exit 9 → is_error true");
@@ -125,6 +126,7 @@ while true; do sleep 0.05; done
                 },
                 &step.path,
                 &stop,
+                None,
             )
             .unwrap_err();
         match err {
@@ -169,6 +171,7 @@ kill -SEGV $$
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap_err();
     match err {

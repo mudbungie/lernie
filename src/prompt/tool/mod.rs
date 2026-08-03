@@ -25,6 +25,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 use thiserror::Error;
 
+mod bound;
 pub mod builtin;
 mod envelope;
 pub mod spawn;
@@ -95,7 +96,9 @@ pub struct ToolOutcome {
     /// the executor ran, this is the §3.3 *result envelope*
     /// ([`envelope::render`]): the exit code stated, the child's stdout,
     /// and its stderr under a marker whenever the child wrote any —
-    /// success included. A call declined before the executor was entered
+    /// success included — each stream first bounded per the governing
+    /// `tool_output:` policy ([`bound::apply`], §3.3 *Bounded transcript
+    /// projection*); the full capture stays in `output.json`. A call declined before the executor was entered
     /// (§3.3 *declaring is not permitting*) carries the harness's own
     /// decline text instead: no child ran, so there is no exit code to
     /// state and none is invented.
@@ -209,11 +212,22 @@ pub trait ToolExecutor {
     /// and the only consumer is the executor's polling loop —
     /// pretending it could be anything else would be premature
     /// abstraction.
+    ///
+    /// `output_bound` is the governing `workflow.yaml`'s `tool_output:`
+    /// policy (ARCH §3.3 *Bounded transcript projection*, §6): each
+    /// captured stream is bounded to its head+tail before the result
+    /// envelope is rendered around them ([`bound::apply`]), while the
+    /// full bytes still land in `output.json`. `None` — the block
+    /// absent — projects the streams unbounded. Passed per call rather
+    /// than held by the executor because it is the *calling agent's*
+    /// policy, read from its governing config commit (§2.2), and the
+    /// executor is constructed before any agent is resolved.
     fn execute(
         &self,
         call: ToolCall<'_>,
         step_dir: &Path,
         stop: &AtomicBool,
+        output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError>;
 }
 

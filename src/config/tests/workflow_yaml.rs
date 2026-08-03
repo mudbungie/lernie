@@ -141,6 +141,34 @@ fn partial_budgets_leaves_the_other_axes_unbounded() {
 }
 
 #[test]
+fn parses_explicit_tool_output_block() {
+    // ARCH §3.3 bounded transcript projection: per-stream head+tail
+    // byte allowances, read from `workflow.yaml` (§6).
+    let w = parse("events: {}\ntool_output:\n  head_bytes: 16384\n  tail_bytes: 16384\n").unwrap();
+    let bound = w.tool_output.unwrap();
+    assert_eq!(bound.head_bytes, 16384);
+    assert_eq!(bound.tail_bytes, 16384);
+}
+
+#[test]
+fn omitted_tool_output_block_is_unbounded() {
+    // No `tool_output:` → the projection is unbounded — the policy is
+    // severable (the shipped default lives in template/workflow.yaml).
+    let w = parse("events: {}\n").unwrap();
+    assert!(w.tool_output.is_none());
+}
+
+#[test]
+fn rejects_unknown_tool_output_fields() {
+    // deny_unknown_fields: a misspelled knob is a parse error, not a
+    // silently-unbounded stream.
+    let err =
+        parse("events: {}\ntool_output:\n  head_bytes: 1\n  tail_bytes: 2\n  middle_bytes: 3\n")
+            .unwrap_err();
+    assert!(matches!(err, LoadError::Yaml { .. }));
+}
+
+#[test]
 fn workflow_without_compaction_is_ok() {
     let w = parse("events:\n  user_message:\n    - notify_ui\n").unwrap();
     assert!(w.compaction.is_none());

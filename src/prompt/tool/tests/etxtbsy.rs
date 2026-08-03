@@ -102,6 +102,7 @@ fn spawn_retries_past_transient_etxtbsy() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("a million-attempt budget rides out the hold on any machine");
     holder.join().unwrap();
@@ -160,6 +161,7 @@ fn spawn_surfaces_etxtbsy_after_budget_exhausted() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect_err("the attempt budget exhausts against a permanent hold");
     stop_holder.store(true, std::sync::atomic::Ordering::SeqCst);

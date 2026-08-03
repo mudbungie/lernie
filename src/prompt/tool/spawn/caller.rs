@@ -67,6 +67,18 @@ impl Caller {
         })
     }
 
+    /// `dir` made workspace-relative — the pointer the §3.3 bounded-
+    /// projection marker carries: `steps/<agent-id>/<NNN>/tools/
+    /// <tool-id>/`, the ARCH notation, free of host paths so a committed
+    /// transcript replays identically anywhere. `dir` always descends
+    /// from the workspace this caller was derived from (`tool_call_dir`
+    /// under `step_dir`); the fallback keeps the function total.
+    pub(super) fn record_rel(&self, dir: &Path) -> PathBuf {
+        dir.strip_prefix(&self.workspace)
+            .unwrap_or(dir)
+            .to_path_buf()
+    }
+
     /// The env vars the harness conveys to every tool subprocess per
     /// ARCH §3.3 (the environment bullet). Names are pinned in
     /// [`super::super`] so the executor (the writer) and the built-ins that
@@ -82,5 +94,35 @@ impl Caller {
                 self.workspace.as_os_str().to_owned(),
             ),
         ]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Caller;
+    use std::path::{Path, PathBuf};
+
+    fn caller(workspace: &str) -> Caller {
+        Caller {
+            workspace: PathBuf::from(workspace),
+            agent_id: "a".into(),
+            cwd: PathBuf::from(workspace).join("agents/a"),
+        }
+    }
+
+    /// The marker's pointer is workspace-relative — the ARCH §2.2
+    /// notation, free of host paths.
+    #[test]
+    fn record_rel_strips_the_workspace_prefix() {
+        let rel = caller("/ws").record_rel(Path::new("/ws/steps/a/001/tools/tu_1"));
+        assert_eq!(rel, Path::new("steps/a/001/tools/tu_1"));
+    }
+
+    /// Totality fallback: a dir not under the workspace (impossible via
+    /// `tool_call_dir`, kept total anyway) passes through unchanged.
+    #[test]
+    fn record_rel_is_total_off_the_workspace() {
+        let rel = caller("/ws").record_rel(Path::new("/elsewhere/tools/tu_1"));
+        assert_eq!(rel, Path::new("/elsewhere/tools/tu_1"));
     }
 }

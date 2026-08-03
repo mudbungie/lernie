@@ -46,6 +46,17 @@
           "$ref": "#/definitions/RetryConfig"
         }
       ]
+    },
+    "tool_output": {
+      "description": "Per-stream byte bound on the transcript projection of a tool result (ARCH §3.3 *Bounded transcript projection*, bl-d5fa). Omitted → tool output reaches the transcript unbounded; the shipped default lives in `template/workflow.yaml` ([`ToolOutputBound`]).",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ToolOutputBound"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "definitions": {
@@ -149,6 +160,29 @@
           "minimum": 0.0
         }
       }
+    },
+    "ToolOutputBound": {
+      "description": "The `tool_output:` block. Both fields are byte counts — lernie has no tokenizer, so bytes are the only honest unit (§3.3). `Copy` because it is two words of policy handed down the executor path by value.",
+      "type": "object",
+      "required": [
+        "head_bytes",
+        "tail_bytes"
+      ],
+      "properties": {
+        "head_bytes": {
+          "description": "Bytes kept from the start of each stream — the command banner, the part that says what ran.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0.0
+        },
+        "tail_bytes": {
+          "description": "Bytes kept from the end of each stream — the failure tail, the part that says how it ended.",
+          "type": "integer",
+          "format": "uint",
+          "minimum": 0.0
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

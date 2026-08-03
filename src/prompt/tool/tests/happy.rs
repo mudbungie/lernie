@@ -30,6 +30,7 @@ fn happy_path_writes_input_and_output_records() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);
@@ -74,6 +75,7 @@ exit 7
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(outcome.is_error);
@@ -117,6 +119,7 @@ echo "quiet result"
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);
@@ -150,6 +153,7 @@ fn stdin_payload_is_offered_verbatim_to_the_tool() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     let echoed: serde_json::Value = serde_json::from_slice(after_header(&outcome.content)).unwrap();
@@ -175,6 +179,7 @@ fn tool_that_ignores_stdin_still_succeeds() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);
@@ -205,6 +210,7 @@ fn executor_sets_conv_repo_and_conv_branch_env_vars_on_tool_subprocess() {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     assert!(!outcome.is_error);

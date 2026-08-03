@@ -658,7 +658,11 @@ Each built-in is the triple §3.3 pins:
 - **Binary** — the `lernie tool <name>` subcommand. Reads
   `tool_use.input` JSON from stdin, writes raw bytes to stdout, exits
   0 on success or non-zero on failure; the harness renders the three
-  into the §3.3 *result envelope* that becomes `tool_result.content`.
+  into the §3.3 *result envelope* that becomes `tool_result.content`,
+  each stream first head+tail-bounded per the workflow's `tool_output:`
+  block (§3.3 *bounded transcript projection*, bl-d5fa) — the cut
+  middle is replaced by a marker naming the original byte/line counts
+  and the diagnostic `output.json` that keeps every byte.
 - **JSON schema** — at [`schemas/tools/<name>.json`](schemas/tools/),
   seeded to `<data-root>/tools/<name>.json` by `lernie prime` (which
   `make install` invokes, ARCH §2.2). Sent verbatim as the

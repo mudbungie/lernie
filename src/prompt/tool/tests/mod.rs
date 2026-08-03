@@ -10,6 +10,8 @@
 //!   third hop always resolves (§2.11 injected target).
 //! - [`happy`]: end-to-end stdio contract — exit 0, exit non-zero,
 //!   stderr concat-on-error, on-disk record shape.
+//! - [`bounded`]: the §3.3 bounded transcript projection — streams
+//!   bounded independently inside the envelope, full record intact.
 //! - [`cascade`]: SIGTERM-then-SIGKILL semantics, and the "tool died
 //!   from a signal not under harness control" §2.10 fault.
 //! - [`errors`]: failure modes of resolution, spawn, and disk-record
@@ -24,6 +26,7 @@
 //!   driver target via [`crate::test_support::lernie_binary`].
 
 mod bash_tool;
+mod bounded;
 mod cascade;
 mod errors;
 mod etxtbsy;

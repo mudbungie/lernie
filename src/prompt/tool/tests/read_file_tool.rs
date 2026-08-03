@@ -87,6 +87,7 @@ fn read_file_through_executor_returns_file_bytes_and_lands_disk_record() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute succeeds");
 
@@ -136,6 +137,7 @@ fn read_file_resolves_a_relative_path_against_the_agents_worktree() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute succeeds");
 
@@ -160,6 +162,7 @@ fn read_file_failure_states_its_exit_code_and_marks_stderr() {
             },
             &fixture.step.path,
             &AtomicBool::new(false),
+            None,
         )
         .expect("execute returns Ok even when the tool exits non-zero");
 

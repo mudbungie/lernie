@@ -39,6 +39,7 @@ fn where_the_tool_ran(git: Box<dyn GitRunner>, step: &StepDir) -> PathBuf {
             },
             &step.path,
             &AtomicBool::new(false),
+            None,
         )
         .unwrap();
     PathBuf::from(

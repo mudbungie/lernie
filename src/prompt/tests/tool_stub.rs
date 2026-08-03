@@ -84,6 +84,7 @@ impl ToolExecutor for StubToolExecutor {
         call: ToolCall<'_>,
         step_dir: &Path,
         stop: &AtomicBool,
+        _output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError> {
         self.invocations.borrow_mut().push((
             step_dir.to_path_buf(),

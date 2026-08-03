@@ -45,6 +45,7 @@ impl ToolExecutor for NoTools {
         _c: ToolCall<'_>,
         _s: &Path,
         _st: &AtomicBool,
+        _b: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError> {
         unreachable!("tool executor is never reached")
     }

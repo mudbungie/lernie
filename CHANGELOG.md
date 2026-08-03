@@ -19,8 +19,15 @@ merges.
 
 ## [Unreleased]
 
+## [0.0.4](https://github.com/mudbungie/lernie/compare/v0.0.3...v0.0.4) - 2026-08-02
+
 ### Changes
 
+- apply_patch declines a symlink destination on Add, Update, and Move to — `symlink_metadata` on the final path, so a dangling link can no longer route bytes through to its target (Delete stays exempt: it removes the link itself) [bl-2502]
+- match codex's blank-line grammar in apply_patch exactly: a bare blank line in an Add body or between sections declines loudly (write a lone `+` for blank content), blanks after `*** End of File` are ignored, and the Update-body empty-context reading is documented as faithful parity [bl-fdbb]
+- exclude zero-run tasks from agent-eval's pass@1/pass@5 means instead of leaking `NaN%` into run and compare reports — unmeasured, not zero [bl-dad5]
+- refuse a pinned document whose destination path crosses or lands on a symlink: `--pin` validation promised no traversal, and `write_into` now enforces it at write time too [bl-91f8]
+- read the hold mark unconditionally in the tool-execution loop, so a hold whose control was since removed from config resumes cleanly instead of re-running committed blocks and double-depositing a `tool_result` [bl-11af]
 - commit the provider's token usage with the model output it belongs to: a `messages/NNN-<model>.json` entry is now an API-shaped `{"content":[…],"usage":{…}}` object (the bare block array stays lawful and unmigrated), so a transcript reader states real token counts from the committed bytes alone [bl-718e]
 - the hand-maintained changelog becomes the single authority: release-plz no longer writes CHANGELOG.md (`changelog_update = false`), the bl-1923 subject-protection preprocessor is deleted (release-plz preprocesses twice, so it doubled — 'fleet: fleet: drop …'), and `make promote-changelog VERSION=x.y.z` stamps [Unreleased] as the release section [bl-7558]
 - record every result deposit at a durable `refs/lernie/returned/<child>` mark so `lernie scan` never fabricates a `died` epitaph for a compactor (or any child) whose return was consumed [bl-2c06]

@@ -214,22 +214,45 @@ fn advance_launcher_captures_child_stderr_and_appends_across_launches() {
 
 /// Count `declined` lines in the driver log, retrying while fewer than
 /// `want` are visible — the child is fire-and-forget (§2.11), so its
-/// write lands after the launch returns. A bounded retry *count*, never
-/// a wall-clock deadline (§2.9's rule, "a deadline measured under load
-/// reports the load"): a slow box only makes the pass path slower.
+/// write lands after the launch returns. The budget is a *count*, never
+/// a wall-clock deadline (§2.9: "a deadline measured under load reports
+/// the load"), and it is injected below so both arms are exercisable.
 fn declines_until(workspace: &Path, agent_id: &str, want: usize) -> usize {
+    declines_within(workspace, agent_id, want, 600)
+}
+
+/// [`declines_until`] with the retry budget injected — the shape the
+/// sibling lock poll (`crate::prompt::tests::advance::free_within`)
+/// already uses, and for the same reason. A count bounds how long the
+/// poll waits, not which arms run: when the child has already written
+/// by the first read the loop breaks on its first pass, the sleep never
+/// executes, and the 100% floor reports one uncovered line on a tree
+/// that passed minutes earlier (the bl-2625 flake, bl-1c2e before it).
+/// A `want` the log can never reach spends the whole budget instead.
+fn declines_within(workspace: &Path, agent_id: &str, want: usize, retries: u32) -> usize {
     let path = driver_log_path(workspace, agent_id);
     let mut seen = 0;
-    for _ in 0..600 {
+    for attempt in 0..retries {
+        if attempt > 0 {
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
         seen = std::fs::read_to_string(&path)
             .map(|s| s.matches("declined").count())
             .unwrap_or(0);
         if seen >= want {
             break;
         }
-        std::thread::sleep(std::time::Duration::from_millis(5));
     }
     seen
+}
+
+#[test]
+fn declines_within_gives_up_when_the_count_never_arrives() {
+    // No launch, so no driver log and no `declined` line will ever
+    // appear: the poll spends its whole budget on every box, which is
+    // what makes the retry sleep and the give-up return deterministic.
+    let ws = TempDir::new().unwrap();
+    assert_eq!(declines_within(ws.path(), "a1", 1, 2), 0);
 }
 
 /// The launch is **declined** when its stderr sink cannot be opened

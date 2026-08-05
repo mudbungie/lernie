@@ -4,8 +4,9 @@
 `lernie-tool-<name>` external-tool seam (ARCHITECTURE §3.3) carries a Model
 Context Protocol (MCP) client bridge with **zero changes to lernie** — no new
 verb, no new config key, no new channel. MCP integration is a deployment
-concern in exactly the way provider wire protocols are brazen's (§4.4,
-PRINCIPLES "Integrations are external binaries"): the harness owns
+concern in exactly the way provider wire protocols are brazen's
+(ARCHITECTURE §4.4, PRINCIPLES "Integrations are external binaries"): the
+harness owns
 orchestration and on-disk state; the bridge owns the MCP wire protocol, server
 quirks, and credentials. This document settles the seven questions the ball
 posed, records the refusals, and defines the bridge's contract so any
@@ -16,6 +17,13 @@ capability — is already defined in `docs/TAXONOMY.md` §4 *Model Context
 Protocol (MCP)*; this document coins only **pin** (§2 below) and re-specifies
 nothing the taxonomy owns.
 
+**Section-reference convention.** A bare `§N` in this document always names a
+section of *this* document; every cross-document reference names its document
+— `ARCHITECTURE §N` for `docs/ARCHITECTURE.md`, and anything else by path
+(`docs/TAXONOMY.md` §4). This matters most at §6: this document has one and so
+does ARCHITECTURE (*Workflow as Configuration*, whose budgets are cited
+below), and they are unrelated.
+
 ## 0. The seam, verified against current source
 
 Every premise below was checked against the tree at `main` (cad4b2a):
@@ -23,27 +31,30 @@ Every premise below was checked against the tree at `main` (cad4b2a):
 - **External binary slot.** The harness resolves an external tool as
   `<data-root>/tools/lernie-tool-<name>`, falling back to `lernie-tool-<name>`
   on `PATH` (`src/prompt/tool/spawn.rs`; `EXTERNAL_PREFIX` in
-  `src/prompt/tool/mod.rs`). The stdio contract (§3.3) is: `tool_use.input`
-  JSON on stdin, product on stdout, diagnostics on stderr, exit code mapped to
+  `src/prompt/tool/mod.rs`). The stdio contract (ARCHITECTURE §3.3) is:
+  `tool_use.input` JSON on stdin, product on stdout, diagnostics on stderr,
+  exit code mapped to
   `is_error`, `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` in the environment,
   cwd = the calling agent's working directory, SIGTERM with a 5-second flush
   deadline on cancel.
 - **Tool triple.** A tool is binary + JSON schema (`<data-root>/tools/<name>.json`)
   + skill (`<data-root>/skills/<name>/SKILL.md`). Any on-disk triple is
-  discoverable; role configs select from the pool (§3.3 *Tools-list assembly*).
+  discoverable; role configs select from the pool (ARCHITECTURE §3.3
+  *Tools-list assembly*).
 - **Descriptor snapshot.** Config-commit authoring (`lernie new` /
   `lernie config`) snapshots the data-root pools into the config commit's
   `descriptions/**`; branches inherit the snapshot via git and assembly
   intersects against the branch's own read-state tree, never live data-root
-  state (§3.3 *Descriptions-always population* — snapshot, not mirror). The
-  fork trims `descriptions/tools/` to the role's grant (bl-a900).
+  state (ARCHITECTURE §3.3 *Descriptions-always population* — snapshot, not
+  mirror). The fork trims `descriptions/tools/` to the role's grant (bl-a900).
 - **Result envelope.** `Exit code: <N>` + stdout + labelled stderr, bounded by
   the `tool_output:` projection (bl-ffc5, bl-d5fa).
-- **No wall-clock limit.** The executor imposes none; only the §2.9 cancel
-  cascade and §6 budgets bound a tool invocation's duration.
-- **bl-ae6b's builtin-vs-external reasoning** (§3.3 *Why in-process, not a
-  `lernie-tool-*` binary*) and the §3.6 trusted-computing-base line are quoted
-  and applied in §1 below.
+- **No wall-clock limit.** The executor imposes none; only the ARCHITECTURE
+  §2.9 cancel cascade and ARCHITECTURE §6 budgets bound a tool invocation's
+  duration.
+- **bl-ae6b's builtin-vs-external reasoning** (ARCHITECTURE §3.3 *Why
+  in-process, not a `lernie-tool-*` binary*) and the ARCHITECTURE §3.6
+  trusted-computing-base line are quoted and applied in §1 below.
 - **The named deployment.** The fleet demo (`~/ops/fleet`) already ships
   external Slack tools as full triples — `tools/lernie-tool-slack_read`,
   `tools/lernie-tool-slack_post`, schemas and skills beside them — over a
@@ -54,8 +65,9 @@ Every premise below was checked against the tree at `main` (cad4b2a):
 
 Three candidate homes, one survivor:
 
-**In lernie core (in-process built-in): refused.** §3.6 states the criterion:
-"Shipping a tool in-process is the decision to place it in the trusted
+**In lernie core (in-process built-in): refused.** ARCHITECTURE §3.6 states
+the criterion: "Shipping a tool in-process is the decision to place it in the
+trusted
 computing base." bl-ae6b's defense of the in-process `apply_patch` rested on
 that criterion cutting the *other* way: "`apply_patch`'s authority (write
 files where the invocation's cwd points) is strictly a subset of what the
@@ -109,7 +121,7 @@ operator-run, never harness-run) that:
 1. starts each configured server, performs the MCP `initialize` handshake,
    and requests `tools/list`;
 2. for each tool on the bridge config's **allowlist** (never the whole
-   catalog — §6), writes the triple:
+   catalog — §6 below), writes the triple:
    - **binary**: a symlink (or trivial exec shim) `lernie-tool-<name>` →
      the bridge binary, which reads its own invoked name to select the
      pinned server+tool;
@@ -132,15 +144,18 @@ branch's own tree, so that pool is a pure function of its fork point. Dynamic
 discovery happens exactly once, at pin time, as an operator act.
 
 **Cache stability falls out rather than being arranged.** Prompt assembly is
-append-only and cache-priced (§5.5); a tool list that churned per run would
+append-only and cache-priced (ARCHITECTURE §5.5); a tool list that churned per
+run would
 flush the prompt cache on every drift of a remote server's catalog. Pinning
 makes churn structurally impossible: the MCP server's live catalog is not an
 input to assembly at any point. `notifications/tools/list_changed` has no
-receiver — there is no resident client to receive them (§3) — and that is a
+receiver — there is no resident client to receive them (§3 below) — and that
+is a
 feature, not a gap. Picking up a server's new or changed tools is re-running
 `pin` and authoring a new config commit; branches forked from older configs
 stay pinned to what they saw, the same "fork is the freeze" discipline as
-every other descriptor (§3.3). Drift between a pinned schema and a server's
+every other descriptor (ARCHITECTURE §3.3). Drift between a pinned schema and
+a server's
 live schema surfaces as an ordinary in-band tool decline at invocation time
 (the server rejects the arguments; the bridge exits non-zero with the
 server's error on stderr), which is the honest failure: re-pin and re-author.
@@ -172,9 +187,9 @@ Why this and not a resident server:
 **Semantics, pinned:**
 
 - **Startup.** Server spawn + `initialize` per invocation. The executor
-  imposes no wall-clock limit (§3.3), so a slow server start (an `npx`-hosted
-  server, cold caches) is latency, not breakage; §6 budgets bound the
-  pathological case.
+  imposes no wall-clock limit (ARCHITECTURE §3.3), so a slow server start (an
+  `npx`-hosted server, cold caches) is latency, not breakage; ARCHITECTURE §6
+  budgets bound the pathological case.
 - **Cancellation.** Harness SIGTERM → bridge; the bridge terminates its
   server child (own process group) and exits within the 5-second flush
   deadline. No MCP `notifications/cancelled` choreography — the connection
@@ -224,7 +239,8 @@ seam. One transport until one deployment proves it, per the ball's refusal.
 - **Residual risk, named.** A pinned tool's *result* is the server's own
   product; a server that echoes a credential into its result has put it in
   the transcript, and no bridge mechanism can prevent that. The mitigation
-  is the same as §3.6's supply-chain paragraph: the pin allowlist is the
+  is the same as ARCHITECTURE §3.6's supply-chain paragraph: the pin allowlist
+  is the
   operator vouching for each tool, a decision made once and auditable at a
   glance. Provenance checking of servers is out of scope here as it is
   there.
@@ -234,18 +250,20 @@ seam. One transport until one deployment proves it, per the ball's refusal.
 **The load-bearing ruling: one lernie tool name per pinned MCP tool — never a
 generic `mcp_call {server, tool, arguments}` multiplexer.** A multiplexer
 would collapse every downstream boundary to one bit: the role `tools:` grant
-(§4.3), the grant gate (declaring is not permitting, bl-5a1f), the
-fork-time descriptor trim (bl-a900), and any future §3.6 / capability-boundary
-policy would all see "the MCP tool" where the operator means "post to Slack
-but do not delete channels." Per-tool naming keeps every one of those
+(ARCHITECTURE §4.3), the grant gate (declaring is not permitting, bl-5a1f),
+the fork-time descriptor trim (bl-a900), and any future ARCHITECTURE §3.6 /
+capability-boundary policy would all see "the MCP tool" where the operator
+means "post to Slack but do not delete channels." Per-tool naming keeps every
+one of those
 mechanisms exact, with no MCP special case anywhere. This is what "no bridge
 that bypasses policy" means structurally: the bridge adds no surface that
 policy would have to chase.
 
 - **Today (v1.0).** A pinned tool is granted, refused, trimmed, and audited
   exactly as `slack_read` is in the fleet demo. Nothing new.
-- **v1.1 sandbox (§3.6).** A pinned tool's binary is a native executable, so
-  it loads only under a role granting `exec`, and then runs unclamped —
+- **v1.1 sandbox (ARCHITECTURE §3.6).** A pinned tool's binary is a native
+  executable, so it loads only under a role granting `exec`, and then runs
+  unclamped —
   coarse, honest, and stated. A future bridge compiled to `wasm32-wasip2`
   with `net` imports would clamp per-host; that is an artifact decision the
   bridge's builder makes, not a lernie decision.
@@ -308,5 +326,6 @@ complete triples over a mock NDJSON channel; its `sensor` role is granted
   criterion above.
 
 No lernie implementation ball is filed, because the design concludes none is
-warranted: the seam shipped with §3.3, and this document is the record that
+warranted: the seam shipped with ARCHITECTURE §3.3, and this document is the
+record that
 it was checked, end to end, against a bridge-shaped consumer.

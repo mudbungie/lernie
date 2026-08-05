@@ -19,6 +19,10 @@ merges.
 
 ## [Unreleased]
 
+### Changes
+
+- close three doc-clarity hazards: cross-document section references now name their document (the rule is stated in ARCH §2.1 and applied across `docs/DESIGN_MCP_BRIDGE.md`, whose own §6 read identically to ARCH §6), the brazen citations name `specs/architecture.md` by path and quote the four sections lernie binds to, and the §2.1 bare-"call" ban gains an explicit programming-sense carve-out (call site, callback, callee, function call, system call) so the ban reads as what it always meant — no unqualified "call" for a model, tool, or API interaction [bl-1966]
+
 ## [0.0.6](https://github.com/mudbungie/lernie/compare/v0.0.5...v0.0.6) - 2026-08-02
 
 ### Changes

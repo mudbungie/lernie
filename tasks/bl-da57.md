@@ -1,8 +1,0 @@
-+++
-title = "the binary's user-facing error strings cite ARCHITECTURE sections inconsistently: some name `ARCH §N`, some are bare `§N`"
-created = 1785906055
-updated = 1785906126
-claimant = "Tatter-da57"
-root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
-+++
-The ARCH §2.1 cross-document reference rule (bl-1966) binds documents; the strings the binary prints to a user are the same kind of citation and are split down the middle. Qualified today: src/prompt/fork_point.rs (`ARCH §2.3, §7.2` — itself half-bare), src/prompt/dispatch_cli/mod.rs (`ARCH §2.2`, `ARCH §2.5`), src/prompt/inbox/mod.rs (`ARCH §2.11`). Bare today: src/workspace.rs:208 (`§2.2`), src/prompt/error.rs lines 37/44/61/102/126/167/182 (`§2.2`, `§2.3`, `§4.4`, `§2.9`, `§6`, `§2.6`). A reader of `lernie prompt: provider adapter "bz" not found (§4.4 …)` has no way to know which document §4.4 lives in. Fix: qualify every one as `ARCH §N`; the test assertions that pin these strings (src/prompt/tests/errors.rs:111, src/name.rs:105, src/prompt/dispatch_cli/tests.rs:130 among them) move with them. docs/USER_STORIES.md quotes two of these strings verbatim (US-24) and must be re-quoted in the same pass. Out of scope here: the ~3200 bare `§N` in Rust doc comments, which no user reads.

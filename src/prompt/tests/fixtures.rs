@@ -142,6 +142,7 @@ pub(super) fn valid_deps<'a>(
         adapter_target: None,
         stop: never_stopped(),
         launcher: no_launch(),
+        rng: crate::workspace::agent_name::mint::test_rng(),
     }
 }
 

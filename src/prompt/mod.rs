@@ -120,6 +120,12 @@ pub struct Deps<'a> {
     /// a recording launcher so the launch decision and its ordering are
     /// observable.
     pub launcher: &'a dyn inbox::Launcher,
+    /// The randomness the agent-name mint draws on when a creation path
+    /// omits `name` (ARCH §2.3, yog bl-aca4 — the settle-the-name
+    /// pre-flight). Production wires
+    /// [`name_fact::mint::SplitMix64::from_entropy`]; tests inject a
+    /// seeded or scripted generator so the minted name is deterministic.
+    pub rng: &'a dyn name_fact::mint::Rng,
 }
 
 /// Drive one root conversation against the workspace at `repo`: check
@@ -145,7 +151,18 @@ pub fn run(
 ) -> Result<String, Error> {
     crate::workspace::require(repo)?;
     let fork_point = fork_point::resolve(repo, from, config, deps.git)?;
-    name.map_or(Ok(()), |n| name_fact::require_available(repo, n, deps.git))?;
+    // Settle the name (§2.3, yog bl-aca4): supplied → validated against
+    // the living agents; absent → minted against the same scan. No root
+    // starts nameless.
+    let name = name_fact::mint::preflight(repo, name, deps.git, deps.rng)?;
     let cfg = resolve::resolve_worker(repo, resolve::ConfigSource::Fork(&fork_point), deps)?;
-    dispatch::run_exchange(repo, msg, &fork_point, name, pins, &cfg.as_resolved(), deps)
+    dispatch::run_exchange(
+        repo,
+        msg,
+        &fork_point,
+        Some(&name),
+        pins,
+        &cfg.as_resolved(),
+        deps,
+    )
 }

@@ -11,6 +11,7 @@ use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, inbox_dir, try_acquire};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::run as prompt_run;
+use crate::workspace::agent_name::mint::test_rng;
 use brazen::FinishReason;
 use serde_json::json;
 use std::os::unix::fs::PermissionsExt;
@@ -67,6 +68,7 @@ pub(super) fn real_deps<'a>(
         adapter_target: None,
         stop: never_stopped(),
         launcher: no_launch(),
+        rng: test_rng(),
     }
 }
 

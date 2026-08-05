@@ -17,6 +17,7 @@ use super::fixtures::*;
 use crate::prompt::adapter::AdapterRunner;
 use crate::prompt::step::step_dir_rel;
 use crate::prompt::{Deps, run};
+use crate::workspace::agent_name::mint::test_rng;
 use brazen::FinishReason;
 use serde_json::json;
 use std::ffi::OsString;
@@ -132,6 +133,7 @@ fn stop_during_model_call_deposits_stopped_and_preserves_missing_end() {
         adapter_target: None,
         stop: &stop,
         launcher: no_launch(),
+        rng: test_rng(),
     };
 
     // The half-stream mid-call would surface as `AdapterHalfStream`, but

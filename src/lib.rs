@@ -1,14 +1,16 @@
 //! Lernie — a git-backed agent harness, exposed as its command surface.
 //!
-//! The crate's entire public API is [`cmd`] (ARCH §3.4 "One command
+//! The crate's public API is [`cmd`] (ARCH §3.4 "One command
 //! surface, two bindings"): the `Cli`/`Command` clap definitions, one
 //! **entry** per verb, the binding seam ([`cmd::Fx`], [`cmd::Outcome`],
-//! [`cmd::Error`]), and the binding preludes ([`cmd::prelude`]). Nothing
+//! [`cmd::Error`]), and the binding preludes ([`cmd::prelude`]) — plus
+//! exactly one enumerated exception, the [`mint`] seam (the agent-name
+//! mint yog draws through the crate, §2.3 / yog bl-aca4). Nothing
 //! else is public. That is the parity invariant (§3.4, CI-enforced by
 //! `tests/command_surface_parity/`): the library surface *is* the
-//! command surface — the crate exposes nothing public that is not a
-//! verb's entry, its arguments, its products, or the binding preludes,
-//! and no verb lacks its entry.
+//! command surface plus the mint seam — the crate exposes nothing
+//! public that is not a verb's entry, its arguments, its products, the
+//! binding preludes, or the mint seam, and no verb lacks its entry.
 //!
 //! Consume it two ways, both the *same* control plane: exec the `lernie`
 //! binary (the exec binding, `src/bin/lernie`) or link the crate and call
@@ -38,6 +40,7 @@ pub mod cmd;
 mod config;
 mod harness_root;
 mod install;
+pub mod mint;
 mod name;
 mod prompt;
 mod provider;

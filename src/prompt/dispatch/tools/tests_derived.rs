@@ -39,6 +39,7 @@ fn dispatch_role(ws: &Path, parent: &str, role: &str) -> String {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &NoLaunch,
+        crate::workspace::agent_name::mint::test_rng(),
     )
     .unwrap()
 }

@@ -11,6 +11,7 @@ use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox::{self, inbox_dir};
 use crate::prompt::tool::ToolOutcome;
 use crate::prompt::{AdapterRunner, Deps, Error};
+use crate::workspace::agent_name::mint::test_rng;
 use brazen::{Content, FinishReason};
 use std::ffi::OsString;
 use std::io;
@@ -98,6 +99,7 @@ fn a_stop_during_the_model_call_is_a_stop_not_a_failure() {
         adapter_target: None,
         stop: &stopped,
         launcher: &rec,
+        rng: test_rng(),
     };
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
     assert!(matches!(out, AdvanceOutcome::Terminal));
@@ -138,6 +140,7 @@ fn a_stop_during_the_tool_window_never_rides_the_baton() {
         adapter_target: None,
         stop: &stopped,
         launcher: &rec,
+        rng: test_rng(),
     };
     let out = run(ws.path(), AGENT, None, &deps, &mut || Ok(worker_config())).unwrap();
     // Terminal, never ToolsPending: the flag would evaporate across exec,

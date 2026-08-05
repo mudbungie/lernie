@@ -1,9 +1,12 @@
 //! The agent **name** — the one home of an agent's display identity
 //! (ARCH §2.1, §2.3, §2.11).
 //!
-//! A **name** is a human-spoken discriminator for an agent: optional,
-//! chosen at the dispatch that creates the agent, and immutable
-//! thereafter exactly like the goal (§2.8). The **id** stays the
+//! A **name** is a human-spoken discriminator for an agent: settled at
+//! the dispatch that creates the agent — supplied by the dispatcher, or
+//! minted from the embedded wordlist on omission ([`mint`], the yog
+//! bl-aca4 ruling) — and immutable thereafter exactly like the goal
+//! (§2.8). Unnamed is a *readable* state (pre-mint stock, until
+//! retention ages it out), not a creatable one. The **id** stays the
 //! *identifier* — branch name, worktree directory, `steps/` and `inbox/`
 //! namespace keys (§2.2, §2.3) — and never carries display semantics;
 //! the name never addresses a path.
@@ -40,6 +43,8 @@
 
 use super::{GitRunner, Path, agent_exists, agent_ids, agent_ref, repo_git};
 use std::io;
+
+pub mod mint;
 
 /// Worktree-relative path of the name fact, committed on the dispatch
 /// commit beside `goal.md` (§2.3 step 2). At the worktree root for the
@@ -79,6 +84,10 @@ pub enum Unavailable {
     /// The `agents/*` scan that enforces uniqueness could not be run.
     #[error("scan the workspace's agent names: {0}")]
     Scan(#[source] io::Error),
+    /// The mint-on-omission path ([`mint::preflight`]) found every word
+    /// of the embedded pool worn by a living agent — loud, never a loop.
+    #[error(transparent)]
+    Exhausted(#[from] mint::MintError),
 }
 
 /// A needle that names two or more living agents — refused, never

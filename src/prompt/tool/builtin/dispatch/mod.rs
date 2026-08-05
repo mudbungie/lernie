@@ -35,10 +35,14 @@ use thiserror::Error;
 struct Input {
     role: String,
     goal: String,
-    /// The child's optional display name (ARCH §2.3, §2.11), forwarded
-    /// as `lernie dispatch --name`. Absent is the ordinary case; a name
-    /// that is malformed or already worn is declined by the verb, so the
-    /// model sees the refusal verbatim (§3.3) and no child is created.
+    /// The child's display name (ARCH §2.3, §2.11), forwarded as
+    /// `lernie dispatch --name`. An exposed parameter the schema teaches
+    /// (yog bl-aca4): supplied, it is the child's identity in every
+    /// surface — `message`-addressable, tree-readable; absent, the verb
+    /// mints a valid one-word name, so omission is never an error. A
+    /// supplied name that is malformed or already worn is declined by
+    /// the verb, so the model sees the refusal verbatim (§3.3) and no
+    /// child is created.
     #[serde(default)]
     name: Option<String>,
 }

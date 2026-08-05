@@ -119,6 +119,7 @@ fn cli_run_with(
         adapter_target,
         stop,
         launcher: &launcher,
+        rng: &crate::workspace::agent_name::mint::SplitMix64::from_entropy(),
     };
 
     let outcome = run(workspace, agent_id, Some(lease), &deps, &mut || {

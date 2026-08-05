@@ -65,6 +65,7 @@ fn dispatch(ws: &Path, parent_wt: &Path, role: &str) -> String {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &NoopLauncher,
+        &crate::workspace::agent_name::mint::SplitMix64::from_seed(7),
     )
     .unwrap()
 }

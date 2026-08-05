@@ -57,9 +57,14 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     assert_eq!(request["model"], "claude-sonnet-5");
     // Goal is prepended to the soul and rides as a canonical
     // `Content::Text` in `system[0]` (§2.8, §4.4 typed request).
+    let name_file = std::fs::read_to_string(worktree.join("name")).unwrap();
     assert_eq!(
         request["system"][0]["text"].as_str().unwrap(),
-        "<goal>\nhello\n</goal>\n\nsystem body"
+        format!(
+            "<goal>\nhello\n</goal>\n\nYour name is {}.\n\nsystem body",
+            name_file.trim()
+        ),
+        "the minted name composes into the system slot exactly as a supplied one (§2.8)"
     );
     assert_eq!(request["messages"][0]["role"], "user");
     // The initial user message entered through the front door (§2.11):
@@ -116,8 +121,10 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     let wire: serde_json::Value = serde_json::from_slice(&stdin).unwrap();
     assert_eq!(wire, request);
 
-    // Git sequence: 8 (the start's preamble against repo.git — the
-    // fork-point lineage query, §2.3; then control resolution from the
+    // Git sequence: 9 (the start's preamble against repo.git — the
+    // fork-point lineage query, §2.3; then the settle-the-name
+    // pre-flight's living-names scan, §2.3 — the name is minted here,
+    // nothing was supplied; then control resolution from the
     // config commit, §2.2: the `config/*` head enumeration and its
     // merge-base, the ancestry derivation of the governing commit, plus
     // five `show` reads — `version` first, the §10 schema-version guard,
@@ -135,8 +142,8 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // returned mark runs (§2.6). Merge-back is gone (§2.6): the root
     // branch persists on its own ref. The version guard runs no git.
     let runs = git.runs.borrow();
-    assert_eq!(runs.len(), 24);
-    for (dest, _args) in &runs[0..9] {
+    assert_eq!(runs.len(), 25);
+    for (dest, _args) in &runs[0..10] {
         assert_eq!(dest, &repo_git, "control + spawn run against repo.git");
     }
     // The start's preamble: the fork point (§2.3) — the lineage pool
@@ -144,71 +151,90 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // derivation of its governing config commit (§2.2), taken against
     // the fork point itself.
     assert_eq!(runs[0].1[1], "--format=%(refname:short)");
-    assert_eq!(runs[1].1[1], "--format=%(refname)");
+    // The settle-the-name pre-flight's `agents/*` scan (§2.3): the one
+    // occupied-set derivation both the supplied and the minted arm read.
     assert_eq!(
-        runs[2].1,
+        runs[1].1,
+        vec![
+            "for-each-ref",
+            "--format=%(refname:short)",
+            "refs/heads/agents/"
+        ]
+    );
+    assert_eq!(runs[2].1[1], "--format=%(refname)");
+    assert_eq!(
+        runs[3].1,
         vec!["merge-base", "config/default", "refs/heads/config/default"]
     );
-    assert_eq!(runs[3].1, vec!["show", &format!("{STUB_SHA}:version")]);
+    assert_eq!(runs[4].1, vec!["show", &format!("{STUB_SHA}:version")]);
     assert_eq!(
-        runs[4].1,
+        runs[5].1,
         vec!["show", &format!("{STUB_SHA}:providers.yaml")]
     );
     assert_eq!(
-        runs[5].1,
+        runs[6].1,
         vec!["show", &format!("{STUB_SHA}:workflow.yaml")]
     );
     assert_eq!(
-        runs[6].1,
+        runs[7].1,
         vec!["show", &format!("{STUB_SHA}:manifest.yaml")]
     );
     assert_eq!(
-        runs[7].1,
+        runs[8].1,
         vec!["show", &format!("{STUB_SHA}:souls/worker.md")]
     );
-    let args8 = &runs[8].1;
+    let args8 = &runs[9].1;
     assert_eq!(
         args8[..4],
         ["worktree", "add", "-b", "agents/ct-1-deadbeef"]
     );
     assert_eq!(args8[4], worktree.to_string_lossy().to_string());
     assert_eq!(args8[5], "config/default");
-    for (dest, _args) in &runs[9..24] {
+    for (dest, _args) in &runs[10..25] {
         assert_eq!(dest, &worktree, "post-spawn git runs inside the worktree");
     }
     // Dispatch commit (§2.3 step 2): the config commit's control files
     // leave the agent's tree (§2.2), then goal + soul commit.
-    assert_eq!(runs[9].1[..5], ["rm", "-r", "-q", "--ignore-unmatch", "--"]);
-    let removed: Vec<&str> = runs[9].1[5..].iter().map(String::as_str).collect();
+    assert_eq!(
+        runs[10].1[..5],
+        ["rm", "-r", "-q", "--ignore-unmatch", "--"]
+    );
+    let removed: Vec<&str> = runs[10].1[5..].iter().map(String::as_str).collect();
     assert_eq!(removed, crate::workspace::CONTROL_PATHS);
     // 10-14 are the descriptor derivation (§3.3): the grant checked
     // against the governing config commit, then checked out of it —
     // asserted arg-for-arg in [`super::descriptor_prune`].
-    // 13 stages the settled name (§2.3): the trim's fourth part, always
-    // written — empty here, since this root was started without one.
-    assert_eq!(runs[15].1, vec!["add", "name"]);
-    assert_eq!(std::fs::read_to_string(worktree.join("name")).unwrap(), "");
-    assert_eq!(runs[16].1, vec!["add", "goal.md", "soul.md"]);
-    assert_eq!(runs[17].1[0], "commit");
-    assert!(runs[17].1[2].contains("step 001: dispatch"));
-    assert!(runs[17].1[2].contains("[ct-1-deadbeef]"));
+    // 14 stages the settled name (§2.3): the trim's fourth part, always
+    // written — and since yog bl-aca4 never empty at creation: this root
+    // was started without one, so the pre-flight minted a word.
+    assert_eq!(runs[16].1, vec!["add", "name"]);
+    let minted = std::fs::read_to_string(worktree.join("name")).unwrap();
+    let minted = minted.trim();
+    assert!(
+        !minted.is_empty() && minted.chars().all(|c| c.is_ascii_lowercase()),
+        "a minted name is one wordlist word, got {minted:?}"
+    );
+    assert_eq!(runs[17].1, vec!["add", "goal.md", "soul.md"]);
+    assert_eq!(runs[18].1[0], "commit");
+    assert!(runs[18].1[2].contains("step 001: dispatch"));
+    assert!(runs[18].1[2].contains("[ct-1-deadbeef]"));
     // The step-1 drain (§2.11 *Delivery*): a stray-recovery probe over
     // messages/ (clean here — no add/commit), then the initial user
     // message delivered from the inbox as the first transcript entry,
     // before step 1's read state is captured.
-    assert_eq!(runs[18].1, vec!["status", "--porcelain", "--", "messages"]);
-    assert_eq!(runs[19].1, vec!["add", "messages/001-user.md"]);
-    assert!(runs[20].1[2].contains("transcript 001: user"));
-    assert_eq!(runs[21].1, vec!["rev-parse", "HEAD"]);
+    assert_eq!(runs[19].1, vec!["status", "--porcelain", "--", "messages"]);
+    assert_eq!(runs[20].1, vec!["add", "messages/001-user.md"]);
+    assert!(runs[21].1[2].contains("transcript 001: user"));
+    assert_eq!(runs[22].1, vec!["rev-parse", "HEAD"]);
 
     // The transcript writer commits the model-output entry (§2.3): the
     // sealed staging file is renamed to messages/002-<model-id>.json —
     // the origin token is the model that authored it (§2.3) — and
     // committed.
-    assert_eq!(runs[22].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
-    assert_eq!(runs[23].1[0], "commit");
-    assert!(runs[23].1[2].contains("transcript 002: claude-sonnet-5"));
-    assert!(runs[23].1[2].contains("[ct-1-deadbeef]"));
+    assert_eq!(runs[23].1, vec!["add", "messages/002-claude-sonnet-5.json"]);
+    assert_eq!(runs[24].1[0], "commit");
+    assert!(runs[24].1[2].contains("transcript 002: claude-sonnet-5"));
+    assert!(runs[24].1[2].contains("[ct-1-deadbeef]"));
     // The renamed entry is on disk in the worktree and holds the
     // canonical model-output blocks (the "hi there" text block) plus the
     // provider's own token usage (§2.3 *Usage rides the entry*) — so a transcript reader
@@ -229,5 +255,5 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // no-op here — the operator prompted this agent, so its reply is
     // read in this conversation and addresses no inbox — so the entry
     // commit is the last git op and no merge-back follows.
-    assert_eq!(runs.len(), 24);
+    assert_eq!(runs.len(), 25);
 }

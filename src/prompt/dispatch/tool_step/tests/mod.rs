@@ -262,6 +262,7 @@ fn run_tool_calls_executes_only_the_tool_use_blocks() {
         adapter_target: None,
         stop: &stop,
         launcher: &NoLauncher,
+        rng: crate::workspace::agent_name::mint::test_rng(),
     };
     let content = vec![
         Content::Text("running the check".into()),

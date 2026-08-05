@@ -27,6 +27,7 @@ fn max_depth_refuses_the_dispatch_that_would_breach_it() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     let Error::DispatchRefused {
@@ -66,6 +67,7 @@ fn a_dispatch_within_the_depth_ceiling_forks_normally() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::ok(),
+        &test_rng(),
     )
     .unwrap();
 }
@@ -86,6 +88,7 @@ fn a_workflow_triggered_dispatch_reports_a_refusal_and_does_not_fail_the_branch(
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap();
     assert_eq!(workspace::agent_ids(&ws, &g).unwrap(), vec!["20260101-p1"]);
@@ -104,6 +107,7 @@ fn a_workflow_triggered_dispatch_forks_and_still_propagates_other_errors() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::ok(),
+        &test_rng(),
     )
     .unwrap();
     // A non-budget failure is still the branch's to handle.
@@ -113,6 +117,7 @@ fn a_workflow_triggered_dispatch_forks_and_still_propagates_other_errors() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::failing(),
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::ExecutorLock { .. }), "{err:?}");
@@ -132,6 +137,7 @@ fn an_unreadable_workflow_declines_the_dispatch_in_the_control_read_voice() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::ok(),
+        &test_rng(),
     )
     .unwrap_err();
     let Error::ControlRead { path, .. } = &err else {
@@ -154,6 +160,7 @@ fn a_malformed_workflow_declines_the_dispatch() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::ok(),
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::Config(_)), "{err:?}");

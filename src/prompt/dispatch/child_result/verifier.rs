@@ -74,7 +74,14 @@ pub(super) fn dispatch(
         fork_point: Some(&worker.terminal_ref),
         pins: crate::prompt::PinnedDocs::none(),
     };
-    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
+    child_dispatch::run_procedure(
+        &req,
+        deps.git,
+        deps.clock,
+        deps.id_gen,
+        deps.launcher,
+        deps.rng,
+    )
 }
 
 /// Execute a verifier-verdict action (§6): approve drains the held worker
@@ -140,7 +147,14 @@ fn reject(
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)?;
+    child_dispatch::run_procedure(
+        &req,
+        deps.git,
+        deps.clock,
+        deps.id_gen,
+        deps.launcher,
+        deps.rng,
+    )?;
     if let Some(worker) = find_gated_worker(results, verifier_cr, worktree, deps.git) {
         consume(worker)?;
     }

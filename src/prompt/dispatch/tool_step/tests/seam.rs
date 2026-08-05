@@ -91,6 +91,7 @@ impl Rig {
             adapter_target: None,
             stop: &self.stop,
             launcher: &NoLauncher,
+            rng: crate::workspace::agent_name::mint::test_rng(),
         }
     }
 

@@ -29,7 +29,15 @@ fn verifier_child(
         fork_point: Some(worker_tip),
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let v = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
+    let v = child_dispatch::run(
+        &req,
+        &fx.git,
+        &fx.clock,
+        &fx.id,
+        &fx.launcher,
+        crate::workspace::agent_name::mint::test_rng(),
+    )
+    .unwrap();
     if let Some(response) = verdict {
         let vtip = fx
             .git

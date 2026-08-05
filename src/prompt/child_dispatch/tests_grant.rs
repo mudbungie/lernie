@@ -5,7 +5,7 @@
 //! Split from `tests.rs` so both stay under the 300-line repo cap; the
 //! launcher stub and the request builder are shared from there.
 
-use super::tests::{RecordingLauncher, req};
+use super::tests::{RecordingLauncher, req, test_rng};
 use super::*;
 use crate::workspace::fixture;
 
@@ -39,6 +39,7 @@ fn missing_providers_is_surfaced_as_control_read_before_any_spawn() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::ControlRead { .. }), "got {err:?}");
@@ -87,6 +88,7 @@ fn the_childs_tree_carries_only_the_descriptors_its_role_grants() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap();
 
@@ -168,6 +170,7 @@ pub(super) fn dispatch_role(ws: &Path, parent: &str, role: &str) -> String {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &RecordingLauncher::ok(),
+        &test_rng(),
     )
     .unwrap()
 }
@@ -260,6 +263,7 @@ fn a_granted_tool_the_config_describes_nowhere_declines_before_the_fork() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
 

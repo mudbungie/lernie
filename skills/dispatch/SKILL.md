@@ -23,12 +23,15 @@ lands as its own message on a later step as it completes (ARCH §2.5,
   have a soul at `souls/<role>.md`.
 - `goal` — the goal text. Pinned at the head of every model call on the
   child's branch and not rewritten during execution.
-- `name` — optional display name for the child: one unbroken word,
-  unique among the workspace's living agents, set here and never
-  rewritten. It is what `message` accepts in place of the child's id, so
-  name a child you intend to speak to later. A malformed name, one that
-  begins like an agent id, or one already worn is refused and no child
-  is created.
+- `name` — display name for the child: one unbroken word, unique among
+  the workspace's living agents, set here and never rewritten. A name is
+  the child's identity in every surface — it is what `message` accepts
+  in place of the child's id, the child is told it, and it labels the
+  child in the tree — so supplying one keeps subagent identities and
+  tasks clear; pick a name that says what the child is for. Omit it and
+  a valid one-word name is minted automatically — never an error. A
+  supplied name that is malformed, begins like an agent id, or is
+  already worn is refused and no child is created.
 
 ## Output
 
@@ -93,7 +96,7 @@ left for you to do was wait, you did not need the child.
 ## Notes
 
 - The harness writes the goal to `goal.md`, the role's soul to
-  `soul.md`, and the display name (empty when unnamed) to `name` on the
+  `soul.md`, and the display name (supplied or minted) to `name` on the
   child's first commit; the child's worktree is at
   `<workspace>/agents/<child-agent-id>/` (ARCH §2.2).
 - Dispatch is gated by the workflow's `budgets:` at the fork, so a

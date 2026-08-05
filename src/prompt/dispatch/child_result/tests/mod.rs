@@ -102,6 +102,7 @@ impl Fx {
             adapter_target: None,
             stop: &self.stop,
             launcher: &self.launcher,
+            rng: crate::workspace::agent_name::mint::test_rng(),
         }
     }
 }
@@ -144,7 +145,15 @@ fn returned_child_ep(
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
+    let child = child_dispatch::run(
+        &req,
+        &fx.git,
+        &fx.clock,
+        &fx.id,
+        &fx.launcher,
+        crate::workspace::agent_name::mint::test_rng(),
+    )
+    .unwrap();
     // Simulate the child doing its work and committing (§2.3).
     let child_wt = agent_worktree(ws, &child);
     let f = child_wt.join(work.0);

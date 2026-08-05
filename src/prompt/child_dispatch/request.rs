@@ -28,12 +28,15 @@ pub struct ChildDispatchRequest<'a> {
     /// The goal / dispatch message. Written verbatim to the child's
     /// `goal.md` and deposited as its first inbox message.
     pub goal: &'a str,
-    /// The child's optional **name** (ARCH §2.3, §2.11): the display
-    /// fact, committed to the child's `name` on its dispatch commit and
-    /// immutable thereafter, exactly like the goal (§2.8). Checked for
-    /// availability before the fork so a taken or malformed name
-    /// leaves no branch behind. `None` for every harness-initiated
-    /// dispatch (compactor, verifier) — those are procedure children.
+    /// The child's supplied **name**, if any (ARCH §2.3, §2.11): the
+    /// display fact, committed to the child's `name` on its dispatch
+    /// commit and immutable thereafter, exactly like the goal (§2.8).
+    /// Settled at the pre-flight before the fork: `Some` is checked for
+    /// availability, so a taken or malformed name leaves no branch
+    /// behind; `None` — every harness-initiated dispatch (compactor,
+    /// verifier), and any dispatcher that omits the parameter — mints a
+    /// one-word name against the same living-names scan (yog bl-aca4).
+    /// No fork ends nameless.
     pub name: Option<&'a str>,
     /// The ref the child forks off (ARCH §2.3). `None` is the ordinary
     /// child dispatch off the parent's tip (§2.5); `Some(ref)` forks off

@@ -38,7 +38,15 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let child = child_dispatch::run(&req, &fx.git, &fx.clock, &fx.id, &fx.launcher).unwrap();
+    let child = child_dispatch::run(
+        &req,
+        &fx.git,
+        &fx.clock,
+        &fx.id,
+        &fx.launcher,
+        crate::workspace::agent_name::mint::test_rng(),
+    )
+    .unwrap();
 
     let cfg = resolve_worker(&ws, ConfigSource::Agent(&child), &fx.deps()).unwrap();
     assert_eq!(cfg.role, "compactor");

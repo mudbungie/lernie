@@ -168,3 +168,33 @@ fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
         "bash command-property description",
     );
 }
+
+/// The `dispatch` schema teaches `name` as an exposed parameter (§2.3,
+/// yog bl-aca4): what a name buys (a `message`-addressable,
+/// tree-readable child — identity clarity in subagent trees), that
+/// omission mints a valid one-word name, and that a supplied collision
+/// with a living name is refused. `required` stays `[role, goal]` —
+/// omission must stay lawful for the mint to have a case.
+#[test]
+fn the_dispatch_schema_teaches_the_name_parameter_and_the_mint_on_omission() {
+    let schema = wire_schema("dispatch");
+    let props = &schema["properties"];
+    assert_eq!(props["name"]["type"], "string");
+    assert_eq!(schema["required"], serde_json::json!(["role", "goal"]));
+    assert_eq!(schema["additionalProperties"], serde_json::json!(false));
+    asserts(
+        props["name"]["description"]
+            .as_str()
+            .expect("name carries a description"),
+        &[
+            "one unbroken word",
+            "unique among the workspace's living agents",
+            "the child's identity in every surface",
+            "what `message` accepts in place of the child's agent id",
+            "keeps the identities and tasks in a subagent tree clear",
+            "If you omit it, a valid one-word name is minted automatically",
+            "already worn by a living agent is refused and no child is created",
+        ],
+        "dispatch name-property description",
+    );
+}

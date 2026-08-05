@@ -92,13 +92,14 @@ pub fn run(
     clock: &dyn Clock,
     id_gen: &dyn IdGen,
     launcher: &dyn Launcher,
+    rng: &dyn workspace::agent_name::mint::Rng,
 ) -> Result<String, Error> {
-    // Name availability, pre-flighted like role validity and the §6
-    // budget gate (§2.3): the fact's own home enforces its uniqueness, and
-    // a refusal here leaves no branch, no worktree and no inbox behind.
-    if let Some(name) = req.name {
-        crate::workspace::agent_name::require_available(req.repo, name, git)?;
-    }
+    // Settle the name, pre-flighted like role validity and the §6 budget
+    // gate (§2.3): a supplied name is validated by the fact's own home, an
+    // absent one is minted against the same living-names scan (yog
+    // bl-aca4 — no fork ends nameless), and a refusal here leaves no
+    // branch, no worktree and no inbox behind.
+    let name = workspace::agent_name::mint::preflight(req.repo, req.name, git, rng)?;
     let sub_id = format!("{}-{}", clock.now_compact(), id_gen.short());
     // Hyphenated descent (§2.3): the child's id and worktree share the
     // `<parent>-<sub-id>` name; the `agents/` ref prefix is applied at
@@ -188,7 +189,7 @@ pub fn run(
             // the branch and its config cannot come from different refs.
             fork_point: fork_ref,
             goal_text: req.goal,
-            name: req.name,
+            name: Some(&name),
             soul_text: Some(&soul),
             pins: req.pins,
             grant: &grant,
@@ -232,8 +233,9 @@ pub fn run_procedure(
     clock: &dyn Clock,
     id_gen: &dyn IdGen,
     launcher: &dyn Launcher,
+    rng: &dyn workspace::agent_name::mint::Rng,
 ) -> Result<(), Error> {
-    match run(req, git, clock, id_gen, launcher) {
+    match run(req, git, clock, id_gen, launcher, rng) {
         Err(refused @ Error::DispatchRefused { .. }) => {
             eprintln!("lernie: {refused}");
             Ok(())

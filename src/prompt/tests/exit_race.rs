@@ -12,6 +12,7 @@ use crate::prompt::dispatch::driver::{self, DriveOutcome};
 use crate::prompt::inbox::{Launcher, inbox_dir, try_acquire};
 use crate::prompt::{Deps, run};
 use crate::template::{GitRunner, RealGit};
+use crate::workspace::agent_name::mint::test_rng;
 use std::cell::RefCell;
 use std::ffi::OsString;
 use std::io;
@@ -200,6 +201,7 @@ fn exit_race_late_deposit_is_delivered_via_the_exit_launched_driver() {
         adapter_target: None,
         stop: never_stopped(),
         launcher: &launcher,
+        rng: test_rng(),
     };
 
     let branch = run(

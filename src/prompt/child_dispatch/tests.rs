@@ -43,6 +43,12 @@ impl Launcher for RecordingLauncher {
     }
 }
 
+/// A seeded mint RNG (§2.3): every dispatch settles a name, so the
+/// omission path mints deterministically under test.
+pub(super) fn test_rng() -> crate::workspace::agent_name::mint::SplitMix64 {
+    crate::workspace::agent_name::mint::SplitMix64::from_seed(7)
+}
+
 pub(super) fn req<'a>(
     repo: &'a Path,
     parent: &'a str,
@@ -79,6 +85,7 @@ fn forks_the_child_pins_the_goal_and_deposits_through_the_front_door() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap();
     assert!(child.starts_with("20260101-p1-"), "{child}");
@@ -135,6 +142,7 @@ fn a_failing_launch_surfaces_as_executor_lock() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::ExecutorLock { .. }), "got {err:?}");
@@ -155,6 +163,7 @@ fn a_broken_child_inbox_surfaces_as_deposit() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::Deposit(_)), "got {err:?}");
@@ -191,6 +200,7 @@ fn missing_soul_is_surfaced_as_control_read_before_any_spawn() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     assert!(matches!(err, Error::ControlRead { .. }), "got {err:?}");
@@ -229,6 +239,7 @@ fn a_parent_with_no_config_ancestor_fails_as_git() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &launcher,
+        &test_rng(),
     )
     .unwrap_err();
     assert!(
@@ -243,55 +254,6 @@ fn a_parent_with_no_config_ancestor_fails_as_git() {
     );
 }
 
-#[test]
-fn a_duplicate_sub_id_surfaces_as_worktree_add() {
-    // Two dispatches with the same fixed sub-id collide at `worktree
-    // add` — the structural id-uniqueness guarantee (§2.3).
-    struct FixedClock;
-    impl Clock for FixedClock {
-        fn now_iso8601(&self) -> String {
-            "2026-01-01T00:00:00Z".into()
-        }
-        fn now_compact(&self) -> String {
-            "ct9".into()
-        }
-    }
-    struct FixedIdGen;
-    impl IdGen for FixedIdGen {
-        fn short(&self) -> String {
-            "feedface".into()
-        }
-    }
-    let (_h, ws) = fixture::workspace();
-    let parent_wt = fixture::spawn_root(&ws, "20260101-p1");
-    let g = crate::template::RealGit::new();
-    let launcher = RecordingLauncher::ok();
-    run(
-        &req(&ws, "20260101-p1", &parent_wt, "g"),
-        &g,
-        &FixedClock,
-        &FixedIdGen,
-        &launcher,
-    )
-    .unwrap();
-    let err = run(
-        &req(&ws, "20260101-p1", &parent_wt, "g"),
-        &g,
-        &FixedClock,
-        &FixedIdGen,
-        &launcher,
-    )
-    .unwrap_err();
-    assert!(
-        matches!(
-            err,
-            Error::Git {
-                op: "worktree add",
-                ..
-            }
-        ),
-        "got {err:?}"
-    );
-}
-
 mod budget;
+mod edges;
+mod naming;

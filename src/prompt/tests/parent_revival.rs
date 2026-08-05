@@ -1,19 +1,16 @@
 //! Revival-on-deposit at the **parent** (ARCH §2.11, §2.5): a child's
-//! terminal result deposit must start a driver at the parent, so a
-//! quiescent parent wakes, delivers, and steps with no `lernie scan`
-//! anywhere in the path.
+//! terminal result deposit must start a driver at the parent, so a quiescent
+//! parent wakes, delivers, and steps with no `lernie scan` in the path.
 //!
 //! The launch rides the writer's post-deposit probe — the seam `lernie
 //! message` runs ([`crate::prompt::inbox::probe_and_launch`]) — so a
 //! parent whose lease is held gets nothing (its own executor drains at
 //! its next boundary), and §2.11 pin 2's epitaph decision governs it as
 //! it governs the self-directed launch: a `stopped` or `budget-exhausted`
-//! child deposits and wakes nobody.
-//!
-//! [`super::exit_launch`] covers the same rules on the root step loop's
-//! terminal seam; this file drives the real child path — `lernie
-//! advance` at a dispatched child, whose launcher runs the parent's hop
-//! in-process exactly as the detached `lernie advance` would.
+//! child deposits and wakes nobody. [`super::exit_launch`] covers the same
+//! rules on the root step loop's terminal seam; this file drives the real
+//! child path — `lernie advance` at a dispatched child, whose launcher runs
+//! the parent's hop in-process exactly as the detached `lernie advance` would.
 
 use super::advance::{RecLauncher, worker_config};
 use super::fixtures::*;
@@ -23,6 +20,7 @@ use crate::prompt::inbox::{self, Launcher, inbox_dir, try_acquire};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Clock, Deps, PinnedDocs};
 use crate::template::RealGit;
+use crate::workspace::agent_name::mint::test_rng;
 use std::path::{Path, PathBuf};
 use std::{cell::RefCell, io};
 use tempfile::TempDir;
@@ -87,6 +85,7 @@ impl Launcher for RevivingLauncher {
             adapter_target: None,
             stop: never_stopped(),
             launcher: no_launch(),
+            rng: test_rng(),
         };
         deps.git = &git;
         let out = run(ws, agent, None, &deps, &mut || Ok(worker_config()))
@@ -121,6 +120,7 @@ pub(super) fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, St
         &DescentClock,
         &FixedIdGen,
         no_launch(),
+        test_rng(),
     )
     .unwrap();
     (holder, ws, parent, parent_wt, child)

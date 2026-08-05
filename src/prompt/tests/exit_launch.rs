@@ -16,6 +16,7 @@
 use super::fixtures::*;
 use crate::prompt::inbox::{Launcher, inbox_dir, try_acquire};
 use crate::prompt::{Clock, Deps, run};
+use crate::workspace::agent_name::mint::test_rng;
 use std::cell::RefCell;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -174,6 +175,7 @@ fn parentless_agent_deposit_noops_but_exit_launch_still_fires() {
         adapter_target: None,
         stop: never_stopped(),
         launcher: &launcher,
+        rng: test_rng(),
     };
 
     let branch = plain_run(repo.path(), &deps).unwrap();

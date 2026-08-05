@@ -173,11 +173,13 @@ fn an_unknown_name_gets_the_shared_existence_decline_and_it_mentions_names() {
 }
 
 #[test]
-fn a_child_of_a_named_parent_is_unnamed_not_its_parents_namesake() {
+fn a_child_of_a_named_parent_wears_its_own_mint_not_its_parents_namesake() {
     // The regression the always-written file exists to make impossible
     // (§2.3): a child forks off its parent's tip and so inherits the
-    // parent's `name` blob. Its own dispatch commit settles the fact, so
-    // the name does not propagate down the tree and uniqueness holds.
+    // parent's `name` blob. Its own dispatch commit settles the fact —
+    // since yog bl-aca4 an omitted name is *minted*, so the child wears
+    // its own one-word name, never the inherited one, and uniqueness
+    // holds.
     let (_h, ws) = fixture::workspace();
     fixture::spawn_root(&ws, PARENT);
     dispatch_child(&ws, Some("pale-otter")).unwrap();
@@ -207,10 +209,15 @@ fn a_child_of_a_named_parent_is_unnamed_not_its_parents_namesake() {
         .into_iter()
         .find(|id| id.starts_with(&format!("{named}-")))
         .expect("the grandchild forked");
-    assert_eq!(
-        agent_name::read(&ws, &grandchild, &git),
-        None,
-        "an unnamed child does not wear the name it inherited",
+    let minted = agent_name::read(&ws, &grandchild, &git)
+        .expect("an omitted name is minted — no fork ends nameless (yog bl-aca4)");
+    assert_ne!(
+        minted, "pale-otter",
+        "a child does not wear the name it inherited",
+    );
+    assert!(
+        minted.chars().all(|c| c.is_ascii_lowercase()),
+        "a minted name is one wordlist word, got {minted:?}",
     );
     assert_eq!(
         agent_name::read(&ws, &named, &git).as_deref(),

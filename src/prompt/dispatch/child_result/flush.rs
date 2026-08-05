@@ -138,7 +138,14 @@ fn dispatch_compactor(
         fork_point: point,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    child_dispatch::run_procedure(&req, deps.git, deps.clock, deps.id_gen, deps.launcher)
+    child_dispatch::run_procedure(
+        &req,
+        deps.git,
+        deps.clock,
+        deps.id_gen,
+        deps.launcher,
+        deps.rng,
+    )
 }
 
 #[cfg(test)]

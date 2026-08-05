@@ -106,6 +106,7 @@ impl Fixture {
             adapter_target: None,
             stop,
             launcher: &NoLauncher,
+            rng: crate::workspace::agent_name::mint::test_rng(),
         }
     }
 }

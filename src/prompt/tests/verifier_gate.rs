@@ -22,6 +22,7 @@ use crate::prompt::inbox::{self, deposit_result};
 use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Deps, IdGen, SystemClock};
 use crate::template::{GitRunner, RealGit};
+use crate::workspace::agent_name::mint::test_rng;
 use crate::workspace::{agent_worktree, fixture};
 use brazen::FinishReason;
 use std::cell::Cell;
@@ -76,6 +77,7 @@ fn deps<'a>(
         adapter_target: None,
         stop,
         launcher,
+        rng: test_rng(),
     }
 }
 
@@ -111,7 +113,7 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let worker = dispatch_child(&wreq, &git, &clock, &id, &rec).unwrap();
+    let worker = dispatch_child(&wreq, &git, &clock, &id, &rec, test_rng()).unwrap();
     let worker_wt = agent_worktree(&ws, &worker);
     std::fs::write(worker_wt.join("out.txt"), "the work\n").unwrap();
     git.run(&worker_wt, &["add", "-A"]).unwrap();

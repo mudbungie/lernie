@@ -78,6 +78,7 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
         adapter_target: fx.adapter_target.as_deref(),
         stop: fx.stop,
         launcher: &launcher,
+        rng: &crate::mint::SplitMix64::from_entropy(),
     };
     prompt::run(
         &args.repo,

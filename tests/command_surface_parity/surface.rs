@@ -3,9 +3,10 @@
 //!
 //! The expected side is computed wherever the surface is derived from the
 //! CLI (a verb module's `Args`, its fields, its `run`, its `Command`
-//! variant) and enumerated only for the fixed binding seam — [`Cli`],
-//! [`Command`], [`Outcome`], [`Fx`], [`Error`] and the `prelude`
-//! re-exports. So adding a verb needs no edit here, while widening the
+//! variant) and enumerated only for the fixed seams — the binding seam
+//! ([`Cli`], [`Command`], [`Outcome`], [`Fx`], [`Error`] and the
+//! `prelude` re-exports) and the mint seam (`crate::mint`, ARCH §2.3 /
+//! yog bl-aca4). So adding a verb needs no edit here, while widening a
 //! seam by one field, one method, one variant or one derive fails until
 //! the widening is stated as such.
 //!
@@ -59,10 +60,18 @@ const SEAM: &[&str] = &[
 /// The three mechanisms `cmd::prelude` re-exports (ARCH §3.4).
 const PRELUDES: &[&str] = &["become_pgid_leader", "install_stop_handler", "stop_flag"];
 
+/// The mint seam (ARCH §2.3 / §3.4, yog bl-aca4): the agent-name mint
+/// the linked consumer draws through `crate::mint` — the pure function,
+/// its injected RNG trait, the production generator, and the loud
+/// exhaustion error. The wordlist is deliberately absent: the interface
+/// is the function.
+const MINT: &[&str] = &["use MintError", "use Rng", "use SplitMix64", "use mint"];
+
 /// The whole expected public surface, module-qualified.
 fn expected() -> BTreeSet<String> {
-    let mut want = BTreeSet::from(["crate::mod cmd".to_string()]);
+    let mut want = BTreeSet::from(["crate::mod cmd".to_string(), "crate::mod mint".to_string()]);
     want.extend(SEAM.iter().map(|e| format!("crate::cmd::{e}")));
+    want.extend(MINT.iter().map(|e| format!("crate::mint::{e}")));
     want.extend(
         PRELUDES
             .iter()

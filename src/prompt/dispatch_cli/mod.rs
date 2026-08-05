@@ -247,7 +247,14 @@ fn dispatch_child(
         fork_point,
         pins,
     };
-    let child = child_dispatch::run(&req, &RealGit::new(), &SystemClock, &NanoIdGen, launcher)?;
+    let child = child_dispatch::run(
+        &req,
+        &RealGit::new(),
+        &SystemClock,
+        &NanoIdGen,
+        launcher,
+        &crate::workspace::agent_name::mint::SplitMix64::from_entropy(),
+    )?;
     println!("{child}");
     Ok(())
 }

@@ -163,7 +163,7 @@ fn budget_ref_write_failure_surfaces_as_a_git_error() {
         StubAdapter::reply_ok(&version_line()),
         StubAdapter::reply_ok(&tool_use_stream()),
     ]);
-    let git = StubGit::failing_at(29);
+    let git = StubGit::failing_at(30);
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let (sleeper, tool_executor) = (StubSleeper::default(), StubToolExecutor::ok());
 

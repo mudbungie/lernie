@@ -43,6 +43,7 @@ fn an_ungranted_tool_is_declined_in_band_and_the_granted_one_still_runs() {
         adapter_target: None,
         stop: &stop,
         launcher: &NoLauncher,
+        rng: crate::workspace::agent_name::mint::test_rng(),
     };
     let content = vec![
         Content::ToolUse {

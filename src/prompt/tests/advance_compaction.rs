@@ -12,6 +12,7 @@ use crate::prompt::Clock;
 use crate::prompt::dispatch::advance::{AdvanceOutcome, run};
 use crate::prompt::inbox;
 use crate::prompt::resolve::WorkerConfig;
+use crate::workspace::agent_name::mint::test_rng;
 
 /// A hyphen-free compact stamp (§2.3 — "both the compact timestamp and
 /// the short id are hyphen-free"), so a dispatched child's id is a clean
@@ -69,7 +70,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let child = dispatch_child(&req, &git, &DescentClock, &id, &rec).unwrap();
+    let child = dispatch_child(&req, &git, &DescentClock, &id, &rec, test_rng()).unwrap();
     let child_wt = agent_worktree(&ws, &child);
     std::fs::write(child_wt.join("out.txt"), "result\n").unwrap();
     git.run(&child_wt, &["add", "-A"]).unwrap();
@@ -155,7 +156,7 @@ fn a_compaction_landing_lands_the_product_and_the_next_step_assembles_clean() {
         fork_point: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
-    let child = dispatch_child(&req, &git, &DescentClock, &id, &rec).unwrap();
+    let child = dispatch_child(&req, &git, &DescentClock, &id, &rec, test_rng()).unwrap();
     let cwt = agent_worktree(&ws, &child);
     std::fs::create_dir_all(cwt.join("summary")).unwrap();
     std::fs::write(cwt.join("summary/001.md"), "digest\n").unwrap();

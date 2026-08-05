@@ -17,13 +17,17 @@ use crate::prompt::Error;
 
 /// Indexes on the StubGit's run log. The fork point is resolved first
 /// (§2.3): 0 the config-lineage pool the default `--config` reads
-/// (`for-each-ref`, [`crate::workspace::require_lineage`]). Control
-/// resolution follows (§2.2), and it is now the *ancestry* derivation
-/// against that fork point — 1 the `config/*` head enumeration, 2 its
-/// one `merge-base` — then 3-7 the five `show` control reads —
+/// (`for-each-ref`, [`crate::workspace::require_lineage`]). Next, 1, the
+/// settle-the-name pre-flight's living-names scan (§2.3, the `agents/*`
+/// `for-each-ref` — supplied names are checked and omitted ones minted
+/// against it; the stub lists no agent refs, so no per-agent name reads
+/// follow). Control resolution follows (§2.2), and it is now the
+/// *ancestry* derivation
+/// against that fork point — 2 the `config/*` head enumeration, 3 its
+/// one `merge-base` — then 4-8 the five `show` control reads —
 /// `version` (the §10 schema-version guard, read before anything it could
 /// misparse), then providers, workflow, manifest (§5.2), soul. Branch
-/// work follows: 8 worktree add, 9 the dispatch commit's control-file
+/// work follows: 9 worktree add, 10 the dispatch commit's control-file
 /// removal (§2.3 step 2), then the descriptor derivation
 /// ([`DESCRIPTOR_OPS`]), then the settled-name stage ([`NAME_SETTLE_INDEX`],
 /// §2.3), then dispatch add, dispatch commit, the step-1
@@ -32,7 +36,7 @@ use crate::prompt::Error;
 /// delivered through the front door before step 1's read state is
 /// captured), and rev-parse. Pinned as constants so the
 /// transcript/terminal op-index labels stay readable.
-pub(super) const WORKTREE_ADD_INDEX: usize = 8;
+pub(super) const WORKTREE_ADD_INDEX: usize = 9;
 /// The dispatch commit's descriptor derivation (§3.3, bl-a900): one
 /// `cat-file -e` per granted tool's schema (the described-grant check),
 /// one per its claimed skill frontmatter, and the single `checkout` that

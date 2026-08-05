@@ -118,6 +118,7 @@ fn a_child_forked_mid_tool_step_assembles_a_wire_valid_first_history() {
         &crate::prompt::SystemClock,
         &crate::prompt::NanoIdGen,
         &NoopLauncher,
+        crate::workspace::agent_name::mint::test_rng(),
     )
     .unwrap();
 

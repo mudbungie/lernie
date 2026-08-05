@@ -43,6 +43,7 @@ fn the_workflow_tool_output_policy_reaches_the_executor() {
         adapter_target: None,
         stop: &stop,
         launcher: &NoLauncher,
+        rng: crate::workspace::agent_name::mint::test_rng(),
     };
     let content = vec![Content::ToolUse {
         id: "t1".into(),

@@ -20,13 +20,24 @@ fn run_surfaces_a_fork_point_query_failure() {
 }
 
 #[test]
-fn run_surfaces_governing_config_read_failure() {
-    // With the fork point resolved, the next op derives its governing
-    // config commit by ancestry (§2.2); failing it surfaces as the
-    // governing-config error.
+fn run_surfaces_name_scan_failure() {
+    // Op 1 is the settle-the-name pre-flight's living-names scan (§2.3):
+    // supplied or minted, the name settles against it, and its failure is
+    // the name's own refusal voice — nothing has forked.
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&happy_response_bytes());
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(1)).unwrap_err();
+    assert!(matches!(err, Error::NameUnavailable(_)), "got {err:?}");
+}
+
+#[test]
+fn run_surfaces_governing_config_read_failure() {
+    // With the fork point resolved and the name settled, the next op
+    // derives the governing config commit by ancestry (§2.2); failing it
+    // surfaces as the governing-config error.
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(&happy_response_bytes());
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::failing_at(2)).unwrap_err();
     assert!(
         matches!(
             err,

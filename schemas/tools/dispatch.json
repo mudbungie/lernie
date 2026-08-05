@@ -14,7 +14,7 @@
     },
     "name": {
       "type": "string",
-      "description": "Optional display name for the child (ARCH §2.3): one unbroken word, unique among the workspace's living agents, set here and never rewritten. It is stored under the child and is what `message` accepts in place of the child's agent id, so name a child you intend to speak to later. A malformed name, one that begins like an agent id, or one already worn by a living agent is refused and no child is created."
+      "description": "Display name for the child (ARCH §2.3): one unbroken word, unique among the workspace's living agents, set here and never rewritten. A name is the child's identity in every surface — it is stored under the child, told to the child itself, and is what `message` accepts in place of the child's agent id — so supplying one keeps the identities and tasks in a subagent tree clear; pick a name that says what the child is for. If you omit it, a valid one-word name is minted automatically, so an unnamed dispatch is never an error — but a name you supply that is malformed, begins like an agent id, or is already worn by a living agent is refused and no child is created."
     }
   },
   "required": ["role", "goal"],

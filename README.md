@@ -1281,7 +1281,7 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
   (ARCH §4.1). A load-time guard (`bz --version` == the linked crate
   version) rejects a mismatched binary; `make install` installs the pin
   with `cargo install brazen --version =0.0.5`.
-- **A failed model call names the row.** Which row lernie routed a call
+- **A failed model call names the row.** Which row lernie routed a model call
   under is lernie's fact, not brazen's (it is the role's `provider:` in
   the config commit's `providers.yaml`), so the harness states it:
   `provider error (<kind>) on provider row "<row>": <message>`. A

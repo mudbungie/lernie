@@ -175,7 +175,7 @@ fn run_with(
         workspace::require_ref(
             repo,
             rev,
-            "a child forks off the ref you name (ARCH §2.3, §7.2)",
+            "a child forks off the ref you name (ARCH §2.3, ARCH §7.2)",
             &RealGit::new(),
         )
         .map_err(DispatchCliError::UnknownForkPoint)?;

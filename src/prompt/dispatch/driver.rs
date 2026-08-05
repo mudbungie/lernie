@@ -150,7 +150,7 @@ pub(super) fn reprobe_after_release(
         Err(e) => {
             eprintln!(
                 "lernie: post-release inbox re-read for {agent_id}: {e} \
-                 (accepted crash class, §2.11)"
+                 (accepted crash class, ARCH §2.11)"
             );
             return;
         }
@@ -159,7 +159,9 @@ pub(super) fn reprobe_after_release(
         return;
     }
     if let Err(e) = inbox::probe_and_launch(workspace, agent_id, launcher) {
-        eprintln!("lernie: post-release launch for {agent_id}: {e} (accepted crash class, §2.11)");
+        eprintln!(
+            "lernie: post-release launch for {agent_id}: {e} (accepted crash class, ARCH §2.11)"
+        );
     }
 }
 

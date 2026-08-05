@@ -48,7 +48,7 @@ fn report(roots: &Roots, founding: &Founding) -> String {
         "lernie prime: config root {} — models.yaml, workflows/\n\
          lernie prime: data root {} — tools/, skills/, workspaces/\n\
          lernie prime: harness root founded: {seeded} files seeded, {kept} already present \
-         and left alone (seed-if-absent, §2.2)",
+         and left alone (seed-if-absent, ARCH §2.2)",
         roots.config.display(),
         roots.data.display(),
     )
@@ -82,7 +82,7 @@ mod tests {
             "lernie prime: config root /xc/lernie — models.yaml, workflows/\n\
              lernie prime: data root /xd/lernie — tools/, skills/, workspaces/\n\
              lernie prime: harness root founded: 15 files seeded, 0 already present \
-             and left alone (seed-if-absent, §2.2)"
+             and left alone (seed-if-absent, ARCH §2.2)"
         );
     }
 
@@ -98,7 +98,9 @@ mod tests {
             },
         );
         assert!(
-            r.ends_with("0 files seeded, 15 already present and left alone (seed-if-absent, §2.2)"),
+            r.ends_with(
+                "0 files seeded, 15 already present and left alone (seed-if-absent, ARCH §2.2)"
+            ),
             "{r}"
         );
     }

@@ -205,7 +205,7 @@ pub fn governing_config(workspace: &Path, rev: &str, git: &dyn GitRunner) -> io:
     }
     best.ok_or_else(|| {
         io::Error::other(format!(
-            "no config/* ancestor for {rev} — every agent forks off a config commit (§2.2)"
+            "no config/* ancestor for {rev} — every agent forks off a config commit (ARCH §2.2)"
         ))
     })
 }
@@ -227,7 +227,7 @@ fn nearest(repo: &Path, a: String, b: String, git: &dyn GitRunner) -> io::Result
     }
     Err(io::Error::other(format!(
         "governing config is ambiguous: candidates {a} and {b} are incomparable ancestors \
-         — declined (§2.2, PRINCIPLES)"
+         — declined (ARCH §2.2, PRINCIPLES)"
     )))
 }
 

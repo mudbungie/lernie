@@ -64,7 +64,7 @@ find out, because it says what it founded:
 $ lernie prime
 lernie prime: config root /home/you/.config/lernie — models.yaml, workflows/
 lernie prime: data root /home/you/.local/share/lernie — tools/, skills/, workspaces/
-lernie prime: harness root founded: 15 files seeded, 0 already present and left alone (seed-if-absent, §2.2)
+lernie prime: harness root founded: 15 files seeded, 0 already present and left alone (seed-if-absent, ARCH §2.2)
 ```
 
 That report is on **stderr** — `prime` has no stdout product (ARCH §3.4)

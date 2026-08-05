@@ -127,7 +127,7 @@ pub(super) fn budget_exhausted(
     let Some(ex) = budget::check(repo, branch, budgets) else {
         return Ok(false);
     };
-    eprintln!("lernie: budget {ex} on {branch}; stopping (§6)");
+    eprintln!("lernie: budget {ex} on {branch}; stopping (ARCH §6)");
     budget::mark_exhausted(worktree, branch, deps.git).map_err(|source| Error::Git {
         op: "budget-exhausted update-ref",
         source,
@@ -187,7 +187,7 @@ fn exit_launch(
         return;
     }
     if let Err(e) = deps.launcher.launch(workspace, agent_id) {
-        eprintln!("lernie: exit launch for {agent_id}: {e} (accepted crash class, §2.11)");
+        eprintln!("lernie: exit launch for {agent_id}: {e} (accepted crash class, ARCH §2.11)");
     }
     revive_recipient(workspace, recipient, deps);
 }
@@ -211,6 +211,6 @@ fn revive_recipient(workspace: &Path, recipient: Option<&str>, deps: &Deps<'_>) 
         return;
     };
     if let Err(e) = inbox::probe_and_launch(workspace, recipient, deps.launcher) {
-        eprintln!("lernie: revival launch for {recipient}: {e} (accepted crash class, §2.11)");
+        eprintln!("lernie: revival launch for {recipient}: {e} (accepted crash class, ARCH §2.11)");
     }
 }

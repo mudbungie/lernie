@@ -108,7 +108,7 @@ fn run_names_a_missing_adapter_and_the_command_that_installs_it() {
     assert!(matches!(err, Error::AdapterMissing { .. }), "{err}");
     let s = err.to_string();
     assert!(
-        s.starts_with("provider adapter \"bz\" not found (§4.4 —"),
+        s.starts_with("provider adapter \"bz\" not found (ARCH §4.4 —"),
         "{s}"
     );
     assert!(

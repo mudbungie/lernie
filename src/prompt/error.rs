@@ -34,14 +34,14 @@ pub enum Error {
     /// two (§2.3, [`fork_point`]) — declined before the branch exists.
     #[error(transparent)]
     ForkPoint(#[from] fork_point::Error),
-    #[error("read control {path} from the config commit (§2.2): {source}")]
+    #[error("read control {path} from the config commit (ARCH §2.2): {source}")]
     ControlRead {
         path: PathBuf,
         #[source]
         source: std::io::Error,
     },
     #[error(
-        "model id {0:?} collides with the reserved transcript origin token `tool` (§2.3); \
+        "model id {0:?} collides with the reserved transcript origin token `tool` (ARCH §2.3); \
          rename the model row"
     )]
     ReservedModelId(String),
@@ -58,7 +58,7 @@ pub enum Error {
     /// carrying the linked pin ([`brazen_pin`], the number's one home).
     /// The errno trails as detail.
     #[error(
-        "provider adapter {binary:?} not found (§4.4 — the default adapter is `bz` on \
+        "provider adapter {binary:?} not found (ARCH §4.4 — the default adapter is `bz` on \
          PATH; install the pinned binary: cargo install brazen --version ={pin} --locked, \
          or name an adapter you have with `adapter:` in the harness root's models.yaml): \
          {source}"
@@ -123,18 +123,18 @@ pub enum Error {
          reaching that row; authenticate it with `bz --login --provider {row}`, or export \
          the API-key env var it is configured to read. `bz --list-providers` shows every \
          row's auth mode and credential state, and the row a role uses is its `provider:` \
-         in the config commit's providers.yaml (§4.3). Auth and endpoints are brazen's \
-         alone — the harness never sees credential material (§4.4)"
+         in the config commit's providers.yaml (ARCH §4.3). Auth and endpoints are \
+         brazen's alone — the harness never sees credential material (ARCH §4.4)"
     )]
     AdapterAuth { row: String, message: String },
     #[error(
-        "adapter stream ended without a terminal `end` (killed mid-stream, §2.9); \
+        "adapter stream ended without a terminal `end` (killed mid-stream, ARCH §2.9); \
          adapter stderr tail: {tail} (full capture: {stderr_log})"
     )]
     AdapterHalfStream { stderr_log: PathBuf, tail: String },
     #[error(
         "bz version {found:?} does not match the linked brazen crate {expected:?} \
-         (§4.4 — install the pinned binary: cargo install brazen --version ={expected})"
+         (ARCH §4.4 — install the pinned binary: cargo install brazen --version ={expected})"
     )]
     VersionSkew { found: String, expected: String },
     #[error("adapter-override handshake failed: MessageStart.v={found:?}, expected {expected}")]
@@ -152,7 +152,7 @@ pub enum Error {
     /// which retires a branch that already exists: nothing was created
     /// here, so there is no branch to mark and no epitaph to deposit.
     #[error(
-        "dispatch of {child} from {parent} refused: {exhausted} (§6 budgets — \
+        "dispatch of {child} from {parent} refused: {exhausted} (ARCH §6 budgets — \
          the limit is declared in the governing config's workflow.yaml)"
     )]
     DispatchRefused {
@@ -182,18 +182,18 @@ pub enum Error {
     },
     #[error(
         "adopt LERNIE_LOCK_FD lease for {agent}: {detail} — a bad fd means a defective \
-         launcher; declined, never silently reacquired (§6)"
+         launcher; declined, never silently reacquired (ARCH §6)"
     )]
     LeaseAdopt { agent: String, detail: String },
     #[error(
         "branch {branch} tip is an assistant entry with tool_use unmatched by committed \
          tool results — a mid-step crash after the assistant entry landed; tool side \
-         effects are not replayable, so this is declined (§6). Recover by fork-from-history \
-         (§2.3)."
+         effects are not replayable, so this is declined (ARCH §6). Recover by \
+         fork-from-history (ARCH §2.3)."
     )]
     UnpairedToolUse { branch: String },
     #[error(
-        "workflow action {action:?} is not yet interpreted at the {event} event (§6 \
+        "workflow action {action:?} is not yet interpreted at the {event} event (ARCH §6 \
          binding interpreter — shipped subset is the terminal ref marks); the action is \
          in the closed set but its executor is a tracked follow-on of bl-6a3b"
     )]
@@ -208,9 +208,10 @@ pub enum Error {
     /// every subsequent model call on the branch (§2.7). Refused
     /// loudly, naming the path; recovery is §5.4 deletion or repair.
     #[error(
-        "assembly refused {path}: it carries git conflict-marker lines, which the §2.6 \
+        "assembly refused {path}: it carries git conflict-marker lines, which the ARCH §2.6 \
          compaction-landing decline promises summary/** never does; composing it would \
-         corrupt the branch's context (§2.7). Repair or delete the file (§5.4) to resume"
+         corrupt the branch's context (ARCH §2.7). Repair or delete the file (ARCH §5.4) \
+         to resume"
     )]
     SummaryConflictMarkers { path: String },
     #[error("tool {name} schema unreadable at {path}: {source}")]

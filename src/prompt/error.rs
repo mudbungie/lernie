@@ -96,8 +96,37 @@ pub enum Error {
     },
     #[error("adapter emitted malformed v=1 event JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
-    #[error("provider error ({kind}): {message}")]
-    AdapterError { kind: String, message: String },
+    /// A provider failure brazen spoke in band (§4.4), carrying the
+    /// **provider row** the call was routed to. The row is lernie's own
+    /// fact — a role's `provider:` in the config commit's
+    /// `providers.yaml` (§4.3) — and brazen, which owns endpoints and
+    /// auth, never learns which name lernie knows it by, so naming it is
+    /// this side's job: a workspace binds several rows, and a decline
+    /// that names none of them says nothing about where to look.
+    #[error("provider error ({kind}) on provider row {row:?}: {message}")]
+    AdapterError {
+        kind: String,
+        row: String,
+        message: String,
+    },
+    /// The credential-shaped case of the above — brazen's `auth` kind,
+    /// which it normalizes a 401/403 into. It is split out for the same
+    /// reason [`Error::AdapterMissing`] is split from `AdapterSpawn`: it
+    /// is the one provider failure a first-run user is *certain* to hit
+    /// and can act on unaided, so it gets a remedy rather than a
+    /// classification. brazen's own message already names the remedies —
+    /// but as `bz --login --provider <id>`, a literal placeholder,
+    /// because the row id is exactly what it cannot supply. This variant
+    /// substitutes it.
+    #[error(
+        "provider error (auth) on provider row {row:?}: {message} — no credential is \
+         reaching that row; authenticate it with `bz --login --provider {row}`, or export \
+         the API-key env var it is configured to read. `bz --list-providers` shows every \
+         row's auth mode and credential state, and the row a role uses is its `provider:` \
+         in the config commit's providers.yaml (§4.3). Auth and endpoints are brazen's \
+         alone — the harness never sees credential material (§4.4)"
+    )]
+    AdapterAuth { row: String, message: String },
     #[error(
         "adapter stream ended without a terminal `end` (killed mid-stream, §2.9); \
          adapter stderr tail: {tail} (full capture: {stderr_log})"
@@ -212,4 +241,27 @@ pub enum Error {
         #[source]
         source: serde_yaml_ng::Error,
     },
+}
+
+impl Error {
+    /// Fold a settled in-band `CanonicalError` into this taxonomy,
+    /// naming the **provider row** `bz` was invoked with (§4.3). The
+    /// choice between the two adapter variants belongs here, beside the
+    /// wordings it picks between, not at the retry loop that happens to
+    /// hold the row: brazen's `auth` kind (its normalization of a
+    /// 401/403) takes the remedy-bearing variant, everything else keeps
+    /// the classification.
+    pub(super) fn from_adapter(row: &str, err: brazen::CanonicalError) -> Self {
+        if err.kind == brazen::ErrorKind::Auth {
+            return Error::AdapterAuth {
+                row: row.to_string(),
+                message: err.message,
+            };
+        }
+        Error::AdapterError {
+            kind: format!("{:?}", err.kind),
+            row: row.to_string(),
+            message: err.message,
+        }
+    }
 }

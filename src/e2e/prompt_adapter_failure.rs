@@ -61,7 +61,7 @@ fn a_missing_bz_names_the_adapter_the_pin_and_the_install_command() {
     // the verb prefix, the binary, the section, and the command — with
     // the errno trailing as detail rather than standing alone.
     assert!(
-        stderr.contains("lernie prompt: provider adapter \"bz\" not found (§4.4 —"),
+        stderr.contains("lernie prompt: provider adapter \"bz\" not found (ARCH §4.4 —"),
         "{stderr}"
     );
     assert!(

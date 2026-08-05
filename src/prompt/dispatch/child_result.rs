@@ -281,14 +281,14 @@ fn land_compaction(
     match compactor::land(worktree, agent_id, &cr.child_id, git)? {
         compactor::LandOutcome::Conflicted(paths) => eprintln!(
             "lernie: compaction landing [{}] declined — git could not replay {} \
-             (marked refs/lernie/conflicted/{}, §2.6); the branch continues uncompacted",
+             (marked refs/lernie/conflicted/{}, ARCH §2.6); the branch continues uncompacted",
             cr.child_id,
             paths.join(", "),
             cr.child_id,
         ),
         compactor::LandOutcome::Superseded => eprintln!(
             "lernie: compaction landing [{}] superseded — a compaction landed since \
-             its fork point (§2.6); the branch continues",
+             its fork point (ARCH §2.6); the branch continues",
             cr.child_id,
         ),
         compactor::LandOutcome::Landed | compactor::LandOutcome::NoOp => {}

@@ -29,7 +29,7 @@ use std::path::Path;
 
 /// Why a start needed the ref, for the shared [`workspace::require_ref`]
 /// decline (§2.3).
-const REASON: &str = "a root agent forks off the ref you name (ARCH §2.3, §7.2)";
+const REASON: &str = "a root agent forks off the ref you name (ARCH §2.3, ARCH §7.2)";
 
 /// A fork point that could not be resolved to one ref.
 #[derive(Debug, thiserror::Error)]

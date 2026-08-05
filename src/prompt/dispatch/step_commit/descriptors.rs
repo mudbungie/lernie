@@ -67,7 +67,7 @@ const SKILLS_DIR: &str = "descriptions/skills";
 #[derive(Debug, thiserror::Error)]
 #[error(
     "role {role:?} grants tool {tool:?}, which its governing config commit does not \
-     describe — no descriptions/tools/{tool}.json (§3.3 descriptions-always); \
+     describe — no descriptions/tools/{tool}.json (ARCH §3.3 descriptions-always); \
      described tools: {described}"
 )]
 pub(crate) struct Undescribed {

@@ -83,7 +83,7 @@ pub(super) fn branch_failed(workspace: &Path, agent: &str) -> bool {
 /// that touches it, not only from `lernie scan`.
 pub(super) fn failed_branch_note(agent: &str) -> String {
     format!(
-        "lernie: {agent}: latest model call failed (§2.10) — message queued and a driver \
+        "lernie: {agent}: latest model call failed (ARCH §2.10) — message queued and a driver \
          launched, but if the cause persists the branch will not advance; \
          see steps/{agent}/ or run `lernie scan`"
     )

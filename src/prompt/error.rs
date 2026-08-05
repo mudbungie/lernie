@@ -97,7 +97,7 @@ pub enum Error {
     #[error("adapter emitted malformed v=1 event JSON: {0}")]
     AdapterJson(#[source] serde_json::Error),
     /// A provider failure brazen spoke in band (§4.4), carrying the
-    /// **provider row** the call was routed to. The row is lernie's own
+    /// **provider row** the model call was routed to. The row is lernie's own
     /// fact — a role's `provider:` in the config commit's
     /// `providers.yaml` (§4.3) — and brazen, which owns endpoints and
     /// auth, never learns which name lernie knows it by, so naming it is

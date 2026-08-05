@@ -21,6 +21,7 @@ merges.
 
 ### Changes
 
+- capture a detached driver's stderr instead of discarding it: the ARCH §2.11 launcher now binds the child's stderr to `<workspace>/steps/<agent-id>/driver.log` (append-create, inherited across the ARCH §6 exec baton) rather than `/dev/null`, so the operator-facing lines a `setsid` driver has no terminal for — a compaction landing declined or superseded, a launch that failed into the accepted crash class, a budget stop — are on disk instead of nowhere; stdin and stdout stay null (a driver reads nothing and writes no product to stdout), the path is derived from arguments the launch already carries rather than configured, and a sink that cannot be opened declines the launch instead of silently falling back to null [bl-55f9]
 - close three doc-clarity hazards: cross-document section references now name their document (the rule is stated in ARCH §2.1 and applied across `docs/DESIGN_MCP_BRIDGE.md`, whose own §6 read identically to ARCH §6), the brazen citations name `specs/architecture.md` by path and quote the four sections lernie binds to, and the §2.1 bare-"call" ban gains an explicit programming-sense carve-out (call site, callback, callee, function call, system call) so the ban reads as what it always meant — no unqualified "call" for a model, tool, or API interaction [bl-1966]
 
 ## [0.0.6](https://github.com/mudbungie/lernie/compare/v0.0.5...v0.0.6) - 2026-08-02

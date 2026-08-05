@@ -37,6 +37,9 @@
 //!   *The transcript writer*): the writer's own sink, not a diagnostic
 //!   record, renamed out to the worktree at the model call's settling
 //!   `Finish`.
+//!
+//! One file sits a level up, at `steps/<agent-id>/driver.log`: it belongs
+//! to the agent's detached drivers rather than to any one step (§2.11).
 
 use crate::provider::segment::{Outcome, classify};
 use serde::{Deserialize, Serialize};
@@ -73,6 +76,22 @@ pub const META_FILE: &str = "meta.json";
 /// that is not a diagnostic record — the writer's own sink, never read
 /// back as a step record (§2.3 Diagnostic-only contract).
 pub const STAGING_FILE: &str = "staging.json";
+
+/// A detached driver's stderr, at `steps/<agent-id>/driver.log` — one
+/// level above the numbered step directories, because a driver spans the
+/// steps it takes and a launch may take none at all (ARCH §2.11). The
+/// same *capture, don't discard* rule the per-attempt [`STDERR_FILE`]
+/// already obeys (§4.4 *Stderr is captured, not discarded*), applied to
+/// the process whose stderr no operator is watching: a `setsid` driver
+/// has no terminal to inherit, so its declines — a compaction landing
+/// declined or superseded (§2.6), a launch that failed into the accepted
+/// crash class (§2.11) — would otherwise be written to nothing.
+/// Append-only across launches and across the §6 exec baton (the
+/// successor inherits the open fd), and diagnostic-only like every other
+/// name in this tree: nothing reads it back. Non-numeric, so the step
+/// derivations above ([`next_step_seq`], [`latest_step_outcome`]) skip it
+/// exactly as they skip any other non-step entry.
+pub const DRIVER_LOG_FILE: &str = "driver.log";
 
 /// Width of the zero-padded step sequence in on-disk paths
 /// (`steps/<conv-id>/001`, `…/002`, ...). Three digits gives comfortable

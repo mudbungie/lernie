@@ -34,7 +34,7 @@ pub use deposit::{DepositError, Epitaph, deposit, deposit_result};
 pub use lock::{ExecutorLock, try_acquire};
 pub use scan::scan;
 
-use crate::prompt::{Clock, SystemClock};
+use crate::prompt::{Clock, SystemClock, step};
 use std::ffi::OsStr;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -95,12 +95,15 @@ pub trait Launcher {
 /// session and process group — a §2.9 stop cascade against the launching
 /// process never reaches the driver, and the driver outlives a launcher
 /// running inside another agent's tool subprocess or a user's script),
-/// stdio bound to null (the driver's observable state is its on-disk
-/// step records and commits, §3.1), and [`baton::LOCK_FD_ENV`] scrubbed
-/// (a launched driver *acquires*; only an exec'd successor adopts, §6).
-/// Fire-and-forget: the child is never waited on — a launcher is
-/// short-lived by design, and the unreaped driver reparents to init when
-/// the launcher exits.
+/// stdin and stdout bound to null (a driver reads nothing and, by the
+/// §3.4 one-product convention, says nothing on stdout), **stderr
+/// captured** to the agent's [`step::DRIVER_LOG_FILE`]
+/// ([`driver_log`] — §2.11; the driver's declines are operator-facing
+/// and a `setsid` child has no terminal to inherit), and
+/// [`baton::LOCK_FD_ENV`] scrubbed (a launched driver *acquires*; only
+/// an exec'd successor adopts, §6). Fire-and-forget: the child is never
+/// waited on — a launcher is short-lived by design, and the unreaped
+/// driver reparents to init when the launcher exits.
 #[derive(Debug)]
 pub struct AdvanceLauncher {
     exe: PathBuf,
@@ -117,8 +120,33 @@ impl AdvanceLauncher {
     }
 }
 
+/// Open the append sink for a detached driver's stderr:
+/// `<workspace>/steps/<agent-id>/driver.log` (§2.11,
+/// [`step::DRIVER_LOG_FILE`]). The path is **derived** from the two
+/// arguments every launch already carries, so capture costs no config
+/// and admits no second home for the fact (`docs/PRINCIPLES.md` Single
+/// source of truth): a driver's diagnostics land in the diagnostic tree
+/// its step records land in (§2.3). Created with the agent's step
+/// directory, since a launch may precede that agent's first step.
+///
+/// A failure here **declines the launch** rather than falling back to
+/// null (`docs/PRINCIPLES.md` *Decline illegal operations* — silent
+/// degradation is never preferable to a loud refusal): a workspace whose
+/// `steps/` tree cannot be written is one the driver could not have
+/// recorded a step in either, and the refusal reaches the caller's own
+/// stderr, where the failure it would have swallowed is legible.
+fn driver_log(workspace: &Path, agent_id: &str) -> io::Result<std::fs::File> {
+    let dir = workspace.join(step::STEPS_DIR).join(agent_id);
+    std::fs::create_dir_all(&dir)?;
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join(step::DRIVER_LOG_FILE))
+}
+
 impl Launcher for AdvanceLauncher {
     fn launch(&self, workspace: &Path, agent_id: &str) -> io::Result<()> {
+        let log = driver_log(workspace, agent_id)?;
         let mut cmd = std::process::Command::new(&self.exe);
         cmd.arg("advance")
             .arg(workspace)
@@ -126,7 +154,7 @@ impl Launcher for AdvanceLauncher {
             .env_remove(baton::LOCK_FD_ENV)
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null());
+            .stderr(std::process::Stdio::from(log));
         // SAFETY: [`detach_into_own_session`] is async-signal-safe (a
         // single `setsid` syscall) and is the only code executed
         // between fork and exec.

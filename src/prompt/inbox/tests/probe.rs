@@ -9,6 +9,7 @@ use crate::prompt::Clock;
 use std::cell::RefCell;
 use std::ffi::OsStr;
 use std::io;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use tempfile::TempDir;
 
@@ -172,9 +173,83 @@ fn cli_run_declines_a_recipient_with_no_branch() {
 #[test]
 fn advance_launcher_spawns_detached_and_returns_at_once() {
     // Fire-and-forget (§2.11): `true` accepts the advance args and exits
-    // 0; launch returns as soon as the spawn lands, never waiting.
+    // 0; launch returns as soon as the spawn lands, never waiting. The
+    // sink is opened before the spawn, so it exists on return even
+    // though the child is never waited on.
+    let ws = TempDir::new().unwrap();
     let launcher = AdvanceLauncher::with_exe("true".into());
-    launcher.launch(Path::new("/tmp"), "a1").unwrap();
+    launcher.launch(ws.path(), "a1").unwrap();
+    assert!(
+        driver_log_path(ws.path(), "a1").is_file(),
+        "the launch opens the driver's stderr sink under steps/ (§2.11)"
+    );
+}
+
+/// The §2.11 stderr capture: what a detached driver writes to stderr
+/// lands in `steps/<agent-id>/driver.log` instead of `/dev/null`, and a
+/// second launch **appends** rather than truncating the first's record.
+/// A stub script stands in for `lernie advance` — under test is the fd
+/// the launcher binds, not what the driver chooses to say through it.
+#[test]
+fn advance_launcher_captures_child_stderr_and_appends_across_launches() {
+    let ws = TempDir::new().unwrap();
+    let exe = ws.path().join("stub-driver");
+    std::fs::write(&exe, "#!/bin/sh\necho declined >&2\n").unwrap();
+    std::fs::set_permissions(&exe, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let launcher = AdvanceLauncher::with_exe(exe);
+
+    launcher.launch(ws.path(), "a1").unwrap();
+    assert_eq!(
+        declines_until(ws.path(), "a1", 1),
+        1,
+        "the first is captured"
+    );
+    launcher.launch(ws.path(), "a1").unwrap();
+    assert_eq!(
+        declines_until(ws.path(), "a1", 2),
+        2,
+        "the second appends; nothing truncates the first"
+    );
+}
+
+/// Count `declined` lines in the driver log, retrying while fewer than
+/// `want` are visible — the child is fire-and-forget (§2.11), so its
+/// write lands after the launch returns. A bounded retry *count*, never
+/// a wall-clock deadline (§2.9's rule, "a deadline measured under load
+/// reports the load"): a slow box only makes the pass path slower.
+fn declines_until(workspace: &Path, agent_id: &str, want: usize) -> usize {
+    let path = driver_log_path(workspace, agent_id);
+    let mut seen = 0;
+    for _ in 0..600 {
+        seen = std::fs::read_to_string(&path)
+            .map(|s| s.matches("declined").count())
+            .unwrap_or(0);
+        if seen >= want {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(5));
+    }
+    seen
+}
+
+/// The launch is **declined** when its stderr sink cannot be opened
+/// (PRINCIPLES *Decline illegal operations*) — no silent fallback to
+/// null. A regular file where `steps/` must be a directory is the
+/// smallest unwritable workspace.
+#[test]
+fn advance_launcher_declines_when_the_stderr_sink_cannot_be_opened() {
+    let ws = TempDir::new().unwrap();
+    std::fs::write(ws.path().join(crate::prompt::step::STEPS_DIR), b"not a dir").unwrap();
+    let launcher = AdvanceLauncher::with_exe("true".into());
+    let err = launcher.launch(ws.path(), "a1").unwrap_err();
+    assert_eq!(err.kind(), io::ErrorKind::NotADirectory);
+}
+
+fn driver_log_path(workspace: &Path, agent_id: &str) -> std::path::PathBuf {
+    workspace
+        .join(crate::prompt::step::STEPS_DIR)
+        .join(agent_id)
+        .join(crate::prompt::step::DRIVER_LOG_FILE)
 }
 
 #[test]
@@ -191,7 +266,8 @@ fn detach_into_own_session_never_fails() {
 
 #[test]
 fn advance_launcher_surfaces_a_spawn_failure() {
+    let ws = TempDir::new().unwrap();
     let launcher = AdvanceLauncher::with_exe("/no/such/lernie-binary".into());
-    let err = launcher.launch(Path::new("/tmp"), "a1").unwrap_err();
+    let err = launcher.launch(ws.path(), "a1").unwrap_err();
     assert_eq!(err.kind(), io::ErrorKind::NotFound);
 }

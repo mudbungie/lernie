@@ -597,7 +597,11 @@ so token counts read off the committed bytes with no `steps/` lookup
 tool entry, and every model entry written before usage rode along — is
 equally lawful. `ls steps/<conv-id>/` lists the
 off-worktree step records, one numbered directory per step, each holding
-`request.json`, `response.json`, and `meta.json`. There is **no
+`request.json`, `response.json`, and `meta.json` — plus, beside them,
+`driver.log`: the stderr of every detached driver launched for this
+agent, appended across launches, which is where a driver's declines are
+read (ARCH §2.11 — a `setsid` driver has no terminal to print to).
+There is **no
 `summary/`** on a branch that never reached a compaction checkpoint
 (step 6) — and no merge commit ever: once a compactor has returned, what
 appears is a single-parent `compaction base [<compactor-id>]` commit

@@ -1,7 +1,8 @@
 +++
 title = "stop mid-tool-window wedges the branch: the stopped exit leaves an unpaired tool_use tail, so the next advance declines with UnpairedToolUse and no deposit can ever revive the agent"
 created = 1785824337
-updated = 1785824337
+updated = 1785905559
+claimant = "Tatter-b98d"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

@@ -27,6 +27,7 @@
 
 mod multi;
 mod seam;
+mod settle;
 #[cfg(test)]
 mod tests;
 
@@ -46,8 +47,11 @@ use std::path::Path;
 pub(in crate::prompt) enum ToolWindow {
     /// Every block resolved and committed; the next model call is due.
     Completed,
-    /// The §2.9 stop cascade landed in the window: the caller runs the
-    /// clean stopped exit.
+    /// The §2.9 stop cascade landed in the window: every `tool_use`
+    /// left unanswered is settled with an in-band interrupted
+    /// `tool_result` ([`settle`]) — so the tail a deposit later revives
+    /// is resumable, never the §6 unpaired decline — and the caller
+    /// runs the clean stopped exit.
     Stopped,
     /// The configured control held an invocation before it executed
     /// (§3.3 *Tool control*): the hold mark is written, nothing after
@@ -69,9 +73,9 @@ pub(in crate::prompt) enum ToolWindow {
 /// a model-call window: the tool subprocesses are the executor's limbs and
 /// take the group SIGTERM (§2.9 steps 1-2). A tool cut down that way
 /// returns [`ExecError::KilledBySignal`]; with the stop flag set that is
-/// the stop, not a harness fault — this returns [`ToolWindow::Stopped`] so
-/// [`super::run_exchange`] ceases the loop for the clean stopped-deposit
-/// exit ([`super::terminal::finish`]), never an error propagation. A
+/// the stop, not a harness fault — the window is settled ([`settle`]) and
+/// this returns [`ToolWindow::Stopped`] so [`super::run_exchange`] ceases
+/// the loop for the clean stopped-deposit exit, never an error propagation. A
 /// `KilledBySignal` with *no* stop pending is a genuine crash (SIGSEGV, …)
 /// and still surfaces as [`Error::ToolExec`] (§2.10).
 /// [`ToolWindow::Completed`] means every block resolved and the loop
@@ -111,6 +115,7 @@ pub(in crate::prompt) fn run_tool_calls(
 ) -> Result<ToolWindow, Error> {
     let step_dir_abs = conv_repo.join(step_dir_rel_str);
     let control = resolved.workflow.tool_control.as_ref();
+    let stopped = || settle::interrupted(worktree, conv_id, assistant_content, deps);
     // A hold mark in play means this window is a resume (§3.3 *Tool
     // control*): blocks whose results already committed are skipped —
     // derived from the transcript, never a stored cursor — and the mark
@@ -169,7 +174,7 @@ pub(in crate::prompt) fn run_tool_calls(
                     marked = None;
                 }
                 match gate {
-                    seam::Gate::Stopped => return Ok(ToolWindow::Stopped),
+                    seam::Gate::Stopped => return stopped(),
                     seam::Gate::Hold(reason) => {
                         let held = hold::Held {
                             tool_use_id: id.clone(),
@@ -207,7 +212,7 @@ pub(in crate::prompt) fn run_tool_calls(
                             deps,
                         )? {
                             multi::Fanout::Outcome(outcome) => outcome,
-                            multi::Fanout::Stopped => return Ok(ToolWindow::Stopped),
+                            multi::Fanout::Stopped => return stopped(),
                         }
                     }
                     seam::Gate::Proceed => match deps.tool_executor.execute(
@@ -224,7 +229,7 @@ pub(in crate::prompt) fn run_tool_calls(
                         Err(ExecError::KilledBySignal { .. })
                             if stop_signal::stopped(deps.stop) =>
                         {
-                            return Ok(ToolWindow::Stopped);
+                            return stopped();
                         }
                         Err(source) => {
                             return Err(Error::ToolExec {

@@ -256,8 +256,13 @@ fn a_mark_over_a_missing_worktree_stays_parked() {
 #[test]
 fn a_stop_felling_the_resumes_control_is_the_stopped_terminal() {
     // A stop lands while the resume is mid-consult: the §2.9 cascade
-    // fells the control, and the hop concludes the stopped terminal —
-    // the mark stays (nothing was decided), conservative and visible.
+    // fells the control, and the hop concludes the stopped terminal.
+    // The mark stays — nothing was adjudicated, so the seam decides
+    // nothing — but the stopped exit still settles the window (§2.9
+    // step 3), which makes the mark *stale* by the standing definition
+    // (its invocation's result is committed): the next drive clears it
+    // and the branch resumes as an ordinary stopped one. No new
+    // mechanism releases the park; the existing sweep does.
     let scripts = TempDir::new().unwrap();
     let control = scripts.path().join("fixture-control.sh");
     std::fs::write(&control, "#!/bin/sh\nexec sleep 60\n").unwrap();
@@ -286,4 +291,8 @@ fn a_stop_felling_the_resumes_control_is_the_stopped_terminal() {
     assert!(matches!(out, AdvanceOutcome::Terminal), "got {out:?}");
     assert!(tools.invocations.borrow().is_empty());
     assert!(hold::read(ws, AGENT, &git).is_some());
+    let wt = crate::workspace::agent_worktree(ws, AGENT);
+    let settled = std::fs::read_to_string(wt.join("messages/004-tool.json")).expect("settled");
+    assert!(settled.contains("t2"), "{settled}");
+    assert!(settled.contains("\"is_error\":true"), "{settled}");
 }

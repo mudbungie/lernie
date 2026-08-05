@@ -251,4 +251,11 @@ fn a_stop_felling_the_control_is_the_stop_not_a_fault() {
         .unwrap();
     assert!(matches!(window, ToolWindow::Stopped));
     assert!(rig.executed().is_empty());
+    // Nothing ran, and the window is still settled on the way out (§2.9):
+    // the invocation the control never adjudicated is answered in band,
+    // so the branch stays revivable ([`super::super::settle`]).
+    let settled =
+        std::fs::read_to_string(rig.worktree.join("messages/002-tool.json")).expect("settled");
+    assert!(settled.contains("\"is_error\":true"), "{settled}");
+    assert!(settled.contains("did not return"), "{settled}");
 }

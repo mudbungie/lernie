@@ -121,6 +121,8 @@ mod policy;
 mod seam;
 /// The seam's hold-mark lifecycle.
 mod seam_hold;
+/// The stopped exit's settlement of its own window (ARCH §2.9).
+mod settle;
 
 /// A materialized agent worktree on its own branch, carrying the step-1
 /// transcript entry, plus the workspace-root step directory — the disk

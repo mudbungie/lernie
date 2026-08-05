@@ -111,11 +111,13 @@ fn a_malformed_envelope_is_declined_in_band_and_nothing_runs() {
 }
 
 #[test]
-fn a_stop_mid_envelope_ceases_the_loop_and_commits_nothing() {
+fn a_stop_mid_envelope_ceases_the_loop_and_settles_the_envelope() {
     // §2.9 step 3 through the envelope: the executor's own group
     // SIGTERM with the stop flag set is the stop — the whole tool
-    // window ceases for the stopped-deposit exit, and no aggregate
-    // entry is committed (the envelope never resolved).
+    // window ceases for the stopped-deposit exit. No *aggregate* entry
+    // is committed (the envelope never resolved); what the exit commits
+    // instead is the envelope's interrupted settlement, so the tail a
+    // later deposit revives is paired (§2.9, [`super::super::settle`]).
     let agent_id = "agent-8ee7-stop";
     let ws = TempDir::new().unwrap();
     let fx = Fixture::new();
@@ -153,7 +155,15 @@ fn a_stop_mid_envelope_ceases_the_loop_and_commits_nothing() {
     .unwrap();
     assert!(matches!(window, ToolWindow::Stopped), "the stop ceases");
     assert_eq!(exec.log.borrow().len(), 2, "the third entry never ran");
-    assert!(!worktree.join("messages/002-tool.json").exists());
+    let settled =
+        std::fs::read_to_string(worktree.join("messages/002-tool.json")).expect("window settled");
+    assert!(settled.contains("\"is_error\":true"), "{settled}");
+    assert!(settled.contains("t5"), "the envelope's own id: {settled}");
+    assert!(settled.contains("did not return"), "{settled}");
+    assert!(
+        !settled.contains("invocations:"),
+        "no aggregate was forged: {settled}"
+    );
 }
 
 #[test]

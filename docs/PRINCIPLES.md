@@ -1,6 +1,6 @@
 # Design Principles
 
-Quick-reference catalog of the principles shaping this architecture. Canonical source is `docs/ARCHITECTURE.md`; this document is a distillation.
+Quick-reference catalog of the principles shaping this architecture. Canonical source is `docs/ARCHITECTURE.md`; this document is a distillation. It numbers no sections of its own, so a bare `§N` below is always a section of `docs/ARCHITECTURE.md` — the cross-document reference rule in that document's §2.1.
 
 ## Disk first
 System state — context, messages while in flight, responses, tool calls — lives on disk; processes hold none of it across restart. That includes the model-facing history itself: assistant output and tool results are committed transcript entries (ARCHITECTURE §2.3), never message lists held in executor memory. This is what makes git the substrate at all: history, branching, rollback, replay, and audit collapse to git operations on data that's already there. It is also what eliminates entire classes of bug — lost updates, stale caches, ghost state surviving a crash, in-memory views drifting from on-disk truth — because there is no in-memory truth to drift from. Every other principle below depends on this one.

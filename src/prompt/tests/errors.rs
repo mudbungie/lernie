@@ -185,17 +185,50 @@ fn run_retries_on_retryable_error_then_completes() {
 
 #[test]
 fn run_surfaces_adapter_returning_in_band_error() {
-    // A non-retryable in-band `Error` (auth) aborts the step (§2.10).
+    // A non-retryable in-band `Error` (auth) aborts the step (§2.10), and
+    // the decline names the provider row the fixture's role is bound to
+    // plus the command that credentials it (bl-7e9e).
     let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
     let adapter = StubAdapter::happy(&error_stream(ErrorKind::Auth, "unauthorized"));
     let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
     match err {
-        Error::AdapterError { kind, message } => {
-            assert_eq!(kind, "Auth");
+        Error::AdapterAuth {
+            ref row,
+            ref message,
+        } => {
+            assert_eq!(row, "anthropic");
             assert_eq!(message, "unauthorized");
+        }
+        other => panic!("expected AdapterAuth, got {other:?}"),
+    }
+    let rendered = err.to_string();
+    assert!(
+        rendered.contains("bz --login --provider anthropic"),
+        "the decline states the fix: {rendered}"
+    );
+}
+
+#[test]
+fn run_surfaces_a_non_auth_in_band_error_naming_the_row() {
+    // Every other in-band failure keeps the classification — and gains
+    // the provider row, which brazen cannot supply (§4.3, bl-7e9e).
+    let repo = scaffold_repo(VALID_PER_REPO_PROVIDERS_YAML, Some("body"));
+    let adapter = StubAdapter::happy(&error_stream(ErrorKind::ParseInput, "bad request"));
+    let err = run_with_stubs(repo.path(), "hi", &adapter, &StubGit::ok()).unwrap_err();
+    match err {
+        Error::AdapterError {
+            ref kind, ref row, ..
+        } => {
+            assert_eq!(kind, "ParseInput");
+            assert_eq!(row, "anthropic");
         }
         other => panic!("expected AdapterError, got {other:?}"),
     }
+    assert!(
+        err.to_string()
+            .contains("provider error (ParseInput) on provider row \"anthropic\""),
+        "{err}"
+    );
 }
 
 // Stream-shape error paths (half-stream, malformed events) live in
@@ -206,7 +239,13 @@ fn error_display_includes_context() {
     // Exercises every `#[error("...")]` format line.
     let _: String = Error::RoleMissing("worker".into()).to_string();
     let _: String = Error::AdapterError {
-        kind: "Auth".into(),
+        kind: "Usage".into(),
+        row: "anthropic".into(),
+        message: "m".into(),
+    }
+    .to_string();
+    let _: String = Error::AdapterAuth {
+        row: "anthropic".into(),
         message: "m".into(),
     }
     .to_string();

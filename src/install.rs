@@ -57,23 +57,51 @@ fn io_err(path: &Path, source: io::Error) -> Error {
     }
 }
 
-/// Found the harness root (ARCH §2.2), seed-if-absent throughout.
+/// What one [`prime`] run did to the harness root: the seed-if-absent
+/// split, counted. It carries no paths — the roots are the caller's own
+/// [`Roots`], and re-stating them here would be a second copy of one fact
+/// (`docs/PRINCIPLES.md`, single source of truth).
+#[derive(Debug, Default, Clone, Copy)]
+pub struct Founding {
+    /// Files this run wrote, because they were absent.
+    pub seeded: usize,
+    /// Files already on disk, left byte-for-byte alone.
+    pub kept: usize,
+}
+
+impl Founding {
+    /// Record one seed decision: `wrote` is [`seed_file`]'s answer.
+    fn count(&mut self, wrote: bool) {
+        if wrote {
+            self.seeded += 1;
+        } else {
+            self.kept += 1;
+        }
+    }
+}
+
+/// Found the harness root (ARCH §2.2), seed-if-absent throughout, and
+/// report the split (see [`Founding`]) so the caller can say what it did.
 ///
 /// Idempotent by construction: directories are `create_dir_all` (a no-op
 /// when present) and every file is written only when absent, so a second
 /// run changes nothing and a hand-edited entry (a curated `models.yaml`,
 /// an edited `SKILL.md`) is never clobbered. Under `LERNIE_HOME` both
 /// roots collapse to one directory and every path below lands there.
-pub fn prime(roots: &Roots) -> Result<(), Error> {
+pub fn prime(roots: &Roots) -> Result<Founding, Error> {
+    let mut founding = Founding::default();
     // Config lifetime (§2.2): the hand-edited declarations.
     ensure_dir(&roots.config.join(WORKFLOWS_DIR))?;
-    seed_file(&models_path(&roots.config), MODELS_YAML.as_bytes())?;
+    founding.count(seed_file(
+        &models_path(&roots.config),
+        MODELS_YAML.as_bytes(),
+    )?);
 
     // Data lifetime (§2.2): the machine-populated pools and trees.
     ensure_dir(&roots.data.join(WORKSPACES_DIR))?;
-    extract_dir(&TOOLS, &roots.data.join(TOOLS_SUBDIR))?;
-    extract_dir(&SKILLS, &roots.data.join(SKILLS_SUBDIR))?;
-    Ok(())
+    extract_dir(&TOOLS, &roots.data.join(TOOLS_SUBDIR), &mut founding)?;
+    extract_dir(&SKILLS, &roots.data.join(SKILLS_SUBDIR), &mut founding)?;
+    Ok(founding)
 }
 
 /// Recursively seed an embedded directory into `target`, seed-if-absent
@@ -82,15 +110,15 @@ pub fn prime(roots: &Roots) -> Result<(), Error> {
 /// recurses into `target/<subdir-name>`. Only files are seed-guarded —
 /// directories are `create_dir_all`, so an existing pool with extra
 /// entries keeps them and gains only what the binary ships and disk lacks.
-fn extract_dir(dir: &Dir, target: &Path) -> Result<(), Error> {
+fn extract_dir(dir: &Dir, target: &Path, founding: &mut Founding) -> Result<(), Error> {
     ensure_dir(target)?;
     for file in dir.files() {
         let name = leaf_name(file.path());
-        seed_file(&target.join(name), file.contents())?;
+        founding.count(seed_file(&target.join(name), file.contents())?);
     }
     for sub in dir.dirs() {
         let name = leaf_name(sub.path());
-        extract_dir(sub, &target.join(name))?;
+        extract_dir(sub, &target.join(name), founding)?;
     }
     Ok(())
 }
@@ -104,12 +132,14 @@ fn leaf_name(path: &Path) -> &std::ffi::OsStr {
 
 /// Write `bytes` to `path` iff `path` is absent; a present path is left
 /// untouched (seed-if-absent — the non-clobber contract, §2.2). Parity
-/// with the Makefile's retired `test -e` guard on `models.yaml`.
-fn seed_file(path: &Path, bytes: &[u8]) -> Result<(), Error> {
+/// with the Makefile's retired `test -e` guard on `models.yaml`. Answers
+/// whether it wrote, which is the whole of [`Founding`].
+fn seed_file(path: &Path, bytes: &[u8]) -> Result<bool, Error> {
     if path.exists() {
-        return Ok(());
+        return Ok(false);
     }
-    fs::write(path, bytes).map_err(|e| io_err(path, e))
+    fs::write(path, bytes).map_err(|e| io_err(path, e))?;
+    Ok(true)
 }
 
 /// `create_dir_all`, mapping the error to [`Error::Io`] with the path.

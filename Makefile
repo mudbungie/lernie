@@ -257,8 +257,10 @@ install: release
 	@# hand-edited config survives, and the seeding lives in one place (the
 	@# verb), not duplicated here. The env below mirrors this Makefile's
 	@# root resolution; the binary applies the identical policy (§2.2).
+	@# It reports both roots and its seed-if-absent split on stderr itself
+	@# (bl-7e9e), so nothing is echoed here: the resolution the verb used is
+	@# the authoritative one, and a second copy could only ever disagree.
 	@LERNIE_HOME='$(LERNIE_HOME)' XDG_CONFIG_HOME='$(XDG_CONFIG_HOME)' XDG_DATA_HOME='$(XDG_DATA_HOME)' "$(INSTALL_BIN)/lernie" prime
-	@echo "primed harness root: $(LERNIE_CONFIG_HOME) (config) + $(LERNIE_DATA_HOME) (data)"
 	@$(MAKE) --no-print-directory install-verify
 	@echo
 	@echo "make sure $(INSTALL_BIN) is on your PATH (and that 'bz' resolves there too)."

@@ -57,7 +57,20 @@ no `agent-eval`, no `lernie-eval-agent`, no `bz`, and nothing runs after
 the build. The `lernie prime` line is optional but explicit: `prime`
 founds the harness root (below), and `lernie new` founds it too on its
 way to creating a workspace, so a user who skips `prime` is not stranded
-— only uninformed about where their state went.
+— only uninformed about where their state went. Running it is how you
+find out, because it says what it founded:
+
+```
+$ lernie prime
+lernie prime: config root /home/you/.config/lernie — models.yaml, workflows/
+lernie prime: data root /home/you/.local/share/lernie — tools/, skills/, workspaces/
+lernie prime: harness root founded: 15 files seeded, 0 already present and left alone (seed-if-absent, §2.2)
+```
+
+That report is on **stderr** — `prime` has no stdout product (ARCH §3.4)
+— and a re-run prints the same three lines with the counts swapped
+(`0 files seeded, 15 already present`), which is how you tell an
+already-founded root from a fresh one.
 
 ### From a GitHub release
 
@@ -728,6 +741,32 @@ $ echo '{}' | lernie tool nosuchtool
 lernie tool nosuchtool: unknown built-in tool: "nosuchtool"; available: apply_patch, bash, cd, dispatch, load_skill, message, read_file
 ```
 
+**A direct run gives you the triple, not the envelope.** `lernie tool
+<name>` *is* the tool binary, so it hands back exactly what the bullet
+above says a binary produces: stdout on stdout, stderr on stderr, the
+status as the process exit code. The §3.3 *result envelope* — exit code
+on the first line, then stdout, then stderr under `--- stderr ---` — is
+the **harness's** rendering of those three into one `tool_result.content`,
+and nothing at the CLI prints it:
+
+```
+$ echo '{"command":"echo out; echo err >&2; exit 3"}' | lernie tool bash
+out
+err
+$ echo $?
+3
+```
+
+Four of the built-ins are not runnable standalone at all. `cd`,
+`dispatch`, `message` and `load_skill` read the calling agent's identity
+from the harness-set `LERNIE_CONV_REPO` / `LERNIE_CONV_BRANCH` (ARCH
+§3.3), which only a real step supplies, so by hand they decline:
+
+```
+$ echo '{"path":"/tmp"}' | lernie tool cd
+lernie tool cd: missing env var "LERNIE_CONV_REPO" (set by the harness per ARCH §3.3)
+```
+
 Built-ins:
 
 - **`apply_patch`** — the structured edit path (ARCH §3.3 *The patch
@@ -751,11 +790,14 @@ Built-ins:
   the magnitude it is up against; v0.4+ adds the oversized-output
   auto-dispatch shim (ARCH §3.3 / §12). Try it directly:
   `echo '{"path":"README.md"}' | lernie tool read_file`.
-- **`bash`** — runs a shell command via `sh -c` and returns its
-  §3.3 *result envelope*: the exit code stated on the first line, then
-  stdout, then stderr under a `--- stderr ---` marker whenever the
-  command wrote any — on success as well as failure, so a warning from
-  a command that exited 0 is not lost (bl-ffc5). The shell runs in its own process group so a SIGTERM the
+- **`bash`** — runs a shell command via `sh -c` and hands back the
+  shell's own three: its stdout, its stderr, and its exit status
+  (`128 + signo` when a signal killed it). The harness renders those
+  into the §3.3 *result envelope* the model reads — the exit code stated
+  on the first line, then stdout, then stderr under a `--- stderr ---`
+  marker whenever the command wrote any, on success as well as failure,
+  so a warning from a command that exited 0 is not lost (bl-ffc5).
+  The shell runs in its own process group so a SIGTERM the
   harness sends is forwarded to the entire spawned tree (§2.9
   cascade). Its model-facing definition — `skills/bash/SKILL.md`
   frontmatter and `schemas/tools/bash.json` — is deliberately explicit
@@ -779,8 +821,9 @@ Built-ins:
   Nothing is fenced off — `bash` could already reach outside with an
   absolute path — but the tool commit stages only the worktree, so writes
   made elsewhere are real and **uncommitted**: off the branch, invisible
-  to a parent, absent from replay. Try it directly:
-  `echo '{"path":"/tmp"}' | lernie tool cd`.
+  to a parent, absent from replay. It has no standalone run — moving an
+  agent needs an agent, so by hand it declines for the missing
+  `LERNIE_CONV_REPO` (above).
 - **`dispatch`** (v0.4 Phase 2) — spawns a subagent on a fresh
   branch with the supplied goal and returns
   `{"status":"in_progress","handle":"<sub-branch>"}` synchronously
@@ -1235,9 +1278,26 @@ always crosses the subprocess boundary (§3.4). Two facts follow:
   protocol, auth mode, model aliases) live in brazen's own config
   (`~/.config/brazen/config.toml`; `bz --dump-config`, `bz --login`).
   lernie references a row by name and never sees credential material
-  (§4.1). A load-time guard (`bz --version` == the linked crate version)
-  rejects a mismatched binary; `make install` installs the pin with
-  `cargo install brazen --version =0.0.5`.
+  (ARCH §4.1). A load-time guard (`bz --version` == the linked crate
+  version) rejects a mismatched binary; `make install` installs the pin
+  with `cargo install brazen --version =0.0.5`.
+- **A failed model call names the row.** Which row lernie routed a call
+  under is lernie's fact, not brazen's (it is the role's `provider:` in
+  the config commit's `providers.yaml`), so the harness states it:
+  `provider error (<kind>) on provider row "<row>": <message>`. A
+  missing credential — brazen's `auth` kind, what a 401/403 normalizes
+  to — additionally states the fix, with the row substituted in:
+
+  ```
+  lernie prompt: provider error (auth) on provider row "anthropic": no credential for this
+  provider … — no credential is reaching that row; authenticate it with
+  `bz --login --provider anthropic`, or export the API-key env var it is configured to read.
+  `bz --list-providers` shows every row's auth mode and credential state …
+  ```
+
+  On an operator-run `lernie prompt` that lands on your terminal; a
+  detached driver writes it to `<workspace>/steps/<agent-id>/driver.log`
+  (ARCH §2.11).
 
 ### Adding a provider
 

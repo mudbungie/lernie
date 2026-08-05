@@ -196,10 +196,7 @@ pub(super) fn run(
                     }
                 }
                 drop(response_file);
-                return Err(Error::AdapterError {
-                    kind: format!("{:?}", err.kind),
-                    message: err.message,
-                });
+                return Err(Error::from_adapter(call.provider_row, err));
             }
             SegmentOutcome::HalfStream { stderr_tail } => {
                 // Killed mid-stream (§2.9): nothing settled, so staging

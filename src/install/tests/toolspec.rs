@@ -132,10 +132,11 @@ fn the_bash_schema_keeps_the_one_string_command_and_repeats_the_contract() {
     // user's default shell"), not the argv array its retired `shell`
     // tool used, so lernie's one-string shape is already the shape
     // those models see. Its extra params are ones lernie cannot honour:
-    // `workdir` has no lernie meaning because the cwd is not a per-call
-    // parameter at all — it is one mutable fact about the agent, moved by
-    // an explicit `cd` tool call and read at every spawn (§3.3 *Working
-    // directory*), so a per-call override would be a second home for it.
+    // `workdir` has no lernie meaning because the cwd is not a
+    // per-tool-call parameter at all — it is one mutable fact about the
+    // agent, moved by an explicit `cd` tool call and read at every spawn
+    // (§3.3 *Working directory*), so a per-tool-call override would be a
+    // second home for it.
     // `timeout_ms` has no implementation — the executor imposes no
     // wall-clock limit. The executor's `Input` struct
     // (`prompt::tool::builtin::bash`) is `deny_unknown_fields`, so a

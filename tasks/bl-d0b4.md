@@ -1,7 +1,8 @@
 +++
 title = "seed the agent's working directory at spawn: --cwd on lernie prompt and lernie dispatch"
 created = 1785823804
-updated = 1785996501
+updated = 1785996510
+claimant = "Tubercle"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["upstream-ask"]

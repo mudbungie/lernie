@@ -40,11 +40,12 @@ pub fn wall_seconds(repo: &Path, branch: &str) -> u64 {
     sum_over_descent(repo, branch, step_wall)
 }
 
-/// Dispatch depth of `branch`: a root conversation is one `<ts>-<short>`
-/// conv-id (one hyphen) at depth 0; each dispatch appends `-<ts>-<short>`
-/// (two more hyphens), so depth = hyphens / 2 (ARCH §2.2 hyphenated
-/// descent). Relies on the conv-id token format — the compact timestamp
-/// and short id are both hyphen-free (clock.rs / ARCH §2.3).
+/// Dispatch depth of `branch`: a root agent is one `<ts>-<short>` id
+/// (one hyphen) at depth 0; each dispatch appends `-<ts>-<short>` (two
+/// more hyphens), so depth = hyphens / 2 (ARCH §6 "The depth boundary",
+/// over the §2.3 hyphenated descent). Relies on the id token format —
+/// the compact timestamp and short id are both hyphen-free (clock.rs /
+/// ARCH §2.3).
 pub fn depth(branch: &str) -> u32 {
     (branch.matches('-').count() / 2) as u32
 }

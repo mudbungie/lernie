@@ -83,7 +83,7 @@
       "type": "object",
       "properties": {
         "max_depth": {
-          "description": "Cap on the conversation's dispatch depth (root = 0; each dispatch is one deeper). A conversation deeper than this exhausts on its first model call (ARCH §6).",
+          "description": "The deepest *allowed* dispatch depth (root agent = 0; each dispatch is one deeper). An agent deeper than this exhausts on its first model call, and a dispatch that would land a child deeper is refused before the fork (ARCH §6 \"The depth boundary\").",
           "type": [
             "integer",
             "null"

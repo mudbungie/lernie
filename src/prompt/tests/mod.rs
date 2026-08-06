@@ -2,6 +2,7 @@ mod advance;
 mod advance_compaction;
 mod advance_edges;
 mod advance_release;
+mod budget_depth_boundary;
 mod budget_enforcement;
 mod compaction_toolset;
 mod descriptor_prune;

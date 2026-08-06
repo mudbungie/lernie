@@ -29,6 +29,7 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

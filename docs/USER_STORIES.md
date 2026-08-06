@@ -224,6 +224,20 @@ Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name 
 - **acceptance** exit 0 and stdout `{"cwd":"<absolute path>"}`, with `..` and symlinks resolved; the agent's mark `refs/lernie/cwd/<agent-id>` names that path, and **every subsequent tool call of that agent runs there** — ARCH §3.3: *"Every tool subprocess runs with its working directory set to the **calling agent's current working directory** — its worktree … by default, and thereafter wherever the agent's own `cd` call moved it"*. A relative `path` resolves against where the agent currently is; a path that names nothing, or names a non-directory, is **declined** (`is_error`) and the agent does not move; an agent that never calls `cd` runs in its worktree exactly as before, and a mark whose directory has since disappeared falls back to the worktree rather than stranding the agent.
 - **status** **fulfilled by test.** Unit-covered at the tool (`src/prompt/tool/builtin/cd/tests.rs`), at the mark against real git (`src/workspace/cwd/tests.rs`), and at the spawn boundary — the arm that actually decides where a tool runs (`src/prompt/tool/tests/moved_cwd.rs`). The standing evidence gap is the one every built-in shares: no test drives it as a real subprocess through the installed binary.
 
+### US-27 — the caller places a new agent in a directory it names
+
+- **actor** end user, frontend author, crate consumer
+- **scenario** Start an agent that works in an existing checkout the caller owns, rather than in the worktree lernie made for it. The agent's own `cd` (US-26) cannot serve: it only exists once the agent is running, and a caller cannot write the mark first — ARCH §3.3: *"Creation is the only moment that precedes the first step."*
+- **commands**
+  - exec: `lernie prompt <ws> 'msg' --cwd <dir>` and `lernie dispatch <role> <ws> <branch> --goal 'g' --cwd <dir>`
+  - linked: the same `prompt::Args` / `dispatch::Args` with `cwd: Some(<dir>)`
+- **acceptance**
+  - exit 0 and the verb's ordinary product; the agent's mark `refs/lernie/cwd/<agent-id>` names the canonicalized `<dir>` **before its first step**, so every tool call it makes runs there.
+  - A `<dir>` that names nothing, or names a non-directory, is **refused in the verb's own voice with exit non-zero, and nothing is created** — no `agents/<id>` ref, no worktree, no inbox. Same three declines, same wording, as `cd`'s (US-26).
+  - Omitting the flag is unchanged behaviour: the mark is unset and the agent works in its worktree.
+  - **Nothing is inherited.** A child dispatched by a `--cwd` agent has no mark of its own unless its own dispatch named one, and seeding a child never disturbs the dispatcher's mark.
+- **status** **fulfilled.** Observed hands-on against a built binary (scratch `LERNIE_HOME`, no credential — the mark is written before the first model request, so the ARCH §4.4 auth decline that follows does not touch it): `lernie prompt --cwd <dir>` left `refs/lernie/cwd/<root-id>` naming the absolute `<dir>`; `lernie dispatch --cwd <dir>` the same at the child's id; a child dispatched *without* the flag by that seeded root had **no** mark at all, and the root's was undisturbed; `--cwd /no/such/dir` exited 1 with `lernie prompt: no such directory "/no/such/dir"` and left `agents/` empty, and `--cwd <a file>` exited 1 with `lernie dispatch worker: "…" is not a directory — a working directory is one (ARCH §3.3)`. Unit-covered by `src/prompt/tests/cwd_seed.rs` (root, including that the seed precedes the fork), `src/prompt/child_dispatch/tests/cwd.rs` (child, against real git — including non-inheritance), `src/workspace/cwd/tests.rs::resolving` (the shared validation) and `src/cmd/tests/cwd.rs` (CLI parity of the refusal, and that it leaves no debris).
+
 ---
 
 ## 6. Messaging, driving, sweeping, stopping

@@ -10,8 +10,8 @@
 //! `stopped`-epitaph terminal rather than riding into a successor.
 
 use super::super::{
-    DEFAULT_MAX_TOKENS, assembler, child_result, model_call, result_deposit, step_commit,
-    stop_signal, terminal, tool_step, tools, transcript,
+    assembler, child_result, model_call, result_deposit, step_commit, stop_signal, terminal,
+    tool_step, tools, transcript,
 };
 use crate::config::Event;
 use crate::prompt::inbox::Epitaph;
@@ -107,7 +107,7 @@ pub(super) fn step(
         &system_with_goal,
         messages,
         tools,
-        DEFAULT_MAX_TOKENS,
+        step_commit::DEFAULT_MAX_TOKENS,
     );
     let request_value =
         serde_json::to_value(&request).expect("CanonicalRequest is always serializable");

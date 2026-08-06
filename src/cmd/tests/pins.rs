@@ -31,6 +31,7 @@ fn prompt_declines_a_malformed_pin_in_its_own_voice() {
                 config: None,
                 name: None,
                 pin: vec!["no-equals-here".into()],
+                cwd: None,
             },
             fx,
         )
@@ -57,6 +58,7 @@ fn dispatch_declines_a_reserved_pin_destination_in_its_own_voice() {
                 from: None,
                 name: None,
                 pin: vec![format!("soul.md={}", src.display())],
+                cwd: None,
             },
             fx,
         )

@@ -178,6 +178,13 @@ pub fn run(
     // refusal leaves no branch, no worktree and no inbox behind (§3.3).
     dispatch::require_described(req.parent_worktree, &grant, git)?;
 
+    // The seeded working directory (§3.3): written once the child's id
+    // has settled and while every refusal still precedes the fork,
+    // through the one home for the act ([`super::seed_cwd`]) the root
+    // start also calls. Nothing is inherited — the parent's own mark is
+    // never read here.
+    super::seed_cwd(req.repo, &sub_branch, req.cwd, git)?;
+
     let commit_subject = format!("dispatch: {} [{sub_branch}]", req.role);
     spawn_subagent_branch(
         &SpawnRequest {

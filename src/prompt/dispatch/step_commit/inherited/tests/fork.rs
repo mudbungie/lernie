@@ -59,6 +59,7 @@ fn dispatch(ws: &Path, parent_wt: &Path, role: &str) -> String {
             goal: CHILD_GOAL,
             name: None,
             fork_point: None,
+            cwd: None,
             pins: crate::prompt::PinnedDocs::none(),
         },
         &RealGit::new(),

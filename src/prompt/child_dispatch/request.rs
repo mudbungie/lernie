@@ -46,6 +46,16 @@ pub struct ChildDispatchRequest<'a> {
     /// child's **governing config commit derives from this ref** (§2.2
     /// fork-back-in): its ancestry begins here.
     pub fork_point: Option<&'a str>,
+    /// The **working directory** the caller seeded for the child (§3.3,
+    /// `lernie dispatch --cwd`), already resolved to an absolute
+    /// directory by [`crate::workspace::cwd::resolve`]. Written to the
+    /// child's own mark before the fork, so its first tool call already
+    /// runs there. `None` — every harness-initiated dispatch, the
+    /// `dispatch` built-in, and any caller that omits the flag — leaves
+    /// the mark unset, which is the general path with the fact absent:
+    /// the child works in its worktree. Nothing inherits it; a mark is
+    /// keyed by agent id and the parent's is never consulted here.
+    pub cwd: Option<&'a Path>,
     /// Caller-supplied pinned documents (§2.5,
     /// [`crate::prompt::pinned_doc`]): exact bytes the dispatch commit
     /// snapshots at their validated destinations beside `goal.md` and

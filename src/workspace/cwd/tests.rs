@@ -1,6 +1,6 @@
 //! The working-directory mark against a real workspace (ARCH §3.3).
 
-use super::{cwd_ref, read, write};
+use super::{cwd_ref, read, resolve, write};
 use crate::template::{GitRunner, RealGit};
 use crate::workspace::{fixture, repo_git};
 use std::path::{Path, PathBuf};
@@ -127,4 +127,54 @@ fn a_value_that_cannot_be_staged_surfaces_the_io_failure() {
     // `repo.git` absent entirely: staging the value has nowhere to land.
     let err = write(holder.path(), "a", Path::new("/tmp"), &RealGit::new()).unwrap_err();
     assert_eq!(err.kind(), std::io::ErrorKind::NotFound);
+}
+
+/// [`resolve`] — the one validation both writers of the mark run: the
+/// `cd` built-in mid-run and `--cwd` at agent creation (§3.3). Its
+/// answers are the kernel's, so a directory is a directory in one voice.
+mod resolving {
+    use super::*;
+
+    #[test]
+    fn an_existing_directory_resolves_to_its_absolute_self() {
+        let holder = tempfile::TempDir::new().unwrap();
+        let expected = std::fs::canonicalize(holder.path()).unwrap();
+        assert_eq!(resolve(holder.path()).unwrap(), expected);
+    }
+
+    #[test]
+    fn dot_dot_and_symlinks_are_resolved_not_stored_literally() {
+        let holder = tempfile::TempDir::new().unwrap();
+        std::fs::create_dir(holder.path().join("inner")).unwrap();
+        let resolved = resolve(&holder.path().join("inner/..")).unwrap();
+        assert!(!resolved.to_string_lossy().contains(".."), "{resolved:?}");
+        assert_eq!(resolved, std::fs::canonicalize(holder.path()).unwrap());
+    }
+
+    #[test]
+    fn a_path_that_names_nothing_is_declined() {
+        let err = resolve(Path::new("/no/such/place/at/all")).unwrap_err();
+        assert!(err.to_string().contains("no such directory"), "{err}");
+    }
+
+    #[test]
+    fn a_file_is_declined_because_it_is_not_a_directory() {
+        let holder = tempfile::TempDir::new().unwrap();
+        let file = holder.path().join("f");
+        std::fs::write(&file, b"x").unwrap();
+        let err = resolve(&file).unwrap_err();
+        assert!(err.to_string().contains("is not a directory"), "{err}");
+    }
+
+    #[test]
+    fn a_directory_the_mark_could_not_store_is_declined_before_it_is_written() {
+        // Trailing whitespace survives the filesystem but not the mark's
+        // trimmed-UTF-8 round trip, so the refusal belongs here — at the
+        // caller's path, before any agent exists.
+        let holder = tempfile::TempDir::new().unwrap();
+        let trailing = holder.path().join("dir ");
+        std::fs::create_dir(&trailing).unwrap();
+        let err = resolve(&trailing).unwrap_err();
+        assert!(err.to_string().contains("trimmed UTF-8"), "{err}");
+    }
 }

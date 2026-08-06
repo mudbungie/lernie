@@ -111,6 +111,7 @@ fn a_verifier_gates_a_workers_return_end_to_end_config_only() {
         goal: "do it",
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let worker = dispatch_child(&wreq, &git, &clock, &id, &rec, test_rng()).unwrap();

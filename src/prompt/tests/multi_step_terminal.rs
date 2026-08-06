@@ -28,6 +28,7 @@ fn loop_terminates_on_non_tool_use_finish() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -66,6 +67,7 @@ fn loop_surfaces_tool_executor_failure_as_tool_exec_error() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

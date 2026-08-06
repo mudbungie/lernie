@@ -392,6 +392,7 @@ lernie prompt /path/to/my-conversation 'hello' --name pale-otter
 lernie prompt /path/to/my-conversation 'hello' --config strict
 lernie prompt /path/to/my-conversation 'try again' --from <ref>
 lernie prompt /path/to/my-conversation 'hello' --pin AGENTS.md=./AGENTS.md
+lernie prompt /path/to/my-conversation 'survey it' --cwd /path/to/some/checkout
 ```
 
 `--pin <dest>=<src>` (repeatable) freezes `<src>`'s exact bytes at
@@ -410,6 +411,18 @@ descendants inherit them by ordinary fork, and whether one composes
 into assembled context is the governing manifest's §5.2 question — name
 a destination its globs see. `lernie dispatch` takes the identical
 flag.
+
+`--cwd <path>` starts the agent working in a directory you name instead
+of its own worktree (ARCH §3.3 *Working directory*). It writes the same
+working-directory mark the agent's own `cd` tool writes — once, before
+the first step — so every tool call the agent makes runs there. The
+path must exist and be a directory, and is refused before any branch or
+ref exists, in the verb's own voice. Two things worth knowing: nothing
+outside the worktree is committed, so work an agent does in a foreign
+directory is real but off its branch (the same boundary `cd` has); and
+**nothing is inherited** — a child of a `--cwd` agent is back in its own
+worktree unless its own dispatch names a directory. `lernie dispatch`
+takes the identical flag; the model-facing `dispatch` *tool* does not.
 
 `lernie prompt` is the root-agent path (ARCH §2.3, §2.6, §2.7,
 §2.8, §2.10). Each invocation spawns its own `agents/<conv-id>` branch
@@ -1138,7 +1151,7 @@ structurally by the prefix — there is no `main` (§2.2).
 ## Dispatching subagents directly
 
 `lernie dispatch <role> <repo> <branch> [--goal <text>] [--from <ref>]
-[--name <name>] [--pin <dest>=<src>]...` is the §3.4 re-entry point
+[--name <name>] [--pin <dest>=<src>]... [--cwd <path>]` is the §3.4 re-entry point
 every child dispatch uses.
 It is **writer-shaped, not an
 executor** (ARCH §2.1): it forks the child branch, lands the dispatch

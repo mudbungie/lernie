@@ -63,6 +63,7 @@ pub(super) fn req<'a>(
         goal,
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     }
 }
@@ -255,5 +256,6 @@ fn a_parent_with_no_config_ancestor_fails_as_git() {
 }
 
 mod budget;
+mod cwd;
 mod edges;
 mod naming;

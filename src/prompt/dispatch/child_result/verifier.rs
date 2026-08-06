@@ -72,6 +72,7 @@ pub(super) fn dispatch(
         goal: &goal,
         name: None,
         fork_point: Some(&worker.terminal_ref),
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(
@@ -145,6 +146,7 @@ fn reject(
         goal: &feedback,
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(

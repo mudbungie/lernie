@@ -112,6 +112,7 @@ fn a_child_forked_mid_tool_step_assembles_a_wire_valid_first_history() {
             goal: "summarize the repo\n",
             name: None,
             fork_point: None,
+            cwd: None,
             pins: crate::prompt::PinnedDocs::none(),
         },
         &g,

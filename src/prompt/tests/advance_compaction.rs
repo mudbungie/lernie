@@ -68,6 +68,7 @@ fn a_pending_worker_result_is_interpreted_then_the_branch_steps() {
         goal: "do it",
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let child = dispatch_child(&req, &git, &DescentClock, &id, &rec, test_rng()).unwrap();
@@ -154,6 +155,7 @@ fn a_compaction_landing_lands_the_product_and_the_next_step_assembles_clean() {
         goal: "compact",
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let child = dispatch_child(&req, &git, &DescentClock, &id, &rec, test_rng()).unwrap();

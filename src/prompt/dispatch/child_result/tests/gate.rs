@@ -27,6 +27,7 @@ fn verifier_child(
         goal: "judge",
         name: None,
         fork_point: Some(worker_tip),
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let v = child_dispatch::run(

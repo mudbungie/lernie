@@ -45,6 +45,7 @@ fn command_run_dispatches_every_non_prime_arm() {
         config: None,
         name: None,
         pin: vec![],
+        cwd: None,
     })));
     assert!(!dispatched(Command::Dispatch(dispatch::Args {
         role: "worker".into(),
@@ -54,6 +55,7 @@ fn command_run_dispatches_every_non_prime_arm() {
         from: None,
         name: None,
         pin: vec![],
+        cwd: None,
     })));
     assert!(!dispatched(Command::Stop(stop::Args {
         repo: ne(),

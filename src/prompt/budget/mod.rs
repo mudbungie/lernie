@@ -1,4 +1,4 @@
-//! Per-conversation budget enforcement (ARCH §6 "Budgets (v0.7)").
+//! Whole-tree budget enforcement (ARCH §6 "Budgets (v0.7)").
 //!
 //! `workflow.yaml` declares `budgets: {max_total_tokens, max_wall_seconds,
 //! max_depth}` (all optional; omitted → unbounded). The harness checks

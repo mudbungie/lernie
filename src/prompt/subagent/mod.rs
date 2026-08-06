@@ -3,7 +3,7 @@
 //! Every dispatched subagent — compactor (§2.7), worker (§2.5) — starts
 //! with the same on-disk shape: a branch off the parent's tip, a sibling
 //! worktree at `<conv-repo>/<full-descent>/` (§2.2), `goal.md` (and, for
-//! roles with a per-call soul, `soul.md`) at the worktree root, the
+//! roles with a per-dispatch soul, `soul.md`) at the worktree root, the
 //! agent's `name` settled by the trim (§2.3), all
 //! committed as the dispatch commit. ARCH §2.5 calls dispatch "the
 //! primitive"; this module is its in-process realization, shared between
@@ -64,7 +64,7 @@ pub(crate) struct SpawnRequest<'a> {
     /// operator speaks to by name.
     pub(crate) name: Option<&'a str>,
     /// Soul text written to `<sub_worktree>/soul.md` when supplied.
-    /// `None` for roles whose dispatch has no per-call soul (e.g. the
+    /// `None` for roles whose dispatch has no per-dispatch soul (e.g. the
     /// v0.3 compactor stub: no model call, so no soul to compose).
     pub(crate) soul_text: Option<&'a str>,
     /// Caller-supplied pinned documents (§2.5,

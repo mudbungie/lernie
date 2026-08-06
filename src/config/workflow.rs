@@ -29,7 +29,7 @@ pub struct Workflow {
     /// default`].
     #[serde(default)]
     pub retry: RetryConfig,
-    /// Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked
+    /// Whole-tree spend limits (ARCH §6 "Budgets (v0.7)"). Checked
     /// at every model-call boundary before invoking the adapter; every
     /// value is derived at check time from on-disk `Usage` events, step
     /// timestamps, and branch depth — the harness stores no running
@@ -53,7 +53,7 @@ pub struct Workflow {
     pub tool_control: Option<ToolControl>,
 }
 
-/// Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each
+/// Whole-tree spend limits (ARCH §6 `budgets:` block, v0.7). Each
 /// limit is optional; an omitted limit is unbounded. All three are derived
 /// live from disk at check time — never stored — and are a whole-tree
 /// ceiling: any driver (root or subagent) checks the tree's total spend

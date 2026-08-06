@@ -8,7 +8,7 @@
   ],
   "properties": {
     "budgets": {
-      "description": "Per-conversation spend limits (ARCH §6 \"Budgets (v0.7)\"). Checked at every model-call boundary before invoking the adapter; every value is derived at check time from on-disk `Usage` events, step timestamps, and branch depth — the harness stores no running counter (PRINCIPLES \"Single source of truth\"). Omitted → every limit unbounded.",
+      "description": "Whole-tree spend limits (ARCH §6 \"Budgets (v0.7)\"). Checked at every model-call boundary before invoking the adapter; every value is derived at check time from on-disk `Usage` events, step timestamps, and branch depth — the harness stores no running counter (PRINCIPLES \"Single source of truth\"). Omitted → every limit unbounded.",
       "default": {},
       "allOf": [
         {
@@ -79,7 +79,7 @@
       ]
     },
     "Budgets": {
-      "description": "Per-conversation spend limits (ARCH §6 `budgets:` block, v0.7). Each limit is optional; an omitted limit is unbounded. All three are derived live from disk at check time — never stored — and are a whole-tree ceiling: any driver (root or subagent) checks the tree's total spend against the single frozen limit, with no per-dispatch inheritance (ARCH §6; the tree shares one `steps/` per §2.2/§2.3).",
+      "description": "Whole-tree spend limits (ARCH §6 `budgets:` block, v0.7). Each limit is optional; an omitted limit is unbounded. All three are derived live from disk at check time — never stored — and are a whole-tree ceiling: any driver (root or subagent) checks the tree's total spend against the single frozen limit, with no per-dispatch inheritance (ARCH §6; the tree shares one `steps/` per §2.2/§2.3).",
       "type": "object",
       "properties": {
         "max_depth": {

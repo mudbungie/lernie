@@ -18,9 +18,10 @@ lands as its own message on a later step as it completes (ARCH §2.5,
 { "role": "<role-name>", "goal": "<goal text>", "name": "<display-name>" }
 ```
 
-- `role` — the child's role. v0.4 Phase 2 supports `worker`; the role
-  must be defined in this repo's `providers.yaml` (`roles:` block) and
-  have a soul at `souls/<role>.md`.
+- `role` — the child's role. The role set is open: any role defined in
+  this repo's `providers.yaml` (`roles:` block) with a soul at
+  `souls/<role>.md` is dispatchable, and nothing enumerates role names.
+  A role missing either half is refused before a branch exists.
 - `goal` — the goal text. Pinned at the head of every model call on the
   child's branch and not rewritten during execution.
 - `name` — display name for the child: one unbroken word, unique among
@@ -71,7 +72,7 @@ left for you to do was wait, you did not need the child.
 ## When to use
 
 - A subtask is large enough that finishing it inline would crowd this
-  branch's context — push it to a child, get back a focused summary
+  branch's context — push it to a child, get back its terminal response
   later.
 - Several independent investigations can run in parallel — issue N
   dispatches in one step; each result lands as its own message as it

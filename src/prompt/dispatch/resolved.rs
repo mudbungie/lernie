@@ -28,7 +28,7 @@ pub(in crate::prompt) struct Resolved<'a> {
     pub(in crate::prompt) binary: OsString,
     /// Harness-owned retry policy from `workflow.yaml` (§2.10, §6).
     pub(in crate::prompt) retry: RetryConfig,
-    /// Per-conversation spend limits from `workflow.yaml` (§6), checked
+    /// Whole-tree spend limits from `workflow.yaml` (§6), checked
     /// at every model-call boundary.
     pub(in crate::prompt) budgets: Budgets,
     /// The full workflow (§6): per-step hooks and lifecycle bindings, the

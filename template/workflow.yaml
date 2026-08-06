@@ -54,7 +54,10 @@ tool_output:
 # tool_control:
 #   command: /path/to/control
 
-# Per-conversation spend limits (ARCH §6 "Budgets (v0.7)"). Checked at
+# Whole-tree spend limits (ARCH §6 "Budgets (v0.7)"). One frozen ceiling
+# for the whole agent tree, not a per-agent allowance: every driver in
+# the tree — root or subagent — checks the tree's total against these
+# same numbers, and a dispatch inherits no fresh budget. Checked at
 # every model-call boundary before the adapter is invoked; spend, wall,
 # and depth are derived from disk each check — no stored counter. Omit a
 # limit (or the whole block) to leave that axis unbounded.

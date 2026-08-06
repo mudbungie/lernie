@@ -26,7 +26,7 @@
 //! one mutable per-agent fact an inner `cd` moves for the invocations
 //! after it — both facts make order load-bearing. The round-trip saving
 //! is the point of the envelope; a read/write parallel split inside it
-//! is deferred (bl tracked, see ARCH §3.3 *The multi-tool*).
+//! is deferred (ARCH §3.3 *The multi-tool*).
 //!
 //! **Block-on-all, structurally.** All inner results return together as
 //! this one envelope's single `tool_result`: the transcript commits one

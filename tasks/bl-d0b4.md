@@ -1,10 +1,10 @@
 +++
 title = "seed the agent's working directory at spawn: --cwd on lernie prompt and lernie dispatch"
 created = 1785823804
-updated = 1785996278
+updated = 1785996501
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
-tags = ["design", "upstream-ask"]
+tags = ["upstream-ask"]
 +++
 Source: yog bl-2b8c (closed 2026-08-03; yog docs/VISION.md §4.10 is the cross-suite authority). Premises re-verified against the tree 2026-08-05 and rescoped with the user the same day.
 

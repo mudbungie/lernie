@@ -28,13 +28,12 @@
 //! which deposits an obituary into the dispatcher's inbox (§2.6) like any
 //! other terminal event (ARCH §6, §2.11).
 //!
-//! **`max_depth` and the root (flagged, ARCH §6).** §6 does not spell out
-//! the depth boundary. This module reads `max_depth` as the deepest
-//! *allowed* dispatch depth: a conversation is exhausted iff
-//! `depth(branch) > max_depth`. The root is depth 0, so it is never
-//! depth-exhausted for any non-negative `max_depth`; a subagent
-//! `max_depth + 1` levels below the root exhausts on its first model
-//! call. See `docs/ARCHITECTURE.md` §6.
+//! **The depth boundary is ARCH §6's** ("The depth boundary"), not this
+//! module's: depth counts dispatches from the root agent at depth 0, and
+//! `max_depth` is the deepest *allowed* depth, so exhaustion is strict —
+//! `depth(branch) > max_depth`. [`check`] implements exactly that; the
+//! off-by-one is pinned at the model-call boundary by
+//! `prompt/tests/budget_depth_boundary.rs`.
 
 pub mod derive;
 #[cfg(test)]
@@ -94,8 +93,9 @@ impl std::fmt::Display for Exhausted {
 /// over [`root_of`]`(branch)` (the branch plus its entire descent, ARCH
 /// §6) and exhausted at `actual >= limit`, so the driver stops *before* it
 /// overspends. Depth is positional — derived from `branch` itself and
-/// exhausted at `actual > limit` (`max_depth` is the deepest allowed
-/// depth; the root at depth 0 is never depth-exhausted). Returns the first
+/// exhausted at `actual > limit` (ARCH §6 "The depth boundary": the
+/// deepest *allowed* depth, so the root at depth 0 is never
+/// depth-exhausted). Returns the first
 /// crossed axis, or `None` when every declared limit still has headroom;
 /// an unbounded axis (`None` limit) never triggers.
 pub fn check(repo: &Path, branch: &str, budgets: &Budgets) -> Option<Exhausted> {

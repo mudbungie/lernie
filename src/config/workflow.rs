@@ -73,9 +73,10 @@ pub struct Budgets {
     /// §2.10).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_wall_seconds: Option<u64>,
-    /// Cap on the conversation's dispatch depth (root = 0; each dispatch
-    /// is one deeper). A conversation deeper than this exhausts on its
-    /// first model call (ARCH §6).
+    /// The deepest *allowed* dispatch depth (root agent = 0; each
+    /// dispatch is one deeper). An agent deeper than this exhausts on
+    /// its first model call, and a dispatch that would land a child
+    /// deeper is refused before the fork (ARCH §6 "The depth boundary").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_depth: Option<u32>,
 }

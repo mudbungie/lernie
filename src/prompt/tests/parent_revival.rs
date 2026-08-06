@@ -212,12 +212,12 @@ fn a_parent_with_a_held_lease_gets_no_second_driver() {
 }
 
 /// A child-shaped agent id (§2.3 hyphenated descent) and its parent.
-const CHILD: &str = "20260101-a1-20260102-b2";
+pub(super) const CHILD: &str = "20260101-a1-20260102-b2";
 const PARENT: &str = "20260101-a1";
 
 /// A stub-git workspace with `CHILD` materialized on a terminal tail and
 /// one pending inbox message, so the hop's drain makes a model call due.
-fn child_with_mail() -> TempDir {
+pub(super) fn child_with_mail() -> TempDir {
     let ws = TempDir::new().unwrap();
     let wt = crate::workspace::agent_worktree(ws.path(), CHILD);
     std::fs::create_dir_all(wt.join("messages")).unwrap();

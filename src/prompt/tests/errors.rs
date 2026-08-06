@@ -31,6 +31,7 @@ fn run_with_harness(
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             adapter,
             &sleeper,
@@ -161,6 +162,7 @@ fn run_retries_on_retryable_error_then_completes() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

@@ -105,7 +105,7 @@ impl From<Error> for DispatchCliError {
 }
 
 /// Run `lernie dispatch <role> <repo> <branch> [--goal <text>]
-/// [--name <name>]`
+/// [--name <name>] [--cwd <path>]`
 /// (ARCH §3.4). Role-validity and per-role `--goal` violations surface as
 /// `Err` for the bin's uniform non-zero exit. Any valid role is dispatched
 /// as an ordinary child ([`child_dispatch`], §2.5); roles differ only in
@@ -113,7 +113,8 @@ impl From<Error> for DispatchCliError {
 /// a per-dispatch `--goal` for every role but the compactor, whose goal is
 /// the §2.7 boilerplate. `pins` are the caller-supplied pinned documents
 /// (`--pin <dest>=<src>`, [`crate::prompt::pinned_doc`]), already
-/// validated and loaded by the CLI layer.
+/// validated and loaded by the CLI layer; `cwd` is the seeded working
+/// directory (§3.3), already resolved by the same layer.
 #[allow(clippy::too_many_arguments)]
 pub fn run(
     role: &str,
@@ -123,6 +124,7 @@ pub fn run(
     from: Option<&str>,
     name: Option<&str>,
     pins: &crate::prompt::PinnedDocs,
+    cwd: Option<&Path>,
     driver_target: &Path,
 ) -> Result<(), DispatchCliError> {
     // The production launcher detach-spawns `lernie advance` (§2.11) at
@@ -131,7 +133,7 @@ pub fn run(
     // The launch decision is tested through [`run_with`] against an
     // injected launcher.
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
-    run_with(role, repo, branch, goal, from, name, pins, &launcher)
+    run_with(role, repo, branch, goal, from, name, pins, cwd, &launcher)
 }
 
 /// [`run`] with the driver launcher injected — the same
@@ -147,6 +149,7 @@ fn run_with(
     from: Option<&str>,
     name: Option<&str>,
     pins: &crate::prompt::PinnedDocs,
+    cwd: Option<&Path>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     // The shared id guard, ahead of everything (§2.2, §2.3): the
@@ -216,6 +219,7 @@ fn run_with(
         from,
         name,
         pins,
+        cwd,
         launcher,
     )
 }
@@ -234,6 +238,7 @@ fn dispatch_child(
     fork_point: Option<&str>,
     name: Option<&str>,
     pins: &crate::prompt::PinnedDocs,
+    cwd: Option<&Path>,
     launcher: &dyn Launcher,
 ) -> Result<(), DispatchCliError> {
     let parent_worktree = crate::workspace::agent_worktree(repo, parent_branch);
@@ -245,6 +250,7 @@ fn dispatch_child(
         goal,
         name,
         fork_point,
+        cwd,
         pins,
     };
     let child = child_dispatch::run(

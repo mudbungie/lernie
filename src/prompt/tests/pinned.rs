@@ -32,6 +32,7 @@ fn root_pins_land_in_the_worktree_and_ride_the_dispatch_add() {
         None,
         None,
         &pins,
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

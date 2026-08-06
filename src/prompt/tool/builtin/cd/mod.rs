@@ -5,13 +5,17 @@
 //! Stdout is `{ "cwd": "<absolute path>" }`, the directory every
 //! subsequent tool call of this agent will run in.
 //!
-//! **Relative paths need no resolution here.** The executor spawned this
-//! process *in* the agent's current working directory (§3.3), so
-//! `canonicalize` resolves a relative `path` against exactly the
-//! directory the model meant, symlinks and `..` included — the kernel's
-//! answer, not a re-derivation of one. A path that names nothing, or
-//! names something that is not a directory, is declined as an `is_error`
-//! `tool_result`; nothing is stored and the agent stays where it was.
+//! **What counts as a directory is not decided here.** The one
+//! validation both writers of the mark run is
+//! [`workspace::cwd::resolve`] — canonicalize, prove it is a directory,
+//! prove it survives the mark's round trip — shared with the `--cwd`
+//! seed at agent creation (§2.5) so a path is refused in one voice
+//! wherever it was named. This built-in supplies only the resolution
+//! *context*: the executor spawned this process *in* the agent's current
+//! working directory (§3.3), so a relative `path` resolves against
+//! exactly the directory the model meant. A refusal comes back as an
+//! `is_error` `tool_result`; nothing is stored and the agent stays where
+//! it was.
 //!
 //! **The new directory is stored as the agent's working-directory mark**
 //! ([`crate::workspace::cwd`], `refs/lernie/cwd/<agent-id>`), read back
@@ -67,14 +71,12 @@ pub enum Error {
     StdinRead(#[source] io::Error),
     #[error("missing env var {0:?} (set by the harness per ARCH §3.3)")]
     MissingEnv(&'static str),
-    #[error("no such directory {path:?}: {source}")]
-    NoSuchDir {
-        path: String,
-        #[source]
-        source: io::Error,
-    },
-    #[error("{path:?} is not a directory — cd takes a directory (ARCH §3.3)")]
-    NotADir { path: String },
+    /// The `path` does not name a directory this agent can be moved to —
+    /// the shared decline both writers of the mark run
+    /// ([`workspace::cwd::resolve`], §3.3), re-emitted verbatim so `cd`
+    /// and `--cwd` refuse a directory in one voice.
+    #[error("{0}")]
+    Resolve(#[source] workspace::cwd::ResolveError),
     #[error("store the working directory: {0}")]
     Mark(#[source] io::Error),
     #[error("write to stdout: {0}")]
@@ -109,28 +111,11 @@ pub fn run_with<R: Read, W: Write>(
         .get(ENV_CONV_BRANCH)
         .and_then(|v| v.into_string().ok())
         .ok_or(Error::MissingEnv(ENV_CONV_BRANCH))?;
-    let target = resolve(&input.path)?;
+    let target = workspace::cwd::resolve(Path::new(&input.path)).map_err(Error::Resolve)?;
 
     let workspace = PathBuf::from(repo);
     workspace::cwd::write(&workspace, &branch, &target, git).map_err(Error::Mark)?;
     emit(stdout, &target)
-}
-
-/// The absolute directory `path` names, resolved against this process's
-/// own cwd — which the executor set to the agent's current working
-/// directory (§3.3). Declines a path that names nothing and a path that
-/// names a non-directory, separately: they are different mistakes.
-fn resolve(path: &str) -> Result<PathBuf, Error> {
-    let abs = std::fs::canonicalize(path).map_err(|source| Error::NoSuchDir {
-        path: path.to_owned(),
-        source,
-    })?;
-    match abs.is_dir() {
-        true => Ok(abs),
-        false => Err(Error::NotADir {
-            path: path.to_owned(),
-        }),
-    }
 }
 
 /// Serialize the `{cwd}` result to `stdout` (§3.3). The path is UTF-8 by

@@ -36,6 +36,7 @@ fn resolve_derives_a_dispatched_compactors_role_soul_and_toolset() {
         goal: "compact",
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let child = child_dispatch::run(

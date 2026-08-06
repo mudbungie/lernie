@@ -51,6 +51,7 @@ fn compactor_dispatch_forks_an_ordinary_compactor_child() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -68,6 +69,7 @@ fn worker_dispatch_succeeds_and_spawns_a_sub_branch() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -95,6 +97,7 @@ fn any_config_role_dispatches_open_set() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap();
@@ -120,6 +123,7 @@ fn a_path_that_is_not_a_workspace_is_the_shared_layout_decline() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -144,6 +148,7 @@ fn a_parent_with_no_agent_ref_is_the_shared_existence_decline() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -170,6 +175,7 @@ fn undefined_role_names_the_roles_that_are_defined() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -195,6 +201,7 @@ fn worker_requires_a_goal() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         Path::new("true"),
     )
     .unwrap_err();
@@ -212,6 +219,7 @@ fn compactor_rejects_a_goal() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         Path::new("true"),
     )
     .unwrap_err();
@@ -236,6 +244,7 @@ fn inner_errors_render_through_the_shared_display() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &NoopLauncher,
     )
     .unwrap_err();
@@ -264,6 +273,7 @@ fn dispatch_pins_are_committed_on_the_child_dispatch_commit() {
         None,
         None,
         &pins,
+        None,
         &NoopLauncher,
     )
     .unwrap();

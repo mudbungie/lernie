@@ -104,6 +104,7 @@ fn a_hold_parks_run_exchange_without_a_terminal() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,

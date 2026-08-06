@@ -195,6 +195,7 @@ pub(super) fn run_with_stubs(
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             adapter,
             &sleeper,

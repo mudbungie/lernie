@@ -2,8 +2,9 @@
 //!
 //! [`run_exchange`] executes a single root conversation: spawn branch
 //! `agents/<conv-id>` off the start's fork point (§2.2–§2.3 — a config
-//! lineage's head by default, any ref with `--from`); write the
-//! step-1 dispatch commit (§2.2, §2.10); then the step loop (§2.5) —
+//! lineage's head by default, any ref with `--from`); seed the working
+//! directory the start named (§3.3, `--cwd`); write the step-1 dispatch
+//! commit (§2.2, §2.10); then the step loop (§2.5) —
 //! drain the inbox ([`drain`], §2.11), interpret delivered child results
 //! and the compaction checkpoint at each boundary (the §6 prompt→advance
 //! collapse, [`child_result`]), drive the model call through the retry
@@ -11,10 +12,10 @@
 //! commit ([`assembler`], §2.3, §5), and loop on a settled `tool_use`.
 //! Every terminal deposits a result message ([`result_deposit`], §2.6,
 //! no-op for a root), then runs the shared §2.11 terminal tail
-//! (`terminal::conclude`): terminal-lifecycle bindings (§6), lease
-//! release through the §2.11 release rule (a deposit that raced the last
-//! drain is launched for, [`driver`]), and the epitaph-valued exit
-//! launches at own agent and at the parent the deposit revived.
+//! (`terminal::conclude`): terminal-lifecycle bindings (§6), lease release
+//! through the §2.11 release rule (a deposit that raced the last drain is
+//! launched for, [`driver`]), and the epitaph-valued exit launches at own
+//! agent and at the parent the deposit revived.
 
 pub mod advance;
 mod assembler;
@@ -49,26 +50,23 @@ use brazen::Content;
 use model_call::ModelCall;
 use std::path::Path;
 use step_commit::{
-    commit_dispatch, compose_system, read_branch_tip, spawn_branch, write_dispatch_files,
-    write_meta, write_request,
+    DEFAULT_MAX_TOKENS, commit_dispatch, compose_system, read_branch_tip, spawn_branch,
+    write_dispatch_files, write_meta, write_request,
 };
 use tool_step::run_tool_calls;
-
-/// Per-request `max_tokens` output cap — one model call's output ceiling,
-/// distinct from the §6 spend budgets ([`Budgets`]) and from the §5.2
-/// manifest's `budget_tokens` (an assembled-context budget, no output cap).
-const DEFAULT_MAX_TOKENS: u32 = 4096;
 
 /// Drive one root conversation against an already-resolved config,
 /// forked off `fork_point` (§2.3 — the ref the start named, resolved by
 /// [`super::fork_point`]). Returns the branch name so the caller can
 /// surface it on stdout.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn run_exchange(
     repo: &Path,
     user_message: &str,
     fork_point: &str,
     name: Option<&str>,
     pins: &crate::prompt::PinnedDocs,
+    cwd: Option<&Path>,
     resolved: &Resolved<'_>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
@@ -90,6 +88,8 @@ pub(super) fn run_exchange(
         Some(guard) => guard,
         None => return Ok(branch_name),
     };
+
+    super::seed_cwd(repo, &conv_id, cwd, deps.git)?;
 
     spawn_branch(repo, &worktree_path, &conv_id, fork_point, deps)?;
 

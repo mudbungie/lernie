@@ -143,6 +143,7 @@ fn returned_child_ep(
         goal,
         name: None,
         fork_point: None,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     let child = child_dispatch::run(

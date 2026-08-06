@@ -22,12 +22,20 @@
 //! returns trimmed UTF-8, so [`write`] declines a directory whose path is
 //! not preserved by that round trip rather than storing one that would
 //! read back wrong (PRINCIPLES "Decline illegal operations").
+//!
+//! **The mark has two writers, and one validation.** The agent's own `cd`
+//! built-in writes it mid-run; `lernie prompt --cwd` / `lernie dispatch
+//! --cwd` seed it at creation, before the agent's first step (ARCH §3.3,
+//! §2.5). Both reach a directory through [`resolve`], so a path is
+//! refused in one voice wherever it was named — a second set of rules for
+//! the seed would be a second answer to "what is a working directory".
 
 use super::{MARK_REF_ROOT, repo_git};
 use crate::template::GitRunner;
 use std::io;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
+use thiserror::Error;
 
 /// Ref-namespace prefix for the working-directory mark (§3.3).
 pub const CWD_REF_PREFIX: &str = "cwd/";
@@ -55,7 +63,7 @@ pub fn read(workspace: &Path, agent_id: &str, git: &dyn GitRunner) -> Option<Pat
 /// path as a blob and points the mark at it — last write wins, exactly
 /// as a `cd` should.
 pub fn write(workspace: &Path, agent_id: &str, dir: &Path, git: &dyn GitRunner) -> io::Result<()> {
-    storable(dir)?;
+    storable(dir).map_err(io::Error::other)?;
     let repo = repo_git(workspace);
     // `git hash-object` reads a file; the trait's two methods carry no
     // stdin, so the value is staged beside the repo under a pid-unique
@@ -69,19 +77,64 @@ pub fn write(workspace: &Path, agent_id: &str, dir: &Path, git: &dyn GitRunner) 
     git.run(&repo, &["update-ref", &cwd_ref(agent_id), &hashed?])
 }
 
+/// Every way a caller-named directory can fail to be a working
+/// directory. One taxonomy for both writers (module docs): the `cd`
+/// built-in re-emits it as its `is_error` `tool_result`, `--cwd` as the
+/// verb's own refusal before the fork.
+#[derive(Debug, Error)]
+pub enum ResolveError {
+    #[error("no such directory {path:?}: {source}")]
+    NoSuchDir {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
+    #[error("{path:?} is not a directory — a working directory is one (ARCH §3.3)")]
+    NotADir { path: PathBuf },
+    #[error(
+        "cannot store {path:?} as a working directory: the mark holds trimmed UTF-8 text, so \
+         a path that is not UTF-8 or that leads or trails with whitespace would read back as \
+         a different directory (ARCH §3.3)"
+    )]
+    NotStorable { path: PathBuf },
+}
+
+/// The absolute directory `path` names, ready to become a mark:
+/// canonicalized, proven to be a directory, and proven to survive the
+/// mark's round trip ([`storable`]).
+///
+/// **Relative paths need no resolution of ours.** `canonicalize` resolves
+/// against this process's own working directory — which the executor set
+/// to the agent's, when the caller is the `cd` built-in (§3.3), and which
+/// is the operator's shell, when it is `--cwd`. Either way it is the
+/// kernel's answer, `..` and symlinks included, not a re-derivation of
+/// one. A path that names nothing and a path that names a non-directory
+/// are declined separately: they are different mistakes.
+pub fn resolve(path: &Path) -> Result<PathBuf, ResolveError> {
+    let abs = std::fs::canonicalize(path).map_err(|source| ResolveError::NoSuchDir {
+        path: path.to_owned(),
+        source,
+    })?;
+    if !abs.is_dir() {
+        return Err(ResolveError::NotADir {
+            path: path.to_owned(),
+        });
+    }
+    storable(&abs)?;
+    Ok(abs)
+}
+
 /// Can `dir` survive the mark's storage round trip — written as bytes,
 /// read back as trimmed UTF-8? A non-UTF-8 path or one with leading or
 /// trailing whitespace cannot, and is declined here rather than stored
 /// to read back as some other directory.
-fn storable(dir: &Path) -> io::Result<()> {
+fn storable(dir: &Path) -> Result<(), ResolveError> {
     let text = dir.to_str().filter(|s| !s.is_empty() && s.trim() == *s);
     match text {
         Some(_) => Ok(()),
-        None => Err(io::Error::other(format!(
-            "cannot store {dir:?} as a working directory: the mark holds trimmed UTF-8 \
-             text, so a path that is not UTF-8 or that leads or trails with whitespace \
-             would read back as a different directory (ARCH §3.3)"
-        ))),
+        None => Err(ResolveError::NotStorable {
+            path: dir.to_owned(),
+        }),
     }
 }
 

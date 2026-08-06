@@ -212,6 +212,7 @@ fn prompt_reports_a_non_workspace() {
                 config: None,
                 name: None,
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )
@@ -233,6 +234,7 @@ fn dispatch_forks_a_child_through_the_front_door() {
                 from: None,
                 name: None,
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )
@@ -254,6 +256,7 @@ fn dispatch_reports_an_undefined_role_with_its_prefix() {
                 from: None,
                 name: None,
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )

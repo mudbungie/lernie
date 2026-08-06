@@ -21,8 +21,7 @@ use crate::prompt::resolve::WorkerConfig;
 use crate::prompt::{Clock, Deps, PinnedDocs};
 use crate::template::RealGit;
 use crate::workspace::agent_name::mint::test_rng;
-use std::path::{Path, PathBuf};
-use std::{cell::RefCell, io};
+use std::{cell::RefCell, io, path::Path, path::PathBuf};
 use tempfile::TempDir;
 
 /// A hyphen-free compact stamp (§2.3): agent ids stay clean two-token
@@ -114,6 +113,7 @@ pub(super) fn dispatched_child() -> (TempDir, PathBuf, &'static str, PathBuf, St
             goal: "do it",
             name: None,
             fork_point: None,
+            cwd: None,
             pins: PinnedDocs::none(),
         },
         &RealGit::new(),

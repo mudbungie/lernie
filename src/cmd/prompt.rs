@@ -8,10 +8,11 @@ use crate::harness_root;
 use crate::prompt::inbox::AdvanceLauncher;
 use crate::prompt::{self, NanoIdGen, SpawnAdapter, SpawnTool, SystemClock};
 use crate::template::RealGit;
+use crate::workspace;
 use std::path::PathBuf;
 
 /// `lernie prompt <repo> <message> [--from <ref>] [--config <name>]
-/// [--name <name>] [--pin <dest>=<src>]...`.
+/// [--name <name>] [--pin <dest>=<src>]... [--cwd <path>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Path to the workspace (conversation repo) root.
@@ -38,6 +39,12 @@ pub struct Args {
     /// ([`crate::prompt::pinned_doc`]).
     #[arg(long = "pin", value_name = "DEST=SRC")]
     pub pin: Vec<String>,
+    /// Start the agent working in this directory instead of its worktree
+    /// (ARCH §3.3): seeds the working-directory mark the `cd` built-in
+    /// otherwise writes, before the first step. Validated — and refused —
+    /// before any branch or ref exists.
+    #[arg(long, value_name = "PATH")]
+    pub cwd: Option<PathBuf>,
 }
 
 /// Spawn the root agent branch and drive its step loop; print the agent
@@ -58,8 +65,16 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
 fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
     // Pins are validated and their sources read here, first — every
     // refusal precedes the fork, so no branch, ref or inference exists
-    // when one fires (ARCH §2.5, [`crate::prompt::pinned_doc`]).
+    // when one fires (ARCH §2.5, [`crate::prompt::pinned_doc`]). `--cwd`
+    // joins them under the same rule, through the mark's own validation
+    // (ARCH §3.3, [`crate::workspace::cwd::resolve`] — the `cd`
+    // built-in's rules, applied earlier).
     let pins = prompt::pinned_doc::load(&args.pin)?;
+    let cwd = args
+        .cwd
+        .as_deref()
+        .map(workspace::cwd::resolve)
+        .transpose()?;
     let roots = harness_root::resolve()?;
     // The binding-injected driver target (§2.11 "injected at the binding,
     // not resolved by name") serves both re-entry seams: the §3.3 tool
@@ -87,6 +102,7 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
         args.config.as_deref(),
         args.name.as_deref(),
         &pins,
+        cwd.as_deref(),
         &deps,
     )
     .map_err(Into::into)

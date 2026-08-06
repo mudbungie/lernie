@@ -30,6 +30,7 @@ fn dispatch_child(ws: &Path, name: Option<&str>) -> Result<Outcome, super::Error
                 from: None,
                 name: name.map(str::to_owned),
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )
@@ -104,6 +105,7 @@ fn a_name_a_living_agent_wears_is_refused_at_both_creation_verbs_and_forks_nothi
                 config: None,
                 name: Some("pale-otter".into()),
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )
@@ -196,6 +198,7 @@ fn a_child_of_a_named_parent_wears_its_own_mint_not_its_parents_namesake() {
                 from: None,
                 name: None,
                 pin: vec![],
+                cwd: None,
             },
             fx,
         )

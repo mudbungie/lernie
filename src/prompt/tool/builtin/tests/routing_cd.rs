@@ -31,7 +31,7 @@ fn cd_routed_to_inner_module() {
 
 #[test]
 fn cd_error_is_carried_through_dispatcher() {
-    // A path that names nothing — cd::Error::NoSuchDir via `#[from]`.
+    // A path that names nothing — cd::Error::Resolve via `#[from]`.
     let repo = tempfile::TempDir::new().unwrap();
     let input = serde_json::json!({ "path": "/no/such/place/at/all" }).to_string();
     let mut stdin = Cursor::new(input.into_bytes());

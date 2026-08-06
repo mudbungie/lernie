@@ -8,7 +8,7 @@ use crate::prompt::dispatch_cli;
 use std::path::PathBuf;
 
 /// `lernie dispatch <role> <repo> <branch> [--goal <text>] [--from <ref>]
-/// [--name <name>] [--pin <dest>=<src>]...`.
+/// [--name <name>] [--pin <dest>=<src>]... [--cwd <path>]`.
 #[derive(clap::Args, Debug)]
 pub struct Args {
     /// Role to fork the child as (`souls/<role>.md` + a `roles:` entry).
@@ -38,6 +38,15 @@ pub struct Args {
     /// `lernie prompt --pin`.
     #[arg(long = "pin", value_name = "DEST=SRC")]
     pub pin: Vec<String>,
+    /// Start the child working in this directory instead of its worktree
+    /// (ARCH §3.3): seeds the working-directory mark the `cd` built-in
+    /// otherwise writes, before the child's first step. Validated — and
+    /// refused — before any branch or ref exists. Exact parity with
+    /// `lernie prompt --cwd`; nothing is inherited, so a child of this
+    /// child is back in its own worktree unless its dispatch says
+    /// otherwise.
+    #[arg(long, value_name = "PATH")]
+    pub cwd: Option<PathBuf>,
 }
 
 /// Fork the role's child through the front door — product-less on
@@ -46,9 +55,17 @@ pub struct Args {
 pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
     crate::name::require_agent_id(&args.branch)
         .map_err(|e| Error::new(format!("dispatch {}", args.role), e))?;
-    // Pins load first — parity with `prompt` (ARCH §2.5): every refusal
-    // precedes the fork, so no branch, ref or inbox exists when one fires.
+    // Pins and `--cwd` load first — parity with `prompt` (ARCH §2.5):
+    // every refusal precedes the fork, so no branch, ref or inbox exists
+    // when one fires. The directory runs the mark's own validation (ARCH
+    // §3.3), the `cd` built-in's rules applied earlier.
     let pins = crate::prompt::pinned_doc::load(&args.pin)
+        .map_err(|e| Error::new(format!("dispatch {}", args.role), e))?;
+    let cwd = args
+        .cwd
+        .as_deref()
+        .map(crate::workspace::cwd::resolve)
+        .transpose()
         .map_err(|e| Error::new(format!("dispatch {}", args.role), e))?;
     dispatch_cli::run(
         &args.role,
@@ -58,6 +75,7 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
         args.from.as_deref(),
         args.name.as_deref(),
         &pins,
+        cwd.as_deref(),
         &fx.driver_target,
     )
     .map_err(|e| Error::new(format!("dispatch {}", args.role), e))?;

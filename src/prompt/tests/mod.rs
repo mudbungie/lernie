@@ -5,6 +5,7 @@ mod advance_release;
 mod budget_depth_boundary;
 mod budget_enforcement;
 mod compaction_toolset;
+mod cwd_seed;
 mod descriptor_prune;
 mod errors;
 mod errors_control;

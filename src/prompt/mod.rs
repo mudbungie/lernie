@@ -128,6 +128,37 @@ pub struct Deps<'a> {
     pub rng: &'a dyn name_fact::mint::Rng,
 }
 
+/// **Seed a fresh agent's working directory** (ARCH §3.3) — the one
+/// home for the act, called by both creation paths at the same moment:
+/// after the agent's id has settled, before anything of the agent
+/// exists. `dir` is already resolved and refused-if-illegal at the
+/// binding ([`crate::workspace::cwd::resolve`]), so the only failure
+/// left here is git's, and it fails the creation rather than starting an
+/// agent in a directory its caller did not ask for.
+///
+/// `None` is the ordinary case — the mark stays unset and the agent
+/// works in its worktree, which is the general path with the fact
+/// absent, not a bootstrap case. **Nothing inherits a mark**: it is
+/// keyed by agent id, no fork, merge or transfer moves one, and this
+/// function never reads the dispatcher's. A child is in its own worktree
+/// unless its own creation named a directory.
+pub(crate) fn seed_cwd(
+    repo: &Path,
+    agent_id: &str,
+    dir: Option<&Path>,
+    git: &dyn crate::template::GitRunner,
+) -> Result<(), Error> {
+    match dir {
+        None => Ok(()),
+        Some(dir) => {
+            crate::workspace::cwd::write(repo, agent_id, dir, git).map_err(|source| Error::Git {
+                op: "seed working directory",
+                source,
+            })
+        }
+    }
+}
+
 /// Drive one root conversation against the workspace at `repo`: check
 /// the layout (§2.2 — pre-v1 clean break on the retired
 /// per-conversation layout), resolve the fork point the start names
@@ -139,7 +170,11 @@ pub struct Deps<'a> {
 /// `agents/<id>`, ARCH §2.3). `pins` are the caller-supplied pinned
 /// documents ([`pinned_doc`], §2.5) the dispatch commit snapshots beside
 /// `goal.md` and `soul.md`; a pin-less start passes
-/// [`PinnedDocs::none`].
+/// [`PinnedDocs::none`]. `cwd` is the caller-seeded working directory
+/// (§3.3, `lernie prompt --cwd`), already resolved by
+/// [`crate::workspace::cwd::resolve`]; `None` leaves the mark unset and
+/// the agent works in its worktree.
+#[allow(clippy::too_many_arguments)]
 pub fn run(
     repo: &Path,
     msg: &str,
@@ -147,6 +182,7 @@ pub fn run(
     config: Option<&str>,
     name: Option<&str>,
     pins: &PinnedDocs,
+    cwd: Option<&Path>,
     deps: &Deps<'_>,
 ) -> Result<String, Error> {
     crate::workspace::require(repo)?;
@@ -162,6 +198,7 @@ pub fn run(
         &fork_point,
         Some(&name),
         pins,
+        cwd,
         &cfg.as_resolved(),
         deps,
     )

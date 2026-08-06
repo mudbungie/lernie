@@ -26,6 +26,7 @@ fn run_under_adapter_override_skips_version_guard_and_uses_the_override() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &valid_deps(
             &adapter,
             &sleeper,
@@ -79,6 +80,7 @@ fn run_under_injected_adapter_target_skips_version_guard_and_uses_the_target() {
         None,
         None,
         crate::prompt::PinnedDocs::none(),
+        None,
         &deps,
     )
     .unwrap();

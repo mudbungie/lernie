@@ -136,6 +136,7 @@ fn dispatch_compactor(
         goal: &goal,
         name: None,
         fork_point: point,
+        cwd: None,
         pins: crate::prompt::PinnedDocs::none(),
     };
     child_dispatch::run_procedure(

@@ -198,3 +198,42 @@ fn the_dispatch_schema_teaches_the_name_parameter_and_the_mint_on_omission() {
         "dispatch name-property description",
     );
 }
+
+/// The `dispatch` schema must not teach that a subagent holds fewer
+/// powers than its dispatcher (`docs/TAXONOMY.md`, "an agent is an
+/// agent"; bl-a4d5). Three claims drifted and are pinned here. The
+/// `goal` description once promised "the terminal **compacted**
+/// result" — terminal compaction was deleted (ARCH §2.7 bl-9dbd note)
+/// and what returns is the child's own terminal response — and it was
+/// silent on the child being addressable mid-flight, which reads as a
+/// one-shot fork. The `role` description once said "v0.4 Phase 2
+/// supports `worker`", understating an open role set (ARCH §4.3;
+/// `prompt::role::validate` enumerates no names).
+#[test]
+fn the_dispatch_schema_teaches_a_subagent_as_an_ordinary_agent() {
+    let props = &wire_schema("dispatch")["properties"];
+    let goal = props["goal"]
+        .as_object()
+        .and_then(|g| g["description"].as_str().map(str::to_owned))
+        .expect("goal carries a description");
+    asserts(
+        &goal,
+        &[
+            "its terminal response",
+            "`message` reaches it at any step boundary while it runs",
+            "may dispatch subagents of its own",
+        ],
+        "dispatch goal-property description",
+    );
+    assert!(
+        !goal.contains("compacted"),
+        "goal must not promise a compacted result — terminal compaction is deleted: {goal}"
+    );
+    asserts(
+        props["role"]["description"]
+            .as_str()
+            .expect("role carries a description"),
+        &["The role set is open", "enumerates no role names"],
+        "dispatch role-property description",
+    );
+}

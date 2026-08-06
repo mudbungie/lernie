@@ -6,11 +6,11 @@
   "properties": {
     "role": {
       "type": "string",
-      "description": "Subagent role to dispatch. Must resolve to <conv-repo>/souls/<role>.md and be present in the per-repo providers.yaml `roles:` block (ARCH §4.3). v0.4 Phase 2 supports `worker`; future roles slot in by name as the dispatch CLI grows."
+      "description": "Subagent role to dispatch. The role set is open (ARCH §4.3): a role is dispatchable iff the governing config commit lists it under the `roles:` block of `providers.yaml` and carries its `souls/<role>.md`, and the harness enumerates no role names. A role failing either check is refused before the child's branch exists, naming the pool that is defined."
     },
     "goal": {
       "type": "string",
-      "description": "Per-call goal text. Written verbatim to the subagent's goal.md on its dispatch commit (ARCH §2.3 step 2 / §2.8). The subagent reads its goal there; the dispatching agent does not see the subagent's intermediate work — only the terminal compacted result, which returns later as a message deposited into the parent's inbox (ARCH §2.11)."
+      "description": "Per-dispatch goal text. Written verbatim to the subagent's goal.md on its dispatch commit (ARCH §2.3 step 2 / §2.8). The subagent reads its goal there; the dispatching agent does not see the subagent's intermediate work — only its terminal response, which returns later as a message deposited into the parent's inbox alongside the epitaph naming how the agent ended (ARCH §2.6, §2.11). A subagent is an ordinary agent and the dispatch is not one-shot: `message` reaches it at any step boundary while it runs, and it may dispatch subagents of its own up to the tree's `max_depth` (ARCH §6)."
     },
     "name": {
       "type": "string",

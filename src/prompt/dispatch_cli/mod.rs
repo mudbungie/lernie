@@ -110,7 +110,7 @@ impl From<Error> for DispatchCliError {
 /// `Err` for the bin's uniform non-zero exit. Any valid role is dispatched
 /// as an ordinary child ([`child_dispatch`], §2.5); roles differ only in
 /// the pinned soul (`souls/<role>.md`) and in where the goal comes from —
-/// a per-call `--goal` for every role but the compactor, whose goal is
+/// a per-dispatch `--goal` for every role but the compactor, whose goal is
 /// the §2.7 boilerplate. `pins` are the caller-supplied pinned documents
 /// (`--pin <dest>=<src>`, [`crate::prompt::pinned_doc`]), already
 /// validated and loaded by the CLI layer.
@@ -191,7 +191,7 @@ fn run_with(
     role::validate::validate(repo, parent_branch, from, role, &RealGit::new())
         .map_err(DispatchCliError::InvalidRole)?;
 
-    // Resolve the per-role goal (§2.7): every role carries a per-call
+    // Resolve the per-role goal (§2.7): every role carries a per-dispatch
     // `--goal` except the compactor, which rejects it and uses the
     // boilerplate goal the compaction procedure owns instead.
     let goal_text = if role == ROLE_COMPACTOR {

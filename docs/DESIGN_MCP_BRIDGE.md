@@ -318,12 +318,22 @@ complete triples over a mock NDJSON channel; its `sensor` role is granted
   boundary.
 - **No live catalog queries** — §2, §7; pin-time discovery only.
 
-## 9. Follow-up filed
+## 9. Follow-up: filed, then closed unworked
 
-- **bl-8925** — prove the seam: fleet Slack swap per §7, deployment-space
-  only, blocked on a real Slack MCP server choice and a workspace credential;
-  explicitly zero lernie product code, closing evidence is the empty-diff
-  criterion above.
+**bl-8925** filed the §7 acceptance run — prove the seam by swapping the fleet
+demo's mock Slack tools for MCP-pinned ones, deployment-space only, closing
+evidence the empty-diff criterion. It was **closed unworked on 2026-08-06**:
+MCP integration is not a current priority, and the two things it needed — a
+chosen Slack MCP server and a workspace credential — were never supplied.
+
+Nothing above depends on that run having happened. The ruling (§1), the
+lifetime, transport, credential and capability semantics (§3–§6) and the
+refusals (§8) are settled on the seam as it already ships; §7 remains the
+specification of what a proof would consist of, available to whoever next
+needs a real MCP-backed tool. What is *not* claimed is empirical: no bridge
+has been built and no MCP server has been round-tripped through the envelope,
+so this document is a design checked against the source, not a report of a
+working integration.
 
 No lernie implementation ball is filed, because the design concludes none is
 warranted: the seam shipped with ARCHITECTURE §3.3, and this document is the

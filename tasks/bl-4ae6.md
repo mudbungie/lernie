@@ -1,7 +1,8 @@
 +++
 title = "ARCHITECTURE §6 never spells out the max_depth boundary, so how far a child's own children may go is defined by an implementation guess"
 created = 1785995944
-updated = 1785995944
+updated = 1785996511
+claimant = "Bemoan"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 ARCH §6 lists `max_depth` as a budget axis but does not define what depth is measured from or which comparison exhausts it. `src/prompt/budget/mod.rs:31` says so outright:

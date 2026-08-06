@@ -2,6 +2,7 @@
 title = "multi_tool: let the envelope assert parallel execution"
 created = 1785996502
 updated = 1785996502
+claimant = "Laughably"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 The agent, not the harness, knows whether its inner invocations collide. bl-a690 (closed unbuilt) proposed a harness-side per-tool read/write table; this is the cheaper design that replaces it — the invocation asserts it.

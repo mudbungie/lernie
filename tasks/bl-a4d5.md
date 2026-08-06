@@ -1,7 +1,8 @@
 +++
 title = "the dispatch and workflow prompt surfaces misstate the parent/child relationship: a compaction stage that was deleted, budgets advertised per-agent that are whole-tree, and no hint that a live child is addressable"
 created = 1785906111
-updated = 1785995940
+updated = 1785995947
+claimant = "Bevel"
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++
 **Operator ruling (2026-08-05): the word `subagent` stands.** An agent is an

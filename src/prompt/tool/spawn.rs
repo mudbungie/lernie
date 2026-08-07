@@ -1,6 +1,6 @@
 //! Production [`super::ToolExecutor`] — resolves the tool binary,
 //! delegates spawn / capture / cascade to [`super::subprocess`], and
-//! lands the per-call disk record under `<step_dir>/tools/<tool-id>/`.
+//! lands the per-tool-call disk record under `<step_dir>/tools/<tool-id>/`.
 //!
 //! Resolution order, per ARCH §3.3:
 //!
@@ -37,9 +37,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
-/// Production [`ToolExecutor`]. Constructed per-call by the loop so
-/// the borrow of `data_root` and `clock` stays scoped to one
-/// invocation.
+/// Production [`ToolExecutor`]. Constructed at the executor's entry
+/// point (§2.1) rather than held long-term, so the borrow of
+/// `data_root` and `clock` stays scoped to one step loop.
 pub struct SpawnTool<'a> {
     data_root: &'a Path,
     clock: &'a dyn Clock,
@@ -166,9 +166,10 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
     /// git runner and the PATH lookup never cross a thread boundary
     /// ([`batch`] says why).
     ///
-    /// The window is one pair of clock reads for the whole fan, not one
-    /// per call: under `parallel` the calls genuinely do start together,
-    /// and `self.clock` is not shared into the scope to say otherwise.
+    /// The window is one pair of clock reads for the whole fan, not
+    /// one per tool call: under `parallel` the calls genuinely do start
+    /// together, and `self.clock` is not shared into the scope to say
+    /// otherwise.
     fn execute_all(
         &self,
         calls: &[ToolCall<'_>],

@@ -811,7 +811,7 @@ cachedContentTokenCount, thoughtsTokenCount
 For a typical agent loop with N steps, K tools, T tokens of cumulative growing context:
 - **Without prompt caching:** total input billed ≈ Σ context-at-step-i ≈ O(N·T) — quadratic in conversation depth.
 - **With prompt caching (well-placed breakpoints):** dominated by *delta* tokens per step plus one full read at warm-start; closer to O(N + T).
-- **Reasoning models:** add reasoning_token budget per step; default `reasoning.effort=medium` typically adds 1K–10K hidden output tokens per call.
+- **Reasoning models:** add reasoning_token budget per step; default `reasoning.effort=medium` typically adds 1K–10K hidden output tokens per model call.
 
 ### Rate limits as a cost dimension
 Rate limits are organized by **tier** (OpenAI, Anthropic both use this term) which scales with monthly spend or paid balance. Cached input does not reduce rate-limit consumption on most vendors. Rate limits are enforced separately per model and often per region/endpoint.

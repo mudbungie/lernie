@@ -6,7 +6,7 @@
 //! 1. Stdout bytes from the spawned shell are surfaced verbatim — the
 //!    §3.3 stdio contract.
 //! 2. `is_error` is `false` on a zero-exit command.
-//! 3. The per-call disk record lands at `<step>/tools/<tool-id>/`
+//! 3. The per-tool-call disk record lands at `<step>/tools/<tool-id>/`
 //!    with `input.json` and `output.json` per §3.3 "Disk record".
 //! 4. A failure mode (`false`) round-trips: `is_error: true`, the exit
 //!    code stated and stderr under its marker in `tool_result.content`,

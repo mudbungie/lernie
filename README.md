@@ -529,7 +529,7 @@ returns by depositing a result message at the address its epitaph names
    git-log walk; running, retry, and replay are one code path against
    one input, the commit's tree (§2.3, §5). If the settled model-output
    entry carries any `tool_use` block, run every one through the tool
-   executor — the per-call records land under
+   executor — the per-tool-call records land under
    `<workspace>/steps/<conv-id>/<NNN>/tools/<tool-id>/` (out of every
    worktree, §3.3; written but never read at runtime), and as each tool
    resolves the transcript writer commits `messages/NNN-tool.json` (its

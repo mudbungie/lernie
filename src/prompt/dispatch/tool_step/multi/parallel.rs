@@ -101,7 +101,9 @@ pub(super) fn run(
         let entry = match decision {
             Gated::Declined(entry) => entry,
             Gated::Ready(_) => {
-                let result = results.next().expect("one result per call handed over");
+                let result = results
+                    .next()
+                    .expect("one result per tool call handed over");
                 match finish(&inv.name, result, ctx.stop)? {
                     Some(entry) => entry,
                     None => return Ok(None),

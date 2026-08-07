@@ -66,7 +66,7 @@ impl Prepared {
 
 impl<'a> SpawnTool<'a> {
     /// Phase 1: resolve the calling agent's worktree, create the
-    /// per-call record directory, land `input.json`, and resolve the
+    /// per-tool-call record directory, land `input.json`, and resolve the
     /// binary. Fails before any process is started.
     pub(super) fn prepare(
         &self,

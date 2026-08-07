@@ -172,7 +172,7 @@ A **user story** here is one promise lernie 0.0.1 makes to someone outside the c
 
 ## 5. Built-in tools
 
-Each built-in is the ARCH §3.3 triple — binary (`lernie tool <name>`), JSON schema, `SKILL.md`. Common acceptance for all of US-08…US-12: the invocation reads `tool_use.input` JSON on stdin, writes raw bytes on stdout, exits 0 on success and non-zero on failure; a per-call diagnostic record lands at `steps/<id>/<NNN>/tools/<tool-id>/{input.json,output.json}`; and the model-facing result is the committed transcript entry `messages/NNN-tool.json`, never the diagnostic record.
+Each built-in is the ARCH §3.3 triple — binary (`lernie tool <name>`), JSON schema, `SKILL.md`. Common acceptance for all of US-08…US-12: the invocation reads `tool_use.input` JSON on stdin, writes raw bytes on stdout, exits 0 on success and non-zero on failure; a per-tool-call diagnostic record lands at `steps/<id>/<NNN>/tools/<tool-id>/{input.json,output.json}`; and the model-facing result is the committed transcript entry `messages/NNN-tool.json`, never the diagnostic record.
 
 Linked binding for every one of them: `lernie::cmd::tool::run(tool::Args { name }, &mut fx)` → `Outcome::Code(n)`, with stdin/stdout/stderr supplied as `Fx::tool_stdin` / `tool_stdout` / `tool_stderr`.
 

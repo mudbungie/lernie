@@ -1,7 +1,7 @@
 //! [`ToolExecutor::execute_all`] (ARCH §3.3 *The multi-tool*,
 //! `execution: "parallel"`): the spawning executor overlaps N calls,
-//! returns one result per call in the order given, and lands every
-//! per-call record exactly as `execute` does.
+//! returns one result per tool call in the order given, and lands every
+//! per-tool-call record exactly as `execute` does.
 
 use super::super::{
     OUTPUT_FILE, STEP_TOOLS_SUBDIR, SpawnTool, ToolCall, ToolExecutor, ToolOutputRecord,

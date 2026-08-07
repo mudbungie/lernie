@@ -99,9 +99,9 @@ wherever it was witnessed, which is the only place it was ever needed.
 exactly as it carries the agent's name (ARCHITECTURE §2.8). It is stable for
 the agent's whole life, so prompt-cache append-only assembly is undisturbed
 (ARCHITECTURE §5.5). Carrying it on *every* model call rather than only the
-first is deliberate: assembly is stateless and per-call (PRINCIPLES, *Context
-assembly is deterministic*), a "first call only" rule would be state, and the
-witness (§3) is strengthened, not weakened, by repetition.
+first is deliberate: assembly is stateless and per-model-call (PRINCIPLES,
+*Context assembly is deterministic*), a "first model call only" rule would be
+state, and the witness (§3) is strengthened, not weakened, by repetition.
 
 **Sign tool.** An in-process built-in, granted per role like any tool
 (ARCHITECTURE §4.3, §3.3 grant gate). Input: a statement. Output: the

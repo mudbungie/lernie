@@ -11,7 +11,7 @@
 //! step's request composes from (§2.3, §3.3 "Wire `tool_result` framing
 //! is transcript-backed"). Nothing is returned to the loop: the next
 //! step re-assembles its whole history from the tree (§5), so a
-//! `tool_result` has exactly one home, the committed entry. The per-call
+//! `tool_result` has exactly one home, the committed entry. The per-tool-call
 //! `output.json` stays the raw audit capture, written but never read at
 //! runtime (§2.3 Diagnostic-only contract) — two facts, not two copies.
 //! The sequential loop *is* the sibling-tool serialization §3.3

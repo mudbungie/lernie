@@ -9,7 +9,7 @@
 //! 1. Stdout bytes are the file's bytes verbatim — the §3.3 stdio
 //!    contract.
 //! 2. `is_error` is `false` on a successful read.
-//! 3. The per-call disk record lands at `<step>/tools/<tool-id>/`
+//! 3. The per-tool-call disk record lands at `<step>/tools/<tool-id>/`
 //!    with `input.json` (the `tool_use` block) and `output.json`
 //!    (stdout/stderr/exit/timestamps) per §3.3 "Disk record".
 //! 4. A failure mode (`TooLarge`) round-trips: `is_error: true`, the

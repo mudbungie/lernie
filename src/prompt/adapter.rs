@@ -40,7 +40,7 @@
 //! **No env forwarding.** Auth and endpoints are entirely brazen's
 //! (§4.4): its config resolves via `--config` / `BRAZEN_CONFIG` / XDG,
 //! and the harness sets `BRAZEN_CONFIG` only under test isolation — as
-//! an inherited process env, never a per-call value the harness
+//! an inherited process env, never a per-model-call value the harness
 //! threads. The child inherits the harness environment unchanged.
 
 use super::Error;

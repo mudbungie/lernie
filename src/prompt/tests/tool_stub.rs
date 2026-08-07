@@ -3,7 +3,7 @@
 //! Lives in its own file so [`super::fixtures`] stays under the
 //! repo's 300-line code-file cap. The stub satisfies the §3.3 disk
 //! contract minimally — it lands `input.json` and `output.json`
-//! under `<step_dir>/tools/<id>/` so the loop's per-call commit step
+//! under `<step_dir>/tools/<id>/` so the loop's per-tool-call commit step
 //! has something to `git add` — without spawning a subprocess. Ball
 //! #4's [`crate::prompt::SpawnTool`] is the production impl.
 

@@ -3,10 +3,10 @@
 //! The harness emits a `tool_use` block from the model and the executor
 //! turns it into a `tool_result` block — by spawning the tool's binary
 //! per the §3.3 stdio contract, capturing stdout / stderr / exit, and
-//! landing the per-call disk record (`input.json`, `output.json` under
+//! landing the per-tool-call disk record (`input.json`, `output.json` under
 //! `<step_dir>/tools/<tool-id>/`). The executor is one direction of the
 //! disk-as-bus contract (§3.1): the harness writes the request via the
-//! `tool_use` block in `response.json`; the per-call record makes the
+//! `tool_use` block in `response.json`; the per-tool-call record makes the
 //! result inspectable; the loop reads it back to assemble the next
 //! step's request (§3.3 "Wire `tool_result` framing is application-layer").
 //!
@@ -68,7 +68,7 @@ pub const ENV_CONV_BRANCH: &str = "LERNIE_CONV_BRANCH";
 /// record" → `steps/<conv-id>/<NNN>/tools/<tool-id>/`).
 pub const STEP_TOOLS_SUBDIR: &str = "tools";
 
-/// On-disk filenames for the per-call record (ARCH §3.3 "Disk record").
+/// On-disk filenames for the per-tool-call record (ARCH §3.3 "Disk record").
 pub const INPUT_FILE: &str = "input.json";
 pub const OUTPUT_FILE: &str = "output.json";
 
@@ -79,7 +79,7 @@ pub const OUTPUT_FILE: &str = "output.json";
 #[derive(Clone, Copy)]
 pub struct ToolCall<'a> {
     /// `tool_use.id` from the wire (e.g. `toolu_01abc…`); also the
-    /// per-call directory name on disk per §3.3.
+    /// per-tool-call directory name on disk per §3.3.
     pub id: &'a str,
     /// Tool name as the model spelled it; resolved against the harness
     /// root and PATH per §3.3.
@@ -195,7 +195,7 @@ pub enum ExecError {
 /// without spawning subprocesses.
 pub trait ToolExecutor {
     /// Resolve `call.name` to a binary, invoke it per the §3.3 stdio
-    /// contract, land the per-call record under `<step_dir>/tools/
+    /// contract, land the per-tool-call record under `<step_dir>/tools/
     /// <call.id>/`, and return the outcome the loop needs to assemble
     /// the next step's `tool_result` block.
     ///
@@ -232,7 +232,7 @@ pub trait ToolExecutor {
         output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError>;
 
-    /// Run `calls` **concurrently**, returning one result per call in
+    /// Run `calls` **concurrently**, returning one result per tool call in
     /// the order given — never completion order, so a caller's
     /// rendering is deterministic whatever the scheduler did.
     ///

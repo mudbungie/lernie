@@ -26,6 +26,7 @@
 //!   driver target via [`crate::test_support::lernie_binary`].
 
 mod bash_tool;
+mod batch;
 mod bounded;
 mod cascade;
 mod errors;

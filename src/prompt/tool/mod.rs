@@ -76,6 +76,7 @@ pub const OUTPUT_FILE: &str = "output.json";
 /// `input` fields of a `tool_use` content block (ARCH §3.3 stdin
 /// contract). Borrowed because the loop owns the response the call
 /// lives inside; the executor only reads it.
+#[derive(Clone, Copy)]
 pub struct ToolCall<'a> {
     /// `tool_use.id` from the wire (e.g. `toolu_01abc…`); also the
     /// per-call directory name on disk per §3.3.
@@ -230,6 +231,36 @@ pub trait ToolExecutor {
         stop: &AtomicBool,
         output_bound: Option<crate::config::ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError>;
+
+    /// Run `calls` **concurrently**, returning one result per call in
+    /// the order given — never completion order, so a caller's
+    /// rendering is deterministic whatever the scheduler did.
+    ///
+    /// This is what a `multi_tool` envelope declaring
+    /// `execution: "parallel"` reaches (ARCH §3.3 *The multi-tool*).
+    /// The concurrency lives here, in the one component that owns
+    /// subprocesses, rather than in the step loop: the loop would have
+    /// to share the whole executor across threads, which would put a
+    /// `Sync` bound on the clock, the git runner, and the PATH lookup —
+    /// three traits with nothing to do with threading (PRINCIPLES,
+    /// severability).
+    ///
+    /// The default implementation runs them **serially**, which is
+    /// always a correct answer to "run these": concurrency is an
+    /// optimization an implementation may decline. Only the spawning
+    /// executor overrides it; in-process stubs inherit this.
+    fn execute_all(
+        &self,
+        calls: &[ToolCall<'_>],
+        step_dir: &Path,
+        stop: &AtomicBool,
+        output_bound: Option<crate::config::ToolOutputBound>,
+    ) -> Vec<Result<ToolOutcome, ExecError>> {
+        calls
+            .iter()
+            .map(|call| self.execute(*call, step_dir, stop, output_bound))
+            .collect()
+    }
 }
 
 /// Per-step `tools/` directory for `tool_id` under `step_dir`. Owns

@@ -1,6 +1,6 @@
 ---
 name: multi_tool
-description: "Run several tool invocations in one round trip. Give it a list of `{name, input}` entries — the same shapes the individual tools take — and they run one after another, strictly in your order, each seeing the side effects of the ones before it. Every entry's result comes back together in this one tool result, labelled `[k/N] <name>: ok|failed|declined|skipped`; nothing streams back early. By default a failed entry aborts the rest (they report as skipped); pass `on_failure: \"run_all\"` to run every entry regardless. Each inner tool is checked against your toolset exactly as if you had invoked it top-level, and `multi_tool` may not contain itself (depth 1). Reach for it when you already know the next several tool invocations and none of them needs a look at the previous result first."
+description: "Run several tool invocations in one round trip. Give it a list of `{name, input}` entries — the same shapes the individual tools take — and by default they run one after another, strictly in your order, each seeing the side effects of the ones before it — or pass `execution: \"parallel\"` to run them all at once when you know they do not collide. Every entry's result comes back together in this one tool result, labelled `[k/N] <name>: ok|failed|declined|skipped`; nothing streams back early. By default a failed entry aborts the rest (they report as skipped); pass `on_failure: \"run_all\"` to run every entry regardless. Each inner tool is checked against your toolset exactly as if you had invoked it top-level, and `multi_tool` may not contain itself (depth 1). Reach for it when you already know the next several tool invocations and none of them needs a look at the previous result first."
 ---
 
 # multi_tool
@@ -27,13 +27,23 @@ the only difference is that all the results return together.
   (omitted means `{}`).
 - **`on_failure`** — optional. `"abort"` (default): a failed entry ends
   the envelope, and every later entry is reported `skipped` without
-  running. `"run_all"`: every entry runs regardless.
+  running. `"run_all"`: every entry runs regardless. Not consulted when
+  `execution` is `"parallel"`.
+- **`execution`** — optional. `"serial"` (default): one at a time, in
+  your order. `"parallel"`: all at once.
 
 ## Execution order and delivery
 
-- **Serial, in your order.** Entries never run in parallel. A later
-  entry sees everything an earlier one did: a file `bash` wrote, a
-  directory `cd` moved you to.
+- **Serial by default, in your order.** A later entry sees everything an
+  earlier one did: a file `bash` wrote, a directory `cd` moved you to.
+- **`execution: "parallel"` starts them all together.** Say it only when
+  you know the entries do not collide — nothing checks the claim. Two
+  entries writing the same path race, and last write wins silently; a
+  `cd` entry moves the working directory out from under its siblings,
+  which is legal and almost never what you want. Good fans: several
+  `read_file`s, several `message`s, independent `bash` invocations in
+  separate directories. Results still come back in your list order, and
+  every entry still shares the one commit.
 - **Block-on-all.** The result arrives once, when the last entry has
   resolved. There is no incremental delivery — if you need to read one
   result before choosing the next invocation, issue them as separate

@@ -4,10 +4,20 @@
 
 use super::super::{Resolved, refusal, seam, stop_signal};
 use super::{DECLINED, Entry, FAILED, Invocation, NAME, OK};
-use crate::prompt::Deps;
 use crate::prompt::Error;
-use crate::prompt::tool::{ExecError, ToolCall};
+use crate::prompt::tool::{ExecError, ToolCall, ToolExecutor, ToolOutcome};
 use std::path::Path;
+use std::sync::atomic::AtomicBool;
+
+/// Exactly the two [`crate::prompt::Deps`] an inner invocation reaches
+/// — the executor and the stop flag. Narrowed from `&Deps` because
+/// those two are the whole dependency of the inner path, and saying so
+/// keeps the gate/execute split ([`gate`], [`finish`]) readable.
+#[derive(Clone, Copy)]
+pub(super) struct Ctx<'a> {
+    pub(super) executor: &'a dyn ToolExecutor,
+    pub(super) stop: &'a AtomicBool,
+}
 
 /// One inner invocation's coordinates — bundled so `run_inner` keeps a
 /// readable arity across the gates it threads them through.
@@ -35,28 +45,38 @@ pub(super) struct Inner<'a> {
 /// guarantee (the invocation does not run unreviewed) and tells the
 /// model to re-issue it as a top-level `tool_use`, where a hold parks
 /// properly.
-pub(super) fn run_inner(
+/// What [`gate`] decided: an entry settled without ever reaching the
+/// executor, or the derived id of an invocation cleared to run.
+pub(super) enum Gated {
+    Declined(Entry),
+    Ready(String),
+}
+
+/// Run one inner invocation's gates only, stopping short of execution
+/// so a `parallel` envelope can clear every entry before any of them
+/// runs ([`super::parallel`]). `None` means the §2.9 stop was observed.
+pub(super) fn gate(
     inner: &Inner<'_>,
     resolved: &Resolved<'_>,
-    deps: &Deps<'_>,
-) -> Result<Option<Entry>, Error> {
+    stop: &AtomicBool,
+) -> Result<Option<Gated>, Error> {
     let inv = inner.inv;
     if inv.name == NAME {
-        return Ok(Some(Entry {
+        return Ok(Some(Gated::Declined(Entry {
             name: inv.name.clone(),
             status: DECLINED,
             text: format!(
                 "{NAME:?} may not contain itself (depth 1): \
                  list the nested invocations in this envelope directly."
             ),
-        }));
+        })));
     }
     if let Some(decline) = refusal(resolved.grant.role, resolved.grant.tools, &inv.name) {
-        return Ok(Some(Entry {
+        return Ok(Some(Gated::Declined(Entry {
             name: inv.name.clone(),
             status: DECLINED,
             text: decline,
-        }));
+        })));
     }
     let inner_id = format!("{}-{}", inner.outer_id, inner.k);
     match seam::adjudicate(
@@ -67,18 +87,18 @@ pub(super) fn run_inner(
         &inv.input,
         inner.conv_repo,
         inner.conv_id,
-        deps.stop,
+        stop,
     )? {
         seam::Gate::Stopped => return Ok(None),
         seam::Gate::Refuse(reason) => {
-            return Ok(Some(Entry {
+            return Ok(Some(Gated::Declined(Entry {
                 name: inv.name.clone(),
                 status: DECLINED,
                 text: seam::refusal_text(&inv.name, &reason),
-            }));
+            })));
         }
         seam::Gate::Hold(reason) => {
-            return Ok(Some(Entry {
+            return Ok(Some(Gated::Declined(Entry {
                 name: inv.name.clone(),
                 status: DECLINED,
                 text: format!(
@@ -87,29 +107,54 @@ pub(super) fn run_inner(
                      to have it reviewed (ARCH §3.3 Tool control).",
                     inv.name
                 ),
-            }));
+            })));
         }
         seam::Gate::Proceed => {}
     }
-    match deps.tool_executor.execute(
-        ToolCall {
-            id: &inner_id,
-            name: &inv.name,
-            input: &inv.input,
-        },
-        inner.step_dir_abs,
-        deps.stop,
-        resolved.workflow.tool_output,
-    ) {
+    Ok(Some(Gated::Ready(inner_id)))
+}
+/// Turn one executor result into its entry. `None` means the §2.9 stop
+/// was observed: the executor's own group SIGTERM with the stop flag
+/// set is the stop, not a fault.
+pub(super) fn finish(
+    name: &str,
+    result: Result<ToolOutcome, ExecError>,
+    stop: &AtomicBool,
+) -> Result<Option<Entry>, Error> {
+    match result {
         Ok(outcome) => Ok(Some(Entry {
-            name: inv.name.clone(),
+            name: name.to_string(),
             status: if outcome.is_error { FAILED } else { OK },
             text: String::from_utf8_lossy(&outcome.content).into_owned(),
         })),
-        Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(deps.stop) => Ok(None),
+        Err(ExecError::KilledBySignal { .. }) if stop_signal::stopped(stop) => Ok(None),
         Err(source) => Err(Error::ToolExec {
-            tool: inv.name.clone(),
+            tool: name.to_string(),
             source,
         }),
     }
+}
+
+/// One inner invocation, gates then execution — the serial path's step.
+pub(super) fn run_inner(
+    inner: &Inner<'_>,
+    resolved: &Resolved<'_>,
+    ctx: Ctx<'_>,
+) -> Result<Option<Entry>, Error> {
+    let inner_id = match gate(inner, resolved, ctx.stop)? {
+        None => return Ok(None),
+        Some(Gated::Declined(entry)) => return Ok(Some(entry)),
+        Some(Gated::Ready(id)) => id,
+    };
+    let result = ctx.executor.execute(
+        ToolCall {
+            id: &inner_id,
+            name: &inner.inv.name,
+            input: &inner.inv.input,
+        },
+        inner.step_dir_abs,
+        ctx.stop,
+        resolved.workflow.tool_output,
+    );
+    finish(&inner.inv.name, result, ctx.stop)
 }

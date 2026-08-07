@@ -17,11 +17,12 @@
 //!    a PATH-resolved `lernie` — never the host binary itself, which
 //!    carries no `tool` verb of its own.
 
+mod batch;
 mod caller;
 
-use caller::Caller;
+use batch::Prepared;
 
-use super::subprocess::{SpawnArgs, spawn_and_capture};
+use super::subprocess::{Captured, SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
     ToolInputRecord, ToolOutcome, ToolOutputRecord, atomic_write_json, bound, envelope,
@@ -150,71 +151,69 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
         stop: &AtomicBool,
         output_bound: Option<ToolOutputBound>,
     ) -> Result<ToolOutcome, ExecError> {
-        let caller =
-            Caller::resolve(step_dir, &*self.git).ok_or_else(|| ExecError::NoWorktree {
-                name: call.name.to_string(),
-                step_dir: step_dir.to_path_buf(),
-            })?;
-
-        let dir = tool_call_dir(step_dir, call.id);
-        std::fs::create_dir_all(&dir).map_err(|source| ExecError::Io {
-            dir: dir.clone(),
-            source,
-        })?;
-
-        let input_record = ToolInputRecord {
-            id: call.id.to_string(),
-            name: call.name.to_string(),
-            input: call.input.clone(),
-        };
-        atomic_write_json(&dir, INPUT_FILE, &input_record)?;
-
-        let (binary, args) = self.resolve(call.name);
-        let stdin = serde_json::to_vec(call.input).expect("Value is always serializable");
-        let extra_env = caller.env();
-
-        let binary_ref = &binary;
-        let req = SpawnArgs {
-            binary: binary_ref,
-            args: &args,
-            stdin_bytes: &stdin,
-            extra_env: &extra_env,
-            cwd: &caller.cwd,
-            stop,
-            deadline: self.deadline,
-            etxtbsy_budget: self.etxtbsy_budget,
-            tool_name: call.name,
-        };
+        let prepared = self.prepare(call, step_dir)?;
         let started_at = self.clock.now_iso8601();
-        let captured = spawn_and_capture(&req)?;
+        let captured =
+            spawn_and_capture(&prepared.spawn_args(stop, self.deadline, self.etxtbsy_budget))?;
         let ended_at = self.clock.now_iso8601();
+        self.finish(&prepared, captured, output_bound, &started_at, &ended_at)
+    }
 
-        let exit_code = match captured.status.code() {
-            Some(c) => c,
-            None => return Err(killed_by_signal(call.name, &captured.status)),
-        };
-
-        // §3.3 bounded transcript projection: the streams are bounded
-        // *before* the envelope is rendered around them — the envelope's
-        // header and stderr marker are structure, never cappable
-        // content. The marker points at the workspace-relative record so
-        // the transcript stays host-path-free.
-        let record = caller.record_rel(&dir).join(OUTPUT_FILE);
-        let stdout = bound::apply(&captured.stdout, "stdout", output_bound, &record);
-        let stderr = bound::apply(&captured.stderr, "stderr", output_bound, &record);
-        let content = envelope::render(exit_code, &stdout, &stderr);
-        let is_error = exit_code != 0;
-
-        let output_record = ToolOutputRecord {
-            stdout: String::from_utf8_lossy(&captured.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&captured.stderr).into_owned(),
-            exit_code,
-            started_at,
-            ended_at,
-        };
-        atomic_write_json(&dir, OUTPUT_FILE, &output_record)?;
-
-        Ok(ToolOutcome { content, is_error })
+    /// The overlapping implementation a `parallel` multi-tool envelope
+    /// reaches (ARCH §3.3). Every call is prepared on this thread, the
+    /// blocking waits run together in one [`std::thread::scope`], and
+    /// every record is landed back on this thread — so the clock, the
+    /// git runner and the PATH lookup never cross a thread boundary
+    /// ([`batch`] says why).
+    ///
+    /// The window is one pair of clock reads for the whole fan, not one
+    /// per call: under `parallel` the calls genuinely do start together,
+    /// and `self.clock` is not shared into the scope to say otherwise.
+    fn execute_all(
+        &self,
+        calls: &[ToolCall<'_>],
+        step_dir: &Path,
+        stop: &AtomicBool,
+        output_bound: Option<ToolOutputBound>,
+    ) -> Vec<Result<ToolOutcome, ExecError>> {
+        let prepared: Vec<Result<Prepared, ExecError>> = calls
+            .iter()
+            .map(|call| self.prepare(*call, step_dir))
+            .collect();
+        // Copied out so the scope's closures capture two scalars
+        // instead of `self` — `self` holds the clock, the git runner
+        // and the PATH lookup, none of which are `Sync` and none of
+        // which the blocking phase needs.
+        let (deadline, etxtbsy_budget) = (self.deadline, self.etxtbsy_budget);
+        let started_at = self.clock.now_iso8601();
+        let captured: Vec<Result<Captured, ExecError>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = prepared
+                .iter()
+                .filter_map(|p| p.as_ref().ok())
+                .map(|p| {
+                    scope.spawn(move || {
+                        spawn_and_capture(&p.spawn_args(stop, deadline, etxtbsy_budget))
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                // A panicking capture is a harness fault, not a tool
+                // failure: re-raise it here so it reads exactly as it
+                // would have from `execute`.
+                .map(|h| h.join().unwrap_or_else(|p| std::panic::resume_unwind(p)))
+                .collect()
+        });
+        let ended_at = self.clock.now_iso8601();
+        let mut captured = captured.into_iter();
+        prepared
+            .into_iter()
+            .map(|prepared| {
+                let prepared = prepared?;
+                let captured = captured.next().expect("one capture per prepared call")?;
+                self.finish(&prepared, captured, output_bound, &started_at, &ended_at)
+            })
+            .collect()
     }
 }
 
@@ -222,7 +221,7 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
 /// harness's SIGTERM" fault. Extracts the signal number from the
 /// kernel-reported [`ExitStatus`] (defaulting to 0 if some platform
 /// reports neither code nor signal — should not happen on Linux).
-fn killed_by_signal(name: &str, status: &std::process::ExitStatus) -> ExecError {
+pub(super) fn killed_by_signal(name: &str, status: &std::process::ExitStatus) -> ExecError {
     let signal = status.signal().unwrap_or(0);
     ExecError::KilledBySignal {
         name: name.to_string(),

@@ -20,13 +20,24 @@
 //! inner id is derived from the envelope's wire id plus the 1-based
 //! position, since the wire minted no id for it.
 //!
-//! **Serial, deliberately.** Inner invocations run strictly in list
-//! order, one at a time. Every side effect shares one worktree and one
-//! commit (§3.3 commit-per-side-effect), and the working directory is
-//! one mutable per-agent fact an inner `cd` moves for the invocations
-//! after it — both facts make order load-bearing. The round-trip saving
-//! is the point of the envelope; a read/write parallel split inside it
-//! is deferred (ARCH §3.3 *The multi-tool*).
+//! **Serial by default; the envelope may assert otherwise.** Inner
+//! invocations run strictly in list order, one at a time, unless
+//! `execution` says `parallel`. The harness classifies nothing: only
+//! the agent knows whether *these* invocations collide, so the
+//! assertion is the caller's and is taken at face value (§3.3).
+//!
+//! Under `parallel` the envelope's one commit is unchanged — all N
+//! invocations' writes land in the same `git add -A` sweep that always
+//! swept them (§3.3 commit-per-side-effect), so there is no
+//! per-invocation attribution to lose. Two hazards are the agent's to
+//! avoid, deliberately unpoliced: concurrent writers to one path are
+//! last-write-wins, and an inner `cd` races every sibling's cwd
+//! resolution ([`crate::prompt::tool::spawn::Caller::resolve`] reads
+//! the mark at spawn). Both are legal — unwise, not forbidden.
+//!
+//! `on_failure` is a *sequencing* policy and is not consulted under
+//! `parallel`: every invocation has already started, so none can be
+//! skipped. The tally reports each outcome.
 //!
 //! **Block-on-all, structurally.** All inner results return together as
 //! this one envelope's single `tool_result`: the transcript commits one
@@ -40,8 +51,10 @@
 //! the attribution scheme for nothing.
 
 mod inner;
+mod parallel;
 
-use inner::{Inner, run_inner};
+use inner::{Ctx, Inner, run_inner};
+use parallel::Fan;
 
 use super::Resolved;
 use crate::prompt::Deps;
@@ -64,6 +77,24 @@ struct Envelope {
     invocations: Vec<Invocation>,
     #[serde(default)]
     on_failure: OnFailure,
+    #[serde(default)]
+    execution: Execution,
+}
+
+/// Whether the inner invocations run one at a time or all at once —
+/// the agent's own assertion about whether they collide. Serial is the
+/// default because it is the safe reading of a list the model wrote in
+/// an order.
+#[derive(Deserialize, Default, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum Execution {
+    /// List order, one at a time. A later entry sees every earlier
+    /// entry's side effects.
+    #[default]
+    Serial,
+    /// All at once. The agent asserts the entries do not collide; the
+    /// harness verifies nothing and `on_failure` does not apply.
+    Parallel,
 }
 
 /// One inner invocation: exactly the `{name, input}` a top-level
@@ -139,6 +170,23 @@ pub(super) fn fan_out(
         Ok(envelope) => envelope,
         Err(err) => return Ok(Fanout::Outcome(malformed(&err))),
     };
+    let ctx = Ctx {
+        executor: deps.tool_executor,
+        stop: deps.stop,
+    };
+    if envelope.execution == Execution::Parallel {
+        let fan = Fan {
+            outer_id,
+            invocations: &envelope.invocations,
+            step_dir_abs,
+            conv_repo,
+            conv_id,
+        };
+        return Ok(match parallel::run(&fan, resolved, ctx)? {
+            Some(entries) => Fanout::Outcome(render(&entries)),
+            None => Fanout::Stopped,
+        });
+    }
     let total = envelope.invocations.len();
     let mut entries: Vec<Entry> = Vec::with_capacity(total);
     let mut failed_at: Option<usize> = None;
@@ -157,7 +205,7 @@ pub(super) fn fan_out(
             conv_repo,
             conv_id,
         };
-        let entry = match run_inner(&inner, resolved, deps)? {
+        let entry = match run_inner(&inner, resolved, ctx)? {
             Some(entry) => entry,
             None => return Ok(Fanout::Stopped),
         };

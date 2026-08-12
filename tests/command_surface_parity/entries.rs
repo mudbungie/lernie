@@ -55,6 +55,7 @@ verb_table! {
     Config => config,
     Prompt => prompt,
     Dispatch => dispatch,
+    Retarget => retarget,
     Stop => stop,
     Message => message,
     Scan => scan,

@@ -44,7 +44,8 @@ pub const DEFAULT_CONFIG_NAME: &str = "default";
 /// The root every per-agent **mark** ref lives under:
 /// `refs/lernie/<kind>/<agent-id>`. The kinds spell their own prefixes
 /// where they are written (§2.6 `conflicted`, §6 `budget-exhausted`,
-/// `abandoned`, `notify`, §3.3 [`cwd`], §8 `returned`); this is the namespace they share, so a
+/// `abandoned`, `notify`, §3.3 [`cwd`], §2.2 [`retarget`], §8 `returned`);
+/// this is the namespace they share, so a
 /// consumer that must reach *every* mark of an agent — the retention
 /// delete (§9.2) — enumerates the root instead of keeping a list of
 /// kinds that would go stale the day a fifth one lands.
@@ -255,6 +256,7 @@ pub mod agent_name;
 pub mod cwd;
 mod guard;
 pub mod hold;
+pub mod retarget;
 pub use guard::{
     LayoutError, UnknownAgent, UnknownLineage, UnknownRef, agent_exists, require, require_agent,
     require_lineage, require_ref,

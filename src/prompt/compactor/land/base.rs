@@ -17,7 +17,8 @@
 //! plumbing, no worktree churn) — `read-tree <P>`, drop the deletions,
 //! stage the summary blobs from the compactor's tip, `write-tree`,
 //! `commit-tree -p <bound>`. Pure object-store writes; the branch ref
-//! does not move here (the replay moves it, [`super::replay`]).
+//! does not move here (the replay moves it,
+//! [`crate::prompt::rebase_forward`]).
 
 use super::super::{Error, checkpoint};
 use super::span::Span;

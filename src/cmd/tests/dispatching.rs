@@ -7,8 +7,8 @@
 
 use super::{assert_prefixed, noop_editor, with_fx, with_lernie_home};
 use crate::cmd::{
-    Command, Outcome, advance, bundle, config, dispatch, message, new, prime, prompt, replay, scan,
-    stop, tool,
+    Command, Outcome, advance, bundle, config, dispatch, message, new, prime, prompt, replay,
+    retarget, scan, stop, tool,
 };
 use tempfile::TempDir;
 
@@ -56,6 +56,11 @@ fn command_run_dispatches_every_non_prime_arm() {
         name: None,
         pin: vec![],
         cwd: None,
+    })));
+    assert!(!dispatched(Command::Retarget(retarget::Args {
+        workspace: ne(),
+        agent: "a".into(),
+        config: None,
     })));
     assert!(!dispatched(Command::Stop(stop::Args {
         repo: ne(),

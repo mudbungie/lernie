@@ -241,6 +241,7 @@ fn preludes_are_named_per_verb_by_the_surface() {
     for argv in [
         &["lernie", "new"][..],
         &["lernie", "config", "/w"][..],
+        &["lernie", "retarget", "/w", "20260101-a1"][..],
         &["lernie", "stop", "/w", "20260101-a1"][..],
         &["lernie", "message", "/w", "20260101-a1", "c"][..],
         &["lernie", "scan", "/w"][..],

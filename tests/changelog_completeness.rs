@@ -12,12 +12,15 @@
 //! release window. This test is the answer to the recurrence.
 //!
 //! **What it asserts.** Every `[bl-xxxx]` id in the subject of a commit in
-//! `<last v-tag>..refs/heads/main` appears somewhere in `CHANGELOG.md`. Two
-//! exclusions, both stated by the changelog's own header:
+//! `<last v-tag>..refs/heads/main` appears somewhere in `CHANGELOG.md`. Three
+//! exclusions, all of them the changelog header's own *process, not product*:
 //!
 //! - **gate closes** (`gate: tests [bl-xxxx]` and the older `<kind> gate: …`
 //!   spelling) are process rather than product and are deliberately not
 //!   listed — they live in git and in the balls store;
+//! - **release-prep commits** (`<version> release prep: …`), the
+//!   `make promote-changelog` landing — process by the same rule: they carry
+//!   a ball id but list no delivery;
 //! - **commits with no `[bl-xxxx]` subject at all** — merge commits and
 //!   release-plz's own version bump — which are not deliveries.
 //!
@@ -60,7 +63,18 @@ fn git(root: &Path, args: &[&str]) -> Option<String> {
 }
 
 /// The `[bl-xxxx]` id a delivery subject ends with, or `None` for a subject
-/// that carries none (a merge, a release bump) or that is a gate close.
+/// that carries none (a merge, a release bump) or that is **process rather
+/// than product** — the wording `CHANGELOG.md`'s own header uses, and the one
+/// rule behind both exemptions:
+///
+/// - a **gate close**, the `tests`/`docs`/`alignment` subtask every ball
+///   carries, which lives in git and in the balls store;
+/// - a **release prep** commit, the `make promote-changelog` landing that
+///   stamps `[Unreleased]` as the new version. It carries a ball id but lists
+///   no delivery, and a bullet saying "the changelog was promoted" is noise in
+///   the very release notes it is promoting. `0ff056a` — *"0.0.6 release prep:
+///   promote the changelog [Unreleased] section to [0.0.6] [bl-7cff]"* — is
+///   the shape, and it is already on `main` with no bullet.
 fn delivery_id(subject: &str) -> Option<String> {
     let subject = subject.trim();
     let id = subject
@@ -68,8 +82,10 @@ fn delivery_id(subject: &str) -> Option<String> {
         .1
         .strip_suffix(']')
         .map(|rest| format!("bl-{rest}"))?;
-    let is_gate = subject.starts_with("gate:") || subject.contains(" gate: ");
-    (!is_gate).then_some(id)
+    let process = subject.starts_with("gate:")
+        || subject.contains(" gate: ")
+        || subject.contains("release prep:");
+    (!process).then_some(id)
 }
 
 #[test]
@@ -107,7 +123,8 @@ fn every_delivery_since_the_last_release_has_a_changelog_bullet() {
         missing.is_empty(),
         "CHANGELOG.md has no bullet for {} deliveries in {range}: {}\n\
          Every delivery adds one bullet under `## [Unreleased]` (CHANGELOG.md's header \
-         states the format). Gate closes are exempt; nothing else is.",
+         states the format). Only process commits are exempt — gate closes and the \
+         release-prep landing.",
         missing.len(),
         missing.into_iter().collect::<Vec<_>>().join(", "),
     );
@@ -121,10 +138,16 @@ fn delivery_ids_come_from_subjects_that_are_deliveries() {
         delivery_id("multi_tool: let the envelope assert parallel execution [bl-ec74]").as_deref(),
         Some("bl-ec74"),
     );
-    // Gate closes are process, not product (CHANGELOG.md's header) — both
-    // the current spelling and the older one.
+    // Process, not product (CHANGELOG.md's header): gate closes in both
+    // spellings, and the release-prep landing.
     assert_eq!(delivery_id("gate: alignment [bl-b03d]"), None);
     assert_eq!(delivery_id("docs gate: bl-19d5 README fix [bl-c6ee]"), None);
+    assert_eq!(
+        delivery_id(
+            "0.0.6 release prep: promote the changelog [Unreleased] section to [0.0.6] [bl-7cff]"
+        ),
+        None,
+    );
     // No id: a merge commit, release-plz's bump, an unrelated subject.
     assert_eq!(delivery_id("Merge pull request #6 from mudbungie/rp"), None);
     assert_eq!(delivery_id("chore: release v0.0.6"), None);

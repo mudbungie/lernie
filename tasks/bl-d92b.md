@@ -1,7 +1,8 @@
 +++
 title = "CHANGELOG [Unreleased] misses bullets for 8 of the 20 deliveries in the 0.0.7 window — the bl-0b1f defect recurring"
 created = 1786513656
-updated = 1786513656
+updated = 1786513657
+claimant = "Series"
 priority = 1
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

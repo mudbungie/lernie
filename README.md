@@ -384,6 +384,48 @@ head instead of `config/default`'s, and the agent is governed by that
 lineage (§2.2). A lineage the workspace does not have is declined by
 name, with the pool that does exist.
 
+## Moving a running agent onto a new config: `lernie retarget`
+
+Fork is the freeze, so the config edit you just authored governs nothing
+an already-running agent does. That is deliberate — but it left no exit
+at all, so fixing an expired model id on a live conversation meant
+throwing the conversation away. `lernie retarget` is the exit:
+
+```
+lernie retarget <workspace> <agent>                 # onto config/default's head
+lernie retarget <workspace> <agent> --config strict # onto config/strict's head
+```
+
+It writes one ref, `refs/lernie/retarget/<agent-id>`, at the target
+config commit — and nothing else. **The agent's own executor lands it**
+at its next step (ARCH §2.2, §2.3: no branch ever gains a second
+writer), by re-forking the branch off that commit and replaying the
+agent's own history on top: the same rebase-forward move the compaction
+landing uses. Afterwards the ordinary ancestry query answers the new
+config, with no new stored fact anywhere.
+
+```
+lernie: [20260101-a1] marked for retarget onto a06b090c1d2e (config/default); it lands at the agent's next step (ARCH §2.2)
+```
+
+Three things worth knowing:
+
+- **It takes effect at the next step, never mid-step.** A config governs
+  steps. In practice you follow a retarget with `lernie message`, which
+  *is* that next step.
+- **A target that already governs the agent is a clean no-op** — the verb
+  says so and writes nothing.
+- **Every refusal precedes the mark**, so a declined retarget leaves no
+  debris: an unknown workspace, agent or lineage, or a target config
+  whose `providers.yaml` grants the agent's role a tool its
+  `descriptions/**` does not describe (ARCH §3.3), are all refused before
+  the ref is written.
+
+What is re-derived is everything config-shaped: the role's soul, the
+`descriptions/**` cut to its grant, the control-file removal. The
+agent's own facts — its goal, its name, its whole transcript and its work
+products — are untouched.
+
 ## Sending a prompt
 
 ```

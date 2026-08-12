@@ -39,7 +39,7 @@ mod tests;
 use super::{assembler, child_result, driver, terminal};
 use crate::prompt::inbox::{self, ExecutorLock};
 use crate::prompt::resolve::WorkerConfig;
-use crate::prompt::{Deps, Error};
+use crate::prompt::{Deps, Error, retarget};
 use crate::workspace::hold;
 use brazen::{Content, Message, Role};
 use std::path::Path;
@@ -108,6 +108,23 @@ fn warrant(messages: &[Message]) -> Warrant {
     }
 }
 
+/// Report what consuming a retarget mark did (§2.2). `None` — no mark —
+/// is every boundary but one and says nothing. Of the rest only the
+/// **decline** speaks, the same rule the compaction landing follows: a
+/// landing that did what it said needs no line, and the operator's
+/// confirmation was the verb's own (§3.4). A decline is the one outcome
+/// nothing else surfaces.
+fn report_retarget(agent_id: &str, outcome: Option<retarget::Outcome>) {
+    if let Some(retarget::Outcome::Conflicted(paths)) = outcome {
+        eprintln!(
+            "lernie: retarget of [{agent_id}] declined — git could not replay {} \
+             (marked refs/lernie/conflicted/{agent_id}, ARCH §2.6); the branch continues \
+             on its previous config",
+            paths.join(", "),
+        );
+    }
+}
+
 /// Run one hop against `agent_id`'s branch. `lease` is a lease the
 /// caller already took (the adopted §6 baton fd); `None` acquires here
 /// — losing the acquire is [`AdvanceOutcome::AlreadyDriven`]. `resolve`
@@ -161,6 +178,16 @@ pub(in crate::prompt) fn run(
         driver::release_then_reprobe(lock, workspace, agent_id, &seen, deps.launcher);
         return Ok(AdvanceOutcome::NothingToDo);
     }
+
+    // §2.2 *Fork is the freeze*, and its one exit: a retarget mark
+    // (`lernie retarget`, §3.4) lands **here** — at the step boundary,
+    // before anything resolves config — so the step below is the first one
+    // the target config governs. Unmarked, which is every agent at every
+    // boundary bar one, costs a single ref read.
+    report_retarget(
+        agent_id,
+        retarget::land(workspace, agent_id, &worktree, deps.git)?,
+    );
 
     // §6 delivered-child-result circumstance: interpret any result message
     // the drain left in the inbox (deliver_result / land_compaction / a

@@ -18,6 +18,7 @@ mod cwd;
 mod dispatching;
 mod naming;
 mod pins;
+mod retargeting;
 mod surface;
 mod verbs;
 mod verbs_more;

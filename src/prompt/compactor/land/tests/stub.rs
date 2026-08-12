@@ -166,7 +166,7 @@ fn scratch_worktree_and_mint_failures_surface() {
     for (pat, op) in [
         ("write-tree", "compaction land write-tree"),
         ("commit-tree", "compaction land commit-tree"),
-        ("--count", "compaction land replay count"),
+        ("--count", "rebase-forward replay count"),
     ] {
         let s = Script {
             fail_capture: Some(pat),
@@ -190,7 +190,7 @@ fn a_rebase_failure_with_no_conflict_aborts_and_surfaces() {
         rebase_fails: RefCell::new(1),
         ..Script::ok()
     };
-    assert_op(s.land().unwrap_err(), "compaction land rebase");
+    assert_op(s.land().unwrap_err(), "rebase-forward rebase");
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn an_unmerged_listing_failure_surfaces() {
         fail_capture: Some("ls-files"),
         ..Script::ok()
     };
-    assert_op(s.land().unwrap_err(), "compaction land unmerged");
+    assert_op(s.land().unwrap_err(), "rebase-forward unmerged");
 }
 
 // Stages 1+3 on `code.txt`, plus two lines the parser must skip over:
@@ -229,10 +229,7 @@ fn a_live_branch_wins_add_failure_surfaces() {
         fail_run: Some("add -- "),
         ..Script::ok()
     };
-    assert_op(
-        s.land().unwrap_err(),
-        "compaction land live-branch-wins add",
-    );
+    assert_op(s.land().unwrap_err(), "rebase-forward live-branch-wins add");
 }
 
 #[test]
@@ -244,7 +241,7 @@ fn more_stops_than_commits_aborts_rather_than_spins() {
         ls_files: MODIFY_DELETE,
         ..Script::ok()
     };
-    assert_op(s.land().unwrap_err(), "compaction land rebase");
+    assert_op(s.land().unwrap_err(), "rebase-forward rebase");
 }
 
 #[test]
@@ -268,7 +265,7 @@ fn a_decline_abort_failure_surfaces() {
         fail_run: Some("--abort"),
         ..Script::ok()
     };
-    assert_op(s.land().unwrap_err(), "compaction land abort");
+    assert_op(s.land().unwrap_err(), "rebase-forward abort");
 }
 
 #[test]
@@ -279,7 +276,7 @@ fn a_decline_mark_failure_surfaces() {
         fail_run: Some("update-ref"),
         ..Script::ok()
     };
-    assert_op(s.land().unwrap_err(), "compaction land decline update-ref");
+    assert_op(s.land().unwrap_err(), "rebase-forward decline update-ref");
 }
 
 #[test]

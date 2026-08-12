@@ -38,6 +38,7 @@ pub mod prelude;
 pub mod prime;
 pub mod prompt;
 pub mod replay;
+pub mod retarget;
 pub mod scan;
 pub mod stop;
 pub mod tool;
@@ -107,6 +108,13 @@ pub enum Command {
     /// parent's tip (§2.3); its id, and so its return address, is
     /// unchanged.
     Dispatch(dispatch::Args),
+    /// Move a running agent onto another config commit (ARCH §2.2) — the
+    /// one exit from the config freeze. Writes the mark
+    /// `refs/lernie/retarget/<agent>` at `config/<name>`'s head
+    /// (`--config`, default `default`); the agent's own executor lands the
+    /// re-fork at its next step. A target already governing the agent is a
+    /// clean no-op.
+    Retarget(retarget::Args),
     /// Stop a conversation branch (ARCH §2.9 SIGTERM). Default stops the
     /// one agent; `--stop-children` also stops every descendant
     /// (`<branch>-*`, §2.3) — the opt-in agent→agent cascade.
@@ -276,6 +284,7 @@ impl Command {
             Command::Config(a) => config::run(a, fx),
             Command::Prompt(a) => prompt::run(a, fx),
             Command::Dispatch(a) => dispatch::run(a, fx),
+            Command::Retarget(a) => retarget::run(a, fx),
             Command::Stop(a) => stop::run(a, fx),
             Command::Message(a) => message::run(a, fx),
             Command::Scan(a) => scan::run(a, fx),

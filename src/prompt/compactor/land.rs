@@ -63,10 +63,10 @@
 //! fresh tail.
 
 mod base;
-mod replay;
 mod span;
 
 use super::Error;
+use crate::prompt::rebase_forward::{self, Replay, Replayed};
 use crate::template::GitRunner;
 use crate::workspace;
 use std::path::Path;
@@ -129,15 +129,26 @@ pub fn land(
         &product,
         git,
     )?;
-    replay::run(
+    // The replay is the shared rebase-forward move (§2.6,
+    // [`crate::prompt::rebase_forward`]) — the same one the retarget
+    // landing performs, differing only in the base it lands on and the
+    // ref a decline marks. A compaction decline marks the *compactor*,
+    // whose branch holds every byte of the pass that did not land.
+    let replayed = rebase_forward::run(
         parent_worktree,
-        parent_id,
-        compactor_id,
-        &compactor_ref,
-        &span.point,
-        &base,
+        &Replay {
+            branch_id: parent_id,
+            point: &span.point,
+            base: &base,
+            mark_id: compactor_id,
+            mark_at: &compactor_ref,
+        },
         git,
-    )
+    )?;
+    Ok(match replayed {
+        Replayed::Landed => LandOutcome::Landed,
+        Replayed::Conflicted(paths) => LandOutcome::Conflicted(paths),
+    })
 }
 
 #[cfg(test)]

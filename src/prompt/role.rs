@@ -68,19 +68,29 @@ pub fn derive(
     Ok(parse_role(subject.trim()))
 }
 
-/// Sha of the dispatch commit that names `agent_id` (`dispatch: <role>
-/// [<agent-id>]`), reachable from `start` — the same single-home subject
-/// [`derive`] parses, read as a commit rather than a role. The compaction
-/// landing derives the **compaction point** from it (ARCH §2.6): the
-/// dispatch commit's parent is the commit the compactor forked off.
-/// `None` when no dispatch commit matches (a root, or not an agent ref).
+/// Sha of the **dispatch commit** that founds `agent_id`'s branch,
+/// reachable from `start` — the same single-home subject [`derive`]
+/// parses, read as a commit rather than a role. Two consumers derive
+/// from it: the compaction landing takes the **compaction point** as its
+/// parent (ARCH §2.6 — the commit the compactor forked off), and the
+/// retarget landing re-mints it onto the target config commit (§2.2).
+///
+/// **One pattern founds every branch.** A child's subject is `dispatch:
+/// <role> [<id>]` and a root's is `step 001: dispatch [<id>]`
+/// ([`crate::prompt::dispatch::step_commit`]), so the alternation covers
+/// both and the root is the general path rather than a second case. The
+/// two spellings are matched *exactly* rather than by the `[<id>]` tail
+/// alone, because the executor's own transcript commits end in that tail
+/// too (`transcript NNN: <origin> [<id>]`) and would otherwise answer as
+/// the branch's founding. `None` when no dispatch commit matches — not an
+/// agent ref at all.
 pub fn founding_sha(
     dir: &Path,
     start: &str,
     agent_id: &str,
     git: &dyn GitRunner,
 ) -> Result<Option<String>, Error> {
-    let pattern = format!("^dispatch: .+ \\[{agent_id}\\]$");
+    let pattern = format!("^(dispatch: .+|step 001: dispatch) \\[{agent_id}\\]$");
     let sha = git
         .run_capture(
             dir,

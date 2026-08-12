@@ -54,3 +54,22 @@ fn assistant_tail_with_unmatched_tool_use_is_the_non_replayable_state() {
     ];
     assert_eq!(warrant(&history), Warrant::Unpaired);
 }
+
+/// The retarget report (§2.2): the hop consumes the mark on every
+/// boundary, and only a decline is worth a line — the landing and the
+/// no-op are silent, and an unmarked branch has nothing to say at all.
+mod retarget_report {
+    use super::super::report_retarget;
+    use crate::prompt::retarget::Outcome;
+
+    #[test]
+    fn every_outcome_is_reportable_and_only_the_decline_speaks() {
+        report_retarget("a", None);
+        report_retarget("a", Some(Outcome::Landed));
+        report_retarget("a", Some(Outcome::NoOp));
+        report_retarget(
+            "a",
+            Some(Outcome::Conflicted(vec!["summary/001.md".into()])),
+        );
+    }
+}

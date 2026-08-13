@@ -26,6 +26,8 @@ reaching a release.
 
 ## [Unreleased]
 
+- **the compaction clock never fired.** `compactor::checkpoint::origin` founded a branch by the `[<agent-id>]` tail alone, and the executor's own transcript commits end in that same tail (`transcript NNN: <origin> [<agent-id>]`), so `git log -n 1` answered with the newest transcript commit instead of the branch's dispatch commit: `commits_since_checkpoint` read 0 or 1 forever, `every_n_commits` never reached its threshold and `every_t_seconds` measured from the wrong commit, and the compaction span's lower bound was mis-derived where no base had landed. The founding pattern now has one home — `role::founding_pattern`, matching the two dispatch subjects exactly (`^(dispatch: .+|step 001: dispatch) \[<id>\]$`), shared by `role::founding_sha` and the clock — so the retarget landing and the checkpoint cannot drift apart. The suite was green because the checkpoint tests used synthetic subjects carrying no tail; the regression pin now builds a branch with production subjects [bl-89f7]
+
 ## [0.0.7](https://github.com/mudbungie/lernie/compare/v0.0.6...v0.0.7) - 2026-08-11
 
 ### Changes

@@ -1,97 +1,10 @@
-//! Tests for checkpoint trigger evaluation (ARCH §6).
-//!
-//! [`due`] is pure — driven by constructed states. [`state`]'s git
-//! derivation runs against a real repo so the last-checkpoint grep and the
-//! commit-count / elapsed-time measures are exercised end-to-end.
+//! [`state`]'s git derivation, against a real repo: where the clock's
+//! [`origin`] lands, what it counts from there, and the `op` tag each
+//! git step carries when it fails.
 
 use super::*;
-use crate::config::workflow::{CompactionConfig, compaction::IntermediateCompaction};
 use crate::template::RealGit;
 use tempfile::TempDir;
-
-fn cfg(trigger: CompactionTrigger, n: Option<u32>) -> CompactionConfig {
-    CompactionConfig {
-        intermediate: IntermediateCompaction {
-            trigger,
-            n,
-            keep_recent: None,
-        },
-    }
-}
-
-fn st(commits: u32, seconds: u64, flush: bool) -> CheckpointState {
-    CheckpointState {
-        commits_since_checkpoint: commits,
-        seconds_since_checkpoint: seconds,
-        flush_requested: flush,
-        is_compactor: false,
-    }
-}
-
-#[test]
-fn no_config_never_compacts() {
-    assert!(!due(None, &st(1000, 1000, true)));
-}
-
-#[test]
-fn every_n_commits_fires_at_or_past_the_threshold() {
-    let c = cfg(CompactionTrigger::EveryNCommits, Some(3));
-    assert!(!due(Some(&c), &st(2, 0, false)));
-    assert!(due(Some(&c), &st(3, 0, false)));
-    assert!(due(Some(&c), &st(4, 0, false)));
-}
-
-#[test]
-fn every_t_seconds_fires_at_or_past_the_threshold() {
-    let c = cfg(CompactionTrigger::EveryTSeconds, Some(10));
-    assert!(!due(Some(&c), &st(0, 9, false)));
-    assert!(due(Some(&c), &st(0, 10, false)));
-}
-
-#[test]
-fn on_flush_fires_only_when_the_agent_elects_it() {
-    let c = cfg(CompactionTrigger::OnFlush, None);
-    assert!(!due(Some(&c), &st(9999, 9999, false)));
-    assert!(due(Some(&c), &st(0, 0, true)));
-}
-
-#[test]
-fn a_malformed_threshold_fails_closed() {
-    // n absent or zero (guarded at config load, §6) is never due — a bad
-    // config does not compact every step.
-    assert!(!due(
-        Some(&cfg(CompactionTrigger::EveryNCommits, None)),
-        &st(100, 0, false)
-    ));
-    assert!(!due(
-        Some(&cfg(CompactionTrigger::EveryTSeconds, Some(0))),
-        &st(0, 100, false)
-    ));
-}
-
-#[test]
-fn a_compactor_is_never_compaction_eligible() {
-    // The invariant: a compactor *is* the compaction, not a subject of
-    // one (§2.7). No trigger, at any count/elapsed/elected flush, admits
-    // it to the eligible set — this is what stops a compactor from
-    // dispatching a compactor (bl-a9eb / yog bl-ebbd).
-    let compactor = CheckpointState {
-        is_compactor: true,
-        ..st(9999, 9999, true)
-    };
-    for c in [
-        cfg(CompactionTrigger::EveryNCommits, Some(1)),
-        cfg(CompactionTrigger::EveryTSeconds, Some(1)),
-        cfg(CompactionTrigger::OnFlush, None),
-    ] {
-        assert!(!due(Some(&c), &compactor), "{:?}", c.intermediate.trigger);
-        // The same state on a non-compactor branch *is* due, so the
-        // exclusion is the only thing suppressing it.
-        assert!(due(Some(&c), &st(9999, 9999, true)));
-    }
-}
-
-// ---- real-git state derivation ---------------------------------------
 
 fn init(wt: &Path) {
     let g = RealGit::new();
@@ -207,6 +120,45 @@ fn state_measures_from_the_branchs_own_dispatch_commit_not_inherited_history() {
         !due(Some(&c), &s),
         "a seconds-old branch is below threshold"
     );
+}
+
+#[test]
+fn state_measures_from_the_dispatch_commit_not_a_later_transcript_commit() {
+    // Production subject shapes, which the synthetic ones above never
+    // exercised: the executor's transcript commits end in the *same*
+    // `[<agent-id>]` tail as the dispatch commit that founds the branch
+    // (`transcript NNN: <origin> [<id>]`, `dispatch/transcript.rs`; the
+    // stray recovery's `transcript: recover delivered stray [<id>]`
+    // likewise). Matching that tail alone made `origin` answer with the
+    // *newest* transcript commit, so the clock read ~0 forever and
+    // `every_n_commits` never fired (bl-89f7).
+    let dir = TempDir::new().unwrap();
+    let wt = dir.path();
+    init(wt);
+    commit(wt, "step 001: dispatch [p1]", "goal.md", "g");
+    commit(wt, "transcript 001: user [p1]", "t/001.md", "x");
+    commit(wt, "transcript 002: assistant [p1]", "t/002.md", "x");
+    let s = state(wt, "p1", now_of(wt), false, &RealGit::new()).unwrap();
+    assert_eq!(
+        s.commits_since_checkpoint, 2,
+        "the two transcript commits since dispatch, not 0"
+    );
+    assert!(due(
+        Some(&cfg(CompactionTrigger::EveryNCommits, Some(2))),
+        &s
+    ));
+
+    // Same for a child branch, whose founding is `dispatch: <role> [<id>]`,
+    // and for the stray-recovery subject.
+    commit(wt, "dispatch: worker [p1-c1]", "child.md", "c");
+    commit(
+        wt,
+        "transcript: recover delivered stray [p1-c1]",
+        "s.md",
+        "x",
+    );
+    let child = state(wt, "p1-c1", now_of(wt), false, &RealGit::new()).unwrap();
+    assert_eq!(child.commits_since_checkpoint, 1);
 }
 
 #[test]

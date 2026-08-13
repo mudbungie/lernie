@@ -28,15 +28,18 @@
 //! (§2.3 *Fork and inheritance*), so "commits on this branch" can never
 //! mean "commits reachable from HEAD": a seconds-old child would read its
 //! parent's hundred commits as its own and be instantly due. The one
-//! commit that founds a branch — and the only one naming it — is its
-//! **dispatch commit**, `dispatch: <role> [<agent-id>]` for a child and
-//! `step 001: dispatch [<agent-id>]` for a root
-//! ([`crate::prompt::role`], [`crate::prompt::dispatch::step_commit`]).
-//! Both end in `[<agent-id>]`, so one anchored pattern founds every
-//! branch and the root is not a special case — it is the general path
-//! ([`origin`]). A branch's checkpoint reference is therefore the newest
-//! of {its dispatch commit, its last compaction base}, and the root
-//! commit only when neither exists.
+//! commit that founds a branch is its **dispatch commit**, `dispatch:
+//! <role> [<agent-id>]` for a child and `step 001: dispatch [<agent-id>]`
+//! for a root ([`crate::prompt::dispatch::step_commit`]). One anchored
+//! pattern matches both spellings exactly
+//! ([`crate::prompt::role::founding_pattern`] — the single home of that
+//! question), so the root is not a special case; matching the
+//! `[<agent-id>]` tail alone would not do, because the executor's own
+//! transcript commits end in it too and would answer as the founding
+//! ([`crate::prompt::dispatch::transcript`], bl-89f7). A branch's
+//! checkpoint reference is therefore the newest of {its dispatch commit,
+//! its last compaction base}, and the root commit only when neither
+//! exists ([`origin`]).
 //!
 //! **A compactor is never compaction-eligible.** A compactor *is* the
 //! compaction, not a subject of one (§2.7): compacting it would fork a
@@ -182,12 +185,12 @@ fn checkpoint_time(
 
 /// The sha the branch's checkpoint clock measures from: the newest commit
 /// reachable from `start` that is **this branch's own founding commit**
-/// (its dispatch commit, whose subject ends `[<agent-id>]` for a child and
-/// a root alike), a **compaction base** ([`BASE_SUBJECT_PREFIX`]), or a
-/// retired **compaction merge** ([`MERGE_SUBJECT_PREFIX`]). `git log -n1`
-/// walks newest-first and stops at the first match, and multiple `--grep`
-/// patterns are OR'd, so one query answers "where does this branch's own
-/// clock start". The clock reads it from `HEAD` ([`state`]); the landing
+/// (its dispatch commit, matched by [`role::founding_pattern`] — the one
+/// home of that question), a **compaction base**
+/// ([`BASE_SUBJECT_PREFIX`]), or a retired **compaction merge**
+/// ([`MERGE_SUBJECT_PREFIX`]). `git log -n1` walks newest-first and stops
+/// at the first match, and multiple `--grep` patterns are OR'd, so one
+/// query answers "where does this branch's own clock start". The clock reads it from `HEAD` ([`state`]); the landing
 /// reads it from the compaction point, where it is the **span's lower
 /// bound** — the parent of the base commit it mints ([`super::land`]).
 ///
@@ -201,7 +204,7 @@ pub(super) fn origin(
     agent_id: &str,
     git: &dyn GitRunner,
 ) -> Result<Option<String>, Error> {
-    let founding = format!(r"\[{agent_id}\]$");
+    let founding = role::founding_pattern(agent_id);
     let based = format!("^{}", regex_escape_brackets(BASE_SUBJECT_PREFIX));
     let merged = format!("^{}", regex_escape_brackets(MERGE_SUBJECT_PREFIX));
     let out = git

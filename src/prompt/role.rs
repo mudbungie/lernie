@@ -68,12 +68,11 @@ pub fn derive(
     Ok(parse_role(subject.trim()))
 }
 
-/// Sha of the **dispatch commit** that founds `agent_id`'s branch,
-/// reachable from `start` — the same single-home subject [`derive`]
-/// parses, read as a commit rather than a role. Two consumers derive
-/// from it: the compaction landing takes the **compaction point** as its
-/// parent (ARCH §2.6 — the commit the compactor forked off), and the
-/// retarget landing re-mints it onto the target config commit (§2.2).
+/// One anchored `-E` pattern matching the **dispatch commit** that founds
+/// `agent_id`'s branch — the single home of that question, so every reader
+/// of "where does this branch begin" greps the same regex and they cannot
+/// drift apart ([`founding_sha`] here, [`crate::prompt::compactor`]'s
+/// checkpoint clock, which ORs it with its landing subjects).
 ///
 /// **One pattern founds every branch.** A child's subject is `dispatch:
 /// <role> [<id>]` and a root's is `step 001: dispatch [<id>]`
@@ -81,16 +80,28 @@ pub fn derive(
 /// both and the root is the general path rather than a second case. The
 /// two spellings are matched *exactly* rather than by the `[<id>]` tail
 /// alone, because the executor's own transcript commits end in that tail
-/// too (`transcript NNN: <origin> [<id>]`) and would otherwise answer as
-/// the branch's founding. `None` when no dispatch commit matches — not an
-/// agent ref at all.
+/// too (`transcript NNN: <origin> [<id>]`, and the stray recovery's
+/// `transcript: recover delivered stray [<id>]`) and would otherwise
+/// answer as the branch's founding.
+pub fn founding_pattern(agent_id: &str) -> String {
+    format!("^(dispatch: .+|step 001: dispatch) \\[{agent_id}\\]$")
+}
+
+/// Sha of the **dispatch commit** that founds `agent_id`'s branch,
+/// reachable from `start` — the same single-home subject [`derive`]
+/// parses, read as a commit rather than a role, matched by
+/// [`founding_pattern`]. Two consumers derive from it: the compaction
+/// landing takes the **compaction point** as its parent (ARCH §2.6 — the
+/// commit the compactor forked off), and the retarget landing re-mints it
+/// onto the target config commit (§2.2). `None` when no dispatch commit
+/// matches — not an agent ref at all.
 pub fn founding_sha(
     dir: &Path,
     start: &str,
     agent_id: &str,
     git: &dyn GitRunner,
 ) -> Result<Option<String>, Error> {
-    let pattern = format!("^(dispatch: .+|step 001: dispatch) \\[{agent_id}\\]$");
+    let pattern = founding_pattern(agent_id);
     let sha = git
         .run_capture(
             dir,

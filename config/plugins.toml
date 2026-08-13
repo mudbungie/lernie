@@ -3,7 +3,6 @@
 "claim.pre" = ["bl-delivery"]
 "close.post" = ["bl-delivery"]
 "close.pre" = ["bl-delivery"]
-"drop.post" = ["bl-delivery"]
 "prime.post" = ["bl-delivery"]
 "unclaim.post" = ["bl-delivery"]
 "unclaim.pre" = ["bl-delivery"]

@@ -24,10 +24,14 @@ use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// The embedded pool. Provenance and licence (CC BY 4.0, Electronic
-/// Frontier Foundation) are recorded in the file's own header; it is
-/// data, so it ships in the binary via `include_str!` and the header —
-/// the attribution — rides along.
+/// The embedded pool: 541 concrete, neutral, everyday English words,
+/// authored for this repository and covered by the crate's own licence
+/// (bl-b59c — it replaces an EFF-derived CC BY 4.0 list, which put a
+/// second licence inside an MIT package and minted names like `wrath`).
+/// Provenance, the sizing argument and the invariants are in the file's
+/// own header; the approval is pinned by count and digest in
+/// [`tests::corpus`]. It is data, so it ships in the binary via
+/// `include_str!`.
 const WORDS_TXT: &str = include_str!("mint/words.txt");
 
 /// The one way a mint fails: every word in the pool is already taken.

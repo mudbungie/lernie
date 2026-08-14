@@ -1,7 +1,8 @@
 +++
 title = "the mint corpus is CC BY 4.0 data in an MIT-only package and it mints hostile names: replace it with a clean-room neutral allowlist"
 created = 1786677252
-updated = 1786677252
+updated = 1786677280
+claimant = "Pesto"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 tags = ["publication"]

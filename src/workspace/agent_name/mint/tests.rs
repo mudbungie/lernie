@@ -74,33 +74,10 @@ fn exhaustion_is_loud_at_both_altitudes() {
     assert_eq!(Unavailable::from(err.clone()).to_string(), err.to_string());
 }
 
-/// The properties the embedded `words.txt` promises its consumer (yog
-/// bl-ccf7, carried over intact). Cheap, and it pins the artifact against
-/// a careless future edit — a minted name's path-safety and its "never
-/// mistakable for a human identity" guarantee rest entirely on the data.
-#[test]
-fn embedded_wordlist_holds_its_invariants() {
-    let words = wordlist();
-    // (1) Parse rule: the `#` header and blank lines are gone, nothing else is.
-    assert!(!words.iter().any(|w| w.starts_with('#') || w.is_empty()));
-    // (2) Charset `^[a-z]{3,9}$` — what makes a minted word path-safe as a
-    // name blob line and always past `require_available`'s shape gates.
-    for w in &words {
-        assert!(
-            (3..=9).contains(&w.len()) && w.chars().all(|c| c.is_ascii_lowercase()),
-            "{w:?} violates ^[a-z]{{3,9}}$"
-        );
-    }
-    let unique: HashSet<&&str> = words.iter().collect();
-    assert_eq!(unique.len(), words.len(), "duplicate word in words.txt");
-    // (3) No human-identity collision: bl's own `--as` fallback literal is
-    // the one word that must never be mintable.
-    assert!(!unique.contains(&"unknown"));
-    // (4) The curated count — the whole one-word pool, and the bound on the
-    // collision-retry scan. An edit to the list is meant to update this
-    // line — that is the canary, not a nuisance.
-    assert_eq!(words.len(), 7395);
-}
+/// The embedded pool's own invariants — shape, approval, and semantic
+/// safety — in their own file, because they are about the *data* and not
+/// about the algorithm the rest of this file exercises.
+mod corpus;
 
 #[test]
 fn mint_over_the_embedded_list_is_deterministic_and_avoids_the_occupied_set() {

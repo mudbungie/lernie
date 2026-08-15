@@ -16,12 +16,24 @@
 //!    image; under a linked host it is the host's own re-exec target or
 //!    a PATH-resolved `lernie` — never the host binary itself, which
 //!    carries no `tool` verb of its own.
+//!
+//! Ahead of all three sits the binding's optional **host injection**
+//! ([`super::inject`], §3.3 *Host-injected tools*): the router is
+//! consulted first, and an invocation it owns never reaches resolution at
+//! all. Everything around the answer is unchanged — the same
+//! `input.json` / `output.json` record, the same bounded projection, the
+//! same result envelope — so a routed tool and a spawned one are one
+//! contract with two backends.
 
 mod batch;
 mod caller;
+pub(super) mod lookup;
 
 use batch::Prepared;
 
+pub use lookup::{EnvPath, PathLookup};
+
+use super::inject::{InjectedTool, RoutedCapture, ToolInjection};
 use super::subprocess::{Captured, SpawnArgs, spawn_and_capture};
 use super::{
     ExecError, IN_PROCESS_SUBCOMMAND, INPUT_FILE, OUTPUT_FILE, ToolCall, ToolExecutor,
@@ -31,9 +43,9 @@ use super::{
 use crate::config::ToolOutputBound;
 use crate::prompt::Clock;
 use crate::template::{GitRunner, RealGit};
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::os::unix::process::ExitStatusExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -48,25 +60,7 @@ pub struct SpawnTool<'a> {
     etxtbsy_budget: u32,
     path_lookup: Box<dyn PathLookup + 'a>,
     git: Box<dyn GitRunner + 'a>,
-}
-
-/// Indirection for the §3.3 second hop so tests can drive the PATH
-/// lookup without manipulating the process env. Production wires
-/// [`EnvPath`], which reads the live `PATH`. The third hop needs no
-/// indirection: its target is injected, not looked up.
-pub trait PathLookup {
-    /// PATH lookup for the externalized tool binary
-    /// (`lernie-tool-<name>`), the second hop in §3.3 resolution.
-    fn which_on_path(&self, prefixed_name: &str) -> Option<PathBuf>;
-}
-
-/// Real-process lookup: the live `PATH`, via [`which_in_path`].
-pub struct EnvPath;
-
-impl PathLookup for EnvPath {
-    fn which_on_path(&self, prefixed_name: &str) -> Option<PathBuf> {
-        which_in_path(prefixed_name)
-    }
+    injection: Option<&'a dyn ToolInjection>,
 }
 
 impl<'a> SpawnTool<'a> {
@@ -83,7 +77,18 @@ impl<'a> SpawnTool<'a> {
             etxtbsy_budget: super::subprocess::ETXTBSY_RETRY_ATTEMPTS,
             path_lookup: Box::new(EnvPath),
             git: Box::new(RealGit::new()),
+            injection: None,
         }
+    }
+
+    /// Install the binding's tool injection (`cmd::Fx::tool_injection`,
+    /// ARCH §3.3 *Host-injected tools*) — the definitions this executor
+    /// declares beyond the pool and the router consulted ahead of
+    /// [`Self::resolve`]. `None` is the exec binding's default and leaves
+    /// every path exactly as it was.
+    pub fn with_injection(mut self, injection: Option<&'a dyn ToolInjection>) -> Self {
+        self.injection = injection;
+        self
     }
 
     /// Override how many spawn attempts ride out `ETXTBSY` — an attempt
@@ -153,10 +158,23 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
     ) -> Result<ToolOutcome, ExecError> {
         let prepared = self.prepare(call, step_dir)?;
         let started_at = self.clock.now_iso8601();
+        // The host router, ahead of resolution (§3.3): an invocation it
+        // owns is answered here and never spawns.
+        if let Some(routed) = self.route(&prepared, call, stop) {
+            let ended_at = self.clock.now_iso8601();
+            return self.land(&prepared, &routed, output_bound, &started_at, &ended_at);
+        }
         let captured =
             spawn_and_capture(&prepared.spawn_args(stop, self.deadline, self.etxtbsy_budget))?;
         let ended_at = self.clock.now_iso8601();
         self.finish(&prepared, captured, output_bound, &started_at, &ended_at)
+    }
+
+    /// The definitions the binding injected, if any (ARCH §3.3
+    /// *Host-injected tools*). The composer and the grant gate both read
+    /// this, so a host declares and permits with one statement.
+    fn injected(&self) -> Vec<InjectedTool> {
+        self.injection.map(ToolInjection::tools).unwrap_or_default()
     }
 
     /// The overlapping implementation a `parallel` multi-tool envelope
@@ -181,16 +199,26 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
             .iter()
             .map(|call| self.prepare(*call, step_dir))
             .collect();
+        let started_at = self.clock.now_iso8601();
+        // Routed invocations are answered here, in list order, before the
+        // scope opens: the router runs in this thread (it is the host's
+        // code, bound by no `Sync`), and what it owns never spawns. The
+        // fan's concurrency is unaffected for everything it declines.
+        let routed: Vec<Option<RoutedCapture>> = prepared
+            .iter()
+            .zip(calls)
+            .map(|(p, call)| p.as_ref().ok().and_then(|p| self.route(p, *call, stop)))
+            .collect();
         // Copied out so the scope's closures capture two scalars
         // instead of `self` — `self` holds the clock, the git runner
         // and the PATH lookup, none of which are `Sync` and none of
         // which the blocking phase needs.
         let (deadline, etxtbsy_budget) = (self.deadline, self.etxtbsy_budget);
-        let started_at = self.clock.now_iso8601();
         let captured: Vec<Result<Captured, ExecError>> = std::thread::scope(|scope| {
             let handles: Vec<_> = prepared
                 .iter()
-                .filter_map(|p| p.as_ref().ok())
+                .zip(&routed)
+                .filter_map(|(p, routed)| p.as_ref().ok().filter(|_| routed.is_none()))
                 .map(|p| {
                     scope.spawn(move || {
                         spawn_and_capture(&p.spawn_args(stop, deadline, etxtbsy_budget))
@@ -206,13 +234,28 @@ impl<'a> ToolExecutor for SpawnTool<'a> {
                 .collect()
         });
         let ended_at = self.clock.now_iso8601();
+        // The routing verdicts ride *with* their calls rather than in a
+        // second iterator, so a failed prepare cannot slip them out of
+        // step; only the captures, which exist for spawned calls alone,
+        // are stepped by hand.
         let mut captured = captured.into_iter();
         prepared
             .into_iter()
-            .map(|prepared| {
+            .zip(routed)
+            .map(|(prepared, routed)| {
                 let prepared = prepared?;
-                let captured = captured.next().expect("one capture per prepared call")?;
-                self.finish(&prepared, captured, output_bound, &started_at, &ended_at)
+                match routed {
+                    Some(routed) => {
+                        self.land(&prepared, &routed, output_bound, &started_at, &ended_at)
+                    }
+                    None => self.finish(
+                        &prepared,
+                        captured.next().expect("one capture per spawned call")?,
+                        output_bound,
+                        &started_at,
+                        &ended_at,
+                    ),
+                }
             })
             .collect()
     }
@@ -228,25 +271,4 @@ pub(super) fn killed_by_signal(name: &str, status: &std::process::ExitStatus) ->
         name: name.to_string(),
         signal,
     }
-}
-
-/// PATH lookup for `name` against the live process env. Wraps
-/// [`which_in_path_env`] so the env-var read sits in one place; tests
-/// drive `which_in_path_env` directly with a constructed path and
-/// invoke this wrapper once for the env-read branch.
-pub(super) fn which_in_path(name: &str) -> Option<PathBuf> {
-    which_in_path_env(name, std::env::var_os("PATH").as_deref())
-}
-
-/// PATH lookup that takes the path string as a parameter. First hit
-/// wins. Returns an absolute path so the spawn is unambiguous.
-pub(super) fn which_in_path_env(name: &str, path: Option<&OsStr>) -> Option<PathBuf> {
-    let path = path?;
-    for dir in std::env::split_paths(path) {
-        let candidate = dir.join(name);
-        if candidate.is_file() {
-            return Some(candidate);
-        }
-    }
-    None
 }

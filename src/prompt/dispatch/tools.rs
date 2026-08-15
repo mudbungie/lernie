@@ -32,10 +32,14 @@
 //! [`compose`] is the single home for the question "what does this
 //! request declare?", and it has three answers to add up, not one:
 //!
-//! 1. **Election** — the intersection above, what the role may offer.
-//! 2. **Injection** — a procedure's own toolset, which no config
-//!    declares: the compactor's `write_summary` / `mark_for_deletion`
-//!    (§2.7), injected for that role alone.
+//! 1. **Injection** — a toolset no config declares, from either of two
+//!    sources: the calling role's *procedure* (the compactor's
+//!    `write_summary` / `mark_for_deletion`, §2.7) and the *binding's*
+//!    host injection (`cmd::Fx::tool_injection`, §3.3
+//!    *Host-injected tools* — read off the executor, which is the thing
+//!    that will answer them). One list, because they are one kind of
+//!    thing; [`injected`] is where the two sources meet.
+//! 2. **Election** — the intersection above, what the role may offer.
 //! 3. **Closure** — a provider validates the request *as a whole*: a
 //!    `tool_use` / `tool_result` pair naming a tool the `tools: [...]`
 //!    array omits is refused outright, so the array must additionally
@@ -43,11 +47,20 @@
 //!    reads the opposite way from election — a name the history
 //!    references cannot be dropped, because the exchange has happened.
 //!
+//! **Injection outranks election, and it is spliced first.** A name can
+//! have only one entry, and when both sources carry it the injected
+//! definition wins — because it also wins at execution (the host router
+//! is consulted ahead of the §3.3 resolution order), so the schema the
+//! model reads is always the schema of the thing that will run. The
+//! ordinary case is disjoint sets and the order is then invisible.
+//!
 //! Declaring is not permitting: what a role may *call* is decided at
 //! execution ([`super::tool_step`]), and nothing here widens it.
 
 use crate::prompt::Error;
 use crate::prompt::compactor;
+use crate::prompt::tool::ToolExecutor;
+use crate::prompt::tool::inject::InjectedTool;
 use crate::skill;
 use brazen::{Content, Message, Tool};
 use serde_json::{Value, json};
@@ -63,30 +76,58 @@ const TOOLS_DESC_DIR: &str = "descriptions/tools";
 /// is its own skill's frontmatter `description`).
 const SKILLS_DESC_DIR: &str = "descriptions/skills";
 
-/// Everything `role`'s next model call declares: its `declared` names
-/// intersected with the schemas under `<worktree>/descriptions/tools/`
-/// (in declared order), then the built-in toolset its procedure injects,
-/// then the closure over `history` (§3.3, §4.3, §2.7).
+/// Everything injected into `role`'s next model call — its procedure's
+/// own toolset (§2.7, role-keyed) and the binding's host injection
+/// (§3.3), as one list.
+///
+/// The two sources are read here and nowhere else, so the composer below
+/// and the execution gate ([`super::tool_step::refusal`]) union the same
+/// pair: a tool that is declared but not permitted, or permitted but
+/// never declared, has no way to arise.
+pub(super) fn injected(role: &str, executor: &dyn ToolExecutor) -> Vec<InjectedTool> {
+    let mut out = compactor::builtin_tool_schemas(role);
+    out.extend(executor.injected());
+    out
+}
+
+/// Everything the next model call declares: the `injected` toolset
+/// first, then the role's `declared` names intersected with the schemas under
+/// `<worktree>/descriptions/tools/` (in declared order, minus any name
+/// injection already took), then the closure over `history` (§3.3, §4.3,
+/// §2.7).
 pub(super) fn compose(
     worktree: &Path,
-    role: &str,
     declared: &[String],
     history: &[Message],
+    injected: &[InjectedTool],
 ) -> Result<Vec<Tool>, Error> {
-    let mut tools = Vec::with_capacity(declared.len());
+    let mut tools: Vec<Tool> = injected.iter().map(injected_entry).collect();
     for name in declared {
+        // Injection outranks election on a shared name: the model must
+        // read the schema of the thing that will actually answer it.
+        if tools.iter().any(|t| tool_name(t) == name) {
+            continue;
+        }
         // Not present == not available: the intersection drops it.
         if let Some(input_schema) = read_schema(worktree, name)? {
             tools.push(entry(worktree, name, input_schema)?);
         }
     }
-    // §2.7/§6 role-aware resolution: the compactor's fixed pair, never a
-    // `providers.yaml` list and never riding `descriptions/**`.
-    if role == compactor::COMPACTOR_ROLE {
-        tools.extend(compactor::builtin_tool_schemas());
-    }
     close_over_history(worktree, &mut tools, history)?;
     Ok(tools)
+}
+
+/// One `tools: [...]` entry for an injected definition. Its three facts
+/// are already the entry's three facts — the whole difference from an
+/// elected tool is that they came from the harness or the binding rather
+/// than from `descriptions/**`.
+fn injected_entry(tool: &InjectedTool) -> Tool {
+    Tool::Custom {
+        name: tool.name.clone(),
+        description: tool.description.clone(),
+        input_schema: tool.input_schema.clone(),
+        strict: None,
+    }
 }
 
 /// Append a declaration for every tool `history` names that `tools` does
@@ -208,3 +249,5 @@ fn read_description(worktree: &Path, name: &str) -> Result<Option<String>, Error
 mod tests;
 #[cfg(test)]
 mod tests_derived;
+#[cfg(test)]
+mod tests_injected;

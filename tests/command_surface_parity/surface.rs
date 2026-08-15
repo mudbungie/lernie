@@ -49,6 +49,17 @@ const SEAM: &[&str] = &[
     "field Fx.tool_stdout",
     "field Fx.tool_stderr",
     "field Fx.stop",
+    "field Fx.tool_injection",
+    // The host tool-injection seam (ARCH §3.3 *Host-injected tools*):
+    // `Fx.tool_injection`'s trait and the two plain data types its two
+    // methods speak in. Re-exported from `prompt::tool::inject` rather
+    // than declared here, because the halves it drives — prompt
+    // assembly and the executor — are below the surface and may not
+    // name it.
+    "use InjectedTool",
+    "use RoutedCall",
+    "use RoutedCapture",
+    "use ToolInjection",
     "struct Error",
     "derive Error: Debug",
     "method Error::new",

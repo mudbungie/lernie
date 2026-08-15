@@ -24,6 +24,7 @@
 //! here, and a model's `message` / `dispatch` tool re-enters through it
 //! (§3.4) — so one guard per verb covers every supplier.
 
+pub use crate::prompt::tool::inject::{InjectedTool, RoutedCall, RoutedCapture, ToolInjection};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
@@ -213,6 +214,14 @@ pub struct Fx<'a> {
     /// `Deps::stop`. The exec binding wires [`prelude::stop_flag`] after
     /// [`prelude::install_stop_handler`].
     pub stop: &'a AtomicBool,
+    /// The binding's **tool injection** (ARCH §3.3 *Host-injected
+    /// tools*), injected like [`Self::driver_target`]: `None` — the exec
+    /// binding's default — changes nothing, while a host that supplies
+    /// one has its [`ToolInjection::tools`] declared *and* permitted on
+    /// every request, and its [`ToolInjection::route`] consulted ahead of
+    /// §3.3 binary resolution. Obligations and containment:
+    /// [`ToolInjection`], `docs/DESIGN_TOOL_INJECTION.md`.
+    pub tool_injection: Option<&'a dyn ToolInjection>,
 }
 
 /// A verb's uniform failure. `Display` renders exactly today's stderr
@@ -243,14 +252,6 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
-
-/// The one-product stdout line for a path-valued outcome — `new`'s
-/// destination and `replay`'s scratch path (§3.4). The single home of
-/// the `Path`→`String` render, so covering it once (via `new`) covers it
-/// for both verbs.
-pub(crate) fn path_line(p: PathBuf) -> Outcome {
-    Outcome::Line(p.display().to_string())
-}
 
 impl Command {
     /// The §2.9 preludes this verb needs, in the order a binding must

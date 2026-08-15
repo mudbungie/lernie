@@ -1,7 +1,7 @@
 //! Resolution / spawn / disk-record I/O failure modes — every
 //! [`super::super::ExecError`] variant gets a constructive test.
 
-use super::super::spawn::which_in_path_env;
+use super::super::spawn::lookup::which_in_path_env;
 use super::super::{ExecError, SpawnTool, ToolCall, ToolExecutor};
 use super::fixtures::{AGENT_ID, FixedClock, HarnessRoot, StepDir, driver_target};
 use serde_json::json;
@@ -143,7 +143,7 @@ fn which_in_path_live_env_returns_a_value_for_a_real_binary() {
     // Cover the live `which_in_path` (env-var-reading) wrapper. `sh`
     // is on PATH on every POSIX runner. We're not asserting where —
     // just that the env-read branch produces *something*.
-    use super::super::spawn::which_in_path_env as wpe;
+    use super::super::spawn::lookup::which_in_path_env as wpe;
     let path = std::env::var_os("PATH");
     let hit = wpe("sh", path.as_deref());
     assert!(hit.is_some(), "expected /bin/sh or similar on PATH");
@@ -156,5 +156,5 @@ fn live_which_in_path_reads_path_env_without_panicking() {
     // typically set, but the wrapper must tolerate it being unset
     // (the `?` short-circuits) without us asserting a specific
     // outcome.
-    let _ = super::super::spawn::which_in_path("lernie-tool-definitely-not-installed");
+    let _ = super::super::spawn::lookup::which_in_path("lernie-tool-definitely-not-installed");
 }

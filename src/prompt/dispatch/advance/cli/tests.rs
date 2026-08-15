@@ -29,6 +29,7 @@ fn a_non_workspace_is_refused_by_the_layout_guard() {
         td(),
         None,
         &AtomicBool::new(false),
+        None,
     )
     .unwrap_err();
     assert!(matches!(err, Error::Layout(_)), "{err}");
@@ -40,7 +41,7 @@ fn a_name_with_no_agent_ref_is_refused_before_the_lease() {
     // refused in the `lernie message` voice — and, crucially, the
     // inbox directory the lease would have created never appears.
     let (_h, ws) = crate::workspace::fixture::workspace();
-    let err = cli_run(&ws, "ghost", td(), None, &AtomicBool::new(false)).unwrap_err();
+    let err = cli_run(&ws, "ghost", td(), None, &AtomicBool::new(false), None).unwrap_err();
     assert!(matches!(err, Error::UnknownAgent(_)), "{err}");
     assert!(err.to_string().starts_with("no agent \"ghost\""), "{err}");
     assert!(
@@ -53,7 +54,15 @@ fn a_name_with_no_agent_ref_is_refused_before_the_lease() {
 fn a_quiescent_agent_is_nothing_to_do_via_production_wiring() {
     let (_h, ws) = crate::workspace::fixture::workspace();
     crate::workspace::fixture::spawn_root(&ws, "20260101-a1");
-    let out = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap();
+    let out = cli_run(
+        &ws,
+        "20260101-a1",
+        td(),
+        None,
+        &AtomicBool::new(false),
+        None,
+    )
+    .unwrap();
     assert!(matches!(out, AdvanceHandoff::Done));
 }
 
@@ -62,7 +71,15 @@ fn held_lock_is_already_driven() {
     let (_h, ws) = crate::workspace::fixture::workspace();
     crate::workspace::fixture::spawn_root(&ws, "20260101-a1");
     let _held = test_lease(&inbox_dir(&ws, "20260101-a1"));
-    let out = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap();
+    let out = cli_run(
+        &ws,
+        "20260101-a1",
+        td(),
+        None,
+        &AtomicBool::new(false),
+        None,
+    )
+    .unwrap();
     assert!(matches!(out, AdvanceHandoff::Done));
 }
 
@@ -72,7 +89,15 @@ fn broken_inbox_surfaces_as_executor_lock_error() {
     crate::workspace::fixture::spawn_root(&ws, "20260101-a1");
     std::fs::create_dir_all(ws.join("inbox")).unwrap();
     std::fs::write(inbox_dir(&ws, "20260101-a1"), b"not a dir").unwrap();
-    let err = cli_run(&ws, "20260101-a1", td(), None, &AtomicBool::new(false)).unwrap_err();
+    let err = cli_run(
+        &ws,
+        "20260101-a1",
+        td(),
+        None,
+        &AtomicBool::new(false),
+        None,
+    )
+    .unwrap_err();
     assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
 }
 
@@ -88,6 +113,7 @@ fn bad_lease_env_is_declined_loudly_as_lease_adopt() {
         td(),
         None,
         &AtomicBool::new(false),
+        None,
     )
     .unwrap_err();
     assert!(matches!(err, Error::LeaseAdopt { .. }), "{err}");
@@ -111,6 +137,7 @@ fn adopted_lease_env_drives_the_hop() {
         td(),
         None,
         &AtomicBool::new(false),
+        None,
     )
     .unwrap();
     assert!(matches!(out, AdvanceHandoff::Done));
@@ -129,7 +156,7 @@ fn a_warranted_hop_delivers_then_consults_the_resolver() {
     let agent = "20260101-a1";
     let wt = crate::workspace::fixture::spawn_root(&ws, agent);
     inbox::deposit(&ws, agent, "user", "hi", &SystemClock).unwrap();
-    let err = cli_run(&ws, agent, td(), None, &AtomicBool::new(false)).unwrap_err();
+    let err = cli_run(&ws, agent, td(), None, &AtomicBool::new(false), None).unwrap_err();
     assert!(!err.to_string().is_empty());
     // The delivery commit landed ahead of the failed resolution.
     assert!(wt.join("messages/001-user.md").exists());

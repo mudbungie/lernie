@@ -98,9 +98,9 @@ pub(super) fn step(
     // edge case for it — it is the standing case.
     let tools = tools::compose(
         worktree,
-        resolved.grant.role,
         resolved.grant.tools,
         &messages,
+        &tools::injected(resolved.grant.role, deps.tool_executor),
     )?;
     let request = model_call::build_request(
         resolved.model_id,

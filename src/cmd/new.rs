@@ -12,7 +12,7 @@
 //! would hand every agent forked off it a toolless context, §3.3
 //! descriptions-always). Seeding stays single-sourced in `prime`.
 
-use super::{Error, Fx, Outcome, path_line};
+use super::{Error, Fx, Outcome};
 use crate::harness_root;
 use crate::prompt::{IdGen, NanoIdGen};
 use crate::template::{self, RealGit};
@@ -46,4 +46,13 @@ fn go(args: Args) -> Result<Outcome, Box<dyn std::error::Error>> {
         .unwrap_or_else(|| roots.data.join("workspaces").join(NanoIdGen.short()));
     template::scaffold(&dest, &roots, &RealGit::new())?;
     Ok(path_line(dest))
+}
+
+/// The one-product stdout line for a path-valued outcome — this verb's
+/// destination and `replay`'s scratch path (§3.4). The single home of
+/// the `Path`→`String` render, so covering it once (here) covers it for
+/// both verbs; it lives beside its first caller rather than in the
+/// surface module, which holds the seam and nothing else.
+pub(crate) fn path_line(p: std::path::PathBuf) -> Outcome {
+    Outcome::Line(p.display().to_string())
 }

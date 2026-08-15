@@ -80,7 +80,8 @@ fn go(args: Args, fx: &mut Fx) -> Result<String, Box<dyn std::error::Error>> {
     // not resolved by name") serves both re-entry seams: the §3.3 tool
     // resolver's third hop and the §2.11/§6 detached launch. No
     // `current_exe` here — under a linked host it would name the host.
-    let tool_executor = SpawnTool::new(&roots.data, &SystemClock, &fx.driver_target);
+    let tool_executor = SpawnTool::new(&roots.data, &SystemClock, &fx.driver_target)
+        .with_injection(fx.tool_injection);
     let launcher = AdvanceLauncher::with_exe(fx.driver_target.clone());
     let deps = prompt::Deps {
         adapter: &SpawnAdapter,

@@ -5,6 +5,7 @@
 use super::super::{Resolved, refusal, seam, stop_signal};
 use super::{DECLINED, Entry, FAILED, Invocation, NAME, OK};
 use crate::prompt::Error;
+use crate::prompt::dispatch::tools::injected;
 use crate::prompt::tool::{ExecError, ToolCall, ToolExecutor, ToolOutcome};
 use std::path::Path;
 use std::sync::atomic::AtomicBool;
@@ -58,7 +59,7 @@ pub(super) enum Gated {
 pub(super) fn gate(
     inner: &Inner<'_>,
     resolved: &Resolved<'_>,
-    stop: &AtomicBool,
+    ctx: Ctx<'_>,
 ) -> Result<Option<Gated>, Error> {
     let inv = inner.inv;
     if inv.name == NAME {
@@ -71,7 +72,12 @@ pub(super) fn gate(
             ),
         })));
     }
-    if let Some(decline) = refusal(resolved.grant.role, resolved.grant.tools, &inv.name) {
+    if let Some(decline) = refusal(
+        resolved.grant.role,
+        resolved.grant.tools,
+        &injected(resolved.grant.role, ctx.executor),
+        &inv.name,
+    ) {
         return Ok(Some(Gated::Declined(Entry {
             name: inv.name.clone(),
             status: DECLINED,
@@ -87,7 +93,7 @@ pub(super) fn gate(
         &inv.input,
         inner.conv_repo,
         inner.conv_id,
-        stop,
+        ctx.stop,
     )? {
         seam::Gate::Stopped => return Ok(None),
         seam::Gate::Refuse(reason) => {
@@ -141,7 +147,7 @@ pub(super) fn run_inner(
     resolved: &Resolved<'_>,
     ctx: Ctx<'_>,
 ) -> Result<Option<Entry>, Error> {
-    let inner_id = match gate(inner, resolved, ctx.stop)? {
+    let inner_id = match gate(inner, resolved, ctx)? {
         None => return Ok(None),
         Some(Gated::Declined(entry)) => return Ok(Some(entry)),
         Some(Gated::Ready(id)) => id,

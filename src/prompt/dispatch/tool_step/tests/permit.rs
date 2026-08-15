@@ -101,11 +101,17 @@ fn an_ungranted_tool_is_declined_in_band_and_the_granted_one_still_runs() {
     assert!(worktree.join("messages/003-tool.json").exists());
 }
 
+/// The compactor's procedure injection, as the composer and the gate
+/// both read it (§2.7, `tools::injected`).
+fn compactor_pair() -> Vec<crate::prompt::tool::inject::InjectedTool> {
+    crate::prompt::compactor::builtin_tool_schemas(COMPACTOR_ROLE)
+}
+
 #[test]
 fn the_decline_names_an_empty_toolset_when_the_role_grants_none() {
     // A role with neither a `tools:` grant nor an injected pair: the
     // decline still names its toolset rather than trailing off.
-    let declined = refusal("watcher", &[], "bash").expect("nothing is callable");
+    let declined = refusal("watcher", &[], &[], "bash").expect("nothing is callable");
     assert!(
         declined.contains("The watcher toolset is empty"),
         "{declined}"
@@ -117,9 +123,16 @@ fn a_compactor_calls_its_injected_pair_and_nothing_else() {
     // §2.7 through the general rule: the compactor's `tools:` grant is
     // empty in every shipped config, so its effective toolset *is* the
     // injected pair — deletion-only, with no executor-side special case.
-    assert_eq!(refusal(COMPACTOR_ROLE, &[], "write_summary"), None);
-    assert_eq!(refusal(COMPACTOR_ROLE, &[], "mark_for_deletion"), None);
-    let declined = refusal(COMPACTOR_ROLE, &[], "bash").expect("an inherited tool is declined");
+    assert_eq!(
+        refusal(COMPACTOR_ROLE, &[], &compactor_pair(), "write_summary"),
+        None
+    );
+    assert_eq!(
+        refusal(COMPACTOR_ROLE, &[], &compactor_pair(), "mark_for_deletion"),
+        None
+    );
+    let declined = refusal(COMPACTOR_ROLE, &[], &compactor_pair(), "bash")
+        .expect("an inherited tool is declined");
     assert!(
         declined.contains("not callable by a compactor"),
         "{declined}"

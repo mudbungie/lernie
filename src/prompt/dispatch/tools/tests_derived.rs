@@ -86,8 +86,8 @@ fn a_dispatched_role_declares_its_whole_grant_whatever_its_dispatchers_was() {
 
     let tools = compose(
         &workspace::agent_worktree(&ws, &sensor),
-        "sensor",
         &declared(&["message"]),
+        &[],
         &[],
     )
     .unwrap();
@@ -105,8 +105,8 @@ fn a_dispatched_role_declares_its_whole_grant_whatever_its_dispatchers_was() {
     // The dispatcher's own request is unchanged by any of this.
     let worker_tools = compose(
         &workspace::agent_worktree(&ws, &worker),
-        "worker",
         &declared(&["bash"]),
+        &[],
         &[],
     )
     .unwrap();

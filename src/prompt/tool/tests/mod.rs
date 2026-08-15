@@ -21,6 +21,9 @@
 //!   directory has since gone.
 //! - [`etxtbsy`]: the "text file busy" retry envelope around a spawn,
 //!   both arms, on waits that cannot be closed by machine load.
+//! - [`injection`]: the host injection seam (ARCH §3.3 *Host-injected
+//!   tools*) — a test embedder that declares a tool and routes it,
+//!   asserted to be indistinguishable downstream from a spawned one.
 //! - [`bash_tool`], [`read_file_tool`]: end-to-end through the
 //!   cargo-built `lernie` binary (the §3.3 third hop), injected as the
 //!   driver target via [`crate::test_support::lernie_binary`].
@@ -33,6 +36,7 @@ mod errors;
 mod etxtbsy;
 mod fixtures;
 mod happy;
+mod injection;
 mod moved_cwd;
 mod read_file_tool;
 mod resolve;

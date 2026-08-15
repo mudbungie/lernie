@@ -109,6 +109,8 @@ fn a_bash_write_lands_in_the_worktree_and_rides_the_tool_commit() {
     );
 }
 
+/// The binding's host injection at the grant gate (ARCH §3.3).
+mod injection;
 /// The multi-tool envelope (ARCH §3.3 *The multi-tool*).
 mod multi;
 mod multi_faults;

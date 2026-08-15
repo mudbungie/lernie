@@ -16,8 +16,15 @@
 //! third resolution hop re-enters the command surface at the
 //! binding-injected driver target (`cmd::Fx::driver_target`, §2.11) —
 //! the library resolves no binary path by name.
+//!
+//! Ahead of that resolution sits the optional **host injection**
+//! ([`inject`], §3.3 *Host-injected tools*): a linked binding may hand
+//! the executor tool definitions of its own plus a router that answers
+//! the invocations it owns, so a tool can be answered by the host instead
+//! of by a binary. Everything after the answer — the result envelope, the
+//! bounded projection, the disk record ([`record`]) — is identical either
+//! way.
 
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -29,12 +36,17 @@ mod bound;
 pub mod builtin;
 pub mod control;
 mod envelope;
+pub mod inject;
+mod record;
 pub mod spawn;
 mod subprocess;
 
 #[cfg(test)]
 mod tests;
 
+use inject::InjectedTool;
+pub use record::{INPUT_FILE, OUTPUT_FILE, ToolInputRecord, ToolOutputRecord};
+pub(crate) use record::{atomic_write_json, tool_call_dir};
 pub use spawn::SpawnTool;
 
 /// SIGTERM-to-SIGKILL grace pinned by ARCH §3.3 (mirrors §4.4). The
@@ -46,6 +58,10 @@ pub const DEFAULT_TOOL_DEADLINE: Duration = Duration::from_secs(5);
 /// live (ARCH §3.3 — "discovery mirrors §4.4: looks up `lernie-tool-<name>`
 /// at `<harness-root>/tools/`").
 pub const TOOLS_DIR: &str = "tools";
+
+/// Per-step subdirectory holding tool-call records (ARCH §3.3 "Disk
+/// record" → `steps/<conv-id>/<NNN>/tools/<tool-id>/`).
+pub const STEP_TOOLS_SUBDIR: &str = "tools";
 
 /// Name prefix for externalized tool binaries (ARCH §3.3, mirroring
 /// §4.4's `lernie-provider-<name>` convention).
@@ -63,14 +79,6 @@ pub const ENV_CONV_REPO: &str = "LERNIE_CONV_REPO";
 /// hyphenated descent / conv-id, ARCH §2.2) to the tool subprocess.
 /// Same provenance as [`ENV_CONV_REPO`].
 pub const ENV_CONV_BRANCH: &str = "LERNIE_CONV_BRANCH";
-
-/// Per-step subdirectory holding tool-call records (ARCH §3.3 "Disk
-/// record" → `steps/<conv-id>/<NNN>/tools/<tool-id>/`).
-pub const STEP_TOOLS_SUBDIR: &str = "tools";
-
-/// On-disk filenames for the per-tool-call record (ARCH §3.3 "Disk record").
-pub const INPUT_FILE: &str = "input.json";
-pub const OUTPUT_FILE: &str = "output.json";
 
 /// One tool invocation as the model emitted it — the `id`, `name`, and
 /// `input` fields of a `tool_use` content block (ARCH §3.3 stdin
@@ -108,31 +116,6 @@ pub struct ToolOutcome {
     /// Maps to `tool_result.is_error` per §3.3: `false` for exit 0,
     /// `true` otherwise.
     pub is_error: bool,
-}
-
-/// On-disk shape of `<tool-id>/input.json` — the `tool_use` block
-/// verbatim per ARCH §3.3 ("`id`, `name`, `input`"). Round-trips
-/// through serde so a future replay can rehydrate the call.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ToolInputRecord {
-    pub id: String,
-    pub name: String,
-    pub input: Value,
-}
-
-/// On-disk shape of `<tool-id>/output.json` — exactly the fields ARCH
-/// §3.3 enumerates ("`{stdout, stderr, exit_code, started_at,
-/// ended_at}`"). Stdout / stderr are stored as strings via
-/// lossy-utf8 to keep the record human-readable; the executor's
-/// in-memory [`ToolOutcome::content`] preserves the raw bytes for the
-/// loop to feed back to the model verbatim.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ToolOutputRecord {
-    pub stdout: String,
-    pub stderr: String,
-    pub exit_code: i32,
-    pub started_at: String,
-    pub ended_at: String,
 }
 
 /// Every way [`ToolExecutor::execute`] can fail. The taxonomy
@@ -261,34 +244,19 @@ pub trait ToolExecutor {
             .map(|call| self.execute(*call, step_dir, stop, output_bound))
             .collect()
     }
-}
 
-/// Per-step `tools/` directory for `tool_id` under `step_dir`. Owns
-/// path construction so the disk-record convention (§3.3) lives in one
-/// place.
-pub(crate) fn tool_call_dir(step_dir: &Path, tool_id: &str) -> PathBuf {
-    step_dir.join(STEP_TOOLS_SUBDIR).join(tool_id)
-}
-
-/// Atomic-rename JSON write — temp-path `<file>.tmp` is created next
-/// to the final path, populated, fsync'd, and renamed into place. ARCH
-/// §3.3 demands this so partial captures never surface in `git
-/// status`; PRINCIPLES.md "Disk first" makes the discipline general.
-pub(crate) fn atomic_write_json<T: Serialize>(
-    dir: &Path,
-    filename: &str,
-    value: &T,
-) -> Result<(), ExecError> {
-    let bytes = serde_json::to_vec_pretty(value).expect("serializable record");
-    let final_path = dir.join(filename);
-    let tmp_path = dir.join(format!("{filename}.tmp"));
-    std::fs::write(&tmp_path, bytes).map_err(|source| ExecError::Io {
-        dir: dir.to_path_buf(),
-        source,
-    })?;
-    std::fs::rename(&tmp_path, &final_path).map_err(|source| ExecError::Io {
-        dir: dir.to_path_buf(),
-        source,
-    })?;
-    Ok(())
+    /// The tool definitions this executor answers for **beyond the pool**
+    /// — the binding's host injection ([`inject`], ARCH §3.3
+    /// *Host-injected tools*), empty by default and for every executor
+    /// that carries none.
+    ///
+    /// It lives on the executor, and not on `Deps` beside it, because the
+    /// executor is the one component that knows what it can answer: the
+    /// composer splices these into the request's `tools: [...]` and the
+    /// grant gate unions their names into the effective toolset, so both
+    /// halves read the same object the router belongs to and cannot drift
+    /// from what will actually run (PRINCIPLES, single source of truth).
+    fn injected(&self) -> Vec<InjectedTool> {
+        Vec::new()
+    }
 }

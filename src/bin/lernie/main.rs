@@ -65,6 +65,7 @@ fn main() -> ExitCode {
             tool_stdout: &mut stdout,
             tool_stderr: &mut stderr,
             stop: prelude::stop_flag(),
+            tool_injection: None,
         };
         cli.command.run(&mut fx)
     };

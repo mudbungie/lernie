@@ -277,6 +277,21 @@ policy would have to chase.
   metadata (read vs destructive vs network), the pin step is where an
   operator authors it, since pin is where a human already vouches per tool.
 
+**The ruling now binds a second consumer (bl-9001).** lernie has since
+grown a **host tool-injection** seam: a linked binding may declare tools
+of its own and route their invocations
+(`docs/DESIGN_TOOL_INJECTION.md`, ARCHITECTURE §3.3 *Host-injected
+tools*). It was built to this section's ruling rather than around it —
+the injected tools are individually named, each with its own schema, so
+the grant gate, the descriptor trim and any future capability policy
+still see one name per capability, and a host multiplexer is refused for
+exactly the reason a bridge one is. Nothing in §1 moves: that seam is a
+*binding* facility, carries no wire protocol, no credential and no server
+lifetime, and an MCP bridge remains a deployment-owned binary in the
+`lernie-tool-<name>` slot. A host that wanted to speak MCP through the
+new seam would be putting the bridge inside its own process, where its
+own trusted computing base absorbs the cost — still not lernie's.
+
 ## 7. Token cost, lazy discovery, and the acceptance story
 
 **Cost model.** Each pinned tool costs its schema + frontmatter description

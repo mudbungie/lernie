@@ -20,11 +20,12 @@ use std::path::{Path, PathBuf};
 /// hands these in: the executor is the single source of truth for what
 /// a tool call is on behalf of.
 pub(super) struct Caller {
-    /// `<workspace>` — `LERNIE_CONV_REPO`.
-    workspace: PathBuf,
+    /// `<workspace>` — `LERNIE_CONV_REPO`, and the same fact a host
+    /// router reads as `RoutedCall::workspace` (§3.3).
+    pub(super) workspace: PathBuf,
     /// The agent id (== full hyphenated descent, §2.3) —
-    /// `LERNIE_CONV_BRANCH`.
-    agent_id: String,
+    /// `LERNIE_CONV_BRANCH`, and `RoutedCall::agent`.
+    pub(super) agent_id: String,
     /// The cwd of every subprocess this call spawns (§3.3 *Working
     /// directory*): `<workspace>/agents/<agent-id>` by default, or
     /// whatever the agent's own `cd` last set (`workspace::cwd`).

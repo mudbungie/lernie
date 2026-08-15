@@ -66,7 +66,7 @@ pub(super) fn run(
             conv_repo: fan.conv_repo,
             conv_id: fan.conv_id,
         };
-        match gate(&inner, resolved, ctx.stop)? {
+        match gate(&inner, resolved, ctx)? {
             Some(decision) => gated.push(decision),
             None => return Ok(None),
         }

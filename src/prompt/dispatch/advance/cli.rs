@@ -12,6 +12,7 @@ use super::{AdvanceOutcome, run};
 use crate::harness_root;
 use crate::prompt::inbox::{self, AdvanceLauncher, baton};
 use crate::prompt::resolve::{ConfigSource, resolve_worker};
+use crate::prompt::tool::inject::ToolInjection;
 use crate::prompt::{Deps, Error, RealSleeper, SpawnAdapter, SystemClock};
 use crate::prompt::{NanoIdGen, tool::SpawnTool};
 use std::ffi::OsStr;
@@ -51,6 +52,7 @@ pub fn cli_run(
     driver_target: &Path,
     adapter_target: Option<&Path>,
     stop: &AtomicBool,
+    injection: Option<&dyn ToolInjection>,
 ) -> Result<AdvanceHandoff, Error> {
     cli_run_with(
         workspace,
@@ -59,6 +61,7 @@ pub fn cli_run(
         driver_target,
         adapter_target,
         stop,
+        injection,
     )
 }
 
@@ -73,6 +76,7 @@ fn cli_run_with(
     driver_target: &Path,
     adapter_target: Option<&Path>,
     stop: &AtomicBool,
+    injection: Option<&dyn ToolInjection>,
 ) -> Result<AdvanceHandoff, Error> {
     crate::workspace::require(workspace)?;
     // §2.3 existence guard, ahead of the lease: the `agents/*` refs are
@@ -106,7 +110,8 @@ fn cli_run_with(
     };
 
     let roots = harness_root::resolve()?;
-    let tool_executor = SpawnTool::new(&roots.data, &SystemClock, driver_target);
+    let tool_executor =
+        SpawnTool::new(&roots.data, &SystemClock, driver_target).with_injection(injection);
     let launcher = AdvanceLauncher::with_exe(driver_target.to_path_buf());
     let deps = Deps {
         adapter: &SpawnAdapter,

@@ -168,9 +168,9 @@ pub(super) fn run_exchange(
         let messages = assemble(&worktree_path, resolved.manifest)?;
         let tools = tools::compose(
             &worktree_path,
-            resolved.grant.role,
             resolved.grant.tools,
             &messages,
+            &tools::injected(resolved.grant.role, deps.tool_executor),
         )?;
         let request = model_call::build_request(
             resolved.model_id,

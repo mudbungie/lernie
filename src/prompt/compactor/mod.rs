@@ -41,8 +41,8 @@ pub mod tools;
 pub use checkpoint::{due, state};
 pub use land::{LandOutcome, land};
 
+use super::tool::inject::InjectedTool;
 use super::{Error, subagent};
-use brazen::Tool;
 use serde_json::json;
 use std::path::Path;
 
@@ -51,19 +51,41 @@ use std::path::Path;
 /// the built-in [`tools`] pair — not a `providers.yaml` `tools:` list.
 pub const COMPACTOR_ROLE: &str = "compactor";
 
-/// The compactor's fixed toolset as canonical [`Tool`] schemas, injected
-/// into the model request for the **compactor role alone** (ARCH §2.7,
-/// §6 role-aware resolution). These are built into the primitive, never
-/// declared in `providers.yaml` and never sourced from `descriptions/**`
-/// (a compactor's inherited tree carries the dispatching branch's worker
-/// schemas, not these), so the harness supplies the schemas directly — the
-/// one place the model is told it may call `write_summary` /
+/// What `role`'s **procedure** injects into its next model request — the
+/// compactor's fixed pair for the compactor role, nothing for any other
+/// (ARCH §2.7, §6 role-aware resolution).
+///
+/// These are built into the primitive, never declared in
+/// `providers.yaml` and never sourced from `descriptions/**` (a
+/// compactor's inherited tree carries the dispatching branch's worker
+/// schemas, not these), so the harness supplies the definitions directly
+/// — the one place the model is told it may call `write_summary` /
 /// `mark_for_deletion`. Narrow by construction: two tools, deletion-only,
 /// making "the worst case is lost, never corrupted, information" a
 /// structural property (§2.7).
-pub fn builtin_tool_schemas() -> Vec<Tool> {
+///
+/// **One fact, two readings.** This is also what makes a role's
+/// *effective toolset* — its `providers.yaml` `tools:` grant plus
+/// whatever is injected — computable without a second role table: the
+/// composer reaches for the definitions
+/// ([`super::dispatch::tools::compose`]) and the execution gate for their
+/// names ([`super::dispatch::tool_step`]), off this one list. It was two
+/// functions until bl-9001, a schema half and a names half held in step
+/// by a test; they are now one list read two ways, which is the same
+/// discipline the host injection ([`super::tool::inject`]) rides.
+///
+/// The compactor's `tools:` grant is empty in every shipped config
+/// (`template/providers.yaml`, held by
+/// `src/install/tests.rs::the_shipped_worker_grant_is_the_whole_tool_pool`),
+/// so its effective toolset *is* this pair — the deletion-only guarantee
+/// of §2.7 stated as the general rule rather than a role-shaped branch in
+/// the executor.
+pub fn builtin_tool_schemas(role: &str) -> Vec<InjectedTool> {
+    if role != COMPACTOR_ROLE {
+        return Vec::new();
+    }
     vec![
-        Tool::Custom {
+        InjectedTool {
             name: tools::WRITE_SUMMARY.to_string(),
             description: Some(
                 "Write a signal-preserving summary to the next summary/<NNN>.md \
@@ -81,9 +103,8 @@ pub fn builtin_tool_schemas() -> Vec<Tool> {
                 "required": ["content"],
                 "additionalProperties": false
             }),
-            strict: None,
         },
-        Tool::Custom {
+        InjectedTool {
             name: tools::MARK_FOR_DELETION.to_string(),
             description: Some(
                 "Nominate a branch-relative path for removal (deletion-only: this \
@@ -101,35 +122,8 @@ pub fn builtin_tool_schemas() -> Vec<Tool> {
                 "required": ["path"],
                 "additionalProperties": false
             }),
-            strict: None,
         },
     ]
-}
-
-/// The tool names `role`'s procedure injects into its request — the
-/// compactor's fixed pair (ARCH §2.7), empty for every other role.
-///
-/// The *names* half of [`builtin_tool_schemas`], off the same [`tools`]
-/// constants, so the two cannot drift (a test holds them in step). It is
-/// what makes a role's **effective toolset** — its `providers.yaml`
-/// `tools:` grant plus this — computable without a second role table:
-/// the request composer reaches for the schemas
-/// ([`super::dispatch::tools::compose`]) and the execution gate for the
-/// names ([`super::dispatch::tool_step`]), one fact with two readings.
-///
-/// The compactor's `tools:` grant is empty in every shipped config
-/// (`template/providers.yaml`, held by
-/// `src/install/tests.rs::the_shipped_worker_grant_is_the_whole_tool_pool`),
-/// so its effective toolset *is* this pair — the deletion-only guarantee
-/// of §2.7 ("the worst case is lost information, never corrupted
-/// information") stated as the general rule rather than a role-shaped
-/// branch in the executor.
-pub fn injected(role: &str) -> &'static [&'static str] {
-    if role == COMPACTOR_ROLE {
-        &[tools::WRITE_SUMMARY, tools::MARK_FOR_DELETION]
-    } else {
-        &[]
-    }
 }
 
 /// Boilerplate goal handed to a compactor at dispatch (ARCH §2.7), read
@@ -229,43 +223,19 @@ mod tests {
 
     #[test]
     fn builtin_tool_schemas_are_the_two_named_tools_with_required_inputs() {
-        let schemas = builtin_tool_schemas();
-        let custom = |t: &Tool| match t {
-            Tool::Custom {
-                name,
-                description,
-                input_schema,
-                ..
-            } => (name.clone(), description.clone(), input_schema.clone()),
-            _ => panic!("builtin tools are Custom"),
-        };
-        let parts: Vec<_> = schemas.iter().map(custom).collect();
-        let names: Vec<&str> = parts.iter().map(|(n, _, _)| n.as_str()).collect();
+        let injected = builtin_tool_schemas(COMPACTOR_ROLE);
+        let names: Vec<&str> = injected.iter().map(|t| t.name.as_str()).collect();
         assert_eq!(names, vec![tools::WRITE_SUMMARY, tools::MARK_FOR_DELETION]);
         // Each carries a description and a required input field, so the
         // model is told the tool's shape (§2.7 injected toolset).
-        assert!(parts.iter().all(|(_, d, _)| d.is_some()));
-        assert_eq!(parts[0].2["required"][0], "content");
-        assert_eq!(parts[1].2["required"][0], "path");
-    }
-
-    #[test]
-    fn the_injected_names_are_the_injected_schemas() {
-        // One fact, two readings (§2.7): the execution gate's names and
-        // the request composer's schemas cannot name different tools.
-        let schemas = builtin_tool_schemas();
-        let schema_names: Vec<&str> = schemas
-            .iter()
-            .map(|t| match t {
-                Tool::Custom { name, .. } | Tool::Provider { name, .. } => name.as_str(),
-            })
-            .collect();
-        assert_eq!(injected(COMPACTOR_ROLE), schema_names.as_slice());
+        assert!(injected.iter().all(|t| t.description.is_some()));
+        assert_eq!(injected[0].input_schema["required"][0], "content");
+        assert_eq!(injected[1].input_schema["required"][0], "path");
     }
 
     #[test]
     fn no_other_role_has_an_injected_toolset() {
-        assert!(injected("worker").is_empty());
-        assert!(injected("verifier").is_empty());
+        assert!(builtin_tool_schemas("worker").is_empty());
+        assert!(builtin_tool_schemas("verifier").is_empty());
     }
 }

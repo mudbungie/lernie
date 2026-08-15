@@ -1,7 +1,8 @@
 //! `lernie replay` — reconstruct a scratch workspace under `LERNIE_HOME`
 //! from an archive and print its path (ARCH §9.2).
 
-use super::{Error, Fx, Outcome, path_line};
+use super::new::path_line;
+use super::{Error, Fx, Outcome};
 use std::path::PathBuf;
 
 /// `lernie replay <archive>`.

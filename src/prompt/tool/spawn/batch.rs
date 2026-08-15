@@ -23,6 +23,7 @@ use super::{
     tool_call_dir,
 };
 use crate::config::ToolOutputBound;
+use crate::prompt::tool::inject::{RoutedCall, RoutedCapture};
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -102,11 +103,9 @@ impl<'a> SpawnTool<'a> {
         })
     }
 
-    /// Phase 3: bound the captured streams (§3.3 *Bounded transcript
-    /// projection* — before the envelope is rendered around them, since
-    /// the envelope's header is structure and never cappable content),
-    /// render the result envelope, and land `output.json` with the full
-    /// bytes.
+    /// Phase 3 for a spawned call: classify the exit — a signal that was
+    /// not the harness's SIGTERM is a §2.10 harness fault, not a tool
+    /// failure — then land it like any other answer ([`Self::land`]).
     pub(super) fn finish(
         &self,
         prepared: &Prepared,
@@ -119,6 +118,59 @@ impl<'a> SpawnTool<'a> {
             Some(code) => code,
             None => return Err(killed_by_signal(&prepared.name, &captured.status)),
         };
+        self.land(
+            prepared,
+            &RoutedCapture {
+                stdout: captured.stdout,
+                stderr: captured.stderr,
+                exit_code,
+            },
+            output_bound,
+            started_at,
+            ended_at,
+        )
+    }
+
+    /// Consult the binding's router ahead of the §3.3 resolution order
+    /// (`super`'s module docs): `Some` is the host's answer and this call
+    /// never spawns, `None` — including "no injection installed" — falls
+    /// through unchanged. The caller identity handed over is the same one
+    /// a subprocess reads from its environment, derived once in
+    /// [`Self::prepare`] so a routed call and a spawned one cannot
+    /// disagree about whose call it is.
+    pub(super) fn route(
+        &self,
+        prepared: &Prepared,
+        call: ToolCall<'_>,
+        stop: &AtomicBool,
+    ) -> Option<RoutedCapture> {
+        self.injection?.route(RoutedCall {
+            id: call.id,
+            name: call.name,
+            input: call.input,
+            workspace: &prepared.caller.workspace,
+            agent: &prepared.caller.agent_id,
+            stop,
+        })
+    }
+
+    /// Phase 3 proper, over the three facts a finished tool call has —
+    /// exit code, stdout, stderr — whether a subprocess or a host router
+    /// produced them: bound the streams (§3.3 *Bounded transcript
+    /// projection*, before the envelope is rendered around them, since
+    /// the envelope's header is structure and never cappable content),
+    /// render the result envelope, and land `output.json` with the full
+    /// bytes. One landing for both backends is what makes a routed tool
+    /// indistinguishable from a local one downstream.
+    pub(super) fn land(
+        &self,
+        prepared: &Prepared,
+        captured: &RoutedCapture,
+        output_bound: Option<ToolOutputBound>,
+        started_at: &str,
+        ended_at: &str,
+    ) -> Result<ToolOutcome, ExecError> {
+        let exit_code = captured.exit_code;
         let record = prepared.caller.record_rel(&prepared.dir).join(OUTPUT_FILE);
         let stdout = bound::apply(&captured.stdout, "stdout", output_bound, &record);
         let stderr = bound::apply(&captured.stderr, "stderr", output_bound, &record);

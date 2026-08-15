@@ -2,7 +2,8 @@
 //! driver target. Each branch lands in its own test so a regression
 //! points at the offending hop.
 
-use super::super::spawn::{EnvPath, PathLookup, which_in_path_env};
+use super::super::spawn::lookup::which_in_path_env;
+use super::super::spawn::{EnvPath, PathLookup};
 use super::super::{SpawnTool, ToolCall, ToolExecutor};
 use super::fixtures::{
     FixedClock, HarnessRoot, StepDir, after_header, driver_target, write_script,

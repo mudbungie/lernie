@@ -29,6 +29,7 @@ pub fn run(args: Args, fx: &mut Fx) -> Result<Outcome, Error> {
         &fx.driver_target,
         fx.adapter_target.as_deref(),
         fx.stop,
+        fx.tool_injection,
     )
     .map_err(|e| Error::new("advance", e))?;
     Ok(outcome_of(handoff))

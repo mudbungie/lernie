@@ -1,5 +1,6 @@
 mod advance;
 mod advance_compaction;
+mod advance_crash;
 mod advance_edges;
 mod advance_release;
 mod budget_depth_boundary;

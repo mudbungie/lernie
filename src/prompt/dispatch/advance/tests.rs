@@ -55,6 +55,55 @@ fn assistant_tail_with_unmatched_tool_use_is_the_non_replayable_state() {
     assert_eq!(warrant(&history), Warrant::Unpaired);
 }
 
+#[test]
+fn delivered_mail_behind_an_unpaired_window_does_not_mask_the_decline() {
+    // The bl-15f0 shape: `driver::deliver` ran before the derivation, so
+    // the crash-orphaned window is buried user-side. The tail says
+    // "model call due"; the pairing scan must overrule it — sent anyway,
+    // the provider rejects the history forever.
+    let history = vec![
+        msg(
+            Role::Assistant,
+            vec![Content::ToolUse {
+                id: "t1".into(),
+                name: "bash".into(),
+                input: json!({"command": "true"}),
+                signature: None,
+            }],
+        ),
+        msg(Role::User, vec![Content::Text("hello?".into())]),
+    ];
+    assert_eq!(warrant(&history), Warrant::Unpaired);
+}
+
+#[test]
+fn a_paired_window_mid_history_is_no_unpaired_state() {
+    // The ordinary post-tools shape: every `tool_use` matched by a
+    // committed `tool_result`, wherever the window sits — the pairing
+    // scan stays quiet and the tail speaks (§2.3).
+    let history = vec![
+        msg(
+            Role::Assistant,
+            vec![Content::ToolUse {
+                id: "t1".into(),
+                name: "bash".into(),
+                input: json!({"command": "true"}),
+                signature: None,
+            }],
+        ),
+        msg(
+            Role::Tool,
+            vec![Content::ToolResult {
+                tool_use_id: "t1".into(),
+                content: vec![Content::Text("ok".into())],
+                is_error: false,
+            }],
+        ),
+        msg(Role::User, vec![Content::Text("more".into())]),
+    ];
+    assert_eq!(warrant(&history), Warrant::ModelCallDue);
+}
+
 /// The retarget report (§2.2): the hop consumes the mark on every
 /// boundary, and only a decline is worth a line — the landing and the
 /// no-op are silent, and an unmarked branch has nothing to say at all.

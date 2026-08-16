@@ -83,28 +83,44 @@ enum Warrant {
     /// Tail ends assistant-side without `tool_use`, or is empty: nothing
     /// is due (§2.11 pin 1).
     NothingDue,
-    /// Tail ends assistant-side with `tool_use` unmatched by committed
-    /// tool results: the one non-replayable state (§6), declined loudly.
+    /// A `tool_use` unmatched by any committed `tool_result` — wherever
+    /// it sits: the one non-replayable state (§6), declined loudly.
     Unpaired,
 }
 
-/// Derive warrant from the assembled wire history (§6): the alternation
-/// grouping (§2.3) makes the tail's role the whole answer — committed
-/// tool results compose tool-side (canonical `Role::Tool`, §2.3) and
-/// delivered mail user-side, so either non-assistant tail is the same
-/// observation: a model call is due.
+/// Derive warrant from the assembled wire history (§6). The §2.3
+/// pairing invariant is judged over the **whole alternation**, not the
+/// tail: a `tool_use` with no committed `tool_result` is [`Warrant::Unpaired`]
+/// even with delivered mail behind it — the tail's role cannot answer
+/// for it, because `driver::deliver` runs before this derivation, so a
+/// crash-orphaned window is routinely *buried* user-side by the time it
+/// is read (bl-15f0; sent anyway, the provider rejects the history
+/// forever). Only a fully paired history lets the tail speak: user- or
+/// tool-side means a model call is due (committed tool results compose
+/// tool-side, canonical `Role::Tool`, §2.3, and delivered mail
+/// user-side — the same observation), assistant-side or empty means
+/// nothing is due.
 fn warrant(messages: &[Message]) -> Warrant {
-    match messages.last() {
-        None => Warrant::NothingDue,
-        Some(m) if matches!(m.role, Role::User | Role::Tool) => Warrant::ModelCallDue,
-        Some(m)
-            if m.content
-                .iter()
-                .any(|b| matches!(b, Content::ToolUse { .. })) =>
-        {
-            Warrant::Unpaired
+    let mut unanswered = std::collections::HashSet::new();
+    for m in messages {
+        for b in &m.content {
+            match b {
+                Content::ToolUse { id, .. } => {
+                    unanswered.insert(id.as_str());
+                }
+                Content::ToolResult { tool_use_id, .. } => {
+                    unanswered.remove(tool_use_id.as_str());
+                }
+                _ => {}
+            }
         }
-        Some(_) => Warrant::NothingDue,
+    }
+    if !unanswered.is_empty() {
+        return Warrant::Unpaired;
+    }
+    match messages.last() {
+        Some(m) if matches!(m.role, Role::User | Role::Tool) => Warrant::ModelCallDue,
+        _ => Warrant::NothingDue,
     }
 }
 

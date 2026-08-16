@@ -246,3 +246,36 @@ fn unpaired_tool_use_is_declined_loudly() {
     let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
     assert!(matches!(err, Error::UnpairedToolUse { .. }), "{err}");
 }
+
+#[test]
+fn a_deposit_onto_an_unpaired_tail_is_still_declined_after_delivery() {
+    // The bl-15f0 end-to-end shape: the hop delivers pending mail
+    // *before* deriving warrant, so the crash-orphaned window is buried
+    // user-side by the time the derivation reads the history. Before
+    // the alternation-wide pairing scan this read as ModelCallDue and
+    // the provider rejected the orphan `tool_use` forever; now the hop
+    // declines loudly without ever reaching the model.
+    let tail = vec![
+        ("001-user.md", "hi".to_string()),
+        (
+            "002-claude-sonnet-5.json",
+            model_entry(&[Content::ToolUse {
+                id: "t1".into(),
+                name: "bash".into(),
+                input: serde_json::json!({"command": "true"}),
+                signature: None,
+            }]),
+        ),
+    ];
+    let (ws, wt) = workspace_with_tail(&tail);
+    let clock = FixedClock::default();
+    inbox::deposit(ws.path(), AGENT, "user", "hello?", &clock).unwrap();
+    let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
+    let id = FixedIdGen;
+    let tools = StubToolExecutor::ok();
+    let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
+    let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
+    assert!(matches!(err, Error::UnpairedToolUse { .. }), "{err}");
+    // The mail DID deliver — the decline reads through it, not past it.
+    assert!(wt.join("messages/003-user.md").exists());
+}

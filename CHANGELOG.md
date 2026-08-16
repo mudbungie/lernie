@@ -26,6 +26,12 @@ reaching a release.
 
 ## [Unreleased]
 
+### Fixed
+- Judge the §2.3 tool pairing over the whole alternation when deriving a hop's
+  warrant, so delivered mail behind a crash-orphaned tool window no longer
+  masks the unpaired decline into an eternally provider-rejected model call
+  [bl-15f0]
+
 ## [0.0.9](https://github.com/mudbungie/lernie/compare/v0.0.8...v0.0.9) - 2026-08-14
 
 ### Changes
@@ -134,6 +140,9 @@ reaching a release.
 
 ### Changes
 
+- Resolve the release-binaries tag from the pinned push sha rather than a
+  main-racing `git describe` [bl-8f7c] *(bullet restored 2026-08-15: the
+  delivery predates the changelog guard's window and had none)*
 - Lost wakeup in the 2.11 deposit-probe-launch protocol: a deposit racing a driver's last inbox read is stranded forever [bl-9c8f]
 - record the 2026-07-27 live walk — upgrade live-verified items from unit-only/unchecked, note the two non-findings [bl-be70]
 - lernie dispatch skips the shared id/workspace guard: raw git argv on a missing workspace, config-derivation voice on a missing agent, raw sha on an unknown role [bl-c89b]

@@ -1,7 +1,8 @@
 +++
 title = "the changelog guard resolves the last release tag via git describe, which committer-date skew misorders: it answered v0.0.1 (113 commits) while v0.0.8 sat 3 commits from main, false-firing on an ancient delivery and blocking every close in the checkout"
 created = 1786843603
-updated = 1786843603
+updated = 1786844835
+claimant = "Dills"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

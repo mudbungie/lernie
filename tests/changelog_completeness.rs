@@ -91,21 +91,10 @@ fn delivery_id(subject: &str) -> Option<String> {
 #[test]
 fn every_delivery_since_the_last_release_has_a_changelog_bullet() {
     let root = repo_root();
-    let Some(tag) = git(
-        &root,
-        &[
-            "describe",
-            "--tags",
-            "--abbrev=0",
-            "--match",
-            "v*",
-            "refs/heads/main",
-        ],
-    ) else {
+    let Some(tag) = last_release_tag(&root) else {
         eprintln!("changelog guard skipped: no v* tag reachable from refs/heads/main");
         return;
     };
-    let tag = tag.trim().to_string();
     let range = format!("{tag}..refs/heads/main");
     let Some(log) = git(&root, &["log", "--format=%s", &range]) else {
         eprintln!("changelog guard skipped: no readable refs/heads/main under {root:?}");
@@ -127,6 +116,89 @@ fn every_delivery_since_the_last_release_has_a_changelog_bullet() {
          release-prep landing.",
         missing.len(),
         missing.into_iter().collect::<Vec<_>>().join(", "),
+    );
+}
+
+/// The last release reachable from `main`: every `v*` tag that is an
+/// ancestor, keeping the one nearest by `rev-list --count` — the same
+/// counting the guard's own range uses. Not `git describe --abbrev=0`,
+/// which walks candidates in committer-date order and answers wrongly
+/// under date skew: this history carries a parent whose committer date
+/// postdates its child by hours, and describe answered `v0.0.1` (113
+/// commits out) while `v0.0.8` sat 3 commits away — widening the range
+/// three releases back and failing the guard on a delivery nobody in
+/// the current window touched (bl-d11e).
+fn last_release_tag(root: &Path) -> Option<String> {
+    let tags = git(root, &["tag", "--list", "v*"])?;
+    tags.split_whitespace()
+        .filter(|tag| {
+            git(
+                root,
+                &["merge-base", "--is-ancestor", tag, "refs/heads/main"],
+            )
+            .is_some()
+        })
+        .filter_map(|tag| {
+            let range = format!("{tag}..refs/heads/main");
+            let count = git(root, &["rev-list", "--count", &range])?;
+            Some((count.trim().parse::<u64>().ok()?, tag.to_string()))
+        })
+        .min()
+        .map(|(_, tag)| tag)
+}
+
+/// The bl-d11e regression: a history whose committer dates run backwards
+/// — the old release commit stamped *later* than the new release's —
+/// must still resolve the nearest tag. `git describe --abbrev=0`, the
+/// retired resolution, walks by committer date and picks the old tag on
+/// exactly this shape.
+#[test]
+fn tag_resolution_survives_committer_date_skew() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let sh = |args: &[&str], date: &str| {
+        let out = Command::new("git")
+            .current_dir(root)
+            .env_remove("GIT_DIR")
+            .env_remove("GIT_WORK_TREE")
+            .env_remove("GIT_INDEX_FILE")
+            .env("GIT_AUTHOR_DATE", date)
+            .env("GIT_COMMITTER_DATE", date)
+            .env("GIT_AUTHOR_NAME", "t")
+            .env("GIT_AUTHOR_EMAIL", "t@t")
+            .env("GIT_COMMITTER_NAME", "t")
+            .env("GIT_COMMITTER_EMAIL", "t@t")
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(out.status.success(), "git {args:?}: {out:?}");
+    };
+    let commit = |msg: &str, date: &str| {
+        sh(&["commit", "--allow-empty", "-m", msg], date);
+    };
+    sh(&["init", "-b", "main"], "2026-01-01T00:00:00Z");
+    // The old release, stamped FAR IN THE FUTURE — the skew.
+    commit("root", "2026-06-01T00:00:00Z");
+    sh(
+        &["tag", "-a", "v0.0.1", "-m", "v0.0.1"],
+        "2026-06-01T00:00:00Z",
+    );
+    // A hundred ordinary commits, then the new release with an EARLIER
+    // committer date than the tag behind it.
+    for i in 0..100 {
+        commit(&format!("work {i}"), "2026-01-02T00:00:00Z");
+    }
+    commit("release v0.0.2", "2026-01-03T00:00:00Z");
+    sh(
+        &["tag", "-a", "v0.0.2", "-m", "v0.0.2"],
+        "2026-01-03T00:00:00Z",
+    );
+    commit("tip", "2026-01-04T00:00:00Z");
+
+    assert_eq!(
+        last_release_tag(root).as_deref(),
+        Some("v0.0.2"),
+        "the nearest reachable release, regardless of committer-date order"
     );
 }
 

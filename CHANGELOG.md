@@ -26,6 +26,8 @@ reaching a release.
 
 ## [Unreleased]
 
+## [0.0.10](https://github.com/mudbungie/lernie/compare/v0.0.9...v0.0.10) - 2026-08-15
+
 ### Fixed
 - Judge the §2.3 tool pairing over the whole alternation when deriving a hop's
   warrant, so delivered mail behind a crash-orphaned tool window no longer

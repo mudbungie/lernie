@@ -26,6 +26,12 @@ reaching a release.
 
 ## [Unreleased]
 
+### Fixed
+- Resolve the changelog guard's last-release tag by nearest reachable `v*` tag
+  rather than `git describe`, whose committer-date walk answers three releases
+  back under date skew and false-fails the guard on ancient deliveries
+  [bl-d11e]
+
 ## [0.0.10](https://github.com/mudbungie/lernie/compare/v0.0.9...v0.0.10) - 2026-08-15
 
 ### Fixed

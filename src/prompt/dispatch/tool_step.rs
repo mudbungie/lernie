@@ -28,7 +28,7 @@
 mod multi;
 mod permit;
 mod seam;
-mod settle;
+pub(in crate::prompt::dispatch) mod settle;
 #[cfg(test)]
 mod tests;
 

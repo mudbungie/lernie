@@ -31,6 +31,11 @@ reaching a release.
   warrant, so delivered mail behind a crash-orphaned tool window no longer
   masks the unpaired decline into an eternally provider-rejected model call
   [bl-15f0]
+- Settle a markless unpaired trailing window at the drive boundary, before
+  delivery: a crashed executor's window gets an in-band died `tool_result` per
+  unanswered id, so an ordinary deposit revives the branch instead of meeting
+  the unpaired decline forever; only the buried pre-settlement form still
+  declines [bl-4187]
 
 ## [0.0.9](https://github.com/mudbungie/lernie/compare/v0.0.8...v0.0.9) - 2026-08-14
 

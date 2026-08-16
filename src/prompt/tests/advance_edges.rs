@@ -224,9 +224,12 @@ fn a_broken_inbox_surfaces_as_an_executor_lock_error() {
     assert!(matches!(err, Error::ExecutorLock { .. }), "{err}");
 }
 
-#[test]
-fn unpaired_tool_use_is_declined_loudly() {
-    let tail = vec![
+/// The pre-settlement debris shape (bl-15f0): a crash-orphaned window
+/// that mail already got behind before bl-4187's boundary settlement
+/// existed. Appending a settlement could never compose wire-legal
+/// (§2.3 pairing is positional), so this form stays the loud decline.
+fn buried_unpaired_tail() -> Vec<(&'static str, String)> {
+    vec![
         ("001-user.md", "hi".to_string()),
         (
             "002-claude-sonnet-5.json",
@@ -237,39 +240,35 @@ fn unpaired_tool_use_is_declined_loudly() {
                 signature: None,
             }]),
         ),
-    ];
-    let (ws, _wt) = workspace_with_tail(&tail);
+        ("003-user.md", "hello?".to_string()),
+    ]
+}
+
+#[test]
+fn a_buried_unpaired_window_is_declined_loudly_and_never_settled() {
+    let (ws, wt) = workspace_with_tail(&buried_unpaired_tail());
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let (clock, id) = (FixedClock::default(), FixedIdGen);
     let tools = StubToolExecutor::ok();
     let deps = valid_deps(&adapter, &sleeper, &git, &clock, &id, &tools, ws.path());
     let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
     assert!(matches!(err, Error::UnpairedToolUse { .. }), "{err}");
+    // No settlement entry appeared: the crash settlement refuses the
+    // buried form (it could not compose legally), so the transcript is
+    // exactly as found.
+    assert_eq!(std::fs::read_dir(wt.join("messages")).unwrap().count(), 3);
 }
 
 #[test]
-fn a_deposit_onto_an_unpaired_tail_is_still_declined_after_delivery() {
+fn a_deposit_onto_a_buried_unpaired_window_is_still_declined_after_delivery() {
     // The bl-15f0 end-to-end shape: the hop delivers pending mail
-    // *before* deriving warrant, so the crash-orphaned window is buried
-    // user-side by the time the derivation reads the history. Before
+    // *before* deriving warrant, so the tail reads user-side. Before
     // the alternation-wide pairing scan this read as ModelCallDue and
     // the provider rejected the orphan `tool_use` forever; now the hop
     // declines loudly without ever reaching the model.
-    let tail = vec![
-        ("001-user.md", "hi".to_string()),
-        (
-            "002-claude-sonnet-5.json",
-            model_entry(&[Content::ToolUse {
-                id: "t1".into(),
-                name: "bash".into(),
-                input: serde_json::json!({"command": "true"}),
-                signature: None,
-            }]),
-        ),
-    ];
-    let (ws, wt) = workspace_with_tail(&tail);
+    let (ws, wt) = workspace_with_tail(&buried_unpaired_tail());
     let clock = FixedClock::default();
-    inbox::deposit(ws.path(), AGENT, "user", "hello?", &clock).unwrap();
+    inbox::deposit(ws.path(), AGENT, "user", "again", &clock).unwrap();
     let (adapter, sleeper, git) = (unreachable_adapter(), StubSleeper::default(), StubGit::ok());
     let id = FixedIdGen;
     let tools = StubToolExecutor::ok();
@@ -277,5 +276,5 @@ fn a_deposit_onto_an_unpaired_tail_is_still_declined_after_delivery() {
     let err = run(ws.path(), AGENT, None, &deps, &mut no_resolve).unwrap_err();
     assert!(matches!(err, Error::UnpairedToolUse { .. }), "{err}");
     // The mail DID deliver — the decline reads through it, not past it.
-    assert!(wt.join("messages/003-user.md").exists());
+    assert!(wt.join("messages/004-user.md").exists());
 }

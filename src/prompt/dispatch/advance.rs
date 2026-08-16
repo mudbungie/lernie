@@ -30,6 +30,7 @@
 //! runs, so the pin-1 recursion terminator costs nothing but the probe.
 
 pub mod cli;
+mod crash;
 mod held;
 mod hop;
 
@@ -181,6 +182,10 @@ pub(in crate::prompt) fn run(
         },
         None => lock,
     };
+
+    // §6 crash settlement (bl-4187), strictly before delivery so the
+    // settlement lands ahead of any mail ([`crash`]).
+    crash::settle_crashed_window(workspace, agent_id, deps)?;
 
     // `delivery.left` is what this executor's last inbox read under the
     // lease deliberately left pending — the §2.11 release rule's diff

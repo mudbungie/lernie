@@ -2,6 +2,7 @@
 title = "0.0.10 release prep: promote the [Unreleased] changelog section and merge the release PR"
 created = 1786844602
 updated = 1786844602
+claimant = "Dills"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

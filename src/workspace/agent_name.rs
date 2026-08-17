@@ -4,7 +4,8 @@
 //! A **name** is a human-spoken discriminator for an agent: settled at
 //! the dispatch that creates the agent — supplied by the dispatcher, or
 //! minted from the embedded wordlist on omission ([`mint`], the yog
-//! bl-aca4 ruling) — and immutable thereafter exactly like the goal
+//! bl-aca4 ruling; two words in PascalCase since bl-79a2) — and
+//! immutable thereafter exactly like the goal
 //! (§2.8). Unnamed is a *readable* state (pre-mint stock, until
 //! retention ages it out), not a creatable one. The **id** stays the
 //! *identifier* — branch name, worktree directory, `steps/` and `inbox/`

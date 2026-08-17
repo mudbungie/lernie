@@ -1,6 +1,9 @@
 //! The mint, ported semantics-intact from yog `src/names` (bl-aca4):
 //! RNG-start wraparound draw, bounded collision retry, loud exhaustion —
-//! plus the settle-the-name pre-flight over a real workspace.
+//! plus the settle-the-name pre-flight over a real workspace. Since
+//! bl-79a2 the drawn name is a **PascalCase pair of distinct words**, so
+//! the scan's index space is the pair space and the shape assertions
+//! below are what pin the two-word join.
 
 use super::*;
 use crate::template::{GitRunner, RealGit};
@@ -20,8 +23,17 @@ fn set(names: &[&str]) -> HashSet<String> {
     names.iter().map(|s| (*s).to_owned()).collect()
 }
 
-/// Three words ⇒ a three-name pool, indices 0..3 in scan order: `ash bay cove`.
+/// Three words ⇒ a **six**-name pool (3 × 2 ordered distinct pairs),
+/// indices 0..6 in scan order: `AshBay AshCove BayAsh BayCove CoveAsh
+/// CoveBay`.
 const ABC: &[&str] = &["ash", "bay", "cove"];
+
+/// That scan order, written out — the one place the index mapping is
+/// stated as data rather than derived, so a mapping change has to face
+/// it.
+const ABC_PAIRS: &[&str] = &[
+    "AshBay", "AshCove", "BayAsh", "BayCove", "CoveAsh", "CoveBay",
+];
 
 /// A wordlist, the RNG draw, the occupied names, and the expected mint.
 type Case = (
@@ -34,26 +46,34 @@ type Case = (
 #[test]
 fn mint_scans_from_the_draw_and_retries_past_collisions() {
     let cases: &[Case] = &[
-        // Draw picks the start index; nothing occupied ⇒ that word is the name.
-        (ABC, 0, &[], Ok("ash")),
-        (ABC, 2, &[], Ok("cove")),
-        // A draw wider than the pool wraps into it (5 % 3 == 2).
-        (ABC, 5, &[], Ok("cove")),
+        // Draw picks the start index into the PAIR space; nothing occupied
+        // ⇒ that pair is the name.
+        (ABC, 0, &[], Ok("AshBay")),
+        (ABC, 2, &[], Ok("BayAsh")),
+        (ABC, 5, &[], Ok("CoveBay")),
+        // A draw wider than the pool wraps into it (9 % 6 == 3).
+        (ABC, 9, &[], Ok("BayCove")),
         // Collision retry: the start is taken, discarded, the scan re-samples
-        // the next word.
-        (ABC, 0, &["ash"], Ok("bay")),
-        // Retry wraps past the end of the pool: "cove" then "ash" taken.
-        (ABC, 2, &["cove", "ash"], Ok("bay")),
-        // Pool exhaustion: every word of a two-word list is occupied — the
+        // the next pair — which is the next SECOND word, not a fresh draw.
+        (ABC, 0, &["AshBay"], Ok("AshCove")),
+        // Retry wraps past the end of the pool: "CoveBay" then "AshBay" taken.
+        (ABC, 5, &["CoveBay", "AshBay"], Ok("AshCove")),
+        // Pool exhaustion: a two-word list spells exactly two names — the
         // retry is bounded by the pool, so this errors instead of looping.
         (
             &["ash", "bay"],
             0,
-            &["ash", "bay"],
+            &["AshBay", "BayAsh"],
             Err(MintError::Exhausted(2)),
         ),
+        // One word spells NO name: a word never pairs with itself, so this
+        // is the empty pool rather than a case of its own.
+        (&["ash"], 0, &[], Err(MintError::Exhausted(0))),
         // The empty list is the general path with no inputs — an empty pool.
         (&[], 0, &[], Err(MintError::Exhausted(0))),
+        // An empty entry contributes nothing to the join rather than
+        // panicking — the join is total over whatever the list holds.
+        (&["", "bay"], 0, &[], Ok("Bay")),
     ];
     for (words, draw, taken, expect) in cases {
         let got = mint_from(words, &Fixed(*draw), &set(taken));
@@ -62,12 +82,37 @@ fn mint_scans_from_the_draw_and_retries_past_collisions() {
     }
 }
 
+/// The pair space is enumerated exactly once per name and stops dead at
+/// its own bound: six mints off a three-word list yield the six ordered
+/// distinct pairs in scan order, a seventh is [`MintError::Exhausted`],
+/// and no self-pair is ever spelled.
+#[test]
+fn the_scan_spells_every_distinct_pair_once_then_exhausts() {
+    let mut occupied = HashSet::new();
+    let mut minted = Vec::new();
+    for _ in 0..ABC_PAIRS.len() {
+        let name = mint_from(ABC, &Fixed(0), &occupied).expect("a free pair remains");
+        occupied.insert(name.clone());
+        minted.push(name);
+    }
+    assert_eq!(minted, ABC_PAIRS, "the scan order is the index mapping");
+    assert_eq!(
+        mint_from(ABC, &Fixed(0), &occupied),
+        Err(MintError::Exhausted(6)),
+        "the pair space is the bound, and it is exact"
+    );
+    for word in ABC {
+        let self_pair = pascal(word, word);
+        assert!(!occupied.contains(&self_pair), "{self_pair:?} was spelled");
+    }
+}
+
 #[test]
 fn exhaustion_is_loud_at_both_altitudes() {
     let err = MintError::Exhausted(2);
     assert_eq!(
         err.to_string(),
-        "name pool exhausted: all 2 words are occupied"
+        "name pool exhausted: all 2 names are occupied"
     );
     // The pre-flight's projection is transparent: the caller's uniform
     // failure line carries the same words.
@@ -79,18 +124,69 @@ fn exhaustion_is_loud_at_both_altitudes() {
 /// about the algorithm the rest of this file exercises.
 mod corpus;
 
+/// Split a minted name back into the two pool words it joined, proving
+/// the shape on the way: exactly two ASCII-uppercase initials, no
+/// separator of any kind, and both halves entries of the embedded pool.
+fn split_pascal(name: &str) -> (String, String) {
+    assert!(
+        is_minted_shape(name),
+        "{name:?} is not two PascalCase words with no separator"
+    );
+    let cut = name
+        .char_indices()
+        .rev()
+        .find(|(_, c)| c.is_ascii_uppercase())
+        .map(|(i, _)| i)
+        .expect("the shape check found two capitals");
+    let (first, second) = name.split_at(cut);
+    let (first, second) = (first.to_lowercase(), second.to_lowercase());
+    let pool = wordlist();
+    assert!(
+        pool.contains(&first.as_str()),
+        "{first:?} is not in the pool"
+    );
+    assert!(
+        pool.contains(&second.as_str()),
+        "{second:?} is not in the pool"
+    );
+    assert_ne!(first, second, "{name:?} pairs a word with itself");
+    (first, second)
+}
+
+/// The shared shape predicate reads the ruling and nothing looser: one
+/// word fails it, a hyphenated pair fails it, three words fail it, and a
+/// lower-cased initial fails it — otherwise the other modules' minted-name
+/// assertions would pass on the very shapes bl-79a2 replaced.
+#[test]
+fn the_minted_shape_predicate_reads_only_two_pascal_words() {
+    assert!(is_minted_shape("PeachHollow"));
+    for wrong in [
+        "",
+        "peach",
+        "Peach",
+        "peachHollow",
+        "PeachHollowGate",
+        "Peach-Hollow",
+        "Peach Hollow",
+        "peach-hollow",
+    ] {
+        assert!(!is_minted_shape(wrong), "{wrong:?} read as minted");
+    }
+}
+
 #[test]
 fn mint_over_the_embedded_list_is_deterministic_and_avoids_the_occupied_set() {
     // Deterministic per seed: the same generator state mints the same name.
     let name = mint(&SplitMix64::from_seed(7), &HashSet::new()).unwrap();
     let again = mint(&SplitMix64::from_seed(7), &HashSet::new()).unwrap();
     assert_eq!(name, again);
-    // The one-word shape: a single wordlist entry, never a compound.
-    assert!(!name.contains('-'));
-    assert!(wordlist().contains(&name.as_str()));
-    // Occupying that name pushes the mint to a different one.
+    // The two-word PascalCase shape, over the real 541-word pool.
+    let (first, second) = split_pascal(&name);
+    assert_eq!(name, pascal(&first, &second));
+    // Occupying that name pushes the mint to a different one, still shaped.
     let next = mint(&SplitMix64::from_seed(7), &set(&[&name])).unwrap();
     assert_ne!(next, name);
+    split_pascal(&next);
 }
 
 #[test]
@@ -130,7 +226,7 @@ fn preflight_validates_a_supplied_name_and_mints_on_omission() {
         minted,
         preflight(&ws, None, &git, &SplitMix64::from_seed(7)).unwrap()
     );
-    assert!(wordlist().contains(&minted.as_str()));
+    split_pascal(&minted);
     assert_ne!(minted, "pale-otter");
     // An unreadable workspace is the scan's refusal, not a raw git error.
     assert!(matches!(

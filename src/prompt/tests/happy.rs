@@ -207,13 +207,13 @@ fn run_happy_path_writes_branch_worktree_and_two_commits() {
     // asserted arg-for-arg in [`super::descriptor_prune`].
     // 14 stages the settled name (§2.3): the trim's fourth part, always
     // written — and since yog bl-aca4 never empty at creation: this root
-    // was started without one, so the pre-flight minted a word.
+    // was started without one, so the pre-flight minted a name.
     assert_eq!(runs[16].1, vec!["add", "name"]);
     let minted = std::fs::read_to_string(worktree.join("name")).unwrap();
     let minted = minted.trim();
     assert!(
-        !minted.is_empty() && minted.chars().all(|c| c.is_ascii_lowercase()),
-        "a minted name is one wordlist word, got {minted:?}"
+        crate::workspace::agent_name::mint::is_minted_shape(minted),
+        "a minted name is two PascalCase words (bl-79a2), got {minted:?}"
     );
     assert_eq!(runs[17].1, vec!["add", "goal.md", "soul.md"]);
     assert_eq!(runs[18].1[0], "commit");

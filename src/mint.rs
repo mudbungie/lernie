@@ -3,7 +3,8 @@
 //!
 //! The agent-name mint's single home is this crate, beside the
 //! uniqueness check it races (`workspace::agent_name`): every creation
-//! path mints a one-word name on omission (ARCH §2.3). Yog — the linked
+//! path mints a two-word PascalCase name on omission (`PeachHollow`,
+//! ARCH §2.3, bl-79a2). Yog — the linked
 //! consumer — must *preview* the very name a fire would mint, so it
 //! draws the same function through this facade rather than growing a
 //! second list that would drift. Exported: the pure [`mint`] over an

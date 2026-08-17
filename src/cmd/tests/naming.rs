@@ -219,8 +219,8 @@ fn a_child_of_a_named_parent_wears_its_own_mint_not_its_parents_namesake() {
         "a child does not wear the name it inherited",
     );
     assert!(
-        minted.chars().all(|c| c.is_ascii_lowercase()),
-        "a minted name is one wordlist word, got {minted:?}",
+        crate::workspace::agent_name::mint::is_minted_shape(&minted),
+        "a minted name is two PascalCase words (bl-79a2), got {minted:?}",
     );
     assert_eq!(
         agent_name::read(&ws, &named, &git).as_deref(),

@@ -1,7 +1,7 @@
 +++
 title = "the shipped whole-tree spend ceilings bind far too early on ordinary chats: ship the template with budgets off by default"
 created = 1786937007
-updated = 1786937028
+updated = 1786937117
 claimant = "Unbound8dea"
 priority = 1
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"

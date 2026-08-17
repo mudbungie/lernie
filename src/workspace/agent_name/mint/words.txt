@@ -1,6 +1,11 @@
-# lernie agent-name wordlist — 541 words. One is drawn as an agent name when
-# a creation path omits `name` (ARCH §2.3): the mint's whole pool, and the
-# bound on its collision-retry scan.
+# lernie agent-name wordlist — 541 words. TWO are drawn and joined in
+# PascalCase as an agent name (`PeachHollow`) when a creation path omits
+# `name` (ARCH §2.3, bl-79a2). The mint's whole pool is the ordered pairs of
+# distinct words — 541 × 540 = 292,140 names — and that pair space, not this
+# list's length, is the bound on its collision-retry scan.
+#
+# Every word must therefore read well in BOTH positions of a pair, since the
+# mint may put any word before or after any other.
 #
 # PROVENANCE: authored for this repository. No third-party corpus was
 #   copied, filtered, sampled or diffed to produce it — the words were

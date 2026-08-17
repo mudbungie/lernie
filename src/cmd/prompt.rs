@@ -30,6 +30,7 @@ pub struct Args {
     /// Display name for the new agent (ARCH §2.3): one unbroken word,
     /// unique among the workspace's living agents, set here and never
     /// rewritten. `lernie message` accepts it in place of the agent id.
+    /// Omitted, it is minted as two PascalCase words (`PeachHollow`).
     #[arg(long)]
     pub name: Option<String>,
     /// Pin a caller-supplied document (ARCH §2.5): freeze `<src>`'s

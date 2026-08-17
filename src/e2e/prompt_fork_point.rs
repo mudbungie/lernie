@@ -188,7 +188,7 @@ fn a_start_forks_from_any_historical_commit_and_inherits_its_tree() {
     // What it does *not* inherit is the source's display name (§2.3):
     // the dispatch commit settles `name` unconditionally — and since yog
     // bl-aca4 an omitted name is minted, so a nameless fork of a named
-    // agent wears its own one-word name rather than being a second agent
+    // agent wears its own minted name rather than being a second agent
     // answering to `pale-otter`.
     assert_eq!(
         git(&bare, &["show", &format!("{first_ref}:name")]),
@@ -197,8 +197,8 @@ fn a_start_forks_from_any_historical_commit_and_inherits_its_tree() {
     let minted = git(&bare, &["show", &format!("{second_ref}:name")]);
     assert_ne!(minted, "pale-otter", "the inherited name never propagates");
     assert!(
-        !minted.is_empty() && minted.chars().all(|c| c.is_ascii_lowercase()),
-        "an omitted name is minted as one wordlist word, got {minted:?}"
+        crate::workspace::agent_name::mint::is_minted_shape(&minted),
+        "an omitted name is minted as two PascalCase words (bl-79a2), got {minted:?}"
     );
     // And the name reaches the model through the assembled context, not
     // as prose on the user's message (§2.8): each system slot states its

@@ -30,7 +30,8 @@ lands as its own message on a later step as it completes (ARCH §2.5,
   in place of the child's id, the child is told it, and it labels the
   child in the tree — so supplying one keeps subagent identities and
   tasks clear; pick a name that says what the child is for. Omit it and
-  a valid one-word name is minted automatically — never an error. A
+  a valid two-word PascalCase name is minted automatically
+  (`PeachHollow`) — never an error. A
   supplied name that is malformed, begins like an agent id, or is
   already worn is refused and no child is created.
 

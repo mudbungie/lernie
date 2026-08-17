@@ -26,6 +26,24 @@ reaching a release.
 
 ## [Unreleased]
 
+### Changes
+- **a minted agent name is now two words in PascalCase** (`PeachHollow`), not
+  one lowercase word: a lone common noun in a conversation row or a `lernie
+  list` line reads as a word that happens to be there rather than as a name.
+  The mint's pool becomes the ordered pairs of *distinct* wordlist entries —
+  `n * (n - 1)`, 292,140 names off the same 541 words — which is the index
+  space widened rather than a second draw, so the pure single-draw scan, the
+  wraparound collision retry and the exact exhaustion bound are untouched and
+  no second wordlist exists to drift. The wordlist data is unchanged (its
+  count-and-digest approval pin still passes byte-for-byte). The pair walk is
+  deliberately not uniform — a collision steps to the next second word, not to
+  a fresh random pair — exactly as the one-word walk was not uniform over
+  words; uniqueness is the occupied-set check's, not the generator's. A
+  supplied name is unaffected: PascalCase already passed every
+  `require_available` gate, and a minted name now carries no hyphen at all, so
+  it can never be misread as two segments of an id's hyphenated descent
+  [bl-79a2]
+
 ### Fixed
 - Resolve the changelog guard's last-release tag by nearest reachable `v*` tag
   rather than `git describe`, whose committer-date walk answers three releases

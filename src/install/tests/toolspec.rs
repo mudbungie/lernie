@@ -193,7 +193,7 @@ fn the_dispatch_schema_teaches_the_name_parameter_and_the_mint_on_omission() {
             "the child's identity in every surface",
             "what `message` accepts in place of the child's agent id",
             "keeps the identities and tasks in a subagent tree clear",
-            "If you omit it, a valid one-word name is minted automatically",
+            "If you omit it, a valid two-word PascalCase name is minted automatically",
             "already worn by a living agent is refused and no child is created",
         ],
         "dispatch name-property description",

@@ -27,6 +27,20 @@ reaching a release.
 ## [Unreleased]
 
 ### Changes
+- **keep the conversation's opening prompt through a compaction.** The first
+  prompt was written to disk twice at dispatch — as `goal.md` (ARCH §2.8) and,
+  through the front door, as the dispatch entry `messages/001-…` (§2.11) — and
+  the compactor's own goal quotes `goal.md` verbatim, so the one transcript
+  entry a model told to nominate superseded files reads as pure duplication was
+  the one the operator reads. It was nominated, marked and squashed away on
+  every compacted branch; later user messages have no duplicate and always
+  survived. **The goal is not compaction-eligible** (§2.7): `mark_for_deletion`
+  now declines the dispatch entry in-band, at the nomination, so nothing is
+  staged and the compactor's summary is never premised on a deletion that did
+  not happen. The duplication itself stands — it is one input projected into two
+  places by one dispatch, neither ever rewritten — because a `goal.md` derived
+  from the transcript would change identity the moment compaction shed an early
+  entry. [bl-898f]
 - **ship the workspace template with no `budgets:` block**, so a new workspace
   is unbounded on tokens, wall *and* depth (operator ruling 2026-08-16). The
   ceilings that shipped — 2,000,000 tokens, 3600 wall seconds, depth 4 — are a

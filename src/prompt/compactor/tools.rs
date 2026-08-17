@@ -23,8 +23,27 @@
 //! never write content, so a compactor cannot corrupt a work product even
 //! by defect. The compactor decides relevance against the dispatching
 //! branch's goal (`goal.md`), which its inherited worktree carries (§2.7).
+//!
+//! **The goal is not compaction-eligible** (§2.7, bl-898f). A goal has two
+//! projections written at one dispatch and neither ever rewritten — the
+//! pinned `goal.md` (§2.8) and the **dispatch entry**, the transcript entry
+//! the same text was deposited as through the front door (§2.11: a root's
+//! opening user message, a child's dispatch message). The compactor is
+//! shown one of them — its own goal quotes the dispatching branch's
+//! `goal.md` verbatim (§2.7) — while the other sits in the transcript it
+//! is told to prune, so the dispatch entry is the one entry that reads as
+//! *pure duplication* to a model nominating superseded files. It was
+//! nominated and deleted in practice, and what it deleted was the
+//! operator's only copy of the prompt the conversation exists to serve.
+//! [`mark_for_deletion`] therefore declines that path — at the nomination,
+//! in-band, so the compactor's summary is never premised on a deletion
+//! that did not happen. Declined at the door rather than dropped at the
+//! landing because the fact is knowable from the path alone;
+//! live-branch-wins is dropped at the landing precisely because *its* fact
+//! (a race with the live branch) is not (§2.6).
 
 use super::Error;
+use crate::prompt::dispatch::MESSAGES_DIR;
 use crate::template::GitRunner;
 use std::path::Path;
 
@@ -42,6 +61,11 @@ pub(crate) const SUMMARY_DIR: &str = "summary";
 /// (`001.md`, `002.md`). Matches the step-seq width (§2.3) so the two
 /// on-disk layouts read uniformly.
 const SUMMARY_SEQ_WIDTH: usize = 3;
+/// Transcript counter of the **dispatch entry** — the entry every
+/// branch's opening prompt lands as (module docs, §2.3, §2.11). The
+/// counter is monotonic and never reused (`dispatch::transcript`), so
+/// `001` names that entry for the life of the branch.
+const DISPATCH_SEQ: u32 = 1;
 
 /// Write `summary/<NNN>.md` on `worktree`, picking the next-available
 /// seq by scanning the directory. Returns the branch-relative path of the
@@ -66,20 +90,43 @@ pub(crate) fn write_summary(worktree: &Path, content: &str) -> std::io::Result<S
 /// "applied at commit time" contract. **Deletion-only structural**: this
 /// can only remove, never write, so a compactor cannot corrupt content.
 ///
-/// A path that does not exist on the branch is **declined loudly** rather
-/// than silently ignored (`docs/PRINCIPLES.md` "Decline illegal
-/// operations"): a compactor nominating a nonexistent file is a defect
-/// worth surfacing, and `git rm` errors on it.
+/// Two nominations are **declined loudly** rather than silently ignored
+/// (`docs/PRINCIPLES.md` "Decline illegal operations"), and the decline
+/// reaches the model in-band as an `is_error` `tool_result` (§3.3):
+///
+/// - the branch's **dispatch entry**, which is the goal in transcript form
+///   and is not compaction-eligible (module docs, §2.7);
+/// - a path that does not exist on the branch — a compactor nominating a
+///   nonexistent file is a defect worth surfacing, and `git rm` errors on it.
 pub(crate) fn mark_for_deletion(
     worktree: &Path,
     path: &str,
     git: &dyn GitRunner,
 ) -> Result<(), Error> {
+    if is_dispatch_entry(path) {
+        return Err(Error::DispatchEntryNotEligible {
+            path: path.to_string(),
+        });
+    }
     git.run(worktree, &["rm", "-r", "-q", "--", path])
         .map_err(|source| Error::Git {
             op: "mark_for_deletion rm",
             source,
         })
+}
+
+/// Whether the branch-relative `path` names the branch's dispatch entry
+/// (module docs). Derived from the name alone — the same `NNN-` prefix
+/// reading `dispatch::transcript`'s counter uses — so it needs no tree,
+/// no config and no state, and it holds for a `.md` delivery and a
+/// resumed conversation's inherited first entry alike.
+fn is_dispatch_entry(path: &str) -> bool {
+    let rel = path.strip_prefix("./").unwrap_or(path);
+    rel.strip_prefix(MESSAGES_DIR)
+        .and_then(|r| r.strip_prefix('/'))
+        .and_then(|name| name.split('-').next())
+        .and_then(|nnn| nnn.parse::<u32>().ok())
+        == Some(DISPATCH_SEQ)
 }
 
 /// Pick the next summary-seq: one more than the highest existing
@@ -105,107 +152,4 @@ fn next_seq(dir: &Path) -> std::io::Result<u32> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::template::RealGit;
-
-    fn tmpdir() -> tempfile::TempDir {
-        tempfile::TempDir::new().unwrap()
-    }
-
-    #[test]
-    fn write_summary_picks_001_when_dir_is_empty() {
-        let wt = tmpdir();
-        let rel = write_summary(wt.path(), "body\n").unwrap();
-        assert_eq!(rel, "summary/001.md");
-        assert_eq!(
-            std::fs::read_to_string(wt.path().join(&rel)).unwrap(),
-            "body\n"
-        );
-    }
-
-    #[test]
-    fn write_summary_increments_past_existing_files() {
-        let wt = tmpdir();
-        let dir = wt.path().join("summary");
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("001.md"), "old").unwrap();
-        std::fs::write(dir.join("007.md"), "also old").unwrap();
-        let rel = write_summary(wt.path(), "new\n").unwrap();
-        assert_eq!(rel, "summary/008.md");
-    }
-
-    #[test]
-    fn write_summary_skips_non_md_and_unparseable_stems() {
-        let wt = tmpdir();
-        let dir = wt.path().join("summary");
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join("README.txt"), "").unwrap();
-        std::fs::write(dir.join("notes.md"), "").unwrap();
-        std::fs::write(dir.join("002.md"), "").unwrap();
-        let rel = write_summary(wt.path(), "x").unwrap();
-        assert_eq!(rel, "summary/003.md");
-    }
-
-    #[test]
-    fn write_summary_skips_a_non_utf8_file_name() {
-        // A stem `to_str` cannot decode is skipped like any other
-        // operator-dropped stray, never a numbering fault.
-        use std::os::unix::ffi::OsStrExt;
-        let wt = tmpdir();
-        let dir = wt.path().join("summary");
-        std::fs::create_dir_all(&dir).unwrap();
-        std::fs::write(dir.join(std::ffi::OsStr::from_bytes(b"\xFF\xFE")), "").unwrap();
-        std::fs::write(dir.join("004.md"), "").unwrap();
-        let rel = write_summary(wt.path(), "x").unwrap();
-        assert_eq!(rel, "summary/005.md");
-    }
-
-    /// A real repo on `agents/p1` with one tracked file, for the
-    /// deletion-only `git rm` path.
-    fn repo_with(rel: &str) -> tempfile::TempDir {
-        let dir = tmpdir();
-        let wt = dir.path();
-        let g = RealGit::new();
-        g.run(wt, &["init", "-b", "agents/p1"]).unwrap();
-        g.run(wt, &["config", "user.email", "t@t"]).unwrap();
-        g.run(wt, &["config", "core.hooksPath", "/dev/null"])
-            .unwrap();
-        g.run(wt, &["config", "user.name", "t"]).unwrap();
-        let f = wt.join(rel);
-        std::fs::create_dir_all(f.parent().unwrap()).unwrap();
-        std::fs::write(&f, "content\n").unwrap();
-        g.run(wt, &["add", "-A"]).unwrap();
-        g.run(wt, &["commit", "-m", "c"]).unwrap();
-        dir
-    }
-
-    #[test]
-    fn mark_for_deletion_stages_a_real_removal() {
-        let dir = repo_with("messages/001-user.md");
-        let wt = dir.path();
-        mark_for_deletion(wt, "messages/001-user.md", &RealGit::new()).unwrap();
-        // Removed from the worktree and staged for the next commit.
-        assert!(!wt.join("messages/001-user.md").exists());
-        let staged = RealGit::new()
-            .run_capture(wt, &["diff", "--cached", "--name-status"])
-            .unwrap();
-        assert!(staged.starts_with('D'), "staged deletion: {staged:?}");
-    }
-
-    #[test]
-    fn mark_for_deletion_declines_a_nonexistent_path() {
-        let dir = repo_with("keep.txt");
-        let err = mark_for_deletion(dir.path(), "no/such.md", &RealGit::new()).unwrap_err();
-        assert!(
-            matches!(
-                err,
-                Error::Git {
-                    op: "mark_for_deletion rm",
-                    ..
-                }
-            ),
-            "{err:?}"
-        );
-    }
-}
+mod tests;

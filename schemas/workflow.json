@@ -8,7 +8,7 @@
   ],
   "properties": {
     "budgets": {
-      "description": "Whole-tree spend limits (ARCH §6 \"Budgets (v0.7)\"). Checked at every model-call boundary before invoking the adapter; every value is derived at check time from on-disk `Usage` events, step timestamps, and branch depth — the harness stores no running counter (PRINCIPLES \"Single source of truth\"). Omitted → every limit unbounded.",
+      "description": "Whole-tree spend limits (ARCH §6 \"Budgets (v0.7)\"). Checked at every model-call boundary before invoking the adapter; every value is derived at check time from on-disk `Usage` events, step timestamps, and branch depth — the harness stores no running counter (PRINCIPLES \"Single source of truth\"). Omitted → every limit unbounded, which is what ships: `template/workflow.yaml` declares no `budgets:` block at all (ARCH §6 \"Nothing ships bounded\", operator ruling 2026-08-16), so declaring a ceiling is config an operator adds and removing one deletes config, never code.",
       "default": {},
       "allOf": [
         {

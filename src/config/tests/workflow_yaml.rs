@@ -132,6 +132,30 @@ fn omitted_budgets_block_is_all_unbounded() {
 }
 
 #[test]
+fn the_shipped_template_declares_no_budgets_and_is_unbounded() {
+    // Operator ruling 2026-08-16 (ARCH §6 "Nothing ships bounded"): the
+    // shipped `workflow.yaml` declares no `budgets:` block, so a
+    // template-born workspace is unbounded on every axis — including
+    // `max_depth`. These are the exact bytes `lernie new` writes into
+    // the first config commit (pinned by template/tests_override.rs),
+    // so this is the workspace's own state, not just the parser's.
+    let raw = crate::template::TEMPLATE
+        .get_file("workflow.yaml")
+        .expect("the template ships a workflow.yaml")
+        .contents_utf8()
+        .expect("utf8");
+    assert!(
+        !raw.contains("\nbudgets:"),
+        "the shipped template must declare no budgets block"
+    );
+    let w = parse(raw).unwrap();
+    assert_eq!(w.budgets, Budgets::default());
+    assert!(w.budgets.max_total_tokens.is_none());
+    assert!(w.budgets.max_wall_seconds.is_none());
+    assert!(w.budgets.max_depth.is_none());
+}
+
+#[test]
 fn partial_budgets_leaves_the_other_axes_unbounded() {
     // A single declared limit; the rest stay unbounded (§6).
     let w = parse("events: {}\nbudgets:\n  max_total_tokens: 500\n").unwrap();

@@ -32,8 +32,3 @@ compaction:
 retry:
   max_attempts: 1
   backoff: exponential
-
-budgets:
-  max_total_tokens: 2000000
-  max_wall_seconds: 3600
-  max_depth: 4

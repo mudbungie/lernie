@@ -104,6 +104,8 @@ left for you to do was wait, you did not need the child.
 - Dispatch is gated by the workflow's `budgets:` at the fork, so a
   dispatch that would breach `max_depth` — or start work under a tree
   that has already spent its tokens or wall — is refused outright and
-  leaves no branch behind (ARCH §6).
+  leaves no branch behind (ARCH §6). The shipped config declares no
+  `budgets:` block, so nothing is bounded unless an operator declared a
+  limit; the gate then has nothing to refuse.
 - Stopping a child is a separate user action through the UI; there is
   no `stop_dispatch` tool in v0.4.

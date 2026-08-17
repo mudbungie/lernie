@@ -27,6 +27,20 @@ reaching a release.
 ## [Unreleased]
 
 ### Changes
+- **ship the workspace template with no `budgets:` block**, so a new workspace
+  is unbounded on tokens, wall *and* depth (operator ruling 2026-08-16). The
+  ceilings that shipped — 2,000,000 tokens, 3600 wall seconds, depth 4 — are a
+  *whole-tree* allowance a root and its entire descent share, so they bind far
+  earlier than the numbers read and ended ordinary agent trees that were
+  working correctly, `max_wall_seconds` worst of all. The remedy is off, not
+  generous: raising the numbers moves the same cliff. Config deletion only —
+  an absent block and an absent key already read as unbounded with no
+  compiled-in fallback, so no code path changed and the bounded shape stays
+  fully supported and tested. **Existing workspaces keep their ceilings:** a
+  workspace freezes its own `workflow.yaml` in its config commit at creation
+  and nothing re-reads the template into it, so the exits are the ordinary
+  config ones — `lernie config` to author a commit without the block, `lernie
+  retarget` to move a running agent onto it [bl-8dea]
 - **a minted agent name is now two words in PascalCase** (`PeachHollow`), not
   one lowercase word: a lone common noun in a conversation row or a `lernie
   list` line reads as a word that happens to be there rather than as a name.

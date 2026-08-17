@@ -4,6 +4,10 @@ created = 1786938066
 updated = 1786938066
 priority = 5
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
+
+[[blockers]]
+id = "bl-346e"
+on = "close"
 +++
 brazen 0.0.6 landed on crates.io carrying a default oauth2 provider row (brazen bl-77fa, operator-ruled). lernie pins the adapter exactly, so a published lernie declaring `brazen =0.0.5` beside a downstream pinning `=0.0.6` resolves TWO brazen crates in one graph — the skew bl-e4ef and bl-143e each paid for once already (USER_STORIES G6, third recurrence).
 

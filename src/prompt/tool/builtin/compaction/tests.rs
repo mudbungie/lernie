@@ -80,8 +80,8 @@ fn write_summary_writes_the_next_summary_file() {
 #[test]
 fn mark_for_deletion_stages_a_removal() {
     let repo = TempDir::new().unwrap();
-    worktree_repo(repo.path(), "p1", "messages/001-user.md");
-    let mut input = Cursor::new(br#"{"path":"messages/001-user.md"}"#.to_vec());
+    worktree_repo(repo.path(), "p1", "messages/003-user.md");
+    let mut input = Cursor::new(br#"{"path":"messages/003-user.md"}"#.to_vec());
     let mut out = Vec::new();
     run_mark_for_deletion_with(
         &mut input,
@@ -91,10 +91,33 @@ fn mark_for_deletion_stages_a_removal() {
     )
     .unwrap();
     let wt = workspace::agent_worktree(repo.path(), "p1");
-    assert!(!wt.join("messages/001-user.md").exists());
+    assert!(!wt.join("messages/003-user.md").exists());
     let v: serde_json::Value = serde_json::from_slice(&out).unwrap();
     assert_eq!(v["status"], "marked");
-    assert_eq!(v["path"], "messages/001-user.md");
+    assert_eq!(v["path"], "messages/003-user.md");
+}
+
+#[test]
+fn mark_for_deletion_declines_the_dispatch_entry_through_the_stdio_surface() {
+    // The goal is not compaction-eligible (§2.7): the decline reaches the
+    // model as a non-zero exit whose stderr text names the path, not as a
+    // `{"status":"marked"}` result over a file that is still on disk.
+    let repo = TempDir::new().unwrap();
+    worktree_repo(repo.path(), "p1", "messages/001-user.md");
+    let mut input = Cursor::new(br#"{"path":"messages/001-user.md"}"#.to_vec());
+    let mut out = Vec::new();
+    let err = run_mark_for_deletion_with(
+        &mut input,
+        &mut out,
+        &env(repo.path(), "p1"),
+        &RealGit::new(),
+    )
+    .unwrap_err();
+    assert!(matches!(err, Error::Mark(_)), "{err:?}");
+    assert!(err.to_string().contains("not compaction-eligible"), "{err}");
+    assert!(out.is_empty(), "no result emitted: {out:?}");
+    let wt = workspace::agent_worktree(repo.path(), "p1");
+    assert!(wt.join("messages/001-user.md").exists());
 }
 
 #[test]

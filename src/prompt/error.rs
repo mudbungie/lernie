@@ -214,6 +214,19 @@ pub enum Error {
          to resume"
     )]
     SummaryConflictMarkers { path: String },
+    /// A compactor nominated the branch's **dispatch entry** — the
+    /// transcript entry its opening prompt landed as (§2.3, §2.11). The
+    /// goal is not compaction-eligible (§2.7): the same text rides
+    /// `goal.md` and is quoted verbatim into the compactor's own goal, so
+    /// that one entry reads as pure duplication to a model told to
+    /// nominate superseded files, and deleting it deletes the operator's
+    /// only copy of the prompt the conversation exists to serve.
+    #[error(
+        "{path} is the branch's dispatch entry — its opening prompt, the goal in transcript \
+         form — and is not compaction-eligible (ARCH §2.7). Nominate a later transcript \
+         entry, a superseded summary/, or a spent skills/ body instead"
+    )]
+    DispatchEntryNotEligible { path: String },
     #[error("tool {name} schema unreadable at {path}: {source}")]
     ToolSchemaIo {
         name: String,

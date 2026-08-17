@@ -158,7 +158,10 @@ pub fn compactor_goal(parent_worktree: &Path, parent_branch: &str) -> Result<Str
          \n\
          Use `mark_for_deletion` to nominate superseded files — stale transcript\n\
          entries under `messages/`, a prior `summary/` you are replacing, spent\n\
-         `skills/` bodies the transcript shows loaded and finished with. Your\n\
+         `skills/` bodies the transcript shows loaded and finished with. The\n\
+         branch's dispatch entry — `messages/001-…`, its opening prompt — is the\n\
+         goal quoted below in transcript form, is never superseded, and a\n\
+         nomination of it is declined. Your\n\
          toolset is deletion-only: you can remove and summarize, never rewrite,\n\
          so the worst case is lost information, never corrupted\n\
          information. A work product the live branch has rewritten\n\
@@ -214,6 +217,20 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let err = compactor_goal(dir.path(), "20260101-p1").unwrap_err();
         assert!(matches!(err, Error::Io(_)), "{err:?}");
+    }
+
+    #[test]
+    fn compactor_goal_states_that_the_dispatch_entry_is_never_nominable() {
+        // bl-898f: the harness declines a nomination of the dispatch entry
+        // (§2.7 — the goal is not compaction-eligible), so the boilerplate
+        // says so. A refusal the model was never told about arrives as a
+        // surprise `is_error`; stated, it is a rule it can work within.
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("goal.md"), "ship the widget").unwrap();
+        let g = compactor_goal(dir.path(), "20260101-p1").unwrap();
+        assert!(g.contains("dispatch entry"), "{g}");
+        assert!(g.contains("messages/001-"), "{g}");
+        assert!(g.contains("declined"), "{g}");
     }
 
     #[test]

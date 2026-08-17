@@ -10,7 +10,10 @@ Your toolset is intentionally narrow:
 - `write_summary(content)` — writes the compacted summary file at
   `summary/<NNN>.md` on this branch.
 - `mark_for_deletion(path)` — nominates a file on this branch for removal.
-  The harness applies the deletions at commit time.
+  The harness applies the deletions at commit time. It declines one path: the
+  dispatching branch's dispatch entry, `messages/001-…`. That is the
+  conversation's opening prompt — the goal in transcript form, the same text
+  quoted in your goal — so it is never superseded and never yours to remove.
 
 You cannot create, rewrite, or move arbitrary files. The worst case is lost
 information, never corrupted information. Scope deletions to files within the

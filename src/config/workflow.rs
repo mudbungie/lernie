@@ -34,7 +34,11 @@ pub struct Workflow {
     /// value is derived at check time from on-disk `Usage` events, step
     /// timestamps, and branch depth — the harness stores no running
     /// counter (PRINCIPLES "Single source of truth"). Omitted → every
-    /// limit unbounded.
+    /// limit unbounded, which is what ships: `template/workflow.yaml`
+    /// declares no `budgets:` block at all (ARCH §6 "Nothing ships
+    /// bounded", operator ruling 2026-08-16), so declaring a ceiling is
+    /// config an operator adds and removing one deletes config, never
+    /// code.
     #[serde(default)]
     pub budgets: Budgets,
     /// Per-stream byte bound on the transcript projection of a tool

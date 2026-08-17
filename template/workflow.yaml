@@ -61,7 +61,14 @@ tool_output:
 # every model-call boundary before the adapter is invoked; spend, wall,
 # and depth are derived from disk each check — no stored counter. Omit a
 # limit (or the whole block) to leave that axis unbounded.
-budgets:
-  max_total_tokens: 2000000
-  max_wall_seconds: 3600
-  max_depth: 4
+#
+# Deliberately not configured here (operator ruling 2026-08-16): a
+# whole-tree ceiling binds far earlier than its number reads, because a
+# root and every agent below it spend one shared allowance — an hour of
+# accumulated wall across a tree ends a conversation that is working. So
+# nothing ships bounded: tokens, wall and depth are all unbounded, and a
+# ceiling is config an operator adds. To wire one:
+# budgets:
+#   max_total_tokens: 2000000
+#   max_wall_seconds: 3600
+#   max_depth: 4

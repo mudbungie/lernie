@@ -1,7 +1,8 @@
 +++
 title = "brazen 0.0.6 is published while the pin reads =0.0.5: consume it so lernie publishes ahead of its downstream"
 created = 1786938066
-updated = 1786938066
+updated = 1786938067
+claimant = "BzBump-lernie"
 priority = 5
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 

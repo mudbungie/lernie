@@ -1,4 +1,4 @@
-.PHONY: all build release test test-install coverage lint fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-bz brazen-pin install-verify uninstall ci promote-changelog clean
+.PHONY: all build release test test-install coverage lint leak-scan fmt fmt-check check smoke schemas new-workspace eval install-hooks install install-bz brazen-pin install-verify uninstall ci promote-changelog clean
 
 # Install location for `make install`. Defaults to the XDG-ish user-local
 # convention; override for system-wide installs or packaging:
@@ -171,7 +171,15 @@ eval:
 	@cargo build --quiet -p lernie-eval-agent
 	@cargo run --quiet -p agent-eval -- run --config "$(CONFIG)" --suite "$(SUITE)" --runs "$(RUNS)" --agent "$(AGENT)" $(if $(RECORD),--record "$(RECORD)")
 
-lint:
+# The disclosure gate (scripts/leak-rules.sh is the table, leak-scan.sh the
+# mechanism; from rust-bootstrap bl-2c4e). --self-test first: a leak gate dies
+# by silently matching nothing. The machine-global bl-leak-gate plugin runs
+# this same scanner over the TASK STORE before every bl publish.
+leak-scan:
+	@scripts/leak-scan.sh --self-test
+	@scripts/leak-scan.sh
+
+lint: leak-scan
 	cargo clippy --all-targets -- -D warnings
 
 fmt:

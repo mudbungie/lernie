@@ -15,7 +15,7 @@ in (ARCH §3.3 *Working directory*).
 ```
 
 - **Relative** paths resolve against where you are *now* — `cd src`
-  after `cd /home/you/project` lands in `/home/you/project/src`.
+  after `cd /home/u/project` lands in `/home/u/project/src`.
 - **Absolute** paths are taken as given.
 - `..` and symlinks are resolved; the answer is a real, absolute path.
 

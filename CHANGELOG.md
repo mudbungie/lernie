@@ -26,6 +26,9 @@ reaching a release.
 
 ## [Unreleased]
 
+- Bump the brazen pin to =0.0.6 so lernie publishes ahead of its downstream [bl-8ba7]
+- Scrub the live operator home path from docs, adopt the leak-scan disclosure gate (rules table, scanner, fixtures, `make leak-scan` in lint, daily `store-scan.yml`), and except GitHub's own noreply committer addresses from the personal-email rule [bl-d0d1]
+
 ### Changes
 - **keep the conversation's opening prompt through a compaction.** The first
   prompt was written to disk twice at dispatch — as `goal.md` (ARCH §2.8) and,

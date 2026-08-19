@@ -164,7 +164,7 @@ fn mark_exhausted_writes_a_readable_git_native_ref() {
     let dir = repo();
     let git = RealGit::new();
     git.run(dir.path(), &["init", "-b", "conv-x"]).unwrap();
-    git.run(dir.path(), &["config", "user.email", "b@test.lernie"])
+    git.run(dir.path(), &["config", "user.email", "b@test.invalid"])
         .unwrap();
     git.run(dir.path(), &["config", "user.name", "b"]).unwrap();
     git.run(dir.path(), &["config", "core.hooksPath", "/dev/null"])

@@ -1,7 +1,8 @@
 +++
 title = "Scrub the live operator path from docs and adopt the leak-scan stack"
 created = 1786683232
-updated = 1786683232
+updated = 1787101719
+claimant = "Harassing"
 priority = 2
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"
 +++

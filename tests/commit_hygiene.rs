@@ -5,7 +5,10 @@
 //! became `mudbungie <mudbungie@gmail.com>`, and every `Co-Authored-By`
 //! trailer was stripped. This test keeps it that way on the machine that did
 //! the normalizing, without imposing anything on public CI or on anybody
-//! else's clone.
+//! else's clone. The invariant it holds is **one set of identities**, in all
+//! three slots — author, committer, and any co-author trailer — rather than
+//! the trailer's absence; see [`coauthor_allowed`] for why the difference
+//! matters to a release commit.
 //!
 //! The switch is a file OUTSIDE the repo:
 //! `$XDG_CONFIG_HOME/lernie/enforce-commit-identity` (default
@@ -116,8 +119,32 @@ fn allowed(name: &str, email: &str) -> bool {
     email == OWNER_EMAIL || email == WEB_UI_COMMITTER_EMAIL || name == CI_BOT_NAME
 }
 
+/// Does a `Co-Authored-By` trailer line name one of the allowed identities?
+///
+/// The trailer is judged by the SAME three identities as the author and
+/// committer slots — a **foreign identity** is what this guard is for, and a
+/// trailer is a third slot for one, not a different offence. A blanket "no
+/// trailer at all" contradicted the [`CI_BOT_NAME`] allowance outright:
+/// GitHub's merge button stamps `Co-authored-by: github-actions[bot]` onto
+/// every squashed release PR, so the identity release-plz authors *as* was
+/// allowed in the author slot and refused in the trailer of the very same
+/// commit (`v0.0.11`, which then reddened every close on the armed machine
+/// until this ball).
+///
+/// Matched as a substring rather than by parsing `Name <address>` out: the
+/// trailer's grammar is git's, not this guard's, and a parse gives the guard
+/// a failure mode of its own (an unreadable trailer) where a substring gives
+/// it none. Nothing is loosened — a foreign co-author carries neither the
+/// owner's address nor a GitHub-minted machine name, and the `FORBIDDEN`
+/// sweep below reads the same line again for the erased identities.
+fn coauthor_allowed(line: &str) -> bool {
+    line.contains(OWNER_EMAIL)
+        || line.contains(WEB_UI_COMMITTER_EMAIL)
+        || line.contains(CI_BOT_NAME)
+}
+
 #[test]
-fn main_carries_one_identity_and_no_coauthor_trailers() {
+fn main_carries_one_identity_and_no_foreign_coauthors() {
     let marker = marker();
     if !marker.exists() {
         eprintln!(
@@ -158,10 +185,16 @@ fn main_carries_one_identity_and_no_coauthor_trailers() {
             allowed(cn, ce),
             "{sha}: committer `{cn} <{ce}>` is not an allowed identity (<{OWNER_EMAIL}>, <{WEB_UI_COMMITTER_EMAIL}>, {CI_BOT_NAME})",
         );
-        assert!(
-            !message.to_lowercase().contains("co-authored-by"),
-            "{sha}: message carries a Co-Authored-By trailer",
-        );
+        for line in message
+            .lines()
+            .filter(|l| l.to_lowercase().starts_with("co-authored-by:"))
+        {
+            assert!(
+                coauthor_allowed(line),
+                "{sha}: co-author trailer `{}` is not an allowed identity (<{OWNER_EMAIL}>, <{WEB_UI_COMMITTER_EMAIL}>, {CI_BOT_NAME})",
+                line.trim(),
+            );
+        }
         let haystack = format!("{an} {ae} {cn} {ce} {message}").to_lowercase();
         for needle in FORBIDDEN {
             assert!(

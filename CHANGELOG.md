@@ -30,6 +30,29 @@ reaching a release.
 - Scrub the live operator home path from docs, adopt the leak-scan disclosure gate (rules table, scanner, fixtures, `make leak-scan` in lint, daily `store-scan.yml`), and except GitHub's own noreply committer addresses from the personal-email rule [bl-d0d1]
 
 ### Changes
+- **bill a cached prompt slice once, not twice, when deriving §6 spend.** The
+  derivation summed all four brazen `Usage` counters, which is right only where
+  they are disjoint slices — true on Anthropic, false on the OpenAI-shaped and
+  Google decoders, whose prompt counter already *contains* the cached one
+  (`prompt_tokens` ⊇ `prompt_tokens_details.cached_tokens`, `input_tokens` ⊇
+  `input_tokens_details.cached_tokens`, `promptTokenCount` ⊇
+  `cachedContentTokenCount`). A step's tokens are now `max(input, cache_read +
+  cache_write) + output`: exact where the slice is contained, a floor where the
+  counters are disjoint, plain `input + output` where no cache counter is
+  reported. The old sum inflated with the cache hit rate — worst exactly where a
+  long conversation is cheapest, measured at +25% over one agent tree — so a
+  declared `max_total_tokens` ended conversations well before the number it
+  reads. Which counters overlap is the adapter's fact, not the harness's; the
+  fold collapses back to a plain sum if brazen ever guarantees disjoint slices
+  (filed there as brazen bl-d192) [bl-68f5]
+- **the armed commit-identity guard judges a `Co-Authored-By` trailer by the
+  identities it names**, instead of refusing every trailer outright. The
+  blanket rule contradicted the guard's own CI-bot allowance: GitHub's merge
+  button stamps `Co-authored-by: github-actions[bot]` onto a squashed release
+  PR, so the identity release-plz authors as was allowed in the author slot and
+  refused in the trailer of the same commit — `v0.0.11` then failed the guard
+  on the one machine that arms it, reddening every close there regardless of
+  what was being closed [bl-68f5]
 - **keep the conversation's opening prompt through a compaction.** The first
   prompt was written to disk twice at dispatch — as `goal.md` (ARCH §2.8) and,
   through the front door, as the dispatch entry `messages/001-…` (§2.11) — and

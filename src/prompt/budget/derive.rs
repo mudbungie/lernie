@@ -104,15 +104,36 @@ fn step_tokens(step_dir: &Path) -> u64 {
         .sum()
 }
 
-/// The four `Usage` counters summed (ARCH §6). Each `None` field is 0;
-/// non-`Usage` events carry no tokens.
+/// One `Usage` event's tokens, folded so a cached slice that already
+/// sits INSIDE the prompt counter is billed once (ARCH §6 "The cached
+/// slice is billed once"): `max(input, cache_read + cache_write) +
+/// output`.
+///
+/// brazen's canonical `Usage` reports each provider's own counters
+/// unaltered (brazen `specs/architecture.md` §3.2), and providers
+/// disagree about overlap: Anthropic's prompt counters are disjoint
+/// slices (`input_tokens` beside `cache_read_input_tokens` /
+/// `cache_creation_input_tokens`), while the OpenAI-shaped and Google
+/// decoders map a prompt counter that CONTAINS the cached one
+/// (`prompt_tokens` ⊇ `prompt_tokens_details.cached_tokens`,
+/// `input_tokens` ⊇ `input_tokens_details.cached_tokens`,
+/// `promptTokenCount` ⊇ `cachedContentTokenCount`). Nothing on the
+/// `Usage` event says which shape it is, and a step record carries no
+/// protocol, so the fold takes the larger of the two readings of the
+/// prompt rather than their sum: exact where the slice is contained,
+/// a floor (never an over-statement) where the counters are disjoint,
+/// and plain `input + output` where no cache counter is reported.
+///
+/// A floor rather than a ceiling on purpose — spend is what was really
+/// consumed, and billing a prompt twice ends a conversation before the
+/// ceiling its operator declared. Collapses back to the plain sum if
+/// brazen ever guarantees disjoint slices (lernie bl-68f5 / brazen
+/// bl-d192). Each `None` field is 0; non-`Usage` events carry no tokens.
 fn usage_tokens(event: Event) -> u64 {
     match event {
         Event::Usage(u) => {
-            opt(u.input_tokens)
-                + opt(u.output_tokens)
-                + opt(u.cache_read_tokens)
-                + opt(u.cache_write_tokens)
+            let cached = opt(u.cache_read_tokens) + opt(u.cache_write_tokens);
+            opt(u.input_tokens).max(cached) + opt(u.output_tokens)
         }
         _ => 0,
     }

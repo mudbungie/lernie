@@ -61,10 +61,41 @@ fn spend_includes_descendant_subagents_not_unrelated_convs() {
 #[test]
 fn spend_none_counter_is_zero_and_cache_counters_count() {
     let r = repo();
-    // input None → 0; output/cache_read/cache_write count toward spend.
+    // input None → 0, so the cache counters are the whole prompt
+    // (max(0, 2+1) = 3) and output adds beside it.
     let body = seg(&usage_line(None, Some(7), Some(2), Some(1)));
     write_response(r.path(), "conv", 1, &body);
     assert_eq!(spend(r.path(), "conv"), 10);
+}
+
+#[test]
+fn spend_bills_a_contained_cached_slice_once() {
+    // OpenAI-shaped / Google-shaped providers report a prompt counter that
+    // CONTAINS the cached one (`prompt_tokens` ⊇ `cached_tokens`,
+    // `promptTokenCount` ⊇ `cachedContentTokenCount`). Summing the four
+    // would bill the cached slice twice — here 185,336 for a 93,556-token
+    // prompt (ARCH §6 "The cached slice is billed once").
+    let r = repo();
+    let body = seg(&usage_line(Some(93_556), Some(132), Some(91_648), None));
+    write_response(r.path(), "conv", 1, &body);
+    assert_eq!(spend(r.path(), "conv"), 93_688);
+}
+
+#[test]
+fn spend_counts_disjoint_cache_counters_beside_a_smaller_prompt() {
+    // Anthropic's three prompt counters are disjoint slices, and the
+    // uncached remainder is typically the small one — so the fold takes
+    // cache_read + cache_write and the result is a floor, never an
+    // over-statement (ARCH §6).
+    let r = repo();
+    let body = seg(&usage_line(
+        Some(1_200),
+        Some(50),
+        Some(90_000),
+        Some(1_000),
+    ));
+    write_response(r.path(), "conv", 1, &body);
+    assert_eq!(spend(r.path(), "conv"), 91_050);
 }
 
 #[test]

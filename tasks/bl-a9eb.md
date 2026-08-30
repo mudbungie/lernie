@@ -1,7 +1,8 @@
 +++
 title = "the typed argv gesture: a seat verb an operator can type without writing JSON"
 created = 1788068285
-updated = 1788068285
+updated = 1788068960
+claimant = "OrderGlazier"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 

@@ -91,6 +91,14 @@ over the standing question set, the poster
 draining what a click composed, and the follow lane holding one connection open
 on the focused conversation.
 
+**Everything it does is reachable from the keyboard.** Most of that is egui's —
+Tab moves focus between the controls and Space fires the focused one — and what
+Tab cannot make *usable* is a list, so the arrows walk the roster and the
+conversation list, left and right say which of the two they belong to, and
+Escape puts a notice down. Moving in a list **selects**, so the cursor and the
+selection are one thing and the highlight the pointer paints is where the
+keyboard is. Every binding calls the same door the click beneath it calls.
+
 **The frame never dials.** Every read and every act happens off it, and the
 frame's whole side is one `settle` at the top of an update: file what landed,
 hand over what was composed, publish what to ask next. What to ask is derived

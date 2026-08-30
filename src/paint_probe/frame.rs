@@ -70,6 +70,13 @@ impl Window {
         self.ctx.run(input, |ctx| body(ctx))
     }
 
+    /// **Which widget holds the keyboard right now**, so a keyboard beat can
+    /// say *which* control it walked onto rather than only that something has
+    /// focus.
+    pub(crate) fn focused(&self) -> Option<egui::Id> {
+        self.ctx.memory(egui::Memory::focused)
+    }
+
     /// One idle frame's text — what is on the glass right now.
     pub(crate) fn text(&self, body: impl FnMut(&egui::Context)) -> String {
         text_of(&self.frame(Vec::new(), body))

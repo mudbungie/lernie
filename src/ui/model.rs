@@ -19,6 +19,8 @@ use crate::reply::stream::Stream;
 use crate::reply::transcript::Transcript;
 use crate::reply::{Read, Reply};
 
+/// What a control does, whichever control did it.
+mod acts;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
 /// A start, between its two acts.
@@ -85,6 +87,10 @@ pub struct Model {
     pub notice: Option<Notice>,
     /// Which wall the window is aimed at.
     pub aim: Option<Aim>,
+    /// **Which list the arrow keys belong to**, and the one thing the keyboard
+    /// holds that the pointer does not need: a click names its own row, and a
+    /// key has to be told which list it is in ([`crate::ui::keys`]).
+    pub focus: crate::ui::keys::Pane,
     /// The selected conversation's id.
     pub conversation: Option<String>,
     /// What the operator has typed and not yet sent.

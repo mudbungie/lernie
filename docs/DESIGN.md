@@ -19,7 +19,8 @@ staged body between the start's two acts — painted from a snapshot and firing
 gestures through the same doors `lernie message` and `lernie start` spend. Behind it
 are three threads (§4.12) — the asker over the standing question set, the poster
 draining what a click composed, and the follow lane holding one connection open
-on the focused conversation. **The frame never dials**, and the suite proves the
+on the focused conversation. **Everything the window does is reachable from the
+keyboard** (§4.11). **The frame never dials**, and the suite proves the
 whole of it in one process: a real listener with a real handshake and a real
 preface, the three threads, the settle, and the window, asserted on the glyphs
 that reached the glass.
@@ -423,6 +424,37 @@ while covering no truncation at all; in two copies of the walk; and in a third
 copy that aimed every pointer test's **click** by input text. So a click here is
 aimed by painted glyphs too, and the probe's own suite pins the elision case.
 
+**Everything the window does is reachable from the keyboard** (`src/ui/keys.rs`;
+yog's QUALITY F1, inherited as a standing rule rather than a feature). A face an
+operator has to leave the keyboard for, once per selection, is a face they use
+through the command line instead. Four rulings hold it together and each
+subtracts rather than adds.
+
+- **Most of it is egui's, and the suite proves that rather than assuming it.**
+  Every control here is a button or a text box; egui moves focus with Tab and
+  fires a focused control with Space or Enter. So Send, Nudge, Start and the
+  notice's dismiss want no binding of their own, and the beat that presses Tab
+  and Space into a real window is what keeps that true.
+- **The cursor IS the selection.** A list cursor beside a selection is two
+  highlights, two things to paint and two ways to disagree. Moving in a list
+  *selects*, so the highlight the pointer already paints is where the keyboard
+  is, and the reads that follow a selection follow a keypress for free — the
+  standing set is derived (§4.12), so nothing had to be told. What is left to
+  paint is only which list the arrows belong to, and it is marked on that pane's
+  own heading: a focus that cannot be seen is a focus nobody can use.
+- **A binding names a control that already exists.** The three acts a click
+  makes moved out of the `if …clicked()` that made them into `src/ui/model/
+  acts.rs`, and both surfaces call the same door. The roster walk asks the same
+  question the roster's own paint asks (`roster::aimable`), so a row no pointer
+  can aim at is a row no key can aim at either. **A binding that could fire
+  something a click cannot is a second surface.**
+- **The gate is the composer's box by name, not egui's "is anything focused".**
+  `wants_keyboard_input` answers *is any widget focused*, buttons included, so
+  tabbing to Send would have turned the arrows off. The box wears one id and the
+  gate compares against it — which is also what lets Escape mean *leave the box*
+  inside it and *dismiss the notice* outside it, two contexts that never
+  overlap.
+
 **The native boot is `src/main.rs`, which decides nothing.** `ui::render` takes
 an `egui::Context` and the model, so every assertion in this crate runs the real
 window on an offscreen context. What lives in the excluded entry point is the
@@ -465,6 +497,7 @@ exactly as argv and the environment are.
 | `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~150 |
+| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
 | `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~145 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
@@ -472,7 +505,8 @@ exactly as argv and the environment are.
 | `src/ui/chat.rs` | one conversation as rows, and the live fold that replaces rather than accretes. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects. | ~90 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
-| `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~60 |
+| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
+| `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~65 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
@@ -546,7 +580,7 @@ publication checklist run by a person — history, other refs, commit messages,
 repository text nobody committed, CI logs. Every item is a one-time judgement
 whose remedy is destructive, which is why none of it is automated.
 
-### 6.6 A start does not focus what it started (bl-217c's residual)
+### 6.6 A start does not focus what it started (bl-73ed)
 
 Upstream's rule is *a start focuses what it started* (yog's `docs/DESIGN.md`
 §3.4), and this seat paints the minted name rather than selecting it. That is

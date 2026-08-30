@@ -25,9 +25,38 @@ pub const NO_CHANNEL: &str = "no channel provisioned — material arrives by han
 /// painted as what it is.
 pub const NO_NAME_HERE: &str = "this seat holds no name for it";
 
+/// The word this pane wears, and the subject the arrows act on when it is
+/// focused.
+pub const HEADING: &str = "channels";
+
+/// **Every wall this seat can aim at, in the order the pane paints them.**
+///
+/// It is the keyboard's cursor track and it is a **query**, derived from the
+/// same rows and the same order [`render`] draws — so a key cannot walk onto a
+/// row a click cannot reach, and cannot walk in an order the glass does not
+/// show. A row this seat holds no name for is in neither: no envelope can
+/// address it, so neither surface offers it.
+pub fn aimable(model: &Model) -> Vec<Aim> {
+    let mut rows = Vec::new();
+    for chunk in &model.roster {
+        for row in ordered(&chunk.walls) {
+            if let Some(address) = chunk.channel.address(&row) {
+                rows.push(Aim {
+                    channel: chunk.channel.name.clone(),
+                    address,
+                });
+            }
+        }
+    }
+    rows
+}
+
 /// Paint the roster and take a click on it.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    ui.heading("channels");
+    ui.heading(crate::ui::keys::heading(
+        HEADING,
+        model.focus == crate::ui::Pane::Roster,
+    ));
     if model.roster.is_empty() {
         ui.label(NO_CHANNEL);
         return;
@@ -73,14 +102,7 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow) {
     };
     let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
     if ui.selectable_label(aimed, line(row)).clicked() {
-        model.aim = Some(Aim {
-            channel: chunk.channel.name.clone(),
-            address,
-        });
-        model.convs.clear();
-        model.conversation = None;
-        model.transcript = crate::reply::transcript::Transcript::default();
-        model.live = None;
+        model.aim_at(&chunk.channel.name.clone(), &address);
     }
 }
 

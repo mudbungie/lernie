@@ -118,6 +118,49 @@ fn enter_sends_what_was_typed() {
     );
 }
 
+/// **Every control here is already keyboard-operable, and this proves it rather
+/// than assuming it.** egui moves focus with Tab and fires a focused control
+/// with Space, so neither act wants a binding of its own — and a binding that
+/// could fire something a click cannot would be a second surface.
+#[test]
+fn tab_and_space_fire_the_composer_s_controls_with_no_binding_of_their_own() {
+    let mut model = seated();
+    model.draft = "ship it".to_owned();
+    let window = Window::new();
+    // The body borrows the model, so it lives in a scope of its own and the
+    // assertions read the model back after it.
+    let mut reached = Vec::new();
+    {
+        let mut body = |ctx: &egui::Context| {
+            egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        };
+        window.frame(Vec::new(), &mut body);
+        for _ in 0..6 {
+            window.frame(
+                vec![crate::paint_probe::frame::press(egui::Key::Tab)],
+                &mut body,
+            );
+            reached.push(window.focused());
+            window.frame(
+                vec![crate::paint_probe::frame::press(egui::Key::Space)],
+                &mut body,
+            );
+            window.frame(Vec::new(), &mut body);
+        }
+    }
+    assert!(
+        reached.contains(&Some(egui::Id::new(crate::ui::keys::BOX_ID))),
+        "the box is in the tab order too: {reached:?}"
+    );
+    for op in ["message", "nudge"] {
+        assert!(
+            model.outbox.iter().any(|said| said["op"] == json!(op)),
+            "{op:?} was never fired from the keyboard: {:?}",
+            model.outbox
+        );
+    }
+}
+
 /// **The advance is a control beside the composer**, because it is the one
 /// thing an operator does to a conversation with nothing to say — and it is
 /// composed through the same table, so it carries no draft with it.

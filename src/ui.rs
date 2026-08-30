@@ -34,6 +34,8 @@ pub mod chat;
 pub mod composer;
 /// The conversation list.
 pub mod convs;
+/// The keyboard: every act this window affords, without a pointer.
+pub mod keys;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
 /// The roster: every workspace this seat can reach, grouped by channel.
@@ -43,5 +45,6 @@ pub mod shell;
 /// The ink a row is painted in.
 pub mod theme;
 
+pub use keys::Pane;
 pub use model::{Aim, Channel, Chunk, Model, Notice};
 pub use shell::render;

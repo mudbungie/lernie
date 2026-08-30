@@ -39,6 +39,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     }
     let entry = ui.add(
         egui::TextEdit::singleline(&mut model.draft)
+            .id(egui::Id::new(crate::ui::keys::BOX_ID))
             .desired_width(f32::INFINITY)
             .hint_text(GOAL),
     );

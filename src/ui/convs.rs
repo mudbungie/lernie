@@ -13,9 +13,16 @@ pub const NO_WALL: &str = "pick a workspace";
 /// What it says for a wall that holds nothing.
 pub const NO_CONVERSATIONS: &str = "no conversations here";
 
+/// The word this pane wears, and the subject the arrows act on when it is
+/// focused.
+pub const HEADING: &str = "conversations";
+
 /// Paint the list and take a click on it.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    ui.heading("conversations");
+    ui.heading(crate::ui::keys::heading(
+        HEADING,
+        model.focus == crate::ui::Pane::Conversations,
+    ));
     let Some(aim) = model.aim.clone() else {
         ui.label(NO_WALL);
         return;
@@ -36,9 +43,7 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth));
         if ui.selectable_label(selected, headline(row)).clicked() {
-            model.conversation = Some(row.root_id.clone());
-            model.transcript = crate::reply::transcript::Transcript::default();
-            model.live = None;
+            model.select(&row.root_id.clone());
         }
     });
     if !row.preview.is_empty() {

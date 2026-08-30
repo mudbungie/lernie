@@ -6,7 +6,7 @@
 //! own words, which is a sentence an operator can act on rather than a control
 //! that only looks actionable.
 
-use crate::ui::{Model, chat, composer, convs, roster, theme};
+use crate::ui::{Model, chat, composer, convs, keys, roster, theme};
 
 /// Paint one frame of the whole window.
 ///
@@ -17,6 +17,10 @@ use crate::ui::{Model, chat, composer, convs, roster, theme};
 /// nothing.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
     ctx.set_visuals(theme::visuals());
+    // **The keys come first**, so what one changed is what this frame paints.
+    // Nothing here is a control of its own: every binding calls the door the
+    // click beneath it calls (`crate::ui::keys`).
+    keys::handle(ctx, model);
     notice(ctx, model);
     egui::SidePanel::left("roster")
         .default_width(280.0)
@@ -41,7 +45,7 @@ fn notice(ctx: &egui::Context, model: &mut Model) {
     egui::TopBottomPanel::top("notice").show(ctx, |ui| {
         ui.horizontal(|ui| {
             if ui.button(DISMISS).clicked() {
-                model.notice = None;
+                model.dismiss();
             }
             ui.colored_label(theme::NOTICE, notice.line());
         });

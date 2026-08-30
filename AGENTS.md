@@ -34,6 +34,15 @@ check`. The pre-commit hook runs the same targets via `scripts/pre-commit`;
 neither restates a step the Makefile defines. Run `make install-hooks` once per
 clone — it seats `pre-commit` **and** `commit-msg`.
 
+**And CI is that same target, run by a machine rather than by whoever
+remembered.** `.github/workflows/ci.yml` installs the three pinned tools the
+gate shells to and runs `make ci`, which is `make check` — it spells out no step
+of its own, because a CI file with its own list of steps is a second definition
+of green and the two drift within a week. It runs on every push to `main` and on
+every pull request. A pushed branch exists only to buy a runner verdict; that is
+what the pull-request trigger answers, and the branch is deleted and its pull
+request closed in the same breath as the `bl close` that lands the work.
+
 **All tests must pass and coverage must be 100% before anything merges.** It
 does not matter who broke the test.
 
@@ -77,12 +86,15 @@ change. `--commit REV` scans what one commit publishes: the blobs it adds or
 rewrites plus its message, which is the store gate's question and the only
 scope that can read a `-m` note.
 
-**What no hook can promise.** This scans one tree. Old commits, other refs, and
-anything published elsewhere are outside it. This repository HAS a public remote
-from its founding and its task store publishes to the same remote, so the late
-half — a scan of what is actually public — is a live question here and it is
-simply not written (bl-28fb). Today lernie has prevention only: local, and
-bypassable by whoever runs it.
+**What no hook can promise.** This scans one tree, at the moment somebody runs
+it. Old commits, other refs, and anything published elsewhere are outside it —
+and a hook is one `--no-verify` from not running at all. That residual is
+`.github/workflows/store-scan.yml`'s: a scan of the PUBLISHED store ref, daily,
+on dispatch, and whenever the rule table itself changes. It DETECTS rather than
+prevents — by the time it runs the material is on the remote and the remedy is a
+history rewrite — and what it buys is that the agent writing the ball cannot
+switch it off. Prevention is local and bypassable; enforcement is remote and
+late; saying both is worth more than a gate that implies otherwise.
 
 ### The confinement rules, and the three files they name
 
@@ -196,9 +208,9 @@ severable: `bl conf remove <op>.post lernie-leak-gate` deletes config, not code.
 `git commit --no-verify` defeats the source hook. There is no unbypassable
 preventive placement to move it to — a git hook inside the store clone is
 strictly worse (untracked, per-clone, re-founded by `bl prime`, absent on every
-other box and silently so). Upstream's answer to that residual is a scheduled
-scan of the PUBLISHED ref, which detects rather than prevents. lernie has a
-published ref and no such scan yet; it is filed as bl-28fb.
+other box and silently so), and GitHub cannot interpose a check on a direct push
+to `balls/tasks`: there is no pull request to require a status check on. The
+check the author cannot switch off is `store-scan.yml` above.
 
 ## Never
 

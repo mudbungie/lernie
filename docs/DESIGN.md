@@ -627,6 +627,38 @@ the workers were reading, read once at boot and written once after the event
 loop returns. No fourth thread, no write on a frame, and nothing new crossing
 the lock to carry it.
 
+### 4.14 The gate is run by a machine, and the store is judged on the ref
+
+`.github/workflows/`. Two workflows, and they answer two different questions.
+
+- **`ci.yml` runs `make ci`, which is `make check`**, on every push to `main`
+  and every pull request. It spells out no step of its own: a CI file with its
+  own list of steps is a second definition of green, and two definitions drift
+  within a week. What it does carry is the three pinned tools the gate shells
+  to, each cached under its exact version so a bump is a cache miss rather than
+  a stale binary — the key IS the pin.
+- **`store-scan.yml` scans the published `balls/tasks` ref** with the source's
+  own `scripts/leak-scan.sh` and rule table — the scanner scans the tree it is
+  run in, so there is no second copy of the rules to drift. Daily, on dispatch,
+  and whenever the rule table itself changes, because a new rule re-judges a
+  store that has not moved.
+
+**Prevention is local and enforcement is remote and late, and both halves have
+to be said.** `make leak-scan` and `scripts/lernie-leak-gate` run before a push
+and are one `--no-verify` or one `bl conf remove` from not running at all.
+`store-scan.yml` cannot be switched off by the agent writing the ball, and it
+cannot prevent anything either: by the time it runs the material is on the
+remote and the remedy is a history rewrite. It is not a `push` trigger on the
+store branch, and cannot be — for a push event GitHub resolves workflows from
+the pushed ref's own tree, and `balls/tasks` holds `tasks/*.md` and nothing
+else.
+
+**A pushed branch is never how work lands.** Work lands on `main` by `bl close`
+squashing a claim worktree; the only reason to push one is to buy a runner
+verdict on a defect that exists only on a runner, which is what the
+pull-request trigger answers. Read the verdict, land through `bl close`, then
+delete the branch and close its pull request in the same breath.
+
 ---
 
 ## 5. Module map
@@ -686,6 +718,8 @@ the lock to carry it.
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
+| `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. | config |
+| `.github/workflows/store-scan.yml` | the published store ref, judged by the source's own rule table. | config |
 | `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
 | `src/test_support/corpus.rs` | the one walk over the corpus, and the protocol stamp checked on every file read. `cfg(test)`. | ~130 |
 | `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, and every upstream shape is classified exactly once. | ~140 |
@@ -716,15 +750,7 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The late half of the disclosure gate (bl-28fb)
-
-The gate here is prevention only: local, and bypassable by whoever runs it. The
-standing question — what the tree and the store carry in total — is answered by
-a scan of the published ref, and this repository has a published ref from its
-founding. The check is simply not written. There is also no CI at all yet, so
-`make check` is run by a person or by nobody.
-
-### 6.2 One agreed omission, and it is a finding (bl-4a36)
+### 6.1 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -736,7 +762,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.3 The first publish (bl-11fc)
+### 6.2 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

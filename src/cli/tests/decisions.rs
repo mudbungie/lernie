@@ -1,0 +1,161 @@
+//! **What one invocation decides**: the flags, the typed verbs, the
+//! hand-written envelope, help, and every way a word can fail to be one of
+//! them — each read back as a value, which is what earns `src/main.rs` its
+//! place as the coverage floor's one exclusion.
+
+use super::super::{Decided, REFUSED, Stream, run, usage, version};
+use super::{argv, asked, said};
+use serde_json::json;
+
+#[test]
+fn both_version_spellings_print_the_version_and_succeed() {
+    for spelling in ["--version", "-V"] {
+        let v = said(&[spelling]);
+        assert_eq!(v.code, 0, "{spelling} did not succeed");
+        assert_eq!(v.text, version(), "{spelling} printed something else");
+    }
+}
+
+/// The verbs decide, and say nothing: what they do needs this process's own
+/// environment, which is the entry point's to fold.
+#[test]
+fn the_verbs_decide_and_carry_what_they_were_given() {
+    assert!(matches!(run(argv(&["entries"])), Decided::Entries));
+    assert_eq!(
+        asked(&["ask", r#"{"op":"workspaces"}"#]),
+        json!({"op": "workspaces"})
+    );
+}
+
+/// **A typed verb and a hand-written envelope arrive as one value.** That is
+/// the whole property: the verbs are a serialization of the envelope, not a
+/// second spelling of a gesture, so what leaves this function is identical
+/// either way and only one thing is ever routed.
+#[test]
+fn a_typed_verb_and_the_envelope_it_stands_for_decide_alike() {
+    let typed = asked(&["conversations", "home"]);
+    let written = asked(&["ask", r#"{"op":"conversations","workspace":"home"}"#]);
+    assert_eq!(typed, written);
+    assert_eq!(typed, json!({"op": "conversations", "workspace": "home"}));
+}
+
+/// Every verb in the table is reachable from argv, with the arguments in the
+/// order its usage states.
+#[test]
+fn every_verb_in_the_table_is_typable() {
+    for verb in crate::verbs::table() {
+        let mut words = vec![verb.word];
+        let filled: Vec<String> = verb.params.iter().map(|p| format!("a-{p}")).collect();
+        words.extend(filled.iter().map(String::as_str));
+        assert_eq!(asked(&words)["op"], json!(verb.word), "{}", verb.word);
+    }
+}
+
+/// **A verb's own refusal names the verb**, where a word that is no verb can
+/// only be quoted back — two different mistakes, and the more specific one gets
+/// the more specific answer.
+#[test]
+fn a_verb_with_the_wrong_arity_refuses_by_name_and_teaches_the_grammar() {
+    let v = said(&["transcript", "home"]);
+    assert_eq!(v.code, REFUSED);
+    assert!(v.text.contains("`lernie transcript`"), "{}", v.text);
+    assert!(
+        v.text
+            .contains("usage: lernie transcript <workspace> <agent>"),
+        "{}",
+        v.text
+    );
+}
+
+/// **A body that is not a gesture is the CALLER's typo**, so it is decided
+/// here — in the pure function, where the refusal is a value a test reads back
+/// — and it earns the usage rather than a connection.
+#[test]
+fn a_body_that_is_not_a_gesture_is_refused_with_the_usage() {
+    for (body, said_what) in [
+        ("not json at all", "not JSON"),
+        ("[1,2]", "a gesture is a JSON object"),
+        (r#"{"workspace":"home"}"#, "missing field"),
+    ] {
+        let v = said(&["ask", body]);
+        assert_eq!(v.code, REFUSED, "{body}");
+        assert_eq!(v.stream, Stream::Err);
+        assert!(v.text.contains(said_what), "{body}: {}", v.text);
+        assert!(v.text.contains("usage: lernie"), "{body}: {}", v.text);
+    }
+}
+
+/// **One help, three spellings**, because the subject is one — this binary's
+/// interface. It answers with no engine up and no channel provisioned, which is
+/// the property that makes it answerable here at all.
+#[test]
+fn every_help_spelling_prints_the_one_usage() {
+    for spelling in ["help", "--help", "-h"] {
+        let v = said(&[spelling]);
+        assert_eq!(v.code, 0, "{spelling} did not succeed");
+        assert_eq!(v.text, usage(), "{spelling} printed something else");
+    }
+}
+
+/// One verb's page, and a word that is not a verb.
+#[test]
+fn help_on_a_verb_answers_its_page_and_refuses_a_word_that_is_not_one() {
+    let page = said(&["help", "nudge"]);
+    assert_eq!(page.code, 0);
+    assert!(
+        page.text.starts_with("usage: lernie nudge"),
+        "{}",
+        page.text
+    );
+    let refusal = said(&["help", "nudje"]);
+    assert_eq!(refusal.code, REFUSED);
+    assert!(refusal.text.contains("\"nudje\""), "{}", refusal.text);
+}
+
+/// **A bare invocation names the state of the tree**: the window is what a seat
+/// is for, and it is not built, so the refusal says so instead of implying the
+/// caller mistyped something.
+#[test]
+fn a_bare_invocation_refuses_and_says_the_window_is_not_built() {
+    let v = said(&[]);
+    assert_eq!(v.code, REFUSED);
+    assert!(v.text.contains("the window is not built yet"), "{}", v.text);
+    assert!(v.text.contains("usage: lernie"), "{}", v.text);
+}
+
+#[test]
+fn ask_with_no_envelope_says_what_it_wanted() {
+    let v = said(&["ask"]);
+    assert_eq!(v.code, REFUSED);
+    assert!(v.text.contains("wants one gesture envelope"), "{}", v.text);
+}
+
+#[test]
+fn an_unrecognised_argument_refuses_and_quotes_every_word_of_it() {
+    let v = said(&["seat", "--ws", "Example"]);
+    assert_eq!(v.code, REFUSED);
+    assert!(
+        v.text.contains("unrecognised argument: seat --ws Example"),
+        "{}",
+        v.text
+    );
+}
+
+/// The match is on the WHOLE argument list, not on a first word, so a word that
+/// would succeed alone refuses when something rides behind it — rather than
+/// silently ignoring the rest.
+#[test]
+fn a_recognised_word_with_extra_words_is_not_recognised() {
+    for extra in [["--version", "--now"], ["entries", "--now"]] {
+        let v = said(&extra);
+        assert_eq!(v.code, REFUSED);
+        assert!(
+            v.text
+                .contains(&format!("unrecognised argument: {}", extra.join(" "))),
+            "{}",
+            v.text
+        );
+    }
+    let v = said(&["ask", "{}", "twice"]);
+    assert_eq!(v.code, REFUSED);
+}

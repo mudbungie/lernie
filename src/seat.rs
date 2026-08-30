@@ -31,18 +31,19 @@ use crate::envelope;
 /// Send one gesture envelope down the channel its workspace names, and answer
 /// with the engine's reply stream.
 ///
-/// Three refusals and they are three different things, which is why the
-/// verdicts differ: a body that is not a gesture is the **caller's** typo and
-/// earns the usage; a channel that will not open or will not answer is a fact
-/// about this box or the far end, and earns the sentence alone; and a reply
-/// that says `ok: false` is the engine **answering**, so it goes to stdout with
-/// the rest of the stream and only the exit code says no.
-pub fn ask(data_root: &Path, text: &str) -> Verdict {
-    let envelope = match envelope::parse(text) {
-        Ok(envelope) => envelope,
-        Err(refusal) => return Verdict::refused(refusal),
-    };
-    let (channel, carried) = match route(data_root, &envelope) {
+/// **It takes the envelope, never the text.** Whether a body is a gesture at
+/// all is decided by what the caller typed and by nothing about this box, so it
+/// is settled in [`crate::cli`] — where the refusal is a value a test reads
+/// back and where it costs no connection — and a typed verb and a hand-written
+/// `ask` arrive here as the same value.
+///
+/// Two failures remain and they are two different things: a channel that will
+/// not open or will not answer is a fact about this box or the far end, and
+/// earns the sentence alone; a reply that says `ok: false` is the engine
+/// **answering**, so it goes to stdout with the rest of the stream and only the
+/// exit code says no.
+pub fn ask(data_root: &Path, envelope: &Value) -> Verdict {
+    let (channel, carried) = match route(data_root, envelope) {
         Ok(routed) => routed,
         Err(refusal) => return Verdict::failed(refusal),
     };

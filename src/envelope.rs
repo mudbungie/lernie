@@ -20,14 +20,22 @@
 //! `op` the far end does not know refuses in band, naming it, and that is the
 //! boundary correcting itself rather than two protocols meeting.
 //!
-//! **The typed vocabulary is NOT here and its absence is the design.** yog
-//! holds `Action`/`Query`/`Reply` and their codec because the engine
-//! adjudicates and answers them; the window will need the reply half to paint.
-//! Reimplementing the ask half to route a gesture would be a second table over
-//! thirty-odd variants whose only job is to answer a question one field
-//! already answers — and the arm that drifted would send a client's own leaf to
-//! a host that never heard of it. See DESIGN §6.1 for what that costs and
-//! when it is paid.
+//! **The typed ASK vocabulary is NOT here and its absence is the design.** yog
+//! holds `Action`/`Query` and their codec because the engine adjudicates them.
+//! Reimplementing that side to *route* a gesture would be a second table over
+//! thirty-odd variants whose only job is to answer a question one field already
+//! answers — and the arm that drifted would send a client's own leaf to a host
+//! that never heard of it.
+//!
+//! [`crate::verbs`] is not that table and does not become one. It is a
+//! **serialization**: a word and its parameters, built into the envelope below
+//! and then routed by [`workspace`] exactly as a hand-written one is. Nothing
+//! there is consulted about where a gesture goes, and its rows carry no
+//! knowledge of what an op means — which is why an op it does not name still
+//! crosses, through `ask`, unchanged.
+//!
+//! The **reply** half is [`crate::reply`], and it is the other side of the same
+//! ruling: it decodes what the window paints and nothing else.
 //!
 //! **One table, not two** (§8.2's mapping is spent in both directions). The
 //! read answers *through* the write: [`slot_mut`] is the whole of where an
@@ -101,7 +109,7 @@ pub fn with_workspace(envelope: &Value, name: &str) -> Value {
 /// **What is deliberately NOT a slot**: a `workspace` nested anywhere else. The
 /// config family's destination carries one inside `target`, and yog's typed
 /// table does not treat it as the gesture's address either — the two tables
-/// agree, which is the property that matters. DESIGN §6.7 records that agreement
+/// agree, which is the property that matters. DESIGN §6.6 records that agreement
 /// and the residual behind it.
 fn slot_mut(envelope: &mut Value) -> Option<&mut String> {
     let obj = envelope.as_object_mut()?;

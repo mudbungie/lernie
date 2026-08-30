@@ -14,7 +14,7 @@ use serde_json::json;
 fn an_unaddressed_gesture_goes_to_the_flat_root() {
     let scratch = Scratch::new();
     let engine = wired(&scratch, &flat(), vec![vec![yes()]]);
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     assert_eq!(verdict.text, yes().to_string());
@@ -33,7 +33,7 @@ fn a_name_an_entry_holds_goes_down_that_entry_s_channel() {
     let engine = wired(&scratch, &entry("home"), vec![vec![yes()]]);
     let verdict = ask(
         scratch.path(),
-        r#"{"op":"conversations","workspace":"home"}"#,
+        &json!({"op": "conversations", "workspace": "home"}),
     );
     assert_eq!(verdict.code, 0);
     assert!(
@@ -60,7 +60,7 @@ fn an_entry_that_renames_carries_the_host_s_name_across() {
     assert_eq!(
         ask(
             scratch.path(),
-            r#"{"op":"conversations","workspace":"home"}"#
+            &json!({"op": "conversations", "workspace": "home"})
         )
         .code,
         0
@@ -96,7 +96,7 @@ fn a_hollow_entry_refuses_rather_than_falling_through_to_the_flat_root() {
     std::fs::create_dir_all(scratch.path().join(entry("home"))).expect("mkdir");
     let verdict = ask(
         scratch.path(),
-        r#"{"op":"conversations","workspace":"home"}"#,
+        &json!({"op": "conversations", "workspace": "home"}),
     );
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
@@ -107,24 +107,12 @@ fn a_hollow_entry_refuses_rather_than_falling_through_to_the_flat_root() {
     );
 }
 
-/// A body that is not a gesture is the CALLER's typo, so it earns the usage —
-/// and it is refused before a connection is spent on it.
-#[test]
-fn a_body_that_is_not_a_gesture_is_refused_with_the_usage() {
-    let scratch = Scratch::new();
-    let verdict = ask(scratch.path(), "not json at all");
-    assert_eq!(verdict.code, 2);
-    assert_eq!(verdict.stream, Stream::Err);
-    assert!(verdict.text.contains("not JSON"), "{}", verdict.text);
-    assert!(verdict.text.contains("usage: lernie"), "{}", verdict.text);
-}
-
 /// A box with no channel at all refuses naming the directory and the act that
 /// fills it — and carries no usage, because it is not about what was typed.
 #[test]
 fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
     let scratch = Scratch::new();
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("no wire provisioned"),
@@ -147,7 +135,7 @@ fn a_half_provisioned_flat_root_says_which_file_is_missing() {
     let dir = scratch.dir(WIRE);
     mint::provisioned(&dir, "engine.example:9000");
     std::fs::remove_file(dir.join(ADDRESS)).expect("rm");
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("half-provisioned"),
@@ -164,7 +152,7 @@ fn a_half_provisioned_flat_root_says_which_file_is_missing() {
 fn a_self_provisioned_loopback_root_says_a_seat_wants_a_stated_address() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.dir(WIRE), "127.0.0.1:0");
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("kernel-chosen port"),
@@ -183,7 +171,7 @@ fn a_self_provisioned_loopback_root_says_a_seat_wants_a_stated_address() {
 fn an_engine_that_is_not_there_fails_with_the_transport_s_sentence() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.dir(WIRE), "127.0.0.1:1");
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
     assert!(
@@ -205,7 +193,7 @@ fn a_refusing_reply_is_still_the_product_and_only_the_code_says_no() {
         &flat(),
         vec![vec![json!({"ok": true}), refusal.clone()]],
     );
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Out, "an answer is not a diagnosis");
     assert_eq!(
@@ -220,7 +208,7 @@ fn a_refusing_reply_is_still_the_product_and_only_the_code_says_no() {
 fn an_engine_that_answers_nothing_is_not_ok() {
     let scratch = Scratch::new();
     wired(&scratch, &flat(), vec![vec![]]);
-    let verdict = ask(scratch.path(), r#"{"op":"workspaces"}"#);
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.text, "");
 }

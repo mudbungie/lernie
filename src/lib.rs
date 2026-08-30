@@ -23,8 +23,9 @@
 //! filed; the [`envelope`] a gesture crosses in, read only as far as routing it
 //! requires; the [`seat`] that resolves which engine a gesture reaches and
 //! spends the one name mapping on the way, over a data root [`paths`] names;
-//! and the [`reply`] vocabulary — the typed half a window paints from, read
-//! back out of the answers those channels carry.
+//! the [`reply`] vocabulary — the typed half a window paints from, read
+//! back out of the answers those channels carry; and the [`verbs`] an operator
+//! types instead of writing one out by hand.
 //!
 //! **What is not built, and it is the larger half**: the window. The seat's
 //! whole reason to exist is a graphical face, and this crate is the transport
@@ -38,6 +39,7 @@ pub mod envelope;
 pub mod paths;
 pub mod reply;
 pub mod seat;
+pub mod verbs;
 
 /// Scaffolding the suite shares. Never compiled into a released binary.
 #[cfg(test)]

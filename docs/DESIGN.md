@@ -1,13 +1,15 @@
 # lernie — DESIGN
 
-**Status: a working seat client, a typed reply vocabulary, and no window yet.**
-`lernie ask` opens the channel a gesture's workspace names — the box's own
-engine, or one of the client-side workspaces it holds elsewhere — over a real
-mTLS handshake with a real version preface, carries the operator's envelope
-across, and prints the reply stream. `lernie entries` says what this box holds
-without dialling any of it. `src/reply/` reads the answers back as the six typed
-kinds a window paints (§4.9). The suite proves all of that against a stand-in
-engine that speaks the protocol, at 100% coverage.
+**Status: a working seat client, typed on both sides, and no window yet.**
+`lernie <verb>` and `lernie ask` open the channel a gesture's workspace names —
+the box's own engine, or one of the client-side workspaces it holds elsewhere —
+over a real mTLS handshake with a real version preface, carry the operator's
+envelope across, and print the reply stream. `lernie entries` says what this box
+holds without dialling any of it, and `lernie help` says what a verb takes
+without dialling anything at all. `src/verbs/` is the six gestures typed (§4.10)
+and `src/reply/` reads their answers back as the six kinds a window paints
+(§4.9). The suite proves all of that against a stand-in engine that speaks the
+protocol, at 100% coverage.
 
 **What is deliberately not here is the window**, which is what a seat is
 *for*. §6 is the ledger of that, ball by ball; nothing in it is a hand-wave and
@@ -262,6 +264,49 @@ starts painting it — and the replay fails a directory that enumerates nothing
 as well as a file that no directory claims, the same two-direction discipline
 `rules-audit` and `line-cap` hold.
 
+### 4.10 The typed argv surface is a serialization, never a second implementation (§3)
+
+`src/verbs/`. REMOTE §3 is the rule — *"one dispatch surface, N serializations,
+never two implementations"* — and this is the second serialization the seat
+carries. A verb builds the envelope `src/envelope.rs` already defines and hands
+it to the same `seat::ask`; `ask` stays the escape hatch for every op the table
+does not name, including one this build has never heard of, which §3 says is not
+a protocol bump.
+
+**The table is declarative, and that is what keeps it one implementation.** Each
+row is a word and its parameters in order, all of them named strings, so one
+builder serves every verb and there is no per-verb arm to drift. A gesture whose
+parameters are not all strings is **not** added as a special case — it goes
+through `ask` until there is a reframe that keeps the one table, because the arm
+that would carry it is precisely the second implementation the rule forbids.
+
+**Six verbs, and they are §4.9's six kinds from the other side**: the four reads
+and the two acts whose replies this build paints. The ask surface and the paint
+surface are one roster and grow together — the ball that lands a pane adds its
+kind and its verb in the same breath.
+
+**Positional and context-free, unlike the engine's own line.** yog's line reader
+is terse because a seat with a focus supplies the address; REMOTE §8.5 says a
+seat with no selection *"spells its targets out"*, and a one-shot process is
+that seat. Copying the line's grammar would mint a selection type that is always
+empty. The corollary is the verbatim payload: the line takes a message's content
+as its whole tail because a line has no quoting, argv does, so arity here is
+exact and the shell is what makes a sentence one argument.
+
+**Help's subject is this binary rather than a world**, which is why it is
+answered in the seat with no dial, no engine and no material — a binary an
+operator cannot learn to use until the hard part already works is a poor binary.
+There is exactly one help: `lernie help`, `--help` and `-h` are one text, whose
+verb section is derived from the table rather than restated, and `lernie help
+<verb>` is that verb's page.
+
+**Where the parse of a hand-written envelope now happens.** In `src/cli.rs`,
+not in `src/seat.rs`. Whether a body is a gesture is decided entirely by what
+the caller typed, so it belongs in the pure function where the refusal is a
+value a test reads back and where it costs no connection — and it makes a typed
+verb and a hand-written `ask` arrive at the seat as the same value, which is the
+property the whole surface exists for.
+
 ---
 
 ## 5. Module map
@@ -270,7 +315,8 @@ as well as a file that no directory claims, the same two-direction discipline
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~200 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~185 |
+| `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the data root, from two variables and no knob of the seat's own. Neither set is a refusal, never a guess. | ~90 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | which engine a gesture reaches, what it carries there, and what this box says it holds. | ~160 |
@@ -288,6 +334,8 @@ as well as a file that no directory claims, the same two-direction discipline
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
+| `src/verbs.rs` | the typed gesture surface: the declarative verb table, and the one envelope a row becomes. | ~185 |
+| `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
 | `corpus/` | reply frames as the wire carries them, one per file, replayed by `src/reply/tests/corpus.rs`. The directory a frame sits in **is** its assertion; `corpus/README.md` is the drop-in contract. | docs |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
@@ -348,18 +396,7 @@ from — a client-side stamp, so no origin ever crosses the wire.
 The transport half is already here: `Channel::follow` hands frames over as they
 arrive. What is missing is everything above the socket.
 
-### 6.3 The typed argv gesture (bl-a9eb)
-
-`lernie ask` takes an envelope as JSON today, which is the honest shape for a
-transport with no vocabulary. Upstream's seat verb takes a typed argv through
-the same reader the depositing seat uses, so the two cannot drift, plus a help
-whose subject is the interface and which therefore answers with no engine up.
-Gated on the vocabulary, for the window's reason.
-
-**What it must not do is grow a second spelling of a gesture beside the
-envelope.** One surface, two serialisations, never two implementations.
-
-### 6.4 The local foot-grade check (bl-f5c2)
+### 6.3 The local foot-grade check (bl-f5c2)
 
 REMOTE §4.2's grade is enforced at the engine's chokepoint, fail-closed and in
 band, so a seat holding a foot-grade leaf is already refused correctly. Nothing
@@ -367,7 +404,7 @@ deferred here is a security property — what is missing is a **diagnosis**, so
 that a misconfiguration of this box's own files reads as a sentence about this
 box rather than as an authorization refusal from somebody else.
 
-### 6.5 The late half of the disclosure gate (bl-28fb)
+### 6.4 The late half of the disclosure gate (bl-28fb)
 
 The gate here is prevention only: local, and bypassable by whoever runs it. The
 standing question — what the tree and the store carry in total — is answered by
@@ -375,7 +412,7 @@ a scan of the published ref, and this repository has a published ref from its
 founding. The check is simply not written. There is also no CI at all yet, so
 `make check` is run by a person or by nobody.
 
-### 6.6 Per-seat UI state (bl-0fba)
+### 6.5 Per-seat UI state (bl-0fba)
 
 REMOTE §7's state never crosses the boundary and is the seat's own. The window
 will therefore have durable state on this box for the first time, and the hazard
@@ -383,7 +420,7 @@ is written in `src/paths.rs` already: nothing the seat *generates* may sit besid
 material the seat cannot replace. This is decided before the window decides it
 by being written.
 
-### 6.7 One agreed omission, and it is a finding (bl-4a36)
+### 6.6 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -395,7 +432,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.8 The first publish (bl-11fc)
+### 6.7 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

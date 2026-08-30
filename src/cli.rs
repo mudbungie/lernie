@@ -17,6 +17,11 @@
 /// false` has answered: that is the product, it goes to stdout with the rest of
 /// the frames, and only the exit code says no. Deriving the stream from the
 /// code would put an answer on stderr because it was a negative one.
+/// What this binary says about ITSELF: the version line and the usage.
+mod text;
+
+pub use text::{usage, version};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Stream {
     /// stdout — this run's product.
@@ -106,57 +111,13 @@ pub enum Decided {
     Entries,
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
-    Ask(String),
-}
-
-/// The crate's name and version, as the `--version` line.
-///
-/// **The version is the fence** (yog's `docs/REMOTE.md` §12): `lernie` through
-/// 0.0.x was the agent-loop engine, which continues as `litany`; `lernie` at
-/// 0.1.0 and above is this seat. So the number printed here is not decoration —
-/// it is the one rule that says which program the caller is holding.
-pub fn version() -> String {
-    format!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"))
-}
-
-/// The usage text. It states the fence before it states what to type, because
-/// the name has two eras in the published record and a caller who typed
-/// `lernie` may be holding the other one.
-pub fn usage() -> String {
-    format!(
-        "{}
-
-lernie is the seat: the operator's face on a yog server. It dials in over
-mTLS, asks and acts, and paints what comes back. It holds no world, runs no
-agent and executes nothing.
-
-THE NAME HAS TWO ERAS. lernie through 0.0.x was the agent-loop engine, which
-continues under the name litany. lernie 0.1.0 and above is this seat. The
-version is the only rule that separates them.
-
-usage: lernie entries
-       lernie ask <envelope>
-       lernie [--version | --help]
-
-  entries         describe every channel this box holds, without dialling any
-                  of them: its own engine, then one row per workspace held
-                  elsewhere, each with its address or the reason it has none.
-  ask <envelope>  send one gesture envelope — the JSON object the boundary
-                  already carries, `op` the discriminant — down the channel
-                  its workspace names, and print the reply stream, one
-                  envelope per line. Exit 0 when the last reply says ok.
-  -V, --version   print the name and version
-  -h, --help      print this
-
-What it reads, all of it provisioned by hand and none of it ever written by
-lernie: this box's own channel at <data root>/wire/, and one channel per
-directory under <data root>/wire/workspaces/. The data root is
-$XDG_DATA_HOME/lernie, or $HOME/.local/share/lernie.
-
-See docs/DESIGN.md for the role and the module map, and yog's docs/REMOTE.md
-for the protocol lernie implements against.",
-        version()
-    )
+    ///
+    /// **It carries the envelope, not the text it was typed as.** A typed verb
+    /// and a hand-written `ask` both arrive here as the same value, so there is
+    /// one thing to route and the reading of a caller's JSON — which is a pure
+    /// function of what was typed — stays in this pure function where a test
+    /// reads its refusal back as a value.
+    Ask(serde_json::Value),
 }
 
 /// Decide what one invocation does. `args` is argv **without** the program
@@ -165,21 +126,55 @@ pub fn run(args: Vec<String>) -> Decided {
     let words: Vec<&str> = args.iter().map(String::as_str).collect();
     match words.as_slice() {
         ["entries"] => Decided::Entries,
-        ["ask", envelope] => Decided::Ask((*envelope).to_owned()),
+        ["ask", envelope] => ask(envelope),
+        // One help, three spellings, because the subject is one.
+        ["help" | "--help" | "-h"] => Decided::Say(Verdict::ok(usage())),
+        ["help", verb] => Decided::Say(match crate::verbs::help::page(verb) {
+            Ok(page) => Verdict::ok(page),
+            Err(refusal) => Verdict::refused(refusal),
+        }),
         ["--version" | "-V"] => Decided::Say(Verdict::ok(version())),
-        ["--help" | "-h"] => Decided::Say(Verdict::ok(usage())),
         ["ask"] => Decided::Say(Verdict::refused(
             "`lernie ask` wants one gesture envelope".to_owned(),
         )),
         [] => Decided::Say(Verdict::refused(
-            "nothing to do — the window is not built yet; `lernie entries` and \
-             `lernie ask` are the verbs"
+            "nothing to do — the window is not built yet; the typed verbs, \
+             `lernie ask` and `lernie entries` are what there is"
                 .to_owned(),
         )),
-        other => Decided::Say(Verdict::refused(format!(
+        [word, arguments @ ..] => typed(word, arguments),
+    }
+}
+
+/// A hand-written envelope. **Read here**, in the pure function, because
+/// whether a body is a gesture is decided entirely by what was typed — so it is
+/// the caller's typo, it earns the usage, and it costs no connection.
+fn ask(text: &str) -> Decided {
+    match crate::envelope::parse(text) {
+        Ok(envelope) => Decided::Ask(envelope),
+        Err(refusal) => Decided::Say(Verdict::refused(refusal)),
+    }
+}
+
+/// A typed verb, or a first word that is not one.
+///
+/// The whole argument list still decides — a verb with the wrong number of
+/// arguments refuses rather than ignoring the extras — but the refusal it earns
+/// names the verb and its grammar, where a word that is no verb at all can only
+/// be quoted back.
+fn typed(word: &str, arguments: &[&str]) -> Decided {
+    let Some(verb) = crate::verbs::find(word) else {
+        return Decided::Say(Verdict::refused(format!(
             "unrecognised argument: {}",
-            other.join(" ")
-        ))),
+            std::iter::once(word)
+                .chain(arguments.iter().copied())
+                .collect::<Vec<&str>>()
+                .join(" ")
+        )));
+    };
+    match verb.envelope(arguments.iter().map(|a| (*a).to_owned()).collect()) {
+        Ok(envelope) => Decided::Ask(envelope),
+        Err(refusal) => Decided::Say(Verdict::refused(refusal)),
     }
 }
 

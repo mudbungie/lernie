@@ -49,14 +49,28 @@ everything through the front door.
 **A working seat client, and no window yet.**
 
 ```
+lernie workspaces                       # every workspace an engine holds
+lernie conversations <workspace>        # one workspace's conversations
+lernie transcript <workspace> <agent>   # one conversation, entries and tail
+lernie follow <workspace> <agent>       # hold the line on the live tail
+lernie message <workspace> <agent> <content>
+lernie nudge <workspace> <agent>
+
 lernie entries          # every channel this box holds, without dialling any
-lernie ask <envelope>   # send one gesture, print the reply stream
+lernie ask <envelope>   # the same gestures, written out as JSON
+lernie help [<verb>]    # what a verb takes — answered with no engine up
 ```
 
-`ask` opens the channel the gesture's workspace names — this box's own engine,
-or one of the workspaces it participates in elsewhere — over a real mTLS
-handshake with a real version preface, carries the envelope across, and prints
-each reply frame on its own line. It exits 0 when the last reply says ok.
+A verb opens the channel its workspace names — this box's own engine, or one of
+the workspaces it participates in elsewhere — over a real mTLS handshake with a
+real version preface, carries the envelope across, and prints each reply frame
+on its own line. It exits 0 when the last reply says ok.
+
+The verbs are a **serialization** of the envelope, never a second spelling of a
+gesture: each builds the object `ask` would have taken and hands it to the same
+router. `ask` is the escape hatch for every op the table does not name —
+including one this build has never heard of, which the protocol says is not a
+version bump.
 
 **The window is not built**, and it is what a seat is *for*. That is the larger
 half of the extraction and it is deferred rather than half-done.

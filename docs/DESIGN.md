@@ -1,15 +1,16 @@
 # lernie — DESIGN
 
-**Status: a working seat client, and no window yet.** `lernie ask` opens the
-channel a gesture's workspace names — the box's own engine, or one of the
-client-side workspaces it holds elsewhere — over a real mTLS handshake with a
-real version preface, carries the operator's envelope across, and prints the
-reply stream. `lernie entries` says what this box holds without dialling any of
-it. The suite proves all of that against a stand-in engine that speaks the
-protocol, at 100% coverage.
+**Status: a working seat client, a typed reply vocabulary, and no window yet.**
+`lernie ask` opens the channel a gesture's workspace names — the box's own
+engine, or one of the client-side workspaces it holds elsewhere — over a real
+mTLS handshake with a real version preface, carries the operator's envelope
+across, and prints the reply stream. `lernie entries` says what this box holds
+without dialling any of it. `src/reply/` reads the answers back as the six typed
+kinds a window paints (§4.9). The suite proves all of that against a stand-in
+engine that speaks the protocol, at 100% coverage.
 
 **What is deliberately not here is the window**, which is what a seat is
-*for*. §5 is the ledger of that, ball by ball; nothing in it is a hand-wave and
+*for*. §6 is the ledger of that, ball by ball; nothing in it is a hand-wave and
 none of it is claimed to work.
 
 This document states what lernie is, which invariants it inherits rather than
@@ -216,6 +217,51 @@ it became — it tells its own in-process window in RAM. A separately installed
 seat cannot be told that, so a flat root naming `:0` refuses with the sentence
 rather than the raw connect error port zero would otherwise earn.
 
+### 4.9 The reply vocabulary is reimplemented, and it decodes only what it paints (§8, §9.7)
+
+`src/reply/`. REMOTE §8 is explicit that *"what the seat reimplements is this
+document … no shared protocol crate was created and none should be"* — a shared
+crate would make the versioned authority a dependency for one of the four
+components and an authority for the other three. So the reply spellings are
+read off REMOTE and implemented here, exactly as the android client does.
+
+**Six kinds, because six are painted.** The engine's reply surface is forty-odd
+variants and most of them belong to panes that do not exist here. What is
+carried is the roster (`workspaces`), the conversation list (`conversations`),
+the conversation itself (`transcript`), the live tail (`follow`), a captured run
+(`outcome`) and the detached advance's receipt (`nudged`) — plus the refusal
+envelope, which is not a kind at all. A kind nothing renders is a kind nobody
+has to carry, and the ball that lands a pane is the ball that adds its kind.
+
+**The decode policy is four rungs and the module doc is its one statement.**
+Shape refuses; an unknown **kind** refuses, naming itself, which is REMOTE §3's
+own in-band correction and is the upgrade prompt; an unknown **token** inside a
+row keeps its word and paints as itself, because refusing there would drop a
+whole readable listing to avoid one word; an unknown **field** is ignored
+structurally, which is the other half of §3's rule that a new field is not a
+protocol bump. Nothing is a panic path and nothing is defaulted to a known
+neighbour: a token painted as a word it is not is a lie, where a token painted
+as itself is merely unstyled.
+
+**One deliberate divergence from the engine's own reader**, recorded at the
+site (`src/reply/stream.rs`): a `follow` frame's delta token takes rung 3 where
+the engine's decoder refuses. The two readers are not doing one job — the
+engine's reads bytes the engine wrote, so a mismatch there means its own codec
+drifted, while this one is the last reader of somebody else's answer and
+refusing would throw away an accumulated turn while the operator watches the
+tail move.
+
+**The corpus is a directory, not a test table** (`corpus/`, with its own
+README). Each file is one reply frame exactly as the wire carries it, and its
+**directory is its assertion** — `answers/`, `refusals/`, `unreadable/`. There
+is no manifest and no expected-value sidecar, so a conformance corpus emitted
+upstream (yog bl-32cb) drops in as files and the replay needs no edit. Two
+properties ride with the arrangement: `unreadable/` doubles as the ledger of
+which kinds are not painted yet — a kind moves out of it in the release that
+starts painting it — and the replay fails a directory that enumerates nothing
+as well as a file that no directory claims, the same two-direction discipline
+`rules-audit` and `line-cap` hold.
+
 ---
 
 ## 5. Module map
@@ -234,6 +280,15 @@ rather than the raw connect error port zero would otherwise earn.
 | `src/channel/tls.rs` | the mTLS configuration. | ~80 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
+| `src/reply.rs` | the reply vocabulary's roster: the six kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~165 |
+| `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
+| `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
+| `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
+| `src/reply/convs.rs` | one workspace's conversation list, and the two token fields rung 3 lives on. | ~160 |
+| `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
+| `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
+| `src/reply/stream.rs` | the live tail's fold. | ~105 |
+| `corpus/` | reply frames as the wire carries them, one per file, replayed by `src/reply/tests/corpus.rs`. The directory a frame sits in **is** its assertion; `corpus/README.md` is the drop-in contract. | docs |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
 
@@ -259,21 +314,17 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The window (bl-428f), and the vocabulary it paints from (bl-4174)
+### 6.1 The window (bl-428f)
 
 **This is the seat's whole reason to exist, and it is the larger half of the
-extraction by a wide margin.** It is deferred rather than half-done, and the
-reason is a dependency the transport does not have.
+extraction by a wide margin.** It is deferred rather than half-done.
 
-A window paints **typed** replies — a roster row, a conversation, a transcript
-step, a diff hunk. This crate carries a gesture envelope and reads three things
-out of it, which is enough to route and to exit and is not enough to draw
-anything. So the reply vocabulary comes first (bl-4174), and it comes
-**reimplemented**: yog's REMOTE is the protocol authority, a shared protocol
-crate was refused, and the seat implements what it needs exactly as the android
-client does. bl-4174's first duty is to answer how much of that vocabulary a
-first window actually needs, because most of it belongs to panes that do not
-exist yet.
+**The vocabulary it paints from has landed** (bl-4174, §4.9): six reply kinds,
+reimplemented off REMOTE, decoding only what a window renders. That ball's
+first duty was to answer how much of the surface a first window actually needs,
+and the answer is in §4.9 and in `corpus/unreadable/`, which is the standing
+ledger of what is not painted yet. What a pane adds is its own kind, with the
+ball that lands the pane.
 
 The window itself (bl-428f) brings the largest dependency approval this crate
 will ever make, which is why `Cargo.toml` does not pre-grant it: the approval

@@ -1,0 +1,5 @@
+{
+  "ok": true,
+  "kind": "follow",
+  "stream": { "text": "so far", "delta": "summary" }
+}

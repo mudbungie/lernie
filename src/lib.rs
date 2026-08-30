@@ -21,19 +21,22 @@
 //! **What is built** (DESIGN §5): the command line ([`cli`]); the [`channel`] —
 //! the mTLS dial, the version preface, the framing, and the entries an operator
 //! filed; the [`envelope`] a gesture crosses in, read only as far as routing it
-//! requires; and the [`seat`] that resolves which engine a gesture reaches and
-//! spends the one name mapping on the way, over a data root [`paths`] names.
+//! requires; the [`seat`] that resolves which engine a gesture reaches and
+//! spends the one name mapping on the way, over a data root [`paths`] names;
+//! and the [`reply`] vocabulary — the typed half a window paints from, read
+//! back out of the answers those channels carry.
 //!
 //! **What is not built, and it is the larger half**: the window. The seat's
 //! whole reason to exist is a graphical face, and this crate is the transport
 //! that face will stand on. DESIGN §6 is the ledger of what that costs — the
-//! typed reply vocabulary, the off-frame threads, the paint layer — and every
-//! row of it is a filed ball, not a hand-wave.
+//! off-frame threads, the paint layer — and every row of it is a filed ball,
+//! not a hand-wave.
 
 pub mod channel;
 pub mod cli;
 pub mod envelope;
 pub mod paths;
+pub mod reply;
 pub mod seat;
 
 /// Scaffolding the suite shares. Never compiled into a released binary.

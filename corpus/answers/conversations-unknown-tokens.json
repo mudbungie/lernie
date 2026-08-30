@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "kind": "conversations",
+  "rows": [
+    {
+      "root_id": "20260830T051200Z-d4e5",
+      "display": "a state and a tone from a newer engine",
+      "state": "parked",
+      "preview": "",
+      "age_secs": 0,
+      "attention": 0,
+      "members": 1,
+      "depth": 0,
+      "tone": "amber"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "kind": "workspaces",
+  "stale": "derivation 4m behind",
+  "growth": "one conversation grew 3 steps, and 2 others moved",
+  "rows": [
+    {
+      "workspace": "home",
+      "kind": "named",
+      "attention": 2,
+      "agents": 7,
+      "running": true,
+      "pinned": 0,
+      "config_tip": { "oid": "0f1e2d3c4b5a69788796a5b4c3d2e1f009182736", "short_oid": "0f1e2d3" }
+    },
+    { "workspace": "replay-of-home", "kind": "replay", "attention": 0, "agents": 0, "running": false },
+    { "workspace": "scratch", "kind": "foreign", "attention": 0, "agents": 1, "running": false }
+  ]
+}

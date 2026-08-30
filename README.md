@@ -59,11 +59,15 @@ handshake with a real version preface, carries the envelope across, and prints
 each reply frame on its own line. It exits 0 when the last reply says ok.
 
 **The window is not built**, and it is what a seat is *for*. That is the larger
-half of the extraction and it is deferred rather than half-done, because a
-window paints *typed* replies and this crate carries an envelope it does not
-interpret. `docs/DESIGN.md` §6 is the ledger — the reply vocabulary, the window
-and its paint layer, the off-frame threads — ball by ball, and nothing in it is
-claimed to work.
+half of the extraction and it is deferred rather than half-done.
+
+What has landed towards it is the half a window paints *from*: the typed reply
+vocabulary (`src/reply/`, `docs/DESIGN.md` §4.9). It is reimplemented off yog's
+REMOTE rather than shared through a crate, and it decodes only what a window
+renders — six kinds today, with `corpus/unreadable/` standing as the ledger of
+what is not painted yet. `docs/DESIGN.md` §6 is the ledger of the rest — the
+window and its paint layer, the off-frame threads — ball by ball, and nothing
+in it is claimed to work.
 
 What it reads, all of it put there by the operator's hand and none of it ever
 written by lernie:

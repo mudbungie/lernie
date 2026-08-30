@@ -1,0 +1,7 @@
+{
+  "ok": true,
+  "kind": "workspaces",
+  "rows": [
+    { "workspace": "archive", "kind": "sealed", "attention": 0, "agents": 4, "running": false }
+  ]
+}

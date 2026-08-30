@@ -1,0 +1,41 @@
+{
+  "ok": true,
+  "kind": "conversations",
+  "rows": [
+    {
+      "root_id": "20260830T051200Z-a1b2",
+      "display": "port the paint probe",
+      "name": "port the paint probe",
+      "display_only": false,
+      "state": "live",
+      "uncertain": false,
+      "preview": "the galley reports the string that went in",
+      "age_secs": 42,
+      "flight": "inference",
+      "attention": 1,
+      "members": 3,
+      "direct": 2,
+      "stoppable": true,
+      "stop_children": true,
+      "depth": 0,
+      "tone": "live",
+      "ball": { "id": "bl-428f", "state": "claimed", "title": "the window" }
+    },
+    {
+      "root_id": "20260830T051200Z-a1b2-c3",
+      "display": "a child, indented under its root",
+      "display_only": true,
+      "state": "quiescent",
+      "uncertain": true,
+      "preview": "",
+      "age_secs": -3,
+      "attention": 0,
+      "members": 1,
+      "direct": 0,
+      "stoppable": false,
+      "stop_children": false,
+      "depth": 1,
+      "tone": "weak"
+    }
+  ]
+}

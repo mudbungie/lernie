@@ -1,0 +1,7 @@
+{
+  "ok": false,
+  "kind": "outcome",
+  "exit": 1,
+  "stdout": "",
+  "stderr": "gate refused: coverage 99.4%\n"
+}

@@ -43,6 +43,15 @@ pub enum Notice {
     /// this build does not paint. A statement about **this seat**, which is why
     /// it reads differently from a refusal.
     Unreadable(String),
+    /// This seat could not **reach** the far end: a channel that will not open,
+    /// an engine that is not there, a preface that did not agree.
+    ///
+    /// Three arms and not two, because the remedies are three different acts. A
+    /// refusal is answered by typing something else; an unreadable frame by
+    /// upgrading the seat; an unreachable channel by looking at this box's own
+    /// files or at whether the engine is up. A seat that collapsed them would
+    /// send an operator to check a certificate over a workspace they mistyped.
+    Unreachable(String),
 }
 
 impl Notice {
@@ -51,6 +60,7 @@ impl Notice {
         match self {
             Self::Refused(said) => format!("the engine refused: {said}"),
             Self::Unreadable(why) => format!("this seat could not read the answer: {why}"),
+            Self::Unreachable(why) => format!("this seat could not reach it: {why}"),
         }
     }
 }
@@ -133,6 +143,17 @@ impl Model {
             Some(held) => *held = seated,
             None => self.roster.push(seated),
         }
+    }
+
+    /// **A leg that never reached an engine**, said in this seat's own words.
+    ///
+    /// It is not a reply and so it does not come through
+    /// [`absorb`](Self::absorb): there is no frame, no channel answered, and
+    /// nothing to file. What it changes is exactly what a refusal changes —
+    /// what the operator is told — and it is told differently, because it is
+    /// about this box or the far end rather than about what was asked.
+    pub fn unreachable(&mut self, why: String) {
+        self.notice = Some(Notice::Unreachable(why));
     }
 
     /// Whether this row is the one the window is aimed at.

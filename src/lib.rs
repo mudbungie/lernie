@@ -30,17 +30,21 @@
 //! And the [`ui`]: the window itself — the roster, the conversation list, the
 //! chat pane and the composer, painted from a snapshot and firing gestures
 //! through the same verb table the command line spends. **The frame never
-//! dials.** What fills the snapshot is the off-frame machinery, which is
-//! DESIGN §6.1 and is not built: until it lands the window opens on the
-//! channels this box holds and no content behind them, which is the honest
-//! state of a face with nothing feeding it.
+//! dials.** What fills it is [`offframe`], three threads that meet the frame at
+//! the one lock [`state`] holds: the asker over the standing question set, the
+//! poster draining what a click composed, and the follow lane holding one
+//! connection open on the focused conversation.
 
 pub mod channel;
 pub mod cli;
 pub mod envelope;
+/// The off-frame threads: the asker, the poster and the follow lane.
+pub mod offframe;
 pub mod paths;
 pub mod reply;
 pub mod seat;
+/// The link the frame and the threads share, and the crate's one lock.
+pub mod state;
 /// The window: the seat's face, and the paint layer that can testify about it.
 pub mod ui;
 pub mod verbs;

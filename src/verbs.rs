@@ -54,7 +54,10 @@ pub mod help;
 mod rows;
 
 use rows::TABLE;
-pub use rows::{MESSAGE, NUDGE, message, nudge};
+pub use rows::{
+    CONVERSATIONS, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, follow, message,
+    nudge, transcript, workspaces,
+};
 
 /// One verb: the word, what it takes, and what it is for.
 ///

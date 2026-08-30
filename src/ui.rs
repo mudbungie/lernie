@@ -6,10 +6,8 @@
 //! Every function below takes what it is given and paints it. Nothing here
 //! dials, reads a file, blocks or waits: a frame that could do any of those is
 //! a frame that can freeze, and a frozen window is the one failure a seat has
-//! no excuse for. What fills the [`Model`] is the off-frame machinery
-//! (DESIGN §6.1), and until it lands the window opens on an empty model and
-//! says so — which is the honest state of a face with nothing behind it, not a
-//! defect it hides.
+//! no excuse for. What fills the [`Model`] is [`crate::offframe`], and the
+//! frame's whole side of it is one `settle` at the top of an update.
 //!
 //! The one thing a frame *produces* is [`Model::outbox`]: the gestures a click
 //! or a keystroke composed, drained by whoever can send them. A frame that

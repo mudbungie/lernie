@@ -1,7 +1,6 @@
 # lernie — DESIGN
 
-**Status: a working seat client, typed on both sides, and a window with
-nothing feeding it yet.**
+**Status: a working seat, whole.**
 `lernie <verb>` and `lernie ask` open the channel a gesture's workspace names —
 the box's own engine, or one of the client-side workspaces it holds elsewhere —
 over a real mTLS handshake with a real version preface, carry the operator's
@@ -12,14 +11,15 @@ and `src/reply/` reads their answers back as the six kinds a window paints
 (§4.9). The suite proves all of that against a stand-in engine that speaks the
 protocol, at 100% coverage.
 
-**The window is built and it is not fed.** Bare `lernie` opens the egui face
-(§4.11): the roster grouped by channel, the conversation list, the chat pane and
-the composer, painted from a snapshot and firing gestures through the same verb
-table `lernie message` spends. Every pane is asserted through the paint probe,
-which reads the glyphs that reached the glass. What is missing is the off-frame
-machinery that fills the snapshot — the asker, the poster, the follow lane — so
-the window opens on the channels this box holds and no content behind them.
-That is DESIGN §6.1, it is filed, and nothing here pretends otherwise.
+**Bare `lernie` opens the window** (§4.11): the roster grouped by channel, the
+conversation list, the chat pane and the composer, painted from a snapshot and
+firing gestures through the same verb table `lernie message` spends. Behind it
+are three threads (§4.12) — the asker over the standing question set, the poster
+draining what a click composed, and the follow lane holding one connection open
+on the focused conversation. **The frame never dials**, and the suite proves the
+whole of it in one process: a real listener with a real handshake and a real
+preface, the three threads, the settle, and the window, asserted on the glyphs
+that reached the glass.
 
 This document states what lernie is, which invariants it inherits rather than
 owns, and what it defers. It is a living document: amend it when reality
@@ -323,7 +323,7 @@ the composer. Every one of them is a function of the [`Model`] it is handed.
 blocks or waits; the one thing a frame *produces* is `Model::outbox`, the
 gestures a click composed, drained by whoever can send them. A frame that posted
 its own act would be a frame that waits on one, and a window that waits is the
-failure a seat has no excuse for. What fills the model is §6.1 and is not built.
+failure a seat has no excuse for. What fills the model is §4.12.
 
 **It fires through the verb table.** A composed deposit is built by
 `crate::verbs` — the same rows §4.10's command line spends, through a door whose
@@ -417,7 +417,7 @@ picks the location by being written.
 | Kind | Confined to | Rule | State |
 |---|---|---|---|
 | `unsafe` block or `unsafe fn` | `src/sys.rs` | `unsafe-outside-sys.yml` | **absent, and expected to stay so.** A seat dials a socket, frames JSON and paints; upstream's raw effects are all engine-side. An ask to create this file is an ask to explain what the seat is now doing. |
-| `Mutex` / `RwLock` | `src/state.rs` | `locks-outside-state.yml` | **absent, with a tenant already named.** The wire client is one synchronous ask per call and shares nothing across a thread. The off-frame threads (bl-8ed9) are what fill it. |
+| `Mutex` / `RwLock` | `src/state.rs` | `locks-outside-state.yml` | **occupied, by the tenant the rule was written for** (§4.12). The rule named this file before there was anything in it, and the off-frame threads filled it. There should not be a second: everything above the socket is a pure function of what it is handed, and everything below it is one thread on one connection. |
 | Building and forking a child | `src/test_support/mint.rs` | `no-bare-command.yml`, `no-bare-fork.yml` | **occupied, by test scaffolding.** The seat forks nothing in production, so the rule names the one place that does rather than an aspirational file nothing would ever go in. If production ever needs a child, the location moves to `src/spawn.rs` in the commit that writes the first site — never a second entry, because two confined files are two inventories. |
 
 There is **no fork lock**, and that is a fact about this tree rather than a
@@ -432,18 +432,7 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The off-frame threads (bl-8ed9)
-
-A frame that never blocks means no read and no act happens on it: the standing
-questions per channel, the acts and their later receipts, the follow lane
-holding one connection open on the focused conversation, and the roster composed
-as the **union** across channels with every row carrying the channel it came
-from — a client-side stamp, so no origin ever crosses the wire.
-
-The transport half is already here: `Channel::follow` hands frames over as they
-arrive. What is missing is everything above the socket.
-
-### 6.2 The local foot-grade check (bl-f5c2)
+### 6.1 The local foot-grade check (bl-f5c2)
 
 REMOTE §4.2's grade is enforced at the engine's chokepoint, fail-closed and in
 band, so a seat holding a foot-grade leaf is already refused correctly. Nothing
@@ -451,7 +440,7 @@ deferred here is a security property — what is missing is a **diagnosis**, so
 that a misconfiguration of this box's own files reads as a sentence about this
 box rather than as an authorization refusal from somebody else.
 
-### 6.3 The late half of the disclosure gate (bl-28fb)
+### 6.2 The late half of the disclosure gate (bl-28fb)
 
 The gate here is prevention only: local, and bypassable by whoever runs it. The
 standing question — what the tree and the store carry in total — is answered by
@@ -459,7 +448,7 @@ a scan of the published ref, and this repository has a published ref from its
 founding. The check is simply not written. There is also no CI at all yet, so
 `make check` is run by a person or by nobody.
 
-### 6.4 Per-seat UI state (bl-0fba)
+### 6.3 Per-seat UI state (bl-0fba)
 
 REMOTE §7's state never crosses the boundary and is the seat's own. The window
 will therefore have durable state on this box for the first time, and the hazard
@@ -467,7 +456,7 @@ is written in `src/paths.rs` already: nothing the seat *generates* may sit besid
 material the seat cannot replace. This is decided before the window decides it
 by being written.
 
-### 6.5 One agreed omission, and it is a finding (bl-4a36)
+### 6.4 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -479,7 +468,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.6 The first publish (bl-11fc)
+### 6.5 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

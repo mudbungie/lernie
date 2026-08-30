@@ -73,14 +73,18 @@ router. `ask` is the escape hatch for every op the table does not name —
 including one this build has never heard of, which the protocol says is not a
 version bump.
 
-**The window is built, and nothing feeds it yet.** Bare `lernie` opens the
-face: the roster grouped by channel, the conversation list, the chat pane and
-the composer, painted from a snapshot and firing gestures through the same verb
-table the command line spends. The frame never dials — every read and every act
-belongs off it — and the machinery that would fill the snapshot is the one thing
-still filed rather than built (`docs/DESIGN.md` §6.1). So the window opens on
-the channels this box holds and no content behind them, which is the honest
-state of a face with nothing feeding it.
+**Bare `lernie` opens the window**: the roster grouped by channel, the
+conversation list, the chat pane and the composer, painted from a snapshot and
+firing gestures through the same verb table the command line spends. Behind it
+are three threads — the asker over the standing question set, the poster
+draining what a click composed, and the follow lane holding one connection open
+on the focused conversation.
+
+**The frame never dials.** Every read and every act happens off it, and the
+frame's whole side is one `settle` at the top of an update: file what landed,
+hand over what was composed, publish what to ask next. What to ask is derived
+from the window's own state rather than stored, so a click changes the model and
+the next question follows from it.
 
 What it paints *from* is the typed reply vocabulary (`src/reply/`,
 `docs/DESIGN.md` §4.9), reimplemented off yog's REMOTE rather than shared

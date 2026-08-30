@@ -25,6 +25,8 @@ pub(crate) mod engine;
 pub(crate) mod mint;
 /// The window's fixtures, and the two ways a test looks at one.
 pub(crate) mod window;
+/// A data root with an engine behind one of its channels.
+pub(crate) mod wire;
 
 /// How many scratch directories this process has minted, so two tests running
 /// at once never name one directory.

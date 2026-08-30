@@ -15,6 +15,7 @@
 use std::process::ExitCode;
 
 use lernie::cli::{Decided, Stream, Verdict};
+use lernie::state::Link;
 use lernie::ui::{Chunk, Model};
 
 fn main() -> ExitCode {
@@ -46,10 +47,10 @@ fn rooted(act: impl FnOnce(&std::path::Path) -> Verdict) -> Verdict {
 /// disk — which dials nothing, so a box with no engine up still paints what it
 /// has — and then runs the frame loop over `lernie::ui::render`.
 ///
-/// **What is not here yet is what fills it** (docs/DESIGN.md §6.1): no read is
-/// asked and no act is posted, so the window opens on its channels and no
-/// content behind them. That is the honest state of a face with nothing feeding
-/// it, and it is a filed ball rather than a hidden one.
+/// The three off-frame threads are started around it and stopped when it
+/// closes; the frame's own side of them is one `settle` at the top of every
+/// update, which files what landed, hands over what a click composed, and
+/// publishes what to ask next.
 ///
 /// This is the entry point's own work — a native event loop is process state,
 /// exactly as argv and the environment are — which is why it lives in the one
@@ -63,29 +64,54 @@ fn window(root: &std::path::Path) -> Verdict {
             .collect(),
         ..Model::default()
     };
+    let link = Link::new(BEAT);
+    // The standing set is published by a settle, so the first pass would ask
+    // nothing at all until a frame had run. One settle here is what makes the
+    // window's first paint the answer to a question rather than a blank.
+    link.settle(&mut model);
+    let workers = lernie::offframe::run(&link, root);
     let ran = eframe::run_native(
         "lernie",
         eframe::NativeOptions::default(),
-        Box::new(move |_| {
-            Ok(Box::new(Seat {
-                model: std::mem::take(&mut model),
-            }))
+        Box::new({
+            let link = link.clone();
+            move |_| {
+                Ok(Box::new(Seat {
+                    model: std::mem::take(&mut model),
+                    link,
+                }))
+            }
         }),
     );
+    link.stop();
+    for worker in workers {
+        let _ = worker.join();
+    }
     match ran {
         Ok(()) => Verdict::ok(String::new()),
         Err(e) => Verdict::failed(format!("the window would not open: {e}")),
     }
 }
 
-/// The frame loop's whole body: hand the context and the model to the one
-/// render function and get out of the way.
+/// How often the seat asks. Human cadence: a roster an operator glances at does
+/// not want to be a second faster, and the two surfaces that move quicker than
+/// a glance are held reads rather than a tighter loop.
+const BEAT: std::time::Duration = std::time::Duration::from_millis(750);
+
+/// The frame loop's whole body: settle what the threads brought, render, and
+/// ask to be woken in a beat.
 struct Seat {
     model: Model,
+    link: Link,
 }
 
 impl eframe::App for Seat {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.link.settle(&mut self.model);
         lernie::ui::render(ctx, &mut self.model);
+        // A seat paints what somebody else is doing, so the frame has to come
+        // round without an operator touching anything — and no faster than the
+        // asker can bring something new.
+        ctx.request_repaint_after(self.link.beat());
     }
 }

@@ -1,7 +1,8 @@
 +++
 title = "the off-frame threads: the asker, the poster, the follow lane, and the union roster"
 created = 1788068281
-updated = 1788068281
+updated = 1788069441
+claimant = "OrderGlazier"
 priority = 4
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 

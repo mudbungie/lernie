@@ -1,7 +1,7 @@
 +++
 title = "seam inversion: the router answers every tool invocation and the driver's local executor is deleted"
 created = 1787977844
-updated = 1788059999
+updated = 1788060211
 claimant = "OrderExecutor"
 priority = 3
 root_commit = "12899370c9ec7a5ed7f8e26d3d4fb914ea6c3310"

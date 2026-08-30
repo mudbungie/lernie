@@ -20,8 +20,7 @@ fn argv(words: &[&str]) -> Vec<String> {
 fn said(words: &[&str]) -> Verdict {
     match run(argv(words)) {
         Decided::Say(verdict) => verdict,
-        Decided::Entries => panic!("{words:?} decided to list entries"),
-        Decided::Ask(_) => panic!("{words:?} decided to ask"),
+        other => panic!("{words:?} decided {other:?}"),
     }
 }
 
@@ -29,7 +28,6 @@ fn said(words: &[&str]) -> Verdict {
 fn asked(words: &[&str]) -> Value {
     match run(argv(words)) {
         Decided::Ask(envelope) => envelope,
-        Decided::Entries => panic!("{words:?} decided to list entries"),
-        Decided::Say(verdict) => panic!("{words:?} said {:?}", verdict.text),
+        other => panic!("{words:?} decided {other:?}"),
     }
 }

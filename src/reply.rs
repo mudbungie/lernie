@@ -20,7 +20,7 @@
 //! the roster, the conversation list, the transcript, the live tail, a
 //! captured run and the detached advance's receipt. A kind nothing renders is
 //! a kind nobody has to carry, and the compiler of the window is what pulls in
-//! the next one — see [`Reply`] for the roster of what is here and DESIGN §6.1
+//! the next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
 //! for what is not.
 //!
 //! # The decode policy, stated once
@@ -117,7 +117,7 @@ pub enum Read {
 }
 
 /// **The kinds the window draws.** Six, and each is here because a surface
-/// paints it; DESIGN §6.1 holds the ledger of what a later pane adds.
+/// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Reply {
     /// A short verb's captured run — what a deposit, a stop or a ball verb

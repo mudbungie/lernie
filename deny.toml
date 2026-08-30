@@ -4,27 +4,46 @@
 # allow-list is exhaustive over the committed Cargo.lock — every license that
 # actually appears in the tree, nothing speculative. Re-run `cargo deny check`
 # after any dependency change and fix drift here by config, never by patching a
-# dependency. The window is the next arrival and it is a large one: the ball
-# that links eframe re-derives this list from the lockfile it produces.
+# dependency.
 
 [advisories]
 # Reject crates whose published version has been yanked from the registry.
 yanked = "deny"
-# No acknowledged advisories. An entry here would need a reason recorded beside
-# it, and an entry that stops matching any crate makes every gate run warn
-# `advisory-not-detected` — which is the signal to drop it, so this list stays
-# exactly as long as the tree justifies.
-ignore = []
+# One acknowledged advisory, and the reason is recorded beside it. An entry that
+# stops matching any crate makes every gate run warn `advisory-not-detected` —
+# which is the signal to drop it, so this list stays exactly as long as the tree
+# justifies.
+ignore = [
+    # `ttf-parser` is UNMAINTAINED, not vulnerable: no CVE, no exploit, no
+    # patched version — the crate's author stopped, and the advisory says so
+    # and names `skrifa` as the successor. It is not reachable from anything
+    # this crate calls: it sits under `owned_ttf_parser` under `ab_glyph` under
+    # `epaint`, which is egui's glyph rasteriser, and the fonts it parses are
+    # the ones compiled into `epaint_default_fonts`. There is no untrusted font
+    # input on this surface, because there is no font input at all.
+    #
+    # It cannot be fixed here either: no safe upgrade exists, and the swap is
+    # egui's to make. So the entry is an acknowledgement rather than a
+    # decision — and it is the RIGHT shape of one, because the alternative is
+    # unpinning the window or turning the advisory gate off, and the second of
+    # those would hide the next advisory too. Re-check it at every egui bump;
+    # the day egui moves to `skrifa` this line stops matching and says so.
+    "RUSTSEC-2026-0192",
+]
 
 [licenses]
 # EXHAUSTIVE OVER THE COMMITTED `Cargo.lock`, and derived from it rather than
-# guessed at. Every entry below is a licence some crate in the lockfile the
-# wire client produced actually carries — `rustls` (with `ring`) and
-# `serde_json` and their transitive graph. A speculative
-# allow-list is an allow-list nobody read, and it is worst on the day it
-# silently covers a crate no approval ever named — so widen this only with the
-# ball that links the crate, and re-derive it from the lockfile that ball
-# produces.
+# guessed at. Every entry below is a licence some crate in the lockfile
+# actually carries. A speculative allow-list is an allow-list nobody read, and
+# it is worst on the day it silently covers a crate no approval ever named — so
+# widen this only with the ball that links the crate, and re-derive it from the
+# lockfile that ball produces.
+#
+# RE-DERIVED at bl-428f, the ball that linked the window. eframe/egui multiplied
+# the graph roughly tenfold and added exactly four licences; every other crate
+# it brought was already covered by an entry below, almost all of them under the
+# ubiquitous `MIT OR Apache-2.0`. The four are listed with the crate that forced
+# them, because a licence with no named crate is one nobody can check.
 #
 #   MIT             lernie itself, and most of the graph under an OR.
 #   Apache-2.0      the other half of the ubiquitous dual licence, and half of
@@ -34,12 +53,39 @@ ignore = []
 #                   outright. These are the certificate-verification path.
 #   BSD-3-Clause    `subtle`, the constant-time primitives under `ring`.
 #   Unlicense       `memchr`, under `serde_json`.
+#
+# The window's four, none of them an OR this list could have satisfied twice:
+#
+#   BSL-1.0         `clipboard-win` and `error-code`, the Windows clipboard
+#                   path under `arboard` under `egui-winit`. Sole licence, so
+#                   there is no alternative term to take instead. Permissive,
+#                   and it is the only copyleft-adjacent name here that is not:
+#                   the Boost licence's whole point is that binaries need carry
+#                   no notice.
+#   Unicode-3.0     the `icu_*` normalisation crates under `idna` under `url`
+#                   under `webbrowser` — how egui opens a hyperlink. Sole
+#                   licence, and the Unicode data files' own terms.
+#   OFL-1.1         `epaint_default_fonts`, and the reason `default_fonts` is a
+#                   named feature rather than a default: this is the FONT, not
+#                   code. Its expression is an AND of three, so this and the
+#                   line below are both mandatory or the window ships with
+#                   nothing to draw glyphs with.
+#   LicenseRef-UFL-1.0
+#                   the other half of that AND — the Ubuntu Font Licence,
+#                   which carries no SPDX id and so arrives as a LicenseRef.
+#   Zlib            `slotmap`, the arena `egui_glow` keys its textures by. Sole
+#                   licence, and the most permissive name on this list.
 allow = [
     "MIT",
     "Apache-2.0",
     "ISC",
     "BSD-3-Clause",
     "Unlicense",
+    "BSL-1.0",
+    "Unicode-3.0",
+    "OFL-1.1",
+    "LicenseRef-UFL-1.0",
+    "Zlib",
 ]
 
 [bans]

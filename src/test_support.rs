@@ -23,6 +23,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 pub(crate) mod engine;
 /// The operator's out-of-channel act, performed by the suite.
 pub(crate) mod mint;
+/// The window's fixtures, and the two ways a test looks at one.
+pub(crate) mod window;
 
 /// How many scratch directories this process has minted, so two tests running
 /// at once never name one directory.

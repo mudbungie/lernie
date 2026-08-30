@@ -63,3 +63,52 @@ fn a_half_provisioned_own_engine_says_so_in_the_listing() {
         verdict.text
     );
 }
+
+/// **The typed enumeration the window stamps its rows with**, and it dials
+/// nothing: what a box holds is a fact about its own files, so a seat paints
+/// its channels before any engine is up.
+///
+/// Each entry carries the name its workspace bears on its host, which is what
+/// decides how a gesture aimed at one of its rows must be addressed
+/// (`crate::ui::Channel::address`). The flat root carries none, because it
+/// rewrites nothing.
+#[test]
+fn the_channels_are_the_own_engine_then_every_entry_in_order() {
+    let scratch = Scratch::new();
+    for (leaf, named) in [("zed", None), ("home", Some("personal"))] {
+        let dir = scratch.path().join(entry(leaf));
+        std::fs::create_dir_all(&dir).expect("mkdir");
+        if let Some(named) = named {
+            std::fs::write(dir.join(WORKSPACE), named).expect("the workspace file");
+        }
+    }
+    let held = crate::seat::channels(scratch.path());
+    assert_eq!(
+        held,
+        vec![
+            crate::ui::Channel {
+                name: crate::seat::OWN.to_owned(),
+                named_there: None,
+            },
+            crate::ui::Channel {
+                name: "home".to_owned(),
+                named_there: Some("personal".to_owned()),
+            },
+            crate::ui::Channel {
+                name: "zed".to_owned(),
+                named_there: Some("zed".to_owned()),
+            },
+        ]
+    );
+}
+
+/// A box holding nothing still holds its own engine — the relationship it has
+/// without naming it — so the roster is never empty of the one channel every
+/// box has.
+#[test]
+fn a_box_with_no_entry_still_holds_its_own_engine() {
+    let scratch = Scratch::new();
+    let held = crate::seat::channels(scratch.path());
+    assert_eq!(held.len(), 1);
+    assert_eq!(held[0].named_there, None);
+}

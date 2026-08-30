@@ -112,15 +112,11 @@ fn help_on_a_verb_answers_its_page_and_refuses_a_word_that_is_not_one() {
     assert!(refusal.text.contains("\"nudje\""), "{}", refusal.text);
 }
 
-/// **A bare invocation names the state of the tree**: the window is what a seat
-/// is for, and it is not built, so the refusal says so instead of implying the
-/// caller mistyped something.
+/// **A bare invocation is the window**, because a seat is a window. Every other
+/// spelling is a way of reaching one gesture without one.
 #[test]
-fn a_bare_invocation_refuses_and_says_the_window_is_not_built() {
-    let v = said(&[]);
-    assert_eq!(v.code, REFUSED);
-    assert!(v.text.contains("the window is not built yet"), "{}", v.text);
-    assert!(v.text.contains("usage: lernie"), "{}", v.text);
+fn a_bare_invocation_opens_the_window() {
+    assert!(matches!(run(argv(&[])), Decided::Window));
 }
 
 #[test]

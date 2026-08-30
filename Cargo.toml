@@ -59,11 +59,21 @@ publish = false
 #     `anyhow`, is NOT approved: `main.rs` is a thin entry with no
 #     error-plumbing layer that would justify one.
 #
+#   eframe / egui — THE WINDOW, and the largest approval this crate will ever
+#     make. Approved and linked by the ball that landed the window (bl-428f),
+#     which is also the ball that re-derived the licence allow-list in
+#     `deny.toml` from the lockfile that resulted. The seat is the one
+#     component whose PURPOSE is a graphical face, so this is not a dependency
+#     taken for convenience: without it there is no seat, only a wire client.
+#     `default-features = false` with `default_fonts` and `glow` is
+#     load-bearing and is not at a later ball's discretion — the defaults would
+#     select the wgpu stack, which is ~50 crates for an app that draws text and
+#     rectangles, and dropping `default_fonts` ships a window that renders
+#     nothing. The versions track yog's pin, because the two windows are one
+#     face at two releases and a skew between them is a divergence nobody
+#     decided.
+#
 # DEFERRED, which is not the same as refused:
-#   eframe / egui — the window. This is the seat's whole reason to exist and
-#     the largest approval it will ever need, so it is not pre-granted here: it
-#     arrives with the ball that lands the window, which is also the ball that
-#     re-derives the licence allow-list below from the lockfile that results.
 #   clap — only if the verb surface outgrows a hand-rolled argv match. It does
 #     not today, and the question the ball that wants it must answer is whether
 #     the match arms actually stopped fitting.
@@ -96,8 +106,18 @@ rustls = { version = "0.23", default-features = false, features = [
 ] }
 # The wire is JSON. A gesture envelope crosses byte for byte (REMOTE §3: the
 # wire adds nothing to the boundary), so this crate parses one only far enough
-# to route it.
+# to route it, and reads a reply back as the kinds the window paints.
 serde_json = "1"
+# The window, and the reason this crate exists at all. The three feature terms
+# are the approval's: no defaults, because they select the wgpu stack; `glow`,
+# because a seat draws text and rectangles; `default_fonts`, because without
+# them the window opens and renders nothing. The version tracks yog's, so the
+# two faces of one seat cannot skew by accident.
+eframe = { version = "0.29", default-features = false, features = [
+    "default_fonts",
+    "glow",
+] }
+egui = "0.29"
 
 [[bin]]
 name = "lernie"

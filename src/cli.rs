@@ -32,6 +32,7 @@ pub enum Stream {
 
 /// What one invocation decided: an exit code, the text that explains it, and
 /// where that text belongs.
+#[derive(Debug)]
 pub struct Verdict {
     /// The process exit code. `0` is the only success.
     pub code: u8,
@@ -103,12 +104,17 @@ impl Verdict {
 }
 
 /// What one invocation decided to do.
+#[derive(Debug)]
 pub enum Decided {
     /// Say this, and exit. Every flag and every refusal is one of these.
     Say(Verdict),
     /// Describe every channel this box holds. Needs the data root, which is
     /// this process's own environment and so the entry point's to fold.
     Entries,
+    /// **Open the window**, which is what a seat is for. It needs the data root
+    /// and a native event loop, both of which are the entry point's — so it
+    /// carries nothing, exactly as [`Entries`](Self::Entries) does.
+    Window,
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
     ///
@@ -137,11 +143,9 @@ pub fn run(args: Vec<String>) -> Decided {
         ["ask"] => Decided::Say(Verdict::refused(
             "`lernie ask` wants one gesture envelope".to_owned(),
         )),
-        [] => Decided::Say(Verdict::refused(
-            "nothing to do — the window is not built yet; the typed verbs, \
-             `lernie ask` and `lernie entries` are what there is"
-                .to_owned(),
-        )),
+        // The bare invocation is the window, because a seat is a window. Every
+        // other spelling is a way of reaching one gesture without one.
+        [] => Decided::Window,
         [word, arguments @ ..] => typed(word, arguments),
     }
 }

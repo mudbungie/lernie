@@ -1,6 +1,7 @@
 # lernie — DESIGN
 
-**Status: a working seat client, typed on both sides, and no window yet.**
+**Status: a working seat client, typed on both sides, and a window with
+nothing feeding it yet.**
 `lernie <verb>` and `lernie ask` open the channel a gesture's workspace names —
 the box's own engine, or one of the client-side workspaces it holds elsewhere —
 over a real mTLS handshake with a real version preface, carry the operator's
@@ -11,9 +12,14 @@ and `src/reply/` reads their answers back as the six kinds a window paints
 (§4.9). The suite proves all of that against a stand-in engine that speaks the
 protocol, at 100% coverage.
 
-**What is deliberately not here is the window**, which is what a seat is
-*for*. §6 is the ledger of that, ball by ball; nothing in it is a hand-wave and
-none of it is claimed to work.
+**The window is built and it is not fed.** Bare `lernie` opens the egui face
+(§4.11): the roster grouped by channel, the conversation list, the chat pane and
+the composer, painted from a snapshot and firing gestures through the same verb
+table `lernie message` spends. Every pane is asserted through the paint probe,
+which reads the glyphs that reached the glass. What is missing is the off-frame
+machinery that fills the snapshot — the asker, the poster, the follow lane — so
+the window opens on the channels this box holds and no content behind them.
+That is DESIGN §6.1, it is filed, and nothing here pretends otherwise.
 
 This document states what lernie is, which invariants it inherits rather than
 owns, and what it defers. It is a living document: amend it when reality
@@ -307,6 +313,58 @@ value a test reads back and where it costs no connection — and it makes a type
 verb and a hand-written `ask` arrive at the seat as the same value, which is the
 property the whole surface exists for.
 
+### 4.11 The window renders a snapshot, and the paint layer can testify about it (§7, §8.2, §9.7)
+
+`src/ui/`. Four panes and a notice bar: the roster grouped by the channel each
+row came down, the aimed wall's conversations, the selected conversation, and
+the composer. Every one of them is a function of the [`Model`] it is handed.
+
+**The frame never dials.** Nothing under `src/ui/` opens a socket, reads a file,
+blocks or waits; the one thing a frame *produces* is `Model::outbox`, the
+gestures a click composed, drained by whoever can send them. A frame that posted
+its own act would be a frame that waits on one, and a window that waits is the
+failure a seat has no excuse for. What fills the model is §6.1 and is not built.
+
+**It fires through the verb table.** A composed deposit is built by
+`crate::verbs` — the same rows §4.10's command line spends, through a door whose
+arity is its signature — so a click and a typed command build one object and
+there is no second spelling of a gesture anywhere in this crate.
+
+**A row is addressed by what the channel resolves, never by the name it wears**
+(`ui::Channel::address`, §8.2 read from the seat's side). This box's own engine
+rewrites nothing, so a row is addressed by its own name; an entry resolves by
+its **leaf** and by nothing else, so the leaf is the address of the one
+workspace it names. The third case is real and is painted rather than hidden: an
+entry's engine may answer a workspace the entry does not name, which no envelope
+this seat can write will reach. Dropping it would hide a workspace the operator
+has, and addressing it by the leaf would aim a gesture at a different wall, so
+it is shown and said to be unreachable.
+
+**Nothing that arrives is dropped.** `Model::absorb` is the one door: an answer
+is filed, and a refusal or an unreadable frame becomes the notice bar, standing
+where that content would have been. That is §4.9's rung 2 honoured on the glass
+rather than only in the type — and the two read differently, because a refusal
+is the engine's sentence and an unreadable frame is a statement about this seat,
+of which only the second is fixed by an upgrade. It is a **bar and not a
+modal**: the engine refusing a deposit says nothing about the roster beside it.
+
+**The paint probe and its rule travel together, and the rule is why.**
+`crate::paint_probe` is the one walk over a finished frame, and
+`rules/no-hand-rolled-paint-walk.yml` forbids reading `Galley::text()` anywhere
+else. A galley reports the string that went IN, so a label the toolkit elided to
+`…` reads back whole and every assertion against it is blind to truncation — the
+one defect the paint layer is the only witness for. Upstream found that three
+times before it became a rule: in the probe itself, where 1815 tests passed
+while covering no truncation at all; in two copies of the walk; and in a third
+copy that aimed every pointer test's **click** by input text. So a click here is
+aimed by painted glyphs too, and the probe's own suite pins the elision case.
+
+**The native boot is `src/main.rs`, which decides nothing.** `ui::render` takes
+an `egui::Context` and the model, so every assertion in this crate runs the real
+window on an offscreen context. What lives in the excluded entry point is the
+event loop and the `eframe::App` impl that forwards one call — process state,
+exactly as argv and the environment are.
+
 ---
 
 ## 5. Module map
@@ -334,8 +392,20 @@ property the whole surface exists for.
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
-| `src/verbs.rs` | the typed gesture surface: the declarative verb table, and the one envelope a row becomes. | ~185 |
+| `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
+| `src/verbs/rows.rs` | the six verbs, as data — and the two acts the window composes by name. | ~105 |
 | `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
+| `src/ui.rs` | the window's module list and what a frame may not do. | small |
+| `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~150 |
+| `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
+| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
+| `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
+| `src/ui/chat.rs` | one conversation as rows, and the live fold that replaces rather than accretes. | ~170 |
+| `src/ui/composer.rs` | what an operator types, and the gesture it becomes. | ~80 |
+| `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~60 |
+| `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
+| `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
+| `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | reply frames as the wire carries them, one per file, replayed by `src/reply/tests/corpus.rs`. The directory a frame sits in **is** its assertion; `corpus/README.md` is the drop-in contract. | docs |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
@@ -362,30 +432,7 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The window (bl-428f)
-
-**This is the seat's whole reason to exist, and it is the larger half of the
-extraction by a wide margin.** It is deferred rather than half-done.
-
-**The vocabulary it paints from has landed** (bl-4174, §4.9): six reply kinds,
-reimplemented off REMOTE, decoding only what a window renders. That ball's
-first duty was to answer how much of the surface a first window actually needs,
-and the answer is in §4.9 and in `corpus/unreadable/`, which is the standing
-ledger of what is not painted yet. What a pane adds is its own kind, with the
-ball that lands the pane.
-
-The window itself (bl-428f) brings the largest dependency approval this crate
-will ever make, which is why `Cargo.toml` does not pre-grant it: the approval
-lands with the ball that links it, and that ball re-derives the licence
-allow-list from the lockfile it produces.
-
-It also brings **the paint probe and the rule that governs it**, and that rule
-travels for cause. A galley reports the string that went IN, so a label the
-toolkit elided to an ellipsis still reads back whole and every assertion against
-it is blind to truncation. Upstream found that defect three times before it
-became a rule; it arrives here as a rule and not as a memory.
-
-### 6.2 The off-frame threads (bl-8ed9)
+### 6.1 The off-frame threads (bl-8ed9)
 
 A frame that never blocks means no read and no act happens on it: the standing
 questions per channel, the acts and their later receipts, the follow lane
@@ -396,7 +443,7 @@ from — a client-side stamp, so no origin ever crosses the wire.
 The transport half is already here: `Channel::follow` hands frames over as they
 arrive. What is missing is everything above the socket.
 
-### 6.3 The local foot-grade check (bl-f5c2)
+### 6.2 The local foot-grade check (bl-f5c2)
 
 REMOTE §4.2's grade is enforced at the engine's chokepoint, fail-closed and in
 band, so a seat holding a foot-grade leaf is already refused correctly. Nothing
@@ -404,7 +451,7 @@ deferred here is a security property — what is missing is a **diagnosis**, so
 that a misconfiguration of this box's own files reads as a sentence about this
 box rather than as an authorization refusal from somebody else.
 
-### 6.4 The late half of the disclosure gate (bl-28fb)
+### 6.3 The late half of the disclosure gate (bl-28fb)
 
 The gate here is prevention only: local, and bypassable by whoever runs it. The
 standing question — what the tree and the store carry in total — is answered by
@@ -412,7 +459,7 @@ a scan of the published ref, and this repository has a published ref from its
 founding. The check is simply not written. There is also no CI at all yet, so
 `make check` is run by a person or by nobody.
 
-### 6.5 Per-seat UI state (bl-0fba)
+### 6.4 Per-seat UI state (bl-0fba)
 
 REMOTE §7's state never crosses the boundary and is the seat's own. The window
 will therefore have durable state on this box for the first time, and the hazard
@@ -420,7 +467,7 @@ is written in `src/paths.rs` already: nothing the seat *generates* may sit besid
 material the seat cannot replace. This is decided before the window decides it
 by being written.
 
-### 6.6 One agreed omission, and it is a finding (bl-4a36)
+### 6.5 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -432,7 +479,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.7 The first publish (bl-11fc)
+### 6.6 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

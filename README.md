@@ -56,6 +56,7 @@ lernie follow <workspace> <agent>       # hold the line on the live tail
 lernie message <workspace> <agent> <content>
 lernie nudge <workspace> <agent>
 
+lernie                  # open the window
 lernie entries          # every channel this box holds, without dialling any
 lernie ask <envelope>   # the same gestures, written out as JSON
 lernie help [<verb>]    # what a verb takes — answered with no engine up
@@ -72,16 +73,25 @@ router. `ask` is the escape hatch for every op the table does not name —
 including one this build has never heard of, which the protocol says is not a
 version bump.
 
-**The window is not built**, and it is what a seat is *for*. That is the larger
-half of the extraction and it is deferred rather than half-done.
+**The window is built, and nothing feeds it yet.** Bare `lernie` opens the
+face: the roster grouped by channel, the conversation list, the chat pane and
+the composer, painted from a snapshot and firing gestures through the same verb
+table the command line spends. The frame never dials — every read and every act
+belongs off it — and the machinery that would fill the snapshot is the one thing
+still filed rather than built (`docs/DESIGN.md` §6.1). So the window opens on
+the channels this box holds and no content behind them, which is the honest
+state of a face with nothing feeding it.
 
-What has landed towards it is the half a window paints *from*: the typed reply
-vocabulary (`src/reply/`, `docs/DESIGN.md` §4.9). It is reimplemented off yog's
-REMOTE rather than shared through a crate, and it decodes only what a window
-renders — six kinds today, with `corpus/unreadable/` standing as the ledger of
-what is not painted yet. `docs/DESIGN.md` §6 is the ledger of the rest — the
-window and its paint layer, the off-frame threads — ball by ball, and nothing
-in it is claimed to work.
+What it paints *from* is the typed reply vocabulary (`src/reply/`,
+`docs/DESIGN.md` §4.9), reimplemented off yog's REMOTE rather than shared
+through a crate, decoding only what a window renders — six kinds today, with
+`corpus/unreadable/` standing as the ledger of what is not painted yet.
+
+Every assertion about the window reads the **glyphs that reached the glass**
+(`src/paint_probe.rs`, `rules/no-hand-rolled-paint-walk.yml`). A galley reports
+the string that went in, so a label the toolkit elided to `…` reads back whole
+and every assertion against it is blind to truncation. Upstream found that three
+times before it became a rule; it arrived here as a rule.
 
 What it reads, all of it put there by the operator's hand and none of it ever
 written by lernie:

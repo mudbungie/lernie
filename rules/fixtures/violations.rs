@@ -16,6 +16,7 @@
 //!       * locks-outside-state.yml      → violation 11
 //!       * no-bare-command.yml          → violation 12
 //!       * no-bare-fork.yml             → violation 13
+//!       * no-hand-rolled-paint-walk.yml → violation 14
 //!
 //! One direction alone is worthless. A clean `src` proves nothing if a rule's
 //! pattern has silently stopped matching anything at all — which is exactly
@@ -124,4 +125,14 @@ fn builds_a_child_by_hand() {
 // — and the fork is the party that holds it.
 fn forks_a_child_by_hand(mut cmd: std::process::Command) {
     let _ = cmd.spawn();
+}
+
+// Violation 14: a paint assertion reading `Galley::text()` — the string that
+// went IN — instead of the painted glyphs. A galley the toolkit elided to `…`
+// still reports itself whole, so this reads as a passing assertion forever
+// while covering no truncation at all. There is one walk and it is
+// `crate::paint_probe`; a caller needing something else adds a projection
+// there.
+fn asserts_against_the_input_string(shape: &egui::epaint::TextShape) -> bool {
+    shape.galley.text().contains("Login")
 }

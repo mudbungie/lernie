@@ -27,11 +27,13 @@
 //! back out of the answers those channels carry; and the [`verbs`] an operator
 //! types instead of writing one out by hand.
 //!
-//! **What is not built, and it is the larger half**: the window. The seat's
-//! whole reason to exist is a graphical face, and this crate is the transport
-//! that face will stand on. DESIGN §6 is the ledger of what that costs — the
-//! off-frame threads, the paint layer — and every row of it is a filed ball,
-//! not a hand-wave.
+//! And the [`ui`]: the window itself — the roster, the conversation list, the
+//! chat pane and the composer, painted from a snapshot and firing gestures
+//! through the same verb table the command line spends. **The frame never
+//! dials.** What fills the snapshot is the off-frame machinery, which is
+//! DESIGN §6.1 and is not built: until it lands the window opens on the
+//! channels this box holds and no content behind them, which is the honest
+//! state of a face with nothing feeding it.
 
 pub mod channel;
 pub mod cli;
@@ -39,7 +41,13 @@ pub mod envelope;
 pub mod paths;
 pub mod reply;
 pub mod seat;
+/// The window: the seat's face, and the paint layer that can testify about it.
+pub mod ui;
 pub mod verbs;
+
+/// The one paint walk, and the harness around it. Never in a released binary.
+#[cfg(test)]
+pub(crate) mod paint_probe;
 
 /// Scaffolding the suite shares. Never compiled into a released binary.
 #[cfg(test)]

@@ -1,0 +1,100 @@
+//! The conversation list: the empty states, the headline, the age, the indent,
+//! and the click that selects.
+
+use super::{NO_CONVERSATIONS, NO_WALL, age, headline, render};
+use crate::paint_probe::frame::Window;
+use crate::reply::convs::{AgentState, Tone};
+use crate::test_support::window::{click, conv, pane, seated};
+use crate::ui::Model;
+
+/// Two empty states and they are different facts: nothing aimed at, and a wall
+/// that holds nothing.
+#[test]
+fn the_two_empty_states_say_two_different_things() {
+    let mut nowhere = Model::default();
+    assert!(pane(|ui| render(ui, &mut nowhere)).contains(NO_WALL));
+    let mut aimed = seated();
+    aimed.convs.clear();
+    let painted = pane(|ui| render(ui, &mut aimed));
+    assert!(painted.contains(NO_CONVERSATIONS), "{painted}");
+    assert!(
+        painted.contains("home"),
+        "the wall is still named: {painted}"
+    );
+}
+
+/// A headline is a glance: the label, what it is doing, how long since it moved
+/// — and the two counts only where there is something to count.
+#[test]
+fn a_headline_says_the_state_the_age_and_only_the_counts_that_matter() {
+    let quiet = headline(&conv("id", "port the probe"));
+    assert_eq!(quiet, "port the probe  [quiescent]  42s");
+    let busy = headline(&crate::reply::convs::ConvRow {
+        state: AgentState::Live,
+        attention: 2,
+        members: 4,
+        age_secs: 7200,
+        ..conv("id", "port the probe")
+    });
+    assert!(quiet.len() < busy.len());
+    assert!(busy.contains("[live]"), "{busy}");
+    assert!(busy.contains("2h"), "{busy}");
+    assert!(busy.contains("2 waiting"), "{busy}");
+    assert!(busy.contains("4 members"), "{busy}");
+}
+
+/// **An age in the future is not a thing to paint.** Two machines' clocks
+/// disagreeing is a fact about a seat that dials somewhere else, so a negative
+/// age clamps rather than refusing or showing a minus sign.
+#[test]
+fn an_age_is_compact_and_never_negative() {
+    for (secs, said) in [
+        (-3, "0s"),
+        (0, "0s"),
+        (42, "42s"),
+        (59, "59s"),
+        (60, "1m"),
+        (3599, "59m"),
+        (3600, "1h"),
+        (86_399, "23h"),
+        (86_400, "1d"),
+        (172_800, "2d"),
+    ] {
+        assert_eq!(age(secs), said, "{secs}");
+    }
+}
+
+/// A member hangs under its root, and its preview is painted in the row's own
+/// tone — which is not derivable from the state beside it.
+#[test]
+fn a_member_is_indented_and_its_preview_carries_the_row_s_tone() {
+    let mut model = seated();
+    model.convs = vec![crate::reply::convs::ConvRow {
+        depth: 2,
+        tone: Tone::Weak,
+        preview: "the galley lies about elision".to_owned(),
+        ..conv("child", "a member")
+    }];
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(painted.contains("a member"), "{painted}");
+    assert!(
+        painted.contains("the galley lies about elision"),
+        "{painted}"
+    );
+}
+
+/// **Selecting a conversation drops the last one's transcript**, for the reason
+/// the roster drops the last wall's list: content under a new header reads as
+/// current, and a transcript is the one place that lies worst.
+#[test]
+fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
+    let mut model = seated();
+    model.conversation = None;
+    let window = Window::new();
+    click(&window, &headline(&model.convs[0].clone()), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    assert_eq!(model.conversation.as_deref(), Some("20260830T051200Z-a1b2"));
+    assert!(model.transcript.entries.is_empty());
+    assert_eq!(model.live, None);
+}

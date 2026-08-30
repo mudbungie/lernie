@@ -50,6 +50,11 @@ use serde_json::{Map, Value};
 
 /// The roster and one verb's page, answered here rather than by an engine.
 pub mod help;
+/// The rows themselves — the six verbs, as data.
+mod rows;
+
+use rows::TABLE;
+pub use rows::{MESSAGE, NUDGE, message, nudge};
 
 /// One verb: the word, what it takes, and what it is for.
 ///
@@ -69,70 +74,6 @@ pub struct Verb {
     /// The page: what it answers with, and what to know before typing it.
     pub detail: &'static str,
 }
-
-/// Every verb, in the order the roster prints them: the reads first, widest
-/// first, then the two acts.
-const TABLE: &[Verb] = &[
-    Verb {
-        word: "workspaces",
-        params: &[],
-        summary: "every workspace this engine holds, with its rollups",
-        detail: "The roster, and the whole of what a window's first pane is. It \
-                 names each workspace, how it is classified, how many \
-                 conversations it holds, how many want attention, whether \
-                 anything is running, and where the operator pinned it. It takes \
-                 no address: a read with no workspace goes to this box's own \
-                 engine, and a workspace held elsewhere is reached by naming it \
-                 to one of the verbs below.",
-    },
-    Verb {
-        word: "conversations",
-        params: &["workspace"],
-        summary: "one workspace's conversations",
-        detail: "The rows a window's middle pane paints: each conversation's \
-                 label, its state, a first-line preview, its age and how far it \
-                 hangs under its root. The id it answers with is the address \
-                 every other verb here takes.",
-    },
-    Verb {
-        word: "transcript",
-        params: &["workspace", "agent"],
-        summary: "one conversation, committed entries and the live tail",
-        detail: "The whole conversation as of now — the delivered messages, the \
-                 model's turns and their tool calls, the results, whatever the \
-                 compactor squashed, and the tail of a turn still in flight. It \
-                 answers once and returns; `follow` is the same subject held \
-                 open.",
-    },
-    Verb {
-        word: "follow",
-        params: &["workspace", "agent"],
-        summary: "hold the line on one conversation's live tail",
-        detail: "A read that deliberately never finishes: the connection stays \
-                 open and the engine writes a frame every time the tail moves. \
-                 Each frame is the WHOLE accumulated fold rather than a delta, \
-                 so a frame missed is nothing missed. It ends when the engine \
-                 ends it, or when this end hangs up.",
-    },
-    Verb {
-        word: "message",
-        params: &["workspace", "agent", "content"],
-        summary: "deposit a message into a conversation",
-        detail: "The content crosses verbatim — nothing here trims, wraps or \
-                 normalises it — so quote it as one argument. It answers with \
-                 the deposit's captured run, and the turn it triggers arrives on \
-                 the transcript at its own pace.",
-    },
-    Verb {
-        word: "nudge",
-        params: &["workspace", "agent"],
-        summary: "start a driver on a conversation that has gone quiet",
-        detail: "It launches the advance and answers at once, carrying nothing \
-                 else, because there is nothing else yet: what the model does \
-                 with the turn arrives on the transcript, and a receipt that \
-                 guessed at it here would be a receipt that lied.",
-    },
-];
 
 /// Every verb, in roster order.
 pub fn table() -> Vec<Verb> {
@@ -169,6 +110,14 @@ impl Verb {
                 self.usage()
             ));
         }
+        Ok(self.built(args))
+    }
+
+    /// The envelope proper, with the arity already settled. **The one
+    /// builder**: [`envelope`](Self::envelope) is the checked door for argv,
+    /// [`message`] and [`nudge`] are the typed doors for the window, and both
+    /// arrive here — so a gesture has one spelling however it was composed.
+    fn built(&self, args: Vec<String>) -> Value {
         let mut map = Map::new();
         map.insert(
             crate::envelope::OP.to_owned(),
@@ -177,7 +126,7 @@ impl Verb {
         for (key, value) in self.params.iter().zip(args) {
             map.insert((*key).to_owned(), Value::String(value));
         }
-        Ok(Value::Object(map))
+        Value::Object(map)
     }
 }
 

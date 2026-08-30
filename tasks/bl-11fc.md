@@ -1,7 +1,7 @@
 +++
 title = "the first publish: the fence in the public record, and the allowlist that guards it"
 created = 1788068290
-updated = 1788068290
+updated = 1788068374
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

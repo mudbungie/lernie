@@ -25,8 +25,11 @@ use serde_json::Value;
 
 /// What this box says it holds, said without dialling any of it.
 mod holds;
+/// The §8.1 start family's two acts, spelled as one word.
+mod start;
 
 pub use holds::{OWN, channels, dial, listing};
+pub use start::start;
 
 use crate::channel::material::{self, REMEDY};
 use crate::channel::{Channel, entries};
@@ -48,14 +51,20 @@ use crate::envelope;
 /// **answering**, so it goes to stdout with the rest of the stream and only the
 /// exit code says no.
 pub fn ask(data_root: &Path, envelope: &Value) -> Verdict {
-    let (channel, carried) = match route(data_root, envelope) {
-        Ok(routed) => routed,
-        Err(refusal) => return Verdict::failed(refusal),
-    };
-    match channel.ask(&carried) {
-        Ok(stream) => answer(&stream),
+    match sent(data_root, envelope) {
+        Ok(stream) => Verdict::answered(lines(&stream), envelope::succeeded(&stream)),
         Err(refusal) => Verdict::failed(refusal),
     }
+}
+
+/// **One gesture, spent**: routed and asked, as one act.
+///
+/// Every caller does both and neither half is useful alone — a channel opened
+/// and not asked is a connection nobody wanted — so the pair is one function
+/// and the two failures collapse into the one sentence they always were.
+pub(crate) fn sent(data_root: &Path, envelope: &Value) -> Result<Vec<Value>, String> {
+    let (channel, carried) = route(data_root, envelope)?;
+    channel.ask(&carried)
 }
 
 /// **Which channel this gesture goes down, and what it carries there** (§8.2).
@@ -110,15 +119,15 @@ fn flat(data_root: &Path) -> Result<Channel, String> {
     }
 }
 
-/// The reply stream as this seat's product: one envelope per line, and the exit
-/// code read off the last frame's verdict.
-fn answer(stream: &[Value]) -> Verdict {
-    let text = stream
+/// **The reply stream as this seat's product**: one envelope per line, and the
+/// one place that shape is written — [`start`] prints two streams the same way,
+/// and two spellings of "what a seat printed" is two products.
+pub(crate) fn lines(stream: &[Value]) -> String {
+    stream
         .iter()
         .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join("\n");
-    Verdict::answered(text, envelope::succeeded(stream))
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 #[cfg(test)]

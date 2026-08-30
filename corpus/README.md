@@ -27,9 +27,11 @@ corpus is for.
 ## Why `unreadable/` holds valid answers
 
 Most of it is not malformed at all. `unpainted-kind-*.json` are perfectly good
-frames of kinds this build does not paint: a board, a decision queue, a prepared
-start. They are unreadable *to this seat*, which is the honest reading of
-DESIGN §6.1 — the vocabulary decodes only what the window renders.
+frames of kinds this build does not paint: a board, a decision queue. They are
+unreadable *to this seat*, which is the honest reading of DESIGN §4.9 — the
+vocabulary decodes only what the window renders. The start family's two left
+this directory when the start pane landed; the diff of that move is what the
+paragraph below is about.
 
 So this directory doubles as **the ledger of what is not painted yet**. When a
 pane lands and its kind becomes paintable, its fixture moves to `answers/`, and

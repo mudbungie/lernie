@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "kind": "prepared",
+  "prepared": {
+    "workspace": "home",
+    "binding": "/home/u/dev/thing",
+    "lineage": "reviewer",
+    "goal": "Ball bl-0000: do the thing",
+    "origin": "balls"
+  }
+}

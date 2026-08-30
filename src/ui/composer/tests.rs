@@ -1,31 +1,43 @@
 //! The composer: what it refuses to fire, what it composes when it does, and
 //! the draft that survives a mis-click.
 
-use super::{NOWHERE, NUDGE, SEND, render};
+use super::{NOWHERE, NUDGE, SEND, render, start};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::Model;
 use serde_json::json;
 
-/// With nothing aimed at there is nothing to say it to, and the refusal names
-/// **both** halves of the address — either can be the one that is missing, and
-/// a bare "nothing selected" makes the operator guess which.
+/// **One box, three subjects, and what decides is the selection.** With no wall
+/// aimed at there is neither a conversation to speak to nor one to begin, and
+/// that is the only case the composer refuses outright — a wall with nothing
+/// selected on it is where a conversation is *begun*, which used to be half of
+/// this refusal.
 #[test]
-fn with_no_address_the_composer_names_both_halves_of_one() {
-    for model in [
-        Model::default(),
-        Model {
-            conversation: None,
-            ..seated()
-        },
-        Model {
-            aim: None,
-            ..seated()
-        },
+fn what_the_composer_is_for_follows_from_what_is_selected() {
+    for (model, expected) in [
+        (Model::default(), NOWHERE),
+        (
+            Model {
+                aim: None,
+                ..seated()
+            },
+            NOWHERE,
+        ),
+        (
+            Model {
+                conversation: None,
+                ..seated()
+            },
+            start::START,
+        ),
+        (seated(), SEND),
     ] {
         let mut model = model;
         let painted = pane(|ui| render(ui, &mut model));
-        assert!(painted.contains(NOWHERE), "{painted}");
+        assert!(
+            painted.lines().any(|line| line == expected),
+            "{expected:?}:\n{painted}"
+        );
     }
 }
 

@@ -8,100 +8,13 @@
 //! decision: every decision is here, and every decision is a value a test can
 //! read back.
 
-/// Which stream a verdict's text belongs on.
-///
-/// It is stored rather than derived from the code, and the exception is the
-/// reason. For everything this binary says about *itself* the code does say the
-/// stream — a refusal is stderr, a `--version` is stdout. But the seat's one
-/// product is the engine's **reply stream**, and an engine answering `ok:
-/// false` has answered: that is the product, it goes to stdout with the rest of
-/// the frames, and only the exit code says no. Deriving the stream from the
-/// code would put an answer on stderr because it was a negative one.
 /// What this binary says about ITSELF: the version line and the usage.
 mod text;
+/// What an invocation says, and with what exit code.
+mod verdict;
 
 pub use text::{usage, version};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Stream {
-    /// stdout — this run's product.
-    Out,
-    /// stderr — this run's diagnosis.
-    Err,
-}
-
-/// What one invocation decided: an exit code, the text that explains it, and
-/// where that text belongs.
-#[derive(Debug)]
-pub struct Verdict {
-    /// The process exit code. `0` is the only success.
-    pub code: u8,
-    /// Everything this run has to say, without a trailing newline.
-    pub text: String,
-    /// Which stream [`text`](Self::text) goes to.
-    pub stream: Stream,
-}
-
-/// The exit code for every refusal: bad usage, or a body that is not a gesture.
-/// One code, because these are all the same kind of event — "that is not
-/// something this binary can act on" — and a taxonomy of exit codes would be a
-/// promise to keep them stable.
-const REFUSED: u8 = 2;
-
-/// The exit code for a run that was understood and did not finish: no channel,
-/// a channel that would not open, an engine that would not answer, or an engine
-/// that answered no. One code for the same reason.
-const FAILED: u8 = 1;
-
-impl Verdict {
-    /// A successful run and what it printed.
-    pub fn ok(text: String) -> Self {
-        Self {
-            code: 0,
-            text,
-            stream: Stream::Out,
-        }
-    }
-
-    /// **The engine's answer**, whichever way it went: the reply stream is this
-    /// seat's product, so it goes to stdout, and `ok` is the exit code alone.
-    pub fn answered(text: String, ok: bool) -> Self {
-        Self {
-            code: if ok { 0 } else { FAILED },
-            text,
-            stream: Stream::Out,
-        }
-    }
-
-    /// A refusal, from the sentence naming what was refused.
-    ///
-    /// The prefix and the usage are appended HERE rather than at each call
-    /// site, so "a refusal always says what it refused *and* what the caller
-    /// could have typed instead" is structural rather than remembered: a
-    /// refusal added later cannot forget it. A bare non-zero exit teaches
-    /// nobody anything.
-    pub fn refused(what: String) -> Self {
-        Self {
-            code: REFUSED,
-            text: format!("lernie: {what}\n\n{}", usage()),
-            stream: Stream::Err,
-        }
-    }
-
-    /// A run that did what it was asked and could not finish it.
-    ///
-    /// It carries **no usage**, and that is the difference from a refusal: a
-    /// refusal is about what the caller typed, so the alternatives are the
-    /// useful thing to say next; a failure is about this box or the far end,
-    /// where a usage line is noise in front of the sentence that matters.
-    pub fn failed(what: String) -> Self {
-        Self {
-            code: FAILED,
-            text: format!("lernie: {what}"),
-            stream: Stream::Err,
-        }
-    }
-}
+pub use verdict::{Stream, Verdict};
 
 /// What one invocation decided to do.
 #[derive(Debug)]
@@ -115,6 +28,15 @@ pub enum Decided {
     /// and a native event loop, both of which are the entry point's — so it
     /// carries nothing, exactly as [`Entries`](Self::Entries) does.
     Window,
+    /// **Begin a conversation** in that workspace, with that goal: the §8.1
+    /// start family's two acts, spelled as one word. It is a serialization and
+    /// not a gesture — what crosses is `prepare` and then `prompt`, the
+    /// boundary's own envelopes — and it is one word because the thing between
+    /// them is a local: the staged body, held while the second act is composed.
+    ///
+    /// It carries the two words rather than an envelope, because there are two
+    /// envelopes and the second cannot be built until the first is answered.
+    Start { address: String, goal: String },
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
     ///
@@ -142,6 +64,17 @@ pub fn run(args: Vec<String>) -> Decided {
         ["--version" | "-V"] => Decided::Say(Verdict::ok(version())),
         ["ask"] => Decided::Say(Verdict::refused(
             "`lernie ask` wants one gesture envelope".to_owned(),
+        )),
+        // The composite, and its arity is exact for [`crate::verbs`]'s own
+        // reason: argv quotes, so a goal is one argument, and an unquoted tail
+        // refuses rather than being silently joined.
+        ["start", address, goal] => Decided::Start {
+            address: (*address).to_owned(),
+            goal: (*goal).to_owned(),
+        },
+        ["start", ..] => Decided::Say(Verdict::refused(
+            "`lernie start` takes a workspace and a goal — usage:              lernie start <workspace> <goal>"
+                .to_owned(),
         )),
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.

@@ -10,7 +10,9 @@
 
 use serde_json::Value;
 
-use super::{ERROR, KIND, OK, Outcome, Read, Reply, convs, fields, roster, stream, transcript};
+use super::{
+    ERROR, KIND, OK, Outcome, Read, Reply, convs, fields, roster, start, stream, transcript,
+};
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
 /// the tokens live where the reading does and a spelling cannot drift from it;
@@ -50,6 +52,10 @@ fn decode(frame: &Value) -> Result<Read, String> {
         convs::KIND => Reply::Conversations(fields::rows(obj, convs::row)?),
         transcript::KIND => Reply::Transcript(transcript::transcript(obj)?),
         stream::KIND => Reply::Follow(stream::follow(obj)?),
+        start::PREPARED => Reply::Prepared(start::prepared(obj)?),
+        start::STARTED => Reply::Started {
+            conversation: start::started(obj)?,
+        },
         // Rung 2. The kind is named because naming it is the whole remedy: an
         // operator reading it knows which end is behind, exactly as the
         // version preface's mismatch names both numbers.

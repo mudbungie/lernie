@@ -3,7 +3,8 @@
 //! them — each read back as a value, which is what earns `src/main.rs` its
 //! place as the coverage floor's one exclusion.
 
-use super::super::{Decided, REFUSED, Stream, run, usage, version};
+use super::super::verdict::REFUSED;
+use super::super::{Decided, Stream, run, usage, version};
 use super::{argv, asked, said};
 use serde_json::json;
 
@@ -48,6 +49,40 @@ fn every_verb_in_the_table_is_typable() {
         let filled: Vec<String> = verb.params.iter().map(|p| format!("a-{p}")).collect();
         words.extend(filled.iter().map(String::as_str));
         assert_eq!(asked(&words)["op"], json!(verb.word), "{}", verb.word);
+    }
+}
+
+/// **The composite is one word and two words of argument.** It carries them
+/// rather than an envelope, because there are two envelopes and the second
+/// cannot be built until the first is answered.
+#[test]
+fn the_start_word_carries_a_workspace_and_a_goal() {
+    let Decided::Start { address, goal } = run(argv(&["start", "home", "do the thing"])) else {
+        panic!("`start` begins a conversation");
+    };
+    assert_eq!(address, "home");
+    assert_eq!(goal, "do the thing");
+}
+
+/// **Its arity is exact, for the verb table's own reason**: argv quotes, so a
+/// goal is one argument and an unquoted tail refuses rather than being silently
+/// joined — which would make three typed words indistinguishable from one
+/// quoted sentence.
+#[test]
+fn the_start_word_refuses_by_arity_and_says_what_it_takes() {
+    for words in [
+        vec!["start"],
+        vec!["start", "home"],
+        vec!["start", "home", "do", "the", "thing"],
+    ] {
+        let v = said(&words);
+        assert_eq!(v.code, REFUSED, "{words:?}");
+        assert_eq!(v.stream, Stream::Err);
+        assert!(
+            v.text.contains("lernie start <workspace> <goal>"),
+            "{}",
+            v.text
+        );
     }
 }
 

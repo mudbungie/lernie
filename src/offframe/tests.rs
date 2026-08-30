@@ -1,5 +1,13 @@
 //! The threading itself: the loop that stops, and one end-to-end beat where
 //! real threads carry a real answer to a real frame.
+//!
+//! Split at the design-time budget on the seam the two halves have: this is
+//! about the *threads* — that they start, pass and stop — and [`window`] is
+//! about what the whole seat does with what they bring, read off the glass.
+//!
+//! Split at the design-time budget on the seam the two halves have: this is
+//! about the *threads* — that they start, pass and stop — and [`window`] is
+//! about what the whole seat does with what they bring, read off the glass.
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
@@ -10,6 +18,9 @@ use crate::test_support::Scratch;
 use crate::test_support::wire::{flat, wired};
 use crate::ui::{Channel, Chunk, Model};
 use serde_json::json;
+
+/// The beats that drive the whole seat and read the glass.
+mod window;
 
 /// **A pass runs, then the loop asks whether to run again.** So a stop is seen
 /// between passes and never during one — which is what lets every worker's body
@@ -89,50 +100,5 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
             .map(|row| row.workspace.clone()),
         Some("home".to_owned()),
         "the asker's answer reached the frame"
-    );
-}
-
-/// **The whole seat, in one process**: a real listener with a real mTLS
-/// handshake and a real version preface, the three threads, the settle, and the
-/// window — asserted on the glyphs that reached the glass.
-///
-/// It is the beat the ball is ultimately about, and it is the only one that
-/// crosses every seam at once: everything eframe adds beyond this is an event
-/// loop and a GL surface, which is why the entry point that holds them decides
-/// nothing.
-#[test]
-fn the_window_paints_what_a_real_engine_answered() {
-    let scratch = Scratch::new();
-    let roster = json!({"ok": true, "kind": "workspaces",
-                        "rows": [{"workspace": "home", "kind": "named", "attention": 2,
-                                  "agents": 3, "running": true}]});
-    wired(&scratch, &flat(), vec![vec![roster]; 8]);
-    let mut model = Model {
-        roster: crate::seat::channels(scratch.path())
-            .into_iter()
-            .map(Chunk::of)
-            .collect(),
-        ..Model::default()
-    };
-    let link = Link::new(Duration::from_millis(1));
-    link.settle(&mut model);
-    let workers = run(&link, scratch.path());
-    let window = crate::paint_probe::frame::Window::new();
-    let deadline = std::time::Instant::now() + Duration::from_secs(20);
-    let mut painted = String::new();
-    while !painted.contains("home  (named)  3 conversations  2 waiting  running")
-        && std::time::Instant::now() < deadline
-    {
-        std::thread::sleep(Duration::from_millis(5));
-        link.settle(&mut model);
-        painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    }
-    link.stop();
-    for worker in workers {
-        worker.join().expect("a worker");
-    }
-    assert!(
-        painted.contains("home  (named)  3 conversations  2 waiting  running"),
-        "the engine's own answer never reached the glass:\n{painted}"
     );
 }

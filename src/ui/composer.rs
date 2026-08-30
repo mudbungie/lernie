@@ -9,13 +9,21 @@
 //! spends, through a door whose arity is its signature. So a click and a typed
 //! command build one object and there is no second spelling of a gesture to
 //! drift.
+//!
+//! **One box with two subjects, decided by what is selected.** A wall with a
+//! conversation on it is spoken to; a wall with none is where one is *begun*
+//! ([`start`]) — which used to be a refusal, and was the start's own case
+//! wearing a sentence. A second box beside this one would be the same box
+//! twice, each with its own Enter.
 
 use crate::ui::Model;
 
-/// What the composer says with nothing to say it to. It names **both** halves
-/// of the address, because either can be the one that is missing and a bare
-/// "nothing selected" makes the operator guess which.
-pub const NOWHERE: &str = "pick a workspace and a conversation to say anything";
+/// The half that begins a conversation rather than continuing one.
+pub mod start;
+
+/// What the composer says with no wall aimed at — the one case that is neither
+/// a deposit nor a start, because there is nowhere for either to go.
+pub const NOWHERE: &str = "pick a workspace to say anything or begin anything";
 /// The verb on the button, and the word the refusal above is about.
 pub const SEND: &str = "send";
 /// The other act a conversation affords from here: start a driver on one that
@@ -26,8 +34,12 @@ pub const NUDGE: &str = "nudge";
 
 /// Paint the composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    let (Some(aim), Some(agent)) = (model.aim.clone(), model.conversation.clone()) else {
+    let Some(aim) = model.aim.clone() else {
         ui.label(NOWHERE);
+        return;
+    };
+    let Some(agent) = model.conversation.clone() else {
+        start::render(ui, model, &aim);
         return;
     };
     let entry = ui.add(

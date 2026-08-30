@@ -2,7 +2,8 @@
 //! version line, the usage, and the four constructors' invariants — the exit
 //! code, the stream, and which of them wears the usage.
 
-use super::super::{FAILED, REFUSED, Stream, Verdict, usage, version};
+use super::super::verdict::{FAILED, REFUSED};
+use super::super::{Stream, Verdict, usage, version};
 
 #[test]
 fn version_names_the_crate_and_its_version() {
@@ -58,6 +59,7 @@ fn usage_states_the_fence_and_names_the_engine_s_new_name() {
 fn usage_names_the_verbs_and_what_it_reads() {
     let text = usage();
     assert!(text.contains("lernie entries"), "{text}");
+    assert!(text.contains("lernie start <workspace> <goal>"), "{text}");
     assert!(text.contains("lernie ask <envelope>"), "{text}");
     assert!(text.contains("lernie help [<verb>]"), "{text}");
     assert!(text.contains("wire/workspaces/"), "{text}");

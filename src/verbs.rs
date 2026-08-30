@@ -22,13 +22,17 @@
 //! that would carry it is exactly the second implementation this module exists
 //! not to be.
 //!
-//! # Six verbs, and they are the six the seat can read the answers to
+//! # Six rows, and eight gestures — the roster and the table are not one list
 //!
-//! The roster is not "everything the boundary has". It is the gestures whose
-//! replies [`crate::reply`] paints — the four reads and the two acts that move
-//! a conversation — so the ask surface and the paint surface are one roster and
-//! grow together. The ball that lands a pane adds its kind and its verb in the
-//! same breath.
+//! The **roster** is the gestures whose replies [`crate::reply`] paints, so the
+//! ask surface and the paint surface grow together: the ball that lands a pane
+//! adds its kind and its gesture in the same breath. The **table** is the
+//! subset of those a word can spell, and it is six because two of them cannot
+//! be one. [`start`] holds the pair and says why: `prepare` carries a payload
+//! rung and `prompt` carries a prepared body, and a nested object is not a word
+//! an operator types — which is exactly the case the paragraph above refuses to
+//! special-case. They are typed doors with no row, and what argv types instead
+//! is `lernie start`, the composite that spends both.
 //!
 //! # Positional and context-free, unlike the engine's own line
 //!
@@ -52,12 +56,15 @@ use serde_json::{Map, Value};
 pub mod help;
 /// The rows themselves — the six verbs, as data.
 mod rows;
+/// The start family's two envelopes, which are doors without rows.
+pub mod start;
 
 use rows::TABLE;
 pub use rows::{
     CONVERSATIONS, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, follow, message,
     nudge, transcript, workspaces,
 };
+pub use start::{PREPARE, PROMPT, prepare, prompt};
 
 /// One verb: the word, what it takes, and what it is for.
 ///

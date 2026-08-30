@@ -56,6 +56,8 @@ lernie follow <workspace> <agent>       # hold the line on the live tail
 lernie message <workspace> <agent> <content>
 lernie nudge <workspace> <agent>
 
+lernie start <workspace> <goal>         # begin a conversation — two acts, one word
+
 lernie                  # open the window
 lernie entries          # every channel this box holds, without dialling any
 lernie ask <envelope>   # the same gestures, written out as JSON
@@ -73,10 +75,19 @@ router. `ask` is the escape hatch for every op the table does not name —
 including one this build has never heard of, which the protocol says is not a
 version bump.
 
+`start` is a serialization of **two** gestures rather than one, and the only
+one: starting is two acts — a `prepare` that stages it and answers the fire's
+parameters, then a `prompt` that hands that body straight back with the goal —
+so the thing between them is a local, and one word is what holds it. Both reply
+streams print; the exit code is the fire's.
+
 **Bare `lernie` opens the window**: the roster grouped by channel, the
 conversation list, the chat pane and the composer, painted from a snapshot and
-firing gestures through the same verb table the command line spends. Behind it
-are three threads — the asker over the standing question set, the poster
+firing gestures through the same doors the command line spends. The composer
+speaks to the conversation that is selected and **begins one** where none is,
+holding the staged body between the start's two acts — so the window can start a
+conversation and not only continue one. Behind it are three threads — the asker
+over the standing question set, the poster
 draining what a click composed, and the follow lane holding one connection open
 on the focused conversation.
 
@@ -88,7 +99,7 @@ the next question follows from it.
 
 What it paints *from* is the typed reply vocabulary (`src/reply/`,
 `docs/DESIGN.md` §4.9), reimplemented off yog's REMOTE rather than shared
-through a crate, decoding only what a window renders — six kinds today, with
+through a crate, decoding only what a window renders — eight kinds today, with
 `corpus/unreadable/` standing as the ledger of what is not painted yet.
 
 Every assertion about the window reads the **glyphs that reached the glass**

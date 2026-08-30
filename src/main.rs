@@ -23,6 +23,9 @@ fn main() -> ExitCode {
         Decided::Say(verdict) => verdict,
         Decided::Entries => rooted(lernie::seat::listing),
         Decided::Ask(envelope) => rooted(|root| lernie::seat::ask(root, &envelope)),
+        Decided::Start { address, goal } => {
+            rooted(|root| lernie::seat::start(root, &address, &goal))
+        }
         Decided::Window => rooted(window),
     };
     match verdict.stream {

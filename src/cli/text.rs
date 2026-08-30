@@ -37,6 +37,7 @@ continues under the name litany. lernie 0.1.0 and above is this seat. The
 version is the only rule that separates them.
 
 usage: lernie <verb> [argument…]
+       lernie start <workspace> <goal>
        lernie ask <envelope>
        lernie entries
        lernie help [<verb>]
@@ -48,6 +49,12 @@ envelope per line, and the exit code is 0 when the last reply says ok.
 
 {}
 
+  start <workspace> <goal>
+                  begin a conversation on that workspace — the start family's
+                  two acts (yog's REMOTE §8.1), staged and fired in one
+                  process. Not a gesture but both of them: a `prepare`, then a
+                  `prompt` carrying the body that answered it straight back.
+                  Both reply streams print; the exit code is the fire's.
   ask <envelope>  the same thing written out: any op, including one this build
                   has never heard of, as the JSON object the boundary carries
                   with `op` the discriminant. The escape hatch above is not a

@@ -16,11 +16,12 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Six do not:
-//! the roster, the conversation list, the transcript, the live tail, a
-//! captured run and the detached advance's receipt. A kind nothing renders is
-//! a kind nobody has to carry, and the compiler of the window is what pulls in
-//! the next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
+//! kinds and most of them belong to panes that do not exist here. Eight do
+//! not: the roster, the conversation list, the transcript, the live tail, a
+//! captured run, the detached advance's receipt, and the start family's two —
+//! the staged body and the minted name. A kind nothing renders is a kind
+//! nobody has to carry, and the compiler of the window is what pulls in the
+//! next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
 //! for what is not.
 //!
 //! # The decode policy, stated once
@@ -73,6 +74,8 @@ pub(crate) mod fields;
 mod read;
 /// The workspace roster — the window's altitude-0 chrome.
 pub mod roster;
+/// The start family's two receipts.
+pub mod start;
 /// The live tail's fold.
 pub mod stream;
 /// The conversation itself.
@@ -102,7 +105,11 @@ const ERROR: &str = "error";
 ///
 /// Nothing here is a panic path and nothing is a silent drop: every frame that
 /// arrives becomes one of the three, and all three are paintable.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// **Not `Eq`**, because [`start::Prepared`] carries the body it must hand back
+/// verbatim and arbitrary JSON is not `Eq`. Nothing in this crate keys on a
+/// reply, so the equality given up is one no caller spends.
+#[derive(Debug, Clone, PartialEq)]
 pub enum Read {
     /// The engine answered, and this is the answer typed.
     Answer(Reply),
@@ -116,9 +123,9 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Six, and each is here because a surface
+/// **The kinds the window draws.** Eight, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
     /// A short verb's captured run — what a deposit, a stop or a ball verb
     /// earns. `ok` is `exit == 0` and is read off the exit code alone.
@@ -140,6 +147,16 @@ pub enum Reply {
     /// than a delta: a frame **replaces** what a seat holds, so nothing has to
     /// be reassembled and a follow lane needs no second parser.
     Follow(stream::Stream),
+    /// **A start, staged.** The fire-time parameters as the engine settled
+    /// them, which the next act hands straight back — the one reply on this
+    /// surface a seat has to hold between two gestures.
+    Prepared(start::Prepared),
+    /// **A start, fired**, and the name the engine minted for it. It carries
+    /// nothing else for the reason [`Nudged`](Self::Nudged) carries nothing:
+    /// what the model does with the turn arrives on the transcript. What is
+    /// new is the name, and the name is an address the reply just made
+    /// answerable.
+    Started { conversation: String },
 }
 
 /// A captured run: what the child said and how it ended.

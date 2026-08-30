@@ -21,8 +21,11 @@ use crate::reply::{Read, Reply};
 
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
+/// A start, between its two acts.
+mod start;
 
 pub use channel::{Channel, Chunk};
+pub use start::{Phase, Start};
 
 /// Which wall the window is aimed at: the channel it came down, and the address
 /// a gesture must carry. **The address rather than the row's name**, because
@@ -86,6 +89,10 @@ pub struct Model {
     pub conversation: Option<String>,
     /// What the operator has typed and not yet sent.
     pub draft: String,
+    /// **A start, while it is happening** — the one thing this window holds
+    /// across a round trip, because starting is two acts and the second is
+    /// composed from the first's answer ([`Start`]).
+    pub start: Option<Start>,
     /// **The gestures this frame composed**, for whoever can send them. A frame
     /// that posted its own would be a frame that waits.
     pub outbox: Vec<Value>,
@@ -114,6 +121,11 @@ impl Model {
             Reply::Conversations(rows) => self.convs = rows,
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
+            // The start family's two, whose whole product is each other: the
+            // staged body composes the fire, and the fire's receipt is the
+            // minted name. [`Start`] holds the chain.
+            Reply::Prepared(prepared) => self.fire(&prepared),
+            Reply::Started { conversation } => self.started(conversation),
             // The two receipts. Neither carries content, so what they change is
             // whether the operator is told something happened — and a captured
             // run that failed is told in the child's own words.

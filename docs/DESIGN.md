@@ -6,14 +6,17 @@ the box's own engine, or one of the client-side workspaces it holds elsewhere �
 over a real mTLS handshake with a real version preface, carry the operator's
 envelope across, and print the reply stream. `lernie entries` says what this box
 holds without dialling any of it, and `lernie help` says what a verb takes
-without dialling anything at all. `src/verbs/` is the six gestures typed (§4.10)
-and `src/reply/` reads their answers back as the six kinds a window paints
-(§4.9). The suite proves all of that against a stand-in engine that speaks the
-protocol, at 100% coverage.
+without dialling anything at all. `src/verbs/` is the gestures typed (§4.10)
+and `src/reply/` reads their answers back as the eight kinds a window paints
+(§4.9). **`lernie start` begins a conversation** — the start family's two acts,
+staged and fired in one process (§4.10). The suite proves all of that against a
+stand-in engine that speaks the protocol, at 100% coverage.
 
 **Bare `lernie` opens the window** (§4.11): the roster grouped by channel, the
-conversation list, the chat pane and the composer, painted from a snapshot and
-firing gestures through the same verb table `lernie message` spends. Behind it
+conversation list, the chat pane and the composer — which speaks to the
+conversation that is selected and **begins one** where none is, holding the
+staged body between the start's two acts — painted from a snapshot and firing
+gestures through the same doors `lernie message` and `lernie start` spend. Behind it
 are three threads (§4.12) — the asker over the standing question set, the poster
 draining what a click composed, and the follow lane holding one connection open
 on the focused conversation. **The frame never dials**, and the suite proves the
@@ -233,13 +236,27 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Six kinds, because six are painted.** The engine's reply surface is forty-odd
-variants and most of them belong to panes that do not exist here. What is
-carried is the roster (`workspaces`), the conversation list (`conversations`),
-the conversation itself (`transcript`), the live tail (`follow`), a captured run
-(`outcome`) and the detached advance's receipt (`nudged`) — plus the refusal
-envelope, which is not a kind at all. A kind nothing renders is a kind nobody
-has to carry, and the ball that lands a pane is the ball that adds its kind.
+**Eight kinds, because eight are painted.** The engine's reply surface is
+forty-odd variants and most of them belong to panes that do not exist here.
+What is carried is the roster (`workspaces`), the conversation list
+(`conversations`), the conversation itself (`transcript`), the live tail
+(`follow`), a captured run (`outcome`), the detached advance's receipt
+(`nudged`) and the start family's two — the staged body (`prepared`) and the
+minted name (`started`) — plus the refusal envelope, which is not a kind at
+all. A kind nothing renders is a kind nobody has to carry, and the ball that
+lands a pane is the ball that adds its kind.
+
+**The staged body is carried whole, which is rung 4 read in the WRITE
+direction** (`src/reply/start.rs`). `prepared` is the one reply a seat hands
+straight back: `prompt` fires the body `prepare` answered. So the reader keeps
+the object verbatim beside the two fields it reads — the workspace, because a
+fire is addressed, and the goal, because a rung with a prefill composed one —
+and a start staged with a work target, a birth lineage or a banner origin this
+build paints none of still fires with all three. A seat that re-encoded its own
+reading would drop every parameter it had not learned yet, and the dropped
+parameter is not a missing badge: it is a conversation born in the wrong
+directory off the wrong config. The cost is `Eq` on `Read` and `Reply`, which
+nothing in this crate spent.
 
 **The decode policy is four rungs and the module doc is its one statement.**
 Shape refuses; an unknown **kind** refuses, naming itself, which is REMOTE §3's
@@ -286,10 +303,33 @@ parameters are not all strings is **not** added as a special case — it goes
 through `ask` until there is a reframe that keeps the one table, because the arm
 that would carry it is precisely the second implementation the rule forbids.
 
-**Six verbs, and they are §4.9's six kinds from the other side**: the four reads
-and the two acts whose replies this build paints. The ask surface and the paint
-surface are one roster and grow together — the ball that lands a pane adds its
-kind and its verb in the same breath.
+**Six rows and eight gestures — the table and the roster are not one list.**
+The *roster* is the gestures whose replies §4.9 paints, and it grows with the
+paint surface: the ball that lands a pane adds its kind and its gesture in the
+same breath. The *table* is the subset a word can spell, and it is six because
+two of them cannot be. `prepare` carries a payload rung and `prompt` carries a
+prepared body, and a nested object is not a word an operator types — which is
+exactly the case the paragraph above refuses to special-case. So they are typed
+doors with no row (`src/verbs/start.rs`), and what argv types instead is the
+composite below.
+
+**`lernie start <workspace> <goal>` is a serialization of BOTH acts, not a
+third gesture** (`src/seat/start.rs`). Nothing new crosses the wire: a
+`prepare` goes out, its answer is held in a local, and a `prompt` carrying that
+answer goes out after it — which is exactly what the window holds in its model
+(§4.11). Both reply streams print, in order, because both are the engine
+answering; the exit code is the *fire's*, so a stage that answered no staged
+body exits non-zero with its own frames on stdout. The one outcome two acts
+have and one does not — a stage that landed and a fire that never left this box
+— gets its own sentence, because the workspace exists and nothing is running,
+and the remedy is to type it again (yog §8.1: the steps are convergent).
+
+**The bare rung, and only the bare rung.** yog's §3.4 gives the payload three:
+bare, a work directory, a ball. This seat composes the bare one. A directory
+needs a field that refuses a path that is not there; a ball needs a project, a
+picker and the §3.5 join states. Each is unbuilt rather than unreachable, and
+each arrives with the surface that composes it — a seat that guessed a rung
+would found a claim nobody asked for.
 
 **Positional and context-free, unlike the engine's own line.** yog's line reader
 is terse because a seat with a focus supplies the address; REMOTE §8.5 says a
@@ -340,6 +380,30 @@ this seat can write will reach. Dropping it would hide a workspace the operator
 has, and addressing it by the leaf would aim a gesture at a different wall, so
 it is shown and said to be unreachable.
 
+**One composer with two subjects, and a start is where the third pane's
+refusal went.** A wall with a conversation on it is spoken to; a wall with
+none is where a conversation is *begun*. That second case used to be half of a
+refusal — *pick a workspace and a conversation* — and the refusal was the
+start's own case wearing a sentence. A second box beside this one would be the
+same box twice, each with its own Enter, on a face that is four panes wide.
+What is left refusing is the one case that is neither: no wall aimed at, so
+there is nowhere for either.
+
+**A start is the one thing this window holds across a round trip**
+(`src/ui/model/start.rs`). Starting is two acts and the second is composed from
+the first's answer, so the frame that *absorbs* the staged body is the frame
+that composes the fire — which is the only shape that keeps the rule above: a
+frame composes into the outbox and never waits on a socket. Three facts ride
+with it. The address is **held**, not re-read at fire time, because an operator
+may aim elsewhere while the first act is in flight and a fire that followed the
+aim would prompt a workspace nothing staged. The goal is held too, so the
+operator's text has a painted representation for the whole round trip — a start
+that shows nothing between Enter and the answer reads as a window that did
+nothing. And **a start in flight refuses a second start** by there being no
+control: while one is outstanding the composer paints the sentence instead of
+the box. That is upstream's own finding (yog §3.4): two starts chained through
+one composer spend one goal on two conversations and leave the first unfinished.
+
 **Nothing that arrives is dropped.** `Model::absorb` is the one door: an answer
 is filed, and a refusal or an unreadable frame becomes the notice bar, standing
 where that content would have been. That is §4.9's rung 2 honoured on the glass
@@ -373,35 +437,41 @@ exactly as argv and the environment are.
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~185 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~120 |
+| `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors and the two codes. | ~95 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the data root, from two variables and no knob of the seat's own. Neither set is a refusal, never a guess. | ~90 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
-| `src/seat.rs` | which engine a gesture reaches, what it carries there, and what this box says it holds. | ~160 |
+| `src/seat.rs` | which engine a gesture reaches, what it carries there, and what this box says it holds. | ~135 |
+| `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |
 | `src/channel/hello.rs` | the version preface. | ~85 |
 | `src/channel/tls.rs` | the mTLS configuration. | ~80 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/reply.rs` | the reply vocabulary's roster: the six kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~165 |
+| `src/reply.rs` | the reply vocabulary's roster: the eight kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~185 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
 | `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
 | `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
 | `src/reply/convs.rs` | one workspace's conversation list, and the two token fields rung 3 lives on. | ~160 |
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
+| `src/reply/start.rs` | the start family's two receipts: the staged body carried whole, and the minted name. | ~90 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
-| `src/verbs/rows.rs` | the six verbs, as data — and the two acts the window composes by name. | ~105 |
+| `src/verbs/rows.rs` | the six rows, as data — and the two acts the window composes by name. | ~105 |
+| `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~150 |
 | `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
+| `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~145 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold that replaces rather than accretes. | ~170 |
-| `src/ui/composer.rs` | what an operator types, and the gesture it becomes. | ~80 |
+| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects. | ~90 |
+| `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
 | `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~60 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
@@ -475,3 +545,20 @@ allowlist and a guard test over the real packaged file list, and it needs the
 publication checklist run by a person — history, other refs, commit messages,
 repository text nobody committed, CI logs. Every item is a one-time judgement
 whose remedy is destructive, which is why none of it is automated.
+
+### 6.6 A start does not focus what it started (bl-217c's residual)
+
+Upstream's rule is *a start focuses what it started* (yog's `docs/DESIGN.md`
+§3.4), and this seat paints the minted name rather than selecting it. That is
+deliberate and it is a gap, in that order.
+
+The name is a **barrier** — every gesture after the receipt may address it —
+but only once the detached driver has written the conversation's branch, which
+is upstream's own finding (bl-56c6: *"until the driver writes its branch the
+minted name resolves nowhere"*). A seat that selected it at once would publish
+three standing questions against an address the engine refuses, and paint the
+operator's own new conversation as unknown for the whole of a healthy start.
+Upstream's answer is a held claim and a synthetic row — a pending-conversation
+model this seat does not have and should not grow by halves. So the receipt is
+painted where it was composed, and the conversation arrives in the list the
+ordinary way. The claim is what a later ball buys.

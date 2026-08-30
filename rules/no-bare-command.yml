@@ -1,0 +1,56 @@
+# The spawn boundary, first half: every child process is BUILT in one file,
+# never by a bare `Command::new` anywhere else. The second half is
+# `no-bare-fork.yml`, which makes the same file fork it; the two together are
+# what let one module hold an invariant rather than a convention.
+#
+# LERNIE FORKS NOTHING IN PRODUCTION, and the confined location says so. The
+# seat is a window and a wire client: it dials a socket, frames JSON and paints.
+# It starts no child, and the day it wants to would be a design change, not an
+# implementation detail. The crate's ONE child process is the suite's own
+# out-of-channel certificate mint (`src/test_support/mint.rs`), which shells to
+# `openssl` because that is the tool an operator performs the act with — the
+# seat mints nothing itself (yog's docs/REMOTE.md §1.4), so the suite has to
+# perform the operator's act on the operator's behalf before it can open a
+# channel at all.
+#
+# So the location this rule names is `src/test_support/mint.rs`, and naming the
+# real one beats naming an aspirational `src/spawn.rs` that nothing would ever
+# put a site in: a confinement rule is an inventory, and an inventory that
+# points at an empty file while the one real site sits somewhere else is not an
+# inventory. The row is in docs/DESIGN.md §4.
+#
+# THE DAY PRODUCTION NEEDS A CHILD, this rule's location moves to `src/spawn.rs`
+# in the same commit that writes the first production site, and the mint goes
+# through that boundary too. What must never happen is a SECOND entry below: two
+# confined files are two inventories, which is no inventory.
+#
+# WHAT THE BOUNDARY WOULD DECIDE, if it ever holds a production site, and why
+# the decision cannot be per-call:
+#
+#   - THE ENVIRONMENT. A seat inherits whatever launched it, which on a desktop
+#     is a session bus with this box's credentials for other things entirely.
+#   - THE INHERITED GIT ENVIRONMENT, which is the same hazard with a name.
+#     `git` exports `GIT_DIR` and `GIT_INDEX_FILE` into every process it
+#     starts, and those OUTRANK `-C <repo>` and `current_dir` — so a child
+#     spawned while one is set forks its own `git` against the WRONG repository.
+#     A pre-commit hook is exactly such a context, which is how the suite meets
+#     it: the gate runs under the hook, and any test that forks `git` in a
+#     scratch directory would silently address the repository being committed.
+#   - THE WORKING DIRECTORY, which a caller that forgot inherits from whoever
+#     launched the process.
+#
+# THERE IS NO TEST CARVE-OUT, and the confined file being test scaffolding is
+# not one: the rule refuses a bare `Command::new` in a test exactly as in
+# production, and the one place it is allowed is a location, not a build
+# profile.
+id: no-bare-command
+language: rust
+severity: error
+message: "children are built in src/test_support/mint.rs, the crate's one spawn site (see rules/no-bare-command.yml)"
+ignores:
+  - "**/test_support/mint.rs"
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: 'Command::new$'

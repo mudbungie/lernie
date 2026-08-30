@@ -1,0 +1,141 @@
+[package]
+name = "lernie"
+version = "0.1.0"
+edition = "2024"
+description = "lernie: the operator seat — the window and wire client for a yog server"
+license = "MIT"
+readme = "README.md"
+
+# THE VERSION IS THE FENCE AND IT IS NOT A CHOICE.
+#
+# `lernie` on crates.io carries two eras. Through **0.0.x** it was the
+# agent-loop engine, which continues under the name `litany`. From **0.1.0** it
+# is this crate: the seat — the window and its wire client. That single rule is
+# the only thing separating the two eras in the published record, so the first
+# version this crate may ever bear is 0.1.0 and nothing below it. A 0.0.z
+# release from this tree would collide with the engine's own line and destroy
+# the one disambiguation both READMEs promise.
+
+# NOT PUBLISHED, and the flag is the enforcement rather than a note.
+#
+# The seat's first release is the coordinated cutover moment for the whole
+# four-component split (yog's docs/REMOTE.md §12), and it is an operator
+# decision that has not been made. `cargo publish` is irreversible — a yanked
+# version stays downloadable — and here it is doubly so: the first publish
+# under this name at 0.1.0 is the act that fixes the fence in the public
+# record, and it cannot be taken back or corrected in place.
+#
+# Flipping this to `true` is not a one-line change. It also needs an `include`
+# ALLOWLIST here — never an `exclude`, because the two failure modes are not
+# symmetric: a missing `include` entry costs a build, which is loud and
+# reversible, while a missing `exclude` entry costs a publication that cannot
+# be recalled — and a guard test over the real `cargo package --list`.
+publish = false
+
+# A dependency lands here with the ball that first LINKS it, never before: a
+# dependency added "for later" is one nobody ever reviewed, because it is
+# linked by no code and so no gate and no reviewer ever reads it.
+#
+# LINKED SO FAR: `rustls` and `serde_json`, both by the wire client.
+# `thiserror` is approved and still absent — every refusal on this surface is
+# one `String` a caller prints, so there is no error enum for it to derive yet.
+#
+# THIS COMMENT IS THE APPROVED SET. The house rule is "zero new dependencies
+# without explicit approval"; what follows is the authority for what may be
+# added and on exactly what terms, and a crate not on this list needs a fresh
+# approval:
+#
+#   rustls — `default-features = false`, features `ring`, `std`, `tls12`,
+#     `logging`. The wire is mTLS (REMOTE §1.3) and nothing else may provide
+#     it. `default-features = false` is load-bearing, not tidiness: rustls'
+#     default features select `aws-lc-rs`, whose `aws-lc-sys` builds C and
+#     breaks the single-binary story that is most of why a seat installs
+#     cleanly on a laptop. `ring` is the approved provider and the one
+#     substitution that is NOT at a linking ball's discretion.
+#   serde_json — the wire is JSON: a frame is a JSON value and a gesture
+#     envelope is a JSON object carried verbatim. Hand-rolling a parser for a
+#     security boundary is worse than a dependency.
+#   thiserror — the error enums, house standard rule 10. Its companion half,
+#     `anyhow`, is NOT approved: `main.rs` is a thin entry with no
+#     error-plumbing layer that would justify one.
+#
+# DEFERRED, which is not the same as refused:
+#   eframe / egui — the window. This is the seat's whole reason to exist and
+#     the largest approval it will ever need, so it is not pre-granted here: it
+#     arrives with the ball that lands the window, which is also the ball that
+#     re-derives the licence allow-list below from the lockfile that results.
+#   clap — only if the verb surface outgrows a hand-rolled argv match. It does
+#     not today, and the question the ball that wants it must answer is whether
+#     the match arms actually stopped fitting.
+#
+# REFUSED, and each is a refusal of a whole direction rather than of a crate:
+#   tokio — the wire is synchronous `std::net`. House rule 8 (async is
+#     tokio-only) stays VACUOUS here; do not add tokio to satisfy a rule that
+#     matches nothing.
+#   rcgen — certificates arrive out of channel, by the operator's hand
+#     (REMOTE §1.4). The seat mints nothing, so a certificate library is a
+#     capability the protocol says this component must not have. The suite's
+#     own mint shells to `openssl`, which is the tool an operator uses, and it
+#     is `cfg(test)`.
+#
+# `deny.toml` bans the TLS stacks that must never arrive (openssl-sys,
+# native-tls, aws-lc-sys), so a manifest edit that quietly widened this
+# approval — dropping `default-features = false`, most of all — fails the gate
+# instead of silently re-acquiring a C toolchain.
+[dependencies]
+# The wire is mTLS and nothing else may provide it. The four feature terms are
+# the approval's, not this ball's: `default-features = false` because rustls'
+# defaults select `aws-lc-rs`, whose sys crate builds C; `ring` because it is
+# the approved provider; `std` and `tls12` because the channel is synchronous
+# `std::net` and the engine's safe default protocol versions include TLS 1.2.
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "std",
+    "tls12",
+    "logging",
+] }
+# The wire is JSON. A gesture envelope crosses byte for byte (REMOTE §3: the
+# wire adds nothing to the boundary), so this crate parses one only far enough
+# to route it.
+serde_json = "1"
+
+[[bin]]
+name = "lernie"
+path = "src/main.rs"
+
+# rustc lint gate: the toolchain is pinned (rust-toolchain.toml), so any warning
+# is a deliberate event, not toolchain drift — deny the lot.
+[lints.rust]
+warnings = "deny"
+
+# Clippy gate. `pedantic` runs at deny with priority -1 so the specific
+# allows/denies below (default priority 0) override the group. THIS MANIFEST IS
+# THE ONLY HOME FOR A SUPPRESSION — never inline an `#[allow]` to dodge it
+# (rules/no-lint-suppression.yml forbids it). Every entry carries its reason.
+[lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+
+# The bootstrap five: owned signatures and self-describing errors are house
+# style, and the doc/must_use nags are advisory only.
+needless_pass_by_value = "allow"   # owned params are a deliberate rule, not an oversight
+module_name_repetitions = "allow"  # module-qualified type names read clearer than terse ones
+missing_errors_doc = "allow"       # error enums are self-descriptive; no prose to duplicate
+missing_panics_doc = "allow"       # prod is panic-free (restriction lints below) — nothing to note
+must_use_candidate = "allow"       # advisory; not decorating every getter with #[must_use]
+
+# Empirically warranted here: the prose is proper-noun dominated (lernie, yog,
+# litany, thrall, mTLS) and the nag is noise on every doc comment in the crate.
+doc_markdown = "allow"
+
+# Restriction lints: prod code is panic-free and bounds-checked. These deny the
+# panic family, leftover `dbg!`, and unchecked indexing/string slicing.
+# `clippy --all-targets -- -D warnings` (the gate) picks them up; the test
+# carve-outs live in clippy.toml (allow-*-in-tests).
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+indexing_slicing = "deny"
+string_slice = "deny"

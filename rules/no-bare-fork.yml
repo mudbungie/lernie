@@ -1,0 +1,48 @@
+# The spawn boundary, second half: every child is FORKED in the same one file
+# that builds it, never by a bare `Command::spawn` / `.output()` / `.status()`
+# elsewhere. `no-bare-command.yml` makes the boundary BUILD every child; this
+# makes it SPEND every child. Building at the boundary and letting each caller
+# fork leaves a second per-call contract open, and the contract nobody keeps is
+# this one.
+#
+# WHY THE FORK AND NOT THE WRITE — the expensive lesson, learned upstream and
+# imported deliberately. `fs::write` on a file holds a write fd. A fork on ANY
+# other thread copies that fd into the child, and the child holds it until its
+# own exec completes. An exec of that same file inside that window fails with
+# ETXTBSY. A test that writes a fake binary and runs it is therefore reddened
+# by a fork site in a module it has never heard of, at a rate that looks like a
+# flake — and the victim's own care CANNOT save it, because the fork is the
+# other party. So the discipline belongs at the fork.
+#
+# LERNIE HAS NO FORK LOCK, and that is a fact about this tree rather than a
+# disagreement with the lesson. The hazard needs a write-then-exec pair: some
+# thread writing an executable file while another forks. The seat's one child
+# is `openssl` off `PATH` (`src/test_support/mint.rs`), which no test writes,
+# so there is no write side for a fork to race. The day a test writes a program
+# and runs it, the lock lands in the confined file with it — at the fork, never
+# at the write.
+#
+# The confined location is `src/test_support/mint.rs` for the reason
+# `no-bare-command.yml` states in full and this file does not restate: the seat
+# forks nothing in production, and the crate's one child is the suite
+# performing the operator's out-of-channel mint.
+#
+# THERE IS NO TEST CARVE-OUT, unlike the assert and lint-suppression rules.
+# `#[cfg(test)]` is where the hazard actually lives, so exempting it would
+# exempt the only code that can trip it.
+id: no-bare-fork
+language: rust
+severity: error
+message: "children are forked in src/test_support/mint.rs, the crate's one spawn site (see rules/no-bare-fork.yml)"
+ignores:
+  - "**/test_support/mint.rs"
+rule:
+  kind: call_expression
+  all:
+    - has:
+        field: function
+        kind: field_expression
+        regex: '\.(spawn|output|status|exec)$'
+    - has:
+        field: arguments
+        regex: '^\(\)$'

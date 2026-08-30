@@ -1,0 +1,53 @@
+# House rule 3: `unsafe` is CONFINED, not forbidden — and the confinement is a
+# location, so the whole-crate unsafe inventory can be read in one file.
+#
+# lernie's confined file is `src/sys.rs`, and it DOES NOT EXIST. That is the
+# rule working rather than a gap: a confinement rule has to name its one
+# location BEFORE the first site is written, or the first site picks the
+# location by being written. The row is in docs/DESIGN.md §4.
+#
+# A SEAT SHOULD NEVER ACQUIRE A TENANT HERE. It dials a socket, frames JSON and
+# paints; rustls, the standard library and (when the window lands) eframe are
+# the only things beneath it, and none of them asks a consumer for a raw call.
+# Upstream's four raw effects are all engine-side — a signal disposition, a
+# process-env fold, a child's termination — and every one of them is a thing
+# the seat had severed from it. So the honest expectation is that this file
+# stays absent forever, and an ask to create it is an ask to explain what the
+# seat is now doing that a window does not do.
+#
+# WHY NOT `unsafe_code = "forbid"` IN THE MANIFEST, which would be simpler and
+# needs no rule: `forbid` is unoverridable and reaches test code, so the day one
+# irreducible raw call is needed the only way out is to weaken the whole crate.
+# A location rule refuses everywhere and grants one auditable place instead.
+#
+# THIS RULE'S `ignores` LIST IS THE ONE LOCATION AUTHORITY. Add a site to
+# `src/sys.rs` — never a path to this list. A second confined file is two
+# inventories, which is no inventory.
+#
+# NO TEST CARVE-OUT, and none of the other confinement rules has one either.
+# `unsafe` in a test is `unsafe` in the address space the test runs in, and the
+# suite is the one place where a soundness bug is most likely to be written
+# quickly and read never.
+#
+# Node kinds verified against ast-grep 0.44.1's Rust tree-sitter parser
+# (`--debug-query=ast`):
+#   - `unsafe { … }`          -> node kind `unsafe_block`
+#   - `unsafe fn` / modifiers -> node kind `function_modifiers` containing the
+#                                `unsafe` keyword (regex `\bunsafe\b`)
+#
+# NOTHING IN `src` MATCHES THIS RULE TODAY, which is the failure mode a rule
+# dies of: it would pass as green forever whether or not it still worked. It is
+# proved live from the other direction instead — `rules/fixtures/violations.rs`
+# carries a deliberate violation of it, and `make rules-audit` fails unless
+# THIS rule, by id, still flags it.
+id: unsafe-outside-sys
+language: rust
+severity: error
+message: "unsafe is confined to src/sys.rs, the crate's one raw-effect file (see rules/unsafe-outside-sys.yml)"
+ignores:
+  - "**/sys.rs"
+rule:
+  any:
+    - kind: unsafe_block
+    - kind: function_modifiers
+      regex: '\bunsafe\b'

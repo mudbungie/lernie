@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# lernie gate — the complete build gate, factored out of .githooks/pre-commit
+# so it is content-addressable: a verdict cache keyed on (tree, gate) can
+# fingerprint the gate as the content of THIS file and the Makefile, plus
+# `rustc -V`. Change any of them and every stored verdict silently stops
+# matching, which is exactly the invalidation a gate upgrade must cause.
+#
+# Steps, cheap first, one make-target home each so the hook and a hand-run
+# `make check` cannot drift:
+#   1. make fmt-check
+#   2. make lint      — line-cap, leak-scan, clippy -D warnings, rules-audit,
+#                       cargo-deny
+#   3. make coverage  — tarpaulin --fail-under 100
+#
+# THE DISCLOSURE SCAN AND A FUTURE VERDICT CACHE. `leak-scan` is
+# inside `lint` because `lint` is the whole static gate, and there is nothing
+# here for it to run ahead of: lernie consults no cache. The moment one is
+# added, that stops being true and this file must change with it — the scan
+# lifts OUT of the cached region and runs before the lookup, every time, never
+# skipped. Two reasons, and neither is speed. A stored verdict is a claim about
+# a tree, and it can be imported from another machine; every other step
+# re-derives a build, while this one decides whether something leaves the
+# building. And a cache fingerprint over this file plus the Makefile cannot see
+# `scripts/leak-rules.sh`, so an edited rule table would not invalidate a
+# single stored verdict. Not being cacheable dissolves that; widening the
+# fingerprint only postpones it.
+#
+# The commit MESSAGE is in no tree and no pre-commit step can reach it —
+# `.githooks/commit-msg` runs the same scanner over it.
+#
+# Bypass is intentionally not supported. If something is broken, fix it.
+
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+# When git invokes a hook it exports GIT_DIR, GIT_INDEX_FILE and friends. Those
+# OUTRANK `-C <repo>` and `current_dir`, so they leak into every git subprocess
+# the gate spawns and silently retarget it at THIS repo — a test that `git
+# init`s a tempdir included. Scrub, so the tools run as from a clean shell.
+unset $(git rev-parse --local-env-vars)
+
+if ! command -v cargo >/dev/null 2>&1; then
+  echo "error: cargo not installed; cannot run the gate." >&2
+  exit 1
+fi
+
+echo "gate: fmt (make fmt-check)..." >&2
+make fmt-check >&2
+
+echo "gate: lint (make lint)..." >&2
+make lint >&2
+
+echo "gate: coverage (make coverage)..." >&2
+make coverage >&2
+
+echo "gate: OK." >&2

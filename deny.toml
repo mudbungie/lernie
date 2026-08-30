@@ -1,0 +1,74 @@
+# cargo-deny supply-chain policy for lernie.
+#
+# Verified against cargo-deny 0.20.2 (pin any CI to this exact version). The
+# allow-list is exhaustive over the committed Cargo.lock — every license that
+# actually appears in the tree, nothing speculative. Re-run `cargo deny check`
+# after any dependency change and fix drift here by config, never by patching a
+# dependency. The window is the next arrival and it is a large one: the ball
+# that links eframe re-derives this list from the lockfile it produces.
+
+[advisories]
+# Reject crates whose published version has been yanked from the registry.
+yanked = "deny"
+# No acknowledged advisories. An entry here would need a reason recorded beside
+# it, and an entry that stops matching any crate makes every gate run warn
+# `advisory-not-detected` — which is the signal to drop it, so this list stays
+# exactly as long as the tree justifies.
+ignore = []
+
+[licenses]
+# EXHAUSTIVE OVER THE COMMITTED `Cargo.lock`, and derived from it rather than
+# guessed at. Every entry below is a licence some crate in the lockfile the
+# wire client produced actually carries — `rustls` (with `ring`) and
+# `serde_json` and their transitive graph. A speculative
+# allow-list is an allow-list nobody read, and it is worst on the day it
+# silently covers a crate no approval ever named — so widen this only with the
+# ball that links the crate, and re-derive it from the lockfile that ball
+# produces.
+#
+#   MIT             lernie itself, and most of the graph under an OR.
+#   Apache-2.0      the other half of the ubiquitous dual licence, and half of
+#                   `ring`'s "Apache-2.0 AND ISC" — an AND, so both terms have
+#                   to be here or `ring` is rejected.
+#   ISC             `ring`'s other half, and `untrusted` and `rustls-webpki`
+#                   outright. These are the certificate-verification path.
+#   BSD-3-Clause    `subtle`, the constant-time primitives under `ring`.
+#   Unlicense       `memchr`, under `serde_json`.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "ISC",
+    "BSD-3-Clause",
+    "Unlicense",
+]
+
+[bans]
+# Duplicate versions are informational; a bare "*" version requirement is a
+# hard error — an unpinned dependency is a build that means something different
+# tomorrow.
+multiple-versions = "warn"
+wildcards = "deny"
+
+# TLS stack ban, rustls-only. The seat's wire is mTLS (REMOTE §1.3), so exactly
+# one stack will ever be approved. OpenSSL
+# (`openssl-sys`) and the system TLS bridge (`native-tls`) are a C toolchain
+# dependency and a non-portable one; either breaks the single-binary story that
+# is most of why a seat installs cleanly on a laptop.
+#
+# `aws-lc-sys` is here for a subtler reason: rustls' DEFAULT features select
+# `aws-lc-rs`, whose sys crate builds C. The approved manifest line takes
+# `default-features = false` with `ring` for exactly that reason — but a later
+# manifest edit that dropped the flag would pull the C toolchain back in
+# silently, and no other gate would say so. Banning the sys crate makes that
+# edit fail here instead. All three match nothing today, which is the point.
+deny = [
+    { crate = "openssl-sys" },
+    { crate = "native-tls" },
+    { crate = "aws-lc-sys" },
+]
+
+[sources]
+# Every crate must come from a known registry — no unvetted registries and no
+# ad-hoc git sources. There is no `allow-git` list and none is wanted: a git
+# pin blocks publication outright and re-exposes the tree to a rewritten
+# upstream history orphaning the rev. A registry pin has neither failure mode.

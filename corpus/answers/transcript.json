@@ -1,67 +1,81 @@
 {
-  "ok": true,
-  "kind": "transcript",
-  "rows": [
+  "direction": "reply",
+  "frames": [
     {
-      "name": "001-op.md",
-      "raw": "---\nfrom: op\n---\nport the paint probe with the window.\n",
-      "kind": "delivered",
-      "sender": "op",
-      "body": "port the paint probe with the window."
-    },
-    {
-      "name": "002-child.md",
-      "raw": "---\nfrom: child\nepitaph: delivered\n---\nlanded.\n",
-      "kind": "delivered",
-      "sender": "child",
-      "epitaph": "delivered",
-      "body": "landed."
-    },
-    {
-      "name": "003-model-a.json",
-      "raw": "{\"content\":[],\"usage\":{}}",
-      "kind": "model",
-      "model_id": "model-a",
-      "blocks": [
-        { "kind": "thinking", "text": "the galley lies about elision" },
-        { "kind": "text", "text": "I will route every assertion through the probe." },
-        { "kind": "tool-use", "id": "tu-1", "name": "read", "input": "src/paint_probe.rs" },
-        { "kind": "citation", "text": "a block kind from a newer engine" }
-      ],
-      "usage": { "input_tokens": 1841, "output_tokens": 96, "cache_read_input_tokens": 12000 }
-    },
-    {
-      "name": "004-tool.json",
-      "raw": "{\"tool_use_id\":\"tu-1\",\"content\":\"...\"}",
-      "kind": "tool-result",
-      "tool_use_id": "tu-1",
-      "content": "//! The one paint walk.\n",
-      "is_error": false
-    },
-    {
-      "name": "005-unreadable.bin",
-      "raw": "��",
-      "kind": "raw"
-    },
-    {
-      "name": "«compacted»",
-      "raw": "",
-      "kind": "compacted",
-      "first": 6,
-      "last": 11,
-      "summary": "six entries were squashed into this note"
-    },
-    {
-      "name": "006-annotation.json",
-      "raw": "{\"note\":\"an entry kind from a newer engine\"}",
-      "kind": "annotation"
-    },
-    {
-      "name": "«live»",
-      "raw": "still answering",
-      "kind": "streaming",
-      "thinking": "",
-      "text": "still answering"
+      "kind": "transcript",
+      "ok": true,
+      "rows": [
+        {
+          "body": "hello",
+          "epitaph": "budget-exhausted",
+          "kind": "delivered",
+          "name": "001-user.md",
+          "raw": "{}",
+          "sender": "user"
+        },
+        {
+          "body": "",
+          "kind": "delivered",
+          "name": "002-user.md",
+          "raw": "{}",
+          "sender": "user"
+        },
+        {
+          "blocks": [
+            {
+              "kind": "text",
+              "text": "said"
+            },
+            {
+              "kind": "thinking",
+              "text": "thought"
+            },
+            {
+              "id": "toolu_1",
+              "input": "file",
+              "kind": "tool-use",
+              "name": "Read"
+            }
+          ],
+          "kind": "model",
+          "model_id": "opus",
+          "name": "003-claude.json",
+          "raw": "{}",
+          "usage": {
+            "input_tokens": 5
+          }
+        },
+        {
+          "content": "out",
+          "is_error": true,
+          "kind": "tool-result",
+          "name": "004-tool.json",
+          "raw": "{}",
+          "tool_use_id": "toolu_1"
+        },
+        {
+          "kind": "streaming",
+          "name": "streaming",
+          "raw": "{}",
+          "text": "partial",
+          "thinking": "..."
+        },
+        {
+          "first": 6,
+          "kind": "compacted",
+          "last": 8,
+          "name": "«006–008»",
+          "raw": "{}",
+          "summary": "what the compactor cut"
+        },
+        {
+          "kind": "raw",
+          "name": "005-junk.json",
+          "raw": "{}"
+        }
+      ]
     }
-  ]
+  ],
+  "protocol": 1,
+  "shape": "transcript"
 }

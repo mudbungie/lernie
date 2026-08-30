@@ -1,5 +1,8 @@
 //! The table as data: what each row becomes, and the arity that is exact.
 
+/// The wire conformance corpus, request direction.
+mod corpus;
+
 use super::{Verb, find, table};
 use crate::envelope::OP;
 use serde_json::json;

@@ -1,5 +1,6 @@
 .PHONY: all build release test coverage lint fmt fmt-check check ci \
-        line-cap leak-scan rules-audit deny install-hooks install uninstall clean
+        line-cap leak-scan rules-audit deny corpus install-hooks install \
+        uninstall clean
 
 # The build authority. Every gate step has ONE home here, and the pre-commit
 # hook calls the same targets — so the hook, a hand-run `make check` and any
@@ -179,6 +180,18 @@ rules-audit:
 # the TLS-stack bans, and registry-only sources.
 deny:
 	cargo deny check
+
+# Re-vendor the wire conformance corpus from a yog checkout. There is no
+# published artifact and no endpoint (yog's corpus/README.md), so the corpus
+# arrives by copy; the script never classifies a reply shape, because the
+# directory a frame sits in is THIS repository's assertion about it. A shape
+# yog has grown lands in corpus/unreadable/ and shows up in the diff.
+#
+#   make corpus YOG=../yog
+YOG ?= ../yog
+
+corpus:
+	@scripts/refresh-corpus.sh "$(YOG)"
 
 fmt:
 	cargo fmt

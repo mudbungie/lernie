@@ -278,14 +278,42 @@ refusing would throw away an accumulated turn while the operator watches the
 tail move.
 
 **The corpus is a directory, not a test table** (`corpus/`, with its own
-README). Each file is one reply frame exactly as the wire carries it, and its
-**directory is its assertion** — `answers/`, `refusals/`, `unreadable/`. There
-is no manifest and no expected-value sidecar, so a conformance corpus emitted
-upstream (yog bl-32cb) drops in as files and the replay needs no edit. Two
-properties ride with the arrangement: `unreadable/` doubles as the ledger of
-which kinds are not painted yet — a kind moves out of it in the release that
-starts painting it — and the replay fails a directory that enumerates nothing
-as well as a file that no directory claims, the same two-direction discipline
+README), and **the frames in it are not this repository's** (bl-6b8e). yog
+generates a wire conformance corpus from the boundary that *is* the protocol
+authority (yog bl-32cb, REMOTE §3) and commits it; `scripts/refresh-corpus.sh`
+vendors it here verbatim. A seat that judged its own decoder by fixtures it
+wrote itself would be checking what it already thought of, which is the one
+thing a reimplemented vocabulary cannot afford.
+
+**The layout reconciles two shapes and keeps the better half of each.** The
+frames and their stamps are upstream's, whole; the **directory is still this
+seat's assertion** — `answers/`, `refusals/`, `unreadable/` — because a
+classification is a decision this end makes and never one copied in. So the
+refresh does not classify: a shape already filed goes back where it was, and a
+shape yog has grown lands in `unreadable/` as a new file the diff shows. A
+silent pass is the outcome the arrangement excludes. There is still no
+manifest and no expected-value sidecar; a frame captured off a live engine
+still drops in as a bare file, which is how the malformed and rung-3 readings
+upstream's codec cannot emit are held.
+
+**Vendored, not read from a checkout, and the reason is not taste.** This crate
+must build and its suite must pass on a box that has never held a yog checkout,
+and a test that reads a path nobody configured is a test skipped everywhere but
+one machine. What vendoring costs is staleness, and the **protocol stamp** is
+what that is paid with: every fixture carries the version its fields last moved
+at, `shapes.json` carries the corpus's own, and a corpus ahead of `PROTOCOL`
+fails in a sentence naming both numbers — the same sentence the version preface
+owes an operator (§4.3), for the same reason.
+
+**Both directions of the wire, and both directions of the discipline.** The
+request half (`corpus/request/`, judged by `src/verbs/tests/corpus.rs`) is
+upstream's whole request vocabulary: every frame must decode as a gesture this
+seat can **route** — the workspace slot read off `shapes.json`'s own signature
+rather than off the seat's rule, so it is a second opinion — and every frame
+the seat's encoder can compose must round-trip byte for byte, with the ones it
+cannot recorded by count and reason. And the replay fails a directory that
+enumerates nothing, a fixture carrying no frame, a file no directory claims and
+a vendored file `shapes.json` does not name, the same two-direction discipline
 `rules-audit` and `line-cap` hold.
 
 ### 4.10 The typed argv surface is a serialization, never a second implementation (§3)
@@ -510,7 +538,12 @@ exactly as argv and the environment are.
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
-| `corpus/` | reply frames as the wire carries them, one per file, replayed by `src/reply/tests/corpus.rs`. The directory a frame sits in **is** its assertion; `corpus/README.md` is the drop-in contract. | docs |
+| `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
+| `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
+| `src/test_support/corpus.rs` | the one walk over the corpus, and the protocol stamp checked on every file read. `cfg(test)`. | ~130 |
+| `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, and every upstream shape is classified exactly once. | ~140 |
+| `src/verbs/tests/corpus.rs` | the replay, request direction, read half: every frame in the vocabulary decodes as a gesture and routes by the address its shape carries. | ~120 |
+| `src/verbs/tests/corpus/emits.rs` | the write half: every frame this seat composes round-trips, and what it cannot compose is recorded by count and reason. | ~110 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
 

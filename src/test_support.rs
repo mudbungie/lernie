@@ -18,6 +18,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// The one walk over the wire conformance corpus, shared by both replays.
+pub(crate) mod corpus;
 /// The far end of the wire, so a channel can be tested against something that
 /// speaks the protocol.
 pub(crate) mod engine;

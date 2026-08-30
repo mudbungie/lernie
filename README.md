@@ -107,7 +107,9 @@ the next question follows from it.
 
 What it paints *from* is the typed reply vocabulary (`src/reply/`,
 `docs/DESIGN.md` §4.9), reimplemented off yog's REMOTE rather than shared
-through a crate, decoding only what a window renders — eight kinds today, with
+through a crate, decoding only what a window renders — eight kinds today. It is
+judged by **yog's own generated conformance corpus**, vendored under `corpus/`
+by `scripts/refresh-corpus.sh` and replayed both directions, with
 `corpus/unreadable/` standing as the ledger of what is not painted yet.
 
 Every assertion about the window reads the **glyphs that reached the glass**

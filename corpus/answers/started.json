@@ -1,1 +1,12 @@
-{ "ok": true, "kind": "started", "conversation": "port the paint probe" }
+{
+  "direction": "reply",
+  "frames": [
+    {
+      "conversation": "brave-fox",
+      "kind": "started",
+      "ok": true
+    }
+  ],
+  "protocol": 1,
+  "shape": "started"
+}

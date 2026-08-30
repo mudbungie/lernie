@@ -1,7 +1,8 @@
 +++
 title = "everything the window does is reachable from the keyboard"
 created = 1788069437
-updated = 1788069437
+updated = 1788069991
+claimant = "OrderStarter"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

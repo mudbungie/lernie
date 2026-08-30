@@ -1,7 +1,8 @@
 +++
 title = "the seat's decoder is judged by the wire conformance corpus, not by its own fixtures"
 created = 1788068979
-updated = 1788068979
+updated = 1788070192
+claimant = "OrderProver"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

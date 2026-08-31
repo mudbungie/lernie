@@ -1,7 +1,8 @@
 +++
 title = "the published-ref scan: the late half of the disclosure gate"
 created = 1788068285
-updated = 1788068285
+updated = 1788138889
+claimant = "OrderPolish"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

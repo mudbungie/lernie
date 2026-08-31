@@ -132,11 +132,13 @@ optional `workspace` file naming what that workspace is called on its host.
 Certificates arrive out of channel, by the operator's hand; **lernie mints
 nothing**, and there is no bootstrap flow and must never be one.
 
-`Cargo.toml` carries `publish = false`. The seat's first release is the
-coordinated cutover moment for the whole split and is an operator decision that
-has not been made — and `cargo publish` is irreversible, so the first version
-under this name at 0.1.0 is the act that fixes the fence in the public record.
-The flag is the enforcement rather than a note, because a note is not a gate.
+**0.1.0 is published**, and it is the version that fixes the fence in the public
+record — the coordinated cutover moment for the whole four-component split.
+`cargo publish` is irreversible, so what shipped at 0.1.0 shipped: this
+paragraph still claimed the crate carried `publish = false` when that version
+went out, and no edit can reach the copy on the registry. See *Releases* below
+for the path a version takes now, and `AGENTS.md`'s *Before a publish* for the
+half of it no workflow can hold.
 
 ## Build
 

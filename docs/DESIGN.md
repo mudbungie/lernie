@@ -762,14 +762,15 @@ the fork, never at the write.
 
 ---
 
-## 6. Deferred, with the ball that pays for it
+## 6. Publication: what was deferred, and what it became
 
-Each row is filed, and each says what it costs. Rows leave this section by being
-built rather than by being deleted — §6.2 is here, and works, because what it
-defers is now a shorter list than what it does.
+This section was *Deferred, with the ball that pays for it*, and both its rows
+have since been built — so it is now the record of how the crate reaches the
+registry, kept here rather than deleted because the reasoning is what a later
+editor needs and the section is where they will look for it. Each row still
+says what it costs and what it still defers.
 
-### 6.1 The first publish, which the manifest no longer holds back (bl-11fc,
-bl-f468)
+### 6.1 The first publish, which happened (bl-11fc, bl-f468, bl-3be4)
 
 `publish = true` since bl-f468. What was ever deferred here was not the flag —
 it was the apparatus that has to exist before a flag can be flipped safely, and
@@ -786,13 +787,20 @@ verdict. It stays a checklist rather than a target because every item is a
 one-time judgement whose remedy is destructive. There is still no
 `make publish`.
 
-**What stopped the publish was never in this tree** (bl-3be4). The registry
-crate `lernie` already carries the engine era's 0.0.x line and is set to accept
-Trusted Publishing only, so a token `cargo publish` is refused whatever the
-manifest says. Two owner acts opened it — relax the setting, or land §6.2's
-workflow at the filename the crate's existing trusted publisher already names —
-and the second is the one taken. The registry setting stands; the route to it
-is the workflow.
+**0.1.0 is published** (bl-3be4, 2026-08-30). What had stopped it was never in
+this tree: the registry crate `lernie` already carries the engine era's 0.0.x
+line and is set to accept Trusted Publishing only, so a token `cargo publish`
+is refused whatever the manifest says. Two owner acts opened it — relax the
+setting, or land §6.2's workflow at the filename the crate's existing trusted
+publisher already names — and the second is the one taken. The registry setting
+stands; the route to it is the workflow, and there is no hand-run alternative
+to fall back to.
+
+The fence is now fixed in the public record: crates.io serves `lernie` 0.1.0
+with the fence-stating README rendered on it, `published_by` null (no human
+account published it — the trusted-publishing exchange did), tag `v0.1.0`, and
+a GitHub Release beside it. §0's rule is no longer a claim about a future
+version.
 
 ### 6.2 The release path, which now exists (bl-459d)
 

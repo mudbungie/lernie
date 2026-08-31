@@ -231,13 +231,15 @@ the irreversible act is now `bl close` on a ball that edited `version =` in
 runs BEFORE the version bump lands, not before some later act.** That is the
 whole of what changed; nothing below it got easier.
 
-**Nothing has been published under this name from this tree, and that is the
-whole of the advantage the checklist below exists to keep.** The flag stopped
-being what holds it at bl-f468 (`publish = true`, the operator having taken the
-cutover decision for the four-component split), and the registry-side setting
-of item 6 stopped being what holds it at bl-459d — that setting is satisfied by
-the workflow above rather than relaxed. What holds it now is this list and the
-person reading it.
+**The advantage this list existed to keep is spent: 0.1.0 shipped from this tree
+on 2026-08-30** (bl-3be4). Until then nothing had been published from here, so
+items 1 and 2 had a deadline that had not arrived; it has arrived, and every
+commit and every ref reachable at `v0.1.0` is public and stays public. The flag
+stopped being what holds a publish at bl-f468 (`publish = true`, the operator
+having taken the cutover decision for the four-component split), and the
+registry-side setting of item 6 stopped being what holds it at bl-459d — that
+setting was satisfied by the workflow above rather than relaxed. What holds the
+NEXT one is this list and the person reading it, and there is nothing else.
 
 **The list was RUN, in full, in bl-f468**, and each item's verdict is recorded
 in that ball. Two things it found are worth reading before the next run: the
@@ -298,12 +300,21 @@ it can say.
    offending line into a log that survives the run and is public the moment the
    repository is. The scanner truncates findings to 12 characters for exactly
    this reason; nothing else does.
-6. **Already-published versions — none from this tree, and twelve under this
-   name.** `cargo publish` is irreversible, so items 1 and 2 have a deadline
-   that has not arrived for *this* tree. Do not let it arrive by accident.
-   Audit `cargo package --list` before publishing, not after — the guard test
-   judges file CLASSES and never content, and every home path the sibling crate
-   published lived inside `src`.
+6. **Already-published versions — 0.1.0 from this tree, and twelve under this
+   name before it.** `cargo publish` is irreversible: a yanked version stays
+   downloadable, so items 1 and 2 no longer have a deadline, they have a
+   history. Audit `cargo package --list` before publishing, not after — the
+   guard test judges file CLASSES and never content, and every home path the
+   sibling crate published lived inside `src`.
+
+   **What 0.1.0 shipped that it should not have, and cannot take back**
+   (bl-3be4): one README paragraph asserting the crate carried `publish =
+   false` and that the release decision had not been made. Stale since bl-f468
+   and missed by two balls that read the file for other reasons — no
+   disclosure, no credential, just a false statement about the crate's own
+   status in the copy crates.io serves for 0.1.0 forever. The tree is
+   corrected; the published record is not, and cannot be. Read the whole of a
+   packaged file, not the paragraph you came for.
 
    **The name is not new, and that is what stopped bl-f468's publish — and how
    it was answered.** The registry crate `lernie` already exists, carrying the

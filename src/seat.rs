@@ -78,13 +78,17 @@ pub(crate) fn sent(data_root: &Path, envelope: &Value) -> Result<Vec<Value>, Str
 /// renames: an entry's leaf is the client's name for the workspace and its
 /// `workspace` file is what that workspace answers to on its host.
 pub fn route(data_root: &Path, envelope: &Value) -> Result<(Channel, Value), String> {
-    let named = envelope::workspace(envelope).and_then(|name| {
+    let asked = envelope::workspace(envelope);
+    let named = asked.as_ref().and_then(|name| {
         entries::read_dir(&entries::dir(data_root))
             .into_iter()
-            .find(|held| held.leaf == name)
+            .find(|held| &held.leaf == name)
     });
     let Some(entry) = named else {
-        return Ok((flat(data_root)?, envelope.clone()));
+        let Some(name) = asked else {
+            return Ok((flat(data_root)?, envelope.clone()));
+        };
+        return Ok((unresolved(data_root, envelope, &name)?, envelope.clone()));
     };
     let carried = if entry.workspace == entry.leaf {
         envelope.clone()
@@ -92,6 +96,55 @@ pub fn route(data_root: &Path, envelope: &Value) -> Result<(Channel, Value), Str
         envelope::with_workspace(envelope, &entry.workspace)
     };
     Ok((entry.open()?, carried))
+}
+
+/// **Where a NAMED workspace goes when no entry holds it**, and what the
+/// refusal is about when it goes nowhere.
+///
+/// §8.2's fallthrough stands — *"a name no entry holds … goes where it always
+/// went, the flat directory's client material"* — because the flat engine's own
+/// workspaces are named and held nowhere else, and a seat cannot know that
+/// namespace without asking. Two things around it are this seat's, and both
+/// were wrong (bl-d574):
+///
+/// - **A gesture whose op takes no workspace is naming a CHANNEL and nothing
+///   else**, since there is no parameter for the far end to read: `lernie ask
+///   '{"op":"workspaces","workspace":"<leaf>"}'` is how an operator asks one
+///   entry for its roster. So a name no entry holds has no downstream reader to
+///   refuse it, and falling through answers `ok` from a channel nobody named.
+///   It refuses here instead, naming what it looked for. Which ops those are is
+///   read off [`crate::verbs`]'s one table rather than listed again.
+/// - **The fallthrough's refusal was about the wrong subject.** Where the flat
+///   root holds nothing, the sentence said "no wire provisioned at `wire/`" —
+///   true, and about a directory the operator never asked about, with a remedy
+///   (mint a second leaf) that is destructive of their time. It now says which
+///   name failed to resolve, which channels this box holds, and that the likely
+///   remedy is a rename.
+fn unresolved(data_root: &Path, envelope: &Value, name: &str) -> Result<Channel, String> {
+    let selector = envelope
+        .get(envelope::OP)
+        .and_then(Value::as_str)
+        .and_then(crate::verbs::find)
+        .is_some_and(|verb| !verb.params.contains(&envelope::WORKSPACE));
+    if selector {
+        return Err(format!(
+            "this box holds no channel named {name:?}: that op takes no \
+             workspace, so the name can only name a channel to ask. It holds \
+             {}. {}",
+            holds::names(data_root),
+            holds::rename(data_root, name)
+        ));
+    }
+    match flat(data_root) {
+        Ok(channel) => Ok(channel),
+        Err(refusal) => Err(format!(
+            "no entry here holds {name:?}, so the gesture went to this box's \
+             own engine (REMOTE §8.2), which answers: {refusal}. This box holds \
+             {}. {}",
+            holds::names(data_root),
+            holds::rename(data_root, name)
+        )),
+    }
 }
 
 /// This box's own channel — the flat root's, which is where every gesture with

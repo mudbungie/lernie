@@ -87,6 +87,40 @@ pub fn channels(data_root: &Path) -> Vec<crate::ui::Channel> {
     held
 }
 
+/// **The channels this box holds, named in one clause** — the enumeration a
+/// refusal about an unresolved name owes the operator.
+///
+/// It is [`listing`]'s subject without [`listing`]'s state: a refusal that
+/// says *"there is no channel called that"* is only half an answer, and the
+/// other half is the set the operator meant to pick from. Read off the same
+/// disk, so it can never name a channel the roster does not.
+pub(super) fn names(data_root: &Path) -> String {
+    std::iter::once(OWN.to_owned())
+        .chain(
+            entries::read_dir(&entries::dir(data_root))
+                .into_iter()
+                .map(|held| format!("{:?}", held.leaf)),
+        )
+        .collect::<Vec<String>>()
+        .join(", ")
+}
+
+/// **The rename remedy**, which is the one an unresolved name almost always
+/// wants: material that is present, valid and correctly permissioned but filed
+/// under a directory name no gesture routes to is renamed here, with `mv`. The
+/// mint ([`material::REMEDY`]) is the remedy for material that does not exist,
+/// and offering it for material that does sends the operator back to the box
+/// holding the CA to issue a second leaf that lands in the same wrong
+/// directory.
+pub(super) fn rename(data_root: &Path, name: &str) -> String {
+    format!(
+        "if {name:?}'s material is already here under another directory name, \
+         rename that directory (`mv` it under {}) rather than minting a second \
+         leaf",
+        entries::dir(data_root).display()
+    )
+}
+
 /// The flat root's state, said the way an entry's is.
 fn own(data_root: &Path) -> String {
     let dir = entries::flat(data_root);

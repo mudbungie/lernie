@@ -286,6 +286,21 @@ answer to its name **even when it cannot be dialled** (falling through would
 send a gesture to the wrong engine on the strength of a missing file), and
 where the two names agree the operator's envelope crosses byte for byte.
 
+**The fallthrough is not silent, and a name with no reader does not take it**
+(bl-d574). The flat engine's own workspaces are named and held nowhere else, so
+a seat cannot know that namespace without asking and §8.2's fallthrough stands
+— but two things around it are this seat's own. A gesture whose **op takes no
+workspace** is naming a *channel* and nothing else (`lernie ask
+'{"op":"workspaces","workspace":"<leaf>"}'` is how an operator asks one entry
+for its roster), so a name no entry holds has no downstream reader to refuse it
+and falling through would answer `ok` from a channel nobody named; it refuses
+here, naming what it looked for. Which ops those are is read off
+[`crate::verbs`]'s one table, never listed again. And where a named gesture
+*does* fall through to a flat root that holds nothing, the refusal is about the
+NAME — not about `wire/`, a directory the operator never asked about, whose
+remedy (mint a second leaf) lands in the same wrong place. Both sentences name
+the channels this box holds and offer the rename (`mv`) ahead of the mint.
+
 ### 4.8 Port zero is a request, not an address (§8)
 
 A self-provisioning engine writes `127.0.0.1:0` and only the listener knows what

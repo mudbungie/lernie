@@ -1,7 +1,8 @@
 +++
 title = "neither list pane scrolls: what does not fit the roster or the conversation list is cut off mid-glyph, and the keyboard walks onto rows the glass never painted"
 created = 1788150516
-updated = 1788150516
+updated = 1788150878
+claimant = "OrderJoiner2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

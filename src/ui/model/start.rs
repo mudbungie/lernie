@@ -131,6 +131,13 @@ impl Model {
     /// against the wall the window is aimed at: it is the one fact the engine
     /// added, and a seat that dropped it would have started a conversation and
     /// said nothing about it.
+    ///
+    /// **And the name is selected** — *a start focuses what it started* — but
+    /// only where the window is still aimed at the wall it was started on. The
+    /// selection is painted in the aimed wall's list and nowhere else, so a
+    /// selection on another wall is one the operator can neither see nor leave;
+    /// what the claim then amounts to, and what spends it, is
+    /// [`super::claim`].
     pub(super) fn started(&mut self, conversation: String) {
         let mut start = self.start.clone().unwrap_or_else(|| Start {
             address: self
@@ -140,8 +147,15 @@ impl Model {
             goal: String::new(),
             phase: Phase::Firing,
         });
-        start.phase = Phase::Started(conversation);
+        start.phase = Phase::Started(conversation.clone());
+        let here = self
+            .aim
+            .as_ref()
+            .is_some_and(|aim| aim.address == start.address);
         self.start = Some(start);
+        if here {
+            self.select(&conversation);
+        }
     }
 }
 

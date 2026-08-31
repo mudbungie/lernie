@@ -7,6 +7,13 @@
 //! [`ConvRow::root_id`] is the address that always works, so a seat that
 //! stayed with the id can never post a gesture the engine will refuse.
 //!
+//! **[`ConvRow::uncertain`] is not derivable from the state beside it.** The
+//! engine's classifier answers a state *and* whether it could observe one, and
+//! the two are separate facts: a conversation it cannot probe reads as settled
+//! and is not known to be. A seat that dropped the flag would paint a definite
+//! reading of something nothing looked at — which is also the shape this
+//! window's own pending row wears (`crate::ui::model::claim`).
+//!
 //! **What this build does not carry.** The row also spells the stop cascade's
 //! two gates, the strict child count, a bound ball, an alignment verdict and
 //! the in-flight class. Each belongs to a control or a badge that does not
@@ -34,6 +41,11 @@ pub struct ConvRow {
     pub name: Option<String>,
     /// The badge state, aggregated over the whole subtree.
     pub state: AgentState,
+    /// **Whether the engine could observe the state above.** A conversation it
+    /// cannot probe — no lock to read, no step to frame — answers a state
+    /// anyway and flags it here, so a reading nothing witnessed never paints as
+    /// a definite one.
+    pub uncertain: bool,
     /// The row's first-line preview.
     pub preview: String,
     /// How long since the conversation last moved. Signed, because clock skew
@@ -145,6 +157,7 @@ pub(crate) fn row(v: &Value) -> Result<ConvRow, String> {
         display: fields::text(o, "display")?,
         name: fields::opt_text(o, "name")?,
         state: AgentState::of(&fields::text(o, "state")?),
+        uncertain: fields::flag(o, "uncertain")?,
         preview: fields::text(o, "preview")?,
         age_secs: fields::secs(o, "age_secs")?,
         attention: fields::count(o, "attention")?,

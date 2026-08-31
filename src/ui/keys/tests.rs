@@ -207,3 +207,28 @@ fn a_fresh_window_opens_with_the_roster_holding_the_arrows() {
         "a box that has been asked nothing offers no row to walk"
     );
 }
+
+/// **A row the pointer can aim at is a row a key can aim at.** The pending row
+/// a start puts in the list is in the one list both walk, so an arrow leaves it
+/// for the first conversation the engine actually answered — which is also how
+/// an operator escapes a claim whose driver never wrote its branch.
+#[test]
+fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
+    let mut model = Model {
+        conversation: Some("brisk-otter".to_owned()),
+        start: Some(crate::ui::model::Start {
+            address: "home".to_owned(),
+            goal: "port it".to_owned(),
+            phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+        }),
+        ..stocked()
+    };
+    let painted = typed(&mut model, &[egui::Key::ArrowRight]);
+    assert!(painted.contains("brisk-otter"), "{painted}");
+    typed(&mut model, &[egui::Key::ArrowDown]);
+    assert_eq!(
+        model.conversation.as_deref(),
+        Some("a"),
+        "one step down out of the pending row and into the list"
+    );
+}

@@ -179,3 +179,32 @@ fn the_advance_composes_its_own_gesture_and_takes_no_draft() {
     );
     assert_eq!(model.draft, "not this", "the draft is untouched");
 }
+
+/// **The one case with no box at all.** A conversation this window started is
+/// not addressable until its driver writes the branch, and this seat knows it:
+/// the start's own sentence stands where the box was, so nothing can be
+/// composed that this end already knew the engine would refuse.
+#[test]
+fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
+    let mut model = Model {
+        conversation: Some("brisk-otter".to_owned()),
+        start: Some(crate::ui::model::Start {
+            address: "home".to_owned(),
+            goal: "port it".to_owned(),
+            phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+        }),
+        ..seated()
+    };
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(
+        painted.contains("started «brisk-otter» in home"),
+        "{painted}"
+    );
+    for gone in [SEND, NUDGE] {
+        assert!(
+            !painted.lines().any(|line| line == gone),
+            "{gone:?} is still on the glass: {painted}"
+        );
+    }
+    assert!(model.outbox.is_empty());
+}

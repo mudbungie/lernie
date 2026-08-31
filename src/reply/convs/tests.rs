@@ -35,6 +35,7 @@ fn a_row_carries_what_the_list_paints_and_ignores_what_it_does_not() {
             display: "port the paint probe".to_owned(),
             name: Some("port the paint probe".to_owned()),
             state: AgentState::Live,
+            uncertain: false,
             preview: "the galley reports the string that went in".to_owned(),
             age_secs: 42,
             attention: 1,
@@ -52,7 +53,7 @@ fn a_row_carries_what_the_list_paints_and_ignores_what_it_does_not() {
 fn a_display_only_name_is_absent_and_the_id_remains() {
     let read = row(&json!({
         "root_id": "20260830T051200Z-c3d4", "display": "a goal-stamp title",
-        "display_only": true, "state": "quiescent", "preview": "",
+        "display_only": true, "state": "quiescent", "uncertain": false, "preview": "",
         "age_secs": 0, "attention": 0, "members": 1, "depth": 1, "tone": "weak",
     }))
     .expect("a row");
@@ -66,11 +67,33 @@ fn a_display_only_name_is_absent_and_the_id_remains() {
 #[test]
 fn an_age_may_be_negative_because_two_clocks_may_disagree() {
     let read = row(&json!({
-        "root_id": "x", "display": "x", "state": "stopped", "preview": "",
+        "root_id": "x", "display": "x", "state": "stopped", "uncertain": false,
+        "preview": "",
         "age_secs": -3, "attention": 0, "members": 1, "depth": 0, "tone": "plain",
     }))
     .expect("a row");
     assert_eq!(read.age_secs, -3);
+}
+
+/// **The uncertainty flag is its own fact and it is required.** A state and
+/// whether anything observed it are two answers: a conversation the engine
+/// cannot probe reads settled and is not known to be, and a reader that let the
+/// flag default would paint that reading as definite.
+#[test]
+fn whether_the_state_was_observed_is_read_and_is_not_optional() {
+    let read = row(&json!({
+        "root_id": "x", "display": "x", "state": "quiescent", "uncertain": true,
+        "preview": "", "age_secs": 0, "attention": 0, "members": 1, "depth": 0,
+        "tone": "weak",
+    }))
+    .expect("a row");
+    assert!(read.uncertain);
+    let refusal = row(&json!({
+        "root_id": "x", "display": "x", "state": "quiescent", "preview": "",
+        "age_secs": 0, "attention": 0, "members": 1, "depth": 0, "tone": "weak",
+    }))
+    .expect_err("no uncertain");
+    assert!(refusal.contains("\"uncertain\""), "{refusal}");
 }
 
 /// **Rung 3 on the state**, and the round trip through the label: an
@@ -106,7 +129,8 @@ fn a_row_that_is_not_a_row_refuses_by_name() {
         row(&json!([])),
         Err("conversation row: not an object".to_owned())
     );
-    let refusal =
-        row(&json!({"root_id": "x", "display": "x", "state": "live"})).expect_err("no preview");
+    let refusal = row(&json!({"root_id": "x", "display": "x", "state": "live",
+                              "uncertain": false}))
+    .expect_err("no preview");
     assert!(refusal.contains("\"preview\""), "{refusal}");
 }

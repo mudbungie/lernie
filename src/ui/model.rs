@@ -23,6 +23,8 @@ use crate::reply::{Read, Reply};
 mod acts;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
+/// The claim a start leaves on the selection, and the row it stands in for.
+mod claim;
 /// A start, between its two acts.
 mod start;
 
@@ -124,7 +126,13 @@ impl Model {
     fn file(&mut self, channel: &Channel, reply: Reply) {
         match reply {
             Reply::Workspaces(view) => self.seat(channel, view),
-            Reply::Conversations(rows) => self.convs = rows,
+            // The one answer a claim can be spent against: a listing is where
+            // the started conversation first becomes addressable
+            // ([`Model::resolve`]).
+            Reply::Conversations(rows) => {
+                self.convs = rows;
+                self.resolve();
+            }
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the

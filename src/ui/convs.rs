@@ -16,6 +16,8 @@ pub const NO_CONVERSATIONS: &str = "no conversations here";
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused.
 pub const HEADING: &str = "conversations";
+/// The mark a state nothing observed wears, inside the badge it qualifies.
+pub const UNCERTAIN: &str = "?";
 
 /// Paint the list and take a click on it.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
@@ -28,11 +30,16 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         return;
     };
     ui.label(aim.address);
-    if model.convs.is_empty() {
+    // **The list is the model's, not this pane's**: a conversation this window
+    // has started but the engine cannot resolve yet stands in it as a row of
+    // its own (`crate::ui::model::claim`), and it stands there for the pointer
+    // and the keyboard alike because both walk the one list.
+    let rows = model.rows();
+    if rows.is_empty() {
         ui.label(NO_CONVERSATIONS);
         return;
     }
-    for row in model.convs.clone() {
+    for row in rows {
         conversation(ui, model, &row);
     }
 }
@@ -69,11 +76,18 @@ fn indent(depth: u64) -> f32 {
 
 /// A row's headline: its label, what it is doing, how long since it moved, and
 /// what is waiting under it.
+///
+/// **The badge wears a `?` for a state nothing observed.** The engine answers a
+/// reading and whether it could take one, and painting the first without the
+/// second would state a definite fact about a conversation nobody looked at —
+/// including this window's own, between a start's receipt and its driver's
+/// first write.
 pub fn headline(row: &ConvRow) -> String {
     let mut said = vec![format!(
-        "{}  [{}]  {}",
+        "{}  [{}{}]  {}",
         row.display,
         row.state.label(),
+        if row.uncertain { UNCERTAIN } else { "" },
         age(row.age_secs)
     )];
     if row.attention > 0 {

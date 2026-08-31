@@ -433,6 +433,44 @@ control: while one is outstanding the composer paints the sentence instead of
 the box. That is upstream's own finding (yog §3.4): two starts chained through
 one composer spend one goal on two conversations and leave the first unfinished.
 
+**A start focuses what it started, and the claim is what makes that safe**
+(`src/ui/model/claim.rs`; upstream's rule is yog's `docs/DESIGN.md` §3.4).
+Selecting the minted name outright does not work: the name is a barrier — every
+gesture after the receipt may address it — but only once the detached driver has
+written the conversation's branch, which is upstream's own finding (yog bl-56c6:
+*"until the driver writes its branch the minted name resolves nowhere"*). So the
+selection is taken and three things ride with it, none of them a second pending
+concept — the claim **is** the held `Start` in its `Started` phase, read against
+what is selected.
+
+- **Nothing is asked about it.** `Model::asked` is what §4.12's standing set
+  publishes as its third question and a claimed name is not it. The alternative
+  is three refusals per pass against an address the engine cannot resolve, and
+  the operator's own new conversation painted as unknown for the whole of a
+  healthy start. An empty conversation pane is what the world honestly holds.
+- **A row stands where the conversation will be.** `Model::rows` is the list
+  every surface paints and walks — the pointer's and the keyboard's one list, so
+  the row is not a case each of them carries. It is what nothing observed: no
+  lock, no completed step, flagged uncertain, which is exactly what the engine's
+  own classifier answers for a conversation it cannot probe. **It must not read
+  `live`**, which would claim a driver this seat has never seen. It carries the
+  operator's goal, because a start that shows nothing between Enter and the
+  driver's first write reads as a window that did nothing.
+- **It is spent where it was made.** `Model::resolve` retires the claim on the
+  answer that makes the conversation addressable — a listing row carrying that
+  `name`, which the engine hands over exactly when a stored fact backs it — and
+  moves the selection **only while the selection is still the name the claim put
+  there**. A start can take a minute, and an operator who read something else in
+  that minute is not yarded back. No claim survives being spent, and a claim
+  whose row never arrives is inert: the name stays selected, the row stays
+  faded, and one arrow key leaves it.
+
+**And the composer stands down while it stands.** A deposit or an advance
+composed against a claimed name is a gesture this end already knows the engine
+will refuse, so the start's own sentence stands where the box was — the same
+shape as the second-start refusal above, and the same reason: not a disarmed
+control, but no control.
+
 **Nothing that arrives is dropped.** `Model::absorb` is the one door: an answer
 is filed, and a refusal or an unreadable frame becomes the notice bar, standing
 where that content would have been. That is §4.9's rung 2 honoured on the glass
@@ -527,7 +565,8 @@ exactly as argv and the environment are.
 | `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~150 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
 | `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
-| `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~145 |
+| `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
+| `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold that replaces rather than accretes. | ~170 |
@@ -613,19 +652,3 @@ publication checklist run by a person — history, other refs, commit messages,
 repository text nobody committed, CI logs. Every item is a one-time judgement
 whose remedy is destructive, which is why none of it is automated.
 
-### 6.6 A start does not focus what it started (bl-73ed)
-
-Upstream's rule is *a start focuses what it started* (yog's `docs/DESIGN.md`
-§3.4), and this seat paints the minted name rather than selecting it. That is
-deliberate and it is a gap, in that order.
-
-The name is a **barrier** — every gesture after the receipt may address it —
-but only once the detached driver has written the conversation's branch, which
-is upstream's own finding (bl-56c6: *"until the driver writes its branch the
-minted name resolves nowhere"*). A seat that selected it at once would publish
-three standing questions against an address the engine refuses, and paint the
-operator's own new conversation as unknown for the whole of a healthy start.
-Upstream's answer is a held claim and a synthetic row — a pending-conversation
-model this seat does not have and should not grow by halves. So the receipt is
-painted where it was composed, and the conversation arrives in the list the
-ordinary way. The claim is what a later ball buys.

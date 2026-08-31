@@ -125,7 +125,10 @@ fn walk(model: &mut Model, step: isize) {
             }
         }
         Pane::Conversations => {
-            let rows: Vec<String> = model.convs.iter().map(|row| row.root_id.clone()).collect();
+            // `Model::rows`, not `convs`: the list the pane paints carries a
+            // started conversation's own row before the engine can answer one,
+            // and a row the pointer can aim at is a row a key can aim at.
+            let rows: Vec<String> = model.rows().iter().map(|row| row.root_id.clone()).collect();
             let at = rows
                 .iter()
                 .position(|id| model.conversation.as_ref() == Some(id));

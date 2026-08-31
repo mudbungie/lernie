@@ -15,6 +15,11 @@
 //! ([`start`]) — which used to be a refusal, and was the start's own case
 //! wearing a sentence. A second box beside this one would be the same box
 //! twice, each with its own Enter.
+//!
+//! **The one case with no box at all** is a conversation this window started
+//! and the engine cannot resolve yet: there is a selection, and nothing this
+//! seat composed against it would be answered
+//! (`crate::ui::model::claim`).
 
 use crate::ui::Model;
 
@@ -42,6 +47,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         start::render(ui, model, &aim);
         return;
     };
+    // **A conversation this window has started is not addressable yet**, and
+    // this seat knows it: the minted name resolves nowhere until its driver
+    // writes the branch (`crate::ui::model::claim`). So the box and both its
+    // buttons stand down and the start's own sentence stands in their place —
+    // a gesture composed here would be one this end knew the engine would
+    // refuse. It is not a wedge: the claim retires on the engine's next
+    // listing, and one arrow key leaves it before then.
+    if let Some(held) = model.start.clone().filter(|_| model.pending().is_some()) {
+        ui.label(held.line());
+        return;
+    }
     let entry = ui.add(
         egui::TextEdit::singleline(&mut model.draft)
             .id(egui::Id::new(crate::ui::keys::BOX_ID))

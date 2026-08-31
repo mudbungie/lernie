@@ -98,3 +98,39 @@ fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
     assert!(model.transcript.entries.is_empty());
     assert_eq!(model.live, None);
 }
+
+/// **A state nothing observed wears a `?`**, inside the badge it qualifies. The
+/// engine answers a reading and whether it could take one, and a badge that
+/// painted only the first would state a definite fact about a conversation
+/// nobody looked at.
+#[test]
+fn an_unobserved_state_is_marked_rather_than_painted_as_definite() {
+    let unsure = headline(&crate::reply::convs::ConvRow {
+        uncertain: true,
+        ..conv("id", "port the probe")
+    });
+    assert_eq!(unsure, "port the probe  [quiescent?]  42s");
+}
+
+/// **The conversation this window just started stands in the list**, before the
+/// engine has anything to answer about it: the minted name, the operator's own
+/// goal beneath it, and a badge that says nothing observed any of it.
+#[test]
+fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
+    let mut model = Model {
+        conversation: Some("brisk-otter".to_owned()),
+        start: Some(crate::ui::model::Start {
+            address: "home".to_owned(),
+            goal: "port the paint probe".to_owned(),
+            phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+        }),
+        ..seated()
+    };
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(painted.contains("brisk-otter  [quiescent?]"), "{painted}");
+    assert!(painted.contains("port the paint probe"), "{painted}");
+    assert!(
+        !painted.contains("[live]"),
+        "no driver this seat has seen: {painted}"
+    );
+}

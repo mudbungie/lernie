@@ -55,6 +55,12 @@ pub struct Standing {
     pub aim: Option<Aim>,
     /// The selected conversation, whose transcript is the third — and whose
     /// live tail is the held read.
+    ///
+    /// **Not every selection is one.** A conversation this window has just
+    /// started is selected under a name the engine resolves nowhere until its
+    /// driver writes the branch, and asking about it would earn a refusal per
+    /// pass for the whole of a healthy start. `Model::asked` is the reading
+    /// that leaves it out (`crate::ui::model::claim`).
     pub conversation: Option<String>,
 }
 
@@ -68,7 +74,7 @@ impl Standing {
                 .map(|chunk| chunk.channel.clone())
                 .collect(),
             aim: model.aim.clone(),
-            conversation: model.conversation.clone(),
+            conversation: model.asked(),
         }
     }
 

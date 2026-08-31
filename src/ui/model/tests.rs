@@ -102,7 +102,7 @@ fn each_kind_lands_in_the_pane_that_paints_it() {
     model.absorb(
         &flat,
         read(&json!({"ok": true, "kind": "conversations", "rows": [
-            {"root_id": "a", "display": "one", "state": "live", "preview": "",
+            {"root_id": "a", "display": "one", "state": "live", "uncertain": false, "preview": "",
              "age_secs": 0, "attention": 0, "members": 1, "depth": 0, "tone": "live"}]})),
     );
     assert_eq!(model.convs.len(), 1);

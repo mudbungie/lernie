@@ -30,6 +30,7 @@ pub(crate) fn conv(id: &str, display: &str) -> ConvRow {
         display: display.to_owned(),
         name: Some(display.to_owned()),
         state: AgentState::Quiescent,
+        uncertain: false,
         preview: String::new(),
         age_secs: 42,
         attention: 0,

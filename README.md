@@ -159,6 +159,12 @@ its own window icon, so it matches the window's application id against the
 installed entry and reads the mark off that. Without the seats the window wears
 whatever the desktop invents for an unnamed client.
 
+The entry it installs names the binary by absolute path, resolved at seat time
+— a desktop environment reads `Exec=` out of the session's environment, not a
+login shell's, so a bare name launches nothing wherever `~/.local/bin` reached
+`PATH` through a shell profile. `make icon-seats` refuses rather than seat an
+entry whose `Exec` resolves nowhere; the tracked asset stays generic.
+
 `make lint` is `line-cap`, then `leak-scan`, then `cargo clippy --all-targets --
 -D warnings`, then `rules-audit`, then `cargo deny check`.
 

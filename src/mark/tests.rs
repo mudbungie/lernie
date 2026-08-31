@@ -48,6 +48,37 @@ fn the_app_id_the_desktop_entry_and_the_icon_name_are_one_word() {
     }
 }
 
+/// **The tracked entry's `Exec` is the bare name, exactly once.**
+///
+/// `make icon-seats` rewrites `Exec=` into the copy it INSTALLS, because a
+/// desktop environment resolves that line out of the session's own environment
+/// and a bare name is silently unlaunchable wherever the binary's directory
+/// reached `PATH` through a shell profile. The tracked file stays generic — it
+/// is one repository's source for every box, and a real absolute path in it
+/// would be a disclosure as well as a lie everywhere else.
+///
+/// Two halves, and the second is the one no reader would think to keep. The
+/// bare spelling above is what the test before this one already pins. The
+/// COUNT is what the substitution rides on: it replaces every line matching
+/// `^Exec=`, so a second one would be rewritten to the same path and the entry
+/// would carry the key twice — and a `.desktop` with a duplicate key in one
+/// group is malformed, which launchers answer by ignoring the file rather than
+/// by complaining about it.
+#[test]
+fn the_tracked_entry_carries_exactly_one_exec_and_it_is_generic() {
+    let entry = asset(&format!("{APP_ID}.desktop"));
+    let execs: Vec<&str> = entry
+        .lines()
+        .filter(|line| line.starts_with("Exec="))
+        .collect();
+    assert_eq!(
+        execs,
+        vec![format!("Exec={APP_ID}")],
+        "the installed copy is where an absolute Exec belongs, and there is one \
+         of them — `make icon-seats` rewrites every ^Exec= line:\n{entry}"
+    );
+}
+
 /// The vector source is one element per shape, in the shape list's own order —
 /// so the file reads as the list does and a reordering shows up in both.
 #[test]

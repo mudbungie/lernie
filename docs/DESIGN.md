@@ -592,6 +592,18 @@ wire between them, which is what `crate::channel` is.
   check them, and the suite pins the agreement. `make icon-seats` lays the last
   two down and `make install` runs it, because a rebuilt binary alone can never
   refresh a mark it does not own.
+- **The installed entry names an absolute binary and the tracked one never
+  does**, which is the one place an asset and its installed copy differ on
+  purpose. `Exec=` is resolved by the desktop environment out of the session's
+  environment rather than a login shell's, so the tracked `Exec=lernie` starts
+  nothing at all wherever the binary's directory reaches `PATH` through a shell
+  profile — and it fails silently, with no window and no message. `make
+  icon-seats` substitutes the path at seat time: `$(INSTALL_BIN)/lernie` first
+  (the defect IS that directory being off a `PATH`, `make`'s included), then
+  `command -v`, and a refusal if neither resolves absolutely — an entry that
+  resolves nowhere is the defect, not a fallback. It cannot be the tracked
+  file's business: that file is one repository's source for every box, and a
+  real path in it would be a disclosure as well as a lie everywhere else.
 - **And no PNG, so the tree still tracks no binary.** Upstream laid sized
   rasters beside the scalable source and paid for them with the only entry its
   disclosure gate's `BINARY_ALLOWED` ever held. hicolor's `scalable/` is read

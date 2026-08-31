@@ -234,11 +234,6 @@ install-hooks:
 	done; \
 	echo "hooks: seated $$(ls .githooks | tr '\n' ' ')in $$common/hooks"
 
-# rename(2) atomicity on the installed binary: write a temp name in the SAME
-# directory, then `mv -f` it into place. Anything holding the old path — a
-# desktop launcher, a shell that already resolved it — then sees whole-old or
-# whole-new, never the ENOENT window install(1) opens between its unlink and
-# its write.
 # Re-emit the checked-in vector source from the generator that defines it
 # (src/mark.rs). It is a DERIVATION and never a hand-edit: `mark::tests` asserts
 # the tracked file still equals what the generator produces, so an edit made
@@ -248,10 +243,39 @@ icon:
 	@cargo run --quiet --example icon -- assets
 
 # The freedesktop seats, as ONE target both `install` and a hand-run refresh go
-# through. It is a prerequisite of `install` because on Wayland the compositor
-# resolves the window's mark through the INSTALLED seats (app id -> the desktop
-# entry -> Icon=lernie -> the theme), ignoring the icon the binary embeds
-# entirely: a rebuilt binary alone can never refresh the mark.
+# through. `install` runs it because on Wayland the compositor resolves the
+# window's mark through the INSTALLED seats (app id -> the desktop entry ->
+# Icon=lernie -> the theme), ignoring the icon the binary embeds entirely: a
+# rebuilt binary alone can never refresh the mark.
+#
+# THE INSTALLED ENTRY NAMES AN ABSOLUTE BINARY; THE TRACKED ASSET NEVER DOES.
+# `Exec=` is resolved by the desktop environment out of the SESSION's
+# environment, not out of a login shell's — so the tracked `Exec=lernie` starts
+# nothing at all on a box where the binary's directory is put on `PATH` by a
+# shell profile the session never reads, which is the ordinary shape of a
+# user-local or cargo bin directory. It fails silently: no window, no message,
+# nothing in a log. Only an absolute path is safe, and it cannot live in the
+# tracked file — that file is one repository's source for every box,
+# `mark::tests` reads it for the three-way spelling agreement, and a real
+# absolute path in it would be a disclosure besides. So the substitution
+# happens HERE, at seat time, into the INSTALLED COPY ONLY, recomputed on every
+# run rather than patched: a box already fixed by hand converges on this same
+# answer instead of being edited a second time, and re-running is idempotent.
+#
+# The ladder is two rungs and a refusal:
+#
+#   1. `$(INSTALL_BIN)/lernie` — this Makefile's own installation, and it goes
+#      FIRST precisely because the defect being fixed is that directory not
+#      being on a PATH, INCLUDING the PATH `make` itself was handed.
+#   2. `command -v lernie` — a binary some other hand installed elsewhere,
+#      which is what the operator actually runs.
+#   3. Neither, or a resolution that is not absolute: REFUSE, naming what was
+#      looked for. An entry whose `Exec` resolves nowhere is the whole defect,
+#      so writing one is not a fallback — it is the bug with a success message.
+#
+# rename(2) atomicity, for the same reason the binary below gets it: the temp
+# name is in the SAME directory, so a launcher reading the entry sees whole-old
+# or whole-new and never the window a partial write opens.
 #
 # The cache rebuild is not decoration. GTK judges a cache at the theme root
 # valid while its mtime is >= the toplevel directory's, and installing into an
@@ -260,20 +284,42 @@ icon:
 # fresh file authoritative; the `touch` is the fallback where the tool is
 # absent, and it also bumps the mtime a live shell rescans on.
 icon-seats:
-	@mkdir -p "$(INSTALL_ICONS)" "$(INSTALL_APPS)"
-	@install -m 0644 assets/lernie.svg "$(INSTALL_ICONS)/lernie.svg"
-	@install -m 0644 assets/lernie.desktop "$(INSTALL_APPS)/lernie.desktop"
+	@bin="$(INSTALL_BIN)/lernie"; \
+	[ -x "$$bin" ] || bin=$$(command -v lernie 2>/dev/null || true); \
+	case "$$bin" in /*) ;; *) \
+	  echo "icon-seats: no lernie binary to name in the desktop entry." >&2; \
+	  echo "  looked at $(INSTALL_BIN)/lernie, then PATH." >&2; \
+	  echo "  run 'make install', or point INSTALL_PREFIX at where it lives." >&2; \
+	  exit 1;; \
+	esac; \
+	mkdir -p "$(INSTALL_ICONS)" "$(INSTALL_APPS)"; \
+	install -m 0644 assets/lernie.svg "$(INSTALL_ICONS)/lernie.svg"; \
+	tmp="$(INSTALL_APPS)/.lernie.desktop.tmp"; \
+	sed "s|^Exec=.*|Exec=$$bin|" assets/lernie.desktop > "$$tmp" && \
+	  chmod 0644 "$$tmp" && mv -f "$$tmp" "$(INSTALL_APPS)/lernie.desktop"; \
+	echo "icon seats: $(INSTALL_ICONS)/lernie.svg, $(INSTALL_APPS)/lernie.desktop (Exec=$$bin)"
 	@if command -v gtk-update-icon-cache >/dev/null 2>&1; then \
 	  gtk-update-icon-cache -q -f -t "$(INSTALL_THEME)" 2>/dev/null || true; \
 	fi
 	@touch "$(INSTALL_THEME)"
-	@echo "icon seats: $(INSTALL_ICONS)/lernie.svg, $(INSTALL_APPS)/lernie.desktop"
 
-install: release icon-seats
+# rename(2) atomicity on the installed binary: write a temp name in the SAME
+# directory, then `mv -f` it into place. Anything holding the old path — a
+# desktop launcher, a shell that already resolved it — then sees whole-old or
+# whole-new, never the ENOENT window install(1) opens between its unlink and
+# its write.
+#
+# The ORDER is load-bearing and that is why `icon-seats` is a recipe step here
+# rather than a prerequisite: the entry it writes names the binary, so the
+# binary has to be in place before it looks. As a prerequisite it ran first, and
+# on a box installing for the very first time it would find nothing and refuse
+# — the fresh install being exactly the case that has to work.
+install: release
 	@mkdir -p "$(INSTALL_BIN)"
 	@install -m 0755 $(CARGO_TARGET_DIR)/release/lernie "$(INSTALL_BIN)/.lernie.tmp" && \
 	  mv -f "$(INSTALL_BIN)/.lernie.tmp" "$(INSTALL_BIN)/lernie"
 	@echo "installed $(INSTALL_BIN)/lernie"
+	@$(MAKE) --no-print-directory icon-seats
 
 uninstall:
 	@rm -f "$(INSTALL_BIN)/lernie" \

@@ -31,7 +31,13 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         .default_width(CONVS)
         .max_width(convs_width)
         .show(ctx, |ui| convs::render(ui, model));
-    egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
+    // **Nothing live paints under the enrollment** (bl-7574). The composer is a
+    // bottom panel, so it is outside what the central panel below covers — and
+    // what stood there was a live `start` control firing a conversation on the
+    // very wall being enrolled into, from under the symbol.
+    if model.enroll.is_none() {
+        egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
+    }
     // **The enrollment stands where the conversation would**, and it is the one
     // pane in this window that covers another. It earns that: what it holds is
     // a private key on a screen, the act is "look at this now and close it",

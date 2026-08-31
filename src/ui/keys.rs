@@ -36,10 +36,11 @@
 //! second surface.
 //!
 //! **A box that is taking text takes every key**, which is the one gate: while
-//! the composer's box holds the focus nothing here runs, so an arrow is a
-//! cursor move inside the draft and Escape is egui's own *leave the box*. Press
-//! it again with no box focused and it is the dismiss below. One key, two
-//! contexts, and the contexts never overlap.
+//! a text box holds the focus nothing here runs, so an arrow is a cursor move
+//! inside the draft and Escape is egui's own *leave the box*. Press it again
+//! with no box focused and it is [`Model::escape`] below — which closes the
+//! enrollment where one covers the window, and puts the notice down otherwise.
+//! One key, three contexts, and the contexts never overlap.
 //!
 //! The gate asks for **that box by name** rather than for egui's
 //! `wants_keyboard_input`, which answers *is anything focused at all* — every
@@ -95,7 +96,14 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     }
     let pressed = |key| ctx.input(|i| i.key_pressed(key));
     if pressed(egui::Key::Escape) {
-        model.dismiss();
+        model.escape();
+    }
+    // **A modal owns the arrows** (bl-7574). While the enrollment covers the
+    // window the lists behind it are not the subject of anything, and a walk
+    // under it would re-aim the roster beneath the material — and would take
+    // the arrows out of the name box the operator is typing into.
+    if model.enroll.is_some() {
+        return;
     }
     // Left and right name a **place**, not a step in a cycle: the roster is
     // left of the conversation list on the glass, so the key that points at it

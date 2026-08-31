@@ -62,6 +62,22 @@ impl Model {
         self.notice = None;
     }
 
+    /// **What Escape means**, in the order an operator means it (bl-7574).
+    ///
+    /// The enrollment is the one pane that covers the window, and Escape is the
+    /// key you reach for to close a thing that covers a window. So it closes
+    /// that first — which is the same act `done — forget it` performs, material
+    /// and all, because the control that closes this pane is the control that
+    /// forgets. With nothing covering, the notice is the only thing left to put
+    /// down, and Escape is its × reached without a pointer.
+    pub fn escape(&mut self) {
+        if self.enroll.is_some() {
+            self.close_enrollment();
+        } else {
+            self.dismiss();
+        }
+    }
+
     /// **Open an enrollment aimed at the wall the window is pointed at**, or do
     /// nothing where it is pointed at none.
     ///

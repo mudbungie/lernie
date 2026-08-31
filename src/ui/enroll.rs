@@ -11,6 +11,27 @@
 //! must not have — a long life on a display. So it replaces the central panel
 //! while it is open, and the control that closes it is the one that forgets.
 //!
+//! # It is a modal, so it behaves like one (bl-7574)
+//!
+//! The argument above is about the WINDOW and the pane only ever covered a
+//! PANEL, which left it a modal in name. Two things close that, and neither
+//! widens what it covers.
+//!
+//! **Escape closes it** ([`crate::ui::Model::escape`]), doing exactly what
+//! [`CLOSE`] does — the material included, because the control that closes this
+//! pane is the control that forgets. Reachable by Tab is not the same as
+//! operable, and this is the one pane whose stated purpose is *close it
+//! quickly*. Its name box wears [`crate::ui::keys::NAME_ID`] so the gate that
+//! makes Escape mean *leave the box* while typing covers it too.
+//!
+//! **Nothing live paints under it**: the composer is a bottom panel and so
+//! outside what a central panel covers, which put a live `start` control —
+//! firing a conversation on the very wall being enrolled into — beneath the
+//! symbol. `crate::ui::shell` stands it down while an enrollment is open. The
+//! roster and the conversation list stay, and that is deliberate: they are
+//! where the operator looks, not what they act with, and the doc's reason above
+//! is about a *conversation* legible behind the material.
+//!
 //! # The symbol is geometry, so the assertions are geometry
 //!
 //! A QR symbol has no glyphs. `crate::paint_probe` is the one walk over painted

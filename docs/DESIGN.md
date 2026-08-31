@@ -500,6 +500,27 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**The enrollment is a modal, so it behaves like one** (`src/ui/enroll.rs`,
+bl-7574). Its argument for covering the conversation is about the WINDOW — a
+private key on a screen, the act is *look at this now and close it*, and a
+conversation legible behind it invites the long life on a display the material
+must not have — and it only ever covered a PANEL. Two things close the gap and
+neither widens what it covers. **Escape closes it** (`Model::escape`), doing
+exactly what `done — forget it` does, material included, because the control
+that closes this pane is the control that forgets; reachable by Tab is not the
+same as operable, and this is the one pane whose purpose is *close it quickly*.
+**Nothing live paints under it**: the composer is a bottom panel and so outside
+what a central panel covers, which left a live `start` control — firing a
+conversation on the very wall being enrolled into — beneath the symbol, so the
+shell stands the composer down while an enrollment is open. The arrows stand
+down with it (a modal owns them: the lists behind it are not the subject of
+anything, and the name box keeps its own cursor keys). Escape typed into that
+name box cancels rather than leaving the box, deliberately: egui clears a box's
+focus while processing the same Escape, so the keyboard gate cannot see it, and
+cancel is what Escape means on a modal — nothing is minted until `mint`, so it
+costs a name retyped. The roster and the conversation list stay legible, which
+is where the operator looks rather than what they act with.
+
 **An empty pane says WHICH emptiness it is** (`src/ui/convs.rs`, bl-f780). The
 list had two sentences — nothing aimed at, and *"no conversations here"* — so a
 wall this window had not been ANSWERED about was painted with the sentence

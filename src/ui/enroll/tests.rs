@@ -14,7 +14,7 @@
 
 use fixtures::{file, opened};
 
-use super::{CLOSE, HEADING, MINTING, NAME_HINT, OPEN, SEND};
+use super::{CLOSE, HEADING, KEPT, MINTING, NAME_HINT, OPEN, SEND};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, painted, seated};
 use crate::ui::{Enrolling, Grade, Model};
@@ -198,5 +198,7 @@ fn the_form_s_close_drops_an_unanswered_enrollment() {
 
 /// The fixtures both halves share.
 mod fixtures;
+/// What makes it a modal: Escape closes it, and nothing live paints under it.
+mod modal;
 /// The half after the engine answers: the picture, the forgetting, the geometry.
 mod shown;

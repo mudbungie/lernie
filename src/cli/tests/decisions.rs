@@ -56,7 +56,20 @@ fn a_typed_verb_and_the_envelope_it_stands_for_decide_alike() {
 fn every_verb_in_the_table_is_typable() {
     for verb in crate::verbs::table() {
         let mut words = vec![verb.word];
-        let filled: Vec<String> = verb.params.iter().map(|p| format!("a-{p}")).collect();
+        // **`grade` is the one parameter this binary reads itself** (bl-07b9),
+        // so it is filled with a word that is one rather than with the
+        // placeholder every other field takes.
+        let filled: Vec<String> = verb
+            .params
+            .iter()
+            .map(|p| {
+                if *p == "grade" {
+                    crate::ui::Grade::default().word()
+                } else {
+                    format!("a-{p}")
+                }
+            })
+            .collect();
         words.extend(filled.iter().map(String::as_str));
         if verb.word == crate::verbs::ENROLL.word {
             let Decided::Enroll {
@@ -69,7 +82,11 @@ fn every_verb_in_the_table_is_typable() {
             };
             assert_eq!(
                 (workspace.as_str(), name.as_str(), grade.as_str()),
-                ("a-workspace", "a-name", "a-grade")
+                (
+                    "a-workspace",
+                    "a-name",
+                    crate::ui::Grade::default().word().as_str()
+                )
             );
             continue;
         }

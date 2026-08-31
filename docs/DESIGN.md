@@ -421,6 +421,17 @@ exactly the case the paragraph above refuses to special-case. So they are typed
 doors with no row (`src/verbs/start.rs`), and what argv types instead is the
 composite below.
 
+**The one argument the seat settles itself is `enroll`'s grade** (bl-07b9).
+`grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
+this binary already holds them — `lernie help enroll` says so — so a typo used
+to cost a round trip and come back `unknown grade "OPERATOR"`: true, and naming
+neither word that would have worked. It is read in `cli::run` for exactly the
+reason a hand-written envelope is: decided entirely by what was typed, the
+caller's typo, earns the usage, costs no connection. **It is not a second
+authority on grades** — the engine still decides what a grade means and whether
+this box may ask for one at all, which §8.4 makes unknowable here — and the two
+words are read off `ui::Grade`'s own list rather than a second copy of it.
+
 **The four structural words are DOORS, and they have pages** (`src/verbs/doors.rs`,
 bl-6bda, bl-81dd). `start`, `ask`, `entries` and `help` are answered by this
 binary and cannot be rows of the gesture table for the reason above; the defect

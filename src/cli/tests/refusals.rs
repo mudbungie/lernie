@@ -135,3 +135,28 @@ fn a_recognised_word_with_extra_words_is_not_recognised() {
         v.text
     );
 }
+
+/// **A mistyped grade is settled here, and costs no connection** (bl-07b9).
+/// The set is closed, it is small, and this binary already holds it — the
+/// engine's own `unknown grade "OPERATOR"` is true, arrives after a full round
+/// trip, and names neither of the two words that would have worked.
+#[test]
+fn a_grade_that_is_not_one_of_the_two_refuses_before_anything_is_dialled() {
+    for typo in ["notagrade", "OPERATOR", ""] {
+        let v = said(&["enroll", "home", "phone-1", typo]);
+        assert_eq!(v.code, REFUSED, "{typo:?}");
+        assert!(
+            v.text
+                .contains(&format!("unknown grade {typo:?} — `lernie enroll` takes")),
+            "{typo:?}: {}",
+            v.text
+        );
+        for word in crate::ui::Grade::both() {
+            assert!(
+                v.text.contains(&format!("{:?}", word.word())),
+                "it names both words that would have worked: {}",
+                v.text
+            );
+        }
+    }
+}

@@ -99,11 +99,7 @@ pub fn run(args: Vec<String>) -> Decided {
         },
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
-        ["enroll", workspace, name, grade] => Decided::Enroll {
-            workspace: (*workspace).to_owned(),
-            name: (*name).to_owned(),
-            grade: (*grade).to_owned(),
-        },
+        ["enroll", workspace, name, grade] => enroll(workspace, name, grade),
         ["start", ..] => Decided::Say(Verdict::refused(
             "`lernie start` takes a workspace and a goal — usage:              lernie start <workspace> <goal>"
                 .to_owned(),
@@ -122,6 +118,41 @@ fn ask(text: &str) -> Decided {
     match crate::envelope::parse(text) {
         Ok(envelope) => Decided::Ask(envelope),
         Err(refusal) => Decided::Say(Verdict::refused(refusal)),
+    }
+}
+
+/// **An enrollment, with the one argument this binary can settle itself.**
+///
+/// `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
+/// this binary already holds them — `lernie help enroll` says so in its own
+/// words. So a typo is read here, in the pure function, for exactly the reason
+/// [`ask`] reads a body here: it is decided entirely by what was typed, it is
+/// the caller's typo, it earns the usage, and it costs no connection (bl-07b9).
+/// It used to cost a full round trip and come back `unknown grade "OPERATOR"` —
+/// true, and naming neither of the two words that would have worked.
+///
+/// **It is not a second authority on grades.** The engine stays the place that
+/// decides what a grade means and whether this box may ask for one at all —
+/// §8.4 refuses the act unless this box's own leaf is operator-grade, which is
+/// not knowable here. What is settled here is only whether the word is one of
+/// the two, read off [`crate::ui::Grade`]'s own list rather than a second copy
+/// of it.
+fn enroll(workspace: &str, name: &str, grade: &str) -> Decided {
+    let words = crate::ui::Grade::both();
+    let Some(held) = words.iter().find(|known| known.word() == grade) else {
+        return Decided::Say(Verdict::refused(format!(
+            "unknown grade {grade:?} — `lernie enroll` takes {}",
+            words
+                .iter()
+                .map(|known| format!("{:?}", known.word()))
+                .collect::<Vec<String>>()
+                .join(" or ")
+        )));
+    };
+    Decided::Enroll {
+        workspace: workspace.to_owned(),
+        name: name.to_owned(),
+        grade: held.word(),
     }
 }
 

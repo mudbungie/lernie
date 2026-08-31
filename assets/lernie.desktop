@@ -1,0 +1,21 @@
+# The freedesktop entry, and it is HOW THE MARK IS SEEN on Wayland.
+#
+# A Wayland compositor has no protocol for a client to hand it an icon. What it
+# does instead is match the window's application id against the entries here
+# and read that entry's Icon= by NAME through the hicolor theme. So three
+# spellings have to agree and none of them can be checked at runtime:
+# StartupWMClass below, `lernie::mark::APP_ID` that main.rs hands the toolkit,
+# and the basename of the installed SVG. `mark::tests` pins the agreement,
+# because a mark that resolves nowhere fails silently.
+#
+# `make icon-seats` lays this file and the SVG down; `make install` runs it.
+[Desktop Entry]
+Type=Application
+Name=lernie
+GenericName=Operator seat
+Comment=The operator's face on a yog server
+Exec=lernie
+Icon=lernie
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=lernie

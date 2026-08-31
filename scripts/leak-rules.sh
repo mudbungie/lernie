@@ -179,13 +179,23 @@ FORBIDDEN_PATH='(^|/)(\.env(\..+)?|\.netrc|\.npmrc|\.pypirc|credentials\.json|id
 # rejected, not skipped, and the allowlist is one line of policy: a tracked
 # binary must be a DERIVATION the repo can regenerate and check byte for byte.
 #
-# THRALL DIVERGES HERE, and `^$` is the empty set spelled as a pattern: a path
-# is never the empty string, so nothing matches and every unreadable file is
-# refused. lernie tracks no binary at all — no icons, no assets, no fixtures
-# but the one the self-test needs — so an allowlist with an entry in it would
-# be permission nobody asked for. The day a derivation is tracked, it is named
-# here WITH the test that regenerates it and checks it byte for byte; an entry
-# without that test is not an allowlist entry, it is a hole.
+# `^$` IS THE EMPTY SET spelled as a pattern: a path is never the empty
+# string, so nothing matches and every unreadable file is refused.
+#
+# **The window arrived and it did not need one** (bl-8f48). The note that used
+# to stand here said the icon would be the first entry, because upstream's was
+# — it laid sized PNGs beside a scalable source for shells that will not read
+# an SVG, and paid for them with the only entry its own allowlist ever held.
+# This seat ships the scalable source and nothing else: hicolor's `scalable/`
+# is read by every desktop it installs on, so a sized raster is a derivation
+# nobody here consumes, and an allowlist entry for a file nothing needs is a
+# hole in the gate bought for nothing. `assets/lernie.svg` is TEXT, generated
+# by `make icon` and pinned byte for byte by `mark::tests` — which is the
+# discipline this line asks for, met without spending the line.
+#
+# The day something genuinely unreadable is tracked, it is named here WITH the
+# test that regenerates it and checks it byte for byte; an entry without that
+# test is not an allowlist entry, it is a hole.
 BINARY_ALLOWED='^$'
 
 # Every non-comment line of every content-rule fixture must contain this

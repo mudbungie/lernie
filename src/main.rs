@@ -74,8 +74,22 @@ fn window(root: &std::path::Path) -> Verdict {
     link.settle(&mut model);
     let workers = lernie::offframe::run(&link, root);
     let ran = eframe::run_native(
-        "lernie",
-        eframe::NativeOptions::default(),
+        lernie::mark::APP_ID,
+        eframe::NativeOptions {
+            viewport: egui::ViewportBuilder::default()
+                // **The app id is the whole of what a Wayland compositor has to
+                // go on** (`lernie::mark`): it matches this against the
+                // installed desktop entry and reads the mark off that. The icon
+                // below reaches X11 and nothing else, so both are set and
+                // neither is redundant.
+                .with_app_id(lernie::mark::APP_ID)
+                .with_icon(egui::IconData {
+                    rgba: lernie::mark::rgba(ICON_PX),
+                    width: u32::from(ICON_PX),
+                    height: u32::from(ICON_PX),
+                }),
+            ..eframe::NativeOptions::default()
+        },
         Box::new({
             let link = link.clone();
             move |_| {
@@ -95,6 +109,11 @@ fn window(root: &std::path::Path) -> Verdict {
         Err(e) => Verdict::failed(format!("the window would not open: {e}")),
     }
 }
+
+/// How big the embedded mark is rasterized. One size, because the toolkit
+/// takes one and scales it: a set of sized rasters is what a hicolor theme is
+/// for, and that is the installed SVG's job rather than this one's.
+const ICON_PX: u16 = 256;
 
 /// How often the seat asks. Human cadence: a roster an operator glances at does
 /// not want to be a second faster, and the two surfaces that move quicker than

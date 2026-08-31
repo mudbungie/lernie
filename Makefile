@@ -1,6 +1,6 @@
 .PHONY: all build release test coverage lint fmt fmt-check check ci \
         line-cap leak-scan rules-audit deny corpus install-hooks install \
-        uninstall clean
+        uninstall icon icon-seats clean
 
 # The build authority. Every gate step has ONE home here, and the pre-commit
 # hook calls the same targets — so the hook, a hand-run `make check` and any
@@ -11,6 +11,13 @@
 #   make install INSTALL_PREFIX=/usr/local
 INSTALL_PREFIX ?= $(HOME)/.local
 INSTALL_BIN    := $(INSTALL_PREFIX)/bin
+# The freedesktop seats the mark is actually resolved through. `Icon=lernie` in
+# the entry resolves by NAME through the hicolor theme, so the SVG's basename
+# and the entry's `Icon=` must agree — as must `StartupWMClass` and the app id
+# the window hands the toolkit (src/mark.rs). `mark::tests` pins all three.
+INSTALL_APPS   := $(INSTALL_PREFIX)/share/applications
+INSTALL_THEME  := $(INSTALL_PREFIX)/share/icons/hicolor
+INSTALL_ICONS  := $(INSTALL_THEME)/scalable/apps
 
 # Build output root. Exported so every cargo invocation below honours an
 # override.
@@ -232,15 +239,47 @@ install-hooks:
 # desktop launcher, a shell that already resolved it — then sees whole-old or
 # whole-new, never the ENOENT window install(1) opens between its unlink and
 # its write.
-install: release
+# Re-emit the checked-in vector source from the generator that defines it
+# (src/mark.rs). It is a DERIVATION and never a hand-edit: `mark::tests` asserts
+# the tracked file still equals what the generator produces, so an edit made
+# here without one made there fails the suite. This is the only sanctioned way
+# to move it.
+icon:
+	@cargo run --quiet --example icon -- assets
+
+# The freedesktop seats, as ONE target both `install` and a hand-run refresh go
+# through. It is a prerequisite of `install` because on Wayland the compositor
+# resolves the window's mark through the INSTALLED seats (app id -> the desktop
+# entry -> Icon=lernie -> the theme), ignoring the icon the binary embeds
+# entirely: a rebuilt binary alone can never refresh the mark.
+#
+# The cache rebuild is not decoration. GTK judges a cache at the theme root
+# valid while its mtime is >= the toplevel directory's, and installing into an
+# existing SUBdirectory never bumps the toplevel — so a third-party
+# gtk-update-icon-cache run serves its old index forever. Rebuilding makes the
+# fresh file authoritative; the `touch` is the fallback where the tool is
+# absent, and it also bumps the mtime a live shell rescans on.
+icon-seats:
+	@mkdir -p "$(INSTALL_ICONS)" "$(INSTALL_APPS)"
+	@install -m 0644 assets/lernie.svg "$(INSTALL_ICONS)/lernie.svg"
+	@install -m 0644 assets/lernie.desktop "$(INSTALL_APPS)/lernie.desktop"
+	@if command -v gtk-update-icon-cache >/dev/null 2>&1; then \
+	  gtk-update-icon-cache -q -f -t "$(INSTALL_THEME)" 2>/dev/null || true; \
+	fi
+	@touch "$(INSTALL_THEME)"
+	@echo "icon seats: $(INSTALL_ICONS)/lernie.svg, $(INSTALL_APPS)/lernie.desktop"
+
+install: release icon-seats
 	@mkdir -p "$(INSTALL_BIN)"
 	@install -m 0755 $(CARGO_TARGET_DIR)/release/lernie "$(INSTALL_BIN)/.lernie.tmp" && \
 	  mv -f "$(INSTALL_BIN)/.lernie.tmp" "$(INSTALL_BIN)/lernie"
 	@echo "installed $(INSTALL_BIN)/lernie"
 
 uninstall:
-	@rm -f "$(INSTALL_BIN)/lernie"
-	@echo "removed $(INSTALL_BIN)/lernie"
+	@rm -f "$(INSTALL_BIN)/lernie" \
+	       "$(INSTALL_ICONS)/lernie.svg" \
+	       "$(INSTALL_APPS)/lernie.desktop"
+	@echo "removed the binary and its icon seats"
 
 # There is deliberately NO `publish` target. `Cargo.toml` carries
 # `publish = false`: the seat's first release is the coordinated cutover moment

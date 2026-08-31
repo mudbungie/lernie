@@ -57,9 +57,12 @@ Four properties are load-bearing and none is decoration:
   disk is still caught.
 - **Unreadable is rejected, not skipped.** `grep -I` silently passes binary
   files, which is the class most likely to carry a dump. lernie's allowlist of
-  tracked binaries is EMPTY; a derivation is added to it only with a test that
-  regenerates it and checks it byte for byte. (The window will want an icon.
-  That is the ball that adds the first entry, and the test with it.)
+  tracked binaries is EMPTY and it stayed empty when the window's icon arrived
+  (bl-8f48): the mark is generated arithmetic emitted as a scalable SVG, which
+  is text the scanner reads, so the byte-for-byte pinning test exists
+  (`mark::tests`) without an allowlist entry existing. A derivation is added to
+  the list only with such a test — and only once something genuinely unreadable
+  has to be tracked at all.
 - **Both directions, run first.** `--self-test` is the stronger half: every
   rule owns a fixture in `scripts/leak-fixtures/` where every non-comment line
   must be flagged *by that rule* and must carry the `notreal` marker, plus

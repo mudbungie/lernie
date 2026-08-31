@@ -38,6 +38,8 @@
 pub mod channel;
 pub mod cli;
 pub mod envelope;
+/// The seat's own mark, and where a desktop actually looks for one.
+pub mod mark;
 /// The off-frame threads: the asker, the poster and the follow lane.
 pub mod offframe;
 pub mod paths;

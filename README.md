@@ -147,8 +147,15 @@ step it does not:
 make check     # fmt-check -> lint -> coverage
 make build     # debug build
 make test      # cargo test
-make install   # release build, then the binary into ~/.local/bin
+make install   # release build, then the binary and its icon seats into ~/.local
+make icon      # re-emit assets/lernie.svg from the generator in src/mark.rs
 ```
+
+`install` lays down a desktop entry and a scalable icon beside the binary, and
+it is not decoration: a Wayland compositor has no protocol for a client to set
+its own window icon, so it matches the window's application id against the
+installed entry and reads the mark off that. Without the seats the window wears
+whatever the desktop invents for an unnamed client.
 
 `make lint` is `line-cap`, then `leak-scan`, then `cargo clippy --all-targets --
 -D warnings`, then `rules-audit`, then `cargo deny check`.

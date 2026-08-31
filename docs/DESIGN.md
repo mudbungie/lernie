@@ -521,6 +521,38 @@ subtracts rather than adds.
   inside it and *dismiss the notice* outside it, two contexts that never
   overlap.
 
+**The mark is arithmetic, and where it is SEEN is not where a client sets it**
+(`src/mark.rs`). A window that names no icon wears the generic one every
+unnamed client gets, and the seat's own mark is three shapes — a ring for the
+engine held elsewhere, a filled disc for the seat that is here, and the one
+wire between them, which is what `crate::channel` is.
+
+- **One geometry, two emissions.** `svg` writes the checked-in vector source
+  and `rgba` rasterizes the same shape list for the toolkit's icon call, over
+  one list in one order. `assets/lernie.svg` is a **derivation** — `make icon`
+  emits it and the suite pins it byte for byte — never a hand-edit.
+- **Every number is an integer**, in thousandths of the canvas, with coverage a
+  count of subsamples rather than a distance through a curve. That is what
+  makes a byte-for-byte pin honest (float formatting can differ by target),
+  it removes the `f32 as u8` a rasterizer otherwise ends in — a cast the lint
+  set denies with no home for a suppression but the manifest — and it means no
+  image or vector crate is linked for a picture the seat can compute.
+- **Wayland has no protocol for a client to set its own window icon.** The
+  toolkit's call reaches X11 and nothing else; a compositor resolves a window's
+  mark by matching its **application id** against an installed desktop entry
+  and reading that entry's `Icon=` by name through the hicolor theme. So three
+  spellings must agree — `mark::APP_ID`, `assets/lernie.desktop`'s
+  `StartupWMClass`, and the installed SVG's basename — nothing at runtime can
+  check them, and the suite pins the agreement. `make icon-seats` lays the last
+  two down and `make install` runs it, because a rebuilt binary alone can never
+  refresh a mark it does not own.
+- **And no PNG, so the tree still tracks no binary.** Upstream laid sized
+  rasters beside the scalable source and paid for them with the only entry its
+  disclosure gate's `BINARY_ALLOWED` ever held. hicolor's `scalable/` is read
+  by every desktop this seat installs on, so a sized raster is a derivation
+  nobody consumes — and an allowlist entry for a file nothing needs is a hole
+  in the gate bought for nothing.
+
 **The native boot is `src/main.rs`, which decides nothing.** `ui::render` takes
 an `egui::Context` and the model, so every assertion in this crate runs the real
 window on an offscreen context. What lives in the excluded entry point is the
@@ -575,6 +607,12 @@ exactly as argv and the environment are.
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
 | `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~65 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
+| `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
+| `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |
+| `src/mark/raster.rs` | the pixel loop: supersampling and nothing else. | ~120 |
+| `examples/icon.rs` | `make icon`'s machinery — re-emit `assets/lernie.svg` from the generator that defines it. | ~30 |
+| `assets/lernie.svg` | the mark, as the hicolor theme reads it. A derivation, pinned byte for byte. | derived |
+| `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |

@@ -69,9 +69,13 @@ pub struct Model {
     pub answered: Option<Aim>,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
-    /// The newest live tail. It **replaces**, never accretes: a follow frame is
-    /// the whole accumulated fold, so the newest one wins and nothing has to be
-    /// reassembled.
+    /// The live tail as this seat has accumulated it. It **replaces**, never
+    /// accretes — and under PROTOCOL 2 that is a statement about where the
+    /// accretion happens rather than whether it does: a follow frame is an
+    /// append (REMOTE §5.5), so `crate::offframe::follow` absorbs each frame
+    /// onto the read's own fold and what reaches here is already whole. The
+    /// fold's lifetime is one read, which is what keeps two reads of one
+    /// conversation from running into each other.
     pub live: Option<Stream>,
     /// What the seat last heard that was not content.
     pub notice: Option<Notice>,

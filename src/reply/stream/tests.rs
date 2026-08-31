@@ -76,3 +76,43 @@ fn a_frame_with_no_fold_in_it_refuses() {
         assert!(refusal.contains(said), "{frame}: {refusal}");
     }
 }
+
+/// **The fold's contract**, and the reason the seat needs no second parser:
+/// absorbing a frame's append is reading the concatenation whole. Proven over
+/// a split rather than asserted, because that equality is the only thing
+/// standing between an append lane and a seat that paints half a sentence.
+#[test]
+fn absorbing_the_append_is_reading_the_whole() {
+    let split = [
+        json!({"stream": {"thinking": "weighing ", "delta": "thinking"}}),
+        json!({"stream": {"text": "the answer ", "delta": "text"}}),
+        json!({"stream": {"text": "so far.", "delta": "text"}}),
+    ];
+    let mut fold = Stream::default();
+    for frame in &split {
+        fold.absorb(read(frame).expect("a fold"));
+    }
+    assert_eq!(
+        fold,
+        read(&json!({"stream": {"thinking": "weighing ",
+                                "text": "the answer so far.", "delta": "text"}}))
+        .expect("a fold"),
+        "fold(a).absorb(fold(b)) == fold(a ++ b)"
+    );
+}
+
+/// **Absent stays absent, in both directions.** A frame that appended nothing
+/// leaves the accumulation exactly as it was — including its delta kind, which
+/// is the last kind *seen* and not the last frame's — and absorbing onto an
+/// empty fold is how every read starts, so the first frame is simply the whole
+/// of it.
+#[test]
+fn a_frame_that_appended_nothing_leaves_the_fold_standing() {
+    let mut fold = Stream::default();
+    fold.absorb(read(&json!({"stream": {"text": "said", "delta": "text"}})).expect("a fold"));
+    let whole = fold.clone();
+    fold.absorb(read(&json!({"stream": {}})).expect("a fold"));
+    assert_eq!(fold, whole, "an empty append is not a reset");
+    assert_eq!(fold.last_delta, Some(Delta::Text));
+    assert_eq!(fold.thinking, None, "and silence is not an empty string");
+}

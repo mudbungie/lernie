@@ -80,12 +80,9 @@ impl Link {
                 // A tail for a conversation the operator has left is dropped
                 // here, where what is selected is known for certain. Filing it
                 // would paint one conversation's words under another's name.
-                Said::Live {
-                    conversation,
-                    frame,
-                } => {
+                Said::Live { conversation, read } => {
                     if model.conversation.as_deref() == Some(conversation.as_str()) {
-                        model.absorb(&heard.channel, crate::reply::read(&frame));
+                        model.absorb(&heard.channel, read);
                     }
                 }
                 Said::Unreachable(why) => model.unreachable(&heard.channel, why),
@@ -103,13 +100,15 @@ impl Link {
         });
     }
 
-    /// One frame of the held read, stamped with the conversation it is about.
-    pub fn live(&self, channel: &Channel, conversation: &str, frame: Value) {
+    /// The held read's accumulation so far, stamped with the conversation it is
+    /// about. Already read, because a follow frame is an append and only the
+    /// lane knows which read it belongs to (REMOTE §5.5).
+    pub fn live(&self, channel: &Channel, conversation: &str, read: crate::reply::Read) {
         self.heard(
             channel,
             Said::Live {
                 conversation: conversation.to_owned(),
-                frame,
+                read,
             },
         );
     }

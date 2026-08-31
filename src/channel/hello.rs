@@ -36,7 +36,16 @@ use super::frame;
 /// decode) — the boundary correcting itself, not two protocols meeting. The
 /// integer moves when the *existing* shape changes meaning: the framing, the
 /// envelope, or what a spelling already in use is taken to say.
-pub const PROTOCOL: u32 = 1;
+///
+/// **2 is yog bl-77be's bump**, and it is the second clause of that rule
+/// rather than the first: four shapes grew an optional field
+/// (`request/advertise` and `reply/clients` gained a tool's `subject_cwd`
+/// consent, `request/invoke` and `reply/invocations` gained the subject's
+/// `cwd`), and — the part no ledger can see — REMOTE §5.5 changed what a
+/// follow frame's `text`/`thinking` are taken to say, from the whole
+/// accumulated answer to what landed since the previous frame. The spelling
+/// did not move; the meaning did, which is exactly what this integer is for.
+pub const PROTOCOL: u32 = 2;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

@@ -356,6 +356,27 @@ drifted, while this one is the last reader of somebody else's answer and
 refusing would throw away an accumulated turn while the operator watches the
 tail move.
 
+**A follow frame is an APPEND, and the fold is the lane's** (REMOTE §5.5,
+PROTOCOL 2; bl-5b07). The rule has no flag and no case — *absorb every frame of
+a read, in order, onto an empty fold* — and this seat implements it where a
+read begins and ends: `crate::offframe::follow::tick` holds one
+`Stream::default()` for the whole of one held connection, absorbs each frame
+into it and hands `Model::live` the accumulation. So a read boundary needs no
+field, no flag and no representation anywhere; it is a local variable's scope,
+and two reads of one conversation cannot run into each other because the second
+starts holding nothing. `Stream::absorb` is the engine's own operation copied
+rather than re-derived, and its contract is the equality
+`fold(a).absorb(fold(b)) == fold(a ++ b)`, asserted in
+`src/reply/stream/tests.rs` rather than stated in prose.
+
+Two consequences worth naming. The decode of a live frame moved to the lane's
+own thread, which is where the crate's one high-rate read already runs, so
+`Said::Live` crosses the lock already read; the settle's stale-tail drop is
+unchanged, being a comparison on the stamp and not on the content. And **the
+wire spelling did not move** — the body is still `{"delta", "text",
+"thinking"}` — so no field signature can see this change, which is why the
+protocol integer carries it and why this paragraph exists at all.
+
 **The corpus is a directory, not a test table** (`corpus/`, with its own
 README), and **the frames in it are not this repository's** (bl-6b8e). yog
 generates a wire conformance corpus from the boundary that *is* the protocol
@@ -984,7 +1005,7 @@ material must not have, which is a long life on a display.
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
-| `src/ui/chat.rs` | one conversation as rows, and the live fold that replaces rather than accretes. | ~170 |
+| `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects. | ~90 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |

@@ -8,6 +8,7 @@
 
 use serde_json::Value;
 
+use crate::reply::Read;
 use crate::ui::{Aim, Channel, Model};
 
 /// **What one worker heard**, stamped with the channel it came down.
@@ -31,7 +32,7 @@ pub struct Heard {
 pub enum Said {
     /// One reply frame, exactly as it crossed.
     Frame(Value),
-    /// **One frame of the held read, stamped with what it is about.**
+    /// **The held read's accumulation so far, stamped with what it is about.**
     ///
     /// The stamp is what makes a stale tail impossible rather than unlikely.
     /// The engine was asked about a conversation and answers about that one, so
@@ -40,7 +41,13 @@ pub enum Said {
     /// and the frame decides whether they are still wanted, which is a pure
     /// comparison at the one place that holds the answer, rather than a poll
     /// racing the socket at the other.
-    Live { conversation: String, frame: Value },
+    ///
+    /// **Already read**, unlike [`Frame`](Self::Frame): a follow frame is an
+    /// append (REMOTE §5.5), so it has to be absorbed onto the read's own fold
+    /// before it means anything, and the lane is where a read begins and ends.
+    /// What crosses is therefore the whole tail, which is what lets the model
+    /// go on replacing.
+    Live { conversation: String, read: Read },
     /// This seat could not reach the far end, and here is the sentence.
     Unreachable(String),
 }

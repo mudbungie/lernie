@@ -19,10 +19,18 @@
 
 use std::path::Path;
 
+use crate::reply::{Read, Reply, stream::Stream};
 use crate::state::{Link, Said};
 
 /// Hold the line on the focused conversation until it moves or the engine ends
 /// the stream.
+///
+/// **The fold's whole lifetime is this call**, and that is the whole of how
+/// REMOTE §5.5's *"onto an empty fold"* is implemented: one read is one `tick`,
+/// so a read boundary needs no flag, no field and no representation anywhere —
+/// it is a local variable's scope. The frame is handed the ACCUMULATION, which
+/// is why [`crate::ui::Model::live`] can go on replacing rather than accreting:
+/// what it receives is already whole.
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
     let (Some((channel, aim)), Some(conversation)) = (standing.aimed(), standing.conversation)
@@ -30,14 +38,33 @@ pub fn tick(link: &Link, root: &Path) {
         return;
     };
     let envelope = crate::verbs::follow(aim.address.clone(), conversation.clone());
+    let mut fold = Stream::default();
     let held = crate::seat::route(root, &envelope).and_then(|(open, carried)| {
         open.follow(&carried, &mut |frame| {
-            link.live(&channel, &conversation, frame);
+            link.live(&channel, &conversation, absorbed(&mut fold, &frame));
             !link.stopped() && still_on(link, &aim, &conversation)
         })
     });
     if let Err(why) = held {
         link.heard(&channel, Said::Unreachable(why));
+    }
+}
+
+/// Read one frame and, when it is a tail, absorb it — answering the fold rather
+/// than the append.
+///
+/// **Decoding happens here, on the lane's own thread**, not at the settle: this
+/// is the one read whose frames arrive faster than an operator looks, and the
+/// settle is the frame's side of the lock. Everything else a held read can
+/// answer — a refusal mid-stream, bytes this build cannot read — crosses
+/// untouched, because only the tail has anything to accumulate.
+fn absorbed(fold: &mut Stream, frame: &serde_json::Value) -> Read {
+    match crate::reply::read(frame) {
+        Read::Answer(Reply::Follow(later)) => {
+            fold.absorb(later);
+            Read::Answer(Reply::Follow(fold.clone()))
+        }
+        other => other,
     }
 }
 

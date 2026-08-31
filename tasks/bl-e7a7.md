@@ -1,7 +1,8 @@
 +++
 title = "the installed desktop entry names a bare Exec, so a shell whose PATH lacks the cargo bin dir launches nothing"
 created = 1788147567
-updated = 1788147567
+updated = 1788147593
+claimant = "OrderScribe2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

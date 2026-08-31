@@ -7,14 +7,27 @@ name: CI
 # 100% coverage floor. A CI file that spelled out its own steps would be a
 # second definition of green, and the two would drift within a week.
 #
-# It runs on every push to `main` and on every pull request, which is the whole
-# trigger set this repository needs: work lands on `main` by `bl close`
-# squashing a claim worktree, and a pushed branch exists only to buy a runner
-# verdict — which is what the pull-request trigger answers.
+# Every push to `main` and every pull request still runs it, but only ONE of
+# those is a trigger here. Work lands on `main` by `bl close` squashing a claim
+# worktree, and a pushed branch exists only to buy a runner verdict — which is
+# what the pull-request trigger answers.
 on:
-  push:
-    branches: [main]
+  # Deliberately NO push arm. On a push to `main` this workflow still runs, once,
+  # as the instance `release-plz.yml` CALLS inside its own run (`uses:
+  # ./.github/workflows/ci.yml`, and its release job `needs:` that instance).
+  # A push arm here would run the identical jobs a second time per push for
+  # nothing. Consequence: this workflow has no runs of its own on `main`, so
+  # anything reading them — a status badge, say — must read `release-plz.yml`.
   pull_request:
+  # The reusable entry point, and its placement is load-bearing rather than a
+  # convenience: crates.io trusted publishing REFUSES an OIDC token minted under
+  # a `workflow_run` trigger, so a release gated by observing this workflow
+  # would publish nothing, quietly, forever. A CALLED workflow executes inside
+  # the CALLER's run, which keeps the release's OIDC claim at trigger=push and
+  # workflow `release-plz.yml` — the identity the registry is configured to
+  # trust — while the release job still hard-gates on it through `needs:`.
+  workflow_call:
+  # The gate on a tree, by hand, without releasing anything.
   workflow_dispatch:
 
 # CI reads the tree and writes nothing back. Every action is pinned to a full

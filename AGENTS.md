@@ -43,6 +43,14 @@ every pull request. A pushed branch exists only to buy a runner verdict; that is
 what the pull-request trigger answers, and the branch is deleted and its pull
 request closed in the same breath as the `bl close` that lands the work.
 
+**On a push it runs as a job of `release-plz.yml`, not on a trigger of its
+own** (bl-459d), and that placement is load-bearing rather than tidy: crates.io
+refuses an OIDC token minted under a `workflow_run` trigger, so a release gated
+by *observing* CI publishes nothing, quietly, forever. `ci.yml` therefore has a
+`workflow_call` entry point and no push arm — the release workflow calls it
+inside its own run and `needs:` the result. Consequence: `ci.yml` has no runs of
+its own on `main`, so anything reading them must read `release-plz.yml`.
+
 **All tests must pass and coverage must be 100% before anything merges.** It
 does not matter who broke the test.
 
@@ -214,12 +222,22 @@ check the author cannot switch off is `store-scan.yml` above.
 
 ## Before a publish
 
+**READ THIS FIRST: THE PUBLISH IS NOW AUTOMATIC, AND ITS TRIGGER IS A VERSION
+NUMBER LANDING ON `main`** (bl-459d). `.github/workflows/release-plz.yml`
+publishes any manifest version crates.io does not already serve, on every push
+to `main`, behind the CI gate. There is no publish *command* left to withhold —
+the irreversible act is now `bl close` on a ball that edited `version =` in
+`Cargo.toml`, and it fires minutes later with nobody in the loop. **So this list
+runs BEFORE the version bump lands, not before some later act.** That is the
+whole of what changed; nothing below it got easier.
+
 **Nothing has been published under this name from this tree, and that is the
-whole of the advantage the checklist below exists to keep.** The flag is no
-longer what holds it: `publish = true` since bl-f468, the operator having taken
-the cutover decision for the four-component split. What holds it now is a
-registry-side setting — see item 6 — and what should hold it every time after
-is this list.
+whole of the advantage the checklist below exists to keep.** The flag stopped
+being what holds it at bl-f468 (`publish = true`, the operator having taken the
+cutover decision for the four-component split), and the registry-side setting
+of item 6 stopped being what holds it at bl-459d — that setting is satisfied by
+the workflow above rather than relaxed. What holds it now is this list and the
+person reading it.
 
 **The list was RUN, in full, in bl-f468**, and each item's verdict is recorded
 in that ball. Two things it found are worth reading before the next run: the
@@ -287,15 +305,16 @@ it can say.
    judges file CLASSES and never content, and every home path the sibling crate
    published lived inside `src`.
 
-   **The name is not new, and that is what stopped bl-f468's publish.** The
-   registry crate `lernie` already exists, carrying the engine era's 0.0.x
-   line, and it is set to accept **Trusted Publishing only** — a token
-   `cargo publish` is answered `403 Forbidden` however the manifest is
-   written. Nothing in this tree can satisfy that: it is a registry-side
-   setting, changed by an owner, and its alternative is an Actions workflow
-   whose FILENAME matches the trusted publisher already configured on the
-   crate. So the first release under this name is gated on one of two owner
-   acts, and neither is a code change. Read the crate's own record before
+   **The name is not new, and that is what stopped bl-f468's publish — and how
+   it was answered.** The registry crate `lernie` already exists, carrying the
+   engine era's 0.0.x line, and it is set to accept **Trusted Publishing
+   only**: a token `cargo publish` is answered `403 Forbidden` however the
+   manifest is written, from any box, forever. Nothing in this tree can satisfy
+   that with a credential, and the setting was NOT relaxed. What satisfied it
+   is `.github/workflows/release-plz.yml` (bl-459d), whose filename is the one
+   the crate's engine-era trusted publisher already names — so the only route
+   to the registry runs through a green CI gate on `main`, and there is no
+   hand-run alternative to fall back to. Read the crate's own record before
    assuming a token will do — `crates.io/api/v1/crates/lernie` answers
    `trustpub_only` without authentication.
 7. **The fence.** 0.1.0 is the first version this crate may ever bear. A
@@ -306,12 +325,19 @@ it can say.
 ## Never
 
 - Never credit AI or tooling in commit messages, code, or docs.
-- Never `cargo publish` outside a ball that has run the section above. The flag
-  is no longer the enforcement — `publish = true` since bl-f468 — so the
-  checklist is, and it is a person's act rather than a gate. The first release
-  under this name at 0.1.0 is what fixes the fence in the public record and it
-  is irreversible. There is deliberately no `make publish`: a convenience
-  target for an irreversible act is how the act happens by accident.
+- Never land a `version =` bump outside a ball that has run the section above.
+  Since bl-459d that edit IS the publish: `release-plz.yml` releases any
+  manifest version the registry does not serve, on the next push to `main`,
+  and nothing asks a second time. The flag stopped being the enforcement at
+  bl-f468 (`publish = true`) and the registry setting stopped being it at
+  bl-459d, so the checklist is, and it is a person's act rather than a gate.
+  There is still deliberately no `make publish` and no local publish path: a
+  hand-run `cargo publish` here is refused by the registry anyway (the crate
+  accepts trusted publishing only), and a convenience target for an
+  irreversible act is how the act happens by accident.
+- Never rename `.github/workflows/release-plz.yml`. crates.io matches that
+  filename literally against the OIDC claim, so renaming it breaks publishing
+  until the registry entry is updated to match — silently, at the next release.
 - **Never lower the version below 0.1.0.** That is the fence; a `0.0.z` from
   this tree collides with the engine's own published line. `src/cli/tests.rs`
   fails the suite if it happens.

@@ -166,17 +166,45 @@ Every tool is pinned, or the gate is not reproducible: rustc 1.95.0
 
 `.github/workflows/ci.yml` runs `make ci` — the same target, the same pins — on
 every push to `main` and every pull request, so the gate is not a thing somebody
-remembered to run. `store-scan.yml` scans the published task-store ref with the
-same disclosure scanner, daily and on dispatch: the local gate prevents and is
-bypassable, that one detects and is not.
+remembered to run. On a push it runs as a job of `release-plz.yml` rather than
+on its own trigger, because a release has to be gated by a CALLED workflow (see
+below) and running it twice per push would buy nothing. `store-scan.yml` scans
+the published task-store ref with the same disclosure scanner, daily and on
+dispatch: the local gate prevents and is bypassable, that one detects and is
+not.
 
 Run `make install-hooks` once per clone to seat the pre-commit hook.
 
-**lernie is not published.** `Cargo.toml` carries `publish = false` and an
-`include` allowlist, and `tests/packaged_files.rs` holds that allowlist over the
-real `cargo package --list`. The first release under this name is the
-coordinated cutover moment for the whole four-component split; what a person has
-to check before it is `AGENTS.md`'s *Before the first publish*.
+## Releases
+
+`.github/workflows/release-plz.yml` is the release path. A push to `main` runs
+the gate, keeps one version-bump pull request fresh, and publishes any manifest
+version crates.io does not already serve — tagged `v<version>`, with a GitHub
+Release beside it. `release-plz.toml` holds the four policy decisions it reads
+and the reason for each.
+
+Publishing is by **trusted publishing**: crates.io records that this one
+workflow file in this one repository may publish this one crate, and GitHub
+mints a short-lived signed token asserting exactly that at run time. There is no
+registry credential in this repository and there should never be one. The
+workflow's filename is matched literally against that claim, so renaming it
+breaks publishing until the registry entry is updated.
+
+What no workflow can promise is the other half: `Cargo.toml` declares an
+`include` ALLOWLIST rather than an exclude list, and `tests/packaged_files.rs`
+holds it over the real `cargo package --list` in both directions — but a guard
+judges file classes and never content. That half is `AGENTS.md`'s *Before a
+publish*, run by a person.
+
+The macOS artifact is built natively on an Apple runner in the same workflow and
+then READ rather than trusted — `scripts/mac-verify.sh` reports its
+architecture, its filetype, the OS it targets, every dynamic library it will ask
+macOS for, and whether it is signed at all. It cannot be cross-built from Linux:
+the window links Apple frameworks, the frameworks ship only in Apple's SDK, and
+the SDK agreement refuses both hosting that SDK and running any part of it on
+non-Apple hardware. Nothing here acquires one. The signature the linker applies
+is ad-hoc and is not notarization — a downloaded copy carries a quarantine
+attribute that only somebody on a mac can clear.
 
 ## The rules
 

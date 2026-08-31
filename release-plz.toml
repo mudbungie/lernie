@@ -1,0 +1,60 @@
+# Release policy. `.github/workflows/release-plz.yml` is the mechanism; this
+# file is the four decisions that mechanism reads, and nothing else.
+
+[workspace]
+
+# THE TAG SPELLING, chosen rather than inherited. `v0.1.0` — bare, no crate
+# prefix.
+#
+# The sibling engine crate tags `litany-v{version}`, and copying that here would
+# be cargo-culting the answer to a question this repository does not have. That
+# prefix exists because the engine's repository holds BOTH eras of the name in
+# ONE history: the `v0.0.1`..`v0.0.11` tags of the `lernie`-era engine are
+# already in it, so a bare `v0.0.12` would have been ambiguous and a bare
+# `v0.1.0` would have read as the next engine release.
+#
+# This repository was founded fresh for the seat. It has no tags at all, it will
+# never carry an engine commit, and it holds exactly one crate — so `v<version>`
+# names one thing here and always will. The engine-era `lernie` tags are in the
+# OTHER repository's history, where they stay; nothing this tree pushes can
+# collide with them. One crate, one line of tags, the plainest spelling that is
+# unambiguous.
+git_tag_name = "v{{ version }}"
+
+# NO GENERATED CHANGELOG, and this repository has no hand-written one either —
+# so the record of what changed is the git history and the balls behind it.
+#
+# Generation was refused on evidence rather than taste. Every commit here is a
+# short imperative subject plus a `[bl-xxxx]` trailer, not Conventional Commits,
+# and the sibling repository measured what git-cliff does to exactly that shape:
+# its parser strips a leading `word:` token from any subject that happens to
+# parse as a conventional type, and release-plz runs each commit through the
+# processing TWICE, so the obvious compensation (duplicate the token and let the
+# parser eat the copy) doubles. Subjects here open with prose that reads like a
+# type more often than not — `the first publish: …`, `a start focuses …` — which
+# is the same input that produced that defect there.
+#
+# The consequence is stated so nobody reads it as a bug: the GitHub Release body
+# is EMPTY, because release-plz fills it from the changelog only when it manages
+# the changelog. The tagged tree is the record.
+changelog_update = false
+
+# NO SEMVER CHECK, because there is nothing coherent to check against. This
+# crate's published line is `0.0.0`..`0.0.11` — the agent-loop ENGINE, a
+# different program that happened to hold this name first (DESIGN §0, the
+# fence). Comparing the seat's API surface against the engine's would compare
+# two unrelated crates and report a wall of breaking changes that mean nothing.
+# The version rule the fence states is what separates the eras, and a test
+# enforces it (`src/cli/tests.rs`); an API diff across it is noise.
+semver_check = false
+
+# The bump policy for every release AFTER the first. Non-conventional subjects
+# take release-plz's default increment, which is PATCH — the release PR should
+# always propose the smallest step. A bigger bump is opted into by putting
+# `[minor]` or `[major]` as a standalone bracketed token in any commit message
+# landing in the release window: preceded by start-of-string or whitespace,
+# followed by end-of-string or whitespace. Prose mentions like `[minor]/[major]`
+# (slash-joined, no boundary whitespace) do not match, which keeps a commit that
+# describes this convention from bumping itself.
+custom_minor_increment_regex = '(^|\s)\[minor\](\s|$)'
+custom_major_increment_regex = '(^|\s)\[major\](\s|$)'

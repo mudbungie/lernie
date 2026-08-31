@@ -730,8 +730,11 @@ delete the branch and close its pull request in the same breath.
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
-| `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. | config |
+| `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |
 | `.github/workflows/store-scan.yml` | the published store ref, judged by the source's own rule table. | config |
+| `.github/workflows/release-plz.yml` | the release path (§6.2). Its FILENAME is matched literally against the registry's trusted-publisher claim — renaming it stops publishing. | config |
+| `release-plz.toml` | the four release decisions the workflow reads: the tag spelling, no generated changelog, no semver check across the fence, and the bump markers. | config |
+| `scripts/mac-verify.sh` | reads the produced Mach-O and says what it IS — architecture, filetype, target OS, every `LC_LOAD_DYLIB`, whether it is signed at all — with five malformed inputs it must refuse first. | ~230 |
 | `tests/packaged_files.rs` | what `cargo publish` would ship, over the real `cargo package --list` — the manifest's `include` allowlist, restated so a widening edit is red here. | ~200 |
 | `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
 | `src/test_support/corpus.rs` | the one walk over the corpus, and the protocol stamp checked on every file read. `cfg(test)`. | ~130 |
@@ -761,7 +764,9 @@ the fork, never at the write.
 
 ## 6. Deferred, with the ball that pays for it
 
-Nothing in this section works. Each row is filed, and each says what it costs.
+Each row is filed, and each says what it costs. Rows leave this section by being
+built rather than by being deleted — §6.2 is here, and works, because what it
+defers is now a shorter list than what it does.
 
 ### 6.1 The first publish, which the manifest no longer holds back (bl-11fc,
 bl-f468)
@@ -781,19 +786,57 @@ verdict. It stays a checklist rather than a target because every item is a
 one-time judgement whose remedy is destructive. There is still no
 `make publish`.
 
-**Nothing is published yet, and what stops it is not in this tree** (bl-3be4).
-The registry crate `lernie` already carries the engine era's 0.0.x line and is
-set to accept Trusted Publishing only, so a token `cargo publish` is refused
-whatever the manifest says. That is one of two owner acts — relax the setting,
-or land §6.2's workflow at the filename the crate's existing trusted publisher
-already names.
+**What stopped the publish was never in this tree** (bl-3be4). The registry
+crate `lernie` already carries the engine era's 0.0.x line and is set to accept
+Trusted Publishing only, so a token `cargo publish` is refused whatever the
+manifest says. Two owner acts opened it — relax the setting, or land §6.2's
+workflow at the filename the crate's existing trusted publisher already names —
+and the second is the one taken. The registry setting stands; the route to it
+is the workflow.
 
-### 6.2 The release path, which does not exist (bl-459d)
+### 6.2 The release path, which now exists (bl-459d)
 
-There is no release workflow, which was a decision and is now also the thing in
-front of 0.1.0. It carries the CI gate as a *called* workflow rather than an
-observed one (the registry refuses an OIDC token minted under `workflow_run`),
-the trusted publisher's fixed filename, and the macOS job bl-9380 ruled to be
-the seat's only lawful darwin artifact — a native build on Apple hardware, this
-tree acquiring no SDK ever.
+`.github/workflows/release-plz.yml`, `release-plz.toml`, and a
+`scripts/mac-verify.sh` beside them. Four things about it are decisions rather
+than mechanics, and each was made once:
+
+**The CI gate is CALLED, never observed.** The release job's gate is
+`uses: ./.github/workflows/ci.yml` inside its own run, with `needs: ci` on the
+release job — not a `workflow_run` trigger watching CI from a distance. The
+registry REFUSES an OIDC token minted under `workflow_run`, so the observed
+shape publishes nothing, quietly, forever. `ci.yml` lost its push arm in the
+same edit, so the gate still runs exactly once per push.
+
+**The filename is fixed by the registry, not chosen here.** crates.io matches
+`release-plz.yml` literally against the OIDC claim. Renaming it breaks
+publishing until the registry entry is updated. There is no credential in this
+repository and there should never be one — that is what trusted publishing buys.
+
+**The tag is bare `v<version>`.** The sibling engine crate prefixes its tags
+because ONE history there holds both eras of this name; this repository was
+founded fresh for the seat, holds one crate, will never carry an engine commit,
+and had no tags at all. The engine-era `lernie` tags live in the other
+repository, where nothing this tree pushes can reach them. `release-plz.toml`
+carries that reasoning beside the key.
+
+**The macOS job reports; it does not gate.** bl-9380 measured that the seat
+cannot be cross-built for darwin from Linux — the window links Apple
+frameworks, they ship only in Apple's SDK, and the SDK agreement refuses both
+hosting that SDK (§2.7) and running any part of it on non-Apple hardware
+(§2.5) — and the operator ruled that a GitHub Actions macOS runner IS
+Apple-branded hardware in the licence's sense. So the artifact is built
+natively on `macos-14` and then READ rather than trusted: `mac-verify.sh`
+reports architecture, filetype, target platform, minimum OS, every
+`LC_LOAD_DYLIB` (each must be a stock `/usr/lib` or `/System/Library` path, or
+the artifact acquired a dependency nobody chose) and whether a code signature
+is present at all, with five fabricated malformed inputs it must refuse first.
+`needs: ci`, so it only ever builds a green tree; nothing `needs:` it, so a
+broken mac leg is visible and never stands between a green tree and the
+registry.
+
+**Still deferred, each its own ball.** No upload job for the Linux release
+binary, no container image, and no signing or notarization — the linker's
+ad-hoc signature satisfies an arm64 mac's refusal to start unsigned binaries
+and is not notarization, and a downloaded artifact's quarantine attribute is
+cleared by a credentialled act on a mac by whoever publishes.
 

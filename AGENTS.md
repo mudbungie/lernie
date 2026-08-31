@@ -294,8 +294,22 @@ it can say.
    remove it: GitHub keeps the edit history of a body and serves
    `refs/pull/<n>/head` forever, so an edit here buys the false assurance a
    history rewrite buys elsewhere. And the scanner did not catch it — the
-   `session-artifact` rule's prefix alternation does not name this one — so the
-   rule table has a hole that a fixture would close. Both are filed.
+   `session-artifact` rule's prefix alternation did not name that form. **The
+   rule half is closed** (bl-9fbe): the rule now carries both the bare
+   `session` id prefix and the code-session URL path shape, each with its own
+   fixture line. The published body is not, and will not be; it is recorded
+   here and left alone.
+
+   **The standing ruling — no agent-session URL in this repository's published
+   text, anywhere** (bl-9fbe, operator 2026-08-30: *ban them, no reason to
+   allow it*). Pull-request titles and bodies, issue text, review comments and
+   release notes never carry a session URL or a conversation identifier. The
+   harness convention of appending one to a pull-request body is **overridden
+   here**: strip it before you open the PR, because a body cannot be
+   un-published afterwards. The scanner now reads both forms, so a commit
+   message or a ball body carrying one is refused at the moment of writing —
+   but a PR body is in no tree and no gate will ever see it. That half is
+   yours.
 5. **Actions logs and artifacts.** A failed gate prints paths and sometimes the
    offending line into a log that survives the run and is public the moment the
    repository is. The scanner truncates findings to 12 characters for exactly

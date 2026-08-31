@@ -73,6 +73,32 @@ fn usage_names_the_verbs_and_what_it_reads() {
     }
 }
 
+/// **The usage says that bare `lernie` opens the window** (bl-7dcf).
+///
+/// It is the crate's headline capability and it was in neither list: the shape
+/// read `lernie <verb> [argument…]`, which says a verb is REQUIRED — the
+/// opposite of the truth — and the only route to the window from the help was
+/// running the binary wrong on purpose. The prose does not rescue it either:
+/// *"paints what comes back"* reads as the verbs' own stdout, because every
+/// documented verb prints envelopes there.
+#[test]
+fn the_usage_says_that_a_bare_invocation_opens_the_window() {
+    let text = usage();
+    assert!(
+        text.lines()
+            .any(|line| line.starts_with("usage: lernie ") && line.contains("window")),
+        "the bare form leads the usage block:\n{text}"
+    );
+    assert!(
+        text.contains("WITH NO ARGUMENTS AT ALL"),
+        "and the prose says which invocation it is:\n{text}"
+    );
+    assert!(
+        matches!(crate::cli::run(Vec::new()), crate::cli::Decided::Window),
+        "and that is what a bare invocation actually decides"
+    );
+}
+
 #[test]
 fn ok_carries_the_success_code_and_goes_to_stdout() {
     let v = Verdict::ok("said".to_string());

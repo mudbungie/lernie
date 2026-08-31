@@ -40,12 +40,18 @@ THE NAME HAS TWO ERAS. lernie through 0.0.x was the agent-loop engine, which
 continues under the name litany. lernie 0.1.0 and above is this seat. The
 version is the only rule that separates them.
 
-usage: lernie <verb> [argument…]
+usage: lernie                      open the window on this box's channels
+       lernie <verb> [argument…]
        lernie start <workspace> <goal>
        lernie ask <envelope>
        lernie entries
        lernie help [<verb>]
        lernie [--version | --help]
+
+WITH NO ARGUMENTS AT ALL lernie opens its window: a roster of every workspace
+across every channel this box holds, the aimed wall's conversations, the
+selected conversation and a composer under it. That is what a seat is; every
+verb below is a way of reaching one gesture without one.
 
 The gestures, typed. Each becomes the envelope the boundary already carries
 and goes down the channel its workspace names; the reply stream prints one

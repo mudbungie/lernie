@@ -1,7 +1,8 @@
 +++
 title = "publish 0.1.0: the act itself, once the registry stops refusing a token"
 created = 1788146231
-updated = 1788146231
+updated = 1788146401
+claimant = "OrderBellman"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

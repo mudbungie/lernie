@@ -1,7 +1,8 @@
 +++
 title = "`lernie help <verb>` refuses the four verbs the help text itself documents"
 created = 1788138757
-updated = 1788150555
+updated = 1788151412
+claimant = "OrderJoiner2"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++
 `lernie help` prints a page for the six gesture serializations (`workspaces`, `conversations`, `transcript`, `follow`, `message`, `nudge`) and answers `lernie: no verb named "X" — \`lernie help\` lists every one` for `start`, `ask`, `entries` and `help` — the four structural verbs that same listing names in its usage block and describes in a paragraph each.

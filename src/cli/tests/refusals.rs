@@ -38,11 +38,16 @@ fn the_start_word_refuses_by_arity_and_says_what_it_takes() {
         let v = said(&words);
         assert_eq!(v.code, REFUSED, "{words:?}");
         assert_eq!(v.stream, Stream::Err);
-        assert!(
-            v.text.contains("lernie start <workspace> <goal>"),
-            "{}",
-            v.text
+        // **One space after `usage:`, like every other refusal in the binary**
+        // (bl-60e6). The hand-written sentence this used to earn carried
+        // fourteen, a wrapping artifact from when it was laid out over two rows
+        // in the source — on one of the two words an operator is likeliest to
+        // get wrong. It is the door's own computed line now.
+        let wanted = format!(
+            "`lernie start` takes 2 argument(s) and got {} — usage: lernie start <workspace> <goal>",
+            words.len() - 1
         );
+        assert!(v.text.contains(&wanted), "{}", v.text);
     }
 }
 
@@ -159,4 +164,35 @@ fn a_grade_that_is_not_one_of_the_two_refuses_before_anything_is_dialled() {
             );
         }
     }
+}
+
+/// **No sentence this binary composes carries a run of spaces**, which is the
+/// class the defect above belongs to: `cargo fmt` joins a `\`-continued string
+/// literal and keeps the indentation that was only ever the source's (bl-60e6).
+///
+/// It reads the composed sentences rather than the usage block, whose columns
+/// are aligned on purpose — a run of spaces there is the layout, and everywhere
+/// else it is the artifact.
+#[test]
+fn no_sentence_this_binary_composes_carries_a_run_of_spaces() {
+    let mut said: Vec<String> = Vec::new();
+    for verb in crate::verbs::table() {
+        said.push(verb.usage());
+        said.push(crate::verbs::help::page(verb.word).unwrap_or_default());
+        if let Err(refusal) = verb.envelope(Vec::new()) {
+            said.push(refusal);
+        }
+    }
+    for door in crate::verbs::doors::table() {
+        said.push(door.usage());
+        said.push(door.refused(9));
+        said.push(crate::verbs::help::page(door.word).unwrap_or_default());
+    }
+    let run: Vec<String> = said
+        .iter()
+        .flat_map(|text| text.lines())
+        .filter(|line| line.contains("  "))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(run, Vec::<String>::new());
 }

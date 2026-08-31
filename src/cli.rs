@@ -92,7 +92,13 @@ pub fn run(args: Vec<String>) -> Decided {
         ["--version" | "-V"] => Decided::Say(Verdict::ok(version())),
         // The composite, and its arity is exact for [`crate::verbs`]'s own
         // reason: argv quotes, so a goal is one argument, and an unquoted tail
-        // refuses rather than being silently joined.
+        // refuses rather than being silently joined. **Every other arity falls
+        // through to `typed`**, where `start`'s own door row states the usage
+        // (bl-60e6): the hand-written refusal that used to stand here carried
+        // fourteen literal spaces inside its usage line, a wrapping artifact
+        // from when the sentence was laid out over two rows in the source, and
+        // a stored usage line is the second fact `crate::verbs` exists not to
+        // keep.
         ["start", address, goal] => Decided::Start {
             address: (*address).to_owned(),
             goal: (*goal).to_owned(),
@@ -100,10 +106,6 @@ pub fn run(args: Vec<String>) -> Decided {
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade] => enroll(workspace, name, grade),
-        ["start", ..] => Decided::Say(Verdict::refused(
-            "`lernie start` takes a workspace and a goal — usage:              lernie start <workspace> <goal>"
-                .to_owned(),
-        )),
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,

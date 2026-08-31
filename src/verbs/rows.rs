@@ -48,9 +48,13 @@ pub const WORKSPACES: Verb = Verb {
                  names each workspace, how it is classified, how many \
                  conversations it holds, how many want attention, whether \
                  anything is running, and where the operator pinned it. It takes \
-                 no address: a read with no workspace goes to this box's own \
-                 engine, and a workspace held elsewhere is reached by naming it \
-                 to one of the verbs below.",
+                 no address, so its subject is EVERY channel this box holds: it \
+                 asks each in turn — this box's own engine first, then the \
+                 entries in leaf order — and prints the union under the name of \
+                 the channel each answer came from, which is the roster the \
+                 window paints. A channel that will not answer says so in its \
+                 own section while the others still answer. To ask exactly one, \
+                 name it: `lernie ask '{\"op\":\"workspaces\",\"workspace\":\"<entry>\"}'`.",
 };
 
 /// The `conversations` read's row.

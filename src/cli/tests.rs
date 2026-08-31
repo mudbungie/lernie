@@ -31,3 +31,12 @@ fn asked(words: &[&str]) -> Value {
         other => panic!("{words:?} decided {other:?}"),
     }
 }
+
+/// The envelope a run decided to ask of EVERY channel — the same envelope,
+/// asked of all of them rather than one (bl-0d54).
+fn fanned(words: &[&str]) -> Value {
+    match run(argv(words)) {
+        Decided::Fanned(envelope) => envelope,
+        other => panic!("{words:?} decided {other:?}"),
+    }
+}

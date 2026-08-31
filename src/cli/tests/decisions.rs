@@ -5,7 +5,7 @@
 
 use super::super::verdict::REFUSED;
 use super::super::{Decided, Stream, run, usage, version};
-use super::{argv, asked, said};
+use super::{argv, asked, fanned, said};
 use serde_json::json;
 
 #[test]
@@ -69,8 +69,30 @@ fn every_verb_in_the_table_is_typable() {
             );
             continue;
         }
-        assert_eq!(asked(&words)["op"], json!(verb.word), "{}", verb.word);
+        // **A verb with no `workspace` parameter has no way to name a
+        // channel, so its subject is all of them** (bl-0d54): the envelope is
+        // the same row's, and only how many channels it is asked of differs.
+        let sent = if verb.addresses_a_workspace() {
+            asked(&words)
+        } else {
+            fanned(&words)
+        };
+        assert_eq!(sent["op"], json!(verb.word), "{}", verb.word);
     }
+}
+
+/// **The shorthand fans; the raw door does not** (bl-0d54). `lernie
+/// workspaces` has no way to name a channel, so its subject is every channel
+/// this box holds — while `lernie ask` stays the escape hatch for exactly one,
+/// which is what `{"op":"workspaces","workspace":"<entry>"}` asks.
+#[test]
+fn the_roster_word_fans_while_the_hand_written_envelope_does_not() {
+    assert_eq!(fanned(&["workspaces"]), json!({"op": "workspaces"}));
+    assert_eq!(
+        asked(&["ask", r#"{"op":"workspaces"}"#]),
+        json!({"op": "workspaces"}),
+        "the raw door is one channel's, always"
+    );
 }
 
 /// **The enrollment's arity is exact too**, and a wrong one earns the row's own

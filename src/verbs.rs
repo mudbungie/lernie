@@ -96,6 +96,21 @@ pub fn find(word: &str) -> Option<Verb> {
 }
 
 impl Verb {
+    /// **Whether this verb addresses one workspace**, read off its own
+    /// parameters rather than listed a second time.
+    ///
+    /// It is the predicate two surfaces need and it has one home. A verb with
+    /// no `workspace` parameter has no way to name one, so its subject is
+    /// *every* channel this box holds — which is why `lernie workspaces` fans
+    /// (bl-0d54) where every other word goes down one channel. And a
+    /// `workspace` field written onto such a gesture by hand is therefore a
+    /// pure channel selector, with no reader at the far end, so a name no entry
+    /// holds refuses at the seat instead of answering `ok` from a channel
+    /// nobody named (bl-d574, [`crate::seat::route`]).
+    pub fn addresses_a_workspace(&self) -> bool {
+        self.params.contains(&crate::envelope::WORKSPACE)
+    }
+
     /// The line an operator types, computed rather than stored.
     pub fn usage(&self) -> String {
         std::iter::once(format!("lernie {}", self.word))

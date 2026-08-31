@@ -785,7 +785,9 @@ material must not have, which is a long life on a display.
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
 | `src/place.rs` | where the seat was pointed, remembered between runs. Every way the file can be wrong is one answer: no place. | ~85 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
-| `src/seat.rs` | which engine a gesture reaches, what it carries there, and what this box says it holds. | ~135 |
+| `src/seat.rs` | which engine a gesture reaches, and what it carries there. | ~190 |
+| `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
+| `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from. | ~80 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |

@@ -27,11 +27,7 @@ pub const OWN: &str = "(this box's own engine)";
 pub fn listing(data_root: &Path) -> Verdict {
     let mut rows = vec![row(OWN, &own(data_root))];
     for held in entries::read_dir(&entries::dir(data_root)) {
-        let label = if held.workspace == held.leaf {
-            held.leaf.clone()
-        } else {
-            format!("{} (named {:?} on its host)", held.leaf, held.workspace)
-        };
+        let label = label(&held.leaf, &held.workspace);
         let state = held
             .channel
             .map_or_else(|state| state, |material| material.address);
@@ -85,6 +81,20 @@ pub fn channels(data_root: &Path) -> Vec<crate::ui::Channel> {
             }),
     );
     held
+}
+
+/// **The name this box knows a channel by**, as every surface spells it: the
+/// leaf, plus the name its workspace bears on its host where the two differ.
+///
+/// One home, so the listing and the fan ([`super::fan`]) cannot spell one
+/// channel two ways — a stamp that disagreed with the roster would be worse
+/// than no stamp.
+pub(super) fn label(leaf: &str, workspace: &str) -> String {
+    if leaf == workspace {
+        leaf.to_owned()
+    } else {
+        format!("{leaf} (named {workspace:?} on its host)")
+    }
 }
 
 /// **The channels this box holds, named in one clause** — the enumeration a

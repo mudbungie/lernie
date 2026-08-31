@@ -25,12 +25,15 @@ use serde_json::Value;
 
 /// The §8.4 enrollment act, whose reply is a picture rather than a stream.
 mod enroll;
+/// A gesture that names no workspace, asked of every channel this box holds.
+mod fan;
 /// What this box says it holds, said without dialling any of it.
 mod holds;
 /// The §8.1 start family's two acts, spelled as one word.
 mod start;
 
 pub use enroll::enroll;
+pub use fan::fanned;
 pub use holds::{OWN, channels, dial, listing};
 pub use start::start;
 
@@ -125,7 +128,7 @@ fn unresolved(data_root: &Path, envelope: &Value, name: &str) -> Result<Channel,
         .get(envelope::OP)
         .and_then(Value::as_str)
         .and_then(crate::verbs::find)
-        .is_some_and(|verb| !verb.params.contains(&envelope::WORKSPACE));
+        .is_some_and(|verb| !verb.addresses_a_workspace());
     if selector {
         return Err(format!(
             "this box holds no channel named {name:?}: that op takes no \

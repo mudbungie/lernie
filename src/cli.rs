@@ -59,6 +59,21 @@ pub enum Decided {
     /// function of what was typed — stays in this pure function where a test
     /// reads its refusal back as a value.
     Ask(serde_json::Value),
+    /// **Ask this gesture of every channel this box holds**, and answer with
+    /// the union stamped with where each answer came from (bl-0d54).
+    ///
+    /// It is the same envelope [`Ask`](Self::Ask) carries and there is no
+    /// second spelling of it — what differs is how many channels it is asked
+    /// of. A verb with no `workspace` parameter has no way to name one
+    /// ([`crate::verbs::Verb::addresses_a_workspace`]), so its subject is all
+    /// of them: the window's roster has always been that union, and the CLI's
+    /// shorthand for the same question answered one channel and said nothing
+    /// about the rest.
+    ///
+    /// `lernie ask` stays the raw door and is never fanned: it is the escape
+    /// hatch for one channel, and `{"op":"workspaces","workspace":"<leaf>"}` is
+    /// how an operator asks exactly one of them.
+    Fanned(serde_json::Value),
 }
 
 /// Decide what one invocation does. `args` is argv **without** the program
@@ -130,7 +145,8 @@ fn typed(word: &str, arguments: &[&str]) -> Decided {
         )));
     };
     match verb.envelope(arguments.iter().map(|a| (*a).to_owned()).collect()) {
-        Ok(envelope) => Decided::Ask(envelope),
+        Ok(envelope) if verb.addresses_a_workspace() => Decided::Ask(envelope),
+        Ok(envelope) => Decided::Fanned(envelope),
         Err(refusal) => Decided::Say(Verdict::refused(refusal)),
     }
 }

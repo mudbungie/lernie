@@ -23,6 +23,7 @@ fn main() -> ExitCode {
         Decided::Say(verdict) => verdict,
         Decided::Entries => rooted(lernie::seat::listing),
         Decided::Ask(envelope) => rooted(|root| lernie::seat::ask(root, &envelope)),
+        Decided::Fanned(envelope) => rooted(|root| lernie::seat::fanned(root, &envelope)),
         Decided::Start { address, goal } => {
             rooted(|root| lernie::seat::start(root, &address, &goal))
         }

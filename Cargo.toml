@@ -5,6 +5,49 @@ edition = "2024"
 description = "lernie: the operator seat — the window and wire client for a yog server"
 license = "MIT"
 readme = "README.md"
+# crates.io renders this, and it is the one piece of metadata whose absence is a
+# warning on every `cargo package`. It says nothing a reader of the published
+# crate could not already find.
+repository = "https://github.com/mudbungie/lernie"
+
+# WHAT WOULD BE PUBLISHED, AS AN ALLOWLIST — and never as an `exclude`.
+#
+# The two failure modes are not symmetric. A missing `include` entry costs a
+# build: loud, immediate, and fixed by a patch release. A missing `exclude`
+# entry costs a publication that cannot be recalled — `cargo publish` is
+# irreversible and a yanked version stays downloadable. The sibling crate
+# learned this by publishing its whole tree, operator home paths and all,
+# because its manifest declared neither: with no list at all, `cargo package`
+# ships everything git tracks. Here that would be 298 files, including
+# `scripts/leak-fixtures/`, a directory of deliberately fabricated secrets.
+#
+# **The leading `/` on the two bare filenames is load-bearing.** These are
+# gitignore-style patterns, so one with no slash matches that basename at ANY
+# depth — a bare `README.md` also ships `scripts/leak-fixtures/README.md`, the
+# index of that fabricated corpus, out of a list naming no `scripts` entry.
+# `src/**` contains a slash and is already anchored to the package root.
+#
+# Deliberately absent, each because it is commentary or apparatus rather than
+# something the published crate compiles: `docs/**`, `tests/**`, `examples/**`,
+# `scripts/**`, `rules/**`, `corpus/**`, `.github/**`, `.githooks/**`,
+# `Makefile`, the gate configs, and the agent guide (`AGENTS.md` and its
+# `CLAUDE.md` symlink). `assets/**` is absent too and that is a decision rather
+# than an oversight: the mark's SVG and desktop entry are laid down by `make
+# icon-seats` out of a checkout, and a `cargo install` runs no `make` — so
+# shipping them would be shipping files nothing on the far side can use. The
+# window's own embedded icon is generated arithmetic in `src/mark.rs` and needs
+# no file at all.
+#
+# **Nothing in `src` is a compile-time embed**, which is what makes this list
+# safe: the two directories the suite reads from disk (`assets/`, `corpus/`)
+# are read by `#[cfg(test)]` code, which a published build never compiles.
+# `tests/packaged_files.rs` holds all of this in both directions, over the real
+# `cargo package --list`, and sweeps `src` for the embed that would break it.
+include = [
+    "src/**",
+    "/README.md",
+    "/LICENSE",
+]
 
 # THE VERSION IS THE FENCE AND IT IS NOT A CHOICE.
 #

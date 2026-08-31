@@ -720,6 +720,7 @@ delete the branch and close its pull request in the same breath.
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. | config |
 | `.github/workflows/store-scan.yml` | the published store ref, judged by the source's own rule table. | config |
+| `tests/packaged_files.rs` | what `cargo publish` would ship, over the real `cargo package --list` — the manifest's `include` allowlist, restated so a widening edit is red here. | ~200 |
 | `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
 | `src/test_support/corpus.rs` | the one walk over the corpus, and the protocol stamp checked on every file read. `cfg(test)`. | ~130 |
 | `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, and every upstream shape is classified exactly once. | ~140 |
@@ -762,11 +763,21 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.2 The first publish (bl-11fc)
+### 6.2 The first publish, which is now the operator's act and nothing else
+(bl-11fc)
 
-`publish = false`, and flipping it is not the change. It needs an `include`
-allowlist and a guard test over the real packaged file list, and it needs the
-publication checklist run by a person — history, other refs, commit messages,
-repository text nobody committed, CI logs. Every item is a one-time judgement
-whose remedy is destructive, which is why none of it is automated.
+`publish = false` holds. What was deferred here was never the flag — it was the
+apparatus that has to exist before the flag can be flipped safely, and that has
+landed: `Cargo.toml` declares an `include` ALLOWLIST (never an `exclude`, for
+the asymmetry AGENTS.md states), and `tests/packaged_files.rs` holds it in both
+directions over the real `cargo package --list`. With no list this crate
+packages 298 files, `scripts/leak-fixtures/` among them.
+
+What remains is the half no gate can hold: the publication checklist, run by a
+person, once — history, other refs, commit messages, repository text nobody
+committed, Actions logs, and the fence. It is written out in full in AGENTS.md
+under *Before the first publish*, and it stays a checklist rather than a target
+because every item is a one-time judgement whose remedy is destructive. There is
+no `make publish`: a convenience target for an irreversible act is how the act
+happens by accident.
 

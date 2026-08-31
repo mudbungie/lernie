@@ -212,12 +212,75 @@ other box and silently so), and GitHub cannot interpose a check on a direct push
 to `balls/tasks`: there is no pull request to require a status check on. The
 check the author cannot switch off is `store-scan.yml` above.
 
+## Before the first publish
+
+**Nothing has been published under this name from this tree, and that is the
+whole of the advantage the checklist below exists to keep.** `publish = false`
+holds, and flipping it is the operator's act at the coordinated cutover moment
+for the four-component split — not a step in a ball.
+
+Two halves, and only one of them is a gate.
+
+**The half a machine holds.** `Cargo.toml` declares an `include` ALLOWLIST —
+the crate's own `src` and the two files crates.io renders — never an `exclude`,
+because the failure modes are not symmetric: a missing include entry costs a
+build, which is loud and reversible, while a missing exclude entry costs a
+publication that cannot be recalled. `tests/packaged_files.rs` reads the real
+`cargo package --list` and fails on any path outside those classes, in both
+directions. **With no list at all this crate packages 298 files**, including
+`scripts/leak-fixtures/`, a directory of deliberately fabricated secrets — and
+the sibling crate published exactly that way, its whole tree with operator home
+paths in it, because its manifest declared nothing.
+
+**The half a person holds, once.** Each item is a one-time judgement whose
+remedy is destructive — a history rewrite, a yank, a rotation — so a green
+checkbox would be a worse answer than a person looking. None of it is
+automated, on purpose, and a commit hook cannot promise any of it: `make
+leak-scan` reads the index it is about to commit, and that is the whole of what
+it can say.
+
+1. **History.** The gate has only ever seen the trees somebody ran it on. Sweep
+   every reachable commit for the same material before the first publish —
+   `git log -p --all` through `scripts/leak-scan.sh`, or a checkout of each
+   commit scanned in turn. A hit means a rewrite *and* rotation of whatever it
+   named. This tree is young and was gated from its founding, which makes the
+   sweep cheap rather than unnecessary.
+2. **Other refs.** Tags, and any probe branch that was pushed to buy a runner
+   verdict and not deleted. `balls/tasks` and `balls/config` are on this same
+   remote and publish with it — the store is a ref, not a private sidecar. Run
+   `store-scan` by `workflow_dispatch` rather than trusting the schedule was
+   alive, and note that it only ever sees the TIP: the store's own history is
+   item 1's problem too, and rewriting it invalidates every existing clone.
+3. **Commit messages.** `.githooks/commit-msg` covers messages written with the
+   hook seated (`make install-hooks`). Messages written elsewhere are not
+   covered, and no message is in any tree.
+4. **Repository text nobody committed.** Pull-request titles and bodies, issue
+   text, review comments, release notes, and the crates.io description and
+   metadata. None of it is in the tree.
+5. **Actions logs and artifacts.** A failed gate prints paths and sometimes the
+   offending line into a log that survives the run and is public the moment the
+   repository is. The scanner truncates findings to 12 characters for exactly
+   this reason; nothing else does.
+6. **Already-published versions — and there are none.** This is the item that
+   costs the most and the one this crate still has for free: `cargo publish` is
+   irreversible, so items 1 and 2 have a deadline that has not arrived. Do not
+   let it arrive by accident. Audit `cargo package --list` before publishing,
+   not after — the guard test judges file CLASSES and never content, and every
+   home path the sibling crate published lived inside `src`.
+7. **The fence.** 0.1.0 is the first version this crate may ever bear. A
+   `0.0.z` from this tree would collide with the agent-loop engine's own
+   published line and destroy the one rule that disambiguates the two eras
+   (DESIGN §0). `src/cli/tests.rs` fails the suite if the number is edited down.
+
 ## Never
 
 - Never credit AI or tooling in commit messages, code, or docs.
 - Never `cargo publish`. `publish = false` is the enforcement. The first release
   under this name at 0.1.0 is what fixes the fence in the public record, it is
-  irreversible, and it is an operator decision that has not been made (bl-11fc).
+  irreversible, and it is an operator decision that has not been made. The prep
+  is done and it is the section above; there is deliberately no `make publish`,
+  because a convenience target for an irreversible act is how the act happens by
+  accident.
 - **Never lower the version below 0.1.0.** That is the fence; a `0.0.z` from
   this tree collides with the engine's own published line. `src/cli/tests.rs`
   fails the suite if it happens.

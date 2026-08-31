@@ -172,6 +172,12 @@ bypassable, that one detects and is not.
 
 Run `make install-hooks` once per clone to seat the pre-commit hook.
 
+**lernie is not published.** `Cargo.toml` carries `publish = false` and an
+`include` allowlist, and `tests/packaged_files.rs` holds that allowlist over the
+real `cargo package --list`. The first release under this name is the
+coordinated cutover moment for the whole four-component split; what a person has
+to check before it is `AGENTS.md`'s *Before the first publish*.
+
 ## The rules
 
 Two are hard and machine-enforced:

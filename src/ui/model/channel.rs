@@ -47,11 +47,39 @@ impl Channel {
     }
 }
 
-/// One channel's answer, as the roster shows it: the section, its currency, and
-/// its walls.
+/// **What a section has instead of walls, when it has none** (bl-08b6).
+///
+/// Three states and they are three different facts, which is why an empty
+/// section cannot be one blank: a channel nobody has heard from yet, a channel
+/// this box cannot dial and knows why off its own files, and an engine that
+/// answered and holds no workspace. The roster used to have a sentence for the
+/// empty ROSTER and none for an empty section — and an empty roster is
+/// unreachable, because every box holds its own engine's slot whether or not
+/// anything is provisioned in it.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum Held {
+    /// **Nothing has come down this channel yet.** The [`crate::ui::convs`]
+    /// pane's own doctrine, one noun over: an empty list is not evidence that a
+    /// thing holds nothing until somebody has looked.
+    #[default]
+    Unheard,
+    /// **This box cannot dial it, and here is why** — the sentence
+    /// `crate::channel` already computes and `lernie entries` already prints:
+    /// unprovisioned, half-provisioned and naming the missing file, hollow, or
+    /// a port only the engine that bound it knows.
+    Unheld(String),
+    /// It answered.
+    Heard,
+}
+
+/// One channel's answer, as the roster shows it: the section, what it has
+/// instead of walls when it has none, its currency, and its walls.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Chunk {
     pub channel: Channel,
+    /// What this section has instead of walls — read at boot off this box's own
+    /// files, and spent by the first answer that comes down the channel.
+    pub held: Held,
     /// How stale the derivation behind these rows is, when the engine said.
     pub stale: Option<String>,
     /// What grew since the previous one, when anything did.
@@ -61,7 +89,7 @@ pub struct Chunk {
 
 impl Chunk {
     /// A channel with nothing behind it yet — what the roster holds before any
-    /// answer has come down it, and what a box that has never been asked shows.
+    /// answer has come down it.
     pub fn of(channel: Channel) -> Self {
         Self {
             channel,

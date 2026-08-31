@@ -1,20 +1,38 @@
 //! The roster: what a section says, what a row says, the pin order, the row
 //! this seat cannot address, and the click that aims the window.
 
-use super::{NO_CHANNEL, NO_NAME_HERE, header, line, ordered, render};
+use super::{NO_NAME_HERE, NO_WALLS, NOT_ANSWERED, header, line, ordered, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::roster::{WorkspaceKind, WsRow};
 use crate::test_support::window::{click, own, pane, seated, wall};
 use crate::ui::{Aim, Channel, Chunk, Model};
 
-/// A box with no channel names the operator's own act rather than reporting an
-/// absence — it is a fact about provisioning, and the operator reading it is
-/// the operator who would fix it.
+/// **Every empty section says which emptiness it is** (bl-08b6): nothing has
+/// answered down it yet, this box cannot dial it and knows why off its own
+/// files, or the engine answered and holds no workspace.
+///
+/// The pane used to have one sentence, for an empty ROSTER — and an empty
+/// roster is unreachable, because every box holds its own engine's slot
+/// whether or not anything is provisioned in it. So the box the sentence was
+/// written for got a section header over a blank.
 #[test]
-fn a_box_with_no_channel_names_the_act_that_fills_it() {
-    let mut model = Model::default();
-    let painted = pane(|ui| render(ui, &mut model));
-    assert!(painted.contains(NO_CHANNEL), "{painted}");
+fn every_empty_section_says_which_emptiness_it_is() {
+    for (held, expected) in [
+        (crate::ui::Held::Unheard, NOT_ANSWERED.to_owned()),
+        (
+            crate::ui::Held::Unheld("nothing provisioned at /home/u/wire".to_owned()),
+            "nothing provisioned at /home/u/wire".to_owned(),
+        ),
+        (crate::ui::Held::Heard, NO_WALLS.to_owned()),
+    ] {
+        let mut model = Model {
+            roster: vec![Chunk { held, ..own() }],
+            ..Model::default()
+        };
+        model.roster[0].walls.clear();
+        let painted = pane(|ui| render(ui, &mut model));
+        assert!(painted.contains(&expected), "{expected:?}:\n{painted}");
+    }
 }
 
 /// A row states what it is called, how it is classified and its rollups — and

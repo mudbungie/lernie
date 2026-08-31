@@ -48,5 +48,5 @@ pub mod shell;
 pub mod theme;
 
 pub use keys::Pane;
-pub use model::{Aim, Channel, Chunk, Enrolling, Grade, Model, Notice, Shown};
+pub use model::{Aim, Channel, Chunk, Enrolling, Grade, Held, Model, Notice, Shown};
 pub use shell::render;

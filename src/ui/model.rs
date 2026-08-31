@@ -32,7 +32,7 @@ mod notice;
 /// A start, between its two acts.
 mod start;
 
-pub use channel::{Channel, Chunk};
+pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use notice::Notice;
 pub use start::{Phase, Start};
@@ -182,6 +182,11 @@ impl Model {
     fn seat(&mut self, channel: &Channel, view: crate::reply::roster::Workspaces) {
         let seated = Chunk {
             channel: channel.clone(),
+            // **The answer spends whatever the section was standing on**: a
+            // channel that has answered is neither unheard nor unheld, and an
+            // engine that answered zero workspaces holds zero — which is a
+            // different sentence from either (bl-08b6).
+            held: Held::Heard,
             stale: view.stale,
             growth: view.growth,
             walls: view.rows,

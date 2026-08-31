@@ -30,10 +30,7 @@ fn the_window_paints_what_a_real_engine_answered() {
                                   "agents": 3, "running": true}]});
     wired(&scratch, &flat(), vec![vec![roster]; 8]);
     let mut model = Model {
-        roster: crate::seat::channels(scratch.path())
-            .into_iter()
-            .map(Chunk::of)
-            .collect(),
+        roster: crate::seat::channels(scratch.path()),
         ..Model::default()
     };
     let link = Link::new(Duration::from_millis(1));

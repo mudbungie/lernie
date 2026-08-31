@@ -31,13 +31,27 @@ fn one_frame_paints_the_roster_the_list_the_conversation_and_the_composer() {
     }
 }
 
-/// An empty window is not a blank one: every pane says what it is waiting for.
+/// **An empty window is not a blank one: every pane says what it is waiting
+/// for** — and the window under test is seeded the way `src/main.rs` seeds one,
+/// off a data root holding nothing at all (bl-08b6). That is the first run of a
+/// seat on a new box, and the channels pane is the whole of what it has.
 #[test]
 fn an_empty_window_says_what_each_pane_is_waiting_for() {
-    let mut model = Model::default();
+    let scratch = crate::test_support::Scratch::new();
+    let mut model = Model {
+        roster: crate::seat::channels(scratch.path()),
+        ..Model::default()
+    };
     let shown = painted(&mut model);
+    assert!(
+        shown.contains("nothing provisioned at"),
+        "the channels pane says what it holds and why it is empty:\n{shown}"
+    );
+    assert!(
+        shown.contains("the seat mints nothing"),
+        "and names the act that fills it:\n{shown}"
+    );
     for expected in [
-        crate::ui::roster::NO_CHANNEL,
         crate::ui::convs::NO_WALL,
         crate::ui::chat::NO_CONVERSATION,
         crate::ui::composer::NOWHERE,

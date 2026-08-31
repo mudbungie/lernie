@@ -16,7 +16,7 @@ use std::process::ExitCode;
 
 use lernie::cli::{Decided, Stream, Verdict};
 use lernie::state::Link;
-use lernie::ui::{Chunk, Model};
+use lernie::ui::Model;
 
 fn main() -> ExitCode {
     let verdict = match lernie::cli::run(std::env::args().skip(1).collect()) {
@@ -72,10 +72,7 @@ fn window(root: &std::path::Path) -> Verdict {
     // is folded to nothing rather than refused.
     let keep = lernie::paths::state_root().ok();
     let mut model = Model {
-        roster: lernie::seat::channels(root)
-            .into_iter()
-            .map(Chunk::of)
-            .collect(),
+        roster: lernie::seat::channels(root),
         aim: keep.as_deref().and_then(lernie::place::read),
         ..Model::default()
     };

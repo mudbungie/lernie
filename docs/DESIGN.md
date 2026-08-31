@@ -500,6 +500,22 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**Every empty section says WHICH emptiness it is** (`src/ui/roster.rs`,
+`crate::ui::Held`; bl-08b6). The pane carried one sentence — *no channel
+provisioned — material arrives by hand* — under `roster.is_empty()`, and **an
+empty roster is unreachable**: `seat::channels` answers a section for this
+box's own flat slot whether or not anything is provisioned in it, which is
+right and is what `lernie entries` prints. So the guard was false on exactly
+the box the sentence was written for, and a first run got a section header over
+a blank while the other three panes said what they were waiting for. The
+reframe is one level down: a section is either a list of walls or a **reason
+there is none**, and the reason is three facts and not one — nothing has
+answered down this channel yet (the `convs` pane's own doctrine, one noun
+over), this box cannot dial it and knows why off its own files (the sentence
+`crate::channel` already computes and `entries` already prints — one home, both
+surfaces), or the engine answered and holds no workspace. `seat::channels`
+seeds the second at boot; the first roster answer spends whichever was standing.
+
 **The notice wraps** (`src/ui/shell.rs`, bl-3d0f). It was a `ui.horizontal`
 holding the dismiss and one label, and a horizontal layout lays its label on
 one line however long it is — so the panel cut the sentence at the window's
@@ -892,7 +908,7 @@ material must not have, which is a long life on a display.
 | `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~180 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
-| `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
+| `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |

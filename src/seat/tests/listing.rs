@@ -84,7 +84,7 @@ fn the_channels_are_the_own_engine_then_every_entry_in_order() {
     }
     let held = crate::seat::channels(scratch.path());
     assert_eq!(
-        held,
+        held.iter().map(|c| c.channel.clone()).collect::<Vec<_>>(),
         vec![
             crate::ui::Channel {
                 name: crate::seat::OWN.to_owned(),
@@ -100,6 +100,18 @@ fn the_channels_are_the_own_engine_then_every_entry_in_order() {
             },
         ]
     );
+    // **Each arrives carrying why it has no walls yet** (bl-08b6): these three
+    // are directories with no material in them, so the window's own first paint
+    // says so rather than standing a section header over a blank.
+    for chunk in &held {
+        let crate::ui::Held::Unheld(why) = &chunk.held else {
+            panic!("{} arrived claiming to have been heard", chunk.channel.name);
+        };
+        assert!(
+            why.contains("provisioned") || why.contains("empty entry"),
+            "{why}"
+        );
+    }
 }
 
 /// A box holding nothing still holds its own engine — the relationship it has
@@ -110,5 +122,5 @@ fn a_box_with_no_entry_still_holds_its_own_engine() {
     let scratch = Scratch::new();
     let held = crate::seat::channels(scratch.path());
     assert_eq!(held.len(), 1);
-    assert_eq!(held[0].named_there, None);
+    assert_eq!(held[0].channel.named_there, None);
 }

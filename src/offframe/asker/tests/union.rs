@@ -6,7 +6,7 @@ use super::super::tick;
 use super::asking;
 use crate::test_support::Scratch;
 use crate::test_support::wire::{entry, flat, wired};
-use crate::ui::{Chunk, Model};
+use crate::ui::Model;
 use serde_json::json;
 
 /// **The roster is a union across channels, composed here.** Every channel is
@@ -23,10 +23,7 @@ fn every_channel_is_asked_for_its_own_roster_and_stamped_with_it() {
     wired(&scratch, &flat(), vec![vec![roster("here")]]);
     wired(&scratch, &entry("home"), vec![vec![roster("personal")]]);
     let model = Model {
-        roster: crate::seat::channels(scratch.path())
-            .into_iter()
-            .map(Chunk::of)
-            .collect(),
+        roster: crate::seat::channels(scratch.path()),
         ..Model::default()
     };
     let link = asking(&model);
@@ -69,10 +66,7 @@ fn a_channel_that_will_not_answer_leaves_the_others_standing() {
     // An entry directory with nothing in it: a stated intent with no material.
     std::fs::create_dir_all(scratch.path().join(entry("hollow"))).expect("mkdir");
     let model = Model {
-        roster: crate::seat::channels(scratch.path())
-            .into_iter()
-            .map(Chunk::of)
-            .collect(),
+        roster: crate::seat::channels(scratch.path()),
         ..Model::default()
     };
     let link = asking(&model);

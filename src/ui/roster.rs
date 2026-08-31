@@ -13,10 +13,17 @@
 use crate::reply::roster::WsRow;
 use crate::ui::{Aim, Chunk, Model, theme};
 
-/// What a box with no channel at all says. It is a fact about provisioning and
-/// the operator reading it is the operator who would fix it, so it names the
-/// act rather than reporting an absence.
-pub const NO_CHANNEL: &str = "no channel provisioned — material arrives by hand";
+/// **What a section says while nothing has come down its channel yet.**
+///
+/// The [`crate::ui::convs`] pane's doctrine one noun over: an empty list is not
+/// evidence that a thing holds nothing until somebody has looked. It stands
+/// from the window's first paint — which happens before any engine is dialled,
+/// deliberately — until the first roster answer lands.
+pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
+
+/// What a section says for an engine that answered and holds no workspace. A
+/// fact about that engine, and the one empty state that is not a wait.
+pub const NO_WALLS: &str = "this engine holds no workspace";
 
 /// What an unreachable row says instead of being hidden.
 ///
@@ -57,10 +64,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         HEADING,
         model.focus == crate::ui::Pane::Roster,
     ));
-    if model.roster.is_empty() {
-        ui.label(NO_CHANNEL);
-        return;
-    }
     // **The list scrolls, and the heading above it does not** (bl-e5d2): a
     // roster longer than its pane used to be cut off mid-glyph at the panel
     // edge, with nothing on the glass saying anything had been cut — while the
@@ -87,6 +90,20 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
         .flatten()
     {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), note);
+    }
+    if chunk.walls.is_empty() {
+        // **An empty section says which emptiness it is** (bl-08b6). The pane
+        // used to carry one sentence, for an empty ROSTER — which is
+        // unreachable, because every box holds its own engine's slot whether or
+        // not anything is provisioned in it (`crate::seat::channels`). So the
+        // box the sentence was written for got a section header over a blank,
+        // on the first run of a seat, which is the whole of what it has.
+        ui.label(match &chunk.held {
+            crate::ui::Held::Unheard => NOT_ANSWERED.to_owned(),
+            crate::ui::Held::Unheld(why) => why.clone(),
+            crate::ui::Held::Heard => NO_WALLS.to_owned(),
+        });
+        return;
     }
     for row in ordered(&chunk.walls) {
         wall(ui, model, chunk, &row, reveal);

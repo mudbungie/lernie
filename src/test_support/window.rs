@@ -60,6 +60,7 @@ pub(crate) fn own() -> Chunk {
             name: "(this box's own engine)".to_owned(),
             named_there: None,
         },
+        held: crate::ui::Held::Heard,
         stale: None,
         growth: None,
         walls: vec![wall("home")],

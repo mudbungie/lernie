@@ -99,11 +99,22 @@ fn notice(ctx: &egui::Context, model: &mut Model) {
         return;
     };
     egui::TopBottomPanel::top("notice").show(ctx, |ui| {
-        ui.horizontal(|ui| {
+        ui.horizontal_top(|ui| {
             if ui.button(DISMISS).clicked() {
                 model.dismiss();
             }
-            ui.colored_label(theme::NOTICE, notice.line());
+            // **The sentence WRAPS** (bl-3d0f). A horizontal layout lays its
+            // labels on one line however long they are, and the panel cuts what
+            // reaches the frame — with no ellipsis, because the galley was
+            // never truncated and so never had one added. Every refusal this
+            // seat paints puts the fact first and the remedy last, so the half
+            // that was cut was always the half that says what to do; the first
+            // run of a seat on an unprovisioned box loses the whole of the one
+            // instruction on the window. A second line in a bar already sized
+            // to its content costs nothing that matters.
+            ui.add(
+                egui::Label::new(egui::RichText::new(notice.line()).color(theme::NOTICE)).wrap(),
+            );
         });
     });
 }

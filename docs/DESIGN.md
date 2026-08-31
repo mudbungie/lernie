@@ -500,6 +500,21 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**The notice wraps** (`src/ui/shell.rs`, bl-3d0f). It was a `ui.horizontal`
+holding the dismiss and one label, and a horizontal layout lays its label on
+one line however long it is — so the panel cut the sentence at the window's
+right edge, with no ellipsis, because the galley was never truncated and so
+never had one added. Every refusal this seat paints puts the fact first and the
+remedy last, so **the half that was cut was always the half that says what to
+do**, and the sharpest case is the first run of a seat on an unprovisioned box:
+the notice is the only thing on the window carrying an instruction, and the
+instruction is the part that was off the glass. A second line in a bar already
+sized to its content costs nothing that matters. Its regression asserts the
+RECTS rather than the glyphs: a galley's rows carry no newline where the wrap
+broke them, so a wrapped run and a run laid past the frame read back as the
+same string — the paint probe's own division, where geometry is unaffected and
+it is the text that lies.
+
 **The enrollment is a modal, so it behaves like one** (`src/ui/enroll.rs`,
 bl-7574). Its argument for covering the conversation is about the WINDOW — a
 private key on a screen, the act is *look at this now and close it*, and a

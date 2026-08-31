@@ -206,3 +206,50 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
         "the walked-to row is on the glass"
     );
 }
+
+/// **The notice wraps rather than being cut at the frame** (bl-3d0f). A
+/// horizontal layout lays its label on one line however long it is, and the
+/// panel cut it at the window's right edge with no ellipsis to say so — and
+/// every refusal this seat paints puts the fact first and the remedy last, so
+/// the half that was lost was always the half that says what to do.
+///
+/// The subject is the first run of a seat on an unprovisioned box: the notice
+/// is the only thing on the window carrying an instruction.
+#[test]
+fn a_long_refusal_wraps_and_its_remedy_reaches_the_glass() {
+    let said = format!(
+        "no wire provisioned at /home/u/.local/share/lernie/wire: {}",
+        crate::channel::material::REMEDY
+    );
+    let mut model = Model {
+        notice: Some(Notice::Unreachable(said.clone())),
+        ..seated()
+    };
+    let window = Window::sized(900.0, 600.0);
+    window.text(|ctx| render(ctx, &mut model));
+    let bar = seen(&window, |ctx| render(ctx, &mut model))
+        .into_iter()
+        .find(|run| run.text.starts_with("this seat could not reach it"))
+        .expect("the bar is on the glass");
+    // **The rects are what testify here, not the glyphs.** A galley's rows
+    // carry no newline where the WRAP broke them, so a wrapped run and a run
+    // laid past the frame read back as the same string — which is the paint
+    // probe's own division of labour: geometry is unaffected, it is the text
+    // that lies.
+    assert!(
+        bar.laid.width() <= 900.0,
+        "the run was laid inside the window rather than past it: {:?}",
+        bar.laid
+    );
+    assert!(
+        bar.shown.width() >= bar.laid.width() - 0.5,
+        "and nothing was clipped off its end: laid {:?}, shown {:?}",
+        bar.laid,
+        bar.shown
+    );
+    assert!(
+        bar.text.ends_with("the seat mints nothing"),
+        "so the remedy's last words are on the glass: {:?}",
+        bar.text
+    );
+}

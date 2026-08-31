@@ -1,7 +1,8 @@
 +++
 title = "the window paints an entry that points at the box's own engine as a second server: every workspace appears twice, with no address on either group to say why"
 created = 1788150505
-updated = 1788150505
+updated = 1788151597
+claimant = "OrderJoiner2"
 priority = 4
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ux"]

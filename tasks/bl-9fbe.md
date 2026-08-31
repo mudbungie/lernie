@@ -1,7 +1,8 @@
 +++
 title = "the session-artifact rule misses the one session id this repository actually published"
 created = 1788146189
-updated = 1788146189
+updated = 1788146740
+claimant = "OrderCensor"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++
 Found by bl-f468's publication checklist, item 4 — *repository text nobody

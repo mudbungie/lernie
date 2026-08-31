@@ -1,21 +1,33 @@
 +++
 title = "the installed desktop entry names a bare Exec, so a shell whose PATH lacks the cargo bin dir launches nothing"
 created = 1788147567
-updated = 1788147593
+updated = 1788147635
 claimant = "OrderScribe2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++
-`make icon-seats` installs `assets/lernie.desktop` verbatim, and that file carries `Exec=lernie`.
+Landed. `make icon-seats` installs `assets/lernie.desktop`, and that file carries `Exec=lernie`.
 
-A desktop entry's `Exec` is resolved by the desktop environment, which starts from the session's own environment rather than a login shell's. On a box where the binary lives in a user-local bin directory that only an interactive shell profile adds to `PATH`, the entry resolves nothing and the launcher fails silently — no window, no message.
+A desktop entry's `Exec` is resolved by the desktop environment, which starts from the session's own environment rather than a login shell's. On a box where the binary lives in a user-local bin directory that only an interactive shell profile adds to `PATH`, the entry resolves nothing and the launcher fails silently — no window, no message, nothing in a log.
 
-## What to build
+## What landed
 
-`make icon-seats` resolves the binary AT SEAT TIME (`command -v lernie`) and writes the absolute path into the INSTALLED copy only. The tracked asset stays generic: it is the source of the entry, it is read by `mark::tests` for the three-way spelling agreement, and an absolute path in it would be both a disclosure and a lie on every other box.
+The substitution happens at seat time, into the INSTALLED copy only, recomputed on every run rather than patched — so a box already fixed by hand converges on the same answer instead of being edited twice, and re-running is idempotent. rename(2) atomicity through a temp name in the same directory, for the reason the installed binary already has it.
 
-Absent a resolvable binary the target REFUSES with a sentence saying what it looked for and what to do — not a silent install of a broken entry. `install` has `icon-seats` as a prerequisite and orders `release` first, so the ordinary path always has a binary to find.
+The ladder is two rungs and a refusal:
 
-Re-running the target must be idempotent and must preserve correctness on a box already hand-fixed: the rewrite is of the installed copy, computed fresh each run, never a patch of what is already there.
+1. `$(INSTALL_BIN)/lernie`, this Makefile's own installation. It goes FIRST precisely because the defect is that directory not being on a `PATH` — including the `PATH` `make` itself was handed, which is why a `command -v` first rung would still miss on the very box that has the bug.
+2. `command -v lernie`, for a binary some other hand installed.
+3. Neither, or a resolution that is not absolute: refuse, naming what was looked for. An entry whose `Exec` resolves nowhere is the whole defect, so writing one is not a fallback — it is the bug with a success message.
 
-Record the reasoning at the target, in the Makefile's own voice — the Makefile is the build authority and this is a deviation between a tracked asset and its installed form, which is exactly the kind of thing that gets "cleaned up" by whoever reads the target next.
+The tracked asset stays generic: it is one repository's source for every box, `mark::tests` reads it for the three-way spelling agreement, and a real absolute path in it is a disclosure as well as a lie everywhere else.
+
+## The ordering trap this found
+
+`icon-seats` was a PREREQUISITE of `install`, so it ran before the binary was laid down. With a refusal in it that breaks the fresh install — the one case that has to work — because `release` builds into the target directory and puts nothing on any `PATH`. It is now the last recipe STEP of `install` instead, and the Makefile says why the order is load-bearing.
+
+## What is machine-checked and what is not
+
+The tracked asset's side is: `mark::tests` now pins that `Exec` is the bare name and that there is exactly ONE `^Exec=` line — the count being what the substitution rides on, since a second one would be rewritten to the same path and a duplicate key in one group is a malformed entry, which launchers answer by ignoring the file rather than by complaining.
+
+The target's own behaviour is not, and deliberately: driving it from the suite would need a child process, and the confinement rules put every fork in one file that exists for the certificate mint. It was exercised by hand over a throwaway prefix — refusal with no binary, each rung, an idempotent re-run byte-identical, mode 0644, no temp file left behind, and convergence when rung 1 appears under a box already seated off rung 2.

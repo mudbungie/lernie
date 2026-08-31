@@ -1,7 +1,8 @@
 +++
 title = "a QR code the seat draws itself: the byte-mode encoder, and the module matrix it answers"
 created = 1788147675
-updated = 1788147675
+updated = 1788147691
+claimant = "OrderScribe2"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

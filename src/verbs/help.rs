@@ -13,7 +13,8 @@
 //! verb's [`page`]. Two spellings of one subject would be two texts to keep in
 //! step.
 
-use super::{Verb, find, table};
+use super::doors;
+use super::{find, table};
 
 /// The verb section of the usage: every verb's own line, aligned.
 ///
@@ -32,28 +33,56 @@ pub fn roster() -> String {
         .join("\n")
 }
 
-/// One verb's page: what to type, what it is for, and what to know first.
+/// **The doors' section of the usage**: each word, then its paragraph under it.
 ///
-/// A word that is not a verb refuses **naming it** and pointing at the roster,
+/// It is derived from [`doors`]'s own table for the same reason [`roster`] is
+/// derived from the gesture table — the usage used to carry these four
+/// paragraphs by hand, beside a `lernie help <verb>` that could not reach any
+/// of them (bl-6bda), which is two homes for one prose and a promise kept for
+/// seven words out of eleven.
+pub fn doors() -> String {
+    doors::table()
+        .iter()
+        .map(|door| format!("  {}\n{}", door.usage(), indented(door.detail)))
+        .collect::<Vec<String>>()
+        .join("\n\n")
+}
+
+/// One word's page: what to type, what it is for, and what to know first.
+///
+/// **Every word the usage lists has one**, gesture row and structural door
+/// alike: a page offered over a list is a page the list's every entry must
+/// have, and the four that did not were refused in the bytes a typo earns — on
+/// the one surface whose whole job is to answer with nothing provisioned.
+///
+/// A word that is neither refuses **naming it** and pointing at the roster,
 /// because the operator who typed it is the one who needs the list.
 pub fn page(word: &str) -> Result<String, String> {
-    let Some(verb) = find(word) else {
-        return Err(format!(
-            "no verb named {word:?} — `lernie help` lists every one"
-        ));
-    };
-    Ok(rendered(&verb))
+    if let Some(verb) = find(word) {
+        return Ok(rendered(&verb.usage(), verb.summary, verb.detail));
+    }
+    if let Some(door) = doors::find(word) {
+        return Ok(rendered(&door.usage(), door.summary, door.detail));
+    }
+    Err(format!(
+        "no word named {word:?} — `lernie help` lists every one"
+    ))
 }
 
 /// The page proper: the usage line, the summary under it, then the detail
-/// wrapped to a width a terminal holds.
-fn rendered(verb: &Verb) -> String {
-    format!(
-        "usage: {}\n\n{}\n\n{}",
-        verb.usage(),
-        verb.summary,
-        wrapped(verb.detail)
-    )
+/// wrapped to a width a terminal holds. **One renderer**, because a gesture's
+/// page and a door's are one page with two sources.
+fn rendered(usage: &str, summary: &str, detail: &str) -> String {
+    format!("usage: {usage}\n\n{summary}\n\n{}", wrapped(detail))
+}
+
+/// The same fold, hung four spaces under a word in the usage's door section.
+fn indented(text: &str) -> String {
+    wrapped(text)
+        .lines()
+        .map(|line| format!("      {line}"))
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 /// The detail, folded at a readable width. The table stores one paragraph and

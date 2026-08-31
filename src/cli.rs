@@ -90,9 +90,6 @@ pub fn run(args: Vec<String>) -> Decided {
             Err(refusal) => Verdict::refused(refusal),
         }),
         ["--version" | "-V"] => Decided::Say(Verdict::ok(version())),
-        ["ask"] => Decided::Say(Verdict::refused(
-            "`lernie ask` wants one gesture envelope".to_owned(),
-        )),
         // The composite, and its arity is exact for [`crate::verbs`]'s own
         // reason: argv quotes, so a goal is one argument, and an unquoted tail
         // refuses rather than being silently joined.
@@ -128,27 +125,36 @@ fn ask(text: &str) -> Decided {
     }
 }
 
-/// A typed verb, or a first word that is not one.
+/// A typed verb, a structural door, or a first word that is neither.
 ///
-/// The whole argument list still decides — a verb with the wrong number of
+/// The whole argument list still decides — a word with the wrong number of
 /// arguments refuses rather than ignoring the extras — but the refusal it earns
-/// names the verb and its grammar, where a word that is no verb at all can only
+/// names the word and its grammar, where a word that is no word at all can only
 /// be quoted back.
+///
+/// **A door reaching here is always a wrong arity** (bl-6bda), because every
+/// door's exact spelling is matched above. It used to fall through to the
+/// quote-back, so `lernie entries x y` and `lernie help a b` were told they
+/// were not arguments this binary recognises — the sentence a genuine typo
+/// earns, about words the usage lists one screen up.
 fn typed(word: &str, arguments: &[&str]) -> Decided {
-    let Some(verb) = crate::verbs::find(word) else {
-        return Decided::Say(Verdict::refused(format!(
-            "unrecognised argument: {}",
-            std::iter::once(word)
-                .chain(arguments.iter().copied())
-                .collect::<Vec<&str>>()
-                .join(" ")
-        )));
-    };
-    match verb.envelope(arguments.iter().map(|a| (*a).to_owned()).collect()) {
-        Ok(envelope) if verb.addresses_a_workspace() => Decided::Ask(envelope),
-        Ok(envelope) => Decided::Fanned(envelope),
-        Err(refusal) => Decided::Say(Verdict::refused(refusal)),
+    if let Some(verb) = crate::verbs::find(word) {
+        return match verb.envelope(arguments.iter().map(|a| (*a).to_owned()).collect()) {
+            Ok(envelope) if verb.addresses_a_workspace() => Decided::Ask(envelope),
+            Ok(envelope) => Decided::Fanned(envelope),
+            Err(refusal) => Decided::Say(Verdict::refused(refusal)),
+        };
     }
+    if let Some(door) = crate::verbs::doors::find(word) {
+        return Decided::Say(Verdict::refused(door.refused(arguments.len())));
+    }
+    Decided::Say(Verdict::refused(format!(
+        "unrecognised argument: {}",
+        std::iter::once(word)
+            .chain(arguments.iter().copied())
+            .collect::<Vec<&str>>()
+            .join(" ")
+    )))
 }
 
 #[cfg(test)]

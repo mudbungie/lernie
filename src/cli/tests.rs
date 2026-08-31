@@ -1,14 +1,16 @@
 //! Every decision one invocation can make, read back as a value.
 //!
-//! Split at the design-time budget along the seam the module itself has:
+//! Split at the design-time budget along the seams the module itself has:
 //! [`verdicts`] is what a run *says* about this binary and how a [`Verdict`]
-//! carries it, [`decisions`] is what `run` *decides* to do. The three helpers
-//! both halves share stay here.
+//! carries it, [`decisions`] is what `run` *decides* to do, and [`refusals`] is
+//! every way a word can fail to be one it answers. The four helpers they share
+//! stay here.
 
 use super::{Decided, Verdict, run};
 use serde_json::Value;
 
 mod decisions;
+mod refusals;
 mod verdicts;
 
 /// Build the argument vector the way `main` does, from string literals.

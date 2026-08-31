@@ -421,6 +421,26 @@ exactly the case the paragraph above refuses to special-case. So they are typed
 doors with no row (`src/verbs/start.rs`), and what argv types instead is the
 composite below.
 
+**The four structural words are DOORS, and they have pages** (`src/verbs/doors.rs`,
+bl-6bda, bl-81dd). `start`, `ask`, `entries` and `help` are answered by this
+binary and cannot be rows of the gesture table for the reason above; the defect
+was that the help surface did not know it. The usage listed eleven words,
+`lernie help <word>` answered a page for seven, and the other four were refused
+with *"no verb named `ask`"* — false in the only sense the operator means it,
+byte for byte what `lernie help bogus` earns, on the one surface whose whole job
+is to answer with no engine up. The same lookup gap had a second face on argv:
+`lernie entries x y` and `lernie help a b` fell through to *"unrecognised
+argument"*, the sentence a typo gets, about words the usage lists one screen up.
+A door is a word, a usage line and prose with **no envelope builder behind it**,
+so it costs none of the second implementation the gesture table's own doc
+objects to. Two things ride with it. Its arguments are STORED where a gesture's
+are computed — a gesture's parameters are envelope fields, so its usage is
+derived from what must not drift from it, while a door fills no envelope and its
+arguments exist only to be printed, including the shape a list of field names
+cannot spell (`help`'s optional `[<verb>]`). And the usage's own door section is
+now derived from that table, where it used to carry the four paragraphs by hand
+beside a lookup that could reach none of them.
+
 **`lernie start <workspace> <goal>` is a serialization of BOTH acts, not a
 third gesture** (`src/seat/start.rs`). Nothing new crosses the wire: a
 `prepare` goes out, its answer is held in a local, and a `prompt` carrying that
@@ -869,7 +889,7 @@ material must not have, which is a long life on a display.
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~120 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~160 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors and the two codes. | ~95 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
@@ -903,7 +923,8 @@ material must not have, which is a long life on a display.
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the six rows, as data — and the two acts the window composes by name. | ~105 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
-| `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
+| `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
+| `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~180 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |

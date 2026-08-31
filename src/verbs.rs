@@ -43,6 +43,17 @@
 //! would mint a selection type that is always empty, which is a mechanism with
 //! no input.
 //!
+//! # The four doors are words too, and they have pages
+//!
+//! `start`, `ask`, `entries` and `help` are answered by this binary and cannot
+//! be rows here — `prepare` carries a payload rung, `prompt` carries a prepared
+//! body, `ask` carries a whole envelope, and `help` takes an OPTIONAL word. The
+//! table stays exactly six-plus-one rows of named strings. What they get is
+//! [`doors`]: a word, a usage line and prose, with no envelope builder behind
+//! it, so `lernie help ask` answers and `lernie entries x y` is told what
+//! `entries` takes rather than that it is not an argument this binary
+//! recognises (bl-6bda).
+//!
 //! **A verbatim payload is one argument, and the shell is what makes it one.**
 //! The line takes a message's content as its whole tail because a line has no
 //! quoting; argv does. So `params` is exact, `lernie message w a "ship it"`
@@ -52,7 +63,9 @@
 
 use serde_json::{Map, Value};
 
-/// The roster and one verb's page, answered here rather than by an engine.
+/// The words this binary answers itself — a page and a usage line, no envelope.
+pub mod doors;
+/// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
 /// The rows themselves — the seven verbs, as data.
 mod rows;

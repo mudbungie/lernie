@@ -7,9 +7,13 @@
 //! added moves the roster below, a refusal added moves the match above — which
 //! is the test that a seam is real.
 //!
-//! **The verb section is derived, never restated.** It is
-//! [`crate::verbs::help::roster`], so a verb added to the table is in the usage
-//! the moment it is in the roster and there is no second list to forget.
+//! **Both word sections are derived, never restated.** The gestures are
+//! [`crate::verbs::help::roster`] and the four structural doors are
+//! [`crate::verbs::help::doors`], so a word added to either table is in the
+//! usage the moment it is in the table and there is no second list to forget.
+//! The doors' paragraphs used to be written out here, beside a `lernie help
+//! <verb>` that could reach none of them (bl-6bda) — two homes for one prose,
+//! and a page promised for eleven words and kept for seven.
 
 /// The crate's name and version, as the `--version` line.
 ///
@@ -49,22 +53,12 @@ envelope per line, and the exit code is 0 when the last reply says ok.
 
 {}
 
-  start <workspace> <goal>
-                  begin a conversation on that workspace — the start family's
-                  two acts (yog's REMOTE §8.1), staged and fired in one
-                  process. Not a gesture but both of them: a `prepare`, then a
-                  `prompt` carrying the body that answered it straight back.
-                  Both reply streams print; the exit code is the fire's.
-  ask <envelope>  the same thing written out: any op, including one this build
-                  has never heard of, as the JSON object the boundary carries
-                  with `op` the discriminant. The escape hatch above is not a
-                  fallback — it is the surface, and the verbs are its shorthand.
-  entries         describe every channel this box holds, without dialling any
-                  of them: its own engine, then one row per workspace held
-                  elsewhere, each with its address or the reason it has none.
-  help [<verb>]   what a verb takes and what it answers with. Its subject is
-                  this binary rather than a world, so it answers with no engine
-                  up and no channel provisioned.
+And the four words this binary answers itself, with no channel and no engine
+up. Each has its own page too: `lernie help <word>` reaches every entry in
+both lists.
+
+{}
+
   -V, --version   print the name and version
   -h, --help      print this
 
@@ -76,6 +70,7 @@ $XDG_DATA_HOME/lernie, or $HOME/.local/share/lernie.
 See docs/DESIGN.md for the role and the module map, and yog's docs/REMOTE.md
 for the protocol lernie implements against.",
         version(),
-        crate::verbs::help::roster()
+        crate::verbs::help::roster(),
+        crate::verbs::help::doors()
     )
 }

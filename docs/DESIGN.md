@@ -7,7 +7,7 @@ over a real mTLS handshake with a real version preface, carry the operator's
 envelope across, and print the reply stream. `lernie entries` says what this box
 holds without dialling any of it, and `lernie help` says what a verb takes
 without dialling anything at all. `src/verbs/` is the gestures typed (§4.10)
-and `src/reply/` reads their answers back as the eight kinds a window paints
+and `src/reply/` reads their answers back as the nine kinds a window paints
 (§4.9). **`lernie start` begins a conversation** — the start family's two acts,
 staged and fired in one process (§4.10). The suite proves all of that against a
 stand-in engine that speaks the protocol, at 100% coverage.
@@ -130,10 +130,28 @@ undo a severance rather than add a feature.
   speaks first. There is no inbound direction to secure because there is no
   inbound direction.
 - **It never mints.** Certificates arrive out of channel, by the operator's
-  hand (REMOTE §1.4). There is no enrollment, pairing or bootstrap flow in the
-  channel, ever. The suite's own mint is `cfg(test)` and shells to `openssl`,
-  which is what an operator does; there is no production caller and there must
-  never be one.
+  hand (REMOTE §1.4). The suite's own mint is `cfg(test)` and shells to
+  `openssl`, which is what an operator does; there is no production caller and
+  there must never be one.
+
+  **This clause used to add "there is no enrollment, pairing or bootstrap flow
+  in the channel, ever", and that sentence has been amended** (REMOTE §8.4,
+  operator ruling 2026-08-30). Two things were welded together in it and only
+  one was the invariant. What may never happen is a **device acquiring its
+  identity over its own channel** — a machine holding no material opening a
+  connection and being handed some. That stays impossible rather than merely
+  forbidden: with no certificate there is no handshake, so an unenrolled box
+  performs no channel act of any kind, and this seat still answers nothing and
+  still listens to nothing.
+
+  What the second half described was the *surface as it then stood*, and the
+  `enroll` act is now on it (§4.13). The seat does not mint it: the mint is the
+  engine's, on the engine's box, over a trust root that already exists. The act
+  crosses a channel **already** authenticated at operator grade on material
+  that already moved out of channel; the box being enrolled is not a party to
+  it and has no channel yet; and what reaches that box reaches it through a
+  camera pointed at a screen, which is the same class of act as carrying a file
+  on a stick and is mediated by the same operator. The seat asks, and paints.
 - **It adds no wire vocabulary.** REMOTE §3's ban is on a capability that
   exists on the wire and nowhere else. A gesture typed at a seat is the same
   envelope the engine's own inbox carries, answered by the same dispatch.
@@ -283,14 +301,14 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Eight kinds, because eight are painted.** The engine's reply surface is
+**Nine kinds, because nine are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), the conversation itself (`transcript`), the live tail
 (`follow`), a captured run (`outcome`), the detached advance's receipt
-(`nudged`) and the start family's two — the staged body (`prepared`) and the
-minted name (`started`) — plus the refusal envelope, which is not a kind at
-all. A kind nothing renders is a kind nobody has to carry, and the ball that
+(`nudged`), the start family's two — the staged body (`prepared`) and the
+minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
+the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
 lands a pane is the ball that adds its kind.
 
 **The staged body is carried whole, which is rung 4 read in the WRITE
@@ -685,6 +703,61 @@ delete the branch and close its pull request in the same breath.
 
 ---
 
+### 4.15 Enrollment: the one reply this seat draws and refuses to keep (REMOTE §8.4)
+
+`src/reply/enrolled.rs`, `src/seat/enroll.rs`, `src/ui/enroll.rs`, `src/qr/`.
+
+**What the act is.** `enroll` names a workspace, a name and a grade, and the
+engine mints that box's leaf on its own CA, seats the registration, answers the
+material and shreds the key. The seat sends it over an entry it already holds
+at operator grade and shows the answer as a QR symbol. §3 above records why
+this does not lift REMOTE §1.4, and REMOTE §8.4 is the authority for the wire.
+
+**The reply is not the product, and that is the one place this seat departs
+from its own shape.** Every other verb hands its reply stream to stdout —
+`seat::ask` is the whole of it. This one must not: the answer carries a private
+key for a box that does not exist yet, and stdout is a scrollback, a shell
+history and whatever it was piped into. So `enroll` has an arm of its own all
+the way up to `cli::Decided`, and what it prints is the picture and the three
+fields that are not secret. `lernie ask` still prints the raw frame, which is
+correct — an operator who spells the envelope by hand has asked for the stream,
+and nothing here is a boundary against the operator. What the arm buys is that
+the *ordinary* path leaves nothing where nobody chose to put it.
+
+**Nothing is written down, and it is asserted over the tree.** No file, no
+cache, no log line, no temporary anything, on either face: the command line
+holds it in locals, the window holds it in `Model::enroll` and drops it with
+the pane, and closing that pane is a control whose whole product is the
+forgetting. `seat::enroll`'s suite walks a throwaway root before and after the
+act and compares — over the **tree** rather than over the paths the code
+happens to know about, because a defect here is precisely a path nobody thought
+of.
+
+**The QR encoder is this crate's own** (`src/qr/`), byte mode at correction
+level M, no new dependency. A QR symbol is a fully specified algorithm rather
+than a research problem, and the manifest's dependency set is an approved list
+a ball has to argue its way onto. REMOTE §8.4 measures the envelope at 1567
+bytes and states the rule as *PEM as minted, at level M or lower*; level M
+carries 2331. The encoder's own module doc holds the rulings, and its suite
+pins three whole symbols and all forty versions against an **independent**
+implementation — because an encoder that agrees with itself proves nothing, and
+two reference implementations disagreeing with each other is how two of this
+one's choices were settled.
+
+**The symbol is geometry, so the assertions are geometry.** A QR symbol has no
+glyphs, so `crate::paint_probe` — the one walk over painted *text* — has
+nothing to say about one. The pane's words go through the probe; the picture is
+asserted as the module matrix, which is the thing that is right or wrong. A
+symbol drawn at the wrong scale carries the same bytes; a symbol with one wrong
+module does not.
+
+**And it is the one pane that covers another.** The shell's rule is a bar
+rather than a modal, because a refusal about one pane must not stop the
+operator reading the other three. The enrollment earns the exception: what it
+holds is a private key on a screen, the whole act is *look at this now and
+close it*, and a conversation legible behind it would invite the one thing the
+material must not have, which is a long life on a display.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -706,7 +779,7 @@ delete the branch and close its pull request in the same breath.
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/reply.rs` | the reply vocabulary's roster: the eight kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~185 |
+| `src/reply.rs` | the reply vocabulary's roster: the nine kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~190 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
 | `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
 | `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
@@ -714,6 +787,11 @@ delete the branch and close its pull request in the same breath.
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/start.rs` | the start family's two receipts: the staged body carried whole, and the minted name. | ~90 |
+| `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields spelled once, read and re-said. | ~130 |
+| `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, a symbol printed instead of the answer, and nothing written down. | ~90 |
+| `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~145 |
+| `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |
+| `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the six rows, as data — and the two acts the window composes by name. | ~105 |
@@ -736,6 +814,13 @@ delete the branch and close its pull request in the same breath.
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |
 | `src/mark/raster.rs` | the pixel loop: supersampling and nothing else. | ~120 |
+| `src/qr.rs` | a QR symbol drawn by this crate: bytes in, a grid of modules out, and what it emits stated once. | ~130 |
+| `src/qr/gf.rs` | GF(2⁸) and the Reed-Solomon check bytes — the field itself, with no lookup tables. | ~95 |
+| `src/qr/version.rs` | how big the symbol has to be: the block table at correction level M, and the geometry that follows. | ~200 |
+| `src/qr/bits.rs` | the payload as a bit stream: header, terminator, padding, blocks, interleave. | ~130 |
+| `src/qr/matrix.rs` | the grid: the furniture a scanner finds it by, the zigzag, and the eight candidates. | ~250 |
+| `src/qr/mask.rs` | the eight masks, and the four penalty rules that choose between them. | ~145 |
+| `src/qr/block.rs` | the symbol on a terminal: two module rows a line, carrying its own paper. | ~75 |
 | `examples/icon.rs` | `make icon`'s machinery — re-emit `assets/lernie.svg` from the generator that defines it. | ~30 |
 | `assets/lernie.svg` | the mark, as the hicolor theme reads it. A derivation, pinned byte for byte. | derived |
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |

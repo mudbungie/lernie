@@ -34,6 +34,8 @@ pub mod chat;
 pub mod composer;
 /// The conversation list.
 pub mod convs;
+/// The enrollment pane: a name, a grade, and the symbol that comes back.
+pub mod enroll;
 /// The keyboard: every act this window affords, without a pointer.
 pub mod keys;
 /// What the window holds between frames, and how a reply becomes part of it.
@@ -46,5 +48,5 @@ pub mod shell;
 pub mod theme;
 
 pub use keys::Pane;
-pub use model::{Aim, Channel, Chunk, Model, Notice};
+pub use model::{Aim, Channel, Chunk, Enrolling, Grade, Model, Notice, Shown};
 pub use shell::render;

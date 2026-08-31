@@ -22,12 +22,12 @@
 //! that would carry it is exactly the second implementation this module exists
 //! not to be.
 //!
-//! # Six rows, and eight gestures — the roster and the table are not one list
+//! # Seven rows, and nine gestures — the roster and the table are not one list
 //!
 //! The **roster** is the gestures whose replies [`crate::reply`] paints, so the
 //! ask surface and the paint surface grow together: the ball that lands a pane
 //! adds its kind and its gesture in the same breath. The **table** is the
-//! subset of those a word can spell, and it is six because two of them cannot
+//! subset of those a word can spell, and it is seven because two of them cannot
 //! be one. [`start`] holds the pair and says why: `prepare` carries a payload
 //! rung and `prompt` carries a prepared body, and a nested object is not a word
 //! an operator types — which is exactly the case the paragraph above refuses to
@@ -54,15 +54,15 @@ use serde_json::{Map, Value};
 
 /// The roster and one verb's page, answered here rather than by an engine.
 pub mod help;
-/// The rows themselves — the six verbs, as data.
+/// The rows themselves — the seven verbs, as data.
 mod rows;
 /// The start family's two envelopes, which are doors without rows.
 pub mod start;
 
 use rows::TABLE;
 pub use rows::{
-    CONVERSATIONS, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, follow, message,
-    nudge, transcript, workspaces,
+    CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,
+    follow, message, nudge, transcript, workspaces,
 };
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 

@@ -95,6 +95,12 @@ pub fn header(chunk: &Chunk) -> String {
 
 /// One wall: selectable when this seat can address it, a plain line when it
 /// cannot.
+///
+/// **The enrollment control hangs off the aimed row and off no other**, because
+/// an enrollment mints the pair `(client, workspace)` and the workspace is
+/// exactly what an aim is. Offering it on every row would be offering it before
+/// the operator had said which wall — and the answer to that question is
+/// already on the screen, once.
 fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow) {
     let Some(address) = chunk.channel.address(row) else {
         ui.label(format!("{}  — {NO_NAME_HERE}", line(row)));
@@ -103,6 +109,9 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow) {
     let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
     if ui.selectable_label(aimed, line(row)).clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
+    }
+    if aimed && model.enroll.is_none() && ui.button(crate::ui::enroll::OPEN).clicked() {
+        model.begin_enrollment();
     }
 }
 

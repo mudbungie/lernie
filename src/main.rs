@@ -26,6 +26,11 @@ fn main() -> ExitCode {
         Decided::Start { address, goal } => {
             rooted(|root| lernie::seat::start(root, &address, &goal))
         }
+        Decided::Enroll {
+            workspace,
+            name,
+            grade,
+        } => rooted(|root| lernie::seat::enroll(root, &workspace, &name, &grade)),
         Decided::Window => rooted(window),
     };
     match verdict.stream {

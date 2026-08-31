@@ -25,10 +25,10 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The four reads and the two acts, spelled out — so the roster is asserted
+/// The four reads and the three acts, spelled out — so the roster is asserted
 /// rather than merely iterated, and a verb added or dropped is a diff here.
 #[test]
-fn the_roster_is_the_six_the_seat_can_read_the_answers_to() {
+fn the_roster_is_the_seven_the_seat_can_read_the_answers_to() {
     let words: Vec<&str> = table().iter().map(|verb| verb.word).collect();
     assert_eq!(
         words,
@@ -38,7 +38,8 @@ fn the_roster_is_the_six_the_seat_can_read_the_answers_to() {
             "transcript",
             "follow",
             "message",
-            "nudge"
+            "nudge",
+            "enroll"
         ]
     );
 }

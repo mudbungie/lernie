@@ -25,10 +25,13 @@ mod acts;
 mod channel;
 /// The claim a start leaves on the selection, and the row it stands in for.
 mod claim;
+/// An enrollment, between the control that opened it and the symbol it ends at.
+mod enroll;
 /// A start, between its two acts.
 mod start;
 
 pub use channel::{Channel, Chunk};
+pub use enroll::{Enrolling, Grade, Shown};
 pub use start::{Phase, Start};
 
 /// Which wall the window is aimed at: the channel it came down, and the address
@@ -101,6 +104,11 @@ pub struct Model {
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).
     pub start: Option<Start>,
+    /// **An enrollment, while it is happening** — the second thing this window
+    /// holds across a round trip, and the only thing it ever holds that is a
+    /// secret. It is dropped by a control and written down nowhere
+    /// ([`Enrolling`]).
+    pub enroll: Option<Enrolling>,
     /// **The gestures this frame composed**, for whoever can send them. A frame
     /// that posted its own would be a frame that waits.
     pub outbox: Vec<Value>,
@@ -138,6 +146,9 @@ impl Model {
             // The start family's two, whose whole product is each other: the
             // staged body composes the fire, and the fire's receipt is the
             // minted name. [`Start`] holds the chain.
+            // The one answer that is never filed as content: it is drawn, held
+            // while the picture is on screen, and dropped with the pane.
+            Reply::Enrolled(material) => self.enrolled(&material),
             Reply::Prepared(prepared) => self.fire(&prepared),
             Reply::Started { conversation } => self.started(conversation),
             // The two receipts. Neither carries content, so what they change is

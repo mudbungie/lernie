@@ -42,14 +42,49 @@ fn a_typed_verb_and_the_envelope_it_stands_for_decide_alike() {
 
 /// Every verb in the table is reachable from argv, with the arguments in the
 /// order its usage states.
+///
+/// **`enroll` is the one exception and it is asserted rather than skipped**: it
+/// decides its own arm, because its reply carries a private key and the reply
+/// stream's destination is a terminal's scrollback (`crate::seat::enroll`). The
+/// envelope it eventually sends is still this row's — `verbs::tests` pins that
+/// — so what differs is where the answer goes and nothing about what crosses.
 #[test]
 fn every_verb_in_the_table_is_typable() {
     for verb in crate::verbs::table() {
         let mut words = vec![verb.word];
         let filled: Vec<String> = verb.params.iter().map(|p| format!("a-{p}")).collect();
         words.extend(filled.iter().map(String::as_str));
+        if verb.word == crate::verbs::ENROLL.word {
+            let Decided::Enroll {
+                workspace,
+                name,
+                grade,
+            } = run(argv(&words))
+            else {
+                panic!("`enroll` draws its answer rather than printing it");
+            };
+            assert_eq!(
+                (workspace.as_str(), name.as_str(), grade.as_str()),
+                ("a-workspace", "a-name", "a-grade")
+            );
+            continue;
+        }
         assert_eq!(asked(&words)["op"], json!(verb.word), "{}", verb.word);
     }
+}
+
+/// **The enrollment's arity is exact too**, and a wrong one earns the row's own
+/// usage rather than the arm's silence — the same grammar every other verb
+/// teaches from its mistake.
+#[test]
+fn a_misspelled_enrollment_earns_the_row_s_usage() {
+    let said = said(&["enroll", "home"]);
+    assert_eq!(said.code, 2);
+    assert!(
+        said.text.contains(&crate::verbs::ENROLL.usage()),
+        "{}",
+        said.text
+    );
 }
 
 /// **The composite is one word and two words of argument.** It carries them

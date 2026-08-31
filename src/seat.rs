@@ -23,11 +23,14 @@ use std::path::Path;
 
 use serde_json::Value;
 
+/// The §8.4 enrollment act, whose reply is a picture rather than a stream.
+mod enroll;
 /// What this box says it holds, said without dialling any of it.
 mod holds;
 /// The §8.1 start family's two acts, spelled as one word.
 mod start;
 
+pub use enroll::enroll;
 pub use holds::{OWN, channels, dial, listing};
 pub use start::start;
 

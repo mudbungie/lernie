@@ -6,7 +6,7 @@
 //! own words, which is a sentence an operator can act on rather than a control
 //! that only looks actionable.
 
-use crate::ui::{Model, chat, composer, convs, keys, roster, theme};
+use crate::ui::{Model, chat, composer, convs, enroll, keys, roster, theme};
 
 /// Paint one frame of the whole window.
 ///
@@ -29,7 +29,17 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         .default_width(320.0)
         .show(ctx, |ui| convs::render(ui, model));
     egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
-    egui::CentralPanel::default().show(ctx, |ui| chat::render(ui, model));
+    // **The enrollment stands where the conversation would**, and it is the one
+    // pane in this window that covers another. It earns that: what it holds is
+    // a private key on a screen, the act is "look at this now and close it",
+    // and a conversation legible behind it would invite the one thing the
+    // material must not have, which is a long life on a display
+    // (`crate::ui::enroll`).
+    egui::CentralPanel::default().show(ctx, |ui| {
+        if !enroll::render(ui, model) {
+            chat::render(ui, model);
+        }
+    });
 }
 
 /// The notice bar: the last thing the seat heard that was not content, in the

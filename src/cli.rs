@@ -37,6 +37,19 @@ pub enum Decided {
     /// It carries the two words rather than an envelope, because there are two
     /// envelopes and the second cannot be built until the first is answered.
     Start { address: String, goal: String },
+    /// **Enroll a new box** in that workspace, under that name, at that grade
+    /// (REMOTE §8.4): one gesture, and a symbol printed instead of its answer.
+    ///
+    /// It has an arm of its own — rather than riding [`Ask`](Self::Ask) like
+    /// every other typed verb — because the reply carries a private key for a
+    /// box that does not exist yet, and the reply stream's destination is a
+    /// terminal's scrollback. What the act prints is the picture; see
+    /// [`crate::seat::enroll`].
+    Enroll {
+        workspace: String,
+        name: String,
+        grade: String,
+    },
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
     ///
@@ -71,6 +84,13 @@ pub fn run(args: Vec<String>) -> Decided {
         ["start", address, goal] => Decided::Start {
             address: (*address).to_owned(),
             goal: (*goal).to_owned(),
+        },
+        // Ahead of the typed table, and only because of what the answer
+        // carries: the row is the same row, and the envelope is built from it.
+        ["enroll", workspace, name, grade] => Decided::Enroll {
+            workspace: (*workspace).to_owned(),
+            name: (*name).to_owned(),
+            grade: (*grade).to_owned(),
         },
         ["start", ..] => Decided::Say(Verdict::refused(
             "`lernie start` takes a workspace and a goal — usage:              lernie start <workspace> <goal>"

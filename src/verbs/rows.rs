@@ -1,4 +1,4 @@
-//! **The rows** — the six verbs, as data.
+//! **The rows** — the seven verbs, as data.
 //!
 //! Split from [`super`] at the design-time budget on the seam the module's own
 //! doc already draws: [`super`] is what a verb *is* and what it does with its
@@ -31,6 +31,12 @@ pub fn message(workspace: String, agent: String, content: String) -> Value {
 /// The advance, on the same terms.
 pub fn nudge(workspace: String, agent: String) -> Value {
     NUDGE.built(vec![workspace, agent])
+}
+
+/// The enrollment, on the same terms — the window composes it from a name and
+/// a grade the operator chose, and argv from three words.
+pub fn enroll(workspace: String, name: String, grade: String) -> Value {
+    ENROLL.built(vec![workspace, name, grade])
 }
 
 /// The `workspaces` read's row.
@@ -115,6 +121,24 @@ pub const MESSAGE: Verb = Verb {
              transcript at its own pace.",
 };
 
+/// **The enrollment's row.** Three named strings, so it is a row like any
+/// other — but the *reply* is not like any other, and `lernie enroll` therefore
+/// has its own arm in [`crate::cli`] rather than printing the reply stream the
+/// way every other verb does. The material must not reach a scrollback; what
+/// the arm prints is the symbol.
+pub const ENROLL: Verb = Verb {
+    word: "enroll",
+    params: &["workspace", "name", "grade"],
+    summary: "mint a new box's material and show it as a code to photograph",
+    detail: "The engine mints a leaf on its own CA, seats the client in that \
+             workspace, answers the material and shreds the key. This seat \
+             prints the answer as a QR symbol and keeps NOTHING: not a file, \
+             not a cache, not a log line. `grade` is `operator` or `foot`. It \
+             is refused unless this box's own leaf is operator-grade — the new \
+             box says nothing and performs no act, which is why this is not the \
+             in-channel bootstrap REMOTE §1.4 forbids.",
+};
+
 /// The advance's row.
 pub const NUDGE: Verb = Verb {
     word: "nudge",
@@ -135,4 +159,5 @@ pub(super) const TABLE: &[Verb] = &[
     FOLLOW,
     MESSAGE,
     NUDGE,
+    ENROLL,
 ];

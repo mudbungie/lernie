@@ -31,6 +31,16 @@ const WEAK: Color32 = Color32::from_rgb(0x88, 0x88, 0x88);
 /// The colour a refusal or an unreadable answer is said in.
 pub const NOTICE: Color32 = Color32::from_rgb(0xe0, 0xa0, 0x60);
 
+/// **The two inks a QR symbol is drawn in**, and they are the only pair here
+/// that is not a matter of taste. A symbol is defined dark-on-light and a
+/// camera is what reads it, so these are black on white whatever the window's
+/// visuals are — a dark-themed pane drawing its symbol in theme colours draws
+/// one a phone will not lock onto. They are named `PAPER` and `INK` rather than
+/// `WHITE` and `BLACK` because what they mean is *the ground* and *the mark*,
+/// which is what a decoder is looking for.
+pub const PAPER: Color32 = Color32::WHITE;
+pub const INK: Color32 = Color32::BLACK;
+
 /// The ink a conversation's badge is painted in.
 pub fn state_ink(state: &AgentState) -> Color32 {
     match state {

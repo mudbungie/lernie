@@ -45,6 +45,8 @@ pub mod offframe;
 pub mod paths;
 /// Where the seat was pointed, remembered between runs.
 pub mod place;
+/// A QR symbol, drawn by this crate: bytes in, a grid of modules out.
+pub mod qr;
 pub mod reply;
 pub mod seat;
 /// The link the frame and the threads share, and the crate's one lock.

@@ -16,10 +16,10 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Eight do
+//! kinds and most of them belong to panes that do not exist here. Nine do
 //! not: the roster, the conversation list, the transcript, the live tail, a
-//! captured run, the detached advance's receipt, and the start family's two —
-//! the staged body and the minted name. A kind nothing renders is a kind
+//! captured run, the detached advance's receipt, the start family's two — the
+//! staged body and the minted name — and a new box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
 //! next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
 //! for what is not.
@@ -68,6 +68,8 @@
 
 /// The conversation list one workspace answers with.
 pub mod convs;
+/// A new box's material, and the envelope a camera carries it in.
+pub mod enrolled;
 /// The strict field readers every decoder below shares.
 pub(crate) mod fields;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
@@ -123,7 +125,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Eight, and each is here because a surface
+/// **The kinds the window draws.** Nine, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -151,6 +153,10 @@ pub enum Reply {
     /// them, which the next act hands straight back — the one reply on this
     /// surface a seat has to hold between two gestures.
     Prepared(start::Prepared),
+    /// **A new box's material** — the one reply on this surface that carries a
+    /// secret, held while a symbol is on screen and written down nowhere
+    /// (REMOTE §8.4; DESIGN §3).
+    Enrolled(enrolled::Enrolled),
     /// **A start, fired**, and the name the engine minted for it. It carries
     /// nothing else for the reason [`Nudged`](Self::Nudged) carries nothing:
     /// what the model does with the turn arrives on the transcript. What is

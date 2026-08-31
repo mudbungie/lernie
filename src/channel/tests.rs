@@ -149,7 +149,31 @@ fn an_engine_the_anchors_do_not_cover_never_reaches_the_boundary() {
     mint::material(elsewhere.path());
     held.anchors = elsewhere.join(super::material::ANCHORS);
     let channel = Channel::open(&held).expect("opened");
-    assert!(channel.ask(&json!({"op": "workspaces"})).is_err());
+    // **And it says what to do about it** (bl-e620). rustls' own words are
+    // *"invalid peer certificate: UnknownIssuer"*, which names no file and no
+    // act — driven live, a wrong anchor produced that and nothing else,
+    // anywhere. The handshake happens inside the first write, so this is where
+    // the sentence is earned.
+    let why = channel
+        .ask(&json!({"op": "workspaces"}))
+        .expect_err("the anchors do not cover it");
+    assert!(why.contains("did not verify"), "{why}");
+    assert!(
+        why.contains("did not verify (") && !why.contains("()"),
+        "rustls' own fault is named inside it: {why}"
+    );
+    assert!(
+        why.contains(&held.anchors.display().to_string()),
+        "it names the file to look at: {why}"
+    );
+    assert!(
+        why.contains(&held.chain.display().to_string()),
+        "and the other half of the pair: {why}"
+    );
+    assert!(
+        why.contains("the seat mints nothing"),
+        "and the act, which is not a mint: {why}"
+    );
     assert_eq!(engine.heard(), Vec::<Value>::new(), "nothing was said");
 }
 
@@ -184,4 +208,17 @@ fn the_engine_s_name_is_read_off_the_address() {
     }
     let refusal = server_name("not a name:9000").expect_err("refused");
     assert!(refusal.contains("not a server name"), "{refusal}");
+}
+
+/// **Every other write error is still the transport's own words.** The
+/// handshake is only the commonest cause of a failed write, not the only one,
+/// and a socket that broke mid-send is not a fact about this box's material —
+/// so it earns no remedy about certificates it has nothing to do with.
+#[test]
+fn a_write_that_is_not_a_handshake_is_said_in_the_transport_s_own_words() {
+    let scratch = Scratch::new();
+    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    let channel = Channel::open(&held).expect("opened");
+    let said = channel.wrote(&std::io::Error::other("the pipe went away"));
+    assert_eq!(said, "send: the pipe went away");
 }

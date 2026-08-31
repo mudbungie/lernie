@@ -140,11 +140,9 @@ fn a_lane_that_cannot_be_opened_says_so_as_unreachable() {
     tick(&link, scratch.path());
     let mut settled = model.clone();
     link.settle(&mut settled);
-    assert!(
-        settled
-            .notice
-            .expect("a notice")
-            .line()
-            .contains("could not reach")
-    );
+    let crate::ui::Held::Unheld(why) = &settled.roster[0].held else {
+        panic!("the lane said nothing: {:?}", settled.roster[0].held);
+    };
+    assert!(why.contains("no wire provisioned"), "{why}");
+    assert_eq!(settled.notice, None, "not the shell-wide bar (bl-e620)");
 }

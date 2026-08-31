@@ -88,7 +88,7 @@ impl Link {
                         model.absorb(&heard.channel, crate::reply::read(&frame));
                     }
                 }
-                Said::Unreachable(why) => model.unreachable(why),
+                Said::Unreachable(why) => model.unreachable(&heard.channel, why),
             }
         }
         shared.outbox.append(&mut model.outbox);

@@ -201,15 +201,36 @@ impl Model {
         }
     }
 
-    /// **A leg that never reached an engine**, said in this seat's own words.
+    /// **A leg that never reached an engine**, said on that channel's own
+    /// section (bl-e620).
     ///
     /// It is not a reply and so it does not come through
     /// [`absorb`](Self::absorb): there is no frame, no channel answered, and
-    /// nothing to file. What it changes is exactly what a refusal changes —
-    /// what the operator is told — and it is told differently, because it is
-    /// about this box or the far end rather than about what was asked.
-    pub fn unreachable(&mut self, why: String) {
-        self.notice = Some(Notice::Unreachable(why));
+    /// nothing to file. And it is not the shell's bar either, which is where it
+    /// used to go. **A refusal is an exchange; an unreachable channel is a
+    /// relationship**, and REMOTE §8.2 rules that one *"is that channel's
+    /// workspaces painted unreachable, never the whole shell, which stays
+    /// reserved for the one wire the window cannot exist without."* Three
+    /// things followed from getting that wrong, all driven live: the sentence
+    /// named no subject at all (*"this seat could not reach **it**"*), a seat
+    /// holding two dead channels heard about exactly one of them forever
+    /// because there is one bar and the last writer wins, and the bar's dismiss
+    /// was inert — a relationship that is down is down on every beat, so it
+    /// re-posted faster than a hand can clear it. A row's state is not
+    /// something one dismisses.
+    ///
+    /// The bar is kept for a channel this box holds no section for, which is
+    /// the one case with nowhere else to say it — and it names the channel,
+    /// because a fact with no home still has a subject.
+    pub fn unreachable(&mut self, channel: &Channel, why: String) {
+        match self
+            .roster
+            .iter_mut()
+            .find(|chunk| chunk.channel.name == channel.name)
+        {
+            Some(held) => held.held = Held::Unheld(why),
+            None => self.notice = Some(Notice::Unreachable(format!("{}: {why}", channel.name))),
+        }
     }
 
     /// Whether this row is the one the window is aimed at.

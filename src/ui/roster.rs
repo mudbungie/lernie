@@ -85,6 +85,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
     ui.separator();
     ui.label(header(chunk));
+    // **A channel that cannot be reached says so HERE**, under its own header
+    // and beside whatever it last answered — never in the shell-wide bar, which
+    // is for what an engine said about a gesture (bl-e620). It stands above the
+    // walls rather than in place of them: the rows are the last thing that
+    // channel did say, and they are worth keeping while it is down.
+    if let crate::ui::Held::Unheld(why) = &chunk.held {
+        ui.colored_label(theme::NOTICE, why);
+    }
     for note in [chunk.stale.as_ref(), chunk.growth.as_ref()]
         .into_iter()
         .flatten()
@@ -97,12 +105,18 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
         // unreachable, because every box holds its own engine's slot whether or
         // not anything is provisioned in it (`crate::seat::channels`). So the
         // box the sentence was written for got a section header over a blank,
-        // on the first run of a seat, which is the whole of what it has.
-        ui.label(match &chunk.held {
-            crate::ui::Held::Unheard => NOT_ANSWERED.to_owned(),
-            crate::ui::Held::Unheld(why) => why.clone(),
-            crate::ui::Held::Heard => NO_WALLS.to_owned(),
-        });
+        // on the first run of a seat, which is the whole of what it has. The
+        // unheld case is already said above, in its own words.
+        match &chunk.held {
+            crate::ui::Held::Unheard => {
+                ui.label(NOT_ANSWERED);
+            }
+            crate::ui::Held::Heard => {
+                ui.label(NO_WALLS);
+            }
+            // Already said above, in its own words.
+            crate::ui::Held::Unheld(_) => {}
+        }
         return;
     }
     for row in ordered(&chunk.walls) {

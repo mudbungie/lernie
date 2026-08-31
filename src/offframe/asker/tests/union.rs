@@ -74,11 +74,16 @@ fn a_channel_that_will_not_answer_leaves_the_others_standing() {
     let mut settled = model.clone();
     link.settle(&mut settled);
     assert_eq!(settled.roster.len(), 2);
-    let notice = settled.notice.expect("the hollow entry said so");
-    assert!(
-        notice.line().contains("could not reach"),
-        "{}",
-        notice.line()
-    );
-    assert!(notice.line().contains("empty entry"), "{}", notice.line());
+    // **The one that failed says so on its OWN section**, and the one that
+    // answered is untouched beside it (bl-e620).
+    let hollow = settled
+        .roster
+        .iter()
+        .find(|chunk| chunk.channel.name == "hollow")
+        .expect("the entry has a section");
+    let crate::ui::Held::Unheld(why) = &hollow.held else {
+        panic!("the hollow entry said nothing: {:?}", hollow.held);
+    };
+    assert!(why.contains("empty entry"), "{why}");
+    assert_eq!(settled.notice, None, "and nothing reached the shell's bar");
 }

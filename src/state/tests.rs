@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use super::{Link, Said, Standing};
 use crate::test_support::window::{own, seated};
-use crate::ui::{Aim, Model, Notice};
+use crate::ui::{Aim, Model};
 use serde_json::json;
 
 fn link() -> Link {
@@ -67,23 +67,44 @@ fn a_settle_files_hands_over_and_publishes() {
 /// the seat, or look at this box's files.
 #[test]
 fn an_unreachable_leg_is_its_own_sentence() {
-    let link = link();
-    link.heard(
+    let seated = link();
+    seated.heard(
         &own().channel,
         Said::Unreachable("connect 127.0.0.1:1: refused".to_owned()),
     );
-    let mut model = Model::default();
-    link.settle(&mut model);
-    let Some(notice) = &model.notice else {
+    // **It lands on that channel's own section** (bl-e620), which is where a
+    // fact about a relationship belongs — the bar is for what an engine said.
+    let mut model = Model {
+        roster: vec![own()],
+        ..Model::default()
+    };
+    seated.settle(&mut model);
+    assert_eq!(
+        model.roster[0].held,
+        crate::ui::Held::Unheld("connect 127.0.0.1:1: refused".to_owned())
+    );
+    assert_eq!(model.notice, None, "the shell-wide bar is not its home");
+
+    // With no section for it there is nowhere else, so the bar takes it — and
+    // names the channel, because a fact with no home still has a subject.
+    let orphan = link();
+    orphan.heard(
+        &own().channel,
+        Said::Unreachable("connect 127.0.0.1:1: refused".to_owned()),
+    );
+    let mut homeless = Model::default();
+    orphan.settle(&mut homeless);
+    let Some(notice) = &homeless.notice else {
         panic!("a notice");
     };
-    assert_eq!(
-        notice,
-        &Notice::Unreachable("connect 127.0.0.1:1: refused".to_owned())
-    );
     assert!(
         notice.line().contains("could not reach"),
         "{}",
+        notice.line()
+    );
+    assert!(
+        notice.line().contains(&own().channel.name),
+        "it names its subject: {}",
         notice.line()
     );
 }

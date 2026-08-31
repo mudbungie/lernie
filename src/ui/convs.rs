@@ -33,7 +33,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear about this wall";
 /// silent is said here instead.
 pub fn no_channel(channel: &str) -> String {
     format!(
-        "this seat holds no channel named {channel:?}, so nothing is asked          about this wall — pick one from the channels beside it"
+        "this seat holds no channel named {channel:?}, so nothing is asked about this wall — pick one from the channels beside it"
     )
 }
 

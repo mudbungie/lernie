@@ -21,6 +21,7 @@
 //! read off the address it dialled"*).
 
 use std::net::{IpAddr, TcpStream};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -57,6 +58,11 @@ pub struct Channel {
     config: Arc<ClientConfig>,
     address: String,
     name: ServerName<'static>,
+    /// The two files a failed handshake is about, kept so the sentence can name
+    /// them (bl-e620). They are read once at [`Channel::open`]; holding the
+    /// paths costs nothing and is what turns rustls' own wording into a remedy.
+    anchors: PathBuf,
+    chain: PathBuf,
 }
 
 impl Channel {
@@ -68,6 +74,8 @@ impl Channel {
             config: tls::client_config(m)?,
             address: m.address.clone(),
             name: server_name(&m.address)?,
+            anchors: m.anchors.clone(),
+            chain: m.chain.clone(),
         })
     }
 
@@ -134,10 +142,39 @@ impl Channel {
         let conn = ClientConnection::new(Arc::clone(&self.config), self.name.clone())
             .map_err(|e| format!("tls {}: {e}", self.address))?;
         let mut tls = StreamOwned::new(conn, tcp);
-        hello::state(&mut tls).map_err(|e| format!("send: {e}"))?;
-        frame::write_value(&mut tls, request).map_err(|e| format!("send: {e}"))?;
+        hello::state(&mut tls).map_err(|e| self.wrote(&e))?;
+        frame::write_value(&mut tls, request).map_err(|e| self.wrote(&e))?;
         hello::confirm(&mut tls)?;
         Ok(tls)
+    }
+
+    /// **What a failed write says.**
+    ///
+    /// The TLS handshake happens inside the first write, so an error here is
+    /// usually not a socket at all — it is the two ends failing to accept each
+    /// other's certificates, and rustls says so in its own words: *"invalid
+    /// peer certificate: UnknownIssuer"*, which names no file and no act
+    /// (bl-e620, driven live: a wrong anchor produced that and nothing else,
+    /// anywhere).
+    ///
+    /// So the one class that is always a fact about **this box's own material**
+    /// carries the remedy, and every other write error is still said in the
+    /// transport's own words: a certificate fault is read off the typed
+    /// `rustls::Error` rather than off its wording, so a rewritten message
+    /// cannot silently stop matching.
+    fn wrote(&self, e: &std::io::Error) -> String {
+        let Some(rustls::Error::InvalidCertificate(fault)) = e
+            .get_ref()
+            .and_then(|inner| inner.downcast_ref::<rustls::Error>())
+        else {
+            return format!("send: {e}");
+        };
+        format!(
+            "the handshake with {} did not verify ({fault:?}): {} must hold the anchors of THAT engine's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
+            self.address,
+            self.anchors.display(),
+            self.chain.display()
+        )
     }
 }
 

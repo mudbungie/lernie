@@ -169,3 +169,89 @@ fn an_unknown_classification_is_painted_as_its_own_word() {
     let painted = pane(|ui| render(ui, &mut model));
     assert!(painted.contains("(sealed)"), "{painted}");
 }
+
+/// **Two dead channels are both heard, each under its own name** (bl-e620).
+/// The bar holds one sentence and the last writer wins, so a seat with two
+/// unreachable channels was told about one of them permanently and could not
+/// discover the other from the glass at all.
+#[test]
+fn every_unreachable_channel_says_so_on_its_own_section() {
+    let mut model = Model {
+        roster: vec![
+            Chunk {
+                channel: Channel {
+                    name: "alpha".to_owned(),
+                    named_there: Some("alpha".to_owned()),
+                },
+                ..Chunk::default()
+            },
+            Chunk {
+                channel: Channel {
+                    name: "beta".to_owned(),
+                    named_there: Some("beta".to_owned()),
+                },
+                ..Chunk::default()
+            },
+        ],
+        ..Model::default()
+    };
+    model.unreachable(
+        &model.roster[0].channel.clone(),
+        "connect: refused".to_owned(),
+    );
+    model.unreachable(
+        &model.roster[1].channel.clone(),
+        "the handshake did not verify".to_owned(),
+    );
+    let painted = pane(|ui| render(ui, &mut model));
+    for expected in [
+        "alpha",
+        "connect: refused",
+        "beta",
+        "the handshake did not verify",
+    ] {
+        assert!(painted.contains(expected), "{expected:?}:\n{painted}");
+    }
+    assert_eq!(model.notice, None, "the shell-wide bar carries neither");
+}
+
+/// **A channel that answers again clears its own sentence**, because an answer
+/// spends whatever the section was standing on — so there is nothing to
+/// dismiss and nothing that can go stale.
+#[test]
+fn an_answer_clears_the_channel_s_own_sentence() {
+    let mut model = Model {
+        roster: vec![own()],
+        ..Model::default()
+    };
+    model.unreachable(&own().channel, "connect: refused".to_owned());
+    assert!(pane(|ui| render(ui, &mut model)).contains("connect: refused"));
+    model.absorb(
+        &own().channel,
+        crate::reply::Read::Answer(crate::reply::Reply::Workspaces(
+            crate::reply::roster::Workspaces {
+                rows: vec![wall("home")],
+                stale: None,
+                growth: None,
+            },
+        )),
+    );
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(!painted.contains("connect: refused"), "{painted}");
+    assert!(painted.contains("home"), "{painted}");
+}
+
+/// **The rows a dead channel last answered stand under its sentence.** They are
+/// the last thing it did say, and they are worth keeping while it is down —
+/// REMOTE §8.2's *"that channel's workspaces painted unreachable"*.
+#[test]
+fn a_dead_channel_keeps_the_walls_it_last_answered_under_its_sentence() {
+    let mut model = Model {
+        roster: vec![own()],
+        ..Model::default()
+    };
+    model.unreachable(&own().channel, "connect: refused".to_owned());
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(painted.contains("connect: refused"), "{painted}");
+    assert!(painted.contains("home"), "{painted}");
+}

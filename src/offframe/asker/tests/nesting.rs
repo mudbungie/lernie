@@ -96,15 +96,11 @@ fn an_aimed_read_that_cannot_be_routed_says_so_as_unreachable() {
     let link = asking(&model);
     tick(&link, scratch.path());
     link.settle(&mut model);
-    let notice = model.notice.expect("a notice");
-    assert!(
-        notice.line().contains("could not reach"),
-        "{}",
-        notice.line()
-    );
-    assert!(
-        notice.line().contains("no wire provisioned"),
-        "{}",
-        notice.line()
-    );
+    // **On that channel's own section**, which is where a fact about a
+    // relationship goes (bl-e620).
+    let crate::ui::Held::Unheld(why) = &model.roster[0].held else {
+        panic!("the leg said nothing: {:?}", model.roster[0].held);
+    };
+    assert!(why.contains("no wire provisioned"), "{why}");
+    assert_eq!(model.notice, None);
 }

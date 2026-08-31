@@ -520,6 +520,29 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**An unreachable channel says so on its own section, never in the shell's bar**
+(`Model::unreachable`, bl-e620). REMOTE §8.2 rules it: *"a channel that cannot
+be dialled is that channel's workspaces painted unreachable, never the whole
+shell, which stays reserved for the one wire the window cannot exist without."*
+The bar is for what an **engine said** about a gesture, and for a frame this
+seat could not read — facts about an exchange. An unreachable channel is a fact
+about a **relationship**, and routing it to the bar cost three things, all
+driven live: the sentence named no subject at all (*"this seat could not reach
+**it**"*), a seat holding two dead channels heard about exactly one of them
+forever, because there is one bar and the last writer wins, and the bar's
+dismiss was inert — a relationship that is down is down on every beat, so it
+re-posted faster than a hand could clear it. A row's state is not something one
+dismisses. The bar is kept only for a channel this box holds no section for,
+and it names the channel, because a fact with no home still has a subject.
+
+**And a failed handshake carries a remedy** (`Channel::wrote`). rustls performs
+the handshake inside the first write, so a wrong trust root surfaced as *"send:
+invalid peer certificate: UnknownIssuer"* — rustls' own wording, naming no file
+and no act, on the one failure that is always about material this box carried by
+hand. The certificate class is read off the typed `rustls::Error` rather than
+off its wording, so a rewritten message cannot silently stop matching, and every
+other write error is still said in the transport's own words.
+
 **Every empty section says WHICH emptiness it is** (`src/ui/roster.rs`,
 `crate::ui::Held`; bl-08b6). The pane carried one sentence — *no channel
 provisioned — material arrives by hand* — under `roster.is_empty()`, and **an

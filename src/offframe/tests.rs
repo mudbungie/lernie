@@ -75,6 +75,7 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
         roster: vec![Chunk::of(Channel {
             name: crate::seat::OWN.to_owned(),
             named_there: None,
+            dials: None,
         })],
         ..Model::default()
     };

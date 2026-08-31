@@ -20,6 +20,7 @@ fn stocked() -> Model {
                 channel: Channel {
                     name: "elsewhere".to_owned(),
                     named_there: Some("theirs".to_owned()),
+                    dials: None,
                 },
                 walls: vec![wall("theirs"), wall("not-ours")],
                 ..Chunk::default()

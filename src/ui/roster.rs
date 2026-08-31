@@ -25,12 +25,19 @@ pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
 /// fact about that engine, and the one empty state that is not a wait.
 pub const NO_WALLS: &str = "this engine holds no workspace";
 
-/// What an unreachable row says instead of being hidden.
+/// **What a row this seat cannot address says instead of being hidden.**
 ///
 /// Dropping it would hide a workspace the operator has; addressing it by the
 /// entry's leaf would aim a gesture at a different wall. So it is painted, and
 /// painted as what it is.
-pub const NO_NAME_HERE: &str = "this seat holds no name for it";
+///
+/// The wording states the FACT rather than a verdict (bl-77df). It used to read
+/// *"this seat holds no name for it"*, which lands beside a perfectly correct
+/// provisioning and reads as an error about the row above it. What is actually
+/// true is structural: an entry directory names one workspace, the channel
+/// enumerates every workspace that client is registered in, and the extras have
+/// no entry of their own — so no envelope this seat can write reaches them.
+pub const NO_NAME_HERE: &str = "no entry here names it, so nothing typed here can address it";
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused.
@@ -124,15 +131,26 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
     }
 }
 
-/// The section header: what this box calls the channel, and what its host calls
-/// the workspace when the two differ — because a local rename is the remedy for
-/// a name collision, and an operator has to be able to see one.
+/// The section header: what this box calls the channel, what its host calls the
+/// workspace when the two differ, and **the address it dials**.
+///
+/// The rename is here because a local rename is the remedy for a name
+/// collision, and an operator has to be able to see one. The address is here
+/// because the pane used to drop the one fact that explains a duplicate
+/// (bl-77df): an entry whose `address` file holds what this box's own engine
+/// listens on paints every workspace of that engine twice, under two headers,
+/// with nothing on either saying they are the same server. `lernie entries`
+/// prints the address under every row and the window did not.
 pub fn header(chunk: &Chunk) -> String {
-    match &chunk.channel.named_there {
+    let named = match &chunk.channel.named_there {
         Some(there) if *there != chunk.channel.name => {
             format!("{} (named {:?} on its host)", chunk.channel.name, there)
         }
         _ => chunk.channel.name.clone(),
+    };
+    match &chunk.channel.dials {
+        Some(at) => format!("{named} — {at}"),
+        None => named,
     }
 }
 

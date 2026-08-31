@@ -22,6 +22,17 @@ pub struct Channel {
     /// It is what makes [`Self::address`] exact rather than a guess, and the
     /// fact is §8.2's: an entry resolves by its leaf and by nothing else.
     pub named_there: Option<String>,
+    /// **The `host:port` this channel dials**, where this box holds one to
+    /// dial — the fact `lernie entries` prints under every row and the window
+    /// used to drop (bl-77df).
+    ///
+    /// Two entries naming one address are two trust relationships that happen
+    /// to terminate at one listener (§8.2), which is lawful; an entry naming
+    /// the address this box's own engine listens on is the same thing by
+    /// accident, and it paints every workspace of that engine twice. The seat
+    /// is the only thing that can see that, and it can see it for free — so
+    /// the address goes on the section header and a duplicate is self-evident.
+    pub dials: Option<String>,
 }
 
 impl Channel {

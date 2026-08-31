@@ -29,6 +29,7 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
     let own = Channel {
         name: crate::seat::OWN.to_owned(),
         named_there: None,
+        dials: None,
     };
     let mut model = Model {
         roster: vec![Chunk::of(own.clone())],
@@ -84,6 +85,7 @@ fn an_aimed_read_that_cannot_be_routed_says_so_as_unreachable() {
     let own = Channel {
         name: crate::seat::OWN.to_owned(),
         named_there: None,
+        dials: None,
     };
     let mut model = Model {
         roster: vec![Chunk::of(own.clone())],

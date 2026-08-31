@@ -14,6 +14,7 @@ fn own() -> Channel {
     Channel {
         name: crate::seat::OWN.to_owned(),
         named_there: None,
+        dials: None,
     }
 }
 

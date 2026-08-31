@@ -89,14 +89,17 @@ fn the_channels_are_the_own_engine_then_every_entry_in_order() {
             crate::ui::Channel {
                 name: crate::seat::OWN.to_owned(),
                 named_there: None,
+                dials: None,
             },
             crate::ui::Channel {
                 name: "home".to_owned(),
                 named_there: Some("personal".to_owned()),
+                dials: None,
             },
             crate::ui::Channel {
                 name: "zed".to_owned(),
                 named_there: Some("zed".to_owned()),
+                dials: None,
             },
         ]
     );

@@ -16,11 +16,13 @@ fn a_channel_says_what_a_gesture_must_carry_or_that_it_cannot_say() {
     let flat = Channel {
         name: "(this box's own engine)".to_owned(),
         named_there: None,
+        dials: None,
     };
     assert_eq!(flat.address(&wall("home")), Some("home".to_owned()));
     let entry = Channel {
         name: "home".to_owned(),
         named_there: Some("personal".to_owned()),
+        dials: None,
     };
     assert_eq!(entry.address(&wall("personal")), Some("home".to_owned()));
     assert_eq!(entry.address(&wall("somebody-elses")), None);
@@ -72,6 +74,7 @@ fn a_roster_answer_replaces_one_channel_and_leaves_the_others() {
     let other = Channel {
         name: "elsewhere".to_owned(),
         named_there: Some("elsewhere".to_owned()),
+        dials: None,
     };
     model.absorb(
         &other,

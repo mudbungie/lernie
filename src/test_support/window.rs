@@ -59,6 +59,7 @@ pub(crate) fn own() -> Chunk {
         channel: Channel {
             name: "(this box's own engine)".to_owned(),
             named_there: None,
+            dials: None,
         },
         held: crate::ui::Held::Heard,
         stale: None,

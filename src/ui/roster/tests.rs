@@ -1,39 +1,19 @@
-//! The roster: what a section says, what a row says, the pin order, the row
-//! this seat cannot address, and the click that aims the window.
+//! **What a ROW says**: its rollups, the pin order, the row this seat cannot
+//! address, the classification it wears, and the click that aims the window.
+//!
+//! Split from [`sections`] at the line cap on the seam the pane itself has: a
+//! section is one channel — its header, its address, and what it has instead of
+//! walls — and a row is one workspace on it.
 
-use super::{NO_NAME_HERE, NO_WALLS, NOT_ANSWERED, header, line, ordered, render};
+use super::{NO_NAME_HERE, line, ordered, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::roster::{WorkspaceKind, WsRow};
 use crate::test_support::window::{click, own, pane, seated, wall};
 use crate::ui::{Aim, Channel, Chunk, Model};
 
-/// **Every empty section says which emptiness it is** (bl-08b6): nothing has
-/// answered down it yet, this box cannot dial it and knows why off its own
-/// files, or the engine answered and holds no workspace.
-///
-/// The pane used to have one sentence, for an empty ROSTER — and an empty
-/// roster is unreachable, because every box holds its own engine's slot
-/// whether or not anything is provisioned in it. So the box the sentence was
-/// written for got a section header over a blank.
-#[test]
-fn every_empty_section_says_which_emptiness_it_is() {
-    for (held, expected) in [
-        (crate::ui::Held::Unheard, NOT_ANSWERED.to_owned()),
-        (
-            crate::ui::Held::Unheld("nothing provisioned at /home/u/wire".to_owned()),
-            "nothing provisioned at /home/u/wire".to_owned(),
-        ),
-        (crate::ui::Held::Heard, NO_WALLS.to_owned()),
-    ] {
-        let mut model = Model {
-            roster: vec![Chunk { held, ..own() }],
-            ..Model::default()
-        };
-        model.roster[0].walls.clear();
-        let painted = pane(|ui| render(ui, &mut model));
-        assert!(painted.contains(&expected), "{expected:?}:\n{painted}");
-    }
-}
+/// What a SECTION says: its header, its address, and what it has instead of
+/// walls.
+mod sections;
 
 /// A row states what it is called, how it is classified and its rollups — and
 /// the two rollups only when they are non-zero, because a roster of `0 waiting`
@@ -72,26 +52,6 @@ fn pinned_rows_are_hoisted_in_pin_order() {
     assert_eq!(names, vec!["first", "second", "aardvark", "zed"]);
 }
 
-/// The header names the local spelling, and the host's beside it where the two
-/// differ — a local rename is the remedy for a name collision, and an operator
-/// has to be able to see one.
-#[test]
-fn a_renamed_channel_says_both_names_and_an_unrenamed_one_says_one() {
-    let entry = |there: &str| Chunk {
-        channel: Channel {
-            name: "home".to_owned(),
-            named_there: Some(there.to_owned()),
-        },
-        ..Chunk::default()
-    };
-    assert_eq!(
-        header(&entry("personal")),
-        "home (named \"personal\" on its host)"
-    );
-    assert_eq!(header(&entry("home")), "home");
-    assert_eq!(header(&own()), "(this box's own engine)");
-}
-
 /// **A row this seat holds no name for is painted, and painted as unreachable.**
 /// Dropping it would hide a workspace the operator has; addressing it by the
 /// entry's leaf would aim a gesture at a different wall.
@@ -102,6 +62,7 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
             channel: Channel {
                 name: "home".to_owned(),
                 named_there: Some("personal".to_owned()),
+                dials: None,
             },
             walls: vec![wall("personal"), wall("somebody-elses")],
             ..Chunk::default()
@@ -111,22 +72,6 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
     let painted = pane(|ui| render(ui, &mut model));
     assert!(painted.contains("personal"), "{painted}");
     assert!(painted.contains(NO_NAME_HERE), "{painted}");
-}
-
-/// The engine's currency notes ride with the rows they are about.
-#[test]
-fn a_channel_says_how_current_its_answer_is_when_the_engine_did() {
-    let mut model = Model {
-        roster: vec![Chunk {
-            stale: Some("derivation 4m behind".to_owned()),
-            growth: Some("one grew 3 steps".to_owned()),
-            ..own()
-        }],
-        ..Model::default()
-    };
-    let painted = pane(|ui| render(ui, &mut model));
-    assert!(painted.contains("derivation 4m behind"), "{painted}");
-    assert!(painted.contains("one grew 3 steps"), "{painted}");
 }
 
 /// **Clicking a row aims the window at it**, and clears everything that was
@@ -168,90 +113,4 @@ fn an_unknown_classification_is_painted_as_its_own_word() {
     };
     let painted = pane(|ui| render(ui, &mut model));
     assert!(painted.contains("(sealed)"), "{painted}");
-}
-
-/// **Two dead channels are both heard, each under its own name** (bl-e620).
-/// The bar holds one sentence and the last writer wins, so a seat with two
-/// unreachable channels was told about one of them permanently and could not
-/// discover the other from the glass at all.
-#[test]
-fn every_unreachable_channel_says_so_on_its_own_section() {
-    let mut model = Model {
-        roster: vec![
-            Chunk {
-                channel: Channel {
-                    name: "alpha".to_owned(),
-                    named_there: Some("alpha".to_owned()),
-                },
-                ..Chunk::default()
-            },
-            Chunk {
-                channel: Channel {
-                    name: "beta".to_owned(),
-                    named_there: Some("beta".to_owned()),
-                },
-                ..Chunk::default()
-            },
-        ],
-        ..Model::default()
-    };
-    model.unreachable(
-        &model.roster[0].channel.clone(),
-        "connect: refused".to_owned(),
-    );
-    model.unreachable(
-        &model.roster[1].channel.clone(),
-        "the handshake did not verify".to_owned(),
-    );
-    let painted = pane(|ui| render(ui, &mut model));
-    for expected in [
-        "alpha",
-        "connect: refused",
-        "beta",
-        "the handshake did not verify",
-    ] {
-        assert!(painted.contains(expected), "{expected:?}:\n{painted}");
-    }
-    assert_eq!(model.notice, None, "the shell-wide bar carries neither");
-}
-
-/// **A channel that answers again clears its own sentence**, because an answer
-/// spends whatever the section was standing on — so there is nothing to
-/// dismiss and nothing that can go stale.
-#[test]
-fn an_answer_clears_the_channel_s_own_sentence() {
-    let mut model = Model {
-        roster: vec![own()],
-        ..Model::default()
-    };
-    model.unreachable(&own().channel, "connect: refused".to_owned());
-    assert!(pane(|ui| render(ui, &mut model)).contains("connect: refused"));
-    model.absorb(
-        &own().channel,
-        crate::reply::Read::Answer(crate::reply::Reply::Workspaces(
-            crate::reply::roster::Workspaces {
-                rows: vec![wall("home")],
-                stale: None,
-                growth: None,
-            },
-        )),
-    );
-    let painted = pane(|ui| render(ui, &mut model));
-    assert!(!painted.contains("connect: refused"), "{painted}");
-    assert!(painted.contains("home"), "{painted}");
-}
-
-/// **The rows a dead channel last answered stand under its sentence.** They are
-/// the last thing it did say, and they are worth keeping while it is down —
-/// REMOTE §8.2's *"that channel's workspaces painted unreachable"*.
-#[test]
-fn a_dead_channel_keeps_the_walls_it_last_answered_under_its_sentence() {
-    let mut model = Model {
-        roster: vec![own()],
-        ..Model::default()
-    };
-    model.unreachable(&own().channel, "connect: refused".to_owned());
-    let painted = pane(|ui| render(ui, &mut model));
-    assert!(painted.contains("connect: refused"), "{painted}");
-    assert!(painted.contains("home"), "{painted}");
 }

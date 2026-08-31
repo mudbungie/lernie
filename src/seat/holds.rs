@@ -72,12 +72,14 @@ pub fn dial(data_root: &Path, name: &str) -> Result<Channel, String> {
 /// sentence [`listing`] prints for it, so the window's first run says what it
 /// is waiting for instead of painting a section header over a blank.
 pub fn channels(data_root: &Path) -> Vec<crate::ui::Chunk> {
+    let flat = own(data_root);
     let mut held = vec![chunk(
         crate::ui::Channel {
             name: OWN.to_owned(),
             named_there: None,
+            dials: flat.clone().ok(),
         },
-        own(data_root).err(),
+        flat.err(),
     )];
     held.extend(
         entries::read_dir(&entries::dir(data_root))
@@ -87,6 +89,11 @@ pub fn channels(data_root: &Path) -> Vec<crate::ui::Chunk> {
                     crate::ui::Channel {
                         name: entry.leaf,
                         named_there: Some(entry.workspace),
+                        dials: entry
+                            .channel
+                            .as_ref()
+                            .ok()
+                            .map(|material| material.address.clone()),
                     },
                     entry.channel.err(),
                 )

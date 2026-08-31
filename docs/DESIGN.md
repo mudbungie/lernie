@@ -531,6 +531,22 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**A section header names the address it dials** (`ui::Channel::dials`,
+bl-77df). Two entries naming one address are two trust relationships that
+happen to terminate at one listener (§8.2), which is lawful — and an entry
+naming the address this box's own engine listens on is the same thing by
+accident, which paints every workspace of that engine twice, under two headers,
+with nothing on either saying they are the same server. `lernie entries` prints
+the address under every row and the window dropped it. The seat is the only
+thing that can see the duplication and it can see it for free, so the address
+goes on the header and a duplicate is self-evident. The unaddressable row's own
+sentence was reworded in the same breath: *"this seat holds no name for it"*
+fires on a perfectly correct provisioning and reads as an error about the row
+above it, where the fact is structural — an entry directory names one
+workspace, the channel enumerates every workspace that client is registered in,
+and the extras have no entry of their own, so no envelope this seat can write
+reaches them.
+
 **An unreachable channel says so on its own section, never in the shell's bar**
 (`Model::unreachable`, bl-e620). REMOTE §8.2 rules it: *"a channel that cannot
 be dialled is that channel's workspaces painted unreachable, never the whole

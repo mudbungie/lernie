@@ -81,6 +81,7 @@ fn the_window_begins_a_conversation_in_two_acts_and_paints_the_minted_name() {
         roster: vec![Chunk::of(Channel {
             name: crate::seat::OWN.to_owned(),
             named_there: None,
+            dials: None,
         })],
         aim: Some(crate::ui::Aim {
             channel: crate::seat::OWN.to_owned(),

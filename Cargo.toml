@@ -59,21 +59,39 @@ include = [
 # release from this tree would collide with the engine's own line and destroy
 # the one disambiguation both READMEs promise.
 
-# NOT PUBLISHED, and the flag is the enforcement rather than a note.
+# PUBLISHABLE, and the flag restates cargo's default on purpose: this line is
+# where the decision is recorded, and a key that is not there records nothing.
 #
-# The seat's first release is the coordinated cutover moment for the whole
-# four-component split (yog's docs/REMOTE.md §12), and it is an operator
-# decision that has not been made. `cargo publish` is irreversible — a yanked
-# version stays downloadable — and here it is doubly so: the first publish
-# under this name at 0.1.0 is the act that fixes the fence in the public
-# record, and it cannot be taken back or corrected in place.
+# It read `false` from this crate's founding to bl-f468, and what it held back
+# was never a build — it was the coordinated cutover for the whole
+# four-component split (yog's docs/REMOTE.md §12), which is an operator
+# decision and has now been taken. The first release under this name at 0.1.0
+# is the act that fixes the fence above in the public record: irreversible, and
+# not correctable in place, because a yanked version stays downloadable.
 #
-# Flipping this to `true` is not a one-line change. It also needs an `include`
-# ALLOWLIST here — never an `exclude`, because the two failure modes are not
-# symmetric: a missing `include` entry costs a build, which is loud and
-# reversible, while a missing `exclude` entry costs a publication that cannot
-# be recalled — and a guard test over the real `cargo package --list`.
-publish = false
+# What had to exist before the flag could move, and all of it does:
+#
+#   - the `include` ALLOWLIST above — never an `exclude`, for the asymmetry
+#     stated there — and `tests/packaged_files.rs` holding it in both
+#     directions over the real `cargo package --list`;
+#   - the disclosure gate over the tree, over every commit that reaches it, and
+#     over the store ref that publishes beside it;
+#   - AGENTS.md's *Before a publish* checklist, run by a person, with each
+#     item's verdict recorded in bl-f468.
+#
+# **This flag is necessary and it is not sufficient**, which bl-f468 learned by
+# being refused. The registry holds a second switch this manifest cannot see:
+# the crate `lernie` already exists — twelve 0.0.x releases of the engine era —
+# and it is configured to accept **Trusted Publishing only**, so a token
+# `cargo publish` is answered 403 no matter what this key says. That is a
+# registry-side setting and an owner's act; it is not a manifest problem and
+# there is nothing to add here to satisfy it.
+#
+# There is still no `make publish` and still nothing here that publishes on its
+# own. A convenience target for an irreversible act is how the act happens by
+# accident, and a first publish is not the shape of a recurring release anyway
+# — that is the release workflow's, and it is filed rather than built.
+publish = true
 
 # A dependency lands here with the ball that first LINKS it, never before: a
 # dependency added "for later" is one nobody ever reviewed, because it is

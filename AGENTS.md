@@ -212,12 +212,20 @@ other box and silently so), and GitHub cannot interpose a check on a direct push
 to `balls/tasks`: there is no pull request to require a status check on. The
 check the author cannot switch off is `store-scan.yml` above.
 
-## Before the first publish
+## Before a publish
 
 **Nothing has been published under this name from this tree, and that is the
-whole of the advantage the checklist below exists to keep.** `publish = false`
-holds, and flipping it is the operator's act at the coordinated cutover moment
-for the four-component split — not a step in a ball.
+whole of the advantage the checklist below exists to keep.** The flag is no
+longer what holds it: `publish = true` since bl-f468, the operator having taken
+the cutover decision for the four-component split. What holds it now is a
+registry-side setting — see item 6 — and what should hold it every time after
+is this list.
+
+**The list was RUN, in full, in bl-f468**, and each item's verdict is recorded
+in that ball. Two things it found are worth reading before the next run: the
+one item that is *not* clean is item 4, and the one that stopped a publish is
+item 6. The notes under each item are the checklist's own evidence that it
+works.
 
 Two halves, and only one of them is a gate.
 
@@ -257,16 +265,39 @@ it can say.
 4. **Repository text nobody committed.** Pull-request titles and bodies, issue
    text, review comments, release notes, and the crates.io description and
    metadata. None of it is in the tree.
+
+   **This is the item that was not clean** (bl-f468). The one pull request this
+   repository has ever had carried an agent-session URL in its body — a
+   conversation id, which is the last class on the *What may never enter a ball
+   body* list above and is no more publishable in a pull request than in a
+   ball. Two things follow and neither is a scrub. Editing the body does not
+   remove it: GitHub keeps the edit history of a body and serves
+   `refs/pull/<n>/head` forever, so an edit here buys the false assurance a
+   history rewrite buys elsewhere. And the scanner did not catch it — the
+   `session-artifact` rule's prefix alternation does not name this one — so the
+   rule table has a hole that a fixture would close. Both are filed.
 5. **Actions logs and artifacts.** A failed gate prints paths and sometimes the
    offending line into a log that survives the run and is public the moment the
    repository is. The scanner truncates findings to 12 characters for exactly
    this reason; nothing else does.
-6. **Already-published versions — and there are none.** This is the item that
-   costs the most and the one this crate still has for free: `cargo publish` is
-   irreversible, so items 1 and 2 have a deadline that has not arrived. Do not
-   let it arrive by accident. Audit `cargo package --list` before publishing,
-   not after — the guard test judges file CLASSES and never content, and every
-   home path the sibling crate published lived inside `src`.
+6. **Already-published versions — none from this tree, and twelve under this
+   name.** `cargo publish` is irreversible, so items 1 and 2 have a deadline
+   that has not arrived for *this* tree. Do not let it arrive by accident.
+   Audit `cargo package --list` before publishing, not after — the guard test
+   judges file CLASSES and never content, and every home path the sibling crate
+   published lived inside `src`.
+
+   **The name is not new, and that is what stopped bl-f468's publish.** The
+   registry crate `lernie` already exists, carrying the engine era's 0.0.x
+   line, and it is set to accept **Trusted Publishing only** — a token
+   `cargo publish` is answered `403 Forbidden` however the manifest is
+   written. Nothing in this tree can satisfy that: it is a registry-side
+   setting, changed by an owner, and its alternative is an Actions workflow
+   whose FILENAME matches the trusted publisher already configured on the
+   crate. So the first release under this name is gated on one of two owner
+   acts, and neither is a code change. Read the crate's own record before
+   assuming a token will do — `crates.io/api/v1/crates/lernie` answers
+   `trustpub_only` without authentication.
 7. **The fence.** 0.1.0 is the first version this crate may ever bear. A
    `0.0.z` from this tree would collide with the agent-loop engine's own
    published line and destroy the one rule that disambiguates the two eras
@@ -275,12 +306,12 @@ it can say.
 ## Never
 
 - Never credit AI or tooling in commit messages, code, or docs.
-- Never `cargo publish`. `publish = false` is the enforcement. The first release
-  under this name at 0.1.0 is what fixes the fence in the public record, it is
-  irreversible, and it is an operator decision that has not been made. The prep
-  is done and it is the section above; there is deliberately no `make publish`,
-  because a convenience target for an irreversible act is how the act happens by
-  accident.
+- Never `cargo publish` outside a ball that has run the section above. The flag
+  is no longer the enforcement — `publish = true` since bl-f468 — so the
+  checklist is, and it is a person's act rather than a gate. The first release
+  under this name at 0.1.0 is what fixes the fence in the public record and it
+  is irreversible. There is deliberately no `make publish`: a convenience
+  target for an irreversible act is how the act happens by accident.
 - **Never lower the version below 0.1.0.** That is the fence; a `0.0.z` from
   this tree collides with the engine's own published line. `src/cli/tests.rs`
   fails the suite if it happens.

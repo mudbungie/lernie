@@ -763,21 +763,37 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The first publish, which is now the operator's act and nothing else
-(bl-11fc)
+### 6.1 The first publish, which the manifest no longer holds back (bl-11fc,
+bl-f468)
 
-`publish = false` holds. What was deferred here was never the flag — it was the
-apparatus that has to exist before the flag can be flipped safely, and that has
-landed: `Cargo.toml` declares an `include` ALLOWLIST (never an `exclude`, for
-the asymmetry AGENTS.md states), and `tests/packaged_files.rs` holds it in both
-directions over the real `cargo package --list`. With no list this crate
-packages 298 files, `scripts/leak-fixtures/` among them.
+`publish = true` since bl-f468. What was ever deferred here was not the flag —
+it was the apparatus that has to exist before a flag can be flipped safely, and
+that landed with bl-11fc: `Cargo.toml` declares an `include` ALLOWLIST (never
+an `exclude`, for the asymmetry AGENTS.md states), and `tests/packaged_files.rs`
+holds it in both directions over the real `cargo package --list`. With no list
+this crate packages 298 files, `scripts/leak-fixtures/` among them; with it, 116
+`src` paths and four tree files.
 
-What remains is the half no gate can hold: the publication checklist, run by a
-person, once — history, other refs, commit messages, repository text nobody
-committed, Actions logs, and the fence. It is written out in full in AGENTS.md
-under *Before the first publish*, and it stays a checklist rather than a target
-because every item is a one-time judgement whose remedy is destructive. There is
-no `make publish`: a convenience target for an irreversible act is how the act
-happens by accident.
+The half no gate can hold — history, other refs, commit messages, repository
+text nobody committed, Actions logs, published versions, and the fence — is
+AGENTS.md's *Before a publish*, and bl-f468 ran it in full and recorded every
+verdict. It stays a checklist rather than a target because every item is a
+one-time judgement whose remedy is destructive. There is still no
+`make publish`.
+
+**Nothing is published yet, and what stops it is not in this tree** (bl-3be4).
+The registry crate `lernie` already carries the engine era's 0.0.x line and is
+set to accept Trusted Publishing only, so a token `cargo publish` is refused
+whatever the manifest says. That is one of two owner acts — relax the setting,
+or land §6.2's workflow at the filename the crate's existing trusted publisher
+already names.
+
+### 6.2 The release path, which does not exist (bl-459d)
+
+There is no release workflow, which was a decision and is now also the thing in
+front of 0.1.0. It carries the CI gate as a *called* workflow rather than an
+observed one (the registry refuses an OIDC token minted under `workflow_run`),
+the trusted publisher's fixed filename, and the macOS job bl-9380 ruled to be
+the seat's only lawful darwin artifact — a native build on Apple hardware, this
+tree acquiring no SDK ever.
 

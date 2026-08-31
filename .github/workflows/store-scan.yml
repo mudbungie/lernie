@@ -1,6 +1,6 @@
 name: store-scan
 
-# **The task store, judged by the source's own rule table** (DESIGN §6.1).
+# **The task store, judged by the source's own rule table** (DESIGN §4.14).
 #
 # `bl` keeps this project's balls on `balls/tasks` — a separate repository
 # locally, pushed to THIS remote, so the ball bodies publish beside the crate.

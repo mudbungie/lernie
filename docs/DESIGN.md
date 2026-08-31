@@ -593,6 +593,40 @@ window on an offscreen context. What lives in the excluded entry point is the
 event loop and the `eframe::App` impl that forwards one call — process state,
 exactly as argv and the environment are.
 
+### 4.13 The seat's own durable state lives under a DIFFERENT root (§7)
+
+`src/place.rs`, and the decision it records is `src/paths.rs`'s. REMOTE §7 rules
+that per-seat UI state — focus, scroll, tab selection, drafts — never crosses
+the boundary and is the seat's own, so the window is the first thing this crate
+holds that this box **generates** rather than receives.
+
+**Two roots, and the split is a hazard rather than tidiness.** Everything under
+the data root is operator-provisioned and irreplaceable by anything here:
+deleting it is a revocation, and re-minting is an act on another machine by
+another hand (§1.4). Everything under the state root can be deleted at any time
+for the cost of a forgotten selection. A regenerable subtree beside
+irreplaceable material makes the second look like the first — an operator
+clearing the seat's saved place would be one `rm` from clearing the certificate
+that gets them back in. XDG draws exactly this line already, so the separation
+costs one variable and no invention.
+
+**It may never become a way for the seat to fail to start.** A file that is
+absent, unreadable, truncated or written by a build that spelled things
+differently has one answer: no place, which is the window a first run opens. A
+stale aim needs no validation either — a wall that has gone is a wall no channel
+resolves, and §4.12's standing set already declines to ask about one, so
+checking it here would be a second answer to a settled question.
+
+**It is a JSON object and not two lines**, so the next fact §7 names is a key
+beside this one rather than a format: an unknown key is ignored and a missing
+key is absence, which is §4.9's rungs 3 and 4 applied to this box's own file.
+
+**And it costs the frame nothing.** The aim is already across the lock —
+`Standing` is published on every settle — so the place is a projection of what
+the workers were reading, read once at boot and written once after the event
+loop returns. No fourth thread, no write on a frame, and nothing new crossing
+the lock to carry it.
+
 ---
 
 ## 5. Module map
@@ -604,7 +638,8 @@ exactly as argv and the environment are.
 | `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~120 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors and the two codes. | ~95 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
-| `src/paths.rs` | the data root, from two variables and no knob of the seat's own. Neither set is a refusal, never a guess. | ~90 |
+| `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
+| `src/place.rs` | where the seat was pointed, remembered between runs. Every way the file can be wrong is one answer: no place. | ~85 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | which engine a gesture reaches, what it carries there, and what this box says it holds. | ~135 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
@@ -689,15 +724,7 @@ a scan of the published ref, and this repository has a published ref from its
 founding. The check is simply not written. There is also no CI at all yet, so
 `make check` is run by a person or by nobody.
 
-### 6.2 Per-seat UI state (bl-0fba)
-
-REMOTE §7's state never crosses the boundary and is the seat's own. The window
-will therefore have durable state on this box for the first time, and the hazard
-is written in `src/paths.rs` already: nothing the seat *generates* may sit beside
-material the seat cannot replace. This is decided before the window decides it
-by being written.
-
-### 6.3 One agreed omission, and it is a finding (bl-4a36)
+### 6.2 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -709,7 +736,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.4 The first publish (bl-11fc)
+### 6.3 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

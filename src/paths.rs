@@ -6,12 +6,29 @@
 //! **operator-provisioned and irreplaceable by anything the seat can do**,
 //! which is why nothing the seat generates may ever be written beside it — a
 //! regenerable subtree under the same root would make a rebuild a revocation.
-//! The seat generates nothing today, and this is the note that says why it must
-//! not start here. (Per-seat UI state, when the window lands, is REMOTE §7's
-//! and is durable in a different sense; it gets its own subtree or it gets the
-//! same hazard.)
 //!
-//! **Two variables, and no knob of the seat's own.** The XDG convention names
+//! **So there are two roots and the split is that hazard** (bl-0fba). REMOTE §7
+//! rules that per-seat UI state — focus, scroll, tab selection, drafts — never
+//! crosses the boundary and is the seat's own, so the window is durable state
+//! this box GENERATES rather than state an operator carried here. It lives
+//! under [`state_root`] and never under [`data_root`], and the rule that
+//! separates them is not tidiness:
+//!
+//! - **What is under the data root cannot be rebuilt by anything on this box.**
+//!   Deleting it is a revocation and re-minting is an act on another machine by
+//!   another hand (REMOTE §1.4).
+//! - **What is under the state root can be deleted at any time with no cost but
+//!   a forgotten selection**, which is what makes it safe to write, safe to
+//!   rewrite on every close, and safe to advise an operator to remove.
+//!
+//! A regenerable subtree beside irreplaceable material makes the second look
+//! like the first: an operator clearing the seat's saved place would be one
+//! `rm` away from clearing the certificate that gets them back in. XDG already
+//! draws exactly this line — `XDG_DATA_HOME` for what must survive,
+//! `XDG_STATE_HOME` for what a program remembers between runs — so the split
+//! costs one variable and no invention.
+//!
+//! **Two variables per root, and no knob of the seat's own.** The XDG convention names
 //! the directory, so a box that already places application data somewhere
 //! places lernie's there too, and there is nothing to configure and nothing
 //! that can disagree with it. A third variable — a `LERNIE_HOME` — would be a
@@ -43,14 +60,24 @@ use std::path::PathBuf;
 const HOME: &str = "lernie";
 /// The XDG variable that names the data root outright.
 const XDG: &str = "XDG_DATA_HOME";
-/// The variable the convention's default is derived from.
+/// The XDG variable that names the state root outright.
+const XDG_STATE: &str = "XDG_STATE_HOME";
+/// The variable both conventions' defaults are derived from.
 const HOME_VAR: &str = "HOME";
-/// The convention's default, relative to [`HOME_VAR`].
+/// The data convention's default, relative to [`HOME_VAR`].
 const DEFAULT: &str = ".local/share";
+/// The state convention's default, relative to [`HOME_VAR`].
+const DEFAULT_STATE: &str = ".local/state";
 
 /// This box's data root, read from this process's own environment.
 pub fn data_root() -> Result<PathBuf, String> {
     root_of(std::env::var_os(XDG), std::env::var_os(HOME_VAR))
+}
+
+/// **This box's state root** — where the seat keeps what it generates about
+/// itself, and never where the operator's material lives (see the module doc).
+pub fn state_root() -> Result<PathBuf, String> {
+    keep_of(std::env::var_os(XDG_STATE), std::env::var_os(HOME_VAR))
 }
 
 /// [`data_root`]'s pure core — the environment as two values, so the rule can
@@ -60,18 +87,37 @@ pub fn data_root() -> Result<PathBuf, String> {
 /// value has said nothing, and treating it as a root would name the filesystem
 /// root's own `lernie` directory.
 fn root_of(xdg: Option<OsString>, home: Option<OsString>) -> Result<PathBuf, String> {
+    under(xdg, home, DEFAULT).ok_or_else(|| {
+        format!(
+            "this box's data root is not named: set {XDG}, or {HOME_VAR} so that \
+             {DEFAULT}/{HOME} under it can be found. lernie will not guess — an \
+             operator's certificates would land wherever this process happened to \
+             be started."
+        )
+    })
+}
+
+/// [`state_root`]'s pure core. **The same ladder and a different sentence**: the
+/// two roots differ in one variable and one default, so the rule is written
+/// once, and what a reader needs is not the ladder repeated but what is lost
+/// when this particular root cannot be named.
+fn keep_of(xdg: Option<OsString>, home: Option<OsString>) -> Result<PathBuf, String> {
+    under(xdg, home, DEFAULT_STATE).ok_or_else(|| {
+        format!(
+            "this box's state root is not named: set {XDG_STATE}, or {HOME_VAR} \
+             so that {DEFAULT_STATE}/{HOME} under it can be found. Nothing is \
+             lost but what the window remembers between runs."
+        )
+    })
+}
+
+/// The convention's ladder: the variable that names a root outright, else the
+/// home-relative default under it.
+fn under(xdg: Option<OsString>, home: Option<OsString>, default: &str) -> Option<PathBuf> {
     if let Some(root) = stated(xdg) {
-        return Ok(root.join(HOME));
+        return Some(root.join(HOME));
     }
-    if let Some(root) = stated(home) {
-        return Ok(root.join(DEFAULT).join(HOME));
-    }
-    Err(format!(
-        "this box's data root is not named: set {XDG}, or {HOME_VAR} so that \
-         {DEFAULT}/{HOME} under it can be found. lernie will not guess — an \
-         operator's certificates would land wherever this process happened to \
-         be started."
-    ))
+    Some(stated(home)?.join(default).join(HOME))
 }
 
 /// One variable's value, or nothing when it said nothing.

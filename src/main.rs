@@ -60,11 +60,17 @@ fn rooted(act: impl FnOnce(&std::path::Path) -> Verdict) -> Verdict {
 /// file `tarpaulin.toml` excludes. It decides nothing: every value it paints
 /// comes from the library, where a test reads it back.
 fn window(root: &std::path::Path) -> Verdict {
+    // **The seat's own place, off the STATE root** — never the data root, which
+    // holds only what the operator carried here (`lernie::paths`). A root this
+    // process cannot name costs a forgotten selection and nothing else, so it
+    // is folded to nothing rather than refused.
+    let keep = lernie::paths::state_root().ok();
     let mut model = Model {
         roster: lernie::seat::channels(root)
             .into_iter()
             .map(Chunk::of)
             .collect(),
+        aim: keep.as_deref().and_then(lernie::place::read),
         ..Model::default()
     };
     let link = Link::new(BEAT);
@@ -103,6 +109,16 @@ fn window(root: &std::path::Path) -> Verdict {
     link.stop();
     for worker in workers {
         let _ = worker.join();
+    }
+    // **The last frame's aim is already across the lock**: the standing set is
+    // published on every settle, so where the operator was pointed is a
+    // projection of what the workers were reading and needs no plumbing of its
+    // own — and writing it here, once, is what keeps it off the frame.
+    if let Some(said) = keep
+        .as_deref()
+        .and_then(|at| lernie::place::write(at, link.standing().aim).err())
+    {
+        eprintln!("the seat could not keep its place: {said}");
     }
     match ran {
         Ok(()) => Verdict::ok(String::new()),

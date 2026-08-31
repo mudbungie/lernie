@@ -43,12 +43,14 @@ fn request(word: &str) -> Fixture {
 }
 
 /// The address upstream's own signature says a gesture carries — the top-level
-/// slot, the one nested inside a prepared body, or none.
+/// slot, the one nested inside a prepared body, the one inside a config
+/// destination, or none.
 ///
 /// Derived from `shapes.json` rather than from the seat's rule, so it is a
-/// second opinion: `config`'s destination carries a `workspace` inside
-/// `target` and neither table treats it as the gesture's address (DESIGN §6, bl-4a36),
-/// and this is what would notice if one of them started to.
+/// second opinion: the signature says where a name *is*, and the seat's table
+/// says which of those places it routes by. The two are read against each
+/// other below, so a holder added on one side and not the other is red here
+/// rather than on a connection (bl-4a36).
 fn addressed(signature: &[String], frame: &Value) -> Option<String> {
     let named = |field: &str| signature.iter().any(|f| f == field);
     if named("/workspace:string") {
@@ -56,6 +58,11 @@ fn addressed(signature: &[String], frame: &Value) -> Option<String> {
     }
     if named("/prepared/workspace:string") {
         return frame[envelope::PREPARED][envelope::WORKSPACE]
+            .as_str()
+            .map(str::to_owned);
+    }
+    if named("/target/workspace:string") {
+        return frame[envelope::TARGET][envelope::WORKSPACE]
             .as_str()
             .map(str::to_owned);
     }

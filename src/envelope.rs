@@ -51,8 +51,11 @@ pub const OP: &str = "op";
 /// The field naming the workspace a gesture is aimed at.
 pub const WORKSPACE: &str = "workspace";
 /// The nested body two of the start family's envelopes carry their workspace
-/// inside (`prompt`, `fan`) — the one place the name is a level down.
+/// inside (`prompt`, `fan`) — one of the two places the name is a level down.
 pub const PREPARED: &str = "prepared";
+/// The destination the config family carries its workspace inside — the other
+/// place the name is a level down, and the wall a config act edits.
+pub const TARGET: &str = "target";
 /// The reply envelope's verdict field.
 pub const OK: &str = "ok";
 
@@ -98,26 +101,31 @@ pub fn with_workspace(envelope: &Value, name: &str) -> Value {
 /// **The one table**: where an envelope names its workspace, borrowed so the
 /// read and the rewrite cannot disagree about which envelopes have one.
 ///
-/// Two shapes, because yog's own typed table has two: the field is top level on
-/// every gesture that addresses a workspace directly, and one level down inside
-/// `prepared` on the two that carry a prepared start (`prompt`, `fan`). That
-/// second shape is load-bearing rather than an oddity — the name inside a
-/// prepared body is handed straight back out as the next act's address, so a
-/// prepared left in the host's spelling routes its own follow-up to a name no
-/// entry claims.
+/// Three shapes, because yog's own typed table has three: the field is top
+/// level on every gesture that addresses a workspace directly, one level down
+/// inside `prepared` on the two that carry a prepared start (`prompt`, `fan`),
+/// and one level down inside `target` on the config family, whose destination
+/// *is* its address. The two nested shapes are load-bearing rather than
+/// oddities. The name inside a prepared body is handed straight back out as the
+/// next act's address, so a prepared left in the host's spelling routes its own
+/// follow-up to a name no entry claims. The name inside a config destination is
+/// the wall whose file the act edits, so a config act aimed at an entry under a
+/// §8.2 rename would otherwise resolve to no entry at all, fall through to this
+/// box's own engine, and write the wrong wall's file — silently (bl-4a36, and
+/// yog's twin bl-523f fixing the same row in the typed table).
 ///
-/// **What is deliberately NOT a slot**: a `workspace` nested anywhere else. The
-/// config family's destination carries one inside `target`, and yog's typed
-/// table does not treat it as the gesture's address either — the two tables
-/// agree, which is the property that matters. DESIGN §6 (bl-4a36) records it
-/// and the residual behind it — cited by BALL, because a deferred row that has
-/// been paid for is a row that goes away and renumbers the ones after it.
+/// **What is still deliberately NOT a slot**: a `workspace` nested anywhere
+/// else. Three holders, in the order they are read, and a top-level name always
+/// wins — no envelope in the vocabulary carries two, and reading the outer one
+/// first is what keeps that true if one ever does.
 fn slot_mut(envelope: &mut Value) -> Option<&mut String> {
     let obj = envelope.as_object_mut()?;
     let holder = if obj.contains_key(WORKSPACE) {
         obj
-    } else {
+    } else if obj.contains_key(PREPARED) {
         obj.get_mut(PREPARED)?.as_object_mut()?
+    } else {
+        obj.get_mut(TARGET)?.as_object_mut()?
     };
     named(holder)
 }

@@ -64,8 +64,8 @@ fn a_prepared_body_carries_the_slot_one_level_down() {
 }
 
 /// An envelope naming no workspace comes back byte for byte — the general path
-/// with nothing to rewrite, not a case of its own. Four shapes reach that one
-/// branch: no field at all, a `prepared` that is not an object, a `prepared`
+/// with nothing to rewrite, not a case of its own. Every shape reaches that one
+/// branch: no field at all, a nested body that is not an object, a nested body
 /// with no name in it, and a name that is not a string.
 #[test]
 fn an_envelope_naming_no_workspace_crosses_unchanged() {
@@ -75,6 +75,9 @@ fn an_envelope_naming_no_workspace_crosses_unchanged() {
         json!({"op": "prompt", "prepared": {"goal": "unaddressed"}}),
         json!({"op": "conversations", "workspace": 7}),
         json!({"op": "prompt", "prepared": {"workspace": 7}}),
+        json!({"op": "config", "target": "not an object"}),
+        json!({"op": "config", "target": {"file": "cadence"}}),
+        json!({"op": "config", "target": {"file": "brazen", "workspace": 7}}),
     ] {
         assert_eq!(workspace(&envelope), None, "{envelope}");
         assert_eq!(
@@ -85,20 +88,78 @@ fn an_envelope_naming_no_workspace_crosses_unchanged() {
     }
 }
 
-/// **What is deliberately not a slot**: a `workspace` nested somewhere the
-/// engine's own table does not read as the gesture's address. The config
-/// family's destination carries one inside `target`, and it crosses untouched
-/// — because yog's typed table does not treat it as the address either, and
-/// the two tables agreeing is the property that matters.
+/// **The config family's slot**, one level down inside its destination: the
+/// wall whose file the act edits *is* the gesture's address, so a config act
+/// aimed at an entry under a §8.2 rename is rewritten into the host's spelling
+/// and routed to that entry — rather than resolving to no entry, falling
+/// through to this box's own engine, and writing the wrong wall's file
+/// (bl-4a36; yog's twin bl-523f is the same row in the typed table).
+#[test]
+fn a_config_destination_carries_the_slot_one_level_down() {
+    let envelope = json!({
+        "op": "config",
+        "target": {"file": "brazen", "workspace": "clientleaf"},
+        "text": "",
+    });
+    assert_eq!(workspace(&envelope), Some("clientleaf".to_owned()));
+    let written = with_workspace(&envelope, "hostname");
+    assert_eq!(written["target"]["workspace"], json!("hostname"));
+    assert_eq!(
+        written["target"]["file"], envelope["target"]["file"],
+        "the rewrite touched something other than the name"
+    );
+    assert_eq!(written["text"], envelope["text"]);
+}
+
+/// The §9.3 lineage destination is the family's other addressed shape, and it
+/// answers through the same slot — nothing here is keyed on which `file` a
+/// destination names.
+#[test]
+fn a_lineage_destination_is_addressed_the_same_way() {
+    let envelope = json!({
+        "op": "config",
+        "target": {
+            "file": "branch",
+            "lineage": "default",
+            "origin": "advance",
+            "path": "providers.yaml",
+            "workspace": "clientleaf",
+        },
+    });
+    assert_eq!(workspace(&envelope), Some("clientleaf".to_owned()));
+    assert_eq!(
+        with_workspace(&envelope, "hostname")["target"]["workspace"],
+        json!("hostname")
+    );
+}
+
+/// **What is still deliberately not a slot**: a `workspace` nested somewhere
+/// neither table reads as the gesture's address. Two holders are named and a
+/// third nesting is not one of them.
 #[test]
 fn a_workspace_nested_anywhere_else_is_not_the_address() {
     let envelope = json!({
-        "op": "config",
-        "target": {"file": "brazen", "workspace": "home"},
-        "text": "",
+        "op": "message",
+        "body": {"workspace": "home"},
     });
     assert_eq!(workspace(&envelope), None);
     assert_eq!(with_workspace(&envelope, "personal"), envelope);
+}
+
+/// A top-level name wins over a nested one. No envelope in the vocabulary
+/// carries two; reading the outer one first is what keeps that true if one
+/// ever does.
+#[test]
+fn the_outer_name_is_read_before_a_nested_one() {
+    let envelope = json!({
+        "op": "config",
+        "workspace": "outer",
+        "target": {"file": "brazen", "workspace": "inner"},
+    });
+    assert_eq!(workspace(&envelope), Some("outer".to_owned()));
+    let written = with_workspace(&envelope, "personal");
+    assert_eq!(written["workspace"], json!("personal"));
+    assert_eq!(written["target"]["workspace"], json!("inner"));
 }
 
 /// A value that is not an object at all has no slot, which is the same branch

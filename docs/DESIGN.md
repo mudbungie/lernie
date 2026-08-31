@@ -150,6 +150,18 @@ place §8.2 says a name is rewritten. `src/envelope.rs` is the whole of what
 this crate understands about one, and its module doc is the argument for why
 that is three things and not thirty.
 
+**Where a gesture names its workspace is three holders and one table**
+(bl-4a36, and yog's twin bl-523f in the typed table): top level; one level down
+inside `prepared` on the two envelopes carrying a prepared start; and one level
+down inside `target` on the config family, whose destination *is* its address —
+the wall whose file the act edits. The third row is the one that had to be
+argued for: without it a config act aimed at an entry under a local rename
+resolves to no entry, falls through to this box's own engine, and writes the
+wrong wall's file with nothing painted. The two tables are fixed together or
+not at all, because a §8.2 mapping the two ends disagree about is worse than
+either answer; `src/verbs/tests/corpus.rs` reads the holders off upstream's own
+`shapes.json` as the second opinion.
+
 ### 4.2 The framing (§3)
 
 A big-endian `u32` length, then that many bytes of JSON; a request is one frame,
@@ -751,19 +763,7 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 One agreed omission, and it is a finding (bl-4a36)
-
-The envelope's workspace table mirrors yog's typed table exactly — top level, or
-one level down inside `prepared` — and the suite pins the agreement. **They
-agree on an omission.** The config family carries a workspace inside its
-destination and neither table reads it as the gesture's address, so a config act
-aimed at a workspace held elsewhere under a local rename resolves to no entry,
-goes to this box's own engine, and edits the wrong wall's file. yog's own window
-has the same shape, so it is an upstream finding as much as a local one, and the
-ball's instruction is to fix both sides or neither: the tables agreeing is worth
-more than either answer.
-
-### 6.2 The first publish, which is now the operator's act and nothing else
+### 6.1 The first publish, which is now the operator's act and nothing else
 (bl-11fc)
 
 `publish = false` holds. What was deferred here was never the flag — it was the

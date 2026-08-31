@@ -1,7 +1,8 @@
 +++
 title = "the notice bar does not wrap, so every refusal is cut at the window frame and the remedy is the half that is lost"
 created = 1788150533
-updated = 1788150533
+updated = 1788151162
+claimant = "OrderJoiner2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

@@ -164,6 +164,12 @@ Every tool is pinned, or the gate is not reproducible: rustc 1.95.0
 (`rust-toolchain.toml`), ast-grep 0.44.1 (`sgconfig.yml`), cargo-deny 0.20.2
 (`deny.toml`), cargo-tarpaulin 0.35.2 (`tarpaulin.toml`).
 
+`.github/workflows/ci.yml` runs `make ci` — the same target, the same pins — on
+every push to `main` and every pull request, so the gate is not a thing somebody
+remembered to run. `store-scan.yml` scans the published task-store ref with the
+same disclosure scanner, daily and on dispatch: the local gate prevents and is
+bypassable, that one detects and is not.
+
 Run `make install-hooks` once per clone to seat the pre-commit hook.
 
 ## The rules

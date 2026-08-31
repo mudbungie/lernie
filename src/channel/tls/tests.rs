@@ -130,3 +130,20 @@ fn a_configuration_with_unreadable_anchors_refuses() {
         "the operator's real anchors are untouched"
     );
 }
+
+/// **The grade is read before anything is dialled** (`super::super::leaf`).
+/// Enforcement is the engine's and this changes none of it — what it changes is
+/// that the operator is told about a file on this disk instead of receiving an
+/// authorization sentence from the far end about their own configuration.
+#[test]
+fn a_foot_grade_leaf_refuses_here_rather_than_at_the_far_end() {
+    let scratch = Scratch::new();
+    let held = mint::provisioned(scratch.path(), "engine.example:9000");
+    mint::foot(scratch.path(), true);
+    let refusal = client_config(&held).expect_err("refused");
+    assert!(refusal.contains("foot grade"), "{refusal}");
+    assert!(
+        refusal.contains(&scratch.join(CHAIN).display().to_string()),
+        "{refusal}"
+    );
+}

@@ -156,6 +156,30 @@ fn leaf(dir: &Path, name: &str, subject: &str, san: &str, eku: &str) {
     ]);
 }
 
+/// **Re-mint this box's own pair as FOOT grade**, over the operator-grade one
+/// [`material`] laid down — REMOTE §4.2's misconfiguration, performed the way
+/// an operator performs it by accident: one `-subj`, one attribute longer. The
+/// word is the CA's here and the reader's in [`leaf`](crate::channel::leaf);
+/// they are two parties, and the suite is what proves they agree.
+///
+/// `named` is whether the subject states a common name at all. A leaf that says
+/// foot and names nobody is exactly as wrong, and it is the only way to reach
+/// the half of the sentence that has no client to quote.
+pub(crate) fn foot(dir: &Path, named: bool) {
+    let subject = if named {
+        format!("/CN={SEAT_NAME}/OU=foot")
+    } else {
+        "/OU=foot".to_owned()
+    };
+    leaf(
+        dir,
+        "client",
+        &subject,
+        &format!("DNS:{SEAT_NAME}"),
+        "clientAuth",
+    );
+}
+
 /// One path, as the string `openssl` takes.
 fn path(dir: &Path, leaf: &str) -> String {
     dir.join(leaf).to_string_lossy().into_owned()

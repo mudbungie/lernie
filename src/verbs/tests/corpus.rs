@@ -47,7 +47,7 @@ fn request(word: &str) -> Fixture {
 ///
 /// Derived from `shapes.json` rather than from the seat's rule, so it is a
 /// second opinion: `config`'s destination carries a `workspace` inside
-/// `target` and neither table treats it as the gesture's address (DESIGN §6.4),
+/// `target` and neither table treats it as the gesture's address (DESIGN §6, bl-4a36),
 /// and this is what would notice if one of them started to.
 fn addressed(signature: &[String], frame: &Value) -> Option<String> {
     let named = |field: &str| signature.iter().any(|f| f == field);

@@ -185,6 +185,40 @@ because the default read is a panic path and prod has none.
 literal is an IP identity, anything else a DNS name. There is no server-name
 knob and so nothing that can disagree with what was dialled.
 
+**The grade is read off this box's own leaf before anything is dialled, and it
+is a DIAGNOSIS rather than an enforcement** (`src/channel/leaf.rs`, REMOTE
+§4.2). A certificate carries one of two grades, spelled as the subject's
+organizational unit; a seat is operator grade by definition, and enforcement of
+that is the engine's, at the chokepoint where the client identity is already
+spent for scoping, fail-closed and in band. So a seat holding a foot-grade leaf
+is already refused correctly, and nothing here is a security property.
+
+What is missing without it is a **sentence**. That refusal arrives as an
+authorization answer from the far end about a fault that is entirely this box's
+own configuration, and reading the grade here turns it into a sentence about a
+file on this disk. Three consequences follow and the second is the one that
+decides the design.
+
+- **It identifies one fault; it never validates.** `Some` only where it
+  positively read `OU=foot`; `None` for everything else, bytes that are not a
+  certificate included. A walk that refused what it could not read would be a
+  second, weaker certificate parser standing in front of rustls, refusing
+  leaves the engine would have accepted — an outage bought with a diagnostic.
+  Default-operator is REMOTE §4.2's own rule, and reading it any other way here
+  would be this end inventing a policy the authority does not have.
+- **It is a DER walk, not a byte search**, because the structure is the point:
+  the issuer carries a common name too and it comes first, so a scan for the
+  common-name object identifier answers the operator CA's name for every leaf
+  on the box. `subject` is located relative to the serial number rather than at
+  a fixed index, so a v1 and a v3 certificate take one path.
+- **It reads the leaf `tls::identity` already parsed**, inside the one place a
+  channel is built and before a socket exists, so it costs no second read of
+  the file and there is no path to a dial that skips it.
+
+The sibling foot component does the mirror of this and fails **closed** —
+its obligation is to carry a foot leaf and refuse anything else — which is not
+a disagreement: the two ends answer different questions.
+
 ### 4.5 Material arrives out of channel and is never written (§1.4, §8.2)
 
 `src/channel/material.rs` only ever reads, and answers three ways: nothing
@@ -577,7 +611,8 @@ exactly as argv and the environment are.
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |
 | `src/channel/hello.rs` | the version preface. | ~85 |
-| `src/channel/tls.rs` | the mTLS configuration. | ~80 |
+| `src/channel/tls.rs` | the mTLS configuration. | ~90 |
+| `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
 | `src/reply.rs` | the reply vocabulary's roster: the eight kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~185 |
@@ -646,15 +681,7 @@ the fork, never at the write.
 
 Nothing in this section works. Each row is filed, and each says what it costs.
 
-### 6.1 The local foot-grade check (bl-f5c2)
-
-REMOTE §4.2's grade is enforced at the engine's chokepoint, fail-closed and in
-band, so a seat holding a foot-grade leaf is already refused correctly. Nothing
-deferred here is a security property — what is missing is a **diagnosis**, so
-that a misconfiguration of this box's own files reads as a sentence about this
-box rather than as an authorization refusal from somebody else.
-
-### 6.2 The late half of the disclosure gate (bl-28fb)
+### 6.1 The late half of the disclosure gate (bl-28fb)
 
 The gate here is prevention only: local, and bypassable by whoever runs it. The
 standing question — what the tree and the store carry in total — is answered by
@@ -662,7 +689,7 @@ a scan of the published ref, and this repository has a published ref from its
 founding. The check is simply not written. There is also no CI at all yet, so
 `make check` is run by a person or by nobody.
 
-### 6.3 Per-seat UI state (bl-0fba)
+### 6.2 Per-seat UI state (bl-0fba)
 
 REMOTE §7's state never crosses the boundary and is the seat's own. The window
 will therefore have durable state on this box for the first time, and the hazard
@@ -670,7 +697,7 @@ is written in `src/paths.rs` already: nothing the seat *generates* may sit besid
 material the seat cannot replace. This is decided before the window decides it
 by being written.
 
-### 6.4 One agreed omission, and it is a finding (bl-4a36)
+### 6.3 One agreed omission, and it is a finding (bl-4a36)
 
 The envelope's workspace table mirrors yog's typed table exactly — top level, or
 one level down inside `prepared` — and the suite pins the agreement. **They
@@ -682,7 +709,7 @@ has the same shape, so it is an upstream finding as much as a local one, and the
 ball's instruction is to fix both sides or neither: the tables agreeing is worth
 more than either answer.
 
-### 6.5 The first publish (bl-11fc)
+### 6.4 The first publish (bl-11fc)
 
 `publish = false`, and flipping it is not the change. It needs an `include`
 allowlist and a guard test over the real packaged file list, and it needs the

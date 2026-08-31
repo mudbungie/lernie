@@ -34,6 +34,8 @@ pub mod entries;
 pub mod frame;
 /// The version preface.
 pub mod hello;
+/// The grade, read off this box's own certificate before anything is dialled.
+pub mod leaf;
 /// What the operator carried to this box.
 pub mod material;
 /// The mTLS configuration.

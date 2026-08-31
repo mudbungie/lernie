@@ -109,8 +109,9 @@ pub fn with_workspace(envelope: &Value, name: &str) -> Value {
 /// **What is deliberately NOT a slot**: a `workspace` nested anywhere else. The
 /// config family's destination carries one inside `target`, and yog's typed
 /// table does not treat it as the gesture's address either — the two tables
-/// agree, which is the property that matters. DESIGN §6.4 records that agreement
-/// and the residual behind it.
+/// agree, which is the property that matters. DESIGN §6 (bl-4a36) records it
+/// and the residual behind it — cited by BALL, because a deferred row that has
+/// been paid for is a row that goes away and renumbers the ones after it.
 fn slot_mut(envelope: &mut Value) -> Option<&mut String> {
     let obj = envelope.as_object_mut()?;
     let holder = if obj.contains_key(WORKSPACE) {

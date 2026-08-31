@@ -31,6 +31,16 @@ use super::material::Material;
 pub fn client_config(m: &Material) -> Result<Arc<ClientConfig>, String> {
     let provider = Arc::new(rustls::crypto::ring::default_provider());
     let (chain, key) = identity(&m.chain, &m.key)?;
+    // **The one fault this box can name before it dials** (`super::leaf`). It
+    // reads the grade off the leaf already parsed above rather than opening the
+    // file again, and it identifies exactly one misconfiguration — it never
+    // validates, so nothing rustls would have accepted is refused here.
+    if let Some(said) = chain
+        .first()
+        .and_then(|leaf| super::leaf::refusal(leaf, &m.chain))
+    {
+        return Err(said);
+    }
     let config = ClientConfig::builder_with_provider(provider)
         .with_safe_default_protocol_versions()
         .map_err(|e| format!("tls versions: {e}"))?

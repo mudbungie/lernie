@@ -500,6 +500,22 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**An empty pane says WHICH emptiness it is** (`src/ui/convs.rs`, bl-f780). The
+list had two sentences — nothing aimed at, and *"no conversations here"* — so a
+wall this window had not been ANSWERED about was painted with the sentence
+reserved for a wall that answered nothing. That is a definite fact about a wall
+nobody looked at, which is exactly what `convs::UNCERTAIN` refuses to state one
+level down about a conversation nobody could take a reading of; the ruling is
+the same one level up. Four states now: no aim, **not answered yet**
+(`Model::answered` rides beside the rows and is retired with them by
+`aim_at`, because emptiness cannot tell "zero conversations" from "nobody
+asked"), answered-and-empty, and **an aim on a channel this seat does not
+hold** — which is permanent rather than transient, because `Standing::aimed`
+finds no channel by that name and so nothing is ever asked. `crate::place`
+restores a saved aim without checking it on the ground that a stale one is
+inert; inert is right about the dialling and wrong about the paint, and the
+refusal that was silent is now the pane's third sentence.
+
 **A row is addressed by what the channel resolves, never by the name it wears**
 (`ui::Channel::address`, §8.2 read from the seat's side). This box's own engine
 rewrites nothing, so a row is addressed by its own name; an entry resolves by

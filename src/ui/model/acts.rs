@@ -17,8 +17,10 @@
 //!
 //! # Each act clears exactly what it invalidated
 //!
-//! Aiming at another wall retires the conversation list, the selection and
-//! everything under it, because none of it is about the new wall. Selecting a
+//! Aiming at another wall retires the conversation list, what that list was an
+//! answer to, the selection and everything under it, because none of it is
+//! about the new wall. Retiring the *answer* beside the rows is what lets the
+//! pane say it has not heard yet rather than reporting an empty wall. Selecting a
 //! conversation retires the transcript and the live tail, because they are the
 //! old one's. Nothing else is touched — and in particular the draft is not,
 //! because what an operator typed is theirs until they send it.
@@ -41,6 +43,7 @@ impl Model {
             address: address.to_owned(),
         });
         self.convs.clear();
+        self.answered = None;
         self.conversation = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;

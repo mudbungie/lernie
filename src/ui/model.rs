@@ -54,6 +54,19 @@ pub struct Model {
     pub roster: Vec<Chunk>,
     /// The aimed wall's conversations.
     pub convs: Vec<ConvRow>,
+    /// **Which wall [`Self::convs`] is the ANSWER to**, or `None` while the aim
+    /// has not been answered about at all (bl-f780).
+    ///
+    /// It rides beside the rows rather than being derived, because emptiness
+    /// cannot tell the two apart: a wall that answered zero conversations and a
+    /// wall nobody has asked about yet hold the same `Vec`, and painting *"no
+    /// conversations here"* over the second states a definite fact about a wall
+    /// nobody looked at — the same thing `crate::ui::convs::UNCERTAIN` refuses
+    /// to do one level down, on a conversation nobody could take a reading of.
+    ///
+    /// It is set and cleared at exactly the two places `convs` is, and nowhere
+    /// else.
+    pub answered: Option<Aim>,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The newest live tail. It **replaces**, never accretes: a follow frame is
@@ -103,6 +116,18 @@ impl Model {
         self.focus == pane && std::mem::take(&mut self.reveal)
     }
 
+    /// **Whether this seat holds a channel by that name.** The roster carries
+    /// every channel this box holds from boot — read off the disk, before
+    /// anything is dialled (`crate::seat::channels`) — so a name it does not
+    /// carry is a name no worker will ever ask anything about
+    /// (`crate::state::Standing::aimed`), which is the one aim whose emptiness
+    /// is permanent.
+    pub fn holds(&self, channel: &str) -> bool {
+        self.roster
+            .iter()
+            .any(|chunk| chunk.channel.name == channel)
+    }
+
     /// **Take one reply frame.** The single door: an answer is filed, and
     /// anything else becomes the notice the shell paints where that answer's
     /// content would have been. `channel` is the client-side stamp, applied
@@ -127,6 +152,7 @@ impl Model {
             // ([`Model::resolve`]).
             Reply::Conversations(rows) => {
                 self.convs = rows;
+                self.answered = self.aim.clone();
                 self.resolve();
             }
             Reply::Transcript(transcript) => self.transcript = transcript,

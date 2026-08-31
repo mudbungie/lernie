@@ -10,8 +10,32 @@ use crate::ui::{Model, theme};
 
 /// What the list says with no wall aimed at.
 pub const NO_WALL: &str = "pick a workspace";
-/// What it says for a wall that holds nothing.
+/// What it says for a wall that answered, and answered nothing.
 pub const NO_CONVERSATIONS: &str = "no conversations here";
+/// **What it says for a wall it has not been ANSWERED about** (bl-f780).
+///
+/// The third sentence, and it is the [`UNCERTAIN`] doctrine one level up: *no
+/// conversations here* is a definite fact about a wall nobody has looked at
+/// yet, and the pane already refuses to state a definite fact about a
+/// conversation nobody could take a reading of. It stands from the keypress
+/// that aims until the answer lands — a round trip on a wire, not the
+/// millisecond it is on loopback.
+pub const NOT_ANSWERED: &str = "waiting to hear about this wall";
+
+/// **What it says for an aim this seat cannot ask about at all**, which is
+/// permanent rather than transient.
+///
+/// `crate::place` restores a saved aim without checking it, on the ground that
+/// a stale one is inert — `crate::state::Standing::aimed` finds no channel by
+/// that name and asks nothing. Inert is right about the dialling and wrong
+/// about the paint: nothing is ever asked, so [`NOT_ANSWERED`] would stand
+/// forever over a wall that has no channel to answer it. The refusal that was
+/// silent is said here instead.
+pub fn no_channel(channel: &str) -> String {
+    format!(
+        "this seat holds no channel named {channel:?}, so nothing is asked          about this wall — pick one from the channels beside it"
+    )
+}
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused.
@@ -29,14 +53,27 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(NO_WALL);
         return;
     };
-    ui.label(aim.address);
+    ui.label(aim.address.clone());
+    // **An aim on a channel this seat does not hold is asked about by nobody**,
+    // so it gets its own sentence rather than one that implies an answer came
+    // back. The roster carries every channel this box holds from boot, off the
+    // disk and before anything is dialled, so this is a question about the
+    // model and not about a socket.
+    if !model.holds(&aim.channel) {
+        ui.label(no_channel(&aim.channel));
+        return;
+    }
     // **The list is the model's, not this pane's**: a conversation this window
     // has started but the engine cannot resolve yet stands in it as a row of
     // its own (`crate::ui::model::claim`), and it stands there for the pointer
     // and the keyboard alike because both walk the one list.
     let rows = model.rows();
     if rows.is_empty() {
-        ui.label(NO_CONVERSATIONS);
+        ui.label(if model.answered.as_ref() == Some(&aim) {
+            NO_CONVERSATIONS
+        } else {
+            NOT_ANSWERED
+        });
         return;
     }
     // The list scrolls; the heading and the address above it do not (bl-e5d2,

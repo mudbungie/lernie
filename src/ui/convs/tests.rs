@@ -1,26 +1,71 @@
 //! The conversation list: the empty states, the headline, the age, the indent,
 //! and the click that selects.
 
-use super::{NO_CONVERSATIONS, NO_WALL, age, headline, render};
+use super::{NO_CONVERSATIONS, NO_WALL, NOT_ANSWERED, age, headline, no_channel, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, Tone};
 use crate::test_support::window::{click, conv, pane, seated};
 use crate::ui::Model;
 
-/// Two empty states and they are different facts: nothing aimed at, and a wall
-/// that holds nothing.
+/// **Four empty states and they are four different facts** (bl-f780): nothing
+/// aimed at, a wall nobody has been answered about yet, a wall that answered
+/// nothing, and an aim on a channel this seat does not hold.
+///
+/// The third used to be said about all three of the last three, which states a
+/// definite fact about a wall nobody looked at — the same thing
+/// `super::UNCERTAIN` refuses to do one level down.
 #[test]
-fn the_two_empty_states_say_two_different_things() {
+fn the_empty_states_say_four_different_things() {
     let mut nowhere = Model::default();
     assert!(pane(|ui| render(ui, &mut nowhere)).contains(NO_WALL));
-    let mut aimed = seated();
-    aimed.convs.clear();
-    let painted = pane(|ui| render(ui, &mut aimed));
-    assert!(painted.contains(NO_CONVERSATIONS), "{painted}");
+
+    let mut waiting = seated();
+    waiting.convs.clear();
+    waiting.answered = None;
+    let painted = pane(|ui| render(ui, &mut waiting));
+    assert!(painted.contains(NOT_ANSWERED), "{painted}");
+    assert!(!painted.contains(NO_CONVERSATIONS), "{painted}");
     assert!(
         painted.contains("home"),
         "the wall is still named: {painted}"
     );
+
+    let mut empty = seated();
+    empty.convs.clear();
+    empty.answered = empty.aim.clone();
+    let painted = pane(|ui| render(ui, &mut empty));
+    assert!(painted.contains(NO_CONVERSATIONS), "{painted}");
+
+    let mut stale = seated();
+    stale.convs.clear();
+    stale.aim = Some(crate::ui::Aim {
+        channel: "a channel this box lost".to_owned(),
+        address: "home".to_owned(),
+    });
+    let painted = pane(|ui| render(ui, &mut stale));
+    assert!(
+        painted.contains(&no_channel("a channel this box lost")),
+        "{painted}"
+    );
+    assert!(!painted.contains(NOT_ANSWERED), "{painted}");
+}
+
+/// **Aiming somewhere else retires the ANSWER with the rows.** The transient
+/// face of the same defect: between the keypress and the reply the pane held
+/// the new wall's name over an empty list, and said the wall held nothing.
+#[test]
+fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
+    let mut model = seated();
+    assert_eq!(model.answered, None, "seated() has not been answered");
+    model.absorb(
+        &model.roster[0].channel.clone(),
+        crate::reply::Read::Answer(crate::reply::Reply::Conversations(vec![conv("id", "one")])),
+    );
+    assert_eq!(model.answered, model.aim, "the answer is about the aim");
+    model.aim_at("(this box's own engine)", "elsewhere");
+    assert_eq!(model.answered, None, "and it is retired with the rows");
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(painted.contains(NOT_ANSWERED), "{painted}");
 }
 
 /// A headline is a glance: the label, what it is doing, how long since it moved

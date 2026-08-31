@@ -89,6 +89,17 @@ pub(crate) fn painted(model: &mut Model) -> String {
     Window::new().text(|ctx| crate::ui::render(ctx, model))
 }
 
+/// **What one idle frame of the whole window put ON THE GLASS**, each run
+/// narrowed to what its clip rect let through.
+///
+/// [`painted`] answers what was laid out, which is a different question: a
+/// panel emits the rows that overflow it and then clips them away, so a list
+/// that does not scroll reads back complete from the text projection and is
+/// half missing from the screen.
+pub(crate) fn seen(window: &Window, body: impl FnMut(&egui::Context)) -> Vec<paint_probe::Seen> {
+    paint_probe::seen_of(&window.frame(Vec::new(), body))
+}
+
 /// Everything one idle frame of one pane painted.
 pub(crate) fn pane(body: impl FnMut(&mut egui::Ui)) -> String {
     paint_probe::paint(body)

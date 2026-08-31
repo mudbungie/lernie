@@ -61,13 +61,25 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(NO_CHANNEL);
         return;
     }
-    for chunk in model.roster.clone() {
-        section(ui, model, &chunk);
-    }
+    // **The list scrolls, and the heading above it does not** (bl-e5d2): a
+    // roster longer than its pane used to be cut off mid-glyph at the panel
+    // edge, with nothing on the glass saying anything had been cut — while the
+    // keyboard walked onto rows the pane had never painted. The heading stays
+    // out of it because it is the one thing on this pane that is always
+    // painted, and it carries the mark saying whose the arrows are.
+    let reveal = model.revealing(crate::ui::keys::Pane::Roster);
+    egui::ScrollArea::vertical()
+        .id_salt(HEADING)
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for chunk in model.roster.clone() {
+                section(ui, model, &chunk, reveal);
+            }
+        });
 }
 
 /// One channel's section: its header, how current its answer is, and its walls.
-fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk) {
+fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
     ui.separator();
     ui.label(header(chunk));
     for note in [chunk.stale.as_ref(), chunk.growth.as_ref()]
@@ -77,7 +89,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk) {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), note);
     }
     for row in ordered(&chunk.walls) {
-        wall(ui, model, chunk, &row);
+        wall(ui, model, chunk, &row, reveal);
     }
 }
 
@@ -101,13 +113,17 @@ pub fn header(chunk: &Chunk) -> String {
 /// exactly what an aim is. Offering it on every row would be offering it before
 /// the operator had said which wall — and the answer to that question is
 /// already on the screen, once.
-fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow) {
+fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal: bool) {
     let Some(address) = chunk.channel.address(row) else {
         ui.label(format!("{}  — {NO_NAME_HERE}", line(row)));
         return;
     };
     let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
-    if ui.selectable_label(aimed, line(row)).clicked() {
+    let seat = ui.selectable_label(aimed, line(row));
+    if aimed && reveal {
+        seat.scroll_to_me(None);
+    }
+    if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
     if aimed && model.enroll.is_none() && ui.button(crate::ui::enroll::OPEN).clicked() {

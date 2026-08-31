@@ -27,11 +27,14 @@ mod channel;
 mod claim;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
+/// What the seat last heard that was not content, and how the shell says it.
+mod notice;
 /// A start, between its two acts.
 mod start;
 
 pub use channel::{Channel, Chunk};
 pub use enroll::{Enrolling, Grade, Shown};
+pub use notice::Notice;
 pub use start::{Phase, Start};
 
 /// Which wall the window is aimed at: the channel it came down, and the address
@@ -42,37 +45,6 @@ pub use start::{Phase, Start};
 pub struct Aim {
     pub channel: String,
     pub address: String,
-}
-
-/// What the seat last heard that it could not turn into content.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Notice {
-    /// The engine refused, in its own words.
-    Refused(String),
-    /// This seat could not read what arrived — a malformed frame, or a kind
-    /// this build does not paint. A statement about **this seat**, which is why
-    /// it reads differently from a refusal.
-    Unreadable(String),
-    /// This seat could not **reach** the far end: a channel that will not open,
-    /// an engine that is not there, a preface that did not agree.
-    ///
-    /// Three arms and not two, because the remedies are three different acts. A
-    /// refusal is answered by typing something else; an unreadable frame by
-    /// upgrading the seat; an unreachable channel by looking at this box's own
-    /// files or at whether the engine is up. A seat that collapsed them would
-    /// send an operator to check a certificate over a workspace they mistyped.
-    Unreachable(String),
-}
-
-impl Notice {
-    /// The line the shell paints, with the half that says whose sentence it is.
-    pub fn line(&self) -> String {
-        match self {
-            Self::Refused(said) => format!("the engine refused: {said}"),
-            Self::Unreadable(why) => format!("this seat could not read the answer: {why}"),
-            Self::Unreachable(why) => format!("this seat could not reach it: {why}"),
-        }
-    }
 }
 
 /// Everything the window holds between frames.
@@ -96,6 +68,15 @@ pub struct Model {
     /// holds that the pointer does not need: a click names its own row, and a
     /// key has to be told which list it is in ([`crate::ui::keys`]).
     pub focus: crate::ui::keys::Pane,
+    /// **Whether the focused list owes its selection a place on the glass**,
+    /// set by a keyboard walk and taken by the pane that paints it
+    /// ([`Model::revealing`]).
+    ///
+    /// The keyboard is the only surface that can move a selection out of view:
+    /// a click names a row the operator is already looking at, and a scroll IS
+    /// the operator deciding what to look at — so a pane that revealed on every
+    /// frame would drag the glass back every time they scrolled away.
+    pub reveal: bool,
     /// The selected conversation's id.
     pub conversation: Option<String>,
     /// What the operator has typed and not yet sent.
@@ -115,6 +96,13 @@ pub struct Model {
 }
 
 impl Model {
+    /// **Whether `pane` must bring its selection onto the glass this frame**,
+    /// answered once: the flag is taken, so two panes cannot both act on one
+    /// keypress and a stale one cannot fight the next frame's scroll.
+    pub fn revealing(&mut self, pane: crate::ui::keys::Pane) -> bool {
+        self.focus == pane && std::mem::take(&mut self.reveal)
+    }
+
     /// **Take one reply frame.** The single door: an answer is filed, and
     /// anything else becomes the notice the shell paints where that answer's
     /// content would have been. `channel` is the client-side stamp, applied

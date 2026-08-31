@@ -478,6 +478,28 @@ failure a seat has no excuse for. What fills the model is §4.12.
 arity is its signature — so a click and a typed command build one object and
 there is no second spelling of a gesture anywhere in this crate.
 
+**What does not fit is scrolled, and the conversation has a floor**
+(`src/ui/shell.rs`, `widths`; bl-e5d2). Both list panes hold a list and neither
+had an answer for one longer or wider than its box: the overflow was cut at the
+panel edge mid-glyph, with nothing on the glass saying anything had been cut,
+and the arrow walk moved the selection onto rows the pane had never painted —
+the exact disagreement `roster::aimable` exists to prevent. Two rules close it.
+**The list scrolls** (the heading stays out of the scrolled region: it is the
+one thing on the pane that is always painted, and it carries the mark saying
+whose the arrows are), and **a keyboard walk brings its selection along**
+(`Model::reveal`, set by `keys::walk` and taken once by the pane the arrows
+belong to — the keyboard is the only surface that can move a selection out of
+view, since a click names a row the operator is looking at and a scroll IS the
+operator choosing what to look at). Sideways, the side panels used to keep
+their widths and the central panel absorb the whole loss, so at 900 points the
+pane the window exists for was a ~140-point strip while the roster kept 280.
+The rule is the other way round: the conversation keeps a floor and the two
+list panes yield to it, together and in proportion to what each is worth, until
+they reach their own floor — past which nothing yields, because two panes
+showing nothing buys the chat pane a width it still cannot use. The policy is a
+pure function of one number, so it is a value a test reads back rather than a
+layout somebody has to look at.
+
 **A row is addressed by what the channel resolves, never by the name it wears**
 (`ui::Channel::address`, §8.2 read from the seat's side). This box's own engine
 rewrites nothing, so a row is addressed by its own name; an entry resolves by
@@ -815,7 +837,8 @@ material must not have, which is a long life on a display.
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/help.rs` | the roster and one verb's page, answered with no engine up. | ~80 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~150 |
+| `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~180 |
+| `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
 | `src/ui/model/channel.rs` | what a channel is, and what a gesture aimed down one must be addressed as. | ~75 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
@@ -826,7 +849,7 @@ material must not have, which is a long life on a display.
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects. | ~90 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
-| `src/ui/shell.rs` | the layout, and the notice that stands where content would have been. | ~65 |
+| `src/ui/shell.rs` | the layout, the width policy the panes yield by, and the notice that stands where content would have been. | ~110 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |

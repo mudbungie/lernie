@@ -22,11 +22,14 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // click beneath it calls (`crate::ui::keys`).
     keys::handle(ctx, model);
     notice(ctx, model);
+    let (roster_width, convs_width) = widths(ctx.screen_rect().width());
     egui::SidePanel::left("roster")
-        .default_width(280.0)
+        .default_width(ROSTER)
+        .max_width(roster_width)
         .show(ctx, |ui| roster::render(ui, model));
     egui::SidePanel::left("conversations")
-        .default_width(320.0)
+        .default_width(CONVS)
+        .max_width(convs_width)
         .show(ctx, |ui| convs::render(ui, model));
     egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
     // **The enrollment stands where the conversation would**, and it is the one
@@ -40,6 +43,43 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
             chat::render(ui, model);
         }
     });
+}
+
+/// **What the two list panes are worth when the window is wide enough**, in
+/// points: the roster holds a handful of short words, the conversation list
+/// holds a headline and a preview under it.
+const ROSTER: f32 = 280.0;
+const CONVS: f32 = 320.0;
+
+/// **The floor the conversation and its composer keep.** Below this a chat pane
+/// is a strip: a message elides inside its own width, the composer's box shows
+/// the first few words of a draft, and `send` sits against the frame.
+pub const CHAT_FLOOR: f32 = 420.0;
+
+/// **The width a list pane never goes under**, however narrow the window. A
+/// pane below it shows nothing at all, which is worse than a chat pane under
+/// its floor — so this is the one thing the floor yields to.
+pub const SIDE_FLOOR: f32 = 140.0;
+
+/// **The two list panes' widths at a given window width** — the policy the
+/// window had none of (bl-e5d2).
+///
+/// The side panels used to keep their widths as the window narrowed and the
+/// central panel absorbed the whole loss, so at 900 points the pane the window
+/// exists for was a ~140-point strip while the roster kept 280. The rule is the
+/// other way round: **the conversation has a floor and the list panes yield to
+/// it**, together and in proportion to what each is worth, until they reach
+/// their own floor. Past that nothing yields, because two panes showing nothing
+/// buys the chat pane a width it still cannot use.
+///
+/// It is a pure function of one number, so the policy is a value a test reads
+/// back rather than a layout somebody has to look at.
+pub fn widths(window: f32) -> (f32, f32) {
+    let share = ((window - CHAT_FLOOR) / (ROSTER + CONVS)).clamp(0.0, 1.0);
+    (
+        (ROSTER * share).max(SIDE_FLOOR),
+        (CONVS * share).max(SIDE_FLOOR),
+    )
 }
 
 /// The notice bar: the last thing the seat heard that was not content, in the

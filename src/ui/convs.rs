@@ -39,17 +39,29 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(NO_CONVERSATIONS);
         return;
     }
-    for row in rows {
-        conversation(ui, model, &row);
-    }
+    // The list scrolls; the heading and the address above it do not (bl-e5d2,
+    // and `crate::ui::roster` for why the heading stays out).
+    let reveal = model.revealing(crate::ui::keys::Pane::Conversations);
+    egui::ScrollArea::vertical()
+        .id_salt(HEADING)
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            for row in rows {
+                conversation(ui, model, &row, reveal);
+            }
+        });
 }
 
 /// One row, indented to its depth under the conversation root.
-fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
+fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: bool) {
     let selected = model.conversation.as_ref() == Some(&row.root_id);
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth));
-        if ui.selectable_label(selected, headline(row)).clicked() {
+        let seat = ui.selectable_label(selected, headline(row));
+        if selected && reveal {
+            seat.scroll_to_me(None);
+        }
+        if seat.clicked() {
             model.select(&row.root_id.clone());
         }
     });

@@ -114,7 +114,15 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     }
 }
 
-/// Move the focused list's selection by one.
+/// Move the focused list's selection by one, and say the pane owes the new
+/// selection a place on the glass.
+///
+/// **The walk is the surface that can leave the glass behind.** A list longer
+/// than its pane scrolls ([`crate::ui::shell`]), and a key that moved the
+/// selection past the fold without moving the fold would put the two surfaces
+/// back into the disagreement `crate::ui::roster::aimable` exists to prevent —
+/// the cursor IS the selection, so the selection has to be somewhere an
+/// operator can see it.
 fn walk(model: &mut Model, step: isize) {
     match model.focus {
         Pane::Roster => {
@@ -122,6 +130,7 @@ fn walk(model: &mut Model, step: isize) {
             let at = rows.iter().position(|row| model.aim.as_ref() == Some(row));
             if let Some(row) = moved(rows.len(), at, step).and_then(|i| rows.get(i)) {
                 model.aim_at(&row.channel.clone(), &row.address.clone());
+                model.reveal = true;
             }
         }
         Pane::Conversations => {
@@ -134,6 +143,7 @@ fn walk(model: &mut Model, step: isize) {
                 .position(|id| model.conversation.as_ref() == Some(id));
             if let Some(id) = moved(rows.len(), at, step).and_then(|i| rows.get(i)) {
                 model.select(&id.clone());
+                model.reveal = true;
             }
         }
     }

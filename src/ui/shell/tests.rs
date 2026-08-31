@@ -1,10 +1,10 @@
 //! The whole window in one frame: that every pane is on it, that a notice
 //! stands where content would have been, and that it can be put down.
 
-use super::{DISMISS, render};
-use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, painted, seated};
-use crate::ui::{Model, Notice};
+use super::{CHAT_FLOOR, DISMISS, SIDE_FLOOR, render, widths};
+use crate::paint_probe::frame::{Window, press};
+use crate::test_support::window::{click, conv, own, painted, seated, seen, wall};
+use crate::ui::{Chunk, Model, Notice};
 
 /// **One frame paints every pane.** The smoke test the whole ball is about: a
 /// window that opens and shows the roster, the list, the conversation and the
@@ -89,4 +89,120 @@ fn a_notice_can_be_put_down() {
     let window = Window::new();
     click(&window, DISMISS, |ctx| render(ctx, &mut model));
     assert_eq!(model.notice, None);
+}
+
+/// **The policy the window had none of** (bl-e5d2): the conversation has a
+/// floor and the two list panes yield to it, together and in proportion, until
+/// they reach their own floor — where nothing yields, because two panes showing
+/// nothing buys the chat pane a width it still cannot use.
+#[test]
+fn the_list_panes_yield_to_the_conversation_s_floor_and_then_stop() {
+    assert_eq!(widths(1200.0), (280.0, 320.0), "wide enough for both");
+    assert_eq!(
+        widths(1020.0),
+        (280.0, 320.0),
+        "exactly enough is still enough"
+    );
+    let (roster, convs) = widths(900.0);
+    assert!(
+        (roster - 224.0).abs() < 0.5 && (convs - 256.0).abs() < 0.5,
+        "the loss is shared in proportion: {roster}, {convs}"
+    );
+    assert!(
+        900.0 - roster - convs >= CHAT_FLOOR,
+        "the conversation kept its floor"
+    );
+    assert_eq!(
+        widths(400.0),
+        (SIDE_FLOOR, SIDE_FLOOR),
+        "past their own floor the list panes stop yielding"
+    );
+}
+
+/// The same, on the glass: at 900 points the conversation used to be a
+/// ~140-point strip while the roster kept 280. Now the panes yield, and a
+/// message in the chat pane starts where the floor says it does.
+#[test]
+fn a_narrow_window_paints_the_conversation_at_its_floor() {
+    let mut model = seated();
+    let window = Window::sized(900.0, 600.0);
+    let said = seen(&window, |ctx| render(ctx, &mut model))
+        .into_iter()
+        .find(|run| run.text == "port it")
+        .expect("the conversation is on the glass");
+    let (roster, convs) = widths(900.0);
+    assert!(
+        said.laid.min.x < roster + convs + 40.0,
+        "the chat pane begins where the two list panes end: {:?}",
+        said.laid
+    );
+}
+
+/// **A list longer than its pane scrolls, and the keyboard walk brings its own
+/// row along** (bl-e5d2). The overflow used to be cut at the panel edge
+/// mid-glyph, with nothing saying it had been cut — while the arrow walk moved
+/// the selection onto rows the glass had never painted, which is exactly the
+/// disagreement `crate::ui::roster::aimable` exists to prevent.
+#[test]
+fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
+    let mut model = Model {
+        roster: vec![Chunk {
+            walls: (0..24).map(|i| wall(&format!("wall-{i:02}"))).collect(),
+            ..own()
+        }],
+        ..Model::default()
+    };
+    let window = Window::sized(900.0, 260.0);
+    let last = crate::ui::roster::line(&wall("wall-23"));
+    let first = seen(&window, |ctx| render(ctx, &mut model));
+    assert!(
+        !first.iter().any(|run| run.text == last),
+        "the fold is real, or this test proves nothing"
+    );
+    for _ in 0..24 {
+        window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
+            render(ctx, &mut model);
+        });
+    }
+    assert_eq!(
+        model.aim.clone().map(|aim| aim.address),
+        Some("wall-23".to_owned())
+    );
+    let shown = seen(&window, |ctx| render(ctx, &mut model));
+    assert!(
+        shown.iter().any(|run| run.text == last),
+        "the walked-to row is on the glass: {:?}",
+        shown.iter().map(|run| &run.text).collect::<Vec<&String>>()
+    );
+}
+
+/// The conversation list, on the same rule and through the same walk.
+#[test]
+fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
+    let mut model = Model {
+        convs: (0..24)
+            .map(|i| conv(&format!("id-{i:02}"), &format!("conv-{i:02}")))
+            .collect(),
+        focus: crate::ui::keys::Pane::Conversations,
+        ..seated()
+    };
+    let window = Window::sized(900.0, 260.0);
+    let last = crate::ui::convs::headline(&conv("id-23", "conv-23"));
+    assert!(
+        !seen(&window, |ctx| render(ctx, &mut model))
+            .iter()
+            .any(|run| run.text == last),
+        "the fold is real, or this test proves nothing"
+    );
+    for _ in 0..24 {
+        window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
+            render(ctx, &mut model);
+        });
+    }
+    assert!(
+        seen(&window, |ctx| render(ctx, &mut model))
+            .iter()
+            .any(|run| run.text == last),
+        "the walked-to row is on the glass"
+    );
 }

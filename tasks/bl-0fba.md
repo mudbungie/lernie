@@ -1,7 +1,8 @@
 +++
 title = "per-seat UI state: where the seat keeps what is its own"
 created = 1788068290
-updated = 1788068290
+updated = 1788138812
+claimant = "OrderPolish"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 

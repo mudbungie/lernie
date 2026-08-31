@@ -1,7 +1,8 @@
 +++
 title = "a start focuses what it started: the claim that survives a driver's first write"
 created = 1788069990
-updated = 1788069990
+updated = 1788138456
+claimant = "OrderPolish"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

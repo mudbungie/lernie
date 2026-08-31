@@ -130,7 +130,7 @@ undo a severance rather than add a feature.
   speaks first. There is no inbound direction to secure because there is no
   inbound direction.
 - **It never mints.** Certificates arrive out of channel, by the operator's
-  hand (REMOTE §1.4). There is no enrolment, pairing or bootstrap flow in the
+  hand (REMOTE §1.4). There is no enrollment, pairing or bootstrap flow in the
   channel, ever. The suite's own mint is `cfg(test)` and shells to `openssl`,
   which is what an operator does; there is no production caller and there must
   never be one.

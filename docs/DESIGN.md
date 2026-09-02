@@ -326,6 +326,20 @@ minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
 the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
 lands a pane is the ball that adds its kind.
 
+**A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
+(bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
+unreleased cycle: a `failure` clause on the conversation row, the same clause on
+the §6 queue row and on the `agent` answer, and a `flag` object beside a new
+`flagged` signal token on the queue row. **This seat consumed exactly one of
+them** — the conversation row's clause, because the conversation list is the
+pane that paints the row it hangs on, and a red row that says nothing about why
+it is red is a list an operator opens one by one to learn the one thing every
+row in it says. The other three ride through unread and their shapes stay in
+`corpus/unreadable/`, which is the ledger doing its job rather than a shortfall:
+nothing here paints an `agent` answer or a decision queue, so a field carried
+for them would be a field held for no glass. **The number moves for the wire;
+the fields move for the panes**, and the two are decided separately.
+
 **The staged body is carried whole, which is rung 4 read in the WRITE
 direction** (`src/reply/start.rs`). `prepared` is the one reply a seat hands
 straight back: `prompt` fires the body `prepare` answered. So the reader keeps

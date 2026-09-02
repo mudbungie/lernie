@@ -37,7 +37,7 @@ use super::frame;
 /// integer moves when the *existing* shape changes meaning: the framing, the
 /// envelope, or what a spelling already in use is taken to say.
 ///
-/// **2 is yog bl-77be's bump**, and it is the second clause of that rule
+/// **2 was yog bl-77be's bump**, and it was the second clause of that rule
 /// rather than the first: four shapes grew an optional field
 /// (`request/advertise` and `reply/clients` gained a tool's `subject_cwd`
 /// consent, `request/invoke` and `reply/invocations` gained the subject's
@@ -45,7 +45,24 @@ use super::frame;
 /// follow frame's `text`/`thinking` are taken to say, from the whole
 /// accumulated answer to what landed since the previous frame. The spelling
 /// did not move; the meaning did, which is exactly what this integer is for.
-pub const PROTOCOL: u32 = 2;
+///
+/// **3 and 4 are two bumps of one unreleased cycle** (REMOTE §9.10, §9.11),
+/// and the pair is why this integer is not a count of releases. 3 gave
+/// `reply/conversations`' row, the §6 queue row and the `agent` answer a
+/// `failure` clause — why the conversation's latest model call failed — and 4
+/// gave the queue row a `flag` object beside a new `flagged` signal token.
+/// Each is a gained field, which §3's rule bumps whether or not a reader needs
+/// it; the ledger's granularity is per bump and not per release, so a shape
+/// touched twice in one cycle costs two integers. Neither number was ever
+/// spoken by a peer.
+///
+/// **This seat consumes exactly one of the four fields** (bl-d774), which is
+/// DESIGN §4.9's rule holding rather than a shortfall: `failure` reaches
+/// [`crate::reply::convs::ConvRow`] because the conversation list is the pane
+/// that paints the row it hangs on, and the `agent`, `attention` and queue
+/// shapes stay in the corpus ledger under `unreadable/` because no pane here
+/// reads them. A field is carried by the release that paints it.
+pub const PROTOCOL: u32 = 4;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

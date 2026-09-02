@@ -37,6 +37,7 @@ pub(crate) fn conv(id: &str, display: &str) -> ConvRow {
         members: 1,
         depth: 0,
         tone: Tone::Plain,
+        failure: None,
     }
 }
 

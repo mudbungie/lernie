@@ -70,7 +70,7 @@ pub struct Model {
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The live tail as this seat has accumulated it. It **replaces**, never
-    /// accretes — and under PROTOCOL 2 that is a statement about where the
+    /// accretes — and since PROTOCOL 2 that is a statement about where the
     /// accretion happens rather than whether it does: a follow frame is an
     /// append (REMOTE §5.5), so `crate::offframe::follow` absorbs each frame
     /// onto the read's own fold and what reaches here is already whole. The

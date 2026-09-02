@@ -42,8 +42,46 @@ fn a_row_carries_what_the_list_paints_and_ignores_what_it_does_not() {
             members: 3,
             depth: 0,
             tone: Tone::Live,
+            failure: None,
         }
     );
+}
+
+/// **The failure clause, and the absence that is not a null** (REMOTE §9.10,
+/// PROTOCOL 3). The engine leaves the key out on a conversation whose latest
+/// model call did not fail, so a reader never has to tell *no failure* from *a
+/// failure with nothing to say* — and the row above, which carries no key at
+/// all, is the other half of this assertion.
+///
+/// `null` reads the same as absent because [`super::super::fields::opt_text`]
+/// says so for every optional field on this wire; the queue row spells it that
+/// way and a seat that read two conventions would be the place they diverge.
+#[test]
+fn the_failure_clause_is_read_and_its_absence_is_a_reading() {
+    let failed = row(&json!({
+        "root_id": "x", "display": "x", "state": "stopped", "uncertain": false,
+        "preview": "", "age_secs": 0, "attention": 0, "members": 1, "depth": 0,
+        "tone": "bad", "failure": "no credential for provider row \"work\"",
+    }))
+    .expect("a row");
+    assert_eq!(
+        failed.failure.as_deref(),
+        Some("no credential for provider row \"work\"")
+    );
+    let nulled = row(&json!({
+        "root_id": "x", "display": "x", "state": "stopped", "uncertain": false,
+        "preview": "", "age_secs": 0, "attention": 0, "members": 1, "depth": 0,
+        "tone": "bad", "failure": null,
+    }))
+    .expect("a row");
+    assert_eq!(nulled.failure, None);
+    let refusal = row(&json!({
+        "root_id": "x", "display": "x", "state": "stopped", "uncertain": false,
+        "preview": "", "age_secs": 0, "attention": 0, "members": 1, "depth": 0,
+        "tone": "bad", "failure": 7,
+    }))
+    .expect_err("a clause that is not words");
+    assert!(refusal.contains("\"failure\""), "{refusal}");
 }
 
 /// **A name the engine will not answer to is withheld, and the id still

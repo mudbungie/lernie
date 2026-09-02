@@ -4,7 +4,7 @@
 use super::{NO_CONVERSATIONS, NO_WALL, NOT_ANSWERED, age, headline, no_channel, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, Tone};
-use crate::test_support::window::{click, conv, pane, seated};
+use crate::test_support::window::{click, conv, pane, seated, seen};
 use crate::ui::Model;
 
 /// **Four empty states and they are four different facts** (bl-f780): nothing
@@ -125,6 +125,43 @@ fn a_member_is_indented_and_its_preview_carries_the_row_s_tone() {
     assert!(
         painted.contains("the galley lies about elision"),
         "{painted}"
+    );
+}
+
+/// **A red row says what is wrong with it** (REMOTE §9.10). A conversation
+/// whose latest model call failed used to paint a `bad` tone and no words, so
+/// a wall whose provider row holds no credential was a list of red rows an
+/// operator opened one by one to learn the one thing all of them said.
+///
+/// Three assertions, and the ordering is the one that would rot silently: the
+/// clause is on the glass, it is painted in the row's own tone rather than in
+/// an ink this pane decided for it, and it stands ABOVE the preview — the row
+/// reads label, then why nothing more happened, then what was last said.
+#[test]
+fn a_failed_row_paints_its_clause_above_its_preview_and_in_its_own_tone() {
+    let mut model = seated();
+    model.convs = vec![crate::reply::convs::ConvRow {
+        tone: Tone::Bad,
+        failure: "no credential for provider row \"work\"".to_owned().into(),
+        preview: "the last thing it managed to say".to_owned(),
+        ..conv("id", "a refusing conversation")
+    }];
+    let window = Window::sized(900.0, 600.0);
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    let at = |needle: &str| {
+        runs.iter()
+            .find(|run| run.text.contains(needle))
+            .unwrap_or_else(|| panic!("{needle:?} is not on the glass"))
+            .clone()
+    };
+    let clause = at("no credential for provider row");
+    assert_eq!(clause.ink, crate::ui::theme::tone_ink(&Tone::Bad));
+    assert!(
+        clause.laid.min.y < at("the last thing it managed to say").laid.min.y,
+        "the clause stands above the preview: {:?}",
+        clause.laid
     );
 }
 

@@ -15,10 +15,14 @@
 //! window's own pending row wears (`crate::ui::model::claim`).
 //!
 //! **What this build does not carry.** The row also spells the stop cascade's
-//! two gates, the strict child count, a bound ball, an alignment verdict and
-//! the in-flight class. Each belongs to a control or a badge that does not
-//! exist here yet; rung 4 of [`super`]'s policy rides them through unread, and
-//! each arrives with the surface that paints it.
+//! two gates, the strict child count, a bound ball, an alignment verdict, the
+//! in-flight class and — since REMOTE §9.9 — `last_active_unix`, the absolute
+//! stamp beside the [`ConvRow::age_secs`] distance this pane already paints.
+//! Each belongs to a control or a badge that does not exist here yet; rung 4
+//! of [`super`]'s policy rides them through unread, and each arrives with the
+//! surface that paints it. The stamp is the plainest case of that rule: this
+//! seat paints *how long ago* and nothing paints *when*, and carrying an
+//! absolute time to hold it would be storing a fact no glass spends.
 
 use serde_json::{Map, Value};
 
@@ -60,6 +64,26 @@ pub struct ConvRow {
     /// How solidly the row paints. Not derivable from
     /// [`state`](Self::state): a row can be settled and provisional at once.
     pub tone: Tone,
+    /// **Why this conversation's latest model call failed**, in one clause
+    /// (REMOTE §9.10, PROTOCOL 3) — the words behind a [`Tone::Bad`] row.
+    ///
+    /// `None` for every conversation whose latest call did not fail, which is
+    /// nearly all of them; the field is *absent* on the wire rather than
+    /// `null`, so a reader never has to tell **no failure** from **a failure
+    /// with nothing to say**. A `bad` tone with no clause beside it therefore
+    /// reads as exactly the third thing it is: a call that failed and left no
+    /// words.
+    ///
+    /// **The clause, not the whole.** A row is a glance, so the wire carries
+    /// the provider's first sentence capped; the adapter's own output is one
+    /// query deeper and belongs to a surface this seat does not have.
+    ///
+    /// It is carried and never derived from [`tone`](Self::tone), nor the tone
+    /// from it. The hue is the sighting and the words are the explanation —
+    /// two facts the engine states separately, and a seat that computed either
+    /// from the other would be holding a second opinion about a reading it did
+    /// not take.
+    pub failure: Option<String>,
 }
 
 /// The badge state of a conversation. **Rung 3**: an unknown word keeps its
@@ -164,6 +188,7 @@ pub(crate) fn row(v: &Value) -> Result<ConvRow, String> {
         members: fields::count(o, "members")?,
         depth: fields::count(o, "depth")?,
         tone: Tone::of(&fields::text(o, "tone")?),
+        failure: fields::opt_text(o, "failure")?,
     })
 }
 

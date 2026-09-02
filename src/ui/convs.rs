@@ -1,9 +1,9 @@
 //! **The conversation list** for the wall the window is aimed at.
 //!
 //! A row is a glance, not a transcript: what it is called, what it is doing,
-//! how long since it moved, and the first line of what was said. Everything
-//! deeper is one click away in the chat pane, and a list that tried to be the
-//! pane would be neither.
+//! how long since it moved, why its latest model call failed if it did, and
+//! the first line of what was said. Everything deeper is one click away in the
+//! chat pane, and a list that tried to be the pane would be neither.
 
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, theme};
@@ -102,12 +102,33 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
             model.select(&row.root_id.clone());
         }
     });
-    if !row.preview.is_empty() {
-        ui.horizontal(|ui| {
-            ui.add_space(indent(row.depth) + 12.0);
-            ui.colored_label(theme::tone_ink(&row.tone), &row.preview);
-        });
+    // **The hue's own words** (REMOTE §9.10). A conversation whose latest model
+    // call failed paints red and, until this line, said nothing about why — so
+    // a wall whose provider row holds no credential was a list of red rows an
+    // operator opened one by one to learn the one thing all of them said.
+    //
+    // It goes ABOVE the preview because the preview is what was last said and
+    // this is why nothing more was: the row reads top-down as label, reason,
+    // last words. Both lines are painted in the row's own tone and neither is
+    // derived from the other — the engine states the hue and the clause
+    // separately, and a seat that inferred one would be holding a second
+    // opinion about a reading it did not take.
+    if let Some(failure) = &row.failure {
+        beneath(ui, row, failure);
     }
+    if !row.preview.is_empty() {
+        beneath(ui, row, &row.preview);
+    }
+}
+
+/// A line hung under a row's headline, at the row's own indent and in its own
+/// ink. One function rather than two blocks that must not drift: the second
+/// line of a row is a shape, and a second copy of it is a second shape.
+fn beneath(ui: &mut egui::Ui, row: &ConvRow, said: &str) {
+    ui.horizontal(|ui| {
+        ui.add_space(indent(row.depth) + 12.0);
+        ui.colored_label(theme::tone_ink(&row.tone), said);
+    });
 }
 
 /// How far a row hangs under its root, in points.

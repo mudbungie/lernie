@@ -75,6 +75,9 @@ impl Model {
             members: 1,
             depth: 0,
             tone: Tone::Weak,
+            // Nothing has run yet, so nothing has failed: this row is the
+            // window's own word for a send the engine has not confirmed.
+            failure: None,
         })
     }
 

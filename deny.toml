@@ -29,6 +29,36 @@ ignore = [
     # those would hide the next advisory too. Re-check it at every egui bump;
     # the day egui moves to `skrifa` this line stops matching and says so.
     "RUSTSEC-2026-0192",
+    # THE NEXT THREE ARE DEV-ONLY, AND THAT IS THE WHOLE REASON (bl-dc07).
+    #
+    # None of them is in the SHIPPED graph. `cargo tree -e normal -i <crate>
+    # --target all` answers "nothing to print" for all three: they arrive
+    # behind the snapshot harness, which turns on `egui/accesskit` and so needs
+    # `eframe/accesskit` to match it — and that feature is raised in
+    # `[dev-dependencies]` only, so `cargo build --release` resolves none of
+    # this. Re-run that command before believing this paragraph; it is the
+    # check, and this text is only its record.
+    #
+    # `paste` is UNMAINTAINED rather than vulnerable — no CVE, no exploit, and
+    # the author says so themselves. It reaches the tree twice, both times
+    # through a platform backend nothing here runs: `accesskit_windows`, and
+    # `metal` under `wgpu-hal`.
+    "RUSTSEC-2024-0436",
+    # Two denial-of-service advisories against `quick-xml` 0.30, one quadratic
+    # and one an unbounded allocation, both on XML this process never sees.
+    # They sit under `zbus_xml` under the AT-SPI stack (`atspi` ->
+    # `accesskit_unix` -> `accesskit_winit`), which is the Linux accessibility
+    # BUS — and the harness never starts one: it reads the accessibility tree
+    # in-process, out of `egui`'s own output, with no desktop, no session bus
+    # and no compositor anywhere near it. The attacker position the advisories
+    # describe does not exist in a test binary.
+    #
+    # Neither is fixable here. The patched `quick-xml` is 0.41 and `zbus_xml`
+    # 4.0 pins `^0.30`, so the upgrade belongs to that chain and arrives when
+    # accesskit moves. Re-check at every egui bump; the day it lands these
+    # entries stop matching and the gate says so.
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0195",
 ]
 
 [licenses]

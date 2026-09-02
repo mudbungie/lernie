@@ -71,7 +71,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let entered = entry.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
     let mut sent = entered;
     let mut nudged = false;
-    ui.horizontal(|ui| {
+    // **WRAPPED, because this pane is not as wide as the window** (bl-dc07).
+    // The composer is a bottom panel added AFTER both side panels, so what it
+    // gets is what they left: at a 400-point window the two lists are on their
+    // floor (`crate::ui::shell::SIDE_FLOOR`) and this row is laid out in about
+    // 120 points. An unwrapped row lays its buttons on one line however long
+    // they are, so `nudge` went off the right edge of the window entirely —
+    // painted, correct, and unreachable by any pointer. Wrapping costs a
+    // second line in a panel already sized to its content.
+    ui.horizontal_wrapped(|ui| {
         sent |= ui.button(SEND).clicked();
         nudged = ui.button(NUDGE).clicked();
     });

@@ -1071,6 +1071,11 @@ material must not have, which is a long life on a display.
 | `assets/lernie.svg` | the mark, as the hicolor theme reads it. A derivation, pinned byte for byte. | derived |
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
+| `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, the one settled frame, and which widths the layout still promises a shape. `cfg(test)`. | ~125 |
+| `src/snapshot/worlds.rs` | the three named world states the matrix photographs, built from the window fixtures rather than from a second set. `cfg(test)`. | ~65 |
+| `src/snapshot/reach.rs` | assertion (a): the walk to the seat's one covered pane and back, asked of the accessibility tree. `cfg(test)`. | ~100 |
+| `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
+| `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |

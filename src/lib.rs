@@ -62,3 +62,9 @@ pub(crate) mod paint_probe;
 /// Scaffolding the suite shares. Never compiled into a released binary.
 #[cfg(test)]
 pub(crate) mod test_support;
+
+/// **The seat rendered off-screen**, so an agent can see it without a
+/// compositor — and the invariants that read the result rather than look at
+/// it. Never compiled into a released binary.
+#[cfg(test)]
+pub(crate) mod snapshot;

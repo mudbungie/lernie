@@ -174,11 +174,13 @@ serde_json = "1"
 # because a seat draws text and rectangles; `default_fonts`, because without
 # them the window opens and renders nothing. The version tracks yog's, so the
 # two faces of one seat cannot skew by accident.
-eframe = { version = "0.29", default-features = false, features = [
+eframe = { version = "0.30", default-features = false, features = [
     "default_fonts",
     "glow",
+    "wayland",
+    "x11",
 ] }
-egui = "0.29"
+egui = "0.30"
 
 [[bin]]
 name = "lernie"
@@ -220,3 +222,49 @@ unimplemented = "deny"
 dbg_macro = "deny"
 indexing_slicing = "deny"
 string_slice = "deny"
+
+# DEV-ONLY, AND THE "DEV" IS THE WHOLE OF THE APPROVAL (bl-dc07).
+#
+# The operator's ruling grants `egui_kittest` and `wgpu` as **dev-dependencies
+# only**: they render the seat off-screen so an agent can look at it without a
+# compositor, and nothing they bring may reach the published binary.
+# `tests/packaged_files.rs` holds the file half of that and cargo holds the
+# link half — a dev-dependency is not compiled into `cargo build --release`
+# and does not appear in a consumer's lockfile.
+#
+#   egui_kittest — the headless harness: it runs the real `ui::render` on an
+#     off-screen `egui::Context` with AccessKit enabled, and its `wgpu` feature
+#     rasterizes the resulting frame to an image. The version is EXACT and
+#     tracks `egui` term for term, because the harness links the same egui the
+#     window does and a minor skew between them is two egui versions in one
+#     build. Its earliest release is 0.30.0, which is why the window's own
+#     pin moved from 0.29 in the ball that added this.
+#   wgpu — arrives under `egui_kittest/wgpu`, via `egui-wgpu`. It is named in
+#     the ruling and not declared here, because nothing in this tree calls it
+#     directly: the harness owns the device and the render pass.
+#   image — the encoder the rendered frame is written through. It is NOT a
+#     fourth approval: `egui_kittest/wgpu` already puts it in the graph and
+#     hands back an `image::RgbaImage`, so declaring it adds no crate to the
+#     lockfile and only names what is already there. `default-features =
+#     false` with `png`, because a PNG is the one format an agent's file reader
+#     opens and every other decoder would be dead weight in the gate's build.
+[dev-dependencies]
+egui_kittest = { version = "=0.30.0", features = ["wgpu"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+# THIS LINE IS A FEATURE, NOT A SECOND DEPENDENCY, AND IT BELONGS HERE RATHER
+# THAN ABOVE.
+#
+# The harness needs the accessibility tree, so it turns on `egui/accesskit`.
+# That adds a field to `egui::PlatformOutput`, and `egui-winit` — which eframe
+# links — only matches on that field when its OWN `accesskit` feature is on.
+# Enabled on one side and not the other, the two do not compile together.
+#
+# Raising it on eframe in `[dependencies]` would fix the build and quietly
+# spend the ruling: accesskit would then be linked into the released seat,
+# which is a product decision nobody has taken and not one a test harness gets
+# to make on the way past. Declared HERE it is unified only into builds that
+# include dev-dependencies — the suite, `clippy --all-targets`, the coverage
+# run — and `cargo build --release` resolves eframe exactly as the block above
+# spells it. `tests/packaged_files.rs` guards the file half of the same
+# promise.
+eframe = { version = "0.30", default-features = false, features = ["accesskit"] }

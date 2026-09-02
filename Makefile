@@ -1,5 +1,5 @@
 .PHONY: all build release test coverage lint fmt fmt-check check ci \
-        line-cap leak-scan rules-audit deny corpus install-hooks install \
+        line-cap leak-scan rules-audit deny corpus snapshots install-hooks install \
         uninstall icon icon-seats clean
 
 # The build authority. Every gate step has ONE home here, and the pre-commit
@@ -199,6 +199,20 @@ YOG ?= ../yog
 
 corpus:
 	@scripts/refresh-corpus.sh "$(YOG)"
+
+# **Look at the seat without a compositor.**
+#
+# One PNG per (world, size) of `src/snapshot`'s matrix, into
+# `target/snapshots/`, which is untracked — an image is a derivation, and this
+# repository's disclosure gate refuses every tracked binary outright.
+#
+# It is the snapshot TEST, run for its side effect and named here rather than
+# copied: the matrix has one definition and it is the one the gate judges, so
+# the picture an agent opens cannot drift from the frame the assertions read.
+# `cargo test` writes them too — this target only saves you naming the test and
+# turning its output back on.
+snapshots:
+	cargo test --lib snapshot::tests::the_matrix -- --nocapture
 
 fmt:
 	cargo fmt

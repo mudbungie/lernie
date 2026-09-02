@@ -96,15 +96,23 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 
 /// The half before the answer: what to call the box, what grade to mint it at,
 /// and the button that spends the act.
+/// **Every row here WRAPS, because this pane is not as wide as the window**
+/// (bl-dc07). The enrollment stands in the central panel, which is what the two
+/// side panels leave: at a 400-point window that is about 120 points, and an
+/// unwrapped row lays its controls on one line however long the line has to be.
+/// The name box, the `foot` grade and the control that CLOSES the pane all went
+/// off the right edge of the window — and the one that closes it is the one
+/// that forgets the material, so the pane holding a private key was the pane
+/// with no visible way out of it.
 fn form(ui: &mut egui::Ui, model: &mut Model) {
     let Some(enrolling) = model.enroll.as_mut() else {
         return;
     };
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         ui.label(NAME_HINT);
         ui.text_edit_singleline(&mut enrolling.name);
     });
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         for grade in Grade::both() {
             let chosen = enrolling.grade == grade;
             if ui.selectable_label(chosen, grade.word()).clicked() {
@@ -114,7 +122,7 @@ fn form(ui: &mut egui::Ui, model: &mut Model) {
     });
     let ready = enrolling.ready();
     let minting = enrolling.minting();
-    ui.horizontal(|ui| {
+    ui.horizontal_wrapped(|ui| {
         if ui.add_enabled(ready, egui::Button::new(SEND)).clicked() {
             model.post_enrollment();
         }

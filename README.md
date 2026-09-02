@@ -168,6 +168,44 @@ entry whose `Exec` resolves nowhere; the tracked asset stays generic.
 `make lint` is `line-cap`, then `leak-scan`, then `cargo clippy --all-targets --
 -D warnings`, then `rules-audit`, then `cargo deny check`.
 
+### Looking at the window without a compositor
+
+```
+make snapshots  # render the seat off-screen; PNGs into target/snapshots/
+```
+
+Wayland has no protocol for capturing another client's window, so for a long
+time nobody working on this seat by agent could SEE it — the suite could say
+which words reached the glass and nothing could say what it looked like.
+`src/snapshot` closes that: it runs the real `ui::render` on an off-screen
+context and rasterizes the frame, touching no compositor and opening no window.
+
+It writes one PNG per (world, size) into **`target/snapshots/`**, named
+`<world>--<size>.png` — three named world states (`unprovisioned`, `seated`,
+`enrolling`) at three viewport sizes (`phone` 400x800, `narrow` 900x700, `desk`
+1400x900). They are untracked on purpose: an image is a derivation, re-made by
+every run of the suite, and the disclosure gate refuses every tracked binary.
+
+**Nothing compares those images to anything.** A pinned golden image reddens on
+every font and layout tweak and gets rebaselined without being looked at, which
+is a gate that has stopped reading. The PNGs are for eyes. What gates is three
+properties that hold whatever the pixels are:
+
+- the seat's one covered pane is **one gesture from the main screen** and one
+  gesture back, at every size — asked of the accessibility tree, so the subject
+  is what an operator can act on rather than what was laid out;
+- where the layout claimed content, **the glass is not blank** — every leaf
+  carrying text is read off the rendered image, and one whose every pixel is
+  identical is a word that did not arrive;
+- **no control is laid out wholly off the window**, and none is offered without
+  a rectangle to aim at.
+
+The last two are geometry, and they are judged at the widths this seat's own
+layout policy still promises a shape (`ui::shell::widths` — the width at which
+the conversation pane still gets its floor). Narrower than that the layout says
+in its own words that it has run out of answers, so the frame is rendered and
+photographed but not judged. The first is not geometry and holds everywhere.
+
 Every tool is pinned, or the gate is not reproducible: rustc 1.95.0
 (`rust-toolchain.toml`), ast-grep 0.44.1 (`sgconfig.yml`), cargo-deny 0.20.2
 (`deny.toml`), cargo-tarpaulin 0.35.2 (`tarpaulin.toml`).

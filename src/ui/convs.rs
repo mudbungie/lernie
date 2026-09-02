@@ -107,6 +107,21 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
         // beginning after it. Nothing paints it, so what shows there is the
         // window surface's own clear: black, or the desktop on the frames the
         // alpha path lets through.
+        // **The selection is drawn UNDER the run** rather than by the widget,
+        // because the widget that drew it is the one that could not truncate.
+        // Same ink egui's own selectable seat uses, so a selected row is
+        // unchanged to look at.
+        //
+        // A RESERVED SLOT IS THE ONLY WAY TO GET IT THERE, and the first cut of
+        // this painted the fill after the label instead (bl-dc07). A painter
+        // appends to its layer, so "after" is "on top": the selected
+        // conversation became a solid bar of selection ink with its own name
+        // invisible underneath, which is the one row in the pane an operator is
+        // looking at. Nothing in the suite could see it — the glyphs WERE
+        // painted, so the paint walk read them back intact, and the defect
+        // lived entirely in what was drawn over them. `crate::snapshot` is the
+        // witness that caught it and the one that keeps it caught.
+        let ground = ui.painter().add(egui::Shape::Noop);
         let seat = ui.add(
             egui::Label::new(headline(row))
                 .truncate()
@@ -114,14 +129,13 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
                 .sense(egui::Sense::click()),
         );
         if selected {
-            // The selection is drawn UNDER the run rather than by the widget,
-            // because the widget that drew it is the one that could not
-            // truncate. Same ink egui's own selectable seat uses, so a selected
-            // row is unchanged to look at.
-            ui.painter().rect_filled(
-                seat.rect.expand2(ui.spacing().button_padding),
-                ui.visuals().widgets.active.rounding,
-                ui.visuals().selection.bg_fill,
+            ui.painter().set(
+                ground,
+                egui::Shape::rect_filled(
+                    seat.rect.expand2(ui.spacing().button_padding),
+                    ui.visuals().widgets.active.rounding,
+                    ui.visuals().selection.bg_fill,
+                ),
             );
         }
         if selected && reveal {

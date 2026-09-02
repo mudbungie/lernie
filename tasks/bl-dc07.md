@@ -1,7 +1,8 @@
 +++
 title = "kittest snapshot harness: render the real seat headless, PNG matrix, reachability assertions"
 created = 1788329700
-updated = 1788329700
+updated = 1788329725
+claimant = "Snapseat"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

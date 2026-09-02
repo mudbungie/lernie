@@ -2,6 +2,7 @@
 title = "a region of the window paints nothing and the desktop flickers through it"
 created = 1788329772
 updated = 1788329772
+claimant = "Vellum"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

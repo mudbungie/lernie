@@ -1,7 +1,8 @@
 +++
 title = "the seat speaks protocol 4 and the released engine speaks 5: reply/governing dropped branch for follows, and oid changed meaning under the same key"
 created = 1788319846
-updated = 1788319846
+updated = 1788319847
+claimant = "Vellum"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

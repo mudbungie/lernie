@@ -80,7 +80,24 @@ use super::frame;
 /// `oid` for the fork commit would paint a plausible number that has been
 /// wrong since this bump, and it is the one kind of drift a corpus replay
 /// cannot catch — the bytes are well-formed and the field is spelled the same.
-pub const PROTOCOL: u32 = 5;
+///
+/// **6 is a bump this seat paid for one row and not for the two ops beside
+/// it** (REMOTE §9.13, upstream bl-23bd; bl-675e here). `reply/providers`'
+/// rows gained `effort` and `priority`, two required booleans saying which
+/// tuning knobs that provider row actually takes — a capability stated as a
+/// column of the row it is about, rather than as a second answer a seat would
+/// have to join back. The `/effort` and `/priority` **ops** that landed with
+/// them moved nothing: a new op is a new spelling in an existing vocabulary,
+/// and a peer that has not heard of one refuses it in band by name, which is
+/// the first paragraph of this comment rather than an exception to it.
+///
+/// Nothing here paints providers either, so this is the second consecutive
+/// integer bought without a field — see [`crate::reply`] for why that is the
+/// arrangement working. The request half is not free of obligation, though:
+/// the two new ops carry a top-level `workspace` and `src/verbs/tests/corpus`
+/// asserts this seat routes every vocabulary frame by the slot upstream's own
+/// signature says it carries, which is where a miss would be silent.
+pub const PROTOCOL: u32 = 6;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

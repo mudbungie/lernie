@@ -340,18 +340,37 @@ nothing here paints an `agent` answer or a decision queue, so a field carried
 for them would be a field held for no glass. **The number moves for the wire;
 the fields move for the panes**, and the two are decided separately.
 
-**PROTOCOL 5 is that sentence with the second half empty** (bl-e6ee, REMOTE
-§9.12): `reply/governing` lost `branch`, gained `follows` and
-`diverged_lineages`, and its `oid` changed meaning under the same key — the
-fork commit became the followed lineage's head, as litany's follow-the-tip
-ruling inverted fork-is-the-freeze. Nothing here decodes `governing`, so the
-seat paid the integer and no field, and the correct amount of new paint was
-none. **A shape whose meaning moves under an unchanged spelling is the one
-drift a corpus replay cannot catch** — the bytes are well-formed and the class
-is right — so the trap is written at `PROTOCOL` itself, where whoever lands the
-pane will be reading. That is the general rule this bump happens to be the
-plainest case of: the ledger catches a shape that CHANGED, and only prose
-catches a shape that changed its MIND.
+**PROTOCOL 5 and 6 are that sentence with the second half empty**, and the
+pair is why the ordinary bump costs this seat an integer and nothing else. 5
+(bl-e6ee, REMOTE §9.12) took `branch` off `reply/governing` for `follows` and
+`diverged_lineages`; 6 (bl-675e, REMOTE §9.13) gave `reply/providers`' rows
+`effort` and `priority`, two booleans saying which tuning that provider row
+takes. **Neither shape is decoded here**, so both times the seat paid the
+number and no field, and the correct amount of new paint was none.
+
+**The per-bump ledger is the `PROTOCOL` constant and this section does not
+restate it** — one fact, one home, and a list here would rot the way every
+count this repository stopped writing down rotted. What belongs here is the
+rule the two bumps are instances of, and the one trap they exposed.
+
+**A shape whose meaning moves under an unchanged spelling is the one drift a
+corpus replay cannot catch.** 5 is the plainest case: `oid` stopped naming the
+fork commit and started naming the followed lineage's head, so the bytes stay
+well-formed, the fixture stays in the class it was already in, and every
+mechanical check this repository owns stays green while a future pane paints a
+plausible number that has been wrong since the bump. The ledger catches a shape
+that CHANGED; only prose catches a shape that changed its MIND, so that trap is
+written at `PROTOCOL` where whoever lands the pane will be reading.
+
+**And a bump reaches the WRITE direction even when it paints nothing.** 6 added
+two ops rather than only a field, and a new op is free by §3's rule — the peer
+refuses an unknown one in band, by name. Free of a *decode* is not free of an
+obligation: `src/verbs/tests/corpus.rs` replays every op in the vocabulary,
+including the sixty-odd this seat has no word for, and asserts each routes by
+the address upstream's own signature says it carries. That is where a miss
+would cost something and would do it silently — a gesture routed by a slot the
+seat does not look in goes down the wrong channel — so the request half is
+checked on every bump whether or not a pane moved.
 
 **The staged body is carried whole, which is rung 4 read in the WRITE
 direction** (`src/reply/start.rs`). `prepared` is the one reply a seat hands

@@ -149,3 +149,45 @@ fn a_label_the_frame_never_painted_has_no_coordinate() {
     assert!(locate(&out, "here").is_some());
     assert!(locate(&out, "elsewhere").is_none());
 }
+
+/// **The fills projection, both directions** (bl-6952): a filled rectangle
+/// reaches it with the colour it was filled in, and one clipped away entirely
+/// does not — the rule [`seen_of`] holds for glyphs, held here for shapes.
+///
+/// It exists because a window puts more than text on a screen, and a defect
+/// reported as *a large dark block* is not answerable from galleys at all. The
+/// alternative was a second walk written wherever the question was asked, which
+/// is what `rules/no-hand-rolled-paint-walk.yml` refuses.
+#[test]
+fn a_filled_rect_reaches_the_fills_projection_and_a_clipped_one_does_not() {
+    let window = Window::sized(200.0, 100.0);
+    let ink = egui::Color32::from_rgb(9, 9, 9);
+    let out = window.frame(Vec::new(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let painter = ui.painter();
+            painter.rect_filled(
+                egui::Rect::from_min_size(egui::pos2(10.0, 10.0), egui::vec2(40.0, 20.0)),
+                0.0,
+                ink,
+            );
+            // Off the bottom of a 100-point window: laid, then clipped away.
+            painter.rect_filled(
+                egui::Rect::from_min_size(egui::pos2(10.0, 400.0), egui::vec2(40.0, 20.0)),
+                0.0,
+                ink,
+            );
+        });
+    });
+    let fills = super::fills_of(&out);
+    let ours: Vec<_> = fills.iter().filter(|(_, fill)| *fill == ink).collect();
+    assert_eq!(ours.len(), 1, "one of the two is on the glass: {ours:?}");
+    assert!(
+        (ours[0].0.width() - 40.0).abs() < 0.5,
+        "the whole 40-point width is on the glass: {:?}",
+        ours[0].0
+    );
+    assert!(
+        fills.iter().any(|(_, fill)| *fill != ink),
+        "the panel's own ground is a fill too, and the projection carries it"
+    );
+}

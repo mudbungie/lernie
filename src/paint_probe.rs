@@ -50,18 +50,57 @@ pub(crate) struct Seen {
     pub(crate) ink: egui::Color32,
 }
 
-/// **The one walk.** Glyphs, rect and ink, descending `Shape::Vec` and ignoring
-/// every shape that carries no text.
-fn descend(shape: &egui::Shape, out: &mut Vec<(String, egui::Rect, egui::Color32)>) {
+/// One filled rectangle that reached the glass: where it landed, and the
+/// colour it was filled with.
+///
+/// **Text is not the only thing a window puts on a screen, and a defect
+/// reported as a shape has to be answerable as one** (bl-6952). Every
+/// projection here was a text projection, so *"is there a large dark block on
+/// the glass, and which pane emits it"* could only be answered by a walk
+/// written somewhere else — which is the one thing
+/// `rules/no-hand-rolled-paint-walk.yml` exists to stop. So the walk carries
+/// fills too and this is their projection.
+pub(crate) type Filled = (egui::Rect, egui::Color32);
+
+/// **What the one walk gathers**, in the two kinds a frame actually carries.
+/// Every projection below reads one of these halves; nothing else traverses a
+/// shape.
+#[derive(Default)]
+struct Walked {
+    text: Vec<(String, egui::Rect, egui::Color32)>,
+    fills: Vec<Filled>,
+}
+
+/// **The one walk.** Glyphs with their rect and ink, filled rectangles with
+/// their rect and colour, descending `Shape::Vec` and ignoring every shape that
+/// carries neither.
+fn descend(shape: &egui::Shape, out: &mut Walked) {
     match shape {
-        egui::Shape::Text(t) => out.push((
+        egui::Shape::Text(t) => out.text.push((
             visible(&t.galley),
             t.galley.rect.translate(t.pos.to_vec2()),
             ink(t),
         )),
+        egui::Shape::Rect(r) => out.fills.push((r.rect, r.fill)),
         egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| descend(s, out)),
         _ => {}
     }
+}
+
+/// **Every filled rectangle one finished frame put on the glass**, each
+/// narrowed to what its clip rect let through and dropped where that leaves
+/// nothing — the same rule [`seen_of`] holds, for the same reason.
+pub(crate) fn fills_of(output: &egui::FullOutput) -> Vec<Filled> {
+    let mut out = Vec::new();
+    for clipped in &output.shapes {
+        let mut here = Walked::default();
+        descend(&clipped.shape, &mut here);
+        out.extend(here.fills.into_iter().filter_map(|(rect, fill)| {
+            let shown = rect.intersect(clipped.clip_rect);
+            (shown.width() > 0.5 && shown.height() > 0.5).then_some((shown, fill))
+        }));
+    }
+    out
 }
 
 /// The colour a run reached the glass in — its layout section's, or the shape's
@@ -97,9 +136,9 @@ fn visible(galley: &egui::Galley) -> String {
 
 /// Every painted galley of one shape, with its position.
 pub(crate) fn collect(shape: &egui::Shape, out: &mut Vec<Painted>) {
-    let mut inked = Vec::new();
-    descend(shape, &mut inked);
-    out.extend(inked.into_iter().map(|(text, rect, _)| (text, rect)));
+    let mut walked = Walked::default();
+    descend(shape, &mut walked);
+    out.extend(walked.text.into_iter().map(|(text, rect, _)| (text, rect)));
 }
 
 /// The same, with the positions dropped — one line per galley.
@@ -127,9 +166,9 @@ pub(crate) fn text_of(output: &egui::FullOutput) -> String {
 pub(crate) fn seen_of(output: &egui::FullOutput) -> Vec<Seen> {
     let mut out = Vec::new();
     for clipped in &output.shapes {
-        let mut here = Vec::new();
+        let mut here = Walked::default();
         descend(&clipped.shape, &mut here);
-        out.extend(here.into_iter().filter_map(|(text, laid, ink)| {
+        out.extend(here.text.into_iter().filter_map(|(text, laid, ink)| {
             let shown = laid.intersect(clipped.clip_rect);
             (shown.width() > 0.5 && shown.height() > 0.5).then_some(Seen {
                 text,

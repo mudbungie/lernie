@@ -94,7 +94,36 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
     let selected = model.conversation.as_ref() == Some(&row.root_id);
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth));
-        let seat = ui.selectable_label(selected, headline(row));
+        // **The headline TRUNCATES, and that is a layout invariant rather than
+        // a nicety** (bl-b3b2). `Ui::selectable_label` lays its text with
+        // `TextWrapMode::Extend` — hard-coded, and doubly so inside a
+        // horizontal layout — so a long conversation name made the pane's inner
+        // `min_rect` wider than the pane. That is not merely an overflow: a
+        // side panel paints a frame sized to its own `max_width` and then
+        // reserves `inner_response.response.rect.max` from the layout, so the
+        // two disagree exactly when the shell's yield policy caps the pane
+        // below its content — and the strip between the painted frame and the
+        // reserved edge is covered by NO panel, with the central panel
+        // beginning after it. Nothing paints it, so what shows there is the
+        // window surface's own clear: black, or the desktop on the frames the
+        // alpha path lets through.
+        let seat = ui.add(
+            egui::Label::new(headline(row))
+                .truncate()
+                .selectable(false)
+                .sense(egui::Sense::click()),
+        );
+        if selected {
+            // The selection is drawn UNDER the run rather than by the widget,
+            // because the widget that drew it is the one that could not
+            // truncate. Same ink egui's own selectable seat uses, so a selected
+            // row is unchanged to look at.
+            ui.painter().rect_filled(
+                seat.rect.expand2(ui.spacing().button_padding),
+                ui.visuals().widgets.active.rounding,
+                ui.visuals().selection.bg_fill,
+            );
+        }
         if selected && reveal {
             seat.scroll_to_me(None);
         }

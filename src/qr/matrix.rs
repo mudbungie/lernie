@@ -57,11 +57,16 @@ impl Grid {
             grid.furnish(6, at, at % 2 == 0);
             grid.furnish(at, 6, at % 2 == 0);
         }
-        for centre in [
-            (3, 3),
-            (side.saturating_sub(4), 3),
-            (3, side.saturating_sub(4)),
-        ] {
+        // The far centre is named once rather than written twice inside the
+        // literal, and the literal then fits on the line its loop is on. An
+        // element of a branchless array cannot run a different number of times
+        // than its siblings, but a line holding ONLY such an element holds no
+        // statement of its own for llvm-cov to attribute the count to — and
+        // two of these three scored zero on one machine while scoring covered
+        // on another. A `let` is a statement, so there is nothing left to
+        // mis-attribute.
+        let far = side.saturating_sub(4);
+        for centre in [(3, 3), (far, 3), (3, far)] {
             grid.stamp(centre, 4, |ring| ring != 2 && ring != 4);
         }
         let centres = plan.alignment();

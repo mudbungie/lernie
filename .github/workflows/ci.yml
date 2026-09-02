@@ -87,6 +87,38 @@ jobs:
       # dependency is deliberate rather than incidental.
       - name: The one tool the suite shells to
         run: openssl version
+      # THE RUNNER HAS TO BE ABLE TO RASTERIZE (bl-09c8). `src/snapshot` renders
+      # the real `ui::render` off-screen through `egui_kittest`, whose
+      # `TestRenderer::new()` does `instance.enumerate_adapters(Backends::all())
+      # .first().expect("No adapter found")`. A GitHub runner has no GPU and the
+      # image ships no Vulkan ICD, so that list is EMPTY and the expect fires:
+      # two snapshot tests died on every push while the other 429 passed, and
+      # the release job — `needs: ci` — was skipped each time.
+      #
+      # Mesa's lavapipe is a software Vulkan ICD: `mesa-vulkan-drivers` drops
+      # `/usr/share/vulkan/icd.d/lvp_icd.*.json`, `libvulkan1` is the loader
+      # that reads it, and wgpu then enumerates one CPU adapter. This is the
+      # route egui's own CI takes for kittest.
+      #
+      # MAKING THE RUNNER RENDER IS THE FIX, and the alternatives were refused
+      # rather than overlooked: `#[cfg]`-ing the snapshot tests off under CI
+      # silently unfences the three invariants they carry (reach, blank,
+      # clipped) exactly where nobody looks, and the suite pins no golden image
+      # — it asserts properties that hold whatever the pixels are — so a
+      # software rasterizer is a lawful renderer for it, not an approximation
+      # of one. The gate step below is unchanged: `make ci` is still the whole
+      # definition of green and this step only gives it a device.
+      - name: A software Vulkan adapter, so the snapshot harness can render
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers libvulkan1
+          # Name what was installed, and fail HERE if nothing was: the glob
+          # matches no file when no ICD was dropped, `ls` exits non-zero and
+          # this step reddens with the cause. Otherwise an apt success that
+          # installed no driver reaches `make ci` as the identical, and far
+          # less legible, "No adapter found".
+          ls -1 /usr/share/vulkan/icd.d/*.json
       - run: make ci
       - name: Doctests
         run: cargo test --doc

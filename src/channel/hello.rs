@@ -62,7 +62,25 @@ use super::frame;
 /// that paints the row it hangs on, and the `agent`, `attention` and queue
 /// shapes stay in the corpus ledger under `unreadable/` because no pane here
 /// reads them. A field is carried by the release that paints it.
-pub const PROTOCOL: u32 = 4;
+///
+/// **5 is the first clause of the rule and the one this seat cannot check**
+/// (REMOTE §9.12, upstream bl-e654; bl-e6ee here). `reply/governing` lost
+/// `branch`, gained `follows` and `diverged_lineages`, and — the half no
+/// signature can see — its `oid` **changed meaning under the same key**: it
+/// named the `config/*` ancestor an agent's branch forked off, a commit that
+/// never moved, and now names the commit control reads at each step boundary,
+/// the followed lineage's head. The doctrine inverted with it, from
+/// fork-is-the-freeze to follow-the-tip.
+///
+/// **Nothing here decodes `governing`**, so this seat paid the integer and no
+/// field, and that is the whole of what it owed: the shape falls to
+/// [`crate::reply::read`]'s unknown-kind arm and its fixture asserts exactly
+/// that from `corpus/unreadable/`. The trap is recorded here rather than
+/// nowhere, because it is aimed at whoever lands the pane: a reader that took
+/// `oid` for the fork commit would paint a plausible number that has been
+/// wrong since this bump, and it is the one kind of drift a corpus replay
+/// cannot catch — the bytes are well-formed and the field is spelled the same.
+pub const PROTOCOL: u32 = 5;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

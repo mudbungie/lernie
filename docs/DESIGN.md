@@ -340,6 +340,19 @@ nothing here paints an `agent` answer or a decision queue, so a field carried
 for them would be a field held for no glass. **The number moves for the wire;
 the fields move for the panes**, and the two are decided separately.
 
+**PROTOCOL 5 is that sentence with the second half empty** (bl-e6ee, REMOTE
+§9.12): `reply/governing` lost `branch`, gained `follows` and
+`diverged_lineages`, and its `oid` changed meaning under the same key — the
+fork commit became the followed lineage's head, as litany's follow-the-tip
+ruling inverted fork-is-the-freeze. Nothing here decodes `governing`, so the
+seat paid the integer and no field, and the correct amount of new paint was
+none. **A shape whose meaning moves under an unchanged spelling is the one
+drift a corpus replay cannot catch** — the bytes are well-formed and the class
+is right — so the trap is written at `PROTOCOL` itself, where whoever lands the
+pane will be reading. That is the general rule this bump happens to be the
+plainest case of: the ledger catches a shape that CHANGED, and only prose
+catches a shape that changed its MIND.
+
 **The staged body is carried whole, which is rung 4 read in the WRITE
 direction** (`src/reply/start.rs`). `prepared` is the one reply a seat hands
 straight back: `prompt` fires the body `prepare` answered. So the reader keeps

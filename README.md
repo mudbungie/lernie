@@ -181,9 +181,9 @@ which words reached the glass and nothing could say what it looked like.
 context and rasterizes the frame, touching no compositor and opening no window.
 
 It writes one PNG per (world, size) into **`target/snapshots/`**, named
-`<world>--<size>.png` — three named world states (`unprovisioned`, `seated`,
-`enrolling`) at three viewport sizes (`phone` 400x800, `narrow` 900x700, `desk`
-1400x900). They are untracked on purpose: an image is a derivation, re-made by
+`<world>--<size>.png` — four named world states (`unprovisioned`, `seated`,
+`beginning`, `enrolling`) at three viewport sizes (`phone` 400x800, `narrow`
+900x700, `desk` 1400x900). They are untracked on purpose: an image is a derivation, re-made by
 every run of the suite, and the disclosure gate refuses every tracked binary.
 
 **Nothing compares those images to anything.** A pinned golden image reddens on
@@ -199,6 +199,17 @@ properties that hold whatever the pixels are:
   identical is a word that did not arrive;
 - **no control is laid out wholly off the window**, and none is offered without
   a rectangle to aim at.
+
+A fourth reads the same tree for a different question: **interface parity**
+(yog's `docs/PARITY.md`, DESIGN §4.16). Every control that fires a boundary op
+carries the machine token `act:<op>` on its accessibility node — the visible
+label stays a human word — and the gate holds that every op yog's help table
+classes a `control` either carries such a tag here or has a line in
+**`parity.toml`** citing the ball that will build its surface. The roster is
+the `surface` field on the vendored corpus's `reply/help` rows, so what this
+seat owes is upstream's fact and not a list kept here; the ledger is printed in
+full on every run, and a line goes red when the op is surfaced after all or
+when upstream stops classing it a control.
 
 The last two are geometry, and they are judged at the widths this seat's own
 layout policy still promises a shape (`ui::shell::widths` — the width at which

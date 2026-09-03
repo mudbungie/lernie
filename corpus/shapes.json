@@ -1,5 +1,5 @@
 {
-  "protocol": 6,
+  "protocol": 7,
   "shapes": {
     "reply/acked": {
       "signature": [
@@ -405,13 +405,14 @@
         "/ok:bool",
         "/rows/[]/detail:string",
         "/rows/[]/summary:string",
+        "/rows/[]/surface:string",
         "/rows/[]/usage:string",
         "/rows/[]/verb:string",
         "/rows/[]:object",
         "/rows:array",
         ":object"
       ],
-      "since": 1
+      "since": 7
     },
     "reply/inbox": {
       "signature": [
@@ -589,6 +590,22 @@
         ":object"
       ],
       "since": 1
+    },
+    "reply/roles": {
+      "signature": [
+        "/kind:string",
+        "/ok:bool",
+        "/rows/[]/effort:null",
+        "/rows/[]/effort:string",
+        "/rows/[]/model:string",
+        "/rows/[]/priority:bool",
+        "/rows/[]/provider:string",
+        "/rows/[]/role:string",
+        "/rows/[]:object",
+        "/rows:array",
+        ":object"
+      ],
+      "since": 6
     },
     "reply/routed": {
       "signature": [
@@ -1414,6 +1431,14 @@
         ":object"
       ],
       "since": 1
+    },
+    "request/roles": {
+      "signature": [
+        "/op:string",
+        "/workspace:string",
+        ":object"
+      ],
+      "since": 6
     },
     "request/scan": {
       "signature": [

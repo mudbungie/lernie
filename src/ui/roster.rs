@@ -169,6 +169,11 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     };
     let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
     let seat = ui.selectable_label(aimed, line(row));
+    // **The read this gesture reaches**, not the one that painted the row
+    // (yog's `docs/PARITY.md` §2: the interactable a query owes a seat is the
+    // affordance that reaches the view it populates). Aiming at a wall is what
+    // makes this seat read that wall's conversations.
+    crate::ui::act::tag(&seat, &[crate::verbs::CONVERSATIONS.word]);
     if aimed && reveal {
         seat.scroll_to_me(None);
     }

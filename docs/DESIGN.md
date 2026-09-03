@@ -348,6 +348,18 @@ pair is why the ordinary bump costs this seat an integer and nothing else. 5
 takes. **Neither shape is decoded here**, so both times the seat paid the
 number and no field, and the correct amount of new paint was none.
 
+**PROTOCOL 7 is the first bump this seat reads a field out of, and no pane
+paints it** (bl-8758 upstream, bl-38d4 here). Every `reply/help` row gained
+`surface`, classing the op `control` or `machine` — and the consumer is a GATE,
+not a pane: it is the roster §4.16's parity assertion judges this window
+against. That is a third answer to *what does a bump cost this seat*, beside
+"an integer" and "an integer and some paint": a field can be load-bearing for
+what the suite may assert while the glass stays exactly as it was. It does not
+loosen §4.9 — the reply vocabulary still decodes only what the window renders,
+and `reply/help` is still filed in `corpus/unreadable/` because nothing paints
+a help pane. What reads the field is the corpus walk, which reads every frame
+whatever this build does with it.
+
 **The per-bump ledger is the `PROTOCOL` constant and this section does not
 restate it** — one fact, one home, and a list here would rot the way every
 count this repository stopped writing down rotted. What belongs here is the
@@ -1000,6 +1012,52 @@ holds is a private key on a screen, the whole act is *look at this now and
 close it*, and a conversation legible behind it would invite the one thing the
 material must not have, which is a long life on a display.
 
+### 4.16 Interface parity: a control that fires an op says which op (yog's docs/PARITY.md)
+
+**The authority is yog's `docs/PARITY.md`, and this crate does not get a vote
+on it** — the same relation `docs/REMOTE.md` has to the wire. The operator's
+requirement is that this seat and the android client have interaction parity:
+*not identical placement, but if something is interactable in one it must
+exist in the other*, and drift must be caught mechanically rather than noticed
+by hand.
+
+Four facts follow, and each is a decision this tree implements rather than one
+it makes.
+
+- **The subject is an op, never a widget.** What is judged is exactly what
+  crosses the §8.5 control boundary. An interactable that crosses no wire — a
+  focus, a scroll, a selection, a pane that closes — is a view, and views are
+  out of contract. So the roster's unit is the wire's `op` token, which is
+  already the help row's key, the envelope's discriminant and the corpus
+  filename: one name, seen four times, and no translation table.
+- **Neither client is judged against the other.** Components meet at the
+  interface and never pairwise. The one authority for *which ops owe a seat a
+  control* is yog's help table, published through the `surface` field on the
+  vendored corpus's `reply/help` rows — `control`, meaning every seat-class
+  client owes it a discoverable interactable, or `machine`, spoken by programs
+  and owed nothing. Raising the bar is an edit at yog and a corpus refresh
+  here; this repository maintains no list of what it owes.
+- **The tag is machine metadata and the label stays a human word.**
+  `src/ui/act.rs` writes `act:<op>` into the AccessKit node's `author_id`,
+  which exists for exactly this. It is written where the accessibility tree
+  exists — the suite, by the dev-only ruling in `Cargo.toml` — and the CALL is
+  unconditional, so the decision about which ops a control fires is recorded at
+  the control and nowhere else.
+- **A deliberate absence is config, cited, and loud.** `parity.toml` records
+  one line per control-classed op this seat does not surface, each citing the
+  ball that will build it; `src/snapshot/parity` prints the whole roster on
+  every run and fails on a line that has gone stale (the op is surfaced now) or
+  rotted (the roster no longer classes it a control). Deleting a line
+  re-reddens the gate and changes no code, which is the severability test.
+
+**The inventory instrument is §4.11's harness and never a second one**, for the
+reason a second paint walk was refused: two instruments disagreeing about what
+is on the window is a defect about the instruments. Presence is the whole
+claim — a tag on a dead button passes, and driving the tagged node to assert
+the envelope it emits is a later rung. Unproven is red: a control on a screen
+the walk never visits fails honestly, so the walk's world set is part of the
+instrument.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1072,10 +1130,15 @@ material must not have, which is a long life on a display.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, the one settled frame, and which widths the layout still promises a shape. `cfg(test)`. | ~125 |
-| `src/snapshot/worlds.rs` | the three named world states the matrix photographs, built from the window fixtures rather than from a second set. `cfg(test)`. | ~65 |
+| `src/snapshot/worlds.rs` | the four named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen is one of them. `cfg(test)`. | ~80 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to the seat's one covered pane and back, asked of the accessibility tree. `cfg(test)`. | ~100 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
+| `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |
+| `src/snapshot/parity/roster.rs` | which ops owe this seat a control, read off the vendored corpus's `reply/help` rows and decided nowhere here. `cfg(test)`. | ~80 |
+| `src/snapshot/parity/exempt.rs` | `parity.toml`, and the strict subset of TOML it is allowed to be — no crate parses it. `cfg(test)`. | ~90 |
+| `parity.toml` | the exemption ledger: one line per control-classed op this seat does not surface, each citing the ball that will build it. | config |
+| `src/ui/act.rs` | the `act:<op>` token a control carries, written into AccessKit's `author_id` where no label can drift into it. | ~85 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |

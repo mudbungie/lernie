@@ -41,6 +41,24 @@ fn working() -> World {
     }
 }
 
+/// **The window on a wall with nothing selected** — the composer's other
+/// subject.
+///
+/// It is a world rather than a variation because the seat has one box with two
+/// subjects (`crate::ui::composer`): with a conversation selected the box
+/// deposits, and with none it *begins* one. Every screen a control lives on has
+/// to be a screen this walk visits — yog's `docs/PARITY.md` §5 states it as
+/// *unproven is red* — and the start control lives only here.
+fn beginning() -> World {
+    let mut model = seated();
+    model.conversation = None;
+    model.transcript = crate::reply::transcript::Transcript::default();
+    World {
+        name: "beginning",
+        model,
+    }
+}
+
 /// **The window with the enrollment open** — the one pane in this seat that
 /// covers another, and so the one state where what is on the glass is not what
 /// the layout underneath it says.
@@ -59,5 +77,5 @@ fn enrolling() -> World {
 
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
-    vec![unprovisioned(), working(), enrolling()]
+    vec![unprovisioned(), working(), beginning(), enrolling()]
 }

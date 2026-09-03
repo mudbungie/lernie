@@ -123,7 +123,9 @@ fn form(ui: &mut egui::Ui, model: &mut Model) {
     let ready = enrolling.ready();
     let minting = enrolling.minting();
     ui.horizontal_wrapped(|ui| {
-        if ui.add_enabled(ready, egui::Button::new(SEND)).clicked() {
+        let mint = ui.add_enabled(ready, egui::Button::new(SEND));
+        crate::ui::act::tag(&mint, &[crate::verbs::ENROLL.word]);
+        if mint.clicked() {
             model.post_enrollment();
         }
         if ui.button(CLOSE).clicked() {

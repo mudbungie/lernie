@@ -1,0 +1,108 @@
+# THE PARITY EXEMPTION LEDGER — every op this seat owes a control and has not
+# built one for, each citing the ball that will build it.
+#
+# The contract is yog's `docs/PARITY.md` §7. The roster of what is owed is not
+# here and is not this repository's to decide: it is the `surface` field on the
+# vendored corpus's `reply/help.json` rows, generated from yog's own help table,
+# which is the one home for the suite-level fact "which ops owe every seat a
+# discoverable interactable". A row classed `control` there and absent from the
+# accessibility tree here must appear below or the gate reddens.
+#
+# HOW IT IS READ. One line per op, `op = "reason"`, and nothing else — blank
+# lines and `#` comments are the only other content the parser accepts. Every
+# reason must cite a ball id (`bl-xxxx`), because a reason that cites nothing is
+# a TODO with no owner and no way to tell whether it is still true.
+#
+# BOTH DIRECTIONS, so the file cannot rot quietly (PARITY §5):
+#
+#   - a row for an op that IS now tagged fails — stale; delete it, the control
+#     is the record;
+#   - a row for an op the roster no longer classes `control` fails — rotted;
+#     upstream moved the classification and this line is answering a question
+#     nobody asks any more.
+#
+# And it is never silent: `src/snapshot/parity` prints this whole roster on
+# every run, so an absence is read out loud beside the assertion that allows it.
+#
+# SEVERABILITY, which is the house test: deleting a line re-reddens the gate and
+# changes no code. Adding a control deletes a line and changes no config.
+
+# bl-d2af — the ball pane: a workspace's balls are readable nowhere, and none
+# can be created, claimed, closed or amended from this seat.
+assign = "bl-d2af — no ball pane: nothing here claims a ready ball for a workspace"
+balls = "bl-d2af — no ball pane: the ball/workspace bindings are painted nowhere"
+board = "bl-d2af — no ball pane: the fleet board has no column view here"
+close = "bl-d2af — no ball pane: a ball cannot be closed or delivered from this seat"
+create = "bl-d2af — no ball pane: a ball cannot be filed from this seat"
+marks = "bl-d2af — no ball pane: the branch an agent tracks its tasks on is unreadable"
+release = "bl-d2af — no ball pane: a held ball cannot be unclaimed here"
+update = "bl-d2af — no ball pane: a ball's title, body, schedule and journal are unreachable"
+workspace-balls = "bl-d2af — no ball pane: what a workspace holds and what it cost are unpainted"
+
+# bl-4c48 — the fleet and its trail have no surface: a workspace can be neither
+# run nor watched, and the ops rows are readable nowhere.
+ack = "bl-4c48 — no trail pane: an alarm cannot be acknowledged from this seat"
+arm = "bl-4c48 — no fleet controls: the cheap-model watch cannot be raised here"
+clear-trail = "bl-4c48 — no trail pane: nothing truncates the ops trail from this seat"
+disarm = "bl-4c48 — no fleet controls: the watch cannot be dropped here"
+disband = "bl-4c48 — no fleet controls: a running fleet cannot be stopped from this seat"
+fleet = "bl-4c48 — no fleet controls: a workspace's ready balls cannot be run from here"
+ops = "bl-4c48 — no trail pane: the ops rows are painted nowhere"
+scan = "bl-4c48 — no fleet controls: nothing flushes a workspace's inboxes from here"
+science = "bl-4c48 — no fleet controls: the delivery attempts and their costs are unpainted"
+work-diff = "bl-4c48 — no fleet controls: what the agents changed is readable nowhere"
+
+# bl-213c — the selected conversation affords a deposit and a nudge and nothing
+# else: no stop, no interrupt, no fork, and none of its records.
+agent = "bl-213c — no conversation pane: the selected conversation's own row is unpainted"
+delete-agent = "bl-213c — no conversation acts: a conversation cannot be deleted from this seat"
+files = "bl-213c — no conversation pane: the working files are readable nowhere"
+fork = "bl-213c — no conversation acts: a conversation cannot be tried again from a point"
+governing = "bl-213c — no conversation pane: the governing config commit is unpainted"
+inbox = "bl-213c — no conversation pane: undelivered mail is readable nowhere"
+interrupt = "bl-213c — no conversation acts: nothing cuts a conversation off mid-work"
+rail = "bl-213c — no conversation pane: the spine and its operable commits are unpainted"
+retarget = "bl-213c — no conversation acts: nothing settles one onto another lineage"
+step = "bl-213c — no conversation pane: one step's records are readable nowhere"
+steps = "bl-213c — no conversation pane: the steps taken are painted nowhere"
+stop = "bl-213c — no conversation acts: a driver cannot be killed from this seat"
+
+# bl-8ffa — a prepared start cannot be fanned, and no candidate can be accepted
+# or retired.
+deliver = "bl-8ffa — no candidate surface: one of n cannot be accepted here"
+fan = "bl-8ffa — no candidate surface: a prepared start cannot be spread over attempts"
+retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be released here"
+
+# bl-4a2c — the workspace's configuration is unreachable: no lineage, no config
+# file, no role tuning, and no way to unmake it.
+config = "bl-4a2c — no configuration pane: a config file is neither read nor written here"
+delete-workspace = "bl-4a2c — no configuration pane: a workspace cannot be unmade from this seat"
+effort = "bl-4a2c — no configuration pane: a role's reasoning effort is untunable here"
+lineages = "bl-4a2c — no configuration pane: the config lineages are painted nowhere"
+model = "bl-4a2c — no configuration pane: a role cannot be given a model from this seat"
+priority = "bl-4a2c — no configuration pane: a role's provider priority lane is unreachable"
+roles = "bl-4a2c — no configuration pane: what the roles are set to is readable nowhere"
+
+# bl-40ec — three window-level reads reach no gesture: the roster refreshes
+# itself, and help and search have no home at all.
+help = "bl-40ec — no command surface: a verb's page is readable only from the command line"
+search = "bl-40ec — no search surface: nothing finds text across balls, walls or transcripts"
+workspaces = "bl-40ec — the roster is populated by a standing read no gesture reaches or refreshes"
+
+# bl-e3c5 — the Login pane: provider rows over the channel that hosts the wall,
+# and the sign-in posted as a boundary act. (bl-b180 is the defect it answers.)
+models = "bl-e3c5 — no provider pane: what a provider is offering is readable nowhere"
+providers = "bl-e3c5 — no provider pane: the provider table and its credential facts are unpainted"
+
+# bl-f0ef — the decision queue has no pane, so a flag raised on a conversation
+# is readable nowhere from this seat.
+attention = "bl-f0ef — no decision queue: what is waiting on the operator is unpainted"
+flag = "bl-f0ef — no decision queue: an attention item cannot be raised from this seat"
+seen = "bl-f0ef — no decision queue: a conversation's place in the queue cannot be answered"
+
+# bl-e53c — the tool-host surface is unpainted, so a foot's advertised set and
+# its subject_cwd consent are readable nowhere.
+answer = "bl-e53c — no tool-host pane: a held tool call cannot be released or declined here"
+clients = "bl-e53c — no tool-host pane: the registered machines and what they offer are unpainted"
+restore = "bl-e53c — no tool-host pane: tool auto-approval cannot be given back from this seat"
+revoke = "bl-e53c — no tool-host pane: tool auto-approval cannot be taken away here"

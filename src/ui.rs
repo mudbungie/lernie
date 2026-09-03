@@ -28,6 +28,8 @@
 //! every assertion against it is blind to truncation. That rule arrived here
 //! with this window, as a rule and not as a memory.
 
+/// The `act:<op>` token a control carries so interface drift is catchable.
+pub mod act;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
 /// The composer: what an operator types, and the gesture it becomes.

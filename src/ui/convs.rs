@@ -128,6 +128,13 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
                 .selectable(false)
                 .sense(egui::Sense::click()),
         );
+        // **Two reads hang off this one gesture** (`crate::ui::act`): selecting
+        // a conversation is what makes this seat read its transcript and open
+        // the follow lane on it, and neither has a control of its own.
+        crate::ui::act::tag(
+            &seat,
+            &[crate::verbs::TRANSCRIPT.word, crate::verbs::FOLLOW.word],
+        );
         if selected {
             ui.painter().set(
                 ground,

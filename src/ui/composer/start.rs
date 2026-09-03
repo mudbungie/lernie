@@ -46,7 +46,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // Enter begins it, and the button beside it is how an operator finds that
     // out — the same pairing the deposit's own Enter has, for the same reason.
     let mut fired = entry.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-    fired |= ui.button(START).clicked();
+    // **Both halves of the start ride this one control** (`crate::ui::act`):
+    // the click composes `prepare`, and the `prompt` that finishes it is fired
+    // by the frame when the engine's reply lands (`crate::ui::model::start`),
+    // from no widget at all. A walk over the accessibility tree can only ever
+    // see the control that begins the pair.
+    let begin = ui.button(START);
+    crate::ui::act::tag(&begin, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
+    fired |= begin.clicked();
     if fired {
         model.stage(&aim.address);
     }

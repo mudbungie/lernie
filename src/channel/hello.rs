@@ -97,7 +97,18 @@ use super::frame;
 /// the two new ops carry a top-level `workspace` and `src/verbs/tests/corpus`
 /// asserts this seat routes every vocabulary frame by the slot upstream's own
 /// signature says it carries, which is where a miss would be silent.
-pub const PROTOCOL: u32 = 6;
+///
+/// **7 is the first bump this end reads a field out of** (REMOTE §9.14,
+/// upstream bl-8758; bl-38d4 here). Every `reply/help` row gained `surface`,
+/// classing the op `control` — every seat owes it a discoverable interactable
+/// — or `machine`, spoken by programs and owed nothing. It is wire-visible
+/// because it rides a reply this seat vendors, and it is load-bearing here:
+/// the field IS the roster the interface-parity gate judges this window
+/// against (`crate::snapshot::parity`, yog's `docs/PARITY.md` §2). The bump
+/// also carried the `roles` shape, which nothing here paints yet and which
+/// therefore landed in the corpus ledger — `corpus/README.md` on why that
+/// directory is the record rather than an oversight.
+pub const PROTOCOL: u32 = 7;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

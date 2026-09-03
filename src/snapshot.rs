@@ -41,6 +41,7 @@ use egui_kittest::{Harness, HarnessBuilder};
 
 pub(crate) mod blank;
 pub(crate) mod clipped;
+pub(crate) mod parity;
 pub(crate) mod reach;
 pub(crate) mod worlds;
 

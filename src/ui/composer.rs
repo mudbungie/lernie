@@ -80,8 +80,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // painted, correct, and unreachable by any pointer. Wrapping costs a
     // second line in a panel already sized to its content.
     ui.horizontal_wrapped(|ui| {
-        sent |= ui.button(SEND).clicked();
-        nudged = ui.button(NUDGE).clicked();
+        let deposit = ui.button(SEND);
+        crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
+        sent |= deposit.clicked();
+        let advance = ui.button(NUDGE);
+        crate::ui::act::tag(&advance, &[crate::verbs::NUDGE.word]);
+        nudged = advance.clicked();
     });
     if sent {
         fire(model, &aim.address, &agent);

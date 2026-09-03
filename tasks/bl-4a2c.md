@@ -1,7 +1,8 @@
 +++
 title = "the workspace's configuration is unreachable: no lineage, no config file, no role tuning, and no way to unmake it"
 created = 1788397358
-updated = 1788397358
+updated = 1788398265
+claimant = "Tunepane"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

@@ -8,6 +8,7 @@
 
 use serde_json::Value;
 
+use crate::channel::Reach;
 use crate::reply::Read;
 use crate::ui::{Aim, Channel, Model};
 
@@ -23,11 +24,15 @@ pub struct Heard {
     pub said: Said,
 }
 
-/// What a leg produced. **Three outcomes and not two**, because a channel this
-/// box cannot open is a different sentence from an engine that refused: the
-/// first is about this box's own files or the far end being down, the second is
-/// the engine answering. A seat that read them alike would send an operator to
-/// check a certificate over a workspace name they mistyped.
+/// What a leg produced. **More than one failure outcome**, because a channel
+/// this box cannot open is a different sentence from an engine that refused:
+/// the first is about this box's own files or the far end being down, the
+/// second is the engine answering. A seat that read them alike would send an
+/// operator to check a certificate over a workspace name they mistyped.
+///
+/// The fourth arm is that division taken one step further (bl-3969): what a
+/// failed leg means depends on whether the gesture was an ACT, so the poster
+/// reports one and the two read workers report the other.
 #[derive(Debug, Clone)]
 pub enum Said {
     /// One reply frame, exactly as it crossed.
@@ -49,7 +54,20 @@ pub enum Said {
     /// go on replacing.
     Live { conversation: String, read: Read },
     /// This seat could not reach the far end, and here is the sentence.
+    ///
+    /// **A READ's failure, and only a read's.** It is a fact about a
+    /// relationship — this channel is not answering — which is why it lands on
+    /// that channel's own roster section rather than in the shell's bar
+    /// (REMOTE §8.2, bl-e620).
     Unreachable(String),
+    /// **An ACT that earned no reply**, and what the transport can say about
+    /// whether it crossed (REMOTE §3, bl-3969).
+    ///
+    /// A fact about an **exchange** and not about a relationship, so it goes to
+    /// the bar where a refusal goes. The `op` rides with it because the bar is
+    /// one line for the whole window: a sentence about an act that does not
+    /// name the act is a sentence about nothing an operator can act on.
+    Acted { op: String, reach: Reach },
 }
 
 /// **What to ask next.** Derived from the model on every settle, so it cannot

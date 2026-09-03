@@ -12,8 +12,6 @@
 //! the type: a refusal and an unreadable frame are both visible rows, and
 //! neither is a silent drop.
 
-use serde_json::Value;
-
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
 use crate::reply::transcript::Transcript;
@@ -30,6 +28,8 @@ mod claim;
 mod enroll;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
+/// What a frame composed, and what a lost reply would mean for it.
+mod posted;
 /// The decision queue between frames: what is asking, and the acts on a row.
 mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
@@ -46,6 +46,7 @@ mod window;
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use notice::Notice;
+pub use posted::Posted;
 pub use queue::Asking;
 pub use start::{Phase, Start};
 pub use tuning::{Edit, Tuning};
@@ -184,7 +185,10 @@ pub struct Model {
     pub enroll: Option<Enrolling>,
     /// **The gestures this frame composed**, for whoever can send them. A frame
     /// that posted its own would be a frame that waits.
-    pub outbox: Vec<Value>,
+    ///
+    /// Each carries whether it is an ACT, said by the control that composed it,
+    /// because a lost reply means opposite things for the two ([`Posted`]).
+    pub outbox: Vec<Posted>,
 }
 
 impl Model {

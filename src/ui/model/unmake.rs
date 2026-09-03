@@ -94,7 +94,7 @@ impl Model {
         };
         unmaking.posted = true;
         let gesture = unmaking.gesture();
-        self.outbox.push(gesture);
+        self.outbox.push(super::Posted::act(gesture));
     }
 }
 

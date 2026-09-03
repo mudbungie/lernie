@@ -24,7 +24,10 @@ fn the_refresh_asks_every_channel_again_and_opens_no_pane() {
     let window = Window::new();
     let mut model = seated();
     click(&window, REFRESH, |ctx| crate::ui::render(ctx, &mut model));
-    assert_eq!(model.outbox, vec![crate::verbs::workspaces()]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::workspaces())]
+    );
     assert!(!model.covered(), "nothing was opened");
 }
 

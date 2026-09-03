@@ -60,7 +60,11 @@ fn each_act_composes_the_envelope_its_verb_row_builds() {
     ] {
         let mut model = seated();
         press(&mut model, label);
-        assert_eq!(model.outbox, vec![expected], "{label}");
+        assert_eq!(
+            model.outbox,
+            vec![crate::ui::Posted::act(expected)],
+            "{label}"
+        );
     }
 }
 
@@ -75,8 +79,10 @@ fn the_typed_name_rides_the_deletion_verbatim_and_stays_the_operators() {
     press(&mut model, DELETE);
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "delete-agent", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2", "typed": "port the paint probe"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "delete-agent", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "typed": "port the paint probe"})
+        )]
     );
     assert_eq!(
         model.typed, "port the paint probe",
@@ -98,7 +104,7 @@ fn the_acts_carry_the_address_the_channel_resolves() {
         ..seated()
     };
     press(&mut model, STOP);
-    assert_eq!(model.outbox[0]["workspace"], json!("elsewhere"));
+    assert_eq!(model.outbox[0].envelope["workspace"], json!("elsewhere"));
 }
 
 /// **The raise carries the operator's words and SPENDS them** (bl-f0ef), which
@@ -112,9 +118,11 @@ fn the_raise_carries_the_reason_and_spends_the_box() {
     press(&mut model, FLAG);
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "flag", "workspace": "home",
+        vec![crate::ui::Posted::act(
+            json!({"op": "flag", "workspace": "home",
                     "agent": "20260830T051200Z-a1b2",
-                    "reason": "it is rewriting an unrelated crate"})]
+                    "reason": "it is rewriting an unrelated crate"})
+        )]
     );
     assert!(model.reason.is_empty(), "a flag that fired is said");
 }

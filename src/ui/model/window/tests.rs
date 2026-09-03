@@ -24,7 +24,10 @@ fn opening_the_commands_pane_composes_the_ask_and_closing_keeps_the_rows() {
     let mut model = seated();
     model.begin_commands();
     assert!(model.commanding());
-    assert_eq!(model.outbox, vec![crate::verbs::window::help()]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::window::help())]
+    );
     model.paged(&own().channel, vec![helped("scan", "control")]);
     model.close_lookup();
     assert!(!model.commanding());
@@ -108,7 +111,12 @@ fn the_needle_enables_the_act_and_whitespace_is_not_one() {
     model.needle = "  gate ".to_owned();
     assert!(model.needled());
     model.post_search();
-    assert_eq!(model.outbox, vec![crate::verbs::search("gate".to_owned())]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::search(
+            "gate".to_owned()
+        ))]
+    );
     assert_eq!(model.needle, "  gate ", "the box is not spent on firing");
 }
 
@@ -119,7 +127,10 @@ fn the_needle_enables_the_act_and_whitespace_is_not_one() {
 fn the_refresh_asks_every_channel_again_and_drops_nothing() {
     let mut model = seated();
     model.refresh_roster();
-    assert_eq!(model.outbox, vec![crate::verbs::workspaces()]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::workspaces())]
+    );
     assert_eq!(model.roster.len(), 1, "what stands keeps standing");
 }
 

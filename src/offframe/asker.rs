@@ -33,14 +33,22 @@ use crate::ui::Channel;
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
     for channel in &standing.channels {
-        down(link, root, channel, &crate::verbs::workspaces());
+        read(
+            link,
+            down(link, root, channel, &crate::verbs::workspaces()),
+            channel,
+        );
         // **The queue fans with the roster** (bl-f0ef), and for the same
         // reason: `attention` names no workspace, so its subject is every
         // channel this box holds and the union is composed here. It stands on
         // the PANE rather than on a focus, because nothing on the glass is its
         // subject — see `crate::state::Standing::queue`.
         if standing.queue {
-            down(link, root, channel, &crate::verbs::attention());
+            read(
+                link,
+                down(link, root, channel, &crate::verbs::attention()),
+                channel,
+            );
         }
     }
     let Some((channel, aim)) = standing.aimed() else {
@@ -93,9 +101,23 @@ pub fn tick(link: &Link, root: &Path) {
 /// [`route`](crate::seat::route) resolves it over this box's entries and
 /// rewrites it to the host's spelling at the one place that mapping is spent.
 fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
-    match crate::seat::route(root, envelope).and_then(|(open, carried)| open.ask(&carried)) {
+    let asked = crate::seat::route(root, envelope)
+        .map_err(crate::channel::Reach::Unsent)
+        .and_then(|(open, carried)| open.ask(&carried));
+    match asked {
         Ok(stream) => super::file(link, channel, stream),
-        Err(why) => link.heard(channel, Said::Unreachable(why)),
+        Err(reach) => read(link, Err(reach), channel),
+    }
+}
+
+/// **A read's failure is the channel's own relationship**, whichever leg
+/// produced it, and it says nothing about whether the request crossed:
+/// re-asking is free (REMOTE §3: *"a read is answered in place, and asking
+/// twice is asking once"*), so a standing question needs no arm for a fact it
+/// would do nothing with. The whole set is asked again on the next beat.
+fn read(link: &Link, leg: Result<(), crate::channel::Reach>, channel: &Channel) {
+    if let Err(reach) = leg {
+        link.heard(channel, Said::Unreachable(reach.said()));
     }
 }
 

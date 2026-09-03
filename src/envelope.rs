@@ -9,7 +9,9 @@
 //! it is three things:
 //!
 //! - that it **is** an object with an `op` — enough to refuse a typo at the
-//!   seat rather than spend a connection on it;
+//!   seat rather than spend a connection on it, and enough to NAME the gesture
+//!   in a sentence about it (REMOTE §3's in-doubt paint, bl-3969); the word is
+//!   said back, never interpreted, so this is still not a vocabulary;
 //! - **which workspace it names**, because that is what decides the channel it
 //!   goes down (§8.2);
 //! - whether the last reply frame said **ok**, because that is the exit code.
@@ -76,6 +78,21 @@ pub fn parse(text: &str) -> Result<Value, String> {
              every gesture carries"
         )),
     }
+}
+
+/// **The word this envelope is**, or `?` where it carries none.
+///
+/// Said back and never read: nothing branches on the answer, and the one caller
+/// is the sentence that tells an operator WHICH act is in doubt. A `?` is
+/// unreachable through [`parse`] and through [`crate::verbs`], both of which
+/// refuse an envelope without a string `op` — it is here because a total
+/// function has no arm a test cannot reach.
+pub fn op(envelope: &Value) -> String {
+    envelope
+        .get(OP)
+        .and_then(Value::as_str)
+        .unwrap_or("?")
+        .to_owned()
 }
 
 /// The workspace this envelope names, or `None` when it names none — the

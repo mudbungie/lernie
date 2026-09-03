@@ -84,7 +84,9 @@ impl Model {
             return;
         }
         let goal = std::mem::take(&mut self.draft);
-        self.outbox.push(crate::verbs::prepare(address.to_owned()));
+        self.outbox.push(super::Posted::act(crate::verbs::prepare(
+            address.to_owned(),
+        )));
         self.start = Some(Start {
             address: address.to_owned(),
             goal,
@@ -113,11 +115,11 @@ impl Model {
             self.start = None;
             return;
         }
-        self.outbox.push(crate::verbs::prompt(
+        self.outbox.push(super::Posted::act(crate::verbs::prompt(
             prepared,
             address.clone(),
             goal.clone(),
-        ));
+        )));
         self.start = Some(Start {
             address,
             goal,

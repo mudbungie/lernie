@@ -2,7 +2,7 @@
 
 use serde_json::{Value, json};
 
-use super::{KEPT, enroll};
+use super::{INDOUBT, KEPT, enroll};
 use crate::cli::Stream;
 use crate::test_support::{Scratch, wire};
 
@@ -186,6 +186,29 @@ fn material_too_big_for_a_symbol_says_so_and_draws_nothing() {
     );
     assert!(!verdict.text.contains("notreal"), "it printed the material");
     assert_eq!(before, after, "a refusal still wrote something");
+}
+
+/// **An enrollment that crossed with no answer is the costliest doubt this
+/// seat has** (REMOTE §3, bl-3969): its product is the one reply nothing here
+/// keeps, so a registration may now exist whose material is gone. [`KEPT`]'s
+/// *enroll again* is the right advice when the picture was drawn and the wrong
+/// advice here, so this sentence refuses it and names the read.
+#[test]
+fn an_enrollment_that_crossed_with_no_answer_is_in_doubt_and_says_not_to_repeat() {
+    let scratch = Scratch::new();
+    let _engine = wire::wired(
+        &scratch,
+        &wire::flat(),
+        vec![crate::test_support::engine::Answer::Hangup],
+    );
+    let verdict = enroll(scratch.path(), "home", "phone", "seat");
+    assert_eq!(verdict.code, 1);
+    assert!(verdict.text.contains(INDOUBT), "{}", verdict.text);
+    assert!(
+        verdict.text.contains("clients"),
+        "the recovery is a read, and it is named: {}",
+        verdict.text
+    );
 }
 
 /// An engine that closes without a frame has answered nothing, and that is its

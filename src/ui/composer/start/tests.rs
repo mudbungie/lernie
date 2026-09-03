@@ -48,7 +48,9 @@ fn starting_composes_the_staging_act_and_posts_nothing() {
     });
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "prepare", "workspace": "home", "payload": {"rung": "bare"}})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "prepare", "workspace": "home", "payload": {"rung": "bare"}})
+        )]
     );
     assert_eq!(
         model.start.as_ref().map(|start| start.goal.clone()),
@@ -75,7 +77,7 @@ fn enter_begins_what_was_typed() {
     window.frame(vec![press(egui::Key::Enter)], &mut body);
     window.frame(Vec::new(), &mut body);
     assert_eq!(model.outbox.len(), 1, "{:?}", model.outbox);
-    assert_eq!(model.outbox[0]["op"], json!("prepare"));
+    assert_eq!(model.outbox[0].envelope["op"], json!("prepare"));
 }
 
 /// **A start in flight refuses a second one, by there being no control.** Two

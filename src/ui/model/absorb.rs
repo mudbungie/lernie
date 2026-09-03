@@ -135,6 +135,9 @@ impl Model {
     /// The bar is kept for a channel this box holds no section for, which is
     /// the one case with nowhere else to say it — and it names the channel,
     /// because a fact with no home still has a subject.
+    ///
+    /// **An ACT that failed is not this** — see [`Model::acted`], which is that
+    /// same division applied rather than bent.
     pub fn unreachable(&mut self, channel: &Channel, why: String) {
         match self
             .roster
@@ -144,5 +147,32 @@ impl Model {
             Some(held) => held.held = Held::Unheld(why),
             None => self.notice = Some(Notice::Unreachable(format!("{}: {why}", channel.name))),
         }
+    }
+
+    /// **An act that earned no reply** (yog's `docs/REMOTE.md` §3, bl-3969).
+    ///
+    /// It goes to the bar and takes no channel, which is
+    /// [`unreachable`](Self::unreachable)'s own rule read the other way: *a
+    /// refusal is an exchange; an unreachable channel is a relationship*, and a
+    /// gesture an operator made is an exchange whatever went wrong with it. Two
+    /// further things follow and both are the section's reasons inverted. The
+    /// section is the slot a `workspaces` answer overwrites (`Model::seat` sets
+    /// `Held::Heard` on every one), and the asker answers `workspaces` on every
+    /// beat — so an act's sentence written there is erased within one beat by a
+    /// read that succeeded, which is exactly the wrong outcome for the one fact
+    /// on this window that nothing will say again. And the bar's dismiss is
+    /// live here rather than inert: an act is an event, not a state, so it does
+    /// not re-post on a beat, and *I have looked* is a real thing for an
+    /// operator to say about one.
+    ///
+    /// **The recovery is on the glass already.** The contract's answer to a
+    /// lost reply is a read, and this window's reads never stopped — the
+    /// standing set is re-derived from the focus and asked every beat, so the
+    /// conversation, the roster and whichever pane is open are being asked again
+    /// while the sentence stands. That is why there is no control here and no
+    /// mapping from an act to *its* read: a control would be a second spelling
+    /// of the beat, and the parity roster judges controls, not states (§4.16).
+    pub fn acted(&mut self, op: &str, reach: &crate::channel::Reach) {
+        self.notice = Some(Notice::act(op, reach));
     }
 }

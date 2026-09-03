@@ -121,11 +121,11 @@ fn the_composed_gesture_is_the_row_the_command_line_spends() {
     model.post_enrollment();
     assert_eq!(
         model.outbox,
-        vec![crate::verbs::enroll(
+        vec![crate::ui::Posted::act(crate::verbs::enroll(
             "home".to_owned(),
             "phone-1".to_owned(),
             "foot".to_owned()
-        )]
+        ))]
     );
 }
 

@@ -12,6 +12,15 @@
 //! (REMOTE §3: *"the seat polls"*). So a test says what the engine answers the
 //! first dial, the second, and so on.
 //!
+//! **One of the things it can be told to answer is nothing at all**
+//! ([`Answer::Hangup`], bl-3969). That is the seam yog's own bl-d1f1 recorded
+//! not having: *"The wire path's window is not drivable without a way to drop a
+//! connection mid-answer, which is itself a finding — the path with the worst
+//! recovery story is the one with no test seam for it."* A hangup reads the
+//! request and then closes without the terminator, which is exactly the shape
+//! REMOTE §3's IN DOUBT is made of: the gesture crossed, and no answer came
+//! back.
+//!
 //! **It records every frame it is handed, in order** — the version preface and
 //! then the request, per connection. That is how a test asserts what the seat
 //! *said* rather than only what it did with the reply, and it is the only
@@ -34,6 +43,26 @@ use crate::channel::{frame, material, tls};
 /// How many frames a seat writes per connection: its preface, then its request.
 const FRAMES_IN: usize = 2;
 
+/// **What the stand-in does on one connection.**
+///
+/// A plain `Vec<Value>` converts into the ordinary arm, so every scripted
+/// answer written before this type existed still reads as one — the new arm is
+/// the one a test has to name.
+pub(crate) enum Answer {
+    /// The frames, then the terminator: an answer, ended the way REMOTE §3 ends
+    /// one.
+    Frames(Vec<Value>),
+    /// **Read the request and close, saying nothing.** No frames and no
+    /// terminator, so the seat's reader meets an EOF where a frame belongs.
+    Hangup,
+}
+
+impl From<Vec<Value>> for Answer {
+    fn from(frames: Vec<Value>) -> Self {
+        Self::Frames(frames)
+    }
+}
+
 /// A listener standing in for yog, and what it was told.
 ///
 /// It answers no address of its own: the address it bound is written into the
@@ -51,7 +80,8 @@ impl Engine {
     ///
     /// `protocol` is what the engine states as its version, so a test can make
     /// the two ends disagree without a second code path.
-    pub(crate) fn start(dir: &Path, protocol: u32, script: Vec<Vec<Value>>) -> Self {
+    pub(crate) fn start(dir: &Path, protocol: u32, script: Vec<impl Into<Answer>>) -> Self {
+        let script: Vec<Answer> = script.into_iter().map(Into::into).collect();
         let config = server_config(dir);
         let listener = TcpListener::bind("127.0.0.1:0").expect("a loopback port");
         let address = listener.local_addr().expect("bound").to_string();
@@ -89,7 +119,7 @@ fn serve(
     config: &Arc<ServerConfig>,
     tcp: TcpStream,
     protocol: u32,
-    answer: &[Value],
+    answer: &Answer,
     seen: &Arc<Mutex<Vec<Value>>>,
 ) {
     let Ok(conn) = ServerConnection::new(Arc::clone(config)) else {
@@ -104,7 +134,10 @@ fn serve(
                 .push(said);
         }
     }
-    for value in answer {
+    let Answer::Frames(frames) = answer else {
+        return;
+    };
+    for value in frames {
         let _ = frame::write_value(&mut tls, value);
     }
     let _ = frame::write_end(&mut tls);

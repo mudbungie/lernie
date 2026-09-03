@@ -38,7 +38,7 @@ pub use holds::{OWN, channels, dial, listing};
 pub use start::start;
 
 use crate::channel::material::{self, REMEDY};
-use crate::channel::{Channel, entries};
+use crate::channel::{Channel, Reach, entries};
 use crate::cli::Verdict;
 use crate::envelope;
 
@@ -59,7 +59,7 @@ use crate::envelope;
 pub fn ask(data_root: &Path, envelope: &Value) -> Verdict {
     match sent(data_root, envelope) {
         Ok(stream) => Verdict::answered(lines(&stream), envelope::succeeded(&stream)),
-        Err(refusal) => Verdict::failed(refusal),
+        Err(reach) => Verdict::failed(reach.said()),
     }
 }
 
@@ -68,8 +68,14 @@ pub fn ask(data_root: &Path, envelope: &Value) -> Verdict {
 /// Every caller does both and neither half is useful alone — a channel opened
 /// and not asked is a connection nobody wanted — so the pair is one function
 /// and the two failures collapse into the one sentence they always were.
-pub(crate) fn sent(data_root: &Path, envelope: &Value) -> Result<Vec<Value>, String> {
-    let (channel, carried) = route(data_root, envelope)?;
+///
+/// **They collapse into one SENTENCE and not into one outcome** (bl-3969). A
+/// gesture this box could not route never crossed, so it joins everything
+/// [`crate::channel::Channel::ask`] classes [`Reach::Unsent`]; what the
+/// [`Reach`] carries past this point is the fact a caller with an ACT in hand
+/// needs and a caller printing a sentence does not.
+pub(crate) fn sent(data_root: &Path, envelope: &Value) -> Result<Vec<Value>, Reach> {
+    let (channel, carried) = route(data_root, envelope).map_err(Reach::Unsent)?;
     channel.ask(&carried)
 }
 

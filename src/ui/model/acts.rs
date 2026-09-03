@@ -141,7 +141,7 @@ impl Model {
         };
         enrolling.posted = true;
         let gesture = enrolling.gesture();
-        self.outbox.push(gesture);
+        self.outbox.push(super::Posted::act(gesture));
     }
 
     /// **Close the enrollment, and drop the material with it.** The one control

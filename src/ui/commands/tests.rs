@@ -99,7 +99,10 @@ fn the_roster_opens_it_asking_for_the_table_and_its_own_word_shuts_it() {
     let mut model = seated();
     click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
     assert!(model.commanding());
-    assert_eq!(model.outbox, vec![crate::verbs::window::help()]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::window::help())]
+    );
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.commanding());
 }

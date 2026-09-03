@@ -20,9 +20,17 @@
 //! **A stage that lands and a fire that cannot be sent is its own sentence.** It
 //! is the one outcome the two-act shape has and one act does not: the workspace
 //! exists, the seed is spent, and nothing is running. Saying so beats printing a
-//! transport error under a receipt that looks like success — and the remedy is
-//! to type it again, because the stage's steps are convergent (§8.1: *"steps
-//! are individually idempotent-or-convergent"*).
+//! transport error under a receipt that looks like success.
+//!
+//! **And the remedy is not one sentence, because the fire is an ACT** (REMOTE
+//! §3, bl-3969). *Type it again* is right for a fire that never left this box —
+//! the stage's steps are convergent (§8.1: *"steps are individually
+//! idempotent-or-convergent"*) and the fire did not happen. It is exactly wrong
+//! for a fire that crossed and was not answered: an act with no reply is IN
+//! DOUBT, a second `lernie start` is a second conversation on a wall that may
+//! already have one running, and the recovery is to LOOK. This file was the one
+//! place in the crate that told an operator to resend an act, and it now tells
+//! them which of the two happened and what the read is.
 
 use std::path::Path;
 
@@ -35,12 +43,20 @@ use crate::reply::{Read, Reply, read};
 /// What the seat says when the stage landed and the fire never left this box.
 const UNFIRED: &str = "the start was staged and the fire could not be sent";
 
+/// What it says when the fire crossed and no answer came back. **The one
+/// sentence in this crate that has to refuse the obvious remedy**: the stage is
+/// convergent and the fire is not, so a start that may already be running must
+/// not be typed again (REMOTE §3).
+const INDOUBT: &str = "the start was staged and the fire crossed with no answer, so it is IN DOUBT — \
+     the conversation may be running. Do NOT start it again: ask what the wall \
+     holds (`lernie conversations <workspace>`)";
+
 /// **Begin a conversation**: stage a start in `address`, then fire it with
 /// `goal`.
 pub fn start(data_root: &Path, address: &str, goal: &str) -> Verdict {
     let staged = match super::sent(data_root, &crate::verbs::prepare(address.to_owned())) {
         Ok(frames) => frames,
-        Err(why) => return Verdict::failed(why),
+        Err(reach) => return Verdict::failed(reach.said()),
     };
     let Some(prepared) = prepared(&staged) else {
         // The engine refused, answered a kind this build cannot read, or
@@ -55,7 +71,8 @@ pub fn start(data_root: &Path, address: &str, goal: &str) -> Verdict {
             super::lines(&[staged, fired.clone()].concat()),
             envelope::succeeded(&fired),
         ),
-        Err(why) => Verdict::failed(format!("{UNFIRED}: {why}")),
+        Err(reach) if reach.crossed() => Verdict::failed(format!("{INDOUBT}: {}", reach.said())),
+        Err(reach) => Verdict::failed(format!("{UNFIRED}: {}", reach.said())),
     }
 }
 

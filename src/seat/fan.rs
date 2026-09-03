@@ -46,7 +46,13 @@ pub fn fanned(data_root: &Path, envelope: &Value) -> Verdict {
                     .into_iter()
                     .map(|held| (holds::label(&held.leaf, &held.workspace), held.open())),
             )
-            .map(|(name, channel)| (name, channel.and_then(|open| open.ask(envelope))))
+            .map(|(name, channel)| {
+                let said = channel
+                    .map_err(crate::channel::Reach::Unsent)
+                    .and_then(|open| open.ask(envelope))
+                    .map_err(|reach| reach.said());
+                (name, said)
+            })
             .collect();
     let answered = asked.iter().any(|(_, said)| {
         said.as_ref()

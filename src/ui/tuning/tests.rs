@@ -127,7 +127,11 @@ fn clicking_a_level_and_the_lane_composes_the_two_tuning_writes() {
                 render(ui, &mut model);
             });
         });
-        assert_eq!(model.outbox, vec![expected], "{label}");
+        assert_eq!(
+            model.outbox,
+            vec![crate::ui::Posted::act(expected)],
+            "{label}"
+        );
     }
 }
 
@@ -209,8 +213,10 @@ fn set_spends_a_whole_draft_and_a_half_one_composes_nothing() {
     });
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "model", "workspace": "home", "role": "worker",
-                    "provider": "housevendor", "model": "house-model-1"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "model", "workspace": "home", "role": "worker",
+                    "provider": "housevendor", "model": "house-model-1"})
+        )]
     );
 }
 

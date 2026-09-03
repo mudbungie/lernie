@@ -136,7 +136,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
     // the name would charge them a retype for the engine's *no*, which is a
     // toll on the safe path — where clearing a sent message costs nothing,
     // because it was sent.
-    model.outbox.extend(fired);
+    model
+        .outbox
+        .extend(fired.into_iter().map(crate::ui::Posted::act));
 }
 
 #[cfg(test)]

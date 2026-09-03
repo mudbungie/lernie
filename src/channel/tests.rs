@@ -112,9 +112,13 @@ fn an_engine_that_answers_nothing_ends_the_stream() {
 fn an_engine_of_another_protocol_refuses_and_names_both_versions() {
     let (_scratch, _engine, held) = wired(PROTOCOL + 1, vec![vec![answered()]]);
     let channel = Channel::open(&held).expect("opened");
-    let refusal = channel
+    let reach = channel
         .ask(&json!({"op": "workspaces"}))
         .expect_err("refused");
+    // A peer of another protocol refuses before any gesture is decoded, so
+    // nothing crossed and an act that met this is not in doubt (bl-3969).
+    assert!(!reach.crossed(), "a stated mismatch adjudicates nothing");
+    let refusal = reach.said();
     assert!(
         refusal.contains(&format!("seat speaks version {PROTOCOL}")),
         "{refusal}"
@@ -133,9 +137,14 @@ fn an_engine_that_is_not_there_names_the_address_it_dialled() {
     let scratch = Scratch::new();
     let held = mint::provisioned(scratch.path(), "127.0.0.1:1");
     let channel = Channel::open(&held).expect("opened");
-    let refusal = channel
+    let reach = channel
         .ask(&json!({"op": "workspaces"}))
         .expect_err("refused");
+    assert!(
+        !reach.crossed(),
+        "a socket that never opened carried nothing"
+    );
+    let refusal = reach.said();
     assert!(refusal.contains("connect 127.0.0.1:1"), "{refusal}");
 }
 
@@ -154,9 +163,11 @@ fn an_engine_the_anchors_do_not_cover_never_reaches_the_boundary() {
     // act — driven live, a wrong anchor produced that and nothing else,
     // anywhere. The handshake happens inside the first write, so this is where
     // the sentence is earned.
-    let why = channel
+    let reach = channel
         .ask(&json!({"op": "workspaces"}))
         .expect_err("the anchors do not cover it");
+    assert!(!reach.crossed(), "a handshake that failed carried nothing");
+    let why = reach.said();
     assert!(why.contains("did not verify"), "{why}");
     assert!(
         why.contains("did not verify (") && !why.contains("()"),

@@ -101,10 +101,10 @@ fn the_seen_control_composes_the_answer() {
     click(&window, SEEN, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(
         model.outbox,
-        vec![crate::verbs::seen(
+        vec![crate::ui::Posted::act(crate::verbs::seen(
             "home".to_owned(),
             "20260830T051200Z-a1b2".to_owned()
-        )]
+        ))]
     );
     assert!(model.queue, "answering a row does not close the pane");
 }

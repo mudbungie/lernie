@@ -104,7 +104,10 @@ fn seen_is_composed_only_where_the_wall_resolves() {
     model.post_seen(&waiting("home", "c-1"));
     assert_eq!(
         model.outbox,
-        vec![crate::verbs::seen("home".to_owned(), "c-1".to_owned())]
+        vec![crate::ui::Posted::act(crate::verbs::seen(
+            "home".to_owned(),
+            "c-1".to_owned()
+        ))]
     );
 }
 

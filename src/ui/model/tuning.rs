@@ -180,7 +180,7 @@ impl Model {
             return;
         };
         let Aim { address, .. } = aim;
-        self.outbox.push(gesture(address));
+        self.outbox.push(super::Posted::act(gesture(address)));
     }
 }
 

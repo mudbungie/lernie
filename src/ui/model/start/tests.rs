@@ -23,7 +23,12 @@ fn a_start_is_two_acts_and_the_second_is_composed_from_the_first_s_answer() {
         ..seated()
     };
     model.stage("home");
-    assert_eq!(model.outbox, vec![crate::verbs::prepare("home".to_owned())]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::act(crate::verbs::prepare(
+            "home".to_owned()
+        ))]
+    );
     assert_eq!(model.draft, "", "what was staged is no longer a draft");
     assert_eq!(
         model.start.as_ref().map(|start| start.phase.clone()),
@@ -31,8 +36,8 @@ fn a_start_is_two_acts_and_the_second_is_composed_from_the_first_s_answer() {
     );
     model.absorb(&own().channel, staged("home", ""));
     assert_eq!(model.outbox.len(), 2, "the fire is composed, not posted");
-    assert_eq!(model.outbox[1]["op"], json!("prompt"));
-    assert_eq!(model.outbox[1]["goal"], json!("do the thing"));
+    assert_eq!(model.outbox[1].envelope["op"], json!("prompt"));
+    assert_eq!(model.outbox[1].envelope["goal"], json!("do the thing"));
     model.absorb(
         &own().channel,
         read(&json!({"ok": true, "kind": "started", "conversation": "brisk-otter"})),
@@ -59,7 +64,10 @@ fn the_fire_goes_where_the_start_was_staged_even_if_the_aim_moved() {
         address: "other".to_owned(),
     });
     model.absorb(&own().channel, staged("home", ""));
-    assert_eq!(model.outbox[1]["prepared"]["workspace"], json!("home"));
+    assert_eq!(
+        model.outbox[1].envelope["prepared"]["workspace"],
+        json!("home")
+    );
 }
 
 /// **A blank goal composes nothing and costs nothing** — the deposit's own rule,
@@ -85,7 +93,10 @@ fn a_body_nothing_staged_fires_on_its_own_terms_or_not_at_all() {
     let mut model = Model::default();
     model.absorb(&own().channel, staged("home", "the rung's own prefill"));
     assert_eq!(model.outbox.len(), 1);
-    assert_eq!(model.outbox[0]["goal"], json!("the rung's own prefill"));
+    assert_eq!(
+        model.outbox[0].envelope["goal"],
+        json!("the rung's own prefill")
+    );
     assert_eq!(
         model.start.as_ref().map(|start| start.phase.clone()),
         Some(Phase::Firing)

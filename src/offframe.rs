@@ -35,6 +35,7 @@ use std::thread::JoinHandle;
 
 use serde_json::Value;
 
+use crate::channel::Reach;
 use crate::state::{Link, Said};
 use crate::ui::Channel;
 
@@ -53,12 +54,25 @@ pub mod poster;
 /// asker fans the standing roster and queue reads over every channel, and the
 /// poster fans a gesture a frame composed that names no workspace (bl-40ec).
 /// Two spellings of *ask this channel and file what it said* would be two
-/// places a stamp or a failure arm could drift.
-pub(crate) fn down(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
-    match crate::seat::dial(root, &channel.name).and_then(|open| open.ask(envelope)) {
-        Ok(stream) => file(link, channel, stream),
-        Err(why) => link.heard(channel, Said::Unreachable(why)),
-    }
+/// places a stamp could drift.
+///
+/// **The failure arm is the caller's and no longer this function's** (REMOTE
+/// §3, bl-3969). What a leg that reached nothing MEANS is not a property of the
+/// leg: a read is asked again on the next beat, and an act may not be. So this
+/// hands the [`Reach`] back and the two callers each say the one thing they are
+/// entitled to say. The stamp, the dial and the filing stay here, which is what
+/// the shared spelling was ever for.
+pub(crate) fn down(
+    link: &Link,
+    root: &Path,
+    channel: &Channel,
+    envelope: &Value,
+) -> Result<(), Reach> {
+    let stream = crate::seat::dial(root, &channel.name)
+        .map_err(Reach::Unsent)
+        .and_then(|open| open.ask(envelope))?;
+    file(link, channel, stream);
+    Ok(())
 }
 
 /// Every frame of one answer, in order. **An answer of no frames is reported as

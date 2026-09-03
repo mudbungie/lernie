@@ -1481,6 +1481,123 @@ what was found is worth more than saying nothing while the address it names
 cannot be spent. **It is not in `parity.toml`** — the op is surfaced, and that
 file records absences.
 
+### 4.22 A lost reply leaves an act in doubt, and the recovery is a read (§3, bl-3969)
+
+`src/channel/reach.rs`, `src/ui/model/posted.rs`, `src/offframe/poster.rs`,
+`src/ui/model/notice.rs`. yog's REMOTE §3 states the contract and yog bl-d1f1
+gave the disk bus its mechanical half; the wire has no reply slot to answer
+into, so **this end's half is behaviour**:
+
+> A lost reply leaves an act IN DOUBT, and the recovery is a read — never a
+> resend … a client whose act earned a transport error instead of a reply
+> paints the failure and consults the world, which is the durable record …
+> **Asks are the opposite case and re-ask freely.**
+
+**Nothing wire-visible moved.** `PROTOCOL` stands, the corpus is unchanged,
+and no envelope grew a field: an idempotency token is exactly what §3 refuses
+to mint. What landed is four decisions.
+
+**Sent exactly once was already true, and is now asserted rather than
+observed.** There is no retry, no backoff and no reconnect-and-replay anywhere
+in this crate; `Link::compose` is a `mem::take`, the drained envelopes live in
+the poster's own loop, and no arm puts one back. The crate's one repetition is
+`offframe::pump`'s cadence, which re-derives the standing READS from the model
+and never touches that queue. A property nothing enforces is a property that
+lasts until somebody adds a helpful retry, so the beat that proves it scripts
+an engine to hang up once and answer the second dial, and asserts the far end
+heard the gesture **once** across both.
+
+**The transport says whether the request crossed, and the seam is one it
+already had.** `Channel::ask` answers `Reach::Unsent` or `Reach::Unanswered`
+rather than a bare string, and the line between them is `Channel::dial`
+returning — whose own doc already called what it hands back *"a socket with a
+request on it and no answer yet read"*. So the classification is structural, in
+the way `Channel::wrote` reads a typed `rustls::Error` rather than its wording,
+and not a judgement about a message. **Both arms are one sentence to a read**
+(`Reach::said`), because a standing question is answered in place and asking
+twice is asking once — the asker and the follow lane carry no arm for a fact
+they would do nothing with.
+
+**A version mismatch is on the Unsent side and an unreadable preface is not**,
+which is the one place this ball edited an existing collapse. `hello.rs` folded
+four ways of stating no version into one sentence, rightly: none of them can be
+served. A **fifth** case was folded in with them — a peer this end could not
+read at all — and that one is not about a version. The other four are a peer
+*speaking*, so REMOTE §3's *"a request of a version this build does not speak
+is never adjudicated"* applies and nothing crossed; an unreadable preface is a
+broken connection with this end's request already on it, because the request
+goes out in the same breath as the preface. One sentence per outcome still
+holds; there are now two outcomes.
+
+**Which gesture is an act is recorded at the control** (`Posted`), and that was
+checked rather than assumed. The tempting derivation is the poster's own
+branch — a gesture naming no workspace is fanned, and §4.21's three
+window-level reads are exactly the nameless ones this window composes. It is
+false of the vocabulary: the vendored corpus carries request shapes with no
+workspace slot that plainly change the world — `create`, `close`, `complete`,
+`deliver`, `update`, `retire` among them — so the rule holds by coincidence and
+the next control breaks it in silence. `posted::tests` asserts that against the
+corpus rather than stating a count here. The other derivation — a table of
+which ops are acts — is the second implementation `src/envelope.rs` exists to
+refuse. The composing control already knows, so it says so, exactly as it
+already says which op it fires for §4.16's parity tag.
+
+**An act's failure is an EXCHANGE, so it goes to the bar.** That is bl-e620's
+own division applied rather than bent: *a refusal is an exchange; an
+unreachable channel is a relationship*. A gesture an operator made is an
+exchange whatever went wrong with it, and two of the section's own reasons
+inverted say so. The section is the slot a `workspaces` answer overwrites —
+`Model::seat` sets `Held::Heard` on every one, and the asker answers
+`workspaces` on every beat — so an act's sentence written there was **erased
+within one beat by a read that succeeded**, which is the wrong outcome for the
+one fact on this window that nothing will ever say again. And the bar's dismiss
+is live here rather than inert: an act is an event, not a state, so it does not
+re-post on a beat, and *I have looked* is a real thing to say about one. A
+READ's failure is unchanged and still lands on its channel's section.
+
+**Two sentences, because the remedies are opposite.** `Notice::Unsent` says the
+act never left this seat, so nothing happened and doing it again is safe.
+`Notice::InDoubt` says it reached the engine and may have run, so this seat
+never resends one — the fifth notice arm and **the first whose remedy is to do
+nothing**. Both name the op, because one bar serves the whole window and a
+sentence about an unnamed act is one nobody can act on.
+
+**The read the in-doubt paint leads to is already running, which is why there
+is no control.** The contract's recovery is a read of the world, and this
+window's reads never stopped: the standing set is re-derived from the focus on
+every settle, so the conversation, the roster and whichever pane is open are
+being asked again while the sentence stands. A button on the banner would be a
+second spelling of the beat, and there is no act-to-read mapping to build for
+the same reason. **Nothing here is tagged for parity** — §4.16 judges controls
+that cross the boundary, and a banner is state.
+
+**Argv has the same contract and one place it was breaking it.**
+`seat/start.rs` told an operator to type the start again when the fire failed,
+which is right for a fire that never left (the stage's steps are convergent)
+and exactly wrong for one that crossed: a second `lernie start` is a second
+conversation. It now says which happened, and the in-doubt sentence names
+`lernie conversations` rather than a retype. `seat/enroll.rs` gained the same
+split for the sharper case — its product is the one reply this seat never
+keeps, so a lost answer leaves a registration whose material exists nowhere,
+and `enroll again` would mint a second over a first nobody can see.
+
+**The test seam is the finding upstream recorded not having.** yog bl-d1f1:
+*"The wire path's window is not drivable without a way to drop a connection
+mid-answer, which is itself a finding — the path with the worst recovery story
+is the one with no test seam for it."* The stand-in engine now takes
+`Answer::Hangup`: it completes the handshake, reads the request, and closes
+without a frame or a terminator, which is the in-doubt window exactly. A plain
+`Vec<Value>` still converts into the ordinary arm, so no existing script
+changed.
+
+**One residual, stated rather than closed.** An answer whose frames landed and
+whose terminator did not is painted in doubt though it is not: `Channel::ask`
+collects into a `Vec` and drops it on a later read error, so a receipt that
+arrived is discarded. Closing it means `ask` handing back a partial stream
+beside the failure, which is a second shape for an answer — and the paint it
+would buy is a *narrower* doubt, never a wrong one. The honest over-caution
+costs an operator one read they were being told to make anyway.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1502,6 +1619,7 @@ file records absences.
 | `src/channel/hello.rs` | the version preface. | ~85 |
 | `src/channel/tls.rs` | the mTLS configuration. | ~90 |
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
+| `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
 | `src/reply.rs` | the reply vocabulary's roster: the kinds (`Reply` is the one census), the three outcomes one frame can be, and the four-rung decode policy stated once. | ~200 |
@@ -1540,6 +1658,7 @@ file records absences.
 | `src/ui/model.rs` | what the window holds between frames. The door a reply comes in through split out at the cap onto the seam this row used to name (`model/absorb.rs`). | ~195 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither. | ~140 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
+| `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |

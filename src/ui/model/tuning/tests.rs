@@ -73,11 +73,12 @@ fn effort_and_priority_compose_the_gestures_the_wire_takes() {
     model.post_priority("compactor", true);
     assert_eq!(
         model.outbox,
-        vec![
+        [
             json!({"op": "effort", "workspace": "home", "role": "worker", "level": "low"}),
             json!({"op": "effort", "workspace": "home", "role": "worker", "level": null}),
             json!({"op": "priority", "workspace": "home", "role": "compactor", "on": true}),
         ]
+        .map(crate::ui::Posted::act)
     );
 }
 
@@ -100,8 +101,10 @@ fn a_half_named_assignment_composes_nothing_and_a_whole_one_composes_once() {
     model.post_assignment();
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "model", "workspace": "home", "role": "worker",
-                    "provider": "othervendor", "model": "house-model-2"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "model", "workspace": "home", "role": "worker",
+                    "provider": "othervendor", "model": "house-model-2"})
+        )]
     );
     assert_eq!(
         model.tuning,

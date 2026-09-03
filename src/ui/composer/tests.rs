@@ -54,8 +54,10 @@ fn sending_composes_the_deposit_the_command_line_would_have_and_posts_nothing() 
     });
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "message", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2", "content": "ship it"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "message", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "content": "ship it"})
+        )]
     );
     assert_eq!(model.draft, "", "what was sent is no longer a draft");
 }
@@ -74,8 +76,10 @@ fn cutting_composes_the_interrupt_off_the_same_box_the_deposit_spends() {
     });
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "interrupt", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2", "content": "no, this"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "interrupt", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "content": "no, this"})
+        )]
     );
     assert_eq!(model.draft, "", "what was said is no longer a draft");
 }
@@ -124,7 +128,7 @@ fn the_deposit_carries_the_address_the_channel_resolves() {
     click(&window, SEND, |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
-    assert_eq!(model.outbox[0]["workspace"], json!("home"));
+    assert_eq!(model.outbox[0].envelope["workspace"], json!("home"));
 }
 
 /// **Enter sends.** A composer an operator has to leave the keyboard for, once
@@ -147,8 +151,10 @@ fn enter_sends_what_was_typed() {
     window.frame(Vec::new(), &mut body);
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "message", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2", "content": "ship it"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "message", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "content": "ship it"})
+        )]
     );
 }
 
@@ -188,7 +194,10 @@ fn tab_and_space_fire_the_composer_s_controls_with_no_binding_of_their_own() {
     );
     for op in ["message", "nudge"] {
         assert!(
-            model.outbox.iter().any(|said| said["op"] == json!(op)),
+            model
+                .outbox
+                .iter()
+                .any(|said| said.envelope["op"] == json!(op)),
             "{op:?} was never fired from the keyboard: {:?}",
             model.outbox
         );
@@ -208,8 +217,10 @@ fn the_advance_composes_its_own_gesture_and_takes_no_draft() {
     });
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "nudge", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "nudge", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2"})
+        )]
     );
     assert_eq!(model.draft, "not this", "the draft is untouched");
 }

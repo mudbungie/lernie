@@ -21,7 +21,11 @@ use crate::test_support::{Scratch, mint};
 /// `at` is the directory under the root the material goes in — the flat root
 /// (`wire`) or one entry (`wire/workspaces/<leaf>`) — so one helper stands both
 /// arrangements up.
-pub(crate) fn wired(scratch: &Scratch, at: &Path, script: Vec<Vec<Value>>) -> Engine {
+pub(crate) fn wired(
+    scratch: &Scratch,
+    at: &Path,
+    script: Vec<impl Into<crate::test_support::engine::Answer>>,
+) -> Engine {
     let dir = scratch.path().join(at);
     std::fs::create_dir_all(&dir).expect("mkdir");
     mint::material(&dir);

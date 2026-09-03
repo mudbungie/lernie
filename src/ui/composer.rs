@@ -113,7 +113,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     if nudged {
         model
             .outbox
-            .push(crate::verbs::nudge(aim.address.clone(), agent.clone()));
+            .push(crate::ui::Posted::act(crate::verbs::nudge(
+                aim.address.clone(),
+                agent.clone(),
+            )));
     }
     acts::render(ui, model, &aim, &agent);
 }
@@ -140,9 +143,11 @@ fn fire(
         return;
     }
     let said = std::mem::take(&mut model.draft);
-    model
-        .outbox
-        .push(door(workspace.to_owned(), agent.to_owned(), said));
+    model.outbox.push(crate::ui::Posted::act(door(
+        workspace.to_owned(),
+        agent.to_owned(),
+        said,
+    )));
 }
 
 #[cfg(test)]

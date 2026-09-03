@@ -1,5 +1,10 @@
 //! The poster's pass: what it sends, what it stamps a receipt with, and what a
 //! channel that will not open costs.
+//!
+//! **The lost-reply contract is its own file** (`tests/doubt.rs`, REMOTE §3):
+//! it is one subject with five beats and it is the only part of this pass that
+//! needs an engine which hangs up, so it splits at the design-time budget on
+//! the seam the ball drew.
 
 use std::time::Duration;
 
@@ -10,7 +15,7 @@ use crate::test_support::wire::{flat, wired};
 use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::{Value, json};
 
-fn own() -> Channel {
+pub(super) fn own() -> Channel {
     Channel {
         name: crate::seat::OWN.to_owned(),
         named_there: None,
@@ -19,12 +24,17 @@ fn own() -> Channel {
 }
 
 /// A link holding one composed gesture, aimed or not.
-fn holding(aim: Option<Aim>, envelope: Value) -> (Link, Model) {
+pub(super) fn holding(aim: Option<Aim>, envelope: Value) -> (Link, Model) {
+    posting(aim, crate::ui::Posted::act(envelope))
+}
+
+/// The same, with the classification the control made spelled out.
+pub(super) fn posting(aim: Option<Aim>, posted: crate::ui::Posted) -> (Link, Model) {
     let link = Link::new(Duration::from_millis(1));
     let mut model = Model {
         roster: vec![Chunk::of(own())],
         aim,
-        outbox: vec![envelope],
+        outbox: vec![posted],
         ..Model::default()
     };
     link.settle(&mut model);
@@ -119,25 +129,6 @@ fn a_gesture_with_no_aim_is_still_routed_by_the_address_it_carries() {
     assert_eq!(model.roster.len(), 1, "no chunk was invented for the stamp");
 }
 
-/// A far end that is not there is this seat's own sentence, not the engine's.
-#[test]
-fn an_act_that_could_not_be_sent_says_so_as_unreachable() {
-    let scratch = Scratch::new();
-    let (link, mut model) = holding(
-        None,
-        crate::verbs::nudge("home".to_owned(), "a1b2".to_owned()),
-    );
-    tick(&link, scratch.path());
-    link.settle(&mut model);
-    assert!(
-        model
-            .notice
-            .expect("a notice")
-            .line()
-            .contains("could not reach")
-    );
-}
-
 /// An empty outbox is a pass that does nothing, which is the ordinary case
 /// between two keystrokes.
 #[test]
@@ -167,7 +158,7 @@ fn a_gesture_naming_no_workspace_is_asked_of_every_channel() {
             {"verb": "scan", "usage": "/scan", "summary": "sweep",
              "detail": "one sweep", "surface": "control"}]})]],
     );
-    let (link, mut model) = holding(None, crate::verbs::window::help());
+    let (link, mut model) = posting(None, crate::ui::Posted::read(crate::verbs::window::help()));
     tick(&link, scratch.path());
     link.settle(&mut model);
     assert!(
@@ -188,7 +179,7 @@ fn a_gesture_naming_no_workspace_is_asked_of_every_channel() {
 #[test]
 fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
     let scratch = Scratch::new();
-    let (link, mut model) = holding(None, crate::verbs::workspaces());
+    let (link, mut model) = posting(None, crate::ui::Posted::read(crate::verbs::workspaces()));
     tick(&link, scratch.path());
     link.settle(&mut model);
     let crate::ui::Held::Unheld(why) = &model.roster[0].held else {
@@ -200,3 +191,7 @@ fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
     assert!(!why.is_empty(), "{why}");
     assert_eq!(model.notice, None, "and not in the shell-wide bar");
 }
+
+/// The lost-reply contract: what an act with no reply paints, and what it
+/// never does.
+mod doubt;

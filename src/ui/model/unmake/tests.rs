@@ -48,7 +48,9 @@ fn it_composes_the_envelope_its_verb_row_builds() {
     model.post_unmaking();
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "delete-workspace", "workspace": "home", "typed": "home"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "delete-workspace", "workspace": "home", "typed": "home"})
+        )]
     );
 }
 

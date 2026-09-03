@@ -73,7 +73,8 @@ impl Model {
     /// unaimed, unselected seat, and that is the seat most likely to be asking.
     pub fn begin_commands(&mut self) {
         self.lookup = Some(Lookup::Commands);
-        self.outbox.push(crate::verbs::window::help());
+        self.outbox
+            .push(super::Posted::read(crate::verbs::window::help()));
     }
 
     /// **Whether that pane is the one standing.**
@@ -136,8 +137,9 @@ impl Model {
     /// cleared — see the module doc.
     pub fn post_search(&mut self) {
         if self.needled() {
-            self.outbox
-                .push(crate::verbs::search(self.needle.trim().to_owned()));
+            self.outbox.push(super::Posted::read(crate::verbs::search(
+                self.needle.trim().to_owned(),
+            )));
         }
     }
 
@@ -167,7 +169,8 @@ impl Model {
     /// for: until it existed that sentence appeared only on a beat nobody
     /// could ask for.
     pub fn refresh_roster(&mut self) {
-        self.outbox.push(crate::verbs::workspaces());
+        self.outbox
+            .push(super::Posted::read(crate::verbs::workspaces()));
     }
 }
 

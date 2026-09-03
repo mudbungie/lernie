@@ -47,7 +47,7 @@ fn a_settle_files_hands_over_and_publishes() {
         Said::Frame(json!({"ok": true, "kind": "workspaces", "rows": []})),
     );
     let mut model = Model {
-        outbox: vec![json!({"op": "nudge"})],
+        outbox: vec![crate::ui::Posted::act(json!({"op": "nudge"}))],
         aim: Some(Aim {
             channel: channel.name.clone(),
             address: "home".to_owned(),
@@ -57,7 +57,10 @@ fn a_settle_files_hands_over_and_publishes() {
     link.settle(&mut model);
     assert_eq!(model.roster.len(), 1, "the answer was filed");
     assert!(model.outbox.is_empty(), "the frame handed it over");
-    assert_eq!(link.compose(), vec![json!({"op": "nudge"})]);
+    assert_eq!(
+        link.compose(),
+        vec![crate::ui::Posted::act(json!({"op": "nudge"}))]
+    );
     assert_eq!(link.standing().aim, model.aim);
     assert!(link.compose().is_empty(), "a drain takes it once");
 }

@@ -98,7 +98,9 @@ fn armed_it_composes_the_unmaking_and_keeps_the_arming() {
     press(&mut model, CONFIRM);
     assert_eq!(
         model.outbox,
-        vec![json!({"op": "delete-workspace", "workspace": "home", "typed": "home"})]
+        vec![crate::ui::Posted::act(
+            json!({"op": "delete-workspace", "workspace": "home", "typed": "home"})
+        )]
     );
     assert_eq!(
         model.unmaking.as_ref().map(|held| held.typed.clone()),

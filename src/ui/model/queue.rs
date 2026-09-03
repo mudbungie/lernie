@@ -104,8 +104,10 @@ impl Model {
     /// control.
     pub fn post_seen(&mut self, row: &QueueRow) {
         if let Some(aim) = self.wall(&row.workspace) {
-            self.outbox
-                .push(crate::verbs::seen(aim.address, row.agent.clone()));
+            self.outbox.push(super::Posted::act(crate::verbs::seen(
+                aim.address,
+                row.agent.clone(),
+            )));
         }
     }
 

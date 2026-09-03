@@ -29,9 +29,7 @@
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
-use serde_json::Value;
-
-use crate::ui::{Channel, Model};
+use crate::ui::{Channel, Model, Posted};
 
 /// What crosses the lock, and what the frame publishes for the workers to ask.
 mod traffic;
@@ -42,7 +40,7 @@ pub use traffic::{Heard, Said, Standing};
 #[derive(Default)]
 struct Shared {
     heard: Vec<Heard>,
-    outbox: Vec<Value>,
+    outbox: Vec<Posted>,
     standing: Standing,
     stopped: bool,
 }
@@ -86,6 +84,10 @@ impl Link {
                     }
                 }
                 Said::Unreachable(why) => model.unreachable(&heard.channel, why),
+                // **An act that earned no reply is an exchange, not a
+                // relationship** (REMOTE §3, bl-3969), so it goes to the bar
+                // and never to a channel's section — see `Model::acted`.
+                Said::Acted { op, reach } => model.acted(&op, &reach),
             }
         }
         shared.outbox.append(&mut model.outbox);
@@ -119,7 +121,12 @@ impl Link {
     }
 
     /// Everything the frame composed since the last drain.
-    pub fn compose(&self) -> Vec<Value> {
+    ///
+    /// **It is a take and there is nothing that puts one back.** That is the
+    /// whole of REMOTE §3's *sent exactly once per operator gesture*: the queue
+    /// is the only copy, the poster is its only reader, and no arm anywhere
+    /// re-queues an envelope a leg could not deliver.
+    pub fn compose(&self) -> Vec<Posted> {
         std::mem::take(&mut self.hold().outbox)
     }
 

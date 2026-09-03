@@ -39,14 +39,20 @@ pub fn tick(link: &Link, root: &Path) {
     };
     let envelope = crate::verbs::follow(aim.address.clone(), conversation.clone());
     let mut fold = Stream::default();
-    let held = crate::seat::route(root, &envelope).and_then(|(open, carried)| {
-        open.follow(&carried, &mut |frame| {
-            link.live(&channel, &conversation, absorbed(&mut fold, &frame));
-            !link.stopped() && still_on(link, &aim, &conversation)
-        })
-    });
-    if let Err(why) = held {
-        link.heard(&channel, Said::Unreachable(why));
+    let held = crate::seat::route(root, &envelope)
+        .map_err(crate::channel::Reach::Unsent)
+        .and_then(|(open, carried)| {
+            open.follow(&carried, &mut |frame| {
+                link.live(&channel, &conversation, absorbed(&mut fold, &frame));
+                !link.stopped() && still_on(link, &aim, &conversation)
+            })
+        });
+    // **A held read is still a read** (REMOTE §3): the lane re-opens on the next
+    // pass onto an empty fold, so a connection that died mid-tail costs nothing
+    // and the classification the poster spends is a fact this one has no use
+    // for.
+    if let Err(reach) = held {
+        link.heard(&channel, Said::Unreachable(reach.said()));
     }
 }
 

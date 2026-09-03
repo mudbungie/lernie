@@ -1,7 +1,7 @@
 //! The three things a seat has to understand about an envelope, and the
 //! discipline that they are read from one table.
 
-use super::{OP, WORKSPACE, parse, succeeded, with_workspace, workspace};
+use super::{OP, WORKSPACE, op, parse, succeeded, with_workspace, workspace};
 use serde_json::json;
 
 /// A gesture is a JSON object with an `op`. Everything short of that refuses
@@ -189,4 +189,18 @@ fn the_verdict_is_the_last_frame_s_and_silence_is_never_yes() {
     assert!(!succeeded(&[]));
     assert!(!succeeded(&[json!({"kind": "rows"})]));
     assert!(!succeeded(&[json!({"ok": "yes"})]));
+}
+
+/// **The word an envelope is, said back and never read.** Its one caller is the
+/// sentence that tells an operator WHICH act is in doubt (REMOTE §3), so what
+/// matters is that it names the gesture and that it is total: `?` is
+/// unreachable through [`parse`] and through `crate::verbs`, both of which
+/// refuse an envelope with no string `op`, and an arm with no input is an arm
+/// no assertion covers.
+#[test]
+fn the_op_is_said_back_and_a_gesture_without_one_is_a_question_mark() {
+    assert_eq!(op(&json!({"op": "nudge", "workspace": "home"})), "nudge");
+    assert_eq!(op(&json!({"op": 7})), "?");
+    assert_eq!(op(&json!({})), "?");
+    assert_eq!(op(&json!("not an object")), "?");
 }

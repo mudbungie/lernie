@@ -39,10 +39,13 @@ pub mod hello;
 pub mod leaf;
 /// What the operator carried to this box.
 pub mod material;
+/// Why an exchange produced no answer, and whether the request crossed.
+pub mod reach;
 /// The mTLS configuration.
 pub mod tls;
 
 use material::Material;
+pub use reach::Reach;
 
 /// How long one read may wait before the channel is judged gone.
 ///
@@ -89,10 +92,11 @@ impl Channel {
     /// several is a follow-class read collected — the same reader, which is
     /// REMOTE §3's *"the streaming form is not a second form"*.
     ///
-    /// One `Err` for a refusal, an unreadable answer and a socket that never
-    /// opened alike: all three are the same fact to a caller — this cannot be
-    /// painted, and here is the sentence.
-    pub fn ask(&self, request: &Value) -> Result<Vec<Value>, String> {
+    /// One `Err` for an unreadable answer and a socket that never opened alike:
+    /// both are the same fact to a caller — this cannot be painted, and here is
+    /// the sentence. What the [`Reach`] adds is the one fact a sentence cannot
+    /// carry and an ACT needs: whether the request crossed (REMOTE §3).
+    pub fn ask(&self, request: &Value) -> Result<Vec<Value>, Reach> {
         let mut stream = Vec::new();
         self.follow(request, &mut |frame| {
             stream.push(frame);
@@ -112,13 +116,20 @@ impl Channel {
     /// a reader whose subject moved stops without a word to the engine
     /// (dropping the connection is the word). `Ok(())` is the engine
     /// terminating the stream — the ordinary end, not an event.
+    ///
+    /// **Every failure past [`dial`](Self::dial) is [`Reach::Unanswered`]**, and
+    /// that is the transport's own seam rather than a judgement: `dial` hands
+    /// back a socket with the request already on it, so from here the far end
+    /// has the gesture and this end cannot say what it did with it.
     pub fn follow(
         &self,
         request: &Value,
         on_frame: &mut dyn FnMut(Value) -> bool,
-    ) -> Result<(), String> {
+    ) -> Result<(), Reach> {
         let mut tls = self.dial(request)?;
-        while let Some(chunk) = frame::read_value(&mut tls).map_err(|e| format!("receive: {e}"))? {
+        while let Some(chunk) =
+            frame::read_value(&mut tls).map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
+        {
             if !on_frame(chunk) {
                 return Ok(());
             }
@@ -135,15 +146,24 @@ impl Channel {
     /// request goes out in the same breath as this end's preface — so
     /// confirming the engine's costs no round trip, and a mismatch refuses
     /// before a frame of the answer is decoded.
-    fn dial(&self, request: &Value) -> Result<StreamOwned<ClientConnection, TcpStream>, String> {
+    ///
+    /// **It is also where the doubt begins** (REMOTE §3, bl-3969). Everything
+    /// refused here is [`Reach::Unsent`] and nothing crossed — a socket that
+    /// would not open, a handshake that did not verify, a write that failed, a
+    /// peer of another protocol, which refuses *"before any gesture is
+    /// decoded"*. The one exception is a preface this end could not READ, which
+    /// [`hello::confirm`] classes for itself: the request went out in the same
+    /// breath as this end's preface, so a connection that broke before the
+    /// engine's answer got back may have broken after it ran the gesture.
+    fn dial(&self, request: &Value) -> Result<StreamOwned<ClientConnection, TcpStream>, Reach> {
         let tcp = TcpStream::connect(&self.address)
             .and_then(|tcp| tcp.set_read_timeout(Some(READ_TIMEOUT)).map(|()| tcp))
-            .map_err(|e| format!("connect {}: {e}", self.address))?;
+            .map_err(|e| Reach::Unsent(format!("connect {}: {e}", self.address)))?;
         let conn = ClientConnection::new(Arc::clone(&self.config), self.name.clone())
-            .map_err(|e| format!("tls {}: {e}", self.address))?;
+            .map_err(|e| Reach::Unsent(format!("tls {}: {e}", self.address)))?;
         let mut tls = StreamOwned::new(conn, tcp);
-        hello::state(&mut tls).map_err(|e| self.wrote(&e))?;
-        frame::write_value(&mut tls, request).map_err(|e| self.wrote(&e))?;
+        hello::state(&mut tls).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
+        frame::write_value(&mut tls, request).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
         hello::confirm(&mut tls)?;
         Ok(tls)
     }

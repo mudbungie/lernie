@@ -27,7 +27,7 @@ use std::io::{self, Read, Write};
 
 use serde_json::json;
 
-use super::frame;
+use super::{Reach, frame};
 
 /// The protocol this build speaks.
 ///
@@ -134,9 +134,16 @@ pub const PROTOCOL: u32 = 8;
 const KEY: &str = "protocol";
 
 /// What a peer that stated no version is called in the sentence. An unversioned
-/// build, a frame that is not an object, a frame without the key and a peer
-/// that hung up mid-preface are one case on purpose: none of them can be
-/// served, and four sentences for one outcome is four sentences.
+/// build, a frame that is not an object, a frame without the key and a
+/// terminator where a preface belongs are one case on purpose: none of them can
+/// be served, and four sentences for one outcome is four sentences.
+///
+/// **A peer this end could not read at all is no longer among them** (bl-3969).
+/// It was, and the collapse was right about the sentence and wrong about the
+/// recovery: the other four are a peer speaking, so nothing crossed, where an
+/// unreadable preface is a broken connection with this end's request already on
+/// it. See [`confirm`] — the sentence is still one per outcome; there are now
+/// two outcomes.
 const UNSTATED: &str = "no version";
 
 /// Write this build's preface. Called before this end reads, which is what
@@ -145,20 +152,29 @@ pub fn state(w: &mut dyn Write) -> io::Result<()> {
     frame::write_value(w, &json!({ KEY: PROTOCOL }))
 }
 
-/// Read the engine's preface and refuse a mismatch — as the one `Err(String)`
-/// every other thing that can go wrong with this transport already arrives as,
-/// so nothing above here carries a case for it.
-pub fn confirm(r: &mut dyn Read) -> Result<(), String> {
-    let peer = stated(r);
+/// Read the engine's preface and refuse a mismatch — as the one [`Reach`] every
+/// other thing that can go wrong with this transport already arrives as, so
+/// nothing above here carries a case for it.
+///
+/// **The classification splits where the four collapsed cases do not.** A peer
+/// that STATED something — another version, a frame that is not an object, a
+/// frame without the key, a terminator where a preface belongs — refused this
+/// end before adjudicating anything (REMOTE §3: a request of a version this
+/// build does not speak *"is never adjudicated"*), so nothing crossed and one
+/// sentence still serves all four. A preface this end could not READ is the
+/// fifth case and is not about a version at all: the request went out in the
+/// same breath as this end's preface, so the connection broke with the gesture
+/// already at the far end and an act on it is IN DOUBT (REMOTE §3, bl-3969). It
+/// says so in the transport's own words rather than borrowing a sentence about
+/// a number nobody stated.
+pub fn confirm(r: &mut dyn Read) -> Result<(), Reach> {
+    let stated = frame::read_value(r)
+        .map_err(|e| Reach::Unanswered(format!("the engine stated no version: {e}")))?;
+    let peer = stated.and_then(|frame| frame.get(KEY)?.as_u64());
     if peer == Some(u64::from(PROTOCOL)) {
         return Ok(());
     }
-    Err(mismatch(peer))
-}
-
-/// The version the peer stated, or `None` when it stated none.
-fn stated(r: &mut dyn Read) -> Option<u64> {
-    frame::read_value(r).ok().flatten()?.get(KEY)?.as_u64()
+    Err(Reach::Unsent(mismatch(peer)))
 }
 
 /// The refusal: both versions, and what to do about it.

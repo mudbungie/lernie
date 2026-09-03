@@ -9,6 +9,32 @@
 //! door every answer does and lands as content or as the notice bar. Nothing
 //! here reads what an act earned.
 //!
+//! # An act is sent exactly once, and a lost reply is never a resend
+//!
+//! yog's `docs/REMOTE.md` §3: *"A lost reply leaves an act IN DOUBT, and the
+//! recovery is a read — never a resend."* This pass is where a seat would have
+//! to break that, and it does not: [`crate::state::Link::compose`] is a take,
+//! the drained envelopes live in this function's own loop, and no arm below
+//! re-queues one. There is no retry, no backoff and no reconnect-and-replay
+//! anywhere in this crate — the only repetition it owns is
+//! [`crate::offframe::pump`]'s cadence, which re-derives the standing READS
+//! from the model and never touches this queue.
+//!
+//! **What the failure arm owes is the paint** ([`crate::channel::Reach`]). An
+//! act that crossed and was not answered may have run, so it is said as IN
+//! DOUBT with the contract's own remedy; one that never left this box did not
+//! happen, so it is said as not sent and doing it again is safe. Both are facts
+//! about an **exchange**, so both go to the shell's bar — where a refusal goes
+//! — and never to a channel's roster section, which is a relationship (REMOTE
+//! §8.2, bl-e620). That placement is load-bearing rather than tidy: the section
+//! is the slot the roster read owns, and the asker answers `workspaces` on
+//! every beat, so an act's sentence written there is erased within 750 ms by a
+//! read that succeeded.
+//!
+//! **A posted READ keeps the read arm**, because §4.21's three window-level
+//! reads come down this same queue and re-asking one is free. Which is which is
+//! [`crate::ui::Posted`]'s field, said by the control that composed it.
+//!
 //! # A gesture naming no workspace is FANNED, not routed (bl-40ec)
 //!
 //! `crate::seat::route` resolves an envelope's workspace over this box's
@@ -29,10 +55,9 @@
 
 use std::path::Path;
 
-use serde_json::Value;
-
+use crate::channel::Reach;
 use crate::state::{Link, Said};
-use crate::ui::Channel;
+use crate::ui::{Channel, Posted};
 
 /// Send everything the frame composed since the last pass.
 ///
@@ -49,23 +74,44 @@ pub fn tick(link: &Link, root: &Path) {
         .aimed()
         .map(|(channel, _)| channel)
         .unwrap_or_default();
-    for envelope in link.compose() {
-        if crate::envelope::workspace(&envelope).is_none() {
+    for posted in link.compose() {
+        if crate::envelope::workspace(&posted.envelope).is_none() {
             for held in &standing.channels {
-                super::down(link, root, held, &envelope);
+                if let Err(reach) = super::down(link, root, held, &posted.envelope) {
+                    link.heard(held, said(&posted, reach));
+                }
             }
             continue;
         }
-        routed(link, root, &channel, &envelope);
+        routed(link, root, &channel, &posted);
     }
 }
 
 /// One gesture down the channel its workspace names, and the receipt filed
 /// against the aim.
-fn routed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
-    match crate::seat::route(root, envelope).and_then(|(open, carried)| open.ask(&carried)) {
+fn routed(link: &Link, root: &Path, channel: &Channel, posted: &Posted) {
+    let asked = crate::seat::route(root, &posted.envelope)
+        .map_err(Reach::Unsent)
+        .and_then(|(open, carried)| open.ask(&carried));
+    match asked {
         Ok(stream) => super::file(link, channel, stream),
-        Err(why) => link.heard(channel, Said::Unreachable(why)),
+        Err(reach) => link.heard(channel, said(posted, reach)),
+    }
+}
+
+/// **Which sentence a failed leg earns**, which is the whole of what this ball
+/// added to the send path.
+///
+/// A read that could not be answered is the channel's own relationship and is
+/// asked again on the next beat regardless. An act is an exchange with no
+/// second chance, so it is reported as one and carries its `op`.
+fn said(posted: &Posted, reach: Reach) -> Said {
+    if !posted.act {
+        return Said::Unreachable(reach.said());
+    }
+    Said::Acted {
+        op: crate::envelope::op(&posted.envelope),
+        reach,
     }
 }
 

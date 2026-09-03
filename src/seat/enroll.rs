@@ -36,12 +36,27 @@ use crate::reply::{Read, Reply};
 /// will be until another `enroll` is spent.
 const KEPT: &str = "not written down anywhere — scan it now, or enroll again";
 
+/// What the seat says when the gesture crossed and no answer came back.
+///
+/// **`enroll` is the act whose doubt costs the most.** Its product is the one
+/// reply this seat never keeps, so a registration that was minted and whose
+/// answer was lost leaves a box registered with material that exists nowhere —
+/// and `enroll again` (which [`KEPT`] rightly offers when the picture WAS drawn)
+/// would mint a second registration over a first nobody can see. So the remedy
+/// is REMOTE §3's: read the world first.
+const INDOUBT: &str = "the enrollment crossed with no answer, so it is IN DOUBT — a registration may \
+     exist whose material is gone. Do not enroll again until you have looked: \
+     `lernie ask '{\"op\":\"clients\"}'` says which clients that engine holds";
+
 /// **Enroll a new box**, and print the symbol its material rides in.
 pub fn enroll(data_root: &Path, workspace: &str, name: &str, grade: &str) -> Verdict {
     let gesture = crate::verbs::enroll(workspace.to_owned(), name.to_owned(), grade.to_owned());
     let stream = match crate::seat::sent(data_root, &gesture) {
         Ok(stream) => stream,
-        Err(why) => return Verdict::failed(why),
+        Err(reach) if reach.crossed() => {
+            return Verdict::failed(format!("{INDOUBT}: {}", reach.said()));
+        }
+        Err(reach) => return Verdict::failed(reach.said()),
     };
     let Some(frame) = stream.last() else {
         return Verdict::failed("the engine answered nothing at all".to_owned());

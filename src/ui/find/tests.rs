@@ -142,7 +142,12 @@ fn the_roster_opens_it_and_the_act_inside_it_composes_the_search() {
     assert!(model.outbox.is_empty(), "opening asks nothing");
     model.needle = "gate".to_owned();
     click(&window, FIND, |ctx| crate::ui::render(ctx, &mut model));
-    assert_eq!(model.outbox, vec![crate::verbs::search("gate".to_owned())]);
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::read(crate::verbs::search(
+            "gate".to_owned()
+        ))]
+    );
     assert!(model.finding(), "searching does not close the pane");
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.finding());

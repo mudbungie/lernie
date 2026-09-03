@@ -25,9 +25,9 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The four reads, the conversation's six acts and the enrollment, spelled out
-/// — so the roster is asserted rather than merely iterated, and a verb added or
-/// dropped is a diff here.
+/// The five reads, the conversation's six acts, the enrollment and the model
+/// assignment, spelled out — so the roster is asserted rather than merely
+/// iterated, and a verb added or dropped is a diff here.
 #[test]
 fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
     let words: Vec<&str> = table().iter().map(|verb| verb.word).collect();
@@ -38,13 +38,15 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "conversations",
             "transcript",
             "follow",
+            "roles",
             "message",
             "interrupt",
             "nudge",
             "stop",
             "retarget",
             "delete-agent",
-            "enroll"
+            "enroll",
+            "model"
         ]
     );
 }

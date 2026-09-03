@@ -60,6 +60,17 @@ pub struct Standing {
     pub channels: Vec<Channel>,
     /// The aimed wall, whose conversations are the second question.
     pub aim: Option<Aim>,
+    /// **Whether the tuning pane is open**, which is the aimed wall's fourth
+    /// question — what its roles are set to (bl-4a2c).
+    ///
+    /// A flag rather than a second aim, because the pane holds no aim of its
+    /// own: it is about whatever [`Self::aim`] is, and closes when that moves
+    /// (`crate::ui::model::acts`). It is keyed on the PANE rather than on the
+    /// aim so a seat with no configuration surface open asks nothing about a
+    /// file nobody is looking at — the read is cheap, but a standing question
+    /// nobody has a use for is still a question the engine answers on every
+    /// beat, forever.
+    pub tuning: bool,
     /// The selected conversation, whose transcript is the third — and whose
     /// live tail is the held read.
     ///
@@ -81,6 +92,7 @@ impl Standing {
                 .map(|chunk| chunk.channel.clone())
                 .collect(),
             aim: model.aim.clone(),
+            tuning: model.tuning.is_some(),
             conversation: model.asked(),
         }
     }

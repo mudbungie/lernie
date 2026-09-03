@@ -7,9 +7,10 @@
 
 use crate::paint_probe::{self, frame::Window};
 use crate::reply::convs::{AgentState, ConvRow, Tone};
+use crate::reply::roles::RoleRow;
 use crate::reply::roster::{WorkspaceKind, WsRow};
 use crate::reply::transcript::{Entry, EntryKind, Transcript};
-use crate::ui::{Aim, Channel, Chunk, Model};
+use crate::ui::{Aim, Channel, Chunk, Model, Tuning};
 
 /// One workspace row, named and otherwise quiet.
 pub(crate) fn wall(name: &str) -> WsRow {
@@ -38,6 +39,18 @@ pub(crate) fn conv(id: &str, display: &str) -> ConvRow {
         depth: 0,
         tone: Tone::Plain,
         failure: None,
+    }
+}
+
+/// One role, tuned to the middle of everything: a level the pane has a seat
+/// for, and the priority lane off.
+pub(crate) fn role(name: &str) -> RoleRow {
+    RoleRow {
+        role: name.to_owned(),
+        provider: "housevendor".to_owned(),
+        model: "house-model-1".to_owned(),
+        priority: false,
+        effort: Some("medium".to_owned()),
     }
 }
 
@@ -84,6 +97,16 @@ pub(crate) fn seated() -> Model {
         }),
         conversation: Some("20260830T051200Z-a1b2".to_owned()),
         ..Model::default()
+    }
+}
+
+/// **The seated model with the tuning pane open and answered.** The pane's
+/// own screen, and the one the `effort` and `priority` controls live on.
+pub(crate) fn tuned() -> Model {
+    Model {
+        roles: Some(vec![role("worker"), role("compactor")]),
+        tuning: Some(Tuning::Rows),
+        ..seated()
     }
 }
 

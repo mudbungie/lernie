@@ -47,6 +47,15 @@ impl Model {
         self.conversation = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
+        // **The tuning pane goes with the wall it was opened on** (bl-4a2c).
+        // It holds no aim of its own, deliberately — every gesture it composes
+        // reads `Model::aim` at the moment of composing — so leaving it open
+        // over a new wall would leave an operator looking at one wall's rows
+        // while its controls wrote to another's. Retiring the ROWS beside it is
+        // the same reading `answered` above gets: `None` is a wall nobody has
+        // asked yet, and the old wall's answer is not this wall's.
+        self.tuning = None;
+        self.roles = None;
     }
 
     /// **Select a conversation**, by the id every gesture addresses it with.
@@ -62,17 +71,26 @@ impl Model {
         self.notice = None;
     }
 
-    /// **What Escape means**, in the order an operator means it (bl-7574).
+    /// **What Escape means**, in the order an operator means it (bl-7574,
+    /// extended for the tuning pane in bl-4a2c).
     ///
-    /// The enrollment is the one pane that covers the window, and Escape is the
-    /// key you reach for to close a thing that covers a window. So it closes
-    /// that first — which is the same act `done — forget it` performs, material
-    /// and all, because the control that closes this pane is the control that
-    /// forgets. With nothing covering, the notice is the only thing left to put
-    /// down, and Escape is its × reached without a pointer.
+    /// A ladder from the innermost thing on the glass outwards, which is the
+    /// order the key is actually reached for. The enrollment covers the window
+    /// and holds a secret, so it goes first — and closing it is the same act
+    /// `done — forget it` performs, material and all, because the control that
+    /// closes that pane is the control that forgets. Then a draft assignment,
+    /// which is a thing inside a pane rather than the pane: Escape over a
+    /// half-typed model puts the draft down and leaves the rows standing.
+    /// Then the tuning pane itself. With nothing covering, the notice is the
+    /// only thing left to put down, and Escape is its × reached without a
+    /// pointer.
     pub fn escape(&mut self) {
         if self.enroll.is_some() {
             self.close_enrollment();
+        } else if matches!(self.tuning, Some(super::Tuning::Editing(_))) {
+            self.cancel_assignment();
+        } else if self.tuning.is_some() {
+            self.close_tuning();
         } else {
             self.dismiss();
         }

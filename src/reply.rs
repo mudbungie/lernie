@@ -16,10 +16,11 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Nine do
-//! not: the roster, the conversation list, the transcript, the live tail, a
-//! captured run, the detached advance's receipt, the start family's two — the
-//! staged body and the minted name — and a new box's material. A kind nothing renders is a kind
+//! kinds and most of them belong to panes that do not exist here. Ten do
+//! not: the roster, the conversation list, one workspace's role tuning, the
+//! transcript, the live tail, a captured run, the detached advance's receipt,
+//! the start family's two — the staged body and the minted name — and a new
+//! box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
 //! next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
 //! for what is not.
@@ -74,6 +75,8 @@ pub mod enrolled;
 pub(crate) mod fields;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
 mod read;
+/// What one workspace's roles are set to, and how each is tuned.
+pub mod roles;
 /// The workspace roster — the window's altitude-0 chrome.
 pub mod roster;
 /// The start family's two receipts.
@@ -125,7 +128,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Nine, and each is here because a surface
+/// **The kinds the window draws.** Ten, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -142,6 +145,12 @@ pub enum Reply {
     Workspaces(roster::Workspaces),
     /// One workspace's conversation list.
     Conversations(Vec<convs::ConvRow>),
+    /// **What one workspace's roles are set to** — the read the tuning pane
+    /// opens on, and the read back of what its own three writes landed. It is
+    /// a listing rather than a map: the engine's order is the config's order,
+    /// and a seat that re-sorted it would be holding a second opinion about a
+    /// file it did not write.
+    Roles(Vec<roles::RoleRow>),
     /// One conversation's committed entries with the live tail folded on —
     /// the whole of what the chat pane paints.
     Transcript(transcript::Transcript),

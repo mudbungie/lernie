@@ -48,7 +48,9 @@ pub mod roster;
 pub mod shell;
 /// The ink a row is painted in.
 pub mod theme;
+/// The tuning pane: what a wall's roles are set to, and what sets them.
+pub mod tuning;
 
 pub use keys::Pane;
-pub use model::{Aim, Channel, Chunk, Enrolling, Grade, Held, Model, Notice, Shown};
+pub use model::{Aim, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning};
 pub use shell::render;

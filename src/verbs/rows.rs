@@ -1,10 +1,21 @@
 //! **The rows** — the reads, the deposit, the advance and the enrollment, as
-//! data. The conversation's own four acts are [`super::conversation`]'s.
+//! data. The conversation's own four acts are [`super::conversation`]'s and the
+//! tuning family's two are [`super::tuning`]'s.
 //!
 //! Split from [`super`] at the design-time budget on the seam the module's own
 //! doc already draws: [`super`] is what a verb *is* and what it does with its
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
+//!
+//! **[`TABLE`] is the whole roster and six of its rows are declared
+//! elsewhere**, in the two files that own their subjects. The conversation's
+//! four are [`super::conversation`]'s. The tuning family's `roles` and `model`
+//! are [`super::tuning`]'s, beside the two doors that share their subject and
+//! cannot be rows at all — the read and the three writes are one
+//! `providers.yaml` assignment seen from both ends, and splitting them across
+//! two files to keep this one tidy would have split the fact. What stays here
+//! is the enumeration: every verb this binary has a word for is in the one
+//! list below.
 //!
 //! **Every row is also a `pub const`, with a typed door beside it**, because
 //! the window and the off-frame threads compose gestures by name at compile
@@ -167,6 +178,7 @@ pub(super) const TABLE: &[Verb] = &[
     CONVERSATIONS,
     TRANSCRIPT,
     FOLLOW,
+    super::tuning::ROLES,
     MESSAGE,
     super::conversation::INTERRUPT,
     NUDGE,
@@ -174,4 +186,5 @@ pub(super) const TABLE: &[Verb] = &[
     super::conversation::RETARGET,
     super::conversation::DELETE_AGENT,
     ENROLL,
+    super::tuning::MODEL,
 ];

@@ -98,11 +98,16 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     if pressed(egui::Key::Escape) {
         model.escape();
     }
-    // **A modal owns the arrows** (bl-7574). While the enrollment covers the
-    // window the lists behind it are not the subject of anything, and a walk
-    // under it would re-aim the roster beneath the material — and would take
-    // the arrows out of the name box the operator is typing into.
-    if model.enroll.is_some() {
+    // **A covering pane owns the arrows** (bl-7574; the tuning pane joined it
+    // in bl-4a2c). While one covers the window the lists behind it are not the
+    // subject of anything, and a walk under it would re-aim the roster beneath
+    // the material — and would take the arrows out of the box the operator is
+    // typing into. That second half is what makes this the gate for both panes
+    // rather than only for the one holding a secret: the tuning pane's
+    // assignment editor is a text box with no [`BOX_ID`] on it, and an arrow
+    // reaching the roster from inside it would re-aim, which retires the pane
+    // and the draft in it.
+    if model.enroll.is_some() || model.tuning.is_some() {
         return;
     }
     // Left and right name a **place**, not a step in a cycle: the roster is

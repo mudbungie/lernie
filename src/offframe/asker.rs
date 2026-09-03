@@ -1,9 +1,17 @@
 //! **The asker**: one pass over the standing question set.
 //!
-//! Three questions and they nest. Every channel is asked for its own roster —
+//! Four questions and they nest. Every channel is asked for its own roster —
 //! which is what makes the roster a **union across channels**, composed here
 //! rather than anywhere on the wire. The aimed wall is asked for its
-//! conversations. The selected conversation is asked for its transcript.
+//! conversations, and — while the tuning pane is open on it — for what its
+//! roles are set to. The selected conversation is asked for its transcript.
+//!
+//! **The roles read is standing rather than one-shot**, which is what lets
+//! every control on that pane state the engine's fact instead of this end's
+//! prediction: a tuning act is composed, sent, and read back on the next beat.
+//! A pane that wrote its own row would be holding a second opinion about a file
+//! it does not own, and the three writes go through a `litany config` that can
+//! refuse.
 //!
 //! **A channel that will not answer costs only itself.** Each leg reports its
 //! own outcome, so a box holding three channels with one engine down still gets
@@ -32,6 +40,14 @@ pub fn tick(link: &Link, root: &Path) {
         &channel,
         &crate::verbs::conversations(aim.address.clone()),
     );
+    if standing.tuning {
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::roles(aim.address.clone()),
+        );
+    }
     let Some(conversation) = standing.conversation else {
         return;
     };

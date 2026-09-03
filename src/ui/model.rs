@@ -31,11 +31,14 @@ mod enroll;
 mod notice;
 /// A start, between its two acts.
 mod start;
+/// The tuning pane between frames, and the four acts its controls spend.
+mod tuning;
 
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use notice::Notice;
 pub use start::{Phase, Start};
+pub use tuning::{Edit, Tuning};
 
 /// Which wall the window is aimed at: the channel it came down, and the address
 /// a gesture must carry. **The address rather than the row's name**, because
@@ -67,6 +70,14 @@ pub struct Model {
     /// It is set and cleared at exactly the two places `convs` is, and nowhere
     /// else.
     pub answered: Option<Aim>,
+    /// **What the aimed wall's roles are set to**, or `None` while nobody has
+    /// been answered about them — one field where [`Self::convs`] needs a pair,
+    /// because here the option carries the whole distinction (`tuning`).
+    pub roles: Option<Vec<crate::reply::roles::RoleRow>>,
+    /// **The tuning pane, while it is open** — the second pane in this window
+    /// that covers the conversation, and the only one that is a place rather
+    /// than a moment ([`Tuning`]).
+    pub tuning: Option<Tuning>,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The live tail as this seat has accumulated it. It **replaces**, never
@@ -165,6 +176,9 @@ impl Model {
                 self.answered = self.aim.clone();
                 self.resolve();
             }
+            // Filed whether or not the pane is open: the read stands only while
+            // it is, so a frame after it closed is the last one in flight.
+            Reply::Roles(rows) => self.roles = Some(rows),
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the

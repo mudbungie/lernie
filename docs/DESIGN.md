@@ -316,15 +316,22 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Nine kinds, because nine are painted.** The engine's reply surface is
+**Ten kinds, because ten are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
-(`conversations`), the conversation itself (`transcript`), the live tail
+(`conversations`), one workspace's role tuning (`roles`, §4.17), the
+conversation itself (`transcript`), the live tail
 (`follow`), a captured run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
 the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
 lands a pane is the ball that adds its kind.
+
+**`roles` is the worked example of that last sentence** (bl-4a2c). It sat in
+`corpus/unreadable/` from the PROTOCOL 6 refresh — a perfectly good frame of a
+kind nothing painted — and the commit that moved it to `corpus/answers/` is the
+commit that built the pane. The diff of that move is the record of what the
+release added, which is exactly what the ledger is for.
 
 **A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
 (bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
@@ -490,15 +497,18 @@ parameters are not all strings is **not** added as a special case — it goes
 through `ask` until there is a reframe that keeps the one table, because the arm
 that would carry it is precisely the second implementation the rule forbids.
 
-**Six rows and eight gestures — the table and the roster are not one list.**
+**Nine rows and thirteen gestures — the table and the roster are not one list.**
 The *roster* is the gestures whose replies §4.9 paints, and it grows with the
 paint surface: the ball that lands a pane adds its kind and its gesture in the
-same breath. The *table* is the subset a word can spell, and it is six because
-two of them cannot be. `prepare` carries a payload rung and `prompt` carries a
-prepared body, and a nested object is not a word an operator types — which is
-exactly the case the paragraph above refuses to special-case. So they are typed
-doors with no row (`src/verbs/start.rs`), and what argv types instead is the
-composite below.
+same breath. The *table* is the subset a word can spell, and it is nine because
+four of them cannot be. Two modules hold the four and each is the same rule
+applied. `src/verbs/start.rs`: `prepare` carries a payload rung and `prompt`
+carries a prepared body, and a nested object is not a word an operator types, so
+what argv types instead is the composite below. `src/verbs/tuning.rs` (§4.17):
+`effort` carries a level that is a string **or null** — null being the whole of
+what *off* means, so a row would have to send a fifth word the boundary refuses
+by name — and `priority` carries a bool. Each is exactly the case the paragraph
+above refuses to special-case, and each is a typed door with no row.
 
 **The one argument the seat settles itself is `enroll`'s grade** (bl-07b9).
 `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
@@ -1074,6 +1084,42 @@ the envelope it emits is a later rung. Unproven is red: a control on a screen
 the walk never visits fails honestly, so the walk's world set is part of the
 instrument.
 
+### 4.17 Role tuning: the settings pane, and a standing read keyed on a pane (bl-4a2c)
+
+`src/ui/tuning.rs`. **The seat's second covering pane, and the first that is a
+place rather than a moment.** §4.15's enrollment covers the conversation because
+what it holds is a private key and the act is *look at this now and close it*.
+This one covers it for a plainer reason: it is a surface an operator navigates
+to, acts in, and comes back from — which is what §4.11's reach assertion was
+written about and recorded that this seat did not have. It does now, and the
+walk covers both panes.
+
+**Nothing on it is a preference.** Every row is a fact about the WALL, held in
+that workspace's config on the engine, and every control is one gesture across
+the §8.5 boundary. A seat that kept its own copy would be a second authority for
+a file it does not own — so the pane holds exactly one piece of state, the draft
+of an assignment, because two words typed into two boxes are not a fact about
+anything until they are sent.
+
+**The read is standing, and it is keyed on the PANE rather than on the aim.**
+`Standing` gains a flag rather than a second aim: the pane is about whatever the
+window is aimed at, and closes when that moves, so a second address would be a
+second authority for one focus. Keying it on the pane is what keeps a seat with
+no configuration surface open from asking about a file nobody is looking at on
+every beat, forever. What that buys is the property every control here has:
+**a write lands and the next answer says so.** Nothing on the pane is ever this
+end's prediction about what a `litany config` did, and that matters because it
+can refuse.
+
+**The absence is the fourth choice, and it is not a word.** `effort` offers
+three levels and *off*, where off is the wire's `null` — the line removed, the
+provider's own default governing. The seat's list is therefore `Option`s and not
+strings, so the seat a control paints hands back exactly the value the envelope
+carries and no translation table exists to drift. A level the four seats do not
+name — a config written by a hand, or by a newer engine — is §4.9's rung 3 on
+the glass: painted as itself, because four unselected seats would otherwise say
+the level is *off*, which is a different claim from the one the file makes.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1124,7 +1170,11 @@ instrument.
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
-| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
+| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel, and the two per-wall controls that hang off the aimed row. | ~140 |
+| `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
+| `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
+| `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
+| `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
@@ -1148,8 +1198,8 @@ instrument.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, the one settled frame, and which widths the layout still promises a shape. `cfg(test)`. | ~125 |
-| `src/snapshot/worlds.rs` | the four named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen is one of them. `cfg(test)`. | ~80 |
-| `src/snapshot/reach.rs` | assertion (a): the walk to the seat's one covered pane and back, asked of the accessibility tree. `cfg(test)`. | ~100 |
+| `src/snapshot/worlds.rs` | the six named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen and the tuning pane's two are among them. `cfg(test)`. | ~120 |
+| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's two covered panes and back, asked of the accessibility tree. Two legs per pane, and the length is the bound. `cfg(test)`. | ~115 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |

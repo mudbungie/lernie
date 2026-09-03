@@ -6,7 +6,7 @@
 //! own words, which is a sentence an operator can act on rather than a control
 //! that only looks actionable.
 
-use crate::ui::{Model, chat, composer, convs, enroll, keys, roster, theme};
+use crate::ui::{Model, chat, composer, convs, enroll, keys, roster, theme, tuning};
 
 /// Paint one frame of the whole window.
 ///
@@ -35,7 +35,13 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // bottom panel, so it is outside what the central panel below covers — and
     // what stood there was a live `start` control firing a conversation on the
     // very wall being enrolled into, from under the symbol.
-    if model.enroll.is_none() {
+    //
+    // **The tuning pane stands the composer down for the same reason it stands
+    // down under the enrollment** (bl-4a2c), one noun over: the conversation
+    // the composer deposits into is not on the glass while a pane covers it,
+    // and a send box whose subject an operator cannot see is a control aimed at
+    // something they are not looking at.
+    if model.enroll.is_none() && model.tuning.is_none() {
         egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
     }
     // **The enrollment stands where the conversation would**, and it is the one
@@ -44,10 +50,15 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // and a conversation legible behind it would invite the one thing the
     // material must not have, which is a long life on a display
     // (`crate::ui::enroll`).
+    //
+    // **Two panes may stand there and the enrollment wins**, which is an order
+    // rather than a rule with an exception: it is the one that holds a secret,
+    // and the material's whole product is a short life on a display.
     egui::CentralPanel::default().show(ctx, |ui| {
-        if !enroll::render(ui, model) {
-            chat::render(ui, model);
+        if enroll::render(ui, model) || tuning::render(ui, model) {
+            return;
         }
+        chat::render(ui, model);
     });
 }
 

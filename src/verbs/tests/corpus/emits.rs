@@ -4,8 +4,8 @@
 //!
 //! Split from [`super`] on the seam the corpus itself draws: that half asks
 //! whether a gesture can be READ and routed, which is a question about every
-//! op in the vocabulary, and this one asks whether the eight this seat WRITES
-//! come out right. The two change for different reasons — a verb added moves
+//! op in the vocabulary, and this one asks whether the thirteen this seat
+//! WRITES come out right. The two change for different reasons — a verb added moves
 //! this file, a shape added upstream moves that one.
 //!
 //! **Rule 3 lives here too** — *"a shape you do not implement is still one you
@@ -18,7 +18,9 @@ use std::collections::BTreeMap;
 
 use serde_json::{Map, Value, json};
 
-use super::super::super::{PREPARE, PROMPT, find, prepare, prompt};
+use super::super::super::{
+    EFFORT, PREPARE, PRIORITY, PROMPT, effort, find, prepare, priority, prompt,
+};
 use super::{emitted, request};
 use crate::envelope;
 
@@ -68,12 +70,17 @@ fn text(obj: &Map<String, Value>, key: &str) -> String {
 /// **This seat's own encoding of one frame**, or `None` where it has no way to
 /// compose that frame at all.
 ///
-/// The six rows go through the one builder they always go through, so nothing
-/// here is a second spelling of a gesture (DESIGN §4.10). The start pair are
-/// typed doors, and `prompt`'s body is decoded by the seat's **real** reader
+/// The nine rows go through the one builder they always go through, so nothing
+/// here is a second spelling of a gesture (DESIGN §4.10). The four doors are
+/// typed, and `prompt`'s body is decoded by the seat's **real** reader
 /// before being handed back — which is what makes this a round trip rather
 /// than a re-copy, and what proves the fields no pane paints ride through
 /// untouched.
+///
+/// **The tuning pair are the reason the doors exist**, so they are round-tripped
+/// off the frame's own JSON types rather than off `text`: `level` is a string
+/// or `null` and `on` is a bool, and a reading that went through a string would
+/// be the very translation the doors were written to avoid.
 fn rebuilt(frame: &Value) -> Option<Value> {
     let obj = frame.as_object().expect("a gesture envelope");
     let op = text(obj, envelope::OP);
@@ -93,6 +100,14 @@ fn rebuilt(frame: &Value) -> Option<Value> {
     match op.as_str() {
         PREPARE => (obj["payload"] == json!({ "rung": BARE }))
             .then(|| prepare(text(obj, envelope::WORKSPACE))),
+        EFFORT => Some(effort(
+            text(obj, envelope::WORKSPACE),
+            text(obj, "role"),
+            obj["level"].as_str().map(str::to_owned),
+        )),
+        PRIORITY => obj["on"]
+            .as_bool()
+            .map(|on| priority(text(obj, envelope::WORKSPACE), text(obj, "role"), on)),
         PROMPT => obj["seed"].is_null().then(|| {
             let staged = crate::reply::start::prepared(obj).expect("a staged body");
             let address = staged.workspace.clone();

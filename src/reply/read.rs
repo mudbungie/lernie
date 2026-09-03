@@ -11,7 +11,7 @@
 use serde_json::Value;
 
 use super::{
-    ERROR, KIND, OK, Outcome, Read, Reply, convs, enrolled, fields, roster, start, stream,
+    ERROR, KIND, OK, Outcome, Read, Reply, convs, enrolled, fields, roles, roster, start, stream,
     transcript,
 };
 
@@ -51,6 +51,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
         NUDGED => Reply::Nudged,
         roster::KIND => Reply::Workspaces(roster::workspaces(obj)?),
         convs::KIND => Reply::Conversations(fields::rows(obj, convs::row)?),
+        roles::KIND => Reply::Roles(fields::rows(obj, roles::row)?),
         transcript::KIND => Reply::Transcript(transcript::transcript(obj)?),
         stream::KIND => Reply::Follow(stream::follow(obj)?),
         enrolled::KIND => Reply::Enrolled(enrolled::enrolled(obj)?),

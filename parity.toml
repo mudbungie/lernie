@@ -70,15 +70,19 @@ deliver = "bl-8ffa — no candidate surface: one of n cannot be accepted here"
 fan = "bl-8ffa — no candidate surface: a prepared start cannot be spread over attempts"
 retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be released here"
 
-# bl-4a2c — the workspace's configuration is unreachable: no lineage, no config
-# file, no role tuning, and no way to unmake it.
-config = "bl-4a2c — no configuration pane: a config file is neither read nor written here"
-delete-workspace = "bl-4a2c — no configuration pane: a workspace cannot be unmade from this seat"
-effort = "bl-4a2c — no configuration pane: a role's reasoning effort is untunable here"
-lineages = "bl-4a2c — no configuration pane: the config lineages are painted nowhere"
-model = "bl-4a2c — no configuration pane: a role cannot be given a model from this seat"
-priority = "bl-4a2c — no configuration pane: a role's provider priority lane is unreachable"
-roles = "bl-4a2c — no configuration pane: what the roles are set to is readable nowhere"
+# bl-4a2c landed the tuning quartet — `roles`, `effort`, `priority` and
+# `model` all carry controls on `src/ui/tuning.rs` and are gone from this
+# ledger. What it did not build is the config FILE itself, which is a second
+# pane with a second subject: bytes, on a lineage, at a path.
+#
+# bl-5c53 — the config-file pane: the lineages, the file a lineage holds, and
+# the bytes read out of one and written back to it.
+config = "bl-5c53 — no config-file pane: a config file's bytes are neither read nor written here"
+lineages = "bl-5c53 — no config-file pane: the lineages and the paths each holds are unpainted"
+
+# bl-48fa — the seat has no idiom for a destructive act at all, so the one op
+# that unmakes a thing has nothing to be built out of.
+delete-workspace = "bl-48fa — no destructive-act idiom: nothing here arms and confirms an unmaking"
 
 # bl-40ec — three window-level reads reach no gesture: the roster refreshes
 # itself, and help and search have no home at all.

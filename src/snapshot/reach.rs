@@ -13,10 +13,13 @@
 //! What the assertion is *about* survives that intact: a window has surfaces
 //! you navigate to and back from, and the way they break is that the control
 //! opening one stops being reachable when the window narrows — the pane is
-//! still there, still correct, and nobody can get to it. This seat has exactly
-//! one such surface, [`crate::ui::enroll`], and it is the right subject on its
-//! merits: it is the only pane that covers another, the only one reached by a
-//! control rather than by looking, and the only one with a way back.
+//! still there, still correct, and nobody can get to it.
+//!
+//! **The premise has since come true** (bl-4a2c). [`crate::ui::tuning`] is a
+//! settings panel by any reading: a place you go to, act in, and come back
+//! from, holding what a wall's roles are set to. So the walk covers both
+//! covering panes rather than the one — and it is still two gestures each, in
+//! and back out, because that bound is what the assertion is.
 //!
 //! # Why the accessibility tree and not the glass
 //!
@@ -27,7 +30,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Model, enroll};
+use crate::ui::{Model, enroll, tuning};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -40,10 +43,23 @@ pub(crate) struct Step {
     pub(crate) then: &'static str,
 }
 
-/// **The walk, and its length is the bound.** Two legs: one gesture in, one
-/// gesture back out. A third leg appearing here is the assertion telling you
-/// the pane moved further away.
-pub(crate) const WALK: [Step; 2] = [
+/// **The walk, and its length is the bound.** Two legs per pane: one gesture
+/// in, one gesture back out. A third leg appearing for either is the assertion
+/// telling you that pane moved further away.
+///
+/// The tuning pane goes first because both controls hang off the aimed roster
+/// row and each stands the other down while it is open — so a walk that opened
+/// the enrollment first would find the tuning control gone and complain about
+/// a seat that is behaving exactly as designed.
+pub(crate) const WALK: [Step; 4] = [
+    Step {
+        gesture: tuning::OPEN,
+        then: tuning::HEADING,
+    },
+    Step {
+        gesture: tuning::CLOSE,
+        then: tuning::OPEN,
+    },
     Step {
         gesture: enroll::OPEN,
         then: enroll::HEADING,

@@ -29,13 +29,17 @@
 //! adds its kind and its gesture in the same breath. **A gesture whose reply is
 //! a captured run is already painted**, which is why the conversation's four
 //! acts ([`conversation`]) could be rows the day the ledger asked for them and
-//! its seven *records* could not (bl-213c). The **table** is the subset of the
-//! roster a word can spell, and two of the start family's cannot
-//! be one. [`start`] holds the pair and says why: `prepare` carries a payload
-//! rung and `prompt` carries a prepared body, and a nested object is not a word
-//! an operator types — which is exactly the case the paragraph above refuses to
-//! special-case. They are typed doors with no row, and what argv types instead
-//! is `lernie start`, the composite that spends both.
+//! its seven *records* could not (bl-213c) — and why the tuning family's three
+//! writes ([`tuning`]) could be composed the day the ledger asked for those.
+//! The **table** is the subset of the roster a word can spell, and four
+//! gestures cannot be one. Two modules hold them and each says why. [`start`]:
+//! `prepare` carries a payload rung and `prompt` carries a prepared body, and a
+//! nested object is not a word an operator types — so what argv types instead
+//! is `lernie start`, the composite that spends both. [`tuning`]: `effort`
+//! carries a level that is a string **or null**, where null is the whole of
+//! what *off* means, and `priority` carries a bool. Each is exactly the case
+//! the paragraph above refuses to special-case, and each is a typed door with
+//! no row.
 //!
 //! # Positional and context-free, unlike the engine's own line
 //!
@@ -76,6 +80,8 @@ pub mod help;
 mod rows;
 /// The start family's two envelopes, which are doors without rows.
 pub mod start;
+/// The role-tuning family: one read, and the three writes it reads back.
+pub mod tuning;
 
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
@@ -86,6 +92,7 @@ pub use rows::{
     follow, message, nudge, transcript, workspaces,
 };
 pub use start::{PREPARE, PROMPT, prepare, prompt};
+pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
 
 /// One verb: the word, what it takes, and what it is for.
 ///

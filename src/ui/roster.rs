@@ -180,8 +180,24 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
-    if aimed && model.enroll.is_none() && ui.button(crate::ui::enroll::OPEN).clicked() {
+    // **Both per-wall controls hang off the aimed row and off no other**, and
+    // both stand down while a pane already covers the conversation: what they
+    // open would replace what is standing there, so offering them is offering
+    // to lose it without saying so.
+    if !aimed || model.enroll.is_some() || model.tuning.is_some() {
+        return;
+    }
+    if ui.button(crate::ui::enroll::OPEN).clicked() {
         model.begin_enrollment();
+    }
+    // **The read this gesture reaches**, exactly as the wall's own seat above
+    // carries the conversation list's: opening the tuning pane is what makes
+    // this seat read that wall's roles (`crate::state::Standing`), and the read
+    // has no control of its own.
+    let tune = ui.button(crate::ui::tuning::OPEN);
+    crate::ui::act::tag(&tune, &[crate::verbs::ROLES.word]);
+    if tune.clicked() {
+        model.begin_tuning();
     }
 }
 

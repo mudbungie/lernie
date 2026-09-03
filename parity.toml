@@ -101,12 +101,6 @@ workspaces = "bl-40ec — the roster is populated by a standing read no gesture 
 models = "bl-e3c5 — no provider pane: what a provider is offering is readable nowhere"
 providers = "bl-e3c5 — no provider pane: the provider table and its credential facts are unpainted"
 
-# bl-f0ef — the decision queue has no pane, so a flag raised on a conversation
-# is readable nowhere from this seat.
-attention = "bl-f0ef — no decision queue: what is waiting on the operator is unpainted"
-flag = "bl-f0ef — no decision queue: an attention item cannot be raised from this seat"
-seen = "bl-f0ef — no decision queue: a conversation's place in the queue cannot be answered"
-
 # bl-e53c — the tool-host surface is unpainted, so a foot's advertised set and
 # its subject_cwd consent are readable nowhere.
 answer = "bl-e53c — no tool-host pane: a held tool call cannot be released or declined here"

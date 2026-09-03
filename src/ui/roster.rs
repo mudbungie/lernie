@@ -11,7 +11,7 @@
 //! absorbed ([`crate::ui::Model::absorb`]) and read here.
 
 use crate::reply::roster::WsRow;
-use crate::ui::{Aim, Chunk, Model, theme};
+use crate::ui::{Aim, Channel, Chunk, Model, theme};
 
 /// **What a section says while nothing has come down its channel yet.**
 ///
@@ -70,6 +70,24 @@ pub fn aimable(model: &Model) -> Vec<Aim> {
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    // **The queue's control hangs here, above the channels** (bl-f0ef), and
+    // above the scrolled region for the reason the heading is: it is the one
+    // thing on this pane that is always offered, and a control an operator has
+    // to scroll a roster to find is a control they use the command line for.
+    //
+    // The roster is its home because the roster is the pane that is already
+    // the union across channels, and `attention` names no workspace — so it
+    // hangs off no row, needs no aim, and is offered on a seat that has not
+    // aimed at anything, which is the seat most likely to be asking. It stands
+    // down under a covering pane exactly as the per-wall controls below do:
+    // what it opens would replace what is standing there.
+    if !model.covered() {
+        let open = ui.button(crate::ui::queue::OPEN);
+        crate::ui::act::tag(&open, &[crate::verbs::ATTENTION.word]);
+        if open.clicked() {
+            model.begin_queue();
+        }
+    }
     // **The list scrolls, and the heading above it does not** (bl-e5d2): a
     // roster longer than its pane used to be cut off mid-glyph at the panel
     // edge, with nothing on the glass saying anything had been cut — while the
@@ -90,7 +108,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 /// One channel's section: its header, how current its answer is, and its walls.
 fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
     ui.separator();
-    ui.label(header(chunk));
+    ui.label(header(&chunk.channel));
     // **A channel that cannot be reached says so HERE**, under its own header
     // and beside whatever it last answered — never in the shell-wide bar, which
     // is for what an engine said about a gesture (bl-e620). It stands above the
@@ -133,6 +151,10 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
 /// The section header: what this box calls the channel, what its host calls the
 /// workspace when the two differ, and **the address it dials**.
 ///
+/// It takes the channel and not the chunk because the decision queue groups its
+/// rows by channel too (`crate::ui::queue`), and two spellings of a section
+/// header would be two things an operator has to reconcile.
+///
 /// The rename is here because a local rename is the remedy for a name
 /// collision, and an operator has to be able to see one. The address is here
 /// because the pane used to drop the one fact that explains a duplicate
@@ -140,14 +162,14 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
 /// listens on paints every workspace of that engine twice, under two headers,
 /// with nothing on either saying they are the same server. `lernie entries`
 /// prints the address under every row and the window did not.
-pub fn header(chunk: &Chunk) -> String {
-    let named = match &chunk.channel.named_there {
-        Some(there) if *there != chunk.channel.name => {
-            format!("{} (named {:?} on its host)", chunk.channel.name, there)
+pub fn header(channel: &Channel) -> String {
+    let named = match &channel.named_there {
+        Some(there) if *there != channel.name => {
+            format!("{} (named {:?} on its host)", channel.name, there)
         }
-        _ => chunk.channel.name.clone(),
+        _ => channel.name.clone(),
     };
-    match &chunk.channel.dials {
+    match &channel.dials {
         Some(at) => format!("{named} — {at}"),
         None => named,
     }

@@ -78,6 +78,8 @@ pub mod conversation;
 pub mod doors;
 /// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
+/// The decision queue's three ops — the read, the answer and the raise.
+pub mod queue;
 /// The conversation's records — the reads under one, as rows.
 pub mod records;
 /// The reads and the deposit, as data — the rows this seat had first.
@@ -90,6 +92,7 @@ pub mod tuning;
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };
+pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{FILES, STEPS, files, steps};
 use rows::TABLE;
 pub use rows::{

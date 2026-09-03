@@ -11,8 +11,8 @@
 use serde_json::Value;
 
 use super::{
-    ERROR, KIND, OK, Outcome, Read, Reply, convs, enrolled, fields, files, roles, roster, start,
-    steps, stream, transcript,
+    ERROR, KIND, OK, Outcome, Read, Reply, convs, enrolled, fields, files, queue, roles, roster,
+    start, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -20,6 +20,9 @@ use super::{
 /// these two answer to no type of their own.
 const OUTCOME: &str = "outcome";
 const NUDGED: &str = "nudged";
+/// The flag's receipt. It answers to no type for [`NUDGED`]'s own reason:
+/// what it changed arrives on the next queue, so there is nothing to read.
+const FLAGGED: &str = "flagged";
 
 /// **Read one reply frame.** Total: every input answers one of [`Read`]'s
 /// three arms, and none of them is a panic.
@@ -52,6 +55,8 @@ fn decode(frame: &Value) -> Result<Read, String> {
         roster::KIND => Reply::Workspaces(roster::workspaces(obj)?),
         convs::KIND => Reply::Conversations(fields::rows(obj, convs::row)?),
         roles::KIND => Reply::Roles(fields::rows(obj, roles::row)?),
+        queue::KIND => Reply::Attention(fields::rows(obj, queue::row)?),
+        FLAGGED => Reply::Flagged,
         transcript::KIND => Reply::Transcript(transcript::transcript(obj)?),
         steps::KIND => Reply::Steps(steps::steps(obj)?),
         files::KIND => Reply::Files(files::files(obj)?),

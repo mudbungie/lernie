@@ -316,13 +316,15 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Twelve kinds, because twelve are painted.** The engine's reply surface is
+**Fourteen kinds, because fourteen are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
 conversation itself (`transcript`), the live tail
 (`follow`), the conversation's records pair — the steps its loop took
-(`steps`) and what its worktree holds (`files`), both §4.18's — a captured
+(`steps`) and what its worktree holds (`files`), both §4.18's — the decision
+queue (`attention`) and the receipt that raises a row onto it (`flagged`),
+both §4.19's, a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
@@ -343,15 +345,25 @@ ledger holding the two balls that will move them (bl-3257, bl-b52c).
 (bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
 unreleased cycle: a `failure` clause on the conversation row, the same clause on
 the §6 queue row and on the `agent` answer, and a `flag` object beside a new
-`flagged` signal token on the queue row. **This seat consumed exactly one of
+`flagged` signal token on the queue row. **That release consumed exactly one of
 them** — the conversation row's clause, because the conversation list is the
 pane that paints the row it hangs on, and a red row that says nothing about why
 it is red is a list an operator opens one by one to learn the one thing every
-row in it says. The other three ride through unread and their shapes stay in
-`corpus/unreadable/`, which is the ledger doing its job rather than a shortfall:
-nothing here paints an `agent` answer or a decision queue, so a field carried
-for them would be a field held for no glass. **The number moves for the wire;
-the fields move for the panes**, and the two are decided separately.
+row in it says. The other three rode through unread and their shapes stayed in
+`corpus/unreadable/`, which was the ledger doing its job rather than a
+shortfall: nothing here painted an `agent` answer or a decision queue, so a
+field carried for them would have been a field held for no glass. **The number
+moves for the wire; the fields move for the panes**, and the two are decided
+separately.
+
+**And the fields moved when the pane did** (bl-f0ef). §4.19 lands the decision
+queue, so `attention` and `flagged` moved to `corpus/answers/` in the commit
+that built it and two of PROTOCOL 4's four facts — the queue row's `failure`
+clause and its `flag` object with the `flagged` token beside it — are painted.
+The fourth is still unread and its ledger line still stands: nothing here paints
+an `agent` answer, and that half belongs with the provider rungs (bl-b180,
+bl-e3c5) rather than with a queue. The interval between the bump and the paint
+is the ledger's whole product — one diff, naming exactly what a release added.
 
 **PROTOCOL 5 and 6 are that sentence with the second half empty**, and the
 pair is why the ordinary bump costs this seat an integer and nothing else. 5
@@ -594,7 +606,10 @@ property the whole surface exists for.
 
 `src/ui/`. Four panes and a notice bar: the roster grouped by the channel each
 row came down, the aimed wall's conversations, the selected conversation, and
-the composer. Every one of them is a function of the [`Model`] it is handed.
+the composer — with four more that COVER the conversation when they are open
+(§4.15's enrollment, §4.17's tuning, §4.18's records and §4.19's decision
+queue), asked as one question rather than four (`Model::covered`). Every one of
+them is a function of the [`Model`] it is handed.
 
 **The frame never dials.** Nothing under `src/ui/` opens a socket, reads a file,
 blocks or waits; the one thing a frame *produces* is `Model::outbox`, the
@@ -1210,6 +1225,85 @@ exemption ledger on two seams: the spine (`rail`, `governing`, and the `fork`
 whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 (`agent`, `step`, `inbox` — bl-3257).
 
+### 4.19 The decision queue: the pane about no focus (bl-f0ef)
+
+`src/ui/queue.rs`. **The fourth covering pane, and the first whose subject is
+neither the aimed wall nor the selected conversation.** REMOTE §6 is the
+engine's *what needs you* — a flattened roster across every enumerated
+workspace, filtered to the rows that are asking — and `attention` names no
+workspace, so the read **fans** and the pane is the union across channels, the
+way the roster is (§4.7, REMOTE §8.2). Three ops land with it: `attention` is
+the read the opening control fires, `seen` answers one row, and `flag` raises
+one.
+
+**The flag is why the pane exists, and it was the sharpest case of a field held
+for no glass.** REMOTE §9.11 put it on the wire at PROTOCOL 4 — *when* somebody
+raised a flag on a conversation and *why*, in the raiser's own words — and the
+point of a flag is that a second party asks the operator to look. A seat that
+carries the field and paints it nowhere is the one place that ask goes to die,
+which is what bl-d774 recorded and this ball spends. So it leads a row's detail,
+above the failure clause and the parked invocation: it is the only line on a row
+that somebody *wrote* rather than something the engine observed.
+
+Five decisions, and each is a choice rather than a mechanism:
+
+- **Its control hangs off the roster, above the channels and off no row.** The
+  roster is the one pane that is already the union across channels, which is
+  what the queue is; and because `attention` addresses nothing, the control
+  needs no aim and is offered on a seat that has aimed at nothing — which is the
+  seat most likely to be asking the question. It sits outside the roster's
+  scrolled region for the reason the heading does, and stands down under a
+  covering pane exactly as the two per-wall controls do.
+- **Nothing on the glass can retire it.** §4.17's pane goes down when the aim
+  moves and §4.18's when the selection does, because each is *about* one of
+  them. This one is about everything, so aiming and selecting leave it standing
+  — which is the same rule read on a pane whose subject nothing on the glass can
+  move, not an exception to it. The read stands on the PANE
+  (`Standing::queue`), and there the argument is sharper than tuning's: a fan
+  costs one round trip per channel per beat, so a seat with nothing open pays
+  none of them.
+- **A fan's answer replaces its OWN channel's section**, leaving every other
+  standing — §8.2's *"a refusal is one entry's, never the set's"*, the shape the
+  roster already keeps.
+- **A row is addressed off the ROSTER, never off the section it came down.** A
+  queue row names its workspace as *its host* names it, which is not what a
+  gesture from this box carries when an entry renames. The window's half of that
+  mapping has one home — a roster row and `ui::Channel::address` — so
+  `Model::wall` asks it there. Two things follow and both are the point. A
+  channel stamp becomes a display fact that cannot mis-aim a gesture, which
+  matters because a receipt's stamp is the *aimed* channel rather than the one
+  that answered (`src/offframe/poster.rs`) and `seen`'s reply is a queue rather
+  than a receipt — the residual that leaves is one beat of a section under the
+  wrong header, and it is bl-c70d's, filed with the fix: the seat-side name is
+  a fact `seat::route` already has and discards. And a row for a wall this seat
+  holds no name for is honestly unaddressable, and says so in the roster's own
+  sentence, rather than being aimed at a different wall by a guess.
+- **`flag` is on the composer's second row and not on this pane**, which is the
+  one placement decision the ball made outside it. A flag is *somebody asking
+  the operator to look at this conversation*, so it is raised while looking at
+  it — and this pane covers the conversation, so a control here would flag
+  something the operator cannot see. The queue is where a flag is READ; the
+  composer, which is already the pane that acts on the selected conversation
+  (§4.11), is where one is raised. It sits in the row that does not advance the
+  turn, beside `stop` and `retarget`, because a flag *"changes nothing else — it
+  does not stop, message or touch the conversation"*. Its reason box is a
+  required parameter rather than an arming, so the control is **disabled** until
+  there are words (the tuning pane's `set`, not the composer's second start) and
+  the box is **spent** on firing, the way a deposit is.
+
+**What is painted and not actionable, on purpose.** `held` — the invocation
+parked at the conversation's capability boundary — is read and shown, because it
+is what makes a row answerable rather than merely readable. The control that
+releases or declines it is `answer`, and that belongs to the tool-host surface
+this seat does not have; its `parity.toml` line still cites bl-e53c. Saying what
+is parked is worth more than saying nothing while that pane is unbuilt.
+
+**And one control on it crosses no wire.** *go to it* aims at the row's wall and
+selects its conversation — the two doors a click on the roster and a click on
+the list already spend — and stands the pane down. It carries no `act:` token
+because §4.16 puts a view out of the parity contract: the ledger's unit is an
+op, and an aim is not one.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1252,12 +1346,14 @@ whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
+| `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | what the window holds between frames, and the one door a reply comes in through. | ~180 |
+| `src/ui/model.rs` | what the window holds between frames. The door a reply comes in through split out at the cap onto the seam this row used to name (`model/absorb.rs`). | ~195 |
+| `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither. | ~140 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
@@ -1265,11 +1361,14 @@ whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel, and the two per-wall controls that hang off the aimed row. | ~140 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
+| `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
-| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question three panes share. | ~65 |
+| `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
+| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question four panes share. | ~65 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
@@ -1294,8 +1393,8 @@ whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
-| `src/snapshot/worlds.rs` | the seven named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two and the records pane's are among them. `cfg(test)`. | ~150 |
-| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's three covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~170 |
+| `src/snapshot/worlds.rs` | the eight named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's and the decision queue's are among them. `cfg(test)`. | ~165 |
+| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's four covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |

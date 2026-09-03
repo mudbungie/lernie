@@ -129,8 +129,10 @@ impl AgentState {
         }
     }
 
-    /// One state token, total by construction.
-    fn of(word: &str) -> Self {
+    /// **One state token, total by construction** — and `pub(crate)` because
+    /// the decision queue's rows wear the same vocabulary (`super::queue`).
+    /// One home for the four words, so the two readings cannot drift.
+    pub(crate) fn of(word: &str) -> Self {
         match word {
             "live" => Self::Live,
             IN_FLIGHT => Self::InFlight,

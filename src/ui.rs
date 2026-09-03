@@ -42,6 +42,8 @@ pub mod enroll;
 pub mod keys;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
+/// The decision queue: everything waiting on the operator, anywhere.
+pub mod queue;
 /// The records pane: what a conversation's loop did, and what it touched.
 pub mod records;
 /// The roster: every workspace this seat can reach, grouped by channel.
@@ -54,5 +56,7 @@ pub mod theme;
 pub mod tuning;
 
 pub use keys::Pane;
-pub use model::{Aim, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning};
+pub use model::{
+    Aim, Asking, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning,
+};
 pub use shell::{Column, Shape, render};

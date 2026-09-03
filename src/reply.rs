@@ -16,10 +16,11 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Twelve do
+//! kinds and most of them belong to panes that do not exist here. Fourteen do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
-//! loop took and what its worktree holds — a captured run, the detached
+//! loop took and what its worktree holds — the decision queue and the receipt
+//! that raises a row onto it, a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
 //! name — and a new box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
@@ -76,6 +77,8 @@ pub mod enrolled;
 pub(crate) mod fields;
 /// What one conversation's worktree holds.
 pub mod files;
+/// The decision queue: what is asking for the operator, anywhere.
+pub mod queue;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
 mod read;
 /// What one workspace's roles are set to, and how each is tuned.
@@ -133,7 +136,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Twelve, and each is here because a surface
+/// **The kinds the window draws.** Fourteen, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -159,6 +162,17 @@ pub enum Reply {
     /// One conversation's committed entries with the live tail folded on —
     /// the whole of what the chat pane paints.
     Transcript(transcript::Transcript),
+    /// **Everything waiting on the operator**, across every workspace the
+    /// engine can see — the decision queue's rows, standing while its pane is
+    /// open (bl-f0ef). It is the answer to two ops rather than one: `attention`
+    /// asks for the whole queue and `seen` answers with the queue that remains,
+    /// so a reading of it is never a receipt to discard.
+    Attention(Vec<queue::QueueRow>),
+    /// **A flag was raised**, and the row it lands on arrives on the next
+    /// [`Attention`](Self::Attention). It carries nothing for the reason
+    /// [`Nudged`](Self::Nudged) carries nothing — what changed is on the queue,
+    /// and a receipt that restated it would be this end predicting a listing.
+    Flagged,
     /// **The steps the selected conversation's loop has taken** — one half of
     /// what the records pane paints, standing while it is open (bl-2cf7).
     Steps(steps::Steps),

@@ -186,6 +186,61 @@ pub(crate) fn recorded() -> Model {
     }
 }
 
+/// One queue row, quiet: on the wall `seated` is aimed at, asking for nothing
+/// anybody wrote down.
+pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::QueueRow {
+    crate::reply::queue::QueueRow {
+        workspace: workspace.to_owned(),
+        agent: agent.to_owned(),
+        display: agent.to_owned(),
+        state: AgentState::Quiescent,
+        uncertain: true,
+        preview: String::new(),
+        age_secs: 7,
+        pending: 0,
+        signals: Vec::new(),
+        failure: None,
+        flag: None,
+        held: None,
+    }
+}
+
+/// **The seated model with the decision queue open and answered** (bl-f0ef):
+/// a flagged row carrying every line the pane can hang off one — the raise,
+/// the failure clause, the parked invocation and the signals — a quiet row,
+/// and a row on a wall this seat holds no name for. Every sentence the pane
+/// can say, on one screen.
+pub(crate) fn queued() -> Model {
+    let raised = crate::reply::queue::QueueRow {
+        display: "port the paint probe".to_owned(),
+        state: AgentState::Stopped,
+        uncertain: false,
+        preview: "it stopped on the third attempt".to_owned(),
+        age_secs: 5,
+        pending: 2,
+        signals: vec!["held".to_owned(), "mail".to_owned(), "flagged".to_owned()],
+        failure: Some("Unauthorized".to_owned()),
+        flag: Some(crate::reply::queue::Flag {
+            at: "2026-09-01T22:10Z".to_owned(),
+            reason: "it is rewriting an unrelated crate".to_owned(),
+        }),
+        held: Some(crate::reply::queue::Held {
+            tool: "Bash".to_owned(),
+            tool_use: "toolu_1".to_owned(),
+            reason: "writes".to_owned(),
+        }),
+        ..waiting("home", "20260830T051200Z-a1b2")
+    };
+    Model {
+        queue: true,
+        waiting: vec![crate::ui::Asking {
+            channel: own().channel,
+            rows: vec![raised, waiting("home", "c-2"), waiting("elsewhere", "c-3")],
+        }],
+        ..seated()
+    }
+}
+
 /// Everything one idle frame of the whole window painted.
 pub(crate) fn painted(model: &mut Model) -> String {
     Window::new().text(|ctx| crate::ui::render(ctx, model))

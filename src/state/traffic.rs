@@ -78,6 +78,13 @@ pub struct Standing {
     /// nobody has a use for is still one the engine answers on every beat,
     /// forever.
     pub records: bool,
+    /// **Whether the decision queue is open**, which is the one question that
+    /// is nobody's focus: `attention` names no workspace, so it is asked of
+    /// every channel in [`Self::channels`] rather than of the aim (bl-f0ef).
+    /// Keyed on the PANE for [`Self::tuning`]'s reason, and here the reason is
+    /// sharper — a read that fans costs one round trip per channel on every
+    /// beat, and a seat with nothing open should pay none of them.
+    pub queue: bool,
     /// The selected conversation, whose transcript is the third — and whose
     /// live tail is the held read.
     ///
@@ -101,6 +108,7 @@ impl Standing {
             aim: model.aim.clone(),
             tuning: model.tuning.is_some(),
             records: model.records,
+            queue: model.queue,
             conversation: model.asked(),
         }
     }

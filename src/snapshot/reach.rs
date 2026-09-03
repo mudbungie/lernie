@@ -17,9 +17,11 @@
 //!
 //! **The premise has since come true** (bl-4a2c). [`crate::ui::tuning`] is a
 //! settings panel by any reading: a place you go to, act in, and come back
-//! from, holding what a wall's roles are set to. So the walk covers both
-//! covering panes rather than the one — and it is still two gestures each, in
-//! and back out, because that bound is what the assertion is.
+//! from, holding what a wall's roles are set to. So the walk covers every
+//! covering pane rather than the one — four of them since bl-f0ef — and it is
+//! still two gestures each, in and back out, because that bound is what the
+//! assertion is, and it is the same bound whether the seat has one such pane or
+//! four.
 //!
 //! **And the bound is a fact about the SHAPE, so it is asked per shape**
 //! (bl-dfda). The narrow layout puts one column on the glass at a time, which
@@ -37,7 +39,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Column, Model, Shape, enroll, records, tuning};
+use crate::ui::{Column, Model, Shape, enroll, queue, records, tuning};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -62,7 +64,7 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The three covered panes, in the order the walk visits them.**
+/// **The four covered panes, in the order the walk visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
@@ -70,8 +72,16 @@ struct Covered {
 /// exactly as designed. The records pane goes last for the mirror of that
 /// reason: its control hangs off the composer, which every covering pane stands
 /// down, so it is walked once both roster-row panes have been closed again
-/// (bl-2cf7).
-const PANES: [Covered; 3] = [
+/// (bl-2cf7). The decision queue's control hangs off the roster too, above the
+/// channels rather than off a row, so it stands and falls with the other two
+/// and is walked among them (bl-f0ef).
+const PANES: [Covered; 4] = [
+    Covered {
+        column: Column::Channels,
+        open: queue::OPEN,
+        close: queue::CLOSE,
+        heading: queue::HEADING,
+    },
     Covered {
         column: Column::Channels,
         open: tuning::OPEN,

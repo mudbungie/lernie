@@ -17,8 +17,9 @@ use serde_json::Value;
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
 use crate::reply::transcript::Transcript;
-use crate::reply::{Read, Reply};
 
+/// The one door a reply comes in through, and the leg that brought none.
+mod absorb;
 /// What a control does, whichever control did it.
 mod acts;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
@@ -29,6 +30,8 @@ mod claim;
 mod enroll;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
+/// The decision queue between frames: what is asking, and the acts on a row.
+mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
 /// A start, between its two acts.
@@ -39,6 +42,7 @@ mod tuning;
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use notice::Notice;
+pub use queue::Asking;
 pub use start::{Phase, Start};
 pub use tuning::{Edit, Tuning};
 
@@ -82,6 +86,15 @@ pub struct Model {
     /// **Whether the records pane is open** on the selected conversation — the
     /// third covering pane, and a flag because it has one state (`records`).
     pub records: bool,
+    /// **Whether the decision queue is open** — the fourth covering pane, and
+    /// the first whose subject is neither the aim nor the selection (`queue`).
+    pub queue: bool,
+    /// **What each channel last said is asking for the operator**, one section
+    /// per channel and the union across them. A `Vec` rather than an option
+    /// because the emptiness that matters is per channel: nothing here at all
+    /// is nobody answered yet, and a section holding no row is an engine that
+    /// answered and holds nothing waiting (`queue`).
+    pub waiting: Vec<Asking>,
     /// **The steps its loop has taken**, or `None` while nobody has been
     /// answered — the same one-option reading [`Self::roles`] gets (`records`).
     pub steps: Option<crate::reply::steps::Steps>,
@@ -129,6 +142,11 @@ pub struct Model {
     /// this is not a second control's enablement — it is the gesture's own
     /// third parameter, held where the box that fills it is.
     pub typed: String,
+    /// **The words a flag is raised with** (`crate::ui::composer::acts`). The
+    /// wire requires them — a flag with nothing in it is a row nobody can
+    /// triage — so the control is disabled until there are any, and the box is
+    /// SPENT on firing: what a flag says is said, exactly as a deposit is.
+    pub reason: String,
     /// **A start, while it is happening** — the one thing this window holds
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).
@@ -161,117 +179,6 @@ impl Model {
         self.roster
             .iter()
             .any(|chunk| chunk.channel.name == channel)
-    }
-
-    /// **Take one reply frame.** The single door: an answer is filed, and
-    /// anything else becomes the notice the shell paints where that answer's
-    /// content would have been. `channel` is the client-side stamp, applied
-    /// here and nowhere else.
-    pub fn absorb(&mut self, channel: &Channel, read: Read) {
-        match read {
-            Read::Answer(reply) => self.file(channel, reply),
-            Read::Refusal(said) => self.notice = Some(Notice::Refused(said)),
-            Read::Unreadable(why) => self.notice = Some(Notice::Unreadable(why)),
-        }
-    }
-
-    /// File one answer. A roster answer replaces its **own channel's** chunk
-    /// and leaves every other one standing, which is REMOTE §8.2's *"a refusal
-    /// is one entry's, never the set's"* read from the other side: a box
-    /// serving three engines does not lose the two that are fine.
-    fn file(&mut self, channel: &Channel, reply: Reply) {
-        match reply {
-            Reply::Workspaces(view) => self.seat(channel, view),
-            // The one answer a claim can be spent against: a listing is where
-            // the started conversation first becomes addressable
-            // ([`Model::resolve`]).
-            Reply::Conversations(rows) => {
-                self.convs = rows;
-                self.answered = self.aim.clone();
-                self.resolve();
-            }
-            // Filed whether or not the pane is open: the read stands only while
-            // it is, so a frame after it closed is the last one in flight.
-            Reply::Roles(rows) => self.roles = Some(rows),
-            // The records pair, on the same terms as the roles above.
-            Reply::Steps(listing) => self.steps = Some(listing),
-            Reply::Files(answer) => self.files = Some(answer),
-            Reply::Transcript(transcript) => self.transcript = transcript,
-            Reply::Follow(stream) => self.live = Some(stream),
-            // The start family's two, whose whole product is each other: the
-            // staged body composes the fire, and the fire's receipt is the
-            // minted name. [`Start`] holds the chain.
-            // The one answer that is never filed as content: it is drawn, held
-            // while the picture is on screen, and dropped with the pane.
-            Reply::Enrolled(material) => self.enrolled(&material),
-            Reply::Prepared(prepared) => self.fire(&prepared),
-            Reply::Started { conversation } => self.started(conversation),
-            // The two receipts. Neither carries content, so what they change is
-            // whether the operator is told something happened — and a captured
-            // run that failed is told in the child's own words.
-            Reply::Nudged => self.notice = None,
-            Reply::Outcome(outcome) => {
-                self.notice = (!outcome.ok()).then_some(Notice::Refused(outcome.stderr));
-            }
-        }
-    }
-
-    /// Seat one channel's roster answer. **The channel comes in with the
-    /// answer** rather than being looked up: what a channel is called here and
-    /// what it is called on its host are facts the asker holds, and a model
-    /// that re-derived them would be a second authority for them.
-    fn seat(&mut self, channel: &Channel, view: crate::reply::roster::Workspaces) {
-        let seated = Chunk {
-            channel: channel.clone(),
-            // **The answer spends whatever the section was standing on**: a
-            // channel that has answered is neither unheard nor unheld, and an
-            // engine that answered zero workspaces holds zero — which is a
-            // different sentence from either (bl-08b6).
-            held: Held::Heard,
-            stale: view.stale,
-            growth: view.growth,
-            walls: view.rows,
-        };
-        match self
-            .roster
-            .iter_mut()
-            .find(|chunk| chunk.channel.name == channel.name)
-        {
-            Some(held) => *held = seated,
-            None => self.roster.push(seated),
-        }
-    }
-
-    /// **A leg that never reached an engine**, said on that channel's own
-    /// section (bl-e620).
-    ///
-    /// It is not a reply and so it does not come through
-    /// [`absorb`](Self::absorb): there is no frame, no channel answered, and
-    /// nothing to file. And it is not the shell's bar either, which is where it
-    /// used to go. **A refusal is an exchange; an unreachable channel is a
-    /// relationship**, and REMOTE §8.2 rules that one *"is that channel's
-    /// workspaces painted unreachable, never the whole shell, which stays
-    /// reserved for the one wire the window cannot exist without."* Three
-    /// things followed from getting that wrong, all driven live: the sentence
-    /// named no subject at all (*"this seat could not reach **it**"*), a seat
-    /// holding two dead channels heard about exactly one of them forever
-    /// because there is one bar and the last writer wins, and the bar's dismiss
-    /// was inert — a relationship that is down is down on every beat, so it
-    /// re-posted faster than a hand can clear it. A row's state is not
-    /// something one dismisses.
-    ///
-    /// The bar is kept for a channel this box holds no section for, which is
-    /// the one case with nowhere else to say it — and it names the channel,
-    /// because a fact with no home still has a subject.
-    pub fn unreachable(&mut self, channel: &Channel, why: String) {
-        match self
-            .roster
-            .iter_mut()
-            .find(|chunk| chunk.channel.name == channel.name)
-        {
-            Some(held) => held.held = Held::Unheld(why),
-            None => self.notice = Some(Notice::Unreachable(format!("{}: {why}", channel.name))),
-        }
     }
 
     /// Whether this row is the one the window is aimed at.

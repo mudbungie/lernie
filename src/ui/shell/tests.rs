@@ -161,6 +161,11 @@ fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
         model.aim.clone().map(|aim| aim.address),
         Some("wall-23".to_owned())
     );
+    // **One settle frame**, for `crate::snapshot`'s own reason: egui applies a
+    // scroll over the frame after the one that asked for it, so a single pass
+    // reads a window mid-layout. The keypress frame is where `scroll_to_me` is
+    // spent; this is where it has landed.
+    window.frame(Vec::new(), |ctx| render(ctx, &mut model));
     let shown = seen(&window, |ctx| render(ctx, &mut model));
     assert!(
         shown.iter().any(|run| run.text == last),

@@ -1,7 +1,7 @@
 //! The three acts that spend no words: what each composes, and the arming that
 //! is the operator's until they delete something with it.
 
-use super::{ARM, DELETE, RETARGET, STOP, render};
+use super::{ARM, DELETE, FLAG, RETARGET, STOP, WHY, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::{Aim, Model};
@@ -24,14 +24,14 @@ fn press(model: &mut Model, label: &str) {
     });
 }
 
-/// **All three are on the row**, and the box that arms the last of them says
-/// what it is for rather than standing there unlabelled.
+/// **All four are on the row**, and each box says what it is for rather than
+/// standing there unlabelled.
 #[test]
-fn the_row_offers_the_three_acts_and_says_what_the_box_arms() {
+fn the_row_offers_the_four_acts_and_says_what_each_box_is_for() {
     let mut model = seated();
     let (aim, agent) = subject(&model);
     let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
-    for word in [STOP, RETARGET, DELETE, ARM] {
+    for word in [STOP, RETARGET, FLAG, DELETE, ARM, WHY] {
         assert!(
             painted.lines().any(|line| line == word),
             "{word:?}:\n{painted}"
@@ -101,8 +101,43 @@ fn the_acts_carry_the_address_the_channel_resolves() {
     assert_eq!(model.outbox[0]["workspace"], json!("elsewhere"));
 }
 
+/// **The raise carries the operator's words and SPENDS them** (bl-f0ef), which
+/// is where it parts from the arming above: a flag that fired is said, exactly
+/// as a deposit is, and the next flag on this conversation is a different
+/// sentence about a different moment.
+#[test]
+fn the_raise_carries_the_reason_and_spends_the_box() {
+    let mut model = seated();
+    model.reason = "it is rewriting an unrelated crate".to_owned();
+    press(&mut model, FLAG);
+    assert_eq!(
+        model.outbox,
+        vec![json!({"op": "flag", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2",
+                    "reason": "it is rewriting an unrelated crate"})]
+    );
+    assert!(model.reason.is_empty(), "a flag that fired is said");
+}
+
+/// **The reason is the wire's own requirement, so the control is disabled and
+/// not absent**: the parameter is missing, the subject is not, and a control
+/// that vanished would say the conversation could not be flagged at all.
+#[test]
+fn a_raise_with_no_words_is_offered_and_fires_nothing() {
+    let mut model = seated();
+    model.reason = "   ".to_owned();
+    let (aim, agent) = subject(&model);
+    let window = Window::new();
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
+    assert!(painted.lines().any(|line| line == FLAG), "{painted}");
+    click(&window, FLAG, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aim, &agent));
+    });
+    assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+}
+
 /// **Nothing fires from a frame nobody clicked.** The row paints three buttons
-/// and a box every frame the composer paints, and a frame that composed a
+/// and two boxes every frame the composer paints, and a frame that composed a
 /// deletion for having been drawn is the one failure this row cannot have.
 #[test]
 fn painting_the_row_composes_nothing() {

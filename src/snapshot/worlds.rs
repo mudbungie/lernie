@@ -1,11 +1,11 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! seven rather than one.
+//! eight rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
-//! seven are the shapes: nothing dialled yet, seated at a wall with a
-//! conversation open, the wall with none selected, and the four states of the
-//! three panes that cover the conversation.
+//! eight are the shapes: nothing dialled yet, seated at a wall with a
+//! conversation open, the wall with none selected, and the five states of the
+//! four panes that cover the conversation.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -17,7 +17,7 @@
 //! from a second set of their own — a fixture with a field the row grew is a
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
-use crate::test_support::window::{recorded, role, seated, tuned};
+use crate::test_support::window::{queued, recorded, role, seated, tuned};
 use crate::ui::{Edit, Enrolling, Model, Tuning};
 
 /// One named state of the window, as the matrix files it.
@@ -130,6 +130,16 @@ fn records() -> World {
     }
 }
 
+/// **The window with the decision queue open** — the fifth covered state
+/// (bl-f0ef), and the only screen `attention`'s answer, `seen`'s control and
+/// every sentence a queue row can carry are on.
+fn queue() -> World {
+    World {
+        name: "queue",
+        model: queued(),
+    }
+}
+
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
     vec![
@@ -140,5 +150,6 @@ pub(crate) fn all() -> Vec<World> {
         tuning(),
         assigning(),
         records(),
+        queue(),
     ]
 }

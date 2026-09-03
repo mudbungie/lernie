@@ -16,7 +16,15 @@
 //! - **row one advances it** — `send`, `interrupt`, `nudge`. Each ends with a
 //!   driver running, and the first two spend the box.
 //! - **row two does not** — [`STOP`] kills the driver, [`RETARGET`] marks the
-//!   conversation for another lineage, [`DELETE`] unmakes it.
+//!   conversation for another lineage, [`FLAG`] asks the operator to look at
+//!   it later, [`DELETE`] unmakes it.
+//!
+//! **The flag is on this row and not on the queue pane** (bl-f0ef), which is
+//! the one placement decision that ball made here. A flag is *somebody asking
+//! the operator to look at this conversation*, so it is raised while looking at
+//! it — and `crate::ui::queue` covers the conversation, so a control there
+//! would flag something the operator cannot see. The queue is where a flag is
+//! READ; this is where one is raised.
 //!
 //! **Each of the three answers a captured run**, which is why they are here at
 //! all rather than in the exemption ledger beside the conversation's records: a
@@ -31,6 +39,12 @@ use crate::ui::{Aim, Model};
 pub const STOP: &str = "stop";
 /// The word that marks the conversation for its lineage's head.
 pub const RETARGET: &str = "retarget";
+/// The word that raises an attention item on it.
+pub const FLAG: &str = "flag";
+/// **What the reason box asks for**, and it asks for what the wire requires:
+/// `flag` takes a reason and refuses without one, so the control beside this
+/// box is disabled until it holds something.
+pub const WHY: &str = "why it wants a look";
 /// The word that unmakes it.
 pub const DELETE: &str = "delete";
 /// **What the arming box asks for**, and it asks for exactly what the wire
@@ -77,6 +91,26 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
             fired = Some(crate::verbs::retarget(
                 aim.address.clone(),
                 agent.to_owned(),
+            ));
+        }
+        ui.add(
+            egui::TextEdit::singleline(&mut model.reason)
+                .desired_width(ARM_WIDTH)
+                .hint_text(WHY),
+        );
+        // **Disabled and not absent**, which is the tuning pane's `set` rather
+        // than the composer's second start: the parameter is missing, not the
+        // subject, so the control stays on the glass saying what would fill it.
+        let raise = ui.add_enabled(!model.reason.trim().is_empty(), egui::Button::new(FLAG));
+        crate::ui::act::tag(&raise, &[crate::verbs::FLAG.word]);
+        if raise.clicked() {
+            // **The reason is TAKEN**, unlike the arming below: a flag that
+            // fired is said, exactly as a deposit is, and the next flag on this
+            // conversation is a different sentence about a different moment.
+            fired = Some(crate::verbs::flag(
+                aim.address.clone(),
+                agent.to_owned(),
+                std::mem::take(&mut model.reason),
             ));
         }
         ui.add(

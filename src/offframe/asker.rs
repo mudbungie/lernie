@@ -1,7 +1,8 @@
 //! **The asker**: one pass over the standing question set.
 //!
-//! The questions nest. Every channel is asked for its own roster —
-//! which is what makes the roster a **union across channels**, composed here
+//! The questions nest. Every channel is asked for its own roster — and, while
+//! the decision queue is open, for what is asking on it (bl-f0ef) — which is
+//! what makes both a **union across channels**, composed here
 //! rather than anywhere on the wire. The aimed wall is asked for its
 //! conversations, and — while the tuning pane is open on it — for what its
 //! roles are set to. The selected conversation is asked for its transcript,
@@ -32,6 +33,14 @@ pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
     for channel in &standing.channels {
         down(link, root, channel, &crate::verbs::workspaces());
+        // **The queue fans with the roster** (bl-f0ef), and for the same
+        // reason: `attention` names no workspace, so its subject is every
+        // channel this box holds and the union is composed here. It stands on
+        // the PANE rather than on a focus, because nothing on the glass is its
+        // subject — see `crate::state::Standing::queue`.
+        if standing.queue {
+            down(link, root, channel, &crate::verbs::attention());
+        }
     }
     let Some((channel, aim)) = standing.aimed() else {
         return;

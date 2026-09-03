@@ -121,6 +121,49 @@ fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
     assert_eq!(model.roles, Some(Vec::new()), "the answer is filed");
 }
 
+/// **The queue's read stands on its pane and fans with the roster** (bl-f0ef).
+/// It is the one standing question that is nobody's focus — `attention` names
+/// no workspace — so it rides beside each channel's roster read rather than
+/// under the aim, and a seat with the pane shut asks none of them.
+#[test]
+fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel() {
+    let scratch = Scratch::new();
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "attention", "rows": []})],
+        ],
+    );
+    let own = Channel {
+        name: crate::seat::OWN.to_owned(),
+        named_there: None,
+        dials: None,
+    };
+    let mut model = Model {
+        roster: vec![Chunk::of(own)],
+        ..Model::default()
+    };
+    let link = asking(&model);
+    tick(&link, scratch.path());
+    // No aim and no selection: the pane opens on a seat that has picked
+    // nothing, which is the seat most likely to be asking the question.
+    model.begin_queue();
+    link.settle(&mut model);
+    tick(&link, scratch.path());
+    let ops: Vec<String> = engine
+        .heard()
+        .iter()
+        .filter_map(|said| said.get("op").and_then(Value::as_str))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(ops, vec!["workspaces", "workspaces", "attention"]);
+    link.settle(&mut model);
+    assert_eq!(model.waiting.len(), 1, "the answer is filed by channel");
+}
+
 /// **The records pair stands on its pane exactly as the roles read does**
 /// (bl-2cf7): the selected conversation is asked what its loop did and what
 /// its worktree holds only while somebody is looking — and both answers are

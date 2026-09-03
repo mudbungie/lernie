@@ -86,10 +86,11 @@ impl Model {
     /// closes that pane is the control that forgets. Then a draft assignment,
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
-    /// Then the tuning pane itself, then the records pane (bl-2cf7) — the two
-    /// never stand together, so the order between them is never spent. With
-    /// nothing covering, the notice is the only thing left to put down, and
-    /// Escape is its × reached without a pointer.
+    /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
+    /// decision queue (bl-f0ef) — no two of the three ever stand together, so
+    /// the order among them is never spent. With nothing covering, the notice
+    /// is the only thing left to put down, and Escape is its × reached without
+    /// a pointer.
     pub fn escape(&mut self) {
         if self.enroll.is_some() {
             self.close_enrollment();
@@ -99,6 +100,8 @@ impl Model {
             self.close_tuning();
         } else if self.records {
             self.close_records();
+        } else if self.queue {
+            self.close_queue();
         } else {
             self.dismiss();
         }

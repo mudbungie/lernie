@@ -43,20 +43,17 @@ fn every_empty_section_says_which_emptiness_it_is() {
 /// has to be able to see one.
 #[test]
 fn a_renamed_channel_says_both_names_and_an_unrenamed_one_says_one() {
-    let entry = |there: &str| Chunk {
-        channel: Channel {
-            name: "home".to_owned(),
-            named_there: Some(there.to_owned()),
-            dials: None,
-        },
-        ..Chunk::default()
+    let entry = |there: &str| Channel {
+        name: "home".to_owned(),
+        named_there: Some(there.to_owned()),
+        dials: None,
     };
     assert_eq!(
         header(&entry("personal")),
         "home (named \"personal\" on its host)"
     );
     assert_eq!(header(&entry("home")), "home");
-    assert_eq!(header(&own()), "(this box's own engine)");
+    assert_eq!(header(&own().channel), "(this box's own engine)");
 }
 
 /// The engine's currency notes ride with the rows they are about.

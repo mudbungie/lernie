@@ -7,10 +7,11 @@
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and eight of its rows are declared
-//! elsewhere**, in the three files that own their subjects. The conversation's
-//! four are [`super::conversation`]'s and its records' two are
-//! [`super::records`]'s. The tuning family's `roles` and `model`
+//! **[`TABLE`] is the whole roster and eleven of its rows are declared
+//! elsewhere**, in the four files that own their subjects. The conversation's
+//! four are [`super::conversation`]'s, its records' two are
+//! [`super::records`]'s and the decision queue's three are [`super::queue`]'s.
+//! The tuning family's `roles` and `model`
 //! are [`super::tuning`]'s, beside the two doors that share their subject and
 //! cannot be rows at all — the read and the three writes are one
 //! `providers.yaml` assignment seen from both ends, and splitting them across
@@ -168,14 +169,18 @@ pub const NUDGE: Verb = Verb {
 };
 
 /// Every verb, in the order the roster prints them: the reads first, widest
-/// first; then the conversation's own acts, the deposit first and the unmaking
-/// last; then the one act whose subject is a box rather than a conversation.
+/// first — and the widest of all is the decision queue, which names no
+/// workspace at all; then the conversation's own acts, the deposit first and
+/// the unmaking last, with the queue's two writes among them because their
+/// subject is one conversation; then the one act whose subject is a box.
 ///
-/// The conversation's four live in [`super::conversation`] and its records'
-/// two in [`super::records`], named here rather than defined here — one
-/// table, three files, on the seams those files' own docs draw.
+/// The conversation's four live in [`super::conversation`], its records' two
+/// in [`super::records`] and the queue's three in [`super::queue`], named here
+/// rather than defined here — one table, four files, on the seams those files'
+/// own docs draw.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
+    super::queue::ATTENTION,
     CONVERSATIONS,
     TRANSCRIPT,
     FOLLOW,
@@ -187,6 +192,8 @@ pub(super) const TABLE: &[Verb] = &[
     NUDGE,
     super::conversation::STOP,
     super::conversation::RETARGET,
+    super::queue::FLAG,
+    super::queue::SEEN,
     super::conversation::DELETE_AGENT,
     ENROLL,
     super::tuning::MODEL,

@@ -22,8 +22,9 @@ use crate::test_support::corpus::{Fixture, files, fixture, record, root};
 /// Rule 2, and the record of what this seat cannot compose.
 mod emits;
 
-/// Every op this seat composes: the six rows, and the start family's two
-/// doors. Derived from the table rather than listed, so a verb added is in it.
+/// Every op this seat composes: every row of the table, and the start family's
+/// two doors. Derived from the table rather than listed, so a verb added is in
+/// it.
 fn emitted() -> Vec<String> {
     table()
         .iter()

@@ -33,6 +33,14 @@ const BARE: &str = "bare";
 /// of writing it down.
 const UNEMITTED: &[(&str, usize, &str)] = &[
     (
+        "stop",
+        1,
+        "the children cascade: this seat composes the bare stop only, and the \
+         flag that takes a whole subtree down is a second control with a second \
+         confirmation — it belongs beside the records that would say what is \
+         under there",
+    ),
+    (
         "prepare",
         9,
         "the path and ball rungs: this seat composes the bare rung only, and a \
@@ -70,6 +78,15 @@ fn rebuilt(frame: &Value) -> Option<Value> {
     let obj = frame.as_object().expect("a gesture envelope");
     let op = text(obj, envelope::OP);
     if let Some(verb) = find(&op) {
+        // **A frame carrying a field the row does not name cannot be composed
+        // here**, and that is a general rule rather than one op's arm: the
+        // builder writes exactly `op` plus this row's parameters, so a field
+        // beyond them can only ever come out missing. It answers `None` and
+        // lands in the ledger below with its reason, which is the decision
+        // being recorded instead of an assertion nobody could satisfy.
+        if obj.len() != verb.params.len() + 1 {
+            return None;
+        }
         let args = verb.params.iter().map(|p| text(obj, p)).collect();
         return Some(verb.envelope(args).expect("the shape's own arity"));
     }

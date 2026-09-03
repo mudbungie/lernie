@@ -1,7 +1,7 @@
 //! The composer: what it refuses to fire, what it composes when it does, and
 //! the draft that survives a mis-click.
 
-use super::{NOWHERE, NUDGE, SEND, render, start};
+use super::{INTERRUPT, NOWHERE, NUDGE, SEND, render, start};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::Model;
@@ -58,6 +58,40 @@ fn sending_composes_the_deposit_the_command_line_would_have_and_posts_nothing() 
                     "agent": "20260830T051200Z-a1b2", "content": "ship it"})]
     );
     assert_eq!(model.draft, "", "what was sent is no longer a draft");
+}
+
+/// **The cut is the deposit with a different word on it**, and it spends the
+/// same box: one box, and the verb is chosen by which control was pressed. So
+/// the two share a body and this asserts the half that differs — the envelope's
+/// own op, and that the draft went with it.
+#[test]
+fn cutting_composes_the_interrupt_off_the_same_box_the_deposit_spends() {
+    let mut model = seated();
+    model.draft = "no, this".to_owned();
+    let window = Window::new();
+    click(&window, INTERRUPT, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    assert_eq!(
+        model.outbox,
+        vec![json!({"op": "interrupt", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "content": "no, this"})]
+    );
+    assert_eq!(model.draft, "", "what was said is no longer a draft");
+}
+
+/// **An empty cut fires nothing either**, and for a sharper reason than an
+/// empty deposit's: a driver killed with nothing said is `stop`, which is its
+/// own control one row down. The guard is the deposit's own, shared rather than
+/// restated, and this is the direction that proves the sharing.
+#[test]
+fn an_empty_draft_cuts_nothing_because_that_gesture_has_its_own_control() {
+    let mut model = seated();
+    let window = Window::new();
+    click(&window, INTERRUPT, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    assert!(model.outbox.is_empty(), "{:?}", model.outbox);
 }
 
 /// **An empty draft fires nothing**, and a draft that was not sent survives:

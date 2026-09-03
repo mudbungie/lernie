@@ -736,6 +736,22 @@ same box twice, each with its own Enter, on a face that is four panes wide.
 What is left refusing is the one case that is neither: no wall aimed at, so
 there is nowhere for either.
 
+**Two rows of verbs under the one box, split by what each does to the turn**
+(`src/ui/composer/acts.rs`, bl-213c). The first row *advances* it — `send`,
+`interrupt`, `nudge` — and each of the three ends with a driver running; the
+first two spend the box, because *what to say instead* is the same question as
+*what to say* and a second box for it would be the same box twice. The second
+row does not advance it: `stop` kills the driver, `retarget` marks the
+conversation for its lineage's head, `delete` unmakes it. Two decisions ride
+with that. **Enter is the deposit's and no other verb's** — a key an operator
+reaches for by muscle memory must not kill a running driver, which is exactly
+what the cut adds to the deposit. And **the deletion's arming is a parameter,
+not an enablement**: the wire's `typed` is empty for the bare form and the
+conversation's own name for the cascade, so the box beside `delete` fills the
+gesture's third field and is *not spent* on firing — a delete is refused
+outright while the conversation is live, and charging a retype for the engine's
+*no* is a toll on the safe path.
+
 **A start is the one thing this window holds across a round trip**
 (`src/ui/model/start.rs`). Starting is two acts and the second is composed from
 the first's answer, so the frame that *absorbs* the staged body is the frame
@@ -1096,7 +1112,8 @@ instrument.
 | `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
-| `src/verbs/rows.rs` | the six rows, as data — and the two acts the window composes by name. | ~105 |
+| `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
+| `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
@@ -1110,7 +1127,8 @@ instrument.
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel. | ~120 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
-| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects. | ~90 |
+| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
+| `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, and the unmaking with the name that arms its descendants. | ~90 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
 | `src/ui/shell.rs` | the layout, the width policy the panes yield by, and the notice that stands where content would have been. | ~110 |

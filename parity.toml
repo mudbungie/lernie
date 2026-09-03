@@ -52,20 +52,17 @@ scan = "bl-4c48 — no fleet controls: nothing flushes a workspace's inboxes fro
 science = "bl-4c48 — no fleet controls: the delivery attempts and their costs are unpainted"
 work-diff = "bl-4c48 — no fleet controls: what the agents changed is readable nowhere"
 
-# bl-213c — the selected conversation affords a deposit and a nudge and nothing
-# else: no stop, no interrupt, no fork, and none of its records.
-agent = "bl-213c — no conversation pane: the selected conversation's own row is unpainted"
-delete-agent = "bl-213c — no conversation acts: a conversation cannot be deleted from this seat"
-files = "bl-213c — no conversation pane: the working files are readable nowhere"
-fork = "bl-213c — no conversation acts: a conversation cannot be tried again from a point"
-governing = "bl-213c — no conversation pane: the governing config commit is unpainted"
-inbox = "bl-213c — no conversation pane: undelivered mail is readable nowhere"
-interrupt = "bl-213c — no conversation acts: nothing cuts a conversation off mid-work"
-rail = "bl-213c — no conversation pane: the spine and its operable commits are unpainted"
-retarget = "bl-213c — no conversation acts: nothing settles one onto another lineage"
-step = "bl-213c — no conversation pane: one step's records are readable nowhere"
-steps = "bl-213c — no conversation pane: the steps taken are painted nowhere"
-stop = "bl-213c — no conversation acts: a driver cannot be killed from this seat"
+# bl-2cf7 — the conversation's records have no pane: nothing here reads
+# what is under a conversation, and the fork's two arguments are named off two
+# of those reads. (bl-213c built the acts half; these are what it left.)
+agent = "bl-2cf7 — no conversation records pane: the selected conversation's own row is unpainted"
+files = "bl-2cf7 — no conversation records pane: the working files are readable nowhere"
+fork = "bl-2cf7 — no conversation records pane: `from` is a commit off the rail and `role` a name off the lineages, and this seat reads neither — a control demanding two strings nothing here can discover only looks actionable"
+governing = "bl-2cf7 — no conversation records pane: the governing config commit is unpainted"
+inbox = "bl-2cf7 — no conversation records pane: undelivered mail is readable nowhere"
+rail = "bl-2cf7 — no conversation records pane: the spine and its operable commits are unpainted"
+step = "bl-2cf7 — no conversation records pane: one step's records are readable nowhere"
+steps = "bl-2cf7 — no conversation records pane: the steps taken are painted nowhere"
 
 # bl-8ffa — a prepared start cannot be fanned, and no candidate can be accepted
 # or retired.

@@ -1,0 +1,113 @@
+//! The three acts that spend no words: what each composes, and the arming that
+//! is the operator's until they delete something with it.
+
+use super::{ARM, DELETE, RETARGET, STOP, render};
+use crate::paint_probe::frame::Window;
+use crate::test_support::window::{click, pane, seated};
+use crate::ui::{Aim, Model};
+use serde_json::json;
+
+/// The aim and the conversation the [`seated`] fixture holds, spelled once.
+fn subject(model: &Model) -> (Aim, String) {
+    (
+        model.aim.clone().expect("the fixture is aimed at a wall"),
+        model.conversation.clone().expect("and has one selected"),
+    )
+}
+
+/// Paint the row on its own and click the seat reading `label`.
+fn press(model: &mut Model, label: &str) {
+    let (aim, agent) = subject(model);
+    let window = Window::new();
+    click(&window, label, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, model, &aim, &agent));
+    });
+}
+
+/// **All three are on the row**, and the box that arms the last of them says
+/// what it is for rather than standing there unlabelled.
+#[test]
+fn the_row_offers_the_three_acts_and_says_what_the_box_arms() {
+    let mut model = seated();
+    let (aim, agent) = subject(&model);
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
+    for word in [STOP, RETARGET, DELETE, ARM] {
+        assert!(
+            painted.lines().any(|line| line == word),
+            "{word:?}:\n{painted}"
+        );
+    }
+}
+
+/// **Each composes the gesture the command line would have**, built by the same
+/// verb row `lernie stop` spends — and nothing is sent from a frame.
+#[test]
+fn each_act_composes_the_envelope_its_verb_row_builds() {
+    for (label, expected) in [
+        (
+            STOP,
+            json!({"op": "stop", "workspace": "home", "agent": "20260830T051200Z-a1b2"}),
+        ),
+        (
+            RETARGET,
+            json!({"op": "retarget", "workspace": "home", "agent": "20260830T051200Z-a1b2"}),
+        ),
+        (
+            DELETE,
+            json!({"op": "delete-agent", "workspace": "home",
+                   "agent": "20260830T051200Z-a1b2", "typed": ""}),
+        ),
+    ] {
+        let mut model = seated();
+        press(&mut model, label);
+        assert_eq!(model.outbox, vec![expected], "{label}");
+    }
+}
+
+/// **An empty arming is the bare form and not a refusal**, which is the wire's
+/// own grammar: the one conversation goes and its descendants do not. Typing
+/// the name is what admits them, and the seat carries the string verbatim
+/// rather than deciding anything about it.
+#[test]
+fn the_typed_name_rides_the_deletion_verbatim_and_stays_the_operators() {
+    let mut model = seated();
+    model.typed = "port the paint probe".to_owned();
+    press(&mut model, DELETE);
+    assert_eq!(
+        model.outbox,
+        vec![json!({"op": "delete-agent", "workspace": "home",
+                    "agent": "20260830T051200Z-a1b2", "typed": "port the paint probe"})]
+    );
+    assert_eq!(
+        model.typed, "port the paint probe",
+        "a delete the engine refuses while the conversation is live must not \
+         charge the operator a retype"
+    );
+}
+
+/// **The address is the aim's, not the row's name** — the same rule the deposit
+/// one row up follows, asserted here because these three build their own
+/// envelopes rather than going through its body.
+#[test]
+fn the_acts_carry_the_address_the_channel_resolves() {
+    let mut model = Model {
+        aim: Some(Aim {
+            channel: "(this box's own engine)".to_owned(),
+            address: "elsewhere".to_owned(),
+        }),
+        ..seated()
+    };
+    press(&mut model, STOP);
+    assert_eq!(model.outbox[0]["workspace"], json!("elsewhere"));
+}
+
+/// **Nothing fires from a frame nobody clicked.** The row paints three buttons
+/// and a box every frame the composer paints, and a frame that composed a
+/// deletion for having been drawn is the one failure this row cannot have.
+#[test]
+fn painting_the_row_composes_nothing() {
+    let mut model = seated();
+    let (aim, agent) = subject(&model);
+    let _ = pane(|ui| render(ui, &mut model, &aim, &agent));
+    assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+}

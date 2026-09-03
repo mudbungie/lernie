@@ -1,4 +1,5 @@
-//! **The rows** — the seven verbs, as data.
+//! **The rows** — the reads, the deposit, the advance and the enrollment, as
+//! data. The conversation's own four acts are [`super::conversation`]'s.
 //!
 //! Split from [`super`] at the design-time budget on the seam the module's own
 //! doc already draws: [`super`] is what a verb *is* and what it does with its
@@ -155,13 +156,22 @@ pub const NUDGE: Verb = Verb {
 };
 
 /// Every verb, in the order the roster prints them: the reads first, widest
-/// first, then the two acts.
+/// first; then the conversation's own acts, the deposit first and the unmaking
+/// last; then the one act whose subject is a box rather than a conversation.
+///
+/// The conversation's four live in [`super::conversation`] and are named here
+/// rather than defined here — one table, two files, on the seam that file's
+/// own doc draws.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
     CONVERSATIONS,
     TRANSCRIPT,
     FOLLOW,
     MESSAGE,
+    super::conversation::INTERRUPT,
     NUDGE,
+    super::conversation::STOP,
+    super::conversation::RETARGET,
+    super::conversation::DELETE_AGENT,
     ENROLL,
 ];

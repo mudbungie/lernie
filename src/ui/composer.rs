@@ -23,6 +23,8 @@
 
 use crate::ui::Model;
 
+/// The acts that spend no words: kill the driver, retarget, unmake.
+pub mod acts;
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
 
@@ -31,6 +33,11 @@ pub mod start;
 pub const NOWHERE: &str = "pick a workspace to say anything or begin anything";
 /// The verb on the button, and the word the refusal above is about.
 pub const SEND: &str = "send";
+/// The deposit that cuts first: the driver is killed and the content deposited
+/// as one gesture. It spends the same box `send` does, because *what to say
+/// instead* is the same question as *what to say* — a second box for it would
+/// be the same box twice, which is the rule [`start`] states one level down.
+pub const INTERRUPT: &str = "interrupt";
 /// The other act a conversation affords from here: start a driver on one that
 /// has gone quiet. It is beside the composer rather than in a menu because it
 /// is the one thing an operator does to a conversation with **nothing to say**
@@ -70,6 +77,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // Enter exists is why both are here.
     let entered = entry.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
     let mut sent = entered;
+    let mut cut = false;
     let mut nudged = false;
     // **WRAPPED, because this pane is not as wide as the window** (bl-dc07).
     // The composer is a bottom panel added AFTER both side panels, so what it
@@ -83,35 +91,58 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         let deposit = ui.button(SEND);
         crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
         sent |= deposit.clicked();
+        let cutting = ui.button(INTERRUPT);
+        crate::ui::act::tag(&cutting, &[crate::verbs::INTERRUPT.word]);
+        cut = cutting.clicked();
         let advance = ui.button(NUDGE);
         crate::ui::act::tag(&advance, &[crate::verbs::NUDGE.word]);
         nudged = advance.clicked();
     });
+    // **Enter is the deposit's and no other verb's.** A key that could fire the
+    // cut would be a key an operator reaches by muscle memory to say something
+    // and kills a running driver with; the two verbs differ by exactly that,
+    // and the one with the destructive half is the one that has to be pointed
+    // at (`crate::ui::model::acts` on why a binding never fires what a click
+    // cannot — this is the other direction, which is allowed).
     if sent {
-        fire(model, &aim.address, &agent);
+        fire(model, crate::verbs::message, &aim.address, &agent);
+    }
+    if cut {
+        fire(model, crate::verbs::interrupt, &aim.address, &agent);
     }
     if nudged {
         model
             .outbox
             .push(crate::verbs::nudge(aim.address.clone(), agent.clone()));
     }
+    acts::render(ui, model, &aim, &agent);
 }
 
-/// **Compose the deposit and clear the draft.**
+/// **Compose one of the two deposits and clear the draft.**
 ///
 /// An empty draft fires nothing: the content crosses verbatim and an empty
-/// message is a turn nobody asked for. The draft is cleared only where
-/// something was actually composed, so a mis-click never costs what was typed.
-fn fire(model: &mut Model, workspace: &str, agent: &str) {
+/// message is a turn nobody asked for — and an empty *cut* is a driver killed
+/// with nothing said, which is `stop`, one row down. The draft is cleared only
+/// where something was actually composed, so a mis-click never costs what was
+/// typed.
+///
+/// **The door is the parameter**, so the two verbs share this body rather than
+/// branching inside it: `message` and `interrupt` take the same three named
+/// strings and differ only in the word, which is exactly what a function
+/// pointer carries.
+fn fire(
+    model: &mut Model,
+    door: fn(String, String, String) -> serde_json::Value,
+    workspace: &str,
+    agent: &str,
+) {
     if model.draft.trim().is_empty() {
         return;
     }
     let said = std::mem::take(&mut model.draft);
-    model.outbox.push(crate::verbs::message(
-        workspace.to_owned(),
-        agent.to_owned(),
-        said,
-    ));
+    model
+        .outbox
+        .push(door(workspace.to_owned(), agent.to_owned(), said));
 }
 
 #[cfg(test)]

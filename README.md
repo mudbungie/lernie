@@ -54,7 +54,11 @@ lernie conversations <workspace>        # one workspace's conversations
 lernie transcript <workspace> <agent>   # one conversation, entries and tail
 lernie follow <workspace> <agent>       # hold the line on the live tail
 lernie message <workspace> <agent> <content>
+lernie interrupt <workspace> <agent> <content>   # cut it off and say this instead
 lernie nudge <workspace> <agent>
+lernie stop <workspace> <agent>                  # kill the driver held on it
+lernie retarget <workspace> <agent>              # settle it onto its lineage's head
+lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
 
 lernie start <workspace> <goal>         # begin a conversation — two acts, one word
 

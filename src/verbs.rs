@@ -22,12 +22,15 @@
 //! that would carry it is exactly the second implementation this module exists
 //! not to be.
 //!
-//! # Seven rows, and nine gestures — the roster and the table are not one list
+//! # The roster and the table are not one list
 //!
 //! The **roster** is the gestures whose replies [`crate::reply`] paints, so the
 //! ask surface and the paint surface grow together: the ball that lands a pane
-//! adds its kind and its gesture in the same breath. The **table** is the
-//! subset of those a word can spell, and it is seven because two of them cannot
+//! adds its kind and its gesture in the same breath. **A gesture whose reply is
+//! a captured run is already painted**, which is why the conversation's four
+//! acts ([`conversation`]) could be rows the day the ledger asked for them and
+//! its seven *records* could not (bl-213c). The **table** is the subset of the
+//! roster a word can spell, and two of the start family's cannot
 //! be one. [`start`] holds the pair and says why: `prepare` carries a payload
 //! rung and `prompt` carries a prepared body, and a nested object is not a word
 //! an operator types — which is exactly the case the paragraph above refuses to
@@ -48,7 +51,7 @@
 //! `start`, `ask`, `entries` and `help` are answered by this binary and cannot
 //! be rows here — `prepare` carries a payload rung, `prompt` carries a prepared
 //! body, `ask` carries a whole envelope, and `help` takes an OPTIONAL word. The
-//! table stays exactly six-plus-one rows of named strings. What they get is
+//! table stays rows of named strings, whatever their number. What they get is
 //! [`doors`]: a word, a usage line and prose, with no envelope builder behind
 //! it, so `lernie help ask` answers and `lernie entries x y` is told what
 //! `entries` takes rather than that it is not an argument this binary
@@ -63,15 +66,20 @@
 
 use serde_json::{Map, Value};
 
+/// The conversation's own acts — what an operator does TO one, as rows.
+pub mod conversation;
 /// The words this binary answers itself — a page and a usage line, no envelope.
 pub mod doors;
 /// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
-/// The rows themselves — the seven verbs, as data.
+/// The reads and the deposit, as data — the rows this seat had first.
 mod rows;
 /// The start family's two envelopes, which are doors without rows.
 pub mod start;
 
+pub use conversation::{
+    DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
+};
 use rows::TABLE;
 pub use rows::{
     CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,

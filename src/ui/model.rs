@@ -98,6 +98,12 @@ pub struct Model {
     pub conversation: Option<String>,
     /// What the operator has typed and not yet sent.
     pub draft: String,
+    /// **The arming for the unmaking** (`crate::ui::composer::acts`): the name
+    /// typed back, which is what admits a conversation's descendants into its
+    /// deletion. Empty is the bare form and deletes the one conversation, so
+    /// this is not a second control's enablement — it is the gesture's own
+    /// third parameter, held where the box that fills it is.
+    pub typed: String,
     /// **A start, while it is happening** — the one thing this window holds
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).

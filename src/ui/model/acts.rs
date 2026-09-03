@@ -87,8 +87,12 @@ impl Model {
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
     /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
-    /// decision queue (bl-f0ef) — no two of the three ever stand together, so
-    /// the order among them is never spent. With nothing covering, the notice
+    /// decision queue (bl-f0ef), then an unmaking (bl-48fa) — no two of the
+    /// four ever stand together, so the order among them is never spent. The
+    /// unmaking is on the ladder because Escape over a destructive pane means
+    /// what [`Model::close_unmaking`] means and nothing else: it unmakes
+    /// nothing, and a key that could arm or spend one would be the second
+    /// surface `crate::ui::keys` refuses to be. With nothing covering, the notice
     /// is the only thing left to put down, and Escape is its × reached without
     /// a pointer.
     pub fn escape(&mut self) {
@@ -102,6 +106,8 @@ impl Model {
             self.close_records();
         } else if self.queue {
             self.close_queue();
+        } else if self.unmaking.is_some() {
+            self.close_unmaking();
         } else {
             self.dismiss();
         }

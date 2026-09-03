@@ -606,9 +606,10 @@ property the whole surface exists for.
 
 `src/ui/`. Four panes and a notice bar: the roster grouped by the channel each
 row came down, the aimed wall's conversations, the selected conversation, and
-the composer — with four more that COVER the conversation when they are open
-(§4.15's enrollment, §4.17's tuning, §4.18's records and §4.19's decision
-queue), asked as one question rather than four (`Model::covered`). Every one of
+the composer — with five more that COVER the conversation when they are open
+(§4.15's enrollment, §4.17's tuning, §4.18's records, §4.19's decision queue
+and §4.20's unmaking), asked as one question rather than five
+(`Model::covered`). Every one of
 them is a function of the [`Model`] it is handed.
 
 **The frame never dials.** Nothing under `src/ui/` opens a socket, reads a file,
@@ -827,7 +828,10 @@ not an enablement**: the wire's `typed` is empty for the bare form and the
 conversation's own name for the cascade, so the box beside `delete` fills the
 gesture's third field and is *not spent* on firing — a delete is refused
 outright while the conversation is live, and charging a retype for the engine's
-*no* is a toll on the safe path.
+*no* is a toll on the safe path. That is one half of §4.20's rule rather than an
+exception to it: `delete-workspace`'s `typed` is an ARMING with one accepted
+value, so there it is an enablement — the seat reads which of the two a `typed`
+is off the wire's own grammar, and invents no policy of its own.
 
 **A start is the one thing this window holds across a round trip**
 (`src/ui/model/start.rs`). Starting is two acts and the second is composed from
@@ -1304,6 +1308,85 @@ the list already spend — and stands the pane down. It carries no `act:` token
 because §4.16 puts a view out of the parity contract: the ledger's unit is an
 op, and an aim is not one.
 
+### 4.20 Destructive acts: the arming is an enablement, and an unmaking is a place (bl-48fa)
+
+`src/ui/unmake.rs`, `src/ui/model/unmake.rs`, `src/verbs/workspace.rs`. **The
+seat's fifth covering pane, and the first control in it that destroys
+something.** Everything else this window affords adds or changes and is undone
+by doing the other thing — aiming, selecting, depositing, nudging, starting,
+enrolling, and the four tuning gestures. `delete-workspace` is the first that
+is not, and bl-4a2c refused to build it on exactly that ground: the first
+destructive control must not invent an arming, a confirmation shape, a wording
+convention and a test scaffolding in the same commit that also happens to unmake
+a workspace. This section is those conventions, and the op is their first
+customer.
+
+**The idiom, and every later destructive control follows it.**
+
+- **An unmaking is a PLACE, not a control you pass.** It gets a covering pane of
+  its own, opened by a control on the surface that names its subject, and the
+  pane holds nothing else. Three things follow from that and each is why. A
+  covering pane is the **only placement identical in both layout shapes**
+  (§4.11): the composer stands down off the conversation's own column in the
+  narrow shape, and a list row is aimed by a click with the next row one pixel
+  away. It is already inside the two instruments — `src/snapshot/reach.rs`'s
+  bounded walk and the parity walk's world set — so a new one costs a row in
+  each rather than a new kind of assertion. And a routine pane is a surface an
+  operator moves through quickly; a mis-aimed click there must not be able to
+  land on this.
+- **The pane states its subject before it offers the act** — the address a
+  gesture carries and the channel it goes down, in the roster's own two facts —
+  because what is being unmade is the one thing a confirmation is about, and no
+  control has room to say it.
+- **It holds that subject rather than following the aim.** The roster stays
+  live and clickable under a covering pane, so an unmaking that re-read
+  `Model::aim` when it fired would unmake a wall the operator armed a different
+  one for. This is the opposite of what the tuning pane does (§4.17) and it is
+  the opposite for the right reason: a tuning write that lands on the wrong wall
+  is undone by writing the old value back.
+- **The way out comes first**, in the layout and therefore in the tab order, and
+  it says what it keeps rather than what it abandons (`keep it`, not `cancel` —
+  `cancel` names the destruction as the thing in progress, and nothing is in
+  progress). The control an operator reaches for by reflex must be the one that
+  changes nothing. Escape reaches it too, on `Model::escape`'s ladder, and can
+  do nothing else: a key that could arm or spend one would be the second surface
+  §4.11 refuses to be.
+- **The arming is the subject's own name, and where the wire makes it an
+  arming the seat makes it an ENABLEMENT.** yog refuses `delete-workspace`
+  unless the workspace is the engine's own, nothing in it is live, and the typed
+  name matches exactly — so the act is **disabled** until the box holds that
+  name, and **disabled rather than absent**, which is the tuning pane's `set`:
+  the parameter is missing, not the subject, so the control stays on the glass
+  saying what would fill it. The refusal is spelled out beside it, because a
+  greyed control says a thing is not live and nothing about what would make it
+  live.
+- **Where the wire makes `typed` a PARAMETER it stays one.** `delete-agent`'s
+  box is the other case and does not move: an empty one deletes the one
+  conversation and its name typed back is what admits the descendants, so both
+  values are gestures somebody meant and its control is never disabled
+  (§4.11, `src/ui/composer/acts.rs`). **The seat reads which of the two a
+  `typed` is off the wire's own grammar and invents no policy.** That is why
+  bl-213c's composer row is not the precedent this section generalizes — it is
+  the other half of the same distinction.
+- **The arming is never spent on firing.** A refusal is the COMMON case here:
+  the engine declines while anything in the workspace is live, which is exactly
+  the state an operator reaches for this control in. Clearing the box would
+  charge a retype for the engine's *no*, a toll on the safe path — where
+  clearing a sent message costs nothing, because it was sent. Firing is said
+  instead (`asked — waiting for the engine`), for the reason the enrollment says
+  `minting…`: the outbox is drained within the beat, so nothing else on the
+  glass can answer *has this been asked*.
+- **The act carries `act:<op>` and the pane's own controls carry none** (§4.16).
+  The opening control crosses no wire — it opens a pane — so it is tagged with
+  nothing, the same division `enroll a box…` keeps with `mint`.
+
+**What this does not close.** `reply/deleted` is `{kind, ok}` and this build
+decodes no such kind, so a successful unmaking answers with §4.9's rung-3
+notice rather than with the pane standing down — which is exactly what
+`delete-agent` has done since bl-213c, and is a fact about the reply vocabulary
+rather than about this idiom. The pane says what it asked and leaves the answer
+to the notice bar.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1348,6 +1431,7 @@ op, and an aim is not one.
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
+| `src/verbs/workspace.rs` | the wall's own act as a row — the one whose product is that its subject is gone, and the one whose `typed` is an arming rather than a parameter (§4.20). | ~50 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
@@ -1368,7 +1452,9 @@ op, and an aim is not one.
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
-| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question four panes share. | ~65 |
+| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question five panes share. | ~70 |
+| `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
+| `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |

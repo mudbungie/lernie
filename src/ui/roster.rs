@@ -201,10 +201,10 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
-    // **Both per-wall controls hang off the aimed row and off no other**, and
-    // both stand down while a pane already covers the conversation: what they
-    // open would replace what is standing there, so offering them is offering
-    // to lose it without saying so.
+    // **All three per-wall controls hang off the aimed row and off no other**,
+    // and all three stand down while a pane already covers the conversation:
+    // what they open would replace what is standing there, so offering them is
+    // offering to lose it without saying so.
     if !aimed || model.covered() {
         return;
     }
@@ -219,6 +219,15 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     crate::ui::act::tag(&tune, &[crate::verbs::ROLES.word]);
     if tune.clicked() {
         model.begin_tuning();
+    }
+    // **The unmaking hangs here and LAST**, under the two controls that make
+    // and change things, because that is the order a destructive act belongs in
+    // wherever it is offered beside others (DESIGN §4.20). It carries no `act:`
+    // token: what it opens is a pane, and the op is tagged on the control
+    // inside it that actually fires one (`crate::ui::unmake`) — the same
+    // division `enroll a box…` keeps with `mint`.
+    if ui.button(crate::ui::unmake::OPEN).clicked() {
+        model.begin_unmaking();
     }
 }
 

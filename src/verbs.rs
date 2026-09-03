@@ -88,6 +88,8 @@ mod rows;
 pub mod start;
 /// The role-tuning family: one read, and the three writes it reads back.
 pub mod tuning;
+/// The wall's own act — the one row whose product is that its subject is gone.
+pub mod workspace;
 
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
@@ -101,6 +103,7 @@ pub use rows::{
 };
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
+pub use workspace::{DELETE_WORKSPACE, delete_workspace};
 
 /// One verb: the word, what it takes, and what it is for.
 ///

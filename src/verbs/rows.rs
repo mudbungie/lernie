@@ -174,10 +174,10 @@ pub const NUDGE: Verb = Verb {
 /// the unmaking last, with the queue's two writes among them because their
 /// subject is one conversation; then the one act whose subject is a box.
 ///
-/// The conversation's four live in [`super::conversation`], its records' two
-/// in [`super::records`] and the queue's three in [`super::queue`], named here
-/// rather than defined here — one table, four files, on the seams those files'
-/// own docs draw.
+/// The conversation's four live in [`super::conversation`], its records' two in
+/// [`super::records`], the queue's three in [`super::queue`] and the wall's one
+/// in [`super::workspace`], named here rather than defined here — one table,
+/// five files, on the seams those files' own docs draw.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
     super::queue::ATTENTION,
@@ -197,4 +197,5 @@ pub(super) const TABLE: &[Verb] = &[
     super::conversation::DELETE_AGENT,
     ENROLL,
     super::tuning::MODEL,
+    super::workspace::DELETE_WORKSPACE,
 ];

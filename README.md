@@ -59,6 +59,7 @@ lernie nudge <workspace> <agent>
 lernie stop <workspace> <agent>                  # kill the driver held on it
 lernie retarget <workspace> <agent>              # settle it onto its lineage's head
 lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
+lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace's own name
 
 lernie start <workspace> <goal>         # begin a conversation — two acts, one word
 

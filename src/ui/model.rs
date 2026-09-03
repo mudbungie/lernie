@@ -38,6 +38,8 @@ mod records;
 mod start;
 /// The tuning pane between frames, and the four acts its controls spend.
 mod tuning;
+/// An unmaking between frames: its subject, its arming, and whether it is asked.
+mod unmake;
 
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
@@ -45,6 +47,7 @@ pub use notice::Notice;
 pub use queue::Asking;
 pub use start::{Phase, Start};
 pub use tuning::{Edit, Tuning};
+pub use unmake::Unmaking;
 
 /// Which wall the window is aimed at: the channel it came down, and the address
 /// a gesture must carry. **The address rather than the row's name**, because
@@ -89,6 +92,11 @@ pub struct Model {
     /// **Whether the decision queue is open** — the fourth covering pane, and
     /// the first whose subject is neither the aim nor the selection (`queue`).
     pub queue: bool,
+    /// **An unmaking, while it stands** — the fifth covering pane, and the only
+    /// one this window has whose act cannot be undone by doing the other thing
+    /// (`unmake`; DESIGN §4.20). It carries the wall it was opened on rather
+    /// than following the aim, because the roster stays live under it.
+    pub unmaking: Option<Unmaking>,
     /// **What each channel last said is asking for the operator**, one section
     /// per channel and the union across them. A `Vec` rather than an option
     /// because the emptiness that matters is per channel: nothing here at all

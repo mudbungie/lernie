@@ -39,7 +39,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Column, Model, Shape, enroll, queue, records, tuning};
+use crate::ui::{Column, Model, Shape, enroll, queue, records, tuning, unmake};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -64,18 +64,19 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The four covered panes, in the order the walk visits them.**
+/// **The five covered panes, in the order the walk visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
 /// find the tuning control gone and complain about a seat that is behaving
 /// exactly as designed. The records pane goes last for the mirror of that
 /// reason: its control hangs off the composer, which every covering pane stands
-/// down, so it is walked once both roster-row panes have been closed again
+/// down, so it is walked once every roster-row pane has been closed again
 /// (bl-2cf7). The decision queue's control hangs off the roster too, above the
-/// channels rather than off a row, so it stands and falls with the other two
-/// and is walked among them (bl-f0ef).
-const PANES: [Covered; 4] = [
+/// channels rather than off a row, so it stands and falls with the others and
+/// is walked among them (bl-f0ef). The unmaking's control is a third one on the
+/// aimed row and is walked among them for the same reason (bl-48fa).
+const PANES: [Covered; 5] = [
     Covered {
         column: Column::Channels,
         open: queue::OPEN,
@@ -93,6 +94,12 @@ const PANES: [Covered; 4] = [
         open: enroll::OPEN,
         close: enroll::CLOSE,
         heading: enroll::HEADING,
+    },
+    Covered {
+        column: Column::Channels,
+        open: unmake::OPEN,
+        close: unmake::CLOSE,
+        heading: unmake::HEADING,
     },
     Covered {
         column: Column::Conversation,

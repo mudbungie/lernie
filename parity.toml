@@ -86,9 +86,9 @@ retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be rel
 config = "bl-5c53 — no config-file pane: a config file's bytes are neither read nor written here"
 lineages = "bl-5c53 — no config-file pane: the lineages and the paths each holds are unpainted"
 
-# bl-48fa — the seat has no idiom for a destructive act at all, so the one op
-# that unmakes a thing has nothing to be built out of.
-delete-workspace = "bl-48fa — no destructive-act idiom: nothing here arms and confirms an unmaking"
+# bl-48fa landed the destructive-act idiom (DESIGN §4.20) and with it
+# `delete-workspace`, which carries a control on `src/ui/unmake.rs` and is gone
+# from this ledger.
 
 # bl-40ec — three window-level reads reach no gesture: the roster refreshes
 # itself, and help and search have no home at all.

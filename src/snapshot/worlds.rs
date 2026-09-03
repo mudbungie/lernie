@@ -3,9 +3,9 @@
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
-//! eight are the shapes: nothing dialled yet, seated at a wall with a
-//! conversation open, the wall with none selected, and the five states of the
-//! four panes that cover the conversation.
+//! nine are the shapes: nothing dialled yet, seated at a wall with a
+//! conversation open, the wall with none selected, and the six states of the
+//! five panes that cover the conversation.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -18,7 +18,7 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{queued, recorded, role, seated, tuned};
-use crate::ui::{Edit, Enrolling, Model, Tuning};
+use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
 /// One named state of the window, as the matrix files it.
 pub(crate) struct World {
@@ -140,6 +140,26 @@ fn queue() -> World {
     }
 }
 
+/// **The window with an unmaking standing** — the sixth covered state
+/// (bl-48fa), and the only screen `delete-workspace`'s control is on.
+///
+/// It is photographed **unarmed**, which is the state the pane opens in and the
+/// one an operator actually meets: the box empty, the sentence saying what
+/// would arm it, and the control on the glass and not live. A world armed would
+/// photograph the half-second before the act instead of the pane.
+fn unmaking() -> World {
+    let mut model = seated();
+    let aim = model
+        .aim
+        .clone()
+        .unwrap_or_else(|| panic!("the seated fixture is aimed at a wall"));
+    model.unmaking = Some(Unmaking::at(aim));
+    World {
+        name: "unmaking",
+        model,
+    }
+}
+
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
     vec![
@@ -151,5 +171,6 @@ pub(crate) fn all() -> Vec<World> {
         assigning(),
         records(),
         queue(),
+        unmaking(),
     ]
 }

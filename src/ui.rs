@@ -54,9 +54,12 @@ pub mod shell;
 pub mod theme;
 /// The tuning pane: what a wall's roles are set to, and what sets them.
 pub mod tuning;
+/// The unmaking pane: the seat's one destructive act, and the idiom it sets.
+pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
     Aim, Asking, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning,
+    Unmaking,
 };
 pub use shell::{Column, Shape, render};

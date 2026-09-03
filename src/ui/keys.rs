@@ -35,6 +35,15 @@
 //! aim at either. A binding that could fire something a click cannot is a
 //! second surface.
 //!
+//! # The narrow shape does not add a binding; it changes what a place IS
+//!
+//! With one column on the glass at a time (`crate::ui::shell::policy`), left
+//! and right name a **column** rather than one of two panes, and the arrows
+//! belong to whichever column is showing — asked of [`Pane`] as always, set
+//! from the column once per frame. Nothing else here knows: the walk, the
+//! reveal and the mark on a heading read the one field they always read, and no
+//! pane has to ask which shape it is in.
+//!
 //! **A box that is taking text takes every key**, which is the one gate: while
 //! a text box holds the focus nothing here runs, so an arrow is a cursor move
 //! inside the draft and Escape is egui's own *leave the box*. Press it again
@@ -114,16 +123,46 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // left of the conversation list on the glass, so the key that points at it
     // is the key that goes there, and an operator never has to know where the
     // focus was to know where it will be.
-    if pressed(egui::Key::ArrowLeft) {
-        model.focus = Pane::Roster;
+    //
+    // **In the narrow shape the place is a COLUMN** (bl-dfda), because that is
+    // what left and right mean when one column is on the glass at a time — and
+    // there are three of them, so the key steps rather than names, saturating
+    // at the ends the way the walk below does.
+    let narrow = matches!(
+        crate::ui::shell::shape(ctx.screen_rect().width()),
+        crate::ui::Shape::Narrow
+    );
+    for (key, step) in [(egui::Key::ArrowLeft, -1), (egui::Key::ArrowRight, 1)] {
+        if pressed(key) {
+            sideways(model, narrow, step);
+        }
     }
-    if pressed(egui::Key::ArrowRight) {
-        model.focus = Pane::Conversations;
+    // **In the narrow shape the arrows belong to the column on the glass**,
+    // because it is the only list there is: a focus set at another width would
+    // otherwise walk a selection nobody can see. It is spent here, once, so
+    // everything below — the walk, the reveal, the mark on a heading — reads
+    // one field and no pane has to ask which shape it is in.
+    if narrow {
+        model.focus = model.column.arrows();
     }
     for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
         if pressed(key) {
             walk(model, step);
         }
+    }
+}
+
+/// **Sideways**: the place a left or right key names, in the shape the window
+/// is in. Two panes hold the arrows in the broad shape and there is one of each
+/// key, so the key IS the place; the narrow shape has three columns and one on
+/// the glass, so the key is a step off wherever the operator is.
+fn sideways(model: &mut Model, narrow: bool, step: isize) {
+    if narrow {
+        model.column = model.column.stepped(step);
+    } else if step < 0 {
+        model.focus = Pane::Roster;
+    } else {
+        model.focus = Pane::Conversations;
     }
 }
 

@@ -11,7 +11,7 @@
 //! suite — a detector that matches nothing is green forever, which is the way
 //! this kind of check actually dies.
 
-use super::{SIZES, blank, clipped, name, promised, reach, seat, shots, worlds};
+use super::{SIZES, blank, clipped, name, reach, seat, shots, worlds};
 use crate::test_support::window::seated;
 use crate::ui::Model;
 use egui_kittest::HarnessBuilder;
@@ -36,22 +36,15 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
             let file = into.join(name(world.name, size));
             image.save(&file).expect("the shot is writable");
             let at = format!("{} at {size}", world.name);
-            let judged = promised(width);
             println!(
-                "{at}: {}x{} -> {} ({})",
+                "{at}: {}x{} -> {} ({:?})",
                 image.width(),
                 image.height(),
                 file.display(),
-                if judged {
-                    "geometry judged"
-                } else {
-                    "rendered only — under the layout's own floors"
-                }
+                crate::ui::shell::shape(width)
             );
-            if judged {
-                complaints.extend(blank::complaints(&at, &image, &harness));
-                complaints.extend(clipped::complaints(&at, width, height, &harness));
-            }
+            complaints.extend(blank::complaints(&at, &image, &harness));
+            complaints.extend(clipped::complaints(&at, width, height, &harness));
         }
     }
     assert!(
@@ -65,6 +58,10 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
 ///
 /// The main screen is the seated one: an unprovisioned window is aimed at no
 /// wall, so it offers no enrollment to reach and says so in words instead.
+///
+/// **The walk is the shape's** (bl-dfda): the narrow shape puts one column on
+/// the glass, so reaching a pane there costs the gesture that goes to its
+/// column as well as the two that open and close it.
 #[test]
 fn the_covered_pane_is_one_gesture_away_at_every_size() {
     let mut complaints = Vec::new();
@@ -73,7 +70,7 @@ fn the_covered_pane_is_one_gesture_away_at_every_size() {
         complaints.extend(reach::complaints(
             &format!("seated at {size}"),
             &mut harness,
-            &reach::WALK,
+            &reach::walk(crate::ui::shell::shape(width)),
         ));
     }
     assert!(

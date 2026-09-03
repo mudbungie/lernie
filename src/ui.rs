@@ -55,4 +55,4 @@ pub mod tuning;
 
 pub use keys::Pane;
 pub use model::{Aim, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning};
-pub use shell::render;
+pub use shell::{Column, Shape, render};

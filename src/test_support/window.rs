@@ -84,8 +84,14 @@ pub(crate) fn own() -> Chunk {
 
 /// **A model with something in every pane**: one channel, one wall aimed at,
 /// one conversation selected, and one thing said in it.
+///
+/// **It is standing on the conversation column** (bl-dfda), which the broad
+/// shape does not read at all and the narrow one paints: a seat that has aimed
+/// and selected is a seat looking at what it selected, and the column is where
+/// the operator's own navigation is recorded.
 pub(crate) fn seated() -> Model {
     Model {
+        column: crate::ui::Column::Conversation,
         roster: vec![own()],
         convs: vec![conv("20260830T051200Z-a1b2", "port the paint probe")],
         transcript: Transcript {

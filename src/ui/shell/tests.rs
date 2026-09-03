@@ -1,10 +1,17 @@
 //! The whole window in one frame: that every pane is on it, that a notice
 //! stands where content would have been, and that it can be put down.
+//!
+//! The width policy's own arithmetic is `super::policy`'s suite; what is
+//! asserted here is the layout it produces, and [`narrow`] holds the shape the
+//! window takes when it can no longer produce three columns.
 
-use super::{CHAT_FLOOR, DISMISS, SIDE_FLOOR, render, widths};
+use super::{DISMISS, render, widths};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{click, conv, own, painted, seated, seen, wall};
 use crate::ui::{Chunk, Model, Notice};
+
+/// The narrow shape: one column at a time, and the bar that names the three.
+mod narrow;
 
 /// **One frame paints every pane.** The smoke test the whole ball is about: a
 /// window that opens and shows the roster, the list, the conversation and the
@@ -105,35 +112,7 @@ fn a_notice_can_be_put_down() {
     assert_eq!(model.notice, None);
 }
 
-/// **The policy the window had none of** (bl-e5d2): the conversation has a
-/// floor and the two list panes yield to it, together and in proportion, until
-/// they reach their own floor — where nothing yields, because two panes showing
-/// nothing buys the chat pane a width it still cannot use.
-#[test]
-fn the_list_panes_yield_to_the_conversation_s_floor_and_then_stop() {
-    assert_eq!(widths(1200.0), (280.0, 320.0), "wide enough for both");
-    assert_eq!(
-        widths(1020.0),
-        (280.0, 320.0),
-        "exactly enough is still enough"
-    );
-    let (roster, convs) = widths(900.0);
-    assert!(
-        (roster - 224.0).abs() < 0.5 && (convs - 256.0).abs() < 0.5,
-        "the loss is shared in proportion: {roster}, {convs}"
-    );
-    assert!(
-        900.0 - roster - convs >= CHAT_FLOOR,
-        "the conversation kept its floor"
-    );
-    assert_eq!(
-        widths(400.0),
-        (SIDE_FLOOR, SIDE_FLOOR),
-        "past their own floor the list panes stop yielding"
-    );
-}
-
-/// The same, on the glass: at 900 points the conversation used to be a
+/// The policy on the glass: at 900 points the conversation used to be a
 /// ~140-point strip while the roster kept 280. Now the panes yield, and a
 /// message in the chat pane starts where the floor says it does.
 #[test]

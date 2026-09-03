@@ -38,17 +38,16 @@ pub fn no_channel(channel: &str) -> String {
 }
 
 /// The word this pane wears, and the subject the arrows act on when it is
-/// focused.
+/// focused. **It is painted by `crate::ui::shell`** — above the pane in the
+/// broad shape, on the navigation bar in the narrow one (bl-dfda) — because a
+/// column's name has one home and which one it is depends on the shape.
 pub const HEADING: &str = "conversations";
 /// The mark a state nothing observed wears, inside the badge it qualifies.
 pub const UNCERTAIN: &str = "?";
 
-/// Paint the list and take a click on it.
+/// Paint the list and take a click on it. **The heading is the shell's** —
+/// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    ui.heading(crate::ui::keys::heading(
-        HEADING,
-        model.focus == crate::ui::Pane::Conversations,
-    ));
     let Some(aim) = model.aim.clone() else {
         ui.label(NO_WALL);
         return;

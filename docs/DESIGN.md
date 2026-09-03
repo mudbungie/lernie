@@ -607,8 +607,51 @@ failure a seat has no excuse for. What fills the model is §4.12.
 arity is its signature — so a click and a typed command build one object and
 there is no second spelling of a gesture anywhere in this crate.
 
+**Below the floor the layout takes a second SHAPE: one column at a time**
+(`src/ui/shell/policy.rs`; bl-dfda). The yield below is the whole of what the
+policy used to say, and it ends: past the point where the two list panes are on
+their own floor, nothing yields and the conversation goes under `CHAT_FLOOR`.
+At a phone-shaped viewport that was three columns of about 120 points each,
+with every line in every one of them wrapped to two or three words, and a band
+of the window painted by no panel at all. The answer is not more yielding —
+there is none left to do — it is the **covering-pane idiom read across the
+whole layout**: below the width at which the yield can still keep the
+conversation its floor, the window shows one `Column` (channels /
+conversations / conversation) and a bar naming the three, which is a surface
+you navigate to, act in, and come back from exactly as §4.15's enrollment and
+§4.17's tuning pane are.
+
+Four things follow and each is a decision rather than a mechanism:
+
+- **The line between the shapes is the yield itself**, not a second constant.
+  `shape(window)` asks `widths` whether the conversation still gets
+  `CHAT_FLOOR`, so a tuning of either number moves both answers together.
+- **There is no floor under the narrow shape and that is not an omission.** A
+  width policy needs a floor where two things compete for one window; in the
+  narrow shape nothing competes. So the policy promises a shape at *every*
+  width — which is what let `src/snapshot.rs` delete its `promised` gate rather
+  than keep one that now always says yes, and the phone row is judged by all
+  four assertions with nothing in the harness switched on.
+- **A column's name has ONE home**, and where that home is depends on the
+  shape: the bar carries it when one column shows, the layout paints it above
+  the pane when three do. So the heading moved out of `roster`, `convs` and
+  `chat` into `src/ui/shell.rs` — two nodes reading `channels` would be two
+  things an operator and the accessibility tree both have to tell apart — and
+  bl-e5d2's *heading outside the scrolled region* became structural rather than
+  a convention each pane keeps.
+- **The narrow shape is navigated explicitly and by nothing else.**
+  `Model::column` moves in the bar and under a left/right key, and NOT as a
+  side effect of aiming or selecting: those two are one door for a click and a
+  keypress (§4.11's own rule), so a walk down the roster would have jumped the
+  glass to another column on the first arrow. The bar stands down under a
+  covering pane, as the composer does, because a modal's way out is its own
+  control. The composer stands down off the conversation's own column, which is
+  *"the conversation is not on the glass while a pane covers it"* read
+  literally. And the arrows belong to whichever column shows, spent once per
+  frame in `src/ui/keys.rs`, so no pane asks which shape it is in.
+
 **What does not fit is scrolled, and the conversation has a floor**
-(`src/ui/shell.rs`, `widths`; bl-e5d2). Both list panes hold a list and neither
+(`src/ui/shell/policy.rs`, `widths`; bl-e5d2). Both list panes hold a list and neither
 had an answer for one longer or wider than its box: the overflow was cut at the
 panel edge mid-glyph, with nothing on the glass saying anything had been cut,
 and the arrow walk moved the selection onto rows the pane had never painted —
@@ -1093,6 +1136,13 @@ the envelope it emits is a later rung. Unproven is red: a control on a screen
 the walk never visits fails honestly, so the walk's world set is part of the
 instrument.
 
+**The walk visits every width as well as every world, and takes the union**
+(bl-dfda). In the narrow shape one column is on the glass, so a control on
+another column is not in that width's tree — it is one navigation away rather
+than absent from the seat, and *how far away* is `src/snapshot/reach.rs`'s
+question and stays there. Union, because presence is what this asserts;
+intersection would be reachability asked by the wrong instrument.
+
 ### 4.17 Role tuning: the settings pane, and a standing read keyed on a pane (bl-4a2c)
 
 `src/ui/tuning.rs`. **The seat's second covering pane, and the first that is a
@@ -1226,7 +1276,8 @@ whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, and the unmaking with the name that arms its descendants. | ~90 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
-| `src/ui/shell.rs` | the layout, the width policy the panes yield by, and the notice that stands where content would have been. | ~110 |
+| `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
+| `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |
@@ -1242,9 +1293,9 @@ whose `from` only the rail can offer — bl-b52c) and the depth under this pane
 | `assets/lernie.svg` | the mark, as the hicolor theme reads it. A derivation, pinned byte for byte. | derived |
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
-| `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, the one settled frame, and which widths the layout still promises a shape. `cfg(test)`. | ~125 |
-| `src/snapshot/worlds.rs` | the seven named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two and the records pane's are among them. `cfg(test)`. | ~140 |
-| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's three covered panes and back, asked of the accessibility tree. Two legs per pane, and the length is the bound. `cfg(test)`. | ~130 |
+| `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
+| `src/snapshot/worlds.rs` | the seven named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two and the records pane's are among them. `cfg(test)`. | ~150 |
+| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's three covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~170 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |

@@ -15,6 +15,12 @@
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
 
+/// **The word this pane wears**, and the name of the column it is (bl-dfda).
+/// It is painted by `crate::ui::shell` — above the pane in the broad shape, on
+/// the navigation bar in the narrow one — because a column's name has one home
+/// and which one it is depends on the shape.
+pub const HEADING: &str = "conversation";
+
 /// What the pane says with no conversation selected.
 pub const NO_CONVERSATION: &str = "pick a conversation";
 /// The name the live tail wears — no file backs it.
@@ -147,9 +153,8 @@ fn live_rows(thinking: &str, text: &str) -> Vec<Row> {
         .collect()
 }
 
-/// Paint the pane.
+/// Paint the pane. **The heading is the shell's** — see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
-    ui.heading("conversation");
     if model.conversation.is_none() {
         ui.label(NO_CONVERSATION);
         return;

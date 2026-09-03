@@ -1,12 +1,26 @@
-//! **The layout**, and the notice that stands where content would have been.
+//! **The layout** — the two shapes a window takes, and the notice that stands
+//! where content would have been.
 //!
 //! One function, and it is the whole window: a notice bar, the roster, the
 //! conversation list, and the conversation with its composer under it. There is
 //! no per-pane enablement to drift — a pane with nothing to show says so in its
 //! own words, which is a sentence an operator can act on rather than a control
 //! that only looks actionable.
+//!
+//! **What a width buys is [`policy`]'s** and nothing here decides it. Wide
+//! enough, and the three columns stand side by side with the two lists yielding
+//! to the conversation's floor; narrower than that, the window shows one
+//! [`Column`] at a time and a bar naming the three (bl-dfda). The panes
+//! themselves know nothing about either shape: what changed is where they are
+//! put, and — because a column's name has one home — where their heading is
+//! painted.
 
 use crate::ui::{Model, chat, composer, convs, enroll, keys, records, roster, theme, tuning};
+
+/// The width policy: the yield, the two shapes, and the three columns.
+pub mod policy;
+
+pub use policy::{CHAT_FLOOR, Column, SIDE_FLOOR, Shape, shape, widths};
 
 /// Paint one frame of the whole window.
 ///
@@ -22,15 +36,19 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // click beneath it calls (`crate::ui::keys`).
     keys::handle(ctx, model);
     notice(ctx, model);
-    let (roster_width, convs_width) = widths(ctx.screen_rect().width());
-    egui::SidePanel::left("roster")
-        .default_width(ROSTER)
-        .max_width(roster_width)
-        .show(ctx, |ui| roster::render(ui, model));
-    egui::SidePanel::left("conversations")
-        .default_width(CONVS)
-        .max_width(convs_width)
-        .show(ctx, |ui| convs::render(ui, model));
+    // **The shown column is the shape's answer, not the model's**: in the broad
+    // shape every column is on the glass, so the central panel is the
+    // conversation's and the model's own column is not consulted at all.
+    let (shown, broad) = match shape(ctx.screen_rect().width()) {
+        Shape::Broad { roster, convs } => {
+            lists(ctx, model, roster, convs);
+            (Column::Conversation, true)
+        }
+        Shape::Narrow => {
+            bar(ctx, model);
+            (model.column, false)
+        }
+    };
     // **Nothing live paints under the enrollment** (bl-7574). The composer is a
     // bottom panel, so it is outside what the central panel below covers — and
     // what stood there was a live `start` control firing a conversation on the
@@ -44,62 +62,111 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // **The records pane stands it down too** (bl-2cf7), for the same reason
     // one noun over: the conversation the composer deposits into is not on
     // the glass while any pane covers it.
-    if !model.covered() {
+    //
+    // **And the narrow shape stands it down off every other column**, which is
+    // that rule with the word *covers* read literally: the composer acts on the
+    // selected conversation, and in the narrow shape the conversation is on the
+    // glass only when its own column is.
+    if !model.covered() && shown == Column::Conversation {
         egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
     }
-    // **The enrollment stands where the conversation would**, and it is the one
-    // pane in this window that covers another. It earns that: what it holds is
-    // a private key on a screen, the act is "look at this now and close it",
-    // and a conversation legible behind it would invite the one thing the
-    // material must not have, which is a long life on a display
-    // (`crate::ui::enroll`).
-    //
-    // **Two panes may stand there and the enrollment wins**, which is an order
-    // rather than a rule with an exception: it is the one that holds a secret,
-    // and the material's whole product is a short life on a display.
-    egui::CentralPanel::default().show(ctx, |ui| {
-        if enroll::render(ui, model) || tuning::render(ui, model) || records::render(ui, model) {
-            return;
-        }
-        chat::render(ui, model);
+    egui::CentralPanel::default().show(ctx, |ui| central(ui, model, shown, broad));
+}
+
+/// **The two list panes, side by side with the conversation** — the broad
+/// shape, and the only one that has side panels at all.
+///
+/// **The heading is painted here rather than by the pane** (bl-dfda). A
+/// column's name has one home, and in the narrow shape that home is the bar:
+/// two nodes carrying the word `channels` would be two things an operator — and
+/// the accessibility tree the snapshot harness walks — has to tell apart. So
+/// the pane paints its content and the layout paints its name, which also keeps
+/// bl-e5d2's rule structural: the heading is outside the pane, and therefore
+/// outside the region the pane scrolls.
+fn lists(ctx: &egui::Context, model: &mut Model, roster_width: f32, convs_width: f32) {
+    egui::SidePanel::left("roster")
+        .default_width(policy::ROSTER)
+        .max_width(roster_width)
+        .show(ctx, |ui| {
+            ui.heading(keys::heading(
+                roster::HEADING,
+                model.focus == keys::Pane::Roster,
+            ));
+            roster::render(ui, model);
+        });
+    egui::SidePanel::left("conversations")
+        .default_width(policy::CONVS)
+        .max_width(convs_width)
+        .show(ctx, |ui| {
+            ui.heading(keys::heading(
+                convs::HEADING,
+                model.focus == keys::Pane::Conversations,
+            ));
+            convs::render(ui, model);
+        });
+}
+
+/// **The narrow shape's navigation**: the three columns' own names, with the
+/// one on the glass showing as chosen.
+///
+/// It is a bar of all three rather than a *back* control, because a stack would
+/// make the roster two gestures from the conversation and put the number of
+/// gestures a pane costs at the mercy of where the operator happened to be. One
+/// seat each is one gesture from anywhere to anywhere, which is the bound
+/// `crate::snapshot::reach` asserts.
+///
+/// **It stands down under a covering pane**, exactly as the composer does: a
+/// pane that covers the window is a modal, and a navigation control that
+/// changed a column nobody can see would be a control that answers a click with
+/// nothing. The way out of a covering pane is its own control, which is the
+/// one that forgets where the material is a secret.
+fn bar(ctx: &egui::Context, model: &mut Model) {
+    if model.covered() {
+        return;
+    }
+    egui::TopBottomPanel::top("columns").show(ctx, |ui| {
+        ui.horizontal_wrapped(|ui| {
+            for column in Column::all() {
+                if ui
+                    .selectable_label(model.column == column, column.word())
+                    .clicked()
+                {
+                    model.column = column;
+                }
+            }
+        });
     });
 }
 
-/// **What the two list panes are worth when the window is wide enough**, in
-/// points: the roster holds a handful of short words, the conversation list
-/// holds a headline and a preview under it.
-const ROSTER: f32 = 280.0;
-const CONVS: f32 = 320.0;
-
-/// **The floor the conversation and its composer keep.** Below this a chat pane
-/// is a strip: a message elides inside its own width, the composer's box shows
-/// the first few words of a draft, and `send` sits against the frame.
-pub const CHAT_FLOOR: f32 = 420.0;
-
-/// **The width a list pane never goes under**, however narrow the window. A
-/// pane below it shows nothing at all, which is worse than a chat pane under
-/// its floor — so this is the one thing the floor yields to.
-pub const SIDE_FLOOR: f32 = 140.0;
-
-/// **The two list panes' widths at a given window width** — the policy the
-/// window had none of (bl-e5d2).
+/// **What stands in the central panel**: a covering pane if one is open, and
+/// otherwise the column the shape chose.
 ///
-/// The side panels used to keep their widths as the window narrowed and the
-/// central panel absorbed the whole loss, so at 900 points the pane the window
-/// exists for was a ~140-point strip while the roster kept 280. The rule is the
-/// other way round: **the conversation has a floor and the list panes yield to
-/// it**, together and in proportion to what each is worth, until they reach
-/// their own floor. Past that nothing yields, because two panes showing nothing
-/// buys the chat pane a width it still cannot use.
+/// **The enrollment stands where the conversation would**, and it is the one
+/// pane in this window that covers another. It earns that: what it holds is a
+/// private key on a screen, the act is "look at this now and close it", and a
+/// conversation legible behind it would invite the one thing the material must
+/// not have, which is a long life on a display (`crate::ui::enroll`).
 ///
-/// It is a pure function of one number, so the policy is a value a test reads
-/// back rather than a layout somebody has to look at.
-pub fn widths(window: f32) -> (f32, f32) {
-    let share = ((window - CHAT_FLOOR) / (ROSTER + CONVS)).clamp(0.0, 1.0);
-    (
-        (ROSTER * share).max(SIDE_FLOOR),
-        (CONVS * share).max(SIDE_FLOOR),
-    )
+/// **Two panes may stand there and the enrollment wins**, which is an order
+/// rather than a rule with an exception: it is the one that holds a secret, and
+/// the material's whole product is a short life on a display.
+fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
+    if enroll::render(ui, model) || tuning::render(ui, model) || records::render(ui, model) {
+        return;
+    }
+    match shown {
+        Column::Channels => roster::render(ui, model),
+        Column::Conversations => convs::render(ui, model),
+        Column::Conversation => {
+            // The broad shape has no bar to carry the name, so the conversation
+            // pane's heading stands above it here — the two list panes get
+            // theirs from `lists` for the same reason.
+            if broad {
+                ui.heading(chat::HEADING);
+            }
+            chat::render(ui, model);
+        }
+    }
 }
 
 /// The notice bar: the last thing the seat heard that was not content, in the

@@ -21,6 +21,13 @@
 //! covering panes rather than the one — and it is still two gestures each, in
 //! and back out, because that bound is what the assertion is.
 //!
+//! **And the bound is a fact about the SHAPE, so it is asked per shape**
+//! (bl-dfda). The narrow layout puts one column on the glass at a time, which
+//! is the very thing that makes a pane's control unreachable when a window
+//! narrows — so the walk asks for it there: one gesture to the column the
+//! control lives on, then the same two. Three per pane, stated, is the
+//! assertion; a pane that needed a fourth is the defect it exists to catch.
+//!
 //! # Why the accessibility tree and not the glass
 //!
 //! [`crate::test_support::window::click`] aims at painted glyphs, which is the
@@ -30,7 +37,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Model, enroll, records, tuning};
+use crate::ui::{Column, Model, Shape, enroll, records, tuning};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -43,43 +50,81 @@ pub(crate) struct Step {
     pub(crate) then: &'static str,
 }
 
-/// **The walk, and its length is the bound.** Two legs per pane: one gesture
-/// in, one gesture back out. A third leg appearing for either is the assertion
-/// telling you that pane moved further away.
+/// **One covering pane, and the column its opening control lives on.**
 ///
-/// The tuning pane goes first because both controls hang off the aimed roster
-/// row and each stands the other down while it is open — so a walk that opened
-/// the enrollment first would find the tuning control gone and complain about
-/// a seat that is behaving exactly as designed.
-/// The records pane goes last for the mirror of that reason: its control
-/// hangs off the composer, which every covering pane stands down — so it is
-/// walked once both roster-row panes have been closed again (bl-2cf7).
-pub(crate) const WALK: [Step; 6] = [
-    Step {
-        gesture: tuning::OPEN,
-        then: tuning::HEADING,
+/// The column is what makes the walk answerable in both shapes: in the broad
+/// shape every column is on the glass, so it costs nothing to be told; in the
+/// narrow shape it is exactly the gesture that has to be spent first.
+struct Covered {
+    column: Column,
+    open: &'static str,
+    close: &'static str,
+    heading: &'static str,
+}
+
+/// **The three covered panes, in the order the walk visits them.**
+///
+/// The tuning pane goes first because both roster-row controls stand the other
+/// down while one is open — so a walk that opened the enrollment first would
+/// find the tuning control gone and complain about a seat that is behaving
+/// exactly as designed. The records pane goes last for the mirror of that
+/// reason: its control hangs off the composer, which every covering pane stands
+/// down, so it is walked once both roster-row panes have been closed again
+/// (bl-2cf7).
+const PANES: [Covered; 3] = [
+    Covered {
+        column: Column::Channels,
+        open: tuning::OPEN,
+        close: tuning::CLOSE,
+        heading: tuning::HEADING,
     },
-    Step {
-        gesture: tuning::CLOSE,
-        then: tuning::OPEN,
+    Covered {
+        column: Column::Channels,
+        open: enroll::OPEN,
+        close: enroll::CLOSE,
+        heading: enroll::HEADING,
     },
-    Step {
-        gesture: enroll::OPEN,
-        then: enroll::HEADING,
-    },
-    Step {
-        gesture: enroll::CLOSE,
-        then: enroll::OPEN,
-    },
-    Step {
-        gesture: records::OPEN,
-        then: records::HEADING,
-    },
-    Step {
-        gesture: records::CLOSE,
-        then: records::OPEN,
+    Covered {
+        column: Column::Conversation,
+        open: records::OPEN,
+        close: records::CLOSE,
+        heading: records::HEADING,
     },
 ];
+
+/// **The walk, and its length is the bound** — which is a fact about the SHAPE
+/// and so is answered per shape (bl-dfda).
+///
+/// Two legs per pane, one gesture in and one back out. The narrow shape adds
+/// exactly one more per pane, and adds it unconditionally rather than only
+/// where the column has to change: **go to the column the control lives on,
+/// open, close**. That the step is sometimes a click on the column already
+/// showing is the point — a bound that varied with where the walk happened to
+/// be standing would be a bound nobody could state.
+///
+/// A leg appearing beyond these is the assertion telling you a pane moved
+/// further away than the shape it is in accounts for.
+pub(crate) fn walk(shape: Shape) -> Vec<Step> {
+    PANES
+        .iter()
+        .flat_map(|pane| {
+            let nav = matches!(shape, Shape::Narrow).then(|| Step {
+                gesture: pane.column.word(),
+                then: pane.open,
+            });
+            nav.into_iter().chain([
+                Step {
+                    gesture: pane.open,
+                    then: pane.heading,
+                },
+                Step {
+                    gesture: pane.close,
+                    then: pane.open,
+                },
+            ])
+        })
+        .collect()
+}
 
 /// Whether anything reachable carries exactly this label.
 fn reachable(harness: &Harness<'_, Model>, label: &'static str) -> bool {

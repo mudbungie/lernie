@@ -105,6 +105,11 @@ pub struct Model {
     /// holds that the pointer does not need: a click names its own row, and a
     /// key has to be told which list it is in ([`crate::ui::keys`]).
     pub focus: crate::ui::keys::Pane,
+    /// **Which column is on the glass in the narrow shape** — a navigation the
+    /// operator performed, so it is the one thing here no other fact can be
+    /// asked for. The broad shape never reads it, because every column is on
+    /// the glass there (`crate::ui::shell::policy`).
+    pub column: crate::ui::Column,
     /// **Whether the focused list owes its selection a place on the glass**,
     /// set by a keyboard walk and taken by the pane that paints it
     /// ([`Model::revealing`]).

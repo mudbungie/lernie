@@ -40,7 +40,9 @@ pub const NO_WALLS: &str = "this engine holds no workspace";
 pub const NO_NAME_HERE: &str = "no entry here names it, so nothing typed here can address it";
 
 /// The word this pane wears, and the subject the arrows act on when it is
-/// focused.
+/// focused. **It is painted by `crate::ui::shell`** — above the pane in the
+/// broad shape, on the navigation bar in the narrow one (bl-dfda) — because a
+/// column's name has one home and which one it is depends on the shape.
 pub const HEADING: &str = "channels";
 
 /// **Every wall this seat can aim at, in the order the pane paints them.**
@@ -65,12 +67,9 @@ pub fn aimable(model: &Model) -> Vec<Aim> {
     rows
 }
 
-/// Paint the roster and take a click on it.
+/// Paint the roster and take a click on it. **The heading is the shell's** —
+/// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    ui.heading(crate::ui::keys::heading(
-        HEADING,
-        model.focus == crate::ui::Pane::Roster,
-    ));
     // **The list scrolls, and the heading above it does not** (bl-e5d2): a
     // roster longer than its pane used to be cut off mid-glyph at the panel
     // edge, with nothing on the glass saying anything had been cut — while the

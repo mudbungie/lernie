@@ -13,17 +13,20 @@
 use std::collections::BTreeSet;
 
 use super::{complaints, exempt, inventory, roster};
-use crate::snapshot::{SIZES, promised, seat, worlds};
+use crate::snapshot::{SIZES, seat, worlds};
 
-/// **The walk**: every tag the tree offers, over every world at every judged
-/// width, printed per screen so a failure says which screen was short.
+/// **The walk**: every tag the tree offers, over every world at every width,
+/// printed per screen so a failure says which screen was short.
+///
+/// The union is over widths as well as worlds, and that is the honest reading
+/// of *unproven is red* rather than a loophole (bl-dfda): the narrow shape puts
+/// one column on the glass at a time, so a control on another column is not in
+/// the tree at that width — it is not absent from the seat, it is one
+/// navigation away, which is `super::super::reach`'s question and stays there.
 fn walked() -> BTreeSet<String> {
     let mut found = BTreeSet::new();
     for world in worlds::all() {
         for (size, width, height) in SIZES {
-            if !promised(width) {
-                continue;
-            }
             let harness = seat(world.model.clone(), width, height);
             let seen = inventory(&harness);
             println!("{} at {size}: {seen:?}", world.name);

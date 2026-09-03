@@ -31,6 +31,16 @@
 //! that has stopped reading. What gates instead is three properties that hold
 //! whatever the pixels are: [`reach`], [`blank`] and [`clipped`].
 //!
+//! **Every size is judged, and there is no width-gate any more** (bl-dfda).
+//! There was one — `promised`, a query into `crate::ui::shell::widths` asking
+//! whether the layout still claimed a shape for a width — because the seat's
+//! policy ran out of answers below the conversation's floor and asserting
+//! geometry there would have asserted something nobody promised. The narrow
+//! shape is that answer, `crate::ui::shell::policy::shape` returns one at every
+//! width, and a gate whose condition is now *yes* is a gate that has stopped
+//! reading. So it is gone rather than left saying yes, and the phone row is
+//! judged by all four assertions with nothing here to switch it on.
+//!
 //! The images land under `target/`, which is untracked. That is deliberate on
 //! two counts: an image is a derivation and re-derived by running the suite,
 //! and this repository's disclosure gate refuses every tracked binary outright
@@ -49,11 +59,11 @@ mod tests;
 
 /// **The viewport sizes the matrix renders at**, narrowest first.
 ///
-/// `phone` is the size the ball named and the one that finds things: at 400
-/// points the two list panes are both on their floor
-/// ([`crate::ui::shell::SIDE_FLOOR`]) and the chat pane is under its own, so
-/// every pane is painting in less room than its layout asks for. `narrow` is
-/// the width the side panels start yielding at, and `desk` is the window with
+/// `phone` is the size the ball named and the one that finds things: it is
+/// under the width at which the broad layout can still leave the conversation
+/// its floor, so it is the one size that renders in the narrow shape — one
+/// column at a time (`crate::ui::shell::policy`). `narrow` is the width the
+/// side panels have yielded to their limit at, and `desk` is the window with
 /// room to spare — the one where a defect hides.
 pub(crate) const SIZES: [(&str, f32, f32); 3] = [
     ("phone", 400.0, 800.0),
@@ -88,36 +98,6 @@ pub(crate) fn seat(model: Model, width: f32, height: f32) -> Harness<'static, Mo
         );
     harness.run();
     harness
-}
-
-/// **Whether the seat's own layout policy still promises this width a shape.**
-///
-/// Every size in [`SIZES`] is RENDERED, because a picture of a window that has
-/// gone wrong is the most useful picture there is. Not every size is *judged*
-/// on its geometry, and the line is not "what happens to pass" — it is
-/// [`crate::ui::shell::widths`], which is where this seat states what it does
-/// as a window narrows. The side panes yield in proportion until they reach
-/// their own floor, and past that **nothing yields**: the chat pane goes under
-/// [`crate::ui::shell::CHAT_FLOOR`] and the layout has said, in its own words,
-/// that it has run out of answers.
-///
-/// So a width where the conversation still gets its floor is a width where a
-/// control off the window is a defect. A width below it is a window the layout
-/// never claimed to lay out, and asserting geometry there asserts something
-/// nobody promised — while still, at 400 points, being photographed every run
-/// for whoever fixes it. **What it is waiting for is bl-dfda**: the seat has no
-/// narrow layout at all, and the phone row starts being judged, with no change
-/// here, on the day that ball gives it one. **Assertion (a) is not gated by this**, and that is
-/// the distinction rather than an exception: whether a control answers a click
-/// is a question about the tree, and it holds at every width this seat opens
-/// at.
-///
-/// It is a QUERY, not a second constant. A number written here would be a copy
-/// of a policy that lives in one function, and the two would part company on
-/// the first tuning of either.
-pub(crate) fn promised(width: f32) -> bool {
-    let (roster, convs) = crate::ui::shell::widths(width);
-    width - roster - convs >= crate::ui::shell::CHAT_FLOOR
 }
 
 /// The file one shot is written to, named so a directory listing IS the matrix.

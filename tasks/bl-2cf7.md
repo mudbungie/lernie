@@ -1,7 +1,8 @@
 +++
 title = "the conversation's records reach no gesture: its own row, its steps, its files, its spine, its governing commit, its inbox — and the fork that names two of them"
 created = 1788398397
-updated = 1788398397
+updated = 1788399114
+claimant = "Recordist"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

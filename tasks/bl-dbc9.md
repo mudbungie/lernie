@@ -1,7 +1,8 @@
 +++
 title = "conversation management at the row: a right-click context menu carrying the conversation's acts"
 created = 1788405831
-updated = 1788405831
+updated = 1788405840
+claimant = "Rowmenu"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

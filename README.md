@@ -184,6 +184,17 @@ which words reached the glass and nothing could say what it looked like.
 `src/snapshot` closes that: it runs the real `ui::render` on an off-screen
 context and rasterizes the frame, touching no compositor and opening no window.
 
+**No compositor is not no renderer**, and that distinction costs a box that has
+never been told it. `egui_kittest` asks wgpu to enumerate adapters and takes the
+first; where there is none it panics `No adapter found`, and these two tests are
+the only ones in the suite that can fail that way. A desktop with a working GPU
+driver has one already. A headless box — a container, or a CI runner — usually
+has neither a GPU nor a Vulkan ICD, and the fix is to give it a software one
+rather than to stand the tests down: `mesa-vulkan-drivers` (Mesa's lavapipe,
+which rasterizes on the CPU) plus the `libvulkan1` loader that finds it. That is
+the line `.github/workflows/ci.yml` installs before the gate, and it is enough
+because nothing here compares pixels to a pinned image — see below.
+
 It writes one PNG per (world, size) into **`target/snapshots/`**, named
 `<world>--<size>.png` — four named world states (`unprovisioned`, `seated`,
 `beginning`, `enrolling`) at three viewport sizes (`phone` 400x800, `narrow`

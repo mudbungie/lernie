@@ -1,7 +1,8 @@
 +++
 title = "three window-level reads reach no gesture: the roster refreshes itself, and help and search have no home at all"
 created = 1788397359
-updated = 1788397359
+updated = 1788402386
+claimant = "Gesture"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

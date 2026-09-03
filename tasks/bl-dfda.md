@@ -1,7 +1,8 @@
 +++
 title = "the window has no narrow layout: at a phone-shaped viewport the panes collapse to unreadable columns"
 created = 1788330085
-updated = 1788330085
+updated = 1788399561
+claimant = "Narrowsmith"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

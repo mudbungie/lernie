@@ -57,6 +57,12 @@ name: Release-plz
 #     BEFORE opening the PR, so superseded and orphaned branches pile up one per
 #     push to `main`; the repository's "automatically delete head branches"
 #     setting only fires on MERGE and never sees them.
+#   * merge-release-pr (last, after the pruner) — merges the release PR the PR
+#     job just opened, under two conjunctive guards, and then DISPATCHES this
+#     workflow, because a merge performed with `GITHUB_TOKEN` triggers no run at
+#     all. Merging is not the release gate — `release` above is, post-merge — so
+#     a human holding this PR only delays a decision the gate makes anyway. Its
+#     own header says why native auto-merge cannot stand in for it.
 #
 # ONE-TIME REPOSITORY SETUP, both done:
 #   * Settings → Actions → General → "Allow GitHub Actions to create and approve
@@ -251,3 +257,150 @@ jobs:
                 git push origin --delete "$branch"
               fi
             done
+
+  merge-release-pr:
+    name: merge the release PR
+    # LAST, and additive: nothing `needs:` this job, so a refusal here cannot
+    # take the pruner or the release with it. `needs: prune-release-branches`
+    # chains it behind the PR job (prune's own `needs`), which serializes the
+    # three acts that touch release branches and keeps prune's "has no open PR"
+    # test reading the state it was written against — the current release PR
+    # still OPEN. The head branch this job merges is therefore collected by the
+    # NEXT push's prune, one cycle later, which is what that job is for.
+    #
+    # That chain carries the owner guard with it, which is why there is no `if`
+    # here: `release-plz-pr` refuses to run outside this owner and on anything
+    # but a push, and a skipped job skips everything that `needs` it.
+    needs: prune-release-branches
+    runs-on: ubuntu-latest
+    # WHY MERGE WITHOUT A HUMAN, and why not GitHub's own auto-merge.
+    #
+    # The release PR bumps the version in `Cargo.toml`/`Cargo.lock` and nothing
+    # else (`changelog_update = false`), and merging it does not release
+    # anything: `release-plz-release` above `needs: ci`, so the publish is gated
+    # on the gate AFTER the merge, on the merged tree. A red tree merged here
+    # publishes nothing — that has been observed, a red CI skipping the publish
+    # of an already-merged bump. The merge is therefore not the control point
+    # the gate is, and holding it for a human only delays a release that the
+    # gate will refuse or allow on its own merits either way.
+    #
+    # Native auto-merge cannot do this. It waits for a PR's required checks to
+    # go green, and this PR's checks never do: the PR is opened with
+    # `GITHUB_TOKEN`, and a `pull_request` run created that way REQUIRES A
+    # WRITE-HOLDER'S APPROVAL before it will start. Nobody approves them, so
+    # they sit at `action_required` forever. A PR whose checks never start is a
+    # PR auto-merge waits on forever.
+    permissions:
+      # The merge is a write to `main`.
+      contents: write
+      # ...and a write to the pull request.
+      pull-requests: write
+      # To dispatch this workflow after the merge — see the last step.
+      actions: write
+    concurrency:
+      group: merge-release-pr
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # No checkout: `gh` needs a repository, not a working tree, and this job
+      # reads and writes nothing on disk.
+      GH_REPO: ${{ github.repository }}
+    steps:
+      # THE LISTING IS THE AUDIT TRAIL, and it prints whether or not anything is
+      # merged: every open PR, with the verdict this job reaches on it and the
+      # fields it reached it from. A guard that silently matches nothing looks
+      # exactly like a guard that is working.
+      - name: Every open PR, and the verdict on it
+        run: |
+          set -uo pipefail
+          gh pr list --state open --base main --limit 50 \
+            --json number,headRefName,title,author \
+            --jq '.[] | "\(if (.author.is_bot == true
+                               and .author.login == "app/github-actions"
+                               and (.headRefName | test("^release-plz-")))
+                          then "MERGE " else "refuse" end)  #\(.number)  head=\(.headRefName)  bot=\(.author.is_bot)  author=\(.author.login)"'
+      # THE TWO GUARDS, and they are conjunctive. A candidate must have a
+      # `release-plz-*` head branch AND be authored by the Actions bot AND
+      # target `main`. Only release-plz names a branch that way and only a
+      # workflow holding this repository's token can author a PR as that bot, so
+      # neither half is forgeable by anyone who does not already have write
+      # access. A HUMAN'S PR IS NEVER MERGED HERE, whatever its branch is named.
+      #
+      # One consequence worth knowing before you set it: if `RELEASE_PLZ_TOKEN`
+      # (the optional PAT named in the header) is ever configured, the release
+      # PR is authored by the PAT'S OWNER — a human login — and this job stops
+      # merging it. That is the guard working, not a bug; making the two
+      # coexist is a deliberate edit here, not an accident to discover later.
+      #
+      # The loop is over "every PR that passes both guards" rather than over the
+      # one release-plz maintains, because that dissolves both edge cases into
+      # the general path: none is the terminator below, and two — which
+      # release-plz does not produce — are two lawful merges rather than a case.
+      - name: Merge every open bot-authored release PR
+        id: merge
+        run: |
+          set -uo pipefail
+          candidates="$(gh pr list --state open --base main --limit 50 \
+            --json number,headRefName,author \
+            --jq '.[] | select(.author.is_bot == true
+                               and .author.login == "app/github-actions"
+                               and (.headRefName | test("^release-plz-"))) | .number')"
+
+          # THE TERMINATOR. A run that merged a release PR dispatches this
+          # workflow again (next step); that dispatched run does not reach this
+          # job at all — `release-plz-pr` is push-only, so it, `prune` and this
+          # job are all skipped on a dispatch. Even were it reached, release-plz
+          # opens no second PR for a version the manifest already carries, so
+          # this is where the chain stops on its own.
+          if [ -z "$candidates" ]; then
+            echo "no open bot-authored release PR — nothing to merge"
+            exit 0
+          fi
+
+          for pr in $candidates; do
+            # Mergeability is computed asynchronously, so a PR refreshed moments
+            # ago can refuse once and merge on the retry. The loop re-reads the
+            # PR's own state rather than trusting the exit code: `--delete-branch`
+            # can fail AFTER the merge landed, and that must not read as a
+            # failure to merge (nor be retried into merging twice).
+            for attempt in 1 2 3 4 5; do
+              gh pr merge "$pr" --merge --delete-branch && break
+              [ "$(gh pr view "$pr" --json state -q .state)" = "MERGED" ] && break
+              echo "attempt $attempt: #$pr did not merge; retrying"
+              sleep 15
+            done
+            state="$(gh pr view "$pr" --json state -q .state)"
+            if [ "$state" != "MERGED" ]; then
+              echo "REFUSED: #$pr is $state after 5 attempts — a human must look" >&2
+              exit 1
+            fi
+            echo "merged #$pr"
+          done
+          # The dispatch below reads this, and reads it from the ONE place that
+          # can know: an `exit 0` above is still a successful step, so a step
+          # that merged nothing would otherwise dispatch a full gate + macOS run
+          # on every push to `main` for no reason.
+          echo "merged=yes" >> "$GITHUB_OUTPUT"
+      # WITHOUT THIS STEP THE RELEASE NEVER SHIPS. The merge above is a push to
+      # `main` performed with `GITHUB_TOKEN`, and GitHub documents that "with
+      # the exception of `workflow_dispatch` and `repository_dispatch`, other
+      # `GITHUB_TOKEN`-triggered events do not create workflow runs at all." So
+      # the bump lands on `main` and NOTHING RUNS: no gate, no release, and the
+      # version sits unpublished until some unrelated push happens by. The
+      # recursion this rule exists to prevent is therefore not a hazard here —
+      # it is the reason the release has to be asked for explicitly.
+      #
+      # A dispatch is the documented exception and it is what the header already
+      # reserves a dispatch for: on it, `release-plz-pr` is skipped (push-only),
+      # so `prune` and this job are skipped with it, and the run is exactly
+      # `ci` + `release` + `macos` — the gate, and a publish only if the gate is
+      # green. One dispatched run per merge, and it dispatches nothing further.
+      #
+      # It runs ONLY when a merge actually happened. A step that found no
+      # candidate exits 0, which is a successful step and would carry a bare
+      # `run:` here straight into a pointless gate + macOS run on every push, so
+      # the condition reads the merging step's own output rather than its
+      # success.
+      - name: Ask for the release the merge cannot trigger
+        if: steps.merge.outputs.merged == 'yes'
+        run: gh workflow run release-plz.yml --ref main

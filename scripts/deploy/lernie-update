@@ -1,0 +1,143 @@
+#!/bin/sh
+# Reconcile a seat box's installed lernie against the registry (bl-155a) — the
+# CD half of the seat deployment. Run by `lernie-update.timer`; safe to run by
+# hand. `scripts/deploy/update-selftest.sh` drives this file under fake
+# `curl`/`cargo` shims and is what `make deploy-selftest` runs.
+#
+# ONE RECONCILIATION, NOT TWO. The engine's retired reconciler had a second
+# half — restart the unit under the new binary, deferred while a turn was in
+# flight — and none of it applies here. **A seat has no unit and no turn.** It
+# is a window somebody launched; `cargo install` replaces the file by rename,
+# so a running window keeps its own inode and finishes its session on the
+# build it started under, and the NEXT launch is the new one. There is nothing
+# to restart, nothing to kill, and so no quiescence to read and no deferral to
+# decide. That is the whole reason this file is half the length of the one it
+# is founded on.
+#
+# Nothing here is stored. "Which version is installed" is the binary's own
+# answer and "which is newest" is the registry's; there is no state file to
+# drift, and nothing to reconcile if somebody installs by hand.
+#
+# ---------------------------------------------------------------------------
+# PROTOCOL SKEW IS DESIGNED BEHAVIOR, NOT A DEFECT TO CODE AROUND.
+#
+# The seat and the engine are separately installed components on separate
+# schedules (yog `docs/REMOTE.md` §12), and this timer is one of those
+# schedules. A seat that updates ahead of its engine may speak a newer
+# `PROTOCOL`, and yog's §9.5 hello is fail-closed: each end writes one
+# `{"protocol": <integer>}` frame before it reads the peer's, a mismatch is
+# refused in band on the connection the seat opened, *before* any gesture is
+# decoded, and the refusal names both versions. So the window will not paint —
+# it will say, in one line, that the two ends disagree and by how much.
+#
+# **Wait, do not intervene.** Engine boxes reconcile hourly from their own
+# registry, so the skew closes itself within the hour without anybody logging
+# in to either machine. There is no version list here, no capability probe, no
+# compat shim and no downgrade, by REMOTE's ruling and not by omission — an
+# unversioned wire answering an old question with a new meaning is the failure
+# the preface exists to prevent, and a seat that quietly spoke down to an old
+# engine would be exactly that. If the skew does NOT close, the engine box's
+# reconciler is the thing that is broken; this one is working.
+# ---------------------------------------------------------------------------
+set -eu
+
+CRATE=lernie
+# The sparse index — the same source `cargo install` resolves from, so the two
+# can never disagree about what exists. Names of four characters or more live
+# under `<first two>/<next two>/<name>`.
+INDEX_URL="https://index.crates.io/le/rn/$CRATE"
+
+# **The install root is `$HOME/.local`, and it is not a preference.** It is the
+# Makefile's own `INSTALL_PREFIX` default and the first rung of `icon-seats`'
+# ladder, so the desktop entry that launches the window names
+# `$HOME/.local/bin/lernie` — and an entry's `Exec=` is an absolute path
+# resolved out of the session's environment. Installing to cargo's default
+# root instead would put the new build at `$HOME/.cargo/bin/lernie`, a path the
+# launcher never reads, and the CD would be silently dead: a timer updating a
+# binary nothing runs, with no error anywhere. One `--root` dissolves that; a
+# second install location would not have been a second option, it would have
+# been two binaries and a coin toss about which one the operator sees.
+ROOT="$HOME/.local"
+BIN="$ROOT/bin/$CRATE"
+
+# **The era fence** (`docs/DESIGN.md` §0). The name carries two programs: the
+# agent-loop engine through 0.0.x, this seat from 0.1.0, and the version is the
+# only rule separating them. Both lines are live on the registry and neither
+# can ever be un-published. So "the newest live version" is only the right
+# answer while it is a seat — if every 0.1.x were yanked, the newest live
+# version would be an *engine*, and this timer would unattendedly replace the
+# operator's window with a different program that happens to share its name.
+# Checked once on the winner rather than per line, so the refusal can say what
+# it actually found.
+FENCE=0.1.0
+
+say() { printf '%s: %s\n' "$CRATE-update" "$*"; }
+die() { say "$*" >&2; exit 1; }
+
+# True when $1 is at or above the fence. `sort -V` is the whole comparison:
+# if the fence sorts first, the candidate is at or above it.
+at_or_above_fence() {
+    [ "$(printf '%s\n%s\n' "$FENCE" "$1" | sort -V | head -1)" = "$FENCE" ]
+}
+
+# The newest version the registry will serve. **Yanked releases are filtered
+# HERE rather than left to cargo, and that is what makes a yank the rollback
+# lever**: yank a bad release and the next tick resolves the previous one, sees
+# it differ from what is installed, and puts it back — with nobody logging in
+# to the seat. `cargo install` alone cannot do this, because it refuses to go
+# backwards; that is why the install below passes an explicit `--version` and
+# `--force` rather than a bare crate name.
+#
+# **The fetch is a separate statement from the parse, deliberately.** As one
+# pipeline the exit status would be `tail`'s, so a registry that answered 503
+# would parse to an empty string and look like an empty index — two different
+# failures reported as one, and the wrong one. Read it, then judge it.
+latest_live() {
+    _index=$(curl -fsS --max-time 60 "$INDEX_URL") \
+        || die 'cannot reach the registry index'
+    printf '%s\n' "$_index" | while IFS= read -r _line; do
+        # One JSON object per line. Read it with parameter expansion rather
+        # than a regex: `"vers"` occurs exactly once per line (a dependency
+        # entry carries `"req"`, never `"vers"`), so there is nothing for a
+        # greedy match to run past.
+        case $_line in
+            *'"yanked":false'*) ;;
+            *) continue ;;
+        esac
+        _v=${_line#*'"vers":"'}
+        _v=${_v%%'"'*}
+        [ -n "$_v" ] && printf '%s\n' "$_v"
+    done | sort -V | tail -1
+}
+
+# What is on disk. Asking the binary is the one authority: cargo's own
+# bookkeeping can disagree with the file after a hand install, and the file is
+# what the launcher will exec. Absent is the empty string, which is a lawful
+# answer — a box being seated for the first time has no binary yet.
+installed() {
+    [ -x "$BIN" ] || return 0
+    "$BIN" --version 2>/dev/null | awk 'NR==1 {print $NF}'
+}
+
+want=$(latest_live)
+[ -n "$want" ] || die 'the registry index named no live version'
+at_or_above_fence "$want" \
+    || die "the newest live version is $want, below the $FENCE fence: that is the
+  agent-loop engine's line, not this seat's (docs/DESIGN.md §0). Refusing to
+  install it. Every seat release is yanked — un-yank one, or publish."
+
+have=$(installed)
+
+if [ "$want" = "$have" ]; then
+    say "installed $have is current"
+    exit 0
+fi
+
+say "installing $want (was ${have:-absent})"
+# `--locked` builds against the lockfile the crate publishes, which is the
+# parity check that the seat and its dependencies resolve as released.
+# `--version` is explicit and `--force` is set because the move may be a
+# DOWNGRADE — the yank lever above — and cargo refuses to move backwards
+# otherwise.
+cargo install "$CRATE" --root "$ROOT" --locked --version "$want" --force
+say "installed $(installed); the next window launch runs it"

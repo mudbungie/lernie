@@ -1,0 +1,27 @@
+# The seat reconciler, run by `lernie-update.timer` (bl-155a). Oneshot: it
+# asks the registry what is newest, installs it if that differs from what is on
+# disk, and exits. It restarts nothing — there is no unit to restart and no
+# turn to kill; the next window launch is the adoption.
+[Unit]
+Description=install the newest released lernie
+Documentation=https://github.com/mudbungie/lernie
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/lernie-update
+# A build is the long pole and runs on the seat's own cores. `systemctl --user
+# start` blocks on a oneshot, so this is also the ceiling on how long the
+# deploy's own verification can sit — long enough for a cold first build of the
+# window's toolkit, short enough that a wedged one does not hold out the next
+# tick forever.
+TimeoutStartSec=45min
+# `cargo`, the `cc` a build shells to, and the linker.
+Environment=PATH=%h/.cargo/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+# **This box is somebody's desktop and they are using it.** A background build
+# that makes the machine unpleasant to type on is worse than a slow one: it
+# gets the timer switched off, and a switched-off timer is no CD at all.
+Nice=19
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle

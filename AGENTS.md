@@ -29,9 +29,9 @@ third answer.
 ## The gate
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
-is `line-cap → leak-scan → clippy -D warnings → rules-audit → cargo deny
-check`. The pre-commit hook runs the same targets via `scripts/pre-commit`;
-neither restates a step the Makefile defines. Run `make install-hooks` once per
+is `line-cap → deploy-selftest → leak-scan → clippy -D warnings → rules-audit →
+cargo deny check`. The pre-commit hook runs the same targets via
+`scripts/pre-commit`; neither restates a step the Makefile defines. Run `make install-hooks` once per
 clone — it seats `pre-commit` **and** `commit-msg`.
 
 **And CI is that same target, run by a machine rather than by whoever
@@ -53,6 +53,13 @@ its own on `main`, so anything reading them must read `release-plz.yml`.
 
 **All tests must pass and coverage must be 100% before anything merges.** It
 does not matter who broke the test.
+
+`deploy-selftest` is in that list because `scripts/deploy/` is code that runs
+unattended on somebody's desktop and is in no crate, so nothing else would ever
+judge it: it drives the real reconciler under fake `curl`/`cargo` shims,
+asserting both that an install happens with the right arguments and that one
+does NOT happen when there is nothing to do. README's *Continuous deployment
+for a seat box* is the recipe; the scripts' own headers hold the reasoning.
 
 ### The disclosure gate
 

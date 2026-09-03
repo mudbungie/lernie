@@ -267,6 +267,54 @@ non-Apple hardware. Nothing here acquires one. The signature the linker applies
 is ad-hoc and is not notarization — a downloaded copy carries a quarantine
 attribute that only somebody on a mac can clear.
 
+## Continuous deployment for a seat box
+
+A seat box tracks released versions unattended:
+
+    make deploy-seat HOST=<ssh-host>
+
+`HOST` is an ssh destination and the only parameter — no address, account or
+machine name is committed anywhere in this tree. That is the disclosure gate's
+rule, and the severability one from the other side: a second seat is a second
+argument rather than an edit, and a box that should stop tracking releases is
+one `systemctl --user disable lernie-update.timer` away from stopping, with
+nothing to change here.
+
+It seats three text files — `scripts/deploy/lernie-update` and its `.timer` and
+`.service` — and carries no build. The engine's deployment moves an image
+because an image is its unit of install; a seat's unit of install is a
+published version, and the registry already serves it. From then on the box
+reads the crates.io sparse index hourly, compares the newest **live** version
+against what its own binary reports, and on a difference runs `cargo install
+lernie --root ~/.local --locked --version <v> --force`. It installs to the same
+root `make install` uses, because the desktop entry that launches the window
+names an absolute path and an install anywhere else would update a binary the
+launcher never runs.
+
+**Nothing is restarted, because there is nothing to restart.** A seat is a
+window somebody launched. An install replaces the binary by rename, so an open
+window finishes its session on the build it started under and the next launch
+is the new one.
+
+**A yank is the rollback lever.** Yanked releases are filtered here rather than
+left to cargo, so yanking a bad release makes the previous one newest-live; the
+next tick sees it differ from what is installed and puts it back, on every
+seat, with nobody logging in. That is what the explicit `--version` and
+`--force` are for — cargo will not move backwards without them.
+
+**A seat may run ahead of its engine, and the refusal is designed.** Engine
+boxes reconcile on their own hourly schedule, so a seat that updates first may
+speak a newer `PROTOCOL` and be refused at the hello — fail-closed, in band,
+naming both versions (yog's `docs/REMOTE.md` §9.5). Wait; the skew closes
+itself within the hour. `scripts/deploy/lernie-update`'s header says why there
+is deliberately no downgrade, no capability probe and no compat shim.
+
+`make deploy-selftest` is the regression half and a step of `make lint`: it
+drives the real reconciler under fake `curl` and `cargo` shims in a scratch
+`HOME` — no network, no registry, no toolchain, no machine touched — asserting
+in one direction that an install happened with exactly which arguments, and in
+the other that `cargo` was never invoked at all.
+
 ## The rules
 
 Two are hard and machine-enforced:

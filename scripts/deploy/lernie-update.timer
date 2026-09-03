@@ -1,0 +1,27 @@
+# When to look for a new lernie (bl-155a). Hourly is well inside any useful
+# latency for a release and far below the registry's rate limits; the tick is
+# cheap when nothing changed (one small index fetch and one `--version`).
+[Unit]
+Description=hourly check for a new lernie release
+Documentation=https://github.com/mudbungie/lernie
+
+[Timer]
+# **A user timer on a seat, and deliberately no lingering.** The engine's
+# deployment enables `loginctl enable-linger` because a server's unit must
+# outlive a logout; a seat is a window somebody launches while they are logged
+# in, so the user manager already exists exactly when the seat is used, and
+# keeping one alive on a desktop for a timer whose product only matters at the
+# next launch is a running process bought for nothing.
+#
+# `Persistent=true` is what makes that sound rather than lossy: a window missed
+# while the box was off or logged out runs ONCE on the next login, so the
+# reconcile happens before the operator has finished opening anything.
+OnStartupSec=3min
+OnUnitActiveSec=1h
+Persistent=true
+# Nothing depends on the minute, and on a desktop a build starting the instant
+# somebody logs in is the worst moment for it. Let systemd spread it.
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

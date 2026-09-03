@@ -1,6 +1,6 @@
 .PHONY: all build release test coverage lint fmt fmt-check check ci \
         line-cap leak-scan rules-audit deny corpus snapshots install-hooks install \
-        uninstall icon icon-seats clean
+        uninstall icon icon-seats deploy-seat deploy-selftest clean
 
 # The build authority. Every gate step has ONE home here, and the pre-commit
 # hook calls the same targets — so the hook, a hand-run `make check` and any
@@ -55,11 +55,13 @@ coverage:
 # pinned so the gate is reproducible — ast-grep 0.44.1 (sgconfig.yml),
 # cargo-deny 0.20.2 (deny.toml), toolchain 1.95.0 (rust-toolchain.toml).
 #
-# `line-cap` goes first because it is milliseconds, and `leak-scan` second
-# because it is seconds: a structural violation and a disclosure should both
-# fail before the minute-scale tools start.
+# Ordered by cost, cheapest first: `line-cap` is milliseconds,
+# `deploy-selftest` is under a second and `leak-scan` is seconds, so a
+# structural violation, a broken reconciler and a disclosure all fail before
+# the minute-scale tools start.
 lint:
 	$(MAKE) line-cap
+	$(MAKE) deploy-selftest
 	$(MAKE) leak-scan
 	cargo clippy --all-targets -- -D warnings
 	$(MAKE) rules-audit
@@ -340,6 +342,43 @@ uninstall:
 	       "$(INSTALL_ICONS)/lernie.svg" \
 	       "$(INSTALL_APPS)/lernie.desktop"
 	@echo "removed the binary and its icon seats"
+
+# Continuous deployment for a SEAT BOX (bl-155a): seat a user timer that
+# installs the newest released lernie from crates.io, unattended, from then on.
+#
+#   make deploy-seat HOST=<ssh-host>
+#
+# HOST is an argument and never a default. No address, account or machine name
+# belongs in this tree — the leak gate's rule — and the severability one says
+# the same thing from the other side: a second seat is a second argument, not
+# an edit, and a box that should stop tracking releases stops with a
+# `systemctl --user disable` and no change here at all.
+#
+# It seats a timer; it does not carry a build. The engine's deployment moves an
+# image because an image is its unit of install; a seat's unit of install is a
+# published version and the registry already serves it, so what crosses the ssh
+# channel is three small text files. Nothing is restarted, because a seat is a
+# window somebody launched: `cargo install` replaces the binary by rename, an
+# open window finishes its session on the build it started under, and the next
+# launch is the adoption. `scripts/deploy/lernie-update`'s header carries the
+# protocol-skew consequence — a seat may run ahead of its engine for up to an
+# hour, and the fail-closed hello refusing it is the designed behavior.
+deploy-seat:
+	@[ -n "$(HOST)" ] || { \
+	  echo "deploy-seat: HOST is required — make deploy-seat HOST=<ssh-host>" >&2; \
+	  exit 2; }
+	@scripts/deploy/seat.sh "$(HOST)"
+
+# The reconciler's regression half, and a step of `lint` above rather than a
+# target beside it. It drives the real `lernie-update` under fake `curl` and
+# `cargo` shims in a scratch HOME — no network, no registry, no toolchain, no
+# release, and no machine touched — so the thing the gate judges is the file
+# that actually ships to the box. Both directions in one table: half its cases
+# assert an install happened with exactly which arguments, half assert `cargo`
+# was never invoked at all. A reconciler that installs on every tick and one
+# that has quietly stopped installing are both broken, and only one is loud.
+deploy-selftest:
+	@scripts/deploy/update-selftest.sh
 
 # There is deliberately NO `publish` target. `Cargo.toml` carries
 # `publish = false`: the seat's first release is the coordinated cutover moment

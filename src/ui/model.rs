@@ -26,6 +26,8 @@ mod channel;
 mod claim;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
+/// Which composer box a row menu's navigation asked for the cursor in.
+mod fill;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
 /// What a frame composed, and what a lost reply would mean for it.
@@ -45,6 +47,7 @@ mod window;
 
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
+pub use fill::Fill;
 pub use notice::Notice;
 pub use posted::Posted;
 pub use queue::Asking;
@@ -169,6 +172,11 @@ pub struct Model {
     /// this is not a second control's enablement — it is the gesture's own
     /// third parameter, held where the box that fills it is.
     pub typed: String,
+    /// **Which of the two boxes above a row menu asked for the cursor in**, or
+    /// `None` where nobody has asked (`fill`; bl-dbc9). A conversation row's
+    /// menu cannot hold either box, so the item that would need one goes to it
+    /// instead — and this is the request, taken by the frame that paints it.
+    pub fill: Option<Fill>,
     /// **The words a flag is raised with** (`crate::ui::composer::acts`). The
     /// wire requires them — a flag with nothing in it is a row nobody can
     /// triage — so the control is disabled until there are any, and the box is

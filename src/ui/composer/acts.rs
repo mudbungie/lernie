@@ -32,7 +32,7 @@
 //! answers and one that earns *"this build cannot read that kind"*
 //! (`crate::verbs::conversation`).
 
-use crate::ui::{Aim, Model};
+use crate::ui::{Aim, Fill, Model, keys};
 
 /// The word that kills the driver. `nudge`'s opposite, and the reason it sits
 /// one row below rather than beside it: nudge leaves a driver running.
@@ -65,6 +65,13 @@ const ARM_WIDTH: f32 = 200.0;
 /// Paint the row and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
     let mut fired = None;
+    // **Taken once, before either box is painted** (bl-dbc9). A conversation
+    // row's menu cannot hold either of these boxes, so its two parameterized
+    // items send the operator here and ask for the cursor
+    // (`crate::ui::model::fill`). One read rather than one per box: a frame
+    // that paints this row spends the whole request, so half of one cannot be
+    // left standing for the next.
+    let wanted = model.filling();
     ui.horizontal_wrapped(|ui| {
         // **The reads this gesture reaches** (bl-2cf7), exactly as the wall's
         // roster seat carries the conversation list's: opening the records
@@ -93,11 +100,19 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
                 agent.to_owned(),
             ));
         }
-        ui.add(
+        // **Each box wears an id**, which is what lets the keyboard's gate name
+        // every box that takes text rather than only the draft
+        // (`crate::ui::keys::BOXES`) — an arrow taken from inside a half-typed
+        // reason would otherwise have walked the conversation list under it.
+        let why = ui.add(
             egui::TextEdit::singleline(&mut model.reason)
+                .id(egui::Id::new(keys::REASON_ID))
                 .desired_width(ARM_WIDTH)
                 .hint_text(WHY),
         );
+        if wanted == Some(Fill::Reason) {
+            why.request_focus();
+        }
         // **Disabled and not absent**, which is the tuning pane's `set` rather
         // than the composer's second start: the parameter is missing, not the
         // subject, so the control stays on the glass saying what would fill it.
@@ -113,11 +128,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
                 std::mem::take(&mut model.reason),
             ));
         }
-        ui.add(
+        let arming = ui.add(
             egui::TextEdit::singleline(&mut model.typed)
+                .id(egui::Id::new(keys::ARM_ID))
                 .desired_width(ARM_WIDTH)
                 .hint_text(ARM),
         );
+        if wanted == Some(Fill::Arming) {
+            arming.request_focus();
+        }
         let unmake = ui.button(DELETE);
         crate::ui::act::tag(&unmake, &[crate::verbs::DELETE_AGENT.word]);
         if unmake.clicked() {

@@ -238,3 +238,38 @@ fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
         "one step down out of the pending row and into the list"
     );
 }
+
+/// **Every box that takes text stands the arrows down, not only the draft**
+/// (bl-dbc9).
+///
+/// It was one id, and one was enough while the only way into the other two was
+/// Tab. A conversation row's menu now LANDS the cursor in the reason box and in
+/// the arming box (`crate::ui::model::fill`), and an arrow taken from inside
+/// either would have walked the conversation list under a half-typed reason —
+/// flagging, or arming a deletion on, the row it landed on.
+#[test]
+fn the_two_parameter_boxes_stand_the_arrows_down_as_the_draft_does() {
+    for (fill, id) in [
+        (crate::ui::Fill::Reason, super::REASON_ID),
+        (crate::ui::Fill::Arming, super::ARM_ID),
+    ] {
+        let mut model = stocked();
+        model.focus = Pane::Conversations;
+        model.fill_in("a", fill);
+        let window = Window::new();
+        let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
+        window.frame(Vec::new(), &mut body);
+        assert_eq!(
+            window.focused(),
+            Some(egui::Id::new(id)),
+            "the box took the keyboard"
+        );
+        window.frame(vec![press(egui::Key::ArrowDown)], &mut body);
+        window.frame(Vec::new(), &mut body);
+        assert_eq!(
+            model.conversation.as_deref(),
+            Some("a"),
+            "the arrow went into the box, not into the list"
+        );
+    }
+}

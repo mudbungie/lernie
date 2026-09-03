@@ -6,7 +6,10 @@
 //! chat pane, and a list that tried to be the pane would be neither.
 
 use crate::reply::convs::ConvRow;
-use crate::ui::{Model, theme};
+use crate::ui::{Aim, Model, theme};
+
+/// The row's own acts, on the menu a secondary click opens.
+pub mod menu;
 
 /// What the list says with no wall aimed at.
 pub const NO_WALL: &str = "pick a workspace";
@@ -83,13 +86,13 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         .auto_shrink(false)
         .show(ui, |ui| {
             for row in rows {
-                conversation(ui, model, &row, reveal);
+                conversation(ui, model, &aim, &row, reveal);
             }
         });
 }
 
 /// One row, indented to its depth under the conversation root.
-fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: bool) {
+fn conversation(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, row: &ConvRow, reveal: bool) {
     let selected = model.conversation.as_ref() == Some(&row.root_id);
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth));
@@ -150,6 +153,12 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow, reveal: boo
         if seat.clicked() {
             model.select(&row.root_id.clone());
         }
+        // **The row's own acts hang off the row** (bl-dbc9), on the gesture
+        // egui synthesizes from a right-click and from a touch long-press
+        // alike. It is hung on the same response the click above is taken
+        // from, so the menu is about the row a pointer is on and there is no
+        // second answer to *which conversation is this about*.
+        menu::show(&seat, model, aim, row);
     });
     // **The hue's own words** (REMOTE §9.10). A conversation whose latest model
     // call failed paints red and, until this line, said nothing about why — so

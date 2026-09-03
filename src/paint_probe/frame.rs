@@ -86,18 +86,38 @@ impl Window {
 /// **One full click at `pos`: move, press, release — three frames.** egui
 /// hit-tests against the previous frame's widget rects, so a press in the frame
 /// that first sees the pointer would test against nothing.
-pub(crate) fn click(window: &Window, pos: egui::Pos2, mut body: impl FnMut(&egui::Context)) {
+pub(crate) fn click(window: &Window, pos: egui::Pos2, body: impl FnMut(&egui::Context)) {
+    pressed_at(window, egui::PointerButton::Primary, pos, body);
+}
+
+/// **The same three frames on the SECONDARY button** — the gesture that opens
+/// a row's context menu, and the one egui synthesizes from a touch long-press,
+/// which is why one design serves both clients (DESIGN §4.23).
+pub(crate) fn secondary(window: &Window, pos: egui::Pos2, body: impl FnMut(&egui::Context)) {
+    pressed_at(window, egui::PointerButton::Secondary, pos, body);
+}
+
+/// The button going down at `pos`, and coming back up.
+fn pressed_at(
+    window: &Window,
+    button: egui::PointerButton,
+    pos: egui::Pos2,
+    mut body: impl FnMut(&egui::Context),
+) {
     window.frame(vec![egui::Event::PointerMoved(pos)], &mut body);
     for pressed in [true, false] {
-        window.frame(vec![button(pos, pressed)], &mut body);
+        window.frame(vec![down(button, pos, pressed)], &mut body);
     }
 }
 
-/// The primary button going down, and coming back up.
-fn button(pos: egui::Pos2, pressed: bool) -> egui::Event {
+/// One pointer-button event, **built outside the generic above.** The literal
+/// used to sit inline there and read back as five uncovered lines: the function
+/// is monomorphized per closure it is handed, and a multi-line literal inside
+/// one is regions llvm-cov attributes to an instantiation nothing ran.
+fn down(button: egui::PointerButton, pos: egui::Pos2, pressed: bool) -> egui::Event {
     egui::Event::PointerButton {
         pos,
-        button: egui::PointerButton::Primary,
+        button,
         pressed,
         modifiers: egui::Modifiers::NONE,
     }

@@ -1598,6 +1598,119 @@ beside the failure, which is a second shape for an answer — and the paint it
 would buy is a *narrower* doubt, never a wrong one. The honest over-caution
 costs an operator one read they were being told to make anyway.
 
+### 4.23 The row's own menu: one gesture, two platforms, and nothing on it destroys (bl-dbc9)
+
+`src/ui/convs/menu.rs`, `src/ui/model/fill.rs`. The operator's requirement was
+conversation management reachable from the **conversation itself** — a
+right-click on the desktop, a long-press on the android client. The unifying
+fact is the toolkit's: **egui synthesizes a secondary click from a touch
+long-press**, so the two clients implement one design — `Response::context_menu`
+on the conversation row — and the platform-native trigger falls out with nothing
+written for it.
+
+**It is the composer's second row, on the row, and that seam already existed.**
+`src/ui/composer/acts.rs` is *the acts that spend no words*, and those are
+exactly the acts a list row can offer. `send` and `interrupt` stay off the menu
+**together**: both advance the turn, and both spend the composer's ONE draft
+box, so an item pointing at a box shared by two verbs would name neither. The
+menu is a second gesture path to controls that already exist — it duplicates no
+plumbing, calls the same `crate::verbs` doors, and the parity walk unions the
+tags (§4.16), so two controls per op is lawful and is what this is.
+
+Six items, and the separator is where the one rule is:
+
+| Item | What it does |
+|---|---|
+| `stop` | fires `stop` on the row |
+| `retarget` | fires `retarget` on the row |
+| `seen` | fires `seen` on the row — **offered only where the row is asking** |
+| `records…` | selects the row and opens §4.18's pane on it |
+| `flag…` | selects the row and puts the cursor in the composer's reason box |
+| `delete…` | selects the row and puts the cursor in its arming box |
+
+**The rule: an item whose act takes only the wall and the conversation FIRES;
+an item whose act takes a third parameter goes to the box that fills it.** That
+is what dissolves the question the ball asked — *how does an arming work inside
+a menu* — rather than answering it. A menu cannot hold either box: the composer
+is a bottom panel that stands down off the conversation's own column in the
+narrow shape, so a box in a list row's menu would be a parameter reachable at
+one width and not the other. And a control that fired without one would compose
+a gesture from a parameter nobody was asked for.
+
+**So nothing on this menu can destroy anything, which is §4.20 read on a
+control instead of on a pane.** That section's warning is exact about this
+surface — *"a routine pane is a surface an operator moves through quickly; a
+mis-aimed click there must not be able to land on this"* — and a list row's menu
+is the sharpest case of it: the next row is one pixel away and the menu opens
+under the pointer. `delete…` therefore **opens the arming** and does not fire.
+It also does not invent a second arming, a second confirmation shape or a second
+place: §4.20's own ruling is that the seat reads which of the two a `typed` is
+off the wire's grammar and invents no policy, and `delete-agent`'s `typed` is a
+**parameter** whose box is on the composer. This item goes there.
+
+Four decisions ride with it, and each is an existing ruling read one surface
+over rather than a new one.
+
+- **The subject is the ROW, and only the items that lead somewhere select it.**
+  This is §4.19's division exactly: a queue row's `seen` answers that row
+  without selecting it, and only *go to it* moves the focus. A fired act here
+  carries `(aim.address, row.root_id)` outright, so it needs no selection and
+  takes none — a secondary click that kills a driver must not throw away the
+  transcript the operator was reading. The three that lead somewhere DO select,
+  because each opens a surface whose subject is the *selected* conversation.
+- **The two navigations carry no `act:` token** (§4.16), because an aim, a
+  selection and a focus cross no wire and views are out of the parity contract
+  — the same division *go to it* keeps, and the same one §4.20's opening
+  control keeps. The acts themselves stay tagged where they fire.
+- **`seen` is the one convenience the menu adds over the composer's second
+  row**, and it rides only on a row carrying attention: the op answers *what
+  this conversation is currently asking about*, so on a row with nothing waiting
+  it is an act with no subject. It is offered where the row's own headline says
+  it applies.
+- **The request for a cursor is a field, taken once** (`Model::fill`), which is
+  `Model::reveal`'s shape one noun over. In the broad shape the composer paints
+  later in the same frame as the list, so the cursor lands on the click; in the
+  narrow shape the list is the central panel and the composer is already behind
+  it, so it lands on the next frame. That is why it is a field rather than a
+  call.
+
+**The keyboard story is whole with no binding added, and that is the honest
+answer rather than a deferral** (yog's QUALITY F1, §4.11's standing rule). Every
+item on this menu names a control that is already Tab-reachable: `stop`,
+`retarget`, `records…`, `flag` and `delete` are the composer's second row, `seen`
+is the decision queue's row control, and the two navigations do what an arrow
+walk and the column bar already do. **A binding that opened the menu would be a
+second surface for controls that already exist** — §4.11's *"a binding names a
+control that already exists"* read in the direction it forbids — and egui
+offers no keyboard affordance for a context menu to take cheaply. What the menu
+adds is reach for a pointer, not an op; the keyboard route is the composer and
+the panes, and it is unchanged. Escape closes the menu, which is egui's own and
+means what `Model::escape` means: put the thing down.
+
+**One thing the menu DID cost the keyboard, and it is closed here.** The arrow
+gate named one box — the composer's draft — because until now Tab was the only
+way into the other two. This menu *lands* the cursor in the reason box and in
+the arming box, and an arrow taken from inside either would have walked the
+conversation list under a half-typed reason and then flagged, or armed a
+deletion on, the row it landed on. `crate::ui::keys::BOXES` is now the whole
+list of boxes that take text and the gate compares against all of them. It is
+still a comparison rather than egui's `wants_keyboard_input`, which answers *is
+anything focused* with every button included; a fourth box joins the list in the
+commit that paints it.
+
+**There is no menu-open world in the snapshot matrix, and the reason is the
+instrument** (§4.11's `src/snapshot/blank.rs`). That detector's subject is *a
+rectangle the layout claimed, read off the glass*, and a floating overlay makes
+every rectangle beneath it flat **by construction** — so a menu-open shot would
+redden the one detector that caught a slab painted over the window, and
+exempting it would be blinding that detector to buy a photograph. The menu's
+evidence is the two instruments that can carry it instead: the paint probe
+drives a real secondary click and reads back what the menu put on the glass, and
+the parity walk's own AccessKit tree is driven the same way and counts the
+`act:` tokens the items gained — `seen` from nothing to one, `stop` and `steps`
+from the composer's one to two. Counted rather than present, because a set
+cannot tell one control from two.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1675,12 +1788,14 @@ costs an operator one read they were being told to make anyway.
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
 | `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
-| `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
+| `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the truncating headline with the selection drawn under it, and the two lines hung beneath a row. The row's own acts split out onto the seam a gesture draws (`convs/menu.rs`). | ~245 |
+| `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
+| `src/ui/model/fill.rs` | which of the composer's two parameter boxes a row menu asked for the cursor in, and the one door that names a conversation and goes there (§4.23). Taken once, by the frame that paints the box. | ~85 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
-| `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, and the unmaking with the name that arms its descendants. | ~90 |
+| `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
-| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the one gate. | ~160 |
+| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every box that takes text, named (§4.23). | ~250 |
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |

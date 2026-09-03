@@ -149,7 +149,20 @@ pub(crate) fn pane(body: impl FnMut(&mut egui::Ui)) -> String {
 /// check: a test that clicks a seat that is not on the glass is a broken test,
 /// and the useful moment to say so is here, with the label in the message.
 pub(crate) fn click(window: &Window, label: &str, mut body: impl FnMut(&egui::Context)) {
-    let at = paint_probe::frame::locate_in(window, label, &mut body)
-        .unwrap_or_else(|| panic!("nothing on the glass reads {label:?}"));
+    let at = aim(window, label, &mut body);
     paint_probe::frame::click(window, at, body);
+}
+
+/// **Secondary-click the seat reading exactly `label`** — the gesture that
+/// opens a row's context menu, aimed the same way and failing the same way.
+pub(crate) fn right_click(window: &Window, label: &str, mut body: impl FnMut(&egui::Context)) {
+    let at = aim(window, label, &mut body);
+    paint_probe::frame::secondary(window, at, body);
+}
+
+/// Where a click on `label` lands, or a failure naming the label that is not
+/// on the glass.
+fn aim(window: &Window, label: &str, body: impl FnMut(&egui::Context)) -> egui::Pos2 {
+    paint_probe::frame::locate_in(window, label, body)
+        .unwrap_or_else(|| panic!("nothing on the glass reads {label:?}"))
 }

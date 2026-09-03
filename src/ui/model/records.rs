@@ -33,6 +33,7 @@ impl Model {
             || self.tuning.is_some()
             || self.records
             || self.queue
+            || self.lookup.is_some()
             || self.unmaking.is_some()
     }
 

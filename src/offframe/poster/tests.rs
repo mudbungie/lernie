@@ -149,3 +149,54 @@ fn an_empty_outbox_sends_nothing() {
     link.settle(&mut model);
     assert_eq!(model.notice, None);
 }
+
+/// **A gesture naming no workspace is FANNED, not routed** (bl-40ec): it has
+/// no way to name a channel, so its subject is every channel the standing set
+/// holds — and each answer is stamped with the channel it came down rather
+/// than with the aim.
+///
+/// Routed instead, it would have gone to the flat root alone and said nothing
+/// about the rest, which is bl-0d54's defect one surface over.
+#[test]
+fn a_gesture_naming_no_workspace_is_asked_of_every_channel() {
+    let scratch = Scratch::new();
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![vec![json!({"ok": true, "kind": "help", "rows": [
+            {"verb": "scan", "usage": "/scan", "summary": "sweep",
+             "detail": "one sweep", "surface": "control"}]})]],
+    );
+    let (link, mut model) = holding(None, crate::verbs::window::help());
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    assert!(
+        engine.heard().contains(&json!({"op": "help"})),
+        "{:?}",
+        engine.heard()
+    );
+    assert_eq!(
+        model.pages.len(),
+        1,
+        "the answer landed under the channel it came down"
+    );
+    assert_eq!(model.pages[0].channel.name, own().name);
+}
+
+/// And a channel that will not open costs only itself — reported against that
+/// channel's own section rather than against the aim.
+#[test]
+fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
+    let scratch = Scratch::new();
+    let (link, mut model) = holding(None, crate::verbs::workspaces());
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    let crate::ui::Held::Unheld(why) = &model.roster[0].held else {
+        panic!(
+            "the leg's failure lands on its own section: {:?}",
+            model.roster[0].held
+        );
+    };
+    assert!(!why.is_empty(), "{why}");
+    assert_eq!(model.notice, None, "and not in the shell-wide bar");
+}

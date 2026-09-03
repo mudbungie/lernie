@@ -90,11 +90,17 @@ lineages = "bl-5c53 — no config-file pane: the lineages and the paths each hol
 # `delete-workspace`, which carries a control on `src/ui/unmake.rs` and is gone
 # from this ledger.
 
-# bl-40ec — three window-level reads reach no gesture: the roster refreshes
-# itself, and help and search have no home at all.
-help = "bl-40ec — no command surface: a verb's page is readable only from the command line"
-search = "bl-40ec — no search surface: nothing finds text across balls, walls or transcripts"
-workspaces = "bl-40ec — the roster is populated by a standing read no gesture reaches or refreshes"
+# bl-40ec landed the window's own reads — the three ops that name no workspace
+# (DESIGN §4.21). `workspaces` carries a control on `src/ui/roster.rs`, `help`
+# on the control that opens `src/ui/commands.rs`, and `search` on the act
+# inside `src/ui/find.rs`; all three are gone from this ledger.
+#
+# What it did NOT close is upstream's and is not a missing surface here: a
+# `search` hit spells its workspace and its project as the ENGINE's own
+# absolute path rather than as the name every gesture carries, so a hit cannot
+# be fed to the act whose keys it spells (yog bl-ef16, the recurrence of yog
+# bl-22ab). The rows are read and the reason is on the glass; there is no line
+# here, because the op is surfaced and this file records absences.
 
 # bl-e3c5 — the Login pane: provider rows over the channel that hosts the wall,
 # and the sign-in posted as a boundary act. (bl-b180 is the defect it answers.)

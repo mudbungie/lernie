@@ -16,7 +16,8 @@
 //! painted.
 
 use crate::ui::{
-    Model, chat, composer, convs, enroll, keys, queue, records, roster, theme, tuning, unmake,
+    Model, chat, commands, composer, convs, enroll, find, keys, queue, records, roster, theme,
+    tuning, unmake,
 };
 
 /// The width policy: the yield, the two shapes, and the three columns.
@@ -61,9 +62,10 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // the composer deposits into is not on the glass while a pane covers it,
     // and a send box whose subject an operator cannot see is a control aimed at
     // something they are not looking at.
-    // **The records pane stands it down too** (bl-2cf7), and the decision queue
-    // with it (bl-f0ef), for the same reason one noun over: the conversation
-    // the composer deposits into is not on the glass while any pane covers it.
+    // **The records pane stands it down too** (bl-2cf7), the decision queue
+    // with it (bl-f0ef), and the window's own two panes with those (bl-40ec),
+    // for the same reason one noun over: the conversation the composer deposits
+    // into is not on the glass while any pane covers it.
     //
     // **And the narrow shape stands it down off every other column**, which is
     // that rule with the word *covers* read literally: the composer acts on the
@@ -157,6 +159,8 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
         || tuning::render(ui, model)
         || records::render(ui, model)
         || queue::render(ui, model)
+        || commands::render(ui, model)
+        || find::render(ui, model)
         || unmake::render(ui, model)
     {
         return;

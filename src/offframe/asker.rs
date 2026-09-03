@@ -25,6 +25,7 @@ use std::path::Path;
 
 use serde_json::Value;
 
+use super::down;
 use crate::state::{Link, Said};
 use crate::ui::Channel;
 
@@ -87,34 +88,14 @@ pub fn tick(link: &Link, root: &Path) {
     }
 }
 
-/// **A question addressed at a CHANNEL**, not at a workspace: the roster read
-/// names none, so there is nothing for the §8.2 mapping to resolve and the
-/// channel has to be opened by the name this box knows it by.
-fn down(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
-    match crate::seat::dial(root, &channel.name).and_then(|open| open.ask(envelope)) {
-        Ok(stream) => file(link, channel, stream),
-        Err(why) => link.heard(channel, Said::Unreachable(why)),
-    }
-}
-
 /// **A question addressed at a WORKSPACE**, which is the ordinary path: the
 /// envelope carries the address the roster handed out, and
 /// [`route`](crate::seat::route) resolves it over this box's entries and
 /// rewrites it to the host's spelling at the one place that mapping is spent.
 fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
     match crate::seat::route(root, envelope).and_then(|(open, carried)| open.ask(&carried)) {
-        Ok(stream) => file(link, channel, stream),
+        Ok(stream) => super::file(link, channel, stream),
         Err(why) => link.heard(channel, Said::Unreachable(why)),
-    }
-}
-
-/// Every frame of one answer, in order. **An answer of no frames is reported as
-/// nothing**, which is what it is: the engine terminated the stream without
-/// saying anything, and a seat that invented a sentence for it would be
-/// speaking for an engine that did not.
-fn file(link: &Link, channel: &Channel, stream: Vec<Value>) {
-    for frame in stream {
-        link.heard(channel, Said::Frame(frame));
     }
 }
 

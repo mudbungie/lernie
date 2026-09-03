@@ -40,6 +40,8 @@ mod start;
 mod tuning;
 /// An unmaking between frames: its subject, its arming, and whether it is asked.
 mod unmake;
+/// The window's own two panes: the engines' verb table, and what a needle found.
+mod window;
 
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
@@ -48,6 +50,7 @@ pub use queue::Asking;
 pub use start::{Phase, Start};
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;
+pub use window::{Hits, Lookup, Pages};
 
 /// Which wall the window is aimed at: the channel it came down, and the address
 /// a gesture must carry. **The address rather than the row's name**, because
@@ -92,6 +95,12 @@ pub struct Model {
     /// **Whether the decision queue is open** — the fourth covering pane, and
     /// the first whose subject is neither the aim nor the selection (`queue`).
     pub queue: bool,
+    /// **Which of the window's own two panes is standing**, if either — the
+    /// sixth and seventh covering panes, and the second and third whose
+    /// subject is every channel (`window`; bl-40ec). One field rather than two
+    /// flags, because no two panes ever stand together and a pair of bools
+    /// would make *both* representable.
+    pub lookup: Option<Lookup>,
     /// **An unmaking, while it stands** — the fifth covering pane, and the only
     /// one this window has whose act cannot be undone by doing the other thing
     /// (`unmake`; DESIGN §4.20). It carries the wall it was opened on rather
@@ -103,6 +112,15 @@ pub struct Model {
     /// is nobody answered yet, and a section holding no row is an engine that
     /// answered and holds nothing waiting (`queue`).
     pub waiting: Vec<Asking>,
+    /// **What each channel last said it answers to** — the same per-channel
+    /// reading, one noun over (`window`; bl-40ec).
+    pub pages: Vec<Pages>,
+    /// **What each channel last found**, on the same terms (`window`).
+    pub found: Vec<Hits>,
+    /// **What to look for.** A box the find pane holds and does not spend on
+    /// firing, because refining a needle is the common act — unlike the
+    /// composer's draft, which was sent (`window`).
+    pub needle: String,
     /// **The steps its loop has taken**, or `None` while nobody has been
     /// answered — the same one-option reading [`Self::roles`] gets (`records`).
     pub steps: Option<crate::reply::steps::Steps>,

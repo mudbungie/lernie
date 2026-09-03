@@ -18,10 +18,10 @@
 //! **The premise has since come true** (bl-4a2c). [`crate::ui::tuning`] is a
 //! settings panel by any reading: a place you go to, act in, and come back
 //! from, holding what a wall's roles are set to. So the walk covers every
-//! covering pane rather than the one — four of them since bl-f0ef — and it is
+//! covering pane rather than the one — seven of them since bl-40ec — and it is
 //! still two gestures each, in and back out, because that bound is what the
 //! assertion is, and it is the same bound whether the seat has one such pane or
-//! four.
+//! seven.
 //!
 //! **And the bound is a fact about the SHAPE, so it is asked per shape**
 //! (bl-dfda). The narrow layout puts one column on the glass at a time, which
@@ -39,7 +39,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Column, Model, Shape, enroll, queue, records, tuning, unmake};
+use crate::ui::{Column, Model, Shape, commands, enroll, find, queue, records, tuning, unmake};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -64,7 +64,7 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The five covered panes, in the order the walk visits them.**
+/// **The seven covered panes, in the order the walk visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
@@ -75,8 +75,10 @@ struct Covered {
 /// (bl-2cf7). The decision queue's control hangs off the roster too, above the
 /// channels rather than off a row, so it stands and falls with the others and
 /// is walked among them (bl-f0ef). The unmaking's control is a third one on the
-/// aimed row and is walked among them for the same reason (bl-48fa).
-const PANES: [Covered; 5] = [
+/// aimed row and is walked among them for the same reason (bl-48fa). The
+/// window's own two hang off the roster above the channels beside the queue's,
+/// and are walked among them for the same reason (bl-40ec).
+const PANES: [Covered; 7] = [
     Covered {
         column: Column::Channels,
         open: queue::OPEN,
@@ -100,6 +102,18 @@ const PANES: [Covered; 5] = [
         open: unmake::OPEN,
         close: unmake::CLOSE,
         heading: unmake::HEADING,
+    },
+    Covered {
+        column: Column::Channels,
+        open: commands::OPEN,
+        close: commands::CLOSE,
+        heading: commands::HEADING,
+    },
+    Covered {
+        column: Column::Channels,
+        open: find::OPEN,
+        close: find::CLOSE,
+        heading: find::HEADING,
     },
     Covered {
         column: Column::Conversation,

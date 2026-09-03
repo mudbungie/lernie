@@ -59,6 +59,12 @@ impl Model {
             // The records pair, on the same terms as the roles above.
             Reply::Steps(listing) => self.steps = Some(listing),
             Reply::Files(answer) => self.files = Some(answer),
+            // **The window's own two, one channel's slice at a time** — each
+            // op names no workspace, so each answer replaces what its channel
+            // last said and leaves the others standing, exactly as a roster
+            // answer and a queue answer do (`window`; bl-40ec).
+            Reply::Help(rows) => self.paged(channel, rows),
+            Reply::Found(found) => self.hit(channel, found),
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the

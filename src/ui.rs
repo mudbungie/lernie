@@ -32,12 +32,16 @@
 pub mod act;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
+/// The commands pane: every op each engine has a word for, and what each does.
+pub mod commands;
 /// The composer: what an operator types, and the gesture it becomes.
 pub mod composer;
 /// The conversation list.
 pub mod convs;
 /// The enrollment pane: a name, a grade, and the symbol that comes back.
 pub mod enroll;
+/// The find pane: text found across everything these engines can see.
+pub mod find;
 /// The keyboard: every act this window affords, without a pointer.
 pub mod keys;
 /// What the window holds between frames, and how a reply becomes part of it.
@@ -59,7 +63,7 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Edit, Enrolling, Grade, Held, Model, Notice, Shown, Tuning,
-    Unmaking,
+    Aim, Asking, Channel, Chunk, Edit, Enrolling, Grade, Held, Hits, Lookup, Model, Notice, Pages,
+    Shown, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

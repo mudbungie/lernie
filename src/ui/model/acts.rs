@@ -87,8 +87,10 @@ impl Model {
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
     /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
-    /// decision queue (bl-f0ef), then an unmaking (bl-48fa) — no two of the
-    /// four ever stand together, so the order among them is never spent. The
+    /// decision queue (bl-f0ef), then whichever of the window's own two is
+    /// standing (bl-40ec — one arm, because one field holds both), then an
+    /// unmaking (bl-48fa) — no two of the six ever stand together, so the
+    /// order among them is never spent. The
     /// unmaking is on the ladder because Escape over a destructive pane means
     /// what [`Model::close_unmaking`] means and nothing else: it unmakes
     /// nothing, and a key that could arm or spend one would be the second
@@ -106,6 +108,8 @@ impl Model {
             self.close_records();
         } else if self.queue {
             self.close_queue();
+        } else if self.lookup.is_some() {
+            self.close_lookup();
         } else if self.unmaking.is_some() {
             self.close_unmaking();
         } else {

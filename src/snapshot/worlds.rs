@@ -1,11 +1,11 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! eight rather than one.
+//! eleven rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
-//! nine are the shapes: nothing dialled yet, seated at a wall with a
-//! conversation open, the wall with none selected, and the six states of the
-//! five panes that cover the conversation.
+//! eleven are the shapes: nothing dialled yet, seated at a wall with a
+//! conversation open, the wall with none selected, and the eight states of the
+//! seven panes that cover the conversation.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -17,7 +17,7 @@
 //! from a second set of their own — a fixture with a field the row grew is a
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
-use crate::test_support::window::{queued, recorded, role, seated, tuned};
+use crate::test_support::window::{commanded, finding, queued, recorded, role, seated, tuned};
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
 /// One named state of the window, as the matrix files it.
@@ -140,6 +140,29 @@ fn queue() -> World {
     }
 }
 
+/// **The window with the commands pane open** — the sixth covered state
+/// (bl-40ec), and the only screen every sentence a help row can carry is on.
+fn commands() -> World {
+    World {
+        name: "commands",
+        model: commanded(),
+    }
+}
+
+/// **The window with the find pane open and answered** — the seventh covered
+/// state (bl-40ec), and the only screen `search`'s control is on.
+///
+/// It is photographed with a needle already in the box, because the control is
+/// what this world exists to put on the glass and it is disabled until there
+/// is one. The unarmed state is the pane's own suite's, where an assertion can
+/// name the sentence beside the greyed control.
+fn find() -> World {
+    World {
+        name: "finding",
+        model: finding(),
+    }
+}
+
 /// **The window with an unmaking standing** — the sixth covered state
 /// (bl-48fa), and the only screen `delete-workspace`'s control is on.
 ///
@@ -171,6 +194,8 @@ pub(crate) fn all() -> Vec<World> {
         assigning(),
         records(),
         queue(),
+        commands(),
+        find(),
         unmaking(),
     ]
 }

@@ -7,8 +7,8 @@
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and eleven of its rows are declared
-//! elsewhere**, in the four files that own their subjects. The conversation's
+//! **[`TABLE`] is the whole roster and twelve of its rows are declared
+//! elsewhere**, in the five files that own their subjects. The conversation's
 //! four are [`super::conversation`]'s, its records' two are
 //! [`super::records`]'s and the decision queue's three are [`super::queue`]'s.
 //! The tuning family's `roles` and `model`
@@ -177,10 +177,12 @@ pub const NUDGE: Verb = Verb {
 /// The conversation's four live in [`super::conversation`], its records' two in
 /// [`super::records`], the queue's three in [`super::queue`] and the wall's one
 /// in [`super::workspace`], named here rather than defined here — one table,
-/// five files, on the seams those files' own docs draw.
+/// six files, on the seams those files' own docs draw. [`super::window`]'s
+/// other member has no row and says why: its word is `lernie help`'s.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
     super::queue::ATTENTION,
+    super::window::SEARCH,
     CONVERSATIONS,
     TRANSCRIPT,
     FOLLOW,

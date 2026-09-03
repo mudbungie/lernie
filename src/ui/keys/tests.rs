@@ -163,6 +163,11 @@ fn escape_puts_the_notice_down() {
 /// which is what lets Escape mean *leave the box* there and *dismiss* here.
 #[test]
 fn nothing_is_bound_while_a_box_is_taking_text() {
+    // **The bound is generous rather than exact.** What is asserted is that
+    // the box CAN take the keyboard, and how many stops away it is is a fact
+    // about how many controls the window happens to offer ahead of it — a
+    // number every pane that lands moves, and one no assertion here is about.
+    const STOPS: usize = 64;
     let mut model = stocked();
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
@@ -170,7 +175,7 @@ fn nothing_is_bound_while_a_box_is_taking_text() {
     // would otherwise walk a list and dismiss a notice.
     window.frame(Vec::new(), &mut body);
     let mut wanted = false;
-    for _ in 0..12 {
+    for _ in 0..STOPS {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
         wanted = window.focused() == Some(egui::Id::new(super::BOX_ID));
         if wanted {

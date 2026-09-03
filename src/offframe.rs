@@ -33,7 +33,10 @@
 use std::path::{Path, PathBuf};
 use std::thread::JoinHandle;
 
-use crate::state::Link;
+use serde_json::Value;
+
+use crate::state::{Link, Said};
+use crate::ui::Channel;
 
 /// One pass of the standing reads.
 pub mod asker;
@@ -41,6 +44,32 @@ pub mod asker;
 pub mod follow;
 /// One pass of the outbox.
 pub mod poster;
+
+/// **A gesture addressed at a CHANNEL**, not at a workspace: it names none, so
+/// there is nothing for the §8.2 mapping to resolve and the channel has to be
+/// opened by the name this box knows it by.
+///
+/// It lives here rather than in one worker because **both** spend it: the
+/// asker fans the standing roster and queue reads over every channel, and the
+/// poster fans a gesture a frame composed that names no workspace (bl-40ec).
+/// Two spellings of *ask this channel and file what it said* would be two
+/// places a stamp or a failure arm could drift.
+pub(crate) fn down(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
+    match crate::seat::dial(root, &channel.name).and_then(|open| open.ask(envelope)) {
+        Ok(stream) => file(link, channel, stream),
+        Err(why) => link.heard(channel, Said::Unreachable(why)),
+    }
+}
+
+/// Every frame of one answer, in order. **An answer of no frames is reported as
+/// nothing**, which is what it is: the engine terminated the stream without
+/// saying anything, and a seat that invented a sentence for it would be
+/// speaking for an engine that did not.
+pub(crate) fn file(link: &Link, channel: &Channel, stream: Vec<Value>) {
+    for frame in stream {
+        link.heard(channel, Said::Frame(frame));
+    }
+}
 
 /// **Start the three threads.** The handles come back so a caller that stopped
 /// the link can wait for the passes in flight to finish; a caller that does not

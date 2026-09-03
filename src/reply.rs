@@ -16,11 +16,12 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Fourteen do
+//! kinds and most of them belong to panes that do not exist here. Sixteen do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — the decision queue and the receipt
-//! that raises a row onto it, a captured run, the detached
+//! that raises a row onto it, the window's own two reads — the engine's verb
+//! table and what a needle found — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
 //! name — and a new box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
@@ -77,6 +78,8 @@ pub mod enrolled;
 pub(crate) mod fields;
 /// What one conversation's worktree holds.
 pub mod files;
+/// The engine's own verb table, which is also the parity roster's source.
+pub mod help;
 /// The decision queue: what is asking for the operator, anywhere.
 pub mod queue;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
@@ -85,6 +88,8 @@ mod read;
 pub mod roles;
 /// The workspace roster — the window's altitude-0 chrome.
 pub mod roster;
+/// Text found across the balls, workspaces and conversations an engine sees.
+pub mod search;
 /// The start family's two receipts.
 pub mod start;
 /// The steps one conversation's loop has taken.
@@ -136,7 +141,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Fourteen, and each is here because a surface
+/// **The kinds the window draws.** Sixteen, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -179,6 +184,13 @@ pub enum Reply {
     /// **What the selected conversation's worktree holds** — the other half,
     /// on the same standing (bl-2cf7).
     Files(files::Files),
+    /// **One engine's own verb table** — what the commands pane paints, and
+    /// the same rows the parity roster is generated from (bl-40ec). It names
+    /// no workspace, so it is one channel's answer and the pane is the union.
+    Help(Vec<help::HelpRow>),
+    /// **What a needle found**, across everything one engine can see — the
+    /// find pane's answer, on the same fanned terms (bl-40ec).
+    Found(search::Found),
     /// One frame of the live tail, and the whole accumulated stream rather
     /// than a delta: a frame **replaces** what a seat holds, so nothing has to
     /// be reassembled and a follow lane needs no second parser.

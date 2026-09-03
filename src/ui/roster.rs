@@ -13,6 +13,11 @@
 use crate::reply::roster::WsRow;
 use crate::ui::{Aim, Channel, Chunk, Model, theme};
 
+/// The four ops whose subject is every channel, and the strip they hang on.
+pub mod acts;
+
+pub use acts::REFRESH;
+
 /// **What a section says while nothing has come down its channel yet.**
 ///
 /// The [`crate::ui::convs`] pane's doctrine one noun over: an empty list is not
@@ -70,23 +75,10 @@ pub fn aimable(model: &Model) -> Vec<Aim> {
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    // **The queue's control hangs here, above the channels** (bl-f0ef), and
-    // above the scrolled region for the reason the heading is: it is the one
-    // thing on this pane that is always offered, and a control an operator has
-    // to scroll a roster to find is a control they use the command line for.
-    //
-    // The roster is its home because the roster is the pane that is already
-    // the union across channels, and `attention` names no workspace — so it
-    // hangs off no row, needs no aim, and is offered on a seat that has not
-    // aimed at anything, which is the seat most likely to be asking. It stands
-    // down under a covering pane exactly as the per-wall controls below do:
-    // what it opens would replace what is standing there.
+    // **The window's own acts hang here, above the channels** — see [`acts`]
+    // for which four they are and why this pane is their home.
     if !model.covered() {
-        let open = ui.button(crate::ui::queue::OPEN);
-        crate::ui::act::tag(&open, &[crate::verbs::ATTENTION.word]);
-        if open.clicked() {
-            model.begin_queue();
-        }
+        acts::render(ui, model);
     }
     // **The list scrolls, and the heading above it does not** (bl-e5d2): a
     // roster longer than its pane used to be cut off mid-glyph at the panel

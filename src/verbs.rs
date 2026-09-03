@@ -88,6 +88,8 @@ mod rows;
 pub mod start;
 /// The role-tuning family: one read, and the three writes it reads back.
 pub mod tuning;
+/// The window's own reads — the two ops whose subject is every channel.
+pub mod window;
 /// The wall's own act — the one row whose product is that its subject is gone.
 pub mod workspace;
 
@@ -103,6 +105,7 @@ pub use rows::{
 };
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
+pub use window::{HELP, SEARCH, search};
 pub use workspace::{DELETE_WORKSPACE, delete_workspace};
 
 /// One verb: the word, what it takes, and what it is for.

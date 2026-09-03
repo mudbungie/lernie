@@ -5,9 +5,11 @@
 # committed" reads as one list.
 #
 # PROVENANCE, AND WHY THE COPY IS DELIBERATELY CLOSE. This scanner is
-# ported from yog's, which is where every rule below was learned and where the
-# ball ids cited in the commentary resolve — they are yog's, not lernie's, and
-# nothing in lernie's store answers to them. The port is kept as near to
+# ported from yog's, which is where every rule below was learned. INHERITED
+# commentary cites yog ball ids, which resolve in yog's store and in no other;
+# a DIVERGENCE written here cites this store's, and the two are told apart by
+# what the paragraph is doing rather than by the id. The port is kept as near
+# to
 # byte-identical as the two trees allow for one reason: two copies of a rule
 # table drift within a week, and the only cheap defence is that `diff` against
 # the upstream file stays short enough to read. Every deliberate divergence is
@@ -175,13 +177,29 @@ RULES=(private-key vendor-token credential-assignment ipv4-routable
 # The path rule. Not a content rule: what is wrong with `.env` is that it
 # exists at all, whatever is in it.
 #
-# THRALL'S OWN KEY MATERIAL IS ALREADY COVERED, by shape rather than by name.
-# A foot holds an operator-issued leaf and its key, carried to the box by hand
-# (DESIGN §3.3), and `\.(pem|key|…)$` is exactly that pair — so a certificate
-# accidentally added to the repo is refused before there is any code to read
-# it. When the channel lands (bl-a4a5) and names a directory for entries and
-# key material, that directory joins this pattern beside `.ssh` and `.aws`:
-# the same argument, and the fixture gains the line the day the name exists.
+# THIS SEAT'S OWN KEY MATERIAL IS ALREADY COVERED, by shape rather than by
+# name. The seat never mints: the operator's CA issues this box's leaf and key
+# elsewhere and they are carried here by hand (DESIGN §3, §4.5), and
+# `\.(pem|key|…)$` is exactly that pair — `ca.pem`, `client.pem`, `client.key`
+# — so material accidentally added to this repo is refused whatever directory
+# it was dropped into.
+#
+# THE DIRECTORY THAT HOLDS IT IS DELIBERATELY NOT NAMED. The note that stood
+# here was the foot component's and looked forward to a channel landing; the
+# channel has landed, and entries and material live under this crate's own
+# data root (`src/paths.rs`). That name may NOT join the alternation beside
+# `.ssh` and `.aws`: it is the repository's own name, so it would match
+# ordinary paths throughout this tree and fire on source rather than on a
+# secret. The extension arm already refuses three of the four files under it,
+# and the fourth, `address`, is a host name — ipv4-routable's question and
+# home-path's, not this rule's.
+#
+# `.config/brazen` STAYS (bl-5814), and the reason is that no entry in this
+# arm is here because this crate LINKS the thing: it links no ssh, no AWS SDK
+# and no GnuPG either. The arm names directories that hold credentials on the
+# BOX THE GATE RUNS ON, and the operator who runs this seat runs the LLM
+# adapter beside it — same hand, same home. Dropping it would forgo a real
+# shape to save one alternation.
 FORBIDDEN_PATH='(^|/)(\.env(\..+)?|\.netrc|\.npmrc|\.pypirc|credentials\.json|id_(rsa|dsa|ecdsa|ed25519)(\.pub)?)$|(^|/)(\.ssh|\.aws|\.claude|\.gnupg|\.config/brazen)/|\.(pem|key|p12|pfx|jks|keystore|jsonl|kdbx)$'
 
 # The unreadable-content rule (bl-167d). `grep -I` silently SKIPS binary

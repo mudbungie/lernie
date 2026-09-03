@@ -1,7 +1,8 @@
 +++
 title = "the decision queue has no pane, so a flag raised on a conversation is readable nowhere from this seat"
 created = 1788319410
-updated = 1788319410
+updated = 1788400185
+claimant = "Queuewright"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

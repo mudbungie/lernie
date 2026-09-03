@@ -6,7 +6,7 @@
 //! own words, which is a sentence an operator can act on rather than a control
 //! that only looks actionable.
 
-use crate::ui::{Model, chat, composer, convs, enroll, keys, roster, theme, tuning};
+use crate::ui::{Model, chat, composer, convs, enroll, keys, records, roster, theme, tuning};
 
 /// Paint one frame of the whole window.
 ///
@@ -41,7 +41,10 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // the composer deposits into is not on the glass while a pane covers it,
     // and a send box whose subject an operator cannot see is a control aimed at
     // something they are not looking at.
-    if model.enroll.is_none() && model.tuning.is_none() {
+    // **The records pane stands it down too** (bl-2cf7), for the same reason
+    // one noun over: the conversation the composer deposits into is not on
+    // the glass while any pane covers it.
+    if !model.covered() {
         egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
     }
     // **The enrollment stands where the conversation would**, and it is the one
@@ -55,7 +58,7 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // rather than a rule with an exception: it is the one that holds a secret,
     // and the material's whole product is a short life on a display.
     egui::CentralPanel::default().show(ctx, |ui| {
-        if enroll::render(ui, model) || tuning::render(ui, model) {
+        if enroll::render(ui, model) || tuning::render(ui, model) || records::render(ui, model) {
             return;
         }
         chat::render(ui, model);

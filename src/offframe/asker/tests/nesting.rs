@@ -121,6 +121,72 @@ fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
     assert_eq!(model.roles, Some(Vec::new()), "the answer is filed");
 }
 
+/// **The records pair stands on its pane exactly as the roles read does**
+/// (bl-2cf7): the selected conversation is asked what its loop did and what
+/// its worktree holds only while somebody is looking — and both answers are
+/// filed through the one door.
+#[test]
+fn the_records_reads_stand_only_while_the_records_pane_is_open() {
+    let scratch = Scratch::new();
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "transcript", "rows": []})],
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "transcript", "rows": []})],
+            vec![json!({"ok": true, "kind": "steps", "rows": [], "orphan": "none"})],
+            vec![json!({"ok": true, "kind": "files", "worktree": false})],
+        ],
+    );
+    let own = Channel {
+        name: crate::seat::OWN.to_owned(),
+        named_there: None,
+        dials: None,
+    };
+    let mut model = Model {
+        roster: vec![Chunk::of(own.clone())],
+        aim: Some(Aim {
+            channel: own.name.clone(),
+            address: "home".to_owned(),
+        }),
+        conversation: Some("20260830T051200Z-a1b2".to_owned()),
+        ..Model::default()
+    };
+    let link = asking(&model);
+    tick(&link, scratch.path());
+    model.begin_records();
+    link.settle(&mut model);
+    tick(&link, scratch.path());
+    let ops: Vec<String> = engine
+        .heard()
+        .iter()
+        .filter_map(|said| said.get("op").and_then(Value::as_str))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(
+        ops,
+        vec![
+            "workspaces",
+            "conversations",
+            "transcript",
+            "workspaces",
+            "conversations",
+            "transcript",
+            "steps",
+            "files",
+        ]
+    );
+    link.settle(&mut model);
+    assert!(
+        model.steps.is_some() && model.files.is_some(),
+        "both answers are filed"
+    );
+}
+
 /// A standing set with nothing in it asks nothing at all — the general path
 /// with no input, not a case of its own.
 #[test]

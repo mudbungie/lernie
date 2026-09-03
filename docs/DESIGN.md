@@ -316,12 +316,14 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Ten kinds, because ten are painted.** The engine's reply surface is
+**Twelve kinds, because twelve are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
 conversation itself (`transcript`), the live tail
-(`follow`), a captured run (`outcome`), the detached advance's receipt
+(`follow`), the conversation's records pair — the steps its loop took
+(`steps`) and what its worktree holds (`files`), both §4.18's — a captured
+run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
 the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
@@ -331,7 +333,11 @@ lands a pane is the ball that adds its kind.
 `corpus/unreadable/` from the PROTOCOL 6 refresh — a perfectly good frame of a
 kind nothing painted — and the commit that moved it to `corpus/answers/` is the
 commit that built the pane. The diff of that move is the record of what the
-release added, which is exactly what the ledger is for.
+release added, which is exactly what the ledger is for. The records pair
+(bl-2cf7) is the pattern's second spend: `steps` and `files` made the same
+move in the commit that built §4.18's pane, and the five conversation reads
+still in `unreadable/` (`agent`, `step`, `inbox`, `rail`, `governing`) are the
+ledger holding the two balls that will move them (bl-3257, bl-b52c).
 
 **A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
 (bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
@@ -497,11 +503,14 @@ parameters are not all strings is **not** added as a special case — it goes
 through `ask` until there is a reframe that keeps the one table, because the arm
 that would carry it is precisely the second implementation the rule forbids.
 
-**Nine rows and thirteen gestures — the table and the roster are not one list.**
+**The table and the roster are not one list, and neither count is written
+here** — two were, and both rotted the way every restated count in this suite
+rots; `src/verbs/rows.rs`'s `TABLE` is the one home.
 The *roster* is the gestures whose replies §4.9 paints, and it grows with the
 paint surface: the ball that lands a pane adds its kind and its gesture in the
-same breath. The *table* is the subset a word can spell, and it is nine because
-four of them cannot be. Two modules hold the four and each is the same rule
+same breath. The *table* is the subset a word can spell, and it trails the
+roster by exactly four gestures that cannot be rows. Two modules hold the
+four and each is the same rule
 applied. `src/verbs/start.rs`: `prepare` carries a payload rung and `prompt`
 carries a prepared body, and a nested object is not a word an operator types, so
 what argv types instead is the composite below. `src/verbs/tuning.rs` (§4.17):
@@ -1120,6 +1129,37 @@ name — a config written by a hand, or by a newer engine — is §4.9's rung 3 
 the glass: painted as itself, because four unselected seats would otherwise say
 the level is *off*, which is a different claim from the one the file makes.
 
+### 4.18 The records pane: the conversation's own ledger, on the tuning pane's standing (bl-2cf7)
+
+`src/ui/records.rs`. **The third covering pane, and §4.17's shape one noun
+over**: the subject is the SELECTED CONVERSATION where tuning's is the aimed
+wall, and every joint carries across. bl-213c built the conversation's ACTS —
+each answers a captured run, a kind this seat already painted — and left its
+records, each answering a kind nothing decoded. This pane lands the two an
+operator actually reaches for: **what the loop did** (`steps` — each step's
+framing, cost, retries, wound and sign-in want, under the view-level
+orphaned-tail banner) and **what it touched** (`files` — the walked worktree,
+whose ABSENCE is a different claim from an empty listing and paints as a
+different sentence, plus where the work lands when the listing does not reach
+it).
+
+**The reads are standing and keyed on the PANE** (`Standing::records`), for
+§4.17's reason verbatim: nothing on the glass is ever this end's prediction,
+and a seat with no records surface open asks nothing on any beat. The pane
+holds no state at all — not even a draft, which is one less than tuning holds
+— and it goes down when its subject moves: selecting another conversation or
+aiming at another wall retires the pane and both answers, because a pane
+about *the selected conversation* left standing over a new selection would
+paint one conversation's records under another's name for a beat.
+
+**One control opens it and carries both reads' tags** (`act:steps act:files`),
+leading the composer's second row — the composer being the pane that already
+acts on the selected conversation, and the chat pane being a pure projection
+no control may be the first exception to. The deeper reads stay in the
+exemption ledger on two seams: the spine (`rail`, `governing`, and the `fork`
+whose `from` only the rail can offer — bl-b52c) and the depth under this pane
+(`agent`, `step`, `inbox` — bl-3257).
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1143,7 +1183,7 @@ the level is *off*, which is a different claim from the one the file makes.
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/reply.rs` | the reply vocabulary's roster: the nine kinds, the three outcomes one frame can be, and the four-rung decode policy stated once. | ~190 |
+| `src/reply.rs` | the reply vocabulary's roster: the kinds (`Reply` is the one census), the three outcomes one frame can be, and the four-rung decode policy stated once. | ~200 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
 | `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
 | `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
@@ -1157,9 +1197,12 @@ the level is *off*, which is a different claim from the one the file makes.
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |
 | `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
+| `src/reply/steps.rs` | the steps a conversation's loop has taken: one strict row per step, the nested spend, and the class tokens carried verbatim with `"none"` the one word the pane reads (§4.18). | ~135 |
+| `src/reply/files.rs` | what a conversation's worktree holds: the listing whose absence is a fact, the bounded preview's three classes plus the rung-3 word, and where the work lands (§4.18). | ~125 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
+| `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
@@ -1175,6 +1218,8 @@ the level is *off*, which is a different claim from the one the file makes.
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
+| `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
+| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question three panes share. | ~65 |
 | `src/ui/convs.rs` | the aimed wall's conversations. | ~110 |
 | `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
@@ -1198,8 +1243,8 @@ the level is *off*, which is a different claim from the one the file makes.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, the one settled frame, and which widths the layout still promises a shape. `cfg(test)`. | ~125 |
-| `src/snapshot/worlds.rs` | the six named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen and the tuning pane's two are among them. `cfg(test)`. | ~120 |
-| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's two covered panes and back, asked of the accessibility tree. Two legs per pane, and the length is the bound. `cfg(test)`. | ~115 |
+| `src/snapshot/worlds.rs` | the seven named world states the matrix photographs, built from the window fixtures rather than from a second set. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two and the records pane's are among them. `cfg(test)`. | ~140 |
+| `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's three covered panes and back, asked of the accessibility tree. Two legs per pane, and the length is the bound. `cfg(test)`. | ~130 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |

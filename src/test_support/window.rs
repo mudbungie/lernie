@@ -110,6 +110,76 @@ pub(crate) fn tuned() -> Model {
     }
 }
 
+/// One step, complete and quiet — the row with nothing to complain about.
+pub(crate) fn step(seq: &str) -> crate::reply::steps::StepRow {
+    crate::reply::steps::StepRow {
+        seq: seq.to_owned(),
+        framing: "complete".to_owned(),
+        attempts: 1,
+        tokens: crate::reply::steps::Spend {
+            input: 11,
+            output: 22,
+            cache_read: 33,
+            cache_write: 44,
+            total: 99,
+        },
+        commit: Some("abcdef1".to_owned()),
+        started_at: Some("2026-08-30T05:12Z".to_owned()),
+        ended_at: Some("2026-08-30T05:14Z".to_owned()),
+        auth_failed: false,
+        auth_row: None,
+        wound: crate::reply::steps::NONE.to_owned(),
+        wound_reason: None,
+    }
+}
+
+/// **The seated model with the records pane open and answered** (bl-2cf7):
+/// a quiet step and a wounded one, and a walked worktree with work landing
+/// elsewhere — every sentence the pane can say, on one screen.
+pub(crate) fn recorded() -> Model {
+    let wounded = crate::reply::steps::StepRow {
+        seq: "002".to_owned(),
+        framing: "failed".to_owned(),
+        attempts: 2,
+        commit: None,
+        started_at: None,
+        ended_at: None,
+        auth_failed: true,
+        auth_row: Some("housevendor".to_owned()),
+        wound: "no_response".to_owned(),
+        wound_reason: Some("no bytes".to_owned()),
+        ..step("002")
+    };
+    Model {
+        records: true,
+        steps: Some(crate::reply::steps::Steps {
+            rows: vec![step("001"), wounded],
+            orphan: "mail".to_owned(),
+            orphan_reason: Some("driver died".to_owned()),
+        }),
+        files: Some(crate::reply::files::Files {
+            listing: Some(crate::reply::files::Listing {
+                rows: vec![
+                    crate::reply::files::FileRow {
+                        path: "src".to_owned(),
+                        size: 0,
+                        dir: true,
+                    },
+                    crate::reply::files::FileRow {
+                        path: "src/a.rs".to_owned(),
+                        size: 12,
+                        dir: false,
+                    },
+                ],
+                truncated: true,
+            }),
+            preview: None,
+            working_dir: Some("/home/u/elsewhere".to_owned()),
+        }),
+        ..seated()
+    }
+}
+
 /// Everything one idle frame of the whole window painted.
 pub(crate) fn painted(model: &mut Model) -> String {
     Window::new().text(|ctx| crate::ui::render(ctx, model))

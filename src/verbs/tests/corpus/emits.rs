@@ -4,7 +4,7 @@
 //!
 //! Split from [`super`] on the seam the corpus itself draws: that half asks
 //! whether a gesture can be READ and routed, which is a question about every
-//! op in the vocabulary, and this one asks whether the thirteen this seat
+//! op in the vocabulary, and this one asks whether the ones this seat
 //! WRITES come out right. The two change for different reasons — a verb added moves
 //! this file, a shape added upstream moves that one.
 //!
@@ -34,6 +34,14 @@ const BARE: &str = "bare";
 /// landed here — fails until the reason is rewritten, which is the whole point
 /// of writing it down.
 const UNEMITTED: &[(&str, usize, &str)] = &[
+    (
+        "files",
+        3,
+        "the `at` and `path` forms: this seat composes the bare listing only \
+         — pinning a commit and previewing one file are controls the records \
+         pane does not have yet, and a seat that guessed either would answer \
+         a question nobody asked",
+    ),
     (
         "stop",
         1,

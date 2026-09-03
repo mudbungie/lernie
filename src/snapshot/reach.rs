@@ -30,7 +30,7 @@
 //! The accessibility tree is the set of things that ARE controls, which is the
 //! set the question is about.
 
-use crate::ui::{Model, enroll, tuning};
+use crate::ui::{Model, enroll, records, tuning};
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
@@ -51,7 +51,10 @@ pub(crate) struct Step {
 /// row and each stands the other down while it is open — so a walk that opened
 /// the enrollment first would find the tuning control gone and complain about
 /// a seat that is behaving exactly as designed.
-pub(crate) const WALK: [Step; 4] = [
+/// The records pane goes last for the mirror of that reason: its control
+/// hangs off the composer, which every covering pane stands down — so it is
+/// walked once both roster-row panes have been closed again (bl-2cf7).
+pub(crate) const WALK: [Step; 6] = [
     Step {
         gesture: tuning::OPEN,
         then: tuning::HEADING,
@@ -67,6 +70,14 @@ pub(crate) const WALK: [Step; 4] = [
     Step {
         gesture: enroll::CLOSE,
         then: enroll::OPEN,
+    },
+    Step {
+        gesture: records::OPEN,
+        then: records::HEADING,
+    },
+    Step {
+        gesture: records::CLOSE,
+        then: records::OPEN,
     },
 ];
 

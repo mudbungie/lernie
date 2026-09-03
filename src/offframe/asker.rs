@@ -1,10 +1,12 @@
 //! **The asker**: one pass over the standing question set.
 //!
-//! Four questions and they nest. Every channel is asked for its own roster —
+//! The questions nest. Every channel is asked for its own roster —
 //! which is what makes the roster a **union across channels**, composed here
 //! rather than anywhere on the wire. The aimed wall is asked for its
 //! conversations, and — while the tuning pane is open on it — for what its
-//! roles are set to. The selected conversation is asked for its transcript.
+//! roles are set to. The selected conversation is asked for its transcript,
+//! and — while the records pane is open on it — for its steps and its
+//! worktree's files (bl-2cf7).
 //!
 //! **The roles read is standing rather than one-shot**, which is what lets
 //! every control on that pane state the engine's fact instead of this end's
@@ -55,8 +57,25 @@ pub fn tick(link: &Link, root: &Path) {
         link,
         root,
         &channel,
-        &crate::verbs::transcript(aim.address, conversation),
+        &crate::verbs::transcript(aim.address.clone(), conversation.clone()),
     );
+    // **The records pair stands on the pane exactly as the roles read does**
+    // (bl-2cf7): the selected conversation is asked what its loop did and
+    // what its worktree holds only while somebody is looking.
+    if standing.records {
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::steps(aim.address.clone(), conversation.clone()),
+        );
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::files(aim.address, conversation),
+        );
+    }
 }
 
 /// **A question addressed at a CHANNEL**, not at a workspace: the roster read

@@ -16,11 +16,12 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Ten do
+//! kinds and most of them belong to panes that do not exist here. Twelve do
 //! not: the roster, the conversation list, one workspace's role tuning, the
-//! transcript, the live tail, a captured run, the detached advance's receipt,
-//! the start family's two — the staged body and the minted name — and a new
-//! box's material. A kind nothing renders is a kind
+//! transcript, the live tail, the conversation's records pair — the steps its
+//! loop took and what its worktree holds — a captured run, the detached
+//! advance's receipt, the start family's two — the staged body and the minted
+//! name — and a new box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
 //! next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
 //! for what is not.
@@ -73,6 +74,8 @@ pub mod convs;
 pub mod enrolled;
 /// The strict field readers every decoder below shares.
 pub(crate) mod fields;
+/// What one conversation's worktree holds.
+pub mod files;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
 mod read;
 /// What one workspace's roles are set to, and how each is tuned.
@@ -81,6 +84,8 @@ pub mod roles;
 pub mod roster;
 /// The start family's two receipts.
 pub mod start;
+/// The steps one conversation's loop has taken.
+pub mod steps;
 /// The live tail's fold.
 pub mod stream;
 /// The conversation itself.
@@ -128,7 +133,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Ten, and each is here because a surface
+/// **The kinds the window draws.** Twelve, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -154,6 +159,12 @@ pub enum Reply {
     /// One conversation's committed entries with the live tail folded on —
     /// the whole of what the chat pane paints.
     Transcript(transcript::Transcript),
+    /// **The steps the selected conversation's loop has taken** — one half of
+    /// what the records pane paints, standing while it is open (bl-2cf7).
+    Steps(steps::Steps),
+    /// **What the selected conversation's worktree holds** — the other half,
+    /// on the same standing (bl-2cf7).
+    Files(files::Files),
     /// One frame of the live tail, and the whole accumulated stream rather
     /// than a delta: a frame **replaces** what a seat holds, so nothing has to
     /// be reassembled and a follow lane needs no second parser.

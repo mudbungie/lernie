@@ -42,6 +42,8 @@ pub mod enroll;
 pub mod keys;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
+/// The records pane: what a conversation's loop did, and what it touched.
+pub mod records;
 /// The roster: every workspace this seat can reach, grouped by channel.
 pub mod roster;
 /// The layout, and the notice that stands where content would have been.

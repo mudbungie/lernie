@@ -52,17 +52,23 @@ scan = "bl-4c48 — no fleet controls: nothing flushes a workspace's inboxes fro
 science = "bl-4c48 — no fleet controls: the delivery attempts and their costs are unpainted"
 work-diff = "bl-4c48 — no fleet controls: what the agents changed is readable nowhere"
 
-# bl-2cf7 — the conversation's records have no pane: nothing here reads
-# what is under a conversation, and the fork's two arguments are named off two
-# of those reads. (bl-213c built the acts half; these are what it left.)
-agent = "bl-2cf7 — no conversation records pane: the selected conversation's own row is unpainted"
-files = "bl-2cf7 — no conversation records pane: the working files are readable nowhere"
-fork = "bl-2cf7 — no conversation records pane: `from` is a commit off the rail and `role` a name off the lineages, and this seat reads neither — a control demanding two strings nothing here can discover only looks actionable"
-governing = "bl-2cf7 — no conversation records pane: the governing config commit is unpainted"
-inbox = "bl-2cf7 — no conversation records pane: undelivered mail is readable nowhere"
-rail = "bl-2cf7 — no conversation records pane: the spine and its operable commits are unpainted"
-step = "bl-2cf7 — no conversation records pane: one step's records are readable nowhere"
-steps = "bl-2cf7 — no conversation records pane: the steps taken are painted nowhere"
+# bl-2cf7 landed the records pane — `steps` and `files` carry a control on
+# `src/ui/composer/acts.rs` and are gone from this ledger. What it left it
+# left on two seams, each cited to its own ball below.
+#
+# bl-b52c — the conversation's spine: the rail's operable commits, the
+# governing config commit, and the fork whose `from` is a commit an operator
+# can only discover off the rail.
+fork = "bl-b52c — no spine surface: `from` is a commit off the rail and `role` a name off the lineages, and this seat reads neither — a control demanding two strings nothing here can discover only looks actionable"
+governing = "bl-b52c — no spine surface: the governing config commit is unpainted"
+rail = "bl-b52c — no spine surface: the spine and its operable commits are unpainted"
+
+# bl-3257 — the conversation's deeper records: its own row whole, one step's
+# drill-in under the steps list the records pane now paints, and the
+# undelivered mail.
+agent = "bl-3257 — no deep-records surface: the selected conversation's own row is unpainted"
+inbox = "bl-3257 — no deep-records surface: undelivered mail is readable nowhere"
+step = "bl-3257 — no deep-records surface: one step's records are readable nowhere, though the steps list now paints the seq that addresses them"
 
 # bl-8ffa — a prepared start cannot be fanned, and no candidate can be accepted
 # or retired.

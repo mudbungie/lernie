@@ -71,6 +71,13 @@ pub struct Standing {
     /// nobody has a use for is still a question the engine answers on every
     /// beat, forever.
     pub tuning: bool,
+    /// **Whether the records pane is open**, which is the selected
+    /// conversation's own second question — what its loop did and what its
+    /// worktree holds (bl-2cf7). Keyed on the PANE for the reason
+    /// [`Self::tuning`] is: the reads are cheap, and a standing question
+    /// nobody has a use for is still one the engine answers on every beat,
+    /// forever.
+    pub records: bool,
     /// The selected conversation, whose transcript is the third — and whose
     /// live tail is the held read.
     ///
@@ -93,6 +100,7 @@ impl Standing {
                 .collect(),
             aim: model.aim.clone(),
             tuning: model.tuning.is_some(),
+            records: model.records,
             conversation: model.asked(),
         }
     }

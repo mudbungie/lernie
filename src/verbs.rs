@@ -29,7 +29,9 @@
 //! adds its kind and its gesture in the same breath. **A gesture whose reply is
 //! a captured run is already painted**, which is why the conversation's four
 //! acts ([`conversation`]) could be rows the day the ledger asked for them and
-//! its seven *records* could not (bl-213c) — and why the tuning family's three
+//! its *records* could not (bl-213c) — `steps` and `files` became rows
+//! ([`records`]) in the breath that landed their decoders and the records
+//! pane (bl-2cf7) — and why the tuning family's three
 //! writes ([`tuning`]) could be composed the day the ledger asked for those.
 //! The **table** is the subset of the roster a word can spell, and four
 //! gestures cannot be one. Two modules hold them and each says why. [`start`]:
@@ -76,6 +78,8 @@ pub mod conversation;
 pub mod doors;
 /// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
+/// The conversation's records — the reads under one, as rows.
+pub mod records;
 /// The reads and the deposit, as data — the rows this seat had first.
 mod rows;
 /// The start family's two envelopes, which are doors without rows.
@@ -86,6 +90,7 @@ pub mod tuning;
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };
+pub use records::{FILES, STEPS, files, steps};
 use rows::TABLE;
 pub use rows::{
     CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,

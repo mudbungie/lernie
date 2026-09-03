@@ -184,7 +184,7 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     // both stand down while a pane already covers the conversation: what they
     // open would replace what is standing there, so offering them is offering
     // to lose it without saying so.
-    if !aimed || model.enroll.is_some() || model.tuning.is_some() {
+    if !aimed || model.covered() {
         return;
     }
     if ui.button(crate::ui::enroll::OPEN).clicked() {

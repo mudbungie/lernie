@@ -8,14 +8,16 @@
 //! added to either moves one file, which is the test that a seam is real.
 //!
 //! **Every one of them answers a captured run**, which is the reason these four
-//! and not the other eight: [`crate::reply::Reply::Outcome`] is a kind this
+//! could land first: [`crate::reply::Reply::Outcome`] is a kind this
 //! seat already reads and already paints, so a control that fires one of these
 //! is answered rather than met with *"this build cannot read that kind"*. The
-//! conversation's *records* — its own row, its steps, one step's records, its
-//! files, its spine, its governing commit, its inbox — each answer a kind
-//! nothing here decodes, and the fork's two arguments are read off two of them.
-//! They are recorded absent in `parity.toml` and cited to the ball that will
-//! build the pane.
+//! conversation's two everyday *records* — its steps and its files — passed
+//! the same admission test when bl-2cf7 gave each a decoder and the records
+//! pane ([`super::records`]). The deeper reads — its own row whole, one
+//! step's drill-in, its spine, its governing commit, its inbox, and the fork
+//! whose two arguments are read off the spine — still answer kinds nothing
+//! here decodes, and stay recorded absent in `parity.toml`, each cited to the
+//! ball that will build its surface.
 //!
 //! **The rows are the wire's own field names**, in the order the envelope
 //! spells them, exactly as [`super::rows`] states: a `params` that drifted off

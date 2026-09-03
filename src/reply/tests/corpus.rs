@@ -38,8 +38,8 @@ fn replay(class: &str, expected: impl Fn(&Read) -> bool) {
     }
 }
 
-/// Every frame this build paints — the eight kinds' vendored fixtures, and the
-/// seat's own frames for the rung-3 readings upstream's codec cannot emit.
+/// Every frame this build paints — the painted kinds' vendored fixtures, and
+/// the seat's own frames for the rung-3 readings upstream's codec cannot emit.
 #[test]
 fn the_answers_are_answers() {
     replay("answers", |answered| matches!(answered, Read::Answer(_)));

@@ -29,6 +29,8 @@ mod claim;
 mod enroll;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
+/// The records pane between frames: open or not, and what its two reads filed.
+mod records;
 /// A start, between its two acts.
 mod start;
 /// The tuning pane between frames, and the four acts its controls spend.
@@ -75,9 +77,16 @@ pub struct Model {
     /// because here the option carries the whole distinction (`tuning`).
     pub roles: Option<Vec<crate::reply::roles::RoleRow>>,
     /// **The tuning pane, while it is open** — the second pane in this window
-    /// that covers the conversation, and the only one that is a place rather
-    /// than a moment ([`Tuning`]).
+    /// that covers the conversation ([`Tuning`]).
     pub tuning: Option<Tuning>,
+    /// **Whether the records pane is open** on the selected conversation — the
+    /// third covering pane, and a flag because it has one state (`records`).
+    pub records: bool,
+    /// **The steps its loop has taken**, or `None` while nobody has been
+    /// answered — the same one-option reading [`Self::roles`] gets (`records`).
+    pub steps: Option<crate::reply::steps::Steps>,
+    /// **What its worktree holds**, on the same standing (`records`).
+    pub files: Option<crate::reply::files::Files>,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The live tail as this seat has accumulated it. It **replaces**, never
@@ -179,6 +188,9 @@ impl Model {
             // Filed whether or not the pane is open: the read stands only while
             // it is, so a frame after it closed is the last one in flight.
             Reply::Roles(rows) => self.roles = Some(rows),
+            // The records pair, on the same terms as the roles above.
+            Reply::Steps(listing) => self.steps = Some(listing),
+            Reply::Files(answer) => self.files = Some(answer),
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the

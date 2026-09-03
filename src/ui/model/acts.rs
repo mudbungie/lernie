@@ -56,6 +56,7 @@ impl Model {
         // asked yet, and the old wall's answer is not this wall's.
         self.tuning = None;
         self.roles = None;
+        self.retire_records();
     }
 
     /// **Select a conversation**, by the id every gesture addresses it with.
@@ -63,6 +64,10 @@ impl Model {
         self.conversation = Some(root_id.to_owned());
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
+        // **The records pane goes with the conversation it was opened on**
+        // (bl-2cf7) — the same rule the tuning pane keeps for its wall, one
+        // noun over (`super::records`).
+        self.retire_records();
     }
 
     /// **Put the notice down.** An operator who has read a refusal should not
@@ -81,9 +86,10 @@ impl Model {
     /// closes that pane is the control that forgets. Then a draft assignment,
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
-    /// Then the tuning pane itself. With nothing covering, the notice is the
-    /// only thing left to put down, and Escape is its × reached without a
-    /// pointer.
+    /// Then the tuning pane itself, then the records pane (bl-2cf7) — the two
+    /// never stand together, so the order between them is never spent. With
+    /// nothing covering, the notice is the only thing left to put down, and
+    /// Escape is its × reached without a pointer.
     pub fn escape(&mut self) {
         if self.enroll.is_some() {
             self.close_enrollment();
@@ -91,6 +97,8 @@ impl Model {
             self.cancel_assignment();
         } else if self.tuning.is_some() {
             self.close_tuning();
+        } else if self.records {
+            self.close_records();
         } else {
             self.dismiss();
         }

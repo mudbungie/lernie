@@ -108,7 +108,27 @@ use super::frame;
 /// also carried the `roles` shape, which nothing here paints yet and which
 /// therefore landed in the corpus ledger — `corpus/README.md` on why that
 /// directory is the record rather than an oversight.
-pub const PROTOCOL: u32 = 7;
+///
+/// **8 is a bump for a shape this seat does not speak either half of**
+/// (REMOTE §5.1, upstream bl-66d4; bl-2604 here). `reply/advertised` gained
+/// **`wrote`**, a required boolean saying whether the engine stored the
+/// presented tool set or found it identical to what it held and wrote nothing.
+/// It is required rather than optional-absent-reads-false on purpose:
+/// absent would decode as *"nothing was restored"* — the reassuring answer —
+/// on exactly the build too old to tell.
+///
+/// **The fact is a foot's, not a seat's.** `advertise` is the tool host's
+/// gesture, and a `true` on any re-presentation after the first is that host
+/// learning some other connection bearing its certificate blanked its set
+/// while it was executing and holding no parked read. A seat presents no set,
+/// so this end has no gesture to receive the receipt for and nothing to say
+/// about it: the fixture stays in `corpus/unreadable/`, the shape keeps
+/// falling to [`crate::reply::read`]'s unknown-kind arm, and the pane that
+/// would paint a tool host's state does not exist here yet (bl-e53c). Third
+/// consecutive integer bought without a field, and — like the two before it —
+/// the corpus refresh is the whole of what the re-vendor moved: one signature,
+/// one fixture, nothing else in forty-seven shapes.
+pub const PROTOCOL: u32 = 8;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

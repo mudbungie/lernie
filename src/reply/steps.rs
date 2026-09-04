@@ -19,9 +19,9 @@
 //!
 //! The timestamps and the read-state commit are absent keys when the step's
 //! own record did not carry them, and upstream is explicit that nothing stands
-//! in for a fact nobody recorded. `auth_row` absent under `auth_failed` means
-//! the affordance is offered with nothing derivable to point it at; a reason
-//! key absent beside a wound or an orphan is a class that left no words.
+//! in for a fact nobody recorded. `auth_row` absent under a [`REFUSED`] wound
+//! means the affordance is offered with nothing derivable to point it at; a
+//! reason key absent beside a wound or an orphan is a class that left no words.
 
 use serde_json::{Map, Value};
 
@@ -33,6 +33,17 @@ pub(crate) const KIND: &str = "steps";
 /// The engine's word for a wound or an orphan that is not there. The one
 /// token the pane reads rather than paints — an absence stated once.
 pub const NONE: &str = "none";
+
+/// The wound class that is a **provider refusal**, and the second token this
+/// module reads rather than paints.
+///
+/// It became the reading at PROTOCOL 9, where `auth_failed` — a boolean beside
+/// `auth_row` saying the same thing — was deleted from the row (yog's REMOTE
+/// §9.16: *"a seat that read `auth_failed` reads `wound == \"refused\"`
+/// instead"*). One encoder writes the wound on both this shape and the
+/// transcript's, so the affordance and the wound badge cannot drift into two
+/// dialects of one enum, which is what the boolean allowed.
+pub const REFUSED: &str = "refused";
 
 /// The steps listing whole: the rows, and the orphaned-tail state that is the
 /// view's own fact rather than any row's.
@@ -61,9 +72,8 @@ pub struct StepRow {
     pub commit: Option<String>,
     pub started_at: Option<String>,
     pub ended_at: Option<String>,
-    /// Whether the sign-in affordance is offered on this step.
-    pub auth_failed: bool,
-    /// The provider row it points at, where one was derivable.
+    /// The provider row the sign-in affordance points at, where one was
+    /// derivable. Read under a [`REFUSED`] wound; absent elsewhere.
     pub auth_row: Option<String>,
     /// The wound's class — [`NONE`], or a token carried verbatim.
     pub wound: String,
@@ -105,7 +115,6 @@ fn row(value: &Value) -> Result<StepRow, String> {
         commit: fields::opt_text(obj, "commit")?,
         started_at: fields::opt_text(obj, "started_at")?,
         ended_at: fields::opt_text(obj, "ended_at")?,
-        auth_failed: fields::flag(obj, "auth_failed")?,
         auth_row: fields::opt_text(obj, "auth_row")?,
         wound: fields::text(obj, "wound")?,
         wound_reason: fields::opt_text(obj, "wound_reason")?,

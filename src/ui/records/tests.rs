@@ -37,7 +37,7 @@ fn the_answered_pane_paints_both_halves_whole() {
         "2026-08-30T05:12Z to 2026-08-30T05:14Z  at abcdef1",
         "002  failed — 99 tokens, 2 attempts",
         "an orphaned mail tail — driver died",
-        "wound: no_response — no bytes",
+        "wound: refused — no bytes",
         "a sign-in is wanted on housevendor",
         "src/",
         "src/a.rs  12 B",
@@ -150,7 +150,7 @@ fn the_quiet_rows_say_nothing_and_the_half_absences_read_right() {
     wordless.wound_reason = None;
     assert_eq!(wounded(&wordless), Some("wound: output_limit".to_owned()));
     let mut unrouted = step("001");
-    unrouted.auth_failed = true;
+    unrouted.wound = crate::reply::steps::REFUSED.to_owned();
     assert_eq!(auth(&unrouted), Some("a sign-in is wanted".to_owned()));
     let mut half = step("001");
     half.started_at = None;

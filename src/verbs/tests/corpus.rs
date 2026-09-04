@@ -79,7 +79,13 @@ fn addressed(signature: &[String], frame: &Value) -> Option<String> {
 /// engine never had fails here rather than on a connection.
 #[test]
 fn every_request_shape_is_vendored_and_every_verb_is_one() {
-    let filed: Vec<String> = vendored()
+    // Sorted, because the two sides are ordered by different keys and only a
+    // prefix pair can make that visible: the directory sorts FILENAMES, where
+    // `login-tail.json` precedes `login.json` (`-` sorts under `.`), while the
+    // shape record sorts SHAPE names, where the shorter of a prefix pair comes
+    // first. `login` and `login-tail` arrived at PROTOCOL 13 and are the first
+    // such pair the vocabulary has held.
+    let mut filed: Vec<String> = vendored()
         .iter()
         .map(|file| {
             format!(
@@ -88,6 +94,7 @@ fn every_request_shape_is_vendored_and_every_verb_is_one() {
             )
         })
         .collect();
+    filed.sort();
     let upstream: Vec<String> = record()
         .shapes
         .into_keys()

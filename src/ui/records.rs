@@ -223,8 +223,15 @@ pub fn wounded(row: &StepRow) -> Option<String> {
 
 /// The sign-in affordance: offered at all, and the provider row it points at
 /// when one was derivable.
+///
+/// **Offered on the wound's `refused` arm, not on a flag beside it.** The flag
+/// (`auth_failed`) was deleted from the row at PROTOCOL 9 because it said what
+/// the wound class already said, and two spellings of one fact are two things
+/// that can disagree — so the affordance and [`wounded`] above now read the
+/// same word, and a step cannot offer a sign-in while its badge denies there
+/// was a refusal.
 pub fn auth(row: &StepRow) -> Option<String> {
-    if !row.auth_failed {
+    if row.wound != crate::reply::steps::REFUSED {
         return None;
     }
     Some(match &row.auth_row {

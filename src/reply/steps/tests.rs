@@ -12,7 +12,7 @@ fn full() -> serde_json::Value {
         "tokens": {"input": 11, "output": 22, "cache_read": 33,
                    "cache_write": 44, "total": 99},
         "commit": "abc", "started_at": "t0", "ended_at": "t1",
-        "auth_failed": true, "auth_row": "housevendor",
+        "auth_row": "housevendor",
         "wound": "no_response", "wound_reason": "no bytes",
     })
 }
@@ -36,7 +36,6 @@ fn a_row_carries_the_summary_whole() {
             commit: Some("abc".to_owned()),
             started_at: Some("t0".to_owned()),
             ended_at: Some("t1".to_owned()),
-            auth_failed: true,
             auth_row: Some("housevendor".to_owned()),
             wound: "no_response".to_owned(),
             wound_reason: Some("no bytes".to_owned()),
@@ -53,7 +52,6 @@ fn every_required_field_refuses_and_says_which_one() {
         ("framing", "non-string"),
         ("wound", "non-string"),
         ("attempts", "non-integer"),
-        ("auth_failed", "non-boolean"),
         ("tokens", "non-object"),
     ] {
         let mut row = full();
@@ -78,7 +76,7 @@ fn the_absences_are_readings() {
         "seq": "002", "framing": "failed", "attempts": 2,
         "tokens": {"input": 0, "output": 0, "cache_read": 0,
                    "cache_write": 0, "total": 0},
-        "auth_failed": false, "wound": NONE,
+        "wound": NONE,
     });
     let read = super::row(&bare).expect("a bare row");
     assert_eq!(read.commit, None);

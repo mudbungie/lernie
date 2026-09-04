@@ -104,6 +104,8 @@ lineages = "bl-5c53 — no config-file pane: the lineages and the paths each hol
 
 # bl-e3c5 — the Login pane: provider rows over the channel that hosts the wall,
 # and the sign-in posted as a boundary act. (bl-b180 is the defect it answers.)
+login = "bl-e3c5 — no provider pane: a workspace cannot be signed in to a provider row from this seat"
+login-tail = "bl-e3c5 — no provider pane: a sign-in run prints its lines to nothing here"
 models = "bl-e3c5 — no provider pane: what a provider is offering is readable nowhere"
 providers = "bl-e3c5 — no provider pane: the provider table and its credential facts are unpainted"
 
@@ -113,3 +115,8 @@ answer = "bl-e53c — no tool-host pane: a held tool call cannot be released or 
 clients = "bl-e53c — no tool-host pane: the registered machines and what they offer are unpainted"
 restore = "bl-e53c — no tool-host pane: tool auto-approval cannot be given back from this seat"
 revoke = "bl-e53c — no tool-host pane: tool auto-approval cannot be taken away here"
+
+# bl-7782 — the workspace strip has no pin: both acts are the strip's own, not
+# the conversation row's, so bl-dbc9's context menu is the wrong home for them.
+pin = "bl-7782 — no strip pin: a workspace cannot be floated to the front from this seat"
+unpin = "bl-7782 — no strip pin: a pinned workspace cannot be taken back out here"

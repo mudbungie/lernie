@@ -128,7 +128,41 @@ use super::{Reach, frame};
 /// consecutive integer bought without a field, and — like the two before it —
 /// the corpus refresh is the whole of what the re-vendor moved: one signature,
 /// one fixture, nothing else in forty-seven shapes.
-pub const PROTOCOL: u32 = 8;
+///
+/// **13 crosses five bumps at once, and only one of them is a break**
+/// (bl-249b here; yog's own `src/wire/hello.rs` carries the ledger and REMOTE
+/// §9.16-§9.18 the reasoning). The released engine moved five integers while
+/// this build sat at 8, and the shape of the arrears is the point: four of the
+/// five *gained* something, and a gain reaches a decoder that reads named
+/// fields as nothing at all. What has to be paid is the one loss.
+///
+/// - **9** — `reply/steps` **LOST** `auth_failed`, and `reply/transcript`
+///   gained the `wounded` entry beside it. This is the break: the field was
+///   read here with [`super::super::reply::fields::flag`], which is required,
+///   so at 13 every steps reply refuses on a key the engine no longer writes.
+///   REMOTE §9.16 names the replacement outright — *"a seat that read
+///   `auth_failed` reads `wound == \"refused\"` instead"* — and this build
+///   already decodes `wound` and `auth_row`, so the affordance is re-pointed at
+///   the vocabulary it was always one arm of, and no reading is lost.
+/// - **10** — no field moved anywhere. `attention` became follow-class: the
+///   same ask and the same reply shape, but a *sequence*. It is the one class
+///   of change a field-signature ledger cannot see, and it is exactly why the
+///   preface is strict equality rather than a signature comparison.
+/// - **11** — `reply/ops` gained `failed`, `exit_label` and `standing`.
+/// - **12** — every queue row gained `says`, and `reply/acknowledged` arrived
+///   spelling rows the same way.
+/// - **13** — `reply/config` gained `settings`, the file's own schema applied
+///   to the bytes answered beside it.
+///
+/// **The ledger absorbs the rest, which is the arrangement working rather than
+/// a debt.** `ops` and `config` are already `corpus/unreadable/` files here, so
+/// their gains cost a refresh and nothing else; `acknowledged` and `login` are
+/// new shapes and land there the same way; and the `wounded` entry falls to
+/// [`crate::reply::transcript::EntryKind::Unknown`], which is total by design.
+/// Four new ops are classed `control` — `login`, `login-tail`, `pin`, `unpin`
+/// — so `parity.toml` gains four lines rather than the gate reddening, each
+/// citing the ball that will delete it.
+pub const PROTOCOL: u32 = 13;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

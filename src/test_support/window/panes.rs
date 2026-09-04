@@ -39,7 +39,6 @@ pub(crate) fn step(seq: &str) -> crate::reply::steps::StepRow {
         commit: Some("abcdef1".to_owned()),
         started_at: Some("2026-08-30T05:12Z".to_owned()),
         ended_at: Some("2026-08-30T05:14Z".to_owned()),
-        auth_failed: false,
         auth_row: None,
         wound: crate::reply::steps::NONE.to_owned(),
         wound_reason: None,
@@ -57,9 +56,8 @@ pub(crate) fn recorded() -> Model {
         commit: None,
         started_at: None,
         ended_at: None,
-        auth_failed: true,
         auth_row: Some("housevendor".to_owned()),
-        wound: "no_response".to_owned(),
+        wound: crate::reply::steps::REFUSED.to_owned(),
         wound_reason: Some("no bytes".to_owned()),
         ..step("002")
     };

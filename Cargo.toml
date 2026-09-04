@@ -1,6 +1,6 @@
 [package]
 name = "lernie"
-version = "0.1.28"
+version = "0.1.29"
 edition = "2024"
 description = "lernie: the operator seat — the window and wire client for a yog server"
 license = "MIT"

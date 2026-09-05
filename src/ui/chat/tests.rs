@@ -185,3 +185,86 @@ fn the_pane_says_what_it_is_waiting_for() {
     let painted = pane(|ui| render(ui, &nothing));
     assert!(painted.contains("port it"), "{painted}");
 }
+
+/// **The committed path obeys the live path's rule, because there is one rule.**
+///
+/// The engine emits `{"kind":"thinking","text":""}` as an ordinary block, so a
+/// committed model turn can carry a half with nothing in it exactly as a turn
+/// in flight can. It painted a `(thinking)` header over nothing (bl-beb7) —
+/// which reads as *the model thought something and this seat lost it* — until
+/// both paths went through the one rule.
+#[test]
+fn a_committed_half_with_nothing_in_it_is_no_row_either() {
+    let turn = of(EntryKind::Model {
+        model_id: "model-a".to_owned(),
+        blocks: vec![
+            Block::Thinking(String::new()),
+            Block::Text("the seam is real".to_owned()),
+        ],
+        usage: Usage::new(),
+    });
+    assert_eq!(
+        rows(&turn, None),
+        vec![Row {
+            who: "model-a".to_owned(),
+            said: "the seam is real".to_owned(),
+        }]
+    );
+    // And the other half, the same way: a turn that has only thought so far.
+    let thinking_only = of(EntryKind::Model {
+        model_id: "model-a".to_owned(),
+        blocks: vec![
+            Block::Thinking("weighing two seams".to_owned()),
+            Block::Text(String::new()),
+        ],
+        usage: Usage::new(),
+    });
+    assert_eq!(
+        rows(&thinking_only, None)
+            .into_iter()
+            .map(|r| r.who)
+            .collect::<Vec<String>>(),
+        vec!["model-a (thinking)".to_owned()]
+    );
+}
+
+/// **Dropping an empty half must not become dropping an empty row.** A tool
+/// call with no input still happened, and an unreadable block is deliberately
+/// blank — the rung-3 surfacing the module header promises. Both keep their
+/// rows, so the fix above cannot grow into the opposite defect.
+#[test]
+fn a_blank_row_that_is_not_a_half_of_a_turn_is_kept() {
+    let turn = of(EntryKind::Model {
+        model_id: "model-a".to_owned(),
+        blocks: vec![
+            Block::ToolUse {
+                id: "tu-1".to_owned(),
+                name: "list".to_owned(),
+                input: String::new(),
+            },
+            Block::Unknown("citation".to_owned()),
+        ],
+        usage: Usage::new(),
+    });
+    let shown = rows(&turn, None);
+    assert_eq!(shown.len(), 2, "{shown:?}");
+    assert!(shown.iter().all(|r| r.said.is_empty()), "{shown:?}");
+}
+
+/// **On the glass**, where the defect was read: the header of an empty half
+/// does not reach it, and the answer beside it does.
+#[test]
+fn the_header_of_an_empty_half_never_reaches_the_glass() {
+    let mut model = seated();
+    model.transcript = of(EntryKind::Model {
+        model_id: "model-a".to_owned(),
+        blocks: vec![
+            Block::Thinking(String::new()),
+            Block::Text("the seam is real".to_owned()),
+        ],
+        usage: Usage::new(),
+    });
+    let painted = pane(|ui| render(ui, &model));
+    assert!(painted.contains("the seam is real"), "{painted}");
+    assert!(!painted.contains("(thinking)"), "{painted}");
+}

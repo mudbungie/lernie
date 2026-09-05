@@ -2046,7 +2046,7 @@ never visits fails honestly.
 | `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the truncating headline with the selection drawn under it, and the two lines hung beneath a row. The row's own acts split out onto the seam a gesture draws (`convs/menu.rs`). | ~245 |
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which of the composer's two parameter boxes a row menu asked for the cursor in, and the one door that names a conversation and goes there (§4.23). Taken once, by the frame that paints the box. | ~85 |
-| `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. | ~170 |
+| `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. A half of a turn with nothing in it is no row, on either path, because the rule has one home (`half`) rather than one copy per route. | ~190 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |

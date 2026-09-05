@@ -11,6 +11,10 @@
 //! vocabulary's rung 3, on the glass. A transcript that quietly skipped an
 //! entry would be a conversation the operator reads as shorter than it was,
 //! which is the one failure a transcript must not have.
+//!
+//! The one thing that is **not** a row is a half of a turn with nothing in it
+//! — see [`half`], which is that rule's one home. An empty half is not
+//! something the operator was not shown; it is something that was never said.
 
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
@@ -68,7 +72,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
         }],
         EntryKind::Model {
             model_id, blocks, ..
-        } => blocks.iter().map(|b| block(model_id, b)).collect(),
+        } => blocks.iter().filter_map(|b| block(model_id, b)).collect(),
         EntryKind::ToolResult {
             tool_use_id,
             content,
@@ -105,24 +109,24 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
 
 /// One content block. Reasoning is a **row**, not a spinner: a badge that never
 /// grows cannot tell a model thinking hard from a driver that has hung.
-fn block(model_id: &str, block: &Block) -> Row {
+///
+/// The two halves of a turn go through [`half`], so the committed path obeys
+/// the rule the live one states. The other two blocks do not: a tool call with
+/// an empty input still happened, and an unreadable block is deliberately blank
+/// — dropping either would be the opposite defect, a transcript the operator
+/// reads as shorter than it was.
+fn block(model_id: &str, block: &Block) -> Option<Row> {
     match block {
-        Block::Text(text) => Row {
-            who: model_id.to_owned(),
-            said: text.clone(),
-        },
-        Block::Thinking(text) => Row {
-            who: format!("{model_id} (thinking)"),
-            said: text.clone(),
-        },
-        Block::ToolUse { id, name, input } => Row {
+        Block::Text(text) => half(model_id, "", text),
+        Block::Thinking(text) => half(model_id, "thinking", text),
+        Block::ToolUse { id, name, input } => Some(Row {
             who: format!("{model_id} → {name} {id}"),
             said: input.clone(),
-        },
-        Block::Unknown(word) => Row {
+        }),
+        Block::Unknown(word) => Some(Row {
             who: format!("{model_id} ({word}, which this seat cannot read)"),
             said: String::new(),
-        },
+        }),
     }
 }
 
@@ -134,22 +138,34 @@ fn streaming(stream: &Stream) -> Vec<Row> {
     )
 }
 
-/// The two halves of a turn in flight, each a row of its own and each omitted
-/// when it is empty: a model that has only thought so far, or one that answered
-/// without reasoning. An empty half is simply no row — never a blank one, which
-/// would claim something was said.
+/// **The one rule for a half of a turn, and its one home.** Reasoning and
+/// answer are each a row of its own and each omitted when it is empty: a model
+/// that has only thought so far, or one that answered without reasoning. An
+/// empty half is simply no row — never a blank one, which would claim something
+/// was said.
+///
+/// It is stated once because a turn reaches this pane by two routes — the live
+/// fold at write cadence, the committed entry at ask cadence — and a second
+/// copy of the filter is a rule one of the two will stop obeying. It did: the
+/// committed path painted a `(thinking)` header over nothing for every empty
+/// thinking block the engine emitted, which reads as *the model thought
+/// something and this seat lost it* (bl-beb7).
+fn half(speaker: &str, mark: &str, said: &str) -> Option<Row> {
+    (!said.is_empty()).then(|| Row {
+        who: if mark.is_empty() {
+            speaker.to_owned()
+        } else {
+            format!("{speaker} ({mark})")
+        },
+        said: said.to_owned(),
+    })
+}
+
+/// The two halves of a turn in flight, by [`half`]'s rule.
 fn live_rows(thinking: &str, text: &str) -> Vec<Row> {
     [("thinking", thinking), ("", text)]
         .into_iter()
-        .filter(|(_, said)| !said.is_empty())
-        .map(|(mark, said)| Row {
-            who: if mark.is_empty() {
-                LIVE.to_owned()
-            } else {
-                format!("{LIVE} ({mark})")
-            },
-            said: said.to_owned(),
-        })
+        .filter_map(|(mark, said)| half(LIVE, mark, said))
         .collect()
 }
 

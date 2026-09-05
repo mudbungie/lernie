@@ -269,15 +269,29 @@ holds it over the real `cargo package --list` in both directions — but a guard
 judges file classes and never content. That half is `AGENTS.md`'s *Before a
 publish*, run by a person.
 
-The macOS artifact is built natively on an Apple runner in the same workflow and
-then READ rather than trusted — `scripts/mac-verify.sh` reports its
+**On a mac, the artifact is the crate:**
+
+    cargo install lernie --locked
+
+No release carries a binary, for any platform, and that is a ruling rather
+than a gap (`docs/DESIGN.md` §6.3). The seat's unit of install is the published
+version — the Linux seat box below installs the same way, on a timer — and a
+downloaded mac binary would be the worse product: the linker's signature is
+ad-hoc, not notarization, so a copy that arrives over a network carries a
+quarantine attribute the mac refuses to start it under until somebody clears
+it by hand, and clearing that for everyone means a credential this repository
+does not hold. A binary compiled on the box carries no such attribute and
+runs. What you get is a window launched from a terminal — no `.app` bundle
+and no dock mark; that is a separate question.
+
+What the release workflow does on a mac is PROVE that install: a job on an
+Apple runner checks out the released tag, builds it natively, and READS the
+result rather than trusting it — `scripts/mac-verify.sh` reports its
 architecture, its filetype, the OS it targets, every dynamic library it will ask
 macOS for, and whether it is signed at all. It cannot be cross-built from Linux:
 the window links Apple frameworks, the frameworks ship only in Apple's SDK, and
 the SDK agreement refuses both hosting that SDK and running any part of it on
-non-Apple hardware. Nothing here acquires one. The signature the linker applies
-is ad-hoc and is not notarization — a downloaded copy carries a quarantine
-attribute that only somebody on a mac can clear.
+non-Apple hardware. Nothing here acquires one.
 
 ## Continuous deployment for a seat box
 

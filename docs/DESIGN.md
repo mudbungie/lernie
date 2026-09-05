@@ -2858,7 +2858,7 @@ re-post on a beat.
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |
 | `.github/workflows/store-scan.yml` | the published store ref, judged by the source's own rule table. | config |
-| `.github/workflows/release-plz.yml` | the release path (§6.2). Its FILENAME is matched literally against the registry's trusted-publisher claim — renaming it stops publishing. | config |
+| `.github/workflows/release-plz.yml` | the release path (§6.2) and the proof of the seat's one artifact (§6.3). Its FILENAME is matched literally against the registry's trusted-publisher claim — renaming it stops publishing. | config |
 | `release-plz.toml` | the four release decisions the workflow reads: the tag spelling, no generated changelog, no semver check across the fence, and the bump markers. | config |
 | `scripts/mac-verify.sh` | reads the produced Mach-O and says what it IS — architecture, filetype, target OS, every `LC_LOAD_DYLIB`, whether it is signed at all — with five malformed inputs it must refuse first. | ~230 |
 | `tests/packaged_files.rs` | what `cargo publish` would ship, over the real `cargo package --list` — the manifest's `include` allowlist, restated so a widening edit is red here. | ~200 |
@@ -2966,19 +2966,73 @@ cannot be cross-built for darwin from Linux — the window links Apple
 frameworks, they ship only in Apple's SDK, and the SDK agreement refuses both
 hosting that SDK (§2.7) and running any part of it on non-Apple hardware
 (§2.5) — and the operator ruled that a GitHub Actions macOS runner IS
-Apple-branded hardware in the licence's sense. So the artifact is built
+Apple-branded hardware in the licence's sense. So the released tree is built
 natively on `macos-14` and then READ rather than trusted: `mac-verify.sh`
 reports architecture, filetype, target platform, minimum OS, every
 `LC_LOAD_DYLIB` (each must be a stock `/usr/lib` or `/System/Library` path, or
 the artifact acquired a dependency nobody chose) and whether a code signature
 is present at all, with five fabricated malformed inputs it must refuse first.
-`needs: ci`, so it only ever builds a green tree; nothing `needs:` it, so a
-broken mac leg is visible and never stands between a green tree and the
-registry.
+It hangs off the release job's `releases_created` and checks out the tag that
+job cut, so it runs once per published version and its verdict names one;
+nothing `needs:` it, so a broken mac leg is visible and never stands between a
+green tree and the registry. What it proves, and why it attaches nothing, is
+§6.3.
 
-**Still deferred, each its own ball.** No upload job for the Linux release
-binary, no container image, and no signing or notarization — the linker's
-ad-hoc signature satisfies an arm64 mac's refusal to start unsigned binaries
-and is not notarization, and a downloaded artifact's quarantine attribute is
-cleared by a credentialled act on a mac by whoever publishes.
+**Still deferred.** No container image — bl-18c7's question, and it may be
+answered with a ruling rather than a build. Signing and notarization are not
+deferred; §6.3 says why they are not needed.
+
+### 6.3 The artifact is the crate, and no binary is attached to a release (bl-9380)
+
+bl-9380 left one thing open after the macOS job landed: the artifact was built
+and read on every push and attached to nothing. Four honest answers were on the
+table, and three were refused on the record before this section was written:
+cross-linking against SDK stubs in a Linux container (the licence, above);
+a macOS runner leg as the artifact's one home, uploading what it built (below);
+and something neither sibling repo needed (nothing was found — the seat's
+difference from the foot and the engine is the window, and the window is the
+whole of what the licence reaches). **The fourth holds: `cargo install lernie
+--locked` on the mac IS the artifact, and the repository ships none.**
+
+Three facts make that the ruling rather than a shrug:
+
+- **It is the seat's unit of install already, not a mac exception.** The
+  Linux seat box installs by `cargo install lernie --root ~/.local --locked
+  --version <v> --force` on an hourly timer (bl-155a, README *Continuous
+  deployment for a seat box*): the reconciler carries no build, because "a
+  seat's unit of install is a published version, and the registry already
+  serves it". A mac is the same box with a different SDK. One artifact, one
+  home — the registry — on every platform.
+- **An attached binary would be a worse product, not a convenience.** The
+  linker's signature is ad-hoc; a copy that arrives over a network carries a
+  quarantine attribute, and an arm64 mac refuses to start it until somebody on
+  that mac clears the attribute by hand. Making the download simply run means
+  notarization, which is a credentialled act needing an Apple Developer
+  identity and a secret in this repository — and this repository holds no
+  secret and takes no dependency on one (§6.2: that is what trusted publishing
+  bought). A binary compiled on the box carries no quarantine attribute at all
+  and runs the moment `cargo install` returns. So the asset would have needed
+  a credential to be worth attaching, and without the credential it is a file
+  that does not work as shipped.
+- **The Linux binary follows the same rule, and that closes the row §6.2 used
+  to defer.** No upload job for any platform. The two headless siblings attach
+  a Linux tarball because a tarball is what their boxes install; a seat box
+  never did.
+
+**So the macOS job is the proof of the artifact, not its home.** It builds
+what the operator's `cargo install` builds — the released tag, natively, with
+the SDK the runner already has — and reads the Mach-O it produced. It runs
+exactly when a version publishes, on that version's tag, and refuses if the
+tag and the checked-out manifest disagree, so a green mac leg is a statement
+about a version an operator can name and install. It used to run twice per
+landing, on trees nobody would install; now it runs once, on the one they
+would.
+
+**What this does not solve, stated rather than implied.** A `cargo install`
+on a mac yields a binary launched from a terminal — no `.app` bundle, no dock
+mark, no Launchpad entry; the freedesktop seats `make install` lays down have
+no macOS analogue here. That is a bundle question with the same notarization
+answer waiting behind it, and it is not this ruling's. And "it links, and the
+file has the shape of a working mac binary" is still the whole of what the mac
+leg proves — nothing on the runner runs it.
 

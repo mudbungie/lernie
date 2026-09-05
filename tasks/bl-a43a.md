@@ -1,7 +1,8 @@
 +++
 title = "the fleet has no surface: a workspace cannot be run, stopped, watched or scanned, and what its agents changed is unreadable"
 created = 1788581509
-updated = 1788581509
+updated = 1788582454
+claimant = "Animations-O"
 parent = "bl-4c48"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

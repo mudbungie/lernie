@@ -1,7 +1,8 @@
 +++
 title = "the trail pane reads but cannot act: an alarm cannot be acknowledged and nothing truncates the trail"
 created = 1788581504
-updated = 1788581504
+updated = 1788582907
+claimant = "Animations-O"
 parent = "bl-4c48"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

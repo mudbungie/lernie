@@ -1,7 +1,8 @@
 +++
 title = "the conversation's spine reaches no gesture: the rail, the governing commit, and the fork composed off them"
 created = 1788399123
-updated = 1788399123
+updated = 1788581868
+claimant = "Animations-P"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

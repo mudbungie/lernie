@@ -1,7 +1,8 @@
 +++
 title = "a receipt is stamped with the aimed channel, not the one it was routed down"
 created = 1788400516
-updated = 1788400516
+updated = 1788581206
+claimant = "Animations-M"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

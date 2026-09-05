@@ -36,6 +36,7 @@ impl Model {
             || self.listing.is_some()
             || self.lookup.is_some()
             || self.login.is_some()
+            || self.configuring.is_some()
             || self.unmaking.is_some()
     }
 

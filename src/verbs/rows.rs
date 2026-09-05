@@ -197,6 +197,7 @@ pub(super) const TABLE: &[Verb] = &[
     super::spine::GOVERNING,
     super::tuning::ROLES,
     super::clients::CLIENTS,
+    super::config::LINEAGES,
     super::login::PROVIDERS,
     super::login::MODELS,
     super::login::LOGIN_TAIL,

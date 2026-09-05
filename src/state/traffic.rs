@@ -121,6 +121,12 @@ pub enum Open {
     /// it was answered (REMOTE §5), so a row that said *not connected* says
     /// otherwise on the next beat with nothing asked again.
     Clients,
+    /// **The config pane** — the aimed wall's seventh question: the lineages
+    /// it holds, and the file the pane is pointed at (bl-5c53). The
+    /// destination rides *inside* the arm for [`Open::Login`]'s reason: there
+    /// is no file to read while the pane is down, so a field beside it would
+    /// be a second authority for one fact.
+    Config(Option<crate::verbs::Where>),
     /// **The login pane** — the aimed wall's fifth question, what it can sign
     /// in to, carrying the provider row whose sign-in the held lane is on where
     /// one has been started (bl-e3c5). The row rides *inside* the pane's own
@@ -147,6 +153,8 @@ impl Open {
             Some(Self::Login(model.following()))
         } else if model.showing(crate::ui::Listing::Clients) {
             Some(Self::Clients)
+        } else if model.configuring.is_some() {
+            Some(Self::Config(model.configured()))
         } else {
             None
         }
@@ -202,6 +210,17 @@ impl Standing {
     /// rather than matching an enum four times.
     pub fn standing(&self, pane: &Open) -> bool {
         self.open.as_ref() == Some(pane)
+    }
+
+    /// **The file the config pane is pointed at**, if it is open and a
+    /// destination has been picked on it — [`Self::signin`]'s shape one pane
+    /// over, and for its reason: the read that stands is the pane's own
+    /// question, asked here so the pass tests one thing.
+    pub fn at(&self) -> Option<crate::verbs::Where> {
+        match &self.open {
+            Some(Open::Config(at)) => at.clone(),
+            _ => None,
+        }
     }
 
     /// **The provider row the sign-in lane is on**, if the login pane is open

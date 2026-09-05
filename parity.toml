@@ -84,13 +84,15 @@ retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be rel
 
 # bl-4a2c landed the tuning quartet — `roles`, `effort`, `priority` and
 # `model` all carry controls on `src/ui/tuning.rs` and are gone from this
-# ledger. What it did not build is the config FILE itself, which is a second
-# pane with a second subject: bytes, on a lineage, at a path.
+# ledger. What it did not build is the config FILE itself, and bl-5c53 built
+# the read half of that: `config` and `lineages` both carry controls on
+# `src/ui/config.rs` and `src/ui/roster/wall.rs` and are gone from here too.
 #
-# bl-5c53 — the config-file pane: the lineages, the file a lineage holds, and
-# the bytes read out of one and written back to it.
-config = "bl-5c53 — no config-file pane: a config file's bytes are neither read nor written here"
-lineages = "bl-5c53 — no config-file pane: the lineages and the paths each holds are unpainted"
+# THE WRITE IS NOT BUILT AND THIS LEDGER CANNOT SAY SO. It is per-op, and
+# `config` is one op that is a read or a write depending on whether it carries
+# `text`; the control that reads is a control. bl-4855 is the only record that
+# half of it is missing, and it holds the reason — a write naming no workspace
+# would be FANNED to every channel this box holds.
 
 # bl-48fa landed the destructive-act idiom (DESIGN §4.20) and with it
 # `delete-workspace`, which carries a control on `src/ui/unmake.rs` and is gone

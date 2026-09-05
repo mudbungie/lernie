@@ -1,4 +1,4 @@
-//! **One wall's row**, and the six per-wall controls that hang off the aimed
+//! **One wall's row**, and the seven per-wall controls that hang off the aimed
 //! one.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's own
@@ -60,8 +60,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
-    // **All six per-wall controls hang off the aimed row and off no other**,
-    // and all six stand down while a pane already covers the conversation:
+    // **All seven per-wall controls hang off the aimed row and off no other**,
+    // and all seven stand down while a pane already covers the conversation:
     // what they open would replace what is standing there, so offering them is
     // offering to lose it without saying so.
     if !aimed || model.covered() {
@@ -118,6 +118,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     crate::ui::act::tag(&machines, &[crate::verbs::CLIENTS.word]);
     if machines.clicked() {
         model.begin_clients();
+    }
+    // **The config pane hangs beside them**, the fourth read of a wall's own
+    // configuration and the last that destroys nothing (bl-5c53). It carries
+    // the read the gesture reaches, as the three above do.
+    let files = ui.button(crate::ui::config::OPEN);
+    crate::ui::act::tag(&files, &[crate::verbs::LINEAGES.word]);
+    if files.clicked() {
+        model.begin_configuring();
     }
     // **The unmaking hangs here and LAST**, under the two controls that make
     // and change things, because that is the order a destructive act belongs in

@@ -66,6 +66,11 @@ impl Model {
         // standing over a new aim would paint one wall's machines under
         // another's name.
         self.retire_clients();
+        // **And the config pane with them** (bl-5c53), sharper again: a
+        // destination carries the aim's own workspace inside it, so a pane
+        // left standing over a new aim would read one wall's file and paint it
+        // under another's name.
+        self.retire_configuring();
         self.retire_records();
     }
 
@@ -145,6 +150,8 @@ impl Model {
             self.close_queue();
         } else if self.showing(super::Listing::Clients) {
             self.close_clients();
+        } else if self.configuring.is_some() {
+            self.close_configuring();
         } else if self.lookup.is_some() {
             self.close_lookup();
         } else if self.login.is_some() {

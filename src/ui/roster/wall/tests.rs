@@ -57,6 +57,21 @@ fn the_machines_control_opens_the_clients_pane() {
     assert!(model.outbox.is_empty(), "opening a pane composes nothing");
 }
 
+/// **The config control opens the pane on the aimed wall**, which is what
+/// stands its lineage read up — the read has no control of its own.
+#[test]
+fn the_config_control_opens_the_config_pane() {
+    let mut model = seated();
+    let window = Window::new();
+    click(&window, crate::ui::config::OPEN, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            super::super::render(ui, &mut model);
+        });
+    });
+    assert!(model.configuring.is_some());
+    assert!(model.outbox.is_empty(), "opening a pane composes nothing");
+}
+
 /// **The aim is the gate**, exactly as it is for every other per-wall act:
 /// nothing aimed at is nothing to assert about.
 #[test]

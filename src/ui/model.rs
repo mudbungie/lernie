@@ -28,6 +28,8 @@ mod channel;
 mod claim;
 /// The clients pane between frames: whether it is open, and what it filed.
 mod clients;
+/// The config pane between frames: which file it is pointed at.
+mod config;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
@@ -59,6 +61,7 @@ mod window;
 
 pub use aim::Aim;
 pub use channel::{Channel, Chunk, Held};
+pub use config::Configuring;
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
 pub use listing::Listing;
@@ -111,6 +114,17 @@ pub struct Model {
     /// while nobody has been answered about it — the one-option reading
     /// [`Self::roles`] gets, one noun over (`clients`).
     pub machines: Option<Vec<crate::reply::clients::ClientRow>>,
+    /// **The config pane, while it is open** — the eleventh covering pane, and
+    /// the fourth whose subject is the aimed wall (`config`; DESIGN §4.30). A
+    /// struct rather than a flag because it holds one question of its own:
+    /// which file it is pointed at.
+    pub configuring: Option<Configuring>,
+    /// **One config file's bytes and the settings its schema found**, or
+    /// `None` while nobody has been answered about the file the pane points at
+    /// — the one-option reading [`Self::roles`] gets (`config`).
+    pub config: Option<crate::reply::config::Config>,
+    /// **The aimed wall's config lineages**, on the same standing (`config`).
+    pub lineages: Option<Vec<crate::reply::lineages::Lineage>>,
     /// **The login pane, while it is open** — the eighth covering pane, and
     /// the second whose subject is the aimed wall (`login`; DESIGN §4.24). A
     /// struct rather than a flag because it holds two questions of its own:

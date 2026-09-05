@@ -75,6 +75,9 @@ impl Model {
             Reply::Roles(rows) => self.roles = Some(rows),
             // The clients pane's one read, on the roles' own terms.
             Reply::Clients(rows) => self.machines = Some(rows),
+            // The config pane's two, on the same terms.
+            Reply::Config(file) => self.config = Some(file),
+            Reply::Lineages(rows) => self.lineages = Some(rows),
             // **The queue, one channel's slice at a time** — the fan's answer
             // replaces what this channel last said and leaves the others
             // standing, exactly as a roster answer does (`queue`).

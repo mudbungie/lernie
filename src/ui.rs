@@ -38,6 +38,8 @@ pub mod clients;
 pub mod commands;
 /// The composer: what an operator types, and the gesture it becomes.
 pub mod composer;
+/// The config pane: the files a wall's policy is written in, and their settings.
+pub mod config;
 /// The conversation list.
 pub mod convs;
 /// The enrollment pane: a name, a grade, and the symbol that comes back.
@@ -69,7 +71,7 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Forking, Grade, Held, Hits, Listing, Login,
-    Lookup, Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
+    Aim, Asking, Channel, Chunk, Configuring, Edit, Enrolling, Fill, Forking, Grade, Held, Hits,
+    Listing, Login, Lookup, Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

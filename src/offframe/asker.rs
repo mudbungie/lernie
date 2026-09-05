@@ -32,9 +32,23 @@ use super::down;
 use crate::state::{Link, Open, Said};
 use crate::ui::Channel;
 
-/// Ask everything the last frame said to ask.
+/// Ask everything the last frame said to ask — the questions about every
+/// channel, then the questions about the focus.
+///
+/// **Split in two at the design-time budget on the seam the module's own doc
+/// draws** (bl-5c53): [`everywhere`] is the reads whose subject is *every
+/// channel this box holds*, and [`focused`] is the nest under the aim and the
+/// selection. One grows when a channel-wide op lands a pane; the other when a
+/// pane about a focus does.
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
+    everywhere(link, root, &standing);
+    focused(link, root, &standing);
+}
+
+/// **The reads whose subject is every channel**: each channel's own roster,
+/// and the two pane-keyed unions composed across them.
+fn everywhere(link: &Link, root: &Path, standing: &crate::state::Standing) {
     for channel in &standing.channels {
         read(
             link,
@@ -67,6 +81,11 @@ pub fn tick(link: &Link, root: &Path) {
             );
         }
     }
+}
+
+/// **The nest under the focus**: the aimed wall's questions, the panes keyed
+/// on it, and the selected conversation's.
+fn focused(link: &Link, root: &Path, standing: &crate::state::Standing) {
     let Some((channel, aim)) = standing.aimed() else {
         return;
     };
@@ -109,6 +128,29 @@ pub fn tick(link: &Link, root: &Path) {
             &channel,
             &crate::verbs::clients(aim.address.clone()),
         );
+    }
+    // **The config pane's two, and the one whose subject is a CHANNEL**
+    // (bl-5c53). The lineage listing carries the aim's workspace and is routed
+    // by it like every other aimed read. The file read is routed by it only
+    // for the two destinations that name one: litany's globals and yog's own
+    // cadence file belong to the ENGINE, so what they address is the channel
+    // the window is aimed at — asked here the way a roster is, by name, rather
+    // than falling through to this box's own engine (DESIGN §4.30).
+    if standing.standing(&Open::Config(standing.at())) {
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::lineages(aim.address.clone()),
+        );
+        if let Some(at) = standing.at() {
+            let gesture = crate::verbs::config(&at);
+            if at.addresses_a_workspace() {
+                aimed(link, root, &channel, &gesture);
+            } else {
+                read(link, down(link, root, &channel, &gesture), &channel);
+            }
+        }
     }
     let Some(conversation) = standing.conversation.clone() else {
         return;

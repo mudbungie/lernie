@@ -39,6 +39,8 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
 
 /// The machines, which stand on the clients pane and nest under nothing.
 mod clients;
+/// The config pane's two, one of which addresses a channel rather than a wall.
+mod config;
 /// The provider table, which stands on the login pane and nests under nothing.
 mod login;
 /// The three questions, and how each waits for the last to have an answer.

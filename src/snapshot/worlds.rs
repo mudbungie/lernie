@@ -1,11 +1,11 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! fifteen rather than one.
+//! sixteen rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
 //! are the shapes: nothing dialled yet, seated at a wall with a conversation
-//! open, the wall with none selected, and the eleven states of the ten panes
-//! that cover the conversation.
+//! open, the wall with none selected, and the twelve states of the eleven
+//! panes that cover the conversation.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -18,7 +18,8 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{
-    commanded, finding, machines, pinned, queued, recorded, role, seated, signing, trailing, tuned,
+    commanded, configured, finding, machines, pinned, queued, recorded, role, seated, signing,
+    trailing, tuned,
 };
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
@@ -207,6 +208,20 @@ fn clients() -> World {
     }
 }
 
+/// **The window with the config pane open, pointed at a file and answered**
+/// (bl-5c53) — the eleventh covered state, and the only screen `config`'s own
+/// control is reachable from.
+///
+/// It is photographed pointed at a destination, because the pane pointed at
+/// nothing says one sentence and none of the settings, the fault or the bytes
+/// this world exists to put on the glass.
+fn config() -> World {
+    World {
+        name: "config",
+        model: configured(),
+    }
+}
+
 /// **The window with the aimed wall pinned** (bl-7782) — not a covered state
 /// at all, and the only screen the `unpin` control is on.
 ///
@@ -257,6 +272,7 @@ pub(crate) fn all() -> Vec<World> {
         find(),
         login(),
         clients(),
+        config(),
         pinned_wall(),
         unmaking(),
     ]

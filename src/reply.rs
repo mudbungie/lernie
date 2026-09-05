@@ -74,6 +74,8 @@
 
 /// The machines registered in one workspace, and what each one offers.
 pub mod clients;
+/// One config file's bytes, and the settings its schema found in them.
+pub mod config;
 /// The conversation list one workspace answers with.
 pub mod convs;
 /// A new box's material, and the envelope a camera carries it in.
@@ -86,6 +88,8 @@ pub mod files;
 pub mod governing;
 /// The engine's own verb table, which is also the parity roster's source.
 pub mod help;
+/// The config lineages one workspace holds.
+pub mod lineages;
 /// One sign-in run, as the engine streams it.
 pub mod login;
 /// Every action that crossed the engine's boundary, and where its alarm stands.
@@ -229,6 +233,13 @@ pub enum Reply {
     /// moment it is asked and the advertised set is what that machine last
     /// presented, which are two lifetimes on one row and are painted as two.
     Clients(Vec<clients::ClientRow>),
+    /// **One config file's bytes, and the settings its schema found in them**
+    /// — the config pane's second read, standing on the destination it is
+    /// pointed at (bl-5c53; DESIGN §4.30).
+    Config(config::Config),
+    /// **The config lineages one workspace holds** — that pane's first, and
+    /// the listing its two pickers are filled from.
+    Lineages(Vec<lineages::Lineage>),
     /// **What one provider row is offering** — the same pane, one depth down,
     /// and posted rather than standing: a model list is fixed for the life of
     /// a provider's own answer, so a standing read would spend a round trip a

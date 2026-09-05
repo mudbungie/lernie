@@ -119,6 +119,19 @@ pub(crate) fn absent_is_false(obj: &Map<String, Value>, key: &str) -> Result<boo
     }
 }
 
+/// An **optional** signed integer: absent and `null` are both `None`, and a
+/// value of the wrong type still refuses.
+///
+/// [`opt_text`]'s reading one type over, and it exists for the same reason: a
+/// bound that is not stated and a bound of zero are two different claims about
+/// what a control will accept (`super::config`).
+pub(crate) fn opt_secs(obj: &Map<String, Value>, key: &str) -> Result<Option<i64>, String> {
+    match obj.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => secs(obj, key).map(Some),
+    }
+}
+
 /// A listing's elements, each read by `read`.
 ///
 /// One element that will not read fails the whole listing rather than

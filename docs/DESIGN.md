@@ -326,7 +326,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Twenty-one kinds, because twenty-one are painted.** The engine's reply surface is
+**Twenty-three kinds, because twenty-three are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
@@ -338,7 +338,9 @@ both §4.19's, the window's own three — one engine's verb table (`help`), what
 a needle found (`search`) and the trail (`ops`, §4.27) — the login pane's three: what a wall
 can sign in to (`providers`), what one of its rows offers (`models`) and one
 sign-in run (`login`), all §4.24's — the machines registered in one
-workspace (`clients`, §4.28), a captured
+workspace (`clients`, §4.28), the config pane's two — the lineages a workspace
+holds (`lineages`) and one file's bytes with the settings its schema found in
+them (`config`), both §4.30's — a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
@@ -356,7 +358,8 @@ commit that built §4.21's two (bl-40ec), the sign-in family's three
 (`providers`, `models`, `login`) made it in the commit that built §4.24's pane
 (bl-e3c5), `clients` made it in the commit that built §4.28's (bl-e53c), the
 spine pair (`rail`, `governing`) made it in the commit that built §4.29's half
-of the records pane (bl-b52c), and the three conversation reads still in
+of the records pane (bl-b52c), `config` and `lineages` made it in the commit
+that built §4.30's pane (bl-5c53), and the three conversation reads still in
 `unreadable/` (`agent`, `step`, `inbox`) are the ledger holding the ball that
 will move them (bl-3257).
 
@@ -2257,6 +2260,60 @@ reading, and the sentence painted beside it is upstream's own
 `GoverningConfig::label()` rather than a third wording composed here (REMOTE
 §9.7 rules that directly).
 
+### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18; bl-5c53)
+
+`src/ui/config.rs`, `src/ui/model/config.rs`, `src/reply/config.rs`,
+`src/reply/lineages.rs`, `src/verbs/config.rs`. **The eleventh covering pane,
+and the fourth whose subject is the aimed wall** — §4.17's is what its roles are
+set to, §4.24's what it can sign in to, §4.28's which machines may execute for
+it, and this is the files all of that is written in.
+
+**Two views of one read, and never two reads.** `reply/config` carries the
+destination's `text` and, beside it, that file's schema applied to *those very
+bytes* (REMOTE §9.18). Upstream refused a `ConfigSchema` query for the reason
+this pane inherits: a schema alone does not say what the values ARE, so a seat
+would always join it against a byte read, and two reads of one file have
+staleness between them. What is on the glass is one moment.
+
+**The judgement is the engine's.** A setting's `fault` is the same call yog's
+own pick gate makes, so what this pane paints as wrong is what the far end says
+is wrong — and its absence is *nothing is wrong with this value*, not *nobody
+looked*. A seat that derived one would be a second authority across a boundary.
+The bounds on a control are decoded and stated for the same reason and enforced
+by nothing yet: this build paints values and does not edit them.
+
+**A file with no schema answers an empty array, and that is a reading.** §9.5's
+raw-text destinations are *"the general path with empty input rather than a
+branch"*; the pane says so in its own sentence rather than showing an empty
+list.
+
+**Two destinations name a workspace and three name an ENGINE, so the pane
+addresses two different things.** `brazen` and a lineage's `branch` carry
+`workspace` inside `target`, which `crate::envelope` already reads as the
+gesture's address — §8.2's routing and its rename apply untouched (bl-4a36 put
+that in place). litany's global models file, its workflows and yog's own
+`cadence.yaml` belong to the engine and name no workspace at all, so what they
+address is a **channel**: the pane asks them down the channel the window is
+aimed at, by name, exactly as a roster read is asked. Letting them fall through
+`seat::route` would have asked this box's own engine about a file on somebody
+else's.
+
+**It reads and does not write, and the reason is a hazard.** `config` is one op
+that is a read or a write depending on whether it carries `text` at all
+(upstream's discriminator), so the editor is one field away — and the field is
+not the problem. The poster fans every gesture that names no workspace (§4.21),
+so an ACT composed for one engine's `cadence.yaml` would be written to **every
+channel this box holds**. The read half dodges it by not posting at all: a
+standing read is asked down the aimed channel. bl-4855 carries the frame, the
+three shapes attacked, and the destructive-idiom question; and it is the only
+record that half an op is missing, because `parity.toml` is per-op and `config`
+now carries a control.
+
+**`litany-workflow` is decoded, encodable and not offered.** It is addressed by
+a name and no read this seat has says what workflow names exist, so a control
+for it would be a box asking the operator to remember. It arrives with the
+editor, which needs a box anyway.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2345,21 +2402,26 @@ reading, and the sentence painted beside it is upstream's own
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
+| `src/reply/config.rs` | one config file as the typed thing it is: the bytes, the settings the schema found in them, and the bounds that ride a control (§4.30). | ~130 |
+| `src/reply/lineages.rs` | the config lineages one workspace holds — the listing the file read indexes into, with the tip in both spellings (§4.30). | ~70 |
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
+| `src/verbs/config.rs` | the config family: the lineage listing as a row, and the read whose destination is a nested object — the five places a config file lives, typed (§4.30). | ~165 |
 | `src/verbs/clients.rs` | the one op on the tool-host surface a seat is owed, and the four that are a machine's — with why `invocations` must never be asked from here (§4.28). | ~65 |
 | `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
+| `src/ui/config.rs` | the config pane: what can be read, the settings beside the bytes they were found in, and the engine's own judgement of a value (§4.30). | ~210 |
 | `src/ui/clients.rs` | the clients pane: the three empty states, the two lifetimes on a row, and the consent said on every tool (§4.28). | ~130 |
 | `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
+| `src/ui/model/config.rs` | the config pane between frames — the one question it holds, and the two reads that stand on it (§4.30). | ~95 |
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
-| `src/offframe/asker.rs` | one pass of the standing set: the questions nested, the pane-keyed reads, and the channel that costs only itself (§4.12). | ~145 |
+| `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). | ~225 |
 | `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~140 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
@@ -2391,7 +2453,7 @@ reading, and the sentence painted beside it is upstream's own
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
-| `src/snapshot/worlds.rs` | the fourteen named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's, the decision queue's and the window's own two are among them. `cfg(test)`. | ~200 |
+| `src/snapshot/worlds.rs` | the sixteen named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's, the decision queue's and the window's own two are among them. `cfg(test)`. | ~200 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |

@@ -132,3 +132,59 @@ pub(crate) fn machines() -> Model {
         ..seated()
     }
 }
+
+/// One lineage, with two paths on its tip.
+pub(crate) fn lineage(name: &str) -> crate::reply::lineages::Lineage {
+    crate::reply::lineages::Lineage {
+        name: name.to_owned(),
+        oid: "abcdef1234".to_owned(),
+        short_oid: "abcdef1".to_owned(),
+        committed: 1_700_000_000,
+        files: vec!["providers.yaml".to_owned(), "workflow.yaml".to_owned()],
+    }
+}
+
+/// **The seated model with the config pane open, pointed at a file and
+/// answered** (bl-5c53): a lineage to index into, a typed setting the engine
+/// has faulted, a bounded one it has not, and the bytes they were read out of
+/// — every sentence the pane can say about a file, on one screen.
+pub(crate) fn configured() -> Model {
+    Model {
+        configuring: Some(crate::ui::Configuring {
+            at: Some(crate::verbs::Where::Brazen {
+                workspace: "home".to_owned(),
+            }),
+        }),
+        lineages: Some(vec![lineage("default")]),
+        config: Some(crate::reply::config::Config {
+            text: "roles:\n  worker:\n    provider: gone\n".to_owned(),
+            settings: vec![
+                crate::reply::config::Setting {
+                    entry: "worker".to_owned(),
+                    name: "provider".to_owned(),
+                    value: "gone".to_owned(),
+                    help: "the provider row this role dispatches through".to_owned(),
+                    fault: Some("brazen's table has no provider row `gone`".to_owned()),
+                    control: crate::reply::config::Control {
+                        kind: "provider".to_owned(),
+                        min: None,
+                        max: None,
+                    },
+                },
+                crate::reply::config::Setting {
+                    entry: "watcher".to_owned(),
+                    name: "debounce_ms".to_owned(),
+                    value: "100".to_owned(),
+                    help: "how long a changed workspace coalesces".to_owned(),
+                    fault: None,
+                    control: crate::reply::config::Control {
+                        kind: "number".to_owned(),
+                        min: Some(0),
+                        max: Some(10_000),
+                    },
+                },
+            ],
+        }),
+        ..seated()
+    }
+}

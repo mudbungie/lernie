@@ -40,7 +40,7 @@
 //! set the question is about.
 
 use crate::ui::{
-    Column, Model, Shape, commands, enroll, find, login, queue, records, tuning, unmake,
+    Column, Model, Shape, commands, enroll, find, login, queue, records, trail, tuning, unmake,
 };
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
@@ -66,7 +66,7 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The eight covered panes, in the order the walk visits them.**
+/// **The nine covered panes, in the order the walk visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
@@ -81,8 +81,9 @@ struct Covered {
 /// window's own two hang off the roster above the channels beside the queue's,
 /// and are walked among them for the same reason (bl-40ec). The login pane's
 /// control is a fourth one on the aimed row and is walked among them too
-/// (bl-e3c5).
-const PANES: [Covered; 8] = [
+/// (bl-e3c5). The trail's hangs off the roster beside the queue's, its subject
+/// being every channel as well (bl-4c48).
+const PANES: [Covered; 9] = [
     Covered {
         column: Column::Channels,
         open: queue::OPEN,
@@ -112,6 +113,12 @@ const PANES: [Covered; 8] = [
         open: unmake::OPEN,
         close: unmake::CLOSE,
         heading: unmake::HEADING,
+    },
+    Covered {
+        column: Column::Channels,
+        open: trail::OPEN,
+        close: trail::CLOSE,
+        heading: trail::HEADING,
     },
     Covered {
         column: Column::Channels,

@@ -16,12 +16,12 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Nineteen do
+//! kinds and most of them belong to panes that do not exist here. Twenty do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — the decision queue and the receipt
-//! that raises a row onto it, the window's own two reads — the engine's verb
-//! table and what a needle found — the login pane's three — the provider
+//! that raises a row onto it, the window's own three reads — the engine's verb
+//! table, what a needle found and the trail — the login pane's three — the provider
 //! table, what one row offers and a sign-in run — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
 //! name — and a new box's material. A kind nothing renders is a kind
@@ -83,6 +83,8 @@ pub mod files;
 pub mod help;
 /// One sign-in run, as the engine streams it.
 pub mod login;
+/// Every action that crossed the engine's boundary, and where its alarm stands.
+pub mod ops;
 /// What a wall can sign in to, and what one row is offering.
 pub mod providers;
 /// The decision queue: what is asking for the operator, anywhere.
@@ -146,7 +148,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Nineteen, and each is here because a surface
+/// **The kinds the window draws.** Twenty, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -196,6 +198,10 @@ pub enum Reply {
     /// **What a needle found**, across everything one engine can see — the
     /// find pane's answer, on the same fanned terms (bl-40ec).
     Found(search::Found),
+    /// **The trail one engine keeps** — every action that crossed its boundary,
+    /// standing while the trail pane is open (bl-4c48). It names no workspace,
+    /// so it is one channel's answer and the pane is the union.
+    Ops(Vec<ops::OpRow>),
     /// **What this wall can sign in to** — the login pane's first read,
     /// standing while it is open (bl-e3c5). It is the engine's listing order,
     /// which is brazen's own routing order, and a seat that re-sorted it would

@@ -326,7 +326,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Nineteen kinds, because nineteen are painted.** The engine's reply surface is
+**Twenty kinds, because twenty are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
@@ -334,8 +334,8 @@ conversation itself (`transcript`), the live tail
 (`follow`), the conversation's records pair — the steps its loop took
 (`steps`) and what its worktree holds (`files`), both §4.18's — the decision
 queue (`attention`) and the receipt that raises a row onto it (`flagged`),
-both §4.19's, the window's own two — one engine's verb table (`help`) and what
-a needle found (`search`), both §4.21's — the login pane's three: what a wall
+both §4.19's, the window's own three — one engine's verb table (`help`), what
+a needle found (`search`) and the trail (`ops`, §4.27) — the login pane's three: what a wall
 can sign in to (`providers`), what one of its rows offers (`models`) and one
 sign-in run (`login`), all §4.24's — a captured
 run (`outcome`), the detached advance's receipt
@@ -1528,9 +1528,11 @@ first surface whose subject is neither the aimed wall nor the selected
 conversation; these are the rest of that family, and the family has a
 mechanical definition rather than a taste: **an op with no `workspace`
 parameter cannot name a channel, so its subject is every channel this box
-holds** (`crate::verbs::Verb::addresses_a_workspace`). Four ops are in it —
-`attention`, `workspaces`, `help`, `search` — and until this ball three of the
-four reached no gesture at all.
+holds** (`crate::verbs::Verb::addresses_a_workspace`). Four ops were in it
+when this ball landed — `attention`, `workspaces`, `help`, `search` — and three
+of the four reached no gesture at all. The trail's `ops` joined them at §4.27,
+which is the definition working: nothing about that ball was a decision to make
+the trail channel-wide.
 
 **The mechanism all three needed was one, and it was in the poster.**
 `crate::seat::route` resolves an envelope's workspace over this box's entries
@@ -2059,6 +2061,70 @@ prediction one frame earlier); no second painted seat for the sentence (the bar
 already has a dismiss, the composer's slot already has the receipt, and one
 sentence in two places is two sentences).
 
+### 4.27 The trail: the engine's own record, and the classification that crosses (bl-4c48)
+
+`src/reply/ops.rs`, `src/verbs/trail.rs`, `src/ui/trail.rs`,
+`src/ui/model/trail.rs`. **The ninth covering pane, and the fourth whose
+subject is every channel rather than a focus.** It answers a question this seat
+carried the wire for and painted nowhere: *what has this box been doing*. The
+engine keeps one row per child process its boundary spawned — the argv, where
+it ran, how it ended and where its alarm stands — and until this ball the only
+place that record could be read was yog's own line surface.
+
+**It is §4.19's shape, one noun over, and every joint is the queue's.** `ops`
+names no workspace, so its subject is every channel this box holds
+(`crate::verbs::Verb::addresses_a_workspace`, §4.21's mechanical definition);
+the read fans and the pane is the union; its control hangs off the roster
+rather than off a row, because the roster is the pane that is already the union
+across channels; and no aim or selection can invalidate it, so it survives both.
+
+**But the read STANDS, where §4.21's other two are posted once.** That is the
+one place it parts from the window's other channel-wide panes and it is a fact
+about the subject rather than a preference: a verb table is fixed for the life
+of an engine build and a search answers a needle somebody typed, so re-asking
+either on every beat would spend a round trip per channel forever on an answer
+that cannot have changed. A trail is neither. Every act this seat spends
+appends a row to it, and an alarm goes up and comes down under an operator who
+is looking at it. So it is keyed on the pane exactly as the queue's is
+(`crate::state::Open::Trail`) and asked only while somebody is looking.
+
+**The seat reads the engine's words and classifies nothing** (REMOTE §9.17).
+The reply carries `failed`, `exit_label` and `standing` precisely so that a
+client need not re-implement the sentinel table, the `128 + n` signal reading,
+the retirement key, the ack scan and the origin grouping — *"five derivations
+this document names one home for apiece, and whose failure mode is a seat
+quietly disagreeing rather than failing to build"*. So the pane paints the
+words and never looks at the exit integer, which rides in the detail because it
+is the next thing an operator asks for. `standing` is a `String` and not an
+enum, on §4.9's rung 3: this seat knows exactly one of the five words
+(`clean`), and knows it only in order to say **nothing** — a badge on every
+ordinary run would bury the rows the pane exists for — so a vocabulary that
+grew upstream costs a badge and not a decode.
+
+**The depth is the seat's own answer to a required field.** `ops` carries
+`max`, and the wire refuses an envelope without it; the *"defaults to the last
+50"* an operator reads belongs to yog's line grammar, which is a different
+surface with a different reader. So `crate::verbs::trail::DEPTH` is stated
+once, and it is deliberately deeper than a screen: an operator reading a trail
+is looking for the row before the one that broke, and a depth that stopped at
+the visible rows would make *scroll down* answer nothing. `max` being a NUMBER
+is also why this is a typed door rather than a row in the verb table, which is
+rows of named strings and refuses to grow an arm for anything else (§4.10).
+
+**What this ball did NOT land, and where each half went.** bl-4c48 named ten
+ops and this is the read half of one of its two. The trail's two acts — `ack`,
+which is the operator's watermark and the second of the two ways an alarm comes
+down, and `clear-trail`, which truncates — are bl-b8f7: both name no workspace,
+so both take the poster's fanned path, and *one control truncating every
+engine's trail* is a question to settle before writing it rather than after.
+The fleet family — `fleet`, `disband`, `arm`, `disarm`, `scan`, `science`,
+`work-diff` — is bl-a43a, and it addresses a workspace, so it is the tuning
+pane's shape rather than this one's. **The fleet has no read of its own**: its
+loop state (cap, count, tick, lease, ceiling) rides on the `board` reply, in an
+array that is *absent rather than empty* when nothing is armed — so the
+readable half of the fleet belongs to the ball pane (bl-d2af), which is what
+would decode `board` at all.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2105,6 +2171,7 @@ sentence in two places is two sentences).
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
+| `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27). | ~45 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
@@ -2130,12 +2197,15 @@ sentence in two places is two sentences).
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
+| `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the engine's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
+| `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
+| `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
@@ -2203,7 +2273,8 @@ sentence in two places is two sentences).
 | `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~85 |
 | `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
-| `src/test_support/window/panes.rs` | the covering panes' own fixtures — the seated model with each one open and answered, split at the design-time budget on the seam the parent's doc draws. `cfg(test)`. | ~210 |
+| `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows, the selected conversation — each open and answered. `cfg(test)`. | ~160 |
+| `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~210 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
 

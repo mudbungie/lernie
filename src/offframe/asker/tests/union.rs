@@ -1,6 +1,7 @@
 //! The union across channels: every channel asked for its own roster, each
-//! answer stamped with the channel it came down, and a channel that will not
-//! answer costing only itself.
+//! answer stamped with the channel it came down, a channel that will not
+//! answer costing only itself, and the trail — the other read whose subject is
+//! every channel and which nests under nothing.
 
 use super::super::tick;
 use super::asking;
@@ -86,4 +87,62 @@ fn a_channel_that_will_not_answer_leaves_the_others_standing() {
     };
     assert!(why.contains("empty entry"), "{why}");
     assert_eq!(settled.notice, None, "and nothing reached the shell's bar");
+}
+
+/// **The trail's read stands on its pane and goes down every channel**
+/// (bl-4c48). `ops` names no workspace, so it rides beside each channel's
+/// roster read rather than under the aim — and a seat with the pane shut asks
+/// none of them, because a standing question nobody has a use for is one the
+/// engine answers on every beat forever.
+///
+/// It is here rather than beside the nesting tests because it nests under
+/// nothing: this is the union's own shape, one noun over from the queue's.
+#[test]
+fn the_trail_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel() {
+    let scratch = Scratch::new();
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "ops", "rows": []})],
+        ],
+    );
+    let own = crate::ui::Channel {
+        name: crate::seat::OWN.to_owned(),
+        named_there: None,
+        dials: None,
+    };
+    let mut model = Model {
+        roster: vec![crate::ui::Chunk::of(own)],
+        ..Model::default()
+    };
+    let link = asking(&model);
+    tick(&link, scratch.path());
+    // No aim and no selection: the pane opens on a seat that has picked
+    // nothing, which is the seat most likely to be asking the question.
+    model.begin_trail();
+    link.settle(&mut model);
+    tick(&link, scratch.path());
+    let asked: Vec<serde_json::Value> = engine.heard();
+    let ops: Vec<String> = asked
+        .iter()
+        .filter_map(|said| said.get("op").and_then(serde_json::Value::as_str))
+        .map(str::to_owned)
+        .collect();
+    assert_eq!(ops, vec!["workspaces", "workspaces", "ops"]);
+    // **The depth is on the envelope**, because the wire requires it: yog's
+    // *"defaults to the last 50"* is its own line grammar's, on a surface this
+    // seat is not.
+    let read = asked
+        .iter()
+        .find(|said| said.get("op").and_then(serde_json::Value::as_str) == Some("ops"))
+        .expect("the trail was asked for");
+    assert_eq!(
+        read.get("max").and_then(serde_json::Value::as_u64),
+        Some(crate::verbs::DEPTH)
+    );
+    link.settle(&mut model);
+    assert_eq!(model.trails.len(), 1, "the answer is filed by channel");
 }

@@ -58,6 +58,8 @@ pub mod roster;
 pub mod shell;
 /// The ink a row is painted in.
 pub mod theme;
+/// The trail pane: every action that crossed an engine's boundary.
+pub mod trail;
 /// The tuning pane: what a wall's roles are set to, and what sets them.
 pub mod tuning;
 /// The unmaking pane: the seat's one destructive act, and the idiom it sets.
@@ -66,6 +68,6 @@ pub mod unmake;
 pub use keys::Pane;
 pub use model::{
     Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Login, Lookup, Model,
-    Notice, Pages, Posted, Shown, Tuning, Unmaking,
+    Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

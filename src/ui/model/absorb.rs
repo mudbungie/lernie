@@ -85,6 +85,9 @@ impl Model {
             // last said and leaves the others standing, exactly as a roster
             // answer and a queue answer do (`window`; bl-40ec).
             Reply::Help(rows) => self.paged(channel, rows),
+            // The trail, on the same terms — every action that crossed ONE
+            // engine's boundary, replacing that channel's section (`trail`).
+            Reply::Ops(rows) => self.crossed(channel, rows),
             Reply::Found(found) => self.hit(channel, found),
             // The login pane's three, on the roles' own terms — filed whether
             // or not the pane is open, because a frame that arrives after it

@@ -1,8 +1,9 @@
 //! **The asker**: one pass over the standing question set.
 //!
 //! The questions nest. Every channel is asked for its own roster — and, while
-//! the decision queue is open, for what is asking on it (bl-f0ef) — which is
-//! what makes both a **union across channels**, composed here
+//! the decision queue is open, for what is asking on it (bl-f0ef), and, while
+//! the trail is open, for what has crossed its boundary (bl-4c48) — which is
+//! what makes all three a **union across channels**, composed here
 //! rather than anywhere on the wire. The aimed wall is asked for its
 //! conversations, and — while the tuning pane is open on it — for what its
 //! roles are set to, and — while the login pane is open on it — for what it
@@ -49,6 +50,19 @@ pub fn tick(link: &Link, root: &Path) {
             read(
                 link,
                 down(link, root, channel, &crate::verbs::attention()),
+                channel,
+            );
+        }
+        // **And the trail fans on the same terms** (bl-4c48): `ops` names no
+        // workspace either, so its subject is every channel and the pane is
+        // the union. It STANDS rather than being posted once, unlike the
+        // window's other two channel-wide reads, because a trail is what is
+        // happening: every act this seat spends appends a row to it, and an
+        // alarm goes up and comes down under an operator who is looking.
+        if standing.standing(&Open::Trail) {
+            read(
+                link,
+                down(link, root, channel, &crate::verbs::ops(crate::verbs::DEPTH)),
                 channel,
             );
         }

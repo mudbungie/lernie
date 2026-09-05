@@ -1,6 +1,6 @@
-//! **The window's own acts** — the four ops whose subject is every channel
+//! **The window's own acts** — the five ops whose subject is every channel
 //! this box holds, and the strip above the roster's channels where they hang
-//! (bl-f0ef, bl-40ec; DESIGN §4.21).
+//! (bl-f0ef, bl-40ec, bl-4c48; DESIGN §4.21).
 //!
 //! Split from [`super`] at the design-time budget on a seam that is a real
 //! one: that module is *the list of walls this seat can aim at*, and this is
@@ -14,9 +14,10 @@ pub const REFRESH: &str = "ask the channels again";
 
 /// **Paint the strip and take the clicks on it.**
 ///
-/// Four ops name no workspace, so their subject is every channel this box
+/// Five ops name no workspace, so their subject is every channel this box
 /// holds and none of them hangs off a row: the decision queue's `attention`,
-/// this pane's own `workspaces`, the engines' verb table and a search. The
+/// this pane's own `workspaces`, the trail's `ops`, the engines' verb table
+/// and a search. The
 /// roster is their home because it is the pane that is already the union
 /// across channels, and they are offered on a seat that has aimed at nothing —
 /// which is the seat most likely to be asking any of the four.
@@ -51,6 +52,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         crate::ui::act::tag(&answers, &[crate::verbs::HELP.word]);
         if answers.clicked() {
             model.begin_commands();
+        }
+        // **The trail's control carries `ops` for the queue's reason** — the
+        // read stands on the pane, so opening it is what asks (`crate::ui::
+        // model::trail`).
+        let trail = ui.button(crate::ui::trail::OPEN);
+        crate::ui::act::tag(&trail, &[crate::verbs::OPS]);
+        if trail.clicked() {
+            model.begin_trail();
         }
         // **And this one carries none**: it opens a pane and crosses no wire.
         // `search` is spent by the control inside it, which is where the

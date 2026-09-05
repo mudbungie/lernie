@@ -1,5 +1,5 @@
-//! **The window's own two panes between frames** (bl-40ec; DESIGN §4.21): the
-//! engine's verb table, and what a needle found.
+//! **The window's own panes between frames** (bl-40ec, bl-4c48; DESIGN §4.21,
+//! §4.27): the engine's verb table, what a needle found, and the trail.
 //!
 //! # Neither has a subject anything on the glass can move
 //!
@@ -11,7 +11,7 @@
 //! [`super::Model::select`] for that reason, which is the same rule those two
 //! keep rather than an exception to it.
 //!
-//! # But the reads are POSTED, not standing, and that is the difference
+//! # Two of the three reads are POSTED, not standing, and that is the difference
 //!
 //! The queue stands on its pane because *what is asking* changes under the
 //! operator while they look at it. Neither of these does. A verb table is
@@ -22,6 +22,12 @@
 //! typing. So each is composed into [`super::Model::outbox`] by the control
 //! that asks it, `crate::offframe::poster` fans it over every channel, and the
 //! answers replace one channel's section at a time.
+//!
+//! **The trail is the exception and it is the queue's reason** (bl-4c48): a
+//! trail is what is happening, so its read stands while its pane is open. It
+//! shares this field because *which channel-wide pane is standing* is one
+//! fact; it does not share the cadence, and `crate::state::Open` is where the
+//! cadence is decided.
 //!
 //! # The needle is never spent on firing
 //!
@@ -37,19 +43,29 @@ use crate::reply::help::HelpRow;
 use crate::reply::search::Found;
 use crate::ui::Channel;
 
-/// **Which of the window's own two panes is standing**, if either.
+/// **Which of the window's own panes is standing**, if any.
 ///
-/// One field and not two flags. The two are mutually exclusive on the glass —
-/// both cover the conversation, and the shell paints one — so a pair of bools
-/// makes *both open* a representable state that only the paint order resolves,
-/// which is two representations of one fact. It is also the reframe clippy's
-/// `struct_excessive_bools` asks for by name, taken rather than suppressed.
+/// One field and not a flag apiece. They are mutually exclusive on the glass —
+/// each covers the conversation, and the shell paints one — so a set of bools
+/// makes *two open at once* a representable state that only the paint order
+/// resolves, which is two representations of one fact. It is also the reframe
+/// clippy's `struct_excessive_bools` asks for by name, taken rather than
+/// suppressed.
+///
+/// **The trail joined them rather than bringing a flag of its own** (bl-4c48).
+/// Its subject is every channel this box holds, which is §4.21's whole
+/// definition of this family, so a tenth field would have been a second
+/// representation of *which channel-wide pane is standing*. What it does not
+/// share is the read's cadence — see the section above, and
+/// `crate::state::Open::Trail`, which is where that difference lives.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Lookup {
     /// The engines' own verb tables (`crate::ui::commands`).
     Commands,
     /// Text found across everything they can see (`crate::ui::find`).
     Finding,
+    /// Everything that crossed their boundaries (`crate::ui::trail`).
+    Trailing,
 }
 
 /// **One channel's answer to *what do you answer to***, and the channel it

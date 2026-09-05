@@ -39,18 +39,23 @@ release = "bl-d2af — no ball pane: a held ball cannot be unclaimed here"
 update = "bl-d2af — no ball pane: a ball's title, body, schedule and journal are unreachable"
 workspace-balls = "bl-d2af — no ball pane: what a workspace holds and what it cost are unpainted"
 
-# bl-4c48 — the fleet and its trail have no surface: a workspace can be neither
-# run nor watched, and the ops rows are readable nowhere.
-ack = "bl-4c48 — no trail pane: an alarm cannot be acknowledged from this seat"
-arm = "bl-4c48 — no fleet controls: the cheap-model watch cannot be raised here"
-clear-trail = "bl-4c48 — no trail pane: nothing truncates the ops trail from this seat"
-disarm = "bl-4c48 — no fleet controls: the watch cannot be dropped here"
-disband = "bl-4c48 — no fleet controls: a running fleet cannot be stopped from this seat"
-fleet = "bl-4c48 — no fleet controls: a workspace's ready balls cannot be run from here"
-ops = "bl-4c48 — no trail pane: the ops rows are painted nowhere"
-scan = "bl-4c48 — no fleet controls: nothing flushes a workspace's inboxes from here"
-science = "bl-4c48 — no fleet controls: the delivery attempts and their costs are unpainted"
-work-diff = "bl-4c48 — no fleet controls: what the agents changed is readable nowhere"
+# bl-b8f7 — the trail pane reads and cannot act. bl-4c48 landed the read half:
+# `ops` is painted, so its row is gone from here. These two are its acts, and
+# both fan across every channel because neither names a workspace.
+ack = "bl-b8f7 — the trail pane has no controls: an alarm cannot be acknowledged from this seat"
+clear-trail = "bl-b8f7 — the trail pane has no controls: nothing truncates the trail from this seat"
+
+# bl-a43a — the fleet has no surface: a workspace can be neither run, stopped,
+# watched nor scanned, and what its agents changed is readable nowhere. The
+# loop's own state is not among these: it rides on `board`, which is the ball
+# pane's read (bl-d2af).
+arm = "bl-a43a — no fleet controls: the cheap-model watch cannot be raised here"
+disarm = "bl-a43a — no fleet controls: the watch cannot be dropped here"
+disband = "bl-a43a — no fleet controls: a running fleet cannot be stopped from this seat"
+fleet = "bl-a43a — no fleet controls: a workspace's ready balls cannot be run from here"
+scan = "bl-a43a — no fleet controls: nothing flushes a workspace's inboxes from here"
+science = "bl-a43a — no fleet controls: the delivery attempts and their costs are unpainted"
+work-diff = "bl-a43a — no fleet controls: what the agents changed is readable nowhere"
 
 # bl-2cf7 landed the records pane — `steps` and `files` carry a control on
 # `src/ui/composer/acts.rs` and are gone from this ledger. What it left it

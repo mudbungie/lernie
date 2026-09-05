@@ -1,17 +1,26 @@
-//! **The covering panes' fixtures**: the seated model with each pane open and
-//! answered, and the rows each needs.
+//! **The covering panes whose subject is a FOCUS**: the aimed wall, one of its
+//! rows, or the selected conversation.
 //!
-//! Split from [`super`] at the design-time budget on the seam that module's
-//! own doc draws. Every one of them is `..seated()`, because a pane covers the
-//! window at work rather than replacing it — and each is answered rather than
-//! waiting, for the reason `crate::snapshot::worlds` states: what a pane's
-//! world exists to photograph is every sentence it can say, and an unanswered
-//! pane says only that nobody has answered.
+//! Split from [`super`] at the design-time budget, and split again from
+//! [`union`] at it on the seam DESIGN itself draws (bl-4c48): a pane about a
+//! focus is retired when that focus moves, and a pane about every channel has
+//! no focus to move. The two halves change for different reasons — the first
+//! when a row grows a fact, the second when a channel-wide op lands a surface.
+//!
+//! Every one of them is `..seated()`, because a pane covers the window at work
+//! rather than replacing it — and each is answered rather than waiting, for
+//! the reason `crate::snapshot::worlds` states: what a pane's world exists to
+//! photograph is every sentence it can say, and an unanswered pane says only
+//! that nobody has answered.
 
-use crate::reply::convs::AgentState;
+/// The covering panes whose subject is every channel this box holds.
+pub(crate) mod union;
+
+pub(crate) use union::{commanded, finding, helped, hit, queued, trailed, trailing, waiting};
+
 use crate::ui::{Login, Model, Tuning};
 
-use super::{own, role, seated};
+use super::{role, seated};
 
 /// **The seated model with the tuning pane open and answered.** The pane's
 /// own screen, and the one the `effort` and `priority` controls live on.
@@ -148,123 +157,6 @@ pub(crate) fn recorded() -> Model {
             preview: None,
             working_dir: Some("/home/u/elsewhere".to_owned()),
         }),
-        ..seated()
-    }
-}
-
-/// One queue row, quiet: on the wall `seated` is aimed at, asking for nothing
-/// anybody wrote down.
-pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::QueueRow {
-    crate::reply::queue::QueueRow {
-        workspace: workspace.to_owned(),
-        agent: agent.to_owned(),
-        display: agent.to_owned(),
-        state: AgentState::Quiescent,
-        uncertain: true,
-        preview: String::new(),
-        age_secs: 7,
-        pending: 0,
-        signals: Vec::new(),
-        failure: None,
-        flag: None,
-        held: None,
-    }
-}
-
-/// **The seated model with the decision queue open and answered** (bl-f0ef):
-/// a flagged row carrying every line the pane can hang off one — the raise,
-/// the failure clause, the parked invocation and the signals — a quiet row,
-/// and a row on a wall this seat holds no name for. Every sentence the pane
-/// can say, on one screen.
-pub(crate) fn queued() -> Model {
-    let raised = crate::reply::queue::QueueRow {
-        display: "port the paint probe".to_owned(),
-        state: AgentState::Stopped,
-        uncertain: false,
-        preview: "it stopped on the third attempt".to_owned(),
-        age_secs: 5,
-        pending: 2,
-        signals: vec!["held".to_owned(), "mail".to_owned(), "flagged".to_owned()],
-        failure: Some("Unauthorized".to_owned()),
-        flag: Some(crate::reply::queue::Flag {
-            at: "2026-09-01T22:10Z".to_owned(),
-            reason: "it is rewriting an unrelated crate".to_owned(),
-        }),
-        held: Some(crate::reply::queue::Held {
-            tool: "Bash".to_owned(),
-            tool_use: "toolu_1".to_owned(),
-            reason: "writes".to_owned(),
-        }),
-        ..waiting("home", "20260830T051200Z-a1b2")
-    };
-    Model {
-        queue: true,
-        waiting: vec![crate::ui::Asking {
-            channel: own().channel,
-            rows: vec![raised, waiting("home", "c-2"), waiting("elsewhere", "c-3")],
-        }],
-        ..seated()
-    }
-}
-
-/// One help row, in the classification that owes a control.
-pub(crate) fn helped(verb: &str, surface: &str) -> crate::reply::help::HelpRow {
-    crate::reply::help::HelpRow {
-        verb: verb.to_owned(),
-        usage: format!("/{verb} <workspace>"),
-        summary: format!("what {verb} is for"),
-        detail: format!("the page for {verb}, at the length a page runs to"),
-        surface: surface.to_owned(),
-    }
-}
-
-/// **The seated model with the commands pane open and answered** (bl-40ec):
-/// an op every seat owes a control and one spoken by programs, which is every
-/// sentence a row can carry.
-pub(crate) fn commanded() -> Model {
-    Model {
-        lookup: Some(crate::ui::Lookup::Commands),
-        pages: vec![crate::ui::Pages {
-            channel: own().channel,
-            rows: vec![
-                helped("message", "control"),
-                helped("invocations", "machine"),
-            ],
-        }],
-        ..seated()
-    }
-}
-
-/// One hit, in a conversation on a wall the engine names by its own path —
-/// which is the whole of yog bl-ef16 in one value.
-pub(crate) fn hit(at: &str) -> crate::reply::search::Hit {
-    crate::reply::search::Hit {
-        at: at.to_owned(),
-        field: "summary".to_owned(),
-        excerpt: "the gate said no".to_owned(),
-        offset: 12,
-        project: None,
-        id: None,
-        workspace: Some("/ws/home".to_owned()),
-        agent: Some("20260830T051200Z-a1b2".to_owned()),
-    }
-}
-
-/// **The seated model with the find pane open and answered** (bl-40ec): a
-/// needle already spent, one hit, and a subject the engine could not read —
-/// every sentence the pane can say, on one screen.
-pub(crate) fn finding() -> Model {
-    Model {
-        lookup: Some(crate::ui::Lookup::Finding),
-        needle: "gate".to_owned(),
-        found: vec![crate::ui::Hits {
-            channel: own().channel,
-            found: crate::reply::search::Found {
-                needle: "gate".to_owned(),
-                rows: vec![hit("conversation")],
-                unreadable: vec!["p: balls unlistable".to_owned()],
-            },
-        }],
         ..seated()
     }
 }

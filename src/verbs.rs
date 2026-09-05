@@ -88,6 +88,8 @@ pub mod records;
 mod rows;
 /// The start family's two envelopes, which are doors without rows.
 pub mod start;
+/// The trail's read — a door without a row, because its bound is a number.
+pub mod trail;
 /// The role-tuning family: one read, and the three writes it reads back.
 pub mod tuning;
 /// The window's own reads — the two ops whose subject is every channel.
@@ -107,6 +109,7 @@ pub use rows::{
     follow, message, nudge, transcript, workspaces,
 };
 pub use start::{PREPARE, PROMPT, prepare, prompt};
+pub use trail::{DEPTH, OPS, ops};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
 pub use window::{HELP, SEARCH, search};
 pub use workspace::{DELETE_WORKSPACE, PIN, UNPIN, delete_workspace, pin, unpin};

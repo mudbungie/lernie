@@ -40,6 +40,8 @@ mod queue;
 mod records;
 /// A start, between its two acts.
 mod start;
+/// The trail pane between frames: open or not, and what each channel has done.
+mod trail;
 /// The tuning pane between frames, and the four acts its controls spend.
 mod tuning;
 /// An unmaking between frames: its subject, its arming, and whether it is asked.
@@ -55,6 +57,7 @@ pub use notice::Notice;
 pub use posted::Posted;
 pub use queue::Asking;
 pub use start::{Phase, Start};
+pub use trail::Trail;
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;
 pub use window::{Hits, Lookup, Pages};
@@ -120,11 +123,13 @@ pub struct Model {
     /// **Whether the decision queue is open** — the fourth covering pane, and
     /// the first whose subject is neither the aim nor the selection (`queue`).
     pub queue: bool,
-    /// **Which of the window's own two panes is standing**, if either — the
-    /// sixth and seventh covering panes, and the second and third whose
-    /// subject is every channel (`window`; bl-40ec). One field rather than two
-    /// flags, because no two panes ever stand together and a pair of bools
-    /// would make *both* representable.
+    /// **Which of the window's own three panes is standing**, if any — the
+    /// sixth, seventh and ninth covering panes, and the three besides the
+    /// queue whose subject is every channel (`window`, `trail`; bl-40ec,
+    /// bl-4c48). One field rather than three flags, because no two panes ever
+    /// stand together and a set of bools would make *all three* representable
+    /// — which is also the reframe clippy's `struct_excessive_bools` asks for
+    /// by name, taken rather than suppressed.
     pub lookup: Option<Lookup>,
     /// **An unmaking, while it stands** — the fifth covering pane, and the only
     /// one this window has whose act cannot be undone by doing the other thing
@@ -137,6 +142,9 @@ pub struct Model {
     /// is nobody answered yet, and a section holding no row is an engine that
     /// answered and holds nothing waiting (`queue`).
     pub waiting: Vec<Asking>,
+    /// **What each channel last said has crossed its boundary** — the same
+    /// per-channel reading, one noun over (`trail`; bl-4c48).
+    pub trails: Vec<Trail>,
     /// **What each channel last said it answers to** — the same per-channel
     /// reading, one noun over (`window`; bl-40ec).
     pub pages: Vec<Pages>,

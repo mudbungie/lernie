@@ -18,7 +18,7 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{
-    commanded, finding, pinned, queued, recorded, role, seated, signing, tuned,
+    commanded, finding, pinned, queued, recorded, role, seated, signing, trailing, tuned,
 };
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
@@ -142,6 +142,19 @@ fn queue() -> World {
     }
 }
 
+/// **The window with the trail open and answered** (bl-4c48) — the sixth
+/// covered state, and the only screen a trail row's sentences are on.
+///
+/// It is answered for the reason every other pane's world is: what a world
+/// exists to photograph is every sentence the pane can say, and an unanswered
+/// trail says exactly one.
+fn trail() -> World {
+    World {
+        name: "trailing",
+        model: trailing(),
+    }
+}
+
 /// **The window with the commands pane open** — the sixth covered state
 /// (bl-40ec), and the only screen every sentence a help row can carry is on.
 fn commands() -> World {
@@ -224,6 +237,7 @@ pub(crate) fn all() -> Vec<World> {
         assigning(),
         records(),
         queue(),
+        trail(),
         commands(),
         find(),
         login(),

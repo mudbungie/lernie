@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    EFFORT, PREPARE, PRIORITY, PROMPT, effort, find, prepare, priority, prompt,
+    EFFORT, OPS, PREPARE, PRIORITY, PROMPT, effort, find, ops, prepare, priority, prompt,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -116,6 +116,11 @@ fn rebuilt(frame: &Value) -> Option<Value> {
         PRIORITY => obj["on"]
             .as_bool()
             .map(|on| priority(text(obj, envelope::WORKSPACE), text(obj, "role"), on)),
+        // The trail's depth is a number, which is why it is a door at all —
+        // and it round-trips off the frame's own JSON type for the tuning
+        // pair's reason: a reading that went through a string would be the
+        // translation the doors exist to avoid.
+        OPS => obj["max"].as_u64().map(ops),
         PROMPT => obj["seed"].is_null().then(|| {
             let staged = crate::reply::start::prepared(obj).expect("a staged body");
             let address = staged.workspace.clone();

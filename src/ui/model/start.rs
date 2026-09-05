@@ -46,6 +46,11 @@ pub enum Phase {
     Firing,
     /// The engine minted this name for the conversation it started.
     Started(String),
+    /// The engine refused one of the two acts, in its own words — and the goal
+    /// went back to the box, because a refused fire spends nothing (yog's
+    /// `docs/DESIGN.md` §8.1: *sign in first* is the one this ball exists for,
+    /// and a blank goal and the spend ceiling ride the same door).
+    Refused(String),
 }
 
 impl Start {
@@ -58,6 +63,7 @@ impl Start {
     pub fn line(&self) -> String {
         match &self.phase {
             Phase::Started(name) => format!("started «{name}» in {}", self.address),
+            Phase::Refused(why) => format!("not started in {}: {why}", self.address),
             Phase::Staging | Phase::Firing => {
                 format!("starting in {}: {}…", self.address, self.goal)
             }
@@ -66,7 +72,7 @@ impl Start {
 
     /// Whether a start is still in flight — the gate on composing a second.
     pub fn outstanding(&self) -> bool {
-        !matches!(self.phase, Phase::Started(_))
+        !matches!(self.phase, Phase::Started(_) | Phase::Refused(_))
     }
 }
 
@@ -125,6 +131,47 @@ impl Model {
             goal,
             phase: Phase::Firing,
         });
+    }
+
+    /// **Whether `op` is one of the start's two acts and a start is out on
+    /// it** — the one question a receipt that is not an answer has to ask
+    /// before it can be filed (`super::absorb`). Any other op's refusal is
+    /// somebody else's sentence and leaves the start where it is.
+    pub(super) fn starting(&self, op: &str) -> bool {
+        (op == crate::verbs::PREPARE || op == crate::verbs::PROMPT)
+            && self.start.as_ref().is_some_and(Start::outstanding)
+    }
+
+    /// **The engine refused one of the two acts.** The sentence stands where
+    /// the start's own did, and the box comes back under it with the goal in
+    /// it: a refused fire spends nothing, so what was typed is the operator's
+    /// again. The refund goes to the draft only where the draft is empty — it
+    /// is, whenever the composer has been standing down for this start, and a
+    /// draft typed elsewhere in the meantime is not this start's to overwrite.
+    pub(super) fn refuse_start(&mut self, why: String) {
+        let Some(mut start) = self.start.take() else {
+            return;
+        };
+        self.refund(&start.goal);
+        start.phase = Phase::Refused(why);
+        self.start = Some(start);
+    }
+
+    /// **A start whose act earned no answer this seat can read** — a frame it
+    /// cannot paint, or none at all (REMOTE §3's IN DOUBT). Nothing is held:
+    /// the sentence about *that* is the bar's, and the goal is the operator's
+    /// again, because a start that stays outstanding forever is a composer
+    /// with no box.
+    pub(super) fn take_back_start(&mut self) {
+        if let Some(start) = self.start.take() {
+            self.refund(&start.goal);
+        }
+    }
+
+    fn refund(&mut self, goal: &str) {
+        if self.draft.trim().is_empty() {
+            goal.clone_into(&mut self.draft);
+        }
     }
 
     /// **The minted name**, which is what the whole flow was for.

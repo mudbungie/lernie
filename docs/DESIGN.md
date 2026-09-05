@@ -859,6 +859,9 @@ nothing. And **a start in flight refuses a second start** by there being no
 control: while one is outstanding the composer paints the sentence instead of
 the box. That is upstream's own finding (yog §3.4): two starts chained through
 one composer spend one goal on two conversations and leave the first unfinished.
+**And a start the engine refuses is retired by that refusal, with the goal back
+in the box** — §4.26, which is where the one gesture held across a round trip
+learns which receipt is its own.
 
 **A start focuses what it started, and the claim is what makes that safe**
 (`src/ui/model/claim.rs`; upstream's rule is yog's `docs/DESIGN.md` §3.4).
@@ -1952,6 +1955,84 @@ the window at work can only ever put `pin` on the glass. `pinned` is the
 exists on — *unproven is red*, and a control that lives on a screen the walk
 never visits fails honestly.
 
+### 4.26 The start's refusal: the engine's rung, and the seat's refund (bl-b180)
+
+`src/ui/model/start.rs`, `src/ui/model/absorb.rs`, `src/state/traffic.rs`,
+`src/offframe/poster.rs`. The operator ruling this closes is yog's bl-1fd0: *on
+a wall holding no usable provider credential, typing a goal and hitting Enter
+will work zero percent of the time — the conversation is born, immediately dies
+on no-models, and the operator learns it from a dead row (or from nothing at
+all).* Both first goals typed that evening were lost. The ball arrived with
+three open questions, and each is answered by a house principle rather than a
+preference.
+
+**1. The engine decides, and the seat re-derives nothing.** The predicate is
+brazen's `credential` column plus one clause about the config's own role
+assignments, and it was written and tested on the engine once (yog `StartGate`)
+before being deleted for having no caller — the doc that survived it said *if
+a seat ever needs yog to state the gate, it files against yog and the carrier
+is designed then*. This seat filed (yog bl-2291). A seat re-judging
+`Query::Providers` rows would be a second implementation of a settled decision
+(VISION §8), and with the phone beside this window it would be a third. So the
+rung lives at the engine's `Prompt` door, in the order blank goal → **sign in**
+→ confinement → ceiling, and **the carrier is the refusal every act already
+has**: `{"ok": false, "error": "sign in first: … — /login <provider> (rows: …)"}`.
+No new verb, no new shape, `PROTOCOL` unmoved, corpus unchanged (yog REMOTE
+§9.19). This side paints the engine's sentence and never learns the predicate.
+
+**2. A one-line refusal at the moment a goal would be spent, not a standing
+band.** The face is four panes wide and the composer is one control with two
+subjects; a band that stood for as long as the wall was unsigned would be paid
+for by the pane beside it, on every wall, whether or not the operator meant to
+begin anything. The refusal is instead the **start's own receipt**, painted
+where the start's sentence already stands — `not started in <wall>: sign in
+first …` over the box — with the goal back in the box under it, because a
+refused fire spends nothing and what was typed is the operator's again. The
+standing fact about the wall belongs to the Login pane (bl-e3c5), whose rows
+say *not signed in* for as long as it is true; this surface says it once, when
+it matters, and the sentence stands until the next start replaces it.
+
+**3. The waiting question dissolves.** The ball asked what happens to a start
+typed before a readiness answer is back. There is no readiness answer to wait
+on: the goal is posted as always and the engine's reply is the name or the
+refusal. A special case was a missing reframe.
+
+**What the seat had to learn to do that — and it is not about the wall.** A
+refusal wears no `kind`, so `Model::absorb` could not tell *whose* refusal it
+was filing, and the one gesture this window holds across two acts stayed
+outstanding under any refusal at all: a blank goal, the spend ceiling, a
+confinement refusal — each already an engine-side refusal of `prompt` — left
+the composer painting *starting…* with no box, forever. That is the seat-side
+half of the ruling, and it is a plain defect this ball found on its path:
+
+- **The poster stamps a routed reply with its op** (`Said::Receipt { op, frame
+  }`), because it is the one place that still knows, for the same reason it
+  already stamps an unanswered act (`Said::Acted`). Every routed gesture is
+  stamped rather than only an act, since the stamp is consulted for exactly
+  two ops and a second arm for reads nobody routes would be a branch with no
+  beat; the fanned path and the standing reads stay bare, because a question
+  answered in place has nothing held against it.
+- **`Model::receipt` is `absorb` with that one fact.** An answer files as any
+  frame. A refusal of `prepare` or `prompt` while a start is outstanding retires
+  it into `Phase::Refused` and refunds the goal; any other op's refusal is the
+  bar's sentence and leaves the start alone, and so does a refusal arriving
+  after the start landed. A frame this seat cannot read, and no reply at all
+  (`Model::acted`), take the start back the same way — the bar keeps its own
+  sentence about *that*, and the goal is the operator's — because a start
+  nothing will ever answer is a composer with no box.
+- **The refund never overwrites a draft typed elsewhere.** The composer is one
+  box with two subjects, so a deposit drafted on another wall while the start
+  was out is newer text and is kept; the refused start's own goal is then held
+  only in the retired `Start`, which is the one narrow residual and is recorded
+  rather than papered over.
+
+**Not built, with the reason.** No `Query::Providers` read from the start box
+(the seat would hold a prediction the door re-derives anyway, and the read
+races the typing); no `sign_in_required` flag on the `prepared` body (the same
+prediction one frame earlier); no second painted seat for the sentence (the bar
+already has a dismiss, the composer's slot already has the receipt, and one
+sentence in two places is two sentences).
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2010,12 +2091,12 @@ never visits fails honestly.
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | what the window holds between frames. The door a reply comes in through split out at the cap onto the seam this row used to name (`model/absorb.rs`). | ~195 |
-| `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither. | ~140 |
+| `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
-| `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
+| `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~210 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
@@ -2035,10 +2116,10 @@ never visits fails honestly.
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
-| `src/state/traffic.rs` | what crosses the lock — a worker's report in its four kinds, and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~195 |
+| `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set: the questions nested, the pane-keyed reads, and the channel that costs only itself (§4.12). | ~145 |
-| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed, the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~120 |
+| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~130 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |

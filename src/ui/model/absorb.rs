@@ -34,6 +34,27 @@ impl Model {
         }
     }
 
+    /// **Take one act's receipt**, knowing which act it answers (bl-b180).
+    ///
+    /// An answer goes through [`absorb`](Self::absorb) like any frame. What
+    /// differs is the two readings that are *not* an answer, and only for the
+    /// start's own two acts, which are the one gesture this window holds
+    /// across a round trip: the engine's refusal retires the start into its
+    /// own sentence with the goal back in the box, and a frame this seat cannot
+    /// read retires it into the bar's sentence the same way — because a start
+    /// nothing will ever answer is a composer with no box. Every other op's
+    /// refusal is exactly what it was: the bar.
+    pub fn receipt(&mut self, channel: &Channel, op: &str, read: Read) {
+        match read {
+            Read::Refusal(said) if self.starting(op) => self.refuse_start(said),
+            Read::Unreadable(_) if self.starting(op) => {
+                self.take_back_start();
+                self.absorb(channel, read);
+            }
+            other => self.absorb(channel, other),
+        }
+    }
+
     /// File one answer. A roster answer replaces its **own channel's** chunk
     /// and leaves every other one standing, which is REMOTE §8.2's *"a refusal
     /// is one entry's, never the set's"* read from the other side: a box
@@ -181,7 +202,16 @@ impl Model {
     /// while the sentence stands. That is why there is no control here and no
     /// mapping from an act to *its* read: a control would be a second spelling
     /// of the beat, and the parity roster judges controls, not states (§4.16).
+    ///
+    /// **A start whose act this was is taken back** (bl-b180): the bar says
+    /// what happened to the act, and the box comes back with the goal in it —
+    /// held forever it would be a composer with no box, and IN DOUBT's own
+    /// remedy is to look, which an operator does with the goal in front of
+    /// them rather than behind a sentence that never moves.
     pub fn acted(&mut self, op: &str, reach: &crate::channel::Reach) {
+        if self.starting(op) {
+            self.take_back_start();
+        }
         self.notice = Some(Notice::act(op, reach));
     }
 }

@@ -123,3 +123,32 @@ fn a_link_carries_the_cadence_and_the_stop() {
     assert!(link.stopped());
     assert!(link.clone().stopped(), "every handle is the same link");
 }
+
+/// **An act's receipt is filed knowing which act it answered** (bl-b180): the
+/// poster stamps the op, and the one thing held across two acts — a start —
+/// is retired by its own refusal and by no other.
+#[test]
+fn a_receipt_is_filed_with_the_act_it_answers() {
+    let link = link();
+    let channel = own().channel;
+    let mut model = Model {
+        conversation: None,
+        draft: "do the thing".to_owned(),
+        ..seated()
+    };
+    model.stage("home");
+    link.heard(
+        &channel,
+        Said::Receipt {
+            op: "prepare".to_owned(),
+            frame: json!({"ok": false, "error": "sign in first"}),
+        },
+    );
+    link.settle(&mut model);
+    assert_eq!(
+        model.start.as_ref().map(|start| start.phase.clone()),
+        Some(crate::ui::model::Phase::Refused("sign in first".to_owned()))
+    );
+    assert_eq!(model.draft, "do the thing", "the goal came back");
+    assert_eq!(model.notice, None);
+}

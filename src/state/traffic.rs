@@ -76,6 +76,18 @@ pub enum Said {
     /// one line for the whole window: a sentence about an act that does not
     /// name the act is a sentence about nothing an operator can act on.
     Acted { op: String, reach: Reach },
+    /// **A routed gesture's reply frame**, stamped with the op it answers
+    /// (bl-b180).
+    ///
+    /// A refusal wears no `kind`, so a frame alone cannot say which exchange
+    /// it closes — and the one thing this window holds across two acts, a
+    /// start, has to know whether the sentence that came back is *its* refusal
+    /// or somebody else's. The poster is the one place that still knows, for
+    /// [`Acted`](Self::Acted)'s reason exactly, so it says so on the way in
+    /// rather than the model guessing from timing. A standing read's frame
+    /// stays a bare [`Frame`](Self::Frame): it is answered in place and
+    /// nothing is held against it.
+    Receipt { op: String, frame: Value },
 }
 
 /// **Which covering pane's standing read is up.**

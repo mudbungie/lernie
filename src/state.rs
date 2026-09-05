@@ -96,6 +96,11 @@ impl Link {
                 // relationship** (REMOTE §3, bl-3969), so it goes to the bar
                 // and never to a channel's section — see `Model::acted`.
                 Said::Acted { op, reach } => model.acted(&op, &reach),
+                // The same door as a frame, with the one fact a refusal
+                // cannot carry for itself — which act it answered.
+                Said::Receipt { op, frame } => {
+                    model.receipt(&heard.channel, &op, crate::reply::read(&frame));
+                }
             }
         }
         shared.outbox.append(&mut model.outbox);
@@ -127,13 +132,11 @@ impl Link {
     /// about. Already read, for [`Self::live`]'s reason: a lane's frame is an
     /// append and only the lane knows which read it belongs to (REMOTE §8.3).
     pub fn signing(&self, channel: &Channel, provider: &str, read: crate::reply::Read) {
-        self.heard(
-            channel,
-            Said::Signin {
-                provider: provider.to_owned(),
-                read,
-            },
-        );
+        let said = Said::Signin {
+            provider: provider.to_owned(),
+            read,
+        };
+        self.heard(channel, said);
     }
 
     /// What to ask, as of the last frame.

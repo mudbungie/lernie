@@ -126,3 +126,29 @@ fn a_finished_start_paints_its_name_over_the_box_that_begins_the_next() {
     );
     assert!(painted.lines().any(|line| line == START), "{painted}");
 }
+
+/// **A refused start paints its sentence over the box that carries the goal
+/// back** (bl-b180): the engine's *sign in first* stands where the start's own
+/// sentence stood, and under it the box is live again with what was typed.
+#[test]
+fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back() {
+    let mut model = Model {
+        start: Some(Start {
+            address: "home".to_owned(),
+            goal: "do the thing".to_owned(),
+            phase: Phase::Refused("sign in first: no provider holds a credential".to_owned()),
+        }),
+        draft: "do the thing".to_owned(),
+        ..unselected()
+    };
+    let painted = pane(|ui| render(ui, &mut model, &aimed()));
+    assert!(
+        painted.contains("not started in home: sign in first: no provider holds a credential"),
+        "{painted}"
+    );
+    assert!(painted.lines().any(|line| line == START), "{painted}");
+    assert!(
+        painted.contains("do the thing"),
+        "the goal is in the box:\n{painted}"
+    );
+}

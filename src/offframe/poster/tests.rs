@@ -195,3 +195,39 @@ fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
 /// The lost-reply contract: what an act with no reply paints, and what it
 /// never does.
 mod doubt;
+
+/// **An act's reply is stamped with the op it answers** (bl-b180), which is
+/// what lets the model retire a start on its own refusal: the engine refuses
+/// the staging act, and the start on this end is refused rather than left
+/// outstanding forever with the bar saying something about nothing in
+/// particular.
+#[test]
+fn an_act_s_refusal_reaches_the_start_that_posted_it() {
+    let scratch = Scratch::new();
+    wired(
+        &scratch,
+        &flat(),
+        vec![vec![json!({"ok": false, "error": "sign in first"})]],
+    );
+    let link = Link::new(Duration::from_millis(1));
+    let mut model = Model {
+        roster: vec![Chunk::of(own())],
+        aim: Some(Aim {
+            channel: own().name,
+            address: "home".to_owned(),
+        }),
+        conversation: None,
+        draft: "do the thing".to_owned(),
+        ..Model::default()
+    };
+    model.stage("home");
+    link.settle(&mut model);
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    assert_eq!(
+        model.start.as_ref().map(|start| start.phase.clone()),
+        Some(crate::ui::model::Phase::Refused("sign in first".to_owned()))
+    );
+    assert_eq!(model.draft, "do the thing");
+    assert_eq!(model.notice, None, "the sentence is the composer's");
+}

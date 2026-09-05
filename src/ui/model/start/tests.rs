@@ -147,3 +147,139 @@ fn a_start_in_flight_reads_the_same_whichever_act_is_out() {
     assert_eq!(firing.line(), staging.line());
     assert!(staging.outstanding() && firing.outstanding());
 }
+
+/// The engine's sentence, refusing a fire (yog's `docs/DESIGN.md` §8.1).
+fn refused() -> crate::reply::Read {
+    read(&json!({"ok": false, "error": "sign in first: no provider holds a credential"}))
+}
+
+/// A start staged and, for the second act, fired — the two states a refusal
+/// can find it in.
+fn out(op: &str) -> Model {
+    let mut model = Model {
+        conversation: None,
+        draft: "do the thing".to_owned(),
+        ..seated()
+    };
+    model.stage("home");
+    if op == crate::verbs::PROMPT {
+        model.absorb(&own().channel, staged("home", ""));
+    }
+    model
+}
+
+/// **A refused fire spends nothing** (bl-b180): the engine's refusal of either
+/// act retires the start into its own sentence and hands the goal back to the
+/// box, and the bar says nothing — the sentence stands where the start's did.
+#[test]
+fn a_refusal_of_either_act_retires_the_start_and_gives_the_goal_back() {
+    for op in [crate::verbs::PREPARE, crate::verbs::PROMPT] {
+        let mut model = out(op);
+        assert_eq!(model.draft, "", "{op}: the goal is held, not drafted");
+        model.receipt(&own().channel, op, refused());
+        let start = model.start.as_ref().expect("the start stands, refused");
+        assert_eq!(
+            start.phase,
+            Phase::Refused("sign in first: no provider holds a credential".to_owned()),
+            "{op}"
+        );
+        assert!(!start.outstanding(), "{op}: the box is back");
+        assert_eq!(
+            start.line(),
+            "not started in home: sign in first: no provider holds a credential"
+        );
+        assert_eq!(
+            model.draft, "do the thing",
+            "{op}: the goal is the operator's again"
+        );
+        assert_eq!(
+            model.notice, None,
+            "{op}: the sentence is the composer's, not the bar's"
+        );
+    }
+}
+
+/// **Only the start's own two acts can refuse it.** Another op's refusal is
+/// the bar's sentence and leaves the start exactly where it was — and so does
+/// a refusal that arrives once the start has already landed.
+#[test]
+fn another_op_s_refusal_or_a_late_one_leaves_the_start_alone() {
+    let mut model = out(crate::verbs::PREPARE);
+    model.receipt(&own().channel, "nudge", refused());
+    assert_eq!(
+        model.start.as_ref().map(|start| start.phase.clone()),
+        Some(Phase::Staging)
+    );
+    assert_eq!(model.draft, "");
+    assert!(
+        model.notice.is_some(),
+        "somebody else's refusal is the bar's"
+    );
+
+    let mut landed = out(crate::verbs::PROMPT);
+    landed.absorb(
+        &own().channel,
+        read(&json!({"ok": true, "kind": "started", "conversation": "brisk-otter"})),
+    );
+    landed.receipt(&own().channel, crate::verbs::PROMPT, refused());
+    assert_eq!(
+        landed.start.as_ref().map(|start| start.phase.clone()),
+        Some(Phase::Started("brisk-otter".to_owned()))
+    );
+    assert!(landed.notice.is_some());
+}
+
+/// **A start nothing will ever answer is a composer with no box.** A receipt
+/// this seat cannot read, and no receipt at all, each take the start back:
+/// the bar keeps its own sentence about that, and the goal is the operator's.
+#[test]
+fn an_unreadable_receipt_or_none_at_all_takes_the_start_back() {
+    let mut model = out(crate::verbs::PROMPT);
+    model.receipt(
+        &own().channel,
+        crate::verbs::PROMPT,
+        read(&json!({"ok": true, "kind": "a-kind-this-build-cannot-paint"})),
+    );
+    assert_eq!(model.start, None);
+    assert_eq!(model.draft, "do the thing");
+    assert!(matches!(
+        model.notice,
+        Some(crate::ui::Notice::Unreadable(_))
+    ));
+
+    let mut model = out(crate::verbs::PREPARE);
+    model.acted(
+        crate::verbs::PREPARE,
+        &crate::channel::Reach::Unsent("no channel".to_owned()),
+    );
+    assert_eq!(model.start, None);
+    assert_eq!(model.draft, "do the thing");
+    assert!(matches!(
+        model.notice,
+        Some(crate::ui::Notice::Unsent { .. })
+    ));
+
+    // Another op's lost reply takes nothing back.
+    let mut model = out(crate::verbs::PREPARE);
+    model.acted(
+        "nudge",
+        &crate::channel::Reach::Unsent("no channel".to_owned()),
+    );
+    assert!(model.start.is_some());
+    assert_eq!(model.draft, "");
+}
+
+/// **The refund never overwrites a draft typed elsewhere.** The composer is one
+/// box with two subjects, so a deposit drafted on another wall while the start
+/// was out is the operator's newer text and is kept.
+#[test]
+fn the_refund_never_overwrites_a_draft_typed_elsewhere() {
+    let mut model = out(crate::verbs::PROMPT);
+    model.draft = "a deposit drafted meanwhile".to_owned();
+    model.receipt(&own().channel, crate::verbs::PROMPT, refused());
+    assert_eq!(model.draft, "a deposit drafted meanwhile");
+    assert!(matches!(
+        model.start.as_ref().map(|start| &start.phase),
+        Some(Phase::Refused(_))
+    ));
+}

@@ -94,7 +94,26 @@ fn routed(link: &Link, root: &Path, channel: &Channel, posted: &Posted) {
         .map_err(Reach::Unsent)
         .and_then(|(open, carried)| open.ask(&carried));
     match asked {
-        Ok(stream) => super::file(link, channel, stream),
+        // A routed reply is stamped with the op it answers (bl-b180): a
+        // refusal wears no `kind`, and the start held across two acts has to
+        // know whether the sentence is its own. Every routed gesture is
+        // stamped rather than only an act's, because the stamp is consulted
+        // for exactly two ops and a second arm here for the reads nobody
+        // routes today would be a branch with no beat. The fanned path stays
+        // bare: it carries the window's own reads, which nothing is held
+        // against.
+        Ok(stream) => {
+            let op = crate::envelope::op(&posted.envelope);
+            for frame in stream {
+                link.heard(
+                    channel,
+                    Said::Receipt {
+                        op: op.clone(),
+                        frame,
+                    },
+                );
+            }
+        }
         Err(reach) => link.heard(channel, said(posted, reach)),
     }
 }

@@ -1,7 +1,8 @@
 +++
 title = "a prepared start cannot be fanned, and no candidate can be accepted or retired"
 created = 1788397354
-updated = 1788397354
+updated = 1788583085
+claimant = "Animations-R"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

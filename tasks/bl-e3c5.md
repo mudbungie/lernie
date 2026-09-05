@@ -1,7 +1,8 @@
 +++
 title = "the Login pane: provider rows over the channel that hosts the wall, and the sign-in posted as a boundary act"
 created = 1788138703
-updated = 1788138703
+updated = 1788580237
+claimant = "Animations-D"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

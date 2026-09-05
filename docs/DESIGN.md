@@ -17,7 +17,7 @@ conversation list, the chat pane and the composer — which speaks to the
 conversation that is selected and **begins one** where none is, holding the
 staged body between the start's two acts — painted from a snapshot and firing
 gestures through the same doors `lernie message` and `lernie start` spend. Behind it
-are four threads — the asker over the standing question set, the poster
+are four threads (§4.12) — the asker over the standing question set, the poster
 draining what a click composed, and two held lanes: the follow lane on the
 focused conversation, and the sign-in lane on the provider row the login pane is
 following (§4.24). **Everything the window does is reachable from the
@@ -998,6 +998,97 @@ window on an offscreen context. What lives in the excluded entry point is the
 event loop and the `eframe::App` impl that forwards one call — process state,
 exactly as argv and the environment are.
 
+### 4.12 What fills the model: four threads, a derived question set, and one lock (§7, §8.2)
+
+`src/state.rs`, `src/state/traffic.rs`, `src/offframe.rs` and the four passes
+under it. §4.11 says the frame never dials; this is where the dialling happens,
+and the whole of what it may say to the window.
+
+**The frame owns the model and no worker touches it.** What crosses the lock is
+small and one-directional in each half: frames that **landed**, gestures to
+**send**, and the standing question set. [`Model`] is the frame's alone, so no
+worker can be mid-write in one while a frame reads it, and there is no shared
+structure to keep consistent. `Link::settle` is the frame's entire side of it,
+called once at the top of an update: it files what landed, hands over what was
+composed, and publishes what to ask next. Nothing in it can block — the lock is
+held across a drain and three moves, and no worker holds it across a socket.
+
+**Four threads, because they wait for different things.**
+
+- **The asker** (`src/offframe/asker.rs`) goes round the standing set at human
+  cadence: every channel's roster, the aimed wall's conversations, the selected
+  conversation's transcript, and whichever covering pane's read is up. The
+  questions **nest** — the aim is asked only where there is one, the
+  conversation only where one is selected — and a channel that will not answer
+  costs only itself, which is REMOTE §8.2's *"a refusal is one entry's, never
+  the set's"* one layer above the file it was written about.
+- **The poster** (`src/offframe/poster.rs`) sends what a click composed, on its
+  own thread because an act must not wait behind a read that is mid-pass. It is
+  also where a gesture naming no workspace is **fanned** over every channel
+  rather than routed (§4.21), and where a failed leg earns its sentence: a
+  read's failure is a *relationship* and goes to the channel's roster section,
+  an act's is an *exchange* and goes to the bar (§4.22).
+- **The follow lane** (`src/offframe/follow.rs`) holds one connection open on
+  the focused conversation and is answered as the tail moves — a read that
+  deliberately never finishes, and therefore one that must never be in the
+  serial pass.
+- **The sign-in lane** (`src/offframe/signin.rs`) is that one noun over
+  (§4.24): one connection on the provider row the login pane is following,
+  answered at a human-in-a-browser's pace.
+
+**Both held lanes stamp every frame with what it is about, and the FRAME
+decides whether it is still wanted.** The engine was asked about one
+conversation, or one provider row, and answers about that one — so only this end
+knows the operator has moved on, and only the frame knows what it is looking at
+right now. The guard is therefore a pure comparison at the settle rather than a
+poll racing the socket the lane is parked on. Each lane's fold lives for exactly
+one `tick`, which is how REMOTE §5.5's *"onto an empty fold"* is implemented
+with no flag and no field: a read boundary is a local variable's scope.
+
+**The standing set is a QUERY, never stored** (`Standing::of`). It is derived
+from the model on every settle — every channel's roster, the aim, the selection,
+and which covering pane is open — so there is nothing to invalidate and nothing
+that can disagree with the focus: a click changes the model, and what is asked
+next follows from it. Two consequences are worth stating because both were
+decisions.
+
+- **A pane's read is keyed on the PANE, not on the aim** (§4.17). A seat with no
+  configuration surface open asks nothing about a file nobody is looking at; the
+  reads are cheap, and a standing question nobody has a use for is still one the
+  engine answers on every beat, forever. `Standing::open` is **one field rather
+  than a flag per pane** (§4.24), because no two covering panes ever stand
+  together and four bools would make three-at-once representable.
+- **Not every selection is a question.** A conversation this window has just
+  started is selected under a name the engine resolves nowhere until its driver
+  writes the branch, so `Model::asked` leaves it out and the standing set never
+  asks about it (§4.11's claim).
+
+**The one lock, and the rule named the file before there was anything in it**
+(`rules/locks-outside-state.yml`; §5's confinement table). `src/state.rs` is its
+only tenant and there should not be a second: everything above the socket is a
+pure function of what it is handed, and everything below it is one thread on one
+connection. A poisoned lock is recovered rather than propagated — a worker that
+panicked mid-pass left the queues consistent, because they are vectors of
+finished values.
+
+**An act is sent exactly once, and there is no retry anywhere in this crate.**
+`Link::compose` is a take, the drained envelopes live in the poster's own loop,
+and no arm re-queues one. The only repetition the crate owns is `offframe::pump`'s
+cadence, which re-derives the standing READS and never touches that queue — which
+is REMOTE §3's *"A lost reply leaves an act IN DOUBT, and the recovery is a read
+— never a resend"* implemented as an absence rather than as a rule somebody
+keeps.
+
+**Every pass is a function a test calls directly.** Each worker's body is
+`tick`, and a thread is `pump` around one — so the suite drives a real pass
+against the stand-in engine with no thread at all, and the one end-to-end beat
+is about the threading rather than about what the passes do. **A stop is seen
+between passes, not during one**: a held lane is parked on a socket read, so it
+learns of a stop when the engine writes, when the connection closes, or when the
+transport's own read timeout expires. That is not a leak — closing the window
+ends the process — and the alternative is a second signal path into a blocking
+read, which is a mechanism for a case with no consequence.
+
 ### 4.13 The seat's own durable state lives under a DIFFERENT root (§7)
 
 `src/place.rs`, and the decision it records is `src/paths.rs`'s. REMOTE §7 rules
@@ -1907,6 +1998,12 @@ surfaced and that file records absences.
 | `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
+| `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
+| `src/state/traffic.rs` | what crosses the lock — a worker's report in its four kinds, and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~195 |
+| `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
+| `src/offframe/asker.rs` | one pass of the standing set: the questions nested, the pane-keyed reads, and the channel that costs only itself (§4.12). | ~145 |
+| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed, the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~120 |
+| `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
 | `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
@@ -1958,6 +2055,8 @@ surfaced and that file records absences.
 | `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, and every upstream shape is classified exactly once. | ~140 |
 | `src/verbs/tests/corpus.rs` | the replay, request direction, read half: every frame in the vocabulary decodes as a gesture and routes by the address its shape carries. | ~120 |
 | `src/verbs/tests/corpus/emits.rs` | the write half: every frame this seat composes round-trips, and what it cannot compose is recorded by count and reason. | ~110 |
+| `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~85 |
+| `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
 | `src/test_support/window/panes.rs` | the covering panes' own fixtures — the seated model with each one open and answered, split at the design-time budget on the seam the parent's doc draws. `cfg(test)`. | ~210 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |

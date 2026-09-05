@@ -104,7 +104,11 @@ fn row(value: &Value) -> Result<FileRow, String> {
 }
 
 /// The bounded preview: three known classes and the word itself for a fourth.
-fn preview(value: &Value) -> Result<Preview, String> {
+///
+/// `pub(crate)` because the step drill-in's two capture logs are the identical
+/// bounded reading under identical keys (`super::step`) — nothing parsed them
+/// either — and one spelling of a preview is read by one reader.
+pub(crate) fn preview(value: &Value) -> Result<Preview, String> {
     let obj: &Map<String, Value> = value.as_object().ok_or("preview: not an object")?;
     Ok(match fields::text(obj, "kind")?.as_str() {
         "text" => Preview::Text(fields::text(obj, "text")?),

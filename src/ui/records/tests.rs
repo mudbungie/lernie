@@ -59,27 +59,33 @@ fn every_empty_state_is_its_own_sentence() {
         ..seated()
     };
     let quiet = Model {
-        steps: Some(Steps {
-            rows: Vec::new(),
-            orphan: crate::reply::steps::NONE.to_owned(),
-            orphan_reason: None,
-        }),
-        files: Some(Files {
-            listing: None,
-            preview: None,
-            working_dir: None,
-        }),
+        records: crate::ui::Records {
+            steps: Some(Steps {
+                rows: Vec::new(),
+                orphan: crate::reply::steps::NONE.to_owned(),
+                orphan_reason: None,
+            }),
+            files: Some(Files {
+                listing: None,
+                preview: None,
+                working_dir: None,
+            }),
+            ..unanswered.records.clone()
+        },
         ..unanswered.clone()
     };
     let bare = Model {
-        files: Some(Files {
-            listing: Some(Listing {
-                rows: Vec::new(),
-                truncated: false,
+        records: crate::ui::Records {
+            files: Some(Files {
+                listing: Some(Listing {
+                    rows: Vec::new(),
+                    truncated: false,
+                }),
+                preview: None,
+                working_dir: None,
             }),
-            preview: None,
-            working_dir: None,
-        }),
+            ..quiet.records.clone()
+        },
         ..quiet.clone()
     };
     for (mut model, expected) in [
@@ -115,7 +121,7 @@ fn a_preview_paints_in_each_of_its_four_classes() {
     let said = previewed(&Preview::Unknown("hologram".to_owned()));
     assert!(said.contains("hologram"), "{said}");
     let mut model = recorded();
-    if let Some(files) = model.files.as_mut() {
+    if let Some(files) = model.records.files.as_mut() {
         files.preview = Some(Preview::Text("fn main() {}".to_owned()));
     }
     let painted = pane(|ui| {
@@ -135,7 +141,7 @@ fn the_done_control_closes_the_pane() {
         });
     });
     assert!(!model.showing(crate::ui::Listing::Records));
-    assert!(model.steps.is_some(), "the answers stay");
+    assert!(model.records.steps.is_some(), "the answers stay");
 }
 
 /// **The sentences, as values** — the quiet arms that paint nothing, and the

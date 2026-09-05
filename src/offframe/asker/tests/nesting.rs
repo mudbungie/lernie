@@ -225,7 +225,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
     );
     link.settle(&mut model);
     assert!(
-        model.steps.is_some() && model.files.is_some(),
+        model.records.steps.is_some() && model.records.files.is_some(),
         "both answers are filed"
     );
 }

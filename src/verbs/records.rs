@@ -1,5 +1,5 @@
 //! **The conversation's records, as rows** — the reads under one conversation
-//! rather than of it (bl-2cf7).
+//! rather than of it (bl-2cf7, bl-3257).
 //!
 //! A third rows file, on the seam [`super::rows`]'s own doc draws twice over:
 //! that file is the reads the window's three panes stand on, and
@@ -57,4 +57,66 @@ pub fn steps(workspace: String, agent: String) -> Value {
 /// preview is a control the records pane does not have yet (see [`FILES`]).
 pub fn files(workspace: String, agent: String) -> Value {
     FILES.built(vec![workspace, agent])
+}
+
+/// **The conversation's own row.** The deepest read of the same subject, and a
+/// row here rather than in [`super::conversation`] for this file's own reason:
+/// an operator does not do it TO the conversation, they look at it.
+pub const AGENT: Verb = Verb {
+    word: "agent",
+    params: &["workspace", "agent"],
+    summary: "the conversation's own row, whole",
+    detail: "Everything the engine holds about one conversation rather than \
+             the glance a listing gives: its descent, the name it answers to \
+             and whether that name is addressable, its own liveness and \
+             whether the last turn was refused at the provider, what it has \
+             spent and how full its context is, what is in flight on it right \
+             now, the marks it wears and the tool call parked at its \
+             capability boundary. Every field is a fold the engine already \
+             owned; what was missing was the spelling.",
+};
+
+/// **One step's drill-in**, addressed by the sequence the steps ledger paints.
+pub const STEP: Verb = Verb {
+    word: "step",
+    params: &["workspace", "agent", "seq"],
+    summary: "one step's records, drilled in",
+    detail: "The tier under `steps`, named by the sequence that list shows \
+             (`001`): that step's metadata, the wire request that was sent, \
+             the transcript entry that was staged, every event of the \
+             response stream, and every tool call's input and output — each \
+             as parsed data with the bytes it parsed from beside it — plus \
+             the captured logs that have bytes. A record that is missing says \
+             so, and one that is not JSON comes back verbatim and framed as \
+             unparseable rather than dropped. A step the tree does not hold \
+             answers absent records rather than refusing.",
+};
+
+/// **The undelivered mail.**
+pub const INBOX: Verb = Verb {
+    word: "inbox",
+    params: &["workspace", "agent"],
+    summary: "the mail still waiting in a conversation's inbox",
+    detail: "Every deposit sitting in the conversation's inbox: who sent it, \
+             when, the body, and — on a subagent's result message — how that \
+             agent ended and the commit it ended at. The parse is forgiving, \
+             so a half-written or hand-edited deposit is rendered with \
+             whatever fields it actually stated rather than refused, and each \
+             row carries its file's bytes beside the reading. Delivered mail \
+             is not here; it has moved into the transcript.",
+};
+
+/// The conversation's own row, typed.
+pub fn agent(workspace: String, agent: String) -> Value {
+    AGENT.built(vec![workspace, agent])
+}
+
+/// One step's drill-in, typed — `seq` is the address the ledger's rows paint.
+pub fn step(workspace: String, agent: String, seq: String) -> Value {
+    STEP.built(vec![workspace, agent, seq])
+}
+
+/// The undelivered mail, typed.
+pub fn inbox(workspace: String, agent: String) -> Value {
+    INBOX.built(vec![workspace, agent])
 }

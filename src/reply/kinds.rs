@@ -13,11 +13,12 @@
 //! the ball that lands a pane is the ball that adds its kind.
 
 use super::{
-    balls, board, clients, config, convs, enrolled, files, governing, help, lineages, login, ops,
-    providers, queue, rail, roles, roster, search, start, steps, stream, transcript,
+    agent, balls, board, clients, config, convs, enrolled, files, governing, help, inbox, lineages,
+    login, ops, providers, queue, rail, roles, roster, search, start, step, steps, stream,
+    transcript,
 };
 
-/// **The kinds the window draws.** Twenty-eight, and each is here because a
+/// **The kinds the window draws.** Thirty-one, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -65,6 +66,28 @@ pub enum Reply {
     /// (§4.28, bl-b52c). It is the read the `fork` control's one argument is
     /// discoverable off, which is why the two landed together.
     Rail(rail::Rail),
+    /// **The conversation's own row, whole** — the header the records pane
+    /// opens with, on that pane's standing (§4.32, bl-3257). The largest shape
+    /// on this surface, and the one the seat reads most of a conversation from.
+    ///
+    /// **Boxed**, and it is the only variant here that is: at twenty-one
+    /// fields over five nested objects it is several times the size of every
+    /// other, so carrying it inline would widen `Reply` — and therefore every
+    /// `Read` this window moves across the lock — to the size of the largest
+    /// answer the seat has ever learned to paint.
+    Agent(Box<agent::Agent>),
+    /// **One step's records** — the drill-in under the steps list, addressed
+    /// by the `seq` those rows paint (§4.32, bl-3257). POSTED rather than
+    /// standing: it is asked about one row, on a control, and re-asked freely.
+    ///
+    /// **Boxed**, beside [`Agent`](Self::Agent) and for the same reason: four
+    /// records, a stream, a tool listing and two bounded logs is the second
+    /// of the two shapes on this surface big enough to widen every `Read`
+    /// this window moves across the lock.
+    Step(Box<step::Step>),
+    /// **The undelivered mail** waiting in that conversation's inbox — the
+    /// records pane's sixth read, on the same standing (§4.32, bl-3257).
+    Inbox(Vec<inbox::Row>),
     /// **The config commit that conversation resolves its policy from** — the
     /// spine's other half, on the same standing (§4.28, bl-b52c). Its `oid`
     /// changed meaning at PROTOCOL 5 under an unchanged spelling, and

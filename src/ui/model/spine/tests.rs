@@ -94,8 +94,8 @@ fn moving_the_selection_takes_the_draft_and_both_spine_answers_with_it() {
     };
     model.select("some-other-conversation");
     assert_eq!(model.forking, Forking::default());
-    assert!(model.rail.is_none());
-    assert!(model.governing.is_none());
+    assert!(model.records.rail.is_none());
+    assert!(model.records.governing.is_none());
 }
 
 /// **Both answers come in through the one door and are filed**, whether or not
@@ -108,15 +108,23 @@ fn the_spine_pair_is_filed_by_the_one_door_a_reply_comes_in_through() {
     model.absorb(
         &crate::test_support::window::own().channel,
         crate::reply::Read::Answer(crate::reply::Reply::Rail(
-            answered.rail.clone().expect("the fixture answers a spine"),
+            answered
+                .records
+                .rail
+                .clone()
+                .expect("the fixture answers a spine"),
         )),
     );
     model.absorb(
         &crate::test_support::window::own().channel,
         crate::reply::Read::Answer(crate::reply::Reply::Governing(
-            answered.governing.clone().expect("and a governing commit"),
+            answered
+                .records
+                .governing
+                .clone()
+                .expect("and a governing commit"),
         )),
     );
-    assert_eq!(model.rail, answered.rail);
-    assert_eq!(model.governing, answered.governing);
+    assert_eq!(model.records.rail, answered.records.rail);
+    assert_eq!(model.records.governing, answered.records.governing);
 }

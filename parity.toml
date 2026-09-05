@@ -71,12 +71,10 @@ work-diff = "bl-a43a — no fleet controls: what the agents changed is readable 
 # list this seat cannot obtain. That is a stated limit on a surfaced op and
 # therefore no line here, which records absences.
 
-# bl-3257 — the conversation's deeper records: its own row whole, one step's
-# drill-in under the steps list the records pane now paints, and the
-# undelivered mail.
-agent = "bl-3257 — no deep-records surface: the selected conversation's own row is unpainted"
-inbox = "bl-3257 — no deep-records surface: undelivered mail is readable nowhere"
-step = "bl-3257 — no deep-records surface: one step's records are readable nowhere, though the steps list now paints the seq that addresses them"
+# bl-3257 landed the deeper three inside the records pane (DESIGN §4.30) —
+# `agent` and `inbox` carry tags on the control that opens it, and `step`
+# carries one per row of the steps ledger, whose `seq` is its address. All
+# three are gone from this ledger.
 
 # bl-8ffa — a prepared start cannot be fanned, and no candidate can be accepted
 # or retired.

@@ -23,6 +23,40 @@
 
 use super::{Listing, Model};
 
+/// **What the records pane has been answered** — its seven reads, held
+/// together.
+///
+/// One struct rather than seven fields on [`Model`], for `super::listing`'s
+/// reason one layer over: they are one pane's questions about one subject, and
+/// they are retired together the moment that subject moves
+/// ([`Model::retire_records`]). Seven options spread across the model would be
+/// seven places to remember, and forgetting one paints a conversation's
+/// records under another conversation's name.
+///
+/// Every one is `None` until an answer lands, which is the reading
+/// [`Model::roles`]'s option carries: nobody has been answered is not the same
+/// claim as a conversation whose loop did nothing.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Records {
+    /// The steps its loop has taken (§4.18).
+    pub steps: Option<crate::reply::steps::Steps>,
+    /// What its worktree holds (§4.18).
+    pub files: Option<crate::reply::files::Files>,
+    /// Its spine — every operable commit, and the cards off them (§4.29).
+    pub rail: Option<crate::reply::rail::Rail>,
+    /// The config commit governing it (§4.29).
+    pub governing: Option<crate::reply::governing::Governing>,
+    /// Its own row, whole — the pane's header (§4.32).
+    pub agent: Option<crate::reply::agent::Agent>,
+    /// Its undelivered mail (§4.32).
+    pub mail: Option<Vec<crate::reply::inbox::Row>>,
+    /// **One step's records**, and the one of the seven that is POSTED rather
+    /// than standing: it is asked about a row, by the control on that row.
+    /// Which step it is about is the answer's own `seq`, so nothing here is a
+    /// second name for it (`super::deep`).
+    pub drilled: Option<crate::reply::step::Step>,
+}
+
 impl Model {
     /// **Whether a pane covers the conversation** — the enrollment, the
     /// tuning pane, one of the three listings (`super::listing`), the window's
@@ -62,11 +96,11 @@ impl Model {
     /// what they are about.
     pub(super) fn retire_records(&mut self) {
         self.put_down(Listing::Records);
-        self.steps = None;
-        self.files = None;
-        self.rail = None;
-        self.governing = None;
-        // **The draft goes with them** (`spine`), which the two reads above do
+        // **One assignment, because the answers are one value** ([`Records`]):
+        // a pane whose reads are retired field by field is a pane with a read
+        // somebody will forget.
+        self.records = Records::default();
+        // **The draft goes with them** (`super::spine`), which the answers do
         // not need to say: a goal typed for one conversation is a sentence
         // about that one, and a box left standing over a new selection would
         // fire it at whatever is selected next.

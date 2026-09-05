@@ -59,10 +59,10 @@ pub const ROLE_SAID: &str =
 /// Paint the spine half: the governing commit, the draft, the notches and the
 /// cards hanging off them.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    governing_half(ui, model.governing.clone().as_ref());
+    governing_half(ui, model.records.governing.clone().as_ref());
     ui.separator();
-    ui.label(egui::RichText::new(SPINE_HEAD).strong());
-    let Some(spine) = model.rail.clone() else {
+    let Some(spine) = model.records.rail.clone() else {
+        ui.label(egui::RichText::new(SPINE_HEAD).strong());
         ui.label(NOT_ANSWERED_SPINE);
         return;
     };
@@ -79,48 +79,55 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 /// The governing commit: the engine's own sentence, then the paths its tree
 /// holds.
 fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
-    ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
     let Some(config) = answer else {
+        ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
         ui.label(NOT_ANSWERED_GOVERNING);
         return;
     };
-    ui.label(config.label());
-    ui.colored_label(theme::tone_ink(&Tone::Weak), config.oid.clone());
-    if config.files.is_empty() {
-        ui.label(NO_FILES);
-        return;
-    }
-    for path in &config.files {
-        ui.label(path.clone());
-    }
+    ui.horizontal_wrapped(|ui| {
+        ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
+        ui.label(format!("{} — {}", config.label(), config.oid));
+    });
+    ui.horizontal_wrapped(|ui| {
+        if config.files.is_empty() {
+            ui.label(NO_FILES);
+            return;
+        }
+        for path in &config.files {
+            ui.label(path.clone());
+        }
+    });
 }
 
 /// The two boxes a fork is composed from, and the sentence under the first.
 fn draft(ui: &mut egui::Ui, model: &mut Model) {
     ui.horizontal_wrapped(|ui| {
+        ui.label(egui::RichText::new(SPINE_HEAD).strong());
         ui.add(egui::TextEdit::singleline(&mut model.forking.role).hint_text(ROLE_HINT));
         ui.add(egui::TextEdit::singleline(&mut model.forking.goal).hint_text(GOAL_HINT));
+        ui.colored_label(theme::tone_ink(&Tone::Weak), ROLE_SAID);
     });
-    ui.colored_label(theme::tone_ink(&Tone::Weak), ROLE_SAID);
 }
 
 /// One notch: its line, where the chat seats it, and the fork it can carry.
 fn notch(ui: &mut egui::Ui, model: &mut Model, row: &Notch) {
-    ui.label(headline(row));
-    if let Some(said) = seated(row) {
-        ui.colored_label(theme::tone_ink(&Tone::Weak), said);
-    }
-    let Some(commit) = row.commit.clone() else {
-        return;
-    };
-    // **Disabled and not absent**, for the reason the composer's `flag` is: the
-    // parameters are missing, not the subject, so the control stays on the
-    // glass saying what would fill it.
-    let fire = ui.add_enabled(model.forking.ready(), egui::Button::new(forking(row)));
-    crate::ui::act::tag(&fire, &[crate::verbs::spine::FORK]);
-    if fire.clicked() {
-        model.post_fork(commit);
-    }
+    ui.horizontal_wrapped(|ui| {
+        ui.label(headline(row));
+        if let Some(said) = seated(row) {
+            ui.colored_label(theme::tone_ink(&Tone::Weak), said);
+        }
+        let Some(commit) = row.commit.clone() else {
+            return;
+        };
+        // **Disabled and not absent**, for the reason the composer's `flag`
+        // is: the parameters are missing, not the subject, so the control
+        // stays on the glass saying what would fill it.
+        let fire = ui.add_enabled(model.forking.ready(), egui::Button::new(forking(row)));
+        crate::ui::act::tag(&fire, &[crate::verbs::spine::FORK]);
+        if fire.clicked() {
+            model.post_fork(commit);
+        }
+    });
 }
 
 /// The cards hanging off the spine, or the sentence for a conversation nobody
@@ -131,10 +138,12 @@ fn cards(ui: &mut egui::Ui, spine: &Rail) {
         return;
     }
     for row in &spine.cards {
-        ui.label(card(row));
-        if let Some(said) = &row.tail {
-            ui.colored_label(theme::tone_ink(&Tone::Weak), said.clone());
-        }
+        ui.horizontal_wrapped(|ui| {
+            ui.label(card(row));
+            if let Some(said) = &row.tail {
+                ui.colored_label(theme::tone_ink(&Tone::Weak), said.clone());
+            }
+        });
     }
 }
 

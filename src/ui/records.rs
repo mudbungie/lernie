@@ -28,6 +28,12 @@
 //! is a method. The class tokens ride verbatim (`crate::reply` rung 3): a
 //! `framing` or a `wound` this build has no word for paints as itself.
 
+/// One step's records, under the row that addresses them.
+pub mod drill;
+/// The conversation's own row, as the pane's header.
+pub mod header;
+/// The undelivered mail waiting in its inbox.
+pub mod mail;
 /// The spine half: what the history is anchored to, and the fork off it.
 pub mod spine;
 
@@ -79,22 +85,27 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     // One scroll for both halves, and the heading above it fixed — the shape
     // every pane here keeps, for the reason the tuning pane states: a pane cut
     // off mid-row says nothing about having been cut.
-    let (steps, files) = (model.steps.clone(), model.files.clone());
+    let (steps, files) = (model.records.steps.clone(), model.records.files.clone());
     egui::ScrollArea::vertical()
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            steps_half(ui, steps.as_ref());
+            header::render(ui, model);
+            ui.separator();
+            steps_half(ui, model, steps.as_ref());
             ui.separator();
             files_half(ui, files.as_ref());
             ui.separator();
             spine::render(ui, model);
+            ui.separator();
+            mail::render(ui, model);
         });
     true
 }
 
-/// The steps half: the orphan banner, then one row per step.
-fn steps_half(ui: &mut egui::Ui, steps: Option<&Steps>) {
+/// The steps half: the orphan banner, then one row per step with the control
+/// that drills into it (bl-3257).
+fn steps_half(ui: &mut egui::Ui, model: &mut Model, steps: Option<&Steps>) {
     ui.label(egui::RichText::new(STEPS_HEAD).strong());
     let Some(listing) = steps else {
         ui.label(NOT_ANSWERED_STEPS);
@@ -108,34 +119,52 @@ fn steps_half(ui: &mut egui::Ui, steps: Option<&Steps>) {
         return;
     }
     for row in &listing.rows {
-        step(ui, row);
+        step(ui, model, row);
     }
 }
 
-/// One step: the headline, the provenance under it, and what went wrong.
-fn step(ui: &mut egui::Ui, row: &StepRow) {
-    ui.label(headline(row));
-    if let Some(weak) = provenance(row) {
-        ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), weak);
-    }
-    for said in [wounded(row), auth(row)].into_iter().flatten() {
-        ui.colored_label(theme::NOTICE, said);
-    }
+/// One step: the headline, the provenance under it, what went wrong, and the
+/// drill-in its `seq` addresses.
+fn step(ui: &mut egui::Ui, model: &mut Model, row: &StepRow) {
+    // **The headline, the provenance and the drill-in control share one
+    // wrapped row.** This pane covers the window and its content has to fit
+    // it: a control laid out past the frame is unreachable, and there are
+    // seven halves under this one scroll (`crate::snapshot::clipped`).
+    ui.horizontal_wrapped(|ui| {
+        ui.label(headline(row));
+        if let Some(weak) = provenance(row) {
+            ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), weak);
+        }
+        drill::control(ui, model, &row.seq);
+    });
+    ui.horizontal_wrapped(|ui| {
+        for said in [wounded(row), auth(row)].into_iter().flatten() {
+            ui.colored_label(theme::NOTICE, said);
+        }
+    });
+    drill::records(ui, model, &row.seq);
 }
 
 /// The files half: where the work lands, the listing, and the preview.
 fn files_half(ui: &mut egui::Ui, files: Option<&Files>) {
-    ui.label(egui::RichText::new(FILES_HEAD).strong());
     let Some(answer) = files else {
+        ui.label(egui::RichText::new(FILES_HEAD).strong());
         ui.label(NOT_ANSWERED_FILES);
         return;
     };
-    if let Some(dir) = &answer.working_dir {
-        ui.colored_label(
-            theme::tone_ink(&crate::reply::convs::Tone::Weak),
-            format!("working in {dir}"),
-        );
-    }
+    // **The heading shares its line with where the work lands**, and the
+    // walked entries share one wrapped line with each other: seven halves ride
+    // under this pane's one scroll and a control laid out past the frame is
+    // unreachable (`crate::snapshot::clipped`).
+    ui.horizontal_wrapped(|ui| {
+        ui.label(egui::RichText::new(FILES_HEAD).strong());
+        if let Some(dir) = &answer.working_dir {
+            ui.colored_label(
+                theme::tone_ink(&crate::reply::convs::Tone::Weak),
+                format!("working in {dir}"),
+            );
+        }
+    });
     match &answer.listing {
         None => {
             ui.label(NO_WORKTREE);
@@ -144,12 +173,14 @@ fn files_half(ui: &mut egui::Ui, files: Option<&Files>) {
             ui.label(EMPTY_WORKTREE);
         }
         Some(listing) => {
-            for row in &listing.rows {
-                ui.label(entry(row));
-            }
-            if listing.truncated {
-                ui.colored_label(theme::NOTICE, TRUNCATED);
-            }
+            ui.horizontal_wrapped(|ui| {
+                for row in &listing.rows {
+                    ui.label(entry(row));
+                }
+                if listing.truncated {
+                    ui.colored_label(theme::NOTICE, TRUNCATED);
+                }
+            });
         }
     }
     if let Some(preview) = &answer.preview {
@@ -167,7 +198,8 @@ pub fn entry(row: &crate::reply::files::FileRow) -> String {
 }
 
 /// A bounded preview as text — the engine's three classes, and the rung-3
-/// word painted as itself.
+/// word painted as itself. Shared with the drill-in's two capture logs
+/// ([`drill`]), which are the same bounded reading.
 pub fn previewed(preview: &Preview) -> String {
     match preview {
         Preview::Text(text) => text.clone(),

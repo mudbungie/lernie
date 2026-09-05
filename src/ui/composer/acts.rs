@@ -73,12 +73,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
     // left standing for the next.
     let wanted = model.filling();
     ui.horizontal_wrapped(|ui| {
-        // **The reads this gesture reaches** (bl-2cf7, bl-b52c), exactly as the
-        // wall's roster seat carries the conversation list's: opening the
-        // records pane is what makes this seat read the selected
-        // conversation's steps, its files, its spine and the config commit
-        // governing it (`crate::state::Standing`), and the four reads have no
-        // control of their own. It leads the row because it spends nothing — every
+        // **The reads this gesture reaches** (bl-2cf7, bl-b52c, bl-3257),
+        // exactly as the wall's roster seat carries the conversation list's:
+        // opening the records pane is what makes this seat read the selected
+        // conversation's steps, its files, its spine, the config commit
+        // governing it, its own row and its undelivered mail
+        // (`crate::state::Standing`), and those six reads have no control of
+        // their own. The pane's seventh — one step's drill-in — is not among
+        // them: it hangs on the row that addresses it. It leads the row because it spends nothing — every
         // control after it acts on the conversation, this one only looks.
         let records = ui.button(crate::ui::records::OPEN);
         crate::ui::act::tag(
@@ -88,6 +90,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
                 crate::verbs::FILES.word,
                 crate::verbs::RAIL.word,
                 crate::verbs::GOVERNING.word,
+                crate::verbs::AGENT.word,
+                crate::verbs::INBOX.word,
             ],
         );
         if records.clicked() {

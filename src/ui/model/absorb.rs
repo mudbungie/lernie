@@ -83,12 +83,19 @@ impl Model {
             // standing, exactly as a roster answer does (`queue`).
             Reply::Attention(rows) => self.asking(channel, rows),
             // The records pair, on the same terms as the roles above.
-            Reply::Steps(listing) => self.steps = Some(listing),
-            Reply::Files(answer) => self.files = Some(answer),
+            Reply::Steps(listing) => self.records.steps = Some(listing),
+            Reply::Files(answer) => self.records.files = Some(answer),
             // The spine pair, on the same terms again — the records pane's
             // second two reads, standing while it is open (`spine`).
-            Reply::Rail(spine) => self.rail = Some(spine),
-            Reply::Governing(config) => self.governing = Some(config),
+            Reply::Rail(spine) => self.records.rail = Some(spine),
+            Reply::Governing(config) => self.records.governing = Some(config),
+            // The deeper three, on the same terms (`deep`). The drill-in is
+            // posted rather than standing, and it still comes in through this
+            // one door: what makes it different is who asked, not how it is
+            // filed.
+            Reply::Agent(row) => self.records.agent = Some(*row),
+            Reply::Inbox(rows) => self.records.mail = Some(rows),
+            Reply::Step(records) => self.records.drilled = Some(*records),
             // **The window's own two, one channel's slice at a time** — each
             // op names no workspace, so each answer replaces what its channel
             // last said and leaves the others standing, exactly as a roster

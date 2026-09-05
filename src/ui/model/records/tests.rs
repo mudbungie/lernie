@@ -32,11 +32,11 @@ fn selecting_another_conversation_retires_the_pane_and_its_answers() {
     let mut model = recorded();
     model.select("20260830T051200Z-zzzz");
     assert!(!model.showing(crate::ui::Listing::Records));
-    assert_eq!(model.steps, None);
-    assert_eq!(model.files, None);
+    assert_eq!(model.records.steps, None);
+    assert_eq!(model.records.files, None);
     let mut model = recorded();
     model.close_records();
-    assert!(model.steps.is_some(), "a close keeps the answers");
+    assert!(model.records.steps.is_some(), "a close keeps the answers");
 }
 
 /// Aiming at another wall retires everything under the old one, the records
@@ -46,8 +46,8 @@ fn aiming_elsewhere_retires_the_records_too() {
     let mut model = recorded();
     model.aim_at("(this box's own engine)", "elsewhere");
     assert!(!model.showing(crate::ui::Listing::Records));
-    assert_eq!(model.steps, None);
-    assert_eq!(model.files, None);
+    assert_eq!(model.records.steps, None);
+    assert_eq!(model.records.files, None);
 }
 
 /// **Escape closes it**, on the ladder's own rung: after the panes that hold

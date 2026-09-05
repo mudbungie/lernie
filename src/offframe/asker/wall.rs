@@ -116,37 +116,37 @@ pub(super) fn ask(
         channel,
         &crate::verbs::transcript(aim.address.clone(), conversation.clone()),
     );
-    // **The records pair stands on the pane exactly as the roles read does**
-    // (bl-2cf7): the selected conversation is asked what its loop did and
-    // what its worktree holds only while somebody is looking.
+    // **The records pane's reads stand on the pane exactly as the roles read
+    // does** (bl-2cf7): the selected conversation is asked what its loop did
+    // and what its worktree holds only while somebody is looking.
     if standing.standing(&Open::Records) {
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::steps(aim.address.clone(), conversation.clone()),
-        );
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::files(aim.address.clone(), conversation.clone()),
-        );
-        // **And the spine pair with them** (bl-b52c): the same pane, and the
-        // reads whose answer the `fork` control's one argument comes off — a
-        // control offered on a notch this seat has not been answered about
-        // would be a control with nothing to carry.
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::rail(aim.address.clone(), conversation.clone()),
-        );
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::governing(aim.address.clone(), conversation),
-        );
+        records(link, root, channel, &aim.address, &conversation);
+    }
+}
+
+/// **The records pane's six standing reads**, asked only while it is open.
+///
+/// A body of its own rather than six more calls inside [`ask`]: that function
+/// is *the questions that name one workspace*, and this is one pane's — the
+/// pane with more reads under it than any other, and the one three balls grew.
+/// The pair bl-2cf7 landed is what the loop did and what its worktree holds;
+/// bl-b52c's spine is the two whose answer the `fork` control's one argument
+/// comes off, because a control offered on a notch this seat has not been
+/// answered about would be a control with nothing to carry; and bl-3257's two
+/// are the conversation's own row and its undelivered mail.
+///
+/// **The pane's seventh read is not here and never will be**: `step` is
+/// addressed at one row of the ledger rather than at the pane, so the control
+/// on that row posts it (`crate::ui::model::deep`).
+fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation: &str) {
+    for ask in [
+        crate::verbs::steps(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::files(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::rail(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::governing(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::agent(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::inbox(wall.to_owned(), conversation.to_owned()),
+    ] {
+        aimed(link, root, channel, &ask);
     }
 }

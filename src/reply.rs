@@ -16,7 +16,7 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Twenty-six
+//! kinds and most of them belong to panes that do not exist here. Thirty-one
 //! do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
@@ -75,6 +75,8 @@
 //! later (yog bl-32cb) drops into it as files rather than as code.
 //! `corpus/README.md` is the drop-in contract.
 
+/// The conversation's own row, whole — the deepest read of one conversation.
+pub mod agent;
 /// The balls themselves: the binding table, one wall's own, and its branch.
 pub mod balls;
 /// The fleet board: every live ball in its column, and the loops running them.
@@ -95,6 +97,8 @@ pub mod files;
 pub mod governing;
 /// The engine's own verb table, which is also the parity roster's source.
 pub mod help;
+/// The undelivered mail waiting in one conversation's inbox.
+pub mod inbox;
 /// The census of what an engine can answer, and the captured run.
 mod kinds;
 /// The config lineages one workspace holds.
@@ -121,6 +125,8 @@ pub mod search;
 pub mod spend;
 /// The start family's two receipts.
 pub mod start;
+/// One step's records, drilled in under the steps list.
+pub mod step;
 /// The steps one conversation's loop has taken.
 pub mod steps;
 /// The live tail's fold.

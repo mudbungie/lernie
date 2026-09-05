@@ -46,10 +46,13 @@ fn only_an_operable_notch_offers_a_fork() {
     };
     assert!(!bare.operable());
     let mut model = Model {
-        rail: Some(Rail {
-            notches: vec![bare.clone()],
-            cards: Vec::new(),
-        }),
+        records: crate::ui::Records {
+            rail: Some(Rail {
+                notches: vec![bare.clone()],
+                cards: Vec::new(),
+            }),
+            ..recorded().records
+        },
         ..recorded()
     };
     let text = pane(|ui| render(ui, &mut model));
@@ -66,8 +69,11 @@ fn only_an_operable_notch_offers_a_fork() {
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let mut unanswered = Model {
-        rail: None,
-        governing: None,
+        records: crate::ui::Records {
+            rail: None,
+            governing: None,
+            ..recorded().records
+        },
         ..recorded()
     };
     let text = pane(|ui| render(ui, &mut unanswered));
@@ -75,16 +81,19 @@ fn every_empty_state_is_its_own_sentence() {
     assert!(text.contains(NOT_ANSWERED_GOVERNING), "{text}");
 
     let mut empty = Model {
-        rail: Some(Rail {
-            notches: Vec::new(),
-            cards: Vec::new(),
-        }),
-        governing: Some(Governing {
-            oid: "c".to_owned(),
-            short_oid: "c".to_owned(),
-            governance: Governance::Held { diverged: 2 },
-            files: Vec::new(),
-        }),
+        records: crate::ui::Records {
+            rail: Some(Rail {
+                notches: Vec::new(),
+                cards: Vec::new(),
+            }),
+            governing: Some(Governing {
+                oid: "c".to_owned(),
+                short_oid: "c".to_owned(),
+                governance: Governance::Held { diverged: 2 },
+                files: Vec::new(),
+            }),
+            ..recorded().records
+        },
         ..recorded()
     };
     let text = pane(|ui| render(ui, &mut empty));
@@ -113,7 +122,10 @@ fn the_lines_are_values_and_an_unseated_notch_has_none() {
         ..notch("003")
     };
     assert_eq!(placed(&unseated), None);
-    let rail = recorded().rail.expect("the fixture answers a spine");
+    let rail = recorded()
+        .records
+        .rail
+        .expect("the fixture answers a spine");
     assert_eq!(card(&rail.cards[0]), "Cobalt — from here — live — 9 tokens");
 }
 

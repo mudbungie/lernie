@@ -32,6 +32,8 @@ mod claim;
 mod clients;
 /// The config pane between frames: which file it is pointed at.
 mod config;
+/// The deeper records between frames: the one read the pane posts.
+mod deep;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
@@ -72,6 +74,7 @@ pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
 pub use queue::Asking;
+pub use records::Records;
 pub use spine::Forking;
 pub use start::{Phase, Start};
 pub use trail::Trail;
@@ -199,22 +202,20 @@ pub struct Model {
     /// firing, because refining a needle is the common act — unlike the
     /// composer's draft, which was sent (`window`).
     pub needle: String,
-    /// **The steps its loop has taken**, or `None` while nobody has been
-    /// answered — the same one-option reading [`Self::roles`] gets (`records`).
-    pub steps: Option<crate::reply::steps::Steps>,
-    /// **What its worktree holds**, on the same standing (`records`).
-    pub files: Option<crate::reply::files::Files>,
-    /// **Its spine** — every operable commit and the cards off them — or
-    /// `None` while nobody has been answered, on the same standing
-    /// (`records`, `spine`; DESIGN §4.28).
-    pub rail: Option<crate::reply::rail::Rail>,
-    /// **The config commit governing it**, on the same standing (`records`).
-    pub governing: Option<crate::reply::governing::Governing>,
     /// **The draft a fork is composed from** (`spine`): the role and the goal,
     /// beside the `from` each control carries off its own notch. A bare field
     /// and not an option, exactly as the composer's two parameter boxes are —
     /// the boxes are on the glass whenever the spine is.
     pub forking: Forking,
+    /// **What the records pane has been answered** — its seven reads, held
+    /// together because they are one pane's questions about one subject and
+    /// they are retired together when that subject moves (`records`).
+    ///
+    /// A struct rather than seven fields, on `listing`'s own reasoning one
+    /// layer over: seven options on this struct would be seven places to
+    /// remember when a selection moves, and forgetting one paints a
+    /// conversation's records under another's name.
+    pub records: records::Records,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The live tail as this seat has accumulated it. It **replaces**, never

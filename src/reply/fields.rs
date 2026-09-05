@@ -132,6 +132,40 @@ pub(crate) fn opt_secs(obj: &Map<String, Value>, key: &str) -> Result<Option<i64
     }
 }
 
+/// **An optional nested object**, on [`opt_text`]'s own terms: absent and
+/// `null` are both `None`, and anything else is read strictly.
+///
+/// It lived beside its one caller (`super::queue`) while there was one, on the
+/// rule that a reader with a single caller belongs there. `super::agent`
+/// carries four of them, so it moved here — which is the rule spending itself
+/// rather than being broken.
+pub(crate) fn nested<T>(
+    obj: &Map<String, Value>,
+    key: &str,
+    read: impl Fn(&Map<String, Value>) -> Result<T, String>,
+) -> Result<Option<T>, String> {
+    match obj.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(value) => value
+            .as_object()
+            .ok_or_else(|| format!("non-object field {key:?}"))
+            .and_then(read)
+            .map(Some),
+    }
+}
+
+/// A required nested object, read strictly — the shape a reply always carries.
+pub(crate) fn object<T>(
+    obj: &Map<String, Value>,
+    key: &str,
+    read: impl Fn(&Map<String, Value>) -> Result<T, String>,
+) -> Result<T, String> {
+    obj.get(key)
+        .and_then(Value::as_object)
+        .ok_or_else(|| format!("missing or non-object field {key:?}"))
+        .and_then(read)
+}
+
 /// A listing's elements, each read by `read`.
 ///
 /// One element that will not read fails the whole listing rather than

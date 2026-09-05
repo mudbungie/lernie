@@ -111,8 +111,8 @@ pub(crate) fn row(value: &Value) -> Result<QueueRow, String> {
         pending: fields::count(obj, "pending")?,
         signals: fields::list(obj, "signals", word)?,
         failure: fields::opt_text(obj, "failure")?,
-        flag: nested(obj, "flag", flag)?,
-        held: nested(obj, "held", held)?,
+        flag: fields::nested(obj, "flag", flag)?,
+        held: fields::nested(obj, "held", held)?,
     })
 }
 
@@ -122,27 +122,6 @@ fn word(value: &Value) -> Result<String, String> {
         .as_str()
         .map(str::to_owned)
         .ok_or_else(|| "signal: not a string".to_owned())
-}
-
-/// **An optional nested object**, on [`fields::opt_text`]'s own terms: absent
-/// and `null` are both `None`, and anything else is read strictly.
-///
-/// It is here rather than in [`fields`] because this is the one reply on this
-/// surface that carries two of them; a reader with one caller belongs beside
-/// that caller until it has two.
-fn nested<T>(
-    obj: &Map<String, Value>,
-    key: &str,
-    read: impl Fn(&Map<String, Value>) -> Result<T, String>,
-) -> Result<Option<T>, String> {
-    match obj.get(key) {
-        None | Some(Value::Null) => Ok(None),
-        Some(value) => value
-            .as_object()
-            .ok_or_else(|| format!("non-object field {key:?}"))
-            .and_then(read)
-            .map(Some),
-    }
 }
 
 /// The raised flag, strictly.

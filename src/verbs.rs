@@ -113,7 +113,7 @@ pub use conversation::{
 };
 pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
-pub use records::{FILES, STEPS, files, steps};
+pub use records::{AGENT, FILES, INBOX, STEP, STEPS, agent, files, inbox, step, steps};
 use rows::TABLE;
 pub use rows::{
     CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,

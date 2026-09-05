@@ -365,9 +365,11 @@ spine pair (`rail`, `governing`) made it in the commit that built §4.29's half
 of the records pane (bl-b52c), `config` and `lineages` made it in the commit
 that built §4.30's pane (bl-5c53), the balls family's four (`balls`, `board`,
 `workspace-balls`, `marks`) made it in the commit that built §4.31's ball pane
-(bl-d2af), and the three conversation reads still in
-`unreadable/` (`agent`, `step`, `inbox`) are the ledger holding the ball that
-will move them (bl-3257).
+(bl-d2af), and the deeper three (`agent`, `step`, `inbox`) made it in the
+commit that built §4.32's half of the records pane (bl-3257) — which spends
+the ledger's last conversation read and leaves `unreadable/` holding only
+shapes addressed to a different kind of client, and the malformed frames
+upstream's codec cannot emit.
 
 **And a shape can sit in `unreadable/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
@@ -1385,12 +1387,13 @@ change is §4.17's shape arrived at rather than departed from: one piece of
 state, the draft of the gesture, because two words typed into two boxes are
 not a fact about anything until they are sent.
 
-**One control opens it and carries every read's tag** (`act:steps act:files
-act:rail act:governing`), leading the composer's second row — the composer
-being the pane that already acts on the selected conversation, and the chat
-pane being a pure projection no control may be the first exception to. What
-stays in the exemption ledger is the depth under this pane (`agent`, `step`,
-`inbox` — bl-3257).
+**One control opens it and carries every standing read's tag** (`act:steps
+act:files act:rail act:governing act:agent act:inbox`), leading the composer's
+second row — the composer being the pane that already acts on the selected
+conversation, and the chat pane being a pure projection no control may be the
+first exception to. The pane's seventh read is not among them: `step` is
+addressed at one row rather than at the pane, so its control hangs on the row
+(§4.32). Nothing about this pane is left in the exemption ledger.
 
 ### 4.19 The decision queue: the pane about no focus (bl-f0ef)
 
@@ -2398,6 +2401,69 @@ needs a `name` to act as, which this seat holds nowhere. All five answer with a
 captured run, a kind this seat already paints, so that ball decodes nothing —
 it is controls, their arming, and where each hangs.
 
+### 4.32 The deeper records: the conversation's own row, one step's drill-in, and its undelivered mail (bl-3257)
+
+`src/ui/records/header.rs`, `src/ui/records/drill.rs`, `src/ui/records/mail.rs`,
+`src/ui/model/deep.rs`, `src/reply/agent.rs`, `src/reply/step.rs`,
+`src/reply/inbox.rs`. **The last of what bl-2cf7 left**, and the ball that
+takes the exemption ledger's conversation half to nothing.
+
+**The seven answers are one value on the model** (`Records`, in
+`src/ui/model/records.rs`), not seven fields. They are one pane's questions
+about one subject and they are retired together the moment that subject moves,
+so seven fields would be seven places to remember — and forgetting one paints
+one conversation's records under another's name. It is `super::listing`'s
+reframe one layer over.
+
+**Six of the pane's seven reads stand and the seventh is addressed.** The
+others are about *the selected conversation*, a subject the window already
+holds, so they ride `Standing::records` and cost nothing while the pane is
+shut. `step` is about **one step of it**, and the window holds no such
+selection — a standing read would have to invent one and then hold it, which
+is a second authority for a row an operator clicked. So the control on a steps
+row posts it, exactly as §4.24's `models` is posted off a provider row.
+
+**The answer says which row it belongs to, so the model remembers nothing.**
+`reply/step` echoes back the `seq` it was asked by, and the paint asks the
+model per row (`Model::drilled_into`). Two things follow and both are the
+point: a reply that lands after the operator clicked another row cannot paint
+under the wrong one, and there is no second name for *which step is open* to
+drift from the answer.
+
+**`agent` is the pane's header rather than a row in its scroll**, because it
+is the subject every other half is about. It is the largest shape on the reply
+surface — twenty-one fields over five nested objects — and the reader takes
+all of it but one: the `value` beside every `step` record's `raw` is **not
+decoded**, because this seat paints the bytes and §4.9 does not carry a field
+for no glass. That is the ledger's own rule spent inside a shape rather than
+across one.
+
+**Three of the facts are the engine's own rendering and none is recomputed.**
+The strip's characteristics are prose one derivation assembles with per-segment
+omission rules; the money is the engine's spelling of the integer beside it;
+and the context percent is its rounding, deliberately **unclamped**, so a
+context that has outgrown its window reads as `140%`. A seat that divided the
+two figures itself would be re-taking a decision upstream took on purpose.
+
+**The priced figure is §4.31's reader, not a second one.** yog writes the
+`agent` answer's `spend` with the same encoder it writes a board row's, so this
+seat reads it with the same decoder (`src/reply/spend.rs`) — and what that
+costs is three fields nothing here paints, which ride through unread by rung 4.
+That is the ledger's rule spent the other way round from the `step` record's
+tree: one shape, one reader, and the fields no glass spends are the price of
+not having two.
+
+**The pane is DENSE now, and the density is a constraint rather than a taste.**
+Seven halves ride under one scroll, and `crate::snapshot::clipped` fails the
+whole matrix over a single control laid out past the frame — which is what a
+long pane produces, because a scrolled widget is still laid out where it would
+be. So a heading shares its line with its first fact, a step's headline shares
+its line with the control that drills into it, and the header says several
+facts per line joined by a separator. **Nothing was dropped to make room**;
+what was dropped is the line breaks. The alternative — showing one half at a
+time behind a section selector — is a view this pane may still grow, and it
+would dissolve the constraint rather than pay it.
+
 
 ## 5. Module map
 
@@ -2424,8 +2490,8 @@ it is controls, their arming, and where each hangs.
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~170 |
-| `src/reply/kinds.rs` | **the one census** — every kind this window draws, and the captured run three of the ops come back as. It moves every time a pane lands, where the policy beside it almost never does. | ~155 |
+| `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~180 |
+| `src/reply/kinds.rs` | **the one census** — every kind this window draws, and the captured run three of the ops come back as. It moves every time a pane lands, where the policy beside it almost never does. | ~180 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
 | `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
 | `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
@@ -2444,6 +2510,9 @@ it is controls, their arming, and where each hangs.
 | `src/reply/files.rs` | what a conversation's worktree holds: the listing whose absence is a fact, the bounded preview's three classes plus the rung-3 word, and where the work lands (§4.18). | ~125 |
 | `src/reply/rail.rs` | the conversation's spine (§4.29): the notches, the two absences each is read as a pair, and the label derived off the commit that stores it. | ~170 |
 | `src/reply/governing.rs` | which config commit a conversation resolves its policy from (§4.29): one enum rebuilt off one key, and the engine's own two wordings rather than a third. | ~120 |
+| `src/reply/agent.rs` | the conversation's own row, whole (§4.32): twenty-one facts, every optional one read as an absence, the priced figure read by the ball pane's own reader rather than respelled, and the context percent carried rather than divided out again. | ~240 |
+| `src/reply/step.rs` | one step's records (§4.32): the record vocabulary, the capture-log vocabulary beside it, and the parsed tree that is deliberately not decoded. | ~155 |
+| `src/reply/inbox.rs` | the undelivered mail (§4.32): the forgiving parse read as a reading, and the two facts only a result message states. | ~85 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
@@ -2463,7 +2532,7 @@ it is controls, their arming, and where each hangs.
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | what the window holds between frames. Two pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`) and the aim (`model/aim.rs`). | ~265 |
+| `src/ui/model.rs` | what the window holds between frames. Three pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), and the records pane's seven answers held as one value (`model/records.rs`'s `Records`). | ~280 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
@@ -2482,8 +2551,11 @@ it is controls, their arming, and where each hangs.
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
-| `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
+| `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
+| `src/ui/records/header.rs` | the pane's header (§4.32): the conversation's own row, said several facts to a line because the pane has to fit the window. | ~215 |
+| `src/ui/records/drill.rs` | one step's records under the row that addresses them (§4.32): the control on the row, and the bytes rather than a tree. | ~155 |
+| `src/ui/records/mail.rs` | the undelivered mail (§4.32): the deposit's header with each unstated fact said as itself, and its body. | ~90 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/reply/spend.rs` | what a ball has cost and what the sum is over: the money as upstream rendered it, and the attribution that says the classification and the clause because the clause alone cannot say it (§4.28). | ~80 |
 | `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.28). | ~180 |
@@ -2494,8 +2566,9 @@ it is controls, their arming, and where each hangs.
 | `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, and four emptinesses because they are four different claims. | ~85 |
 | `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.28). | ~105 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
-| `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
+| `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts, the retirement with its subject, and the one `covered` question every pane shares. | ~140 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
+| `src/ui/model/deep.rs` | the one read this pane posts rather than stands, and why the answer's own `seq` is the whole of what says which row it belongs to (§4.32). | ~55 |
 | `src/reply/config.rs` | one config file as the typed thing it is: the bytes, the settings the schema found in them, and the bounds that ride a control (§4.30). | ~130 |
 | `src/reply/lineages.rs` | the config lineages one workspace holds — the listing the file read indexes into, with the tip in both spellings (§4.30). | ~70 |
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
@@ -2574,7 +2647,7 @@ it is controls, their arming, and where each hangs.
 | `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
 | `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
-| `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with four reads under it and the balls that grow it are not done. `cfg(test)`. | ~125 |
+| `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with seven reads under it. `cfg(test)`. | ~230 |
 | `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~185 |
 | `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed wall, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |

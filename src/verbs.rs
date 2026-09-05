@@ -130,7 +130,7 @@ pub use rows::{
 };
 pub use spine::{FORK, GOVERNING, RAIL, fork, governing, rail};
 pub use start::{PREPARE, PROMPT, prepare, prompt};
-pub use trail::{DEPTH, OPS, ops};
+pub use trail::{ACK, CLEAR_TRAIL, DEPTH, OPS, ack, clear_trail, ops};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
 pub use window::{HELP, SEARCH, search};
 pub use workspace::{DELETE_WORKSPACE, PIN, UNPIN, delete_workspace, pin, unpin};

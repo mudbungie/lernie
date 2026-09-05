@@ -24,7 +24,8 @@ use crate::ui::{Enrolling, Model, Unmaking};
 mod covered;
 
 use covered::{
-    assigning, board, clients, commands, config, find, fleet, login, queue, records, trail, tuning,
+    assigning, board, clearing_trail, clients, commands, config, find, fleet, login, queue,
+    records, trail, tuning,
 };
 
 /// One named state of the window, as the matrix files it.
@@ -148,6 +149,7 @@ pub(crate) fn all() -> Vec<World> {
         records(),
         queue(),
         trail(),
+        clearing_trail(),
         board(),
         fleet(),
         commands(),

@@ -14,8 +14,8 @@
 
 use super::World;
 use crate::test_support::window::{
-    boarded, commanded, configured, finding, fleeting, machines, queued, recorded, role, signing,
-    trailing, tuned,
+    boarded, clearing, commanded, configured, finding, fleeting, machines, queued, recorded, role,
+    signing, trailing, tuned,
 };
 use crate::ui::{Edit, Model, Tuning};
 
@@ -170,5 +170,19 @@ pub(super) fn config() -> World {
     World {
         name: "config",
         model: configured(),
+    }
+}
+
+/// **The window with the place a trail is cut in standing** (bl-b8f7) — the
+/// only screen `clear-trail`'s control is on.
+///
+/// It is a world of its own for `crate::snapshot::parity`'s reason exactly:
+/// the act lives one pane deeper than the roster's own ops row, so a walk that
+/// only ever opened the trail would never see it, and a control on no screen
+/// this set visits fails honestly.
+pub(super) fn clearing_trail() -> World {
+    World {
+        name: "clearing",
+        model: clearing(),
     }
 }

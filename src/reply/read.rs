@@ -28,6 +28,11 @@ const FLAGGED: &str = "flagged";
 /// one field — and it is deliberately NOT read as *which* family it answers:
 /// that is the `op`, and the op is stamped by the poster (DESIGN §4.33).
 const ARMED: &str = "armed";
+/// The trail's two acts' receipts. Neither answers to a type, for [`FLAGGED`]'s
+/// own reason: what each changed is on the trail, and the standing read is
+/// what says so (bl-b8f7).
+const ACKED: &str = "acked";
+const TRAIL_CLEARED: &str = "trail-cleared";
 /// The capability boundary's two receipts (§4.34). They answer to no type of
 /// their own either: each is a handful of scalars about an act just performed,
 /// and a struct holding them would be a type with one reader and one painter.
@@ -90,6 +95,8 @@ fn decode(frame: &Value) -> Result<Read, String> {
         config::KIND => Reply::Config(config::config(obj)?),
         lineages::KIND => Reply::Lineages(fields::rows(obj, lineages::row)?),
         ops::KIND => Reply::Ops(fields::rows(obj, ops::row)?),
+        ACKED => Reply::Acked,
+        TRAIL_CLEARED => Reply::TrailCleared,
         ARMED => Reply::Armed(fields::flag(obj, ARMED)?),
         science::KIND => Reply::Science(fields::rows(obj, science::row)?),
         diff::KIND => Reply::Work(fields::rows(obj, diff::diff)?),

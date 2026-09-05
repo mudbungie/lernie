@@ -41,6 +41,8 @@ use crate::ui::{Model, theme};
 pub const OPEN: &str = "the trail…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
+/// The word on the control that appends the operator's watermark.
+pub const ACK: &str = "acknowledge every alarm";
 /// The pane's own heading.
 pub const HEADING: &str = "the trail";
 /// What it says before any channel has answered.
@@ -48,6 +50,14 @@ pub const NOT_ANSWERED: &str = "waiting to hear what has crossed the boundary";
 /// What it says once they have and nothing has. A fact about the engines, and
 /// the one empty state here that is not a wait.
 pub const NOTHING: &str = "nothing has crossed the boundary yet";
+
+/// **Whether every channel that answered answered nothing** — the one reading
+/// of these rows this pane makes, and it is about the trail rather than about
+/// an alarm: what is standing is the engine's classification and stays there
+/// (REMOTE §9.17).
+fn crossed_any(model: &Model) -> bool {
+    model.trails.iter().all(|section| section.rows.is_empty())
+}
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -59,6 +69,28 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     ui.horizontal_wrapped(|ui| {
         if ui.button(CLOSE).clicked() {
             model.close_lookup();
+        }
+        // **The watermark is a control on the pane and not on a row**, because
+        // that is what the op is: `ack` takes no address at all and appends
+        // one line every failure-derived alarm reads past. Offering it per row
+        // would be four controls for one gesture (bl-b8f7).
+        //
+        // It is offered only where there is a trail to acknowledge — the
+        // enablement rule with the SUBJECT missing rather than a parameter —
+        // and *a trail* is the one reading of these rows this seat makes: the
+        // classification stays the engine's (REMOTE §9.17), so nothing here
+        // asks whether an alarm is standing.
+        let seen = ui.add_enabled(!crossed_any(model), egui::Button::new(ACK));
+        crate::ui::act::tag(&seen, &[crate::verbs::ACK.word]);
+        if seen.clicked() {
+            model.post_ack();
+        }
+        // **And the cut opens a place rather than firing** (DESIGN §4.20), so
+        // it carries no `act:` token: the op is tagged on the control inside
+        // that pane which actually spends it — the division `enroll a box…`
+        // keeps with `mint`.
+        if ui.button(crate::ui::clear::OPEN).clicked() {
+            model.begin_clearing();
         }
     });
     ui.separator();

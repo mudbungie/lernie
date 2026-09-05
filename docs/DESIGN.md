@@ -326,7 +326,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Thirty-one kinds, because thirty-one are painted.** The engine's reply
+**Thirty-three kinds, because thirty-three are painted.** The engine's reply
 surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
@@ -368,9 +368,10 @@ that built §4.30's pane (bl-5c53), the balls family's four (`balls`, `board`,
 (bl-d2af), the deeper three (`agent`, `step`, `inbox`) made it in the
 commit that built §4.32's half of the records pane (bl-3257), the fleet's
 three (`armed`, `science`, `work-diff`) made it in the commit that built
-§4.33's pane (bl-a43a), and the capability boundary's two receipts
-(`answered`, `floored`) made it in the commit that built §4.34's controls
-(bl-bce2) — which between them spend the ledger's last conversation read and
+§4.33's pane (bl-a43a), the capability boundary's two receipts (`answered`,
+`floored`) made it in the commit that built §4.34's controls (bl-bce2), and the
+trail's two (`acked`, `trail-cleared`) in the commit that built §4.35's acts
+(bl-b8f7) — which between them spend the ledger's last conversation read and
 leave `unreadable/` holding only shapes addressed to a different kind of
 client, and the malformed frames upstream's codec cannot emit.
 
@@ -2163,9 +2164,10 @@ rows of named strings and refuses to grow an arm for anything else (§4.10).
 **What this ball did NOT land, and where each half went.** bl-4c48 named ten
 ops and this is the read half of one of its two. The trail's two acts — `ack`,
 which is the operator's watermark and the second of the two ways an alarm comes
-down, and `clear-trail`, which truncates — are bl-b8f7: both name no workspace,
-so both take the poster's fanned path, and *one control truncating every
-engine's trail* is a question to settle before writing it rather than after.
+down, and `clear-trail`, which truncates — were bl-b8f7: both name no
+workspace, so both take the poster's fanned path, and *one control truncating
+every engine's trail* was a question to settle before writing it rather than
+after. Both have since landed, and both answers are §4.35's.
 The fleet family — `fleet`, `disband`, `arm`, `disarm`, `scan`, `science`,
 `work-diff` — was bl-a43a, and it addresses a workspace, so it is the tuning
 pane's shape rather than this one's; it has since landed as §4.33. **The fleet has no read of its own**: its
@@ -2676,6 +2678,74 @@ place for a one-line statement about an act just performed. Being there is also
 what makes each dismissible: an act is an event and not a state, so it does not
 re-post on a beat.
 
+### 4.35 The trail's two acts: the fan is the reading, and the cut is a place (bl-b8f7)
+
+`src/verbs/trail.rs`, `src/ui/trail.rs`, `src/ui/clear.rs`,
+`src/ui/model/trail.rs`. §4.27 landed the trail's read and left its two acts,
+and bl-b8f7 filed both of the questions they raise as questions to settle
+**before** a control exists rather than after. Here are the two answers.
+
+**Both fan, and the fan is the right reading rather than a shape to work
+around.** Neither `ack` nor `clear-trail` carries a field of any kind — the
+envelopes are `{"op": "ack"}` and `{"op": "clear-trail"}` — so
+`crate::verbs::Verb::addresses_a_workspace` is false for both and the poster
+puts each down every channel this box holds (§4.21). The alternative bl-b8f7
+named was growing a channel on `crate::ui::Posted` and offering each act per
+section. It is refused, for three reasons that are one reason:
+
+- **The pane IS the union.** `ops` names no workspace, so the trail this seat
+  paints is the union across channels (§4.27). An act offered per section would
+  have a subject narrower than the pane it stands on, which is a control whose
+  scope an operator has to reconstruct from where they clicked.
+- **`ack` is the operator's watermark, and the operator is one.** It records
+  *I have looked at what is standing*. Somebody looking at the union has looked
+  at every section; a per-engine watermark would be bookkeeping this seat
+  invented and the operator would have to keep.
+- **A channel on `Posted` would be a second addressing table.** This crate
+  routes by the envelope's own `workspace` field and nowhere else — that is
+  `crate::envelope`'s *"one table, not two"* — and a gesture addressed by a
+  field beside the envelope would be a second mechanism for the one question
+  the first exists to answer.
+
+What the seat owes instead is **saying so**, which is why the cut's pane names
+the engines it reaches one to a line rather than counting them, and why its
+word is `cut every trail…`.
+
+**The cut is an unmaking, so it is a PLACE** (§4.20) — a covering pane of its
+own (`src/ui/clear.rs`), opened from the trail, holding nothing else, with the
+way out first and the act last. All three of §4.20's reasons carry across
+untouched: a covering pane is the only placement identical in both layout
+shapes, it is already inside the reach walk's and the parity walk's
+instruments, and a pane an operator moves through must not be able to take a
+mis-aimed click that cuts something. It is a member of `Lookup` rather than a
+field of its own, which makes *the trail and its cut standing together*
+unrepresentable rather than merely unreached.
+
+**And there is no arming, because there is no name to type back.** §4.20's
+arming is **the subject's own name**, and it is an enablement there because the
+WIRE makes it one: `delete-workspace` carries a `typed` field and refuses
+unless it matches. `clear-trail` carries no field at all, and that same section
+rules that *"the seat reads which of the two a `typed` is off the wire's own
+grammar and invents no policy"*. A box this seat invented would be an arming
+the engine does not have on an act it does not gate — and a second confirmation
+shape beside §4.20's, which is exactly what that section was written to
+prevent. What the arming was FOR is bought by the place instead: the subject is
+stated before the act is offered, and the act is not a control an operator
+passes.
+
+**Two departures from the unmaking, each with its own reason.** Its pane stays
+up saying *asked — waiting for the engine*, because a refusal is the common
+case for `delete-workspace` and the arming has to survive it. Nothing refuses a
+truncation, so this pane stands down onto the trail as it fires: the place to
+be standing when the answer arrives is the pane that answers, and the trail's
+read is standing. And its way out returns to the trail rather than to no pane
+at all, for the same reason — that is where the gesture came from.
+
+**Neither receipt is filed** (`acked`, `trail-cleared`). Both carry nothing,
+and what each changed is on the trail: the next standing read answers `acked`
+on the rows that were standing, and a truncated trail's first row is the cut
+itself. They join `nudged` and `flagged` in the one arm that predicts no
+listing (§4.9).
 
 ## 5. Module map
 
@@ -2729,7 +2799,7 @@ re-post on a beat.
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
-| `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27). | ~45 |
+| `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~90 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
 | `src/verbs/capability.rs` | the boundary's three acts as rows — the parked call's answer with its three verdicts, and the floor's two directions, neither of which can be refused (§4.34). | ~110 |
@@ -2764,6 +2834,7 @@ re-post on a beat.
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered (§4.34), and the way out to the conversation. | ~230 |
+| `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |

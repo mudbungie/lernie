@@ -74,6 +74,11 @@ pub enum Lookup {
     Trailing,
     /// The balls they hold, in their columns (`crate::ui::board`; bl-d2af).
     Board,
+    /// **The place a trail is cut in** (`crate::ui::clear`; bl-b8f7). It is a
+    /// member of THIS field rather than a pane beside the trail because the
+    /// two are mutually exclusive by construction: one is opened from the
+    /// other, and the way out of it re-opens the one it came from.
+    Clearing,
 }
 
 /// **One channel's answer to *what do you answer to***, and the channel it

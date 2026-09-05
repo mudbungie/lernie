@@ -157,7 +157,13 @@ impl Model {
             // the raise are ONE arm rather than two identical ones, which is
             // the honest shape: what each changed arrives on the transcript and
             // on the next queue respectively, and this end predicts neither.
-            Reply::Nudged | Reply::Flagged => self.notice = None,
+            // **The trail's two receipts join them** (bl-b8f7), and for the
+            // identical reason: what each changed is on the trail, and the
+            // standing read is what says so. A receipt that restated it would
+            // be this end predicting a listing.
+            Reply::Nudged | Reply::Flagged | Reply::Acked | Reply::TrailCleared => {
+                self.notice = None;
+            }
             // **The capability boundary's two, which DO carry a fact**
             // (§4.34). Neither is content — there is no row either belongs
             // under — so each becomes the bar's one line about an act just

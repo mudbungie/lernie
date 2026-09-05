@@ -41,11 +41,9 @@ create = "bl-f7ae — the ball pane has no controls: a ball cannot be filed from
 release = "bl-f7ae — the ball pane has no controls: a held ball cannot be unclaimed here"
 update = "bl-f7ae — the ball pane has no controls: a ball's title, body, schedule and journal are unreachable"
 
-# bl-b8f7 — the trail pane reads and cannot act. bl-4c48 landed the read half:
-# `ops` is painted, so its row is gone from here. These two are its acts, and
-# both fan across every channel because neither names a workspace.
-ack = "bl-b8f7 — the trail pane has no controls: an alarm cannot be acknowledged from this seat"
-clear-trail = "bl-b8f7 — the trail pane has no controls: nothing truncates the trail from this seat"
+# bl-b8f7 landed the trail's two acts — `ack` carries a control on the trail
+# pane itself and `clear-trail` one inside the place it opens (DESIGN §4.34), so
+# both rows are gone from here.
 
 # bl-a43a landed the fleet pane — `fleet`, `disband`, `arm`, `disarm`, `scan`,
 # `science` and `work-diff` all carry a control on the aimed wall

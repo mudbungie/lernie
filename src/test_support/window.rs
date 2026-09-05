@@ -22,9 +22,9 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 pub(crate) mod panes;
 
 pub(crate) use panes::{
-    attempt, boarded, column, commanded, configured, deposit, diff, drilled, figure, finding,
-    fleeting, helped, hit, lineage, machine, machines, notch, own_row, pinned, provider, queued,
-    recorded, signing, step, trailed, trailing, tuned, waiting,
+    attempt, boarded, clearing, column, commanded, configured, deposit, diff, drilled, figure,
+    finding, fleeting, helped, hit, lineage, machine, machines, notch, own_row, pinned, provider,
+    queued, recorded, signing, step, trailed, trailing, tuned, waiting,
 };
 
 /// One workspace row, named and otherwise quiet.

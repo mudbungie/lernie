@@ -34,6 +34,8 @@ pub mod act;
 pub mod board;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
+/// The place a trail is cut in — the second destructive act's own pane.
+pub mod clear;
 /// The clients pane: which machines may execute for a wall, and what they offer.
 pub mod clients;
 /// The commands pane: every op each engine has a word for, and what each does.

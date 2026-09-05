@@ -162,6 +162,14 @@ pub enum Reply {
     /// **The config lineages one workspace holds** — that pane's first, and
     /// the listing its two pickers are filled from.
     Lineages(Vec<lineages::Lineage>),
+    /// **The watermark landed** (bl-b8f7). It carries nothing for the reason
+    /// [`Flagged`](Self::Flagged) carries nothing: what changed is on the
+    /// trail, and the standing read answers `acked` on the rows that were
+    /// standing — this end predicts neither.
+    Acked,
+    /// **The trail was truncated**, on exactly those terms. What the new trail
+    /// holds is its own first row, and the standing read is what says so.
+    TrailCleared,
     /// **Whether a standing thing is now standing** — the receipt `fleet`,
     /// `disband`, `arm` and `disarm` all answer with (bl-a43a). It is ONE kind
     /// for two families — the fleet loop and the alignment monitor — so a seat

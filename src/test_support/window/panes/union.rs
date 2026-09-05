@@ -178,3 +178,13 @@ pub(crate) fn trailing() -> Model {
         ..seated()
     }
 }
+
+/// **The seated model with the place a trail is cut in standing** (bl-b8f7):
+/// the trail already answered under it, so the pane names the engine the cut
+/// would reach and its act is the only control on the glass that destroys.
+pub(crate) fn clearing() -> Model {
+    Model {
+        lookup: Some(crate::ui::Lookup::Clearing),
+        ..trailing()
+    }
+}

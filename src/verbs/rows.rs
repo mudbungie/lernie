@@ -230,9 +230,11 @@ pub(super) const TABLE: &[Verb] = &[
     super::tuning::MODEL,
     super::workspace::PIN,
     super::workspace::UNPIN,
+    super::trail::ACK,
     super::fleet::SCAN,
     super::fleet::ARM,
     super::fleet::DISARM,
     super::fleet::DISBAND,
+    super::trail::CLEAR_TRAIL,
     super::workspace::DELETE_WORKSPACE,
 ];

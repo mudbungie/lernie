@@ -50,6 +50,51 @@ impl Model {
         self.lookup == Some(Lookup::Trailing)
     }
 
+    /// **Acknowledge every alarm, on every channel this box holds.**
+    ///
+    /// `ack` names no workspace, so the poster fans it — and that is the right
+    /// reading rather than a shape to work around (DESIGN §4.35): the pane is
+    /// the union across channels, and an acknowledgement made while looking at
+    /// the union is an acknowledgement of the union. What it changed arrives
+    /// on the next standing read, which answers `acked` on the rows that were
+    /// standing.
+    pub fn post_ack(&mut self) {
+        self.outbox.push(super::Posted::act(crate::verbs::ack()));
+    }
+
+    /// **Open the place a trail is cut in** (DESIGN §4.20's idiom, §4.35's
+    /// reading of it). It stands the trail down, being the same field, and
+    /// [`Model::close_clearing`] is what brings it back.
+    pub fn begin_clearing(&mut self) {
+        self.lookup = Some(Lookup::Clearing);
+    }
+
+    /// **Whether that place is the pane standing.**
+    pub fn clearing(&self) -> bool {
+        self.lookup == Some(Lookup::Clearing)
+    }
+
+    /// **The way out, which cuts nothing** — it re-opens the trail rather than
+    /// leaving the operator on no pane at all, because the trail is where the
+    /// gesture that opened this came from and its read is standing.
+    pub fn close_clearing(&mut self) {
+        self.begin_trail();
+    }
+
+    /// **Cut every trail this box can reach**, and go back to looking at them.
+    ///
+    /// The pane stands down on firing rather than saying *asked*, which is
+    /// where this parts from the unmaking (§4.20) and it parts on that pane's
+    /// own reasoning: an unmaking's refusal is the COMMON case, so its pane
+    /// stays up to hold the arming. Nothing refuses a truncation, and what
+    /// answers this one is the trail itself on the next beat — so the place to
+    /// be standing when the answer lands is the trail.
+    pub fn post_clear_trail(&mut self) {
+        self.outbox
+            .push(super::Posted::act(crate::verbs::clear_trail()));
+        self.begin_trail();
+    }
+
     /// File one channel's trail, on [`Model::asking`](super::Model)'s own
     /// terms: this channel's section is replaced and every other stands.
     pub(super) fn crossed(&mut self, channel: &Channel, rows: Vec<OpRow>) {

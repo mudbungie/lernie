@@ -16,8 +16,8 @@
 //! painted.
 
 use crate::ui::{
-    Model, board, chat, clients, commands, composer, config, convs, enroll, find, fleet, keys,
-    login, queue, records, roster, theme, trail, tuning, unmake,
+    Model, board, chat, clear, clients, commands, composer, config, convs, enroll, find, fleet,
+    keys, login, queue, records, roster, theme, trail, tuning, unmake,
 };
 
 /// The width policy: the yield, the two shapes, and the three columns.
@@ -160,6 +160,7 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
         || records::render(ui, model)
         || queue::render(ui, model)
         || trail::render(ui, model)
+        || clear::render(ui, model)
         || board::render(ui, model)
         || fleet::render(ui, model)
         || commands::render(ui, model)

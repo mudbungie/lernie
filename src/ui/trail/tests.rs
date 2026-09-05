@@ -147,3 +147,39 @@ fn the_pane_s_close_stands_it_down() {
     // The rows outlive it — the next open is about the same trail.
     assert_eq!(model.trails.len(), 1);
 }
+
+/// **The watermark is one control on the pane, not one per row** — that is
+/// what the op is: `ack` takes no address and appends one line every
+/// failure-derived alarm reads past (bl-b8f7).
+#[test]
+fn the_watermark_is_one_control_and_it_fans() {
+    let mut model = trailing();
+    let window = Window::new();
+    click(&window, super::ACK, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    let posted = model.outbox.first().expect("a gesture");
+    assert_eq!(posted.envelope, serde_json::json!({ "op": "ack" }));
+    assert!(posted.act, "a watermark is an act");
+}
+
+/// **It is offered only where there is a trail to acknowledge** — the
+/// enablement rule with the SUBJECT missing rather than a parameter. *A trail*
+/// is the one reading of these rows this pane makes: whether an alarm is
+/// standing stays the engine's classification (REMOTE §9.17).
+#[test]
+fn the_watermark_is_dead_where_no_row_has_crossed() {
+    let mut model = Model {
+        lookup: Some(crate::ui::Lookup::Trailing),
+        trails: vec![Trail {
+            channel: own().channel,
+            rows: Vec::new(),
+        }],
+        ..seated()
+    };
+    let window = Window::new();
+    click(&window, super::ACK, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert!(model.outbox.is_empty(), "a watermark with no trail fired");
+}

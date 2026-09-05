@@ -284,6 +284,14 @@ does not hold. A binary compiled on the box carries no such attribute and
 runs. What you get is a window launched from a terminal — no `.app` bundle
 and no dock mark; that is a separate question.
 
+**There is no container image either** (`docs/DESIGN.md` §6.4). The other three
+components ship one because an image is the unit of install for a box that
+takes images; a seat's box is a desktop, and every layer a seat image could
+carry — the GL stack, the display client libraries, the fonts — is something
+that box has by being one, while the display socket, the GPU and the wire
+material would all have to be mounted back in from it. The crate is the
+artifact on every platform, and the seat box below installs it that way.
+
 What the release workflow does on a mac is PROVE that install: a job on an
 Apple runner checks out the released tag, builds it natively, and READS the
 result rather than trusting it — `scripts/mac-verify.sh` reports its

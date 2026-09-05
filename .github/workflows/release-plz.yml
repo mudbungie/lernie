@@ -85,8 +85,10 @@ name: Release-plz
 # attribute. Signing and notarization are not a build-line act: replacing the
 # linker's ad-hoc signature with a real one needs a credential this repository
 # may not hold, and `cargo install` needs none — a binary compiled on the box
-# carries no quarantine attribute at all. No container image either; that is
-# bl-18c7's question.
+# carries no quarantine attribute at all. No container image either, and that
+# is the same ruling read from the other side (bl-18c7, DESIGN §6.4): an image
+# is the unit of install for a box that takes images, and a seat's box is a
+# desktop that already has every layer such an image could carry.
 
 # No `workflow_run` arm anywhere — see the `ci` job. The gate is `needs: ci`.
 on:

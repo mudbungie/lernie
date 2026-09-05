@@ -3049,9 +3049,8 @@ nothing `needs:` it, so a broken mac leg is visible and never stands between a
 green tree and the registry. What it proves, and why it attaches nothing, is
 §6.3.
 
-**Still deferred.** No container image — bl-18c7's question, and it may be
-answered with a ruling rather than a build. Signing and notarization are not
-deferred; §6.3 says why they are not needed.
+**Nothing is still deferred here.** No container image is a ruling, §6.4;
+signing and notarization are not needed, §6.3 says why.
 
 ### 6.3 The artifact is the crate, and no binary is attached to a release (bl-9380)
 
@@ -3106,4 +3105,63 @@ no macOS analogue here. That is a bundle question with the same notarization
 answer waiting behind it, and it is not this ruling's. And "it links, and the
 file has the shape of a working mac binary" is still the whole of what the mac
 leg proves — nothing on the runner runs it.
+
+### 6.4 The seat ships no OCI image: the reasoned exception to yog's §10.1 (bl-18c7)
+
+yog's DESIGN §10.1 records the operator ruling that every component of the
+four-way split ships one OCI image, *"for deployment sanity and for nothing
+else"* — the image is the unit of install — and the ball that carried the
+seat's half said the answer could be that it does not, provided the reasoning
+is recorded in the seat's own repository as a doc amendment rather than a
+silent omission. **This is that amendment: the seat ships no image, and the
+question is closed rather than deferred.** It is the same ruling as §6.3 read
+from the other side.
+
+**An image is the unit of install for a box that takes images, and a seat's
+box is a desktop.** The three headless components run where no toolchain, no
+display and no operator is, and an immutable image is exactly what such a box
+should be handed. A seat runs where all three are. Its unit of install was
+settled before this question was asked — the published crate, compiled on the
+box, by `make install` or the hourly reconciler on Linux (bl-155a) and by
+`cargo install` on a mac (§6.3) — and that already buys what the ruling names:
+one immutable version per install, an hourly convergence, and a yank as the
+rollback lever. A second unit of install for the same component is two homes
+for one artifact, and the second would be the one nobody's box uses.
+
+**What a seat image would have to carry is host state, and what it could
+carry is nothing the host lacks.** The layer would hold a display stack — GL
+or EGL, the Wayland and X client libraries, xkbcommon, fonts, and a Vulkan ICD
+or software rasterizer for a box with no GPU — and the run line would mount
+the display socket through, pass the GPU device through, mount the seat's own
+XDG state root (§4.13) and mount the wire material it dials with, which REMOTE
+§1.4 says is never in a layer. Every one of those is something the host has by
+being a desktop; the image would carry a copy of the host's own display stack
+so that the host could lend the image its display. The run line would be
+longer than the install it replaced, and would couple the seat to the
+compositor, the device node and the socket path of one box — the coupling an
+image exists to remove.
+
+**The one face a container could lawfully host is not this product.** The
+seat has a headless verb surface (§4.10: the typed argv is a serialization of
+the same boundary), and a box with no display could script it from a
+container. bl-9380 named a headless wire-client artifact as *a different ball
+with a different product*, and it is: today one binary carries both faces, so
+an image of it is the window's image with the frameworks and the display
+libraries linked whether or not a verb ever paints. If that product is ever
+cut — the window behind a feature, a binary that links nothing above the
+socket — the image question returns with it, and lands on the container line
+the siblings already run (yog §10.2's rule: a graph that links nothing above
+libSystem crosses). Nothing here forecloses that; nothing here builds it.
+
+**So there is no `Containerfile`, no `.containerignore`, no `make image` and
+no `make image-scan`.** The image-side disclosure gate is §10.1's condition on
+publishing an image, and a gate comes with the artifact it judges: a scan
+target with no image to read is a gate that passes forever, which is the
+failure every two-direction check in this tree exists to end. The naming fence
+(§0) has one fewer surface for the same reason — an image tag inherits a crate
+version, and there is no tag to inherit one.
+
+**What this asks of yog's document.** §10.1 lists `ghcr.io/mudbungie/lernie`
+among the four packages; that name will never exist. The amendment there is a
+sentence citing this section, and it is yog's ball, not this one's.
 

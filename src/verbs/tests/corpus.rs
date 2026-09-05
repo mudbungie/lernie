@@ -15,22 +15,22 @@
 
 use serde_json::{Value, json};
 
-use super::super::{EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, table};
+use super::super::{CREATE, EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, UPDATE, table};
 use crate::envelope;
 use crate::test_support::corpus::{Fixture, files, fixture, record, root};
 
 /// Rule 2, and the record of what this seat cannot compose.
 mod emits;
 
-/// Every op this seat composes: every row of the table, and the six doors that
-/// have no row. Derived from the table rather than listed, so a verb added is
-/// in it.
+/// Every op this seat composes: every row of the table, and the eight doors
+/// that have no row. Derived from the table rather than listed, so a verb added
+/// is in it.
 fn emitted() -> Vec<String> {
     table()
         .iter()
         .map(|verb| verb.word.to_owned())
         .chain(
-            [PREPARE, PROMPT, EFFORT, PRIORITY, OPS, FORK]
+            [PREPARE, PROMPT, EFFORT, PRIORITY, OPS, FORK, CREATE, UPDATE]
                 .into_iter()
                 .map(str::to_owned),
         )

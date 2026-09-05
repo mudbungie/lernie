@@ -136,7 +136,10 @@ impl Model {
     /// closes that pane is the control that forgets. Then a draft assignment,
     /// which is a thing inside a pane rather than the pane: Escape over a
     /// half-typed model puts the draft down and leaves the rows standing.
-    /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
+    /// Then the tuning pane itself, then the ball pane's authoring block
+    /// (bl-f7ae) — a thing INSIDE a pane rather than the pane, on the draft
+    /// assignment's own terms: Escape over a half-typed title puts the block
+    /// down and leaves the board standing. Then the records pane (bl-2cf7), then the
     /// decision queue (bl-f0ef), then whichever of the window's own two is
     /// standing (bl-40ec — one arm, because one field holds both), then the
     /// login pane (bl-e3c5), then the clients pane (bl-e53c), then an
@@ -155,6 +158,8 @@ impl Model {
             self.cancel_assignment();
         } else if self.tuning.is_some() {
             self.close_tuning();
+        } else if self.authoring.is_some() {
+            self.close_authoring();
         } else if self.showing(super::Listing::Records) {
             self.close_records();
         } else if self.showing(super::Listing::Queue) {

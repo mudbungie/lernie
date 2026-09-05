@@ -92,6 +92,21 @@ pub const CONFIG_ID: &str = "the config editor's box";
 /// **The id the workflow name box wears** (`crate::ui::config`).
 pub const WORKFLOW_ID: &str = "the workflow name box";
 
+/// **The five the ball pane's authoring block wears** (bl-f7ae,
+/// `crate::ui::board::acts`) — the project a new ball is filed in, its title
+/// and body, the journal note an amendment appends, and the id typed back that
+/// arms a delivery.
+///
+/// Five ids for one block because the gate is a comparison against a FOCUSED
+/// id: two boxes sharing one would be one box as far as the keyboard is
+/// concerned, and an arrow taken from inside the second would walk the roster
+/// under a half-typed title.
+pub const PROJECT_ID: &str = "the new ball's project box";
+pub const TITLE_ID: &str = "the ball's title box";
+pub const BODY_ID: &str = "the ball's body box";
+pub const NOTE_ID: &str = "the ball's journal box";
+pub const DELIVER_ID: &str = "the delivery's arming box";
+
 /// **Every box on the glass that takes text, so the gate can name them all**
 /// (bl-dbc9).
 ///
@@ -104,7 +119,18 @@ pub const WORKFLOW_ID: &str = "the workflow name box";
 /// `wants_keyboard_input` — which answers *is anything focused*, buttons
 /// included — and this is the whole list of what it compares against. A fourth
 /// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 5] = [BOX_ID, REASON_ID, ARM_ID, CONFIG_ID, WORKFLOW_ID];
+pub const BOXES: [&str; 10] = [
+    BOX_ID,
+    REASON_ID,
+    ARM_ID,
+    CONFIG_ID,
+    WORKFLOW_ID,
+    PROJECT_ID,
+    TITLE_ID,
+    BODY_ID,
+    NOTE_ID,
+    DELIVER_ID,
+];
 
 /// Whether a box that takes text holds the keyboard right now.
 fn typing(ctx: &egui::Context) -> bool {

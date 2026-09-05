@@ -48,6 +48,44 @@ pub(crate) fn column(id: &str, column: &str) -> crate::reply::board::BoardRow {
     }
 }
 
+/// **The pane with the authoring block open on a ball that does not exist
+/// yet**, its two boxes FILLED — the fleet fixture's own rule: a world with
+/// empty boxes photographs the block an operator meets and puts its one
+/// control on no screen the parity walk visits.
+pub(crate) fn filing() -> Model {
+    let mut model = boarded();
+    model.begin_filing();
+    if let Some(block) = model.authoring.as_mut() {
+        block.project = "lernie".to_owned();
+        block.title = "the ball this would file".to_owned();
+    }
+    model
+}
+
+/// **The pane with the block open on the ball this wall holds**, its journal
+/// box and its arming box filled, so all three of its acts are live.
+pub(crate) fn amending() -> Model {
+    let mut model = boarded();
+    model.begin_amending(&bound("bl-1"));
+    if let Some(block) = model.authoring.as_mut() {
+        block.note = "what happened".to_owned();
+        block.arm = "bl-1".to_owned();
+    }
+    model
+}
+
+/// One ball a wall holds, as quiet as such a row can be.
+pub(crate) fn bound(id: &str) -> crate::reply::balls::BoundBall {
+    crate::reply::balls::BoundBall {
+        id: id.to_owned(),
+        badge: Some("delivered".to_owned()),
+        project: "lernie".to_owned(),
+        owner: "alba".to_owned(),
+        state: "bound".to_owned(),
+        spend: figure(Some("$2.50"), None),
+    }
+}
+
 /// **The seated model with the ball pane open and answered** (bl-d2af): a
 /// claimed row carrying every line the pane can hang off one — the holder, the
 /// epic, the drones, its own spend and its rollup — a gated row, a bare ready
@@ -114,14 +152,7 @@ pub(crate) fn boarded() -> Model {
                 },
             ],
         }],
-        holding: Some(vec![crate::reply::balls::BoundBall {
-            id: "bl-1".to_owned(),
-            badge: Some("delivered".to_owned()),
-            project: "lernie".to_owned(),
-            owner: "alba".to_owned(),
-            state: "bound".to_owned(),
-            spend: figure(Some("$2.50"), None),
-        }]),
+        holding: Some(vec![bound("bl-1")]),
         marks: Some("balls/tasks".to_owned()),
         ..seated()
     }

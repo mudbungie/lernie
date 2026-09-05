@@ -19,8 +19,8 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, effort, find, fork, ops, prepare, priority,
-    prompt,
+    CREATE, EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, UPDATE, create, effort, find, fork, ops,
+    prepare, priority, prompt, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -56,8 +56,24 @@ const UNEMITTED: &[(&str, usize, &str)] = &[
         2,
         "the amending form: this seat composes the bare READ only, and pointing \
          a wall's task space at another branch is a write with a confirmation \
-         to design — it belongs beside the four acts the ball pane does not \
-         have yet (bl-f7ae)",
+         to design — the ball pane's five acts landed in bl-f7ae and this one \
+         did not, because a tracking branch is not a ball",
+    ),
+    (
+        "create",
+        1,
+        "the scheduling fields: this seat composes the title and the body, and \
+         a priority, a tag, a parent and a blocker are four pickers the ball \
+         pane does not have — `fields` is an array of objects besides, which is \
+         why the door composes text and nothing else (`crate::verbs::balls::\
+         edit`)",
+    ),
+    (
+        "update",
+        1,
+        "the scheduling fields, on the filing's own terms: this seat amends a \
+         ball's text and appends to its journal, and the four facts the board \
+         orders on are the same four pickers",
     ),
     (
         "work-diff",
@@ -96,6 +112,16 @@ const UNEMITTED: &[(&str, usize, &str)] = &[
          fire the name it painted",
     ),
 ];
+
+/// **The array neither authoring door composes**, named once: a frame carrying
+/// it is declined here and recorded in [`UNEMITTED`] above.
+const FIELDS: &str = "fields";
+
+/// An OPTIONAL string field, read as the doors read it — absent is `None`, and
+/// an empty string is a value somebody wrote.
+fn said(obj: &Map<String, Value>, key: &str) -> Option<String> {
+    Some(obj.get(key)?.as_str()?.to_owned())
+}
 
 /// A required string field of a frame the vocabulary guarantees carries one.
 /// It names the field it did not find: a verb whose `params` drifted off the
@@ -163,6 +189,28 @@ fn rebuilt(frame: &Value) -> Option<Value> {
                 text(obj, "from"),
                 text(obj, "role"),
                 text(obj, "goal"),
+            )
+        }),
+        // The two authoring doors, round-tripped off the frame's own keys
+        // rather than off `text`: absence is a value on both, and a reading
+        // that filled a missing key with `""` would be exactly the
+        // translation the doors exist to avoid.
+        CREATE => (!obj.contains_key(FIELDS)).then(|| {
+            create(
+                text(obj, "project"),
+                text(obj, "name"),
+                text(obj, "title"),
+                said(obj, "body"),
+            )
+        }),
+        UPDATE => (!obj.contains_key(FIELDS)).then(|| {
+            update(
+                text(obj, "project"),
+                text(obj, "id"),
+                text(obj, "name"),
+                said(obj, "title"),
+                said(obj, "body"),
+                said(obj, "note"),
             )
         }),
         PROMPT => obj["seed"].is_null().then(|| {

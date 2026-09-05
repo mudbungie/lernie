@@ -7,8 +7,8 @@
 //! every rule for changing it is a pure function a test reads back as a value.
 
 use super::{
-    Aim, Asking, Bindings, Chunk, Columns, Configuring, Enrolling, Fill, Fleet, Forking, Hits,
-    Listing, Login, Lookup, Notice, Pages, Posted, Records, Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Enrolling, Fill, Fleet, Forking,
+    Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -125,6 +125,12 @@ pub struct Model {
     /// **The branch the aimed wall tracks its tasks on**, on the same standing
     /// (`board`).
     pub marks: Option<String>,
+    /// **A ball's text being authored, while the block is open** (`board::
+    /// acts`; DESIGN §4.35, bl-f7ae). A struct rather than a flag because it
+    /// holds the wall it was opened on and the name that wall's engine knows
+    /// it by, and because one block serves two subjects — a ball that does not
+    /// exist yet, and one this wall holds.
+    pub authoring: Option<Authoring>,
     /// **The fleet pane, while it is open** — the thirteenth covering pane,
     /// and the fifth whose subject is the aimed wall (`fleet`; DESIGN §4.33).
     /// A struct rather than a flag because three of its five acts carry a word

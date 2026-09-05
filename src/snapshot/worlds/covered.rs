@@ -13,6 +13,7 @@
 //! unanswered pane offers no controls at all.
 
 use super::World;
+use crate::test_support::window::panes::board::{amending, filing};
 use crate::test_support::window::{
     boarded, clearing, commanded, configured, finding, fleeting, machines, queued, recorded, role,
     signing, trailing, tuned,
@@ -89,6 +90,35 @@ pub(super) fn board() -> World {
     World {
         name: "boarding",
         model: boarded(),
+    }
+}
+
+/// **The window with the ball pane's authoring block open on a ball that does
+/// not exist yet** (bl-f7ae) — the only screen `create`'s control is on.
+///
+/// Two worlds rather than one because the block has two subjects and never
+/// both at once: this one offers the filing and the next one the three acts on
+/// a ball that exists. Its boxes are filled for `fleeting`'s reason — a world
+/// photographed unfilled puts every control it gates on no screen this walk
+/// visits (yog's `docs/PARITY.md` §5, *unproven is red*).
+pub(super) fn ball_filing() -> World {
+    World {
+        name: "filing",
+        model: filing(),
+    }
+}
+
+/// **The window with that block open on a ball the wall holds** — the only
+/// screen `update`, `release` and `close` are on.
+///
+/// It is photographed **armed**, which is the opposite of the unmaking world's
+/// choice and for the reason that world states: there the arming is the whole
+/// subject of the photograph, and here it is one of three controls that would
+/// otherwise be on no screen at all.
+pub(super) fn ball_amending() -> World {
+    World {
+        name: "amending",
+        model: amending(),
     }
 }
 

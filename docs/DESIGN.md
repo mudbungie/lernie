@@ -2473,15 +2473,13 @@ two aimed ones are asked by that click and by no other, so that is where their
 token belongs (`src/ui/roster/acts.rs`).
 
 **What this ball did NOT land.** bl-d2af named nine ops and this is the read
-half. The five acts — `create`, `close`, `update`, `assign`, `release` — are
-**bl-f7ae**, and the reason they are a ball of their own is a question worth
-settling before a control exists rather than after: not one of the five names a
-workspace, so all five FAN, and one click would file the same ball on every
-channel this box holds. That is `clear-trail`'s question (bl-b8f7) on a second
-family, and it wants an answer in words before a control is written. Each also
-needs a `name` to act as, which this seat holds nowhere. All five answer with a
-captured run, a kind this seat already paints, so that ball decodes nothing —
-it is controls, their arming, and where each hangs.
+half. The five acts — `create`, `close`, `update`, `assign`, `release` — were
+held back as **bl-f7ae** because they asked two questions worth settling before
+a control existed rather than after: not one of them names a workspace, so all
+five would FAN, and each carries a `name` to act as that this seat held
+nowhere. §4.35 is those two answers and the controls that follow from them —
+the fan is refused, each act is addressed down the channel its row came down,
+and the name turns out to be the workspace's own rather than an operator's.
 
 ### 4.32 The deeper records: the conversation's own row, one step's drill-in, and its undelivered mail (bl-3257)
 
@@ -2747,6 +2745,102 @@ on the rows that were standing, and a truncated trail's first row is the cut
 itself. They join `nudged` and `flagged` in the one arm that predicts no
 listing (§4.9).
 
+### 4.35 The ball pane's five acts: the stamp that is not an identity, and the one act with no undoing (bl-f7ae)
+
+`src/verbs/balls.rs`, `src/verbs/balls/edit.rs`, `src/ui/board/acts.rs`,
+`src/ui/model/board/acts.rs`, `src/ui/model/board/block.rs`. **The act half of
+§4.31**, which landed the read: `create`, `assign`, `release`, `update` and
+`close` are what CHANGE the store, and until they landed an operator could
+watch a board and could not touch it.
+
+**The fan question, settled: none of the five is fanned.** All five carry a
+project and the `--as` name and NO workspace, so `crate::verbs::Verb::
+addresses_a_workspace` is false for every one of them and the poster's own
+rule would spread each over every channel this box holds — one click filing
+the same ball on five engines, or asking five engines to deliver a ball one of
+them holds. That rule is right about the window's own reads and wrong here,
+and the envelope cannot tell the two apart because on the wire they are the
+same shape. **The composing control can, for free**, which is bl-4855's
+answer for `config` and is now this family's: every control here hangs on a
+row that came down ONE channel, so each says which
+(`crate::ui::Posted::down`). Nothing new was built for it — the address was
+already there, and the question was whether these five were allowed to use it.
+
+**The `--as` name is the workspace's, so this seat needs no identity.** The
+ball that filed this asked where a seat-side operator name would come from — a
+box, a setting, or the aimed wall's `owner`. It comes from none of them,
+because it is not an operator name at all: yog spells the field *"the `--as`
+stamp every `bl` verb carries (§3.2): the ball's bound workspace name, never
+the operator `$USER`"*, and `projects::join::owner_name` binds a ball to a
+workspace on exactly that equality. So the stamp is the aimed wall's name and
+the whole question dissolves — a seat that invented an operator name would
+break the binding it was making.
+
+**It is read off the CHANNEL and not off the aim**, which is the one subtlety
+in it. `crate::seat::route` rewrites a `workspace` field to the host's spelling
+where an entry renames, and none of these five has such a field; so an aim's
+`address` — this box's leaf — would cross as a claimant nobody on that engine
+is. `Model::stamp` reads `Channel::named_there`, which is that same rename
+seen from the other end, and falls back to the address for the channel that
+does not rename.
+
+**Where each hangs is where its fields already are.** `assign` is on a board
+row, because a ball nobody holds IS a row of that section and the wall it
+would be claimed for is the aim; it is offered off the row's own `claimant`
+rather than off the column's word, so a `gated` row — upstream's *"a ball you
+could claim but could not deliver"* — offers it and a claimed one does not. The
+other four are in an authoring **block** the aimed wall's section opens, which
+is where the ball's project, its id and the name its verbs stamp all already
+are. One block with two subjects — a ball that does not exist yet, and one this
+wall holds — because authoring a ball's words is one act; upstream folds them
+the same way and says why, *"one vocabulary, so a fact balls learns is added in
+one place instead of in the roster, the codec's field list and a second struct
+beside them"*.
+
+**Two of the five are doors and can never be rows** (`src/verbs/balls/
+edit.rs`). §4.10's table is rows of named strings written by one builder that
+writes every parameter it names, and `create`'s body and each of `update`'s
+three may be **absent** — absence being a value here, since an empty string
+asks upstream to blank a field nobody touched. Same rule as `effort`'s
+string-or-null and `fork`'s list, third application. `assign`, `release` and
+`close` are three named strings apiece and are rows.
+
+**`close` is armed and the other three are not.** §4.20 divides on one test —
+*undone by doing the other thing* — and three pass it: a filing is undone by
+releasing or closing what it filed, an amendment by writing the old words back
+(and a `note` is an append that claims nothing), a release by the `assign` on
+the board one section up. `close` folds `main` into the worktree, squashes the
+work onto the branch and removes the worktree, and there is no verb that
+reverses it. So it takes §4.20's **enablement**: dark until the box holds the
+ball's own id, with the refusal spelled beside it.
+
+**It does not take §4.20's other half — a pane of its own — and that is an
+argument rather than an omission.** That pane exists because
+`delete-workspace`'s subject is a row in a routine surface an operator moves
+through quickly, *"and a mis-aimed click there must not be able to land on
+this"*. This one is already two deliberate gestures deep — a covering pane,
+then a control on one of its rows — and the arming is a third. **The arming
+names its own subject**, which is why nothing records which ball is armed: the
+box holds an id and the control it enables is the one on the ball with that id.
+And it is never spent on firing, for §4.20's reason: a refusal is the common
+case here — the engine declines while the gate fails — and clearing the box
+would charge a retype for the engine's *no*.
+
+**Nothing new is decoded and no receipt is invented.** All five answer with a
+captured run, which §4.9 already paints: a refusal arrives in the child's own
+words on the bar, and a success says nothing. That silence is this pane's
+standing reads paying for themselves (§4.31: all four STAND while somebody is
+looking) — a ball filed appears in the ready column within the beat, a claim
+moves a row, a close takes one away. A `Notice::Said` receipt here would be a
+second, worse statement of what the pane itself is about to show.
+
+**What this did NOT land.** Neither authoring door composes the four
+scheduling facts — a priority, a tag, a parent, a blocker — because `fields` is
+an array of objects and each is a picker this pane does not have;
+`src/verbs/tests/corpus/emits.rs` records both by count and reason. `marks`'s
+amending form stays unbuilt beside them: a tracking branch is not a ball.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2843,13 +2937,17 @@ listing (§4.9).
 | `src/ui/records/mail.rs` | the undelivered mail (§4.32): the deposit's header with each unstated fact said as itself, and its body. | ~90 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/reply/spend.rs` | what a ball has cost and what the sum is over: the money as upstream rendered it, and the attribution that says the classification and the clause because the clause alone cannot say it (§4.28). | ~80 |
-| `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.28). | ~180 |
-| `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one wall's own balls with the figure that is required there and nowhere else, and the branch a wall tracks its tasks on (§4.28). | ~110 |
-| `src/verbs/balls.rs` | the balls family's four reads as rows — two naming no workspace and two naming one, a division read off the parameters rather than listed twice; `marks` is here as its READ, the amending form being a write with a confirmation to design (§4.28). | ~100 |
-| `src/ui/board.rs` | the ball pane (§4.28): the union across channels, the aimed wall's section between its two halves, and the two emptinesses that are the union's rather than the wall's. | ~155 |
+| `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.31). | ~180 |
+| `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one wall's own balls with the figure that is required there and nowhere else, and the branch a wall tracks its tasks on (§4.31). | ~110 |
+| `src/verbs/balls.rs` | the balls family as rows: four reads — two naming no workspace and two naming one, a division read off the parameters rather than listed twice — and the three acts that claim, release and deliver a ball; `marks` is here as its READ, the amending form being a write with a confirmation to design (§4.31, §4.35). | ~175 |
+| `src/verbs/balls/edit.rs` | the two authoring acts, which can never be rows: `create`'s body and each of `update`'s three may be ABSENT, and an empty string asks upstream to blank a field nobody touched (§4.35). | ~105 |
+| `src/ui/board.rs` | the ball pane (§4.31): the union across channels, the aimed wall's section between its two halves, the two emptinesses that are the union's rather than the wall's, and the claim offered on a row nobody holds (§4.35). | ~200 |
+| `src/ui/board/acts.rs` | the authoring block: one block with two subjects, the way out first, and the enablement that arms the one act with no undoing (§4.35). | ~205 |
 | `src/ui/board/rows.rs` | the words a board row wears — every line a pure function of the row, the loop's line being the engine's own with the two facts it omits hung off it. | ~135 |
-| `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, and four emptinesses because they are four different claims. | ~85 |
-| `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.28). | ~105 |
+| `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, four emptinesses because they are four different claims, and the two controls that open the authoring block (§4.35). | ~100 |
+| `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.31). | ~120 |
+| `src/ui/model/board/acts.rs` | what the model does with the five acts: the `--as` stamp read off the channel, the two openings, and the one door that sends down one channel (§4.35). | ~130 |
+| `src/ui/model/board/block.rs` | the block itself — what it holds, and the four gestures whose absence IS the enablement of the control that spends them (§4.35). | ~155 |
 | `src/reply/diff.rs` | what one attempt changed — the row the work diff answers with and the same row nested in every science attempt, one type because upstream has one encoder; binary read off the shape, and the patch deliberately unread (§4.32). | ~115 |
 | `src/reply/science.rs` | every delivery attempt of one workspace: what it was fired with, what it cost, what was said to it and how it ended — the outcome a token with whatever that token can say (§4.32). | ~155 |
 | `src/verbs/fleet.rs` | the fleet family — six rows and one door, the door because a cap is a number; and the file it is written in names no reply at all, because two families share one (§4.32). | ~150 |

@@ -9,6 +9,21 @@
 //! of that predicate, and the asker fans the first two and aims the second two
 //! off exactly it.
 //!
+//! # The five acts, and the `--as` name that is not an identity
+//!
+//! Three of them — [`ASSIGN`], [`RELEASE`], [`CLOSE`] — are three named
+//! strings apiece and nothing else, so they are rows. The two authoring verbs
+//! carry OPTIONAL text and are doors beside them ([`edit`]), on `effort`'s and
+//! `fork`'s own terms.
+//!
+//! **`name` is the workspace's own name, never the operator's.** yog spells it
+//! outright — *"the `--as` stamp every `bl` verb carries (§3.2): the ball's
+//! bound workspace name, never the operator `$USER`"* — and its join binds a
+//! ball to a workspace on exactly that equality. So this seat needs no
+//! identity of its own to act: the stamp is the aimed wall's name as its
+//! engine spells it (`crate::ui::Model::stamp`), and a seat that invented an
+//! operator name would break the binding it was trying to make.
+//!
 //! **`marks` is here as its READ.** With a branch it amends the wall's
 //! tracking space, and that second form is a write with a confirmation to
 //! design; the bare form reads, and the row below spells the bare form. The
@@ -19,6 +34,16 @@
 use serde_json::Value;
 
 use super::Verb;
+
+/// The two authoring acts, whose text is optional and so cannot be rows.
+pub mod edit;
+
+/// **The fields the family's frames carry**, spelled once for the rows below
+/// and for the doors in [`edit`] beside them — one home, so a row's `params`
+/// and a door's `json!` can never disagree about what the wire calls a thing.
+pub(crate) const PROJECT: &str = "project";
+pub(crate) const ID: &str = "id";
+pub(crate) const NAME: &str = "name";
 
 /// The whole box's binding table.
 pub const BALLS: Verb = Verb {
@@ -72,6 +97,43 @@ pub const MARKS: Verb = Verb {
              does not compose.",
 };
 
+/// **Claim a ready ball for a workspace.**
+pub const ASSIGN: Verb = Verb {
+    word: "assign",
+    params: &[PROJECT, ID, NAME],
+    summary: "claim a ready ball for a workspace",
+    detail: "Claims a ready ball (`bl claim`), which is what BINDS it to a \
+             workspace: a bound ball is one a workspace holds, and the join is \
+             on the name stamped here. So `name` is the claiming workspace's \
+             own name as its engine spells it, never the operator's login. It \
+             names no workspace field, so nothing routes it — the control that \
+             fires it names the channel its row came down (DESIGN §4.35).",
+};
+
+/// **Let a held ball go.**
+pub const RELEASE: Verb = Verb {
+    word: "release",
+    params: &[PROJECT, ID, NAME],
+    summary: "unclaim a ball a workspace holds",
+    detail: "Lets a ball go (`bl unclaim`): the workspace stops holding it and \
+             anyone can claim it again. Nothing already committed in its \
+             worktree is lost, which is what makes it the undoing of `assign` \
+             rather than an unmaking of its own.",
+};
+
+/// **Deliver a held ball.**
+pub const CLOSE: Verb = Verb {
+    word: "close",
+    params: &[PROJECT, ID, NAME],
+    summary: "close a ball and deliver its work",
+    detail: "Delivers a ball (`bl close`): folds `main` into its worktree, \
+             runs the project's pre-commit gate, squashes the work onto the \
+             target branch and removes the worktree. A failing gate aborts and \
+             leaves the ball claimed. It is the one of the five with no verb \
+             that undoes it, which is why the control that fires it is armed \
+             (DESIGN §4.35).",
+};
+
 /// The binding table, typed.
 pub fn balls() -> Value {
     BALLS.built(Vec::new())
@@ -90,6 +152,21 @@ pub fn workspace_balls(workspace: String) -> Value {
 /// One wall's tracking branch, typed.
 pub fn marks(workspace: String) -> Value {
     MARKS.built(vec![workspace])
+}
+
+/// Claim it, typed.
+pub fn assign(project: String, id: String, name: String) -> Value {
+    ASSIGN.built(vec![project, id, name])
+}
+
+/// Let it go, typed.
+pub fn release(project: String, id: String, name: String) -> Value {
+    RELEASE.built(vec![project, id, name])
+}
+
+/// Deliver it, typed.
+pub fn close(project: String, id: String, name: String) -> Value {
+    CLOSE.built(vec![project, id, name])
 }
 
 #[cfg(test)]

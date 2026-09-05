@@ -19,6 +19,13 @@
 //! pane standing — which is the same rule the tuning pane keeps, read on a
 //! pane whose subject is wider than its aimed section.
 //!
+//! # Its acts are a module of their own
+//!
+//! [`acts`] holds the five (bl-f7ae) — opening the block, closing it, and the
+//! one door that sends — and [`block`] holds the value they are about. This
+//! file is what the reads last said; those two are what the operator would do
+//! about it.
+//!
 //! # All four reads STAND, on the trail's terms
 //!
 //! A board is what is happening: a drone starts, a ball is claimed, a loop
@@ -26,6 +33,11 @@
 //! looking at it. So the set is keyed on the pane (`crate::state::Open::Board`)
 //! and asked only while somebody is looking — the trail's reasoning
 //! (`super::trail`), one noun over.
+
+/// The pane's five acts: what the model does with each, and where it sends it.
+pub mod acts;
+/// The block a ball's text is authored in, and the gestures it composes.
+pub mod block;
 
 use super::{Lookup, Model};
 use crate::reply::balls::BallRow;
@@ -93,13 +105,17 @@ impl Model {
         }
     }
 
-    /// **The aimed wall's two answers go with the wall they are about**,
+    /// **The aimed wall's two answers go with the wall they are about**, and
+    /// the authoring block with them (bl-f7ae) — it is opened on one wall's
+    /// ball and stamps that wall's own name, so a block left standing over a
+    /// new aim would offer to amend a ball under a claimant nobody is.
     /// called by the act that moves the aim. `None` is a wall nobody has asked
     /// yet, and the old wall's answer is not this wall's — the reading
     /// `Model::roles` gets, for the same reason.
     pub(super) fn retire_wall_balls(&mut self) {
         self.holding = None;
         self.marks = None;
+        self.authoring = None;
     }
 }
 

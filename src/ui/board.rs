@@ -20,6 +20,13 @@
 //! *this wall's balls* on two screens, which is one question; keeping them
 //! here costs one section that says what it is about.
 //!
+//! # Its five acts are the block's, and one of them is on a row here
+//!
+//! `create`, `update`, `release` and `close` hang in the authoring block the
+//! aimed wall's section opens (`crate::ui::board::acts`); `assign` hangs on a
+//! board row, because a ready ball IS a row of this section and the wall it
+//! would be claimed for is the aim (bl-f7ae, DESIGN §4.35).
+//!
 //! # The loop's own facts are here because there is nowhere else
 //!
 //! There is no `fleet` read on this wire and no reply kind for one. What an
@@ -40,6 +47,8 @@ use crate::ui::{Model, theme};
 
 pub use rows::{binding, cost, gated, headline, held, placed, running, worked};
 
+/// The pane's five acts: the authoring block, and the words on its controls.
+pub mod acts;
 /// The words a row wears, each a pure function of it.
 mod rows;
 /// The aimed wall's half of the pane.
@@ -74,6 +83,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     ui.separator();
     let columns = model.columns.clone();
     let bindings = model.bindings.clone();
+    // **The claim a click composed, spent after the walk** — the sections are
+    // walked with the model borrowed, and an act pushed from inside the loop
+    // would be one composed while the pane is mid-paint.
+    let mut fired: Option<(crate::ui::Channel, serde_json::Value)> = None;
     // One scroll for every section, and the heading above it fixed — the shape
     // every pane here keeps, for the reason the tuning pane states: a pane cut
     // off mid-row says nothing about having been cut.
@@ -104,10 +117,13 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                     ui.colored_label(theme::NOTICE, running(loop_));
                 }
                 for row in &section.board.rows {
-                    live(ui, row);
+                    if let Some(gesture) = live(ui, model, &section.channel, row) {
+                        fired = Some((section.channel.clone(), gesture));
+                    }
                 }
             }
             wall::render(ui, model);
+            acts::render(ui, model);
             for section in &bindings {
                 if section.rows.is_empty() {
                     continue;
@@ -122,6 +138,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                 }
             }
         });
+    if let Some((down, gesture)) = fired {
+        model.post_ball(&down, gesture);
+    }
     true
 }
 
@@ -136,9 +155,22 @@ fn empty(columns: &[crate::ui::Columns], bindings: &[crate::ui::Bindings]) -> bo
         && bindings.iter().all(|section| section.rows.is_empty())
 }
 
-/// One live ball: what it is, where the board put it, who is on it and what it
-/// has cost.
-fn live(ui: &mut egui::Ui, row: &BoardRow) {
+/// One live ball: what it is, where the board put it, who is on it, what it has
+/// cost, and — where nobody holds it and the window is aimed down this same
+/// channel — the control that claims it (bl-f7ae).
+///
+/// **The claim hangs on the ROW because the row is its subject**, and the wall
+/// it claims FOR is the aim, which is the one thing on the glass that names a
+/// `--as` stamp. `Model::claiming` is where both refusals live; here the
+/// absence of a gesture is the absence of a control, because a ball somebody
+/// already holds is not a control an operator should have to read a grey
+/// button to understand.
+fn live(
+    ui: &mut egui::Ui,
+    model: &Model,
+    down: &crate::ui::Channel,
+    row: &BoardRow,
+) -> Option<serde_json::Value> {
     ui.label(headline(row));
     ui.colored_label(
         theme::tone_ink(&crate::reply::convs::Tone::Weak),
@@ -158,6 +190,10 @@ fn live(ui: &mut egui::Ui, row: &BoardRow) {
             );
         }
     }
+    let gesture = model.claiming(down, row)?;
+    let claim = ui.button(acts::CLAIM);
+    crate::ui::act::tag(&claim, &[crate::verbs::ASSIGN.word]);
+    claim.clicked().then_some(gesture)
 }
 
 #[cfg(test)]

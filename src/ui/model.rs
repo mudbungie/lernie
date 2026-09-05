@@ -69,6 +69,7 @@ mod unmake;
 mod window;
 
 pub use aim::Aim;
+pub use board::block::Authoring;
 pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};
 pub use config::Configuring;

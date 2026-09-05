@@ -27,19 +27,17 @@
 # SEVERABILITY, which is the house test: deleting a line re-reddens the gate and
 # changes no code. Adding a control deletes a line and changes no config.
 
-# bl-d2af landed the ball pane's READ half — `balls`, `board`,
-# `workspace-balls` and `marks` are painted, so their rows are gone from here.
-# What it left is the ACT half, and that is bl-f7ae below.
-#
-# bl-f7ae — the ball pane reads and cannot act: nothing here files, claims,
-# releases, amends or closes a ball. All five name a project and a `--as` name
-# and NO workspace, so all five fan — one control filing five balls is the
-# question to settle before writing them rather than after.
-assign = "bl-f7ae — the ball pane has no controls: nothing here claims a ready ball"
-close = "bl-f7ae — the ball pane has no controls: a ball cannot be closed or delivered from this seat"
-create = "bl-f7ae — the ball pane has no controls: a ball cannot be filed from this seat"
-release = "bl-f7ae — the ball pane has no controls: a held ball cannot be unclaimed here"
-update = "bl-f7ae — the ball pane has no controls: a ball's title, body, schedule and journal are unreachable"
+# bl-d2af landed the ball pane's READ half and bl-f7ae landed its ACT half, so
+# all nine of the family's ops are gone from this ledger: `balls`, `board`,
+# `workspace-balls` and `marks` are painted, `assign` hangs on a board row, and
+# `create`, `update`, `release` and `close` hang in the authoring block the
+# aimed wall's section opens (`crate::ui::board::acts`, DESIGN §4.35). None of
+# the five acts is fanned — each is addressed down the channel its row came
+# down — which was the question bl-f7ae existed to settle. What the two balls
+# did NOT surface is per-form rather than per-op, so it is recorded by count
+# and reason in `src/verbs/tests/corpus/emits.rs` instead: `create` and
+# `update` compose text and not the four scheduling facts, and `marks` composes
+# its read and not its amending form.
 
 # bl-b8f7 landed the trail's two acts — `ack` carries a control on the trail
 # pane itself and `clear-trail` one inside the place it opens (DESIGN §4.34), so

@@ -43,6 +43,12 @@
 //! the paragraph above refuses to special-case, and each is a typed door with
 //! no row.
 //!
+//! **Two more doors landed with the ball pane's acts** ([`balls::edit`]):
+//! `create` and `update` carry text that may be **absent**, and absence is a
+//! value on this wire — a row would have to send `""` where the operator wrote
+//! nothing, which asks upstream to blank a field nobody touched. Same rule as
+//! the two above, third application.
+//!
 //! # Positional and context-free, unlike the engine's own line
 //!
 //! yog's line reader is terse and **context-bearing**: `/message ship it`
@@ -72,7 +78,7 @@
 
 use serde_json::{Map, Value};
 
-/// The balls family's four reads — the board, the bindings, a wall's and its branch.
+/// The balls family: four reads, three acts, and the two authoring doors.
 pub mod balls;
 /// The capability boundary's three acts: the parked call, and the floor.
 pub mod capability;
@@ -109,7 +115,11 @@ pub mod window;
 /// The wall's own act — the one row whose product is that its subject is gone.
 pub mod workspace;
 
-pub use balls::{BALLS, BOARD, MARKS, WORKSPACE_BALLS, balls, board, marks, workspace_balls};
+pub use balls::edit::{CREATE, UPDATE, create, update};
+pub use balls::{
+    ASSIGN, BALLS, BOARD, CLOSE, MARKS, RELEASE, WORKSPACE_BALLS, assign, balls, board, close,
+    marks, release, workspace_balls,
+};
 pub use capability::{ANSWER, RESTORE, REVOKE, VERDICTS, answer, restore, revoke};
 pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};

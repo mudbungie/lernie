@@ -25,11 +25,10 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The twenty-five reads, the conversation's fifteen acts, the trail's two,
-/// the enrollment, the
-/// sign-in, the model assignment and the wall's own three, spelled out — so
-/// the roster is asserted rather than merely iterated, and a verb added or
-/// dropped is a diff here.
+/// The twenty-five reads, the conversation's fifteen acts, the trail's two, the
+/// enrollment, the sign-in, the model assignment, the ball family's three and
+/// the wall's own three, spelled out — so the roster is asserted rather than
+/// merely iterated, and a verb added or dropped is a diff here.
 #[test]
 fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
     let words: Vec<&str> = table().iter().map(|verb| verb.word).collect();
@@ -83,6 +82,9 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "disarm",
             "disband",
             "clear-trail",
+            "assign",
+            "release",
+            "close",
             "delete-workspace"
         ]
     );

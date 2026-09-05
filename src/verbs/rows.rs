@@ -9,9 +9,11 @@
 //!
 //! **[`TABLE`] is the whole roster and twenty-two of its rows are declared
 //! elsewhere**, in the eight files that own their subjects. The balls family's
-//! four — the box-wide binding table, the fleet board, one wall's own balls
-//! and the branch it tracks them on — are [`super::balls`]'s, on the terms
-//! every group below is: one subject, one file, whatever the mix of widths.
+//! seven — the box-wide binding table, the fleet board, one wall's own balls,
+//! the branch it tracks them on, and the three acts that claim, release and
+//! deliver a ball — are [`super::balls`]'s, beside the two authoring doors
+//! that share their subject and cannot be rows because their text may be
+//! absent. One subject, one file, whatever the mix of widths.
 //! The conversation's
 //! four are [`super::conversation`]'s, its records' two are
 //! [`super::records`]'s, its spine's two are [`super::spine`]'s — beside the
@@ -236,5 +238,8 @@ pub(super) const TABLE: &[Verb] = &[
     super::fleet::DISARM,
     super::fleet::DISBAND,
     super::trail::CLEAR_TRAIL,
+    super::balls::ASSIGN,
+    super::balls::RELEASE,
+    super::balls::CLOSE,
     super::workspace::DELETE_WORKSPACE,
 ];

@@ -366,12 +366,13 @@ of the records pane (bl-b52c), `config` and `lineages` made it in the commit
 that built §4.30's pane (bl-5c53), the balls family's four (`balls`, `board`,
 `workspace-balls`, `marks`) made it in the commit that built §4.31's ball pane
 (bl-d2af), the deeper three (`agent`, `step`, `inbox`) made it in the
-commit that built §4.32's half of the records pane (bl-3257), and the fleet's
+commit that built §4.32's half of the records pane (bl-3257), the fleet's
 three (`armed`, `science`, `work-diff`) made it in the commit that built
-§4.33's pane (bl-a43a) — which between them spend the ledger's last
-conversation read and leave `unreadable/` holding only shapes addressed to a
-different kind of client, and the malformed frames upstream's codec cannot
-emit.
+§4.33's pane (bl-a43a), and the capability boundary's two receipts
+(`answered`, `floored`) made it in the commit that built §4.34's controls
+(bl-bce2) — which between them spend the ledger's last conversation read and
+leave `unreadable/` holding only shapes addressed to a different kind of
+client, and the malformed frames upstream's codec cannot emit.
 
 **And a shape can sit in `unreadable/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
@@ -1464,12 +1465,14 @@ Five decisions, and each is a choice rather than a mechanism:
   there are words (the tuning pane's `set`, not the composer's second start) and
   the box is **spent** on firing, the way a deposit is.
 
-**What is painted and not actionable, on purpose.** `held` — the invocation
-parked at the conversation's capability boundary — is read and shown, because it
-is what makes a row answerable rather than merely readable. The control that
-releases or declines it is `answer`, and that belongs to the tool-host surface
-this seat does not have; its `parity.toml` line still cites bl-e53c. Saying what
-is parked is worth more than saying nothing while that pane is unbuilt.
+**What was painted and not actionable, and now is both.** `held` — the
+invocation parked at the conversation's capability boundary — was read and
+shown before anything could answer it, because saying what is parked is worth
+more than saying nothing. This paragraph used to record that the control which
+releases or declines it *"belongs to the tool-host surface this seat does not
+have"*; §4.34 built it here instead, and the three verdicts are on this row —
+the pane whose whole question is *what is waiting on you* being the pane a
+parked call belongs to.
 
 **And one control on it crosses no wire.** *go to it* aims at the row's wall and
 selects its conversation — the two doors a click on the roster and a click on
@@ -2549,6 +2552,57 @@ nothing exercises; it rides through under §4.9's rung 4, and
 reason. `parity.toml` has nothing to say about it because that ledger is per
 OP, and `work-diff` now carries a control.
 
+### 4.34 The capability boundary: the parked call, and the floor (REMOTE §5, §9.11; bl-bce2)
+
+`src/verbs/capability.rs`, `src/ui/queue.rs`, `src/ui/composer/acts.rs`,
+`src/ui/model/notice.rs`. **Three ops on one subject and two homes**, because
+the subject divides where the panes already do: `answer` is about the one
+invocation waiting right now, and `revoke`/`restore` are standing policy about
+the conversation an operator is looking at.
+
+**`answer` is on the decision queue's row, and the row is why.** §4.19 records
+that the queue paints `held` — the invocation parked at a conversation's
+boundary — and says outright that *"the control that releases or declines it is
+`answer`, and that belongs to the tool-host surface this seat does not have"*.
+It has one now, and it is not a tool-host surface: the pane whose whole
+question is *what is waiting on you* is the pane a parked tool call belongs to,
+and it is the one place in the window that already says what is parked. Three
+controls, one per verdict, offered on a row that is holding a call and on no
+other — the wire's own three words, painted as themselves for
+`crate::verbs::tuning::levels`'s reason.
+
+**Nothing names the invocation, and that is the gesture's own shape.** The
+engine reads the held `tool_use` off the conversation's hold mark at fire time,
+so the envelope carries a verdict and an address and nothing else. A seat that
+carried an id would be able to answer a call that is no longer parked.
+
+**`revoke` and `restore` are on the composer's second row**, beside `stop` and
+`retarget`, because a floor changes nothing about the turn and everything about
+the conversation — which is exactly what that row is for (§4.11).
+
+**Both are offered, always, and that is a decision this ball took against its
+own filing.** The pin pair's rule (§4.25) says a row is offered the assertion
+that is not already true of it, and the ball expected to read the rank off
+`reply/agent`. It is not there: the `agent` answer §4.32 decodes in full
+carries no floor field, and `floored`'s `standing` is the receipt of an act
+just performed rather than a standing fact. What dissolves it is that
+**neither act can be refused**. A floor is one row appended to the engine's
+trail and the reply is re-derived from that trail afterwards, so `restore` on a
+conversation nobody floored is not an error, and `restore` under a
+still-floored ancestor leaves the floor standing and *says so*. There is no act
+here the far end may have already decided against, which is the only thing the
+pane doctrine was written to forbid.
+
+**Both receipts carry a fact, so both become the bar's one line** — the sixth
+kind of `Notice`, and the first that is not a failure. `answered` says which call it landed on and whether the conversation
+is running again (`hold` launches nothing, which is the operator saying *stay
+parked*); `floored` says whether one stands over the conversation now. Neither
+has a row to sit under and neither fills a pane, and the window has exactly one
+place for a one-line statement about an act just performed. Being there is also
+what makes each dismissible: an act is an event and not a state, so it does not
+re-post on a beat.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2604,6 +2658,7 @@ OP, and `work-diff` now carries a control.
 | `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27). | ~45 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
+| `src/verbs/capability.rs` | the boundary's three acts as rows — the parked call's answer with its three verdicts, and the floor's two directions, neither of which can be refused (§4.34). | ~110 |
 | `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
 | `src/reply/search.rs` | what a needle found (§4.21): the four facts about a match, the four address fields that are optional because a hit is one of three shapes, and the unreadable list that is a different claim from finding nothing. | ~135 |
@@ -2620,7 +2675,7 @@ OP, and `work-diff` now carries a control.
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~240 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
-| `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
+| `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34) — and the line that says whose sentence each is. | ~135 |
 | `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
@@ -2634,7 +2689,7 @@ OP, and `work-diff` now carries a control.
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
-| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered (§4.34), and the way out to the conversation. | ~230 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |

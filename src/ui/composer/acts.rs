@@ -15,9 +15,17 @@
 //!
 //! - **row one advances it** — `send`, `interrupt`, `nudge`. Each ends with a
 //!   driver running, and the first two spend the box.
-//! - **row two does not** — [`STOP`] kills the driver, [`RETARGET`] marks the
-//!   conversation for another lineage, [`FLAG`] asks the operator to look at
-//!   it later, [`DELETE`] unmakes it.
+//! - **row two does not** — [`STOP`] kills the driver, [`REVOKE`] and
+//!   [`RESTORE`] take away and give back its standing permission to make tool
+//!   calls, [`RETARGET`] marks the conversation for another lineage, [`FLAG`]
+//!   asks the operator to look at it later, [`DELETE`] unmakes it.
+//!
+//! **The floor pair is here and the parked call's answer is not** (bl-bce2).
+//! A floor is standing policy about the conversation an operator is looking
+//! at, which is exactly this row's subject. `answer` is about one invocation
+//! that is waiting, and *what is waiting on you* is the decision queue's whole
+//! question — so it is a control there, on the row that already says what is
+//! parked (DESIGN §4.34).
 //!
 //! **The flag is on this row and not on the queue pane** (bl-f0ef), which is
 //! the one placement decision that ball made here. A flag is *somebody asking
@@ -37,6 +45,10 @@ use crate::ui::{Aim, Fill, Model, keys};
 /// The word that kills the driver. `nudge`'s opposite, and the reason it sits
 /// one row below rather than beside it: nudge leaves a driver running.
 pub const STOP: &str = "stop";
+/// The word that takes the conversation's tool auto-approval away.
+pub const REVOKE: &str = "revoke";
+/// The word that gives it back.
+pub const RESTORE: &str = "restore";
 /// The word that marks the conversation for its lineage's head.
 pub const RETARGET: &str = "retarget";
 /// The word that raises an attention item on it.
@@ -101,6 +113,27 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
         crate::ui::act::tag(&halt, &[crate::verbs::STOP.word]);
         if halt.clicked() {
             fired = Some(crate::verbs::stop(aim.address.clone(), agent.to_owned()));
+        }
+        // **The floor's two acts, both always offered** (bl-bce2). They are
+        // assertions rather than a toggle — DESIGN §4.25's rule — and the pin
+        // pair's other half does not apply: a row is offered the control that
+        // is not already true of it only where this seat can READ which is
+        // true, and whether a conversation is floored right now is a fact no
+        // reply on this surface carries. Neither act can be refused, so
+        // offering both costs nothing an operator has to undo: a floor is a
+        // row appended to the engine's trail and its receipt is re-derived
+        // from that trail, so `restore` on a conversation nobody floored is
+        // not an error, and `restore` under a still-floored ancestor leaves
+        // the floor standing and says so.
+        let take = ui.button(REVOKE);
+        crate::ui::act::tag(&take, &[crate::verbs::REVOKE.word]);
+        if take.clicked() {
+            fired = Some(crate::verbs::revoke(aim.address.clone(), agent.to_owned()));
+        }
+        let give = ui.button(RESTORE);
+        crate::ui::act::tag(&give, &[crate::verbs::RESTORE.word]);
+        if give.clicked() {
+            fired = Some(crate::verbs::restore(aim.address.clone(), agent.to_owned()));
         }
         let settle = ui.button(RETARGET);
         crate::ui::act::tag(&settle, &[crate::verbs::RETARGET.word]);

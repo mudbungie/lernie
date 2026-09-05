@@ -25,7 +25,7 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The twenty-five reads, the conversation's twelve acts, the enrollment, the
+/// The twenty-five reads, the conversation's fifteen acts, the enrollment, the
 /// sign-in, the model assignment and the wall's own three, spelled out — so
 /// the roster is asserted rather than merely iterated, and a verb added or
 /// dropped is a diff here.
@@ -67,6 +67,9 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "retarget",
             "flag",
             "seen",
+            "answer",
+            "revoke",
+            "restore",
             "delete-agent",
             "enroll",
             "login",

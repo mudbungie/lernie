@@ -28,6 +28,11 @@ const FLAGGED: &str = "flagged";
 /// one field — and it is deliberately NOT read as *which* family it answers:
 /// that is the `op`, and the op is stamped by the poster (DESIGN §4.33).
 const ARMED: &str = "armed";
+/// The capability boundary's two receipts (§4.34). They answer to no type of
+/// their own either: each is a handful of scalars about an act just performed,
+/// and a struct holding them would be a type with one reader and one painter.
+const ANSWERED: &str = "answered";
+const FLOORED: &str = "floored";
 
 /// **Read one reply frame.** Total: every input answers one of [`Read`]'s
 /// three arms, and none of them is a panic.
@@ -62,6 +67,15 @@ fn decode(frame: &Value) -> Result<Read, String> {
         roles::KIND => Reply::Roles(fields::rows(obj, roles::row)?),
         queue::KIND => Reply::Attention(fields::rows(obj, queue::row)?),
         FLAGGED => Reply::Flagged,
+        ANSWERED => Reply::Answered {
+            tool: fields::text(obj, "tool")?,
+            tool_use: fields::text(obj, "tool_use")?,
+            verdict: fields::text(obj, "verdict")?,
+            advanced: fields::flag(obj, "advanced")?,
+        },
+        FLOORED => Reply::Floored {
+            standing: fields::flag(obj, "standing")?,
+        },
         transcript::KIND => Reply::Transcript(transcript::transcript(obj)?),
         steps::KIND => Reply::Steps(steps::steps(obj)?),
         files::KIND => Reply::Files(files::files(obj)?),

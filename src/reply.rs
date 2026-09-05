@@ -16,8 +16,8 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Thirty-one
-//! do
+//! kinds and most of them belong to panes that do not exist here.
+//! Thirty-three do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — its spine pair, the operable

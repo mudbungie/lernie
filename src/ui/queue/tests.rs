@@ -136,3 +136,50 @@ fn the_roster_opens_it_and_its_own_word_shuts_it() {
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.showing(crate::ui::Listing::Queue));
 }
+
+/// **The three verdicts are offered on a row that is holding a call, and on no
+/// other** — `answer` is scoped to the exact invocation parked at the far end,
+/// so a control on a row with nothing parked would fire a gesture the engine
+/// refuses by name (bl-bce2).
+#[test]
+fn the_verdicts_are_offered_only_where_something_is_parked() {
+    let mut model = queued();
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    for word in crate::verbs::VERDICTS {
+        assert!(painted.contains(word), "{word:?}:\n{painted}");
+    }
+    let quiet = crate::reply::queue::QueueRow {
+        held: None,
+        ..waiting("home", "20260830T051200Z-a1b2")
+    };
+    let mut bare = Model {
+        waiting: vec![Asking {
+            channel: crate::test_support::window::own().channel,
+            rows: vec![quiet],
+        }],
+        ..queued()
+    };
+    let painted = pane(|ui| {
+        render(ui, &mut bare);
+    });
+    assert!(!painted.contains("refuse"), "{painted}");
+}
+
+/// **Firing one composes the answer with that word and nothing else**: which
+/// call it lands on is read at the far end off the conversation's own hold
+/// mark, so this end names no invocation.
+#[test]
+fn a_verdict_composes_the_answer_and_names_no_invocation() {
+    let window = Window::new();
+    let mut model = queued();
+    click(&window, "refuse", |ctx| crate::ui::render(ctx, &mut model));
+    assert_eq!(
+        model.outbox,
+        vec![crate::ui::Posted::act(serde_json::json!({
+            "op": "answer", "workspace": "home",
+            "agent": "20260830T051200Z-a1b2", "verdict": "refuse"
+        }))]
+    );
+}

@@ -3,9 +3,17 @@
 //!
 //! Split from [`super`] at the design-time budget on a seam of its own: the
 //! model is what the window holds and how it changes, and this is one closed
-//! vocabulary of what went wrong, with the one line that says whose sentence it
-//! is. It changes when a new *kind* of not-content appears, which is not when
-//! the model changes.
+//! vocabulary of what the seat heard that it cannot paint as content, with the
+//! one line that says whose sentence it is. It changes when a new *kind* of
+//! not-content appears, which is not when the model changes.
+//!
+//! **Five of the six are things that went wrong and the sixth is not**
+//! (bl-bce2). A receipt that carries a FACT — which call was released, whether
+//! a floor stands — is not content either: there is no row it belongs under
+//! and no pane it fills, and the window has exactly one place for a one-line
+//! statement about an act just performed. So [`Notice::Said`] is here, and
+//! being here is what makes it dismissible: an act is an event and not a
+//! state, so it does not re-post on a beat.
 
 /// What the seat last heard that it could not turn into content.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +55,15 @@ pub enum Notice {
     /// owns and overwrites on every beat, so a click that went nowhere would
     /// have left a red sentence for less than a second and then nothing at all.
     Unsent { op: String, why: String },
+    /// **An act's receipt, in the engine's own terms** — the sixth arm, and
+    /// the first that is not a failure at all.
+    ///
+    /// It exists because two acts answer with a fact rather than with content:
+    /// `answer` says which call it landed on and whether the conversation is
+    /// running again, and `revoke`/`restore` say whether a floor stands over
+    /// the conversation now — re-derived by the engine, so it is the one
+    /// statement about a floor this seat can make (§4.34).
+    Said(String),
 }
 
 impl Notice {
@@ -58,6 +75,35 @@ impl Notice {
             return Self::InDoubt { op, why };
         }
         Self::Unsent { op, why }
+    }
+
+    /// **What an answer landed on, and what it did to the conversation.** The
+    /// verdict rides verbatim (`crate::reply`'s rung 3), and `advanced` is the
+    /// half worth saying: `pass` and `refuse` both drive the branch on, where
+    /// `hold` is the operator saying *stay parked* and launches nothing.
+    pub fn answered(tool: &str, tool_use: &str, verdict: &str, advanced: bool) -> Self {
+        let said = format!("answered {tool} ({tool_use}): {verdict}");
+        Self::Said(if advanced {
+            format!("{said} — the conversation is running again")
+        } else {
+            format!("{said} — it stays parked")
+        })
+    }
+
+    /// **Whether a floor stands over the conversation now**, which is the
+    /// engine's re-derivation and never an echo of the direction that was
+    /// asked: restoring one whose ancestor is still revoked leaves it floored,
+    /// and this is the sentence that says so instead of claiming a restore
+    /// that did not happen.
+    pub fn floored(standing: bool) -> Self {
+        Self::Said(
+            if standing {
+                "a floor stands over this conversation: every tool call but a read waits for you"
+            } else {
+                "the floor is lifted — its tool calls are adjudicated by the ordinary policy again"
+            }
+            .to_owned(),
+        )
     }
 
     /// The line the shell paints, with the half that says whose sentence it is.
@@ -76,6 +122,7 @@ impl Notice {
                  world is the record, and the reads on this window are already \
                  asking it again."
             ),
+            Self::Said(said) => said.clone(),
             Self::Unsent { op, why } => format!(
                 "`{op}` was not sent: it never left this seat ({why}), so nothing \
                  happened — it is safe to do it again."

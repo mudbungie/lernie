@@ -111,6 +111,24 @@ impl Model {
         }
     }
 
+    /// **Answer the invocation parked at a row's conversation**, or do nothing
+    /// where this seat cannot address the wall it names — [`Self::post_seen`]'s
+    /// gate, for its reason exactly.
+    ///
+    /// The verdict is the only parameter: *which* call is answered is read at
+    /// the far end off the conversation's own hold mark at fire time, so this
+    /// end names no invocation and cannot spend one that is no longer parked
+    /// (`crate::verbs::capability`).
+    pub fn post_answer(&mut self, row: &QueueRow, verdict: &str) {
+        if let Some(aim) = self.wall(&row.workspace) {
+            self.outbox.push(super::Posted::act(crate::verbs::answer(
+                aim.address,
+                row.agent.clone(),
+                verdict.to_owned(),
+            )));
+        }
+    }
+
     /// **Go to the conversation a row is about**: aim at its wall, select it,
     /// and stand the pane down.
     ///

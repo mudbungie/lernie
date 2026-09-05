@@ -22,7 +22,8 @@
 //!
 //! # One control answers a row and one leaves the pane for it
 //!
-//! [`SEEN`] crosses the boundary and carries its `act:` token; [`GO`] aims and
+//! [`SEEN`] crosses the boundary and carries its `act:` token; so does each of
+//! `crate::verbs::VERDICTS` on a row that is holding a call; [`GO`] aims and
 //! selects, which is a view and out of the parity contract (PARITY §2). Both
 //! stand down on a row this seat cannot address, and the row says why in the
 //! roster's own words — `crate::ui::model::queue::Model::wall` is the one place
@@ -125,18 +126,33 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
     acts(ui, model, row);
 }
 
-/// The row's two controls, or the sentence that stands where they would be.
+/// The row's controls, or the sentence that stands where they would be.
 fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
     if model.wall(&row.workspace).is_none() {
         ui.colored_label(theme::NOTICE, crate::ui::roster::NO_NAME_HERE);
         return;
     }
     let mut fired = None;
+    let mut verdict = None;
     ui.horizontal_wrapped(|ui| {
         let answer = ui.button(SEEN);
         crate::ui::act::tag(&answer, &[crate::verbs::SEEN.word]);
         if answer.clicked() {
             fired = Some(row.clone());
+        }
+        // **The three verdicts, offered only on a row that is holding one**
+        // (bl-bce2). `answer` is scoped to the exact call parked at the far
+        // end, so a control on a row with nothing parked would fire a gesture
+        // the engine refuses by name — and this pane is the one place that
+        // already says what is parked (`parked`).
+        if row.held.is_some() {
+            for word in crate::verbs::VERDICTS {
+                let seat = ui.button(word);
+                crate::ui::act::tag(&seat, &[crate::verbs::ANSWER.word]);
+                if seat.clicked() {
+                    verdict = Some(word);
+                }
+            }
         }
         // **No `act:` token**: aiming and selecting cross no wire, so this is a
         // view (PARITY §2) and tagging it would put a widget in a ledger whose
@@ -147,6 +163,9 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
     });
     if let Some(row) = fired {
         model.post_seen(&row);
+    }
+    if let Some(word) = verdict {
+        model.post_answer(row, word);
     }
 }
 

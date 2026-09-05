@@ -1,7 +1,7 @@
 //! The three acts that spend no words: what each composes, and the arming that
 //! is the operator's until they delete something with it.
 
-use super::{ARM, DELETE, FLAG, RETARGET, STOP, WHY, render};
+use super::{ARM, DELETE, FLAG, RESTORE, RETARGET, REVOKE, STOP, WHY, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::{Aim, Model};
@@ -153,4 +153,32 @@ fn painting_the_row_composes_nothing() {
     let (aim, agent) = subject(&model);
     let _ = pane(|ui| render(ui, &mut model, &aim, &agent));
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+}
+
+/// **Both floor controls are always on the glass, and each fires its own
+/// assertion** (bl-bce2). Neither can be refused — a floor is a row appended
+/// to the engine's trail and the receipt is re-derived from it — so there is
+/// no rank to read and nothing this seat could get wrong by offering both.
+#[test]
+fn the_floor_pair_are_both_offered_and_each_asserts_its_own_direction() {
+    let mut model = seated();
+    let (aim, agent) = subject(&model);
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
+    for word in [REVOKE, RESTORE] {
+        assert!(
+            painted.lines().any(|line| line == word),
+            "{word:?}:\n{painted}"
+        );
+    }
+    for (word, op) in [(REVOKE, "revoke"), (RESTORE, "restore")] {
+        let mut model = seated();
+        press(&mut model, word);
+        assert_eq!(
+            model.outbox,
+            vec![crate::ui::Posted::act(json!({
+                "op": op, "workspace": "home", "agent": "20260830T051200Z-a1b2"
+            }))],
+            "{word}"
+        );
+    }
 }

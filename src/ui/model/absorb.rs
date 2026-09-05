@@ -158,6 +158,19 @@ impl Model {
             // the honest shape: what each changed arrives on the transcript and
             // on the next queue respectively, and this end predicts neither.
             Reply::Nudged | Reply::Flagged => self.notice = None,
+            // **The capability boundary's two, which DO carry a fact**
+            // (§4.34). Neither is content — there is no row either belongs
+            // under — so each becomes the bar's one line about an act just
+            // performed, and the sentence is the whole product: what the
+            // answer landed on and whether the conversation is running again,
+            // or whether a floor stands over it now.
+            Reply::Answered {
+                tool,
+                tool_use,
+                verdict,
+                advanced,
+            } => self.notice = Some(Notice::answered(&tool, &tool_use, &verdict, advanced)),
+            Reply::Floored { standing } => self.notice = Some(Notice::floored(standing)),
             Reply::Outcome(outcome) => {
                 self.notice = (!outcome.ok()).then_some(Notice::Refused(outcome.stderr));
             }

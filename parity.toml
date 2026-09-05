@@ -122,11 +122,10 @@ retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be rel
 # the three below act on a CONVERSATION that is waiting at the capability
 # boundary. They are cited to their own ball, with the frames in it.
 #
-# bl-bce2 — the capability boundary reaches no gesture: a held tool call cannot
-# be answered, and auto-approval cannot be revoked or restored.
-answer = "bl-bce2 — no capability controls: a held tool call cannot be released or declined here"
-restore = "bl-bce2 — no capability controls: tool auto-approval cannot be given back from this seat"
-revoke = "bl-bce2 — no capability controls: tool auto-approval cannot be taken away here"
+# bl-bce2 landed the capability boundary's three (DESIGN §4.33): `answer`
+# carries three controls on a decision-queue row that is holding a call — one
+# per verdict — and `revoke` and `restore` carry one each on the composer's
+# second row. All three are gone from this ledger.
 
 # bl-7782 landed the strip's pin: one control on the aimed roster row whose
 # word and op follow the row's own rank, so `pin` and `unpin` are both tagged

@@ -170,3 +170,52 @@ fn a_channel_can_be_held_before_it_has_answered() {
     assert!(held.walls.is_empty());
     assert_eq!(held.stale, None);
 }
+
+/// **The capability boundary's two receipts carry a FACT, so each becomes the
+/// bar's own line** (bl-bce2) — the sixth kind of notice, and the first that
+/// is not a failure.
+///
+/// The two halves that matter are asserted here rather than in the sentence:
+/// an answer says whether the conversation is running again, and a floor says
+/// whether one **stands** — which is the engine's re-derivation, so a
+/// `restore` under a still-floored ancestor reads as still floored.
+#[test]
+fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
+    let mut model = Model::default();
+    let flat = own().channel;
+    model.absorb(
+        &flat,
+        Read::Answer(Reply::Answered {
+            tool: "Bash".to_owned(),
+            tool_use: "toolu_1".to_owned(),
+            verdict: "pass".to_owned(),
+            advanced: true,
+        }),
+    );
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("answered Bash (toolu_1): pass"), "{said}");
+    assert!(said.contains("running again"), "{said}");
+
+    model.absorb(
+        &flat,
+        Read::Answer(Reply::Answered {
+            tool: "Bash".to_owned(),
+            tool_use: "toolu_1".to_owned(),
+            verdict: "hold".to_owned(),
+            advanced: false,
+        }),
+    );
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("stays parked"), "{said}");
+
+    model.absorb(&flat, Read::Answer(Reply::Floored { standing: true }));
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(
+        said.contains("a floor stands over this conversation"),
+        "{said}"
+    );
+
+    model.absorb(&flat, Read::Answer(Reply::Floored { standing: false }));
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("the floor is lifted"), "{said}");
+}

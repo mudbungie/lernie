@@ -18,7 +18,7 @@ use super::{
     steps, stream, transcript,
 };
 
-/// **The kinds the window draws.** Thirty-one, and each is here because a
+/// **The kinds the window draws.** Thirty-three, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -50,6 +50,32 @@ pub enum Reply {
     /// asks for the whole queue and `seen` answers with the queue that remains,
     /// so a reading of it is never a receipt to discard.
     Attention(Vec<queue::QueueRow>),
+    /// **The parked invocation was answered** (§4.34, bl-bce2): which call the
+    /// answer landed on, the verdict written, and whether the release actually
+    /// drove the conversation on.
+    ///
+    /// It answers with the **held invocation** rather than with the queue that
+    /// remains, which is upstream's own decision and the reason the seat can
+    /// say anything at all: the mark lifts only once the re-adjudication runs,
+    /// so a queue read here would still show the park it just answered.
+    Answered {
+        tool: String,
+        tool_use: String,
+        /// The verdict written, carried verbatim ([`super`]'s rung 3).
+        verdict: String,
+        /// Whether the releasing advance was launched. `hold` never launches
+        /// one, and that is the operator saying *stay parked*.
+        advanced: bool,
+    },
+    /// **A capability floor was written** (§4.34, bl-bce2): whether one
+    /// **stands** over the conversation now.
+    ///
+    /// Re-derived from the engine's trail after the write rather than echoed
+    /// back from the direction that was asked, and the two differ exactly
+    /// where it matters: restoring a conversation whose ancestor is still
+    /// floored leaves it floored, and a receipt saying otherwise would lie.
+    /// It is one field, so it is carried as one.
+    Floored { standing: bool },
     /// **A flag was raised**, and the row it lands on arrives on the next
     /// [`Attention`](Self::Attention). It carries nothing for the reason
     /// [`Nudged`](Self::Nudged) carries nothing — what changed is on the queue,

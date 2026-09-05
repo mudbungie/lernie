@@ -1,7 +1,8 @@
 +++
 title = "the capability boundary reaches no gesture: a held tool call cannot be answered, and auto-approval cannot be revoked or restored"
 created = 1788581513
-updated = 1788581513
+updated = 1788582810
+claimant = "Animations-P"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

@@ -61,12 +61,13 @@ work-diff = "bl-a43a — no fleet controls: what the agents changed is readable 
 # `src/ui/composer/acts.rs` and are gone from this ledger. What it left it
 # left on two seams, each cited to its own ball below.
 #
-# bl-b52c — the conversation's spine: the rail's operable commits, the
-# governing config commit, and the fork whose `from` is a commit an operator
-# can only discover off the rail.
-fork = "bl-b52c — no spine surface: `from` is a commit off the rail and `role` a name off the lineages, and this seat reads neither — a control demanding two strings nothing here can discover only looks actionable"
-governing = "bl-b52c — no spine surface: the governing config commit is unpainted"
-rail = "bl-b52c — no spine surface: the spine and its operable commits are unpainted"
+# bl-b52c landed the spine inside the records pane (DESIGN §4.29) — `rail` and
+# `governing` carry tags on the control that opens it, and `fork` carries one
+# per operable notch, so all three are gone from this ledger. What it did not
+# dissolve is the `role`: it is a name off the config lineages, which is
+# bl-5c53's read, so the control types it and says so rather than offering a
+# list this seat cannot obtain. That is a stated limit on a surfaced op and
+# therefore no line here, which records absences.
 
 # bl-3257 — the conversation's deeper records: its own row whole, one step's
 # drill-in under the steps list the records pane now paints, and the

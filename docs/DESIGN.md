@@ -354,10 +354,11 @@ release added, which is exactly what the ledger is for. The records pair
 move in the commit that built §4.18's pane, `help` and `search` made it in the
 commit that built §4.21's two (bl-40ec), the sign-in family's three
 (`providers`, `models`, `login`) made it in the commit that built §4.24's pane
-(bl-e3c5), `clients` made it in the commit that built §4.28's (bl-e53c), and
-the five conversation reads still in `unreadable/` (`agent`, `step`, `inbox`,
-`rail`, `governing`) are the ledger holding the two balls that will move them
-(bl-3257, bl-b52c).
+(bl-e3c5), `clients` made it in the commit that built §4.28's (bl-e53c), the
+spine pair (`rail`, `governing`) made it in the commit that built §4.29's half
+of the records pane (bl-b52c), and the three conversation reads still in
+`unreadable/` (`agent`, `step`, `inbox`) are the ledger holding the ball that
+will move them (bl-3257).
 
 **And a shape can sit in `unreadable/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
@@ -403,11 +404,12 @@ pair is why the ordinary bump costs this seat an integer and nothing else. 5
 `effort` and `priority`, two booleans saying which tuning that provider row
 takes. **Neither shape was decoded here at the time**, so both times the seat
 paid the number and no field, and the correct amount of new paint was none.
-**One of the two has since been claimed and the interval is the ledger's
-product**: §4.24's pane reads `reply/providers` — the two booleans among its
-fields — and the commit that built it is the diff saying so, three protocol
-bumps after the fields landed. `reply/governing` is still nobody's, and its
-ledger line still stands (bl-b52c).
+**Both have since been claimed and each interval is the ledger's product**:
+§4.24's pane reads `reply/providers` — the two booleans among its fields — and
+the commit that built it is the diff saying so, three protocol bumps after the
+fields landed; §4.29's half reads `reply/governing` under 5's *new* meaning,
+which is the harder half of the same product and is why the next paragraph's
+trap is restated at that decoder rather than only at `PROTOCOL`.
 
 **PROTOCOL 7 is the first bump this seat reads a field out of, and no pane
 paints it** (bl-8758 upstream, bl-38d4 here). Every `reply/help` row gained
@@ -1360,20 +1362,26 @@ it).
 
 **The reads are standing and keyed on the PANE** (`Standing::records`), for
 §4.17's reason verbatim: nothing on the glass is ever this end's prediction,
-and a seat with no records surface open asks nothing on any beat. The pane
-holds no state at all — not even a draft, which is one less than tuning holds
-— and it goes down when its subject moves: selecting another conversation or
-aiming at another wall retires the pane and both answers, because a pane
-about *the selected conversation* left standing over a new selection would
-paint one conversation's records under another's name for a beat.
+and a seat with no records surface open asks nothing on any beat. It goes down
+when its subject moves: selecting another conversation or aiming at another
+wall retires the pane and every answer under it, because a pane about *the
+selected conversation* left standing over a new selection would paint one
+conversation's records under another's name for a beat.
 
-**One control opens it and carries both reads' tags** (`act:steps act:files`),
-leading the composer's second row — the composer being the pane that already
-acts on the selected conversation, and the chat pane being a pure projection
-no control may be the first exception to. The deeper reads stay in the
-exemption ledger on two seams: the spine (`rail`, `governing`, and the `fork`
-whose `from` only the rail can offer — bl-b52c) and the depth under this pane
-(`agent`, `step`, `inbox` — bl-3257).
+**It held no state at all when it was two reads, and it holds one draft now
+that it has an act** (§4.29). That sentence used to read *"not even a draft,
+which is one less than tuning holds"*, and it was true of a pane whose whole
+content was answers. The spine's `fork` is the thing that changed it, and the
+change is §4.17's shape arrived at rather than departed from: one piece of
+state, the draft of the gesture, because two words typed into two boxes are
+not a fact about anything until they are sent.
+
+**One control opens it and carries every read's tag** (`act:steps act:files
+act:rail act:governing`), leading the composer's second row — the composer
+being the pane that already acts on the selected conversation, and the chat
+pane being a pure projection no control may be the first exception to. What
+stays in the exemption ledger is the depth under this pane (`agent`, `step`,
+`inbox` — bl-3257).
 
 ### 4.19 The decision queue: the pane about no focus (bl-f0ef)
 
@@ -2192,6 +2200,62 @@ Clippy's `struct_excessive_bools` asks for exactly that refactor by name; a
 manifest allow would have kept three representations of one fact to avoid
 writing one word.
 
+### 4.29 The spine: what a conversation's history is anchored to, and the one act composed off it (bl-b52c)
+
+`src/ui/records/spine.rs`, `src/ui/model/spine.rs`, `src/verbs/spine.rs`,
+`src/reply/rail.rs`, `src/reply/governing.rs`. **The records pane's other
+half**: §4.18 landed what the loop DID and what it TOUCHED and left what it is
+anchored TO — the operable commits, the config commit governing them, and the
+fork whose `from` is one of the first.
+
+**It is in that pane and not a pane of its own**, because the subject is the
+same noun. A second covering pane over the selected conversation would be a
+second place to look for one thing, and the two reads stand on the same
+`Standing::records` the other two do — so opening the pane is four questions
+per beat and closing it is none.
+
+**The act is here because its argument is only discoverable here.** `fork`
+takes a `from`, which is a **ref**, and upstream refuses an empty one — *"a
+fork with no ref is a different gesture"*. The refs a conversation offers are
+exactly this half's notches. That is what `parity.toml`'s line for `fork` said
+in those words until this ball deleted it: *a control demanding two strings
+nothing here can discover only looks actionable*. So there is one control per
+**operable** notch — a notch with a commit, which is upstream's own test for a
+notch a gesture can reach — it carries that notch's own commit, and a notch
+that recorded none carries no control at all.
+
+**The other string is still not discoverable, and the control says so rather
+than pretending.** A role names an entry litany resolves against the fork
+point's own governing config, so the honest control would offer the names that
+config declares — and the read that lists them is the config-file pane's,
+which this seat does not have (bl-5c53). A picker over a list this seat cannot
+obtain would be capability theatre; a bare box with no sentence would read as
+a free string. So it is a box with a sentence under it, and no line in the
+ledger: the op is surfaced, and a stated limit on a surfaced op is not an
+absence.
+
+**`fork` is a door and can never be a row.** `src/verbs`' table is rows of
+named strings and `fork` carries `skills`, an array — the case §4.10's own
+module doc refuses to special-case. So it joins `effort`, `priority`, `ops`
+and the start family's two as a typed door with no row, and the seat composes
+the empty list: a skill set is a choice off the same config the role is, and
+the pane that would offer one does not exist.
+
+**The goal is spent on firing and the role is kept**, which is the composer's
+own split read one surface over (§4.11): a flag's reason is taken because what
+a flag says is said, and an unmaking's arming is cloned because clearing it
+would charge a retype for the engine's *no*. A fork's goal is the first — it
+was said, to a child that now exists — and its role is the second, being the
+same name the next attempt off the same spine wants.
+
+**`reply/governing` is the first shape this seat reads whose MEANING moved
+under an unchanged spelling** (§4.9, REMOTE §9.12). `oid` named the fork
+commit at PROTOCOL 4 and names the followed lineage's head at 5, and no
+mechanical check this repository owns could have caught the difference — so
+the trap is restated at the decoder, where whoever paints the number is
+reading, and the sentence painted beside it is upstream's own
+`GoverningConfig::label()` rather than a third wording composed here (REMOTE
+§9.7 rules that directly).
 
 ## 5. Module map
 
@@ -2235,12 +2299,15 @@ writing one word.
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |
 | `src/reply/steps.rs` | the steps a conversation's loop has taken: one strict row per step, the nested spend, and the class tokens carried verbatim with `"none"` the one word the pane reads (§4.18). | ~135 |
 | `src/reply/files.rs` | what a conversation's worktree holds: the listing whose absence is a fact, the bounded preview's three classes plus the rung-3 word, and where the work lands (§4.18). | ~125 |
+| `src/reply/rail.rs` | the conversation's spine (§4.29): the notches, the two absences each is read as a pair, and the label derived off the commit that stores it. | ~170 |
+| `src/reply/governing.rs` | which config commit a conversation resolves its policy from (§4.29): one enum rebuilt off one key, and the engine's own two wordings rather than a third. | ~120 |
 | `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27). | ~45 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
+| `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
 | `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
 | `src/reply/search.rs` | what a needle found (§4.21): the four facts about a match, the four address fields that are optional because a hit is one of three shapes, and the unreadable list that is a different claim from finding nothing. | ~135 |
@@ -2253,7 +2320,8 @@ writing one word.
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | what the window holds between frames. The door a reply comes in through split out at the cap onto the seam this row used to name (`model/absorb.rs`). | ~195 |
+| `src/ui/model.rs` | what the window holds between frames. Two pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`) and the aim (`model/aim.rs`). | ~265 |
+| `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
@@ -2272,9 +2340,11 @@ writing one word.
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the answer and the way out to the conversation. | ~210 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
+| `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
+| `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
@@ -2346,7 +2416,8 @@ writing one word.
 | `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~85 |
 | `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
-| `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows, the selected conversation — each open and answered. `cfg(test)`. | ~160 |
+| `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
+| `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with four reads under it and the balls that grow it are not done. `cfg(test)`. | ~125 |
 | `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~210 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |

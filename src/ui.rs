@@ -69,7 +69,7 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Listing, Login, Lookup,
-    Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
+    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Forking, Grade, Held, Hits, Listing, Login,
+    Lookup, Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

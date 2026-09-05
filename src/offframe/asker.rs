@@ -9,8 +9,8 @@
 //! roles are set to, and — while the login pane is open on it — for what it
 //! can sign in to (bl-e3c5). The selected conversation is asked for its
 //! transcript,
-//! and — while the records pane is open on it — for its steps and its
-//! worktree's files (bl-2cf7).
+//! and — while the records pane is open on it — for its steps, its worktree's
+//! files (bl-2cf7), its spine and the config commit governing it (bl-b52c).
 //!
 //! **The roles read is standing rather than one-shot**, which is what lets
 //! every control on that pane state the engine's fact instead of this end's
@@ -133,7 +133,23 @@ pub fn tick(link: &Link, root: &Path) {
             link,
             root,
             &channel,
-            &crate::verbs::files(aim.address, conversation),
+            &crate::verbs::files(aim.address.clone(), conversation.clone()),
+        );
+        // **And the spine pair with them** (bl-b52c): the same pane, and the
+        // reads whose answer the `fork` control's one argument comes off — a
+        // control offered on a notch this seat has not been answered about
+        // would be a control with nothing to carry.
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::rail(aim.address.clone(), conversation.clone()),
+        );
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::governing(aim.address, conversation),
         );
     }
 }

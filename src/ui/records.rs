@@ -28,6 +28,9 @@
 //! is a method. The class tokens ride verbatim (`crate::reply` rung 3): a
 //! `framing` or a `wound` this build has no word for paints as itself.
 
+/// The spine half: what the history is anchored to, and the fork off it.
+pub mod spine;
+
 use crate::reply::files::{Files, Preview};
 use crate::reply::steps::{StepRow, Steps};
 use crate::ui::{Model, theme};
@@ -84,6 +87,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             steps_half(ui, steps.as_ref());
             ui.separator();
             files_half(ui, files.as_ref());
+            ui.separator();
+            spine::render(ui, model);
         });
     true
 }

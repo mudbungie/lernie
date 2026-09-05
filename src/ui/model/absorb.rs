@@ -82,6 +82,10 @@ impl Model {
             // The records pair, on the same terms as the roles above.
             Reply::Steps(listing) => self.steps = Some(listing),
             Reply::Files(answer) => self.files = Some(answer),
+            // The spine pair, on the same terms again — the records pane's
+            // second two reads, standing while it is open (`spine`).
+            Reply::Rail(spine) => self.rail = Some(spine),
+            Reply::Governing(config) => self.governing = Some(config),
             // **The window's own two, one channel's slice at a time** — each
             // op names no workspace, so each answer replaces what its channel
             // last said and leaves the others standing, exactly as a roster

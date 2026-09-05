@@ -16,10 +16,11 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Twenty do
+//! kinds and most of them belong to panes that do not exist here. Twenty-two do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
-//! loop took and what its worktree holds — the decision queue and the receipt
+//! loop took and what its worktree holds — its spine pair, the operable
+//! commits and the config commit governing them — the decision queue and the receipt
 //! that raises a row onto it, the window's own three reads — the engine's verb
 //! table, what a needle found and the trail — the login pane's three — the provider
 //! table, what one row offers and a sign-in run — a captured run, the detached
@@ -81,6 +82,8 @@ pub mod enrolled;
 pub(crate) mod fields;
 /// What one conversation's worktree holds.
 pub mod files;
+/// Which config commit a conversation resolves its policy from.
+pub mod governing;
 /// The engine's own verb table, which is also the parity roster's source.
 pub mod help;
 /// One sign-in run, as the engine streams it.
@@ -91,6 +94,8 @@ pub mod ops;
 pub mod providers;
 /// The decision queue: what is asking for the operator, anywhere.
 pub mod queue;
+/// The conversation's spine: its operable commits, and the cards off them.
+pub mod rail;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
 mod read;
 /// What one workspace's roles are set to, and how each is tuned.
@@ -150,8 +155,8 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Twenty, and each is here because a surface
-/// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
+/// **The kinds the window draws.** Twenty-two, and each is here because a
+/// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
     /// A short verb's captured run — what a deposit, a stop or a ball verb
@@ -193,6 +198,16 @@ pub enum Reply {
     /// **What the selected conversation's worktree holds** — the other half,
     /// on the same standing (bl-2cf7).
     Files(files::Files),
+    /// **The selected conversation's spine** — every operable commit it has
+    /// and the children dispatched off them, on the records pane's standing
+    /// (§4.28, bl-b52c). It is the read the `fork` control's one argument is
+    /// discoverable off, which is why the two landed together.
+    Rail(rail::Rail),
+    /// **The config commit that conversation resolves its policy from** — the
+    /// spine's other half, on the same standing (§4.28, bl-b52c). Its `oid`
+    /// changed meaning at PROTOCOL 5 under an unchanged spelling, and
+    /// `governing`'s own module doc is where that is written down.
+    Governing(governing::Governing),
     /// **One engine's own verb table** — what the commands pane paints, and
     /// the same rows the parity roster is generated from (bl-40ec). It names
     /// no workspace, so it is one channel's answer and the pane is the union.

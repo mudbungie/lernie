@@ -19,7 +19,8 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    EFFORT, OPS, PREPARE, PRIORITY, PROMPT, effort, find, ops, prepare, priority, prompt,
+    EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, effort, find, fork, ops, prepare, priority,
+    prompt,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -29,7 +30,7 @@ const BARE: &str = "bare";
 
 /// **The frames the seat's encoder cannot compose**, by op, count and reason.
 ///
-/// Both entries are a surface this build does not have rather than a field it
+/// Every entry is a surface this build does not have rather than a field it
 /// drops. A count that moves — because yog grew a rung, or because a pane
 /// landed here — fails until the reason is rewritten, which is the whole point
 /// of writing it down.
@@ -55,6 +56,21 @@ const UNEMITTED: &[(&str, usize, &str)] = &[
         9,
         "the path and ball rungs: this seat composes the bare rung only, and a \
          seat that guessed a rung would found a claim nobody asked for",
+    ),
+    (
+        "governing",
+        1,
+        "the `at` form: this seat composes the bare read only — resolving the \
+         policy as of another commit is the pin the records pane does not \
+         have, and a seat that guessed a rev would answer about a tree \
+         nobody named",
+    ),
+    (
+        "fork",
+        1,
+        "the skill list: this seat composes an attempt that pins none, because \
+         the skills a lineage declares are a read the config-file pane owns \
+         and this window has no way to offer them",
     ),
     (
         "prompt",
@@ -121,6 +137,18 @@ fn rebuilt(frame: &Value) -> Option<Value> {
         // pair's reason: a reading that went through a string would be the
         // translation the doors exist to avoid.
         OPS => obj["max"].as_u64().map(ops),
+        // The fork's `skills` is the reason it is a door: a list is not a
+        // named string. It round-trips off the frame's own array, so a frame
+        // that pins a skill is declined here rather than composed short.
+        FORK => (obj["skills"].as_array().is_some_and(Vec::is_empty)).then(|| {
+            fork(
+                text(obj, envelope::WORKSPACE),
+                text(obj, "parent"),
+                text(obj, "from"),
+                text(obj, "role"),
+                text(obj, "goal"),
+            )
+        }),
         PROMPT => obj["seed"].is_null().then(|| {
             let staged = crate::reply::start::prepared(obj).expect("a staged body");
             let address = staged.workspace.clone();

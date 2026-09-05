@@ -7,10 +7,12 @@
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and sixteen of its rows are declared
-//! elsewhere**, in the six files that own their subjects. The conversation's
+//! **[`TABLE`] is the whole roster and eighteen of its rows are declared
+//! elsewhere**, in the seven files that own their subjects. The conversation's
 //! four are [`super::conversation`]'s, its records' two are
-//! [`super::records`]'s and the decision queue's three are [`super::queue`]'s.
+//! [`super::records`]'s, its spine's two are [`super::spine`]'s — beside the
+//! `fork` door that shares their subject and cannot be a row, because it
+//! carries a list — and the decision queue's three are [`super::queue`]'s.
 //! The tuning family's `roles` and `model`
 //! are [`super::tuning`]'s, beside the two doors that share their subject and
 //! cannot be rows at all — the read and the three writes are one
@@ -191,6 +193,8 @@ pub(super) const TABLE: &[Verb] = &[
     FOLLOW,
     super::records::STEPS,
     super::records::FILES,
+    super::spine::RAIL,
+    super::spine::GOVERNING,
     super::tuning::ROLES,
     super::clients::CLIENTS,
     super::login::PROVIDERS,

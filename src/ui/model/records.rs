@@ -4,10 +4,11 @@
 //! # A flag, because the pane has one state
 //!
 //! The tuning pane is a two-state enum because an assignment can be mid-edit;
-//! this pane holds nothing of its own — every row on it is the engine's answer
-//! and every answer lives on [`Model`] beside the roles, filed whether or not
-//! the pane is open. So `records` is a `bool`, and a struct here would be a
-//! state machine with one state.
+//! this pane's own state is one draft and no mode — every row on it is the
+//! engine's answer, filed on [`Model`] beside the roles whether or not the
+//! pane is open, and the fork's two words are a bare field (`super::spine`).
+//! So `records` is a `bool`, and a struct here would be a state machine with
+//! one state.
 //!
 //! # It follows the tuning pane's whole shape, one noun over
 //!
@@ -62,6 +63,13 @@ impl Model {
         self.put_down(Listing::Records);
         self.steps = None;
         self.files = None;
+        self.rail = None;
+        self.governing = None;
+        // **The draft goes with them** (`spine`), which the two reads above do
+        // not need to say: a goal typed for one conversation is a sentence
+        // about that one, and a box left standing over a new selection would
+        // fire it at whatever is selected next.
+        self.forking = crate::ui::Forking::default();
     }
 }
 

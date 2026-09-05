@@ -20,6 +20,8 @@ use crate::reply::transcript::Transcript;
 mod absorb;
 /// What a control does, whichever control did it.
 mod acts;
+/// Which wall the window is aimed at, and the two questions asked of a name.
+mod aim;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
 /// The claim a start leaves on the selection, and the row it stands in for.
@@ -42,6 +44,8 @@ mod posted;
 mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
+/// The spine's own state: the draft a fork is composed from.
+mod spine;
 /// A start, between its two acts.
 mod start;
 /// The trail pane between frames: open or not, and what each channel has done.
@@ -53,6 +57,7 @@ mod unmake;
 /// The window's own two panes: the engines' verb table, and what a needle found.
 mod window;
 
+pub use aim::Aim;
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
@@ -61,21 +66,12 @@ pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
 pub use queue::Asking;
+pub use spine::Forking;
 pub use start::{Phase, Start};
 pub use trail::Trail;
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;
 pub use window::{Hits, Lookup, Pages};
-
-/// Which wall the window is aimed at: the channel it came down, and the address
-/// a gesture must carry. **The address rather than the row's name**, because
-/// the two differ exactly where an entry renames — and this is the value every
-/// composed gesture is built from.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Aim {
-    pub channel: String,
-    pub address: String,
-}
 
 /// Everything the window holds between frames.
 #[derive(Debug, Clone, Default)]
@@ -177,6 +173,17 @@ pub struct Model {
     pub steps: Option<crate::reply::steps::Steps>,
     /// **What its worktree holds**, on the same standing (`records`).
     pub files: Option<crate::reply::files::Files>,
+    /// **Its spine** — every operable commit and the cards off them — or
+    /// `None` while nobody has been answered, on the same standing
+    /// (`records`, `spine`; DESIGN §4.28).
+    pub rail: Option<crate::reply::rail::Rail>,
+    /// **The config commit governing it**, on the same standing (`records`).
+    pub governing: Option<crate::reply::governing::Governing>,
+    /// **The draft a fork is composed from** (`spine`): the role and the goal,
+    /// beside the `from` each control carries off its own notch. A bare field
+    /// and not an option, exactly as the composer's two parameter boxes are —
+    /// the boxes are on the glass whenever the spine is.
+    pub forking: Forking,
     /// The selected conversation, as committed.
     pub transcript: Transcript,
     /// The live tail as this seat has accumulated it. It **replaces**, never
@@ -252,26 +259,6 @@ impl Model {
     /// keypress and a stale one cannot fight the next frame's scroll.
     pub fn revealing(&mut self, pane: crate::ui::keys::Pane) -> bool {
         self.focus == pane && std::mem::take(&mut self.reveal)
-    }
-
-    /// **Whether this seat holds a channel by that name.** The roster carries
-    /// every channel this box holds from boot — read off the disk, before
-    /// anything is dialled (`crate::seat::channels`) — so a name it does not
-    /// carry is a name no worker will ever ask anything about
-    /// (`crate::state::Standing::aimed`), which is the one aim whose emptiness
-    /// is permanent.
-    pub fn holds(&self, channel: &str) -> bool {
-        self.roster
-            .iter()
-            .any(|chunk| chunk.channel.name == channel)
-    }
-
-    /// Whether this row is the one the window is aimed at.
-    pub fn aimed_at(&self, channel: &str, address: Option<&String>) -> bool {
-        match (&self.aim, address) {
-            (Some(aim), Some(address)) => aim.channel == channel && aim.address == *address,
-            _ => false,
-        }
     }
 }
 

@@ -88,6 +88,8 @@ pub mod queue;
 pub mod records;
 /// The reads and the deposit, as data — the rows this seat had first.
 mod rows;
+/// The conversation's spine — its two reads, and the fork composed off them.
+pub mod spine;
 /// The start family's two envelopes, which are doors without rows.
 pub mod start;
 /// The trail's read — a door without a row, because its bound is a number.
@@ -111,6 +113,7 @@ pub use rows::{
     CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,
     follow, message, nudge, transcript, workspaces,
 };
+pub use spine::{FORK, GOVERNING, RAIL, fork, governing, rail};
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 pub use trail::{DEPTH, OPS, ops};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};

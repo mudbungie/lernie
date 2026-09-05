@@ -47,17 +47,13 @@ update = "bl-f7ae — the ball pane has no controls: a ball's title, body, sched
 ack = "bl-b8f7 — the trail pane has no controls: an alarm cannot be acknowledged from this seat"
 clear-trail = "bl-b8f7 — the trail pane has no controls: nothing truncates the trail from this seat"
 
-# bl-a43a — the fleet has no surface: a workspace can be neither run, stopped,
-# watched nor scanned, and what its agents changed is readable nowhere. The
-# loop's own state is not among these: it rides on `board`, which is the ball
-# pane's read (bl-d2af).
-arm = "bl-a43a — no fleet controls: the cheap-model watch cannot be raised here"
-disarm = "bl-a43a — no fleet controls: the watch cannot be dropped here"
-disband = "bl-a43a — no fleet controls: a running fleet cannot be stopped from this seat"
-fleet = "bl-a43a — no fleet controls: a workspace's ready balls cannot be run from here"
-scan = "bl-a43a — no fleet controls: nothing flushes a workspace's inboxes from here"
-science = "bl-a43a — no fleet controls: the delivery attempts and their costs are unpainted"
-work-diff = "bl-a43a — no fleet controls: what the agents changed is readable nowhere"
+# bl-a43a landed the fleet pane — `fleet`, `disband`, `arm`, `disarm`, `scan`,
+# `science` and `work-diff` all carry a control on the aimed wall
+# (`src/ui/fleet.rs`, DESIGN §4.32), so all seven rows are gone from here. What
+# it did NOT surface is the `work-diff` form that names a ball and a path and
+# answers that one file's patch; that is one op with one control, so this
+# ledger — which is per op — has nothing to say about it, and
+# `src/verbs/tests/corpus/emits.rs` records it by count and reason instead.
 
 # bl-2cf7 landed the records pane — `steps` and `files` carry a control on
 # `src/ui/composer/acts.rs` and are gone from this ledger. What it left it

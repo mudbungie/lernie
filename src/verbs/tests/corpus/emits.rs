@@ -60,6 +60,14 @@ const UNEMITTED: &[(&str, usize, &str)] = &[
          have yet (bl-f7ae)",
     ),
     (
+        "work-diff",
+        2,
+        "the two file forms: this seat composes the bare listing only — naming \
+         a ball and a path answers that one file's PATCH instead, and a \
+         control that guessed at a file would answer a question nobody asked \
+         (`crate::verbs::fleet`)",
+    ),
+    (
         "prepare",
         9,
         "the path and ball rungs: this seat composes the bare rung only, and a \

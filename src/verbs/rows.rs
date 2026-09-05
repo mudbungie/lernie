@@ -197,6 +197,8 @@ pub(super) const TABLE: &[Verb] = &[
     CONVERSATIONS,
     super::balls::WORKSPACE_BALLS,
     super::balls::MARKS,
+    super::fleet::SCIENCE,
+    super::fleet::WORK_DIFF,
     TRANSCRIPT,
     FOLLOW,
     super::records::AGENT,
@@ -225,5 +227,9 @@ pub(super) const TABLE: &[Verb] = &[
     super::tuning::MODEL,
     super::workspace::PIN,
     super::workspace::UNPIN,
+    super::fleet::SCAN,
+    super::fleet::ARM,
+    super::fleet::DISARM,
+    super::fleet::DISBAND,
     super::workspace::DELETE_WORKSPACE,
 ];

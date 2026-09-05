@@ -48,6 +48,8 @@ pub mod convs;
 pub mod enroll;
 /// The find pane: text found across everything these engines can see.
 pub mod find;
+/// The fleet pane: running a wall's balls, watching them, and what they did.
+pub mod fleet;
 /// The keyboard: every act this window affords, without a pointer.
 pub mod keys;
 /// The login pane: what a wall can sign in to, and the act that signs it in.
@@ -73,8 +75,8 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Bindings, Channel, Chunk, Columns, Configuring, Edit, Enrolling, Fill, Forking,
-    Grade, Held, Hits, Listing, Login, Lookup, Model, Notice, Pages, Posted, Records, Shown, Trail,
-    Tuning, Unmaking,
+    Aim, Armed, Asking, Bindings, Channel, Chunk, Columns, Configuring, Edit, Enrolling, Fill,
+    Fleet, Forking, Grade, Held, Hits, Listing, Login, Lookup, Model, Notice, Pages, Posted,
+    Records, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

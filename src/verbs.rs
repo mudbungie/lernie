@@ -82,6 +82,8 @@ pub mod config;
 pub mod conversation;
 /// The words this binary answers itself — a page and a usage line, no envelope.
 pub mod doors;
+/// The fleet loop, the alignment monitor, and what a wall's agents changed.
+pub mod fleet;
 /// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
 /// The sign-in family: the provider table, the offering, the act and its lane.
@@ -110,6 +112,10 @@ pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages};
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
+};
+pub use fleet::{
+    ARM, DISARM, DISBAND, FLEET, SCAN, SCIENCE, WORK_DIFF, arm, disarm, disband, fleet, scan,
+    science, work_diff,
 };
 pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};

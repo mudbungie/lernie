@@ -78,6 +78,11 @@ impl Model {
         // wall do not, and painting the old wall's balls under the new wall's
         // name is exactly what the retirement above prevents one level up.
         self.retire_wall_balls();
+        // **The fleet pane goes with the wall too** (bl-a43a), and for the
+        // login pane's sharper reason: its acts run drones and spend money in
+        // ONE workspace, so a pane left standing over a new aim would offer to
+        // start a fleet somewhere the operator is no longer looking.
+        self.retire_fleet();
     }
 
     /// **Select a conversation**, by the id every gesture addresses it with.

@@ -58,6 +58,7 @@ pub(super) fn ask(
             &crate::verbs::marks(aim.address.clone()),
         );
     }
+    fleet(link, root, standing, channel, aim);
     // **The provider table stands on the login pane** (bl-e3c5), on the roles
     // read's own terms — and the standing is what makes it worth having: a
     // credential lands on the engine while the operator is looking at the
@@ -149,4 +150,36 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
     ] {
         aimed(link, root, channel, &ask);
     }
+}
+
+/// **The fleet pane's two reads** (bl-a43a), on the roles read's own terms and
+/// for the trail's reason: both are DERIVED when asked, so what they say is
+/// only ever true of the moment they were asked.
+///
+/// Its own function rather than a third `if` in [`ask`], which is at the
+/// hundred-line budget clippy holds it to — and the seam is real: these two
+/// are the only pane-keyed pair here whose standing is about the answer going
+/// stale rather than about the read being cheap.
+fn fleet(
+    link: &Link,
+    root: &Path,
+    standing: &crate::state::Standing,
+    channel: &Channel,
+    aim: &crate::ui::Aim,
+) {
+    if !standing.standing(&Open::Fleet) {
+        return;
+    }
+    aimed(
+        link,
+        root,
+        channel,
+        &crate::verbs::science(aim.address.clone()),
+    );
+    aimed(
+        link,
+        root,
+        channel,
+        &crate::verbs::work_diff(aim.address.clone()),
+    );
 }

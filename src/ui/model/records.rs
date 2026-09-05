@@ -60,8 +60,9 @@ pub struct Records {
 impl Model {
     /// **Whether a pane covers the conversation** — the enrollment, the
     /// tuning pane, one of the three listings (`super::listing`), the window's
-    /// own FOUR, the login pane, the config pane, or an unmaking. The question
-    /// the shell and every pane-opening control share, asked once so twelve
+    /// own FOUR, the login pane, the config pane, the fleet pane, or an
+    /// unmaking. The question
+    /// the shell and every pane-opening control share, asked once so thirteen
     /// panes cannot stand on one glass: a control that opened a second cover
     /// would replace what is standing without saying so.
     pub fn covered(&self) -> bool {
@@ -71,6 +72,7 @@ impl Model {
             || self.lookup.is_some()
             || self.login.is_some()
             || self.configuring.is_some()
+            || self.fleet.is_some()
             || self.unmaking.is_some()
     }
 

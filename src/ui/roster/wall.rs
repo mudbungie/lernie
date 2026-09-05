@@ -127,6 +127,24 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if files.clicked() {
         model.begin_configuring();
     }
+    // **The fleet hangs after the four reads and before the unmaking**
+    // (bl-a43a), which is where an act that STARTS things belongs: it is the
+    // one per-wall control that spawns drones and spends money, and it is not
+    // the unmaking. It carries no `act:` token, because what it opens is a
+    // pane and each of its five ACTS is tagged on the control inside that
+    // fires one — the division `enroll a box…` keeps with `mint`. What it
+    // does carry is its two READS, exactly as the tuning and login controls
+    // carry theirs: opening the pane is what makes this seat ask that wall for
+    // its attempts and for what its agents changed
+    // (`crate::state::Standing`), and neither read has a control of its own.
+    let drones = ui.button(crate::ui::fleet::OPEN);
+    crate::ui::act::tag(
+        &drones,
+        &[crate::verbs::SCIENCE.word, crate::verbs::WORK_DIFF.word],
+    );
+    if drones.clicked() {
+        model.begin_fleet();
+    }
     // **The unmaking hangs here and LAST**, under the two controls that make
     // and change things, because that is the order a destructive act belongs in
     // wherever it is offered beside others (DESIGN §4.20). It carries no `act:`

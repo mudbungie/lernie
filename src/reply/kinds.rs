@@ -13,9 +13,9 @@
 //! the ball that lands a pane is the ball that adds its kind.
 
 use super::{
-    agent, balls, board, clients, config, convs, enrolled, files, governing, help, inbox, lineages,
-    login, ops, providers, queue, rail, roles, roster, search, start, step, steps, stream,
-    transcript,
+    agent, balls, board, clients, config, convs, diff, enrolled, files, governing, help, inbox,
+    lineages, login, ops, providers, queue, rail, roles, roster, science, search, start, step,
+    steps, stream, transcript,
 };
 
 /// **The kinds the window draws.** Thirty-one, and each is here because a
@@ -136,6 +136,21 @@ pub enum Reply {
     /// **The config lineages one workspace holds** — that pane's first, and
     /// the listing its two pickers are filled from.
     Lineages(Vec<lineages::Lineage>),
+    /// **Whether a standing thing is now standing** — the receipt `fleet`,
+    /// `disband`, `arm` and `disarm` all answer with (bl-a43a). It is ONE kind
+    /// for two families — the fleet loop and the alignment monitor — so a seat
+    /// cannot tell which it answers from the reply and must read the `op` back
+    /// (`crate::ui::model::absorb::Model::receipt`, DESIGN §4.33).
+    Armed(bool),
+    /// **Every delivery attempt of one workspace** — the fleet pane's first
+    /// read, standing while it is open (bl-a43a). It is derived when asked, so
+    /// the same row a minute later is a different statement.
+    Science(Vec<science::Attempt>),
+    /// **What one workspace's agents changed** — the fleet pane's second read,
+    /// on the same standing. It is the rows and nothing else: the `patch` a
+    /// named file would answer with rides through unread, because no gesture
+    /// this build composes can ask for one.
+    Work(Vec<diff::Diff>),
     /// **What one provider row is offering** — the same pane, one depth down,
     /// and posted rather than standing: a model list is fixed for the life of
     /// a provider's own answer, so a standing read would spend a round trip a

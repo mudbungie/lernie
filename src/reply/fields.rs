@@ -132,6 +132,47 @@ pub(crate) fn opt_secs(obj: &Map<String, Value>, key: &str) -> Result<Option<i64
     }
 }
 
+/// An **optional** count: absent and `null` are both `None`, and a value of
+/// the wrong type still refuses.
+///
+/// [`opt_text`]'s absence over [`count`]'s width. Upstream leaves a counter out
+/// rather than writing a zero where the zero would be a claim nobody made — a
+/// record nothing was compacted out of, a churn that is not text at all — so
+/// `None` and `Some(0)` stay two readings.
+pub(crate) fn opt_count(obj: &Map<String, Value>, key: &str) -> Result<Option<u64>, String> {
+    match obj.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => count(obj, key).map(Some),
+    }
+}
+
+/// An **optional** boolean, on exactly [`opt_count`]'s terms.
+pub(crate) fn opt_flag(obj: &Map<String, Value>, key: &str) -> Result<Option<bool>, String> {
+    match obj.get(key) {
+        None | Some(Value::Null) => Ok(None),
+        Some(_) => flag(obj, key).map(Some),
+    }
+}
+
+/// An **optional** list of strings, absent read as empty.
+///
+/// The one place absence and emptiness are deliberately one reading, and it is
+/// upstream's own shape that makes them one: a list is written only by the
+/// state that has one to write, and the state rides beside it verbatim — so
+/// *this row's state has no such list* and *this row's list is empty* are the
+/// same claim about the same row.
+pub(crate) fn strings(obj: &Map<String, Value>, key: &str) -> Result<Vec<String>, String> {
+    match obj.get(key) {
+        None => Ok(Vec::new()),
+        Some(_) => list(obj, key, |value| {
+            value
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| format!("field {key:?}: a non-string element"))
+        }),
+    }
+}
+
 /// **An optional nested object**, on [`opt_text`]'s own terms: absent and
 /// `null` are both `None`, and anything else is read strictly.
 ///

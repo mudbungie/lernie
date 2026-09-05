@@ -15,11 +15,13 @@
 
 /// The covering panes whose subject is every channel this box holds.
 pub(crate) mod board;
+pub(crate) mod fleet;
 /// The records pane, whose four reads make it the fixture that grows.
 pub(crate) mod records;
 pub(crate) mod union;
 
 pub(crate) use board::{boarded, column, figure};
+pub(crate) use fleet::{attempt, diff, fleeting};
 pub(crate) use records::{deposit, drilled, notch, own_row, recorded, step};
 pub(crate) use union::{commanded, finding, helped, hit, queued, trailed, trailing, waiting};
 

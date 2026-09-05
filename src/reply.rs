@@ -87,6 +87,8 @@ pub mod clients;
 pub mod config;
 /// The conversation list one workspace answers with.
 pub mod convs;
+/// What one attempt changed — the row the work diff and a science row share.
+pub mod diff;
 /// A new box's material, and the envelope a camera carries it in.
 pub mod enrolled;
 /// The strict field readers every decoder below shares.
@@ -119,6 +121,8 @@ mod read;
 pub mod roles;
 /// The workspace roster — the window's altitude-0 chrome.
 pub mod roster;
+/// Every delivery attempt of one workspace, with what it cost and how it ended.
+pub mod science;
 /// Text found across the balls, workspaces and conversations an engine sees.
 pub mod search;
 /// What a ball has cost, and what the sum is over.

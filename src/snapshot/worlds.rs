@@ -17,11 +17,15 @@
 //! from a second set of their own — a fixture with a field the row grew is a
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
-use crate::test_support::window::{
-    boarded, commanded, configured, finding, machines, pinned, queued, recorded, role, seated,
-    signing, trailing, tuned,
+use crate::test_support::window::{pinned, seated};
+use crate::ui::{Enrolling, Model, Unmaking};
+
+/// The covered states — one world per pane that stands over the conversation.
+mod covered;
+
+use covered::{
+    assigning, board, clients, commands, config, find, fleet, login, queue, records, trail, tuning,
 };
-use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
 /// One named state of the window, as the matrix files it.
 pub(crate) struct World {
@@ -98,145 +102,6 @@ fn enrolling() -> World {
     }
 }
 
-/// **The window with the tuning pane open** — the settings surface this seat
-/// spent its first year without (`crate::snapshot::reach` on the premise).
-///
-/// It is answered rather than waiting, because the controls are what this
-/// world exists to put on the glass and there are none until a row is.
-fn tuning() -> World {
-    World {
-        name: "tuning",
-        model: tuned(),
-    }
-}
-
-/// **The window with one role's assignment being rewritten** — the third
-/// covered state, and the only screen the `model` control exists on.
-fn assigning() -> World {
-    World {
-        name: "assigning",
-        model: Model {
-            tuning: Some(Tuning::Editing(Edit::of(&role("worker")))),
-            ..tuned()
-        },
-    }
-}
-
-/// **The window with the records pane open** — the fourth covered state
-/// (bl-2cf7), answered rather than waiting for the reason the tuning world
-/// is: what this world exists to photograph is every sentence the pane can
-/// say, and an unanswered pane says exactly two.
-fn records() -> World {
-    World {
-        name: "records",
-        model: recorded(),
-    }
-}
-
-/// **The window with the decision queue open** — the fifth covered state
-/// (bl-f0ef), and the only screen `attention`'s answer, `seen`'s control and
-/// every sentence a queue row can carry are on.
-fn queue() -> World {
-    World {
-        name: "queue",
-        model: queued(),
-    }
-}
-
-/// **The window with the trail open and answered** (bl-4c48) — the sixth
-/// covered state, and the only screen a trail row's sentences are on.
-///
-/// It is answered for the reason every other pane's world is: what a world
-/// exists to photograph is every sentence the pane can say, and an unanswered
-/// trail says exactly one.
-fn trail() -> World {
-    World {
-        name: "trailing",
-        model: trailing(),
-    }
-}
-
-/// **The window with the ball pane open and answered** (bl-d2af) — the only
-/// screen a board row's sentences, a loop's line, a binding row and the aimed
-/// wall's own balls are on.
-///
-/// It is answered, and answered on BOTH its widths, for the reason every other
-/// pane's world is: what a world exists to photograph is every sentence the
-/// pane can say, and a pane answered on one width only would leave the other's
-/// sentences on no screen this walk visits.
-fn board() -> World {
-    World {
-        name: "boarding",
-        model: boarded(),
-    }
-}
-
-/// **The window with the commands pane open** — the sixth covered state
-/// (bl-40ec), and the only screen every sentence a help row can carry is on.
-fn commands() -> World {
-    World {
-        name: "commands",
-        model: commanded(),
-    }
-}
-
-/// **The window with the find pane open and answered** — the seventh covered
-/// state (bl-40ec), and the only screen `search`'s control is on.
-///
-/// It is photographed with a needle already in the box, because the control is
-/// what this world exists to put on the glass and it is disabled until there
-/// is one. The unarmed state is the pane's own suite's, where an assertion can
-/// name the sentence beside the greyed control.
-fn find() -> World {
-    World {
-        name: "finding",
-        model: finding(),
-    }
-}
-
-/// **The window with the login pane open and answered** — the eighth covered
-/// state (bl-e3c5), and the only screen `login`'s and `models`' controls are
-/// on.
-///
-/// It is photographed mid-flow, with a run being followed and a row asked what
-/// it offers, because that is the state every sentence on the pane is reachable
-/// in: an unanswered login pane says one thing and has no control at all.
-fn login() -> World {
-    World {
-        name: "signing",
-        model: signing(),
-    }
-}
-
-/// **The window with the clients pane open and answered** (bl-e53c) — the
-/// ninth covered state, and the only screen `clients`' control is reachable
-/// from at all.
-///
-/// It is photographed answered, for the login world's reason: what the world
-/// exists to put on the glass is every sentence the pane can say about a
-/// machine — connected, not connected, and advertising nothing — and an
-/// unanswered pane says one.
-fn clients() -> World {
-    World {
-        name: "machines",
-        model: machines(),
-    }
-}
-
-/// **The window with the config pane open, pointed at a file and answered**
-/// (bl-5c53) — the eleventh covered state, and the only screen `config`'s own
-/// control is reachable from.
-///
-/// It is photographed pointed at a destination, because the pane pointed at
-/// nothing says one sentence and none of the settings, the fault or the bytes
-/// this world exists to put on the glass.
-fn config() -> World {
-    World {
-        name: "config",
-        model: configured(),
-    }
-}
-
 /// **The window with the aimed wall pinned** (bl-7782) — not a covered state
 /// at all, and the only screen the `unpin` control is on.
 ///
@@ -284,6 +149,7 @@ pub(crate) fn all() -> Vec<World> {
         queue(),
         trail(),
         board(),
+        fleet(),
         commands(),
         find(),
         login(),

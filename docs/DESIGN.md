@@ -326,7 +326,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Twenty-eight kinds, because twenty-eight are painted.** The engine's reply
+**Thirty-one kinds, because thirty-one are painted.** The engine's reply
 surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
@@ -365,11 +365,13 @@ spine pair (`rail`, `governing`) made it in the commit that built §4.29's half
 of the records pane (bl-b52c), `config` and `lineages` made it in the commit
 that built §4.30's pane (bl-5c53), the balls family's four (`balls`, `board`,
 `workspace-balls`, `marks`) made it in the commit that built §4.31's ball pane
-(bl-d2af), and the deeper three (`agent`, `step`, `inbox`) made it in the
-commit that built §4.32's half of the records pane (bl-3257) — which spends
-the ledger's last conversation read and leaves `unreadable/` holding only
-shapes addressed to a different kind of client, and the malformed frames
-upstream's codec cannot emit.
+(bl-d2af), the deeper three (`agent`, `step`, `inbox`) made it in the
+commit that built §4.32's half of the records pane (bl-3257), and the fleet's
+three (`armed`, `science`, `work-diff`) made it in the commit that built
+§4.33's pane (bl-a43a) — which between them spend the ledger's last
+conversation read and leave `unreadable/` holding only shapes addressed to a
+different kind of client, and the malformed frames upstream's codec cannot
+emit.
 
 **And a shape can sit in `unreadable/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
@@ -2153,13 +2155,14 @@ down, and `clear-trail`, which truncates — are bl-b8f7: both name no workspace
 so both take the poster's fanned path, and *one control truncating every
 engine's trail* is a question to settle before writing it rather than after.
 The fleet family — `fleet`, `disband`, `arm`, `disarm`, `scan`, `science`,
-`work-diff` — is bl-a43a, and it addresses a workspace, so it is the tuning
-pane's shape rather than this one's. **The fleet has no read of its own**: its
+`work-diff` — was bl-a43a, and it addresses a workspace, so it is the tuning
+pane's shape rather than this one's; it has since landed as §4.33. **The fleet has no read of its own**: its
 loop state (cap, count, tick, lease, ceiling) rides on the `board` reply, in an
 array that is *absent rather than empty* when nothing is armed — so the
 readable half of the fleet belongs to the ball pane, which is what would decode
 `board` at all. That pane has since landed and it does (§4.28, bl-d2af); what
-bl-a43a is left holding is the fleet's controls and its own two reads.
+bl-a43a was left holding is the fleet's controls and its own two reads, and
+that is §4.33.
 
 ### 4.28 The clients pane: which machines may execute for this wall (REMOTE §5, §5.1; bl-e53c)
 
@@ -2370,7 +2373,7 @@ empty** when nothing is armed. That is the one case where a `Vec` and an
 loop's rendered line rides too and this seat paints it rather than composing
 one: `label` is upstream's own sentence about the cap, the count, the tick and
 the lease, and a seat re-deriving it from the numbers beside it would be a
-second opinion about a loop it does not run. The fleet's CONTROLS are bl-a43a.
+second opinion about a loop it does not run. The fleet's CONTROLS are §4.33's.
 
 **The money is upstream's rendering and nothing here computes one**
 (`src/reply/spend.rs`). `usd` was derived on the box that holds the price
@@ -2465,6 +2468,87 @@ time behind a section selector — is a view this pane may still grow, and it
 would dissolve the constraint rather than pay it.
 
 
+### 4.33 The fleet: running a wall's balls, watching them, and what they changed (bl-a43a)
+
+`src/reply/diff.rs`, `src/reply/science.rs`, `src/verbs/fleet.rs`,
+`src/ui/fleet.rs`, `src/ui/fleet/rows.rs`, `src/ui/model/fleet.rs`. **The
+thirteenth covering pane, and the fifth whose subject is the aimed wall.** It
+is the other half of bl-4c48, whose trail half is §4.27 and whose board half is
+§4.31: seven ops, all of them carrying a workspace, and until this landed a
+workspace could be watched from this seat and never run.
+
+**The naming trap is the first fact about it, and it costs an afternoon to
+rediscover.** `fleet` and `disband` are the **loop** — claim this project's top
+ready ball and start a drone on it, up to a cap. `arm` and `disarm` are the
+**alignment monitor** — a cheap model reads each commit against its goal and
+records a verdict on the trail. Two families, two settings, two carriers, and
+**one shared reply kind**: all four answer `{"kind": "armed", "armed": BOOL}`,
+so no reader can tell which family an answer belongs to by looking at it. Every
+reader here reads the **op** back instead. The poster already stamps a routed
+receipt with the op it answers (§4.26's `Said::Receipt`), so
+`Model::receipt` joins the two before the pane ever sees them and
+`crate::ui::model::Armed` carries both. A seat that classified off the reply
+would be guessing between two settings.
+
+**Neither stopping act is armed, and that is an argument rather than an
+omission** — the one bl-a43a asked for by name. §4.20's arming is for the
+**unmaking**: an act whose product is that its subject is gone. Neither of
+these is that. `disband` *"stops nothing that is running; everything already
+running is untouched and keeps its ball"*, and `disarm` leaves *"every verdict
+already recorded on the trail"*. Each is undone by doing the other thing — one
+`fleet` re-arms the loop, one `arm` re-raises the watch — and an arming on an
+act a click reverses teaches an operator to type through armings, which is the
+one thing that would make the unmaking's arming worthless. What they get
+instead is the unmaking's ORDER: the acts that start things first, the acts
+that stop them under.
+
+**It holds the wall it was opened on rather than following the aim**, which is
+§4.20's unmaking arrangement and here for a sharper form of its reason: these
+acts start drones and spend money in ONE workspace, so a gesture composed
+against whatever the aim happened to be at the moment of the click would be a
+control that moved under the operator. The pane is retired when the aim moves,
+so the two can never disagree — and holding the wall is what makes that a fact
+rather than a promise.
+
+**Three boxes, because three acts carry a word nothing on the glass can
+derive.** A cap is a number — which is also why `fleet` is a typed door rather
+than a row in the verb table (§4.10) — a project is a name, and a monitor's
+model is a name. Each control stands down until its own box has something in
+it, which is §4.20's enablement rule with the parameter missing rather than the
+subject. The cap opens at **one** and will not go below it: a cap of zero is a
+loop that spawns nothing and still reaps, which upstream refuses to spell as a
+cap at all, so it is not a value this box can send.
+
+**The pane holds no loop STATE and that is deliberate.** Whether a loop is
+running, how full it is and when it last acted are on the `board` answer, which
+the ball pane paints (§4.31) — one fact, one home. What this pane holds is the
+last receipt, which is an event rather than a state: what happened when the
+operator pressed the control, said once, in the op's own name.
+
+**Both reads STAND, on the trail's terms.** `science` and `work-diff` are
+**derived when you ask** — nothing behind either is stored — so the same row a
+minute later is a statement about the world a minute later, and a posted-once
+read would paint a moment that had passed. They are keyed on the pane
+(`crate::state::Open::Fleet`) and asked only while somebody is looking. Their
+`act:` tokens ride on the control that OPENS the pane, exactly as the tuning
+and login controls carry theirs, because opening it is what asks them.
+
+**One diff row, two answers.** A science attempt's `diff` object *is* a
+work-diff row — upstream encodes both with one encoder *"so an attempt's
+identity has one spelling anywhere"* — so `src/reply/diff.rs` is one type read
+by both, and its `state` rides verbatim with every field that state does not
+write as an option. Binary is read off the SHAPE rather than a token, because
+upstream writes counts or it writes `binary`, never both.
+
+**The patch is not read, and the ledger says so.** `work-diff` answers a
+`patch` beside its rows when the gesture names a ball and a path. This seat
+composes the bare listing only, exactly as it composes the bare `files` read,
+so that field can never arrive here and a decoder for it would be a reader
+nothing exercises; it rides through under §4.9's rung 4, and
+`src/verbs/tests/corpus/emits.rs` records the two file forms by count and
+reason. `parity.toml` has nothing to say about it because that ledger is per
+OP, and `work-diff` now carries a control.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2532,7 +2616,8 @@ would dissolve the constraint rather than pay it.
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | what the window holds between frames. Three pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), and the records pane's seven answers held as one value (`model/records.rs`'s `Records`). | ~280 |
+| `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
+| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~240 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
@@ -2565,6 +2650,12 @@ would dissolve the constraint rather than pay it.
 | `src/ui/board/rows.rs` | the words a board row wears — every line a pure function of the row, the loop's line being the engine's own with the two facts it omits hung off it. | ~135 |
 | `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, and four emptinesses because they are four different claims. | ~85 |
 | `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.28). | ~105 |
+| `src/reply/diff.rs` | what one attempt changed — the row the work diff answers with and the same row nested in every science attempt, one type because upstream has one encoder; binary read off the shape, and the patch deliberately unread (§4.32). | ~115 |
+| `src/reply/science.rs` | every delivery attempt of one workspace: what it was fired with, what it cost, what was said to it and how it ended — the outcome a token with whatever that token can say (§4.32). | ~155 |
+| `src/verbs/fleet.rs` | the fleet family — six rows and one door, the door because a cap is a number; and the file it is written in names no reply at all, because two families share one (§4.32). | ~150 |
+| `src/ui/fleet.rs` | the fleet pane (§4.32): five acts in the unmaking's order, three boxes and the two controls each holds down, and the two standing listings under them. | ~215 |
+| `src/ui/fleet/rows.rs` | the words a fleet row wears — the receipt that names its op, an attempt's lines and no others, and the churn read off the shape. | ~125 |
+| `src/ui/model/fleet.rs` | the fleet pane between frames (§4.32) — three words, the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the wall. | ~135 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts, the retirement with its subject, and the one `covered` question every pane shares. | ~140 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
@@ -2621,7 +2712,8 @@ would dissolve the constraint rather than pay it.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
-| `src/snapshot/worlds.rs` | the sixteen named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's, the decision queue's and the window's own two are among them. `cfg(test)`. | ~200 |
+| `src/snapshot/worlds/covered.rs` | the covered states, one world per pane that stands over the conversation, each answered because an unanswered pane offers no control at all and `PARITY.md` §5 reads unproven as red. `cfg(test)`. | ~175 |
+| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
@@ -2649,6 +2741,7 @@ would dissolve the constraint rather than pay it.
 | `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
 | `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with seven reads under it. `cfg(test)`. | ~230 |
 | `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~185 |
+| `src/test_support/window/panes/fleet.rs` | the fleet pane's fixtures (§4.32) — its own file rather than the ball pane's neighbour, on the seam DESIGN draws: that pane is two widths and this one is one. `cfg(test)`. | ~130 |
 | `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed wall, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |

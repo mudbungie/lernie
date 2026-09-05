@@ -46,12 +46,12 @@ fn every_frame_becomes_content_or_a_visible_notice() {
     );
     model.absorb(
         &flat,
-        read(&json!({"ok": true, "kind": "science", "rows": []})),
+        read(&json!({"ok": true, "kind": "invocations", "rows": []})),
     );
     let Some(Notice::Unreadable(why)) = &model.notice else {
         panic!("an unpainted kind is this seat's own sentence");
     };
-    assert!(why.contains("\"science\""), "{why}");
+    assert!(why.contains("\"invocations\""), "{why}");
     assert!(
         model
             .notice

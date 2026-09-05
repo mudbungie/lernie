@@ -46,6 +46,12 @@ impl Model {
     /// refusal is exactly what it was: the bar.
     pub fn receipt(&mut self, channel: &Channel, op: &str, read: Read) {
         match read {
+            // **The one kind whose meaning is the op and not the reply**
+            // (bl-a43a): `fleet`, `disband`, `arm` and `disarm` all answer
+            // `armed`, and the two families they span are the fleet loop and
+            // the alignment monitor. The poster still knows which was sent, so
+            // the join happens here rather than by the pane guessing.
+            Read::Answer(Reply::Armed(on)) => self.armed(op, on),
             Read::Refusal(said) if self.starting(op) => self.refuse_start(said),
             Read::Unreadable(_) if self.starting(op) => {
                 self.take_back_start();
@@ -113,6 +119,17 @@ impl Model {
             // or not the pane is open, because a frame that arrives after it
             // closed is the last one in flight rather than a thing to drop.
             Reply::WorkspaceBalls(rows) => self.holding = Some(rows),
+            // **The fleet pane's two reads**, on the roles' terms again — the
+            // aimed wall's attempts and what its agents changed (`fleet`;
+            // bl-a43a).
+            Reply::Science(rows) => self.scienced(rows),
+            Reply::Work(rows) => self.worked(rows),
+            // **The receipt four ops share, filed under the op that earned
+            // it** — never under a family read off the reply, which cannot say
+            // which of the two it answers (DESIGN §4.33). A frame that reached
+            // this door without an op is a standing read's, and no standing
+            // read answers this kind, so it is filed under no name at all.
+            Reply::Armed(on) => self.armed("", on),
             Reply::Marks { branch } => self.marks = Some(branch),
             Reply::Found(found) => self.hit(channel, found),
             // The login pane's three, on the roles' own terms — filed whether

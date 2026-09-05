@@ -122,6 +122,12 @@ pub enum Open {
     /// (bl-d2af). It stands for the trail's reason exactly — a board is what
     /// is happening.
     Board,
+    /// **The fleet pane** — the aimed wall's seventh question, its delivery
+    /// attempts and what its agents changed (bl-a43a). Both are DERIVED when
+    /// asked — nothing behind either is stored — so the same row a minute
+    /// later is a statement about the world a minute later, which is the
+    /// trail's reason for standing read on a subject that is a focus.
+    Fleet,
     /// **The clients pane** — the aimed wall's sixth question, the machines
     /// registered in it and what each offers (bl-e53c). Its standing buys the
     /// same thing the login pane's does: presence is true only at the moment
@@ -158,6 +164,8 @@ impl Open {
             Some(Self::Trail)
         } else if model.boarding() {
             Some(Self::Board)
+        } else if model.fleet.is_some() {
+            Some(Self::Fleet)
         } else if model.login.is_some() {
             Some(Self::Login(model.following()))
         } else if model.showing(crate::ui::Listing::Clients) {

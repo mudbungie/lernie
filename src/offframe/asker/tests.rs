@@ -43,6 +43,8 @@ mod board;
 mod clients;
 /// The config pane's two, one of which addresses a channel rather than a wall.
 mod config;
+/// The fleet pane's two, which stand because their answers go stale.
+mod fleet;
 /// The provider table, which stands on the login pane and nests under nothing.
 mod login;
 /// The three questions, and how each waits for the last to have an answer.

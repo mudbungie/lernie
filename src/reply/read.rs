@@ -11,9 +11,9 @@
 use serde_json::Value;
 
 use super::{
-    ERROR, KIND, OK, Outcome, Read, Reply, agent, balls, board, clients, config, convs, enrolled,
-    fields, files, governing, help, inbox, lineages, login, ops, providers, queue, rail, roles,
-    roster, search, start, step, steps, stream, transcript,
+    ERROR, KIND, OK, Outcome, Read, Reply, agent, balls, board, clients, config, convs, diff,
+    enrolled, fields, files, governing, help, inbox, lineages, login, ops, providers, queue, rail,
+    roles, roster, science, search, start, step, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -24,6 +24,10 @@ const NUDGED: &str = "nudged";
 /// The flag's receipt. It answers to no type for [`NUDGED`]'s own reason:
 /// what it changed arrives on the next queue, so there is nothing to read.
 const FLAGGED: &str = "flagged";
+/// The receipt four ops share. It answers to no type of its own because it is
+/// one field — and it is deliberately NOT read as *which* family it answers:
+/// that is the `op`, and the op is stamped by the poster (DESIGN §4.33).
+const ARMED: &str = "armed";
 
 /// **Read one reply frame.** Total: every input answers one of [`Read`]'s
 /// three arms, and none of them is a panic.
@@ -72,6 +76,9 @@ fn decode(frame: &Value) -> Result<Read, String> {
         config::KIND => Reply::Config(config::config(obj)?),
         lineages::KIND => Reply::Lineages(fields::rows(obj, lineages::row)?),
         ops::KIND => Reply::Ops(fields::rows(obj, ops::row)?),
+        ARMED => Reply::Armed(fields::flag(obj, ARMED)?),
+        science::KIND => Reply::Science(fields::rows(obj, science::row)?),
+        diff::KIND => Reply::Work(fields::rows(obj, diff::diff)?),
         balls::KIND => Reply::Balls(fields::rows(obj, balls::row)?),
         board::KIND => Reply::Board(board::board(obj)?),
         balls::HELD => Reply::WorkspaceBalls(fields::rows(obj, balls::bound)?),

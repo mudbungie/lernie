@@ -25,7 +25,7 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The twenty-three reads, the conversation's eight acts, the enrollment, the
+/// The twenty-five reads, the conversation's twelve acts, the enrollment, the
 /// sign-in, the model assignment and the wall's own three, spelled out — so
 /// the roster is asserted rather than merely iterated, and a verb added or
 /// dropped is a diff here.
@@ -43,6 +43,8 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "conversations",
             "workspace-balls",
             "marks",
+            "science",
+            "work-diff",
             "transcript",
             "follow",
             "agent",
@@ -71,6 +73,10 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "model",
             "pin",
             "unpin",
+            "scan",
+            "arm",
+            "disarm",
+            "disband",
             "delete-workspace"
         ]
     );
@@ -149,7 +155,7 @@ fn a_usage_line_is_derived_from_the_word_and_its_parameters() {
 /// `entries` are the command line's own words, not gestures.
 #[test]
 fn a_word_that_is_not_a_verb_is_not_found() {
-    for word in ["ask", "entries", "help", "science", ""] {
+    for word in ["ask", "entries", "help", "invocations", ""] {
         assert_eq!(find(word), None, "{word:?}");
     }
 }

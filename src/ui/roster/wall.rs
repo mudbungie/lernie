@@ -1,4 +1,4 @@
-//! **One wall's row**, and the five per-wall controls that hang off the aimed
+//! **One wall's row**, and the six per-wall controls that hang off the aimed
 //! one.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's own
@@ -36,7 +36,7 @@ pub const UNPIN: &str = "unpin";
 /// One wall: selectable when this seat can address it, a plain line when it
 /// cannot.
 ///
-/// **The five per-wall controls hang off the aimed row and off no other**,
+/// **The six per-wall controls hang off the aimed row and off no other**,
 /// because
 /// an enrollment mints the pair `(client, workspace)` and the workspace is
 /// exactly what an aim is. Offering it on every row would be offering it before
@@ -60,8 +60,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
-    // **All five per-wall controls hang off the aimed row and off no other**,
-    // and all five stand down while a pane already covers the conversation:
+    // **All six per-wall controls hang off the aimed row and off no other**,
+    // and all six stand down while a pane already covers the conversation:
     // what they open would replace what is standing there, so offering them is
     // offering to lose it without saying so.
     if !aimed || model.covered() {
@@ -107,6 +107,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     crate::ui::act::tag(&sign, &[crate::verbs::PROVIDERS.word]);
     if sign.clicked() {
         model.begin_login();
+    }
+    // **The machines hang beside the sign-in**, because a wall's registered
+    // clients are the third fact about its configuration and reading them
+    // destroys nothing (bl-e53c). It carries the read the gesture reaches, as
+    // the two above do: opening the pane is what makes this seat ask that wall
+    // which machines it holds (`crate::state::Standing`), and the read has no
+    // control of its own.
+    let machines = ui.button(crate::ui::clients::OPEN);
+    crate::ui::act::tag(&machines, &[crate::verbs::CLIENTS.word]);
+    if machines.clicked() {
+        model.begin_clients();
     }
     // **The unmaking hangs here and LAST**, under the two controls that make
     // and change things, because that is the order a destructive act belongs in

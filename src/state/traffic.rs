@@ -115,6 +115,12 @@ pub enum Open {
     /// of the aim, and it stands because a trail is what is happening
     /// (bl-4c48).
     Trail,
+    /// **The clients pane** — the aimed wall's sixth question, the machines
+    /// registered in it and what each offers (bl-e53c). Its standing buys the
+    /// same thing the login pane's does: presence is true only at the moment
+    /// it was answered (REMOTE §5), so a row that said *not connected* says
+    /// otherwise on the next beat with nothing asked again.
+    Clients,
     /// **The login pane** — the aimed wall's fifth question, what it can sign
     /// in to, carrying the provider row whose sign-in the held lane is on where
     /// one has been started (bl-e3c5). The row rides *inside* the pane's own
@@ -131,14 +137,16 @@ impl Open {
     fn of(model: &Model) -> Option<Self> {
         if model.tuning.is_some() {
             Some(Self::Tuning)
-        } else if model.records {
+        } else if model.showing(crate::ui::Listing::Records) {
             Some(Self::Records)
-        } else if model.queue {
+        } else if model.showing(crate::ui::Listing::Queue) {
             Some(Self::Queue)
         } else if model.trailing() {
             Some(Self::Trail)
         } else if model.login.is_some() {
             Some(Self::Login(model.following()))
+        } else if model.showing(crate::ui::Listing::Clients) {
+            Some(Self::Clients)
         } else {
             None
         }

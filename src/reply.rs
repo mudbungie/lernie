@@ -71,6 +71,8 @@
 //! later (yog bl-32cb) drops into it as files rather than as code.
 //! `corpus/README.md` is the drop-in contract.
 
+/// The machines registered in one workspace, and what each one offers.
+pub mod clients;
 /// The conversation list one workspace answers with.
 pub mod convs;
 /// A new box's material, and the envelope a camera carries it in.
@@ -207,6 +209,11 @@ pub enum Reply {
     /// which is brazen's own routing order, and a seat that re-sorted it would
     /// be holding a second opinion about a table it does not own.
     Providers(Vec<providers::ProviderRow>),
+    /// **The machines registered in one workspace** — the clients pane's one
+    /// read, standing while it is open (bl-e53c). Presence is answered at the
+    /// moment it is asked and the advertised set is what that machine last
+    /// presented, which are two lifetimes on one row and are painted as two.
+    Clients(Vec<clients::ClientRow>),
     /// **What one provider row is offering** — the same pane, one depth down,
     /// and posted rather than standing: a model list is fixed for the life of
     /// a provider's own answer, so a standing read would spend a round trip a

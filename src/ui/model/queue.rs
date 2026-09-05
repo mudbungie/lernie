@@ -49,14 +49,14 @@ impl Model {
     /// question *what is waiting on me* is answerable from an unaimed,
     /// unselected seat, and that is the seat most likely to be asking it.
     pub fn begin_queue(&mut self) {
-        self.queue = true;
+        self.stand(super::Listing::Queue);
     }
 
     /// **Close it.** The rows stay, for the reason the roles and the records
     /// do: the next open is about the same queue, and the standing read
     /// replaces them anyway.
     pub fn close_queue(&mut self) {
-        self.queue = false;
+        self.put_down(super::Listing::Queue);
     }
 
     /// File one channel's queue, replacing what that channel last said and

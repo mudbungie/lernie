@@ -73,6 +73,8 @@ impl Model {
             // Filed whether or not the pane is open: the read stands only while
             // it is, so a frame after it closed is the last one in flight.
             Reply::Roles(rows) => self.roles = Some(rows),
+            // The clients pane's one read, on the roles' own terms.
+            Reply::Clients(rows) => self.machines = Some(rows),
             // **The queue, one channel's slice at a time** — the fan's answer
             // replaces what this channel last said and leaves the others
             // standing, exactly as a roster answer does (`queue`).

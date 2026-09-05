@@ -57,7 +57,7 @@ pub(crate) fn queued() -> Model {
         ..waiting("home", "20260830T051200Z-a1b2")
     };
     Model {
-        queue: true,
+        listing: Some(crate::ui::Listing::Queue),
         waiting: vec![crate::ui::Asking {
             channel: own().channel,
             rows: vec![raised, waiting("home", "c-2"), waiting("elsewhere", "c-3")],

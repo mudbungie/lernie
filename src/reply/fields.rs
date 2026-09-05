@@ -103,6 +103,22 @@ pub(crate) fn opt_exit(obj: &Map<String, Value>, key: &str) -> Result<Option<i32
         .map_err(|_| format!("field {key:?} out of range"))
 }
 
+/// A boolean whose **absence is `false`**, and whose `null` is a refusal.
+///
+/// It is not [`opt_text`]'s shape one type over, and the difference is the
+/// point: an optional string spells *not stated* by absence OR by `null`
+/// because the reply surface uses both, while REMOTE §5.1's consent flag
+/// *"absent reads false, rides only when true, and a mistyped value refuses at
+/// the read"* — and upstream's own decoder refuses a `null` there. Two ends
+/// disagreeing about what an absence is would be a consent read one way and
+/// enforced the other.
+pub(crate) fn absent_is_false(obj: &Map<String, Value>, key: &str) -> Result<bool, String> {
+    match obj.get(key) {
+        None => Ok(false),
+        Some(_) => flag(obj, key),
+    }
+}
+
 /// A listing's elements, each read by `read`.
 ///
 /// One element that will not read fails the whole listing rather than

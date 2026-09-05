@@ -1,11 +1,11 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! thirteen rather than one.
+//! fifteen rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
-//! twelve are the shapes: nothing dialled yet, seated at a wall with a
-//! conversation open, the wall with none selected, and the eight states of the
-//! seven panes that cover the conversation.
+//! are the shapes: nothing dialled yet, seated at a wall with a conversation
+//! open, the wall with none selected, and the eleven states of the ten panes
+//! that cover the conversation.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -18,7 +18,7 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{
-    commanded, finding, pinned, queued, recorded, role, seated, signing, trailing, tuned,
+    commanded, finding, machines, pinned, queued, recorded, role, seated, signing, trailing, tuned,
 };
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
@@ -192,6 +192,21 @@ fn login() -> World {
     }
 }
 
+/// **The window with the clients pane open and answered** (bl-e53c) — the
+/// ninth covered state, and the only screen `clients`' control is reachable
+/// from at all.
+///
+/// It is photographed answered, for the login world's reason: what the world
+/// exists to put on the glass is every sentence the pane can say about a
+/// machine — connected, not connected, and advertising nothing — and an
+/// unanswered pane says one.
+fn clients() -> World {
+    World {
+        name: "machines",
+        model: machines(),
+    }
+}
+
 /// **The window with the aimed wall pinned** (bl-7782) — not a covered state
 /// at all, and the only screen the `unpin` control is on.
 ///
@@ -241,6 +256,7 @@ pub(crate) fn all() -> Vec<World> {
         commands(),
         find(),
         login(),
+        clients(),
         pinned_wall(),
         unmaking(),
     ]

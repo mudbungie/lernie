@@ -55,7 +55,7 @@ fn the_answered_pane_paints_both_halves_whole() {
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let unanswered = Model {
-        records: true,
+        listing: Some(crate::ui::Listing::Records),
         ..seated()
     };
     let quiet = Model {
@@ -134,7 +134,7 @@ fn the_done_control_closes_the_pane() {
             render(ui, &mut model);
         });
     });
-    assert!(!model.records);
+    assert!(!model.showing(crate::ui::Listing::Records));
     assert!(model.steps.is_some(), "the answers stay");
 }
 
@@ -195,6 +195,6 @@ fn the_open_control_stands_the_pane_up_from_the_composer() {
             crate::ui::composer::render(ui, &mut model);
         });
     });
-    assert!(model.records, "the pane is up");
+    assert!(model.showing(crate::ui::Listing::Records), "the pane is up");
     assert!(model.outbox.is_empty(), "a look composes nothing");
 }

@@ -32,6 +32,8 @@
 pub mod act;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
+/// The clients pane: which machines may execute for a wall, and what they offer.
+pub mod clients;
 /// The commands pane: every op each engine has a word for, and what each does.
 pub mod commands;
 /// The composer: what an operator types, and the gesture it becomes.
@@ -67,7 +69,7 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Login, Lookup, Model,
-    Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
+    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Listing, Login, Lookup,
+    Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

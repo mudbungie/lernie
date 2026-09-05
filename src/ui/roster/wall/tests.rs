@@ -41,6 +41,22 @@ fn clicking_it_composes_the_assertion_and_never_a_flip() {
     }
 }
 
+/// **The machines control opens the pane on the aimed wall**, which is what
+/// stands its one read up — the read has no control of its own, exactly as the
+/// tuning pane's and the login pane's do not.
+#[test]
+fn the_machines_control_opens_the_clients_pane() {
+    let mut model = seated();
+    let window = Window::new();
+    click(&window, crate::ui::clients::OPEN, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            super::super::render(ui, &mut model);
+        });
+    });
+    assert!(model.showing(crate::ui::Listing::Clients));
+    assert!(model.outbox.is_empty(), "opening a pane composes nothing");
+}
+
 /// **The aim is the gate**, exactly as it is for every other per-wall act:
 /// nothing aimed at is nothing to assert about.
 #[test]
@@ -51,7 +67,7 @@ fn an_aimless_seat_composes_no_pin() {
 }
 
 /// **It hangs off the aimed row and off no other**, and stands down while a
-/// pane covers the conversation — the rule all five per-wall controls keep.
+/// pane covers the conversation — the rule all six per-wall controls keep.
 #[test]
 fn it_is_offered_on_the_aimed_row_alone_and_stands_down_under_a_pane() {
     let mut elsewhere = Model {

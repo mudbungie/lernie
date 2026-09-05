@@ -117,12 +117,17 @@ lineages = "bl-5c53 — no config-file pane: the lineages and the paths each hol
 # remedy and refuses to make it a channel feature, so the pane says it rather
 # than offering a verb that cannot finish.
 
-# bl-e53c — the tool-host surface is unpainted, so a foot's advertised set and
-# its subject_cwd consent are readable nowhere.
-answer = "bl-e53c — no tool-host pane: a held tool call cannot be released or declined here"
-clients = "bl-e53c — no tool-host pane: the registered machines and what they offer are unpainted"
-restore = "bl-e53c — no tool-host pane: tool auto-approval cannot be given back from this seat"
-revoke = "bl-e53c — no tool-host pane: tool auto-approval cannot be taken away here"
+# bl-e53c landed the clients pane — `clients` carries a control on the aimed
+# roster row and is gone from this ledger. What it left is the other half of
+# that entry and a different subject: the pane it built is about a MACHINE, and
+# the three below act on a CONVERSATION that is waiting at the capability
+# boundary. They are cited to their own ball, with the frames in it.
+#
+# bl-bce2 — the capability boundary reaches no gesture: a held tool call cannot
+# be answered, and auto-approval cannot be revoked or restored.
+answer = "bl-bce2 — no capability controls: a held tool call cannot be released or declined here"
+restore = "bl-bce2 — no capability controls: tool auto-approval cannot be given back from this seat"
+revoke = "bl-bce2 — no capability controls: tool auto-approval cannot be taken away here"
 
 # bl-7782 landed the strip's pin: one control on the aimed roster row whose
 # word and op follow the row's own rank, so `pin` and `unpin` are both tagged

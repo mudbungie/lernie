@@ -72,6 +72,8 @@
 
 use serde_json::{Map, Value};
 
+/// The machines registered in one workspace — the tool-host surface's one read.
+pub mod clients;
 /// The conversation's own acts — what an operator does TO one, as rows.
 pub mod conversation;
 /// The words this binary answers itself — a page and a usage line, no envelope.
@@ -97,6 +99,7 @@ pub mod window;
 /// The wall's own act — the one row whose product is that its subject is gone.
 pub mod workspace;
 
+pub use clients::{CLIENTS, clients};
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };

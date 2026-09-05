@@ -36,7 +36,7 @@ fn the_refresh_asks_every_channel_again_and_opens_no_pane() {
 #[test]
 fn the_strip_stands_down_under_a_covering_pane() {
     let mut model = Model {
-        queue: true,
+        listing: Some(crate::ui::Listing::Queue),
         ..seated()
     };
     let painted = crate::test_support::window::painted(&mut model);

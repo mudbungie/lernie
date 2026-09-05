@@ -326,7 +326,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Twenty kinds, because twenty are painted.** The engine's reply surface is
+**Twenty-one kinds, because twenty-one are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
@@ -337,7 +337,8 @@ queue (`attention`) and the receipt that raises a row onto it (`flagged`),
 both §4.19's, the window's own three — one engine's verb table (`help`), what
 a needle found (`search`) and the trail (`ops`, §4.27) — the login pane's three: what a wall
 can sign in to (`providers`), what one of its rows offers (`models`) and one
-sign-in run (`login`), all §4.24's — a captured
+sign-in run (`login`), all §4.24's — the machines registered in one
+workspace (`clients`, §4.28), a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
@@ -353,9 +354,23 @@ release added, which is exactly what the ledger is for. The records pair
 move in the commit that built §4.18's pane, `help` and `search` made it in the
 commit that built §4.21's two (bl-40ec), the sign-in family's three
 (`providers`, `models`, `login`) made it in the commit that built §4.24's pane
-(bl-e3c5), and the five conversation reads still in `unreadable/` (`agent`,
-`step`, `inbox`, `rail`, `governing`) are the ledger holding the two balls that
-will move them (bl-3257, bl-b52c).
+(bl-e3c5), `clients` made it in the commit that built §4.28's (bl-e53c), and
+the five conversation reads still in `unreadable/` (`agent`, `step`, `inbox`,
+`rail`, `governing`) are the ledger holding the two balls that will move them
+(bl-3257, bl-b52c).
+
+**And a shape can sit in `unreadable/` because it is addressed to a different
+KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
+`invocations` is a tool host's own work queue: it is follow-class, it *drains*,
+and the queue it answers is the one addressed to the certificate that asked
+(REMOTE §5.3). So a seat asking it would learn nothing about any foot — its own
+queue is empty by construction — while a box whose seat and foot share one
+identity would have that machine's work handed to the window and never
+completed, and the foot's own read refused in band as a second reader (§5.1).
+`advertise`, `complete`, `invoke` and `capture` are the same class, and the
+engine's own help table says so: all five are `surface: machine`, so no seat
+owes any of them a control. Their ledger lines are not balls waiting to be
+built, and `src/verbs/clients.rs` states it where an implementer will look.
 
 **A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
 (bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
@@ -2125,6 +2140,59 @@ array that is *absent rather than empty* when nothing is armed — so the
 readable half of the fleet belongs to the ball pane (bl-d2af), which is what
 would decode `board` at all.
 
+### 4.28 The clients pane: which machines may execute for this wall (REMOTE §5, §5.1; bl-e53c)
+
+`src/ui/clients.rs`, `src/ui/model/clients.rs`, `src/reply/clients.rs`,
+`src/verbs/clients.rs`. **The ninth covering pane, and the third whose subject
+is the aimed wall** — §4.17's is what its roles are set to, §4.24's is what it
+can sign in to, and this is which machines may run a tool for it.
+
+**Two lifetimes on one row, and the pane says both.** `present` is an
+observation — true at the instant the engine answered and recorded nowhere on
+either end — and the advertised set is a statement the machine last made, which
+stands whether or not it is connected. A row therefore reads *not connected*
+beside a full set as the ordinary thing: a tool host holds its connection only
+while it is waiting for work (REMOTE §5), so a busy machine and an absent one
+are indistinguishable from here, and the sentence says so rather than leaving an
+operator to read *absent* as *broken*.
+
+**The consent is stated on every tool, present or absent.** `subject_cwd` is
+what yog's worktree lane routes on (REMOTE §5.1) — the advertising box
+consenting to run that tool at a directory the invocation names — and it is the
+fact the ball that landed this pane was filed about: *"an operator with no way
+to see which entries consent cannot tell a foot that will take a subject from
+one that will refuse it."* A line that appeared only when true would make its
+absence ambiguous, so both answers are painted.
+
+**The read STANDS while the pane is open**, on §4.17's rule and for the sharper
+form of §4.24's reason: presence is true only at the instant it was answered, so
+a row saying a foot is connected is worth nothing unless it is asked again.
+
+**A tool's `input_schema` is not decoded.** It is the host's statement to a
+model — yog carries it verbatim and never validates it — and an operator reading
+a roster of machines is asking what a box can do, not what shape its arguments
+take. §4.9's rule, applied: the commit that paints a schema is the commit that
+decodes one.
+
+**The pane carries no control, and that is the surface being honest.** Every
+other op in REMOTE §5 is a MACHINE's (§4.9's third reading of the ledger), so
+there is nothing here for a seat to fire. What an operator *does* about a tool
+call happens on the conversation that is making it, not on the machine that
+would run it — the capability boundary's three ops (`answer`, `revoke`,
+`restore`) are conversation-addressed, they are cited in `parity.toml` to
+bl-bce2, and their frames are in that ball.
+
+**The three listing panes are one field** (`src/ui/model/listing.rs`). This pane
+was the fourth `bool` on `Model` and the count is what named the reframe:
+`Lookup` had already drawn it for the window's own two — *one field rather than
+two flags, because no two panes ever stand together and a pair of bools would
+make **both** representable* — and the records pane, the decision queue and this
+one hold nothing of their own, so *which one is standing* is their entire state.
+Clippy's `struct_excessive_bools` asks for exactly that refactor by name; a
+manifest allow would have kept three representations of one fact to avoid
+writing one word.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2207,11 +2275,16 @@ would decode `board` at all.
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
+| `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
+| `src/verbs/clients.rs` | the one op on the tool-host surface a seat is owed, and the four that are a machine's — with why `invocations` must never be asked from here (§4.28). | ~65 |
 | `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
+| `src/ui/clients.rs` | the clients pane: the three empty states, the two lifetimes on a row, and the consent said on every tool (§4.28). | ~130 |
 | `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
+| `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
+| `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
@@ -2248,7 +2321,7 @@ would decode `board` at all.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
-| `src/snapshot/worlds.rs` | the eleven named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's, the decision queue's and the window's own two are among them. `cfg(test)`. | ~200 |
+| `src/snapshot/worlds.rs` | the fourteen named world states the matrix photographs, built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The walk's screen set is part of the parity instrument, which is why the start's own screen, the tuning pane's two, the records pane's, the decision queue's and the window's own two are among them. `cfg(test)`. | ~200 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |

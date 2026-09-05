@@ -20,20 +20,19 @@
 //! *the selected conversation* left open over a new selection would paint one
 //! conversation's records under another's name for a beat.
 
-use super::Model;
+use super::{Listing, Model};
 
 impl Model {
     /// **Whether a pane covers the conversation** — the enrollment, the
-    /// tuning pane, the decision queue, the window's own three, the login
-    /// pane, an unmaking, or this one. The question the shell and every pane-opening
-    /// control share, asked once so nine panes cannot stand on one glass: a
-    /// control that opened a second cover would replace what is standing
-    /// without saying so.
+    /// tuning pane, one of the three listings (`super::listing`), the window's
+    /// own three, the login pane, or an unmaking. The question the shell and
+    /// every pane-opening control share, asked once so ten panes cannot stand
+    /// on one glass: a control that opened a second cover would replace what
+    /// is standing without saying so.
     pub fn covered(&self) -> bool {
         self.enroll.is_some()
             || self.tuning.is_some()
-            || self.records
-            || self.queue
+            || self.listing.is_some()
             || self.lookup.is_some()
             || self.login.is_some()
             || self.unmaking.is_some()
@@ -45,7 +44,7 @@ impl Model {
     /// conversation is what an address is.
     pub fn begin_records(&mut self) {
         if self.conversation.is_some() {
-            self.records = true;
+            self.stand(Listing::Records);
         }
     }
 
@@ -53,14 +52,14 @@ impl Model {
     /// next open on the same conversation is about the same records, and the
     /// standing read replaces them anyway.
     pub fn close_records(&mut self) {
-        self.records = false;
+        self.put_down(Listing::Records);
     }
 
     /// **The records go with the conversation they answer** — called by the
     /// two acts that move the subject, so the pane and its rows never outlive
     /// what they are about.
     pub(super) fn retire_records(&mut self) {
-        self.records = false;
+        self.put_down(Listing::Records);
         self.steps = None;
         self.files = None;
     }

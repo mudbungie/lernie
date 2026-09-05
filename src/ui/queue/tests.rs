@@ -54,7 +54,7 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
 #[test]
 fn every_empty_state_is_its_own_sentence() {
     let unanswered = Model {
-        queue: true,
+        listing: Some(crate::ui::Listing::Queue),
         ..seated()
     };
     let quiet = Model {
@@ -106,7 +106,10 @@ fn the_seen_control_composes_the_answer() {
             "20260830T051200Z-a1b2".to_owned()
         ))]
     );
-    assert!(model.queue, "answering a row does not close the pane");
+    assert!(
+        model.showing(crate::ui::Listing::Queue),
+        "answering a row does not close the pane"
+    );
 }
 
 /// **The control that leaves for the conversation aims, selects and stands the
@@ -116,7 +119,7 @@ fn the_go_control_leaves_the_pane_for_the_conversation() {
     let window = Window::new();
     let mut model = queued();
     click(&window, GO, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(!model.queue);
+    assert!(!model.showing(crate::ui::Listing::Queue));
     assert_eq!(model.conversation.as_deref(), Some("20260830T051200Z-a1b2"));
     assert!(model.outbox.is_empty());
 }
@@ -129,7 +132,7 @@ fn the_roster_opens_it_and_its_own_word_shuts_it() {
     let window = Window::new();
     let mut model = seated();
     click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(model.queue);
+    assert!(model.showing(crate::ui::Listing::Queue));
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(!model.queue);
+    assert!(!model.showing(crate::ui::Listing::Queue));
 }

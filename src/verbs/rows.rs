@@ -192,6 +192,7 @@ pub(super) const TABLE: &[Verb] = &[
     super::records::STEPS,
     super::records::FILES,
     super::tuning::ROLES,
+    super::clients::CLIENTS,
     super::login::PROVIDERS,
     super::login::MODELS,
     super::login::LOGIN_TAIL,

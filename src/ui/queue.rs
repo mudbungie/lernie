@@ -58,7 +58,7 @@ pub const GO: &str = "go to it";
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
-    if !model.queue {
+    if !model.showing(crate::ui::Listing::Queue) {
         return false;
     }
     ui.heading(HEADING);

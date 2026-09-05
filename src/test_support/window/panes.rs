@@ -93,6 +93,43 @@ pub(crate) fn signing() -> Model {
     }
 }
 
+/// One machine, connected or not, offering one tool that takes a caller-named
+/// directory and one that does not.
+pub(crate) fn machine(client: &str, present: bool) -> crate::reply::clients::ClientRow {
+    crate::reply::clients::ClientRow {
+        client: client.to_owned(),
+        present,
+        tools: vec![
+            crate::reply::clients::ToolRow {
+                name: "Bash".to_owned(),
+                description: "run a command".to_owned(),
+                subject_cwd: false,
+            },
+            crate::reply::clients::ToolRow {
+                name: "bash".to_owned(),
+                description: "run a command in the conversation's cwd".to_owned(),
+                subject_cwd: true,
+            },
+        ],
+    }
+}
+
+/// **The seated model with the clients pane open and answered** (bl-e53c): a
+/// machine connected right now with both consents on its set, one that is not
+/// connected, and one that has advertised nothing — every sentence the pane
+/// can say about a row, on one screen.
+pub(crate) fn machines() -> Model {
+    let bare = crate::reply::clients::ClientRow {
+        tools: Vec::new(),
+        ..machine("phone", false)
+    };
+    Model {
+        listing: Some(crate::ui::Listing::Clients),
+        machines: Some(vec![machine("laptop", true), machine("desk", false), bare]),
+        ..seated()
+    }
+}
+
 /// One step, complete and quiet — the row with nothing to complain about.
 pub(crate) fn step(seq: &str) -> crate::reply::steps::StepRow {
     crate::reply::steps::StepRow {
@@ -132,7 +169,7 @@ pub(crate) fn recorded() -> Model {
         ..step("002")
     };
     Model {
-        records: true,
+        listing: Some(crate::ui::Listing::Records),
         steps: Some(crate::reply::steps::Steps {
             rows: vec![step("001"), wounded],
             orphan: "mail".to_owned(),

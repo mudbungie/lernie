@@ -24,10 +24,14 @@ mod acts;
 mod channel;
 /// The claim a start leaves on the selection, and the row it stands in for.
 mod claim;
+/// The clients pane between frames: whether it is open, and what it filed.
+mod clients;
 /// An enrollment, between the control that opened it and the symbol it ends at.
 mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
 mod fill;
+/// The three panes that are pure listings, and the field that says which is up.
+mod listing;
 /// The login pane between frames: what it asks about, and the acts it spends.
 mod login;
 /// What the seat last heard that was not content, and how the shell says it.
@@ -52,6 +56,7 @@ mod window;
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
+pub use listing::Listing;
 pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
@@ -99,9 +104,17 @@ pub struct Model {
     /// **The tuning pane, while it is open** — the second pane in this window
     /// that covers the conversation ([`Tuning`]).
     pub tuning: Option<Tuning>,
-    /// **Whether the records pane is open** on the selected conversation — the
-    /// third covering pane, and a flag because it has one state (`records`).
-    pub records: bool,
+    /// **Which of the three LISTING panes is standing**, if any — the records
+    /// pane, the decision queue, or the clients pane (`listing`). One field
+    /// rather than a flag each: they hold nothing of their own, no two ever
+    /// stand together, and three bools would make *two of them open at once* a
+    /// state only the derivation order resolves — the reframe clippy's
+    /// `struct_excessive_bools` names, taken rather than suppressed.
+    pub listing: Option<Listing>,
+    /// **The machines registered in the aimed wall's workspace**, or `None`
+    /// while nobody has been answered about it — the one-option reading
+    /// [`Self::roles`] gets, one noun over (`clients`).
+    pub machines: Option<Vec<crate::reply::clients::ClientRow>>,
     /// **The login pane, while it is open** — the eighth covering pane, and
     /// the second whose subject is the aimed wall (`login`; DESIGN §4.24). A
     /// struct rather than a flag because it holds two questions of its own:
@@ -120,16 +133,21 @@ pub struct Model {
     /// the login pane's held read, and [`Self::live`]'s shape one noun over
     /// (`login`).
     pub signin: Option<crate::reply::login::Signin>,
-    /// **Whether the decision queue is open** — the fourth covering pane, and
-    /// the first whose subject is neither the aim nor the selection (`queue`).
-    pub queue: bool,
     /// **Which of the window's own three panes is standing**, if any — the
-    /// sixth, seventh and ninth covering panes, and the three besides the
-    /// queue whose subject is every channel (`window`, `trail`; bl-40ec,
-    /// bl-4c48). One field rather than three flags, because no two panes ever
-    /// stand together and a set of bools would make *all three* representable
-    /// — which is also the reframe clippy's `struct_excessive_bools` asks for
-    /// by name, taken rather than suppressed.
+    /// sixth, seventh and tenth covering panes, and the three whose subject is
+    /// every channel and which are opened from the roster's own ops row
+    /// (`window`, `trail`; bl-40ec, bl-4c48). One field rather than three
+    /// flags, because no two panes ever stand together and a set of bools
+    /// would make *all three* representable — which is also the reframe
+    /// clippy's `struct_excessive_bools` asks for by name, taken rather than
+    /// suppressed.
+    ///
+    /// It is a second field beside [`Self::listing`] and not one with it,
+    /// because the two name different axes: these three are the WINDOW's own —
+    /// reached from the ops row, about every channel, and one of them holds a
+    /// needle — while a listing is a pane about one thing on the glass that
+    /// holds nothing at all. DESIGN §4.28 records the fold that would make
+    /// them one.
     pub lookup: Option<Lookup>,
     /// **An unmaking, while it stands** — the fifth covering pane, and the only
     /// one this window has whose act cannot be undone by doing the other thing

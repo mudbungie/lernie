@@ -61,6 +61,11 @@ impl Model {
         // wall's own store, so a pane left standing over a new aim would offer
         // to sign the operator in somewhere they are no longer looking.
         self.retire_login();
+        // **And the clients pane with them** (bl-e53c), on the login pane's own
+        // terms: its rows are one workspace's registrations, so a pane left
+        // standing over a new aim would paint one wall's machines under
+        // another's name.
+        self.retire_clients();
         self.retire_records();
     }
 
@@ -118,8 +123,9 @@ impl Model {
     /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
     /// decision queue (bl-f0ef), then whichever of the window's own two is
     /// standing (bl-40ec — one arm, because one field holds both), then the
-    /// login pane (bl-e3c5), then an unmaking (bl-48fa) — no two of the seven
-    /// ever stand together, so the order among them is never spent. The
+    /// login pane (bl-e3c5), then the clients pane (bl-e53c), then an
+    /// unmaking (bl-48fa) — no two of the nine ever stand together, so the
+    /// order among them is never spent. The
     /// unmaking is on the ladder because Escape over a destructive pane means
     /// what [`Model::close_unmaking`] means and nothing else: it unmakes
     /// nothing, and a key that could arm or spend one would be the second
@@ -133,10 +139,12 @@ impl Model {
             self.cancel_assignment();
         } else if self.tuning.is_some() {
             self.close_tuning();
-        } else if self.records {
+        } else if self.showing(super::Listing::Records) {
             self.close_records();
-        } else if self.queue {
+        } else if self.showing(super::Listing::Queue) {
             self.close_queue();
+        } else if self.showing(super::Listing::Clients) {
+            self.close_clients();
         } else if self.lookup.is_some() {
             self.close_lookup();
         } else if self.login.is_some() {

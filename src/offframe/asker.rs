@@ -98,6 +98,18 @@ pub fn tick(link: &Link, root: &Path) {
             &crate::verbs::providers(aim.address.clone()),
         );
     }
+    // **The machines stand on their pane** (bl-e53c), on the provider table's
+    // own terms and for a sharper form of its reason: a row's presence is true
+    // only at the instant the engine answered it, so the read that says a foot
+    // is connected is worth nothing unless it is asked again.
+    if standing.standing(&Open::Clients) {
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::clients(aim.address.clone()),
+        );
+    }
     let Some(conversation) = standing.conversation.clone() else {
         return;
     };

@@ -16,10 +16,10 @@ fn own() -> Channel {
 fn it_opens_on_an_unaimed_seat_and_keeps_its_rows_when_it_shuts() {
     let mut model = Model::default();
     model.begin_queue();
-    assert!(model.queue && model.covered());
+    assert!(model.showing(crate::ui::Listing::Queue) && model.covered());
     let mut model = queued();
     model.close_queue();
-    assert!(!model.queue);
+    assert!(!model.showing(crate::ui::Listing::Queue));
     assert_eq!(model.waiting.len(), 1, "the rows outlive the pane");
 }
 
@@ -31,7 +31,10 @@ fn no_aim_and_no_selection_can_retire_it() {
     let mut model = queued();
     model.aim_at("(this box's own engine)", "home");
     model.select("c-2");
-    assert!(model.queue, "the queue is about no focus");
+    assert!(
+        model.showing(crate::ui::Listing::Queue),
+        "the queue is about no focus"
+    );
     assert_eq!(model.waiting.len(), 1);
 }
 
@@ -117,9 +120,12 @@ fn seen_is_composed_only_where_the_wall_resolves() {
 fn going_to_a_row_aims_selects_and_closes() {
     let mut model = queued();
     model.go_to(&waiting("elsewhere", "c-3"));
-    assert!(model.queue, "an unaddressable row leaves the pane standing");
+    assert!(
+        model.showing(crate::ui::Listing::Queue),
+        "an unaddressable row leaves the pane standing"
+    );
     model.go_to(&waiting("home", "c-1"));
-    assert!(!model.queue);
+    assert!(!model.showing(crate::ui::Listing::Queue));
     assert_eq!(
         model.aim,
         Some(Aim {
@@ -138,7 +144,10 @@ fn escape_closes_the_queue_before_reaching_the_notice() {
     let mut model = queued();
     model.notice = Some(crate::ui::Notice::Refused("no".to_owned()));
     model.escape();
-    assert!(!model.queue, "the pane went down");
+    assert!(
+        !model.showing(crate::ui::Listing::Queue),
+        "the pane went down"
+    );
     assert!(model.notice.is_some(), "the notice did not");
     model.escape();
     assert_eq!(model.notice, None, "the next escape reaches it");

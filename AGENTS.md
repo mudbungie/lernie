@@ -92,6 +92,17 @@ Four properties are load-bearing and none is decoration:
   must be flagged *by that rule* and must carry the `notreal` marker, plus
   near-misses that must NOT be flagged. A leak gate dies by matching nothing
   and passing everything forever; a noisy one dies by being bypassed.
+- **A `grep -q` reads from a herestring, never from a pipe** (bl-7ad6), and the
+  self-test holds every tracked bash script under `scripts/` to it — `deploy/`
+  is POSIX `/bin/sh`, which has neither the option that makes the shape wrong
+  nor the herestring that fixes it. A piped `grep -q` exits the moment it matches and closes the read end; the writer dies of
+  SIGPIPE mid-write, and `pipefail` reports the pipeline failed *because the
+  pattern matched*. It flaked the self-test into calling a live rule dead, and
+  at `scan_paths` — where the shape is `&& report` — it would have dropped a
+  real finding instead. Measured before the fix: 36 false answers in 16,000
+  pipelines under load, 0 in 16,000 herestrings. The ban is on the shape, not
+  on the option, because a sourced file cannot see whether its caller set
+  `pipefail`.
 - **`.githooks/commit-msg` runs the same scanner over the commit MESSAGE**,
   which no pre-commit step can see.
 

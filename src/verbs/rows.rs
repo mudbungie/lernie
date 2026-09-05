@@ -206,5 +206,7 @@ pub(super) const TABLE: &[Verb] = &[
     ENROLL,
     super::login::LOGIN,
     super::tuning::MODEL,
+    super::workspace::PIN,
+    super::workspace::UNPIN,
     super::workspace::DELETE_WORKSPACE,
 ];

@@ -75,6 +75,30 @@ impl Model {
         self.retire_records();
     }
 
+    /// **Assert this wall's place in the strip** — pinned, or not (bl-7782).
+    ///
+    /// `pinned` is what the operator is asking FOR, not what the row currently
+    /// is: the wire's two ops are assertions rather than a toggle, and upstream
+    /// says why — *"unpinning one that is not pinned leaves the list alone,
+    /// which is what lets two seats send it at once and agree."* So this end
+    /// composes the act it means and never flips a flag it read a beat ago.
+    ///
+    /// The aim is the gate, exactly as it is for every other per-wall act, and
+    /// what says it landed is the next roster answer: both ops reply with the
+    /// listing carrying the ranks it now has, which is a kind this seat already
+    /// paints.
+    pub fn post_pin(&mut self, pinned: bool) {
+        let Some(Aim { address, .. }) = self.aim.clone() else {
+            return;
+        };
+        let gesture = if pinned {
+            crate::verbs::pin(address)
+        } else {
+            crate::verbs::unpin(address)
+        };
+        self.outbox.push(super::Posted::act(gesture));
+    }
+
     /// **Put the notice down.** An operator who has read a refusal should not
     /// have to wait for the next answer to clear it.
     pub fn dismiss(&mut self) {

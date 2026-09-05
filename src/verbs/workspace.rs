@@ -1,10 +1,29 @@
-//! **The workspace's own act**, and the only row in this table whose product is
-//! that its subject is gone (bl-48fa).
+//! **The workspace's own three acts** — the unmaking whose product is that its
+//! subject is gone (bl-48fa), and the pin pair that orders the strip every seat
+//! paints (bl-7782).
 //!
 //! It is a file of its own beside [`super::conversation`] on that module's own
 //! seam: a row lives with the noun it acts on, and every other row here acts on
-//! a conversation, a conversation's records, the queue or a box. This one acts
+//! a conversation, a conversation's records, the queue or a box. These three act
 //! on the wall.
+//!
+//! # The pin pair are ASSERTIONS and not a toggle
+//!
+//! yog's own help row says what they are: *"Says what it means rather than
+//! flipping whatever it found: unpinning one that is not pinned leaves the list
+//! alone, which is what lets two seats send it at once and agree."* So there is
+//! no `pin` taking a bool, and a seat must not compose one from a flag it read
+//! a beat ago — it sends the act it means, and two seats meaning the same thing
+//! converge. The control shapes itself to the row's own rank
+//! (`crate::ui::roster`), which is a reading of what is on the glass rather than
+//! a state this end holds.
+//!
+//! **Both answer the workspace listing** — the roster, with the ranks it now
+//! carries — so nothing new is decoded for them and the next answer is what
+//! says the act landed. A pin is *an assertion about the world, not an
+//! arrangement of one screen*: the same list on every seat, surviving a
+//! restart, which is why it crosses the boundary at all instead of being a
+//! local sort.
 //!
 //! # `typed` is an ARMING here and a PARAMETER next door
 //!
@@ -47,3 +66,32 @@ pub const DELETE_WORKSPACE: Verb = Verb {
 pub fn delete_workspace(workspace: String, typed: String) -> Value {
     DELETE_WORKSPACE.built(vec![workspace, typed])
 }
+
+/// **The pin.** Float this wall to the front of the strip and keep it there.
+pub const PIN: Verb = Verb {
+    word: "pin",
+    params: &["workspace"],
+    summary: "float this workspace to the front of the strip and keep it there",
+    detail: "It adds the workspace to the durable pin list every seat orders              its strip by: pinned first, in the order they were pinned, ahead              of the rest in name order. A pin is an assertion about the world              rather than an arrangement of one screen, so it is the same list              on every seat and it survives a restart. Pinning one already              pinned moves it to the end of the pinned run rather than saying              it twice. It answers the workspace listing with the ranks it now              carries.",
+};
+
+/// **The unpin.** Take it back out of the pinned run.
+pub const UNPIN: Verb = Verb {
+    word: "unpin",
+    params: &["workspace"],
+    summary: "take this workspace back out of the pinned run",
+    detail: "It removes the workspace from the pin list, so it falls back into              name order with everything unpinned. It says what it means rather              than flipping whatever it found: unpinning one that is not pinned              leaves the list alone, which is what lets two seats send it at              once and agree. It answers the workspace listing with the ranks it              now carries.",
+};
+
+/// The pin, typed.
+pub fn pin(workspace: String) -> Value {
+    PIN.built(vec![workspace])
+}
+
+/// The unpin, typed.
+pub fn unpin(workspace: String) -> Value {
+    UNPIN.built(vec![workspace])
+}
+
+#[cfg(test)]
+mod tests;

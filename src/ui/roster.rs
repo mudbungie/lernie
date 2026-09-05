@@ -15,8 +15,11 @@ use crate::ui::{Aim, Channel, Chunk, Model, theme};
 
 /// The four ops whose subject is every channel, and the strip they hang on.
 pub mod acts;
+/// One wall's row, and the five per-wall controls that hang off the aimed one.
+pub mod wall;
 
 pub use acts::REFRESH;
+pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
 
 /// **What a section says while nothing has come down its channel yet.**
 ///
@@ -29,20 +32,6 @@ pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
 /// What a section says for an engine that answered and holds no workspace. A
 /// fact about that engine, and the one empty state that is not a wait.
 pub const NO_WALLS: &str = "this engine holds no workspace";
-
-/// **What a row this seat cannot address says instead of being hidden.**
-///
-/// Dropping it would hide a workspace the operator has; addressing it by the
-/// entry's leaf would aim a gesture at a different wall. So it is painted, and
-/// painted as what it is.
-///
-/// The wording states the FACT rather than a verdict (bl-77df). It used to read
-/// *"this seat holds no name for it"*, which lands beside a perfectly correct
-/// provisioning and reads as an error about the row above it. What is actually
-/// true is structural: an entry directory names one workspace, the channel
-/// enumerates every workspace that client is registered in, and the extras have
-/// no entry of their own — so no envelope this seat can write reaches them.
-pub const NO_NAME_HERE: &str = "no entry here names it, so nothing typed here can address it";
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused. **It is painted by `crate::ui::shell`** — above the pane in the
@@ -136,7 +125,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
         return;
     }
     for row in ordered(&chunk.walls) {
-        wall(ui, model, chunk, &row, reveal);
+        wall::render(ui, model, chunk, &row, reveal);
     }
 }
 
@@ -167,73 +156,6 @@ pub fn header(channel: &Channel) -> String {
     }
 }
 
-/// One wall: selectable when this seat can address it, a plain line when it
-/// cannot.
-///
-/// **The four per-wall controls hang off the aimed row and off no other**,
-/// because
-/// an enrollment mints the pair `(client, workspace)` and the workspace is
-/// exactly what an aim is. Offering it on every row would be offering it before
-/// the operator had said which wall — and the answer to that question is
-/// already on the screen, once.
-fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal: bool) {
-    let Some(address) = chunk.channel.address(row) else {
-        ui.label(format!("{}  — {NO_NAME_HERE}", line(row)));
-        return;
-    };
-    let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
-    let seat = ui.selectable_label(aimed, line(row));
-    // **The read this gesture reaches**, not the one that painted the row
-    // (yog's `docs/PARITY.md` §2: the interactable a query owes a seat is the
-    // affordance that reaches the view it populates). Aiming at a wall is what
-    // makes this seat read that wall's conversations.
-    crate::ui::act::tag(&seat, &[crate::verbs::CONVERSATIONS.word]);
-    if aimed && reveal {
-        seat.scroll_to_me(None);
-    }
-    if seat.clicked() {
-        model.aim_at(&chunk.channel.name.clone(), &address);
-    }
-    // **All four per-wall controls hang off the aimed row and off no other**,
-    // and all four stand down while a pane already covers the conversation:
-    // what they open would replace what is standing there, so offering them is
-    // offering to lose it without saying so.
-    if !aimed || model.covered() {
-        return;
-    }
-    if ui.button(crate::ui::enroll::OPEN).clicked() {
-        model.begin_enrollment();
-    }
-    // **The read this gesture reaches**, exactly as the wall's own seat above
-    // carries the conversation list's: opening the tuning pane is what makes
-    // this seat read that wall's roles (`crate::state::Standing`), and the read
-    // has no control of its own.
-    let tune = ui.button(crate::ui::tuning::OPEN);
-    crate::ui::act::tag(&tune, &[crate::verbs::ROLES.word]);
-    if tune.clicked() {
-        model.begin_tuning();
-    }
-    // **The sign-in hangs beside the tuning control**, because both are about
-    // the wall's own configuration and neither destroys anything. It carries
-    // the read the gesture reaches, exactly as the tuning control does:
-    // opening the login pane is what makes this seat read that wall's provider
-    // table (`crate::state::Standing`), and the read has no control of its own.
-    let sign = ui.button(crate::ui::login::OPEN);
-    crate::ui::act::tag(&sign, &[crate::verbs::PROVIDERS.word]);
-    if sign.clicked() {
-        model.begin_login();
-    }
-    // **The unmaking hangs here and LAST**, under the two controls that make
-    // and change things, because that is the order a destructive act belongs in
-    // wherever it is offered beside others (DESIGN §4.20). It carries no `act:`
-    // token: what it opens is a pane, and the op is tagged on the control
-    // inside it that actually fires one (`crate::ui::unmake`) — the same
-    // division `enroll a box…` keeps with `mint`.
-    if ui.button(crate::ui::unmake::OPEN).clicked() {
-        model.begin_unmaking();
-    }
-}
-
 /// **Pinned first, in pin order**, then the rest by name.
 ///
 /// The rank is what makes this a sort rather than a filter: a seat given only a
@@ -246,25 +168,6 @@ pub fn ordered(walls: &[WsRow]) -> Vec<WsRow> {
             .cmp(&(b.pinned.unwrap_or(u64::MAX), &b.workspace))
     });
     rows
-}
-
-/// One wall's line: what it is called, how it is classified, and its rollups.
-/// The two rollups are stated only when they are non-zero — a roster of `0
-/// waiting` on every row teaches nothing and costs the one that says `3`.
-pub fn line(row: &WsRow) -> String {
-    let mut said = vec![format!(
-        "{}  ({})  {} conversations",
-        row.workspace,
-        row.kind.label(),
-        row.agents
-    )];
-    if row.attention > 0 {
-        said.push(format!("{} waiting", row.attention));
-    }
-    if row.running {
-        said.push("running".to_owned());
-    }
-    said.join("  ")
 }
 
 #[cfg(test)]

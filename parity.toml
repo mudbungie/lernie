@@ -119,7 +119,7 @@ clients = "bl-e53c — no tool-host pane: the registered machines and what they 
 restore = "bl-e53c — no tool-host pane: tool auto-approval cannot be given back from this seat"
 revoke = "bl-e53c — no tool-host pane: tool auto-approval cannot be taken away here"
 
-# bl-7782 — the workspace strip has no pin: both acts are the strip's own, not
-# the conversation row's, so bl-dbc9's context menu is the wrong home for them.
-pin = "bl-7782 — no strip pin: a workspace cannot be floated to the front from this seat"
-unpin = "bl-7782 — no strip pin: a pinned workspace cannot be taken back out here"
+# bl-7782 landed the strip's pin: one control on the aimed roster row whose
+# word and op follow the row's own rank, so `pin` and `unpin` are both tagged
+# and neither is in this ledger. They are the strip's acts and not the
+# conversation row's, which is why bl-dbc9's context menu was the wrong home.

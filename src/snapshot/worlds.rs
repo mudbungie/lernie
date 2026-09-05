@@ -1,5 +1,5 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! twelve rather than one.
+//! thirteen rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
@@ -18,7 +18,7 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{
-    commanded, finding, queued, recorded, role, seated, signing, tuned,
+    commanded, finding, pinned, queued, recorded, role, seated, signing, tuned,
 };
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
@@ -179,6 +179,20 @@ fn login() -> World {
     }
 }
 
+/// **The window with the aimed wall pinned** (bl-7782) — not a covered state
+/// at all, and the only screen the `unpin` control is on.
+///
+/// It is a world for `crate::snapshot::parity`'s reason exactly: the pin pair
+/// are assertions, so each row carries the one act that is not already true of
+/// it, and the world at work carries only `pin`. A control that lives on a
+/// screen this walk never visits fails honestly.
+fn pinned_wall() -> World {
+    World {
+        name: "pinned",
+        model: pinned(),
+    }
+}
+
 /// **The window with an unmaking standing** — the sixth covered state
 /// (bl-48fa), and the only screen `delete-workspace`'s control is on.
 ///
@@ -213,6 +227,7 @@ pub(crate) fn all() -> Vec<World> {
         commands(),
         find(),
         login(),
+        pinned_wall(),
         unmaking(),
     ]
 }

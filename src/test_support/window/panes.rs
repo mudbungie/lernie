@@ -23,6 +23,19 @@ pub(crate) fn tuned() -> Model {
     }
 }
 
+/// **The seated model with the aimed wall pinned** (bl-7782) — the one screen
+/// the `unpin` control exists on, because the pin pair are assertions and each
+/// row carries exactly the one that is not already true of it.
+pub(crate) fn pinned() -> Model {
+    let mut model = seated();
+    for chunk in &mut model.roster {
+        for row in &mut chunk.walls {
+            row.pinned = Some(0);
+        }
+    }
+    model
+}
+
 /// One provider row, open to a sign-in and taking both tuning knobs.
 pub(crate) fn provider(name: &str) -> crate::reply::providers::ProviderRow {
     crate::reply::providers::ProviderRow {

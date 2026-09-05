@@ -1917,6 +1917,41 @@ paste-back arm, so the pane says the remedy rather than offering a verb that
 cannot finish. **It is not in `parity.toml`**, because the ops are all
 surfaced and that file records absences.
 
+### 4.25 The pin: an assertion about the world, not an arrangement of one screen (bl-7782)
+
+`src/verbs/workspace.rs`, `src/ui/roster/wall.rs`, `src/ui/model/acts.rs`. The
+strip has ordered pinned walls first since the roster could read a rank
+(`roster::ordered`), and until this ball nothing on the glass could set one.
+
+**The pin crosses the boundary, and that is the point.** A seat-local sort would
+have been cheaper and would have been a different thing: yog's own help row says
+*"a pin is an assertion about the world, not an arrangement of one screen, so it
+is the same list on every seat and it survives a restart."* So it is the engine's
+list, this seat asserts into it, and the rank comes back on the roster answer
+every beat already carries.
+
+**Two ops, and the control is not a toggle.** Upstream spells the pair as
+assertions and states why: *"says what it means rather than flipping whatever it
+found: unpinning one that is not pinned leaves the list alone, which is what lets
+two seats send it at once and agree."* A seat that composed one op from a flag it
+read a beat ago would be re-introducing exactly the race that wording removes. So
+**the control's word and its `act:` token both follow the row's own rank** —
+`pin to the front` on an unpinned row, `unpin` on a pinned one — which is a
+reading of what is on the glass rather than a state this end holds. It is the
+fifth per-wall control, hanging off the aimed row and off no other, standing down
+under a covering pane with the other four.
+
+**Both answer the workspace listing**, so nothing new is decoded and the next
+answer is what says the act landed — §4.17's *a write lands and the next answer
+says so*, reached here for free because the roster read is already standing.
+
+**It costs the parity instrument a world rather than a pane** (§4.16, §4.11's
+matrix). Each row carries exactly the one act that is not already true of it, so
+the window at work can only ever put `pin` on the glass. `pinned` is the
+`seated` world with its aimed wall ranked, and it is the only screen `unpin`
+exists on — *unproven is red*, and a control that lives on a screen the walk
+never visits fails honestly.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1962,7 +1997,7 @@ surfaced and that file records absences.
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
-| `src/verbs/workspace.rs` | the wall's own act as a row — the one whose product is that its subject is gone, and the one whose `typed` is an arming rather than a parameter (§4.20). | ~50 |
+| `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
 | `src/reply/search.rs` | what a needle found (§4.21): the four facts about a match, the four address fields that are optional because a hit is one of three shapes, and the unreadable list that is a different claim from finding nothing. | ~135 |
 | `src/verbs/window.rs` | the window's own two ops (§4.21) — the engine's verb table, which has no argv row because its word is `lernie help`'s, and the search, which does. | ~80 |
@@ -1978,11 +2013,12 @@ surfaced and that file records absences.
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither. | ~140 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: the three kinds, and the line that says whose sentence it is. | ~40 |
 | `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
-| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share. | ~60 |
+| `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, and what each receipt does to it. | ~160 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
-| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel, and the two per-wall controls that hang off the aimed row. The strip of window-level acts above the channels split out at the design-time budget (`roster/acts.rs`). | ~260 |
+| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
+| `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |

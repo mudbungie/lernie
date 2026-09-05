@@ -109,7 +109,7 @@ pub use rows::{
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
 pub use window::{HELP, SEARCH, search};
-pub use workspace::{DELETE_WORKSPACE, delete_workspace};
+pub use workspace::{DELETE_WORKSPACE, PIN, UNPIN, delete_workspace, pin, unpin};
 
 /// One verb: the word, what it takes, and what it is for.
 ///

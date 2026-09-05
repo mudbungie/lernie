@@ -1,7 +1,8 @@
 +++
 title = "the ball pane reads but cannot act: no ball can be filed, claimed, released, amended or closed from this seat"
 created = 1788581980
-updated = 1788581980
+updated = 1788583007
+claimant = "Animations-T"
 parent = "bl-d2af"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

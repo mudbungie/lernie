@@ -84,11 +84,13 @@ retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be rel
 # the read half of that: `config` and `lineages` both carry controls on
 # `src/ui/config.rs` and `src/ui/roster/wall.rs` and are gone from here too.
 #
-# THE WRITE IS NOT BUILT AND THIS LEDGER CANNOT SAY SO. It is per-op, and
-# `config` is one op that is a read or a write depending on whether it carries
-# `text`; the control that reads is a control. bl-4855 is the only record that
-# half of it is missing, and it holds the reason — a write naming no workspace
-# would be FANNED to every channel this box holds.
+# THE WRITE IS BUILT TOO, AND THIS LEDGER NEVER COULD HAVE SAID SO EITHER WAY.
+# It is per-op, and `config` is one op that is a read or a write depending on
+# whether it carries `text`; the control that reads was already a control.
+# bl-4855 built the other half and DESIGN §4.30 is the record of it — including
+# the reason it waited, which was that a write naming no workspace would have
+# been FANNED to every channel this box holds. It is addressed down one channel
+# now, the way the read already was.
 
 # bl-48fa landed the destructive-act idiom (DESIGN §4.20) and with it
 # `delete-workspace`, which carries a control on `src/ui/unmake.rs` and is gone

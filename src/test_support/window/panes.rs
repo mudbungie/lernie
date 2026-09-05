@@ -158,6 +158,7 @@ pub(crate) fn configured() -> Model {
             at: Some(crate::verbs::Where::Brazen {
                 workspace: "home".to_owned(),
             }),
+            ..crate::ui::Configuring::default()
         }),
         lineages: Some(vec![lineage("default")]),
         config: Some(crate::reply::config::Config {

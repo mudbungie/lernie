@@ -16,25 +16,34 @@
 //! settings at all, which is not an error: it is the raw-text destination doing
 //! exactly what upstream says it does.
 //!
-//! # It reads and does not write, and the reason is a hazard rather than time
+//! # It writes, and the address is the read's rather than a second rule
 //!
 //! `config` is one op that is a read or a write depending on whether it carries
-//! `text` at all, so the editor is one field away — and the field is not the
-//! problem. Three of the five destinations name no workspace, and a gesture
-//! naming no workspace is **fanned** by this seat's poster: an act composed for
-//! one engine's `cadence.yaml` would be written to every channel this box
-//! holds. That is bl-4855's, with the frame and the hazard in it.
+//! `text` at all, so the editor is one field away — and the field was never the
+//! problem. Three of the five destinations name no workspace, and this seat's
+//! poster used to read *no workspace* as *every channel this box holds*, which
+//! would have written one operator's `cadence.yaml` onto every engine they are
+//! a client of. The fix was not a flag telling the poster not to fan: it was
+//! that the fan is what *addressed to no channel in particular* means, and a
+//! gesture about ONE engine says which — the way this pane's read already did
+//! (`crate::offframe::asker::wall`, DESIGN §4.30, bl-4855).
 //!
-//! # The workflow destination is not offered, because nothing lists one
+//! # The workflow destination is a box, because the box is the listing
 //!
-//! `litany-workflow` is addressed by a name, and no read this seat has answers
-//! what workflow names exist — so a control for it would be a text box asking
-//! the operator to remember. It lands with the editor (bl-4855), which needs a
-//! box anyway.
+//! `litany-workflow` is addressed by a name and no read this seat has answers
+//! what workflow names exist, so the name is typed. That is not a control
+//! asking the operator to remember something a listing could have told them —
+//! there is no listing, upstream mints the file on a name it has not seen, and
+//! a box is the honest shape of *say which*. Empty names no destination, which
+//! is what keeps it an enablement.
 
-use crate::reply::config::{Config, Setting};
+/// The box the new bytes are typed into, and the two controls it enables.
+mod edit;
+/// The typed view of what the engine reads in those bytes.
+mod settings;
+
 use crate::reply::lineages::Lineage;
-use crate::ui::{Model, theme};
+use crate::ui::{Model, keys, theme};
 use crate::verbs::Where;
 
 /// The word that opens the pane, on the wall the window is aimed at.
@@ -43,6 +52,11 @@ pub const OPEN: &str = "config…";
 pub const CLOSE: &str = "done";
 /// The pane's own heading.
 pub const HEADING: &str = "config";
+/// The hint the workflow name box wears, and the control beside it.
+pub const WORKFLOW: &str = "workflow";
+/// How wide that box is — the composer's own arming width, because a workflow
+/// name is the same kind of short typed value.
+const NAME_WIDTH: f32 = 220.0;
 /// What it says before a file has been picked.
 pub const NOTHING_PICKED: &str = "pick a file to read";
 /// What it says for a wall nobody has been answered about yet.
@@ -102,6 +116,7 @@ fn destinations(ui: &mut egui::Ui, model: &mut Model) {
             pick(ui, model, &at);
         }
     });
+    workflow(ui, model);
     match model.lineages.clone() {
         None => {
             ui.label(NOT_ANSWERED);
@@ -115,6 +130,37 @@ fn destinations(ui: &mut egui::Ui, model: &mut Model) {
             }
         }
     }
+}
+
+/// **The workflow destination, which is a box and then a control.**
+///
+/// The name is typed because nothing lists one — upstream addresses a workflow
+/// by name and mints the file on a name it has not seen — so the box IS the
+/// listing. Empty names no destination and the control is dark, which is the
+/// tuning pane's `set` rather than an absence: the parameter is missing, not
+/// the subject.
+fn workflow(ui: &mut egui::Ui, model: &mut Model) {
+    ui.horizontal_wrapped(|ui| {
+        if let Some(name) = model.workflow_box() {
+            ui.add(
+                egui::TextEdit::singleline(name)
+                    .id(egui::Id::new(keys::WORKFLOW_ID))
+                    .desired_width(NAME_WIDTH)
+                    .hint_text(WORKFLOW),
+            );
+        }
+        let name = model.workflow_named();
+        let at = Where::LitanyWorkflow { name: name.clone() };
+        let chosen = model.configured().as_ref() == Some(&at);
+        let control = ui.add_enabled(
+            !name.is_empty(),
+            egui::SelectableLabel::new(chosen, WORKFLOW),
+        );
+        crate::ui::act::tag(&control, &[crate::verbs::CONFIG]);
+        if control.clicked() {
+            model.read_config(&at);
+        }
+    });
 }
 
 /// One lineage: what it is and where its tip stands, then a control per path
@@ -153,7 +199,7 @@ fn pick(ui: &mut egui::Ui, model: &mut Model, at: &Where) {
 }
 
 /// The file the pane is pointed at: its settings, then its bytes.
-fn file(ui: &mut egui::Ui, model: &Model) {
+fn file(ui: &mut egui::Ui, model: &mut Model) {
     let Some(at) = model.configured() else {
         ui.label(NOTHING_PICKED);
         return;
@@ -163,44 +209,12 @@ fn file(ui: &mut egui::Ui, model: &Model) {
         ui.label(NOT_READ);
         return;
     };
-    settings(ui, &held);
+    settings::render(ui, &held);
     ui.separator();
     if held.text.is_empty() {
         ui.label(NO_BYTES);
-        return;
     }
-    ui.label(held.text);
-}
-
-/// Every setting the schema found, each under the declaration it belongs to.
-fn settings(ui: &mut egui::Ui, held: &Config) {
-    if held.settings.is_empty() {
-        ui.colored_label(
-            theme::tone_ink(&crate::reply::convs::Tone::Weak),
-            NO_SETTINGS,
-        );
-        return;
-    }
-    for row in &held.settings {
-        setting(ui, row);
-    }
-}
-
-/// One setting: where it lives, what it says, what it takes, and the engine's
-/// judgement of it where there is one.
-fn setting(ui: &mut egui::Ui, row: &Setting) {
-    let weak = theme::tone_ink(&crate::reply::convs::Tone::Weak);
-    // **Every row wraps**, because this pane stands in the central panel and
-    // the central panel is what the two side panels leave (bl-dc07).
-    ui.horizontal_wrapped(|ui| {
-        ui.label(format!("{}.{}", row.entry, row.name));
-        ui.label(row.value.clone());
-        ui.colored_label(weak, row.control.says());
-    });
-    ui.colored_label(weak, row.help.clone());
-    if let Some(fault) = &row.fault {
-        ui.colored_label(theme::NOTICE, fault.clone());
-    }
+    edit::render(ui, model, &at, &held.text);
 }
 
 #[cfg(test)]

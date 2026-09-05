@@ -19,8 +19,10 @@
 //!
 //! yog reads a `config` gesture as a **write** when it carries `text` and as a
 //! **read** when it does not (REMOTE §8.5's query/action split, bl-0164). So
-//! there is no `read-config` word to spell, and this module composes only the
-//! read: the write is bl-4855's, with the hazard that ball records.
+//! there is no `read-config` word to spell, and [`config`] and [`write`] are
+//! one envelope and one field apart — which is why they are one function's
+//! output with an `Option` rather than two builders that could disagree about
+//! a destination.
 //!
 //! # Two of the five destinations name a workspace and three name an ENGINE
 //!
@@ -61,6 +63,10 @@ const TARGET_NAME: &str = "name";
 const TARGET_LINEAGE: &str = "lineage";
 const TARGET_PATH: &str = "path";
 const TARGET_ORIGIN: &str = "origin";
+
+/// **The field that makes a `config` gesture a write.** It is beside `target`
+/// and not inside it: the destination says WHERE and this says what lands.
+const TEXT: &str = "text";
 
 /// **Where a config read is addressed** — the five destinations, as the one
 /// enum the pane picks and this module encodes.
@@ -153,9 +159,31 @@ pub fn lineages(workspace: String) -> Value {
 /// **One config file's bytes, read** — the gesture with no `text`, which is the
 /// whole of what makes it a read.
 pub fn config(at: &Where) -> Value {
+    addressed(at, None)
+}
+
+/// **One config file's bytes, written** — the same envelope carrying the whole
+/// new text.
+///
+/// The WHOLE text and never a patch, because that is what upstream's pipeline
+/// takes: `stage → validate → hash-guard → atomic rename` over the bytes the
+/// gesture states (REMOTE §9.18, *"a typed edit is a seat composing that text
+/// and applying it"*). A seat that sent a fragment would be asking the engine
+/// to hold a draft.
+pub fn write(at: &Where, text: String) -> Value {
+    addressed(at, Some(text))
+}
+
+/// The one envelope both halves are, so a destination cannot be encoded two
+/// ways: `text` present is the write and absent is the read, which is
+/// upstream's own discriminator and this crate's only reading of it.
+fn addressed(at: &Where, text: Option<String>) -> Value {
     let mut map = Map::new();
     map.insert(envelope::OP.to_owned(), Value::String(CONFIG.to_owned()));
     map.insert(envelope::TARGET.to_owned(), at.target());
+    if let Some(text) = text {
+        map.insert(TEXT.to_owned(), Value::String(text));
+    }
     Value::Object(map)
 }
 

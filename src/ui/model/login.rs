@@ -138,13 +138,8 @@ impl Model {
     /// engine has none. A channel this seat no longer holds answers `false`,
     /// which is the honest reading: there is nothing to say *elsewhere* about.
     pub fn elsewhere(&self) -> bool {
-        let Some(aim) = self.aim.as_ref() else {
-            return false;
-        };
-        self.roster
-            .iter()
-            .find(|chunk| chunk.channel.name == aim.channel)
-            .is_some_and(|chunk| chunk.channel.named_there.is_some())
+        self.channel()
+            .is_some_and(|channel| channel.named_there.is_some())
     }
 
     /// **The pane and its three answers go with the wall they are about** —

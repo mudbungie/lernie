@@ -45,10 +45,20 @@
 //! defect one surface over.
 //!
 //! So the poster asks the envelope instead: a gesture with no workspace field
-//! has no way to name a channel, so its subject is every channel the standing
-//! set holds ([`crate::verbs::Verb::addresses_a_workspace`] is the same rule
-//! on the table, and `crate::cli::Decided::Fanned` and `crate::seat::fan` are
-//! it on argv). That is what lets a frame reach the three window-level reads
+//! has no way to name a channel, so **its subject is every channel the frame
+//! addressed it to** — which is every channel the standing set holds when the
+//! frame addressed it to none ([`crate::verbs::Verb::addresses_a_workspace`]
+//! is the same rule on the table, and `crate::cli::Decided::Fanned` and
+//! `crate::seat::fan` are it on argv).
+//!
+//! **Addressing it to none is what a window-level READ means, and it was never
+//! what every workspace-less gesture means** (bl-4855). `config` on one
+//! engine's own `cadence.yaml` names no workspace and is not about every
+//! engine; fanning it would write the operator's text onto every engine this
+//! box is a client of. So the fan is [`legs`]'s empty-input case rather than
+//! its rule, and the composer states the address the way the read half already
+//! does — the pane's file read is asked down the aimed channel by name
+//! (`crate::offframe::asker::wall`), and its write is composed the same way. That is what lets a frame reach the three window-level reads
 //! at all — the roster refresh, the engines' own verb table and a search —
 //! and it is why each answer is stamped with the channel it came down rather
 //! than with the aim — which is now true of the routed path as well
@@ -73,15 +83,29 @@ pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
     for posted in link.compose() {
         if crate::envelope::workspace(&posted.envelope).is_none() {
-            for held in &standing.channels {
-                if let Err(reach) = super::down(link, root, held, &posted.envelope) {
-                    link.heard(held, said(&posted, reach));
+            for held in legs(&standing, &posted) {
+                if let Err(reach) = super::down(link, root, &held, &posted.envelope) {
+                    link.heard(&held, said(&posted, reach));
                 }
             }
             continue;
         }
         routed(link, root, &posted);
     }
+}
+
+/// **Which channels a workspace-less gesture goes down** — the one it names,
+/// or every one this box holds where it names none.
+///
+/// One rule with an empty input rather than two, which is the whole of what
+/// bl-4855 changed here: the fan is what *addressed to no channel in
+/// particular* means, and it stops being the answer the poster reaches for
+/// when it has not been told anything.
+fn legs(standing: &crate::state::Standing, posted: &Posted) -> Vec<crate::ui::Channel> {
+    posted
+        .channel
+        .clone()
+        .map_or_else(|| standing.channels.clone(), |one| vec![one])
 }
 
 /// One gesture down the channel its workspace names, and the receipt filed

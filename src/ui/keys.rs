@@ -86,6 +86,12 @@ pub const REASON_ID: &str = "the flag's reason box";
 /// (`crate::ui::composer::acts::ARM`).
 pub const ARM_ID: &str = "the deletion's arming box";
 
+/// **The id the config editor's box wears** (`crate::ui::config::edit`).
+pub const CONFIG_ID: &str = "the config editor's box";
+
+/// **The id the workflow name box wears** (`crate::ui::config`).
+pub const WORKFLOW_ID: &str = "the workflow name box";
+
 /// **Every box on the glass that takes text, so the gate can name them all**
 /// (bl-dbc9).
 ///
@@ -98,7 +104,7 @@ pub const ARM_ID: &str = "the deletion's arming box";
 /// `wants_keyboard_input` — which answers *is anything focused*, buttons
 /// included — and this is the whole list of what it compares against. A fourth
 /// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 3] = [BOX_ID, REASON_ID, ARM_ID];
+pub const BOXES: [&str; 5] = [BOX_ID, REASON_ID, ARM_ID, CONFIG_ID, WORKFLOW_ID];
 
 /// Whether a box that takes text holds the keyboard right now.
 fn typing(ctx: &egui::Context) -> bool {

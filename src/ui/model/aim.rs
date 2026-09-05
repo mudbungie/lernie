@@ -26,6 +26,21 @@ pub struct Aim {
 }
 
 impl Model {
+    /// **The channel the aim is on**, where this seat still holds one by that
+    /// name — [`crate::state::Standing::aimed`]'s lookup on the model rather
+    /// than on the question set, because a control composes its gesture before
+    /// any standing set is derived from the frame (bl-4855).
+    ///
+    /// A focus on a channel that has since gone answers `None`, which is the
+    /// honest reading: there is nothing left to address.
+    pub fn channel(&self) -> Option<super::Channel> {
+        let aim = self.aim.as_ref()?;
+        self.roster
+            .iter()
+            .find(|chunk| chunk.channel.name == aim.channel)
+            .map(|chunk| chunk.channel.clone())
+    }
+
     /// **Whether this seat holds a channel by that name.** The roster carries
     /// every channel this box holds from boot — read off the disk, before
     /// anything is dialled (`crate::seat::channels`) — so a name it does not

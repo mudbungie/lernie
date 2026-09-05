@@ -1584,7 +1584,16 @@ over. `src/offframe/poster.rs` now reads the envelope — a gesture naming no
 workspace is **fanned** over every channel the standing set holds, each answer
 stamped with the channel it came down and each failure reported against it.
 `crate::seat::fan` is that rule on argv and `crate::cli::Decided::Fanned` is
-it in the command line, so all three surfaces read one predicate. The leg
+it in the command line, so all three surfaces read one predicate.
+
+**§4.30 later narrowed what the poster infers from that predicate, and the
+narrowing belongs here** (bl-4855). *Names no workspace* establishes that a
+gesture cannot name a channel by its workspace; *therefore every channel is its
+subject* is a second step, true of these three reads and false of a `config`
+write about one engine's own file. The poster no longer takes it: a gesture
+carries the channel it is addressed to, and the fan is what addressing it to
+none means. Nothing about these three changed — they name none, and every
+channel is what they mean. The leg
 itself has one spelling, `crate::offframe::down`, shared by the asker and the
 poster.
 
@@ -2276,10 +2285,12 @@ reading, and the sentence painted beside it is upstream's own
 `GoverningConfig::label()` rather than a third wording composed here (REMOTE
 §9.7 rules that directly).
 
-### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18; bl-5c53)
+### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18; bl-5c53, bl-4855)
 
-`src/ui/config.rs`, `src/ui/model/config.rs`, `src/reply/config.rs`,
-`src/reply/lineages.rs`, `src/verbs/config.rs`. **The eleventh covering pane,
+`src/ui/config.rs`, `src/ui/config/settings.rs`, `src/ui/config/edit.rs`,
+`src/ui/model/config.rs`, `src/ui/model/config/draft.rs`,
+`src/reply/config.rs`, `src/reply/lineages.rs`, `src/verbs/config.rs`,
+`src/ui/model/posted.rs`, `src/offframe/poster.rs`. **The eleventh covering pane,
 and the fourth whose subject is the aimed wall** — §4.17's is what its roles are
 set to, §4.24's what it can sign in to, §4.28's which machines may execute for
 it, and this is the files all of that is written in.
@@ -2314,21 +2325,84 @@ aimed at, by name, exactly as a roster read is asked. Letting them fall through
 `seat::route` would have asked this box's own engine about a file on somebody
 else's.
 
-**It reads and does not write, and the reason is a hazard.** `config` is one op
-that is a read or a write depending on whether it carries `text` at all
-(upstream's discriminator), so the editor is one field away — and the field is
-not the problem. The poster fans every gesture that names no workspace (§4.21),
-so an ACT composed for one engine's `cadence.yaml` would be written to **every
-channel this box holds**. The read half dodges it by not posting at all: a
-standing read is asked down the aimed channel. bl-4855 carries the frame, the
-three shapes attacked, and the destructive-idiom question; and it is the only
-record that half an op is missing, because `parity.toml` is per-op and `config`
-now carries a control.
+**It writes, and the fan was never a rule about workspace-less gestures**
+(bl-4855). `config` is one op that is a read or a write depending on whether it
+carries `text` at all (upstream's discriminator), so the editor is one field
+away — and the field was never the problem. §4.21's poster fanned every gesture
+naming no workspace, so an ACT composed for one engine's `cadence.yaml` would
+have been written to **every channel this box holds**, putting one operator's
+policy onto every engine they are a client of.
 
-**`litany-workflow` is decoded, encodable and not offered.** It is addressed by
-a name and no read this seat has says what workflow names exist, so a control
-for it would be a box asking the operator to remember. It arrives with the
-editor, which needs a box anyway.
+The fix is not an arm saying *do not fan this one*. §4.21's predicate is
+`crate::verbs::Verb::addresses_a_workspace`, and what it actually establishes is
+that such a gesture **cannot name a channel by its workspace** — from which the
+poster inferred *therefore every channel is its subject*. That inference is
+true of a window-level READ, whose subject genuinely is the box's whole set, and
+false of a `config` write about one engine's own file. So the address stops
+being inferred: `crate::ui::Posted` carries the channel a gesture is addressed
+to, `crate::offframe::poster::legs` sends it down that one, and **the fan is
+what addressing it to no channel in particular means** — the general path with
+empty input rather than a branch. It is recorded at the control for the reason
+`Posted::act` already is (§4.22, *"the composing control already knows, for
+free"*) and for the poster's own (bl-c70d): the aim is not read on the send pass
+at all, because an operator may compose one gesture aimed at a wall on one
+channel and fire another at a row on a second before either leaves.
+
+**So the write is addressed exactly as the read is**, and the branch is the same
+one in both halves: a destination naming a workspace is routed by it — which is
+what performs an entry's rename at the channel boundary, and what naming a
+channel would bypass — and one naming the ENGINE goes down the channel the
+window is aimed at, by name. `crate::offframe::asker::wall` for the read,
+`Model::write_config` for the write, one predicate
+(`Where::addresses_a_workspace`) read twice.
+
+**It is an ordinary act, and the box is what makes it one.** §4.20's idiom — a
+PLACE, a covering pane holding nothing else — is for an act whose subject
+ceases to exist. This one's subject is a file that still exists afterwards, and
+the control cannot be reached by a mis-aimed click because reaching it means
+having authored the file's whole text. So it takes §4.20's other half, the
+ENABLEMENT: `write` and `revert` are dark until the box differs from what the
+engine last answered, and the refusal is spelled beside them, *"because a
+greyed control says a thing is not live and nothing about what would make it
+live"*. `revert` is what makes §4.20's own test — *undone by doing the other
+thing* — true rather than claimed: the other thing is on the glass beside it.
+
+**What is NOT ordinary about it is the guard the wire dropped, and the seat
+answers it with a reading rather than a refusal.** Upstream's own editors carry
+a hash guard because *"a long-lived RAM draft"* can be written over a file that
+moved under it; a `config` act *"carries no hash guard, and needs none"* because
+a gesture states its whole text in one atomic instruction (REMOTE §9.18). That
+is true of the gesture and false of the operator, who types for minutes while a
+standing read replaces the answer underneath them. `Draft::seed` — the bytes the
+box and the engine last agreed on — is the guard restated as a sentence:
+the file is neither what the box holds nor what the two last agreed on, which
+leaves exactly one reading, another writer. Our own write in flight is excluded
+because the answer is still the anchor, and our own write landed because the
+answer IS the box. The engine remains the only thing that judges.
+
+**Nothing records that a write is in flight, and that is the enablement working
+rather than a gap.** The control asks *is there anything to write*, which is a
+fact about the world and stays correct while a write crosses. A flag saying
+*asked* would be this seat holding a second opinion about a question the
+standing read answers every beat, and the worst it prevents is writing the same
+bytes twice, which is the same file. A successful write answers
+`{"ok":true,"kind":"applied"}`, which this build decodes as no kind and paints
+as §4.9's rung-3 notice — exactly what `delete-workspace` has done since §4.20,
+and a fact about the reply vocabulary rather than about this pane.
+
+**`litany-workflow` is a box, because the box is the listing.** It is addressed
+by a name and no read this seat has says what workflow names exist — and none
+can, because upstream mints the file on a name it has not seen. A box is
+therefore the honest shape of *say which*, not a control asking the operator to
+remember something a listing could have told them. Empty names no destination
+and the control beside it is dark, which is the tuning pane's `set`: the
+parameter is missing, not the subject. It brings `crate::ui::keys::BOXES` to
+five.
+
+**`parity.toml` still says nothing about any of this, and that is still worth
+knowing.** The ledger is per-op and cannot express *half an op*; `config`
+carried a control from the read half onward. This section is the record that
+the other half now exists.
 
 ### 4.31 The ball pane: the board, the bindings, and what a wall holds (bl-d2af)
 
@@ -2676,7 +2750,7 @@ re-post on a beat.
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34) — and the line that says whose sentence each is. | ~135 |
-| `src/ui/model/posted.rs` | a gesture on its way out, and whether a lost reply leaves it in doubt — recorded at the control because it cannot be computed (§4.22). | ~65 |
+| `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~210 |
@@ -2720,14 +2794,17 @@ re-post on a beat.
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
-| `src/verbs/config.rs` | the config family: the lineage listing as a row, and the read whose destination is a nested object — the five places a config file lives, typed (§4.30). | ~165 |
+| `src/verbs/config.rs` | the config family: the lineage listing as a row, and the one envelope the read and the write both are — the five places a config file lives, typed, and `text` the whole of what separates the halves (§4.30). | ~190 |
 | `src/verbs/clients.rs` | the one op on the tool-host surface a seat is owed, and the four that are a machine's — with why `invocations` must never be asked from here (§4.28). | ~65 |
 | `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
-| `src/ui/config.rs` | the config pane: what can be read, the settings beside the bytes they were found in, and the engine's own judgement of a value (§4.30). | ~210 |
+| `src/ui/config.rs` | the config pane: what can be read — the four destinations that are picked and the fifth that is typed (§4.30). | ~215 |
+| `src/ui/config/settings.rs` | the typed view: every setting the engine's schema found in those bytes, its bounds, and the engine's own judgement of the value (§4.30). | ~50 |
+| `src/ui/config/edit.rs` | the editor: the box the new bytes are typed into, the enablement that is its arming, and the sentence for a file that moved under it (§4.30). | ~90 |
 | `src/ui/clients.rs` | the clients pane: the three empty states, the two lifetimes on a row, and the consent said on every tool (§4.28). | ~130 |
 | `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
-| `src/ui/model/config.rs` | the config pane between frames — the one question it holds, and the two reads that stand on it (§4.30). | ~95 |
+| `src/ui/model/config.rs` | the config pane between frames — which file it is pointed at, the two reads that stand on it, the box, and the write it composes (§4.30). | ~195 |
+| `src/ui/model/config/draft.rs` | the box and the two readings it takes against the engine's answer: is there anything to write, and did the file go somewhere neither end of this box put it (§4.30). | ~75 |
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
@@ -2736,7 +2813,7 @@ re-post on a beat.
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~155 |
 | `src/offframe/asker/wall.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed wall. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
-| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~140 |
+| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the channels a workspace-less one goes down — the one it named, or every one where it named none (§4.30) — and which sentence a failed leg earns. | ~165 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |

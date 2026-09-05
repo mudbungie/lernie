@@ -151,3 +151,28 @@ fn the_close_control_puts_the_pane_down() {
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.configuring, None);
 }
+
+/// **The workflow destination is a box and then a control**, and an empty name
+/// names nothing: upstream addresses a workflow by a name no read this seat
+/// has enumerates, so the box is the listing, dark until it holds one.
+#[test]
+fn the_workflow_name_is_typed_and_an_empty_one_reaches_nothing() {
+    let window = Window::new();
+    let mut model = configured();
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    assert!(painted.contains(super::WORKFLOW), "{painted}");
+    if let Some(name) = model.workflow_box() {
+        *name = "nightly".to_owned();
+    }
+    click(&window, super::WORKFLOW, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(
+        model.configured(),
+        Some(Where::LitanyWorkflow {
+            name: "nightly".to_owned()
+        })
+    );
+}

@@ -20,6 +20,26 @@
 //! (`crate::reply::config::Setting::fault`) and a seat that re-derived one
 //! would be a second authority across a boundary.
 //!
+//! # The box is the write, and the seed is what makes the write ordinary
+//!
+//! A config write replaces a file's whole bytes (REMOTE §9.18: *"a typed edit
+//! is a seat composing that text and applying it"*), so the act is the box —
+//! and reaching it means having authored the file, which no mis-aimed click
+//! does. That is why it takes DESIGN §4.20's ENABLEMENT and not its PLACE:
+//! §4.20 is for an act whose subject ceases to exist, and this one's subject
+//! is a file that still exists afterwards holding text the operator wrote.
+//!
+//! What is NOT ordinary about it is the thing the wire dropped. Upstream's
+//! editors carry a hash guard because *"a long-lived RAM draft"* can be
+//! written over a file that moved under it, and a `config` act *"carries no
+//! hash guard, and needs none"* because a gesture states its whole text in one
+//! atomic instruction — true of the gesture and false of the OPERATOR, who
+//! types for minutes while a standing read replaces the answer underneath
+//! them. [`Draft::seed`] is that guard restated as a READING rather than as a
+//! refusal, which is this seat's whole division of labour: the pane says the
+//! file went somewhere else, and the engine remains the only thing that
+//! judges.
+//!
 //! # Both reads STAND, and the second only once a file is picked
 //!
 //! A config file changes under the operator — a `litany config` from any seat,
@@ -27,6 +47,13 @@
 //! holds is worth nothing unless it is asked again. The lineage listing stands
 //! on the pane and the file read stands on the destination, which is
 //! `crate::state::Open::Config`'s own shape.
+
+/// The box's own two readings, split from the pane's state at the design-time
+/// budget on the seam they already have: this file is *what the pane is
+/// pointed at*, and that one is *what the box and the file have to say to each
+/// other*.
+mod draft;
+pub use draft::Draft;
 
 use super::Model;
 use crate::verbs::Where;
@@ -39,6 +66,18 @@ pub struct Configuring {
     /// (`crate::state::Standing::at`), so closing the pane ends that read and
     /// picking another replaces it.
     pub at: Option<Where>,
+    /// **The bytes in the editor**, once the file has answered once — there is
+    /// nothing to edit before that, and a box seeded from nothing would invite
+    /// a write of nothing over a file nobody has seen.
+    pub draft: Option<Draft>,
+    /// **The name the workflow destination is addressed by.**
+    ///
+    /// It lives on the pane rather than inside a [`Where`] because it is what
+    /// the operator is TYPING, not what they picked: `litany-workflow` is
+    /// addressed by a name and no read this seat has says which names exist
+    /// (DESIGN §4.30), so the box is the listing. Empty is not a destination,
+    /// which is what keeps the control an enablement rather than a refusal.
+    pub workflow: String,
 }
 
 impl Model {
@@ -78,7 +117,79 @@ impl Model {
             return;
         };
         pane.at = Some(at.clone());
+        pane.draft = None;
         self.config = None;
+    }
+
+    /// **The box, seeded from the file the first time it answers and settled
+    /// against every answer after.** Called by the frame that paints it, which
+    /// is the one place that holds the engine's answer and the box at once.
+    pub fn draft_config(&mut self, answered: &str) {
+        let Some(pane) = self.configuring.as_mut() else {
+            return;
+        };
+        match pane.draft.as_mut() {
+            Some(draft) => draft.settle(answered),
+            None => pane.draft = Some(Draft::of(answered)),
+        }
+    }
+
+    /// **The box's own bytes, to paint into.** `pub(crate)` and borrowing,
+    /// which the house rules permit for an internal accessor: a box is written
+    /// by the widget and there is nothing to hand back by value.
+    pub(crate) fn draft_box(&mut self) -> Option<&mut String> {
+        Some(&mut self.configuring.as_mut()?.draft.as_mut()?.text)
+    }
+
+    /// **The workflow name box, to paint into** — [`Self::draft_box`]'s shape
+    /// for the one destination addressed by a name rather than picked.
+    pub(crate) fn workflow_box(&mut self) -> Option<&mut String> {
+        Some(&mut self.configuring.as_mut()?.workflow)
+    }
+
+    /// **The workflow name as a destination would carry it**, trimmed —
+    /// leading and trailing space is typing, never part of a file's name, and
+    /// the empty string is the pane holding no fourth destination at all.
+    pub fn workflow_named(&self) -> String {
+        self.configuring
+            .as_ref()
+            .map(|pane| pane.workflow.trim().to_owned())
+            .unwrap_or_default()
+    }
+
+    /// **The draft as a value**, for the frame's own readings.
+    pub fn drafted(&self) -> Option<Draft> {
+        self.configuring.as_ref()?.draft.clone()
+    }
+
+    /// **Put the engine's answer back in the box** — the way out of an edit,
+    /// and the way to take another writer's file over your own draft. It is
+    /// one gesture for both because it is one act: the box becomes the file.
+    pub fn revert_config(&mut self, answered: &str) {
+        let Some(pane) = self.configuring.as_mut() else {
+            return;
+        };
+        pane.draft = Some(Draft::of(answered));
+    }
+
+    /// **Write the box to the file it was read from.**
+    ///
+    /// The address is the read half's, spelled once more rather than derived a
+    /// second way (DESIGN §4.30): a destination naming a workspace is routed by
+    /// it, and one naming the ENGINE is addressed down the channel the window
+    /// is aimed at — never fanned, which is what would put the operator's text
+    /// on every engine this box is a client of (bl-4855).
+    pub fn write_config(&mut self, at: &Where, text: String) {
+        let posted = super::Posted::act(crate::verbs::write(at, text));
+        let posted = if at.addresses_a_workspace() {
+            posted
+        } else {
+            let Some(down) = self.channel() else {
+                return;
+            };
+            posted.down(down)
+        };
+        self.outbox.push(posted);
     }
 
     /// **The pane and both answers go with the wall they are about** — called

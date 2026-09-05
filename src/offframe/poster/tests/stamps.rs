@@ -160,3 +160,51 @@ fn a_routed_leg_that_reached_nothing_is_that_channels_own_sentence() {
         model.roster[0].held
     );
 }
+
+/// **A gesture naming no workspace that names a CHANNEL goes down that channel
+/// alone** (bl-4855) — the fan is what *addressed to no channel in particular*
+/// means, and it was never what every workspace-less gesture means.
+///
+/// `config` on one engine's own `cadence.yaml` names no workspace and is not
+/// about every engine. Fanned, it would have written this operator's text onto
+/// every engine this box is a client of.
+#[test]
+fn an_addressed_gesture_goes_down_the_one_channel_and_no_other() {
+    let scratch = Scratch::new();
+    let own_engine = wired(&scratch, &flat(), vec![vec![yes()]]);
+    let other = wired(&scratch, &entry("b"), vec![vec![yes()]]);
+    let addressed = Channel {
+        name: "b".to_owned(),
+        named_there: Some("b".to_owned()),
+        dials: None,
+    };
+    let (link, mut model) = beside(
+        Some(Aim {
+            channel: own().name,
+            address: "home".to_owned(),
+        }),
+        crate::ui::Posted::act(crate::verbs::write(
+            &crate::verbs::Where::Cadence,
+            "beat: 1\n".to_owned(),
+        ))
+        .down(addressed),
+    );
+    tick(&link, scratch.path());
+    link.settle(&mut model);
+    assert!(
+        other
+            .heard()
+            .contains(&json!({"op": "config", "target": {"file": "cadence"},
+                              "text": "beat: 1\n"})),
+        "the channel it named heard it: {:?}",
+        other.heard()
+    );
+    assert!(
+        !own_engine
+            .heard()
+            .iter()
+            .any(|said| said.get("op").is_some()),
+        "and no other engine was told anything at all: {:?}",
+        own_engine.heard()
+    );
+}

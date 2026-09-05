@@ -107,3 +107,20 @@ fn only_the_two_workspace_destinations_are_routed_by_an_address() {
         "brazen"
     );
 }
+
+/// **The write is the read's envelope and the whole new text**, which is
+/// upstream's own discriminator: `text` present is a write, absent is a read,
+/// and nothing else separates them (REMOTE §8.5, §9.18).
+#[test]
+fn the_write_is_the_read_plus_the_whole_text() {
+    let at = Where::Cadence;
+    let read = super::config(&at);
+    let write = super::write(&at, "beat: 1\n".to_owned());
+    assert_eq!(read["op"], "config");
+    assert_eq!(read.get("text"), None, "no text is what makes it a read");
+    assert_eq!(
+        write["target"], read["target"],
+        "one destination, one encoding"
+    );
+    assert_eq!(write["text"], "beat: 1\n");
+}

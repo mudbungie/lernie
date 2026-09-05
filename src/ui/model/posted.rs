@@ -26,7 +26,27 @@
 //! composing control already knows, for free, and knowing it there costs one
 //! word per site.
 
+//! # The channel is the second thing a frame knows and an envelope cannot say
+//!
+//! The same argument, one field over (bl-4855). The poster reads *no
+//! workspace* as *every channel this box holds*, which is true of a window-level
+//! READ — a roster refresh, a verb table, a search — and false of a `config`
+//! write aimed at one engine's own `cadence.yaml`, which names no workspace
+//! either and would be written to every engine this box is a client of. The
+//! envelope cannot tell them apart, because on the wire they are the same
+//! shape; the composing control can, for free, because it fired on a pane
+//! open on an aim.
+//!
+//! So a gesture may name the channel it is addressed to, and naming none is
+//! not a default — it is the assertion *every channel is my subject*. It is
+//! recorded at the control for [`Self::act`]'s reason and for
+//! `crate::offframe::poster`'s: **the aim is not read on the send pass at
+//! all**, because an operator may compose one gesture aimed at a wall on one
+//! channel and fire another at a row on a second before either leaves.
+
 use serde_json::Value;
+
+use crate::ui::Channel;
 
 /// A gesture on its way out, and whether a lost reply leaves it in doubt.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,6 +58,16 @@ pub struct Posted {
     /// operator gesture, never resent, and IN DOUBT if no reply comes back.
     /// `false` is a read, which may be asked again freely.
     pub act: bool,
+    /// **The channel this gesture is addressed to**, where its envelope names
+    /// no workspace and cannot address one itself.
+    ///
+    /// `None` is not *unset*: it is the window-level read's own assertion that
+    /// the subject is every channel this box holds. A gesture whose envelope
+    /// DOES name a workspace never carries one — `crate::seat::route` chooses
+    /// the channel by resolving that name over this box's entries, and
+    /// rewrites it to the host's spelling on the way, which naming a channel
+    /// here would bypass.
+    pub channel: Option<Channel>,
 }
 
 impl Posted {
@@ -46,6 +76,7 @@ impl Posted {
         Self {
             envelope,
             act: true,
+            channel: None,
         }
     }
 
@@ -57,6 +88,18 @@ impl Posted {
         Self {
             envelope,
             act: false,
+            channel: None,
+        }
+    }
+
+    /// **Address it down one channel**, which is what a gesture naming no
+    /// workspace must do when its subject is one engine rather than all of
+    /// them.
+    #[must_use]
+    pub fn down(self, channel: Channel) -> Self {
+        Self {
+            channel: Some(channel),
+            ..self
         }
     }
 }

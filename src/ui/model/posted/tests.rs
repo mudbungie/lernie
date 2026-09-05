@@ -45,3 +45,23 @@ fn naming_no_workspace_does_not_make_a_gesture_a_read() {
         );
     }
 }
+
+/// **A gesture may name the channel it is addressed to**, and naming none is
+/// not *unset*: it is the window-level read's own assertion that the subject
+/// is every channel this box holds (bl-4855).
+#[test]
+fn a_gesture_names_the_channel_it_is_addressed_to_or_names_none() {
+    let bare = Posted::act(json!({"op": "config"}));
+    assert_eq!(bare.channel, None, "addressed to no channel in particular");
+    let addressed = bare.clone().down(crate::ui::Channel {
+        name: "b".to_owned(),
+        named_there: Some("b".to_owned()),
+        dials: None,
+    });
+    assert_eq!(
+        addressed.channel.map(|held| held.name),
+        Some("b".to_owned())
+    );
+    assert!(addressed.act, "and it is still the act it was");
+    assert_eq!(Posted::read(json!({"op": "help"})).channel, None);
+}

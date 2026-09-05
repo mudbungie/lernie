@@ -112,7 +112,7 @@ pub mod workspace;
 pub use balls::{BALLS, BOARD, MARKS, WORKSPACE_BALLS, balls, board, marks, workspace_balls};
 pub use capability::{ANSWER, RESTORE, REVOKE, VERDICTS, answer, restore, revoke};
 pub use clients::{CLIENTS, clients};
-pub use config::{CONFIG, LINEAGES, Where, config, lineages};
+pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };

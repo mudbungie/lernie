@@ -93,11 +93,18 @@ fn dark(symbol: &Symbol, rect: egui::Rect, pitch: f32) -> egui::Shape {
 }
 
 /// Where one module sits inside the symbol's rectangle, quiet zone included.
+///
+/// The corner and the size are each named before they are used, so that no line
+/// here holds only an argument. A line that is nothing but a sub-expression of
+/// the call below carries no statement of its own for llvm-cov to attribute a
+/// count to, and one such line scored zero on the runner while scoring covered
+/// on every local machine — the same phantom bl-f83f measured in
+/// `qr::matrix`, and the same remedy: a `let` is a statement, so there is
+/// nothing left to mis-attribute.
 fn module(rect: egui::Rect, x: usize, y: usize, pitch: f32) -> egui::Rect {
-    egui::Rect::from_min_size(
-        rect.min + egui::vec2(span(x + QUIET, pitch), span(y + QUIET, pitch)),
-        egui::vec2(pitch, pitch),
-    )
+    let corner = rect.min + egui::vec2(span(x + QUIET, pitch), span(y + QUIET, pitch));
+    let size = egui::vec2(pitch, pitch);
+    egui::Rect::from_min_size(corner, size)
 }
 
 /// `n` modules, in screen points, at a pitch [`pitch`] chose.

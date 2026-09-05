@@ -125,6 +125,7 @@ fn a_receipt_with_nothing_held_still_carries_the_minted_name() {
                 address: address.to_owned(),
                 goal: String::new(),
                 phase: Phase::Started("brisk-otter".to_owned()),
+                spread: None,
             })
         );
     }
@@ -138,6 +139,7 @@ fn a_start_in_flight_reads_the_same_whichever_act_is_out() {
         address: "home".to_owned(),
         goal: "do it".to_owned(),
         phase: Phase::Staging,
+        spread: None,
     };
     let firing = Start {
         phase: Phase::Firing,

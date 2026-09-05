@@ -91,6 +91,7 @@ fn a_start_in_flight_paints_its_sentence_and_offers_no_second_start() {
                 address: "home".to_owned(),
                 goal: "do the thing".to_owned(),
                 phase,
+                spread: None,
             }),
             ..unselected()
         };
@@ -116,6 +117,7 @@ fn a_finished_start_paints_its_name_over_the_box_that_begins_the_next() {
             address: "home".to_owned(),
             goal: "do the thing".to_owned(),
             phase: Phase::Started("brisk-otter".to_owned()),
+            spread: None,
         }),
         ..unselected()
     };
@@ -137,6 +139,7 @@ fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back()
             address: "home".to_owned(),
             goal: "do the thing".to_owned(),
             phase: Phase::Refused("sign in first: no provider holds a credential".to_owned()),
+            spread: None,
         }),
         draft: "do the thing".to_owned(),
         ..unselected()

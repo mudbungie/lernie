@@ -106,6 +106,52 @@ impl Notice {
         )
     }
 
+    /// **What a delivery acted on** (§4.36). The identities and not a verdict:
+    /// the standing fact is the tagged squash the target's history now
+    /// carries, so what this seat can honestly say is which refs moved and to
+    /// what — never *this candidate won*, which is a thing about a cohort
+    /// nobody records.
+    /// **Two of the four identities are optional and each absence is a fact**
+    /// rather than a blank: no source ref means there was none to deliver, and
+    /// no commit means the delivery landed nothing. Saying either as an empty
+    /// string would report a delivery that did not happen.
+    pub fn delivered(
+        base: &str,
+        target: &str,
+        source: Option<String>,
+        commit: Option<String>,
+    ) -> Self {
+        let from = source.map_or_else(
+            || "no source ref".to_owned(),
+            |source| format!("from {source}"),
+        );
+        let landed = commit.map_or_else(
+            || "nothing landed".to_owned(),
+            |commit| format!("at {commit}"),
+        );
+        Self::Said(format!(
+            "delivered onto {target} {landed}, {from}, off the pinned {base} — the \
+             ball is not closed and what its close delivers is unchanged"
+        ))
+    }
+
+    /// **What a retirement actually did to the source ref** (§4.36), which is
+    /// the engine's answer and never this seat's prediction: an undeclared
+    /// retention keeps the ref, and only the reply knows whether this project
+    /// declared one and whether the keep had expired.
+    pub fn retired(discarded: bool) -> Self {
+        Self::Said(
+            if discarded {
+                "the candidate's worktree is released, and its source ref went with it: \
+                 this project's retention says the keep had expired"
+            } else {
+                "the candidate's worktree is released — its source ref, and so its whole \
+                 diff, is still addressable"
+            }
+            .to_owned(),
+        )
+    }
+
     /// The line the shell paints, with the half that says whose sentence it is.
     ///
     /// **Fact first, remedy last**, which every refusal this seat paints keeps

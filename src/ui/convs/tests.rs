@@ -205,6 +205,7 @@ fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
             address: "home".to_owned(),
             goal: "port the paint probe".to_owned(),
             phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+            spread: None,
         }),
         ..seated()
     };

@@ -17,6 +17,11 @@
 //! Here it costs nothing to prevent: while a start is outstanding the composer
 //! paints the sentence instead of the box, so there is no control to press.
 
+/// The n-candidate spread: the obligation a fan is about, and the two acts a
+/// held one composes on the way through.
+mod spread;
+pub use spread::Spread;
+
 use crate::reply::start::Prepared;
 use crate::ui::Model;
 
@@ -35,6 +40,16 @@ pub struct Start {
     pub goal: String,
     /// How far along it is.
     pub phase: Phase,
+    /// **The obligation this start is a SPREAD over**, where it is one
+    /// (§4.36). A fan is not a second start path: it is this start with n in
+    /// the middle — `prepare`, then `fan` instead of `prompt`, then one
+    /// ordinary `prompt` per candidate that comes back. So it is held here
+    /// rather than beside, and every rule this value already carries applies
+    /// to it unchanged: one is outstanding at a time (two `prepare` receipts
+    /// cannot be told apart — the reply carries no correlation), a refusal
+    /// retires it with the goal back in the box, and an unread answer takes it
+    /// back.
+    pub spread: Option<Spread>,
 }
 
 /// The three states of a start, which are two acts and a receipt.
@@ -62,6 +77,9 @@ impl Start {
     /// because the minted name is a thing the operator can use.
     pub fn line(&self) -> String {
         match &self.phase {
+            Phase::Started(name) if self.spread.is_some() => {
+                format!("one candidate of «{name}» in {}", self.address)
+            }
             Phase::Started(name) => format!("started «{name}» in {}", self.address),
             Phase::Refused(why) => format!("not started in {}: {why}", self.address),
             Phase::Staging | Phase::Firing => {
@@ -97,6 +115,7 @@ impl Model {
             address: address.to_owned(),
             goal,
             phase: Phase::Staging,
+            spread: None,
         });
     }
 
@@ -130,6 +149,7 @@ impl Model {
             address,
             goal,
             phase: Phase::Firing,
+            spread: None,
         });
     }
 
@@ -138,7 +158,7 @@ impl Model {
     /// before it can be filed (`super::absorb`). Any other op's refusal is
     /// somebody else's sentence and leaves the start where it is.
     pub(super) fn starting(&self, op: &str) -> bool {
-        (op == crate::verbs::PREPARE || op == crate::verbs::PROMPT)
+        (op == crate::verbs::PREPARE || op == crate::verbs::PROMPT || op == crate::verbs::FAN)
             && self.start.as_ref().is_some_and(Start::outstanding)
     }
 
@@ -195,12 +215,19 @@ impl Model {
                 .map_or_else(String::new, |aim| aim.address.clone()),
             goal: String::new(),
             phase: Phase::Firing,
+            spread: None,
         });
         start.phase = Phase::Started(conversation.clone());
-        let here = self
-            .aim
-            .as_ref()
-            .is_some_and(|aim| aim.address == start.address);
+        // **A spread selects nothing** (§4.36). *A start focuses what it
+        // started* is a sentence about ONE conversation; n receipts land one
+        // after another and the focus would be whichever arrived last, which
+        // is a fact about the network. The fleet pane is what a fan is read
+        // on, and it covers the conversation anyway.
+        let here = start.spread.is_none()
+            && self
+                .aim
+                .as_ref()
+                .is_some_and(|aim| aim.address == start.address);
         self.start = Some(start);
         if here {
             self.select(&conversation);

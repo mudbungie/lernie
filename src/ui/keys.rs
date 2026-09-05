@@ -92,6 +92,12 @@ pub const CONFIG_ID: &str = "the config editor's box";
 /// **The id the workflow name box wears** (`crate::ui::config`).
 pub const WORKFLOW_ID: &str = "the workflow name box";
 
+/// **The id the fan's goal box wears** (`crate::ui::fleet::candidates`).
+pub const FAN_GOAL_ID: &str = "the fan's goal box";
+
+/// **The id the delivery subject's box wears** (`crate::ui::fleet::candidates`).
+pub const SUMMARY_ID: &str = "the delivery subject's box";
+
 /// **The five the ball pane's authoring block wears** (bl-f7ae,
 /// `crate::ui::board::acts`) — the project a new ball is filed in, its title
 /// and body, the journal note an amendment appends, and the id typed back that
@@ -119,12 +125,14 @@ pub const DELIVER_ID: &str = "the delivery's arming box";
 /// `wants_keyboard_input` — which answers *is anything focused*, buttons
 /// included — and this is the whole list of what it compares against. A fourth
 /// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 10] = [
+pub const BOXES: [&str; 12] = [
     BOX_ID,
     REASON_ID,
     ARM_ID,
     CONFIG_ID,
     WORKFLOW_ID,
+    FAN_GOAL_ID,
+    SUMMARY_ID,
     PROJECT_ID,
     TITLE_ID,
     BODY_ID,

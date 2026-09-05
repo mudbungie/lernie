@@ -68,11 +68,19 @@
 # carries one per row of the steps ledger, whose `seq` is its address. All
 # three are gone from this ledger.
 
-# bl-8ffa — a prepared start cannot be fanned, and no candidate can be accepted
-# or retired.
-deliver = "bl-8ffa — no candidate surface: one of n cannot be accepted here"
-fan = "bl-8ffa — no candidate surface: a prepared start cannot be spread over attempts"
-retire = "bl-8ffa — no candidate surface: a candidate's worktree cannot be released here"
+# THE LEDGER IS EMPTY, AND THAT IS THE SUCCESS STATE (bl-8ffa). Every op the
+# roster classes `control` carries a control on this seat; what is left below
+# is the record of how each row left, which is the only thing a finished ledger
+# can be. A row returns the moment upstream adds a control-classed op this seat
+# has no surface for — and the gate reddens for it until one lands or a line
+# here cites the ball that will land it.
+
+# bl-8ffa landed the n-candidate path (DESIGN §4.36). All three carry controls
+# on the fleet pane's work-diff listing — `fan` on the row that is a ball's own
+# claim, `deliver` and `retire` on the rows that are candidates of it — so all
+# three are gone from this ledger. The listing is where they belong because a
+# row already names every value they take: the obligation, the handle, and
+# which of the two kinds of row it is.
 
 # bl-4a2c landed the tuning quartet — `roles`, `effort`, `priority` and
 # `model` all carry controls on `src/ui/tuning.rs` and are gone from this

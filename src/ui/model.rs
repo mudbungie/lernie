@@ -84,7 +84,7 @@ pub use posted::Posted;
 pub use queue::Asking;
 pub use records::Records;
 pub use spine::Forking;
-pub use start::{Phase, Start};
+pub use start::{Phase, Spread, Start};
 pub use trail::Trail;
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;

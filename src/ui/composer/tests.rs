@@ -237,6 +237,7 @@ fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
             address: "home".to_owned(),
             goal: "port it".to_owned(),
             phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+            spread: None,
         }),
         ..seated()
     };

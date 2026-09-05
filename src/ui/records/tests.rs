@@ -88,13 +88,18 @@ fn every_empty_state_is_its_own_sentence() {
         },
         ..quiet.clone()
     };
-    for (mut model, expected) in [
-        (unanswered.clone(), NOT_ANSWERED_STEPS),
-        (unanswered, NOT_ANSWERED_FILES),
-        (quiet.clone(), NO_STEPS),
-        (quiet, NO_WORKTREE),
-        (bare, EMPTY_WORKTREE),
-    ] {
+    // **The cases are boxed rather than laid out in an array**: a `Model` is
+    // wide enough that five of them on the stack trip
+    // `clippy::large_stack_arrays`, and the sentence each case asserts is what
+    // this test is about, not where the value lives.
+    let cases: Vec<(Box<Model>, &str)> = vec![
+        (Box::new(unanswered.clone()), NOT_ANSWERED_STEPS),
+        (Box::new(unanswered), NOT_ANSWERED_FILES),
+        (Box::new(quiet.clone()), NO_STEPS),
+        (Box::new(quiet), NO_WORKTREE),
+        (Box::new(bare), EMPTY_WORKTREE),
+    ];
+    for (mut model, expected) in cases {
         let painted = pane(|ui| {
             render(ui, &mut model);
         });

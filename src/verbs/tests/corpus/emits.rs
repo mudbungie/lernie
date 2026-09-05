@@ -19,8 +19,8 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    CREATE, EFFORT, FORK, OPS, PREPARE, PRIORITY, PROMPT, UPDATE, create, effort, find, fork, ops,
-    prepare, priority, prompt, update,
+    CREATE, DELIVER, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE, UPDATE, create,
+    deliver, effort, fan, find, fork, ops, prepare, priority, prompt, retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -103,6 +103,26 @@ const UNEMITTED: &[(&str, usize, &str)] = &[
         "the skill list: this seat composes an attempt that pins none, because \
          the skills a lineage declares are a read the config-file pane owns \
          and this window has no way to offer them",
+    ),
+    (
+        "fan",
+        1,
+        "the ball-less form: upstream reads it as the ENGINE's own focused \
+         ball, and a seat has no focus at the far end — every gesture this \
+         window composes names the ball off the work-diff row it fired from \
+         (`crate::verbs::candidates`)",
+    ),
+    (
+        "deliver",
+        1,
+        "the ball-less form, on the fan's own terms: the obligation comes off \
+         the row, never off a focus this seat cannot see",
+    ),
+    (
+        "retire",
+        1,
+        "the ball-less form, on the fan's own terms: the obligation comes off \
+         the row, never off a focus this seat cannot see",
     ),
     (
         "prompt",
@@ -191,6 +211,32 @@ fn rebuilt(frame: &Value) -> Option<Value> {
                 text(obj, "goal"),
             )
         }),
+        // The candidate family's three. Each is declined where the frame omits
+        // `ball` — the engine's own focused-ball form, which a seat has no way
+        // to mean — and `fan`'s prepared body goes through the seat's REAL
+        // reader before being handed back, exactly as `prompt`'s does.
+        FAN => obj.contains_key("ball").then(|| {
+            let staged = crate::reply::start::prepared(obj).expect("a staged body");
+            let address = staged.workspace.clone();
+            fan(
+                &staged,
+                address,
+                text(obj, "ball"),
+                text(obj, "project"),
+                obj["n"].as_u64().expect("a count"),
+            )
+        }),
+        DELIVER => obj.contains_key("ball").then(|| {
+            deliver(
+                text(obj, "ball"),
+                text(obj, "project"),
+                text(obj, "handle"),
+                text(obj, "summary"),
+            )
+        }),
+        RETIRE => obj
+            .contains_key("ball")
+            .then(|| retire(text(obj, "ball"), text(obj, "project"), text(obj, "handle"))),
         // The two authoring doors, round-tripped off the frame's own keys
         // rather than off `text`: absence is a value on both, and a reading
         // that filled a missing key with `""` would be exactly the

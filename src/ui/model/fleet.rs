@@ -62,6 +62,17 @@ pub struct Fleet {
     pub cap: u64,
     /// The cheap model the monitor is pinned to.
     pub model: String,
+    /// **How many candidates a spread asks for** (§4.36). A stepper for the
+    /// cap's reason and floored at two for a sharper one: upstream reads 1 and
+    /// 0 as *materialize nothing and hand back the ordinary claim binding*,
+    /// which is a start and not a fan.
+    pub spread: u64,
+    /// What each of those candidates is for. A start with no goal is a driver
+    /// launched for nothing, and n of them is n.
+    pub goal: String,
+    /// The delivery subject one acceptance carries, verbatim — balls tags it
+    /// with the handle, and that tag is the only acceptance mark there is.
+    pub summary: String,
     /// What the last of the four standing acts answered.
     pub said: Option<Armed>,
 }
@@ -90,6 +101,9 @@ impl Model {
                 project: String::new(),
                 cap: 1,
                 model: String::new(),
+                spread: 2,
+                goal: String::new(),
+                summary: String::new(),
                 said: None,
             });
         }
@@ -116,6 +130,22 @@ impl Model {
     /// holds a second opinion about which wall it is firing at.
     pub fn post_fleet(&mut self, envelope: serde_json::Value) {
         self.outbox.push(super::Posted::act(envelope));
+    }
+
+    /// **Spend one of the candidate acts**, ADDRESSED down the channel the
+    /// pane stands on (§4.30's ruling, §4.36's first customer).
+    ///
+    /// `deliver` and `retire` name no workspace anywhere in their envelopes —
+    /// their subject is a ball in a project on one engine — so the poster
+    /// would otherwise fan them over every channel this box holds, accepting
+    /// one candidate on every engine the operator is a client of. A seat that
+    /// no longer holds the channel composes nothing, which is the honest
+    /// reading: there is nothing left to address.
+    pub fn post_candidate(&mut self, envelope: serde_json::Value) {
+        let Some(down) = self.channel() else {
+            return;
+        };
+        self.outbox.push(super::Posted::act(envelope).down(down));
     }
 
     /// File the receipt four ops share, under the op that earned it.

@@ -1281,6 +1281,15 @@ requirement is that this seat and the android client have interaction parity:
 exist in the other*, and drift must be caught mechanically rather than noticed
 by hand.
 
+**The ledger is now EMPTY, and that is the state it was written to reach**
+(bl-8ffa). Every op the roster classes `control` carries one here; what
+`parity.toml` holds is the record of how each row left. The test over the
+committed file used to assert it was non-empty as a vacuity guard, which made
+the finished state unreachable for the one file that matters — the guard the
+reader needs is two-directional over text the suite controls, and it already
+had one (`src/snapshot/parity/tests.rs`). A row returns the moment upstream
+adds a control-classed op this seat has no surface for.
+
 Four facts follow, and each is a decision this tree implements rather than one
 it makes.
 
@@ -2840,6 +2849,92 @@ an array of objects and each is a picker this pane does not have;
 `src/verbs/tests/corpus/emits.rs` records both by count and reason. `marks`'s
 amending form stays unbuilt beside them: a tracking branch is not a ball.
 
+### 4.36 The n-candidate path: spread one obligation, accept one, release the rest (yog's VISION §4.10; bl-8ffa)
+
+`src/verbs/candidates.rs`, `src/ui/model/start/spread.rs`,
+`src/ui/fleet/candidates.rs`, `src/ui/model/fleet.rs`, `src/reply/start.rs`,
+`src/reply/kinds.rs`, `src/ui/model/notice.rs`. **Not a pane** — three acts on
+a listing §4.33 already paints, which is the whole of what makes them cheap.
+
+**The row says which act it earns, and upstream's encoder is what decides.** A
+work-diff row carries a `handle` or it does not: with one it is a **candidate**
+on `attempt/<handle>` waiting to be accepted or released, without one it is the
+ball's **own claim**, whose delivery obligation is the thing a fan spreads. So
+the three controls are not a mode this pane holds; they are what the row IS,
+and every value the acts take — the project, the ball, the handle — is already
+on it. A typed handle box would have been a chance to name a candidate that is
+not on the glass.
+
+**A fan is the start with n in the middle** (§4.26 read over n), not a second
+start path. `crate::ui::model::Start` gains one field — the obligation, where
+there is one — and everything that value already carries applies unchanged:
+one is outstanding at a time, a refusal retires it with the goal back in the
+box, an unread answer takes it back. What a spread changes is exactly two
+things: the staging receipt composes `fan` rather than `prompt`, and the fan's
+own answer composes one ordinary `prompt` per candidate.
+
+**The gate is that two `prepare` acts in flight cannot be told apart**, because
+the receipt carries no correlation with the gesture that earned it. That is
+already `Start`'s rule for a second start and it is why the fan is held there
+rather than beside it: a second field would have made *both outstanding* a
+representable state that only the absorb order resolves.
+
+**The frame fires the candidates and no control does**, which is §4.26's
+argument sharpened. A `fan` MATERIALIZES n attempt worktrees, so a candidate
+prepared and never fired is a worktree balls made for nothing — firing them is
+the completion of the act rather than a convenience. **What that forfeits is
+stated rather than hidden**: upstream's terminal fires each itself *"with
+whatever variation you want between them"*, and this window fires n with one
+goal. Per-candidate variation is a surface — n boxes, or one edited n times —
+and it arrives with the ball that builds it; what it is not is a reason to
+leave n worktrees empty.
+
+**A spread's receipts select nothing.** *A start focuses what it started* is a
+sentence about one conversation; n `started` receipts land one after another
+and the focus would be whichever arrived last, which is a fact about the
+network rather than about the operator.
+
+**`deliver` and `retire` are §4.30's first customer**, and without that ruling
+this ball could not have landed. Neither names a workspace anywhere in its
+envelope — their subject is a ball in a project on ONE engine — so the poster
+would have fanned them over every channel this box holds, accepting one
+candidate on every engine the operator is a client of. `Model::post_candidate`
+addresses them down the channel the pane stands on. `fan` needs none of that:
+it carries its workspace inside the prepared body, which `crate::envelope`
+already reads.
+
+**They are doors and not rows for the same reason.** A row is a word an
+operator TYPES, and argv has no channel selector — `lernie deliver …` would be
+the fan hazard on the other surface. `lernie ask` stays the door argv has.
+
+**Nothing here is armed, and that is §4.33's argument one noun over.** §4.20 is
+for an act whose product is that its subject is gone. `deliver` advances a ref
+by the ordinary recursive delivery — git holds what it moved, the ball is not
+closed, and what its close delivers is unchanged. `retire` releases a worktree
+and *"changes no delivery target, ever"*; whether the source ref goes with it
+is this project's own declared retention, acting on a schedule the operator set
+elsewhere, and the reply says which way it went. So the seat PAINTS that answer
+(`Notice::retired`) rather than predicting a policy it has not read. There is
+no reject control because there is no reject op: a rejection is the *absence*
+of a delivery.
+
+**Two of `delivered`'s four identities are optional and each absence is a
+fact** — no `source` is a source ref that was not there, no `commit` is a
+delivery that landed nothing. Painting either as a blank would report a
+delivery that did not happen.
+
+**The count is a stepper floored at two.** Upstream reads 1 and 0 as
+*materialize nothing and hand back the ordinary claim binding*, which is a
+start and this pane already has one. Its buttons carry the step (`−1`, `+1`)
+where the cap's carry a bare glyph, because two steppers on one pane spelled
+the same way are one control an operator cannot tell from another.
+
+**The ball is always named.** All three take an optional `ball` upstream, and
+omitting it means *the engine's own focused ball* — a focus a seat does not
+have, since its gestures are composed off a row that already names one. The
+three ball-less frames are recorded in `src/verbs/tests/corpus/emits.rs` by
+count and reason.
+
 
 ## 5. Module map
 
@@ -2874,7 +2969,7 @@ amending form stays unbuilt beside them: a tracking branch is not a ball.
 | `src/reply/convs.rs` | one workspace's conversation list, and the two token fields rung 3 lives on. | ~160 |
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
-| `src/reply/start.rs` | the start family's two receipts: the staged body carried whole, and the minted name. | ~90 |
+| `src/reply/start.rs` | the start family's three receipts: the staged body carried whole, one of those per candidate of a spread (§4.36), and the minted name. | ~110 |
 | `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields spelled once, read and re-said. | ~130 |
 | `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, a symbol printed instead of the answer, and nothing written down. | ~90 |
 | `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~140 |
@@ -2896,6 +2991,7 @@ amending form stays unbuilt beside them: a tracking branch is not a ball.
 | `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~90 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
+| `src/verbs/candidates.rs` | the n-attempt path's three envelopes — the spread, the acceptance and the release — as doors and never rows, because argv has no channel selector for a gesture naming no workspace (§4.36). | ~105 |
 | `src/verbs/capability.rs` | the boundary's three acts as rows — the parked call's answer with its three verdicts, and the floor's two directions, neither of which can be refused (§4.34). | ~110 |
 | `src/verbs/workspace.rs` | the wall's own three acts as rows — the unmaking, whose `typed` is an arming rather than a parameter (§4.20), and the pin pair, which are assertions rather than a toggle (§4.25). | ~100 |
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
@@ -2913,11 +3009,12 @@ amending form stays unbuilt beside them: a tracking branch is not a ball.
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~240 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
-| `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34) — and the line that says whose sentence each is. | ~135 |
+| `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
-| `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~210 |
+| `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~240 |
+| `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
@@ -2951,9 +3048,10 @@ amending form stays unbuilt beside them: a tracking branch is not a ball.
 | `src/reply/diff.rs` | what one attempt changed — the row the work diff answers with and the same row nested in every science attempt, one type because upstream has one encoder; binary read off the shape, and the patch deliberately unread (§4.32). | ~115 |
 | `src/reply/science.rs` | every delivery attempt of one workspace: what it was fired with, what it cost, what was said to it and how it ended — the outcome a token with whatever that token can say (§4.32). | ~155 |
 | `src/verbs/fleet.rs` | the fleet family — six rows and one door, the door because a cap is a number; and the file it is written in names no reply at all, because two families share one (§4.32). | ~150 |
-| `src/ui/fleet.rs` | the fleet pane (§4.32): five acts in the unmaking's order, three boxes and the two controls each holds down, and the two standing listings under them. | ~215 |
+| `src/ui/fleet.rs` | the fleet pane (§4.33): five acts in the unmaking's order, three boxes and the two controls each holds down, and the two standing listings under them. | ~205 |
+| `src/ui/fleet/candidates.rs` | the n-attempt path on the listing that already names every value it takes (§4.36): which act a row earns, the two words and the count the three spend, and the acceptance addressed down one channel. | ~180 |
 | `src/ui/fleet/rows.rs` | the words a fleet row wears — the receipt that names its op, an attempt's lines and no others, and the churn read off the shape. | ~125 |
-| `src/ui/model/fleet.rs` | the fleet pane between frames (§4.32) — three words, the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the wall. | ~135 |
+| `src/ui/model/fleet.rs` | the fleet pane between frames (§4.33) — three words for its own acts and two more for the candidates' (§4.36), the receipt filed under the op that earned it, and the retirement that takes the pane and both its answers with the wall. | ~175 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames: **the seven answers as one value** (`Records`), its open/close acts, the retirement with its subject, and the one `covered` question every pane shares. | ~140 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
@@ -2994,7 +3092,7 @@ amending form stays unbuilt beside them: a tracking branch is not a ball.
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
-| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every box that takes text, named (§4.23). | ~250 |
+| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every one of the seven boxes that take text, named (§4.23). | ~265 |
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
 | `src/ui/theme.rs` | the ink a row is painted in. | ~70 |

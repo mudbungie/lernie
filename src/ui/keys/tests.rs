@@ -226,6 +226,7 @@ fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
             address: "home".to_owned(),
             goal: "port it".to_owned(),
             phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
+            spread: None,
         }),
         ..stocked()
     };

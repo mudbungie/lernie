@@ -39,8 +39,13 @@
 
 use crate::ui::{Model, theme};
 
+pub use candidates::{ACCEPT, GOAL_HINT, RELEASE, SPREAD, SUMMARY_HINT};
+
 pub use rows::{attempt, changed, churn, receipt};
 
+/// The three acts one obligation's attempts earn, on the listing that already
+/// names every value they need (§4.36).
+mod candidates;
 /// The words a row wears, each a pure function of it.
 mod rows;
 
@@ -167,8 +172,10 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
     fired
 }
 
-/// The two standing reads, each with its own emptiness.
-fn listings(ui: &mut egui::Ui, model: &Model) {
+/// The two standing reads, each with its own emptiness — and the second is
+/// where the n-candidate path lives, because its rows name every value those
+/// three acts take (`candidates`).
+fn listings(ui: &mut egui::Ui, model: &mut Model) {
     let attempts = model.attempts.clone();
     let work = model.work.clone();
     egui::ScrollArea::vertical()
@@ -193,18 +200,7 @@ fn listings(ui: &mut egui::Ui, model: &Model) {
             match work.as_deref() {
                 None => drop(ui.label(NOT_ANSWERED)),
                 Some([]) => drop(ui.label(NOTHING)),
-                Some(rows) => {
-                    for row in rows {
-                        ui.separator();
-                        ui.label(changed(row));
-                        for file in &row.files {
-                            ui.colored_label(
-                                theme::tone_ink(&crate::reply::convs::Tone::Weak),
-                                churn(file),
-                            );
-                        }
-                    }
-                }
+                Some(rows) => candidates::render(ui, model, rows),
             }
         });
 }

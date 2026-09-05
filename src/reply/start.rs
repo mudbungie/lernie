@@ -38,6 +38,8 @@ use super::fields;
 pub(crate) const PREPARED: &str = "prepared";
 /// The fire's reply kind.
 pub(crate) const STARTED: &str = "started";
+/// The spread's reply kind: one staged body per candidate (§4.36).
+pub(crate) const FANNED: &str = "fanned";
 
 /// The field the minted conversation name rides under.
 const CONVERSATION: &str = "conversation";
@@ -70,6 +72,24 @@ pub(crate) fn prepared(obj: &Map<String, Value>) -> Result<Prepared, String> {
         .get(PREPARED)
         .and_then(Value::as_object)
         .ok_or_else(|| format!("missing or non-object field {PREPARED:?}"))?;
+    body_of(body)
+}
+
+/// **One candidate of a spread**, which is a staged body with no envelope
+/// around it: `fanned` answers a LIST of these, where `prepared` answers one
+/// nested under its own name. Both go through [`body_of`], so a candidate and
+/// a single start are the same value read the same way — and each candidate is
+/// fired by the ordinary `prompt`, which is the whole of what makes the fan a
+/// spread rather than a second start path.
+pub(crate) fn candidate(value: &Value) -> Result<Prepared, String> {
+    let body = value
+        .as_object()
+        .ok_or_else(|| "candidate: not an object".to_owned())?;
+    body_of(body)
+}
+
+/// The two fields this build reads, and the whole body carried beside them.
+fn body_of(body: &Map<String, Value>) -> Result<Prepared, String> {
     Ok(Prepared {
         workspace: fields::text(body, WORKSPACE)?,
         goal: fields::text(body, GOAL)?,

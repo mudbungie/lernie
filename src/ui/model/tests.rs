@@ -219,3 +219,65 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
     let said = model.notice.clone().expect("a receipt is a line").line();
     assert!(said.contains("the floor is lifted"), "{said}");
 }
+
+/// **The candidate family's two receipts become the bar's one line**, and each
+/// optional identity is a FACT rather than a blank: no commit means the
+/// delivery landed nothing, no source ref means there was none, and whether a
+/// retirement also took the ref is the project's own declared retention — the
+/// engine's answer, never this seat's prediction (§4.36).
+#[test]
+fn the_candidate_family_s_two_receipts_become_the_bar_s_one_line() {
+    let mut model = Model::default();
+    let flat = own().channel;
+    model.absorb(
+        &flat,
+        Read::Answer(Reply::Delivered {
+            base: "aaa1".to_owned(),
+            target: "work/bl-1".to_owned(),
+            source: Some("attempt/at-1".to_owned()),
+            commit: Some("ccc3".to_owned()),
+        }),
+    );
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("delivered onto work/bl-1 at ccc3"), "{said}");
+    assert!(said.contains("from attempt/at-1"), "{said}");
+    assert!(said.contains("the ball is not closed"), "{said}");
+
+    model.absorb(
+        &flat,
+        Read::Answer(Reply::Delivered {
+            base: "aaa1".to_owned(),
+            target: "main".to_owned(),
+            source: None,
+            commit: None,
+        }),
+    );
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("nothing landed"), "{said}");
+    assert!(said.contains("no source ref"), "{said}");
+
+    model.absorb(&flat, Read::Answer(Reply::Retired { discarded: false }));
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("still addressable"), "{said}");
+
+    model.absorb(&flat, Read::Answer(Reply::Retired { discarded: true }));
+    let said = model.notice.clone().expect("a receipt is a line").line();
+    assert!(said.contains("the keep had expired"), "{said}");
+}
+
+/// **The spread's answer reaches the model through the one door**, and what it
+/// does there is compose the fires — §4.26's argument read over n.
+#[test]
+fn a_fanned_answer_composes_one_fire_per_candidate() {
+    let mut model = Model::default();
+    let row = crate::reply::start::Prepared {
+        workspace: "there".to_owned(),
+        goal: "the rung's own prefill".to_owned(),
+        body: serde_json::json!({"goal": "the rung's own prefill", "workspace": "there"}),
+    };
+    model.absorb(
+        &own().channel,
+        Read::Answer(Reply::Fanned(vec![row.clone(), row])),
+    );
+    assert_eq!(model.outbox.len(), 2);
+}

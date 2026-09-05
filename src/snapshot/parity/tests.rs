@@ -210,11 +210,20 @@ fn every_shape_the_subset_excludes_is_refused_and_names_its_line() {
 
 /// **The committed ledger is read by the real reader**, so the file's own
 /// syntax is judged by the gate rather than only by the test above.
+///
+/// **It no longer asserts the ledger is non-empty, because the ledger is
+/// empty** (bl-8ffa): the candidate family's three were the last rows in it,
+/// so every op the roster classes `control` now carries one here. That
+/// assertion was a vacuity guard and it was the wrong one — it made the
+/// success state
+/// [`an_empty_ledger_is_the_success_state_and_not_a_refusal`] declares
+/// unreachable for the committed file, so the ledger could never be finished.
+/// The guard the reader actually needs is two-directional over text this
+/// suite controls, and it is already above: one fixture that must parse into a
+/// row and five shapes that must be refused by line.
 #[test]
 fn the_committed_ledger_parses_and_every_row_cites_a_ball() {
-    let rows = exempt::read();
-    assert!(!rows.is_empty(), "parity.toml records nothing");
-    for row in &rows {
+    for row in &exempt::read() {
         assert!(row.why.contains("bl-"), "{} cites nothing", row.op);
     }
 }

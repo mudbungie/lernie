@@ -67,6 +67,38 @@ pub enum Reply {
         /// one, and that is the operator saying *stay parked*.
         advanced: bool,
     },
+    /// **The spread's product** (§4.36): one staged body per candidate, each
+    /// rebound to its own attempt worktree and ready for the ordinary
+    /// `prompt`. It is a listing of exactly the value
+    /// [`Prepared`](Self::Prepared) carries one of, because upstream encodes
+    /// it with the same encoder — so a candidate and a single staged start are
+    /// one type here, and firing n is firing one, n times.
+    Fanned(Vec<start::Prepared>),
+    /// **A candidate was accepted** (§4.36): the identities its delivery acted
+    /// on. It is a receipt and never a stored winner — the standing fact is
+    /// the tagged squash the target's history now carries — so it is four
+    /// scalars and no type of its own, exactly as
+    /// [`Answered`](Self::Answered) is.
+    ///
+    /// **Two of the four are optional and each absence is a fact**, upstream's
+    /// own: no `source` is a source ref that was not there, and no `commit` is
+    /// a delivery that landed nothing. The target and the pinned base it
+    /// validated against are always said, because a delivery is about them
+    /// whether or not it moved anything.
+    Delivered {
+        base: String,
+        target: String,
+        source: Option<String>,
+        commit: Option<String>,
+    },
+    /// **A candidate's worktree was released** (§4.36): `discarded` says
+    /// whether this project's declared retention also took the source ref.
+    ///
+    /// It reports what the policy DID and never what was asked, which is why
+    /// the seat paints it rather than predicting it: an undeclared retention
+    /// keeps the ref, and a seat that said so on its own would be a second
+    /// authority on a file it has not read.
+    Retired { discarded: bool },
     /// **A capability floor was written** (§4.34, bl-bce2): whether one
     /// **stands** over the conversation now.
     ///

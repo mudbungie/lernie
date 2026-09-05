@@ -149,7 +149,23 @@ impl Model {
             // The one answer that is never filed as content: it is drawn, held
             // while the picture is on screen, and dropped with the pane.
             Reply::Enrolled(material) => self.enrolled(&material),
-            Reply::Prepared(prepared) => self.fire(&prepared),
+            Reply::Prepared(prepared) => self.staged(&prepared),
+            // **The spread's product is n starts** (§4.36), so the frame that
+            // absorbs it composes n fires — §4.26's own argument read over n:
+            // the second act belongs to the frame that took the first's
+            // receipt, and a candidate prepared and never fired is a worktree
+            // balls materialized for nothing.
+            Reply::Fanned(rows) => self.fanned(rows),
+            // The candidate family's two receipts. Neither is content — there
+            // is no row either belongs under — so each is the bar's one line
+            // about an act just performed, exactly as §4.34's pair are.
+            Reply::Delivered {
+                base,
+                target,
+                source,
+                commit,
+            } => self.notice = Some(Notice::delivered(&base, &target, source, commit)),
+            Reply::Retired { discarded } => self.notice = Some(Notice::retired(discarded)),
             Reply::Started { conversation } => self.started(conversation),
             // The three receipts. None carries content, so what they change is
             // whether the operator is told something happened — and a captured

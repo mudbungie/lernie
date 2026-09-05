@@ -38,6 +38,12 @@ const TRAIL_CLEARED: &str = "trail-cleared";
 /// and a struct holding them would be a type with one reader and one painter.
 const ANSWERED: &str = "answered";
 const FLOORED: &str = "floored";
+/// The candidate family's two receipts (§4.36). They answer to no type of
+/// their own for [`ANSWERED`]'s reason: each is a handful of scalars about an
+/// act just performed, and the spread's own answer is a list of a type that
+/// already exists.
+const DELIVERED: &str = "delivered";
+const RETIRED: &str = "retired";
 
 /// **Read one reply frame.** Total: every input answers one of [`Read`]'s
 /// three arms, and none of them is a panic.
@@ -112,6 +118,16 @@ fn decode(frame: &Value) -> Result<Read, String> {
         stream::KIND => Reply::Follow(stream::follow(obj)?),
         enrolled::KIND => Reply::Enrolled(enrolled::enrolled(obj)?),
         start::PREPARED => Reply::Prepared(start::prepared(obj)?),
+        start::FANNED => Reply::Fanned(fields::rows(obj, start::candidate)?),
+        DELIVERED => Reply::Delivered {
+            base: fields::text(obj, "base")?,
+            target: fields::text(obj, "target")?,
+            source: fields::opt_text(obj, "source")?,
+            commit: fields::opt_text(obj, "commit")?,
+        },
+        RETIRED => Reply::Retired {
+            discarded: fields::flag(obj, "discarded")?,
+        },
         start::STARTED => Reply::Started {
             conversation: start::started(obj)?,
         },

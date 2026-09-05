@@ -30,6 +30,7 @@ fn firing() -> Model {
             address: "home".to_owned(),
             goal: "port the paint probe".to_owned(),
             phase: Phase::Firing,
+            spread: None,
         }),
         ..seated()
     }

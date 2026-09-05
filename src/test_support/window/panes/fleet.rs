@@ -118,6 +118,9 @@ pub(crate) fn fleeting() -> Model {
             project: "lernie".to_owned(),
             cap: 4,
             model: "claude-haiku-4-5".to_owned(),
+            spread: 3,
+            goal: String::new(),
+            summary: String::new(),
             said: Some(crate::ui::Armed {
                 op: "fleet".to_owned(),
                 armed: true,

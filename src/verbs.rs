@@ -80,6 +80,8 @@ use serde_json::{Map, Value};
 
 /// The balls family: four reads, three acts, and the two authoring doors.
 pub mod balls;
+/// The n-attempt path: spread a prepared start, accept one, release the rest.
+pub mod candidates;
 /// The capability boundary's three acts: the parked call, and the floor.
 pub mod capability;
 /// The machines registered in one workspace — the tool-host surface's one read.
@@ -120,6 +122,7 @@ pub use balls::{
     ASSIGN, BALLS, BOARD, CLOSE, MARKS, RELEASE, WORKSPACE_BALLS, assign, balls, board, close,
     marks, release, workspace_balls,
 };
+pub use candidates::{DELIVER, FAN, RETIRE, deliver, fan, retire};
 pub use capability::{ANSWER, RESTORE, REVOKE, VERDICTS, answer, restore, revoke};
 pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};

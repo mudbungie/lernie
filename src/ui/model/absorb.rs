@@ -97,6 +97,16 @@ impl Model {
             // The trail, on the same terms — every action that crossed ONE
             // engine's boundary, replacing that channel's section (`trail`).
             Reply::Ops(rows) => self.crossed(channel, rows),
+            // **The ball pane's two channel-wide reads**, on the same terms
+            // again — each names no workspace, so each answer replaces its own
+            // channel's section (`board`; bl-d2af).
+            Reply::Board(board) => self.columned(channel, board),
+            Reply::Balls(rows) => self.bound(channel, rows),
+            // **And its two aimed reads**, on the roles' terms: filed whether
+            // or not the pane is open, because a frame that arrives after it
+            // closed is the last one in flight rather than a thing to drop.
+            Reply::WorkspaceBalls(rows) => self.holding = Some(rows),
+            Reply::Marks { branch } => self.marks = Some(branch),
             Reply::Found(found) => self.hit(channel, found),
             // The login pane's three, on the roles' own terms — filed whether
             // or not the pane is open, because a frame that arrives after it

@@ -22,6 +22,8 @@ mod absorb;
 mod acts;
 /// Which wall the window is aimed at, and the two questions asked of a name.
 mod aim;
+/// The ball pane between frames: the boards, the bindings, and the wall's own.
+mod board;
 /// What a channel is, and what a gesture aimed down one must be addressed as.
 mod channel;
 /// The claim a start leaves on the selection, and the row it stands in for.
@@ -60,6 +62,7 @@ mod unmake;
 mod window;
 
 pub use aim::Aim;
+pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};
 pub use config::Configuring;
 pub use enroll::{Enrolling, Grade, Shown};
@@ -173,6 +176,20 @@ pub struct Model {
     /// **What each channel last said has crossed its boundary** — the same
     /// per-channel reading, one noun over (`trail`; bl-4c48).
     pub trails: Vec<Trail>,
+    /// **What each channel last said its board is** — every live ball in its
+    /// column and the loops running them, on the trail's own per-channel
+    /// reading (`board`; bl-d2af).
+    pub columns: Vec<Columns>,
+    /// **What each channel last said its ball⇄workspace bindings are**, on the
+    /// same terms (`board`).
+    pub bindings: Vec<Bindings>,
+    /// **What the aimed wall last said it holds**, or `None` while nobody has
+    /// been answered about it — the one-option reading [`Self::roles`] gets,
+    /// and retired with the aim for the same reason (`board`).
+    pub holding: Option<Vec<crate::reply::balls::BoundBall>>,
+    /// **The branch the aimed wall tracks its tasks on**, on the same standing
+    /// (`board`).
+    pub marks: Option<String>,
     /// **What each channel last said it answers to** — the same per-channel
     /// reading, one noun over (`window`; bl-40ec).
     pub pages: Vec<Pages>,

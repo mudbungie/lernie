@@ -37,6 +37,8 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
     out
 }
 
+/// The ball pane's four, which stand together at two widths from one pane.
+mod board;
 /// The machines, which stand on the clients pane and nest under nothing.
 mod clients;
 /// The config pane's two, one of which addresses a channel rather than a wall.

@@ -30,6 +30,8 @@
 
 /// The `act:<op>` token a control carries so interface drift is catchable.
 pub mod act;
+/// The ball pane: the board, the bindings, and what the aimed wall holds.
+pub mod board;
 /// The chat pane: one conversation, entry by entry.
 pub mod chat;
 /// The clients pane: which machines may execute for a wall, and what they offer.
@@ -71,7 +73,8 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Configuring, Edit, Enrolling, Fill, Forking, Grade, Held, Hits,
-    Listing, Login, Lookup, Model, Notice, Pages, Posted, Shown, Trail, Tuning, Unmaking,
+    Aim, Asking, Bindings, Channel, Chunk, Columns, Configuring, Edit, Enrolling, Fill, Forking,
+    Grade, Held, Hits, Listing, Login, Lookup, Model, Notice, Pages, Posted, Shown, Trail, Tuning,
+    Unmaking,
 };
 pub use shell::{Column, Shape, render};

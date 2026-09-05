@@ -7,8 +7,12 @@
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and eighteen of its rows are declared
-//! elsewhere**, in the seven files that own their subjects. The conversation's
+//! **[`TABLE`] is the whole roster and twenty-two of its rows are declared
+//! elsewhere**, in the eight files that own their subjects. The balls family's
+//! four — the box-wide binding table, the fleet board, one wall's own balls
+//! and the branch it tracks them on — are [`super::balls`]'s, on the terms
+//! every group below is: one subject, one file, whatever the mix of widths.
+//! The conversation's
 //! four are [`super::conversation`]'s, its records' two are
 //! [`super::records`]'s, its spine's two are [`super::spine`]'s — beside the
 //! `fork` door that shares their subject and cannot be a row, because it
@@ -187,8 +191,12 @@ pub const NUDGE: Verb = Verb {
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
     super::queue::ATTENTION,
+    super::balls::BALLS,
+    super::balls::BOARD,
     super::window::SEARCH,
     CONVERSATIONS,
+    super::balls::WORKSPACE_BALLS,
+    super::balls::MARKS,
     TRANSCRIPT,
     FOLLOW,
     super::records::STEPS,

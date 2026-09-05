@@ -27,17 +27,19 @@
 # SEVERABILITY, which is the house test: deleting a line re-reddens the gate and
 # changes no code. Adding a control deletes a line and changes no config.
 
-# bl-d2af — the ball pane: a workspace's balls are readable nowhere, and none
-# can be created, claimed, closed or amended from this seat.
-assign = "bl-d2af — no ball pane: nothing here claims a ready ball for a workspace"
-balls = "bl-d2af — no ball pane: the ball/workspace bindings are painted nowhere"
-board = "bl-d2af — no ball pane: the fleet board has no column view here"
-close = "bl-d2af — no ball pane: a ball cannot be closed or delivered from this seat"
-create = "bl-d2af — no ball pane: a ball cannot be filed from this seat"
-marks = "bl-d2af — no ball pane: the branch an agent tracks its tasks on is unreadable"
-release = "bl-d2af — no ball pane: a held ball cannot be unclaimed here"
-update = "bl-d2af — no ball pane: a ball's title, body, schedule and journal are unreachable"
-workspace-balls = "bl-d2af — no ball pane: what a workspace holds and what it cost are unpainted"
+# bl-d2af landed the ball pane's READ half — `balls`, `board`,
+# `workspace-balls` and `marks` are painted, so their rows are gone from here.
+# What it left is the ACT half, and that is bl-f7ae below.
+#
+# bl-f7ae — the ball pane reads and cannot act: nothing here files, claims,
+# releases, amends or closes a ball. All five name a project and a `--as` name
+# and NO workspace, so all five fan — one control filing five balls is the
+# question to settle before writing them rather than after.
+assign = "bl-f7ae — the ball pane has no controls: nothing here claims a ready ball"
+close = "bl-f7ae — the ball pane has no controls: a ball cannot be closed or delivered from this seat"
+create = "bl-f7ae — the ball pane has no controls: a ball cannot be filed from this seat"
+release = "bl-f7ae — the ball pane has no controls: a held ball cannot be unclaimed here"
+update = "bl-f7ae — the ball pane has no controls: a ball's title, body, schedule and journal are unreachable"
 
 # bl-b8f7 — the trail pane reads and cannot act. bl-4c48 landed the read half:
 # `ops` is painted, so its row is gone from here. These two are its acts, and

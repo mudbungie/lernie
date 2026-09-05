@@ -13,11 +13,13 @@
 //! photograph is every sentence it can say, and an unanswered pane says only
 //! that nobody has answered.
 
+/// The covering panes whose subject is every channel this box holds.
+pub(crate) mod board;
 /// The records pane, whose four reads make it the fixture that grows.
 pub(crate) mod records;
-/// The covering panes whose subject is every channel this box holds.
 pub(crate) mod union;
 
+pub(crate) use board::{boarded, column, figure};
 pub(crate) use records::{notch, recorded, step};
 pub(crate) use union::{commanded, finding, helped, hit, queued, trailed, trailing, waiting};
 

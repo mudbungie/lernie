@@ -18,8 +18,8 @@
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
 use crate::test_support::window::{
-    commanded, configured, finding, machines, pinned, queued, recorded, role, seated, signing,
-    trailing, tuned,
+    boarded, commanded, configured, finding, machines, pinned, queued, recorded, role, seated,
+    signing, trailing, tuned,
 };
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
@@ -156,6 +156,21 @@ fn trail() -> World {
     }
 }
 
+/// **The window with the ball pane open and answered** (bl-d2af) — the only
+/// screen a board row's sentences, a loop's line, a binding row and the aimed
+/// wall's own balls are on.
+///
+/// It is answered, and answered on BOTH its widths, for the reason every other
+/// pane's world is: what a world exists to photograph is every sentence the
+/// pane can say, and a pane answered on one width only would leave the other's
+/// sentences on no screen this walk visits.
+fn board() -> World {
+    World {
+        name: "boarding",
+        model: boarded(),
+    }
+}
+
 /// **The window with the commands pane open** — the sixth covered state
 /// (bl-40ec), and the only screen every sentence a help row can carry is on.
 fn commands() -> World {
@@ -268,6 +283,7 @@ pub(crate) fn all() -> Vec<World> {
         records(),
         queue(),
         trail(),
+        board(),
         commands(),
         find(),
         login(),

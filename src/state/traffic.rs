@@ -115,6 +115,13 @@ pub enum Open {
     /// of the aim, and it stands because a trail is what is happening
     /// (bl-4c48).
     Trail,
+    /// **The ball pane** — the third question that is nobody's focus, and
+    /// the one that is BOTH: `balls` and `board` name no workspace, so they
+    /// are asked of every channel, and `workspace-balls` and `marks` name the
+    /// aimed wall, so they are asked of it while the same pane stands
+    /// (bl-d2af). It stands for the trail's reason exactly — a board is what
+    /// is happening.
+    Board,
     /// **The clients pane** — the aimed wall's sixth question, the machines
     /// registered in it and what each offers (bl-e53c). Its standing buys the
     /// same thing the login pane's does: presence is true only at the moment
@@ -149,6 +156,8 @@ impl Open {
             Some(Self::Queue)
         } else if model.trailing() {
             Some(Self::Trail)
+        } else if model.boarding() {
+            Some(Self::Board)
         } else if model.login.is_some() {
             Some(Self::Login(model.following()))
         } else if model.showing(crate::ui::Listing::Clients) {

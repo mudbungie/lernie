@@ -18,7 +18,7 @@
 //! **The premise has since come true** (bl-4a2c). [`crate::ui::tuning`] is a
 //! settings panel by any reading: a place you go to, act in, and come back
 //! from, holding what a wall's roles are set to. So the walk covers every
-//! covering pane rather than the one — seven of them since bl-40ec — and it is
+//! covering pane rather than the one — ten of them since bl-d2af — and it is
 //! still two gestures each, in and back out, because that bound is what the
 //! assertion is, and it is the same bound whether the seat has one such pane or
 //! seven.
@@ -40,7 +40,8 @@
 //! set the question is about.
 
 use crate::ui::{
-    Column, Model, Shape, commands, enroll, find, login, queue, records, trail, tuning, unmake,
+    Column, Model, Shape, board, commands, enroll, find, login, queue, records, trail, tuning,
+    unmake,
 };
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
@@ -66,7 +67,7 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The nine covered panes, in the order the walk visits them.**
+/// **The ten covered panes this walk visits, in the order it visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
@@ -82,8 +83,9 @@ struct Covered {
 /// and are walked among them for the same reason (bl-40ec). The login pane's
 /// control is a fourth one on the aimed row and is walked among them too
 /// (bl-e3c5). The trail's hangs off the roster beside the queue's, its subject
-/// being every channel as well (bl-4c48).
-const PANES: [Covered; 9] = [
+/// being every channel as well (bl-4c48), and the ball pane's beside those two
+/// on the same terms — two of its four reads name no workspace (bl-d2af).
+const PANES: [Covered; 10] = [
     Covered {
         column: Column::Channels,
         open: queue::OPEN,
@@ -119,6 +121,12 @@ const PANES: [Covered; 9] = [
         open: trail::OPEN,
         close: trail::CLOSE,
         heading: trail::HEADING,
+    },
+    Covered {
+        column: Column::Channels,
+        open: board::OPEN,
+        close: board::CLOSE,
+        heading: board::HEADING,
     },
     Covered {
         column: Column::Channels,

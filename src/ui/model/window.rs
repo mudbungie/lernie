@@ -1,5 +1,6 @@
-//! **The window's own panes between frames** (bl-40ec, bl-4c48; DESIGN §4.21,
-//! §4.27): the engine's verb table, what a needle found, and the trail.
+//! **The window's own panes between frames** (bl-40ec, bl-4c48, bl-d2af;
+//! DESIGN §4.21, §4.27, §4.31): the engine's verb table, what a needle found,
+//! the trail, and the balls.
 //!
 //! # Neither has a subject anything on the glass can move
 //!
@@ -52,6 +53,11 @@ use crate::ui::Channel;
 /// clippy's `struct_excessive_bools` asks for by name, taken rather than
 /// suppressed.
 ///
+/// **The ball pane joined them on the trail's terms** (bl-d2af). Two of its
+/// four reads name no workspace, which is §4.21's whole definition of this
+/// family; the other two name the aimed wall and are that pane's own section
+/// rather than a second pane (`super::board`).
+///
 /// **The trail joined them rather than bringing a flag of its own** (bl-4c48).
 /// Its subject is every channel this box holds, which is §4.21's whole
 /// definition of this family, so a tenth field would have been a second
@@ -66,6 +72,8 @@ pub enum Lookup {
     Finding,
     /// Everything that crossed their boundaries (`crate::ui::trail`).
     Trailing,
+    /// The balls they hold, in their columns (`crate::ui::board`; bl-d2af).
+    Board,
 }
 
 /// **One channel's answer to *what do you answer to***, and the channel it

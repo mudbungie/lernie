@@ -72,6 +72,12 @@ impl Model {
         // under another's name.
         self.retire_configuring();
         self.retire_records();
+        // **The ball pane's WALL half goes with the wall, and the pane does
+        // not** (bl-d2af). Two of its four reads name every channel, so the
+        // pane's subject survives an aim that moved; the two that name one
+        // wall do not, and painting the old wall's balls under the new wall's
+        // name is exactly what the retirement above prevents one level up.
+        self.retire_wall_balls();
     }
 
     /// **Select a conversation**, by the id every gesture addresses it with.

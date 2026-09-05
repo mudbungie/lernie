@@ -121,8 +121,12 @@ fn row(value: &Value) -> Result<StepRow, String> {
     })
 }
 
-/// The nested spend object, read where the row holds it.
-fn spend(row: &Map<String, Value>) -> Result<Spend, String> {
+/// The nested spend object, read where the row holds it — **and where a
+/// figure holds one too** ([`super::spend`]), which is why it is
+/// `pub(crate)`: the four counters and their total are one shape on this
+/// wire, written by one encoder, and a second reading of it would be a
+/// second protocol.
+pub(crate) fn spend(row: &Map<String, Value>) -> Result<Spend, String> {
     let obj = row
         .get("tokens")
         .and_then(Value::as_object)

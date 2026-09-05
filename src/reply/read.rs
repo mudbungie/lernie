@@ -11,9 +11,9 @@
 use serde_json::Value;
 
 use super::{
-    ERROR, KIND, OK, Outcome, Read, Reply, clients, config, convs, enrolled, fields, files,
-    governing, help, lineages, login, ops, providers, queue, rail, roles, roster, search, start,
-    steps, stream, transcript,
+    ERROR, KIND, OK, Outcome, Read, Reply, balls, board, clients, config, convs, enrolled, fields,
+    files, governing, help, lineages, login, ops, providers, queue, rail, roles, roster, search,
+    start, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -69,6 +69,12 @@ fn decode(frame: &Value) -> Result<Read, String> {
         config::KIND => Reply::Config(config::config(obj)?),
         lineages::KIND => Reply::Lineages(fields::rows(obj, lineages::row)?),
         ops::KIND => Reply::Ops(fields::rows(obj, ops::row)?),
+        balls::KIND => Reply::Balls(fields::rows(obj, balls::row)?),
+        board::KIND => Reply::Board(board::board(obj)?),
+        balls::HELD => Reply::WorkspaceBalls(fields::rows(obj, balls::bound)?),
+        balls::MARKS => Reply::Marks {
+            branch: balls::marks(obj)?,
+        },
         providers::KIND => Reply::Providers(fields::rows(obj, providers::row)?),
         providers::MODELS => Reply::Models(fields::rows(obj, providers::offered)?),
         login::KIND => Reply::Login(login::signin(obj)?),

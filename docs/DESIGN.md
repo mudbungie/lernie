@@ -326,7 +326,8 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Twenty-three kinds, because twenty-three are painted.** The engine's reply surface is
+**Twenty-eight kinds, because twenty-eight are painted.** The engine's reply
+surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
@@ -335,7 +336,10 @@ conversation itself (`transcript`), the live tail
 (`steps`) and what its worktree holds (`files`), both §4.18's — the decision
 queue (`attention`) and the receipt that raises a row onto it (`flagged`),
 both §4.19's, the window's own three — one engine's verb table (`help`), what
-a needle found (`search`) and the trail (`ops`, §4.27) — the login pane's three: what a wall
+a needle found (`search`) and the trail (`ops`, §4.27) — the ball pane's four:
+the whole box's binding table (`balls`), the fleet board (`board`), one wall's
+own balls (`workspace-balls`) and the branch it tracks them on (`marks`), all
+§4.30's — the login pane's three: what a wall
 can sign in to (`providers`), what one of its rows offers (`models`) and one
 sign-in run (`login`), all §4.24's — the machines registered in one
 workspace (`clients`, §4.28), the config pane's two — the lineages a workspace
@@ -359,7 +363,9 @@ commit that built §4.21's two (bl-40ec), the sign-in family's three
 (bl-e3c5), `clients` made it in the commit that built §4.28's (bl-e53c), the
 spine pair (`rail`, `governing`) made it in the commit that built §4.29's half
 of the records pane (bl-b52c), `config` and `lineages` made it in the commit
-that built §4.30's pane (bl-5c53), and the three conversation reads still in
+that built §4.30's pane (bl-5c53), the balls family's four (`balls`, `board`,
+`workspace-balls`, `marks`) made it in the commit that built §4.31's ball pane
+(bl-d2af), and the three conversation reads still in
 `unreadable/` (`agent`, `step`, `inbox`) are the ledger holding the ball that
 will move them (bl-3257).
 
@@ -2148,8 +2154,9 @@ The fleet family — `fleet`, `disband`, `arm`, `disarm`, `scan`, `science`,
 pane's shape rather than this one's. **The fleet has no read of its own**: its
 loop state (cap, count, tick, lease, ceiling) rides on the `board` reply, in an
 array that is *absent rather than empty* when nothing is armed — so the
-readable half of the fleet belongs to the ball pane (bl-d2af), which is what
-would decode `board` at all.
+readable half of the fleet belongs to the ball pane, which is what would decode
+`board` at all. That pane has since landed and it does (§4.28, bl-d2af); what
+bl-a43a is left holding is the fleet's controls and its own two reads.
 
 ### 4.28 The clients pane: which machines may execute for this wall (REMOTE §5, §5.1; bl-e53c)
 
@@ -2314,6 +2321,84 @@ a name and no read this seat has says what workflow names exist, so a control
 for it would be a box asking the operator to remember. It arrives with the
 editor, which needs a box anyway.
 
+### 4.31 The ball pane: the board, the bindings, and what a wall holds (bl-d2af)
+
+`src/reply/balls.rs`, `src/reply/board.rs`, `src/reply/spend.rs`,
+`src/verbs/balls.rs`, `src/ui/board.rs`, `src/ui/board/rows.rs`,
+`src/ui/board/wall.rs`, `src/ui/model/board.rs`. **The twelfth covering
+pane**,
+and the one that answers what this window carried the wire for and painted
+nowhere: the task store the conversations are working. Until it landed an
+operator seated here could watch work happen and could not see the ball it was
+happening on.
+
+**It is the first pane whose subject is TWO WIDTHS, and the wire is what
+decided that.** Four ops, and they split on the one predicate §4.21 already
+defines mechanically (`crate::verbs::Verb::addresses_a_workspace`). `balls` —
+the whole box's ball⇄workspace binding table — and `board` — that table folded
+into columns — name no workspace, so they fan and their sections are the union
+across channels, which is §4.19's shape exactly. `workspace-balls` and `marks`
+name one, so they are §4.17's: asked of the aimed wall, and retired when the
+aim moves. Splitting them into two panes would put *the board* and *what this
+wall holds* on two screens, and they are one question asked at two widths; so
+they are one pane with one section that says which width it is about
+(`src/ui/board/wall.rs`).
+
+**The pane survives an aim and its wall half does not.** That is not an
+exception to §4.17's retirement rule, it is that rule applied to each half of
+the subject: a pane about every channel's board does not stop being about them
+because the operator aimed elsewhere, and painting the old wall's balls under
+the new wall's name is exactly what the retirement prevents. So
+`Model::aim_at` drops `holding` and `marks` and leaves `Lookup::Board`
+standing.
+
+**All four reads STAND, on the trail's terms** (§4.27). A board is what is
+happening: a drone starts, a ball is claimed, a loop ticks, and every one of
+those changes the pane under an operator who is looking at it. So the set is
+keyed on the pane (`crate::state::Open::Board`) and asked only while somebody
+is looking — never posted once, which is what the window's other channel-wide
+reads get and what a verb table and a search deserve.
+
+**The fleet's readable half is here because there is nowhere else.** There is
+no `fleet` read on this wire and no reply kind for one; what an armed loop is
+doing rides on the `board` answer, in an array that is **absent rather than
+empty** when nothing is armed. That is the one case where a `Vec` and an
+`Option<Vec>` are not two claims, so `Board::fleet` is a plain `Vec`. The
+loop's rendered line rides too and this seat paints it rather than composing
+one: `label` is upstream's own sentence about the cap, the count, the tick and
+the lease, and a seat re-deriving it from the numbers beside it would be a
+second opinion about a loop it does not run. The fleet's CONTROLS are bl-a43a.
+
+**The money is upstream's rendering and nothing here computes one**
+(`src/reply/spend.rs`). `usd` was derived on the box that holds the price
+table; a seat multiplying tokens by a rate of its own would disagree with it
+quietly, which is §4.27's own failure mode one noun over. Its absence is a
+fact and not a zero. The attribution rides as both the classification and the
+clause, because a figure over one stamped conversation renders as no clause at
+all and the clause alone cannot tell that from *workspace-wide*. The four
+counters are `crate::reply::steps::Spend` read from where they already live,
+never restated — one shape on this wire, one encoder upstream, one reading
+here.
+
+**One control carries four tokens**, which is PARITY §3's rule that the
+ledger's unit is the op rather than the widget, spent on the widest control
+this window has. Opening the pane stands all four reads up: two of every
+channel this box holds, and — when the window is aimed — two of that wall. The
+two aimed ones are asked by that click and by no other, so that is where their
+token belongs (`src/ui/roster/acts.rs`).
+
+**What this ball did NOT land.** bl-d2af named nine ops and this is the read
+half. The five acts — `create`, `close`, `update`, `assign`, `release` — are
+**bl-f7ae**, and the reason they are a ball of their own is a question worth
+settling before a control exists rather than after: not one of the five names a
+workspace, so all five FAN, and one click would file the same ball on every
+channel this box holds. That is `clear-trail`'s question (bl-b8f7) on a second
+family, and it wants an answer in words before a control is written. Each also
+needs a `name` to act as, which this seat holds nowhere. All five answer with a
+captured run, a kind this seat already paints, so that ball decodes nothing —
+it is controls, their arming, and where each hangs.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -2339,7 +2424,8 @@ editor, which needs a box anyway.
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/reply.rs` | the reply vocabulary's roster: the kinds (`Reply` is the one census), the three outcomes one frame can be, and the four-rung decode policy stated once. | ~200 |
+| `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~170 |
+| `src/reply/kinds.rs` | **the one census** — every kind this window draws, and the captured run three of the ops come back as. It moves every time a pane lands, where the policy beside it almost never does. | ~155 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |
 | `src/reply/fields.rs` | the strict field readers — rung 1, in one place, every refusal naming its field. | ~110 |
 | `src/reply/roster.rs` | the workspace enumeration and how current it is. | ~145 |
@@ -2399,6 +2485,14 @@ editor, which needs a box anyway.
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
+| `src/reply/spend.rs` | what a ball has cost and what the sum is over: the money as upstream rendered it, and the attribution that says the classification and the clause because the clause alone cannot say it (§4.28). | ~80 |
+| `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.28). | ~180 |
+| `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one wall's own balls with the figure that is required there and nowhere else, and the branch a wall tracks its tasks on (§4.28). | ~110 |
+| `src/verbs/balls.rs` | the balls family's four reads as rows — two naming no workspace and two naming one, a division read off the parameters rather than listed twice; `marks` is here as its READ, the amending form being a write with a confirmation to design (§4.28). | ~100 |
+| `src/ui/board.rs` | the ball pane (§4.28): the union across channels, the aimed wall's section between its two halves, and the two emptinesses that are the union's rather than the wall's. | ~155 |
+| `src/ui/board/rows.rs` | the words a board row wears — every line a pure function of the row, the loop's line being the engine's own with the two facts it omits hung off it. | ~135 |
+| `src/ui/board/wall.rs` | the aimed wall's half: what it holds, what each cost, the branch it tracks on, and four emptinesses because they are four different claims. | ~85 |
+| `src/ui/model/board.rs` | the ball pane between frames — the two per-channel unions, the wall's two answers, and the retirement that takes the wall half and leaves the pane (§4.28). | ~105 |
 | `src/ui/model/trail.rs` | the trail between frames — a flag and the per-channel filing, on the queue's own terms, with the read standing because a trail is what is happening (§4.27). | ~70 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
 | `src/ui/model/spine.rs` | the pane's one draft (§4.29) — the two words a fork is composed from, why the goal is spent on firing and the role is not, and the act that spends them. | ~85 |
@@ -2421,7 +2515,8 @@ editor, which needs a box anyway.
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
-| `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). | ~225 |
+| `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~155 |
+| `src/offframe/asker/wall.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed wall. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
 | `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~140 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
@@ -2480,7 +2575,8 @@ editor, which needs a box anyway.
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
 | `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
 | `src/test_support/window/panes/records.rs` | the records pane's own fixture, split out at the budget because it is the one covering pane with four reads under it and the balls that grow it are not done. `cfg(test)`. | ~125 |
-| `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~210 |
+| `src/test_support/window/panes/union.rs` | the fixtures for the four whose subject is EVERY CHANNEL (§4.19, §4.21, §4.27): the decision queue, the verb table, a search and the trail. Split on the seam DESIGN draws, not at the cap. `cfg(test)`. | ~185 |
+| `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed wall, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
 

@@ -16,13 +16,16 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Twenty-two do
+//! kinds and most of them belong to panes that do not exist here. Twenty-six
+//! do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — its spine pair, the operable
 //! commits and the config commit governing them — the decision queue and the receipt
 //! that raises a row onto it, the window's own three reads — the engine's verb
-//! table, what a needle found and the trail — the login pane's three — the provider
+//! table, what a needle found and the trail — the ball pane's four — the
+//! world's binding table, the fleet board, one wall's own balls and the branch
+//! it tracks them on — the login pane's three — the provider
 //! table, what one row offers and a sign-in run — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
 //! name — and a new box's material. A kind nothing renders is a kind
@@ -72,6 +75,10 @@
 //! later (yog bl-32cb) drops into it as files rather than as code.
 //! `corpus/README.md` is the drop-in contract.
 
+/// The balls themselves: the binding table, one wall's own, and its branch.
+pub mod balls;
+/// The fleet board: every live ball in its column, and the loops running them.
+pub mod board;
 /// The machines registered in one workspace, and what each one offers.
 pub mod clients;
 /// One config file's bytes, and the settings its schema found in them.
@@ -88,6 +95,8 @@ pub mod files;
 pub mod governing;
 /// The engine's own verb table, which is also the parity roster's source.
 pub mod help;
+/// The census of what an engine can answer, and the captured run.
+mod kinds;
 /// The config lineages one workspace holds.
 pub mod lineages;
 /// One sign-in run, as the engine streams it.
@@ -108,6 +117,8 @@ pub mod roles;
 pub mod roster;
 /// Text found across the balls, workspaces and conversations an engine sees.
 pub mod search;
+/// What a ball has cost, and what the sum is over.
+pub mod spend;
 /// The start family's two receipts.
 pub mod start;
 /// The steps one conversation's loop has taken.
@@ -117,6 +128,7 @@ pub mod stream;
 /// The conversation itself.
 pub mod transcript;
 
+pub use kinds::{Outcome, Reply};
 pub use read::read;
 
 /// The field every reply carries, and the only one a refusal shares with an
@@ -157,134 +169,6 @@ pub enum Read {
     /// unknown kind — naming it *is* the upgrade prompt, exactly as the
     /// version preface's mismatch is.
     Unreadable(String),
-}
-
-/// **The kinds the window draws.** Twenty-two, and each is here because a
-/// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Reply {
-    /// A short verb's captured run — what a deposit, a stop or a ball verb
-    /// earns. `ok` is `exit == 0` and is read off the exit code alone.
-    Outcome(Outcome),
-    /// The detached advance was launched. It carries nothing because there is
-    /// nothing yet: what the model does with the turn arrives on the
-    /// transcript, at its own pace, and a receipt that guessed at it would be
-    /// a receipt that lied.
-    Nudged,
-    /// The enumerated workspaces with their rollups — the roster, and how
-    /// current the derivation behind it is.
-    Workspaces(roster::Workspaces),
-    /// One workspace's conversation list.
-    Conversations(Vec<convs::ConvRow>),
-    /// **What one workspace's roles are set to** — the read the tuning pane
-    /// opens on, and the read back of what its own three writes landed. It is
-    /// a listing rather than a map: the engine's order is the config's order,
-    /// and a seat that re-sorted it would be holding a second opinion about a
-    /// file it did not write.
-    Roles(Vec<roles::RoleRow>),
-    /// One conversation's committed entries with the live tail folded on —
-    /// the whole of what the chat pane paints.
-    Transcript(transcript::Transcript),
-    /// **Everything waiting on the operator**, across every workspace the
-    /// engine can see — the decision queue's rows, standing while its pane is
-    /// open (bl-f0ef). It is the answer to two ops rather than one: `attention`
-    /// asks for the whole queue and `seen` answers with the queue that remains,
-    /// so a reading of it is never a receipt to discard.
-    Attention(Vec<queue::QueueRow>),
-    /// **A flag was raised**, and the row it lands on arrives on the next
-    /// [`Attention`](Self::Attention). It carries nothing for the reason
-    /// [`Nudged`](Self::Nudged) carries nothing — what changed is on the queue,
-    /// and a receipt that restated it would be this end predicting a listing.
-    Flagged,
-    /// **The steps the selected conversation's loop has taken** — one half of
-    /// what the records pane paints, standing while it is open (bl-2cf7).
-    Steps(steps::Steps),
-    /// **What the selected conversation's worktree holds** — the other half,
-    /// on the same standing (bl-2cf7).
-    Files(files::Files),
-    /// **The selected conversation's spine** — every operable commit it has
-    /// and the children dispatched off them, on the records pane's standing
-    /// (§4.28, bl-b52c). It is the read the `fork` control's one argument is
-    /// discoverable off, which is why the two landed together.
-    Rail(rail::Rail),
-    /// **The config commit that conversation resolves its policy from** — the
-    /// spine's other half, on the same standing (§4.28, bl-b52c). Its `oid`
-    /// changed meaning at PROTOCOL 5 under an unchanged spelling, and
-    /// `governing`'s own module doc is where that is written down.
-    Governing(governing::Governing),
-    /// **One engine's own verb table** — what the commands pane paints, and
-    /// the same rows the parity roster is generated from (bl-40ec). It names
-    /// no workspace, so it is one channel's answer and the pane is the union.
-    Help(Vec<help::HelpRow>),
-    /// **What a needle found**, across everything one engine can see — the
-    /// find pane's answer, on the same fanned terms (bl-40ec).
-    Found(search::Found),
-    /// **The trail one engine keeps** — every action that crossed its boundary,
-    /// standing while the trail pane is open (bl-4c48). It names no workspace,
-    /// so it is one channel's answer and the pane is the union.
-    Ops(Vec<ops::OpRow>),
-    /// **What this wall can sign in to** — the login pane's first read,
-    /// standing while it is open (bl-e3c5). It is the engine's listing order,
-    /// which is brazen's own routing order, and a seat that re-sorted it would
-    /// be holding a second opinion about a table it does not own.
-    Providers(Vec<providers::ProviderRow>),
-    /// **The machines registered in one workspace** — the clients pane's one
-    /// read, standing while it is open (bl-e53c). Presence is answered at the
-    /// moment it is asked and the advertised set is what that machine last
-    /// presented, which are two lifetimes on one row and are painted as two.
-    Clients(Vec<clients::ClientRow>),
-    /// **One config file's bytes, and the settings its schema found in them**
-    /// — the config pane's second read, standing on the destination it is
-    /// pointed at (bl-5c53; DESIGN §4.30).
-    Config(config::Config),
-    /// **The config lineages one workspace holds** — that pane's first, and
-    /// the listing its two pickers are filled from.
-    Lineages(Vec<lineages::Lineage>),
-    /// **What one provider row is offering** — the same pane, one depth down,
-    /// and posted rather than standing: a model list is fixed for the life of
-    /// a provider's own answer, so a standing read would spend a round trip a
-    /// beat forever on something that cannot change under the operator.
-    Models(Vec<String>),
-    /// **One sign-in run**, whether it is the act's own receipt or a frame of
-    /// the lane that follows it — upstream answers both with this kind,
-    /// because they are the same value at the same moment (REMOTE §8.3).
-    Login(login::Signin),
-    /// One frame of the live tail, and the whole accumulated stream rather
-    /// than a delta: a frame **replaces** what a seat holds, so nothing has to
-    /// be reassembled and a follow lane needs no second parser.
-    Follow(stream::Stream),
-    /// **A start, staged.** The fire-time parameters as the engine settled
-    /// them, which the next act hands straight back — the one reply on this
-    /// surface a seat has to hold between two gestures.
-    Prepared(start::Prepared),
-    /// **A new box's material** — the one reply on this surface that carries a
-    /// secret, held while a symbol is on screen and written down nowhere
-    /// (REMOTE §8.4; DESIGN §3).
-    Enrolled(enrolled::Enrolled),
-    /// **A start, fired**, and the name the engine minted for it. It carries
-    /// nothing else for the reason [`Nudged`](Self::Nudged) carries nothing:
-    /// what the model does with the turn arrives on the transcript. What is
-    /// new is the name, and the name is an address the reply just made
-    /// answerable.
-    Started { conversation: String },
-}
-
-/// A captured run: what the child said and how it ended.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Outcome {
-    /// The child's exit status.
-    pub exit: i32,
-    pub stdout: String,
-    pub stderr: String,
-}
-
-impl Outcome {
-    /// Whether the run succeeded. **Derived from the exit code**, never read
-    /// off the `ok` beside it: one fact with one home, and a second copy could
-    /// only ever disagree with it.
-    pub fn ok(&self) -> bool {
-        self.exit == 0
-    }
 }
 
 #[cfg(test)]

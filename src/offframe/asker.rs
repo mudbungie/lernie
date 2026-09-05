@@ -29,6 +29,9 @@ use std::path::Path;
 use serde_json::Value;
 
 use super::down;
+
+/// The questions that name one workspace, asked of the aimed wall.
+mod wall;
 use crate::state::{Link, Open, Said};
 use crate::ui::Channel;
 
@@ -40,6 +43,13 @@ use crate::ui::Channel;
 /// channel this box holds*, and [`focused`] is the nest under the aim and the
 /// selection. One grows when a channel-wide op lands a pane; the other when a
 /// pane about a focus does.
+///
+/// **That seam is the wire's own** ([`crate::verbs::Verb::addresses_a_workspace`]):
+/// a question with no workspace field has no way to name a channel, so it goes
+/// down every one and the pane is the union; a question with one goes down the
+/// aimed wall's alone. A pane that asks at BOTH widths therefore appears in
+/// both halves — which is a fact about its four ops rather than a special case
+/// (`crate::ui::board`, DESIGN §4.31).
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
     everywhere(link, root, &standing);
@@ -50,148 +60,69 @@ pub fn tick(link: &Link, root: &Path) {
 /// and the two pane-keyed unions composed across them.
 fn everywhere(link: &Link, root: &Path, standing: &crate::state::Standing) {
     for channel in &standing.channels {
-        read(
-            link,
-            down(link, root, channel, &crate::verbs::workspaces()),
-            channel,
-        );
-        // **The queue fans with the roster** (bl-f0ef), and for the same
-        // reason: `attention` names no workspace, so its subject is every
-        // channel this box holds and the union is composed here. It stands on
-        // the PANE rather than on a focus, because nothing on the glass is its
-        // subject — see `crate::state::Standing::queue`.
-        if standing.standing(&Open::Queue) {
-            read(
-                link,
-                down(link, root, channel, &crate::verbs::attention()),
-                channel,
-            );
-        }
-        // **And the trail fans on the same terms** (bl-4c48): `ops` names no
-        // workspace either, so its subject is every channel and the pane is
-        // the union. It STANDS rather than being posted once, unlike the
-        // window's other two channel-wide reads, because a trail is what is
-        // happening: every act this seat spends appends a row to it, and an
-        // alarm goes up and comes down under an operator who is looking.
-        if standing.standing(&Open::Trail) {
-            read(
-                link,
-                down(link, root, channel, &crate::verbs::ops(crate::verbs::DEPTH)),
-                channel,
-            );
-        }
+        fanned(link, root, standing, channel);
     }
 }
 
 /// **The nest under the focus**: the aimed wall's questions, the panes keyed
-/// on it, and the selected conversation's.
+/// on it, and the selected conversation's — all of it [`wall`]'s.
 fn focused(link: &Link, root: &Path, standing: &crate::state::Standing) {
     let Some((channel, aim)) = standing.aimed() else {
         return;
     };
-    aimed(
+    wall::ask(link, root, standing, &channel, &aim);
+}
+
+/// **The questions that name no workspace**, asked of one channel — the caller
+/// asks them of every channel this box holds, which is what makes each pane
+/// above the union.
+fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: &Channel) {
+    read(
         link,
-        root,
-        &channel,
-        &crate::verbs::conversations(aim.address.clone()),
+        down(link, root, channel, &crate::verbs::workspaces()),
+        channel,
     );
-    if standing.standing(&Open::Tuning) {
-        aimed(
+    // **The queue fans with the roster** (bl-f0ef), and for the same
+    // reason: `attention` names no workspace, so its subject is every
+    // channel this box holds and the union is composed here. It stands on
+    // the PANE rather than on a focus, because nothing on the glass is its
+    // subject — see `crate::state::Standing::queue`.
+    if standing.standing(&Open::Queue) {
+        read(
             link,
-            root,
-            &channel,
-            &crate::verbs::roles(aim.address.clone()),
+            down(link, root, channel, &crate::verbs::attention()),
+            channel,
         );
     }
-    // **The provider table stands on the login pane** (bl-e3c5), on the roles
-    // read's own terms — and the standing is what makes it worth having: a
-    // credential lands on the engine while the operator is looking at the
-    // table, so a row that said *no credential* says otherwise on the next
-    // beat with nothing asked again. The run's own lines are the held lane's
-    // (`crate::offframe::signin`), never this pass's.
-    if standing.standing(&Open::Login(standing.signin())) {
-        aimed(
+    // **And the trail fans on the same terms** (bl-4c48): `ops` names no
+    // workspace either, so its subject is every channel and the pane is
+    // the union. It STANDS rather than being posted once, unlike the
+    // window's other two channel-wide reads, because a trail is what is
+    // happening: every act this seat spends appends a row to it, and an
+    // alarm goes up and comes down under an operator who is looking.
+    if standing.standing(&Open::Trail) {
+        read(
             link,
-            root,
-            &channel,
-            &crate::verbs::providers(aim.address.clone()),
+            down(link, root, channel, &crate::verbs::ops(crate::verbs::DEPTH)),
+            channel,
         );
     }
-    // **The machines stand on their pane** (bl-e53c), on the provider table's
-    // own terms and for a sharper form of its reason: a row's presence is true
-    // only at the instant the engine answered it, so the read that says a foot
-    // is connected is worth nothing unless it is asked again.
-    if standing.standing(&Open::Clients) {
-        aimed(
+    // **The ball pane's two widest reads fan on the same terms** (bl-d2af):
+    // `balls` is the whole box's binding table and `board` its fold into
+    // columns, and neither names a workspace. Both stand while the pane is
+    // open, for the trail's reason — a board is what is happening, and a
+    // claim, a spawn or a loop's tick moves it under an operator looking
+    // at it.
+    if standing.standing(&Open::Board) {
+        read(
             link,
-            root,
-            &channel,
-            &crate::verbs::clients(aim.address.clone()),
+            down(link, root, channel, &crate::verbs::balls()),
+            channel,
         );
-    }
-    // **The config pane's two, and the one whose subject is a CHANNEL**
-    // (bl-5c53). The lineage listing carries the aim's workspace and is routed
-    // by it like every other aimed read. The file read is routed by it only
-    // for the two destinations that name one: litany's globals and yog's own
-    // cadence file belong to the ENGINE, so what they address is the channel
-    // the window is aimed at — asked here the way a roster is, by name, rather
-    // than falling through to this box's own engine (DESIGN §4.30).
-    if standing.standing(&Open::Config(standing.at())) {
-        aimed(
+        read(
             link,
-            root,
-            &channel,
-            &crate::verbs::lineages(aim.address.clone()),
-        );
-        if let Some(at) = standing.at() {
-            let gesture = crate::verbs::config(&at);
-            if at.addresses_a_workspace() {
-                aimed(link, root, &channel, &gesture);
-            } else {
-                read(link, down(link, root, &channel, &gesture), &channel);
-            }
-        }
-    }
-    let Some(conversation) = standing.conversation.clone() else {
-        return;
-    };
-    aimed(
-        link,
-        root,
-        &channel,
-        &crate::verbs::transcript(aim.address.clone(), conversation.clone()),
-    );
-    // **The records pair stands on the pane exactly as the roles read does**
-    // (bl-2cf7): the selected conversation is asked what its loop did and
-    // what its worktree holds only while somebody is looking.
-    if standing.standing(&Open::Records) {
-        aimed(
-            link,
-            root,
-            &channel,
-            &crate::verbs::steps(aim.address.clone(), conversation.clone()),
-        );
-        aimed(
-            link,
-            root,
-            &channel,
-            &crate::verbs::files(aim.address.clone(), conversation.clone()),
-        );
-        // **And the spine pair with them** (bl-b52c): the same pane, and the
-        // reads whose answer the `fork` control's one argument comes off — a
-        // control offered on a notch this seat has not been answered about
-        // would be a control with nothing to carry.
-        aimed(
-            link,
-            root,
-            &channel,
-            &crate::verbs::rail(aim.address.clone(), conversation.clone()),
-        );
-        aimed(
-            link,
-            root,
-            &channel,
-            &crate::verbs::governing(aim.address, conversation),
+            down(link, root, channel, &crate::verbs::board()),
+            channel,
         );
     }
 }
@@ -200,7 +131,7 @@ fn focused(link: &Link, root: &Path, standing: &crate::state::Standing) {
 /// envelope carries the address the roster handed out, and
 /// [`route`](crate::seat::route) resolves it over this box's entries and
 /// rewrites it to the host's spelling at the one place that mapping is spent.
-fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
+pub(super) fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
     let asked = crate::seat::route(root, envelope)
         .sent
         .map_err(crate::channel::Reach::Unsent)
@@ -216,7 +147,7 @@ fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
 /// re-asking is free (REMOTE §3: *"a read is answered in place, and asking
 /// twice is asking once"*), so a standing question needs no arm for a fact it
 /// would do nothing with. The whole set is asked again on the next beat.
-fn read(link: &Link, leg: Result<(), crate::channel::Reach>, channel: &Channel) {
+pub(super) fn read(link: &Link, leg: Result<(), crate::channel::Reach>, channel: &Channel) {
     if let Err(reach) = leg {
         link.heard(channel, Said::Unreachable(reach.said()));
     }

@@ -72,6 +72,8 @@
 
 use serde_json::{Map, Value};
 
+/// The balls family's four reads — the board, the bindings, a wall's and its branch.
+pub mod balls;
 /// The machines registered in one workspace — the tool-host surface's one read.
 pub mod clients;
 /// The config family: the lineages a workspace holds, and one file's bytes.
@@ -103,6 +105,7 @@ pub mod window;
 /// The wall's own act — the one row whose product is that its subject is gone.
 pub mod workspace;
 
+pub use balls::{BALLS, BOARD, MARKS, WORKSPACE_BALLS, balls, board, marks, workspace_balls};
 pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages};
 pub use conversation::{

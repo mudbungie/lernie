@@ -90,10 +90,10 @@ fn an_exit_status_outside_its_own_type_is_unreadable() {
 /// the version preface's mismatch is.
 #[test]
 fn a_kind_this_build_does_not_paint_refuses_by_name_with_a_remedy() {
-    let Read::Unreadable(why) = read(&json!({"ok": true, "kind": "board", "rows": []})) else {
+    let Read::Unreadable(why) = read(&json!({"ok": true, "kind": "science", "rows": []})) else {
         panic!("an unpainted kind");
     };
-    assert!(why.contains("\"board\""), "{why}");
+    assert!(why.contains("\"science\""), "{why}");
     assert!(why.contains("upgrade"), "{why}");
 }
 

@@ -26,10 +26,10 @@ use super::{Listing, Model};
 impl Model {
     /// **Whether a pane covers the conversation** — the enrollment, the
     /// tuning pane, one of the three listings (`super::listing`), the window's
-    /// own three, the login pane, or an unmaking. The question the shell and
-    /// every pane-opening control share, asked once so ten panes cannot stand
-    /// on one glass: a control that opened a second cover would replace what
-    /// is standing without saying so.
+    /// own FOUR, the login pane, the config pane, or an unmaking. The question
+    /// the shell and every pane-opening control share, asked once so twelve
+    /// panes cannot stand on one glass: a control that opened a second cover
+    /// would replace what is standing without saying so.
     pub fn covered(&self) -> bool {
         self.enroll.is_some()
             || self.tuning.is_some()

@@ -8,7 +8,7 @@
 
 use std::path::Path;
 
-use super::flat;
+use super::route::flat;
 use crate::channel::{Channel, entries, material};
 use crate::cli::Verdict;
 

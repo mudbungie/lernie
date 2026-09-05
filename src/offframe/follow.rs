@@ -40,6 +40,7 @@ pub fn tick(link: &Link, root: &Path) {
     let envelope = crate::verbs::follow(aim.address.clone(), conversation.clone());
     let mut fold = Stream::default();
     let held = crate::seat::route(root, &envelope)
+        .sent
         .map_err(crate::channel::Reach::Unsent)
         .and_then(|(open, carried)| {
             open.follow(&carried, &mut |frame| {

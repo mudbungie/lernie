@@ -118,6 +118,7 @@ pub fn tick(link: &Link, root: &Path) {
 /// rewrites it to the host's spelling at the one place that mapping is spent.
 fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
     let asked = crate::seat::route(root, envelope)
+        .sent
         .map_err(crate::channel::Reach::Unsent)
         .and_then(|(open, carried)| open.ask(&carried));
     match asked {

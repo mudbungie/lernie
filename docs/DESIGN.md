@@ -287,6 +287,15 @@ answer to its name **even when it cannot be dialled** (falling through would
 send a gesture to the wrong engine on the strength of a missing file), and
 where the two names agree the operator's envelope crosses byte for byte.
 
+**And it answers what this box calls the channel it chose** (`seat::Routed`,
+bl-c70d). The name was computed here and discarded, so every caller that files
+an answer had to guess at it again — and the poster's guess was the *aim*,
+which is where a gesture was composed rather than where it went. The name now
+comes out of the one place the choice is made, whether or not anything opened:
+a leg that never crossed still has a sentence to paint, and the section it
+belongs under is the one it would have crossed on. Nothing re-derives it, which
+keeps §8.2's mapping spent exactly once.
+
 **The fallthrough is not silent, and a name with no reader does not take it**
 (bl-d574). The flat engine's own workspaces are named and held nowhere else, so
 a seat cannot know that namespace without asking and §8.2's fallthrough stands
@@ -1397,11 +1406,12 @@ Five decisions, and each is a choice rather than a mechanism:
   mapping has one home — a roster row and `ui::Channel::address` — so
   `Model::wall` asks it there. Two things follow and both are the point. A
   channel stamp becomes a display fact that cannot mis-aim a gesture, which
-  matters because a receipt's stamp is the *aimed* channel rather than the one
+  mattered because a receipt's stamp was the *aimed* channel rather than the one
   that answered (`src/offframe/poster.rs`) and `seen`'s reply is a queue rather
-  than a receipt — the residual that leaves is one beat of a section under the
-  wrong header, and it is bl-c70d's, filed with the fix: the seat-side name is
-  a fact `seat::route` already has and discards. And a row for a wall this seat
+  than a receipt — the residual that left was one beat of a section under the
+  wrong header. **That residual is spent** (bl-c70d): `seat::route` answers the
+  seat-side name it chose (§4.7) and the poster stamps it, so the aim is not
+  read on that pass at all. And a row for a wall this seat
   holds no name for is honestly unaddressable, and says so in the roster's own
   sentence, rather than being aimed at a different wall by a guess.
 - **`flag` is on the composer's second row and not on this pane**, which is the
@@ -2061,7 +2071,8 @@ sentence in two places is two sentences).
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
 | `src/place.rs` | where the seat was pointed, remembered between runs. Every way the file can be wrong is one answer: no place. | ~85 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
-| `src/seat.rs` | which engine a gesture reaches, and what it carries there. | ~190 |
+| `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
+| `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from. | ~80 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
@@ -2136,7 +2147,7 @@ sentence in two places is two sentences).
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set: the questions nested, the pane-keyed reads, and the channel that costs only itself (§4.12). | ~145 |
-| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~130 |
+| `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the one that is fanned, and which sentence a failed leg earns — an act's or a read's. | ~140 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |

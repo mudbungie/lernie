@@ -51,29 +51,26 @@
 //! it on argv). That is what lets a frame reach the three window-level reads
 //! at all — the roster refresh, the engines' own verb table and a search —
 //! and it is why each answer is stamped with the channel it came down rather
-//! than with the aim.
+//! than with the aim — which is now true of the routed path as well
+//! ([`routed`], bl-c70d): the aim is not read on this pass at all.
 
 use std::path::Path;
 
 use crate::channel::Reach;
 use crate::state::{Link, Said};
-use crate::ui::{Channel, Posted};
+use crate::ui::Posted;
 
 /// Send everything the frame composed since the last pass.
 ///
-/// The receipt of a **routed** gesture is stamped with the aimed channel,
-/// which is where a composed gesture came from. A gesture composed with no aim
-/// is still sent — the address it carries is what routes it, and the address
-/// is the whole of what routing needs — and its receipt is stamped with a
-/// channel that names nothing, because a stamp this seat cannot honestly make
-/// is not one it should invent. A **fanned** gesture needs no such guess: each
-/// leg knows the channel it opened.
+/// **A fanned gesture is stamped by its leg** and a routed one by
+/// [`crate::seat::route`], which is the one place the channel is chosen; the
+/// aim is read for neither. An aim is where a gesture was *composed*, and an
+/// operator may compose one aimed at a wall on one channel while a control
+/// fires at a row on another — so a receipt stamped with the aim is filed under
+/// a channel the gesture never went down, and a gesture composed with no aim
+/// earned a stamp naming nothing at all (bl-c70d).
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
-    let channel = standing
-        .aimed()
-        .map(|(channel, _)| channel)
-        .unwrap_or_default();
     for posted in link.compose() {
         if crate::envelope::workspace(&posted.envelope).is_none() {
             for held in &standing.channels {
@@ -83,14 +80,20 @@ pub fn tick(link: &Link, root: &Path) {
             }
             continue;
         }
-        routed(link, root, &channel, &posted);
+        routed(link, root, &posted);
     }
 }
 
 /// One gesture down the channel its workspace names, and the receipt filed
-/// against the aim.
-fn routed(link: &Link, root: &Path, channel: &Channel, posted: &Posted) {
-    let asked = crate::seat::route(root, &posted.envelope)
+/// against **that** channel.
+///
+/// [`crate::seat::Routed`] answers the seat-side name whether or not anything
+/// opened, so the failure arm files under the channel the gesture would have
+/// crossed on rather than under a second guess about it.
+fn routed(link: &Link, root: &Path, posted: &Posted) {
+    let chosen = crate::seat::route(root, &posted.envelope);
+    let asked = chosen
+        .sent
         .map_err(Reach::Unsent)
         .and_then(|(open, carried)| open.ask(&carried));
     match asked {
@@ -106,7 +109,7 @@ fn routed(link: &Link, root: &Path, channel: &Channel, posted: &Posted) {
             let op = crate::envelope::op(&posted.envelope);
             for frame in stream {
                 link.heard(
-                    channel,
+                    &chosen.down,
                     Said::Receipt {
                         op: op.clone(),
                         frame,
@@ -114,7 +117,7 @@ fn routed(link: &Link, root: &Path, channel: &Channel, posted: &Posted) {
                 );
             }
         }
-        Err(reach) => link.heard(channel, said(posted, reach)),
+        Err(reach) => link.heard(&chosen.down, said(posted, reach)),
     }
 }
 

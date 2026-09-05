@@ -79,7 +79,7 @@ fn an_entry_that_renames_nothing_carries_the_envelope_unchanged() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.path().join(entry("home")), "engine.example:9000");
     let envelope = json!({"op": "conversations", "workspace": "home", "extra": [1, 2]});
-    let (_channel, carried) = route(scratch.path(), &envelope).expect("routed");
+    let (_channel, carried) = route(scratch.path(), &envelope).sent.expect("routed");
     assert_eq!(carried, envelope);
 }
 
@@ -217,4 +217,53 @@ fn a_name_no_entry_holds_still_reaches_the_flat_engine_when_the_op_takes_one() {
         "{:?}",
         engine.heard()
     );
+}
+
+/// **The seat-side name comes OUT of the route** (bl-c70d), so whoever files
+/// the answer stamps the channel that was chosen rather than guessing at it a
+/// second time — and `dials` is an address something reached, not one a file
+/// claims.
+#[test]
+fn the_route_answers_what_this_box_calls_the_channel_it_chose() {
+    let scratch = Scratch::new();
+    wired(&scratch, &flat(), vec![vec![yes()]]);
+    mint::provisioned(&scratch.path().join(entry("alpha")), "alpha.example:9000");
+    let flat_root = route(scratch.path(), &json!({"op": "workspaces"})).down;
+    assert_eq!(flat_root.name, crate::seat::OWN);
+    assert_eq!(flat_root.named_there, None);
+    assert!(flat_root.dials.is_some(), "the flat root opened");
+    let held = route(
+        scratch.path(),
+        &json!({"op": "conversations", "workspace": "alpha"}),
+    )
+    .down;
+    assert_eq!(held.name, "alpha");
+    assert_eq!(held.named_there, Some("alpha".to_owned()));
+    assert_eq!(held.dials, Some("alpha.example:9000".to_owned()));
+}
+
+/// **And it is answered whether or not anything opened**, because a leg that
+/// never crossed still has a sentence to paint and the section it belongs
+/// under is the one it would have crossed on. A selector that named no channel
+/// at all is stamped with the name it named — there is nothing else true about
+/// it — and nothing is claimed about an address.
+#[test]
+fn a_route_that_opened_nothing_still_answers_the_channel_it_would_have_used() {
+    let scratch = Scratch::new();
+    std::fs::create_dir_all(scratch.path().join(entry("hollow"))).expect("mkdir");
+    let hollow = route(
+        scratch.path(),
+        &json!({"op": "conversations", "workspace": "hollow"}),
+    );
+    assert_eq!(hollow.down.name, "hollow");
+    assert_eq!(hollow.down.dials, None);
+    assert!(hollow.sent.is_err());
+    let unnamed = route(
+        scratch.path(),
+        &json!({"op": "workspaces", "workspace": "nowhere"}),
+    );
+    assert_eq!(unnamed.down.name, "nowhere");
+    assert_eq!(unnamed.down.named_there, None);
+    assert_eq!(unnamed.down.dials, None);
+    assert!(unnamed.sent.is_err());
 }

@@ -40,7 +40,7 @@ use crate::envelope;
 /// already prints, because this is that listing *answered*.
 pub fn fanned(data_root: &Path, envelope: &Value) -> Verdict {
     let asked: Vec<(String, Result<Vec<Value>, String>)> =
-        std::iter::once((OWN.to_owned(), super::flat(data_root)))
+        std::iter::once((OWN.to_owned(), super::route::flat(data_root)))
             .chain(
                 entries::read_dir(&entries::dir(data_root))
                     .into_iter()

@@ -41,6 +41,7 @@ pub fn tick(link: &Link, root: &Path) {
     let envelope = crate::verbs::login_tail(aim.address.clone(), provider.clone());
     let mut fold = Signin::default();
     let held = crate::seat::route(root, &envelope)
+        .sent
         .map_err(crate::channel::Reach::Unsent)
         .and_then(|(open, carried)| {
             open.follow(&carried, &mut |frame| {

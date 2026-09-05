@@ -1201,6 +1201,22 @@ implementation — because an encoder that agrees with itself proves nothing, an
 two reference implementations disagreeing with each other is how two of this
 one's choices were settled.
 
+**And the drawing is a scale rule, not a constant** (`src/ui/enroll/symbol.rs`,
+bl-5e0e). The symbol's whole job is to be read by a camera once, before the
+material is forgotten, so two things about how it is painted are properties of
+the act rather than of taste. It is drawn **as large as the pane allows** — the
+module pitch is what the available square divides into, where a four-point
+constant put a realistic §8.4 envelope's 153-module symbol in a 644-point
+square that overflowed the central panel at every window size this seat is
+photographed at, with no zoom and no way to make it bigger. And the pitch is a
+**whole number of device pixels**, drawn as **one mesh** rather than a filled
+rectangle per module: egui feathers every fill by a device pixel, half of it
+proud of the edge, so at a fractional origin — the only kind a layout offers —
+a module's own edge pixels come out grey and the contrast a decoder needs is
+spent on anti-aliasing. The suite renders and reads every module back off the
+pixels at one and two device pixels per point, which is the only altitude that
+can see either defect.
+
 **The symbol is geometry, so the assertions are geometry.** A QR symbol has no
 glyphs, so `crate::paint_probe` — the one walk over painted *text* — has
 nothing to say about one. The pane's words go through the probe; the picture is
@@ -2067,7 +2083,8 @@ sentence in two places is two sentences).
 | `src/reply/start.rs` | the start family's two receipts: the staged body carried whole, and the minted name. | ~90 |
 | `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields spelled once, read and re-said. | ~130 |
 | `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, a symbol printed instead of the answer, and nothing written down. | ~90 |
-| `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~145 |
+| `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~140 |
+| `src/ui/enroll/symbol.rs` | the symbol as geometry (bl-5e0e): the module pitch, which is a whole number of device pixels and as many of them as the pane has room for, and the one mesh every dark module is drawn in rather than a feathered rectangle apiece. | ~120 |
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |
 | `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
 | `src/reply/stream.rs` | the live tail's fold. | ~105 |

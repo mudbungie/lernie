@@ -1,13 +1,13 @@
-//! **The enrollment pane, after the engine answers**: the picture, the
-//! forgetting, and where a module goes.
+//! **The enrollment pane, after the engine answers**: the picture and the
+//! forgetting. Where a module goes is `super::super::symbol`'s own suite.
 //!
 //! **Nothing here asserts a pixel.** A QR symbol drawn at the wrong scale
 //! carries the same bytes and a symbol with one wrong module does not, so the
 //! thing that is right or wrong is the matrix — which `crate::qr`'s own suite
-//! pins against an independent encoder — and what is left for this pane is
-//! *where* a module goes and *what words* stand around it.
+//! pins against an independent encoder — and what is left for this half is the
+//! words that stand around it.
 
-use super::super::{CLOSE, KEPT, MODULE, QUIET, SEND, module, points};
+use super::super::{CLOSE, KEPT, SEND};
 use super::fixtures::{file, material, opened};
 use crate::paint_probe::frame::Window;
 use crate::qr::Symbol;
@@ -119,40 +119,4 @@ fn the_shown_pane_s_close_forgets_the_material() {
     let window = Window::new();
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.enroll, None);
-}
-
-/// Two screen distances are the same one. **A tolerance rather than a bit-for-
-/// bit compare** because clippy denies the second outright, and the margin is
-/// honest here rather than a hedge: every value in this arithmetic is a small
-/// integer times a whole-numbered constant, so the difference is exactly zero
-/// and anything an epsilon would forgive is a real defect.
-fn same(got: f32, want: f32) {
-    assert!((got - want).abs() < f32::EPSILON, "{got} is not {want}");
-}
-
-/// **Where a module goes.** The quiet zone is painted rather than assumed — a
-/// decoder uses it to find the symbol's edge, and a pane's own background is
-/// not it — so module (0, 0) sits four modules in on both axes.
-#[test]
-fn a_module_sits_inside_its_own_quiet_zone() {
-    let rect = egui::Rect::from_min_size(egui::pos2(10.0, 20.0), egui::vec2(500.0, 500.0));
-    let first = module(rect, 0, 0);
-    same(first.min.x, 10.0 + points(QUIET));
-    same(first.min.y, 20.0 + points(QUIET));
-    same(first.width(), MODULE);
-    same(first.height(), MODULE);
-    let along = module(rect, 3, 5);
-    same(along.min.x - first.min.x, points(3));
-    same(along.min.y - first.min.y, points(5));
-}
-
-/// The conversion is exact by arithmetic rather than by hope: the widest symbol
-/// there is measures 185 modules with its quiet zone, so nothing saturates.
-#[test]
-fn every_symbol_s_span_converts_exactly() {
-    same(points(0), 0.0);
-    same(points(1), MODULE);
-    let widest = Symbol::encode(&[0; 2331]).expect("the ceiling").side() + 2 * QUIET;
-    assert_eq!(widest, 185);
-    same(points(widest), 185.0 * MODULE);
 }

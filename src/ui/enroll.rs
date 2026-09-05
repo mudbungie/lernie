@@ -40,8 +40,10 @@
 //! asserts the words around it. Pixels are the wrong altitude to be right at:
 //! a symbol drawn at the wrong scale still carries the same bytes, and a symbol
 //! with a wrong module does not.
+//!
+//! The one place pixels ARE the altitude is [`symbol`], which decides the grid
+//! the matrix is drawn on. That is where the scale rule and its suite live.
 
-use crate::qr::Symbol;
 use crate::ui::{Grade, Model, theme};
 
 /// The word that opens an enrollment, on the wall the window is aimed at.
@@ -59,13 +61,6 @@ pub const NAME_HINT: &str = "the new box's name";
 pub const KEPT: &str = "not written down anywhere — scan it now, or enroll again";
 /// What stands where the symbol will be, while the engine is minting.
 pub const MINTING: &str = "minting…";
-
-/// How many screen points one module gets. Small enough that a version-40
-/// symbol still fits a pane, large enough that a camera resolves one.
-const MODULE: f32 = 4.0;
-/// The quiet zone, in modules — the standard's four, which a decoder uses to
-/// find the symbol's edge.
-const QUIET: usize = 4;
 
 /// Paint the enrollment, and take the clicks on it. Answers whether there was
 /// one to paint, so the shell knows whether the conversation still stands.
@@ -87,7 +82,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                 model.close_enrollment();
             }
             ui.separator();
-            paint(ui, &shown.symbol);
+            symbol::paint(ui, &shown.symbol);
         }
         None => form(ui, model),
     }
@@ -141,39 +136,7 @@ fn form(ui: &mut egui::Ui, model: &mut Model) {
     }
 }
 
-/// **The symbol, as rectangles.** One filled rectangle per dark module on a
-/// light ground, with the quiet zone painted rather than assumed: a decoder
-/// uses it to find the symbol's edge, and a pane's own background is not it.
-fn paint(ui: &mut egui::Ui, symbol: &Symbol) {
-    let side = points(symbol.side() + 2 * QUIET);
-    let (rect, _) = ui.allocate_exact_size(egui::vec2(side, side), egui::Sense::hover());
-    let painter = ui.painter();
-    painter.rect_filled(rect, 0.0, theme::PAPER);
-    for y in 0..symbol.side() {
-        for x in 0..symbol.side() {
-            if symbol.dark(x, y) {
-                painter.rect_filled(module(rect, x, y), 0.0, theme::INK);
-            }
-        }
-    }
-}
-
-/// Where one module sits inside the symbol's rectangle, quiet zone included.
-fn module(rect: egui::Rect, x: usize, y: usize) -> egui::Rect {
-    egui::Rect::from_min_size(
-        rect.min + egui::vec2(points(x + QUIET), points(y + QUIET)),
-        egui::vec2(MODULE, MODULE),
-    )
-}
-
-/// `n` modules, in screen points. Through `u16` rather than by a cast: the
-/// house lint set denies a lossy numeric cast and its only home would be a
-/// manifest-wide relaxation, and the widest symbol there is measures 185
-/// modules with its quiet zone — so the conversion is exact and the saturation
-/// is unreachable by arithmetic rather than by hope.
-fn points(n: usize) -> f32 {
-    f32::from(u16::try_from(n).unwrap_or(u16::MAX)) * MODULE
-}
+mod symbol;
 
 #[cfg(test)]
 mod tests;

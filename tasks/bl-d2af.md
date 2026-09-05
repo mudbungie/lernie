@@ -1,7 +1,8 @@
 +++
 title = "the ball pane: a workspace's balls are readable nowhere, and none can be created, claimed, closed or amended from this seat"
 created = 1788397351
-updated = 1788397351
+updated = 1788581846
+claimant = "Animations-O"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

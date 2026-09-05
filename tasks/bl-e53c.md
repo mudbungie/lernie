@@ -1,7 +1,8 @@
 +++
 title = "the tool-host surface is unpainted, so a foot's advertised set and its subject_cwd consent are readable nowhere"
 created = 1788153324
-updated = 1788153324
+updated = 1788581446
+claimant = "Animations-M"
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++
 Three reply shapes sit in `corpus/unreadable/` — `clients`, `invocations` and `agent` — and under the corpus README that directory is a ledger rather than a defect list: *"a kind that ought to be painted and sits here is a filed ball, not an oversight."* This is that ball.

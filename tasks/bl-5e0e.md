@@ -1,7 +1,8 @@
 +++
 title = "the enrollment symbol is drawn at 4 points per module, and at 1x scaling every module bleeds half a point into its neighbours"
 created = 1788329656
-updated = 1788329656
+updated = 1788581108
+claimant = "Animations-J"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

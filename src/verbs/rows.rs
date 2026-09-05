@@ -7,17 +7,20 @@
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and twelve of its rows are declared
-//! elsewhere**, in the five files that own their subjects. The conversation's
+//! **[`TABLE`] is the whole roster and sixteen of its rows are declared
+//! elsewhere**, in the six files that own their subjects. The conversation's
 //! four are [`super::conversation`]'s, its records' two are
 //! [`super::records`]'s and the decision queue's three are [`super::queue`]'s.
 //! The tuning family's `roles` and `model`
 //! are [`super::tuning`]'s, beside the two doors that share their subject and
 //! cannot be rows at all — the read and the three writes are one
 //! `providers.yaml` assignment seen from both ends, and splitting them across
-//! two files to keep this one tidy would have split the fact. What stays here
-//! is the enumeration: every verb this binary has a word for is in the one
-//! list below.
+//! two files to keep this one tidy would have split the fact. The sign-in
+//! family's four are [`super::login`]'s, on the same terms: the table, one
+//! row's offering, the act that starts a run in the wall and the lane that
+//! streams it are one subject, and three of the four are reads while one is an
+//! act. What stays here is the enumeration: every verb this binary has a word
+//! for is in the one list below.
 //!
 //! **Every row is also a `pub const`, with a typed door beside it**, because
 //! the window and the off-frame threads compose gestures by name at compile
@@ -189,6 +192,9 @@ pub(super) const TABLE: &[Verb] = &[
     super::records::STEPS,
     super::records::FILES,
     super::tuning::ROLES,
+    super::login::PROVIDERS,
+    super::login::MODELS,
+    super::login::LOGIN_TAIL,
     MESSAGE,
     super::conversation::INTERRUPT,
     NUDGE,
@@ -198,6 +204,7 @@ pub(super) const TABLE: &[Verb] = &[
     super::queue::SEEN,
     super::conversation::DELETE_AGENT,
     ENROLL,
+    super::login::LOGIN,
     super::tuning::MODEL,
     super::workspace::DELETE_WORKSPACE,
 ];

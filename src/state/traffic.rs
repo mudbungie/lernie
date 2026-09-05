@@ -53,6 +53,14 @@ pub enum Said {
     /// What crosses is therefore the whole tail, which is what lets the model
     /// go on replacing.
     Live { conversation: String, read: Read },
+    /// **A sign-in lane's fold so far, stamped with the row it is about**
+    /// (REMOTE §8.3, bl-e3c5) — [`Live`](Self::Live)'s shape one noun over,
+    /// and stamped for the identical reason: the engine was asked about one
+    /// provider and answers about that one, so only the FRAME knows whether the
+    /// operator is still following it. A run started on a second row replaces
+    /// the first upstream, and an unstamped frame would paint one run's lines
+    /// under the other's name.
+    Signin { provider: String, read: Read },
     /// This seat could not reach the far end, and here is the sentence.
     ///
     /// **A READ's failure, and only a read's.** It is a fact about a
@@ -70,6 +78,54 @@ pub enum Said {
     Acted { op: String, reach: Reach },
 }
 
+/// **Which covering pane's standing read is up.**
+///
+/// It is keyed on the PANE rather than on a focus, for one reason all four
+/// share: the reads are cheap, and a standing question nobody has a use for is
+/// still a question the engine answers on every beat, forever. The queue's is
+/// the sharpest — a read that fans costs one round trip per channel per beat —
+/// and the login pane's is the one whose standing actually buys something, a
+/// credential landing on the engine while the operator is looking at the table.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Open {
+    /// **The tuning pane** — the aimed wall's fourth question, what its roles
+    /// are set to (bl-4a2c).
+    Tuning,
+    /// **The records pane** — the selected conversation's own second question,
+    /// what its loop did and what its worktree holds (bl-2cf7).
+    Records,
+    /// **The decision queue** — the one question that is nobody's focus:
+    /// `attention` names no workspace, so it is asked of every channel rather
+    /// than of the aim (bl-f0ef).
+    Queue,
+    /// **The login pane** — the aimed wall's fifth question, what it can sign
+    /// in to, carrying the provider row whose sign-in the held lane is on where
+    /// one has been started (bl-e3c5). The row rides *inside* the pane's own
+    /// arm because there is no sign-in to follow while the pane is down, so a
+    /// field beside it would be a second authority for one fact.
+    Login(Option<String>),
+}
+
+impl Open {
+    /// Which of them the model has standing. **A ladder rather than a set**,
+    /// because the model's own `covered` question already promises no two are
+    /// open at once — the order is a total function over a state space the
+    /// window cannot reach rather than a precedence anybody spends.
+    fn of(model: &Model) -> Option<Self> {
+        if model.tuning.is_some() {
+            Some(Self::Tuning)
+        } else if model.records {
+            Some(Self::Records)
+        } else if model.queue {
+            Some(Self::Queue)
+        } else if model.login.is_some() {
+            Some(Self::Login(model.following()))
+        } else {
+            None
+        }
+    }
+}
+
 /// **What to ask next.** Derived from the model on every settle, so it cannot
 /// drift from the focus and there is nothing to invalidate.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -78,31 +134,15 @@ pub struct Standing {
     pub channels: Vec<Channel>,
     /// The aimed wall, whose conversations are the second question.
     pub aim: Option<Aim>,
-    /// **Whether the tuning pane is open**, which is the aimed wall's fourth
-    /// question — what its roles are set to (bl-4a2c).
+    /// **Which covering pane's standing read is up**, if any.
     ///
-    /// A flag rather than a second aim, because the pane holds no aim of its
-    /// own: it is about whatever [`Self::aim`] is, and closes when that moves
-    /// (`crate::ui::model::acts`). It is keyed on the PANE rather than on the
-    /// aim so a seat with no configuration surface open asks nothing about a
-    /// file nobody is looking at — the read is cheap, but a standing question
-    /// nobody has a use for is still a question the engine answers on every
-    /// beat, forever.
-    pub tuning: bool,
-    /// **Whether the records pane is open**, which is the selected
-    /// conversation's own second question — what its loop did and what its
-    /// worktree holds (bl-2cf7). Keyed on the PANE for the reason
-    /// [`Self::tuning`] is: the reads are cheap, and a standing question
-    /// nobody has a use for is still one the engine answers on every beat,
-    /// forever.
-    pub records: bool,
-    /// **Whether the decision queue is open**, which is the one question that
-    /// is nobody's focus: `attention` names no workspace, so it is asked of
-    /// every channel in [`Self::channels`] rather than of the aim (bl-f0ef).
-    /// Keyed on the PANE for [`Self::tuning`]'s reason, and here the reason is
-    /// sharper — a read that fans costs one round trip per channel on every
-    /// beat, and a seat with nothing open should pay none of them.
-    pub queue: bool,
+    /// One field rather than a flag per pane, which is `crate::ui::Lookup`'s
+    /// reframe one layer down and the one clippy's `struct_excessive_bools`
+    /// asks for by name. No two covering panes ever stand together
+    /// (`crate::ui::Model::covered`), so four bools would make *three of them
+    /// open at once* a representable state that only the derivation order
+    /// resolves — two representations of one fact.
+    pub open: Option<Open>,
     /// The selected conversation, whose transcript is the third — and whose
     /// live tail is the held read.
     ///
@@ -124,10 +164,25 @@ impl Standing {
                 .map(|chunk| chunk.channel.clone())
                 .collect(),
             aim: model.aim.clone(),
-            tuning: model.tuning.is_some(),
-            records: model.records,
-            queue: model.queue,
+            open: Open::of(model),
             conversation: model.asked(),
+        }
+    }
+
+    /// **Whether `pane`'s standing read is the one that is up.**
+    ///
+    /// The asker's whole reading of [`Self::open`], so a pass tests a pane
+    /// rather than matching an enum four times.
+    pub fn standing(&self, pane: &Open) -> bool {
+        self.open.as_ref() == Some(pane)
+    }
+
+    /// **The provider row the sign-in lane is on**, if the login pane is open
+    /// and a sign-in has been started from it.
+    pub fn signin(&self) -> Option<String> {
+        match &self.open {
+            Some(Open::Login(provider)) => provider.clone(),
+            _ => None,
         }
     }
 

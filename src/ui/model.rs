@@ -28,6 +28,8 @@ mod claim;
 mod enroll;
 /// Which composer box a row menu's navigation asked for the cursor in.
 mod fill;
+/// The login pane between frames: what it asks about, and the acts it spends.
+mod login;
 /// What the seat last heard that was not content, and how the shell says it.
 mod notice;
 /// What a frame composed, and what a lost reply would mean for it.
@@ -48,6 +50,7 @@ mod window;
 pub use channel::{Channel, Chunk, Held};
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
+pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
 pub use queue::Asking;
@@ -96,6 +99,24 @@ pub struct Model {
     /// **Whether the records pane is open** on the selected conversation — the
     /// third covering pane, and a flag because it has one state (`records`).
     pub records: bool,
+    /// **The login pane, while it is open** — the eighth covering pane, and
+    /// the second whose subject is the aimed wall (`login`; DESIGN §4.24). A
+    /// struct rather than a flag because it holds two questions of its own:
+    /// which row a sign-in is being followed on, and which was asked what it
+    /// offers.
+    pub login: Option<Login>,
+    /// **What the aimed wall can sign in to**, or `None` while nobody has been
+    /// answered about it — the one-option reading [`Self::roles`] gets, and
+    /// filed here rather than on the pane because the rows are the engine's.
+    pub providers: Option<Vec<crate::reply::providers::ProviderRow>>,
+    /// **What the last row asked answered with** — the posted read's answer,
+    /// dropped by the act that asks another (`login`). Which row it is about
+    /// is the pane's `asking`, because the reply carries no name.
+    pub offered: Option<Vec<String>>,
+    /// **The sign-in run this seat is following**, as the lane has folded it —
+    /// the login pane's held read, and [`Self::live`]'s shape one noun over
+    /// (`login`).
+    pub signin: Option<crate::reply::login::Signin>,
     /// **Whether the decision queue is open** — the fourth covering pane, and
     /// the first whose subject is neither the aim nor the selection (`queue`).
     pub queue: bool,

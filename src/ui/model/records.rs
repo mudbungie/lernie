@@ -24,16 +24,17 @@ use super::Model;
 
 impl Model {
     /// **Whether a pane covers the conversation** — the enrollment, the
-    /// tuning pane, the decision queue, an unmaking, or this one. The question
-    /// the shell and every pane-opening control share, asked once so five panes
-    /// cannot stand on one glass: a control that opened a second cover would
-    /// replace what is standing without saying so.
+    /// tuning pane, the decision queue, the login pane, an unmaking, or this
+    /// one. The question the shell and every pane-opening control share, asked
+    /// once so eight panes cannot stand on one glass: a control that opened a
+    /// second cover would replace what is standing without saying so.
     pub fn covered(&self) -> bool {
         self.enroll.is_some()
             || self.tuning.is_some()
             || self.records
             || self.queue
             || self.lookup.is_some()
+            || self.login.is_some()
             || self.unmaking.is_some()
     }
 

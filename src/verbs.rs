@@ -78,6 +78,8 @@ pub mod conversation;
 pub mod doors;
 /// The roster and one word's page, answered here rather than by an engine.
 pub mod help;
+/// The sign-in family: the provider table, the offering, the act and its lane.
+pub mod login;
 /// The decision queue's three ops — the read, the answer and the raise.
 pub mod queue;
 /// The conversation's records — the reads under one, as rows.
@@ -96,6 +98,7 @@ pub mod workspace;
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };
+pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{FILES, STEPS, files, steps};
 use rows::TABLE;

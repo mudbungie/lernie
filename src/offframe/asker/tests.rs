@@ -37,6 +37,8 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
     out
 }
 
+/// The provider table, which stands on the login pane and nests under nothing.
+mod login;
 /// The three questions, and how each waits for the last to have an answer.
 mod nesting;
 /// The union across channels, and the channel that costs only itself.

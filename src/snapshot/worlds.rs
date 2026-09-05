@@ -1,9 +1,9 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! eleven rather than one.
+//! twelve rather than one.
 //!
 //! A snapshot of one model is a photograph of one moment; what an operator
 //! actually needs to see is the window in each of the shapes it takes. These
-//! eleven are the shapes: nothing dialled yet, seated at a wall with a
+//! twelve are the shapes: nothing dialled yet, seated at a wall with a
 //! conversation open, the wall with none selected, and the eight states of the
 //! seven panes that cover the conversation.
 //!
@@ -17,7 +17,9 @@
 //! from a second set of their own — a fixture with a field the row grew is a
 //! fixture that stops compiling, and two of them is two places to fill it in.
 
-use crate::test_support::window::{commanded, finding, queued, recorded, role, seated, tuned};
+use crate::test_support::window::{
+    commanded, finding, queued, recorded, role, seated, signing, tuned,
+};
 use crate::ui::{Edit, Enrolling, Model, Tuning, Unmaking};
 
 /// One named state of the window, as the matrix files it.
@@ -163,6 +165,20 @@ fn find() -> World {
     }
 }
 
+/// **The window with the login pane open and answered** — the eighth covered
+/// state (bl-e3c5), and the only screen `login`'s and `models`' controls are
+/// on.
+///
+/// It is photographed mid-flow, with a run being followed and a row asked what
+/// it offers, because that is the state every sentence on the pane is reachable
+/// in: an unanswered login pane says one thing and has no control at all.
+fn login() -> World {
+    World {
+        name: "signing",
+        model: signing(),
+    }
+}
+
 /// **The window with an unmaking standing** — the sixth covered state
 /// (bl-48fa), and the only screen `delete-workspace`'s control is on.
 ///
@@ -196,6 +212,7 @@ pub(crate) fn all() -> Vec<World> {
         queue(),
         commands(),
         find(),
+        login(),
         unmaking(),
     ]
 }

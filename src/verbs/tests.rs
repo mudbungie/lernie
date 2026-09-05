@@ -25,9 +25,10 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The nine reads, the conversation's eight acts, the enrollment, the model
-/// assignment and the wall's own unmaking, spelled out — so the roster is asserted rather than merely
-/// iterated, and a verb added or dropped is a diff here.
+/// The twelve reads, the conversation's eight acts, the enrollment, the
+/// sign-in, the model assignment and the wall's own unmaking, spelled out — so
+/// the roster is asserted rather than merely iterated, and a verb added or
+/// dropped is a diff here.
 #[test]
 fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
     let words: Vec<&str> = table().iter().map(|verb| verb.word).collect();
@@ -43,6 +44,9 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "steps",
             "files",
             "roles",
+            "providers",
+            "models",
+            "login-tail",
             "message",
             "interrupt",
             "nudge",
@@ -52,6 +56,7 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "seen",
             "delete-agent",
             "enroll",
+            "login",
             "model",
             "delete-workspace"
         ]

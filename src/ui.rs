@@ -44,6 +44,8 @@ pub mod enroll;
 pub mod find;
 /// The keyboard: every act this window affords, without a pointer.
 pub mod keys;
+/// The login pane: what a wall can sign in to, and the act that signs it in.
+pub mod login;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
 /// The decision queue: everything waiting on the operator, anywhere.
@@ -63,7 +65,7 @@ pub mod unmake;
 
 pub use keys::Pane;
 pub use model::{
-    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Lookup, Model, Notice,
-    Pages, Posted, Shown, Tuning, Unmaking,
+    Aim, Asking, Channel, Chunk, Edit, Enrolling, Fill, Grade, Held, Hits, Login, Lookup, Model,
+    Notice, Pages, Posted, Shown, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

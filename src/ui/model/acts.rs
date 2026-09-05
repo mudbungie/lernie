@@ -56,6 +56,11 @@ impl Model {
         // asked yet, and the old wall's answer is not this wall's.
         self.tuning = None;
         self.roles = None;
+        // **The login pane goes with the wall too** (bl-e3c5), and for the
+        // sharper form of the same reason: its act signs a credential into ONE
+        // wall's own store, so a pane left standing over a new aim would offer
+        // to sign the operator in somewhere they are no longer looking.
+        self.retire_login();
         self.retire_records();
     }
 
@@ -88,9 +93,9 @@ impl Model {
     /// half-typed model puts the draft down and leaves the rows standing.
     /// Then the tuning pane itself, then the records pane (bl-2cf7), then the
     /// decision queue (bl-f0ef), then whichever of the window's own two is
-    /// standing (bl-40ec — one arm, because one field holds both), then an
-    /// unmaking (bl-48fa) — no two of the six ever stand together, so the
-    /// order among them is never spent. The
+    /// standing (bl-40ec — one arm, because one field holds both), then the
+    /// login pane (bl-e3c5), then an unmaking (bl-48fa) — no two of the seven
+    /// ever stand together, so the order among them is never spent. The
     /// unmaking is on the ladder because Escape over a destructive pane means
     /// what [`Model::close_unmaking`] means and nothing else: it unmakes
     /// nothing, and a key that could arm or spend one would be the second
@@ -110,6 +115,8 @@ impl Model {
             self.close_queue();
         } else if self.lookup.is_some() {
             self.close_lookup();
+        } else if self.login.is_some() {
+            self.close_login();
         } else if self.unmaking.is_some() {
             self.close_unmaking();
         } else {

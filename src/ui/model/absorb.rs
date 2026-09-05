@@ -65,6 +65,15 @@ impl Model {
             // answer and a queue answer do (`window`; bl-40ec).
             Reply::Help(rows) => self.paged(channel, rows),
             Reply::Found(found) => self.hit(channel, found),
+            // The login pane's three, on the roles' own terms — filed whether
+            // or not the pane is open, because a frame that arrives after it
+            // closed is the last one in flight rather than a thing to drop.
+            // The table's rows and one row's offering are plain answers; the
+            // sign-in run replaces, exactly as the live tail does, because the
+            // lane hands over the whole fold (`crate::offframe::signin`).
+            Reply::Providers(rows) => self.providers = Some(rows),
+            Reply::Models(rows) => self.offered = Some(rows),
+            Reply::Login(run) => self.signin = Some(run),
             Reply::Transcript(transcript) => self.transcript = transcript,
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the

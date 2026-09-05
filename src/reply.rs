@@ -16,12 +16,13 @@
 //! where this module and that document disagree, one of them is a bug.
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
-//! kinds and most of them belong to panes that do not exist here. Sixteen do
+//! kinds and most of them belong to panes that do not exist here. Nineteen do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — the decision queue and the receipt
 //! that raises a row onto it, the window's own two reads — the engine's verb
-//! table and what a needle found — a captured run, the detached
+//! table and what a needle found — the login pane's three — the provider
+//! table, what one row offers and a sign-in run — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
 //! name — and a new box's material. A kind nothing renders is a kind
 //! nobody has to carry, and the compiler of the window is what pulls in the
@@ -80,6 +81,10 @@ pub(crate) mod fields;
 pub mod files;
 /// The engine's own verb table, which is also the parity roster's source.
 pub mod help;
+/// One sign-in run, as the engine streams it.
+pub mod login;
+/// What a wall can sign in to, and what one row is offering.
+pub mod providers;
 /// The decision queue: what is asking for the operator, anywhere.
 pub mod queue;
 /// Reading one frame: the dispatch off `kind`, and the refusal that wears none.
@@ -141,7 +146,7 @@ pub enum Read {
     Unreadable(String),
 }
 
-/// **The kinds the window draws.** Sixteen, and each is here because a surface
+/// **The kinds the window draws.** Nineteen, and each is here because a surface
 /// paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -191,6 +196,20 @@ pub enum Reply {
     /// **What a needle found**, across everything one engine can see — the
     /// find pane's answer, on the same fanned terms (bl-40ec).
     Found(search::Found),
+    /// **What this wall can sign in to** — the login pane's first read,
+    /// standing while it is open (bl-e3c5). It is the engine's listing order,
+    /// which is brazen's own routing order, and a seat that re-sorted it would
+    /// be holding a second opinion about a table it does not own.
+    Providers(Vec<providers::ProviderRow>),
+    /// **What one provider row is offering** — the same pane, one depth down,
+    /// and posted rather than standing: a model list is fixed for the life of
+    /// a provider's own answer, so a standing read would spend a round trip a
+    /// beat forever on something that cannot change under the operator.
+    Models(Vec<String>),
+    /// **One sign-in run**, whether it is the act's own receipt or a frame of
+    /// the lane that follows it — upstream answers both with this kind,
+    /// because they are the same value at the same moment (REMOTE §8.3).
+    Login(login::Signin),
     /// One frame of the live tail, and the whole accumulated stream rather
     /// than a delta: a frame **replaces** what a seat holds, so nothing has to
     /// be reassembled and a follow lane needs no second parser.

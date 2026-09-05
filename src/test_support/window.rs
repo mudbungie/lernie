@@ -21,7 +21,9 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 /// The covering panes' own fixtures — a model with each one open and answered.
 pub(crate) mod panes;
 
-pub(crate) use panes::{commanded, finding, helped, hit, queued, recorded, step, tuned, waiting};
+pub(crate) use panes::{
+    commanded, finding, helped, hit, provider, queued, recorded, signing, step, tuned, waiting,
+};
 
 /// One workspace row, named and otherwise quiet.
 pub(crate) fn wall(name: &str) -> WsRow {

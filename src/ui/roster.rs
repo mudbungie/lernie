@@ -170,7 +170,8 @@ pub fn header(channel: &Channel) -> String {
 /// One wall: selectable when this seat can address it, a plain line when it
 /// cannot.
 ///
-/// **The enrollment control hangs off the aimed row and off no other**, because
+/// **The four per-wall controls hang off the aimed row and off no other**,
+/// because
 /// an enrollment mints the pair `(client, workspace)` and the workspace is
 /// exactly what an aim is. Offering it on every row would be offering it before
 /// the operator had said which wall — and the answer to that question is
@@ -193,8 +194,8 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
-    // **All three per-wall controls hang off the aimed row and off no other**,
-    // and all three stand down while a pane already covers the conversation:
+    // **All four per-wall controls hang off the aimed row and off no other**,
+    // and all four stand down while a pane already covers the conversation:
     // what they open would replace what is standing there, so offering them is
     // offering to lose it without saying so.
     if !aimed || model.covered() {
@@ -211,6 +212,16 @@ fn wall(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal
     crate::ui::act::tag(&tune, &[crate::verbs::ROLES.word]);
     if tune.clicked() {
         model.begin_tuning();
+    }
+    // **The sign-in hangs beside the tuning control**, because both are about
+    // the wall's own configuration and neither destroys anything. It carries
+    // the read the gesture reaches, exactly as the tuning control does:
+    // opening the login pane is what makes this seat read that wall's provider
+    // table (`crate::state::Standing`), and the read has no control of its own.
+    let sign = ui.button(crate::ui::login::OPEN);
+    crate::ui::act::tag(&sign, &[crate::verbs::PROVIDERS.word]);
+    if sign.clicked() {
+        model.begin_login();
     }
     // **The unmaking hangs here and LAST**, under the two controls that make
     // and change things, because that is the order a destructive act belongs in

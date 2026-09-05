@@ -1,12 +1,12 @@
-//! **The off-frame threads** — the asker, the poster and the follow lane.
+//! **The off-frame threads** — the asker, the poster and the two held lanes.
 //!
 //! A frame that never blocks means no read and no act happens on one. These are
-//! where they happen: three loops on three sockets, each talking to the window
+//! where they happen: four loops on four sockets, each talking to the window
 //! only through [`Link`](crate::state::Link) — frames that landed one way,
 //! gestures to send the other, and the standing question set published by the
 //! frame that last settled.
 //!
-//! # Three, because they wait for different things
+//! # Four, because they wait for different things
 //!
 //! The **asker** goes round the standing set at human cadence: every channel's
 //! roster, the aimed wall's conversations, the selected conversation's
@@ -45,6 +45,8 @@ pub mod asker;
 pub mod follow;
 /// One pass of the outbox.
 pub mod poster;
+/// One pass of the sign-in lane.
+pub mod signin;
 
 /// **A gesture addressed at a CHANNEL**, not at a workspace: it names none, so
 /// there is nothing for the §8.2 mapping to resolve and the channel has to be
@@ -85,11 +87,11 @@ pub(crate) fn file(link: &Link, channel: &Channel, stream: Vec<Value>) {
     }
 }
 
-/// **Start the three threads.** The handles come back so a caller that stopped
+/// **Start the four threads.** The handles come back so a caller that stopped
 /// the link can wait for the passes in flight to finish; a caller that does not
 /// want to wait can drop them.
 pub fn run(link: &Link, root: &Path) -> Vec<JoinHandle<()>> {
-    let passes: [fn(&Link, &Path); 3] = [asker::tick, poster::tick, follow::tick];
+    let passes: [fn(&Link, &Path); 4] = [asker::tick, poster::tick, follow::tick, signin::tick];
     passes
         .into_iter()
         .map(|pass| {

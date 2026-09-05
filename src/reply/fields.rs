@@ -84,6 +84,25 @@ pub(crate) fn opt_text(obj: &Map<String, Value>, key: &str) -> Result<Option<Str
     }
 }
 
+/// An **optional** exit status: absent and `null` are both `None`, a value of
+/// the wrong type refuses, and one no `i32` holds refuses too.
+///
+/// [`exit`]'s narrowing over [`opt_text`]'s absence, and it is a reader rather
+/// than the two composed at the call site because the two failures have to name
+/// one field between them: a sign-in that has not settled and one that settled
+/// on a status this seat cannot paint are different claims (`super::login`).
+pub(crate) fn opt_exit(obj: &Map<String, Value>, key: &str) -> Result<Option<i32>, String> {
+    let Some(value) = obj.get(key).filter(|held| !held.is_null()) else {
+        return Ok(None);
+    };
+    let n = value
+        .as_i64()
+        .ok_or_else(|| format!("missing or non-integer field {key:?}"))?;
+    i32::try_from(n)
+        .map(Some)
+        .map_err(|_| format!("field {key:?} out of range"))
+}
+
 /// A listing's elements, each read by `read`.
 ///
 /// One element that will not read fails the whole listing rather than

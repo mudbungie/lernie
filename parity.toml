@@ -102,12 +102,15 @@ lineages = "bl-5c53 — no config-file pane: the lineages and the paths each hol
 # bl-22ab). The rows are read and the reason is on the glass; there is no line
 # here, because the op is surfaced and this file records absences.
 
-# bl-e3c5 — the Login pane: provider rows over the channel that hosts the wall,
-# and the sign-in posted as a boundary act. (bl-b180 is the defect it answers.)
-login = "bl-e3c5 — no provider pane: a workspace cannot be signed in to a provider row from this seat"
-login-tail = "bl-e3c5 — no provider pane: a sign-in run prints its lines to nothing here"
-models = "bl-e3c5 — no provider pane: what a provider is offering is readable nowhere"
-providers = "bl-e3c5 — no provider pane: the provider table and its credential facts are unpainted"
+# bl-e3c5 landed the login pane (DESIGN §4.24) and with it all four of the
+# sign-in family: `providers` carries the control that opens the pane,
+# `login` and `models` carry the two controls on a provider row, and
+# `login-tail` is the held lane that pane's own control starts — so none of
+# them is in this ledger any more. What it did not build is a paste-back arm
+# for a browser-only row signed in from a seat with no shell, and that is not a
+# missing surface here: REMOTE §8.3 rules the port-forward a STATED operator
+# remedy and refuses to make it a channel feature, so the pane says it rather
+# than offering a verb that cannot finish.
 
 # bl-e53c — the tool-host surface is unpainted, so a foot's advertised set and
 # its subject_cwd consent are readable nowhere.

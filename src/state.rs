@@ -34,7 +34,7 @@ use crate::ui::{Channel, Model, Posted};
 /// What crosses the lock, and what the frame publishes for the workers to ask.
 mod traffic;
 
-pub use traffic::{Heard, Said, Standing};
+pub use traffic::{Heard, Open, Said, Standing};
 
 /// What the two sides share.
 #[derive(Default)]
@@ -83,6 +83,14 @@ impl Link {
                         model.absorb(&heard.channel, read);
                     }
                 }
+                // The sign-in lane's guard, and it is the tail's verbatim: a
+                // run the operator has stopped following is dropped here,
+                // where what the pane is following is known for certain.
+                Said::Signin { provider, read } => {
+                    if model.following().as_deref() == Some(provider.as_str()) {
+                        model.absorb(&heard.channel, read);
+                    }
+                }
                 Said::Unreachable(why) => model.unreachable(&heard.channel, why),
                 // **An act that earned no reply is an exchange, not a
                 // relationship** (REMOTE §3, bl-3969), so it goes to the bar
@@ -110,6 +118,19 @@ impl Link {
             channel,
             Said::Live {
                 conversation: conversation.to_owned(),
+                read,
+            },
+        );
+    }
+
+    /// One sign-in lane's fold so far, stamped with the provider row it is
+    /// about. Already read, for [`Self::live`]'s reason: a lane's frame is an
+    /// append and only the lane knows which read it belongs to (REMOTE §8.3).
+    pub fn signing(&self, channel: &Channel, provider: &str, read: crate::reply::Read) {
+        self.heard(
+            channel,
+            Said::Signin {
+                provider: provider.to_owned(),
                 read,
             },
         );

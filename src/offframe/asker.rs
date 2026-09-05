@@ -5,7 +5,9 @@
 //! what makes both a **union across channels**, composed here
 //! rather than anywhere on the wire. The aimed wall is asked for its
 //! conversations, and — while the tuning pane is open on it — for what its
-//! roles are set to. The selected conversation is asked for its transcript,
+//! roles are set to, and — while the login pane is open on it — for what it
+//! can sign in to (bl-e3c5). The selected conversation is asked for its
+//! transcript,
 //! and — while the records pane is open on it — for its steps and its
 //! worktree's files (bl-2cf7).
 //!
@@ -26,7 +28,7 @@ use std::path::Path;
 use serde_json::Value;
 
 use super::down;
-use crate::state::{Link, Said};
+use crate::state::{Link, Open, Said};
 use crate::ui::Channel;
 
 /// Ask everything the last frame said to ask.
@@ -43,7 +45,7 @@ pub fn tick(link: &Link, root: &Path) {
         // channel this box holds and the union is composed here. It stands on
         // the PANE rather than on a focus, because nothing on the glass is its
         // subject — see `crate::state::Standing::queue`.
-        if standing.queue {
+        if standing.standing(&Open::Queue) {
             read(
                 link,
                 down(link, root, channel, &crate::verbs::attention()),
@@ -60,7 +62,7 @@ pub fn tick(link: &Link, root: &Path) {
         &channel,
         &crate::verbs::conversations(aim.address.clone()),
     );
-    if standing.tuning {
+    if standing.standing(&Open::Tuning) {
         aimed(
             link,
             root,
@@ -68,7 +70,21 @@ pub fn tick(link: &Link, root: &Path) {
             &crate::verbs::roles(aim.address.clone()),
         );
     }
-    let Some(conversation) = standing.conversation else {
+    // **The provider table stands on the login pane** (bl-e3c5), on the roles
+    // read's own terms — and the standing is what makes it worth having: a
+    // credential lands on the engine while the operator is looking at the
+    // table, so a row that said *no credential* says otherwise on the next
+    // beat with nothing asked again. The run's own lines are the held lane's
+    // (`crate::offframe::signin`), never this pass's.
+    if standing.standing(&Open::Login(standing.signin())) {
+        aimed(
+            link,
+            root,
+            &channel,
+            &crate::verbs::providers(aim.address.clone()),
+        );
+    }
+    let Some(conversation) = standing.conversation.clone() else {
         return;
     };
     aimed(
@@ -80,7 +96,7 @@ pub fn tick(link: &Link, root: &Path) {
     // **The records pair stands on the pane exactly as the roles read does**
     // (bl-2cf7): the selected conversation is asked what its loop did and
     // what its worktree holds only while somebody is looking.
-    if standing.records {
+    if standing.standing(&Open::Records) {
         aimed(
             link,
             root,

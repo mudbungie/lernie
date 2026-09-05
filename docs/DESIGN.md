@@ -17,9 +17,10 @@ conversation list, the chat pane and the composer — which speaks to the
 conversation that is selected and **begins one** where none is, holding the
 staged body between the start's two acts — painted from a snapshot and firing
 gestures through the same doors `lernie message` and `lernie start` spend. Behind it
-are three threads (§4.12) — the asker over the standing question set, the poster
-draining what a click composed, and the follow lane holding one connection open
-on the focused conversation. **Everything the window does is reachable from the
+are four threads — the asker over the standing question set, the poster
+draining what a click composed, and two held lanes: the follow lane on the
+focused conversation, and the sign-in lane on the provider row the login pane is
+following (§4.24). **Everything the window does is reachable from the
 keyboard** (§4.11). **The frame never dials**, and the suite proves the
 whole of it in one process: a real listener with a real handshake and a real
 preface, the three threads, the settle, and the window, asserted on the glyphs
@@ -316,7 +317,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Sixteen kinds, because sixteen are painted.** The engine's reply surface is
+**Nineteen kinds, because nineteen are painted.** The engine's reply surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
 (`conversations`), one workspace's role tuning (`roles`, §4.17), the
@@ -325,7 +326,9 @@ conversation itself (`transcript`), the live tail
 (`steps`) and what its worktree holds (`files`), both §4.18's — the decision
 queue (`attention`) and the receipt that raises a row onto it (`flagged`),
 both §4.19's, the window's own two — one engine's verb table (`help`) and what
-a needle found (`search`), both §4.21's — a captured
+a needle found (`search`), both §4.21's — the login pane's three: what a wall
+can sign in to (`providers`), what one of its rows offers (`models`) and one
+sign-in run (`login`), all §4.24's — a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
 minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
@@ -339,9 +342,11 @@ commit that built the pane. The diff of that move is the record of what the
 release added, which is exactly what the ledger is for. The records pair
 (bl-2cf7) is the pattern's second spend: `steps` and `files` made the same
 move in the commit that built §4.18's pane, `help` and `search` made it in the
-commit that built §4.21's two (bl-40ec), and the five conversation reads still
-in `unreadable/` (`agent`, `step`, `inbox`, `rail`, `governing`) are the ledger
-holding the two balls that will move them (bl-3257, bl-b52c).
+commit that built §4.21's two (bl-40ec), the sign-in family's three
+(`providers`, `models`, `login`) made it in the commit that built §4.24's pane
+(bl-e3c5), and the five conversation reads still in `unreadable/` (`agent`,
+`step`, `inbox`, `rail`, `governing`) are the ledger holding the two balls that
+will move them (bl-3257, bl-b52c).
 
 **A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
 (bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
@@ -372,8 +377,13 @@ pair is why the ordinary bump costs this seat an integer and nothing else. 5
 (bl-e6ee, REMOTE §9.12) took `branch` off `reply/governing` for `follows` and
 `diverged_lineages`; 6 (bl-675e, REMOTE §9.13) gave `reply/providers`' rows
 `effort` and `priority`, two booleans saying which tuning that provider row
-takes. **Neither shape is decoded here**, so both times the seat paid the
-number and no field, and the correct amount of new paint was none.
+takes. **Neither shape was decoded here at the time**, so both times the seat
+paid the number and no field, and the correct amount of new paint was none.
+**One of the two has since been claimed and the interval is the ledger's
+product**: §4.24's pane reads `reply/providers` — the two booleans among its
+fields — and the commit that built it is the diff saying so, three protocol
+bumps after the fields landed. `reply/governing` is still nobody's, and its
+ledger line still stands (bl-b52c).
 
 **PROTOCOL 7 is the first bump this seat reads a field out of, and no pane
 paints it** (bl-8758 upstream, bl-38d4 here). Every `reply/help` row gained
@@ -1711,6 +1721,111 @@ the parity walk's own AccessKit tree is driven the same way and counts the
 from the composer's one to two. Counted rather than present, because a set
 cannot tell one control from two.
 
+### 4.24 The login pane: the sign-in is an act on the boundary (REMOTE §8.3, bl-e3c5)
+
+`src/ui/login.rs`, `src/ui/login/run.rs`, `src/ui/model/login.rs`,
+`src/reply/providers.rs`, `src/reply/login.rs`, `src/verbs/login.rs`,
+`src/offframe/signin.rs`. **The eighth covering pane, and the second whose
+subject is the aimed wall.** §4.17's tuning pane is what a wall's roles are set
+to; this is what that wall can sign in to, and the act that signs it in.
+
+**The act is the ENGINE'S and this crate never spawns one.** `bz --login` runs
+on the engine, inside the named workspace's wall, so the credential lands where
+the agents that read it run and nothing credential-shaped crosses this wire
+(REMOTE §8.3). That is the whole reason the surface is portable at all: the
+seat asks, posts and paints, and the run holder, its one-run-per-pair
+replacement and its hour sweep are all upstream's. **Closing the pane
+terminates nothing** — a run with no lane still settles and still writes its
+`ops.jsonl` row — which is a property this side gets for free and must not
+re-implement.
+
+**All three cadences meet on one pane, and each is the rule it belongs to.**
+This is the only surface in the seat where they do, which is why they are
+stated together:
+
+- **`providers` STANDS while the pane is open** (§4.17's rule, keyed on the
+  pane). Here the standing buys something the tuning pane's does not: a
+  credential lands on the ENGINE while the operator is looking at the table, so
+  a row that said *no credential* says otherwise on the next beat with nothing
+  asked again.
+- **`models` is POSTED** (§4.21's rule). What a row offers is fixed for the
+  life of the engine's own answer, so a standing read would spend a round trip
+  a beat forever on something that cannot change under the operator. It is a
+  read and not an act: asking twice is asking once.
+- **`login-tail` is HELD, on a fourth thread** (`src/offframe/signin.rs`). It
+  is answered at the provider's pace — minutes of a human's attention — so it
+  is the read in this seat whose N takes longest to finish, and putting it in
+  the serial pass would stall the roster and the transcript behind a browser
+  nobody has got to yet. It is the follow lane's shape one noun over, stamp for
+  stamp: every frame says which provider row it is about, and the guard is a
+  pure comparison at the settle where what the pane is following is known for
+  certain.
+
+**One control fires two ops.** `sign in to this row` carries
+`act:login act:login-tail`, because starting the run is what stands the lane up
+— §4.16's *"one control may fire more than one op"*, and the start control's own
+shape (`prepare` then `prompt`). A seat that tagged only the act would be
+claiming `login-tail` is reachable nowhere.
+
+**Which sphere the sign-in is for, said in the surface, and never as an
+address.** The wall's name and the channel it came down, and — for a wall held
+elsewhere — that it is held elsewhere, read off the roster's own client-side
+channel stamp (`ui::Channel::named_there`, §8.2). Two entries naming one
+listener are still two trust relationships, and an address in this sentence
+would be this end telling the operator where a credential is about to land.
+
+**The loopback remedy is STATED and never built** (REMOTE §8.3). A row whose
+flow wants a browser at the engine's own loopback completes only from a browser
+on that box, or through a port-forward — *an operator act on boxes the operator
+administers*, which upstream rules is a remedy and not a channel feature.
+**It is said for every row on a wall held elsewhere rather than for the
+browser-only ones**, and that is a limit rather than a choice: the `device`
+column is on yog's provider ROW and not on the view that crosses the wire
+(bl-7c9f), so this seat cannot tell the two apart. A stated remedy that is
+sometimes unnecessary beats a silence that is sometimes wrong. If the column
+ever reaches the view, the sentence narrows to the rows that need it and
+nothing else here moves.
+
+**The run-by-hand fallback is the engine's sentence with one of ours beside
+it.** `fallback` is composed by the end that knows the wall and arrives only on
+a non-zero exit. The original surface (yog bl-1ddb) spelled a local wall's
+fallback as an `exec` on this box and an entry-held wall's as something else;
+there is no `exec` in this crate and both are the same case now — **an act the
+operator runs on the box that HOLDS the wall** — so what the pane adds is one
+sentence saying so, naming the channel and no address.
+
+**The pane holds two questions and no answer.** `Login { following, asking }`
+is a struct of two options and not §4.17's enum, because neither excludes the
+other: a sign-in being followed and a row that was asked what it offers are two
+independent facts about two possibly different rows, and every combination is a
+window an operator really reaches. The state that would mean nothing — a
+subject with no pane — is unrepresentable because both live *inside* the pane's
+own option. The three answers are `Model`'s, filed whether or not the pane is
+open, for §4.17's reason verbatim. `asking` exists because the `models` reply
+carries no provider name: the question is the only thing that can say which row
+a listing answers.
+
+**And the pane goes with the wall.** `Model::aim_at` retires it and all three
+answers, which is §4.17's rule in its sharper form: the act signs a credential
+into ONE wall's store, so a pane left standing over a new aim would offer to
+sign the operator in somewhere they are no longer looking.
+
+**The standing set stopped being flags** (`state::Open`). Four covering panes
+now stand reads up, and four bools would make *three of them open at once* a
+representable state that only the derivation order resolves — `ui::Lookup`'s
+reframe one layer down, and the one clippy's `struct_excessive_bools` asks for
+by name. `Standing::open` is one field, the followed provider row rides inside
+the login arm because there is no sign-in to follow while the pane is down, and
+`Open::of`'s ladder is a total function over a state space `Model::covered`
+already promises the window cannot reach.
+
+**What this does not close, and it is upstream's.** A browser-only row signed
+in from a seat with no shell — a phone — has no paved path: the port-forward
+remedy assumes a terminal somewhere. REMOTE §8.3 states it and refuses a
+paste-back arm, so the pane says the remedy rather than offering a verb that
+cannot finish. **It is not in `parity.toml`**, because the ops are all
+surfaced and that file records absences.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -1786,6 +1901,13 @@ cannot tell one control from two.
 | `src/ui/records.rs` | the records pane (§4.18): the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. | ~240 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/ui/model/records.rs` | the records pane between frames — a flag, because it holds nothing — its open/close acts, the retirement with its subject, and the one `covered` question seven panes share. | ~70 |
+| `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
+| `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
+| `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |
+| `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
+| `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
+| `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
+| `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
 | `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
 | `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the truncating headline with the selection drawn under it, and the two lines hung beneath a row. The row's own acts split out onto the seam a gesture draws (`convs/menu.rs`). | ~245 |

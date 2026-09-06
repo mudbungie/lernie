@@ -7,6 +7,8 @@
 
 /// The tail anchor, the follow, and the scroll that releases it.
 mod anchor;
+/// A machine's answer on the glass: folded, and one gesture from the whole.
+mod machinery;
 
 use super::{LIVE, NO_CONVERSATION, Row, render, rows};
 use crate::reply::stream::{Delta, Stream};
@@ -37,6 +39,7 @@ fn a_delivered_message_names_its_sender_and_its_ending() {
         vec![Row {
             who: "op".to_owned(),
             said: "port it".to_owned(),
+            fold: None,
         }]
     );
     let ended = of(EntryKind::Delivered {
@@ -126,6 +129,7 @@ fn a_compacted_span_says_what_went() {
         vec![Row {
             who: "compacted 4–9".to_owned(),
             said: "six were squashed".to_owned(),
+            fold: None,
         }]
     );
 }
@@ -215,6 +219,7 @@ fn a_committed_half_with_nothing_in_it_is_no_row_either() {
         vec![Row {
             who: "model-a".to_owned(),
             said: "the seam is real".to_owned(),
+            fold: None,
         }]
     );
     // And the other half, the same way: a turn that has only thought so far.

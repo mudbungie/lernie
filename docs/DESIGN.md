@@ -809,6 +809,34 @@ again, with no control to press and nothing to get out of step. `reveal`'s
 reasoning above is the same one from the other side — a scroll IS the operator
 choosing what to look at, so the pane must stop following the moment they do.
 
+**A machine's answer is folded and a person's is not** (`src/ui/chat/fold.rs`,
+`chat::folded`; bl-90d0). litany bounds a tool stream at 16 KiB head plus 16
+KiB tail before it reaches a transcript, so up to 32 KiB per call arrived here
+and the pane painted all of it: one `bash` running `ls -la && git log` filled
+the pane and continued below it, one `bl --help` was six screens, a `find` over
+a home tree arrived essentially whole. The call above each of them is one
+compact line, which is what makes the asymmetry sharp — the question is a line
+and its answer is six screens.
+
+**The fold is by KIND and never by size**, which is the distinction that
+matters: a seven-hundred-line `bl --help` is not a long answer, it is
+bookkeeping in front of one, while a long prose answer is the thing the pane is
+opened for. So `Row::fold` is `Some` only for a tool result, and only for one
+with something to hide — an expander over four lines is a control that costs a
+gesture and saves nothing. What stands is bounded twice, because a result
+overruns in two shapes and either bound alone lets the other through: six
+lines, and five hundred characters of them, since a `git log` is six hundred
+short lines and a JSON blob is thirty kilobytes on ONE line, which a pane that
+wraps paints as three hundred rows of glass.
+
+**Whether one row is open is the toolkit's memory, keyed on the row**, on
+bl-83ae's own reasoning one noun over: it is a per-row view state no other fact
+can be asked for and no gesture on the wire corresponds to, so putting it on
+the model would be plumbing a click through a snapshot to get back to the
+widget that took it. The control names the act it fires and carries the size of
+what is hidden — *show all 700 lines, 32985 bytes*, then *fold* — on the pin
+pair's rule (§4.25): two words, never one that toggles.
+
 **A section header names the address it dials** (`ui::Channel::dials`,
 bl-77df). Two entries naming one address are two trust relationships that
 happen to terminate at one listener (§8.2), which is lawful — and an entry
@@ -3267,7 +3295,9 @@ of *what a seat printed*.
 | `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the truncating headline with the selection drawn under it, and the two lines hung beneath a row. The row's own acts split out onto the seam a gesture draws (`convs/menu.rs`). | ~245 |
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which of the composer's two parameter boxes a row menu asked for the cursor in, and the one door that names a conversation and goes there (§4.23). Taken once, by the frame that paints the box. | ~85 |
-| `src/ui/chat.rs` | one conversation as rows, and the live fold the lane hands over whole. A half of a turn with nothing in it is no row, on either path, because the rule has one home (`half`) rather than one copy per route. | ~190 |
+| `src/ui/chat.rs` | the conversation pane: where it opens, what it follows, and how a folded row is painted. | ~110 |
+| `src/ui/chat/rows.rs` | one conversation as rows, and the live fold the lane hands over whole. A half of a turn with nothing in it is no row, on either path, because the rule has one home (`half`) rather than one copy per route. | ~190 |
+| `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |

@@ -69,6 +69,18 @@ pub(crate) fn role(name: &str) -> RoleRow {
     }
 }
 
+/// **`n` numbered lines**, the fixture a suite reaches for when it needs a
+/// body no pane can hold whole. One home for it because three suites want the
+/// same shape at three scales, and a `format!` in a `collect` is a lint
+/// besides.
+pub(crate) fn numbered(n: usize) -> String {
+    use std::fmt::Write;
+    (1..=n).fold(String::new(), |mut all, at| {
+        let _ = writeln!(all, "line {at:03}");
+        all
+    })
+}
+
 /// One delivered transcript entry.
 pub(crate) fn said(sender: &str, body: &str) -> Entry {
     Entry {

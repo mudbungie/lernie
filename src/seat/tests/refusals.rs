@@ -11,6 +11,7 @@ use super::{ask, flat, wired};
 use crate::channel::entries::WIRE;
 use crate::channel::material::ADDRESS;
 use crate::cli::Stream;
+use crate::render::Form;
 use crate::test_support::{Scratch, mint};
 use serde_json::json;
 
@@ -19,7 +20,7 @@ use serde_json::json;
 #[test]
 fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
     let scratch = Scratch::new();
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("no wire provisioned"),
@@ -42,7 +43,7 @@ fn a_half_provisioned_flat_root_says_which_file_is_missing() {
     let dir = scratch.dir(WIRE);
     mint::provisioned(&dir, "engine.example:9000");
     std::fs::remove_file(dir.join(ADDRESS)).expect("rm");
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("half-provisioned"),
@@ -59,7 +60,7 @@ fn a_half_provisioned_flat_root_says_which_file_is_missing() {
 fn a_self_provisioned_loopback_root_says_a_seat_wants_a_stated_address() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.dir(WIRE), "127.0.0.1:0");
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("kernel-chosen port"),
@@ -78,7 +79,7 @@ fn a_self_provisioned_loopback_root_says_a_seat_wants_a_stated_address() {
 fn an_engine_that_is_not_there_fails_with_the_transport_s_sentence() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.dir(WIRE), "127.0.0.1:1");
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
     assert!(
@@ -100,7 +101,7 @@ fn a_refusing_reply_is_still_the_product_and_only_the_code_says_no() {
         &flat(),
         vec![vec![json!({"ok": true}), refusal.clone()]],
     );
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Out, "an answer is not a diagnosis");
     assert_eq!(
@@ -115,7 +116,7 @@ fn a_refusing_reply_is_still_the_product_and_only_the_code_says_no() {
 fn an_engine_that_answers_nothing_is_not_ok() {
     let scratch = Scratch::new();
     wired(&scratch, &flat(), vec![vec![]]);
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.text, "");
 }

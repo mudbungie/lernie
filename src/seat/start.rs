@@ -38,6 +38,7 @@ use serde_json::Value;
 
 use crate::cli::Verdict;
 use crate::envelope;
+use crate::render::Form;
 use crate::reply::{Read, Reply, read};
 
 /// What the seat says when the stage landed and the fire never left this box.
@@ -53,7 +54,7 @@ const INDOUBT: &str = "the start was staged and the fire crossed with no answer,
 
 /// **Begin a conversation**: stage a start in `address`, then fire it with
 /// `goal`.
-pub fn start(data_root: &Path, address: &str, goal: &str) -> Verdict {
+pub fn start(data_root: &Path, address: &str, goal: &str, form: Form) -> Verdict {
     let staged = match super::sent(data_root, &crate::verbs::prepare(address.to_owned())) {
         Ok(frames) => frames,
         Err(reach) => return Verdict::failed(reach.said()),
@@ -63,12 +64,12 @@ pub fn start(data_root: &Path, address: &str, goal: &str) -> Verdict {
         // terminated saying nothing. Its frames are the product either way, and
         // the exit code is what says no start happened — a stage that answered
         // `ok: true` and no staged body must not exit zero.
-        return Verdict::answered(super::lines(&staged), false);
+        return Verdict::answered(super::said(&staged, form), false);
     };
     let fire = crate::verbs::prompt(&prepared, address.to_owned(), goal.to_owned());
     match super::sent(data_root, &fire) {
         Ok(fired) => Verdict::answered(
-            super::lines(&[staged, fired.clone()].concat()),
+            super::said(&[staged, fired.clone()].concat(), form),
             envelope::succeeded(&fired),
         ),
         Err(reach) if reach.crossed() => Verdict::failed(format!("{INDOUBT}: {}", reach.said())),

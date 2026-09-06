@@ -3,6 +3,7 @@
 use super::{ask, entry, flat, route, wired, yes};
 use crate::channel::entries::WORKSPACE;
 use crate::cli::Stream;
+use crate::render::Form;
 use crate::test_support::{Scratch, mint};
 use serde_json::json;
 
@@ -12,7 +13,7 @@ use serde_json::json;
 fn an_unaddressed_gesture_goes_to_the_flat_root() {
     let scratch = Scratch::new();
     let engine = wired(&scratch, &flat(), vec![vec![yes()]]);
-    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = ask(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     assert_eq!(verdict.text, yes().to_string());
@@ -32,6 +33,7 @@ fn a_name_an_entry_holds_goes_down_that_entry_s_channel() {
     let verdict = ask(
         scratch.path(),
         &json!({"op": "conversations", "workspace": "home"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 0);
     assert!(
@@ -58,7 +60,8 @@ fn an_entry_that_renames_carries_the_host_s_name_across() {
     assert_eq!(
         ask(
             scratch.path(),
-            &json!({"op": "conversations", "workspace": "home"})
+            &json!({"op": "conversations", "workspace": "home"}),
+            Form::Json,
         )
         .code,
         0
@@ -95,6 +98,7 @@ fn a_hollow_entry_refuses_rather_than_falling_through_to_the_flat_root() {
     let verdict = ask(
         scratch.path(),
         &json!({"op": "conversations", "workspace": "home"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
@@ -118,6 +122,7 @@ fn a_selector_naming_no_entry_refuses_instead_of_answering_from_the_flat_root() 
     let verdict = ask(
         scratch.path(),
         &json!({"op": "workspaces", "workspace": "NoSuchWs"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
@@ -149,6 +154,7 @@ fn a_selector_naming_an_entry_reaches_that_entry_s_engine() {
     let verdict = ask(
         scratch.path(),
         &json!({"op": "workspaces", "workspace": "alpha"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 0);
     assert!(
@@ -171,6 +177,7 @@ fn a_name_that_falls_through_to_an_unprovisioned_flat_root_names_itself() {
     let verdict = ask(
         scratch.path(),
         &json!({"op": "conversations", "workspace": "beta"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
@@ -208,6 +215,7 @@ fn a_name_no_entry_holds_still_reaches_the_flat_engine_when_the_op_takes_one() {
     let verdict = ask(
         scratch.path(),
         &json!({"op": "conversations", "workspace": "beta"}),
+        Form::Json,
     );
     assert_eq!(verdict.code, 0);
     assert!(

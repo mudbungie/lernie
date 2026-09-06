@@ -16,6 +16,22 @@ mod verdict;
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
 
+use crate::render::Form;
+
+/// **The one word this binary reads about its own OUTPUT** rather than about a
+/// gesture: `--json` prints the frames exactly as they crossed, where the
+/// default renders them for a person ([`crate::render`]).
+///
+/// **It is read off the FRONT and nowhere else**, and the position is the
+/// whole of what makes it unambiguous. Every gesture parameter on this surface
+/// is a verbatim string — a goal, a message's content, a ball's title — so a
+/// flag scanned out of the middle or the tail would silently eat an operator's
+/// own text, and `lernie message w a --json` would stop being a way to send
+/// those seven characters. Leading, everything after it is the gesture, byte
+/// for byte. Typing it at the end is the mistake this costs, and [`misplaced`]
+/// is what that mistake earns.
+pub const JSON: &str = "--json";
+
 /// What one invocation decided to do.
 #[derive(Debug)]
 pub enum Decided {
@@ -36,7 +52,12 @@ pub enum Decided {
     ///
     /// It carries the two words rather than an envelope, because there are two
     /// envelopes and the second cannot be built until the first is answered.
-    Start { address: String, goal: String },
+    Start {
+        address: String,
+        goal: String,
+        /// Which form the two reply streams print in.
+        form: Form,
+    },
     /// **Enroll a new box** in that workspace, under that name, at that grade
     /// (REMOTE §8.4): one gesture, and its answer rendered rather than handed
     /// on as a frame.
@@ -63,7 +84,7 @@ pub enum Decided {
     /// one thing to route and the reading of a caller's JSON — which is a pure
     /// function of what was typed — stays in this pure function where a test
     /// reads its refusal back as a value.
-    Ask(serde_json::Value),
+    Ask(serde_json::Value, Form),
     /// **Ask this gesture of every channel this box holds**, and answer with
     /// the union stamped with where each answer came from (bl-0d54).
     ///
@@ -78,16 +99,17 @@ pub enum Decided {
     /// `lernie ask` stays the raw door and is never fanned: it is the escape
     /// hatch for one channel, and `{"op":"workspaces","workspace":"<leaf>"}` is
     /// how an operator asks exactly one of them.
-    Fanned(serde_json::Value),
+    Fanned(serde_json::Value, Form),
 }
 
 /// Decide what one invocation does. `args` is argv **without** the program
 /// name.
 pub fn run(args: Vec<String>) -> Decided {
+    let (form, args) = form(args);
     let words: Vec<&str> = args.iter().map(String::as_str).collect();
     match words.as_slice() {
         ["entries"] => Decided::Entries,
-        ["ask", envelope] => ask(envelope),
+        ["ask", envelope] => ask(envelope, form),
         // One help, three spellings, because the subject is one.
         ["help" | "--help" | "-h"] => Decided::Say(Verdict::ok(usage())),
         ["help", verb] => Decided::Say(match crate::verbs::help::page(verb) {
@@ -107,6 +129,7 @@ pub fn run(args: Vec<String>) -> Decided {
         ["start", address, goal] => Decided::Start {
             address: (*address).to_owned(),
             goal: (*goal).to_owned(),
+            form,
         },
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
@@ -114,16 +137,37 @@ pub fn run(args: Vec<String>) -> Decided {
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,
-        [word, arguments @ ..] => typed(word, arguments),
+        [word, arguments @ ..] => typed(word, arguments, form),
     }
+}
+
+/// **Read the output form off the front**, and hand back the gesture that is
+/// left. See [`JSON`] for why the front and only the front.
+fn form(args: Vec<String>) -> (Form, Vec<String>) {
+    match args.split_first() {
+        Some((first, rest)) if first == JSON => (Form::Json, rest.to_vec()),
+        _ => (Form::Rendered, args),
+    }
+}
+
+/// **The refusal a trailing `--json` earns**, which is the arity refusal plus
+/// the sentence that turns it from a puzzle into a typo. `lernie workspaces
+/// --json` is what everybody types first — it is what the sibling tools take —
+/// and being told that `workspaces` takes no argument answers a question the
+/// operator did not ask.
+fn misplaced(refusal: String, arguments: &[&str]) -> String {
+    if arguments.contains(&JSON) {
+        return format!("{refusal} — `{JSON}` goes BEFORE the word: `lernie {JSON} …`");
+    }
+    refusal
 }
 
 /// A hand-written envelope. **Read here**, in the pure function, because
 /// whether a body is a gesture is decided entirely by what was typed — so it is
 /// the caller's typo, it earns the usage, and it costs no connection.
-fn ask(text: &str) -> Decided {
+fn ask(text: &str, form: Form) -> Decided {
     match crate::envelope::parse(text) {
-        Ok(envelope) => Decided::Ask(envelope),
+        Ok(envelope) => Decided::Ask(envelope, form),
         Err(refusal) => Decided::Say(Verdict::refused(refusal)),
     }
 }
@@ -197,16 +241,19 @@ pub const INTO: &str = "--into";
 /// quote-back, so `lernie entries x y` and `lernie help a b` were told they
 /// were not arguments this binary recognises — the sentence a genuine typo
 /// earns, about words the usage lists one screen up.
-fn typed(word: &str, arguments: &[&str]) -> Decided {
+fn typed(word: &str, arguments: &[&str], form: Form) -> Decided {
     if let Some(verb) = crate::verbs::find(word) {
         return match verb.envelope(arguments.iter().map(|a| (*a).to_owned()).collect()) {
-            Ok(envelope) if verb.addresses_a_workspace() => Decided::Ask(envelope),
-            Ok(envelope) => Decided::Fanned(envelope),
-            Err(refusal) => Decided::Say(Verdict::refused(refusal)),
+            Ok(envelope) if verb.addresses_a_workspace() => Decided::Ask(envelope, form),
+            Ok(envelope) => Decided::Fanned(envelope, form),
+            Err(refusal) => Decided::Say(Verdict::refused(misplaced(refusal, arguments))),
         };
     }
     if let Some(door) = crate::verbs::doors::find(word) {
-        return Decided::Say(Verdict::refused(door.refused(arguments.len())));
+        return Decided::Say(Verdict::refused(misplaced(
+            door.refused(arguments.len()),
+            arguments,
+        )));
     }
     Decided::Say(Verdict::refused(format!(
         "unrecognised argument: {}",

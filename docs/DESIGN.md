@@ -3040,6 +3040,69 @@ three ball-less frames are recorded in `src/verbs/tests/corpus/emits.rs` by
 count and reason.
 
 
+### 4.37 The rendering: the seat is the part you look at (bl-6ae7, bl-b00f)
+
+`src/render/`. **Every verb prints a human rendering by default, and `--json`
+is the raw frame stream.** That is the round-1 ruling and it reverses what this
+crate shipped through 0.1.30: the boundary's own machine form was the ONLY
+form, so a day of CLI use was a day of piping into a JSON formatter, and
+`transcript` — which carries every entry AND that entry's `raw` bytes — was one
+line of tens of kilobytes, each conversation twice over.
+
+**The rendering is per reply KIND, never per verb**, and that is what keeps it
+one implementation rather than a second table beside §4.10's. A verb is a
+serialization of a *gesture*; what comes back is a kind of
+`crate::reply::Reply`, and several verbs answer with one kind — `attention` and
+`seen` both answer a queue, `fleet`, `arm`, `disarm` and `disband` all answer
+`Armed`. A table keyed on the verb would hold four spellings of one rendering
+and they would disagree within a week. So the census §4.9 keeps is read in the
+other direction here: a kind added there is a match arm missing in
+`render/answer.rs`, which is the compiler saying the rendering half of a pane
+was not built.
+
+**The design note that was taken for a ruling.** The help said *"the reply
+stream prints one envelope per line"* and that sentence was read as a statement
+about the CLI's presentation. It is a statement about the WIRE, and the two are
+different questions — which is exactly why `--json` can keep the envelope byte
+for byte while the default renders.
+
+**A rendering is a reading, and the frame is always one act away.** It paints
+what a person scans a listing for and elides the rest — an entry's `raw`, a
+preview's third paragraph, a step's whole captured document. That loss is
+deliberate and it is safe *because* it is not the only form. What must never
+happen is the other direction: a rendering that states something the frame does
+not.
+
+**The branches live in the vocabulary, not at each field** (`render/parts.rs`).
+Every optional field on this surface is rendered by handing it to `clause`, and
+every flag to `when`, so *present* and *absent* are written once and executed by
+whatever frame carries each. Forty-one renderings each with its own `match`
+would be forty-one pairs of arms the corpus — one fixture a kind — could never
+reach both of.
+
+**The empty arm is a parameter of a listing and never a default**, and that is
+where bl-b00f is answered. A fresh world answers `rows: []` correctly and
+terminally; the one fact a person needs at that exact moment is that a world
+bootstraps its first workspace when a conversation is started in it (yog DESIGN
+§3.1, the fixed name `home`), so the roster's empty arm names the act rather
+than printing an empty listing and stopping.
+
+**`--json` is read off the FRONT of argv and nowhere else** (`crate::cli::JSON`).
+Every gesture parameter on this surface is a verbatim string — a goal, a
+message's content, a ball's title — so a flag scanned out of the middle or the
+tail would silently eat an operator's own text and `lernie message w a --json`
+would stop being a way to send those seven characters. Leading, everything
+after it is the gesture byte for byte. The cost is that the spelling everybody
+tries first is the trailing one, and that is paid where it is made: an arity
+refusal whose arguments contain `--json` says where the word goes.
+
+**One place, three surfaces.** `crate::render::said` is what
+`crate::seat::lines` used to be — the one place this seat's product is written
+— so the rendering reaches one gesture, the fan across channels and the
+composite start's two streams at once, and there is still exactly one spelling
+of *what a seat printed*.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -3065,6 +3128,17 @@ count and reason.
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
+| `src/render.rs` | the rendering (§4.37): the two forms, and the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable. | ~105 |
+| `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
+| `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |
+| `src/render/walls.rs` | the roster, the conversation list, the decision queue and the live tail. | ~130 |
+| `src/render/chat.rs` | the conversation as prose: its transcript, and its own whole row with the engine's offers on it. | ~165 |
+| `src/render/records.rs` | one conversation's records: its steps, its worktree, its inbox, its spine, and the commit governing it. | ~155 |
+| `src/render/step.rs` | one step drilled into — its captured documents printed as what they are, never parsed. | ~75 |
+| `src/render/policy.rs` | what a wall's policy is written in: its roles, its lineages, one config file, and the machines registered to it. | ~100 |
+| `src/render/tasks.rs` | the balls, the board, one wall's own balls, the delivery attempts and what they changed. | ~155 |
+| `src/render/reads.rs` | the three reads whose subject is an engine rather than a wall: its verb table, a search, the trail. | ~70 |
+| `src/render/acts.rs` | what an act came back saying: a captured run, a staged start, a sign-in, and the receipts that carry one fact. | ~165 |
 | `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~180 |
 | `src/reply/kinds.rs` | **the one census** — every kind this window draws, and the captured run three of the ops come back as. It moves every time a pane lands, where the policy beside it almost never does. | ~180 |
 | `src/reply/read.rs` | reading one frame — the dispatch off `kind`, and the refusal that wears none. | ~75 |

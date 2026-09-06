@@ -196,3 +196,34 @@ fn no_sentence_this_binary_composes_carries_a_run_of_spaces() {
         .collect();
     assert_eq!(run, Vec::<String>::new());
 }
+
+/// **The spelling everybody tries first is the wrong one**, and the arity
+/// refusal is where that is paid: `lernie workspaces --json` is what the
+/// sibling tools take, and being told `workspaces` takes no argument answers a
+/// question the operator did not ask.
+#[test]
+fn a_trailing_json_flag_earns_the_sentence_that_says_where_it_goes() {
+    for words in [
+        vec!["workspaces", "--json"],
+        vec!["entries", "--json"],
+        vec!["conversations", "home", "--json"],
+    ] {
+        let refusal = said(&words);
+        assert_eq!(refusal.code, REFUSED, "{words:?}");
+        assert!(
+            refusal.text.contains("`--json` goes BEFORE the word"),
+            "{words:?}: {}",
+            refusal.text
+        );
+    }
+    // …and an ordinary arity mistake earns the plain sentence. (The usage
+    // below it says where the flag goes for everybody; what is asserted here
+    // is that the DIAGNOSIS line does not, because nothing about this mistake
+    // is that flag.)
+    let plain = said(&["workspaces", "home"]);
+    assert!(
+        !plain.text.contains("`--json` goes BEFORE"),
+        "{}",
+        plain.text
+    );
+}

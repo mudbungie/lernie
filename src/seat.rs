@@ -45,6 +45,7 @@ pub use start::start;
 use crate::channel::Reach;
 use crate::cli::Verdict;
 use crate::envelope;
+use crate::render::Form;
 
 /// Send one gesture envelope down the channel its workspace names, and answer
 /// with the engine's reply stream.
@@ -60,9 +61,9 @@ use crate::envelope;
 /// earns the sentence alone; a reply that says `ok: false` is the engine
 /// **answering**, so it goes to stdout with the rest of the stream and only the
 /// exit code says no.
-pub fn ask(data_root: &Path, envelope: &Value) -> Verdict {
+pub fn ask(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
     match sent(data_root, envelope) {
-        Ok(stream) => Verdict::answered(lines(&stream), envelope::succeeded(&stream)),
+        Ok(stream) => Verdict::answered(said(&stream, form), envelope::succeeded(&stream)),
         Err(reach) => Verdict::failed(reach.said()),
     }
 }
@@ -83,16 +84,15 @@ pub(crate) fn sent(data_root: &Path, envelope: &Value) -> Result<Vec<Value>, Rea
     channel.ask(&carried)
 }
 
-/// **The reply stream as this seat's product**: one envelope per line, and the
-/// one place that shape is written — [`start`] prints two streams the same way,
-/// and two spellings of "what a seat printed" is two products.
-pub(crate) fn lines(stream: &[Value]) -> String {
-    stream
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<String>>()
-        .join("\n")
-}
+/// **The reply stream as this seat's product** — the one place that shape is
+/// written, whichever form it takes. [`start`] prints two streams the same
+/// way and [`fanned`] prints one per channel, and two spellings of "what a
+/// seat printed" is two products.
+///
+/// It is [`crate::render::said`] under this crate's own name: the rendering is
+/// the product, and `--json` is the frames as they crossed
+/// ([`crate::render`]).
+pub(crate) use crate::render::said;
 
 #[cfg(test)]
 mod tests;

@@ -3,6 +3,7 @@
 use super::fanned;
 use crate::channel::entries::WORKSPACE;
 use crate::cli::Stream;
+use crate::render::Form;
 use crate::test_support::wire::{entry, flat, wired, yes};
 use crate::test_support::{Scratch, mint};
 use serde_json::json;
@@ -21,7 +22,7 @@ fn every_channel_answers_under_its_own_name() {
         vec![vec![json!({"ok": true, "n": 1})]],
     );
 
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     assert_eq!(
@@ -44,7 +45,7 @@ fn every_channel_answers_under_its_own_name() {
 fn a_box_with_no_flat_channel_still_answers_from_its_entries() {
     let scratch = Scratch::new();
     wired(&scratch, &entry("alpha"), vec![vec![yes()]]);
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 0, "{}", verdict.text);
     assert!(
         verdict.text.contains(&yes().to_string()),
@@ -60,7 +61,7 @@ fn a_box_with_no_flat_channel_still_answers_from_its_entries() {
 fn a_channel_that_cannot_answer_says_so_beside_the_ones_that_did() {
     let scratch = Scratch::new();
     wired(&scratch, &entry("alpha"), vec![vec![yes()]]);
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     let lines: Vec<&str> = verdict.text.lines().collect();
     assert_eq!(lines[0], "(this box's own engine)");
     assert!(lines[1].contains("no wire provisioned at"), "{}", lines[1]);
@@ -78,7 +79,7 @@ fn a_renamed_entry_is_stamped_the_way_the_listing_names_it() {
         "personal",
     )
     .expect("the workspace file");
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert!(
         verdict
             .text
@@ -95,7 +96,7 @@ fn a_renamed_entry_is_stamped_the_way_the_listing_names_it() {
 fn a_box_no_channel_of_which_answers_fails() {
     let scratch = Scratch::new();
     mint::provisioned(&scratch.path().join(entry("alpha")), "127.0.0.1:1");
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert!(
         verdict.text.contains("connect 127.0.0.1:1"),
@@ -120,7 +121,7 @@ fn a_channel_that_answers_no_is_printed_and_does_not_count_as_an_answer() {
         &flat(),
         vec![vec![json!({"ok": false, "said": "no"})]],
     );
-    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}));
+    let verdict = fanned(scratch.path(), &json!({"op": "workspaces"}), Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Out, "an answer is not a diagnosis");
     assert!(verdict.text.contains(r#""said":"no""#), "{}", verdict.text);

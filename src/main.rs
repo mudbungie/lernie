@@ -22,11 +22,15 @@ fn main() -> ExitCode {
     let verdict = match lernie::cli::run(std::env::args().skip(1).collect()) {
         Decided::Say(verdict) => verdict,
         Decided::Entries => rooted(lernie::seat::listing),
-        Decided::Ask(envelope) => rooted(|root| lernie::seat::ask(root, &envelope)),
-        Decided::Fanned(envelope) => rooted(|root| lernie::seat::fanned(root, &envelope)),
-        Decided::Start { address, goal } => {
-            rooted(|root| lernie::seat::start(root, &address, &goal))
+        Decided::Ask(envelope, form) => rooted(|root| lernie::seat::ask(root, &envelope, form)),
+        Decided::Fanned(envelope, form) => {
+            rooted(|root| lernie::seat::fanned(root, &envelope, form))
         }
+        Decided::Start {
+            address,
+            goal,
+            form,
+        } => rooted(|root| lernie::seat::start(root, &address, &goal, form)),
         Decided::Enroll {
             workspace,
             name,

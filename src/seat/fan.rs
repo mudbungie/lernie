@@ -28,17 +28,18 @@ use std::path::Path;
 
 use serde_json::Value;
 
-use super::{OWN, holds, lines};
+use super::{OWN, holds, said};
 use crate::channel::entries;
 use crate::cli::Verdict;
 use crate::envelope;
+use crate::render::Form;
 
 /// Ask `envelope` of every channel this box holds and answer with the union.
 ///
 /// Each section is a channel's name as the roster spells it, then that
 /// channel's own answer indented under it — the shape [`super::listing`]
 /// already prints, because this is that listing *answered*.
-pub fn fanned(data_root: &Path, envelope: &Value) -> Verdict {
+pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
     let asked: Vec<(String, Result<Vec<Value>, String>)> =
         std::iter::once((OWN.to_owned(), super::route::flat(data_root)))
             .chain(
@@ -60,7 +61,7 @@ pub fn fanned(data_root: &Path, envelope: &Value) -> Verdict {
     });
     let text = asked
         .iter()
-        .map(|(name, said)| section(name, said))
+        .map(|(name, answer)| section(name, answer, form))
         .collect::<Vec<String>>()
         .join("\n");
     Verdict::answered(text, answered)
@@ -70,9 +71,9 @@ pub fn fanned(data_root: &Path, envelope: &Value) -> Verdict {
 ///
 /// The channel stamp is **this box's**, exactly as the window's is — no origin
 /// crosses the wire and no reply grew a field the engine cannot fill.
-fn section(name: &str, said: &Result<Vec<Value>, String>) -> String {
-    let body = match said {
-        Ok(stream) => lines(stream),
+fn section(name: &str, answer: &Result<Vec<Value>, String>, form: Form) -> String {
+    let body = match answer {
+        Ok(stream) => said(stream, form),
         Err(refusal) => refusal.clone(),
     };
     std::iter::once(name.to_owned())

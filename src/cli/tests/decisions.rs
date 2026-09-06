@@ -10,6 +10,7 @@
 use super::super::verdict::REFUSED;
 use super::super::{Decided, run, usage, version};
 use super::{argv, asked, fanned, said};
+use crate::render::Form;
 use serde_json::json;
 
 #[test]
@@ -125,7 +126,7 @@ fn the_roster_word_fans_while_the_hand_written_envelope_does_not() {
 /// cannot be built until the first is answered.
 #[test]
 fn the_start_word_carries_a_workspace_and_a_goal() {
-    let Decided::Start { address, goal } = run(argv(&["start", "home", "do the thing"])) else {
+    let Decided::Start { address, goal, .. } = run(argv(&["start", "home", "do the thing"])) else {
         panic!("`start` begins a conversation");
     };
     assert_eq!(address, "home");
@@ -164,6 +165,42 @@ fn help_on_a_verb_answers_its_page_and_refuses_a_word_that_is_not_one() {
 #[test]
 fn a_bare_invocation_opens_the_window() {
     assert!(matches!(run(argv(&[])), Decided::Window));
+}
+
+/// **`--json` is read off the front and changes only the FORM**, never the
+/// envelope: the same word with and without it decides the same gesture.
+#[test]
+fn the_json_flag_leads_and_leaves_the_gesture_exactly_as_it_was() {
+    let Decided::Fanned(bare, Form::Rendered) = run(argv(&["workspaces"])) else {
+        panic!("a bare read renders");
+    };
+    let Decided::Fanned(flagged, Form::Json) = run(argv(&["--json", "workspaces"])) else {
+        panic!("a flagged read is the machine form");
+    };
+    assert_eq!(bare, flagged);
+    let Decided::Ask(_, Form::Json) = run(argv(&["--json", "conversations", "home"])) else {
+        panic!("a workspace read carries the form too");
+    };
+    let Decided::Start { form, .. } = run(argv(&["--json", "start", "home", "go"])) else {
+        panic!("the composite carries it");
+    };
+    assert_eq!(form, Form::Json);
+    let Decided::Ask(_, Form::Json) = run(argv(&["--json", "ask", "{\"op\":\"workspaces\"}"]))
+    else {
+        panic!("the raw door carries it");
+    };
+}
+
+/// **A parameter that happens to be the flag is still the parameter.** Reading
+/// it anywhere but the front would make `lernie message` unable to send seven
+/// particular characters, which is the whole reason the position is fixed.
+#[test]
+fn the_flag_after_the_word_is_the_operators_own_text() {
+    assert_eq!(
+        asked(&["message", "home", "Pelican", "--json"]),
+        json!({"op": "message", "workspace": "home", "agent": "Pelican",
+               "content": "--json"})
+    );
 }
 
 /// **`--into <dir>` is read here**, in the pure function, because a destination

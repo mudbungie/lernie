@@ -29,7 +29,7 @@ fn said(words: &[&str]) -> Verdict {
 /// The envelope a run decided to send, for the arguments that decide to ask.
 fn asked(words: &[&str]) -> Value {
     match run(argv(words)) {
-        Decided::Ask(envelope) => envelope,
+        Decided::Ask(envelope, _) => envelope,
         other => panic!("{words:?} decided {other:?}"),
     }
 }
@@ -38,7 +38,7 @@ fn asked(words: &[&str]) -> Value {
 /// asked of all of them rather than one (bl-0d54).
 fn fanned(words: &[&str]) -> Value {
     match run(argv(words)) {
-        Decided::Fanned(envelope) => envelope,
+        Decided::Fanned(envelope, _) => envelope,
         other => panic!("{words:?} decided {other:?}"),
     }
 }

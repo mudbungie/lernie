@@ -41,7 +41,7 @@ continues under the name litany. lernie 0.1.0 and above is this seat. The
 version is the only rule that separates them.
 
 usage: lernie                      open the window on this box's channels
-       lernie <verb> [argument…]
+       lernie [--json] <verb> [argument…]
        lernie start <workspace> <goal>
        lernie ask <envelope>
        lernie entries
@@ -54,8 +54,15 @@ selected conversation and a composer under it. That is what a seat is; every
 verb below is a way of reaching one gesture without one.
 
 The gestures, typed. Each becomes the envelope the boundary already carries
-and goes down the channel its workspace names; the reply stream prints one
-envelope per line, and the exit code is 0 when the last reply says ok.
+and goes down the channel its workspace names, and the exit code is 0 when the
+last reply says ok.
+
+WHAT IT PRINTS. By default the reply is RENDERED: the rows of a listing, the
+entries of a transcript, the sentence a receipt is. `--json` prints the frames
+exactly as they crossed instead, one envelope per line, which is what a script
+wants. The flag goes BEFORE the word — everything after the word is the
+gesture, verbatim, including a message whose text happens to start with a
+dash.
 
 {}
 
@@ -65,6 +72,7 @@ both lists.
 
 {}
 
+      --json      print the reply frames as they crossed, not rendered
   -V, --version   print the name and version
   -h, --help      print this
 

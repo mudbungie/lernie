@@ -64,6 +64,7 @@ lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace
 lernie start <workspace> <goal>         # begin a conversation — two acts, one word
 
 lernie                  # open the window
+lernie --json <verb>…   # the reply frames as they crossed, instead of rendered
 lernie entries          # every channel this box holds, without dialling any
 lernie ask <envelope>   # the same gestures, written out as JSON
 lernie help [<verb>]    # what a verb takes — answered with no engine up
@@ -71,8 +72,16 @@ lernie help [<verb>]    # what a verb takes — answered with no engine up
 
 A verb opens the channel its workspace names — this box's own engine, or one of
 the workspaces it participates in elsewhere — over a real mTLS handshake with a
-real version preface, carries the envelope across, and prints each reply frame
-on its own line. It exits 0 when the last reply says ok.
+real version preface, carries the envelope across, and **prints the reply
+rendered**: the rows of a listing, the entries of a transcript, the sentence a
+receipt is. It exits 0 when the last reply says ok.
+
+The boundary stays JSON and `--json` prints it byte for byte, one envelope a
+line, which is what a script wants (`docs/DESIGN.md` §4.37). The rendering is
+designed once per reply **kind** rather than per verb, because several verbs
+answer with one kind and four spellings of one rendering would disagree within a
+week. The flag goes before the word: everything after the word is the gesture,
+verbatim, including a message whose text begins with a dash.
 
 The verbs are a **serialization** of the envelope, never a second spelling of a
 gesture: each builds the object `ask` would have taken and hands it to the same

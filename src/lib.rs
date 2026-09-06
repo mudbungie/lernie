@@ -47,6 +47,7 @@ pub mod paths;
 pub mod place;
 /// A QR symbol, drawn by this crate: bytes in, a grid of modules out.
 pub mod qr;
+pub mod render;
 pub mod reply;
 pub mod seat;
 /// The link the frame and the threads share, and the crate's one lock.

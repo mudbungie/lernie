@@ -1,7 +1,8 @@
 +++
 title = "lernie model takes a model id the workspace's own 'lernie models' does not list, and the failure only shows up a turn later, truncated"
 created = 1788673706
-updated = 1788673706
+updated = 1788675648
+claimant = "Cantaloups-S1"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

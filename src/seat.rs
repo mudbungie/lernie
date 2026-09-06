@@ -31,6 +31,8 @@ mod enroll;
 mod fan;
 /// What this box says it holds, said without dialling any of it.
 mod holds;
+/// The role assignment, against the list the same seat can already fetch.
+mod model;
 /// Which channel a gesture goes down, and what it carries there.
 mod route;
 /// The §8.1 start family's two acts, spelled as one word.
@@ -39,6 +41,7 @@ mod start;
 pub use enroll::enroll;
 pub use fan::fanned;
 pub use holds::{OWN, channels, dial, listing};
+pub use model::model;
 pub use route::{Routed, route};
 pub use start::start;
 

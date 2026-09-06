@@ -23,6 +23,25 @@ fn main() -> ExitCode {
         Decided::Say(verdict) => verdict,
         Decided::Entries => rooted(lernie::seat::listing),
         Decided::Ask(envelope, form) => rooted(|root| lernie::seat::ask(root, &envelope, form)),
+        // **The warning is a diagnosis, so it goes to stderr** — the reply
+        // stream under it is the product and stays on stdout.
+        Decided::Model {
+            workspace,
+            role,
+            provider,
+            model,
+            form,
+        } => rooted(|root| {
+            lernie::seat::model(
+                root,
+                &workspace,
+                &role,
+                &provider,
+                &model,
+                form,
+                &mut |said| eprintln!("{said}"),
+            )
+        }),
         Decided::Fanned(envelope, form) => {
             rooted(|root| lernie::seat::fanned(root, &envelope, form))
         }

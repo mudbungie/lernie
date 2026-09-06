@@ -13,6 +13,10 @@ mod text;
 /// What an invocation says, and with what exit code.
 mod verdict;
 
+/// What one invocation decided to do.
+mod decided;
+
+pub use decided::Decided;
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
 
@@ -31,81 +35,6 @@ use crate::render::Form;
 /// for byte. Typing it at the end is the mistake this costs, and [`misplaced`]
 /// is what that mistake earns.
 pub const JSON: &str = "--json";
-
-/// What one invocation decided to do.
-#[derive(Debug)]
-pub enum Decided {
-    /// Say this, and exit. Every flag and every refusal is one of these.
-    Say(Verdict),
-    /// Describe every channel this box holds. Needs the data root, which is
-    /// this process's own environment and so the entry point's to fold.
-    Entries,
-    /// **Open the window**, which is what a seat is for. It needs the data root
-    /// and a native event loop, both of which are the entry point's — so it
-    /// carries nothing, exactly as [`Entries`](Self::Entries) does.
-    Window,
-    /// **Begin a conversation** in that workspace, with that goal: the §8.1
-    /// start family's two acts, spelled as one word. It is a serialization and
-    /// not a gesture — what crosses is `prepare` and then `prompt`, the
-    /// boundary's own envelopes — and it is one word because the thing between
-    /// them is a local: the staged body, held while the second act is composed.
-    ///
-    /// It carries the two words rather than an envelope, because there are two
-    /// envelopes and the second cannot be built until the first is answered.
-    Start {
-        address: String,
-        goal: String,
-        /// **The work target, when one was named** — the §3.4 path rung, and
-        /// `None` for the bare one. The rung is said outright rather than
-        /// inferred, so this `Option` IS the rung and there is no second word
-        /// for the operator to keep in agreement with it.
-        dir: Option<String>,
-        /// Which form the two reply streams print in.
-        form: Form,
-    },
-    /// **Enroll a new box** in that workspace, under that name, at that grade
-    /// (REMOTE §8.4): one gesture, and its answer rendered rather than handed
-    /// on as a frame.
-    ///
-    /// It has an arm of its own — rather than riding [`Ask`](Self::Ask) like
-    /// every other typed verb — because the answer is not a reply stream: it is
-    /// the §8.4 **envelope**, which is a different object with two fields
-    /// fewer, and it is drawn as a symbol beside the line it encodes. See
-    /// [`crate::seat::enroll`].
-    ///
-    /// `into` is the destination the operator named, and it is `None` on the
-    /// ordinary path — the seat writes nothing it was not asked to write.
-    Enroll {
-        workspace: String,
-        name: String,
-        grade: String,
-        into: Option<String>,
-    },
-    /// Send this gesture envelope down the channel it names. Needs the data
-    /// root for the same reason.
-    ///
-    /// **It carries the envelope, not the text it was typed as.** A typed verb
-    /// and a hand-written `ask` both arrive here as the same value, so there is
-    /// one thing to route and the reading of a caller's JSON — which is a pure
-    /// function of what was typed — stays in this pure function where a test
-    /// reads its refusal back as a value.
-    Ask(serde_json::Value, Form),
-    /// **Ask this gesture of every channel this box holds**, and answer with
-    /// the union stamped with where each answer came from (bl-0d54).
-    ///
-    /// It is the same envelope [`Ask`](Self::Ask) carries and there is no
-    /// second spelling of it — what differs is how many channels it is asked
-    /// of. A verb with no `workspace` parameter has no way to name one
-    /// ([`crate::verbs::Verb::addresses_a_workspace`]), so its subject is all
-    /// of them: the window's roster has always been that union, and the CLI's
-    /// shorthand for the same question answered one channel and said nothing
-    /// about the rest.
-    ///
-    /// `lernie ask` stays the raw door and is never fanned: it is the escape
-    /// hatch for one channel, and `{"op":"workspaces","workspace":"<leaf>"}` is
-    /// how an operator asks exactly one of them.
-    Fanned(serde_json::Value, Form),
-}
 
 /// Decide what one invocation does. `args` is argv **without** the program
 /// name.
@@ -133,6 +62,18 @@ pub fn run(args: Vec<String>) -> Decided {
         // keep.
         ["start", address, goal] => started(address, goal, None, form),
         ["start", address, goal, dir] => started(address, goal, Some(dir), form),
+        // Ahead of the typed table for [`Follow`](Decided::Follow)'s reason
+        // one noun over: the word spends a SECOND row first (bl-1e5a). The
+        // assignment is unchanged and is still the table's; what is added
+        // ahead of it is the read that says whether the id is one the provider
+        // offers.
+        ["model", workspace, role, provider, model] => Decided::Model {
+            workspace: (*workspace).to_owned(),
+            role: (*role).to_owned(),
+            provider: (*provider).to_owned(),
+            model: (*model).to_owned(),
+            form,
+        },
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => enroll(workspace, name, grade, tail),

@@ -628,6 +628,32 @@ fourth. The usage line stays computed from the row's parameters and stores
 nothing (`Verb::usage`); the word is stated in the row's own `detail`, which is
 what `lernie help enroll` prints.
 
+**And `model` reads before it writes** (`src/seat/model.rs`, bl-1e5a). The
+word accepted an id the same seat could prove does not exist, answered `ok`,
+wrote it into the wall's `providers.yaml`, and the workspace was broken until
+somebody read a step record — the next deposit died and the failure reached the
+operator truncated, on a row, a turn later. The documented rule is the
+engine's and it is right: *a model id is validated by the wire at the first
+live model call*, because an engine holding a second opinion about a
+provider's catalogue would be a second authority on somebody else's table. It
+is not an argument for the seat staying silent when it has just been handed a
+word it can check against a list it already knows how to fetch — `models` is a
+row in the same table, one round trip, off the same channel.
+
+**It warns and never refuses**, for the reason the engine does not validate
+early: a provider's list moves under this seat, a cache is stale, a row that
+cannot be asked answers nothing. So the assignment goes through and what is
+bought is that the operator learns it now, in full. **Every way the read can
+fail to answer a listing says nothing at all** — a refusal, a kind this build
+cannot read, an empty row, an unreachable channel — because turning a
+provider's silence into a refusal would make an unreachable row a reason not to
+write a file the engine is willing to write.
+
+**The whole offered list is named, not a guess at the nearest.** It is the same
+round trip, it is exactly what `lernie models` would have printed, and a
+similarity score is a mechanism with no input: an operator knows which one they
+meant the moment they see the row.
+
 **The one argument the seat settles itself is `enroll`'s grade** (bl-07b9).
 `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
 this binary already holds them — `lernie help enroll` says so — so a typo used
@@ -3270,7 +3296,8 @@ of *what a seat printed*.
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~160 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~225 |
+| `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors and the two codes. | ~95 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
@@ -3281,6 +3308,7 @@ of *what a seat printed*.
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from. | ~80 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
+| `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |
 | `src/channel/hello.rs` | the version preface. | ~85 |

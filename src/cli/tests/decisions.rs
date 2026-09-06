@@ -7,6 +7,9 @@
 //! module already had: this is what a run decides, and that is every way a word
 //! can fail to be one of them.
 
+/// The words that are not one ask: the composites, and the drawn answer.
+mod composites;
+
 use super::super::verdict::REFUSED;
 use super::super::{Decided, run, usage, version};
 use super::{argv, asked, fanned, said};
@@ -95,6 +98,15 @@ fn every_verb_in_the_table_is_typable() {
             assert_eq!(into, None);
             continue;
         }
+        // **`model` reads before it writes** (bl-1e5a): the assignment is this
+        // row's own envelope, and what the word adds ahead of it is the
+        // `models` read that says whether the id is one the provider offers.
+        if verb.word == crate::verbs::MODEL.word {
+            let Decided::Model { .. } = run(argv(&words)) else {
+                panic!("`model` checks before it assigns");
+            };
+            continue;
+        }
         // **A verb with no `workspace` parameter has no way to name a
         // channel, so its subject is all of them** (bl-0d54): the envelope is
         // the same row's, and only how many channels it is asked of differs.
@@ -119,18 +131,6 @@ fn the_roster_word_fans_while_the_hand_written_envelope_does_not() {
         json!({"op": "workspaces"}),
         "the raw door is one channel's, always"
     );
-}
-
-/// **The composite is one word and two words of argument.** It carries them
-/// rather than an envelope, because there are two envelopes and the second
-/// cannot be built until the first is answered.
-#[test]
-fn the_start_word_carries_a_workspace_and_a_goal() {
-    let Decided::Start { address, goal, .. } = run(argv(&["start", "home", "do the thing"])) else {
-        panic!("`start` begins a conversation");
-    };
-    assert_eq!(address, "home");
-    assert_eq!(goal, "do the thing");
 }
 
 /// **One help, three spellings**, because the subject is one — this binary's
@@ -203,52 +203,6 @@ fn the_flag_after_the_word_is_the_operators_own_text() {
     );
 }
 
-/// **`--into <dir>` is read here**, in the pure function, because a destination
-/// on this box is decided entirely by what was typed (bl-1554).
-#[test]
-fn the_enrollment_carries_the_destination_it_was_given() {
-    let Decided::Enroll { into, grade, .. } = run(argv(&[
-        "enroll",
-        "ops",
-        "box-1",
-        "foot",
-        crate::cli::INTO,
-        "/home/u/carry",
-    ])) else {
-        panic!("`enroll` with a destination is still an enrollment");
-    };
-    assert_eq!(into.as_deref(), Some("/home/u/carry"));
-    assert_eq!(grade, "foot");
-}
-
-/// A tail that is anything else refuses **naming the one word it takes**,
-/// rather than earning the verb table's arity sentence about three arguments.
-#[test]
-fn a_tail_that_is_not_the_one_word_refuses_and_names_it() {
-    for tail in [
-        vec!["enroll", "ops", "box-1", "foot", "/home/u/carry"],
-        vec!["enroll", "ops", "box-1", "foot", "--out", "/home/u/carry"],
-        vec!["enroll", "ops", "box-1", "foot", crate::cli::INTO],
-        vec![
-            "enroll",
-            "ops",
-            "box-1",
-            "foot",
-            crate::cli::INTO,
-            "/home/u/carry",
-            "extra",
-        ],
-    ] {
-        let refused = said(&tail);
-        assert_eq!(refused.code, REFUSED, "{tail:?}");
-        assert!(
-            refused.text.contains(crate::cli::INTO),
-            "{tail:?}: {}",
-            refused.text
-        );
-    }
-}
-
 /// **The cascade is a word after the address** (bl-9fd1), and it is the only
 /// stop that works on a conversation with children: the bare form kills the
 /// root's driver, a child's driver deposits into it, and it is running again
@@ -263,27 +217,4 @@ fn the_stop_cascade_is_typed_as_the_word_children() {
         asked(&["stop", "home", "Pelican", "children"]),
         json!({"op": "stop", "workspace": "home", "agent": "Pelican", "children": true})
     );
-}
-
-/// **A third word is the work target** (bl-4371), and its absence is the bare
-/// rung — the `Option` IS the rung, so there is no fourth word saying which.
-#[test]
-fn a_third_word_aims_the_start_at_a_directory() {
-    let Decided::Start {
-        address, goal, dir, ..
-    } = run(argv(&["start", "home", "do the thing", "/work/repo"]))
-    else {
-        panic!("a start with a work target");
-    };
-    assert_eq!(
-        (address, goal, dir),
-        (
-            "home".to_owned(),
-            "do the thing".to_owned(),
-            Some("/work/repo".to_owned())
-        )
-    );
-    let Decided::Start { dir: None, .. } = run(argv(&["start", "home", "do the thing"])) else {
-        panic!("two words is the bare rung");
-    };
 }

@@ -141,8 +141,16 @@ pub enum Shape {
     Narrow,
 }
 
+/// **The width every column is worth together** — the one window width at
+/// which each of the three gets exactly what it is worth and nothing is left
+/// over. It is derived and never written down twice: it is the crossing point
+/// of [`widths`]' two clauses, so tuning any of the three moves it.
+fn worth() -> f32 {
+    ROSTER + CONVS + CHAT_FLOOR
+}
+
 /// **The two list panes' widths at a given window width** — the yield, and the
-/// policy the window had none of (bl-e5d2).
+/// policy the window had none of (bl-e5d2, bl-fef8).
 ///
 /// The side panels used to keep their widths as the window narrowed and the
 /// central panel absorbed the whole loss, so at 900 points the pane the window
@@ -150,8 +158,18 @@ pub enum Shape {
 /// other way round: **the conversation has a floor and the list panes yield to
 /// it**, together and in proportion to what each is worth, until they reach
 /// their own floor.
+///
+/// **And a window WIDER than every column's worth is the same rule read the
+/// other way** (bl-fef8): the lists' share stopped growing at 1.0, so every
+/// pixel of a large display landed in the one pane whose content is already
+/// prose, and the two navigation columns stayed the width they are worth at a
+/// 1020-point window forever. Both are one expression — the share is the
+/// SMALLER of *this column's proportion of the window* and *what is left after
+/// the conversation keeps its floor* — and the two clauses cross at exactly
+/// [`worth`], which is what makes the growth a continuation of the yield
+/// rather than a second regime with a constant of its own.
 pub fn widths(window: f32) -> (f32, f32) {
-    let share = ((window - CHAT_FLOOR) / (ROSTER + CONVS)).clamp(0.0, 1.0);
+    let share = (window / worth()).min((window - CHAT_FLOOR) / (ROSTER + CONVS));
     (
         (ROSTER * share).max(SIDE_FLOOR),
         (CONVS * share).max(SIDE_FLOOR),

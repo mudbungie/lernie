@@ -751,6 +751,45 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**And the yield keeps going the other way above the width every column is
+worth** (`widths`; bl-fef8). The share stopped at 1.0, so every pixel of a
+large display landed in the one pane whose content is already prose while the
+two navigation columns stayed the width they are worth at a 1020-point window
+forever. It is one expression rather than a second regime: the share is the
+SMALLER of *this column's proportion of the window* and *what is left once the
+conversation keeps its floor*, and the two clauses cross at exactly
+`ROSTER + CONVS + CHAT_FLOOR` — the width at which each column gets what it is
+worth and nothing is over. So there is no constant for the growth, no hinge to
+tune, and every answer at or below that width is the one the yield already
+gave.
+
+**The panel's width is the policy's, EXACTLY** (`shell::lists`; bl-fef8), and
+this is the half the policy could not state. egui stores a side panel's state
+as the rect its CONTENT took and reads that back as the width on the next pass,
+so a `default_width` plus a `max_width` is a request the panel stops honouring
+after one frame: a pane narrower than its cap shrinks to its content and can
+never grow again. A window opened at 800 points and widened to 1440 kept a
+175-point roster with every row in it wrapped after two words — the policy said
+280 and nothing ever asked it a second time. `exact_width` clamps the stored
+rect to a point range, so what a pane took last frame cannot outvote what this
+window is worth. It costs the drag handle, which is subtraction rather than
+loss: a dragged width is a second home for a fact the policy owns, and the drag
+never worked — a pane pulled wider than its content snapped back to the content
+on the next pass.
+
+**A list row's second line truncates, exactly as its headline does**
+(`convs::beneath`; bl-fef8, bl-b3b2's rule one line down). The headline was
+made to truncate and the preview under it was left extending, which is the same
+defect with the same two costs. A preview ran flush into the next panel with no
+`…`, so a reader could not tell the sentence continued — and the wire's own
+`preview` field arrives already elided, which made the pane look like it was
+eliding when it was being cut. In the layout it pushed the pane's `min_rect`
+past the panel's painted frame, and a side panel reserves the CONTENT's right
+edge from the layout while painting only its own: the strip between the two is
+covered by no panel at all, which is the ~150-point band of bare window surface
+the ball measured beside the list. One fix, because they were never two
+defects.
+
 **The transcript is anchored to its TAIL, and the anchor is a scroll state per
 conversation rather than a gesture** (`src/ui/chat.rs`; bl-83ae). The pane
 opened on message 001 and stayed there — a conversation streaming its eleventh

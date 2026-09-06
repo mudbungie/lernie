@@ -182,10 +182,25 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, row: &ConvRow, 
 /// A line hung under a row's headline, at the row's own indent and in its own
 /// ink. One function rather than two blocks that must not drift: the second
 /// line of a row is a shape, and a second copy of it is a second shape.
+///
+/// **It TRUNCATES, for bl-b3b2's reason one line down** (bl-fef8). The headline
+/// above was made to truncate and this was left extending, which is the same
+/// defect with the same two costs. On the glass a preview ran flush into the
+/// next panel with no `…`, so a reader could not tell the sentence continued —
+/// while the wire's own `preview` field arrives already elided, which made the
+/// pane look like it was eliding when it was being cut. And in the layout it
+/// pushed the pane's `min_rect` past the panel's painted frame, and a side
+/// panel reserves the CONTENT's right edge from the layout while painting only
+/// its own: the strip between the two is covered by no panel at all, which is
+/// the ~150-point band of window surface the ball measured beside the list.
+/// Both are gone at once, because they were never two defects.
 fn beneath(ui: &mut egui::Ui, row: &ConvRow, said: &str) {
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth) + 12.0);
-        ui.colored_label(theme::tone_ink(&row.tone), said);
+        ui.add(
+            egui::Label::new(egui::RichText::new(said).color(theme::tone_ink(&row.tone)))
+                .truncate(),
+        );
     });
 }
 

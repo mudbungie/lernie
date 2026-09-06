@@ -10,11 +10,10 @@ use crate::ui::Pane;
 /// nothing buys the chat pane a width it still cannot use.
 #[test]
 fn the_list_panes_yield_to_the_conversation_s_floor_and_then_stop() {
-    assert_eq!(widths(1200.0), (280.0, 320.0), "wide enough for both");
     assert_eq!(
         widths(1020.0),
         (280.0, 320.0),
-        "exactly enough is still enough"
+        "every column worth exactly what it is worth"
     );
     let (roster, convs) = widths(900.0);
     assert!(
@@ -30,6 +29,48 @@ fn the_list_panes_yield_to_the_conversation_s_floor_and_then_stop() {
         (SIDE_FLOOR, SIDE_FLOOR),
         "past their own floor the list panes stop yielding"
     );
+}
+
+/// **Above the width every column is worth, the yield keeps going the other
+/// way** (bl-fef8). The share used to stop at 1.0, so every pixel of a large
+/// display landed in the one pane whose content is already prose while the two
+/// navigation columns stayed the width they are worth at a 1020-point window
+/// forever. It is the same expression rather than a second regime: the share
+/// is the smaller of *this column's proportion of the window* and *what is
+/// left once the conversation keeps its floor*, and the two clauses cross at
+/// exactly the width every column is worth.
+#[test]
+fn a_window_wider_than_every_column_s_worth_grows_all_three_together() {
+    let (roster, convs) = widths(1400.0);
+    assert!(roster > 280.0 && convs > 320.0, "{roster}, {convs}");
+    assert!(
+        (roster / convs - 280.0 / 320.0).abs() < 0.01,
+        "each grows in proportion to what it is worth: {roster}, {convs}"
+    );
+    assert!(
+        1400.0 - roster - convs > CHAT_FLOOR,
+        "and the conversation grows too, not only the lists"
+    );
+    // Monotone, so no width is served worse than a narrower one.
+    let mut before = 0.0;
+    for width in [1020.0_f32, 1200.0, 1400.0, 2560.0] {
+        let (roster, _) = widths(width);
+        assert!(roster > before, "{width}: {roster} is not past {before}");
+        before = roster;
+    }
+}
+
+/// **The two clauses cross at the width every column is worth**, which is what
+/// makes the growth a continuation of the yield rather than a hinge: on either
+/// side of 1020 the answer is one expression, and at 1020 both clauses give
+/// the same number.
+#[test]
+fn the_yield_and_the_growth_meet_at_the_width_every_column_is_worth() {
+    let (below, _) = widths(1019.0);
+    let (at, _) = widths(1020.0);
+    let (above, _) = widths(1021.0);
+    assert!(below < at && at < above, "{below}, {at}, {above}");
+    assert!((at - 280.0).abs() < 0.01, "{at}");
 }
 
 /// **Where the two shapes meet, and that the line is the yield itself**

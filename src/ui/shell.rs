@@ -87,10 +87,24 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
 /// the pane paints its content and the layout paints its name, which also keeps
 /// bl-e5d2's rule structural: the heading is outside the pane, and therefore
 /// outside the region the pane scrolls.
+///
+/// **The width is [`policy`]'s, EXACTLY, and a panel asked for a default plus a
+/// cap does not obey one** (bl-fef8). egui stores a side panel's state as the
+/// rect its CONTENT took and reads that back as the width on the next pass, so
+/// a pane narrower than its cap shrank to its content and could never grow
+/// again: a window opened at 800 points and then widened to 1440 kept a
+/// 175-point roster forever, every row in it wrapped after two words, because
+/// nothing in the loop consulted the policy a second time. `exact_width` makes
+/// the policy the whole of the answer — the stored rect is clamped to a point
+/// range, so what a pane took last frame cannot outvote what this window is
+/// worth. It costs the drag handle, and that is subtraction rather than loss: a
+/// dragged width is a second home for a fact the policy already owns, and the
+/// drag did not work anyway — a pane pulled wider than its content snapped back
+/// to the content on the next pass.
 fn lists(ctx: &egui::Context, model: &mut Model, roster_width: f32, convs_width: f32) {
     egui::SidePanel::left("roster")
-        .default_width(policy::ROSTER)
-        .max_width(roster_width)
+        .resizable(false)
+        .exact_width(roster_width)
         .show(ctx, |ui| {
             ui.heading(keys::heading(
                 roster::HEADING,
@@ -99,8 +113,8 @@ fn lists(ctx: &egui::Context, model: &mut Model, roster_width: f32, convs_width:
             roster::render(ui, model);
         });
     egui::SidePanel::left("conversations")
-        .default_width(policy::CONVS)
-        .max_width(convs_width)
+        .resizable(false)
+        .exact_width(convs_width)
         .show(ctx, |ui| {
             ui.heading(keys::heading(
                 convs::HEADING,

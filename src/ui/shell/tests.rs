@@ -12,6 +12,9 @@ use crate::ui::{Chunk, Model, Notice};
 
 /// The narrow shape: one column at a time, and the bar that names the three.
 mod narrow;
+/// What a list pane's width is on the glass, and the band that used to stand
+/// beside it.
+mod width;
 
 /// **One frame paints every pane.** The smoke test the whole ball is about: a
 /// window that opens and shows the roster, the list, the conversation and the

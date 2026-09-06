@@ -1,7 +1,8 @@
 +++
 title = "the transcript anchors to the first message: selecting a conversation shows message 001, and a live one never follows its tail"
 created = 1788673677
-updated = 1788673677
+updated = 1788674145
+claimant = "Cantaloups-S3"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

@@ -1,7 +1,8 @@
 +++
 title = "the seat CD can only be seated over ssh: a box with no sshd cannot arm its own timer"
 created = 1788673590
-updated = 1788673590
+updated = 1788673831
+claimant = "Cantaloups-H"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

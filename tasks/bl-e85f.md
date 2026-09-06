@@ -1,7 +1,8 @@
 +++
 title = "a refused act clears the composer while the notice says nothing happened and it is safe to do it again"
 created = 1788673692
-updated = 1788673692
+updated = 1788675181
+claimant = "Cantaloups-S3"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

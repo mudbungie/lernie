@@ -118,14 +118,29 @@ fn an_answer_goes_to_stdout_either_way_and_only_the_code_says_no() {
     assert_eq!(no.text, "frames", "an answer is never decorated");
 }
 
-/// The prefix and the usage are the constructor's, not the call site's — so
+/// The prefix and the pointer are the constructor's, not the call site's — so
 /// this holds for a refusal nobody has written yet.
+///
+/// **And the pointer is one line, not the whole usage** (bl-b232). Printing
+/// the 110-line help under every diagnosis scrolled the diagnosis off the top
+/// of a terminal, which is backwards for a message whose whole value is the
+/// word or the byte offset it names.
 #[test]
-fn every_refusal_names_what_it_refused_and_still_teaches() {
+fn every_refusal_names_what_it_refused_and_points_at_the_page() {
     let v = Verdict::refused("that is not a verb".to_string());
     assert_eq!(v.code, REFUSED);
     assert_eq!(v.stream, Stream::Err);
-    assert_eq!(v.text, format!("lernie: that is not a verb\n\n{}", usage()));
+    assert_eq!(
+        v.text,
+        "lernie: that is not a verb\n`lernie help` lists every word; \
+         `lernie help <word>` is one word's page"
+    );
+    assert_eq!(v.text.lines().count(), 2, "{}", v.text);
+    assert!(
+        !v.text.contains(&usage()),
+        "the page is what `help` is for: {}",
+        v.text
+    );
 }
 
 /// **A failure carries no usage**, and that is the difference: a refusal is

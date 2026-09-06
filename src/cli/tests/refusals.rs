@@ -72,7 +72,7 @@ fn a_verb_with_the_wrong_arity_refuses_by_name_and_teaches_the_grammar() {
 /// here — in the pure function, where the refusal is a value a test reads back
 /// — and it earns the usage rather than a connection.
 #[test]
-fn a_body_that_is_not_a_gesture_is_refused_with_the_usage() {
+fn a_body_that_is_not_a_gesture_is_refused_and_pointed_at_the_page() {
     for (body, said_what) in [
         ("not json at all", "not JSON"),
         ("[1,2]", "a gesture is a JSON object"),
@@ -82,7 +82,12 @@ fn a_body_that_is_not_a_gesture_is_refused_with_the_usage() {
         assert_eq!(v.code, REFUSED, "{body}");
         assert_eq!(v.stream, Stream::Err);
         assert!(v.text.contains(said_what), "{body}: {}", v.text);
-        assert!(v.text.contains("usage: lernie"), "{body}: {}", v.text);
+        // **`ask` is where this cost the most** (bl-b232): composing an
+        // envelope by hand makes the malformed case the common one, and the
+        // diagnosis names a byte offset that used to scroll away under 110
+        // lines of help.
+        assert!(v.text.contains("`lernie help`"), "{body}: {}", v.text);
+        assert_eq!(v.text.lines().count(), 2, "{body}: {}", v.text);
     }
 }
 

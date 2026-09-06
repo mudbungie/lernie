@@ -35,6 +35,12 @@ pub struct Verdict {
     pub stream: Stream,
 }
 
+/// **Where a refused caller is pointed.** One line, under the diagnosis: the
+/// roster of every word, and the page for the one that was typed. It is not
+/// the usage itself — see [`Verdict::refused`].
+pub(super) const POINTER: &str =
+    "`lernie help` lists every word; `lernie help <word>` is one word's page";
+
 /// The exit code for every refusal: bad usage, or a body that is not a gesture.
 /// One code, because these are all the same kind of event — "that is not
 /// something this binary can act on" — and a taxonomy of exit codes would be a
@@ -68,15 +74,25 @@ impl Verdict {
 
     /// A refusal, from the sentence naming what was refused.
     ///
-    /// The prefix and the usage are appended HERE rather than at each call
-    /// site, so "a refusal always says what it refused *and* what the caller
-    /// could have typed instead" is structural rather than remembered: a
-    /// refusal added later cannot forget it. A bare non-zero exit teaches
-    /// nobody anything.
+    /// The prefix and the POINTER are appended HERE rather than at each call
+    /// site, so "a refusal always says what it refused *and* where the answer
+    /// is" is structural rather than remembered: a refusal added later cannot
+    /// forget it. A bare non-zero exit teaches nobody anything.
+    ///
+    /// **It is a pointer and no longer the whole usage** (bl-b232). Every
+    /// refusal used to print the entire help under its diagnosis — the fence,
+    /// the sixty-odd verbs, all four door pages, about 110 lines — so on a
+    /// terminal the one line that mattered scrolled off the top before the
+    /// operator's eye reached it. That is exactly backwards for a message
+    /// whose whole value is the byte offset or the word it names, and it bites
+    /// hardest on `ask`, where composing an envelope by hand makes the
+    /// malformed case the COMMON one rather than the exceptional one. The
+    /// sentence already tells the reader how to get the list; printing the
+    /// list is what `help` is for.
     pub fn refused(what: String) -> Self {
         Self {
             code: REFUSED,
-            text: format!("lernie: {what}\n\n{}", super::usage()),
+            text: format!("lernie: {what}\n{POINTER}"),
             stream: Stream::Err,
         }
     }

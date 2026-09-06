@@ -820,6 +820,19 @@ empty. The corollary is the verbatim payload: the line takes a message's content
 as its whole tail because a line has no quoting, argv does, so arity here is
 exact and the shell is what makes a sentence one argument.
 
+**A refusal points at the page; it does not print it** (`cli::verdict`,
+bl-b232). Every refusal used to carry the whole usage under its diagnosis —
+the fence, the sixty-odd verbs, all four door pages, about 110 lines — so on a
+terminal the one line that mattered scrolled off the top before the operator's
+eye reached it. That is backwards for a message whose whole value is the word
+or the byte offset it names, and it bites hardest on `ask`: an operator
+composing an envelope by hand is in a loop where the malformed case is the
+COMMON one, not the exceptional one. The structural half is unchanged and is
+what made this a one-line fix — the tail is appended by the constructor and
+never at a call site, so a refusal written later cannot forget it — and what
+the tail says is now `lernie help` and `lernie help <word>`. The list is what
+`help` is for.
+
 **Help's subject is this binary rather than a world**, which is why it is
 answered in the seat with no dial, no engine and no material — a binary an
 operator cannot learn to use until the hard part already works is a poor binary.
@@ -3411,7 +3424,7 @@ of *what a seat printed*.
 | `src/lib.rs` | the crate doc and the module list. | small |
 | `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~225 |
 | `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
-| `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors and the two codes. | ~95 |
+| `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
 | `src/place.rs` | where the seat was pointed, remembered between runs. Every way the file can be wrong is one answer: no place. | ~85 |

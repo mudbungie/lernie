@@ -48,6 +48,7 @@ use crate::envelope;
 pub const ROLES: Verb = Verb {
     word: "roles",
     params: &["workspace"],
+    flags: &[],
     summary: "what this workspace's roles are set to, and how each is tuned",
     detail: "One row per role the workspace's config declares: the provider \
              row and model id bound to it, the effort level it asks for, and \
@@ -65,6 +66,7 @@ pub const ROLES: Verb = Verb {
 pub const MODEL: Verb = Verb {
     word: "model",
     params: &["workspace", "role", "provider", "model"],
+    flags: &[],
     summary: "give a role this model, on the workspace's config lineage",
     detail: "One write into `providers.yaml` on the workspace's default \
              config lineage, through `litany config`. It reaches the \
@@ -91,12 +93,12 @@ const ROLE: &str = "role";
 
 /// **What a workspace's roles are**, asked of the wall `address` names.
 pub fn roles(workspace: String) -> Value {
-    ROLES.built(vec![workspace])
+    ROLES.built(vec![workspace], &[])
 }
 
 /// **Give `role` a model**, on that workspace's config lineage.
 pub fn model(workspace: String, role: String, provider: String, model: String) -> Value {
-    MODEL.built(vec![workspace, role, provider, model])
+    MODEL.built(vec![workspace, role, provider, model], &[])
 }
 
 /// **Ask `role`'s model calls for this much reasoning**, or for none.

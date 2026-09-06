@@ -41,6 +41,7 @@ use super::Verb;
 pub const CLIENTS: Verb = Verb {
     word: "clients",
     params: &["workspace"],
+    flags: &[],
     summary: "the machines registered in this workspace, who is connected, and \
               what they offer",
     detail: "One row per client registered in the named workspace: its name, \
@@ -57,5 +58,5 @@ pub const CLIENTS: Verb = Verb {
 
 /// **The machines this workspace holds**, asked of the wall `workspace` names.
 pub fn clients(workspace: String) -> Value {
-    CLIENTS.built(vec![workspace])
+    CLIENTS.built(vec![workspace], &[])
 }

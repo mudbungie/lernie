@@ -37,6 +37,7 @@ use super::Verb;
 pub const HELP: Verb = Verb {
     word: "help",
     params: &[],
+    flags: &[],
     summary: "every op this engine has a word for, and what each is for",
     detail: "One row per op the engine answers: the line to type, one \
              sentence on what it is for, the page under that, and whether the \
@@ -52,6 +53,7 @@ pub const HELP: Verb = Verb {
 pub const SEARCH: Verb = Verb {
     word: "search",
     params: &["text"],
+    flags: &[],
     summary: "find text across balls, workspaces and conversations",
     detail: "One row per hit: what kind of thing carried it, which field of \
              that thing, how far into it, and the words around it — plus what \
@@ -67,10 +69,10 @@ pub const SEARCH: Verb = Verb {
 /// The engine's table, typed — a door whose arity is its signature, on the
 /// same terms as every other row's.
 pub fn help() -> Value {
-    HELP.built(Vec::new())
+    HELP.built(Vec::new(), &[])
 }
 
 /// The search, typed.
 pub fn search(text: String) -> Value {
-    SEARCH.built(vec![text])
+    SEARCH.built(vec![text], &[])
 }

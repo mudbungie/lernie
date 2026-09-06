@@ -568,6 +568,40 @@ parameters are not all strings is **not** added as a special case — it goes
 through `ask` until there is a reframe that keeps the one table, because the arm
 that would carry it is precisely the second implementation the rule forbids.
 
+**`flags` is the first of those reframes, and bl-9fd1 is why it was taken.** A
+gesture parameter that is a `bool` had no typed spelling at all, and the one
+the wire actually carries is `stop`'s `children` — the control an operator
+reaches for when something is wrong. Measured: on a conversation with children
+the bare stop does not stop it. The root's driver dies, a child's driver
+deposits into it, and it is running again five seconds later, having spent
+796,522 further tokens; only the cascade holds, and it was reachable solely by
+hand-writing the envelope. The seat printed the engine's own offer — *the
+engine offers nudge, stop with its children* — in the records pane, and then
+spelled no word that reaches it.
+
+**A flag is a boolean field spelled as its own name, typed after the
+parameters.** It is still one table and one builder: `Verb::flags` is a list of
+field names, a trailing word that matches one writes `true` under it, and a
+trailing word that matches none is refused **by name** rather than by counting
+— a tail of the right length and the wrong word is a different mistake from a
+tail of the wrong length. **Absent is absent, never `false`**: this seat does
+not assert into a field nobody touched, and `src/verbs/tests/corpus/emits.rs`
+declines a frame that spells one `false` for the same reason.
+
+**Why a flag and not a fourth door.** `start`, `prepare`, `prompt`, `effort`
+and `priority` are doors because each carries a shape the table cannot hold —
+a nested object, a string-or-null, a payload rung. A trailing boolean is not
+one of those; it is a field whose value is *whether the word is there*, which
+is exactly what a table of field names can express. Making `stop` a door would
+have moved a row out of the roster to gain nothing, and the next boolean the
+wire grows would have moved a second.
+
+**What this does NOT close: the window still has no cascade.** The CLI spells
+it; the window's `stop` controls fire the bare form, and the records pane still
+prints the offer beside no control. A cascade wants an arming — `delete-agent`'s
+typed name is the pattern — and that is a pane's work rather than a
+serialization's, so it is filed rather than smuggled in here.
+
 **The table and the roster are not one list, and neither count is written
 here** — two were, and both rotted the way every restated count in this suite
 rots; `src/verbs/rows.rs`'s `TABLE` is the one home.
@@ -3249,7 +3283,8 @@ of *what a seat printed*.
 | `src/reply/agent.rs` | the conversation's own row, whole (§4.32): twenty-one facts, every optional one read as an absence, the priced figure read by the ball pane's own reader rather than respelled, and the context percent carried rather than divided out again. | ~240 |
 | `src/reply/step.rs` | one step's records (§4.32): the record vocabulary, the capture-log vocabulary beside it, and the parsed tree that is deliberately not decoded. | ~155 |
 | `src/reply/inbox.rs` | the undelivered mail (§4.32): the forgiving parse read as a reading, and the two facts only a result message states. | ~85 |
-| `src/verbs.rs` | the typed gesture surface: what a verb is, and the one envelope a row becomes. | ~135 |
+| `src/verbs.rs` | the typed gesture surface: which words exist, which module each row lives in, and what the table is for. | ~155 |
+| `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the one envelope it becomes. Split from the surface at the wall, because the two change for different reasons. | ~160 |
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |

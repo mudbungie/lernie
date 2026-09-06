@@ -50,24 +50,25 @@ use super::Verb;
 /// against the row, so a reordered `params` fails there rather than silently
 /// mis-addressing a deposit.
 pub fn message(workspace: String, agent: String, content: String) -> Value {
-    MESSAGE.built(vec![workspace, agent, content])
+    MESSAGE.built(vec![workspace, agent, content], &[])
 }
 
 /// The advance, on the same terms.
 pub fn nudge(workspace: String, agent: String) -> Value {
-    NUDGE.built(vec![workspace, agent])
+    NUDGE.built(vec![workspace, agent], &[])
 }
 
 /// The enrollment, on the same terms — the window composes it from a name and
 /// a grade the operator chose, and argv from three words.
 pub fn enroll(workspace: String, name: String, grade: String) -> Value {
-    ENROLL.built(vec![workspace, name, grade])
+    ENROLL.built(vec![workspace, name, grade], &[])
 }
 
 /// The `workspaces` read's row.
 pub const WORKSPACES: Verb = Verb {
     word: "workspaces",
     params: &[],
+    flags: &[],
     summary: "every workspace this engine holds, with its rollups",
     detail: "The roster, and the whole of what a window's first pane is. It \
                  names each workspace, how it is classified, how many \
@@ -86,6 +87,7 @@ pub const WORKSPACES: Verb = Verb {
 pub const CONVERSATIONS: Verb = Verb {
     word: "conversations",
     params: &["workspace"],
+    flags: &[],
     summary: "one workspace's conversations",
     detail: "The rows a window's middle pane paints: each conversation's \
                  label, its state, a first-line preview, its age and how far it \
@@ -97,6 +99,7 @@ pub const CONVERSATIONS: Verb = Verb {
 pub const TRANSCRIPT: Verb = Verb {
     word: "transcript",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "one conversation, committed entries and the live tail",
     detail: "The whole conversation as of now — the delivered messages, the \
                  model's turns and their tool calls, the results, whatever the \
@@ -109,6 +112,7 @@ pub const TRANSCRIPT: Verb = Verb {
 pub const FOLLOW: Verb = Verb {
     word: "follow",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "hold the line on one conversation's live tail",
     detail: "A read that deliberately never finishes: the connection stays \
                  open and the engine writes a frame every time the tail moves. \
@@ -121,28 +125,29 @@ pub const FOLLOW: Verb = Verb {
 /// is its signature** — so the window composes a gesture without a table lookup
 /// that could miss, and without an arm for a refusal that cannot happen.
 pub fn workspaces() -> Value {
-    WORKSPACES.built(Vec::new())
+    WORKSPACES.built(Vec::new(), &[])
 }
 
 /// One workspace's conversations.
 pub fn conversations(workspace: String) -> Value {
-    CONVERSATIONS.built(vec![workspace])
+    CONVERSATIONS.built(vec![workspace], &[])
 }
 
 /// One conversation, as committed.
 pub fn transcript(workspace: String, agent: String) -> Value {
-    TRANSCRIPT.built(vec![workspace, agent])
+    TRANSCRIPT.built(vec![workspace, agent], &[])
 }
 
 /// The held read on one conversation's live tail.
 pub fn follow(workspace: String, agent: String) -> Value {
-    FOLLOW.built(vec![workspace, agent])
+    FOLLOW.built(vec![workspace, agent], &[])
 }
 
 /// The deposit's row.
 pub const MESSAGE: Verb = Verb {
     word: "message",
     params: &["workspace", "agent", "content"],
+    flags: &[],
     summary: "deposit a message into a conversation",
     detail: "The content crosses verbatim — nothing here trims, wraps or \
              normalises it — so quote it as one argument. It answers with the \
@@ -158,6 +163,7 @@ pub const MESSAGE: Verb = Verb {
 pub const ENROLL: Verb = Verb {
     word: "enroll",
     params: &["workspace", "name", "grade"],
+    flags: &[],
     summary: "mint a new box's material and say it as a code, a line and, if asked, four files",
     detail: "The engine mints a leaf on its own CA, seats the client in that \
              workspace, answers the material and shreds the key. What comes \
@@ -179,6 +185,7 @@ pub const ENROLL: Verb = Verb {
 pub const NUDGE: Verb = Verb {
     word: "nudge",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "start a driver on a conversation that has gone quiet",
     detail: "It launches the advance and answers at once, carrying nothing \
              else, because there is nothing else yet: what the model does with \

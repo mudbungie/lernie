@@ -55,6 +55,7 @@ pub fn ops(max: u64) -> Value {
 pub const ACK: Verb = Verb {
     word: "ack",
     params: &[],
+    flags: &[],
     summary: "acknowledge every alarm on the ops trail",
     detail: "Appends the acknowledgement line every failure-derived alarm \
              reads past, so a failure you have understood and chosen to leave \
@@ -67,6 +68,7 @@ pub const ACK: Verb = Verb {
 pub const CLEAR_TRAIL: Verb = Verb {
     word: "clear-trail",
     params: &[],
+    flags: &[],
     summary: "truncate the ops trail; the clear is the new trail's first row",
     detail: "Starts a fresh trail. The clear itself is logged as the new \
              trail's first row, so the trail never lies about having been cut \
@@ -77,12 +79,12 @@ pub const CLEAR_TRAIL: Verb = Verb {
 
 /// The watermark, typed.
 pub fn ack() -> Value {
-    ACK.built(Vec::new())
+    ACK.built(Vec::new(), &[])
 }
 
 /// The truncation, typed.
 pub fn clear_trail() -> Value {
-    CLEAR_TRAIL.built(Vec::new())
+    CLEAR_TRAIL.built(Vec::new(), &[])
 }
 
 #[cfg(test)]

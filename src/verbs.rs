@@ -76,8 +76,6 @@
 //! silently joined — which would make three typed words indistinguishable from
 //! one quoted sentence.
 
-use serde_json::{Map, Value};
-
 /// The balls family: four reads, three acts, and the two authoring doors.
 pub mod balls;
 /// The n-attempt path: spread a prepared start, accept one, release the rest.
@@ -112,6 +110,8 @@ pub mod start;
 pub mod trail;
 /// The role-tuning family: one read, and the three writes it reads back.
 pub mod tuning;
+/// What a verb is: the row, its usage, its flags, and the envelope it becomes.
+mod verb;
 /// The window's own reads — the two ops whose subject is every channel.
 pub mod window;
 /// The wall's own act — the one row whose product is that its subject is gone.
@@ -136,7 +136,6 @@ pub use fleet::{
 pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{AGENT, FILES, INBOX, STEP, STEPS, agent, files, inbox, step, steps};
-use rows::TABLE;
 pub use rows::{
     CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,
     follow, message, nudge, transcript, workspaces,
@@ -145,97 +144,9 @@ pub use spine::{FORK, GOVERNING, RAIL, fork, governing, rail};
 pub use start::{PREPARE, PROMPT, prepare, prompt};
 pub use trail::{ACK, CLEAR_TRAIL, DEPTH, OPS, ack, clear_trail, ops};
 pub use tuning::{EFFORT, MODEL, PRIORITY, ROLES, effort, model, priority, roles};
+pub use verb::{Verb, find, table};
 pub use window::{HELP, SEARCH, search};
 pub use workspace::{DELETE_WORKSPACE, PIN, UNPIN, delete_workspace, pin, unpin};
-
-/// One verb: the word, what it takes, and what it is for.
-///
-/// **No usage string is stored.** [`Verb::usage`] computes it from the word and
-/// the parameters, so a parameter added to a row cannot leave a usage line
-/// behind saying otherwise.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Verb {
-    /// The word typed, which is also the envelope's `op`. One fact.
-    pub word: &'static str,
-    /// The envelope field each argument fills, in the order they are typed.
-    /// These are the **wire's** own field names, so what an operator reads in
-    /// the usage is what REMOTE calls it.
-    pub params: &'static [&'static str],
-    /// One line: what the verb is for.
-    pub summary: &'static str,
-    /// The page: what it answers with, and what to know before typing it.
-    pub detail: &'static str,
-}
-
-/// Every verb, in roster order.
-pub fn table() -> Vec<Verb> {
-    TABLE.to_vec()
-}
-
-/// The verb that word names, if it is one.
-pub fn find(word: &str) -> Option<Verb> {
-    TABLE.iter().find(|verb| verb.word == word).copied()
-}
-
-impl Verb {
-    /// **Whether this verb addresses one workspace**, read off its own
-    /// parameters rather than listed a second time.
-    ///
-    /// It is the predicate two surfaces need and it has one home. A verb with
-    /// no `workspace` parameter has no way to name one, so its subject is
-    /// *every* channel this box holds — which is why `lernie workspaces` fans
-    /// (bl-0d54) where every other word goes down one channel. And a
-    /// `workspace` field written onto such a gesture by hand is therefore a
-    /// pure channel selector, with no reader at the far end, so a name no entry
-    /// holds refuses at the seat instead of answering `ok` from a channel
-    /// nobody named (bl-d574, [`crate::seat::route`]).
-    pub fn addresses_a_workspace(&self) -> bool {
-        self.params.contains(&crate::envelope::WORKSPACE)
-    }
-
-    /// The line an operator types, computed rather than stored.
-    pub fn usage(&self) -> String {
-        std::iter::once(format!("lernie {}", self.word))
-            .chain(self.params.iter().map(|p| format!("<{p}>")))
-            .collect::<Vec<String>>()
-            .join(" ")
-    }
-
-    /// **The envelope this verb becomes** — the one serialization, built from
-    /// the row rather than by an arm of its own.
-    ///
-    /// Arity is exact and refuses by name (see the module doc on why the tail
-    /// is one argument here). The refusal carries this verb's own usage, so an
-    /// operator learns the grammar from the mistake rather than from the source.
-    pub fn envelope(&self, args: Vec<String>) -> Result<Value, String> {
-        if args.len() != self.params.len() {
-            return Err(format!(
-                "`lernie {}` takes {} argument(s) and got {} — usage: {}",
-                self.word,
-                self.params.len(),
-                args.len(),
-                self.usage()
-            ));
-        }
-        Ok(self.built(args))
-    }
-
-    /// The envelope proper, with the arity already settled. **The one
-    /// builder**: [`envelope`](Self::envelope) is the checked door for argv,
-    /// [`message`] and [`nudge`] are the typed doors for the window, and both
-    /// arrive here — so a gesture has one spelling however it was composed.
-    fn built(&self, args: Vec<String>) -> Value {
-        let mut map = Map::new();
-        map.insert(
-            crate::envelope::OP.to_owned(),
-            Value::String(self.word.to_owned()),
-        );
-        for (key, value) in self.params.iter().zip(args) {
-            map.insert((*key).to_owned(), Value::String(value));
-        }
-        Value::Object(map)
-    }
-}
 
 #[cfg(test)]
 mod tests;

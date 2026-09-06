@@ -32,6 +32,7 @@ use super::Verb;
 pub const ATTENTION: Verb = Verb {
     word: "attention",
     params: &[],
+    flags: &[],
     summary: "everything waiting on you, across every workspace",
     detail: "One row per conversation asking for you, anywhere an engine this \
              box holds can see: why it is asking, what it last said, how long \
@@ -47,6 +48,7 @@ pub const ATTENTION: Verb = Verb {
 pub const FLAG: Verb = Verb {
     word: "flag",
     params: &["workspace", "agent", "reason"],
+    flags: &[],
     summary: "raise an attention item on a conversation, with a reason",
     detail: "It records that this conversation wants a human look, and why, \
              in the raiser's own words. It changes nothing else — it does not \
@@ -60,6 +62,7 @@ pub const FLAG: Verb = Verb {
 pub const SEEN: Verb = Verb {
     word: "seen",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "answer a conversation's place in the attention queue",
     detail: "It records what the conversation is currently asking about as \
              seen, which is what takes it off the queue — the same watermarks \
@@ -73,15 +76,15 @@ pub const SEEN: Verb = Verb {
 /// The queue read, typed — a door whose arity is its signature, on the same
 /// terms as every other row's.
 pub fn attention() -> Value {
-    ATTENTION.built(Vec::new())
+    ATTENTION.built(Vec::new(), &[])
 }
 
 /// The raise, typed.
 pub fn flag(workspace: String, agent: String, reason: String) -> Value {
-    FLAG.built(vec![workspace, agent, reason])
+    FLAG.built(vec![workspace, agent, reason], &[])
 }
 
 /// The answer, typed.
 pub fn seen(workspace: String, agent: String) -> Value {
-    SEEN.built(vec![workspace, agent])
+    SEEN.built(vec![workspace, agent], &[])
 }

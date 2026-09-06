@@ -51,6 +51,7 @@ pub fn fleet(workspace: String, project: String, cap: u64) -> Value {
 pub const DISBAND: Verb = Verb {
     word: "disband",
     params: &["workspace"],
+    flags: &[],
     summary: "stop running a fleet in this workspace",
     detail: "Removes the workspace's fleet setting. Nothing further is \
              claimed, started or released; everything already running is \
@@ -62,6 +63,7 @@ pub const DISBAND: Verb = Verb {
 pub const ARM: Verb = Verb {
     word: "arm",
     params: &["workspace", "model"],
+    flags: &[],
     summary: "watch this workspace's agents with a cheap model",
     detail: "Arms the alignment monitor on the named workspace, pinned to the \
              model you name. From then on, whenever an agent commits, one \
@@ -77,6 +79,7 @@ pub const ARM: Verb = Verb {
 pub const DISARM: Verb = Verb {
     word: "disarm",
     params: &["workspace"],
+    flags: &[],
     summary: "stop watching this workspace",
     detail: "Removes the workspace's monitor setting. No further checks are \
              made and nothing further is charged; every verdict already \
@@ -87,6 +90,7 @@ pub const DISARM: Verb = Verb {
 pub const SCAN: Verb = Verb {
     word: "scan",
     params: &["workspace"],
+    flags: &[],
     summary: "flush this workspace's inboxes now",
     detail: "Delivers whatever is waiting in the workspace's conversations \
              rather than waiting for the next beat to notice it. It answers \
@@ -97,6 +101,7 @@ pub const SCAN: Verb = Verb {
 pub const SCIENCE: Verb = Verb {
     word: "science",
     params: &["workspace"],
+    flags: &[],
     summary: "every delivery attempt of this workspace, with what it cost",
     detail: "One row per attempt — the ordinary claim and each fan candidate \
              alike: the goal it was fired with, the documents frozen onto its \
@@ -111,6 +116,7 @@ pub const SCIENCE: Verb = Verb {
 pub const WORK_DIFF: Verb = Verb {
     word: "work-diff",
     params: &["workspace"],
+    flags: &[],
     summary: "what this workspace's agents changed in their project",
     detail: "For every ball the workspace holds, the changes on that ball's \
              work branch that are not yet on the branch it delivers into — one \
@@ -123,32 +129,32 @@ pub const WORK_DIFF: Verb = Verb {
 
 /// Stop the loop, typed.
 pub fn disband(workspace: String) -> Value {
-    DISBAND.built(vec![workspace])
+    DISBAND.built(vec![workspace], &[])
 }
 
 /// Raise the monitor, typed.
 pub fn arm(workspace: String, model: String) -> Value {
-    ARM.built(vec![workspace, model])
+    ARM.built(vec![workspace, model], &[])
 }
 
 /// Drop it, typed.
 pub fn disarm(workspace: String) -> Value {
-    DISARM.built(vec![workspace])
+    DISARM.built(vec![workspace], &[])
 }
 
 /// Flush the inboxes, typed.
 pub fn scan(workspace: String) -> Value {
-    SCAN.built(vec![workspace])
+    SCAN.built(vec![workspace], &[])
 }
 
 /// The attempts, typed.
 pub fn science(workspace: String) -> Value {
-    SCIENCE.built(vec![workspace])
+    SCIENCE.built(vec![workspace], &[])
 }
 
 /// What changed, typed.
 pub fn work_diff(workspace: String) -> Value {
-    WORK_DIFF.built(vec![workspace])
+    WORK_DIFF.built(vec![workspace], &[])
 }
 
 #[cfg(test)]

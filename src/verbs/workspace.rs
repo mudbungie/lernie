@@ -51,6 +51,7 @@ use super::Verb;
 pub const DELETE_WORKSPACE: Verb = Verb {
     word: "delete-workspace",
     params: &["workspace", "typed"],
+    flags: &[],
     summary: "unmake a workspace; the typed name is the arming",
     detail: "It unmakes the workspace and releases the balls it held. Fail-closed \
              at fire time wherever it is asked: refused unless the workspace is \
@@ -64,13 +65,14 @@ pub const DELETE_WORKSPACE: Verb = Verb {
 /// armed: an engine comparing a name against a value this end trimmed after
 /// checking it would be two spellings of one string.
 pub fn delete_workspace(workspace: String, typed: String) -> Value {
-    DELETE_WORKSPACE.built(vec![workspace, typed])
+    DELETE_WORKSPACE.built(vec![workspace, typed], &[])
 }
 
 /// **The pin.** Float this wall to the front of the strip and keep it there.
 pub const PIN: Verb = Verb {
     word: "pin",
     params: &["workspace"],
+    flags: &[],
     summary: "float this workspace to the front of the strip and keep it there",
     detail: "It adds the workspace to the durable pin list every seat orders              its strip by: pinned first, in the order they were pinned, ahead              of the rest in name order. A pin is an assertion about the world              rather than an arrangement of one screen, so it is the same list              on every seat and it survives a restart. Pinning one already              pinned moves it to the end of the pinned run rather than saying              it twice. It answers the workspace listing with the ranks it now              carries.",
 };
@@ -79,18 +81,19 @@ pub const PIN: Verb = Verb {
 pub const UNPIN: Verb = Verb {
     word: "unpin",
     params: &["workspace"],
+    flags: &[],
     summary: "take this workspace back out of the pinned run",
     detail: "It removes the workspace from the pin list, so it falls back into              name order with everything unpinned. It says what it means rather              than flipping whatever it found: unpinning one that is not pinned              leaves the list alone, which is what lets two seats send it at              once and agree. It answers the workspace listing with the ranks it              now carries.",
 };
 
 /// The pin, typed.
 pub fn pin(workspace: String) -> Value {
-    PIN.built(vec![workspace])
+    PIN.built(vec![workspace], &[])
 }
 
 /// The unpin, typed.
 pub fn unpin(workspace: String) -> Value {
-    UNPIN.built(vec![workspace])
+    UNPIN.built(vec![workspace], &[])
 }
 
 #[cfg(test)]

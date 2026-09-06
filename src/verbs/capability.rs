@@ -31,6 +31,7 @@ use super::Verb;
 pub const ANSWER: Verb = Verb {
     word: "answer",
     params: &["workspace", "agent", "verdict"],
+    flags: &[],
     summary: "release, decline or keep parked the tool call held at this conversation",
     detail: "Answers the invocation the capability boundary parked before it \
              ran. `pass` lets that one call through, `refuse` declines it in \
@@ -47,6 +48,7 @@ pub const ANSWER: Verb = Verb {
 pub const REVOKE: Verb = Verb {
     word: "revoke",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "take away this conversation's tool auto-approval, and its descendants'",
     detail: "Stops letting the conversation act on its own: from its next tool \
              call, everything but a read waits for you. It keeps running, \
@@ -61,6 +63,7 @@ pub const REVOKE: Verb = Verb {
 pub const RESTORE: Verb = Verb {
     word: "restore",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "give this conversation's tool auto-approval back",
     detail: "Lifts a floor `revoke` put on the conversation: its calls are \
              adjudicated by the ordinary policy again, from its next one. It \
@@ -81,17 +84,17 @@ pub const VERDICTS: [&str; 3] = ["pass", "refuse", "hold"];
 
 /// The answer, typed.
 pub fn answer(workspace: String, agent: String, verdict: String) -> Value {
-    ANSWER.built(vec![workspace, agent, verdict])
+    ANSWER.built(vec![workspace, agent, verdict], &[])
 }
 
 /// The floor, raised.
 pub fn revoke(workspace: String, agent: String) -> Value {
-    REVOKE.built(vec![workspace, agent])
+    REVOKE.built(vec![workspace, agent], &[])
 }
 
 /// The floor, lowered.
 pub fn restore(workspace: String, agent: String) -> Value {
-    RESTORE.built(vec![workspace, agent])
+    RESTORE.built(vec![workspace, agent], &[])
 }
 
 #[cfg(test)]

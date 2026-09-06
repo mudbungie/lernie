@@ -45,6 +45,7 @@ use crate::envelope;
 pub const LINEAGES: Verb = Verb {
     word: "lineages",
     params: &["workspace"],
+    flags: &[],
     summary: "this workspace's config lineages, and the files each one holds",
     detail: "The policy branches a conversation is born on, each with its tip \
              commit and every file that commit holds. It is the listing a \
@@ -153,7 +154,7 @@ impl Where {
 
 /// **This workspace's config lineages**, asked of the wall `workspace` names.
 pub fn lineages(workspace: String) -> Value {
-    LINEAGES.built(vec![workspace])
+    LINEAGES.built(vec![workspace], &[])
 }
 
 /// **One config file's bytes, read** — the gesture with no `text`, which is the

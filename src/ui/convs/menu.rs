@@ -75,7 +75,11 @@ type Door = fn(String, String) -> serde_json::Value;
 /// says it applies.
 fn straight(row: &ConvRow) -> Vec<(&'static str, &'static str, Door)> {
     let mut out: Vec<(&'static str, &'static str, Door)> = vec![
-        (STOP, crate::verbs::STOP.word, crate::verbs::stop),
+        // The bare form: a menu holds no confirmation, and a cascade needs
+        // one (bl-9fd1).
+        (STOP, crate::verbs::STOP.word, |workspace, agent| {
+            crate::verbs::stop(workspace, agent, false)
+        }),
         (
             RETARGET,
             crate::verbs::RETARGET.word,

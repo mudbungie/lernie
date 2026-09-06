@@ -39,6 +39,7 @@ use super::Verb;
 pub const PROVIDERS: Verb = Verb {
     word: "providers",
     params: &["workspace"],
+    flags: &[],
     summary: "what this workspace's wall can sign in to",
     detail: "One row per provider the wall routes, in the engine's own \
              listing order — which is brazen's routing order, so the first \
@@ -54,6 +55,7 @@ pub const PROVIDERS: Verb = Verb {
 pub const MODELS: Verb = Verb {
     word: "models",
     params: &["workspace", "provider"],
+    flags: &[],
     summary: "the model ids one provider row offers",
     detail: "The ids that row answers to, as the engine has them — the \
              values `model` takes as its last argument. It is asked of one \
@@ -65,6 +67,7 @@ pub const MODELS: Verb = Verb {
 pub const LOGIN: Verb = Verb {
     word: "login",
     params: &["workspace", "provider"],
+    flags: &[],
     summary: "start a sign-in on one provider row, in that workspace's wall",
     detail: "The run happens on the ENGINE, inside the named workspace's \
              wall, so the credential lands where the agents that need it run \
@@ -82,6 +85,7 @@ pub const LOGIN: Verb = Verb {
 pub const LOGIN_TAIL: Verb = Verb {
     word: "login-tail",
     params: &["workspace", "provider"],
+    flags: &[],
     summary: "hold the line on one sign-in's output",
     detail: "Buffered from the start, then live to the outcome, with the \
              settled exit as the last frame. Each frame carries what the run \
@@ -93,20 +97,20 @@ pub const LOGIN_TAIL: Verb = Verb {
 
 /// **The provider table**, asked of the wall `address` names.
 pub fn providers(workspace: String) -> Value {
-    PROVIDERS.built(vec![workspace])
+    PROVIDERS.built(vec![workspace], &[])
 }
 
 /// **What one row offers.**
 pub fn models(workspace: String, provider: String) -> Value {
-    MODELS.built(vec![workspace, provider])
+    MODELS.built(vec![workspace, provider], &[])
 }
 
 /// **Start a sign-in** on one row of that wall.
 pub fn login(workspace: String, provider: String) -> Value {
-    LOGIN.built(vec![workspace, provider])
+    LOGIN.built(vec![workspace, provider], &[])
 }
 
 /// **Hold the line on one sign-in's output.**
 pub fn login_tail(workspace: String, provider: String) -> Value {
-    LOGIN_TAIL.built(vec![workspace, provider])
+    LOGIN_TAIL.built(vec![workspace, provider], &[])
 }

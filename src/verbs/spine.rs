@@ -37,6 +37,7 @@ use super::Verb;
 pub const RAIL: Verb = Verb {
     word: "rail",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "the conversation's spine: every operable commit and what hangs off it",
     detail: "One notch per step, each carrying the commit that step read \
              against, the spend as of it, and where in the chat its rule sits \
@@ -52,6 +53,7 @@ pub const RAIL: Verb = Verb {
 pub const GOVERNING: Verb = Verb {
     word: "governing",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "which config commit this conversation resolves its policy from",
     detail: "A conversation forks off a commit of a `config/*` lineage, and \
              the fork settles which lineage governs it — not which commit. \
@@ -77,12 +79,12 @@ const GOAL: &str = "goal";
 
 /// The spine, typed.
 pub fn rail(workspace: String, agent: String) -> Value {
-    RAIL.built(vec![workspace, agent])
+    RAIL.built(vec![workspace, agent], &[])
 }
 
 /// The governing commit, typed. The bare form only — see [`GOVERNING`].
 pub fn governing(workspace: String, agent: String) -> Value {
-    GOVERNING.built(vec![workspace, agent])
+    GOVERNING.built(vec![workspace, agent], &[])
 }
 
 /// **Fork `parent` from `from`, and give the child this goal.**

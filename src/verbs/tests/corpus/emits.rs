@@ -74,14 +74,31 @@ fn rebuilt(frame: &Value) -> Option<Value> {
     if let Some(verb) = find(&op) {
         // **A frame carrying a field the row does not name cannot be composed
         // here**, and that is a general rule rather than one op's arm: the
-        // builder writes exactly `op` plus this row's parameters, so a field
-        // beyond them can only ever come out missing. It answers `None` and
-        // lands in the ledger below with its reason, which is the decision
-        // being recorded instead of an assertion nobody could satisfy.
-        if obj.len() != verb.params.len() + 1 {
+        // builder writes exactly `op`, this row's parameters and whichever of
+        // its flags the frame raises, so a field beyond them can only ever
+        // come out missing. It answers `None` and lands in the ledger below
+        // with its reason, which is the decision being recorded instead of an
+        // assertion nobody could satisfy.
+        //
+        // **A flag is raised by the word and never by `false`** (bl-9fd1): a
+        // frame that spells one `false` is a field this seat's builder does
+        // not write, so it is declined here rather than round-tripped into an
+        // assertion nobody made.
+        let raised: Vec<String> = verb
+            .flags
+            .iter()
+            .filter(|flag| obj.get(**flag) == Some(&json!(true)))
+            .map(|flag| (*flag).to_owned())
+            .collect();
+        if obj.len() != verb.params.len() + raised.len() + 1 {
             return None;
         }
-        let args = verb.params.iter().map(|p| text(obj, p)).collect();
+        let args = verb
+            .params
+            .iter()
+            .map(|p| text(obj, p))
+            .chain(raised)
+            .collect();
         return Some(verb.envelope(args).expect("the shape's own arity"));
     }
     match op.as_str() {

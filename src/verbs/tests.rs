@@ -153,6 +153,7 @@ fn a_usage_line_is_derived_from_the_word_and_its_parameters() {
     let made = Verb {
         word: "later",
         params: &["one", "two"],
+        flags: &[],
         summary: "",
         detail: "",
     };
@@ -166,4 +167,74 @@ fn a_word_that_is_not_a_verb_is_not_found() {
     for word in ["ask", "entries", "help", "invocations", ""] {
         assert_eq!(find(word), None, "{word:?}");
     }
+}
+
+/// **A flag is a boolean field spelled as its own word** (bl-9fd1): typed after
+/// the parameters, it writes `true` under that name; not typed, it writes
+/// nothing at all. Absent is never `false` — this seat does not assert into a
+/// field nobody touched.
+#[test]
+fn a_flag_is_raised_by_its_own_word_and_absent_otherwise() {
+    let made = Verb {
+        word: "later",
+        params: &["one"],
+        flags: &["deeply"],
+        summary: "",
+        detail: "",
+    };
+    assert_eq!(made.usage(), "lernie later <one> [deeply]");
+    assert_eq!(
+        made.envelope(vec!["a".to_owned()]),
+        Ok(json!({"op": "later", "one": "a"}))
+    );
+    assert_eq!(
+        made.envelope(vec!["a".to_owned(), "deeply".to_owned()]),
+        Ok(json!({"op": "later", "one": "a", "deeply": true}))
+    );
+}
+
+/// **The two ways a tail can be wrong are two sentences.** Too many words is
+/// answered by counting; the right number of words and the wrong one is
+/// answered by naming the word it takes, because counting says nothing about
+/// it.
+#[test]
+fn a_wrong_tail_is_told_apart_from_a_wrong_count() {
+    let made = Verb {
+        word: "later",
+        params: &["one"],
+        flags: &["deeply"],
+        summary: "",
+        detail: "",
+    };
+    let counted = made
+        .envelope(vec!["a".to_owned(), "deeply".to_owned(), "b".to_owned()])
+        .expect_err("three is past the range");
+    assert!(
+        counted.contains("takes 1 to 2 argument(s) and got 3"),
+        "{counted}"
+    );
+    let named = made
+        .envelope(vec!["a".to_owned(), "shallowly".to_owned()])
+        .expect_err("that is not the word");
+    assert!(named.contains("no word \"shallowly\""), "{named}");
+    assert!(named.contains("\"deeply\""), "{named}");
+}
+
+/// **The cascade is the flag's one real site** (bl-9fd1), and the bare form is
+/// unchanged: a `stop` that raises nothing sends no `children` field, so an
+/// engine reads exactly the gesture this seat has always sent.
+#[test]
+fn the_stop_cascade_is_the_word_children_and_the_bare_form_says_nothing() {
+    assert_eq!(
+        super::stop("home".to_owned(), "c-1".to_owned(), false),
+        json!({"op": "stop", "workspace": "home", "agent": "c-1"})
+    );
+    assert_eq!(
+        super::stop("home".to_owned(), "c-1".to_owned(), true),
+        json!({"op": "stop", "workspace": "home", "agent": "c-1", "children": true})
+    );
+    assert_eq!(
+        find("stop").expect("a verb").usage(),
+        "lernie stop <workspace> <agent> [children]"
+    );
 }

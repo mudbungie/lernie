@@ -112,7 +112,16 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
         let halt = ui.button(STOP);
         crate::ui::act::tag(&halt, &[crate::verbs::STOP.word]);
         if halt.clicked() {
-            fired = Some(crate::verbs::stop(aim.address.clone(), agent.to_owned()));
+            // **The bare form, from this control** (bl-9fd1). The cascade is a
+            // second act with a second confirmation and it belongs beside the
+            // records that say what is under there; the CLI spells it today
+            // (`lernie stop <workspace> <agent> children`) and the window's
+            // control is still owed.
+            fired = Some(crate::verbs::stop(
+                aim.address.clone(),
+                agent.to_owned(),
+                false,
+            ));
         }
         // **The floor's two acts, both always offered** (bl-bce2). They are
         // assertions rather than a toggle — DESIGN §4.25's rule — and the pin

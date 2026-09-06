@@ -49,6 +49,7 @@ pub(crate) const NAME: &str = "name";
 pub const BALLS: Verb = Verb {
     word: "balls",
     params: &[],
+    flags: &[],
     summary: "every ball⇄workspace binding fact",
     detail: "The join rows: which ball is claimed by which workspace, in which \
              state. It names no workspace, so its subject is EVERY channel this \
@@ -62,6 +63,7 @@ pub const BALLS: Verb = Verb {
 pub const BOARD: Verb = Verb {
     word: "board",
     params: &[],
+    flags: &[],
     summary: "the fleet board — every live ball in its column",
     detail: "The balls as columns: ready, gated, claimed, blocked. Gated is \
              balls' own close-blocker rule — a ball you could claim but could \
@@ -77,6 +79,7 @@ pub const BOARD: Verb = Verb {
 pub const WORKSPACE_BALLS: Verb = Verb {
     word: "workspace-balls",
     params: &["workspace"],
+    flags: &[],
     summary: "the balls one workspace holds, with what each has cost",
     detail: "Every ball bound to the named workspace: its id, its badge, the \
              project its `bl` verbs run in, the name they stamp `--as`, and \
@@ -88,6 +91,7 @@ pub const WORKSPACE_BALLS: Verb = Verb {
 pub const MARKS: Verb = Verb {
     word: "marks",
     params: &["workspace"],
+    flags: &[],
     summary: "the branch this workspace tracks its tasks on",
     detail: "Each agent tracks on a balls branch of its own, in a task space \
              of its own, so two agents' task churn never collides. \
@@ -101,6 +105,7 @@ pub const MARKS: Verb = Verb {
 pub const ASSIGN: Verb = Verb {
     word: "assign",
     params: &[PROJECT, ID, NAME],
+    flags: &[],
     summary: "claim a ready ball for a workspace",
     detail: "Claims a ready ball (`bl claim`), which is what BINDS it to a \
              workspace: a bound ball is one a workspace holds, and the join is \
@@ -114,6 +119,7 @@ pub const ASSIGN: Verb = Verb {
 pub const RELEASE: Verb = Verb {
     word: "release",
     params: &[PROJECT, ID, NAME],
+    flags: &[],
     summary: "unclaim a ball a workspace holds",
     detail: "Lets a ball go (`bl unclaim`): the workspace stops holding it and \
              anyone can claim it again. Nothing already committed in its \
@@ -125,6 +131,7 @@ pub const RELEASE: Verb = Verb {
 pub const CLOSE: Verb = Verb {
     word: "close",
     params: &[PROJECT, ID, NAME],
+    flags: &[],
     summary: "close a ball and deliver its work",
     detail: "Delivers a ball (`bl close`): folds `main` into its worktree, \
              runs the project's pre-commit gate, squashes the work onto the \
@@ -136,37 +143,37 @@ pub const CLOSE: Verb = Verb {
 
 /// The binding table, typed.
 pub fn balls() -> Value {
-    BALLS.built(Vec::new())
+    BALLS.built(Vec::new(), &[])
 }
 
 /// The board, typed.
 pub fn board() -> Value {
-    BOARD.built(Vec::new())
+    BOARD.built(Vec::new(), &[])
 }
 
 /// One wall's balls, typed.
 pub fn workspace_balls(workspace: String) -> Value {
-    WORKSPACE_BALLS.built(vec![workspace])
+    WORKSPACE_BALLS.built(vec![workspace], &[])
 }
 
 /// One wall's tracking branch, typed.
 pub fn marks(workspace: String) -> Value {
-    MARKS.built(vec![workspace])
+    MARKS.built(vec![workspace], &[])
 }
 
 /// Claim it, typed.
 pub fn assign(project: String, id: String, name: String) -> Value {
-    ASSIGN.built(vec![project, id, name])
+    ASSIGN.built(vec![project, id, name], &[])
 }
 
 /// Let it go, typed.
 pub fn release(project: String, id: String, name: String) -> Value {
-    RELEASE.built(vec![project, id, name])
+    RELEASE.built(vec![project, id, name], &[])
 }
 
 /// Deliver it, typed.
 pub fn close(project: String, id: String, name: String) -> Value {
-    CLOSE.built(vec![project, id, name])
+    CLOSE.built(vec![project, id, name], &[])
 }
 
 #[cfg(test)]

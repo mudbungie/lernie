@@ -198,6 +198,22 @@ fn no_sentence_this_binary_composes_carries_a_run_of_spaces() {
     assert_eq!(run, Vec::<String>::new());
 }
 
+/// **A tail that is not the flag names the flag** (bl-9fd1) rather than
+/// counting: `lernie stop w a kids` is the right number of words and the wrong
+/// one, and an arity sentence about "2 to 3 arguments" answers a question the
+/// operator did not ask.
+#[test]
+fn a_tail_that_is_not_the_flag_is_told_which_word_it_takes() {
+    let refused = said(&["stop", "home", "Pelican", "kids"]);
+    assert_eq!(refused.code, REFUSED);
+    assert!(
+        refused.text.contains("no word \"kids\""),
+        "{}",
+        refused.text
+    );
+    assert!(refused.text.contains("\"children\""), "{}", refused.text);
+}
+
 /// **The spelling everybody tries first is the wrong one**, and the arity
 /// refusal is where that is paid: `lernie workspaces --json` is what the
 /// sibling tools take, and being told `workspaces` takes no argument answers a

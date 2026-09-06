@@ -34,6 +34,7 @@ use super::Verb;
 pub const INTERRUPT: Verb = Verb {
     word: "interrupt",
     params: &["workspace", "agent", "content"],
+    flags: &[],
     summary: "cut a conversation off mid-work and say this instead",
     detail: "The driver is killed and the content deposited, both stamped as \
              one gesture, and the deposit's own driver-start is what carries \
@@ -45,24 +46,32 @@ pub const INTERRUPT: Verb = Verb {
 };
 
 /// **The kill.** The bare form only — see [`STOP`]'s own detail on the cascade.
+/// The field the cascade rides under, which is also the word that raises it.
+pub const CHILDREN: &str = "children";
+
 pub const STOP: Verb = Verb {
     word: "stop",
     params: &["workspace", "agent"],
-    summary: "kill the driver held on a conversation",
+    flags: &[CHILDREN],
+    summary: "kill the driver held on a conversation; `children` takes the subtree with it",
     detail: "It kills the driver and leaves everything else standing: the \
              conversation's history, its worktree and its inbox are untouched, \
-             and `nudge` starts a driver on it again. This is the BARE form. \
-             The wire also carries a `children` flag that takes the whole \
-             subtree down, and this seat composes no gesture that raises it — a \
-             cascade is a second control with a second confirmation, and it \
-             belongs beside the conversation records that would say what is \
-             under there.",
+             and `nudge` starts a driver on it again. SAY `children` AS THE \
+             THIRD WORD and the agents it spawned go down with it. On a \
+             conversation that has children the bare form does not stop it: \
+             the root's driver dies, a child's driver deposits into it, and it \
+             is running again seconds later — which is what bl-9fd1 measured, \
+             on two conversations in two workspaces, at 796,522 further tokens. \
+             The engine says which forms it is offering on the conversation \
+             itself (`lernie agent <workspace> <agent>` prints its offers), so \
+             a seat need not guess whether there is a subtree under there.",
 };
 
 /// **The change of lineage.**
 pub const RETARGET: Verb = Verb {
     word: "retarget",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "settle a conversation onto the head of the config lineage governing it",
     detail: "Marks the conversation to be re-forked onto the head of the \
              config lineage that governs it, which its own executor lands at \
@@ -76,6 +85,7 @@ pub const RETARGET: Verb = Verb {
 pub const DELETE_AGENT: Verb = Verb {
     word: "delete-agent",
     params: &["workspace", "agent", "typed"],
+    flags: &[],
     summary: "delete a conversation; the typed name arms taking its children too",
     detail: "Removes the conversation and everything the engine holds for it — \
              its ref, worktree, steps and inbox. Refused while it is live, so a \
@@ -90,21 +100,28 @@ pub const DELETE_AGENT: Verb = Verb {
 /// rather than by a table lookup that could miss, so it carries no arm for a
 /// refusal that cannot happen.
 pub fn interrupt(workspace: String, agent: String, content: String) -> Value {
-    INTERRUPT.built(vec![workspace, agent, content])
+    INTERRUPT.built(vec![workspace, agent, content], &[])
 }
 
 /// The kill, typed.
-pub fn stop(workspace: String, agent: String) -> Value {
-    STOP.built(vec![workspace, agent])
+/// **Kill the driver held on a conversation** — and, when `children`, every
+/// driver under it.
+///
+/// The cascade is a parameter here rather than a second function, because it
+/// is one gesture with one field on the wire and two spellings of it would be
+/// exactly the second implementation [`super`] exists not to be.
+pub fn stop(workspace: String, agent: String, children: bool) -> Value {
+    let raised: Vec<&str> = children.then_some(CHILDREN).into_iter().collect();
+    STOP.built(vec![workspace, agent], &raised)
 }
 
 /// The change of lineage, typed.
 pub fn retarget(workspace: String, agent: String) -> Value {
-    RETARGET.built(vec![workspace, agent])
+    RETARGET.built(vec![workspace, agent], &[])
 }
 
 /// The unmaking, typed. `typed` is the arming and an empty string is the bare
 /// form, which is the wire's own grammar rather than a spelling invented here.
 pub fn delete_agent(workspace: String, agent: String, typed: String) -> Value {
-    DELETE_AGENT.built(vec![workspace, agent, typed])
+    DELETE_AGENT.built(vec![workspace, agent, typed], &[])
 }

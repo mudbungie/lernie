@@ -6,7 +6,7 @@
 //! and this is the LEDGER of decisions that mechanism could not make. The
 //! first moves when a builder changes; the second only when somebody decides a
 //! surface is not worth building, or builds it (bl-4371 built the path rung
-//! and this file is where that is visible).
+//! and bl-9fd1 the cascade, and this file is where each is visible).
 
 /// **The frames the seat's encoder cannot compose**, by op, count and reason.
 ///
@@ -22,14 +22,6 @@ pub(super) const UNEMITTED: &[(&str, usize, &str)] = &[
          — pinning a commit and previewing one file are controls the records \
          pane does not have yet, and a seat that guessed either would answer \
          a question nobody asked",
-    ),
-    (
-        "stop",
-        1,
-        "the children cascade: this seat composes the bare stop only, and the \
-         flag that takes a whole subtree down is a second control with a second \
-         confirmation — it belongs beside the records that would say what is \
-         under there",
     ),
     (
         "marks",

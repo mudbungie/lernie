@@ -249,6 +249,22 @@ fn a_tail_that_is_not_the_one_word_refuses_and_names_it() {
     }
 }
 
+/// **The cascade is a word after the address** (bl-9fd1), and it is the only
+/// stop that works on a conversation with children: the bare form kills the
+/// root's driver, a child's driver deposits into it, and it is running again
+/// seconds later.
+#[test]
+fn the_stop_cascade_is_typed_as_the_word_children() {
+    assert_eq!(
+        asked(&["stop", "home", "Pelican"]),
+        json!({"op": "stop", "workspace": "home", "agent": "Pelican"})
+    );
+    assert_eq!(
+        asked(&["stop", "home", "Pelican", "children"]),
+        json!({"op": "stop", "workspace": "home", "agent": "Pelican", "children": true})
+    );
+}
+
 /// **A third word is the work target** (bl-4371), and its absence is the bare
 /// rung — the `Option` IS the rung, so there is no fourth word saying which.
 #[test]

@@ -22,6 +22,7 @@ use super::Verb;
 pub const STEPS: Verb = Verb {
     word: "steps",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "the steps a conversation's loop has taken",
     detail: "One row per step, in sequence order: how it ended, how many \
              attempts it took, what it cost in tokens, its timestamps and \
@@ -36,6 +37,7 @@ pub const STEPS: Verb = Verb {
 pub const FILES: Verb = Verb {
     word: "files",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "what a conversation's worktree holds",
     detail: "The walked worktree: each entry's path, size and kind, whether \
              the walk was cut short, and — where the conversation's work \
@@ -50,13 +52,13 @@ pub const FILES: Verb = Verb {
 /// The steps ledger, typed — a door whose arity is its signature, on the same
 /// terms as every other row's.
 pub fn steps(workspace: String, agent: String) -> Value {
-    STEPS.built(vec![workspace, agent])
+    STEPS.built(vec![workspace, agent], &[])
 }
 
 /// The worktree listing, typed. The bare read only: a commit pin or a file
 /// preview is a control the records pane does not have yet (see [`FILES`]).
 pub fn files(workspace: String, agent: String) -> Value {
-    FILES.built(vec![workspace, agent])
+    FILES.built(vec![workspace, agent], &[])
 }
 
 /// **The conversation's own row.** The deepest read of the same subject, and a
@@ -65,6 +67,7 @@ pub fn files(workspace: String, agent: String) -> Value {
 pub const AGENT: Verb = Verb {
     word: "agent",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "the conversation's own row, whole",
     detail: "Everything the engine holds about one conversation rather than \
              the glance a listing gives: its descent, the name it answers to \
@@ -80,6 +83,7 @@ pub const AGENT: Verb = Verb {
 pub const STEP: Verb = Verb {
     word: "step",
     params: &["workspace", "agent", "seq"],
+    flags: &[],
     summary: "one step's records, drilled in",
     detail: "The tier under `steps`, named by the sequence that list shows \
              (`001`): that step's metadata, the wire request that was sent, \
@@ -96,6 +100,7 @@ pub const STEP: Verb = Verb {
 pub const INBOX: Verb = Verb {
     word: "inbox",
     params: &["workspace", "agent"],
+    flags: &[],
     summary: "the mail still waiting in a conversation's inbox",
     detail: "Every deposit sitting in the conversation's inbox: who sent it, \
              when, the body, and — on a subagent's result message — how that \
@@ -108,15 +113,15 @@ pub const INBOX: Verb = Verb {
 
 /// The conversation's own row, typed.
 pub fn agent(workspace: String, agent: String) -> Value {
-    AGENT.built(vec![workspace, agent])
+    AGENT.built(vec![workspace, agent], &[])
 }
 
 /// One step's drill-in, typed — `seq` is the address the ledger's rows paint.
 pub fn step(workspace: String, agent: String, seq: String) -> Value {
-    STEP.built(vec![workspace, agent, seq])
+    STEP.built(vec![workspace, agent, seq], &[])
 }
 
 /// The undelivered mail, typed.
 pub fn inbox(workspace: String, agent: String) -> Value {
-    INBOX.built(vec![workspace, agent])
+    INBOX.built(vec![workspace, agent], &[])
 }

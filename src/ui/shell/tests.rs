@@ -220,7 +220,7 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
 fn a_long_refusal_wraps_and_its_remedy_reaches_the_glass() {
     let said = format!(
         "no wire provisioned at /home/u/.local/share/lernie/wire: {}",
-        crate::channel::material::REMEDY
+        crate::channel::material::Whose::Own.remedy()
     );
     let mut model = Model {
         notice: Some(Notice::Unreachable(said.clone())),

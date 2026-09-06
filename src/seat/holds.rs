@@ -167,12 +167,12 @@ pub(super) fn rename(data_root: &Path, name: &str) -> String {
 /// and a sentence is what it answers *instead*.
 fn own(data_root: &Path) -> Result<String, String> {
     let dir = entries::flat(data_root);
-    match material::read_dir(&dir) {
+    match material::read_dir(&dir, material::Whose::Own) {
         Ok(Some(held)) => Ok(held.address),
         Ok(None) => Err(format!(
             "nothing provisioned at {}: {}",
             dir.display(),
-            material::REMEDY
+            material::Whose::Own.remedy()
         )),
         Err(refusal) => Err(refusal),
     }

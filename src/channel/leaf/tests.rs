@@ -7,7 +7,7 @@ use rustls::pki_types::CertificateDer;
 use rustls::pki_types::pem::PemObject;
 
 use super::{FOOT, ORG_UNIT, attributes, client, elements, refusal, subject, tlv};
-use crate::channel::material::{CHAIN, REMEDY};
+use crate::channel::material::{CHAIN, Whose};
 use crate::test_support::{Scratch, mint};
 
 /// This box's own leaf, as DER, out of a scratch directory the mint filled.
@@ -33,7 +33,7 @@ fn a_foot_grade_leaf_is_named_as_this_box_s_own_misconfiguration() {
     assert!(said.contains("foot grade"), "{said}");
     assert!(said.contains("operator grade by definition"), "{said}");
     assert!(
-        said.contains(REMEDY),
+        said.contains(&Whose::Elsewhere.remedy()),
         "the remedy is the operator's act: {said}"
     );
 }

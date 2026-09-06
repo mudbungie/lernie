@@ -29,7 +29,7 @@ fn the_four_files_are_the_entry_this_seat_itself_reads() {
     let said = written(&dir, &minted()).expect("the entry was filed");
     assert!(said.contains(&dir.display().to_string()), "{said}");
 
-    let held = material::read_dir(&dir)
+    let held = material::read_dir(&dir, material::Whose::Elsewhere)
         .expect("it reads")
         .expect("it holds a channel");
     assert_eq!(held.address, "engine.invalid:7737");

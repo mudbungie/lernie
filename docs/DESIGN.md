@@ -258,6 +258,31 @@ half provisioned (a refusal naming every gap at once), provisioned. The four
 file names are the wire's rather than this crate's, so an operator's act does
 not depend on which program was installed.
 
+**The remedy is two remedies, and which one is the CALLER's fact**
+(`material::Whose`, bl-ad7f, bl-5cbe). Every refusal about absent material used
+to carry one sentence, and it was the visiting box's: *mint an extra client
+leaf on the host that issued it and carry it here*. That is the first thing
+this binary ever says to a new operator, and on a single-box install it is
+advice that does not work — the leaf already exists, because the engine's own
+boot minted `ca.pem`, `client.pem`, `client.key` and `address` into its own
+wire directory, so the act is a **copy** — while a `WIRE_LEAF` leaf is
+registered in no workspace besides. So the flat root and an entry now answer
+different sentences, and the fact that decides which is the reader's rather
+than the directory's: `channel::entries` is reading a directory somebody made
+for another box's engine, `seat::route` is reading this box's own channel, and
+`material::read_dir` is told.
+
+**And both name the four files.** *Carried here by hand* said what to do and
+never what to carry: the filenames appeared in this repository's README and in
+no message the binary ever printed, so a user who had not read the README
+could not act on the sentence at all. yog's own `wire-certs` output is the
+model — it lists each path and says what to rename it to.
+
+**The assignment goes BEFORE the verb** (bl-5cbe). `WIRE_LEAF` is an
+environment variable that `yog wire-certs` reads, not an argument it parses, so
+the printed spelling `yog wire-certs WIRE_LEAF=<name>` earns an unexpected
+argument and issues no leaf. It is the one line a new operator copies.
+
 ### 4.6 The client-side workspace (§8.2)
 
 An entry is a directory under `wire/workspaces/<leaf>/` carrying the channel
@@ -3404,7 +3429,7 @@ of *what a seat printed*.
 | `src/channel/tls.rs` | the mTLS configuration. | ~90 |
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
-| `src/channel/material.rs` | what the operator carried here, and what its absence means. | ~110 |
+| `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
 | `src/render.rs` | the rendering (§4.37): the two forms, and the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable. | ~105 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |

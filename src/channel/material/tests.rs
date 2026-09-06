@@ -1,6 +1,6 @@
 //! The three answers a directory can give.
 
-use super::{ADDRESS, ANCHORS, CHAIN, KEY, read_dir};
+use super::{ADDRESS, ANCHORS, CHAIN, KEY, Whose, read_dir};
 use crate::test_support::Scratch;
 use std::path::Path;
 
@@ -17,7 +17,7 @@ fn provision(dir: &Path, address: &str) {
 #[test]
 fn nothing_provisioned_is_an_answer_and_not_an_error() {
     let tmp = Scratch::new();
-    assert_eq!(read_dir(tmp.path()), Ok(None));
+    assert_eq!(read_dir(tmp.path(), Whose::Elsewhere), Ok(None));
 }
 
 /// A directory that does not exist reads exactly as an empty one: absent and
@@ -25,7 +25,10 @@ fn nothing_provisioned_is_an_answer_and_not_an_error() {
 #[test]
 fn a_directory_that_is_not_there_reads_as_nothing_provisioned() {
     let tmp = Scratch::new();
-    assert_eq!(read_dir(&tmp.path().join("never-made")), Ok(None));
+    assert_eq!(
+        read_dir(&tmp.path().join("never-made"), Whose::Elsewhere),
+        Ok(None)
+    );
 }
 
 /// Everything present is the material, with the address trimmed.
@@ -33,7 +36,7 @@ fn a_directory_that_is_not_there_reads_as_nothing_provisioned() {
 fn a_provisioned_directory_answers_its_material() {
     let tmp = Scratch::new();
     provision(tmp.path(), "  engine.example:9000\n");
-    let held = read_dir(tmp.path())
+    let held = read_dir(tmp.path(), Whose::Elsewhere)
         .expect("readable")
         .expect("provisioned");
     assert_eq!(held.address, "engine.example:9000");
@@ -50,7 +53,7 @@ fn a_half_provisioned_directory_names_every_gap_at_once() {
     provision(tmp.path(), "engine.example:9000");
     std::fs::remove_file(tmp.path().join(KEY)).expect("rm");
     std::fs::remove_file(tmp.path().join(ADDRESS)).expect("rm");
-    let refusal = read_dir(tmp.path()).expect_err("refused");
+    let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
     assert!(refusal.contains(KEY), "{refusal}");
     assert!(refusal.contains(ADDRESS), "{refusal}");
     assert!(refusal.contains("half-provisioned"), "{refusal}");
@@ -63,9 +66,22 @@ fn every_refusal_says_the_material_arrives_by_hand() {
     let tmp = Scratch::new();
     provision(tmp.path(), "engine.example:9000");
     std::fs::remove_file(tmp.path().join(ANCHORS)).expect("rm");
-    let refusal = read_dir(tmp.path()).expect_err("refused");
+    let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
     assert!(refusal.contains("the seat mints nothing"), "{refusal}");
     assert!(refusal.contains("carried here by hand"), "{refusal}");
+    // **The assignment goes before the verb** (bl-5cbe). `WIRE_LEAF` is an
+    // environment variable, not an argument `yog wire-certs` parses, so the
+    // spelling this line printed for a year did not work when it was typed —
+    // and this is the first line a new seat prints, to somebody who by
+    // construction has not provisioned a channel before.
+    assert!(
+        refusal.contains("`WIRE_LEAF=<name> yog wire-certs`"),
+        "{refusal}"
+    );
+    // **And it names what to carry.** Four files, by name.
+    for named in [ANCHORS, CHAIN, KEY, ADDRESS] {
+        assert!(refusal.contains(named), "{named}: {refusal}");
+    }
 }
 
 /// An address file that is empty, whitespace, or unreadable is one refusal:
@@ -75,7 +91,7 @@ fn an_address_that_says_nothing_refuses_however_it_says_it() {
     for stated in ["", "   \n"] {
         let tmp = Scratch::new();
         provision(tmp.path(), stated);
-        let refusal = read_dir(tmp.path()).expect_err("refused");
+        let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
         assert!(refusal.contains("names no address"), "{refusal}");
     }
     // Unreadable takes the same branch: a directory where the file goes.
@@ -83,6 +99,6 @@ fn an_address_that_says_nothing_refuses_however_it_says_it() {
     provision(tmp.path(), "engine.example:9000");
     std::fs::remove_file(tmp.path().join(ADDRESS)).expect("rm");
     std::fs::create_dir(tmp.path().join(ADDRESS)).expect("mkdir");
-    let refusal = read_dir(tmp.path()).expect_err("refused");
+    let refusal = read_dir(tmp.path(), Whose::Elsewhere).expect_err("refused");
     assert!(refusal.contains("half-provisioned"), "{refusal}");
 }

@@ -55,7 +55,7 @@
 
 use std::path::{Path, PathBuf};
 
-use super::material::{self, Material, REMEDY};
+use super::material::{self, Material, Whose};
 
 /// The material directory's leaf under the data root. The flat root itself:
 /// the box's own client relationship, held without naming it.
@@ -129,13 +129,17 @@ fn entry(dir: &Path) -> Entry {
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    let channel = match material::read_dir(dir) {
+    let channel = match material::read_dir(dir, Whose::Elsewhere) {
         Ok(Some(held)) => Ok(held),
         // Nothing provisioned is silence at the entries directory, where
         // absence means this box holds no channel. Here it is a refusal: a
         // directory somebody made names an intent, and an intent with no
         // material behind it is the half-provisioned failure one step earlier.
-        Ok(None) => Err(format!("{} is an empty entry: {REMEDY}", dir.display())),
+        Ok(None) => Err(format!(
+            "{} is an empty entry: {}",
+            dir.display(),
+            Whose::Elsewhere.remedy()
+        )),
         Err(refusal) => Err(refusal),
     };
     let workspace = named(dir, &leaf);

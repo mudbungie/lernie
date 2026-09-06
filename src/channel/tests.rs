@@ -14,7 +14,7 @@ fn wired(protocol: u32, script: Vec<Vec<Value>>) -> (Scratch, Engine, Material) 
     let scratch = Scratch::new();
     mint::material(scratch.path());
     let engine = Engine::start(scratch.path(), protocol, script);
-    let held = read_dir(scratch.path())
+    let held = read_dir(scratch.path(), crate::channel::material::Whose::Own)
         .expect("readable")
         .expect("provisioned");
     (scratch, engine, held)

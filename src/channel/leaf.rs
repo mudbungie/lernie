@@ -104,7 +104,7 @@ pub fn refusal(der: &[u8], at: &Path) -> Option<String> {
          an operator-grade pair on the box that holds the CA and carry it here; \
          {}",
         at.display(),
-        super::material::REMEDY
+        super::material::Whose::Elsewhere.remedy()
     ))
 }
 

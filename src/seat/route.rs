@@ -18,7 +18,7 @@ use std::path::Path;
 use serde_json::Value;
 
 use super::{OWN, holds};
-use crate::channel::material::{self, REMEDY};
+use crate::channel::material::{self, Whose};
 use crate::channel::{Channel, entries};
 use crate::envelope;
 
@@ -174,7 +174,7 @@ fn unresolved(data_root: &Path, envelope: &Value, name: &str) -> Routed {
 /// the remedy is the same out-of-channel act (REMOTE §1.4).
 pub(super) fn flat(data_root: &Path) -> Result<Channel, String> {
     let dir = entries::flat(data_root);
-    match material::read_dir(&dir)? {
+    match material::read_dir(&dir, Whose::Own)? {
         // A `:0` is a self-provisioning engine's request for a kernel-chosen
         // port (REMOTE §8): only the engine that bound it knows what it became,
         // and it tells its own in-process window in RAM. So there is nothing
@@ -182,14 +182,18 @@ pub(super) fn flat(data_root: &Path) -> Result<Channel, String> {
         // earns.
         Some(held) if held.address.ends_with(":0") => Err(format!(
             "{} names {} — a kernel-chosen port only that engine's own window is \
-             told; a seat wants a stated address",
+             told; a seat wants a stated address. Re-issue with one stated \
+             (`WIRE_HOST=<host> WIRE_PORT=<port> yog wire-certs` on that box) and \
+             copy the {} here again",
             dir.join(material::ADDRESS).display(),
-            held.address
+            held.address,
+            material::ADDRESS
         )),
         Some(held) => Channel::open(&held),
         None => Err(format!(
-            "no wire provisioned at {}: {REMEDY}",
-            dir.display()
+            "no wire provisioned at {}: {}",
+            dir.display(),
+            Whose::Own.remedy()
         )),
     }
 }

@@ -73,7 +73,7 @@ pub(crate) fn material(dir: &Path) {
 pub(crate) fn provisioned(dir: &Path, address: &str) -> crate::channel::material::Material {
     material(dir);
     std::fs::write(dir.join(crate::channel::material::ADDRESS), address).expect("the address");
-    crate::channel::material::read_dir(dir)
+    crate::channel::material::read_dir(dir, crate::channel::material::Whose::Own)
         .expect("readable")
         .expect("provisioned")
 }

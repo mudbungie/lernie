@@ -27,8 +27,15 @@ fn a_box_with_no_wire_names_the_directory_and_the_operator_s_act() {
         "{}",
         verdict.text
     );
+    // **The flat root's remedy is a COPY, not a mint** (bl-ad7f). On a
+    // single-box install the leaf already exists — the engine's own boot made
+    // it — and the four files are named, because "carried here by hand" said
+    // what to do and never what to carry.
+    for named in ["the act is a COPY", "ca.pem", "client.key", "address"] {
+        assert!(verdict.text.contains(named), "{named}: {}", verdict.text);
+    }
     assert!(
-        verdict.text.contains("carried here by hand"),
+        verdict.text.contains("the seat mints nothing"),
         "{}",
         verdict.text
     );

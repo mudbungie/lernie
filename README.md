@@ -61,7 +61,8 @@ lernie retarget <workspace> <agent>              # settle it onto its lineage's 
 lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
 lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace's own name
 
-lernie start <workspace> <goal>         # begin a conversation — two acts, one word
+lernie start <workspace> <goal> [<dir>]  # begin a conversation — two acts, one word;
+                                         # a directory aims the driver there
 
 lernie                  # open the window
 lernie --json <verb>…   # the reply frames as they crossed, instead of rendered
@@ -93,7 +94,11 @@ version bump.
 one: starting is two acts — a `prepare` that stages it and answers the fire's
 parameters, then a `prompt` that hands that body straight back with the goal —
 so the thing between them is a local, and one word is what holds it. Both reply
-streams print; the exit code is the fire's.
+streams print; the exit code is the fire's. Name a **directory** after the goal
+and the start is staged on the path rung instead of the bare one: the
+conversation's driver runs there, and the engine's own target preamble is fired
+ahead of the goal. A directory named in the goal's prose is a request the
+agent's tools are free to ignore; the rung is not.
 
 **Bare `lernie` opens the window**: the roster grouped by channel, the
 conversation list, the chat pane and the composer, painted from a snapshot and

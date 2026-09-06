@@ -53,9 +53,23 @@ const INDOUBT: &str = "the start was staged and the fire crossed with no answer,
      holds (`lernie conversations <workspace>`)";
 
 /// **Begin a conversation**: stage a start in `address`, then fire it with
-/// `goal`.
-pub fn start(data_root: &Path, address: &str, goal: &str, form: Form) -> Verdict {
-    let staged = match super::sent(data_root, &crate::verbs::prepare(address.to_owned())) {
+/// `goal` — on the §3.4 path rung when `dir` names a work target, and on the
+/// bare rung when it does not.
+///
+/// **The goal the fire carries is the rung's prefill and then the operator's**
+/// ([`crate::verbs::start::goal`]). The bare rung prefills nothing, so that is
+/// the operator's goal unchanged; the path rung prefills the target preamble,
+/// and dropping it would fire a conversation bound to a directory it was never
+/// told about.
+pub fn start(
+    data_root: &Path,
+    address: &str,
+    goal: &str,
+    dir: Option<&str>,
+    form: Form,
+) -> Verdict {
+    let staging = crate::verbs::prepare(address.to_owned(), dir.map(str::to_owned));
+    let staged = match super::sent(data_root, &staging) {
         Ok(frames) => frames,
         Err(reach) => return Verdict::failed(reach.said()),
     };
@@ -66,7 +80,11 @@ pub fn start(data_root: &Path, address: &str, goal: &str, form: Form) -> Verdict
         // `ok: true` and no staged body must not exit zero.
         return Verdict::answered(super::said(&staged, form), false);
     };
-    let fire = crate::verbs::prompt(&prepared, address.to_owned(), goal.to_owned());
+    let fire = crate::verbs::prompt(
+        &prepared,
+        address.to_owned(),
+        crate::verbs::start::goal(&prepared.goal, goal),
+    );
     match super::sent(data_root, &fire) {
         Ok(fired) => Verdict::answered(
             super::said(&[staged, fired.clone()].concat(), form),

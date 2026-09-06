@@ -636,12 +636,42 @@ have and one does not — a stage that landed and a fire that never left this bo
 — gets its own sentence, because the workspace exists and nothing is running,
 and the remedy is to type it again (yog §8.1: the steps are convergent).
 
-**The bare rung, and only the bare rung.** yog's §3.4 gives the payload three:
-bare, a work directory, a ball. This seat composes the bare one. A directory
-needs a field that refuses a path that is not there; a ball needs a project, a
-picker and the §3.5 join states. Each is unbuilt rather than unreachable, and
-each arrives with the surface that composes it — a seat that guessed a rung
-would found a claim nobody asked for.
+**Two rungs of the three, and the third is a picker** (bl-4371). yog's §3.4
+gives the payload three: bare, a work directory, a ball. This seat composes
+**bare** and **path**; the ball rung needs a project, a picker and the §3.5 join
+states, so it is unbuilt rather than unreachable and arrives with the surface
+that composes it — a seat that guessed a rung would found a claim nobody asked
+for.
+
+**The path rung is a third argument to `start` and no new door.** The rung is
+said outright and never inferred, which is upstream's own rule for this
+payload, so the seat carries **one `Option<String>`** — the target — and the
+rung word follows from it. A second word saying which rung would be a fact the
+operator has to keep in agreement with the first.
+
+**A path this seat does not check.** The directory is on the ENGINE's box and a
+seat may hold no such path at all, so a path that is not there is refused over
+the wire in the engine's own words. That is the same division §4.10 draws for
+`enroll`'s grade in the other direction: the grade is a closed set this binary
+holds, and a filesystem on another machine is not.
+
+**What the ball measured is why the rung is worth an argument.** Same model,
+same box, same minute, one goal each, the only difference being the rung. The
+bare rung named the directory in the goal's prose: the agent's shell obeyed the
+prose while its patch tool wrote into the agent worktree, and it thrashed
+through three compactors and four million tokens to leave an empty report in
+the wrong tree. The path rung took eight steps, spawned nothing, and wrote the
+file where it was asked to. A rung sets the driver's working directory; prose
+in a goal is a request the tools are free to ignore.
+
+**And the fire carries the prefill.** A rung with a prefill composes a goal —
+the path rung's is the §3.3 target preamble, verbatim — and upstream's own help
+states the seat's half: *"To fire a prefill with words of your own, send the
+two joined as one goal — that text is the reply's `prepared.goal`, and editing
+it is exactly what a seat with a composer does."* A one-shot process has no
+composer, so `crate::verbs::start::goal` is where the editing would have been:
+the prefill, a blank line, then what was typed. The bare rung prefills nothing,
+so the ordinary case takes no arm.
 
 **Positional and context-free, unlike the engine's own line.** yog's line reader
 is terse because a seat with a focus supplies the address; REMOTE §8.5 says a
@@ -3208,7 +3238,8 @@ of *what a seat printed*.
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
 | `src/ui/roster/acts.rs` | the strip above the channels: the four ops whose subject is every channel, and the one of them that opens nothing (§4.21). | ~65 |
-| `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why. | ~80 |
+| `src/verbs/tests/corpus/emits/ledger.rs` | the frames this seat's encoder cannot compose, by op, count and reason — split from the mechanism at the cap, because a builder changing and a surface not being built are two different reasons to edit. | ~120 |
+| `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, and the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371). | ~130 |
 | `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |

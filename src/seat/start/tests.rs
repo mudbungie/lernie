@@ -35,7 +35,7 @@ fn a_start_stages_then_fires_and_the_second_act_carries_the_first_s_answer() {
         &flat(),
         vec![vec![staged("home")], vec![started("brisk-otter")]],
     );
-    let verdict = start(scratch.path(), "home", "do the thing", Form::Json);
+    let verdict = start(scratch.path(), "home", "do the thing", None, Form::Json);
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
     assert_eq!(
@@ -76,7 +76,10 @@ fn a_renamed_entry_stages_and_fires_down_the_same_channel() {
         "personal",
     )
     .expect("the workspace file");
-    assert_eq!(start(scratch.path(), "home", "do it", Form::Json).code, 0);
+    assert_eq!(
+        start(scratch.path(), "home", "do it", None, Form::Json).code,
+        0
+    );
     let heard = engine.heard();
     assert!(
         heard.contains(&json!({"op": "prepare", "workspace": "personal",
@@ -110,7 +113,7 @@ fn a_stage_that_answers_no_body_prints_what_it_said_and_starts_nothing() {
     ] {
         let scratch = Scratch::new();
         let engine = wired(&scratch, &flat(), vec![answer]);
-        let verdict = start(scratch.path(), "home", "do it", Form::Json);
+        let verdict = start(scratch.path(), "home", "do it", None, Form::Json);
         assert_eq!(verdict.code, 1, "{}", verdict.text);
         assert_eq!(verdict.stream, Stream::Out);
         assert_eq!(verdict.text, expected);
@@ -136,7 +139,7 @@ fn the_exit_code_is_the_fire_s_verdict() {
         &flat(),
         vec![vec![staged("home")], vec![refused.clone()]],
     );
-    let verdict = start(scratch.path(), "home", "do it", Form::Json);
+    let verdict = start(scratch.path(), "home", "do it", None, Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.text, format!("{}\n{refused}", staged("home")));
 }
@@ -151,7 +154,7 @@ fn a_fire_that_never_leaves_the_box_says_the_start_was_staged() {
     // One connection in the script: the stage takes it, and the fire's dial
     // finds a listener that has stopped accepting.
     wired(&scratch, &flat(), vec![vec![staged("home")]]);
-    let verdict = start(scratch.path(), "home", "do it", Form::Json);
+    let verdict = start(scratch.path(), "home", "do it", None, Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
     assert!(verdict.text.contains(UNFIRED), "{}", verdict.text);
@@ -171,7 +174,7 @@ fn a_fire_that_crossed_with_no_answer_refuses_the_retype_and_names_the_read() {
         &flat(),
         vec![Answer::Frames(vec![staged("home")]), Answer::Hangup],
     );
-    let verdict = start(scratch.path(), "home", "do it", Form::Json);
+    let verdict = start(scratch.path(), "home", "do it", None, Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
     assert!(verdict.text.contains(INDOUBT), "{}", verdict.text);
@@ -192,12 +195,55 @@ fn a_fire_that_crossed_with_no_answer_refuses_the_retype_and_names_the_read() {
 #[test]
 fn a_box_with_no_channel_says_so_before_it_stages_anything() {
     let scratch = Scratch::new();
-    let verdict = start(scratch.path(), "home", "do it", Form::Json);
+    let verdict = start(scratch.path(), "home", "do it", None, Form::Json);
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
     assert!(
         verdict.text.contains("no wire provisioned"),
         "{}",
         verdict.text
+    );
+}
+
+/// **A start aimed at a directory** (bl-4371): the stage names the path rung,
+/// and the fire carries the preamble the engine composed with the operator's
+/// own goal after it.
+///
+/// This is the whole of the ball. The bare rung was the only one this seat
+/// could reach, so a goal that named its directory in prose was a request the
+/// agent's tools were free to ignore — and did.
+#[test]
+fn a_start_with_a_work_target_stages_the_path_rung_and_fires_the_preamble_with_it() {
+    let scratch = Scratch::new();
+    let prefilled = json!({"ok": true, "kind": "prepared",
+                           "prepared": {"workspace": "home",
+                                        "goal": "Working directory: /w",
+                                        "binding": "/w"}});
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![vec![prefilled], vec![started("brisk-otter")]],
+    );
+    let verdict = start(
+        scratch.path(),
+        "home",
+        "do the thing",
+        Some("/w"),
+        Form::Json,
+    );
+    assert_eq!(verdict.code, 0);
+    let heard = engine.heard();
+    assert!(
+        heard.contains(&json!({"op": "prepare", "workspace": "home",
+                               "payload": {"rung": "path", "dir": "/w"}})),
+        "{heard:?}"
+    );
+    assert!(
+        heard.contains(&json!({"op": "prompt", "seed": null,
+                               "goal": "Working directory: /w\n\ndo the thing",
+                               "prepared": {"workspace": "home",
+                                            "goal": "Working directory: /w",
+                                            "binding": "/w"}})),
+        "{heard:?}"
     );
 }

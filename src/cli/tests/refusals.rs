@@ -44,7 +44,8 @@ fn the_start_word_refuses_by_arity_and_says_what_it_takes() {
         // in the source — on one of the two words an operator is likeliest to
         // get wrong. It is the door's own computed line now.
         let wanted = format!(
-            "`lernie start` takes 2 argument(s) and got {} — usage: lernie start <workspace> <goal>",
+            "`lernie start` takes 2 to 3 argument(s) and got {} — usage: lernie start \
+             <workspace> <goal> [<dir>]",
             words.len() - 1
         );
         assert!(v.text.contains(&wanted), "{}", v.text);
@@ -105,7 +106,7 @@ fn a_door_with_the_wrong_arity_refuses_by_name_and_teaches_the_grammar() {
         ),
         (
             vec!["help", "a", "b"],
-            "`lernie help` takes at most 1 argument(s) and got 2 — usage: lernie help [<verb>]",
+            "`lernie help` takes 0 to 1 argument(s) and got 2 — usage: lernie help [<verb>]",
         ),
     ] {
         let v = said(&words);

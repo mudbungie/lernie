@@ -25,113 +25,14 @@ use super::super::super::{
 use super::{emitted, request};
 use crate::envelope;
 
+/// The frames this seat's encoder cannot compose, by op, count and reason.
+mod ledger;
+
+use ledger::UNEMITTED;
+
 /// The rung this seat composes, and the only one it can (`src/verbs/start.rs`).
 const BARE: &str = "bare";
-
-/// **The frames the seat's encoder cannot compose**, by op, count and reason.
-///
-/// Every entry is a surface this build does not have rather than a field it
-/// drops. A count that moves — because yog grew a rung, or because a pane
-/// landed here — fails until the reason is rewritten, which is the whole point
-/// of writing it down.
-const UNEMITTED: &[(&str, usize, &str)] = &[
-    (
-        "files",
-        3,
-        "the `at` and `path` forms: this seat composes the bare listing only \
-         — pinning a commit and previewing one file are controls the records \
-         pane does not have yet, and a seat that guessed either would answer \
-         a question nobody asked",
-    ),
-    (
-        "stop",
-        1,
-        "the children cascade: this seat composes the bare stop only, and the \
-         flag that takes a whole subtree down is a second control with a second \
-         confirmation — it belongs beside the records that would say what is \
-         under there",
-    ),
-    (
-        "marks",
-        2,
-        "the amending form: this seat composes the bare READ only, and pointing \
-         a wall's task space at another branch is a write with a confirmation \
-         to design — the ball pane's five acts landed in bl-f7ae and this one \
-         did not, because a tracking branch is not a ball",
-    ),
-    (
-        "create",
-        1,
-        "the scheduling fields: this seat composes the title and the body, and \
-         a priority, a tag, a parent and a blocker are four pickers the ball \
-         pane does not have — `fields` is an array of objects besides, which is \
-         why the door composes text and nothing else (`crate::verbs::balls::\
-         edit`)",
-    ),
-    (
-        "update",
-        1,
-        "the scheduling fields, on the filing's own terms: this seat amends a \
-         ball's text and appends to its journal, and the four facts the board \
-         orders on are the same four pickers",
-    ),
-    (
-        "work-diff",
-        2,
-        "the two file forms: this seat composes the bare listing only — naming \
-         a ball and a path answers that one file's PATCH instead, and a \
-         control that guessed at a file would answer a question nobody asked \
-         (`crate::verbs::fleet`)",
-    ),
-    (
-        "prepare",
-        9,
-        "the path and ball rungs: this seat composes the bare rung only, and a \
-         seat that guessed a rung would found a claim nobody asked for",
-    ),
-    (
-        "governing",
-        1,
-        "the `at` form: this seat composes the bare read only — resolving the \
-         policy as of another commit is the pin the records pane does not \
-         have, and a seat that guessed a rev would answer about a tree \
-         nobody named",
-    ),
-    (
-        "fork",
-        1,
-        "the skill list: this seat composes an attempt that pins none, because \
-         the skills a lineage declares are a read the config-file pane owns \
-         and this window has no way to offer them",
-    ),
-    (
-        "fan",
-        1,
-        "the ball-less form: upstream reads it as the ENGINE's own focused \
-         ball, and a seat has no focus at the far end — every gesture this \
-         window composes names the ball off the work-diff row it fired from \
-         (`crate::verbs::candidates`)",
-    ),
-    (
-        "deliver",
-        1,
-        "the ball-less form, on the fan's own terms: the obligation comes off \
-         the row, never off a focus this seat cannot see",
-    ),
-    (
-        "retire",
-        1,
-        "the ball-less form, on the fan's own terms: the obligation comes off \
-         the row, never off a focus this seat cannot see",
-    ),
-    (
-        "prompt",
-        6,
-        "a predicted conversation seed: this seat spells `seed` null, because \
-         the mint is the engine's and a seat that predicted one would have to \
-         fire the name it painted",
-    ),
-];
+const PATH: &str = "path";
 
 /// **The array neither authoring door composes**, named once: a frame carrying
 /// it is declined here and recorded in [`UNEMITTED`] above.
@@ -184,8 +85,19 @@ fn rebuilt(frame: &Value) -> Option<Value> {
         return Some(verb.envelope(args).expect("the shape's own arity"));
     }
     match op.as_str() {
-        PREPARE => (obj["payload"] == json!({ "rung": BARE }))
-            .then(|| prepare(text(obj, envelope::WORKSPACE))),
+        // **Both rungs this seat composes** (bl-4371): the bare payload, and
+        // the path payload read back off its own two fields. The ball rung's
+        // eight frames still answer `None` and are recorded below.
+        PREPARE => match &obj["payload"] {
+            payload if *payload == json!({ "rung": BARE }) => {
+                Some(prepare(text(obj, envelope::WORKSPACE), None))
+            }
+            payload if payload["rung"] == json!(PATH) => Some(prepare(
+                text(obj, envelope::WORKSPACE),
+                payload["dir"].as_str().map(str::to_owned),
+            )),
+            _ => None,
+        },
         EFFORT => Some(effort(
             text(obj, envelope::WORKSPACE),
             text(obj, "role"),

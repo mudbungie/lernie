@@ -248,3 +248,26 @@ fn a_tail_that_is_not_the_one_word_refuses_and_names_it() {
         );
     }
 }
+
+/// **A third word is the work target** (bl-4371), and its absence is the bare
+/// rung — the `Option` IS the rung, so there is no fourth word saying which.
+#[test]
+fn a_third_word_aims_the_start_at_a_directory() {
+    let Decided::Start {
+        address, goal, dir, ..
+    } = run(argv(&["start", "home", "do the thing", "/work/repo"]))
+    else {
+        panic!("a start with a work target");
+    };
+    assert_eq!(
+        (address, goal, dir),
+        (
+            "home".to_owned(),
+            "do the thing".to_owned(),
+            Some("/work/repo".to_owned())
+        )
+    );
+    let Decided::Start { dir: None, .. } = run(argv(&["start", "home", "do the thing"])) else {
+        panic!("two words is the bare rung");
+    };
+}

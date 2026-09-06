@@ -110,6 +110,7 @@ impl Model {
         let goal = std::mem::take(&mut self.draft);
         self.outbox.push(super::Posted::act(crate::verbs::prepare(
             address.to_owned(),
+            None,
         )));
         self.start = Some(Start {
             address: address.to_owned(),

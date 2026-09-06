@@ -55,6 +55,11 @@ pub enum Decided {
     Start {
         address: String,
         goal: String,
+        /// **The work target, when one was named** — the §3.4 path rung, and
+        /// `None` for the bare one. The rung is said outright rather than
+        /// inferred, so this `Option` IS the rung and there is no second word
+        /// for the operator to keep in agreement with it.
+        dir: Option<String>,
         /// Which form the two reply streams print in.
         form: Form,
     },
@@ -126,11 +131,8 @@ pub fn run(args: Vec<String>) -> Decided {
         // from when the sentence was laid out over two rows in the source, and
         // a stored usage line is the second fact `crate::verbs` exists not to
         // keep.
-        ["start", address, goal] => Decided::Start {
-            address: (*address).to_owned(),
-            goal: (*goal).to_owned(),
-            form,
-        },
+        ["start", address, goal] => started(address, goal, None, form),
+        ["start", address, goal, dir] => started(address, goal, Some(dir), form),
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => enroll(workspace, name, grade, tail),
@@ -138,6 +140,17 @@ pub fn run(args: Vec<String>) -> Decided {
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,
         [word, arguments @ ..] => typed(word, arguments, form),
+    }
+}
+
+/// **The composite start**, with or without the work target that makes it the
+/// §3.4 path rung rather than the bare one (bl-4371).
+fn started(address: &str, goal: &str, dir: Option<&str>, form: Form) -> Decided {
+    Decided::Start {
+        address: address.to_owned(),
+        goal: goal.to_owned(),
+        dir: dir.map(str::to_owned),
+        form,
     }
 }
 

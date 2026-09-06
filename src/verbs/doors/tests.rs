@@ -3,11 +3,12 @@
 
 use super::{ASK, ENTRIES, HELP, START, find, table};
 
-/// **A door's usage line is what it prints**, including the one shape a list of
-/// envelope field names cannot spell: `help`'s optional argument.
+/// **A door's usage line is what it prints**, including the shape a list of
+/// envelope field names cannot spell: an optional argument. Two doors have one
+/// — `help`'s word, and `start`'s work target (bl-4371).
 #[test]
 fn every_door_prints_the_line_an_operator_types() {
-    assert_eq!(START.usage(), "lernie start <workspace> <goal>");
+    assert_eq!(START.usage(), "lernie start <workspace> <goal> [<dir>]");
     assert_eq!(ASK.usage(), "lernie ask <envelope>");
     assert_eq!(ENTRIES.usage(), "lernie entries");
     assert_eq!(HELP.usage(), "lernie help [<verb>]");
@@ -24,14 +25,15 @@ fn an_arity_refusal_names_the_word_and_what_it_takes() {
     );
     assert_eq!(
         START.refused(1),
-        "`lernie start` takes 2 argument(s) and got 1 — usage: lernie start \
-         <workspace> <goal>"
+        "`lernie start` takes 2 to 3 argument(s) and got 1 — usage: lernie start \
+         <workspace> <goal> [<dir>]",
+        "a door with an optional argument says the whole range, not its top"
     );
     assert_eq!(
         HELP.refused(2),
-        "`lernie help` takes at most 1 argument(s) and got 2 — usage: lernie \
+        "`lernie help` takes 0 to 1 argument(s) and got 2 — usage: lernie \
          help [<verb>]",
-        "the one door whose two arities differ says so"
+        "a door whose two arities differ says so"
     );
 }
 

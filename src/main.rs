@@ -29,8 +29,9 @@ fn main() -> ExitCode {
         Decided::Start {
             address,
             goal,
+            dir,
             form,
-        } => rooted(|root| lernie::seat::start(root, &address, &goal, form)),
+        } => rooted(|root| lernie::seat::start(root, &address, &goal, dir.as_deref(), form)),
         Decided::Enroll {
             workspace,
             name,

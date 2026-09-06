@@ -26,7 +26,8 @@ fn a_start_is_two_acts_and_the_second_is_composed_from_the_first_s_answer() {
     assert_eq!(
         model.outbox,
         vec![crate::ui::Posted::act(crate::verbs::prepare(
-            "home".to_owned()
+            "home".to_owned(),
+            None
         ))]
     );
     assert_eq!(model.draft, "", "what was staged is no longer a draft");

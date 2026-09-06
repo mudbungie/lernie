@@ -57,10 +57,14 @@ impl Door {
     /// rather than that it is not an argument this binary recognises.
     pub fn refused(&self, got: usize) -> String {
         let (least, most) = self.arity;
+        // **The whole range, not just its top.** `help` was the only door
+        // with a range when this was written and *at most one* was true of
+        // it; `start`'s optional work target (bl-4371) made a second, where
+        // that wording would say nothing about the two it also requires.
         let takes = if least == most {
             format!("{least}")
         } else {
-            format!("at most {most}")
+            format!("{least} to {most}")
         };
         format!(
             "`lernie {}` takes {takes} argument(s) and got {got} — usage: {}",
@@ -83,9 +87,9 @@ pub fn table() -> Vec<Door> {
 /// The composite that begins a conversation.
 pub const START: Door = Door {
     word: "start",
-    takes: "<workspace> <goal>",
-    arity: (2, 2),
-    summary: "begin a conversation on that workspace",
+    takes: "<workspace> <goal> [<dir>]",
+    arity: (2, 3),
+    summary: "begin a conversation on that workspace, optionally aimed at a directory",
     detail: "The start family's two acts (yog's REMOTE §8.1), staged and \
              fired in one process. Not a gesture but both of them: a \
              `prepare`, then a `prompt` carrying the body that answered it \
@@ -93,7 +97,15 @@ pub const START: Door = Door {
              fire's. It is one word because the thing between the two acts is \
              a local — the staged body, held while the second is composed — \
              and a nested object is not a word an operator types, which is why \
-             it is a door here rather than a row of the gesture table.",
+             it is a door here rather than a row of the gesture table. \
+             NAME A DIRECTORY and the start is staged on the path rung \
+             instead of the bare one: the conversation's driver runs THERE, \
+             and the engine's own target preamble is prepended to the goal. \
+             Without it the conversation is born wherever the engine puts a \
+             bare one, and a directory named in the goal's prose is a request \
+             the tools are free to ignore. The path is on the ENGINE's box and \
+             this seat does not check it; a path that is not there is refused \
+             over the wire, in the engine's own words.",
 };
 
 /// The escape hatch, which is the surface.

@@ -35,8 +35,13 @@ fn a_page_states_the_usage_the_summary_and_the_detail() {
         text.starts_with("usage: lernie follow <workspace> <agent>"),
         "{text}"
     );
-    assert!(text.contains("hold the line"), "{text}");
-    assert!(text.contains("never finishes"), "{text}");
+    assert!(text.contains("holds the line"), "{text}");
+    // **The page states the protocol's own rule** (REMOTE §5.5, bl-5185): it
+    // used to say the opposite — that each frame was the whole accumulated
+    // fold, so a frame missed was nothing missed — which would be believed by
+    // anyone reading this seat's raw output.
+    assert!(text.contains("APPEND"), "{text}");
+    assert!(text.contains("onto an empty fold"), "{text}");
     for line in text.lines() {
         assert!(line.len() <= 72, "{line:?} is {} wide", line.len());
     }

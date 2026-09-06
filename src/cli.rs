@@ -62,6 +62,17 @@ pub fn run(args: Vec<String>) -> Decided {
         // keep.
         ["start", address, goal] => started(address, goal, None, form),
         ["start", address, goal, dir] => started(address, goal, Some(dir), form),
+        // Ahead of the typed table, because the word spends its row MORE THAN
+        // ONCE (bl-f076): a read ends at the engine's step boundary and the
+        // question an operator asked is about the whole of the work. `follow`
+        // stays a row of the gesture table — the window's own lane spends it,
+        // and the corpus round-trips it — so a wrong arity still earns the
+        // row's own usage one arm down.
+        ["follow", workspace, agent] => Decided::Follow {
+            workspace: (*workspace).to_owned(),
+            agent: (*agent).to_owned(),
+            form,
+        },
         // Ahead of the typed table for [`Follow`](Decided::Follow)'s reason
         // one noun over: the word spends a SECOND row first (bl-1e5a). The
         // assignment is unchanged and is still the table's; what is added

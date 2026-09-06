@@ -68,6 +68,19 @@ pub enum Decided {
     /// one thing to route and the reading of a caller's JSON — which is a pure
     /// function of what was typed — stays in this pure function where a test
     /// reads its refusal back as a value.
+    /// **Watch one conversation until it rests** (bl-3dca, bl-f076) — the
+    /// §5.1 follow read, held across the engine's step boundaries.
+    ///
+    /// It is a serialization and not a gesture, exactly as
+    /// [`Start`](Self::Start) is: what crosses is `agent` and `follow`, the
+    /// boundary's own envelopes, asked as many times as it takes. One word,
+    /// because the engine ends a read at the step and an operator's question
+    /// is about the TURN — and about the whole of the work after it.
+    Follow {
+        workspace: String,
+        agent: String,
+        form: Form,
+    },
     /// **Give a role this model** (bl-1e5a), having first asked the provider
     /// row what it offers. A serialization of two reads-and-a-write, not a
     /// gesture: `models` then `model`, the boundary's own envelopes.

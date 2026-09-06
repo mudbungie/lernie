@@ -23,6 +23,18 @@ fn main() -> ExitCode {
         Decided::Say(verdict) => verdict,
         Decided::Entries => rooted(lernie::seat::listing),
         Decided::Ask(envelope, form) => rooted(|root| lernie::seat::ask(root, &envelope, form)),
+        // **The one act whose product is written as it arrives.** A held read
+        // that printed at the end would not be a watch, so the sink is here,
+        // where every other stream this process writes already is.
+        Decided::Follow {
+            workspace,
+            agent,
+            form,
+        } => rooted(|root| {
+            lernie::seat::follow(root, &workspace, &agent, form, &mut |said| {
+                println!("{said}");
+            })
+        }),
         // **The warning is a diagnosis, so it goes to stderr** — the reply
         // stream under it is the product and stays on stdout.
         Decided::Model {

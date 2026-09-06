@@ -239,3 +239,24 @@ fn every_gate_the_engine_can_offer_has_a_word() {
     }
     says(&frame, &["offers: nudge, stop, stop children"]);
 }
+
+/// **A follow frame renders what LANDED** (bl-f076), and a frame that landed
+/// nothing is still the tail moving: the delta is a heartbeat, where the
+/// frame's own shape said the same eight characters forever.
+#[test]
+fn a_follow_frame_is_the_text_that_landed_or_a_heartbeat() {
+    let frame = |stream| json!({"ok": true, "kind": "follow", "stream": stream});
+    assert_eq!(
+        rendered(&frame(json!({"delta": "text", "text": "391"}))),
+        "391"
+    );
+    assert_eq!(
+        rendered(&frame(json!({"delta": "thinking", "thinking": "counting"}))),
+        "(thinking) counting"
+    );
+    assert_eq!(
+        rendered(&frame(json!({"delta": "thinking"}))),
+        "…  thinking"
+    );
+    assert_eq!(rendered(&frame(json!({}))), "…");
+}

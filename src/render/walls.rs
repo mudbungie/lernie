@@ -99,23 +99,31 @@ pub(super) fn parked(held: &Held) -> String {
     format!("held: {} ({}) — {}", held.tool, held.tool_use, held.reason)
 }
 
-/// **The live tail**, folded. The thinking and the text as they stand, and the
-/// delta only as a note about which of them last moved — a frame is an APPEND
-/// and the fold is the lane's (REMOTE §5.5), so what is printed is the whole
-/// of what has landed and never the fragment that just arrived.
+/// **One frame of the live tail: what LANDED, and nothing else.**
+///
+/// A frame is an APPEND (REMOTE §5.5) and a terminal is already a fold, so the
+/// rendering is the appended text — printed in order, one frame a line, it
+/// reads as the turn being written. Folding here and re-printing the whole
+/// accumulation each frame would be the same answer at quadratic cost.
 pub(super) fn follow(stream: &Stream) -> String {
-    let body = tail(
-        stream.thinking.as_deref().unwrap_or_default(),
-        stream.text.as_deref().unwrap_or_default(),
-    );
-    line_over(
-        &line(vec![
-            Some("live".to_owned()),
-            clause("(", stream.last_delta.as_ref().map(Delta::label).as_deref())
-                .map(|said| format!("{said})")),
-        ]),
-        Some(body),
-    )
+    let landed = line(vec![
+        clause("(thinking)", stream.thinking.as_deref()),
+        stream.text.clone(),
+    ]);
+    if !landed.is_empty() {
+        return landed;
+    }
+    // **A frame that carried no content is still the tail moving** (bl-f076).
+    // A reasoning-heavy stretch sends `{"delta": "thinking"}` and nothing
+    // else, over and over; printing the frame's own shape there said the same
+    // eight characters forever and nothing about progress, and printing
+    // nothing at all is the silence this word was fixed for. What is left to
+    // say is which kind of work the engine says is going on, once per frame,
+    // which is a heartbeat.
+    line(vec![
+        Some("…".to_owned()),
+        stream.last_delta.as_ref().map(Delta::label),
+    ])
 }
 
 /// A turn in progress: what it is thinking, and what it has said.

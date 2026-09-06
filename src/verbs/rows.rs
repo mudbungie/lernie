@@ -113,12 +113,18 @@ pub const FOLLOW: Verb = Verb {
     word: "follow",
     params: &["workspace", "agent"],
     flags: &[],
-    summary: "hold the line on one conversation's live tail",
-    detail: "A read that deliberately never finishes: the connection stays \
-                 open and the engine writes a frame every time the tail moves. \
-                 Each frame is the WHOLE accumulated fold rather than a delta, \
-                 so a frame missed is nothing missed. It ends when the engine \
-                 ends it, or when this end hangs up.",
+    summary: "watch one conversation until it comes to rest",
+    detail: "It holds the line and prints the tail as the engine writes it, \
+             and it keeps holding across the engine's own step boundaries — a \
+             single held read ends when a STEP commits (yog's REMOTE §5.1), \
+             which is not the end of anything you asked about. It ends when \
+             the conversation comes to REST: it prints a line saying so and \
+             exits 0. A conversation already at rest is told to you at once, \
+             for the same reason. Ctrl-C is the other way out. \
+             EACH FRAME IS AN APPEND, not the whole answer (REMOTE §5.5): \
+             absorb every frame of a read, in order, onto an empty fold, and \
+             what you hold after the last one is what you have. A missed frame \
+             is missed text — which is what the holding is for.",
 };
 
 /// The roster read, typed. **Four reads and two acts, each a door whose arity

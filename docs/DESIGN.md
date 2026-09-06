@@ -685,6 +685,60 @@ cannot spell (`help`'s optional `[<verb>]`). And the usage's own door section is
 now derived from that table, where it used to carry the four paragraphs by hand
 beside a lookup that could reach none of them.
 
+**`lernie follow` is a serialization of a read spent REPEATEDLY, and that is
+the third shape on this surface** (`src/seat/follow.rs`, bl-3dca, bl-f076).
+Nothing new crosses the wire: what goes out is `agent` and then `follow`, the
+boundary's own envelopes, asked as many times as the conversation takes to
+come to rest. `follow` stays a row of the gesture table — the window's own lane
+spends it and the corpus round-trips it — and what the CLI word adds is the
+LOOP, exactly as `start` adds the local between two acts. `enroll` is the
+precedent for the arm: a row whose word is answered ahead of the table because
+what the seat does with the answer is not printing it.
+
+**Two defects, one cause.** The word was one `ask`: one held connection, its
+frames collected, printed at the end, and the exit code read off the last
+frame. On a **quiescent** conversation that blocked 31 seconds, printed one
+newline and exited 1 — byte for byte what a failed dial, a refused certificate
+and a dead engine look like, and those are what a first-time user suspects,
+when nothing at all was wrong. On a **live** one it returned mid-turn every
+time, because the engine ends a held read at the STEP boundary (REMOTE §5.1)
+and a turn is many steps: three consecutive reads of one working conversation
+ended after 3, 8 and 6 seconds. Watching an agent was `while true; do lernie
+follow …; done`, invented by the operator and losing whatever landed between
+two reads.
+
+**The rule: hold the line until the conversation RESTS, or until the user
+quits.** The engine's step boundary is not the end of anything an operator
+asked about, so a read that ends there is re-asked; what ends the word is the
+conversation coming to rest, which is a fact the engine already answers
+(`agent`'s `state`). **The state read comes first**, which is what fixes the
+quiescent case at no cost: a conversation already at rest opens no held
+connection at all, so the half-minute of silence is not shortened — it never
+happens — and the word exits 0 with a line saying which state it rested in and
+what makes it move again.
+
+**An unknown state ENDS the watch.** §4.9's rung 3 paints an unrecognised token
+as itself, and the safe reading here is *this seat cannot say that this is
+working*: ending and printing the word beats holding a connection open forever
+on a state nobody here understands.
+
+**This is the one place the product is written as it arrives.** A held read
+that printed only at the end would not be a watch, so `seat::follow` takes a
+sink: `src/main.rs` hands it a printer and the suite hands it a `Vec`. The
+decision stays entirely in the library, where a test reads it back, and the
+stream stays the entry point's — which is the same division that earns
+`main.rs` its place as the coverage floor's one exclusion.
+
+**And the rendering of a follow frame is what LANDED** (§4.37,
+`render/walls.rs`). A frame is an append (REMOTE §5.5) and a terminal is
+already a fold, so the appended text is printed in order, one frame a line, and
+folding here to re-print the accumulation each frame would be the same answer
+at quadratic cost. A frame that carried no content at all — the
+`{"delta": "thinking"}` a reasoning-heavy stretch sends over and over — renders
+as the delta alone, which is a heartbeat: printing the frame's own shape there
+said the same eight characters forever, and printing nothing is the silence
+this word was fixed for.
+
 **`lernie start <workspace> <goal>` is a serialization of BOTH acts, not a
 third gesture** (`src/seat/start.rs`). Nothing new crosses the wire: a
 `prepare` goes out, its answer is held in a local, and a `prompt` carrying that
@@ -3342,6 +3396,7 @@ of *what a seat printed*.
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from. | ~80 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
+| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the state read that opens and ends the watch, the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~155 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |

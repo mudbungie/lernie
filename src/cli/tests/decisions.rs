@@ -98,6 +98,15 @@ fn every_verb_in_the_table_is_typable() {
             assert_eq!(into, None);
             continue;
         }
+        // **`follow` is the other row whose word is not one ask** (bl-f076):
+        // the gesture is the row's, and the word spends it until the
+        // conversation comes to rest.
+        if verb.word == crate::verbs::FOLLOW.word {
+            let Decided::Follow { .. } = run(argv(&words)) else {
+                panic!("`follow` watches rather than asking once");
+            };
+            continue;
+        }
         // **`model` reads before it writes** (bl-1e5a): the assignment is this
         // row's own envelope, and what the word adds ahead of it is the
         // `models` read that says whether the id is one the provider offers.

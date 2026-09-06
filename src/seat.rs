@@ -29,6 +29,8 @@ use serde_json::Value;
 mod enroll;
 /// A gesture that names no workspace, asked of every channel this box holds.
 mod fan;
+/// Holding the line on one conversation until it comes to rest.
+mod follow;
 /// What this box says it holds, said without dialling any of it.
 mod holds;
 /// The role assignment, against the list the same seat can already fetch.
@@ -40,6 +42,7 @@ mod start;
 
 pub use enroll::enroll;
 pub use fan::fanned;
+pub use follow::follow;
 pub use holds::{OWN, channels, dial, listing};
 pub use model::model;
 pub use route::{Routed, route};

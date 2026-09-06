@@ -76,9 +76,10 @@ fn every_verb_in_the_table_is_typable() {
                 workspace,
                 name,
                 grade,
+                into,
             } = run(argv(&words))
             else {
-                panic!("`enroll` draws its answer rather than printing it");
+                panic!("`enroll` renders its answer rather than printing a frame");
             };
             assert_eq!(
                 (workspace.as_str(), name.as_str(), grade.as_str()),
@@ -88,6 +89,9 @@ fn every_verb_in_the_table_is_typable() {
                     crate::ui::Grade::default().word().as_str()
                 )
             );
+            // **The three words alone write nothing**, which is what makes the
+            // destination the operator's choice rather than this seat's.
+            assert_eq!(into, None);
             continue;
         }
         // **A verb with no `workspace` parameter has no way to name a
@@ -160,4 +164,50 @@ fn help_on_a_verb_answers_its_page_and_refuses_a_word_that_is_not_one() {
 #[test]
 fn a_bare_invocation_opens_the_window() {
     assert!(matches!(run(argv(&[])), Decided::Window));
+}
+
+/// **`--into <dir>` is read here**, in the pure function, because a destination
+/// on this box is decided entirely by what was typed (bl-1554).
+#[test]
+fn the_enrollment_carries_the_destination_it_was_given() {
+    let Decided::Enroll { into, grade, .. } = run(argv(&[
+        "enroll",
+        "ops",
+        "box-1",
+        "foot",
+        crate::cli::INTO,
+        "/home/u/carry",
+    ])) else {
+        panic!("`enroll` with a destination is still an enrollment");
+    };
+    assert_eq!(into.as_deref(), Some("/home/u/carry"));
+    assert_eq!(grade, "foot");
+}
+
+/// A tail that is anything else refuses **naming the one word it takes**,
+/// rather than earning the verb table's arity sentence about three arguments.
+#[test]
+fn a_tail_that_is_not_the_one_word_refuses_and_names_it() {
+    for tail in [
+        vec!["enroll", "ops", "box-1", "foot", "/home/u/carry"],
+        vec!["enroll", "ops", "box-1", "foot", "--out", "/home/u/carry"],
+        vec!["enroll", "ops", "box-1", "foot", crate::cli::INTO],
+        vec![
+            "enroll",
+            "ops",
+            "box-1",
+            "foot",
+            crate::cli::INTO,
+            "/home/u/carry",
+            "extra",
+        ],
+    ] {
+        let refused = said(&tail);
+        assert_eq!(refused.code, REFUSED, "{tail:?}");
+        assert!(
+            refused.text.contains(crate::cli::INTO),
+            "{tail:?}: {}",
+            refused.text
+        );
+    }
 }

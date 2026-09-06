@@ -38,17 +38,22 @@ pub enum Decided {
     /// envelopes and the second cannot be built until the first is answered.
     Start { address: String, goal: String },
     /// **Enroll a new box** in that workspace, under that name, at that grade
-    /// (REMOTE §8.4): one gesture, and a symbol printed instead of its answer.
+    /// (REMOTE §8.4): one gesture, and its answer rendered rather than handed
+    /// on as a frame.
     ///
     /// It has an arm of its own — rather than riding [`Ask`](Self::Ask) like
-    /// every other typed verb — because the reply carries a private key for a
-    /// box that does not exist yet, and the reply stream's destination is a
-    /// terminal's scrollback. What the act prints is the picture; see
+    /// every other typed verb — because the answer is not a reply stream: it is
+    /// the §8.4 **envelope**, which is a different object with two fields
+    /// fewer, and it is drawn as a symbol beside the line it encodes. See
     /// [`crate::seat::enroll`].
+    ///
+    /// `into` is the destination the operator named, and it is `None` on the
+    /// ordinary path — the seat writes nothing it was not asked to write.
     Enroll {
         workspace: String,
         name: String,
         grade: String,
+        into: Option<String>,
     },
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
@@ -105,7 +110,7 @@ pub fn run(args: Vec<String>) -> Decided {
         },
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
-        ["enroll", workspace, name, grade] => enroll(workspace, name, grade),
+        ["enroll", workspace, name, grade, tail @ ..] => enroll(workspace, name, grade, tail),
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,
@@ -123,7 +128,13 @@ fn ask(text: &str) -> Decided {
     }
 }
 
-/// **An enrollment, with the one argument this binary can settle itself.**
+/// **An enrollment, with the two arguments this binary can settle itself.**
+///
+/// The optional tail is read here for the same reason: `--into <dir>` is a
+/// destination on THIS box, so whether it was spelled correctly is decided
+/// entirely by what was typed. A tail that is anything else refuses naming the
+/// one word, rather than falling through to the verb table and earning an arity
+/// sentence about three arguments that says nothing about the fourth.
 ///
 /// `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
 /// this binary already holds them — `lernie help enroll` says so in its own
@@ -139,7 +150,18 @@ fn ask(text: &str) -> Decided {
 /// not knowable here. What is settled here is only whether the word is one of
 /// the two, read off [`crate::ui::Grade`]'s own list rather than a second copy
 /// of it.
-fn enroll(workspace: &str, name: &str, grade: &str) -> Decided {
+fn enroll(workspace: &str, name: &str, grade: &str, tail: &[&str]) -> Decided {
+    let into = match tail {
+        [] => None,
+        [word, dir] if *word == INTO => Some((*dir).to_owned()),
+        _ => {
+            return Decided::Say(Verdict::refused(format!(
+                "`lernie enroll` takes one optional word after the three, and it is \
+                 `{INTO} <dir>` — not {:?}",
+                tail.join(" ")
+            )));
+        }
+    };
     let words = crate::ui::Grade::both();
     let Some(held) = words.iter().find(|known| known.word() == grade) else {
         return Decided::Say(Verdict::refused(format!(
@@ -155,8 +177,13 @@ fn enroll(workspace: &str, name: &str, grade: &str) -> Decided {
         workspace: workspace.to_owned(),
         name: name.to_owned(),
         grade: held.word(),
+        into,
     }
 }
+
+/// The one word `enroll` takes after its three, and the one place it is spelled
+/// — the pattern that reads it and the refusal that teaches it both name this.
+pub const INTO: &str = "--into";
 
 /// A typed verb, a structural door, or a first word that is neither.
 ///

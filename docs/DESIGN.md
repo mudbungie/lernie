@@ -584,6 +584,16 @@ what *off* means, so a row would have to send a fifth word the boundary refuses
 by name — and `priority` carries a bool. Each is exactly the case the paragraph
 above refuses to special-case, and each is a typed door with no row.
 
+**The two arguments the seat settles itself are `enroll`'s grade and its
+destination** (bl-07b9, bl-1554). The second is `--into <dir>`, the one optional
+word in this surface, and it is read in the same place for the same reason: a
+directory on THIS box is decided entirely by what was typed. A tail that is
+anything else refuses naming that word rather than falling through to the verb
+table, whose arity sentence is about three arguments and says nothing about a
+fourth. The usage line stays computed from the row's parameters and stores
+nothing (`Verb::usage`); the word is stated in the row's own `detail`, which is
+what `lernie help enroll` prints.
+
 **The one argument the seat settles itself is `enroll`'s grade** (bl-07b9).
 `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
 this binary already holds them — `lernie help enroll` says so — so a typo used
@@ -1222,7 +1232,8 @@ delete the branch and close its pull request in the same breath.
 
 ### 4.15 Enrollment: the one reply this seat draws and refuses to keep (REMOTE §8.4)
 
-`src/reply/enrolled.rs`, `src/seat/enroll.rs`, `src/ui/enroll.rs`, `src/qr/`.
+`src/reply/enrolled.rs`, `src/seat/enroll.rs`, `src/seat/enroll/entry.rs`,
+`src/ui/enroll.rs`, `src/qr/`.
 
 **What the act is.** `enroll` names a workspace, a name and a grade, and the
 engine mints that box's leaf on its own CA, seats the registration, answers the
@@ -1232,23 +1243,58 @@ this does not lift REMOTE §1.4, and REMOTE §8.4 is the authority for the wire.
 
 **The reply is not the product, and that is the one place this seat departs
 from its own shape.** Every other verb hands its reply stream to stdout —
-`seat::ask` is the whole of it. This one must not: the answer carries a private
-key for a box that does not exist yet, and stdout is a scrollback, a shell
-history and whatever it was piped into. So `enroll` has an arm of its own all
-the way up to `cli::Decided`, and what it prints is the picture and the three
-fields that are not secret. `lernie ask` still prints the raw frame, which is
-correct — an operator who spells the envelope by hand has asked for the stream,
-and nothing here is a boundary against the operator. What the arm buys is that
-the *ordinary* path leaves nothing where nobody chose to put it.
+`seat::ask` is the whole of it. This one must not, because the product is not
+the frame: it is REMOTE §8.4's **envelope**, which is the same fields with two
+of them removed under a marker, and a seat that handed on the frame would leave
+the operator to reimplement the payload contract. So `enroll` has an arm of its
+own all the way up to `cli::Decided`. `lernie ask` still prints the raw frame,
+which is correct — an operator who spells the envelope by hand has asked for
+the stream, and nothing here is a boundary against the operator.
 
-**Nothing is written down, and it is asserted over the tree.** No file, no
-cache, no log line, no temporary anything, on either face: the command line
-holds it in locals, the window holds it in `Model::enroll` and drops it with
-the pane, and closing that pane is a control whose whole product is the
-forgetting. `seat::enroll`'s suite walks a throwaway root before and after the
-act and compares — over the **tree** rather than over the paths the code
-happens to know about, because a defect here is precisely a path nobody thought
-of.
+**One artifact, three renderings, and the operator picks which they can take**
+(bl-1554, bl-a8fd). The envelope is one line of compact JSON and everything
+else is a rendering of it: the **QR symbol** for a camera, the **line itself**
+for the paste box an android seat offers — *one line of JSON beginning
+`{"yog-enroll": 1`*, in that screen's own words — and `--into <dir>` for a box
+with neither, which lays the envelope down as the four files §4.6's entry is.
+There is one place the envelope is built (`Enrolled::envelope`) and the
+renderings are of that, so no two of them can disagree.
+
+**It printed the picture alone until bl-1554, and that closed the act to two of
+the four components.** A **foot** is by definition a box the operator is not
+sitting at — no screen, no camera — so the one component the act exists to
+provision was the one it could not reach; and the **phone** asks for the line
+verbatim, which the seat was drawing a picture of and discarding. Both had the
+same workaround — spell the envelope by hand through `lernie ask` and reassemble
+it against §8.4 — and the material was spent either way, because the engine
+shreds the key and a second enrollment under one name is refused.
+
+**The custody argument does not reach the text, and that is why this is not a
+relaxation.** What the rule below rules out is a copy *nobody chose*: a cache, a
+log, a temporary file. The envelope was on the screen either way, drawn as a
+picture of itself, and a photograph of a private key is a private key.
+
+**Nothing is written UNASKED, and it is asserted over the tree.** No file, no
+cache, no log line, no temporary anything, on either face: with no `--into` the
+command line holds the material in locals, the window holds it in
+`Model::enroll` and drops it with the pane, and closing that pane is a control
+whose whole product is the forgetting. `seat::enroll`'s suite walks a throwaway
+root before and after the act and compares — over the **tree** rather than over
+the paths the code happens to know about, because a defect here is precisely a
+path nobody thought of. A destination the operator NAMED is walked the same way
+and holds exactly the four files.
+
+**And a destination never costs the material.** The engine has already minted
+and shredded by the time any of this runs, so the answer is said on stdout
+whichever way the filing went, and only the exit code reports a directory that
+would not take it. Two rules follow from the same fact and neither is a
+convenience: a **symbol that will not fit** no longer refuses — it is one of
+three renderings and the other two still work, where refusing would burn a name
+over a drawing — and a **file already present** is never written over, because
+re-issuing distrusts nothing and a clobbered `client.pem` leaves two live
+certificates under one identity with the surviving key belonging to neither.
+The files are created with the mode on the `open` rather than corrected
+afterwards, so the key is never readable off the account even for an instant.
 
 **The QR encoder is this crate's own** (`src/qr/`), byte mode at correction
 level M, no new dependency. A QR symbol is a fully specified algorithm rather
@@ -2990,7 +3036,8 @@ count and reason.
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/start.rs` | the start family's three receipts: the staged body carried whole, one of those per candidate of a spread (§4.36), and the minted name. | ~110 |
 | `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields spelled once, read and re-said. | ~130 |
-| `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, a symbol printed instead of the answer, and nothing written down. | ~90 |
+| `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, and its envelope said as a symbol, as a line, and — where the operator names a destination — as an entry. | ~135 |
+| `src/seat/enroll/entry.rs` | the envelope decomposed into §4.6's four files, under `material`'s own names, created narrow and never over material already there. | ~90 |
 | `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~140 |
 | `src/ui/enroll/symbol.rs` | the symbol as geometry (bl-5e0e): the module pitch, which is a whole number of device pixels and as many of them as the pane has room for, and the one mesh every dark module is drawn in rather than a feathered rectangle apiece. | ~120 |
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |

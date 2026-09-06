@@ -31,7 +31,16 @@ fn main() -> ExitCode {
             workspace,
             name,
             grade,
-        } => rooted(|root| lernie::seat::enroll(root, &workspace, &name, &grade)),
+            into,
+        } => rooted(|root| {
+            lernie::seat::enroll(
+                root,
+                &workspace,
+                &name,
+                &grade,
+                into.as_deref().map(std::path::Path::new),
+            )
+        }),
         Decided::Window => rooted(window),
     };
     match verdict.stream {

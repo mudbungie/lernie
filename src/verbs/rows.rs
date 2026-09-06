@@ -158,14 +158,21 @@ pub const MESSAGE: Verb = Verb {
 pub const ENROLL: Verb = Verb {
     word: "enroll",
     params: &["workspace", "name", "grade"],
-    summary: "mint a new box's material and show it as a code to photograph",
+    summary: "mint a new box's material and say it as a code, a line and, if asked, four files",
     detail: "The engine mints a leaf on its own CA, seats the client in that \
-             workspace, answers the material and shreds the key. This seat \
-             prints the answer as a QR symbol and keeps NOTHING: not a file, \
-             not a cache, not a log line. `grade` is `operator` or `foot`. It \
-             is refused unless this box's own leaf is operator-grade — the new \
-             box says nothing and performs no act, which is why this is not the \
-             in-channel bootstrap REMOTE §1.4 forbids.",
+             workspace, answers the material and shreds the key. What comes \
+             back is REMOTE §8.4's envelope — one line of compact JSON under \
+             `{\"yog-enroll\":1,…}` — and this seat says it three ways, because \
+             they are the same bytes: a QR symbol for a camera, the line itself \
+             for the paste box an android seat offers, and `--into <dir>` for a \
+             box with neither, which writes the four files an entry is \
+             (`ca.pem`, `client.pem`, `client.key`, `address`) into that \
+             directory for you to carry to the machine they are for. With no \
+             `--into` this seat keeps NOTHING: not a file, not a cache, not a \
+             log line. `grade` is `operator` or `foot`. It is refused unless \
+             this box's own leaf is operator-grade — the new box says nothing \
+             and performs no act, which is why this is not the in-channel \
+             bootstrap REMOTE §1.4 forbids.",
 };
 
 /// The advance's row.

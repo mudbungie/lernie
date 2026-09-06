@@ -363,11 +363,14 @@ uninstall:
 # launch is the adoption. `scripts/deploy/lernie-update`'s header carries the
 # protocol-skew consequence — a seat may run ahead of its engine for up to an
 # hour, and the fail-closed hello refusing it is the designed behavior.
+# With no HOST it seats THIS box, and that is the common case rather than the
+# fallback: a seat is a window, the box most likely to run a window is the
+# workstation somebody is sitting at, and that box is the one least likely to be
+# running an sshd — it cannot ssh to itself (bl-bae7). One target, two carriers,
+# no second verb; `scripts/deploy/seat.sh` spells the payload once and only its
+# `put`/`run` differ.
 deploy-seat:
-	@[ -n "$(HOST)" ] || { \
-	  echo "deploy-seat: HOST is required — make deploy-seat HOST=<ssh-host>" >&2; \
-	  exit 2; }
-	@scripts/deploy/seat.sh "$(HOST)"
+	@scripts/deploy/seat.sh $(HOST)
 
 # The reconciler's regression half, and a step of `lint` above rather than a
 # target beside it. It drives the real `lernie-update` under fake `curl` and

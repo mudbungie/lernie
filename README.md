@@ -305,14 +305,28 @@ non-Apple hardware. Nothing here acquires one.
 
 A seat box tracks released versions unattended:
 
-    make deploy-seat HOST=<ssh-host>
+    make deploy-seat                    # THIS box
+    make deploy-seat HOST=<ssh-host>    # that one
 
-`HOST` is an ssh destination and the only parameter — no address, account or
-machine name is committed anywhere in this tree. That is the disclosure gate's
-rule, and the severability one from the other side: a second seat is a second
-argument rather than an edit, and a box that should stop tracking releases is
-one `systemctl --user disable lernie-update.timer` away from stopping, with
-nothing to change here.
+**With no HOST it seats the box you are on, and that is the common case rather
+than a fallback** (bl-bae7). A seat is a *window*, the box most likely to run a
+window is the workstation somebody is sitting at, and that is the box least
+likely to be running an sshd — it cannot ssh to itself. The remote form was the
+only door until bl-bae7, so the seat most likely to exist was the one that could
+not arm its own timer, and its lernie was whatever the last hand install left.
+
+**Two carriers, one payload.** The three files and the four arming commands are
+spelled once in `scripts/deploy/seat.sh` and do not know which way they arrived;
+only its `put` and `run` differ. A local seating is therefore not a second
+recipe that can drift from the remote one — the same idiom yog's
+`scripts/deploy/verify.sh` states for its own `--local`.
+
+`HOST`, when given, is an ssh destination and the only parameter — no address,
+account or machine name is committed anywhere in this tree. That is the
+disclosure gate's rule, and the severability one from the other side: a second
+seat is a second argument rather than an edit, and a box that should stop
+tracking releases is one `systemctl --user disable lernie-update.timer` away
+from stopping, with nothing to change here.
 
 It seats three text files — `scripts/deploy/lernie-update` and its `.timer` and
 `.service` — and carries no build. The engine's deployment moves an image

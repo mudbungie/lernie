@@ -1,7 +1,8 @@
 +++
 title = "lernie enroll prints only a QR, and nothing in the suite prints the yog-enroll envelope the phone app asks you to paste"
 created = 1788673822
-updated = 1788673822
+updated = 1788674116
+claimant = "Cantaloups-S2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

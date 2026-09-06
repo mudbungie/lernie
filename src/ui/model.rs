@@ -59,6 +59,8 @@ mod records;
 mod spine;
 /// A start, between its two acts.
 mod start;
+/// What hangs under a conversation, and whether it is on the glass.
+mod subtree;
 /// The trail pane between frames: open or not, and what each channel has done.
 mod trail;
 /// The tuning pane between frames, and the four acts its controls spend.

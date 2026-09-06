@@ -1,6 +1,9 @@
 //! The conversation list: the empty states, the headline, the age, the indent,
 //! and the click that selects.
 
+/// What hangs under a conversation, on the glass.
+mod subtree;
+
 use super::{NO_CONVERSATIONS, NO_WALL, NOT_ANSWERED, age, headline, no_channel, render};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, Tone};

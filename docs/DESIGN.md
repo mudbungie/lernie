@@ -968,6 +968,40 @@ widget that took it. The control names the act it fires and carries the size of
 what is hidden — *show all 700 lines, 32985 bytes*, then *fold* — on the pin
 pair's rule (§4.25): two words, never one that toggles.
 
+**What hangs UNDER a conversation is under it, and the rule is about descent
+rather than about compactors** (`src/ui/model/subtree.rs`, `convs::subtree`;
+bl-00f5). One session of ordinary work answered twelve conversations, of which
+five were compactors the operator never started — each with a minted name as
+memorable as the work's, each at the same weight, four of the five belonging to
+ONE conversation. The rows were not wrong: `depth` is 1 and the preview says
+what they are. But an index whose majority is machinery is an index people
+learn to stop reading.
+
+**The wire carries no kind, and it should not.** A conversation row spells its
+address, its badge, its preview and how far it hangs under its root; nothing on
+it says *this one is a compactor*, and a fork's candidate is a depth-1 row the
+operator DID start — so a seat that guessed from a preview would be reading
+prose to make a structural decision. What the engine does give is the descent,
+and the descent is the whole answer: the list is the conversations, a root is
+always on the glass, and its subtree is one gesture away with the count on the
+control. That satisfies the ball's own first remedy — *compactors fold under
+the conversation they compact* — with no rule about compactors, and folds a
+fork's candidates on the same terms, which is right for the same reason: both
+are what that conversation is made of.
+
+**The fold is applied to `Model::rows`, which is the one list the pointer
+paints and the keyboard walks** (§4.11's own rule, `crate::ui::model::claim`).
+Applied in the pane it would have made a row a click could not reach and a key
+could — the second surface `crate::ui::keys` exists in order not to have.
+`Model::opened` is a set of what is OPEN rather than of what is folded, so the
+default costs no state at all, and it is a navigation the operator performed,
+which is `Model::column`'s own standing.
+
+**What the attention rows say is not this seat's half.** Every compactor in
+that session earned an `attention` row reading *came to rest — your turn*,
+which is false of a finished compaction; that is a fact the engine answers, and
+yog's own ball owns it.
+
 **A section header names the address it dials** (`ui::Channel::dials`,
 bl-77df). Two entries naming one address are two trust relationships that
 happen to terminate at one listener (§8.2), which is lawful — and an entry
@@ -3387,6 +3421,7 @@ of *what a seat printed*.
 | `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~240 |
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
+| `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |

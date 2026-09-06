@@ -97,11 +97,18 @@ impl Model {
     /// One list, because the pointer and the keyboard both read it: a row a
     /// click could reach and a key could not is the second surface
     /// `crate::ui::keys` exists in order not to have.
+    /// **What hangs under a conversation is under it** (`super::subtree`): the
+    /// list is the conversations, and an unopened subtree is one gesture away
+    /// rather than five rows of it. The filter is applied HERE, on the one
+    /// list, so a row a click cannot reach is one a key cannot walk onto
+    /// either.
     pub fn rows(&self) -> Vec<ConvRow> {
-        self.pending()
-            .into_iter()
-            .chain(self.convs.iter().cloned())
-            .collect()
+        self.unfolded(
+            self.pending()
+                .into_iter()
+                .chain(self.convs.iter().cloned())
+                .collect(),
+        )
     }
 
     /// **Spend the claim against what the engine answered.**

@@ -96,6 +96,7 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, row: &ConvRow, 
     let selected = model.conversation.as_ref() == Some(&row.root_id);
     ui.horizontal(|ui| {
         ui.add_space(indent(row.depth));
+        subtree(ui, model, row);
         // **The headline TRUNCATES, and that is a layout invariant rather than
         // a nicety** (bl-b3b2). `Ui::selectable_label` lays its text with
         // `TextWrapMode::Extend` — hard-coded, and doubly so inside a
@@ -178,6 +179,35 @@ fn conversation(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, row: &ConvRow, 
         beneath(ui, row, &row.preview);
     }
 }
+
+/// **The control that opens what hangs under a conversation** (bl-00f5), on
+/// the rows that have anything under them and on no others.
+///
+/// It names the act and how much of it there is — the pin pair's rule
+/// (§4.25) and the tool fold's (§4.11): two words rather than one that
+/// toggles, so a reader never has to work out which way it will go. The count
+/// is the engine's `members` less this row itself, which is the same number
+/// the headline already carries as *N members* and is not re-derived from the
+/// list.
+fn subtree(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
+    let Some(under) = row.members.checked_sub(1).filter(|under| *under > 0) else {
+        return;
+    };
+    let open = model.subtree_open(&row.root_id);
+    let word = if open {
+        format!("{HIDE} {under}")
+    } else {
+        format!("{SHOW} {under}")
+    };
+    if ui.small_button(word).clicked() {
+        model.toggle_subtree(&row.root_id.clone());
+    }
+}
+
+/// The word on the control while a subtree is folded — see [`subtree`].
+pub const SHOW: &str = "show";
+/// And the one it wears while it is open.
+pub const HIDE: &str = "hide";
 
 /// A line hung under a row's headline, at the row's own indent and in its own
 /// ink. One function rather than two blocks that must not drift: the second

@@ -199,6 +199,15 @@ pub struct Model {
     pub reveal: bool,
     /// The selected conversation's id.
     pub conversation: Option<String>,
+    /// **Which conversations have had their subtree opened** (`subtree`;
+    /// bl-00f5).
+    ///
+    /// A set of what is OPEN rather than of what is folded, so the default
+    /// costs no state at all: a seat that has never been told otherwise shows
+    /// the conversations and not the machinery under them. It is a navigation
+    /// the operator performed, which is the one class of thing on this struct
+    /// no other fact can be asked for — [`Self::column`]'s own standing.
+    pub opened: std::collections::BTreeSet<String>,
     /// What the operator has typed and not yet sent.
     pub draft: String,
     /// **The arming for the unmaking** (`crate::ui::composer::acts`): the name

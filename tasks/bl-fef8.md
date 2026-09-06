@@ -1,7 +1,8 @@
 +++
 title = "the two left columns are fixed width at every window size, their rows wrap after three words, the preview is cut without an ellipsis, and a 160px band beside them is always empty"
 created = 1788673700
-updated = 1788673700
+updated = 1788674445
+claimant = "Cantaloups-S3"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

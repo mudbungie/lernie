@@ -1,7 +1,7 @@
 +++
 title = "lernie enroll prints only a QR, and nothing in the suite prints the yog-enroll envelope the phone app asks you to paste"
 created = 1788673822
-updated = 1788674116
+updated = 1788674420
 claimant = "Cantaloups-S2"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
@@ -61,3 +61,7 @@ line it encodes.
 p2. The phone is one of the four components and this is the only supported way
 to seat one that does not require shell access to the device. Today the
 advertised path is closed unless the operator can decode their own QR.
+
+---
+
+Same change as bl-1554, landed there: the seat now says the REMOTE 8.4 envelope as a line of text beside the symbol, unconditionally. One artifact (Enrolled::envelope), three renderings — symbol, line, and --into <dir> which lays it down as the four entry files. The line is exactly what the android paste box takes: compact JSON, the six fields under the marker, no ok/kind, on one line. One note for the phone lane: the envelope's key order is serde_json's own, which is sorted, so the marker lands LAST — the paste screen's hint text says 'one line of JSON beginning {"yog-enroll": 1'. Order is not semantic (a scanner parses the object, and 8.4 fixes none) but the hint is wrong about what the line begins with; either the hint changes or the encoder puts the marker first at both ends.

@@ -170,12 +170,35 @@ fn live_rows(thinking: &str, text: &str) -> Vec<Row> {
 }
 
 /// Paint the pane. **The heading is the shell's** — see [`HEADING`].
+///
+/// **The pane is anchored to the TAIL, and the anchoring is a scroll state per
+/// conversation rather than a gesture** (bl-83ae). Two facts do the whole of
+/// it and neither is a flag on the model.
+///
+/// The scroll state is salted with the conversation's own id, so *where I am
+/// in this transcript* is a property of the transcript rather than of the
+/// pane: selecting a conversation for the first time meets a fresh state,
+/// egui's fresh state is stuck-to-end, and the tail is what lands on the glass.
+/// A conversation scrolled up in and come back to is where it was left, which
+/// is the same rule read a second time.
+///
+/// [`egui::ScrollArea::stick_to_bottom`] is the following: while the offset is
+/// at the end the pane rides every append — the follow lane's write cadence
+/// included — and the first scroll away takes the stickiness off, because
+/// egui re-derives it from *is the offset at the end* on every frame. So
+/// scrolling back down starts it following again, with no control to press and
+/// nothing on the model to get out of step. Until this the pane opened at
+/// message 001 and stayed there: a live conversation's answer arrived thirty
+/// screens below the fold, which is the whole middle of the window unusable
+/// for the two things it is opened for.
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
-    if model.conversation.is_none() {
+    let Some(conversation) = model.conversation.as_ref() else {
         ui.label(NO_CONVERSATION);
         return;
-    }
+    };
     egui::ScrollArea::vertical()
+        .id_salt(conversation)
+        .stick_to_bottom(true)
         .auto_shrink([false, false])
         .show(ui, |ui| {
             for row in rows(&model.transcript, model.live.as_ref()) {

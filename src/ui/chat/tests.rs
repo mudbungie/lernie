@@ -1,5 +1,12 @@
 //! The chat pane as data: every entry kind, the two unreadables held apart, and
 //! the live fold that replaces rather than accretes.
+//!
+//! Where the pane OPENS and what it follows is [`anchor`], split off because
+//! it is the one question here answered on the glass rather than in the row
+//! projection: a scroll offset is not a value `rows` can be asked for.
+
+/// The tail anchor, the follow, and the scroll that releases it.
+mod anchor;
 
 use super::{LIVE, NO_CONVERSATION, Row, render, rows};
 use crate::reply::stream::{Delta, Stream};

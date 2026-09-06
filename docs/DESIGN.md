@@ -741,6 +741,25 @@ showing nothing buys the chat pane a width it still cannot use. The policy is a
 pure function of one number, so it is a value a test reads back rather than a
 layout somebody has to look at.
 
+**The transcript is anchored to its TAIL, and the anchor is a scroll state per
+conversation rather than a gesture** (`src/ui/chat.rs`; bl-83ae). The pane
+opened on message 001 and stayed there — a conversation streaming its eleventh
+step painted its second, unmoved, and a sixty-entry transcript cost about
+thirty screens of scrolling to read what the agent had just said, with no *jump
+to latest* control anywhere. Two facts close it and neither is a field on the
+model. The scroll area is **salted with the conversation's own id**, so *where
+I am in this transcript* is a property of the transcript: a conversation
+selected for the first time meets a fresh scroll state, egui's fresh state is
+stuck-to-end, and the tail is what lands on the glass — while one scrolled up
+in and come back to is where it was left, which is the same rule read again.
+And `stick_to_bottom` is the following: while the offset is at the end the pane
+rides every append, the follow lane's write cadence included, and the first
+scroll away takes the stickiness off because egui re-derives it from *is the
+offset at the end* on every frame. So scrolling back down starts it following
+again, with no control to press and nothing to get out of step. `reveal`'s
+reasoning above is the same one from the other side — a scroll IS the operator
+choosing what to look at, so the pane must stop following the moment they do.
+
 **A section header names the address it dials** (`ui::Channel::dials`,
 bl-77df). Two entries naming one address are two trust relationships that
 happen to terminate at one listener (§8.2), which is lawful — and an entry

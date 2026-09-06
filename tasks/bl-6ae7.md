@@ -1,7 +1,8 @@
 +++
 title = "every CLI verb prints one line of raw JSON and there is no rendered form: transcript is one line of tens of kilobytes, carrying each entry twice"
 created = 1788673691
-updated = 1788673691
+updated = 1788674106
+claimant = "Cantaloups-S1"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

@@ -95,7 +95,7 @@ impl Link {
                 // **An act that earned no reply is an exchange, not a
                 // relationship** (REMOTE §3, bl-3969), so it goes to the bar
                 // and never to a channel's section — see `Model::acted`.
-                Said::Acted { op, reach } => model.acted(&op, &reach),
+                Said::Acted { op, reach, said } => model.acted(&op, &reach, said),
                 // The same door as a frame, with the one fact a refusal
                 // cannot carry for itself — which act it answered.
                 Said::Receipt { op, frame } => {

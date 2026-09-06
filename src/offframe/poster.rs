@@ -158,6 +158,7 @@ fn said(posted: &Posted, reach: Reach) -> Said {
     Said::Acted {
         op: crate::envelope::op(&posted.envelope),
         reach,
+        said: crate::envelope::said(&posted.envelope),
     }
 }
 

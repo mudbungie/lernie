@@ -189,7 +189,14 @@ impl Model {
         }
     }
 
-    fn refund(&mut self, goal: &str) {
+    /// **Words back into an empty box, and never into a full one.**
+    ///
+    /// `pub(super)` since bl-e85f, because two acts give words back and the
+    /// rule is one: a start taken back hands over its goal, and a deposit that
+    /// never left this box hands over what was typed. The guard is what makes
+    /// it safe to call from either — a draft the operator has typed since is
+    /// theirs, and a refund that overwrote it would lose the newer of the two.
+    pub(super) fn refund(&mut self, goal: &str) {
         if self.draft.trim().is_empty() {
             goal.clone_into(&mut self.draft);
         }

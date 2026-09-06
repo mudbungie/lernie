@@ -254,6 +254,7 @@ fn an_unreadable_receipt_or_none_at_all_takes_the_start_back() {
     model.acted(
         crate::verbs::PREPARE,
         &crate::channel::Reach::Unsent("no channel".to_owned()),
+        None,
     );
     assert_eq!(model.start, None);
     assert_eq!(model.draft, "do the thing");
@@ -267,6 +268,7 @@ fn an_unreadable_receipt_or_none_at_all_takes_the_start_back() {
     model.acted(
         "nudge",
         &crate::channel::Reach::Unsent("no channel".to_owned()),
+        None,
     );
     assert!(model.start.is_some());
     assert_eq!(model.draft, "");

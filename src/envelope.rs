@@ -95,6 +95,30 @@ pub fn op(envelope: &Value) -> String {
         .to_owned()
 }
 
+/// **The words an operator typed INTO this envelope**, or `None` where it
+/// carries none (bl-e85f).
+///
+/// One key, because one key is what the vocabulary has: `message` and
+/// `interrupt` are the two gestures a composer fires and both spell their body
+/// `content` (`crate::verbs`). Every other envelope this window composes is
+/// built from what is on the glass — a name, a rank, a verdict — and can be
+/// composed again by looking at it, so there is nothing to give back.
+///
+/// It exists so the words can ride WITH the act they belong to, exactly as
+/// [`op`] does and for the same reason (`crate::state::traffic`): a seat that
+/// kept them in a field instead would be holding a second copy of a thing that
+/// is already in flight, and would have to work out which act's copy it was
+/// looking at when one came back.
+pub fn said(envelope: &Value) -> Option<String> {
+    envelope
+        .get(CONTENT)
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+}
+
+/// The key both composed gestures spell their body with — see [`said`].
+const CONTENT: &str = "content";
+
 /// The workspace this envelope names, or `None` when it names none — the
 /// roster, the board, the trail and every gesture whose subject is the whole
 /// world.

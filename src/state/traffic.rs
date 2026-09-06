@@ -75,7 +75,18 @@ pub enum Said {
     /// the bar where a refusal goes. The `op` rides with it because the bar is
     /// one line for the whole window: a sentence about an act that does not
     /// name the act is a sentence about nothing an operator can act on.
-    Acted { op: String, reach: Reach },
+    Acted {
+        op: String,
+        reach: Reach,
+        /// **The words the gesture carried**, where it carried any
+        /// (`crate::envelope::said`). They ride with the act for `op`'s own
+        /// reason: an act that provably never left this box is one the
+        /// operator has to type again, and the seat should not be the reason
+        /// they do. A field on the model instead would be a second copy of
+        /// something already in flight, and nothing could say which act's copy
+        /// had come back.
+        said: Option<String>,
+    },
     /// **A routed gesture's reply frame**, stamped with the op it answers
     /// (bl-b180).
     ///

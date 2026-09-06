@@ -2275,6 +2275,34 @@ half of the ruling, and it is a plain defect this ball found on its path:
   only in the retired `Start`, which is the one narrow residual and is recorded
   rather than papered over.
 
+**A DEPOSIT that never left this box is refunded on the same rule, and only
+that one** (`Model::acted`, `crate::envelope::said`; bl-e85f). The notice for
+an unsent act reads, in this seat's own words, *nothing happened — it is safe
+to do it again*, and the seat then threw away the one thing *again* needs: the
+composer showed its placeholder and the typed text was gone, so *do it again*
+meant retyping a paragraph-long goal. It is the one case where the composed
+text is provably still needed, because the notice's own claim is that the act
+did not happen.
+
+Three things make it a rule rather than a patch:
+
+- **The words ride WITH the act**, on `Said::Acted`, exactly as its `op` does
+  and for that field's own reason (`crate::state::traffic`). A seat that kept
+  them in a field would be holding a second copy of something already in
+  flight, and would have nothing to say about which act's copy had come back.
+  `crate::envelope::said` reads them off the envelope by the one key the
+  vocabulary has — `message` and `interrupt` are the two gestures a composer
+  fires and both spell their body `content`; every other envelope this window
+  composes is built from what is on the glass and can be composed again by
+  looking at it, so there is nothing to give back.
+- **Only where nothing crossed**, which is the whole of the asymmetry with the
+  start above. IN DOUBT means the engine had the gesture and may have run it,
+  and its sentence says so — words back under a live `send` would invite
+  exactly the resend REMOTE §3 forbids.
+- **One refund, shared.** `Model::refund` is the start's, and the guard that
+  makes it safe for either caller is the same: words go back only into an empty
+  box, so a draft typed since is never clobbered.
+
 **Not built, with the reason.** No `Query::Providers` read from the start box
 (the seat would hold a prediction the door re-derives anyway, and the read
 races the typing); no `sign_in_required` flag on the `prepared` body (the same
@@ -3246,7 +3274,8 @@ of *what a seat printed*.
 | `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~240 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
-| `src/ui/model/absorb.rs` | **the one door a reply comes in through**, and the leg that brought none: what is filed, what becomes the notice, and why an unreachable channel is neither — and the act's receipt, which is the same door knowing which act it answers (§4.26). | ~205 |
+| `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
+| `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |

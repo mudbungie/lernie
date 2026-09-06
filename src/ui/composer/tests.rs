@@ -1,6 +1,9 @@
 //! The composer: what it refuses to fire, what it composes when it does, and
 //! the draft that survives a mis-click.
 
+/// What a refused act does to the box it came out of.
+mod refund;
+
 use super::{INTERRUPT, NOWHERE, NUDGE, SEND, render, start};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};

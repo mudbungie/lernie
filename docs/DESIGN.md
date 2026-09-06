@@ -873,6 +873,47 @@ again, with no control to press and nothing to get out of step. `reveal`'s
 reasoning above is the same one from the other side — a scroll IS the operator
 choosing what to look at, so the pane must stop following the moment they do.
 
+**The pane says WHICH conversation it is showing** (`src/ui/chat/subject.rs`;
+bl-7b03). The header was the literal word *conversation*, on every
+conversation and in every state: a reader scrolling a transcript could not tell
+whether what they were reading was still running, what it had cost, or which
+model had answered. Every one of those facts was typed, decoded and rendered —
+on the records pane, two clicks away.
+
+**The column's NAME is still the shell's and this is its SUBJECT.** §4.11's own
+rule (bl-dfda) says a column's name has one home, and it does: *conversation*
+is painted over the pane in the broad shape and on the bar in the narrow one.
+What this adds is content — the thing the rest of the pane is about — which is
+exactly where the records pane puts its own header (§4.32), and it stands
+outside the scrolled region for the roster's reason: it is the one thing here
+that is always true of what is being read.
+
+**Every line is the engine's, composed once.** `crate::ui::records::header`
+already assembles the identity, the resting clause, the spend and the context
+reading that names the model, so this reads them from there rather than
+re-deriving them: two surfaces reading one answer is one home, and two surfaces
+composing one sentence is two. The failure clause goes above the costing,
+because it is why there is no more of it — *a conversation that died on a bad
+model id looked identical to one that finished*.
+
+**Which model answered has two sources and they answer different questions.**
+The engine's context reading names the model it is holding a window open for —
+the one the NEXT turn will use, the better answer, and the one the costing line
+already carries. But a reading exists only while there is one to take, and a
+**quiescent** conversation has none: that is the state the question is actually
+asked in, and it is why *nothing in the window says which model answered* was
+true of every conversation that had finished. So the transcript's own last
+model turn answers when the engine's reading does not — a fact this seat
+already holds, about a turn that happened, never a prediction about the next
+one — and it stands down the moment the engine has a reading, rather than being
+joined beside it.
+
+**So the `agent` read moved out of the records pane's standing set and into the
+conversation's own** (`asker::wall`). It is one read MOVED and never a second
+copy: the pane still paints off `Model::records.agent`, and a header that is
+only true while a pane two clicks away is open is a header that is usually not
+there.
+
 **A machine's answer is folded and a person's is not** (`src/ui/chat/fold.rs`,
 `chat::folded`; bl-90d0). litany bounds a tool stream at 16 KiB head plus 16
 KiB tail before it reaches a transcript, so up to 32 KiB per call arrived here
@@ -3393,6 +3434,7 @@ of *what a seat printed*.
 | `src/ui/chat.rs` | the conversation pane: where it opens, what it follows, and how a folded row is painted. | ~110 |
 | `src/ui/chat/rows.rs` | one conversation as rows, and the live fold the lane hands over whole. A half of a turn with nothing in it is no row, on either path, because the rule has one home (`half`) rather than one copy per route. | ~190 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
+| `src/ui/chat/subject.rs` | which conversation the pane is showing: name, resting clause, failure and costing, read off the records header rather than re-derived. | ~65 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |

@@ -20,6 +20,8 @@
 pub mod fold;
 /// Every entry of a transcript as the rows this pane paints.
 pub mod rows;
+/// Which conversation this is: the header over the transcript.
+pub mod subject;
 
 pub use fold::Fold;
 pub use rows::{Row, rows};
@@ -62,6 +64,13 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
         ui.label(NO_CONVERSATION);
         return;
     };
+    // **Which conversation this is, above the transcript** (bl-7b03). The
+    // column's NAME is still the shell's — *conversation*, painted over the
+    // pane in the broad shape and on the bar in the narrow one — and this is
+    // its SUBJECT, which is content and belongs in the pane. It stands outside
+    // the scrolled region for `crate::ui::roster`'s reason: it is the one thing
+    // here that is always true of what is being read.
+    subject::render(ui, model);
     egui::ScrollArea::vertical()
         .id_salt(conversation)
         .stick_to_bottom(true)

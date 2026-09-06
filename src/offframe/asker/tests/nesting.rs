@@ -178,9 +178,11 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
+            vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
+            vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "steps", "rows": [], "orphan": "none"})],
             vec![json!({"ok": true, "kind": "files", "worktree": false})],
         ],
@@ -210,15 +212,20 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
         .filter_map(|said| said.get("op").and_then(Value::as_str))
         .map(str::to_owned)
         .collect();
+    // **`agent` rides with the transcript on both passes** (bl-7b03): the
+    // conversation pane's header needs the row whether or not this pane is
+    // open, so it is the selection's read and no longer this pane's.
     assert_eq!(
         ops,
         vec![
             "workspaces",
             "conversations",
             "transcript",
+            "agent",
             "workspaces",
             "conversations",
             "transcript",
+            "agent",
             "steps",
             "files",
         ]

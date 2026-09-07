@@ -1,7 +1,8 @@
 +++
 title = "lernie --json enroll prints an ANSI QR block instead of frames, and enrolment is one-shot: a scripted enroll destroys the material it was supposed to hand over"
 created = 1788745981
-updated = 1788745981
+updated = 1788746171
+claimant = "Cantaloups-S7"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r2"]

@@ -160,3 +160,51 @@ fn a_row_no_entry_names_is_faint_and_takes_no_click() {
     });
     assert_eq!(model.aim, None, "a click on it aims nothing");
 }
+
+/// **The window's acts are a compact strip, and so is the aimed wall's band**
+/// (bl-f251, item 4): at the roster's own width the six verbs stand on at
+/// most two lines and the wall's eight on at most three, every one of them
+/// on the glass whole — where the first pass had six full-width rows.
+#[test]
+fn the_two_bands_are_compact_strips_at_the_rosters_width() {
+    let mut model = seated();
+    let window = Window::sized(crate::ui::shell::policy::ROSTER, 600.0);
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    let lines = |words: &[&str]| -> usize {
+        let mut tops: Vec<f32> = words
+            .iter()
+            .map(|word| {
+                let run = runs
+                    .iter()
+                    .find(|run| run.text == *word)
+                    .unwrap_or_else(|| panic!("{word:?} is on the glass whole"));
+                run.laid.min.y
+            })
+            .collect();
+        tops.sort_by(f32::total_cmp);
+        tops.dedup_by(|a, b| (*a - *b).abs() < 1.0);
+        tops.len()
+    };
+    let window_acts = [
+        acts::REFRESH,
+        crate::ui::queue::OPEN,
+        crate::ui::commands::OPEN,
+        crate::ui::trail::OPEN,
+        crate::ui::board::OPEN,
+        crate::ui::find::OPEN,
+    ];
+    assert!(lines(&window_acts) <= 2, "the window's strip");
+    let wall_acts = [
+        super::super::PIN,
+        crate::ui::enroll::OPEN,
+        crate::ui::tuning::OPEN,
+        crate::ui::login::OPEN,
+        crate::ui::clients::OPEN,
+        crate::ui::config::OPEN,
+        crate::ui::fleet::OPEN,
+        crate::ui::unmake::OPEN,
+    ];
+    assert!(lines(&wall_acts) <= 3, "the wall's strip");
+}

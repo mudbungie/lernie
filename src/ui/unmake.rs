@@ -41,7 +41,7 @@
 use crate::ui::{Model, theme};
 
 /// The word that opens it, on the wall the window is aimed at.
-pub const OPEN: &str = "unmake this workspace…";
+pub const OPEN: &str = "unmake…";
 /// The word that closes it, having unmade nothing. It says what it leaves
 /// rather than what it abandons: `cancel` on a destructive pane names the
 /// destruction as the thing in progress, and nothing is in progress.

@@ -38,7 +38,7 @@
 use crate::ui::{Model, theme};
 
 /// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "what these engines answer…";
+pub const OPEN: &str = "verbs…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
 /// The pane's own heading.

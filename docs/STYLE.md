@@ -63,11 +63,14 @@ say which column the arrows belong to by wearing the brand mark, and a
 column's rows say what state each thing is in by their rule. No control
 says *open* or *select*; position says it. The window-level acts — the queue
 of what is waiting, the trail, the board, the engines' vocabulary, a search,
-and asking every channel again — are a band of entries at the top of the
-roster column, where a desktop's global navigation is expected, styled as
-rows and not as chips. The queue's entry wears the attention accent while
-anything is waiting, so the one control most worth pressing is the one that
-is coloured.
+and asking every channel again — are a **compact strip** across the top of
+the roster column, where a desktop's global navigation is expected: one
+wrapped row of controls, a short verb apiece with the ellipsis on every one
+that leads somewhere (bl-f251). The first pass had them as six full-width
+rows of prose, which read as a list of things rather than a place to go. The
+aimed wall's acts are the same strip under its row. The queue's control
+wears the attention accent while anything is waiting, so the one control
+most worth pressing is the one that is coloured.
 
 **A conversation's facts are arranged, not listed.** Over the transcript, the
 header (bl-f251): its name at `HEADING` size in body ink with its state word
@@ -182,6 +185,12 @@ the rows and grows only from the words, never from the panel it stands in.
 glass; the attention accent on an armed irreversible act. **A compact
 control** is a glyph and a word in one run — `theme::worded` — and the glyph
 is a token of the theme, asserted to have a glyph in the body font.
+
+**A strip** (the window's acts, the aimed wall's acts): compact controls in
+one wrapped row, a short verb each — `refresh`, `verbs…`, `roles…`,
+`unmake…` — never a sentence, so that at the roster's own width the six
+stand on two lines and the eight on three. A verb that opens a pane carries
+the ellipsis; the one that only asks does not.
 
 **A notice**: one sentence under the top edge in the state's ink — `Error`
 for a refusal or an unreadable answer, `Annotation` for a note — with no

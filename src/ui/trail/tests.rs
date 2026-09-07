@@ -17,8 +17,10 @@ fn the_roster_s_control_opens_the_pane() {
     assert!(model.trailing(), "the control opened nothing");
     let glass = painted(&mut model);
     assert!(glass.contains(HEADING), "{glass}");
-    // And the strip stands down while a pane covers the conversation.
-    assert!(!glass.contains(OPEN), "{glass}");
+    // And the strip stands down while a pane covers the conversation — read
+    // as a whole run, because the pane's own cut control ends in the same
+    // word.
+    assert!(!glass.lines().any(|line| line == OPEN), "{glass}");
 }
 
 /// **The three emptinesses are three sentences.** Nobody has answered, the

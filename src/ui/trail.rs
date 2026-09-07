@@ -38,7 +38,7 @@ use crate::reply::ops::{CLEAN, OpRow};
 use crate::ui::{Model, theme};
 
 /// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "the trail…";
+pub const OPEN: &str = "trail…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
 /// The word on the control that appends the operator's watermark.

@@ -50,7 +50,7 @@ mod candidates;
 mod rows;
 
 /// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "run the fleet…";
+pub const OPEN: &str = "fleet…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
 /// The pane's own heading.

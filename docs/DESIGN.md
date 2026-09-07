@@ -4017,6 +4017,17 @@ beside a block is the speaker's weight, and a divider between blocks would
 have made it read as a separator. Asserted off the glass as heights and
 gaps, never as a picture.
 
+**The two bands are compact strips** (bl-f251, item 4; `src/ui/roster/acts.rs`,
+`src/ui/roster/wall.rs`). The window's acts were six full-width rows of prose
+at the top of the roster and the wall's a wrapped band of eight sentences
+under its row; both are now one wrapped row of compact controls a short verb
+each — the `OPEN` word of every pane shortened to its noun and ellipsis, the
+pin to `pin` — asserted at the roster's own width as a count of the lines
+the verbs stand on. The words changed and nothing else did: every control
+keeps its `act:` token, the reach walk and the parity gate read the
+constants, and the queue's control still wears the attention accent while
+anything waits.
+
 **A label off the window is a layout question** (`src/snapshot/clipped.rs`;
 bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
 marks selectable prose as clickable so a pointer can select it, so every

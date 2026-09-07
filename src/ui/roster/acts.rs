@@ -7,21 +7,24 @@
 //! *the acts that address none of them*. The first changes when a roster row
 //! grows a fact; the second when a window-level op lands a surface.
 //!
-//! **They are rows, not chips** (`docs/STYLE.md` §2): a desktop's global
-//! navigation is a band at the top of the leftmost column, and the six entries
-//! are places you go rather than buttons you press. A grid of bordered chips
-//! is a face with no hierarchy, which is what this band was.
+//! **They are a compact strip of short verbs** (bl-f251, item 4; `docs/STYLE.md`
+//! §2): a desktop's global navigation is a strip across the top of the
+//! leftmost column, one wrapped row of controls a word each, where the first
+//! pass had them as six full-width rows of prose — a column of sentences that
+//! read as a list of things rather than as a place to go. A verb apiece,
+//! the queue's in the attention accent while anything waits, and the
+//! ellipsis on every one that leads somewhere.
 
 use crate::ui::{Model, theme};
 
 /// The word on the control that asks every channel for its roster again.
-pub const REFRESH: &str = "ask the channels again";
+pub const REFRESH: &str = "refresh";
 
-/// **One entry of the band**: a full-width row, one word, no state rule and
-/// never chosen — the band is where you GO, and where you are is said by the
+/// **One control of the strip**: a compact control, its verb in `ink`, never
+/// chosen — the strip is where you GO, and where you are is said by the
 /// column that filled in, not by a highlight up here.
 fn entry(ui: &mut egui::Ui, word: &str, ink: egui::Color32) -> egui::Response {
-    theme::paint::row(ui, word, ink, None, false, 0.0)
+    ui.button(egui::RichText::new(word).color(ink))
 }
 
 /// **Paint the band and take the clicks on it.**
@@ -54,6 +57,13 @@ fn entry(ui: &mut egui::Ui, word: &str, ink: egui::Color32) -> egui::Response {
 /// (`crate::ui::Model::unreachable`), and until this control existed that
 /// sentence only ever appeared on a beat nobody could ask for.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    ui.horizontal_wrapped(|ui| strip(ui, model));
+    ui.add_space(theme::space::XS);
+}
+
+/// The strip's controls, in the order they are read: the ask, the queue,
+/// then the four panes.
+fn strip(ui: &mut egui::Ui, model: &mut Model) {
     let again = entry(ui, REFRESH, theme::INK_WEAK);
     crate::ui::act::tag(&again, &[crate::verbs::WORKSPACES.word]);
     if again.clicked() {

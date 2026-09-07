@@ -30,7 +30,7 @@ pub const NO_NAME_HERE: &str = "no entry here names it, so nothing typed here ca
 
 /// **The word on the control that floats this wall to the front of the strip**,
 /// offered on an aimed row that is not pinned.
-pub const PIN: &str = "pin to the front";
+pub const PIN: &str = "pin";
 /// **And the one that takes it back out**, offered where it is pinned. Two
 /// words rather than one that toggles, because the two ops are assertions: the
 /// control names the act it fires (`crate::verbs::workspace`).
@@ -98,11 +98,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if !aimed || model.covered() {
         return;
     }
-    // **They are ONE band under the row, indented, in the order the ledger
-    // reads them** (`docs/STYLE.md` §5, DESIGN §4.20): the acts on the wall
-    // as an object, wrapping at the column's width, with the destructive one
-    // last. A column of eight full-width controls under a row is a column
-    // that reads as eight more rows, which is the grid of chips §1 refuses.
+    // **They are ONE compact strip under the row, indented, in the order the
+    // ledger reads them** (`docs/STYLE.md` §2, DESIGN §4.20): the acts on the
+    // wall as an object, a short verb apiece, wrapping at the column's width,
+    // with the destructive one last (bl-f251). A column of eight full-width
+    // controls under a row would read as eight more rows.
     ui.horizontal_wrapped(|ui| {
         ui.add_space(theme::space::L);
         controls::render(ui, model, row);

@@ -47,7 +47,7 @@
 use crate::ui::{Grade, Model, theme};
 
 /// The word that opens an enrollment, on the wall the window is aimed at.
-pub const OPEN: &str = "enroll a box…";
+pub const OPEN: &str = "enroll…";
 /// The word that spends it.
 pub const SEND: &str = "mint";
 /// The word that closes it and forgets the material.

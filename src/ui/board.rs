@@ -55,7 +55,7 @@ mod rows;
 pub mod wall;
 
 /// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "the board…";
+pub const OPEN: &str = "board…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
 /// The pane's own heading.

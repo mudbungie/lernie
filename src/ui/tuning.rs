@@ -43,7 +43,7 @@ use crate::reply::roles::RoleRow;
 use crate::ui::{Model, theme};
 
 /// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "tune the roles…";
+pub const OPEN: &str = "roles…";
 /// The word that closes it.
 pub const CLOSE: &str = "done";
 /// The pane's own heading.

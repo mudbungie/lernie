@@ -1,7 +1,8 @@
 +++
 title = "desktop design iteration 2, item 5 of bl-f251: empty states say what to do next in one line"
 created = 1788755497
-updated = 1788755497
+updated = 1788755996
+claimant = "Cantaloups-D5"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

@@ -195,7 +195,10 @@ than beside it, so there is one reader and it cannot drift.
 Each end writes `{"protocol": <n>}` before it reads the peer's, so neither
 waits on the other. A mismatch is fail-closed, names **both** versions, and is
 the upgrade prompt: there is no negotiation, no version list and no compat
-shim. `src/channel/hello.rs`.
+shim. `src/channel/hello.rs` — where the number is *included*, never
+declared: the repo-root `PROTOCOL` file states it and `build.rs` compiles it in
+(bl-55b1), because the release gates that read it are other repositories
+fetching one path out of a tree they do not build.
 
 **This is why a separate crate needs it.** Until the split, one crate shipped
 both ends of every connection and the wire could not skew. A seat is installed

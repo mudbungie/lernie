@@ -202,7 +202,20 @@ use super::{Reach, frame};
 /// Four new ops are classed `control` — `login`, `login-tail`, `pin`, `unpin`
 /// — so `parity.toml` gains four lines rather than the gate reddening, each
 /// citing the ball that will delete it.
-pub const PROTOCOL: u32 = 17;
+///
+/// **It is not declared here** (bl-55b1). The repo-root `PROTOCOL` file states
+/// it and `build.rs` compiles that into the constant re-exported below — the
+/// shape yog and every consumer now carry, because the gates that read this
+/// number are other repositories fetching one path out of a tree they do not
+/// build, and a Rust path is not a stable address for that. **Bump it by
+/// editing that line**; nothing under `src` says the number.
+pub use protocol::PROTOCOL;
+
+/// The generated constant: `build.rs` writes it from the repo-root `PROTOCOL`
+/// file.
+mod protocol {
+    include!(concat!(env!("OUT_DIR"), "/protocol.rs"));
+}
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

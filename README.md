@@ -272,9 +272,11 @@ Release beside it. `release-plz.toml` holds the four policy decisions it reads
 and the reason for each.
 
 **A protocol bump waits for the engine** (bl-52b5). yog mints the wire protocol
-version and this crate *vendors* a copy of the constant; the wire is
-fail-closed on a mismatch and does not negotiate (yog `docs/REMOTE.md` §3). So
-`merge-release-pr` **holds every release while this repository's `PROTOCOL`
+version and this crate *vendors* a copy of the number in a repo-root
+`PROTOCOL` file — one line, compiled into the constant by `build.rs` (bl-55b1),
+at the one address a module split cannot move, which is what both gates read;
+the wire is fail-closed on a mismatch and does not negotiate (yog
+`docs/REMOTE.md` §3). So `merge-release-pr` **holds every release while this repository's `PROTOCOL`
 exceeds the newest published yog's** — thrall took that road first, shipping 16
 while the published engine spoke 15, which composes with nothing. Strictly
 greater, not different: a seat *behind* the engine is the mirror-image defect

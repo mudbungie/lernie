@@ -1,7 +1,7 @@
 //! The anatomy on the glass: a row's words, ink, rule and tint; a block's
 //! rule; a section's word; a field's ring and glow.
 
-use super::{composer, elbow, field, prose, rail, row, ruled, section};
+use super::{composer, elbow, empty, field, prose, rail, row, ruled, section};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
 use crate::ui::theme::{
@@ -252,4 +252,22 @@ fn prose_is_laid_at_the_leading_and_a_label_is_not() {
         paragraph.laid,
         label.laid
     );
+}
+
+/// **An empty state is one weak sentence that wraps** (bl-f251, item 5):
+/// on the glass in `INK_WEAK`, and at a width that cannot hold it on one
+/// line it stands more than one line tall rather than running off the edge.
+#[test]
+fn an_empty_state_is_one_weak_sentence_that_wraps() {
+    let window = Window::sized(160.0, 200.0);
+    let sentence = "no conversations here yet — begin one in the box below";
+    let glyphs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            empty(ui, sentence);
+        });
+    });
+    let run = glyphs.first().expect("the sentence reached the glass");
+    assert_eq!(run.ink, INK_WEAK);
+    assert!(run.laid.height() > 1.5 * type_scale::BODY, "{:?}", run.laid);
+    assert!(run.laid.max.x <= 160.0, "{:?}", run.laid);
 }

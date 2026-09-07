@@ -4028,6 +4028,15 @@ keeps its `act:` token, the reach walk and the parity gate read the
 constants, and the queue's control still wears the attention accent while
 anything waits.
 
+**Every empty state names the next act in one weak line** (bl-f251, item 5;
+`theme::paint::empty`). *Pick a conversation* said what was missing and
+nothing about where to get one; each pane's empty sentence now ends in the
+act that fills it — the list under channels, the box below, the strip's
+`refresh`, a fleet run — and every one is painted through one shape in
+`INK_WEAK`, wrapped, so a pane with nothing in it reads as a pointer rather
+than a blank with a caption. The words are still the constants every test
+and the reach walk read; what changed is the sentence and its ink.
+
 **A label off the window is a layout question** (`src/snapshot/clipped.rs`;
 bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
 marks selectable prose as clickable so a pointer can select it, so every

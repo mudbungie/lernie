@@ -35,7 +35,8 @@ use crate::ui::theme;
 pub const HEADING: &str = "conversation";
 
 /// What the pane says with no conversation selected.
-pub const NO_CONVERSATION: &str = "pick a conversation";
+pub const NO_CONVERSATION: &str =
+    "pick a conversation from the list, or begin one in the box below";
 /// The name the live tail wears — no file backs it.
 pub const LIVE: &str = "«live»";
 
@@ -63,7 +64,7 @@ pub const LIVE: &str = "«live»";
 /// for the two things it is opened for.
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
     let Some(conversation) = model.conversation.as_ref() else {
-        ui.label(NO_CONVERSATION);
+        theme::paint::empty(ui, NO_CONVERSATION);
         return;
     };
     // **Which conversation this is, above the transcript** (bl-7b03). The

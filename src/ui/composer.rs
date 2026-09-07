@@ -61,7 +61,7 @@ pub const NUDGE: &str = "nudge";
 /// Paint the composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let Some(aim) = model.aim.clone() else {
-        ui.label(NOWHERE);
+        theme::paint::empty(ui, NOWHERE);
         return;
     };
     let Some(agent) = model.conversation.clone() else {

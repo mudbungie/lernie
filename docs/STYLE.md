@@ -192,6 +192,14 @@ one wrapped row, a short verb each — `refresh`, `verbs…`, `roles…`,
 stand on two lines and the eight on three. A verb that opens a pane carries
 the ellipsis; the one that only asks does not.
 
+**An empty state** (`theme::paint::empty`): one sentence in `INK_WEAK`,
+wrapped, that names the next act — *pick a workspace under channels to list
+its conversations*, *no conversations here yet — begin one in the box
+below*, *nothing is waiting on you — a conversation that asks will appear
+here* — never only what is missing. Weak because it is the absence of
+content said once; a wait (*waiting to hear…*) is the same shape, because it
+resolves itself and the reader needs to know only that.
+
 **A notice**: one sentence under the top edge in the state's ink — `Error`
 for a refusal or an unreadable answer, `Annotation` for a note — with no
 fill and no box, and a dismiss at its end.

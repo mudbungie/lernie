@@ -64,7 +64,7 @@ pub const HEADING: &str = "the board";
 pub const NOT_ANSWERED: &str = "waiting to hear what is on the board";
 /// What it says once they have and nothing is on it. A fact about the box, and
 /// the one empty state here that is not a wait.
-pub const NOTHING: &str = "no ball is on any board here";
+pub const NOTHING: &str = "no ball is on any board here — file one below";
 /// The heading over the whole box's binding table.
 pub const BINDINGS: &str = "every ball⇄workspace binding";
 
@@ -100,9 +100,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             // widths would say *nothing is on any board* about a box whose
             // channels have not answered and a wall it never asked.
             if columns.is_empty() && bindings.is_empty() {
-                ui.label(NOT_ANSWERED);
+                crate::ui::theme::paint::empty(ui, NOT_ANSWERED);
             } else if empty(&columns, &bindings) {
-                ui.label(NOTHING);
+                crate::ui::theme::paint::empty(ui, NOTHING);
             }
             for section in &columns {
                 // **A section that answered nothing is silent, not a

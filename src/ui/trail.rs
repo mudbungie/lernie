@@ -49,7 +49,8 @@ pub const HEADING: &str = "the trail";
 pub const NOT_ANSWERED: &str = "waiting to hear what has crossed the boundary";
 /// What it says once they have and nothing has. A fact about the engines, and
 /// the one empty state here that is not a wait.
-pub const NOTHING: &str = "nothing has crossed the boundary yet";
+pub const NOTHING: &str =
+    "nothing has crossed the boundary yet — every act from any seat lands here";
 
 /// **Whether every channel that answered answered nothing** — the one reading
 /// of these rows this pane makes, and it is about the trail rather than about
@@ -96,11 +97,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     ui.separator();
     let trails = model.trails.clone();
     if trails.is_empty() {
-        ui.label(NOT_ANSWERED);
+        crate::ui::theme::paint::empty(ui, NOT_ANSWERED);
         return true;
     }
     if trails.iter().all(|section| section.rows.is_empty()) {
-        ui.label(NOTHING);
+        crate::ui::theme::paint::empty(ui, NOTHING);
         return true;
     }
     // One scroll for every section, and the heading above it fixed — the shape

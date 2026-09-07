@@ -80,7 +80,8 @@ pub const CHANGES: &str = "what the agents changed";
 /// What it says about a wall nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this wall's agents have done";
 /// What it says about a wall that answered and has none.
-pub const NOTHING: &str = "this wall's agents have delivered nothing yet";
+pub const NOTHING: &str =
+    "this wall's agents have delivered nothing yet — run a fleet below to begin";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -185,7 +186,7 @@ fn listings(ui: &mut egui::Ui, model: &mut Model) {
             ui.label(ATTEMPTS);
             match attempts.as_deref() {
                 None => drop(ui.label(NOT_ANSWERED)),
-                Some([]) => drop(ui.label(NOTHING)),
+                Some([]) => drop(crate::ui::theme::paint::empty(ui, NOTHING)),
                 Some(rows) => {
                     for row in rows {
                         ui.separator();
@@ -199,7 +200,7 @@ fn listings(ui: &mut egui::Ui, model: &mut Model) {
             ui.label(CHANGES);
             match work.as_deref() {
                 None => drop(ui.label(NOT_ANSWERED)),
-                Some([]) => drop(ui.label(NOTHING)),
+                Some([]) => drop(crate::ui::theme::paint::empty(ui, NOTHING)),
                 Some(rows) => candidates::render(ui, model, rows),
             }
         });

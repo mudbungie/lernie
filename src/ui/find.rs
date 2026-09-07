@@ -45,7 +45,7 @@ pub const NEEDS_WORDS: &str = "type what to look for and this becomes live";
 /// What the pane says before anything has been asked.
 pub const NOT_ASKED: &str = "nothing has been looked for yet";
 /// What a section says for an engine that answered and found nothing.
-pub const NOTHING: &str = "this engine found none of it";
+pub const NOTHING: &str = "this engine found none of it — try fewer words";
 /// **Why a hit cannot be acted on** — the standing sentence, said once above
 /// the list rather than on every row (yog bl-ef16).
 pub const NOT_ADDRESSABLE: &str = "a hit says where it is in the engine's own path spelling, which no gesture \
@@ -116,7 +116,7 @@ fn answered(ui: &mut egui::Ui, found: &crate::reply::search::Found) {
         ui.colored_label(theme::NOTICE, unread(why));
     }
     if found.rows.is_empty() {
-        ui.label(NOTHING);
+        theme::paint::empty(ui, NOTHING);
         return;
     }
     for row in &found.rows {

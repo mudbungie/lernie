@@ -17,9 +17,9 @@ mod row;
 pub use row::{HIDE, SHOW};
 
 /// What the list says with no wall aimed at.
-pub const NO_WALL: &str = "pick a workspace";
+pub const NO_WALL: &str = "pick a workspace under channels to list its conversations";
 /// What it says for a wall that answered, and answered nothing.
-pub const NO_CONVERSATIONS: &str = "no conversations here";
+pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one in the box below";
 /// **What it says for a wall it has not been ANSWERED about** (bl-f780).
 ///
 /// The third sentence, and it is the [`UNCERTAIN`] doctrine one level up: *no
@@ -57,7 +57,7 @@ pub const UNCERTAIN: &str = "?";
 /// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let Some(aim) = model.aim.clone() else {
-        ui.label(NO_WALL);
+        crate::ui::theme::paint::empty(ui, NO_WALL);
         return;
     };
     ui.label(aim.address.clone());
@@ -67,7 +67,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // disk and before anything is dialled, so this is a question about the
     // model and not about a socket.
     if !model.holds(&aim.channel) {
-        ui.label(no_channel(&aim.channel));
+        crate::ui::theme::paint::empty(ui, &no_channel(&aim.channel));
         return;
     }
     // **The list is the model's, not this pane's**: a conversation this window
@@ -76,11 +76,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // and the keyboard alike because both walk the one list.
     let rows = model.rows();
     if rows.is_empty() {
-        ui.label(if model.answered.as_ref() == Some(&aim) {
-            NO_CONVERSATIONS
-        } else {
-            NOT_ANSWERED
-        });
+        crate::ui::theme::paint::empty(
+            ui,
+            if model.answered.as_ref() == Some(&aim) {
+                NO_CONVERSATIONS
+            } else {
+                NOT_ANSWERED
+            },
+        );
         return;
     }
     // The list scrolls; the heading and the address above it do not (bl-e5d2,

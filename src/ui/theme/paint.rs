@@ -117,6 +117,14 @@ pub fn ruled(ui: &mut egui::Ui, ink: Color32, body: impl FnOnce(&mut egui::Ui)) 
     rule_at(ui, top, bottom - top.y, ink);
 }
 
+/// **An empty state**: one sentence in weak ink, wrapped at the width it
+/// has, that says what to do next (bl-f251, item 5). Weak because it is not
+/// content — it is the absence of content, said once — and one sentence
+/// because the next act is the whole of what an empty pane owes a reader.
+pub fn empty(ui: &mut egui::Ui, sentence: &str) -> Response {
+    ui.add(egui::Label::new(egui::RichText::new(sentence).color(INK_WEAK)).wrap())
+}
+
 /// **A section of a covering pane**: `L` of air, a hairline, and its word in
 /// weak ink — never a framed group.
 pub fn section(ui: &mut egui::Ui, word: &str) {

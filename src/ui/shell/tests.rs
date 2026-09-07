@@ -5,13 +5,16 @@
 //! asserted here is the layout it produces, and [`narrow`] holds the shape the
 //! window takes when it can no longer produce three columns.
 
-use super::{DISMISS, render, widths};
+use super::{render, widths};
 use crate::paint_probe::frame::{Window, press};
-use crate::test_support::window::{click, conv, own, painted, seated, seen, wall};
-use crate::ui::{Chunk, Model, Notice};
+use crate::test_support::window::{conv, own, painted, seated, seen, wall};
+use crate::ui::{Chunk, Model};
 
 /// The narrow shape: one column at a time, and the bar that names the three.
 mod narrow;
+/// The notice bar: where it stands, whose ink it wears, and how it is put
+/// down.
+mod notice;
 /// What a list pane's width is on the glass, and the band that used to stand
 /// beside it.
 mod width;
@@ -61,6 +64,18 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
         shown.contains("the seat mints nothing"),
         "and names the act that fills it:\n{shown}"
     );
+    // **And every one names the next act, in weak ink** (bl-f251, item 5):
+    // the window's three empty panes each say what to do rather than what is
+    // missing, and say it one step under content.
+    let window = crate::paint_probe::frame::Window::new();
+    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    for empty in [crate::ui::convs::NO_WALL, crate::ui::chat::NO_CONVERSATION] {
+        let run = runs
+            .iter()
+            .find(|run| run.text == empty)
+            .unwrap_or_else(|| panic!("{empty:?} is on the glass whole"));
+        assert_eq!(run.ink, crate::ui::theme::INK_WEAK, "{empty:?}");
+    }
     for expected in [
         crate::ui::convs::NO_WALL,
         crate::ui::chat::NO_CONVERSATION,
@@ -71,48 +86,6 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
             "{expected:?} is not on the glass:\n{shown}"
         );
     }
-}
-
-/// **A refusal and an unreadable answer are both visible, and they read
-/// differently** — one is the engine's sentence, the other is a statement about
-/// this seat, and only the second is fixed by an upgrade. Neither is a silent
-/// drop, which is the reply vocabulary's own policy on the glass.
-#[test]
-fn a_notice_stands_where_the_content_would_have_been_and_says_whose_it_is() {
-    for (notice, expected) in [
-        (
-            Notice::Refused("unknown workspace \"hoem\"".to_owned()),
-            "the engine refused: unknown workspace \"hoem\"",
-        ),
-        (
-            Notice::Unreadable("cannot paint a \"board\" answer".to_owned()),
-            "this seat could not read the answer: cannot paint a \"board\" answer",
-        ),
-    ] {
-        let mut model = Model {
-            notice: Some(notice),
-            ..seated()
-        };
-        let shown = painted(&mut model);
-        assert!(shown.contains(expected), "{expected:?}:\n{shown}");
-        assert!(
-            shown.contains("home  (named)  2 conversations"),
-            "a refusal about one pane does not stop the others:\n{shown}"
-        );
-    }
-}
-
-/// **It is a bar, not a modal**, and it can be put down: an operator who has
-/// read a refusal should not have to wait for the next answer to clear it.
-#[test]
-fn a_notice_can_be_put_down() {
-    let mut model = Model {
-        notice: Some(Notice::Refused("no".to_owned())),
-        ..seated()
-    };
-    let window = Window::new();
-    click(&window, DISMISS, |ctx| render(ctx, &mut model));
-    assert_eq!(model.notice, None);
 }
 
 /// The policy on the glass: at 900 points the conversation used to be a
@@ -214,76 +187,4 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
             .any(|run| run.text == last),
         "the walked-to row is on the glass"
     );
-}
-
-/// **The notice wraps rather than being cut at the frame** (bl-3d0f). A
-/// horizontal layout lays its label on one line however long it is, and the
-/// panel cut it at the window's right edge with no ellipsis to say so — and
-/// every refusal this seat paints puts the fact first and the remedy last, so
-/// the half that was lost was always the half that says what to do.
-///
-/// The subject is the first run of a seat on an unprovisioned box: the notice
-/// is the only thing on the window carrying an instruction.
-#[test]
-fn a_long_refusal_wraps_and_its_remedy_reaches_the_glass() {
-    let said = format!(
-        "no wire provisioned at /home/u/.local/share/lernie/wire: {}",
-        crate::channel::material::Whose::Own.remedy()
-    );
-    let mut model = Model {
-        notice: Some(Notice::Unreachable(said.clone())),
-        ..seated()
-    };
-    let window = Window::sized(900.0, 600.0);
-    window.text(|ctx| render(ctx, &mut model));
-    let bar = seen(&window, |ctx| render(ctx, &mut model))
-        .into_iter()
-        .find(|run| run.text.starts_with("this seat could not reach it"))
-        .expect("the bar is on the glass");
-    // **The rects are what testify here, not the glyphs.** A galley's rows
-    // carry no newline where the WRAP broke them, so a wrapped run and a run
-    // laid past the frame read back as the same string — which is the paint
-    // probe's own division of labour: geometry is unaffected, it is the text
-    // that lies.
-    assert!(
-        bar.laid.width() <= 900.0,
-        "the run was laid inside the window rather than past it: {:?}",
-        bar.laid
-    );
-    assert!(
-        bar.shown.width() >= bar.laid.width() - 0.5,
-        "and nothing was clipped off its end: laid {:?}, shown {:?}",
-        bar.laid,
-        bar.shown
-    );
-    assert!(
-        bar.text.ends_with("the seat mints nothing"),
-        "so the remedy's last words are on the glass: {:?}",
-        bar.text
-    );
-}
-
-/// **A notice is said in its state's ink** (`docs/STYLE.md` §5): a failure in
-/// the error accent, a receipt in the annotation accent, and neither in a box.
-#[test]
-fn a_notice_wears_its_state_s_ink() {
-    use crate::ui::theme::{State, accent};
-    for (notice, ink) in [
-        (Notice::Refused("no".to_owned()), accent(State::Error)),
-        (
-            Notice::Said("the floor stands".to_owned()),
-            accent(State::Annotation),
-        ),
-    ] {
-        let mut model = Model {
-            notice: Some(notice.clone()),
-            ..seated()
-        };
-        let window = Window::new();
-        let run = seen(&window, |ctx| render(ctx, &mut model))
-            .into_iter()
-            .find(|run| run.text == notice.line())
-            .expect("the notice is on the glass");
-        assert_eq!(run.ink, ink, "{notice:?}");
-    }
 }

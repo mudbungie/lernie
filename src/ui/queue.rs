@@ -50,7 +50,7 @@ pub const HEADING: &str = "waiting on you";
 pub const NOT_ANSWERED: &str = "waiting to hear what is asking for you";
 /// What it says once they have, and nothing is. A fact about the world, and
 /// the one empty state here that is not a wait.
-pub const NOTHING: &str = "nothing is waiting on you";
+pub const NOTHING: &str = "nothing is waiting on you — a conversation that asks will appear here";
 /// The word on the control that answers a row's place in the queue.
 pub const SEEN: &str = "seen";
 /// The word on the control that leaves the pane for the conversation.
@@ -90,11 +90,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     ui.add_space(theme::space::S);
     let waiting = model.waiting.clone();
     if waiting.is_empty() {
-        ui.label(NOT_ANSWERED);
+        theme::paint::empty(ui, NOT_ANSWERED);
         return true;
     }
     if waiting.iter().all(|section| section.rows.is_empty()) {
-        ui.label(NOTHING);
+        theme::paint::empty(ui, NOTHING);
         return true;
     }
     // One scroll for every section, and the heading above it fixed — the shape

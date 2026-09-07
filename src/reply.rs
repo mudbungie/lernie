@@ -109,6 +109,8 @@ pub mod lineages;
 pub mod login;
 /// Every action that crossed the engine's boundary, and where its alarm stands.
 pub mod ops;
+/// What a reviewer has staged for a workspace's config, and one of them whole.
+pub mod proposals;
 /// What a wall can sign in to, and what one row is offering.
 pub mod providers;
 /// The decision queue: what is asking for the operator, anywhere.

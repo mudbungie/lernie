@@ -10,6 +10,7 @@
 use crate::reply::clients::ClientRow;
 use crate::reply::config::Config;
 use crate::reply::lineages::Lineage;
+use crate::reply::proposals::Proposals;
 use crate::reply::roles::RoleRow;
 
 use super::parts::{clause, line, line_over, listing, quoted, things, when};
@@ -64,6 +65,34 @@ pub(super) fn lineages(rows: &[Lineage]) -> String {
         })
         .collect();
     listing("lineages", painted, "this wall holds no lineage")
+}
+
+/// **What a reviewer has staged for this wall's config** (REMOTE §9.22), and —
+/// where the read named one — that proposal whole under the listing.
+///
+/// The standing is the engine's word and not this seat's arithmetic: `stale`
+/// means somebody advanced the lineage after the reviewer read it, so the
+/// patch was written against a config that no longer governs anything and the
+/// answer is to reject it. The whole is the reviewer's message and diff,
+/// verbatim, because a diff a seat re-formatted is a diff nobody can apply.
+pub(super) fn proposals(staged: &Proposals) -> String {
+    let painted = staged
+        .rows
+        .iter()
+        .map(|row| {
+            line(vec![
+                Some(row.id.clone()),
+                Some(row.standing()),
+                Some(row.moves()),
+                Some(row.diffstat.clone()),
+                quoted(&row.subject),
+            ])
+        })
+        .collect();
+    line_over(
+        &listing("proposals", painted, "nothing is staged for this wall"),
+        staged.whole.clone(),
+    )
 }
 
 /// **The machines registered in one workspace**, and what each offers.

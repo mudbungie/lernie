@@ -158,12 +158,12 @@ fn every_boolean_receipt_says_both_of_its_answers() {
         ),
         (
             json!({"ok": true, "kind": "answered", "tool": "Bash", "tool_use": "t1",
-                   "verdict": "allow", "advanced": true}),
+                   "verdict": "allow", "scope": "workspace", "advanced": true}),
             "advanced",
         ),
         (
             json!({"ok": true, "kind": "answered", "tool": "Bash", "tool_use": "t1",
-                   "verdict": "hold", "advanced": false}),
+                   "verdict": "hold", "scope": "call", "advanced": false}),
             "still parked",
         ),
         (

@@ -32,7 +32,12 @@ fn staging_names_the_workspace_and_the_bare_rung() {
 /// this build never read.
 #[test]
 fn the_fire_hands_the_body_back_whole_and_re_addressed() {
-    let fired = prompt(&staged("personal"), "home".to_owned(), "do it".to_owned());
+    let fired = prompt(
+        &staged("personal"),
+        "home".to_owned(),
+        "do it".to_owned(),
+        None,
+    );
     assert_eq!(
         fired,
         json!({"op": "prompt", "goal": "do it", "seed": null,
@@ -48,7 +53,12 @@ fn the_fire_hands_the_body_back_whole_and_re_addressed() {
 /// own engine.
 #[test]
 fn the_fire_is_addressed_where_the_seat_can_route_it() {
-    let fired = prompt(&staged("personal"), "home".to_owned(), "do it".to_owned());
+    let fired = prompt(
+        &staged("personal"),
+        "home".to_owned(),
+        "do it".to_owned(),
+        None,
+    );
     assert_eq!(
         crate::envelope::workspace(&fired),
         Some("home".to_owned()),
@@ -62,7 +72,7 @@ fn the_fire_is_addressed_where_the_seat_can_route_it() {
 fn both_envelopes_wear_the_boundary_s_own_op() {
     assert_eq!(prepare(String::new(), None)["op"], json!(super::PREPARE));
     assert_eq!(
-        prompt(&staged("home"), String::new(), String::new())["op"],
+        prompt(&staged("home"), String::new(), String::new(), None)["op"],
         json!(super::PROMPT)
     );
 }
@@ -92,4 +102,30 @@ fn a_rung_with_a_prefill_fires_it_ahead_of_what_was_typed() {
         super::goal("Working directory: /w\nDo all work there.", "do the thing"),
         "Working directory: /w\nDo all work there.\n\ndo the thing"
     );
+}
+
+/// **The role is the one field the seat writes into the body it carries back**
+/// (REMOTE §9.21, PROTOCOL 18). `prepare` answers `null` — litany's `worker` —
+/// so a fire that names no role is byte-identical to the fire this seat sent
+/// before the field existed, and one that names a role states it on the body
+/// that was going anyway rather than in a second gesture.
+#[test]
+fn a_role_is_written_onto_the_body_and_unstated_leaves_what_the_engine_said() {
+    let bare = prompt(
+        &staged("personal"),
+        "home".to_owned(),
+        "do it".to_owned(),
+        None,
+    );
+    assert_eq!(bare["prepared"].get(super::ROLE), None);
+    let planning = prompt(
+        &staged("personal"),
+        "home".to_owned(),
+        "do it".to_owned(),
+        Some("planner".to_owned()),
+    );
+    assert_eq!(planning["prepared"][super::ROLE], json!("planner"));
+    // Everything else about the body is untouched, the re-addressing included.
+    assert_eq!(planning["prepared"]["workspace"], json!("home"));
+    assert_eq!(planning["prepared"]["origin"], json!("world"));
 }

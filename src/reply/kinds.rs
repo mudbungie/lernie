@@ -14,8 +14,8 @@
 
 use super::{
     agent, balls, board, clients, config, convs, diff, enrolled, files, governing, help, inbox,
-    lineages, login, ops, providers, queue, rail, roles, roster, science, search, start, step,
-    steps, stream, transcript,
+    lineages, login, ops, proposals, providers, queue, rail, roles, roster, science, search, start,
+    step, steps, stream, transcript,
 };
 
 /// **The kinds the window draws.** Thirty-three, and each is here because a
@@ -63,6 +63,13 @@ pub enum Reply {
         tool_use: String,
         /// The verdict written, carried verbatim ([`super`]'s rung 3).
         verdict: String,
+        /// **How far the answer stands** (PROTOCOL 18): the held call, the
+        /// conversation and its descent, or the workspace. Read back rather
+        /// than assumed from what was asked — the engine narrows a wide answer
+        /// on a destructive or credential-reaching call, so the receipt is the
+        /// only place the reach the boundary actually took is stated. Carried
+        /// verbatim on rung 3, like the verdict beside it.
+        scope: String,
         /// Whether the releasing advance was launched. `hold` never launches
         /// one, and that is the operator saying *stay parked*.
         advanced: bool,
@@ -194,6 +201,12 @@ pub enum Reply {
     /// **The config lineages one workspace holds** — that pane's first, and
     /// the listing its two pickers are filled from.
     Lineages(Vec<lineages::Lineage>),
+    /// **What a reviewer has staged for this workspace's config**, and — when
+    /// the read named one — that proposal whole (REMOTE §9.22, PROTOCOL 18).
+    /// The learning loop's operator half: a candidate config commit is the
+    /// same subject `lineages` browses and `config` writes, one branch away
+    /// from governing anything.
+    Proposals(proposals::Proposals),
     /// **The watermark landed** (bl-b8f7). It carries nothing for the reason
     /// [`Flagged`](Self::Flagged) carries nothing: what changed is on the
     /// trail, and the standing read answers `acked` on the rows that were

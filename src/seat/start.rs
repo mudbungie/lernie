@@ -61,11 +61,17 @@ const INDOUBT: &str = "the start was staged and the fire crossed with no answer,
 /// the operator's goal unchanged; the path rung prefills the target preamble,
 /// and dropping it would fire a conversation bound to a directory it was never
 /// told about.
+/// **The role rides the FIRE and not the stage** (REMOTE §9.21): `prepare`
+/// answers `role: null` and a seat states what the operator asked for on the
+/// body it hands straight back, which is one field of a gesture that was going
+/// anyway — no second op, no second round trip, and nothing held on the server
+/// between them.
 pub fn start(
     data_root: &Path,
     address: &str,
     goal: &str,
     dir: Option<&str>,
+    role: Option<&str>,
     form: Form,
 ) -> Verdict {
     let staging = crate::verbs::prepare(address.to_owned(), dir.map(str::to_owned));
@@ -84,6 +90,7 @@ pub fn start(
         &prepared,
         address.to_owned(),
         crate::verbs::start::goal(&prepared.goal, goal),
+        role.map(str::to_owned),
     );
     match super::sent(data_root, &fire) {
         Ok(fired) => Verdict::answered(

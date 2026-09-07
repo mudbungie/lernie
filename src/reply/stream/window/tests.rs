@@ -29,12 +29,14 @@ fn the_two_transitions_are_read_as_upstream_spells_them() {
                 tool: Some("box2_Bash".to_owned()),
                 input: Some("{\"command\":\"hostname && uptime\"}".to_owned()),
                 exit_code: None,
+                held: None,
             },
             Window {
                 tool_use: "toolu_01".to_owned(),
                 tool: None,
                 input: None,
                 exit_code: Some(0),
+                held: None,
             },
         ]
     );
@@ -87,6 +89,7 @@ fn a_later_transition_fills_and_never_blanks() {
             tool: Some("Bash".to_owned()),
             input: Some("{}".to_owned()),
             exit_code: Some(1),
+            held: None,
         },
     );
     fold(
@@ -96,6 +99,7 @@ fn a_later_transition_fills_and_never_blanks() {
             tool: None,
             input: None,
             exit_code: None,
+            held: None,
         },
     );
     assert_eq!(
@@ -105,6 +109,7 @@ fn a_later_transition_fills_and_never_blanks() {
             tool: Some("Bash".to_owned()),
             input: Some("{}".to_owned()),
             exit_code: Some(1),
+            held: None,
         }]
     );
 }

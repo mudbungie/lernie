@@ -8,6 +8,21 @@
 //! **boundary** it runs behind: release the one call that is waiting, or take
 //! away and give back the standing permission to make them at all.
 //!
+//! # The answer has a REACH, and it is required in both directions
+//!
+//! [`SCOPES`] (PROTOCOL 18, yog bl-94a5) is how far one answer stands: the
+//! held `call`, the `conversation` and its descent, or the whole `workspace`.
+//! An answer with no scope settled one call, so an operator holding a
+//! conversation answered the same question for every call of a kind they had
+//! already decided about — the wider two are how that stops.
+//!
+//! **`scope` is stated on every gesture this seat composes**, `call` included,
+//! because the wire requires it in both directions rather than defaulting: an
+//! absent field would let the two ends disagree about how wide the instruction
+//! was, and *wider* is the reading nobody may arrive at by accident. What is
+//! optional is the operator's TYPING of it ([`answer`]'s `None`), which is a
+//! different thing from the field being optional.
+//!
 //! **One call and one policy, which is why there are two receipts.**
 //! [`ANSWER`] is about the invocation parked right now — read off the
 //! conversation's own hold mark at fire time, so nothing is typed and no other
@@ -35,11 +50,21 @@ pub const ANSWER: Verb = Verb {
     summary: "release, decline or keep parked the tool call held at this conversation",
     detail: "Answers the invocation the capability boundary parked before it \
              ran. `pass` lets that one call through, `refuse` declines it in \
-             band — the model reads why and carries on — and `hold` keeps it \
-             parked even if the policy later would have passed it. The answer \
-             is scoped to the exact call that is held, which is read from the \
-             conversation's own hold mark, so nothing is typed and nothing can \
-             be spent by a different call. Passing or refusing then drives the \
+             band — the model is told the decision stands and told not to \
+             retry it, rephrase it or reach the same outcome another way — and \
+             `hold` keeps it parked even if the policy later would have passed \
+             it. Which call is answered is read from the conversation's own \
+             hold mark, so nothing is typed and nothing can be spent by a \
+             different call. A fourth word says how far the answer stands. \
+             Left off it settles that one call, which is the safe reading and \
+             the one you get without asking for anything; `conversation` \
+             settles the whole class of the held call — the same tool at the \
+             same reach — for this conversation and everything below it, and \
+             `workspace` settles that class for every conversation there. A \
+             wider answer is how you stop being asked eleven times about one \
+             narrow tool; `revoke` suspends every standing answer, which is \
+             how you take one back. A destructive or credential-reaching call \
+             takes the bare form only. Passing or refusing then drives the \
              conversation on, which is what actually lifts the hold. Nothing \
              here stops the agent. Refused when nothing is held there.",
 };
@@ -82,9 +107,32 @@ pub const RESTORE: Verb = Verb {
 /// not — which is the composer's own split between its two rows.
 pub const VERDICTS: [&str; 3] = ["pass", "refuse", "hold"];
 
-/// The answer, typed.
-pub fn answer(workspace: String, agent: String, verdict: String) -> Value {
-    ANSWER.built(vec![workspace, agent, verdict], &[])
+/// **The gesture's fourth field**, spelled once so the door that states it and
+/// the reading that comes back cannot disagree about its name.
+pub const SCOPE: &str = "scope";
+
+/// **The three reaches an answer can have** (PROTOCOL 18), narrowest first —
+/// which is the order they may be offered in and the order they are safe in.
+///
+/// The wire's own words again, on [`VERDICTS`]'s terms, so no table exists to
+/// drift. [`CALL`] is the first of them and the one an unstated answer means.
+pub const SCOPES: [&str; 3] = ["call", "conversation", "workspace"];
+
+/// **What an answer that says nothing about its reach means**: the one held
+/// call, which is what every answer was before 18 and is still the reading an
+/// operator gets without asking for another.
+pub const CALL: &str = "call";
+
+/// The answer, typed. **The scope is always stated** — `None` is the operator
+/// not typing one, not the field going missing — because the wire requires it
+/// in both directions and an absent field would let the two ends disagree
+/// about how wide the instruction was.
+pub fn answer(workspace: String, agent: String, verdict: String, scope: Option<String>) -> Value {
+    ANSWER.stating(
+        vec![workspace, agent, verdict],
+        SCOPE,
+        Some(scope.unwrap_or_else(|| CALL.to_owned())),
+    )
 }
 
 /// The floor, raised.

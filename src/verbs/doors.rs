@@ -91,9 +91,9 @@ pub fn table() -> Vec<Door> {
 /// The composite that begins a conversation.
 pub const START: Door = Door {
     word: "start",
-    takes: "<workspace> <goal> [<dir>]",
-    arity: (2, 3),
-    summary: "begin a conversation on that workspace, optionally aimed at a directory",
+    takes: "<workspace> <goal> [<dir>] [--role <name>]",
+    arity: (2, 5),
+    summary: "begin a conversation on that workspace, optionally aimed at a directory and a role",
     detail: "The start family's two acts (yog's REMOTE §8.1), staged and \
              fired in one process. Not a gesture but both of them: a \
              `prepare`, then a `prompt` carrying the body that answered it \
@@ -109,7 +109,16 @@ pub const START: Door = Door {
              bare one, and a directory named in the goal's prose is a request \
              the tools are free to ignore. The path is on the ENGINE's box and \
              this seat does not check it; a path that is not there is refused \
-             over the wire, in the engine's own words.",
+             over the wire, in the engine's own words. \
+             NAME A ROLE and the conversation is born on it (REMOTE §9.21) — \
+             the soul, the provider assignment and the tool grant the \
+             workspace's governing config declares under that name, which is \
+             how a planning conversation is started rather than a working one. \
+             It is stated on the FIRE and not on the stage, because which role \
+             you want is the choice made between the two acts. Without it the \
+             conversation is born on the engine's default, and a role the \
+             governing config does not declare is refused there, before any \
+             branch or worktree exists.",
 };
 
 /// The escape hatch, which is the surface.

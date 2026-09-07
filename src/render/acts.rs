@@ -107,11 +107,23 @@ pub(super) fn models(rows: &[String]) -> String {
     listing("models", rows.to_vec(), "that provider offers no model")
 }
 
-/// **A parked call was answered**, and whether the release drove the
-/// conversation on.
-pub(super) fn answered(tool: &str, tool_use: &str, verdict: &str, advanced: bool) -> String {
+/// **A parked call was answered**, how far the answer stands, and whether the
+/// release drove the conversation on.
+///
+/// The reach is the engine's own reading and not an echo of what was asked: a
+/// wide answer on a destructive or credential-reaching call is narrowed there,
+/// so this line is the one place an operator learns what their instruction
+/// actually covered.
+pub(super) fn answered(
+    tool: &str,
+    tool_use: &str,
+    verdict: &str,
+    scope: &str,
+    advanced: bool,
+) -> String {
     line(vec![
         Some(format!("{tool} ({tool_use}): {verdict}")),
+        Some(format!("for this {scope}")),
         Some(if advanced { "advanced" } else { "still parked" }.to_owned()),
     ])
 }

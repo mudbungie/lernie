@@ -81,8 +81,14 @@ impl Notice {
     /// verdict rides verbatim (`crate::reply`'s rung 3), and `advanced` is the
     /// half worth saying: `pass` and `refuse` both drive the branch on, where
     /// `hold` is the operator saying *stay parked* and launches nothing.
-    pub fn answered(tool: &str, tool_use: &str, verdict: &str, advanced: bool) -> Self {
-        let said = format!("answered {tool} ({tool_use}): {verdict}");
+    pub fn answered(
+        tool: &str,
+        tool_use: &str,
+        verdict: &str,
+        scope: &str,
+        advanced: bool,
+    ) -> Self {
+        let said = format!("answered {tool} ({tool_use}): {verdict} for this {scope}");
         Self::Said(if advanced {
             format!("{said} — the conversation is running again")
         } else {

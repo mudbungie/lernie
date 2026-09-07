@@ -189,11 +189,15 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
             verdict: "pass".to_owned(),
+            scope: "conversation".to_owned(),
             advanced: true,
         }),
     );
     let said = model.notice.clone().expect("a receipt is a line").line();
-    assert!(said.contains("answered Bash (toolu_1): pass"), "{said}");
+    assert!(
+        said.contains("answered Bash (toolu_1): pass for this conversation"),
+        "the reach the boundary took is the receipt's, not an echo of the ask: {said}"
+    );
     assert!(said.contains("running again"), "{said}");
 
     model.absorb(
@@ -202,6 +206,7 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
             verdict: "hold".to_owned(),
+            scope: "call".to_owned(),
             advanced: false,
         }),
     );

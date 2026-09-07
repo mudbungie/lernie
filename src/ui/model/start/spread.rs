@@ -137,7 +137,7 @@ impl Model {
             }
             self.outbox
                 .push(super::super::Posted::act(crate::verbs::prompt(
-                    row, to, said,
+                    row, to, said, None,
                 )));
         }
     }

@@ -56,6 +56,19 @@ pub const SEEN: &str = "seen";
 /// The word on the control that leaves the pane for the conversation.
 pub const GO: &str = "go to it";
 
+/// **The line the two wider rows stand under** — what makes them wider is that
+/// they settle the held call's whole CLASS, the same tool at the same reach,
+/// rather than the one invocation. It reads as a continuation of the row above
+/// it, which is what the leading ellipsis is for.
+pub const WIDER: &str = "…and every call like it:";
+
+/// **One wider seat's whole label**, which carries its own reach — the
+/// receipt's own sentence (`crate::ui::model::Notice::answered`), so what an
+/// operator pressed and what comes back read the same.
+pub fn wider(verdict: &str, scope: &str) -> String {
+    format!("{verdict} for this {scope}")
+}
+
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
@@ -176,7 +189,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
                 let seat = ui.button(word);
                 crate::ui::act::tag(&seat, &[crate::verbs::ANSWER.word]);
                 if seat.clicked() {
-                    verdict = Some(word);
+                    verdict = Some((word, crate::verbs::capability::CALL));
                 }
             }
         }
@@ -187,11 +200,38 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
             model.go_to(row);
         }
     });
+    // **The two wider reaches, each seat saying its own reach** (PROTOCOL 18,
+    // yog bl-94a5). An answer with no scope settles one call, so an operator
+    // holding a conversation answered the same question for every call of a
+    // kind they had already decided about; these are how that stops.
+    //
+    // **Written out per scope rather than picked from a selector**, which is
+    // the whole of why there is no state here: a sticky picker makes *wider*
+    // something an operator can arrive at by accident, on the next row and
+    // without touching it, and the wire refuses a default for that exact
+    // reason. A seat that says what it does the moment it is read cannot be
+    // stale — which is also why the reach is in the LABEL and not in a heading
+    // above it, since a heading is not what a screen reader reads out with the
+    // button.
+    if row.held.is_some() {
+        ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), WIDER);
+        for scope in crate::verbs::SCOPES.into_iter().skip(1) {
+            ui.horizontal_wrapped(|ui| {
+                for word in crate::verbs::VERDICTS {
+                    let seat = ui.button(wider(word, scope));
+                    crate::ui::act::tag(&seat, &[crate::verbs::ANSWER.word]);
+                    if seat.clicked() {
+                        verdict = Some((word, scope));
+                    }
+                }
+            });
+        }
+    }
     if let Some(row) = fired {
         model.post_seen(&row);
     }
-    if let Some(word) = verdict {
-        model.post_answer(row, word);
+    if let Some((word, scope)) = verdict {
+        model.post_answer(row, word, scope);
     }
 }
 

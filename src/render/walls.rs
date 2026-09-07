@@ -185,17 +185,35 @@ pub(crate) fn waiting_on_mail(agent: &str, state: &str, deposits: usize) -> Stri
 /// than one that says which invocation.
 fn running(call: &Window) -> String {
     line(vec![
-        Some(
-            call.exit_code
-                .map_or_else(|| RUNNING.to_owned(), |code| format!("exit {code}")),
-        ),
+        Some(status(call)),
         Some(call.tool.clone().unwrap_or_else(|| call.tool_use.clone())),
         call.input.as_deref().map(brief),
+        call.held.as_deref().map(brief),
     ])
+}
+
+/// **The word a call is in, and the order is the order the transitions
+/// happen in** (REMOTE §5.5, PROTOCOL 18). A capture that landed is the last
+/// word about a call, so an exit code outranks the park it was released from;
+/// a park outranks *running*, because a held call is not running and saying it
+/// was is the whole defect this closes — on a foot lane every call to a
+/// non-shell tool is held, so it is most of the conversation.
+fn status(call: &Window) -> String {
+    if let Some(code) = call.exit_code {
+        return format!("exit {code}");
+    }
+    if call.held.is_some() {
+        return HELD.to_owned();
+    }
+    RUNNING.to_owned()
 }
 
 /// What a call with no exit code yet is said to be doing.
 const RUNNING: &str = "running";
+
+/// What a call the capability boundary parked is said to be doing — the agent
+/// row's own word (`parked`, above), so one park reads the same on both reads.
+const HELD: &str = "held";
 
 /// A turn in progress: what it is thinking, and what it has said.
 pub(super) fn tail(thinking: &str, text: &str) -> String {

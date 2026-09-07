@@ -141,10 +141,15 @@ impl Model {
             self.start = None;
             return;
         }
+        // **No role, which is the body as the engine answered it** (REMOTE
+        // §9.21): the composer has no role picker, and a seat that guessed one
+        // would be born on a soul nobody chose. What the window fires is
+        // byte-identical to what it fired before the field existed.
         self.outbox.push(super::Posted::act(crate::verbs::prompt(
             prepared,
             address.clone(),
             goal.clone(),
+            None,
         )));
         self.start = Some(Start {
             address,

@@ -98,6 +98,8 @@ pub mod fleet;
 pub mod help;
 /// The sign-in family: the provider table, the offering, the act and its lane.
 pub mod login;
+/// The learning loop's two ops — what a reviewer staged, and the verdict on one.
+pub mod proposals;
 /// The decision queue's three ops — the read, the answer and the raise.
 pub mod queue;
 /// The conversation's records — the reads under one, as rows.
@@ -125,7 +127,7 @@ pub use balls::{
     marks, release, workspace_balls,
 };
 pub use candidates::{DELIVER, FAN, RETIRE, deliver, fan, retire};
-pub use capability::{ANSWER, RESTORE, REVOKE, VERDICTS, answer, restore, revoke};
+pub use capability::{ANSWER, RESTORE, REVOKE, SCOPES, VERDICTS, answer, restore, revoke};
 pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};
 pub use conversation::{
@@ -137,6 +139,7 @@ pub use fleet::{
     science, work_diff,
 };
 pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
+pub use proposals::{PROPOSAL, PROPOSALS, proposal, proposals};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{AGENT, FILES, INBOX, STEP, STEPS, agent, files, inbox, step, steps};
 pub use rows::{

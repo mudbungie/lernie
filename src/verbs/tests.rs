@@ -25,9 +25,9 @@ fn every_verb_builds_an_envelope_whose_op_is_its_own_word() {
     }
 }
 
-/// The twenty-five reads, the conversation's fifteen acts, the trail's two, the
-/// enrollment, the sign-in, the model assignment, the ball family's three and
-/// the wall's own three, spelled out — so the roster is asserted rather than
+/// The twenty-six reads, the conversation's fifteen acts, the trail's two, the
+/// enrollment, the sign-in, the model assignment, the learning loop's settle,
+/// the ball family's three and the wall's own three, spelled out — so the roster is asserted rather than
 /// merely iterated, and a verb added or dropped is a diff here.
 #[test]
 fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
@@ -57,6 +57,7 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "roles",
             "clients",
             "lineages",
+            "proposals",
             "providers",
             "models",
             "login-tail",
@@ -67,6 +68,7 @@ fn the_roster_is_the_verbs_the_seat_can_read_the_answers_to() {
             "retarget",
             "flag",
             "seen",
+            "proposal",
             "answer",
             "revoke",
             "restore",

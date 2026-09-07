@@ -61,8 +61,11 @@ fn main() -> ExitCode {
             address,
             goal,
             dir,
+            role,
             form,
-        } => rooted(|root| lernie::seat::start(root, &address, &goal, dir.as_deref(), form)),
+        } => rooted(|root| {
+            lernie::seat::start(root, &address, &goal, dir.as_deref(), role.as_deref(), form)
+        }),
         // **The filing diagnosis is a diagnosis, so it goes to stderr** — the
         // material under it is the product and stays on stdout, which is what
         // lets `--json` put one envelope there and nothing else.

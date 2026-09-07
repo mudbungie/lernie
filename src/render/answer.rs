@@ -34,6 +34,7 @@ pub(super) fn answer(reply: &Reply) -> String {
         Reply::Roles(rows) => policy::roles(rows),
         Reply::Config(config) => policy::config(config),
         Reply::Lineages(rows) => policy::lineages(rows),
+        Reply::Proposals(staged) => policy::proposals(staged),
         Reply::Clients(rows) => policy::clients(rows),
 
         Reply::Balls(rows) => tasks::balls(rows),
@@ -57,8 +58,9 @@ pub(super) fn answer(reply: &Reply) -> String {
             tool,
             tool_use,
             verdict,
+            scope,
             advanced,
-        } => acts::answered(tool, tool_use, verdict, *advanced),
+        } => acts::answered(tool, tool_use, verdict, scope, *advanced),
         Reply::Delivered {
             base,
             target,

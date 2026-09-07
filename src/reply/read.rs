@@ -12,8 +12,8 @@ use serde_json::Value;
 
 use super::{
     ERROR, KIND, OK, Outcome, Read, Reply, agent, balls, board, clients, config, convs, diff,
-    enrolled, fields, files, governing, help, inbox, lineages, login, ops, providers, queue, rail,
-    roles, roster, science, search, start, step, steps, stream, transcript,
+    enrolled, fields, files, governing, help, inbox, lineages, login, ops, proposals, providers,
+    queue, rail, roles, roster, science, search, start, step, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -82,6 +82,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
             tool: fields::text(obj, "tool")?,
             tool_use: fields::text(obj, "tool_use")?,
             verdict: fields::text(obj, "verdict")?,
+            scope: fields::text(obj, crate::verbs::capability::SCOPE)?,
             advanced: fields::flag(obj, "advanced")?,
         },
         FLOORED => Reply::Floored {
@@ -100,6 +101,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
         clients::KIND => Reply::Clients(fields::rows(obj, clients::row)?),
         config::KIND => Reply::Config(config::config(obj)?),
         lineages::KIND => Reply::Lineages(fields::rows(obj, lineages::row)?),
+        proposals::KIND => Reply::Proposals(proposals::proposals(obj)?),
         ops::KIND => Reply::Ops(fields::rows(obj, ops::row)?),
         ACKED => Reply::Acked,
         TRAIL_CLEARED => Reply::TrailCleared,

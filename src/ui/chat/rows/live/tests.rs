@@ -10,6 +10,7 @@ fn call(exit_code: Option<i32>) -> Window {
         tool: Some("box2_Bash".to_owned()),
         input: Some("{\"command\":\"uptime\"}".to_owned()),
         exit_code,
+        held: None,
     }
 }
 
@@ -53,6 +54,7 @@ fn a_call_with_no_opening_half_is_named_by_its_invocation() {
             tool: None,
             input: None,
             exit_code: Some(1),
+            held: None,
         }],
         ..Stream::default()
     };
@@ -61,4 +63,51 @@ fn a_call_with_no_opening_half_is_named_by_its_invocation() {
     assert!(painted[0].who.contains("toolu_09"), "{:?}", painted[0]);
     assert_eq!(painted[0].said, "");
     assert_eq!(streaming(&Stream::default()), Vec::new());
+}
+
+/// **A parked call is a row of its own, and it gets no dispatch row** (REMOTE
+/// §5.5, PROTOCOL 18): the capability control stops it before the executor is
+/// entered, so litany lands no `input.json` and a dispatch row would claim a
+/// thing that did not happen. What the row says is the control's own reason.
+#[test]
+fn a_parked_call_paints_the_park_and_not_a_dispatch() {
+    let parked = Stream {
+        tools: vec![Window {
+            tool_use: "toolu_02".to_owned(),
+            tool: Some("box2_service_status".to_owned()),
+            input: None,
+            exit_code: None,
+            held: Some("classified opaque".to_owned()),
+        }],
+        ..Stream::default()
+    };
+    let painted = streaming(&parked);
+    assert_eq!(painted.len(), 1, "{painted:?}");
+    assert!(painted[0].who.contains("held"), "{:?}", painted[0]);
+    assert!(
+        painted[0].who.contains("box2_service_status"),
+        "{:?}",
+        painted[0]
+    );
+    assert_eq!(painted[0].said, "classified opaque");
+}
+
+/// **The park is not terminal.** When the operator answers it the call runs,
+/// and its opening and closing arrive under the same id — so the fold carries
+/// all three facts and the pane paints all three rows, in the order they
+/// happened.
+#[test]
+fn an_answered_park_keeps_its_row_and_gains_the_two_it_was_waiting_for() {
+    let released = Stream {
+        tools: vec![Window {
+            held: Some("classified opaque".to_owned()),
+            ..call(Some(0))
+        }],
+        ..Stream::default()
+    };
+    let painted = streaming(&released);
+    assert_eq!(painted.len(), 3, "{painted:?}");
+    assert!(painted[0].who.contains("held"), "{:?}", painted[0]);
+    assert_eq!(painted[1].said, "{\"command\":\"uptime\"}");
+    assert!(painted[2].who.contains("returned"), "{:?}", painted[2]);
 }

@@ -110,3 +110,55 @@ fn a_transcript_prints_what_was_said_and_not_the_raw_bytes_beside_it() {
     assert!(said.contains("ship it"), "{said}");
     assert!(!said.contains("---"), "the raw bytes are printed: {said}");
 }
+
+/// **The fourth `framing` word reaches the glass as itself** (PROTOCOL 18, yog
+/// bl-ab53). `in_flight` is the step being written right now, told apart from
+/// the one an interrupt cut — a new VALUE and not a new key, which no field
+/// signature can see. This seat carries a class token verbatim on §4.9's rung
+/// 3, so what it owes is the assertion that the word arrives and is not
+/// painted as a neighbour it is not: `killed` is the word that makes an
+/// interrupt legible, and reading it over a healthy conversation costs the
+/// vocabulary the interrupt depends on.
+#[test]
+fn an_in_flight_step_paints_as_itself_and_never_as_the_word_for_a_kill() {
+    let said = rendered(
+        &json!({"ok": true, "kind": "steps", "orphan": "none", "rows": [
+            {"seq": "007", "framing": "in_flight", "attempts": 1, "wound": "none",
+             "started_at": "t0", "commit": "abc",
+             "tokens": {"input": 11, "output": 22, "cache_read": 33, "cache_write": 44, "total": 99}}
+        ]}),
+    );
+    assert!(said.contains("in_flight"), "{said}");
+    assert!(!said.contains("killed"), "{said}");
+}
+
+/// **What a reviewer staged for a wall's config, and one of them whole**
+/// (PROTOCOL 18, yog bl-dd88). The standing crosses as the engine's own word —
+/// `fresh` means the lineage still stands where the reviewer read it — and is
+/// never inferred here from an empty `lineages`, which is REMOTE §9.4's rule
+/// that the wire states a derivation so no seat owns one.
+#[test]
+fn a_proposals_listing_says_the_standing_the_engine_read_and_never_infers_one() {
+    let row = |id, fresh, lineages| {
+        json!({"id": id, "fresh": fresh, "lineages": lineages, "parent": "9f2c1ab4",
+               "diffstat": "1 file changed, 6 insertions(+)", "subject": "notes: what it taught"})
+    };
+    let said = rendered(
+        &json!({"ok": true, "kind": "proposals", "whole": "commit 71011c3d",
+        "rows": [row("r-1", true, json!(["default"])), row("r-2", false, json!([]))]}),
+    );
+    assert!(said.contains("r-1"), "{said}");
+    assert!(said.contains("fresh"), "{said}");
+    assert!(said.contains("default"), "{said}");
+    assert!(said.contains("stale"), "{said}");
+    assert!(
+        said.contains("no lineage still heads at its parent"),
+        "an empty lineage list is the stale case said out loud: {said}"
+    );
+    assert!(said.contains("commit 71011c3d"), "{said}");
+    assert!(
+        rendered(&json!({"ok": true, "kind": "proposals", "rows": []}))
+            .contains("nothing is staged for this wall"),
+        "nothing staged is an empty answer, not a refusal"
+    );
+}

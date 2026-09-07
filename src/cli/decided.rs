@@ -39,6 +39,13 @@ pub enum Decided {
         /// inferred, so this `Option` IS the rung and there is no second word
         /// for the operator to keep in agreement with it.
         dir: Option<String>,
+        /// **The role the conversation is born on, when one was asked for**
+        /// (REMOTE §9.21, PROTOCOL 18). `None` leaves the body's own value,
+        /// which is the `null` `prepare` answers and litany reads as `worker`
+        /// — so a start that names no role is the start this seat sent before
+        /// the field existed. It is stated on the FIRE and not on the stage,
+        /// which is why it is a word here and not a rung.
+        role: Option<String>,
         /// Which form the two reply streams print in.
         form: Form,
     },

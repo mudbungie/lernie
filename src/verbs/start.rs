@@ -31,6 +31,30 @@
 //! where it was asked to. The rung sets the driver's working directory; prose
 //! in a goal cannot.
 //!
+//! # The role is the one field the seat WRITES into the body it carries back
+//!
+//! [`ROLE`] (REMOTE §9.21, PROTOCOL 18; yog bl-9ced) is the role a conversation
+//! is born on — the soul, the provider assignment and the tool grant litany
+//! resolves out of the same config commit `lineage` already chose. yog derives
+//! nothing into it: `prepare` answers `null`, which is litany's `worker` and is
+//! byte-identical in meaning to every body answered before the field existed,
+//! and *which* role an operator wants is a choice made **between** the stage
+//! and the fire. Plan mode is exactly that choice, so the seat states it on the
+//! body it was already handing back — one field of one gesture, no second op
+//! and no second round trip.
+//!
+//! It is the one exception to the verbatim carry below and it is the carry's
+//! own rule rather than a hole in it: the body is handed back untouched EXCEPT
+//! where this seat has something to say, which was the workspace and is now
+//! the workspace and the role. Unstated leaves whatever the engine answered,
+//! which is how a fire that names no role stays the byte-identical fire.
+//!
+//! **A role this seat does not check**, for the reason it checks no path:
+//! litany resolves the role before the fork, so a role the governing commit
+//! does not declare leaves no branch, no ref and no worktree, and the engine
+//! refuses in its own words. A second validity check here could only disagree
+//! with it.
+//!
 //! **A path this seat does not check.** The directory is the ENGINE's box, not
 //! this one — a seat dials a server and may hold no such path at all — so a
 //! path that is not there is refused by the engine, in its own words, which is
@@ -64,6 +88,10 @@ const BARE: &str = "bare";
 const PATH: &str = "path";
 /// The work target the path rung carries.
 const DIR: &str = "dir";
+
+/// **The field the born-on role rides under** (REMOTE §9.21), spelled once so
+/// the door that writes it and the grammar that reads it cannot disagree.
+pub const ROLE: &str = "role";
 
 /// **Stage a start** in the workspace `address` names — on the path rung when
 /// a work target is named, and on the bare rung when none is.
@@ -114,10 +142,18 @@ pub fn goal(prefill: &str, typed: &str) -> String {
 /// doc); `seed` is spelled `null` because this seat predicts no conversation
 /// name — the mint is the engine's, and a seat that predicted one would have to
 /// fire the name it painted.
-pub fn prompt(prepared: &Prepared, address: String, goal: String) -> Value {
+/// `role`, where the operator asked for one, is written onto that same body —
+/// see the module doc on why this is the carry's rule and not an exception to
+/// it. `None` leaves the field exactly as the engine answered it, so a fire
+/// that names no role is the fire this seat sent before the field existed.
+pub fn prompt(prepared: &Prepared, address: String, goal: String, role: Option<String>) -> Value {
+    let mut body = envelope::with_workspace(&prepared.body, &address);
+    if let (Some(named), Some(map)) = (role, body.as_object_mut()) {
+        map.insert(ROLE.to_owned(), Value::String(named));
+    }
     json!({
         envelope::OP: PROMPT,
-        envelope::PREPARED: envelope::with_workspace(&prepared.body, &address),
+        envelope::PREPARED: body,
         "goal": goal,
         "seed": Value::Null,
     })

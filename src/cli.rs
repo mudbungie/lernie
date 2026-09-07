@@ -16,8 +16,12 @@ mod verdict;
 /// What one invocation decided to do.
 mod decided;
 
+/// `answer`'s own grammar: three words and the optional reach of the fourth.
+mod answer;
 /// `enroll`'s own grammar: three words and two optional ones.
 mod enroll;
+/// `start`'s own grammar: the rung's positional word, and the role's written one.
+mod start;
 
 pub use decided::{Asking, Decided};
 pub use enroll::{AT, INTO};
@@ -64,8 +68,7 @@ pub fn run(args: Vec<String>) -> Decided {
         // from when the sentence was laid out over two rows in the source, and
         // a stored usage line is the second fact `crate::verbs` exists not to
         // keep.
-        ["start", address, goal] => started(address, goal, None, form),
-        ["start", address, goal, dir] => started(address, goal, Some(dir), form),
+        ["start", address, goal, tail @ ..] => start::start(address, goal, tail, form),
         // Ahead of the typed table, because the word spends its row MORE THAN
         // ONCE (bl-f076): a read ends at the engine's step boundary and the
         // question an operator asked is about the whole of the work. `follow`
@@ -96,6 +99,19 @@ pub fn run(args: Vec<String>) -> Decided {
         // rather than making an operator answer it.
         ["ops"] => Decided::Fanned(crate::verbs::ops(crate::verbs::DEPTH), form),
         ["ops", depth] => trail(depth, form),
+        // **The capability answer, with its reach defaulted** (PROTOCOL 18;
+        // `ops`' own shape one noun over). The wire requires `scope` in both
+        // directions and an operator may leave it off, which no row of named
+        // strings can express — so the word answers the field from the narrow
+        // constant when nothing was typed, and the wider two are the fourth
+        // word. The row stays in the table: the window spends it, the corpus
+        // round-trips it, and a wrong arity still earns its usage below.
+        ["answer", workspace, agent, verdict] => {
+            answer::answer(workspace, agent, verdict, None, form)
+        }
+        ["answer", workspace, agent, verdict, scope] => {
+            answer::answer(workspace, agent, verdict, Some(scope), form)
+        }
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => {
@@ -105,17 +121,6 @@ pub fn run(args: Vec<String>) -> Decided {
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,
         [word, arguments @ ..] => typed(word, arguments, form),
-    }
-}
-
-/// **The composite start**, with or without the work target that makes it the
-/// §3.4 path rung rather than the bare one (bl-4371).
-fn started(address: &str, goal: &str, dir: Option<&str>, form: Form) -> Decided {
-    Decided::Start {
-        address: address.to_owned(),
-        goal: goal.to_owned(),
-        dir: dir.map(str::to_owned),
-        form,
     }
 }
 

@@ -198,7 +198,12 @@ the upgrade prompt: there is no negotiation, no version list and no compat
 shim. `src/channel/hello.rs` — where the number is *included*, never
 declared: the repo-root `PROTOCOL` file states it and `build.rs` compiles it in
 (bl-55b1), because the release gates that read it are other repositories
-fetching one path out of a tree they do not build.
+fetching one path out of a tree they do not build. The per-bump LEDGER — the
+prose beside the re-export, saying what each version moved and what this seat
+did about it — is `src/channel/hello/ledger.rs` (bl-c515), because it grows one
+entry every bump where the mechanism above it has not changed in five. Two
+homes and neither is a copy of the other: the file says what the number is, the
+ledger says why it is that.
 
 **This is why a separate crate needs it.** Until the split, one crate shipped
 both ends of every connection and the wire could not skew. A seat is installed
@@ -479,6 +484,56 @@ another. The same bump's other half cost nothing — the §6 signal vocabulary
 gained a value, `truncated`, which this seat already carries as itself on rung
 3 — and its third brought two new shapes, `doctor` and its request, which land
 in `corpus/unreadable/` with the parity ledger carrying the op's line (§4.16).
+
+**PROTOCOL 18 is the bump that spends every reading it has** (bl-c515; yog
+bl-58bb, bl-ab53, bl-dd88, bl-94a5). Four shapes off three lanes at one
+version, and this seat's answer to each is a different one of §4.9's own
+readings — which is why it is worth writing down once rather than restating the
+ledger:
+
+- **A field gained and PAINTED.** `reply/follow`'s tool-window entry gained
+  `held`, the capability control's reason for parking a call. A held
+  invocation is stopped before the executor is entered, so litany lands neither
+  of the two files the window is made of and the lane said nothing at the one
+  moment the operator was the blocker. Painted on both faces at once for the
+  reason `sender_name` was at 17 — the defect is on the glass — and painted as
+  a transition rather than a status: the park is a row of its own, the dispatch
+  row it replaces does not appear because there was no dispatch, and an
+  answered park keeps its row and gains the two it was waiting for.
+- **A VALUE gained and nothing to build.** `reply/steps` gained a fourth
+  `framing` word, `in_flight`. Rung 3 already carries it: a class token paints
+  as itself. What the bump costs is one assertion — that the word arrives and
+  is not read as `killed`, which is the word an interrupt writes and the one
+  thing a healthy conversation must never be described by.
+- **Two ops at no version cost, and the ledger split in half.** `proposals`
+  and `proposal` are the learning loop's operator half (REMOTE §9.22). New ops
+  are free by §3's rule, so what a client owes is a re-vendor and not a
+  re-pin — and this release paid the *wire* half whole (the reply decoded, both
+  gestures composed, the command line painting the listing and the proposal
+  whole) while the GLASS half is two lines in `parity.toml` citing bl-a1d6.
+  That is the number-moves-for-the-wire / fields-move-for-the-panes rule
+  splitting one shape rather than one release.
+- **A field gained that cost NO decode at all.** The `prepared` body gained
+  `role`, and every shape carrying a `prepared` gained it — four. Rung 4 in the
+  write direction had already paid for it: the body crosses back verbatim, so
+  the field rode through untouched from the moment it existed. What it cost is
+  the other kind of grammar — `prepare` answers `null` and the SEAT states what
+  the operator asked for on the fire (`lernie start … --role <name>`,
+  `crate::cli::start`), because which role a conversation is born on is the
+  choice made between the two acts and plan mode is exactly that choice. It is
+  the one exception to the verbatim carry, and it is the carry's own rule
+  rather than a hole in it: the body is handed back untouched except where this
+  seat has something to say, which was the workspace and is now the workspace
+  and the role.
+- **A field gained that cost a GRAMMAR.** `request/answer` and
+  `reply/answered` gained `scope`, how far one capability answer stands.
+  Required in both directions and optional to type, which is a shape the verb
+  table cannot express — *a word and its parameters, all of them named
+  strings* — so it rides a door of its own (`crate::cli::answer`) on
+  `enroll`'s precedent, and the window offers the two wider reaches as rows
+  that name themselves rather than as a picker, because a sticky picker makes
+  *wider* a thing an operator arrives at by accident and the wire refuses a
+  default for exactly that reason.
 
 **The per-bump ledger is the `PROTOCOL` constant and this section does not
 restate it** — one fact, one home, and a list here would rot the way every
@@ -1981,6 +2036,17 @@ seat half has not. Its reply kind sits in `corpus/unreadable/` for §4.9's
 reason, so the decode and the pane arrive in one commit and that commit deletes
 the line. The two halves of a protocol bump are decided separately: the number
 moves for the wire, the paint moves for the panes.
+
+**And PROTOCOL 18 added two more, which is the ledger doing the thing it was
+written to do** (bl-c515). `proposals` and `proposal` are the learning loop's
+operator half and both are classed `control`, so both owe this seat an
+interactable and neither has one — the reply is decoded, both gestures are
+composed and the command line paints them, and the GLASS is bl-a1d6's. The
+lines say so and cite it, which is the difference between a gap and a debt with
+an owner. Note what does NOT put a line here: `answer` gained a `scope` at the
+same bump and stays tagged, because the roster's unit is the op and the op is
+surfaced — how RICH a surfaced control is, is not this ledger's question and
+must not become one, or the file stops being a list of absences.
 
 **The inventory instrument is §4.11's harness and never a second one**, for the
 reason a second paint walk was refused: two instruments disagreeing about what
@@ -3896,6 +3962,8 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
 | `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~210 |
+| `src/cli/start.rs` | the composite start's grammar: the work target, positional because the §3.4 rung is what it decides, and `--role <name>`, written because it is stated on the FIRE and not on the stage (REMOTE §9.21, PROTOCOL 18). A tail this arm cannot read leads with the quoting, because it is almost always an unquoted goal. | ~80 |
+| `src/cli/answer.rs` | `answer`'s own grammar: the three words and the optional fourth, the reach (PROTOCOL 18). A word the wire REQUIRES and an operator may leave off is neither a parameter nor a flag, so the word answers the field from the narrow constant and reads a misspelling here — `enroll`'s grade's own rule. | ~60 |
 | `src/cli/enroll.rs` | `enroll`'s own grammar: its three words, the grade read off a closed set of two, and the two optional words — `--at <host>:<port>`, the route the new box will dial, and `--into <dir>`, where this box writes the material down (§4.15, bl-971c). Its own file for the reason yog's line reader cut the same seam at: a verb whose grammar is more than words is its own file. | ~120 |
 | `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
@@ -3912,7 +3980,8 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |
-| `src/channel/hello.rs` | the version preface. | ~85 |
+| `src/channel/hello.rs` | the version preface: write, confirm, and the refusal that names both numbers. | ~100 |
+| `src/channel/hello/ledger.rs` | the per-bump ledger, and the re-export of the constant `build.rs` compiles from the repo-root `PROTOCOL` file. Split from the file above at PROTOCOL 18 (bl-c515) because the two grow for different reasons — that one is what the preface DOES and has not changed in five versions, this one is an entry longer after every bump, forever. | ~280 |
 | `src/channel/tls.rs` | the mTLS configuration. | ~90 |
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
@@ -4002,7 +4071,7 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
 | `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
-| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered (§4.34), and the way out to the conversation. | ~230 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered and the two wider reaches each names for itself (§4.34, PROTOCOL 18), and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
 | `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
@@ -4039,9 +4108,11 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/ui/model/deep.rs` | the one read this pane posts rather than stands, and why the answer's own `seq` is the whole of what says which row it belongs to (§4.32). | ~55 |
 | `src/reply/config.rs` | one config file as the typed thing it is: the bytes, the settings the schema found in them, and the bounds that ride a control (§4.30). | ~130 |
 | `src/reply/lineages.rs` | the config lineages one workspace holds — the listing the file read indexes into, with the tip in both spellings (§4.30). | ~70 |
+| `src/reply/proposals.rs` | what a reviewer has staged for one workspace's config, and — where the read named one — that proposal whole (REMOTE §9.22, PROTOCOL 18). `fresh` crosses as the engine's own reading and is never inferred here from an empty lineage list. | ~130 |
 | `src/reply/clients.rs` | the machines registered in one workspace: presence as an observation, the advertised set as a statement, and the consent whose absence is a reading (§4.28). | ~110 |
 | `src/reply/providers.rs` | what a wall can sign in to, and what one row offers: the four required fields, the block whose absence is the whole of *signable*, and the two capability booleans (§4.24). | ~110 |
 | `src/reply/login.rs` | one sign-in run as the engine streams it — both tagged streams, the fold a frame is an append onto, and the two settled facts whose absence is a reading (§4.24). | ~115 |
+| `src/verbs/proposals.rs` | the learning loop's two gestures: the listing at both its depths (the id is an optional string and rides the `stating` door), and the settle whose id and verdict are both required and neither defaulted. | ~100 |
 | `src/verbs/config.rs` | the config family: the lineage listing as a row, and the one envelope the read and the write both are — the five places a config file lives, typed, and `text` the whole of what separates the halves (§4.30). | ~190 |
 | `src/verbs/clients.rs` | the one op on the tool-host surface a seat is owed, and the four that are a machine's — with why `invocations` must never be asked from here (§4.28). | ~65 |
 | `src/verbs/login.rs` | the sign-in family as rows: the table, the offering, the act that starts a run in the wall, and the lane that streams it — four ops, one subject (§4.24). | ~115 |

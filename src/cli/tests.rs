@@ -3,14 +3,18 @@
 //! Split at the design-time budget along the seams the module itself has:
 //! [`verdicts`] is what a run *says* about this binary and how a [`Verdict`]
 //! carries it, [`decisions`] is what `run` *decides* to do, and [`refusals`] is
-//! every way a word can fail to be one it answers. The four helpers they share
-//! stay here.
+//! every way a word can fail to be one it answers. [`answer`] and
+//! [`start`] are the fourth and fifth, on the seam [`super::answer`] and
+//! [`super::start`] themselves cut: a verb whose grammar is more than words is
+//! its own file. The four helpers they share stay here.
 
 use super::{Decided, Verdict, run};
 use serde_json::Value;
 
+mod answer;
 mod decisions;
 mod refusals;
+mod start;
 mod verdicts;
 
 /// Build the argument vector the way `main` does, from string literals.

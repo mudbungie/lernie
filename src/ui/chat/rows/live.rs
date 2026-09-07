@@ -46,11 +46,35 @@ fn call(window: &Window) -> Vec<Row> {
         .tool
         .clone()
         .unwrap_or_else(|| window.tool_use.clone());
-    let opened = Row::plain(
-        format!("{LIVE} → {named} {}", window.tool_use),
-        window.input.clone().unwrap_or_default(),
-        Speaker::Model,
-    );
+    // **The park is a row of its own, and it comes first** (REMOTE §5.5,
+    // PROTOCOL 18): it is the transition that happened before the dispatch,
+    // and on a lane with a floor it is the only one that ever happens. Its
+    // body is the control's own reason, verbatim — a seat that re-worded it
+    // would be answering a question the control already answered.
+    //
+    // **It is the model's own weight and not a failure**, on this module's
+    // rule that one call reads the same on both routes: a park is the boundary
+    // waiting on the operator, which is neither an error nor a peer speaking.
+    let parked = window.held.as_ref().map(|reason| {
+        Row::plain(
+            format!("{LIVE} {HELD} {named} {}", window.tool_use),
+            reason.clone(),
+            Speaker::Model,
+        )
+    });
+    // **A parked call was not dispatched, so it gets no dispatch row.** litany
+    // lands no `input.json` for one — the park stops it before the executor is
+    // entered — so a row here would claim a thing that did not happen. It
+    // returns the moment the operator answers, because the opening entry then
+    // arrives under this same id and fills the input in.
+    let dispatched = window.input.is_some() || window.held.is_none();
+    let opened = dispatched.then(|| {
+        Row::plain(
+            format!("{LIVE} → {named} {}", window.tool_use),
+            window.input.clone().unwrap_or_default(),
+            Speaker::Model,
+        )
+    });
     let landed = window.exit_code.map(|code| {
         let ok = code == 0;
         Row {
@@ -67,13 +91,17 @@ fn call(window: &Window) -> Vec<Row> {
             fold: None,
         }
     });
-    std::iter::once(opened).chain(landed).collect()
+    parked.into_iter().chain(opened).chain(landed).collect()
 }
 
 /// The two words a settled call is said in — the committed transcript's own,
 /// so one call reads the same on both routes.
 const RETURNED: &str = "returned";
 const FAILED: &str = "failed";
+
+/// The word a parked call is said in — the agent row's own (`render::walls`),
+/// so the park reads the same whichever read carried it.
+const HELD: &str = "held";
 
 /// **The one rule for a half of a turn, and its one home.** Reasoning and
 /// answer are each a row of its own and each omitted when it is empty: a model

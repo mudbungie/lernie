@@ -9,7 +9,10 @@ use super::{ASK, ENTRIES, HELP, OPS, START, find, table};
 /// (bl-28a4).
 #[test]
 fn every_door_prints_the_line_an_operator_types() {
-    assert_eq!(START.usage(), "lernie start <workspace> <goal> [<dir>]");
+    assert_eq!(
+        START.usage(),
+        "lernie start <workspace> <goal> [<dir>] [--role <name>]"
+    );
     assert_eq!(ASK.usage(), "lernie ask <envelope>");
     assert_eq!(OPS.usage(), "lernie ops [<max>]");
     assert_eq!(ENTRIES.usage(), "lernie entries");
@@ -27,8 +30,8 @@ fn an_arity_refusal_names_the_word_and_what_it_takes() {
     );
     assert_eq!(
         START.refused(1),
-        "`lernie start` takes 2 to 3 argument(s) and got 1 — usage: lernie start \
-         <workspace> <goal> [<dir>]",
+        "`lernie start` takes 2 to 5 argument(s) and got 1 — usage: lernie start \
+         <workspace> <goal> [<dir>] [--role <name>]",
         "a door with an optional argument says the whole range, not its top"
     );
     assert_eq!(

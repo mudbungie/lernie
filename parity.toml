@@ -147,3 +147,15 @@
 # renders is a kind nobody has to carry), so the pane and the decode land in
 # one commit, and this line is deleted by it.
 doctor = "yog bl-28f4 landed the engine's half at PROTOCOL 17; the seat owes it a control and a rendering, which is round-1 ruling 7's lernie half"
+
+# The learning loop's two arrived at PROTOCOL 18 (yog bl-dd88, REMOTE §9.22) —
+# `proposals` reads what a reviewer has staged for a workspace's config and
+# `proposal` is the verdict on one of them, which is the decision the whole
+# loop is built around. The wire half landed here in bl-c515 whole: the reply
+# is decoded, both gestures are composed, and the command line paints the
+# listing and the proposal whole. What did not land is the GLASS — a proposal
+# is a candidate config commit, so its home is the config pane's own row
+# (DESIGN §4.30) and both verdicts are §4.20 acts rather than bare buttons.
+# These two lines are what bl-a1d6 deletes.
+proposals = "bl-a1d6 hangs the listing on the config pane; the read and both gestures landed in bl-c515 and only the control is missing"
+proposal = "bl-a1d6 hangs accept and reject on that listing's row, under §4.20's arming; the gesture landed in bl-c515"

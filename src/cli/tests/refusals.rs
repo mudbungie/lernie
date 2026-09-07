@@ -30,11 +30,7 @@ fn a_misspelled_enrollment_earns_the_row_s_usage() {
 /// quoted sentence.
 #[test]
 fn the_start_word_refuses_by_arity_and_says_what_it_takes() {
-    for words in [
-        vec!["start"],
-        vec!["start", "home"],
-        vec!["start", "home", "do", "the", "thing"],
-    ] {
+    for words in [vec!["start"], vec!["start", "home"]] {
         let v = said(&words);
         assert_eq!(v.code, REFUSED, "{words:?}");
         assert_eq!(v.stream, Stream::Err);
@@ -44,12 +40,33 @@ fn the_start_word_refuses_by_arity_and_says_what_it_takes() {
         // in the source — on one of the two words an operator is likeliest to
         // get wrong. It is the door's own computed line now.
         let wanted = format!(
-            "`lernie start` takes 2 to 3 argument(s) and got {} — usage: lernie start \
-             <workspace> <goal> [<dir>]",
-            words.len() - 1
+            "`lernie start` takes 2 to 5 argument(s) and got {} — usage: {}",
+            words.len() - 1,
+            crate::verbs::doors::START.usage()
         );
         assert!(v.text.contains(&wanted), "{}", v.text);
     }
+}
+
+/// **An unquoted goal is the tail this arm cannot read, and the sentence leads
+/// with the fix.** The composite's grammar grew a written word at PROTOCOL 18
+/// (`--role`), so a tail past the goal is read here rather than counted by the
+/// door — and what an operator has almost always done is forget the quotes,
+/// which is a different mistake from naming a work target wrongly and gets the
+/// answer that fixes it.
+#[test]
+fn an_unquoted_goal_is_told_to_quote_it_and_shown_the_whole_grammar() {
+    let v = said(&["start", "home", "do", "the", "thing"]);
+    assert_eq!(v.code, REFUSED);
+    assert_eq!(v.stream, Stream::Err);
+    assert!(v.text.contains("\"the thing\""), "{}", v.text);
+    assert!(v.text.contains("ONE argument"), "{}", v.text);
+    assert!(v.text.contains("--role"), "{}", v.text);
+    assert!(
+        v.text.contains(&crate::verbs::doors::START.usage()),
+        "{}",
+        v.text
+    );
 }
 
 /// **A verb's own refusal names the verb**, where a word that is no verb can

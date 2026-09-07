@@ -19,6 +19,19 @@
 //! status unknown*, which is what makes the two readings impossible to
 //! disagree about.
 //!
+//! # A third transition never reaches disk, and it is the park
+//!
+//! [`Window::held`] (REMOTE §5.5, PROTOCOL 18; yog bl-58bb) carries the
+//! capability control's reason for parking the call. It is not a third file:
+//! a held invocation is stopped *before* the executor is entered, so litany
+//! lands neither `input.json` nor `output.json` and the two entries above say
+//! nothing at all — the engine reads the park off the conversation's own hold
+//! mark instead. Its presence is the status, `exit_code`'s own discipline on
+//! the same entry, so a held call is never also an opening. The park is not
+//! terminal: when the operator answers it, the call runs and its opening and
+//! closing arrive under this same `tool_use`, which [`fold`] merges onto the
+//! one call the way it merges any other transition.
+//!
 //! # Where it ran is in the name, and this end must not take it apart
 //!
 //! REMOTE §5.1 presents a loaded remote tool as `<client>_<tool>`, always and
@@ -38,6 +51,7 @@ pub(crate) const TOOLS: &str = "tools";
 const TOOL: &str = "tool";
 const INPUT: &str = "input";
 const EXIT_CODE: &str = "exit_code";
+const HELD: &str = "held";
 
 /// **One tool call, as much of it as has been said.**
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -55,6 +69,12 @@ pub struct Window {
     pub input: Option<String>,
     /// **The status, by its presence.** Absent is a call still in flight.
     pub exit_code: Option<i32>,
+    /// **The park, by its presence** (PROTOCOL 18): the capability control's
+    /// own reason for holding this call before it ran. Absent is a call the
+    /// boundary did not park — which is every call on a lane with no floor —
+    /// and the reason is the control's sentence, carried verbatim rather than
+    /// re-worded here, because the seat has no second reading of it.
+    pub held: Option<String>,
 }
 
 /// The window a frame carries. **Required, empty list included** (REMOTE
@@ -73,6 +93,7 @@ fn entry(value: &Value) -> Result<Window, String> {
         tool: fields::opt_text(obj, TOOL)?,
         input: fields::opt_text(obj, INPUT)?,
         exit_code: fields::opt_exit(obj, EXIT_CODE)?,
+        held: fields::opt_text(obj, HELD)?,
     })
 }
 
@@ -88,6 +109,12 @@ pub(crate) fn fold(held: &mut Vec<Window>, entry: Window) {
             call.tool = entry.tool.or_else(|| call.tool.take());
             call.input = entry.input.or_else(|| call.input.take());
             call.exit_code = entry.exit_code.or(call.exit_code);
+            // The park is a transition like the other two, and the answer that
+            // lifts it is the opening entry arriving under the same id. So the
+            // later entry's reason wins where it has one and the held reason
+            // stands where it does not — never blanked by a half that is
+            // simply about something else.
+            call.held = entry.held.or_else(|| call.held.take());
         }
         None => held.push(entry),
     }

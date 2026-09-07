@@ -90,6 +90,15 @@ impl Model {
             // The config pane's two, on the same terms.
             Reply::Config(file) => self.config = Some(file),
             Reply::Lineages(rows) => self.lineages = Some(rows),
+            // **The learning loop's read has no pane on this glass yet**
+            // (§4.9: a kind nothing renders is a kind nobody has to carry; the
+            // ball that lands a pane is the ball that files it). This window
+            // composes no `proposals` gesture, so no answer of the kind can
+            // reach this door unasked — and a model field for one would be a
+            // place invented ahead of the thing that fills it. The record is
+            // the two lines in `parity.toml`, each citing the ball that will
+            // delete this arm along with them.
+            Reply::Proposals(_) => {}
             // **The queue, one channel's slice at a time** — the fan's answer
             // replaces what this channel last said and leaves the others
             // standing, exactly as a roster answer does (`queue`).
@@ -196,8 +205,13 @@ impl Model {
                 tool,
                 tool_use,
                 verdict,
+                scope,
                 advanced,
-            } => self.notice = Some(Notice::answered(&tool, &tool_use, &verdict, advanced)),
+            } => {
+                self.notice = Some(Notice::answered(
+                    &tool, &tool_use, &verdict, &scope, advanced,
+                ));
+            }
             Reply::Floored { standing } => self.notice = Some(Notice::floored(standing)),
             Reply::Outcome(outcome) => {
                 self.notice = (!outcome.ok()).then_some(Notice::Refused(outcome.stderr));

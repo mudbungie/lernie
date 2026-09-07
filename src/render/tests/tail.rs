@@ -144,3 +144,48 @@ fn a_held_read_says_a_refusal_and_prints_the_frame_where_asked() {
         "the machine form is the frame, byte for byte"
     );
 }
+
+/// **A parked call arrives on the lane rather than only at the end of it**
+/// (REMOTE §5.5, PROTOCOL 18; yog bl-58bb). The park is a transition litany
+/// lands no file for — a held invocation is stopped before the executor is
+/// entered — so the window said nothing at the one moment the operator reading
+/// this line was the thing it was waiting for. On a foot lane every call to a
+/// non-shell tool is held, which makes it most of the conversation.
+#[test]
+fn a_follow_frame_says_a_call_the_boundary_parked_and_why() {
+    says(
+        &json!({"ok": true, "kind": "follow", "stream": {},
+                "tools": [{"tool_use": "toolu_02", "tool": "box2_service_status",
+                           "held": "box2_service_status {} classified opaque"}]}),
+        &["┊ held", "box2_service_status", "classified opaque"],
+    );
+}
+
+/// **The park is not terminal, and the fold is what makes that legible.** When
+/// the operator answers it the call runs, and its opening and closing arrive
+/// under the same `tool_use` — so a follower keyed on that id reads one call
+/// going held → posted → complete, and the last word about it is the exit code
+/// rather than the park it was released from.
+#[test]
+fn an_answered_park_reads_as_one_call_going_held_then_posted_then_complete() {
+    let mut fold = Stream::default();
+    let parked = tail(
+        &json!({"ok": true, "kind": "follow", "stream": {},
+                "tools": [{"tool_use": "toolu_02", "tool": "box2_service_status",
+                           "held": "classified opaque"}]}),
+        &mut fold,
+        Form::Rendered,
+    );
+    assert!(parked.contains("held"), "{parked}");
+    let ran = tail(
+        &json!({"ok": true, "kind": "follow", "stream": {},
+                "tools": [{"tool_use": "toolu_02", "exit_code": 0}]}),
+        &mut fold,
+        Form::Rendered,
+    );
+    assert!(ran.contains("exit 0"), "{ran}");
+    assert!(
+        ran.contains("box2_service_status"),
+        "the closing entry restates no name, so the fold must: {ran}"
+    );
+}

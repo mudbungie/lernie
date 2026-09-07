@@ -19,9 +19,9 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    ADDRESS, CREATE, DELIVER, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE,
-    UPDATE, create, deliver, effort, enroll, fan, find, fork, ops, prepare, priority, prompt,
-    retire, update,
+    ADDRESS, ANSWER, CREATE, DELIVER, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT,
+    PROPOSALS, RETIRE, UPDATE, answer, create, deliver, effort, enroll, fan, find, fork, ops,
+    prepare, priority, prompt, proposals, retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -123,6 +123,28 @@ fn rebuilt(frame: &Value) -> Option<Value> {
             said(obj, ADDRESS),
         ));
     }
+    // **The second row with a door beside it** (bl-c515), on `enroll`'s own
+    // terms: `proposals` is one op at two depths and the deeper one names an
+    // optional `id`, which the generic arm declines on arity alone. The door
+    // composes both, absence and all — a bare listing states no id, because
+    // that absence is the fact rather than a field left short.
+    if op == PROPOSALS.word {
+        return Some(proposals(text(obj, envelope::WORKSPACE), said(obj, "id")));
+    }
+    // **The third row with a door beside it** (bl-c515): `answer`'s `scope` is
+    // required on the wire and optional to type, which no row of named strings
+    // can express — so the row keeps three parameters and the door states the
+    // fourth field, and the generic arm below would decline every frame on
+    // arity. It round-trips off the frame's own word, `call` included, because
+    // this seat states the field on every gesture it composes.
+    if op == ANSWER.word {
+        return Some(answer(
+            text(obj, envelope::WORKSPACE),
+            text(obj, "agent"),
+            text(obj, "verdict"),
+            said(obj, crate::verbs::capability::SCOPE),
+        ));
+    }
     if let Some(verb) = find(&op) {
         return from_row(verb, obj);
     }
@@ -216,7 +238,11 @@ fn rebuilt(frame: &Value) -> Option<Value> {
         PROMPT => obj["seed"].is_null().then(|| {
             let staged = crate::reply::start::prepared(obj).expect("a staged body");
             let address = staged.workspace.clone();
-            prompt(&staged, address, text(obj, "goal"))
+            // **No role stated, because the body already carries whatever the
+            // frame said** (REMOTE §9.21): the field is inside `prepared` and
+            // rides the verbatim carry, so a round trip that re-stated it here
+            // would be testing this arm rather than the carry.
+            prompt(&staged, address, text(obj, "goal"), None)
         }),
         _ => None,
     }

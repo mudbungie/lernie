@@ -3521,6 +3521,24 @@ after it is the gesture byte for byte. The cost is that the spelling everybody
 tries first is the trailing one, and that is paid where it is made: an arity
 refusal whose arguments contain `--json` says where the word goes.
 
+**A rendering elides, and it says where it did.** That is the reading rule
+above with a name on it, and the work diff is where it was broken: the frame
+carries `truncated` — the engine stopped listing files at its own bound — and
+the rendering decoded the field and printed nothing, so a cut listing read as
+the whole change (bl-2e1d). The worktree listing had held the same rule with
+its own `(truncated)` since bl-6ae7; the diff now holds it with a line naming
+what it knows and what it does not, because the count the engine dropped is
+genuinely not on this wire.
+
+**And that diff is a NUMSTAT, which bounds what a diff rendering here can be.**
+yog answers `work-diff` off `git diff --numstat` — a path and two counts a
+file — so there is no hunk on this surface, no `@@` header and no diff LINE to
+omit; the named form that answers one file's patch is deliberately not composed
+by this seat (`crate::verbs::WORK_DIFF`). What a per-file `a/… → b/…` header
+says elsewhere is said here by the ROW, because the two ends being compared are
+the row's two refs and the two commits they resolved to — decoded since the
+vocabulary was written and printed nowhere until bl-2e1d.
+
 **One place, three surfaces.** `crate::render::said` is what
 `crate::seat::lines` used to be — the one place this seat's product is written
 — so the rendering reaches one gesture, the fan across channels and the
@@ -3564,7 +3582,8 @@ of *what a seat printed*.
 | `src/render/records.rs` | one conversation's records: its steps, its worktree, its inbox, its spine, and the commit governing it. | ~155 |
 | `src/render/step.rs` | one step drilled into — its captured documents printed as what they are, never parsed. | ~75 |
 | `src/render/policy.rs` | what a wall's policy is written in: its roles, its lineages, one config file, and the machines registered to it. | ~100 |
-| `src/render/tasks.rs` | the balls, the board, one wall's own balls, the delivery attempts and what they changed. | ~155 |
+| `src/render/tasks.rs` | the balls, the board, one wall's own balls and the delivery attempts. What those attempts CHANGED split out at the cap: a listing of rows and a diff are two shapes. | ~120 |
+| `src/render/work.rs` | the work diff as a diff (§4.37, bl-2e1d): the two commits a comparison resolved to, the totals folded over the churn, and the mark an elision earns. | ~145 |
 | `src/render/reads.rs` | the three reads whose subject is an engine rather than a wall: its verb table, a search, the trail. | ~70 |
 | `src/render/acts.rs` | what an act came back saying: a captured run, a staged start, a sign-in, and the receipts that carry one fact. | ~165 |
 | `src/reply.rs` | the reply vocabulary's module list, the three outcomes one frame can be, and the four-rung decode policy stated once. The census split out at the cap (`reply/kinds.rs`) on the seam this row used to name. | ~180 |

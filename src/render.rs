@@ -57,6 +57,8 @@ mod step;
 mod tasks;
 /// The roster, the conversation list, the queue, the transcript and the tail.
 mod walls;
+/// What a wall's agents changed, as a diff rather than a row of counters.
+mod work;
 
 /// **Which form a reply stream is printed in.**
 ///

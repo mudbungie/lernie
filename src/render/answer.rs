@@ -13,7 +13,7 @@
 
 use crate::reply::Reply;
 
-use super::{acts, chat, policy, reads, records, step, tasks, walls};
+use super::{acts, chat, policy, reads, records, step, tasks, walls, work};
 
 /// What one answer looks like to a person.
 pub(super) fn answer(reply: &Reply) -> String {
@@ -41,7 +41,7 @@ pub(super) fn answer(reply: &Reply) -> String {
         Reply::WorkspaceBalls(rows) => tasks::workspace_balls(rows),
         Reply::Marks { branch } => format!("tasks tracked on {branch}"),
         Reply::Science(rows) => tasks::science(rows),
-        Reply::Work(rows) => tasks::work(rows),
+        Reply::Work(rows) => work::work(rows),
         Reply::Ops(rows) => reads::ops(rows),
         Reply::Found(found) => reads::found(found),
         Reply::Help(rows) => reads::help(rows),

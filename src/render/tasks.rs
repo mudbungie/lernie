@@ -1,11 +1,11 @@
 //! **The work an engine is holding**: the binding table, the fleet board, one
-//! wall's own balls, the delivery attempts and what they changed. The three
+//! wall's own balls and the delivery attempts. What those attempts CHANGED is
+//! a diff rather than a listing, so it is next door ([`super::work`]). The three
 //! reads whose subject is the engine rather than a wall are next door
 //! ([`super::reads`]).
 
 use crate::reply::balls::{BallRow, BoundBall};
 use crate::reply::board::Board;
-use crate::reply::diff::Diff;
 use crate::reply::science::Attempt;
 
 use super::parts::{brief, clause, line, line_over, listing, tally, things, when};
@@ -113,42 +113,4 @@ pub(super) fn science(rows: &[Attempt]) -> String {
         })
         .collect();
     listing("attempts", painted, "this wall has attempted nothing")
-}
-
-/// **What one wall's agents changed** — a churn row a file.
-pub(super) fn work(rows: &[Diff]) -> String {
-    let painted = rows
-        .iter()
-        .map(|row| {
-            line_over(
-                &line(vec![
-                    Some(row.ball_id.clone()),
-                    Some(row.project.clone()),
-                    Some(row.state.clone()),
-                    clause("→", row.target.as_deref()),
-                    clause("from", row.source.as_deref()),
-                    clause("delivered", row.delivered.as_deref()),
-                    when(
-                        !row.missing.is_empty(),
-                        &format!("missing {}", row.missing.join(", ")),
-                    ),
-                ]),
-                Some(
-                    row.files
-                        .iter()
-                        .map(|churn| {
-                            line(vec![
-                                Some(churn.path.clone()),
-                                clause("+", churn.added.map(|n| n.to_string()).as_deref()),
-                                clause("-", churn.removed.map(|n| n.to_string()).as_deref()),
-                                when(churn.binary == Some(true), "binary"),
-                            ])
-                        })
-                        .collect::<Vec<String>>()
-                        .join("\n"),
-                ),
-            )
-        })
-        .collect();
-    listing("work", painted, "nothing has changed")
 }

@@ -156,6 +156,12 @@ pub struct Model {
     /// and not an option, exactly as the composer's two parameter boxes are —
     /// the boxes are on the glass whenever the spine is.
     pub forking: Forking,
+    /// **The arming for the cascade** (`crate::ui::records::cascade`): the
+    /// conversation's own name typed back, which is what admits the
+    /// conversations under it into a stop. It is this seat's own enablement
+    /// and not a wire field — `stop` carries a boolean flag and no `typed` —
+    /// so it is never sent, only read (DESIGN §4.20's amended scope rule).
+    pub cascade: String,
     /// **What the records pane has been answered** — its seven reads, held
     /// together because they are one pane's questions about one subject and
     /// they are retired together when that subject moves (`records`).

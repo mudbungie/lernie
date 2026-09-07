@@ -51,12 +51,16 @@ pub const NOTHING_OFFERED: &str = "the engine offers nothing on it";
 
 /// Paint the header, or the sentence for a conversation nobody has answered
 /// about yet.
-pub fn render(ui: &mut egui::Ui, model: &Model) {
-    let Some(row) = model.records.agent.as_ref() else {
+pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    // **Taken by value before anything is painted**, exactly as the pane's own
+    // two halves take their listings: the offers line's control acts on the
+    // model, and the row it reads is a snapshot of the same frame.
+    let Some(row) = model.records.agent.clone() else {
         ui.label(egui::RichText::new(HEAD).strong());
         ui.label(NOT_ANSWERED);
         return;
     };
+    let row = &row;
     ui.horizontal_wrapped(|ui| {
         ui.label(egui::RichText::new(HEAD).strong());
         ui.label(named(row));
@@ -71,7 +75,16 @@ pub fn render(ui: &mut egui::Ui, model: &Model) {
         ui.colored_label(theme::tone_ink(&Tone::Weak), said);
     }
     ui.label(costing(row));
-    ui.colored_label(theme::tone_ink(&Tone::Weak), doing(row));
+    // **The offers line and the one control that answers it share a row**
+    // (bl-3686): the sentence says what the engine is offering, and the
+    // cascade is the half of that sentence no other surface in this window
+    // can fire. The pane is dense and a control laid out past the frame is
+    // unreachable (`crate::snapshot::clipped`), so it wraps rather than
+    // taking a line of its own.
+    ui.horizontal_wrapped(|ui| {
+        ui.colored_label(theme::tone_ink(&Tone::Weak), doing(row));
+        super::cascade::control(ui, model, row);
+    });
 }
 
 /// What joins two facts on one line. A separator rather than a sentence: the
@@ -219,7 +232,15 @@ pub fn offered(row: &Agent) -> String {
 
 /// One offer's word. The set is closed, so this is a total function and not a
 /// table that can miss.
-fn word(offer: Offer) -> &'static str {
+///
+/// **It is the cascade control's label too** (`super::cascade`), which is why
+/// it is reachable at all: the sentence and the button say one word, read from
+/// one place, so neither can be reworded out of agreement with the other.
+///
+/// `pub(crate)` and not `pub`, because a `&'static str` off the crate's real
+/// surface is rule 2's borrow-shaped return — and the honest demotion is what
+/// that rule asks for before a clone-to-own.
+pub(crate) fn word(offer: Offer) -> &'static str {
     match offer {
         Offer::Nudge => "nudge",
         Offer::Stop => "stop",

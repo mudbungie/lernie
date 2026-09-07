@@ -14,8 +14,8 @@ use crate::ui::Model;
 /// full it is.
 #[test]
 fn the_answered_header_paints_the_conversation_whole() {
-    let model = recorded();
-    let text = pane(|ui| render(ui, &model));
+    let mut model = recorded();
+    let text = pane(|ui| render(ui, &mut model));
     for word in [
         HEAD,
         "port the paint probe — in-flight — the provider refused the latest turn — at aaaaaaa",
@@ -32,14 +32,14 @@ fn the_answered_header_paints_the_conversation_whole() {
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
-    let nobody = Model {
+    let mut nobody = Model {
         records: crate::ui::Records {
             agent: None,
             ..recorded().records
         },
         ..recorded()
     };
-    let waiting = pane(|ui| render(ui, &nobody));
+    let waiting = pane(|ui| render(ui, &mut nobody));
     assert!(waiting.contains(NOT_ANSWERED), "{waiting}");
 }
 

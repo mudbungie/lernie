@@ -28,6 +28,8 @@
 //! is a method. The class tokens ride verbatim (`crate::reply` rung 3): a
 //! `framing` or a `wound` this build has no word for paints as itself.
 
+/// The cascade: the stop that takes the subtree with it.
+pub mod cascade;
 /// One step's records, under the row that addresses them.
 pub mod drill;
 /// The conversation's own row, as the pane's header.
@@ -106,18 +108,33 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 /// The steps half: the orphan banner, then one row per step with the control
 /// that drills into it (bl-3257).
 fn steps_half(ui: &mut egui::Ui, model: &mut Model, steps: Option<&Steps>) {
-    ui.label(egui::RichText::new(STEPS_HEAD).strong());
+    // **The heading shares its line with its first fact** (§4.32; bl-3686),
+    // which is the rule the files, governing and spine halves already keep and
+    // the one this half and the inbox had not been swept to. It is not tidying:
+    // the pane's content has to FIT the window at the narrowest shape this
+    // layout promises, and `crate::snapshot::clipped` fails the whole matrix
+    // over one control laid out past the frame. The header's cascade is what
+    // wanted the room, and the room came from a line break rather than from
+    // anything the pane says.
+    ui.horizontal_wrapped(|ui| {
+        ui.label(egui::RichText::new(STEPS_HEAD).strong());
+        match steps {
+            None => {
+                ui.label(NOT_ANSWERED_STEPS);
+            }
+            Some(listing) => {
+                if let Some(said) = orphaned(listing) {
+                    ui.colored_label(theme::NOTICE, said);
+                }
+                if listing.rows.is_empty() {
+                    ui.label(NO_STEPS);
+                }
+            }
+        }
+    });
     let Some(listing) = steps else {
-        ui.label(NOT_ANSWERED_STEPS);
         return;
     };
-    if let Some(said) = orphaned(listing) {
-        ui.colored_label(theme::NOTICE, said);
-    }
-    if listing.rows.is_empty() {
-        ui.label(NO_STEPS);
-        return;
-    }
     for row in &listing.rows {
         step(ui, model, row);
     }

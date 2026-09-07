@@ -621,11 +621,15 @@ is exactly what a table of field names can express. Making `stop` a door would
 have moved a row out of the roster to gain nothing, and the next boolean the
 wire grows would have moved a second.
 
-**What this does NOT close: the window still has no cascade.** The CLI spells
-it; the window's `stop` controls fire the bare form, and the records pane still
-prints the offer beside no control. A cascade wants an arming — `delete-agent`'s
-typed name is the pattern — and that is a pane's work rather than a
-serialization's, so it is filed rather than smuggled in here.
+**And the window spells it now** (bl-3686). This paragraph used to say what
+the flag did not close — *"the window's `stop` controls fire the bare form, and
+the records pane still prints the offer beside no control"* — because a cascade
+wants an arming and that is a pane's work rather than a serialization's. The
+pane built it: §4.32's control sits on the offers line it was printed beside,
+armed by the conversation's own name, and it goes through **this** door
+(`crate::verbs::stop(.., true)`) rather than a second one. The composer's
+`stop` and the row menu's still fire the bare form, and that is the placement
+§4.20 rules rather than a gap.
 
 **The table and the roster are not one list, and neither count is written
 here** — two were, and both rotted the way every restated count in this suite
@@ -1958,6 +1962,34 @@ notice rather than with the pane standing down — which is exactly what
 rather than about this idiom. The pane says what it asked and leaves the answer
 to the notice bar.
 
+**Amended: what earns an arming is SCOPE, not destruction** (bl-3686). This
+section was written with two destructive customers and read as though
+destruction were the test. It is not, and yog's own §3.6 doctrine already says
+what is — *"typed-name confirm iff the verb destroys objects beyond the one
+named on screen. A leaf agent is the row under the pointer … retyping its name
+proves nothing the dialog does not already show"*. The operative half of that
+sentence is **beyond the one named on screen**; `destroys` is what its two
+customers happened to do. The cascade (§4.32) is the first act that is beyond
+the row and leaves everything standing: `stop children` kills the drivers of
+conversations the control does not name, and `nudge` starts each again. It
+takes an arming, and it takes it for the same reason a subtree delete does —
+not because what it does is permanent, but because the operator has to be able
+to say they meant the ones they cannot see. Undoing it is `nudge` **per
+conversation**, which is why *"undone by doing the other thing"* is not the
+answer here either.
+
+**And where the wire offers no `typed` at all, the arming is the seat's.** The
+two customers above read their shape off the wire's grammar — `delete-agent`
+carries a `typed` parameter, `delete-workspace` is refused without a matching
+name — and the rule *"the seat … invents no policy"* was written against those
+two. `stop` carries neither: its cascade is a boolean flag the engine takes on
+trust. So the arming there is an **enablement** this seat holds and never
+sends, compared against the conversation's own display name by the same rule
+the engine applies to `delete-agent`'s (surrounding whitespace forgiven,
+nothing else). What the seat still invents no policy about is the *act*: the
+flag it sends is exactly what the operator asked for, and the engine remains
+the only thing that can refuse.
+
 ### 4.21 The window's own reads: the three ops that name no workspace (bl-40ec)
 
 `src/ui/roster/acts.rs`, `src/ui/commands.rs`, `src/ui/find.rs`,
@@ -2959,6 +2991,29 @@ That is the ledger's rule spent the other way round from the `step` record's
 tree: one shape, one reader, and the fields no glass spends are the price of
 not having two.
 
+**The cascade is the pane's one act on the conversation itself** (bl-3686),
+and it is here because this is the pane that says what is under there. The
+header's descent line says what the conversation hangs under, the spine's cards
+say what was dispatched off it, and the offers line is the engine's own
+sentence about whether `stop children` is available at all — so the control
+that fires it sits on that line, and its label is [`word`]'s own string for
+`Offer::Children` rather than a second spelling of it. It is **absent** where
+the engine offers no cascade and **disabled** until the arming box holds the
+conversation's name, which is §4.20's two states read one after the other: what
+is missing in the first case is the subject, and in the second a parameter. The
+composer's `stop` and the row menu's stay the BARE form, because both are
+routine surfaces and §4.20 keeps a subtree off one.
+
+**The boundary field has one site in this window, and retiring it deletes one
+line.** litany bl-3114 made every engine stop take its children, so yog retires
+`stop`'s `children` field at its next PROTOCOL bump (yog bl-6efc). The only
+place in this seat that means *yes* is `Model::post_cascade`'s `true`, and that
+literal is what the bump deletes. What the bump does not settle is where the
+arming goes afterwards: once every stop is this act, the composer's control and
+the row menu's become it too, and the arming has to move to them — a seat ball
+off the bump, recorded here rather than left for an operator to discover by
+stopping a subtree from a list row.
+
 **The pane is DENSE now, and the density is a constraint rather than a taste.**
 Seven halves ride under one scroll, and `crate::snapshot::clipped` fails the
 whole matrix over a single control laid out past the frame — which is what a
@@ -2966,7 +3021,15 @@ long pane produces, because a scrolled widget is still laid out where it would
 be. So a heading shares its line with its first fact, a step's headline shares
 its line with the control that drills into it, and the header says several
 facts per line joined by a separator. **Nothing was dropped to make room**;
-what was dropped is the line breaks. The alternative — showing one half at a
+what was dropped is the line breaks — and bl-3686 spent the last two of them
+that were going spare. The header's cascade did not fit: at the narrow shape
+the pane had under four points of slack, and adding one wrapped row put a
+control off the bottom of the window. So the `steps` heading and the governing
+half's file list were swept to the rule the other halves already keep — a
+heading shares its line with its first fact, and three facts about one commit
+share one wrapped row. **That is the measurement, not an estimate**: the matrix
+reddened, and it is why a control cannot be added to this pane without one.
+The alternative — showing one half at a
 time behind a section selector — is a view this pane may still grow, and it
 would dissolve the constraint rather than pay it.
 
@@ -3529,6 +3592,7 @@ of *what a seat printed*.
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
 | `src/ui/records/header.rs` | the pane's header (§4.32): the conversation's own row, said several facts to a line because the pane has to fit the window. | ~215 |
+| `src/ui/records/cascade.rs` | the pane's one act on the conversation itself (§4.20, §4.32): the stop that takes the subtree, its arming, and the one site the boundary's `children` field has in this window. | ~95 |
 | `src/ui/records/drill.rs` | one step's records under the row that addresses them (§4.32): the control on the row, and the bytes rather than a tree. | ~155 |
 | `src/ui/records/mail.rs` | the undelivered mail (§4.32): the deposit's header with each unstated fact said as itself, and its body. | ~90 |
 | `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |

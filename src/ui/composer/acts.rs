@@ -112,11 +112,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
         let halt = ui.button(STOP);
         crate::ui::act::tag(&halt, &[crate::verbs::STOP.word]);
         if halt.clicked() {
-            // **The bare form, from this control** (bl-9fd1). The cascade is a
-            // second act with a second confirmation and it belongs beside the
-            // records that say what is under there; the CLI spells it today
-            // (`lernie stop <workspace> <agent> children`) and the window's
-            // control is still owed.
+            // **The bare form, from this control** (bl-9fd1, bl-3686). The
+            // cascade is a second act with an arming of its own and it lives
+            // beside the records that say what is under there
+            // (`crate::ui::records::cascade`); this row is a routine surface
+            // and §4.20 keeps a subtree off one.
             fired = Some(crate::verbs::stop(
                 aim.address.clone(),
                 agent.to_owned(),

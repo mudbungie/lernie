@@ -75,8 +75,8 @@ type Door = fn(String, String) -> serde_json::Value;
 /// says it applies.
 fn straight(row: &ConvRow) -> Vec<(&'static str, &'static str, Door)> {
     let mut out: Vec<(&'static str, &'static str, Door)> = vec![
-        // The bare form: a menu holds no confirmation, and a cascade needs
-        // one (bl-9fd1).
+        // The bare form: a menu holds no box, and the cascade's arming is one
+        // (bl-9fd1, bl-3686 — `crate::ui::records::cascade`).
         (STOP, crate::verbs::STOP.word, |workspace, agent| {
             crate::verbs::stop(workspace, agent, false)
         }),

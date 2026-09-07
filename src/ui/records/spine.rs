@@ -84,11 +84,14 @@ fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
         ui.label(NOT_ANSWERED_GOVERNING);
         return;
     };
+    // **One wrapped row, not two** (bl-3686): the heading, the engine's own
+    // sentence and the paths its tree holds are three facts about one commit,
+    // and the pane has to fit the narrowest shape this layout promises
+    // (`crate::snapshot::clipped`, §4.32). What was dropped to make room for
+    // the header's cascade is the line break, never a path.
     ui.horizontal_wrapped(|ui| {
         ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
         ui.label(format!("{} — {}", config.label(), config.oid));
-    });
-    ui.horizontal_wrapped(|ui| {
         if config.files.is_empty() {
             ui.label(NO_FILES);
             return;

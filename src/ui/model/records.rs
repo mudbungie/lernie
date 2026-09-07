@@ -107,6 +107,48 @@ impl Model {
         // about that one, and a box left standing over a new selection would
         // fire it at whatever is selected next.
         self.forking = crate::ui::Forking::default();
+        // **And so does the arming** (`crate::ui::records::cascade`), for a
+        // sharper form of the same reason: a name typed to admit ONE
+        // conversation's subtree, left standing over the next selection, is an
+        // arming for a conversation nobody armed. It cannot fire at one — the
+        // control compares the box against the row it is painted beside — but
+        // a box that still reads the old name is a control that looks armed.
+        self.cascade = String::new();
+    }
+
+    /// **Stop the selected conversation and everything under it**, or do
+    /// nothing where nothing is aimed at, nothing is selected, or the box does
+    /// not hold the name.
+    ///
+    /// The three gates are one reading rather than three arms of a control, on
+    /// `super::spine::Model::post_fork`'s own terms: every state they exclude
+    /// is one the pane cannot paint this control in, so they make the states
+    /// unreachable rather than merely unlikely.
+    ///
+    /// **The arming is not spent** (DESIGN §4.20): the refusal is the common
+    /// answer here, and clearing the box would charge a retype for the
+    /// engine's *no*.
+    pub fn post_cascade(&mut self) {
+        let (Some(aim), Some(agent)) = (self.aim.clone(), self.conversation.clone()) else {
+            return;
+        };
+        let armed = self
+            .records
+            .agent
+            .as_ref()
+            .is_some_and(|row| crate::ui::records::cascade::armed(row, &self.cascade));
+        if !armed {
+            return;
+        }
+        self.outbox.push(super::Posted::act(crate::verbs::stop(
+            aim.address,
+            agent,
+            // **The boundary field, at its one site in this window.** litany
+            // bl-3114 made every engine stop take its children, so yog retires
+            // this field at its next PROTOCOL bump (yog bl-6efc) — and what
+            // the bump deletes here is this line.
+            true,
+        )));
     }
 }
 

@@ -1,7 +1,7 @@
 +++
 title = "steal from hermes: work-diff has no rendering — a diff wants a file header, a totals line and an explicit 'omitted N lines' cut, not a row of JSON"
 created = 1788745727
-updated = 1788745868
+updated = 1788746034
 claimant = "Cantaloups-S6"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
@@ -68,3 +68,45 @@ Worth recording beside this: on a path-rung conversation this lane drove, the ag
 ## Severity
 
 p3 rather than p4: bl-6ae7 ruled that every verb renders, and `work-diff` is one of the verbs whose whole content is a shape a row printer cannot show.
+
+---
+
+Two premises moved before this was picked up, and both change what lands.
+
+**A renderer exists.** bl-6ae7 landed `src/render/`, and `work-diff` has an arm
+in it (`render/tasks.rs::work`) — one header a ball, one churn line a file. The
+`{"kind":"work-diff","ok":true,"rows":[…]}` in the body is the `--json` form.
+
+**This wire is a numstat, never a patch.** yog reads the attempt with
+`git diff --numstat` (`src/workdiff/read.rs`) and answers a path plus two counts
+a file; `truncated` there is `files.len() > MAX_ENTRIES`, a FILE cut. So there is
+no hunk on this surface, no `@@` header, and no diff LINE to omit — items 1 and 4
+of the comparator list (an unprompted `review diff`, and a `-`/`+` gutter) have
+nothing on this frame to render, and the form that answers one file's patch is
+deliberately not composed by this seat (`verbs::WORK_DIFF`'s own detail says so).
+
+What the frame CAN answer, and what landed:
+
+- **The totals line.** `N files  +A -B  M binary`, folded over the churn, first
+  line under each row's header. Binaries counted apart — no line count describes
+  them, and folding them in understates every total they are part of.
+- **The explicit cut.** `truncated` was decoded and printed NOWHERE, so a listing
+  the engine stopped early read as the whole change. It is now a line that states
+  what it knows and names what it does not: the count dropped is genuinely not on
+  this wire. Same rule the worktree listing already held with `(truncated)`.
+- **The header's two ends.** The per-file `a/… → b/…` has no referent here (one
+  path a churn; a rename is not carried), but the fact it exists to state — which
+  two things are being compared — is the ROW's, and `target_oid`/`source_oid`
+  were decoded and printed nowhere either. The header now carries `at <t>..<s>`,
+  short, and says nothing when only one end resolved.
+- **A `diff` row with no files** now says the attempt has changed nothing yet,
+  rather than a header with an empty space under it. Shape-read, not word-read:
+  `truncated` is written by the `diff` state alone.
+
+Not done, and not filed: **colour**. `render::said` returns a `String` with no
+knowledge of whether its sink is a TTY, so theme-resolved colour is a change to
+what a rendering IS, not to this diff — it wants its own ball across all forty
+renderings, or none.
+
+The rendering split to `src/render/work.rs` at the cap (DESIGN §5); §4.37 gained
+the elision rule and the numstat bound.

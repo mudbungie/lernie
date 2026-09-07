@@ -431,6 +431,35 @@ jobs:
           fi
 
           for pr in $candidates; do
+            # The pull request's OWN CI run, collected before the merge takes
+            # away the ref it would have needed (bl-78e0, swept from thrall
+            # bl-f3f2). It was created when the PR opened and has never been
+            # approved to start a single job — the PR is `GITHUB_TOKEN`'s, which
+            # the guard above REQUIRES, and GitHub does not run workflows for
+            # events that token triggers — so it sits at `action_required` until
+            # `--delete-branch` below removes the head, at which point it
+            # concludes FAILURE with zero jobs about a second later. That is a
+            # permanent red per release standing beside the real ones, which is
+            # how a real one goes unnoticed.
+            #
+            # Nothing is lost by collecting them, because they gate nothing:
+            # what gates the publish is stated in the header and is not the pull
+            # request's checks. **The guard is ZERO JOBS and nothing else**, so
+            # the step is self-retiring — a `RELEASE_PLZ_TOKEN` would make these
+            # runs execute for real and it would stop matching anything (that
+            # token also stops this job merging at all, by the author guard
+            # above; the two retire together, which is the right coupling).
+            head_sha="$(gh pr view "$pr" --json headRefOid -q .headRefOid)"
+            for run in $(gh api "repos/$GH_REPO/actions/runs?head_sha=$head_sha&event=pull_request" \
+                            -q '.workflow_runs[].id'); do
+              ran="$(gh api "repos/$GH_REPO/actions/runs/$run/jobs" -q '.total_count')"
+              if [ "${ran:-1}" -eq 0 ]; then
+                echo "deleting run $run for #$pr: zero jobs, and its head ref is about to go"
+                gh api -X DELETE "repos/$GH_REPO/actions/runs/$run"
+              else
+                echo "keeping run $run for #$pr: it ran $ran job(s)"
+              fi
+            done
             # Mergeability is computed asynchronously, so a PR refreshed moments
             # ago can refuse once and merge on the retry. The loop re-reads the
             # PR's own state rather than trusting the exit code: `--delete-branch`

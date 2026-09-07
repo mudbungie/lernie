@@ -1,7 +1,8 @@
 +++
 title = "spend is tokens and nothing else: every comparator answers in currency and the seat cannot"
 created = 1788673907
-updated = 1788673907
+updated = 1788745719
+claimant = "Cantaloups-D2"
 priority = 4
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r1"]

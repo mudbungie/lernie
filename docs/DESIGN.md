@@ -844,6 +844,44 @@ as itself, and the safe reading here is *this seat cannot say that this is
 working*: ending and printing the word beats holding a connection open forever
 on a state nobody here understands.
 
+**Mail waiting is NOT rest** (bl-87ab, bl-3ecd). `message` (or `start`) then
+`follow` is the pair every operator types, and it answered *"nothing more will
+arrive until it is nudged or messaged"* in zero seconds — about a conversation
+that took a lease twelve seconds later and then ran for another seventy-eight.
+The deposit had landed and no driver held the inbox lock yet, so the state read
+was right about the instant and the sentence it produced was false: something
+more was going to arrive, and nothing further was going to be asked of the
+operator. The recovery — sleep, then ask again — is written nowhere.
+
+The engine has no field for *about to start*, and inventing a guess here would
+be a second opinion about a reading it already takes. What it does have is the
+deposit itself, so **the state read alone was never enough**: a rest whose
+`inbox` still holds mail is a turn that has not begun, and the watch holds
+through it exactly as it holds on a live one. It says once that it is waiting,
+because a silent hold is the thing this word was fixed for and a quarter-second
+drumbeat of the same line would be worse than the silence; Ctrl-C is the way
+out it always was. Three properties keep it honest. It costs **one read on the
+path that was wrong and nothing anywhere else** — a conversation genuinely at
+rest has an empty inbox and answers as fast as it ever did, and a working one
+is never asked. An inbox this seat could **not read is no mail**, on every way
+the probe can fail, because the state read has already said rest and holding
+somebody's connection open forever on an unanswered question is worse than the
+sentence being fixed. And the waiting line **names the state the engine gave**
+rather than hiding it, since that reading is true and is the one the operator
+will see again in `conversations` a second later; what it adds is the fact that
+makes the at-rest sentence false.
+
+**Under `--json` this seat narrates nothing** (bl-87ab). `--help` promises *"the
+frames exactly as they crossed, one envelope per line, which is what a script
+wants"*, and this word broke it on the one line that mattered: every frame of a
+watch was an envelope and the line saying the watch was OVER was prose, so a
+reader calling `json.loads` per line died on the terminator. One rule now
+covers both sentences the word writes for itself — in the machine form neither
+is said, and what ENDS the watch is the `agent` frame that ended it, printed as
+it crossed. It carries the state in a field, which is what a script wanted from
+the sentence. The elapsed is this end's own fact and a script has its own
+clock; the rendered form keeps it.
+
 **This is the one place the product is written as it arrives.** A held read
 that printed only at the end would not be a watch, so `seat::follow` takes a
 sink: `src/main.rs` hands it a printer and the suite hands it a `Vec`. The
@@ -3771,7 +3809,7 @@ of *what a seat printed*.
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. | ~115 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
-| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the state read that opens and ends the watch, the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~155 |
+| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the state read that opens and ends the watch, the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~240 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |

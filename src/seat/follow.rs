@@ -40,6 +40,44 @@
 //! ending, and printing the word, beats holding a connection open forever on a
 //! state nobody here understands.
 //!
+//! # Mail waiting is not rest (bl-87ab, bl-3ecd)
+//!
+//! `message` (or `start`) then `follow` is the pair every operator types, and
+//! it answered *"nothing more will arrive until it is nudged or messaged"* in
+//! zero seconds — about a conversation that took a lease twelve seconds later
+//! and then ran for another seventy-eight. The deposit had landed and no
+//! driver held the inbox lock yet, so the state read was correct as of that
+//! instant and the sentence it produced was false: something more was going to
+//! arrive, and nothing further was going to be asked of the operator.
+//!
+//! The engine has no field for *about to start* and inventing one here would
+//! be a guess. What it does have is the deposit itself: **an inbox with mail in
+//! it is a turn that has not begun**, so the state read alone was never enough
+//! and the second read is what makes the answer true. So a rest with mail
+//! waiting is not an ending — the watch holds, exactly as it holds on a live
+//! one, and says once that it is waiting so the hold never reads as a hang.
+//! Ctrl-C is the way out it always was.
+//!
+//! **It costs one read, and only on the path that was wrong.** A conversation
+//! genuinely at rest has an empty inbox and answers as fast as it ever did;
+//! nothing is asked before the state read, and nothing extra is asked while a
+//! conversation is working. And a mail count this seat could not READ is
+//! treated as no mail: the state read has already said rest, and a probe that
+//! failed is not grounds for holding somebody's connection open forever.
+//!
+//! # `--json` narrates nothing (bl-87ab)
+//!
+//! `--help` promises *"the frames exactly as they crossed, one envelope per
+//! line, which is what a script wants"*, and this word broke it on the one
+//! line that mattered: every frame of a watch was an envelope and the line
+//! saying the watch was OVER was prose, so a reader calling `json.loads` on
+//! each line died on the terminator. The rule is now one rule for both
+//! sentences this file writes — under `--json` this seat says nothing of its
+//! own, and what ends the watch is the `agent` frame that ENDED it, printed as
+//! it crossed. It carries the state in a field, which is what a script wanted
+//! from the sentence. The elapsed is this end's own fact and a script has its
+//! own clock; the rendered form keeps it.
+//!
 //! # Why the frames are handed to a sink
 //!
 //! A held read that printed only at the end would not be a follow. So this is
@@ -80,10 +118,12 @@ pub fn follow(
 ) -> Verdict {
     let asking = crate::verbs::agent(workspace.to_owned(), agent.to_owned());
     let holding = crate::verbs::follow(workspace.to_owned(), agent.to_owned());
+    let mail = crate::verbs::inbox(workspace.to_owned(), agent.to_owned());
     // **What the closing line's elapsed is measured from** (bl-293d): the
     // whole of what this seat can say a duration about. The engine's own
     // turn started before the watch did and is not this end's to time.
     let began = Instant::now();
+    let mut told = false;
     loop {
         let standing = match super::sent(data_root, &asking) {
             Ok(frames) => frames,
@@ -95,7 +135,20 @@ pub fn follow(
             // the product and the exit code is what says the watch never
             // started.
             Rest::Unreadable => return Verdict::answered(said(&standing, form), false),
-            Rest::At(state) => return Verdict::ok(rested(agent, &state, began.elapsed())),
+            Rest::At(state) => match waiting(data_root, &mail) {
+                // Rest with an empty inbox is the ending: nothing is coming.
+                0 => return Verdict::ok(ending(&standing, agent, &state, began.elapsed(), form)),
+                // Rest with mail in it is a turn about to begin. Hold, and say
+                // so once — a silent hold is the thing this word was fixed
+                // for, and saying it every quarter second would be worse than
+                // silence.
+                deposits => {
+                    if !told && matches!(form, Form::Rendered) {
+                        told = true;
+                        say(&crate::render::waiting_on_mail(agent, &state, deposits));
+                    }
+                }
+            },
             Rest::Working => {}
         }
         match held(data_root, &holding, form, say) {
@@ -156,15 +209,43 @@ fn resting(standing: &[Value]) -> Rest {
     }
 }
 
-/// **The line a watch ends on**, said where every other line of this seat's
-/// product is said ([`crate::render::at_rest`]). How long the watch held is
-/// the one fact only this end has, so it is measured here and rendered there.
-fn rested(agent: &str, state: &str, held: Duration) -> String {
-    crate::render::at_rest(
-        agent,
-        state,
-        i64::try_from(held.as_secs()).unwrap_or(i64::MAX),
-    )
+/// **How much mail is waiting to be taken**, which is what tells a rest that
+/// is about to end from one that is not.
+///
+/// **Unreadable is NO mail, deliberately.** The state read above has already
+/// said this conversation is at rest, so every way this probe can fail — a
+/// channel that dropped, a refusal, an answer of a kind this build does not
+/// paint — leaves the watch with exactly the reading it had before the probe
+/// existed. Holding a connection open forever on the strength of a question
+/// that was not answered is the one outcome worse than the sentence this
+/// exists to fix.
+fn waiting(data_root: &Path, mail: &Value) -> usize {
+    let Ok(frames) = super::sent(data_root, mail) else {
+        return 0;
+    };
+    match frames.last().map(read) {
+        Some(Read::Answer(Reply::Inbox(rows))) => rows.len(),
+        _ => 0,
+    }
+}
+
+/// **The line a watch ends on**, in the form the caller asked for.
+///
+/// Rendered, it is this seat's own sentence, said where every other line of
+/// its product is said ([`crate::render::at_rest`]) — and how long the watch
+/// held is the one fact only this end has, so it is measured here and rendered
+/// there. As JSON it is the `agent` frame that ended the watch, exactly as it
+/// crossed: `--json` is the frame stream and this seat adds nothing to it
+/// (bl-87ab).
+fn ending(standing: &[Value], agent: &str, state: &str, held: Duration, form: Form) -> String {
+    match form {
+        Form::Json => said(standing, form),
+        Form::Rendered => crate::render::at_rest(
+            agent,
+            state,
+            i64::try_from(held.as_secs()).unwrap_or(i64::MAX),
+        ),
+    }
 }
 
 #[cfg(test)]

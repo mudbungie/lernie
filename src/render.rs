@@ -38,7 +38,7 @@ use serde_json::Value;
 use crate::reply::stream::Stream;
 use crate::reply::{Read, Reply, read};
 
-pub(crate) use walls::at_rest;
+pub(crate) use walls::{at_rest, waiting_on_mail};
 
 /// The receipts and the runs — what an ACT answers with.
 mod acts;

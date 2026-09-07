@@ -1,5 +1,10 @@
 //! The watch: the state read that opens it, the reads it holds, and the ways
 //! it ends.
+//!
+//! The two answers bl-87ab found wrong — what a rest IS, and what `--json`
+//! says at the end of one — are [`waiting`]'s, split at the 300-line cap on
+//! the seam the ball itself draws: this file is the LOOP, that one is what the
+//! loop says and when it is entitled to stop.
 
 use super::follow;
 use crate::cli::Stream;
@@ -19,6 +24,17 @@ fn agent(state: &str) -> Value {
                      "attribution": {"kind": "own"}}})
 }
 
+/// The inbox read's answer: as much undelivered mail as asked for.
+fn inbox(deposits: usize) -> Value {
+    let rows: Vec<Value> = (0..deposits)
+        .map(|n| {
+            json!({"name": format!("{n}.md"), "raw": "body",
+                   "deposit": {"body": "body"}})
+        })
+        .collect();
+    json!({"ok": true, "kind": "inbox", "rows": rows})
+}
+
 /// One frame of a live tail.
 fn tail(text: &str) -> Value {
     json!({"ok": true, "kind": "follow", "tools": [], "stream": {"delta": "text", "text": text}})
@@ -36,14 +52,15 @@ fn asked(engine: &crate::test_support::engine::Engine) -> Vec<Value> {
 
 /// Run a watch and hand back its verdict beside everything it printed.
 fn watched(scratch: &Scratch) -> (crate::cli::Verdict, Vec<String>) {
+    formed(scratch, Form::Rendered)
+}
+
+/// The same, in the form the caller names.
+fn formed(scratch: &Scratch, form: Form) -> (crate::cli::Verdict, Vec<String>) {
     let mut said: Vec<String> = Vec::new();
-    let verdict = follow(
-        scratch.path(),
-        "home",
-        "PelicanQuiet",
-        Form::Rendered,
-        &mut |line| said.push(line.to_owned()),
-    );
+    let verdict = follow(scratch.path(), "home", "PelicanQuiet", form, &mut |line| {
+        said.push(line.to_owned());
+    });
     (verdict, said)
 }
 
@@ -54,7 +71,11 @@ fn watched(scratch: &Scratch) -> (crate::cli::Verdict, Vec<String>) {
 #[test]
 fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     let scratch = Scratch::new();
-    let engine = wired(&scratch, &flat(), vec![vec![agent("quiescent")]]);
+    let engine = wired(
+        &scratch,
+        &flat(),
+        vec![vec![agent("quiescent")], vec![inbox(0)]],
+    );
     let (verdict, said) = watched(&scratch);
     assert_eq!(verdict.code, 0);
     assert_eq!(verdict.stream, Stream::Out);
@@ -74,10 +95,17 @@ fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     assert!(verdict.text.starts_with("┊ "), "{}", verdict.text);
     assert!(verdict.text.contains(" after 0s "), "{}", verdict.text);
     assert!(said.is_empty(), "no tail was held: {said:?}");
+    // **Two reads and no held connection.** The state read says at rest and the
+    // inbox read is what makes that sentence TRUE rather than true-as-of-an-
+    // instant (bl-87ab); neither opens a follow, so the half-minute of silence
+    // bl-3dca removed stays removed.
     assert_eq!(
         asked(&engine),
-        vec![json!({"op": "agent", "workspace": "home", "agent": "PelicanQuiet"})],
-        "it asked what the conversation was doing and nothing else"
+        vec![
+            json!({"op": "agent", "workspace": "home", "agent": "PelicanQuiet"}),
+            json!({"op": "inbox", "workspace": "home", "agent": "PelicanQuiet"}),
+        ],
+        "it asked what the conversation was doing, and whether anything was waiting"
     );
 }
 
@@ -204,3 +232,6 @@ fn a_channel_that_will_not_answer_says_so_on_either_read() {
     assert_eq!(verdict.code, 1);
     assert_eq!(verdict.stream, Stream::Err);
 }
+
+/// What a rest is, and what `--json` says about the end of one.
+mod waiting;

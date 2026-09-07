@@ -176,6 +176,26 @@ pub(crate) fn at_rest(agent: &str, state: &str, secs: i64) -> String {
     ))
 }
 
+/// **The line a watch says while it waits for a driver to take mail** (bl-87ab,
+/// bl-3ecd) — which conversation, the rest the engine reported, and how much is
+/// waiting. It is said once per watch, not once per look: the hold is the
+/// answer and a quarter-second drumbeat of it would be worse than the silence.
+///
+/// It names the state the engine gave rather than hiding it, because that
+/// reading is true and it is the one an operator will see again in
+/// `conversations` a second later. What it adds is the fact that makes the
+/// at-rest sentence false here: mail nobody has taken yet.
+pub(crate) fn waiting_on_mail(agent: &str, state: &str, deposits: usize) -> String {
+    narrated(&format!(
+        "{agent} is at rest ({state}) with {} not yet taken — holding until a driver takes \
+         it; Ctrl-C to stop watching",
+        // The caller only says this line when something IS waiting — a rest
+        // with an empty inbox ends the watch instead — so the total form of
+        // `things` is the arm that never renders rather than a second sentence.
+        things(u64::try_from(deposits).unwrap_or(u64::MAX), "deposit").unwrap_or_default()
+    ))
+}
+
 /// **One tool call, whole.** What ran and on which machine — REMOTE §5.1
 /// presents a routed tool as `<client>_<tool>`, so the name is the box — the
 /// input the engine already bounded, and how it ended.

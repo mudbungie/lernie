@@ -35,13 +35,24 @@ fn a_page_states_the_usage_the_summary_and_the_detail() {
         text.starts_with("usage: lernie follow <workspace> <agent>"),
         "{text}"
     );
-    assert!(text.contains("holds the line"), "{text}");
+    // **The phrases are sought in the page UNFOLDED.** The detail is wrapped
+    // to a terminal width, so where a line break falls is a function of every
+    // sentence ahead of it: asserting on the folded text lets an edit anywhere
+    // in the page break a claim about a phrase further down, which is the
+    // fold's doing and not the page's.
+    let said = text.split_whitespace().collect::<Vec<&str>>().join(" ");
+    assert!(said.contains("holds the line"), "{text}");
     // **The page states the protocol's own rule** (REMOTE §5.5, bl-5185): it
     // used to say the opposite — that each frame was the whole accumulated
     // fold, so a frame missed was nothing missed — which would be believed by
     // anyone reading this seat's raw output.
-    assert!(text.contains("APPEND"), "{text}");
-    assert!(text.contains("onto an empty fold"), "{text}");
+    assert!(said.contains("APPEND"), "{text}");
+    assert!(said.contains("onto an empty fold"), "{text}");
+    // **And that mail queued is not rest** (bl-3ecd, behaviour bl-87ab). The
+    // page said a conversation already at rest is told to you at once, full
+    // stop, which stopped being true of one with a deposit in its inbox — and
+    // this page is where an operator learns why `follow` is holding.
+    assert!(said.contains("MAIL QUEUED IS NOT REST"), "{text}");
     for line in text.lines() {
         assert!(line.len() <= 72, "{line:?} is {} wide", line.len());
     }

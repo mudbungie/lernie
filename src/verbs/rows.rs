@@ -121,7 +121,11 @@ pub const FOLLOW: Verb = Verb {
              which is not the end of anything you asked about. It ends when \
              the conversation comes to REST: it prints a line saying so and \
              exits 0. A conversation already at rest is told to you at once, \
-             for the same reason. Ctrl-C is the other way out. \
+             for the same reason. MAIL QUEUED IS NOT REST: a conversation with \
+             a deposit still in its inbox has been spoken to and not yet \
+             answered, so the watch holds for the driver to take it and says \
+             once that it is waiting — which is what makes `message` then \
+             `follow` the pair it looks like. Ctrl-C is the other way out. \
              EACH FRAME IS AN APPEND, not the whole answer (REMOTE §5.5): \
              absorb every frame of a read, in order, onto an empty fold, and \
              what you hold after the last one is what you have. A missed frame \

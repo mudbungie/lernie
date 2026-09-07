@@ -92,18 +92,19 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
         ui.colored_label(theme::INK_WEAK, NOT_ANSWERED);
         return;
     };
-    // **The identity line is runs, not a sentence** (STYLE §2): the name in
-    // body ink because it is what the reader came for, the resting clause in
-    // that state's own accent because *is this still running* is the question
-    // the header exists to answer at a glance, and the model one step weaker
-    // because it is context for the two above it. An unknown wire word keeps
-    // body ink rather than borrowing a state it is not (`theme::state_ink`).
+    // **The header is a place's name, not a line of facts** (bl-f251, item
+    // 2; STYLE §2): the name at HEADING size in body ink because it is what
+    // the reader came for, the resting clause beside it in that state's own
+    // accent because *is this still running* is the question the header
+    // exists to answer at a glance. An unknown wire word keeps body ink
+    // rather than borrowing a state it is not (`theme::state_ink`).
     ui.horizontal(|ui| {
-        ui.label(egui::RichText::new(&row.display).color(theme::INK).strong());
+        ui.label(
+            egui::RichText::new(&row.display)
+                .heading()
+                .color(theme::INK),
+        );
         ui.label(egui::RichText::new(header::resting(row)).color(theme::state_ink(&row.state)));
-        if let Some(model_id) = answered_by(row, &model.transcript) {
-            ui.label(egui::RichText::new(model_id).color(theme::INK_WEAK));
-        }
     });
     // **A conversation that died on a bad model id must not look like one that
     // finished**, which is the ball's own sentence: the provider's clause is
@@ -113,7 +114,22 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
     if let Some(failure) = &row.failure {
         ui.colored_label(theme::accent(theme::State::Error), failure);
     }
-    ui.colored_label(theme::INK_WEAK, costing(row));
+    // **One line, one step weaker, for what it is on and what it has spent**:
+    // the model that answered where the engine holds no reading of its own,
+    // then the costing — which names the model itself where it does.
+    ui.horizontal(|ui| {
+        if let Some(model_id) = answered_by(row, &model.transcript) {
+            ui.label(egui::RichText::new(model_id).color(theme::INK_WEAK));
+        }
+        ui.colored_label(theme::INK_WEAK, costing(row));
+    });
+    // **And where it hangs, if it hangs under anything** — the subtree path,
+    // in the same weak ink, because a child read without its parent's name is
+    // a place with no address.
+    if let Some(path) = header::descent(row) {
+        ui.colored_label(theme::INK_WEAK, path);
+    }
+    ui.add_space(theme::space::S);
 }
 
 #[cfg(test)]

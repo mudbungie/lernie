@@ -70,9 +70,12 @@ anything is waiting, so the one control most worth pressing is the one that
 is coloured.
 
 **A conversation's facts are arranged, not listed.** Over the transcript, the
-subject line: its name in body ink, its state word in that state's accent,
-then — one step weaker — which model answered and what it has spent. Under
-the transcript, the composer, and **the composer is the pane's focal
+header (bl-f251): its name at `HEADING` size in body ink with its state word
+beside it in that state's accent; under that, one line one step weaker —
+which model answered and what it has spent; and under that, where it hangs
+if it hangs under anything. A header at heading size is what makes the pane
+read as a place with a name rather than a list with a first row. Under the
+transcript, the composer, and **the composer is the pane's focal
 element** (bl-f251): a field `COMPOSER_ROWS` lines tall with `send` inside
 it, at its bottom right in the brand on a brand wash. Enter sends and
 Shift+Enter breaks a line, and the hint says both. Under the field, one
@@ -150,6 +153,11 @@ box.
 **A threaded row** (the conversation list): the row above at its depth, with
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.
+
+**A conversation header** (`chat::subject`): the name at `HEADING` in
+`INK`, the state word beside it in its accent, the model-and-spend line in
+`INK_WEAK`, the subtree path in `INK_WEAK`, a provider's refusal in the
+error accent above the spend, and `S` of air before the transcript.
 
 **A block** (the transcript): aligned, ruled, never bubbled. Every block
 starts at the same left edge; a `RULE`-wide line in the speaker's weight

@@ -3998,6 +3998,15 @@ the walk never visits is unproven. Each compact control is a glyph and a
 word (`theme::glyph`, `theme::worded`), and every glyph is asserted to be in
 the body font.
 
+**The header over the transcript is the pane's name** (bl-f251, item 2;
+`src/ui/chat/subject.rs`). The first pass arranged the subject as three runs
+on one body-size line, which read as the first row of a list. It now stands
+at `HEADING` size with the state word beside it, the model and the spend on
+one weak line under it, and the subtree path under that where the row's
+`ancestors` says it hangs under anything — every clause still the engine's,
+composed by `records::header` and read from there. The size is asserted off
+the glass as a height: the name's laid rect is taller than the state word's.
+
 **A label off the window is a layout question** (`src/snapshot/clipped.rs`;
 bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
 marks selectable prose as clickable so a pointer can select it, so every

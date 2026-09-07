@@ -135,6 +135,36 @@ fn the_resting_clause_is_painted_in_the_state_s_accent() {
         .find(|run| run.text == "ZucchiniFrost")
         .expect("the name is on the glass");
     assert_eq!(named.ink, crate::ui::theme::INK, "the name is body ink");
+    // **And it stands at HEADING size** (bl-f251): the header is the pane's
+    // name, so it is taller on the glass than the state word beside it.
+    assert!(
+        named.laid.height() > resting.laid.height(),
+        "{:?} over {:?}",
+        named.laid,
+        resting.laid
+    );
+}
+
+/// **Where it hangs is on the header** (bl-f251): a child conversation says
+/// what it hangs under, one step weaker, and a root says nothing about it.
+#[test]
+fn a_child_conversation_says_what_it_hangs_under_and_a_root_does_not() {
+    let mut model = showing();
+    let window = crate::paint_probe::frame::Window::new();
+    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let under = runs
+        .iter()
+        .find(|run| run.text == "under 20260830T050000Z-root")
+        .expect("the path is on the glass");
+    assert_eq!(under.ink, crate::ui::theme::INK_WEAK);
+    if let Some(row) = model.records.agent.as_mut() {
+        row.ancestors = Vec::new();
+    }
+    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(
+        !runs.iter().any(|run| run.text.starts_with("under ")),
+        "a root hangs under nothing"
+    );
 }
 
 /// **The model that answered last stands on the line, one step weaker** —

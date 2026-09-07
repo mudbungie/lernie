@@ -2178,6 +2178,30 @@ stamped with the channel it came down and each failure reported against it.
 `crate::seat::fan` is that rule on argv and `crate::cli::Decided::Fanned` is
 it in the command line, so all three surfaces read one predicate.
 
+**The bare channel is enumerated when it is provisioned, or when it is the
+only thing there is** (bl-b858). The fan asks *every channel this box holds*,
+and a flat root with no material at all is not one — it is an ABSENCE. On a
+seat for an engine somewhere else, provisioned exactly as `enroll --into`
+instructs, it was enumerated anyway, so a paragraph of refusal beginning *"if
+an engine runs on this box"* stood above every working channel on every roster
+read, on a box where none does and none is meant to; the read had worked and
+its answer was underneath. The two arms are one sentence read twice rather than
+a case and its exception: a box that holds nothing at all still gets the
+refusal and its whole recipe, because that is exactly the box the recipe is
+for, and silence there would answer an empty fan with nothing.
+
+**Provisioned is not reachable, and only the first is asked.** Half-provisioned
+material, a `:0` address, a channel that will not open — each is a fault about a
+channel this box *does* have and each still says so in its own section. What is
+dropped is the one reading that is not about a channel at all.
+
+**And `lernie entries` keeps it, which is the same rule and not an
+inconsistency.** `crate::seat::holds::listing` answers *what does this box
+hold*, and for that question the absence IS the answer — a row saying the bare
+channel holds nothing is what was asked for. The fan answers a question about
+walls, where the same sentence is noise above the answer. One surface prints an
+absence because it was asked about it; the other does not because it was not.
+
 **§4.30 later narrowed what the poster infers from that predicate, and the
 narrowing belongs here** (bl-4855). *Names no workspace* establishes that a
 gesture cannot name a channel by its workspace; *therefore every channel is its
@@ -3714,7 +3738,7 @@ of *what a seat printed*.
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
-| `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from. | ~80 |
+| `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. | ~115 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
 | `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the state read that opens and ends the watch, the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~155 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |

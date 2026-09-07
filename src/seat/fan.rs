@@ -30,6 +30,7 @@ use serde_json::Value;
 
 use super::{OWN, holds, said};
 use crate::channel::entries;
+use crate::channel::material::{self, Whose};
 use crate::cli::Verdict;
 use crate::envelope;
 use crate::render::Form;
@@ -40,21 +41,22 @@ use crate::render::Form;
 /// channel's own answer indented under it — the shape [`super::listing`]
 /// already prints, because this is that listing *answered*.
 pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
-    let asked: Vec<(String, Result<Vec<Value>, String>)> =
-        std::iter::once((OWN.to_owned(), super::route::flat(data_root)))
-            .chain(
-                entries::read_dir(&entries::dir(data_root))
-                    .into_iter()
-                    .map(|held| (holds::label(&held.leaf, &held.workspace), held.open())),
-            )
-            .map(|(name, channel)| {
-                let said = channel
-                    .map_err(crate::channel::Reach::Unsent)
-                    .and_then(|open| open.ask(envelope))
-                    .map_err(|reach| reach.said());
-                (name, said)
-            })
+    let seated: Vec<(String, Result<crate::channel::Channel, String>)> =
+        entries::read_dir(&entries::dir(data_root))
+            .into_iter()
+            .map(|held| (holds::label(&held.leaf, &held.workspace), held.open()))
             .collect();
+    let asked: Vec<(String, Result<Vec<Value>, String>)> = own(data_root, &seated)
+        .into_iter()
+        .chain(seated)
+        .map(|(name, channel)| {
+            let said = channel
+                .map_err(crate::channel::Reach::Unsent)
+                .and_then(|open| open.ask(envelope))
+                .map_err(|reach| reach.said());
+            (name, said)
+        })
+        .collect();
     let answered = asked.iter().any(|(_, said)| {
         said.as_ref()
             .is_ok_and(|stream| envelope::succeeded(stream))
@@ -65,6 +67,36 @@ pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
         .collect::<Vec<String>>()
         .join("\n");
     Verdict::answered(text, answered)
+}
+
+/// **This box's own engine, where it is a channel this box HOLDS** — and
+/// where it is all this box could hold (bl-b858).
+///
+/// An unprovisioned flat root is an ABSENCE, not a fault. On a seat for an
+/// engine somewhere else — a box that holds named entries and no engine of its
+/// own, provisioned exactly as `enroll --into` instructs — enumerating it put a
+/// paragraph of refusal above every working channel on every roster read,
+/// beginning *"if an engine runs on this box"* on a box where none does and
+/// none is meant to. The read had worked; the answer was under the complaint.
+///
+/// **One condition rather than a special case**, and it is the same sentence
+/// read twice: the bare channel is enumerated when it is provisioned, or when
+/// it is the only thing there is. A box with nothing at all still gets the
+/// refusal and its whole recipe — that is precisely the box the recipe is for,
+/// and silence there would answer an empty fan with nothing.
+///
+/// **Provisioned is not the same as reachable, and only the first is asked
+/// here.** Half-provisioned material, a `:0` address, a channel that will not
+/// open: each is a fault about a channel this box does have, and each still
+/// says so in its own section. What is dropped is the one reading that is not
+/// about a channel at all.
+fn own(
+    data_root: &Path,
+    seated: &[(String, Result<crate::channel::Channel, String>)],
+) -> Option<(String, Result<crate::channel::Channel, String>)> {
+    let held = material::read_dir(&entries::flat(data_root), Whose::Own);
+    (!matches!(held, Ok(None)) || seated.is_empty())
+        .then(|| (OWN.to_owned(), super::route::flat(data_root)))
 }
 
 /// One channel's section: its name, then what it said, indented under it.

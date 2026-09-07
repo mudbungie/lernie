@@ -1,7 +1,8 @@
 +++
 title = "restyle every pane onto docs/STYLE.md: rows with a state rule, threaded connectors, ruled transcript blocks, folded tool results, a composer that glows when it is your turn, records, notices and enrolment on the same anatomy"
 created = 1788754421
-updated = 1788754421
+updated = 1788754473
+claimant = "Cantaloups-D4"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

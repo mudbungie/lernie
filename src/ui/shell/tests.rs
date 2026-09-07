@@ -200,6 +200,9 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
             render(ctx, &mut model);
         });
     }
+    // One settle frame, for the roster walk's reason above: the scroll lands
+    // on the frame after the one that asked for it.
+    window.frame(Vec::new(), |ctx| render(ctx, &mut model));
     assert!(
         seen(&window, |ctx| render(ctx, &mut model))
             .iter()

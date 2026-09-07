@@ -3814,6 +3814,30 @@ composite start's two streams at once, and there is still exactly one spelling
 of *what a seat printed*.
 
 
+### 4.38 The look: the phone's visual language, and the desktop's deltas (bl-73d2)
+
+`docs/STYLE.md`, `src/ui/theme.rs`, `src/ui/theme/visuals.rs`,
+`rules/no-literal-colour.yml`. **This document says what a pane IS; `docs/STYLE.md`
+says what it LOOKS like, and it is normative** — a pane that departs from it
+is a defect, and the fix is in the style file or the token module, never on
+the pane. The language's home is the phone seat's own `docs/STYLE.md`
+(yog-android bl-549b): six state colours and no seventh (operator ruling
+2026-09-06 — green asks for you, blue works, purple is the model generating,
+orange annotates, grey is done, red is an error), no outlines, and one module
+every colour and size is read from. This seat adopts the palette byte for
+byte and carries only its deltas, each named beside its token with its
+reason: a smaller body and heading, a 28-point row where the phone's is a
+48-point touch target, and the three-column shape the width policy of §4.11
+already answers for.
+
+**The adapter installs the tokens at the top of every frame**
+(`theme::install`, called by `ui::render`), so the offscreen frame every
+assertion reads is painted in the same style the operator sees. The one
+rule added is the phone's own: `Color32` is constructed in the theme, in the
+paint probe that reads one back, and nowhere else. The ink a run reached the
+glass in is already on the paint walk (`paint_probe::Seen::ink`), which is
+what makes *the asking row is green* an assertion rather than a picture.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -4002,7 +4026,8 @@ of *what a seat printed*.
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every one of the seven boxes that take text, named (§4.23). | ~265 |
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
-| `src/ui/theme.rs` | the ink a row is painted in. | ~70 |
+| `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~210 |
+| `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |
 | `src/mark/raster.rs` | the pixel loop: supersampling and nothing else. | ~120 |

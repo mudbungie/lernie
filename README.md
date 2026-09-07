@@ -436,6 +436,9 @@ their fixture is the only thing proving they work at all.
 
 - **`docs/DESIGN.md`** — lernie's own architecture: the fence, the role, the
   inherited invariants, the module map, and what is deferred.
+- **`docs/STYLE.md`** — what the window looks like: the phone seat's visual
+  language adopted verbatim, the desktop's information architecture, and its
+  deltas. Normative for every pane; `src/ui/theme.rs` is its one module.
 - **yog's `docs/REMOTE.md`** — the **protocol authority**. It is versioned, and
   every component implements against it. Where this crate and that document
   disagree, one of them is a bug; never invent a third answer.

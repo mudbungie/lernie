@@ -38,7 +38,7 @@ pub(super) fn paint(ui: &mut egui::Ui, symbol: &Symbol) {
     );
     let side = span(across, pitch);
     let (rect, _) = ui.allocate_exact_size(egui::vec2(side, side), egui::Sense::hover());
-    ui.painter().rect_filled(rect, 0.0, theme::PAPER);
+    ui.painter().rect_filled(rect, 0.0, theme::QR_PAPER);
     ui.painter().add(dark(symbol, rect, pitch));
 }
 
@@ -85,7 +85,7 @@ fn dark(symbol: &Symbol, rect: egui::Rect, pitch: f32) -> egui::Shape {
     for y in 0..symbol.side() {
         for x in 0..symbol.side() {
             if symbol.dark(x, y) {
-                mesh.add_colored_rect(module(rect, x, y, pitch), theme::INK);
+                mesh.add_colored_rect(module(rect, x, y, pitch), theme::QR_INK);
             }
         }
     }

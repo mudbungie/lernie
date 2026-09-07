@@ -33,7 +33,7 @@ pub use policy::{CHAT_FLOOR, Column, SIDE_FLOOR, Shape, shape, widths};
 /// (`crate::paint_probe`). The native boot is `src/main.rs`, which decides
 /// nothing.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
-    ctx.set_visuals(theme::visuals());
+    theme::install(ctx);
     // **The keys come first**, so what one changed is what this frame paints.
     // Nothing here is a control of its own: every binding calls the door the
     // click beneath it calls (`crate::ui::keys`).

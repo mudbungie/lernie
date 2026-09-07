@@ -17,6 +17,7 @@
 //!       * no-bare-command.yml          → violation 12
 //!       * no-bare-fork.yml             → violation 13
 //!       * no-hand-rolled-paint-walk.yml → violation 14
+//!       * no-literal-colour.yml        → violation 15
 //!
 //! One direction alone is worthless. A clean `src` proves nothing if a rule's
 //! pattern has silently stopped matching anything at all — which is exactly
@@ -135,4 +136,10 @@ fn forks_a_child_by_hand(mut cmd: std::process::Command) {
 // there.
 fn asserts_against_the_input_string(shape: &egui::epaint::TextShape) -> bool {
     shape.galley.text().contains("Login")
+}
+
+// Violation 15: a colour spelled outside `src/ui/theme.rs` — a second opinion
+// about what a hue means, which is the one thing colour must never carry.
+fn spells_a_colour_by_hand() -> egui::Color32 {
+    egui::Color32::from_rgb(255, 0, 0)
 }

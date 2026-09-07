@@ -1,0 +1,35 @@
+# Colour means state, and a state's colour has ONE home: `src/ui/theme.rs`
+# (`docs/STYLE.md` §1, rule 3). A pane that spells `Color32::from_rgb(…)` —
+# or any other constructor — holds a second opinion about what a hue means,
+# and two opinions drift the first time the palette is tuned: the roster reads
+# one green and the queue another, and an operator learns that colour means
+# nothing. So a pane asks the theme for a colour by the NAME of a state, and
+# the theme is the only file that may write bytes.
+#
+# The files that are not panes are the ones the `ignores` list names: the
+# theme itself, and the paint probe with its suite, which reads a colour back
+# off a finished frame and constructs one only to prove it can read it. The QR symbol's black-on-white pair lives in the
+# theme too (`QR_PAPER`, `QR_INK`), because a camera reads it and no theme may
+# tune it — which is exactly the kind of reasoning that belongs beside the
+# bytes, once.
+#
+# Node kinds verified against ast-grep 0.44.1's Rust tree-sitter parser: an
+# associated call `Color32::from_rgb(a, b, c)` is a `call_expression` whose
+# `function` is a `scoped_identifier` with `path` `Color32` (or `egui::Color32`,
+# which the regex's tail also matches).
+id: no-literal-colour
+language: rust
+severity: error
+message: "a colour is spelled once, in src/ui/theme.rs; ask it by the name of a state (see rules/no-literal-colour.yml)"
+ignores:
+  - "**/ui/theme.rs"
+  - "**/paint_probe.rs"
+  - "**/paint_probe/**"
+rule:
+  kind: call_expression
+  has:
+    field: function
+    kind: scoped_identifier
+    has:
+      field: path
+      regex: 'Color32$'

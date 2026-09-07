@@ -1,7 +1,8 @@
 +++
 title = "follow calls a HELD conversation 'at rest (quiescent)' and names two remedies that are both wrong: the engine now says the park on the frame and the row, and the seat still reads only the state"
 created = 1788746782
-updated = 1788746782
+updated = 1788755511
+claimant = "Cantaloups-S9"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r2"]

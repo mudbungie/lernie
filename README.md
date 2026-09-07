@@ -284,7 +284,11 @@ and its release is the fix. Between the two gates — yog holds a bump until the
 consumers' mains carry it, each consumer holds a release until yog has
 published it — the ordering a bump requires is: **the consumers' mains first,
 then yog publishes, then the consumers publish.** The decision is
-`scripts/protocol-gate.sh`, proved both ways by `make protocol-gate`.
+`scripts/protocol-gate.sh`, proved both ways by `make protocol-gate`. A hold
+clears when the engine publishes, which is an event this repository never sees,
+so `merge-release-pr` runs on a `workflow_dispatch` of Release-plz as well as
+on a push (bl-614a): that dispatch is the door for re-judging a held release,
+and without it the release waited for an unrelated landing on `main`.
 
 Publishing is by **trusted publishing**: crates.io records that this one
 workflow file in this one repository may publish this one crate, and GitHub

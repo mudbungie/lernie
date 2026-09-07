@@ -1,7 +1,8 @@
 +++
 title = "steal from hermes: work-diff has no rendering — a diff wants a file header, a totals line and an explicit 'omitted N lines' cut, not a row of JSON"
 created = 1788745727
-updated = 1788745727
+updated = 1788745868
+claimant = "Cantaloups-S6"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r2"]

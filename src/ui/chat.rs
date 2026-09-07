@@ -82,7 +82,10 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
                 .into_iter()
                 .enumerate()
             {
-                ui.add_space(theme::space::S);
+                // **Entries are parted by air, never by a line** (bl-f251):
+                // `M` between blocks, which is what lets the rule beside
+                // each read as the speaker's and not as a divider.
+                ui.add_space(theme::space::M);
                 block(ui, at, &row);
             }
         });
@@ -109,7 +112,9 @@ fn block(ui: &mut egui::Ui, at: usize, row: &Row) {
         match &row.fold {
             Some(fold) => folded(ui, at, row, fold),
             None => {
-                ui.label(&row.said);
+                // **The body is prose** (STYLE §5): laid at the leading,
+                // in body ink, wrapped at the width it has.
+                theme::paint::prose(ui, &row.said, theme::INK);
             }
         }
     });
@@ -143,9 +148,9 @@ fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
     // that says so — and the whole answer, once asked for, stands in body ink
     // like every other row.
     if open {
-        ui.label(&row.said);
+        theme::paint::prose(ui, &row.said, theme::INK);
     } else {
-        ui.label(egui::RichText::new(&fold.head).color(theme::INK_WEAK));
+        theme::paint::prose(ui, &fold.head, theme::INK_WEAK);
     }
 }
 

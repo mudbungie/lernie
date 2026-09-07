@@ -4007,6 +4007,16 @@ one weak line under it, and the subtree path under that where the row's
 composed by `records::header` and read from there. The size is asserted off
 the glass as a height: the name's laid rect is taller than the state word's.
 
+**The type scale grew a point and prose grew a leading** (bl-f251, item 3;
+`src/ui/theme.rs`, `src/ui/theme/paint.rs`, `src/ui/chat.rs`). The body is
+14 where the first pass set 13, and the transcript's bodies are laid through
+`theme::paint::prose` at `type_scale::LEADING` — the one run on the glass
+with a line height of its own, because prose is read line after line where
+a list is scanned. Entries are parted by `M` of air and no line: the rule
+beside a block is the speaker's weight, and a divider between blocks would
+have made it read as a separator. Asserted off the glass as heights and
+gaps, never as a picture.
+
 **A label off the window is a layout question** (`src/snapshot/clipped.rs`;
 bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
 marks selectable prose as clickable so a pointer can select it, so every

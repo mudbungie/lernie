@@ -10,7 +10,9 @@
 
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
-use super::{BRAND, HAIRLINE, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, SURFACE, space};
+use super::{
+    BRAND, HAIRLINE, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, SURFACE, space, type_scale,
+};
 
 /// The two fields that take text: the one-line box and the composer.
 mod field;
@@ -131,6 +133,25 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
 }
 
 pub use field::{composer, field};
+
+/// **A paragraph of prose**: `words` wrapped at the width it has, in `ink`,
+/// laid at [`type_scale::LEADING`] rather than the font's own line height
+/// (bl-f251). The transcript's body is read line after line, and a body
+/// laid as tight as a list row reads as one — every other run on the glass
+/// keeps the font's height, which is what makes this shape a shape.
+pub fn prose(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let format = egui::TextFormat {
+        font_id: font,
+        color: ink,
+        line_height: Some(type_scale::LEADING),
+        ..egui::TextFormat::default()
+    };
+    let mut job = egui::text::LayoutJob::default();
+    job.append(words, 0.0, format);
+    job.wrap.max_width = ui.available_width();
+    ui.add(egui::Label::new(job).wrap())
+}
 
 #[cfg(test)]
 mod tests;

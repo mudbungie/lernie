@@ -192,16 +192,25 @@ pub mod space {
     pub const XL: f32 = 24.0;
 }
 
-/// **Type, in points** — four sizes and no fifth. **Desktop delta:** every
-/// size sits two points under the phone's (15 → 13, 20 → 18), because a
-/// desktop is read at arm's length and holds three columns of prose where the
-/// phone holds one — and the covering panes must fit the narrowest shape the
-/// layout promises (§4.32), which the phone's body overruns.
+/// **Type, in points** — four sizes and no fifth. **Desktop delta:** the
+/// body sits one point under the phone's and the heading two (15 → 14,
+/// 20 → 18), because a desktop is read at arm's length and holds three
+/// columns of prose where the phone holds one — and the covering panes must
+/// fit the narrowest shape the layout promises (§4.32), which the phone's
+/// body overruns. The body was 13 through the first pass and read as
+/// spartan at 1440×900 (bl-f251); 14 is the point the density constraint
+/// still admits.
+///
+/// [`type_scale::LEADING`] is the line height a paragraph of the transcript
+/// is laid at — one and a half bodies — where a control, a row and a label
+/// keep the font's own. Prose is read line after line and a list is scanned;
+/// the air between the lines is what tells the two apart on a dark ground.
 pub mod type_scale {
     pub const SMALL: f32 = 11.0;
     pub const MONO: f32 = 12.0;
-    pub const BODY: f32 = 13.0;
+    pub const BODY: f32 = 14.0;
     pub const HEADING: f32 = 18.0;
+    pub const LEADING: f32 = 21.0;
 }
 
 /// **The glyph an act wears** (bl-f251) — an icon is a token exactly as a

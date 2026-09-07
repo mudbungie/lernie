@@ -145,3 +145,40 @@ fn a_folded_head_stands_in_weak_ink() {
         .expect("the head of the answer is on the glass");
     assert_eq!(head.ink, theme::INK_WEAK, "{:?}", head.text);
 }
+
+/// **Entries are parted by air, not by a line** (bl-f251): the rules beside
+/// two consecutive blocks stand at least `M` apart, and no hairline-wide
+/// fill spans the column between them.
+#[test]
+fn entries_are_parted_by_air_and_never_by_a_line() {
+    let output = glass(vec![turn("model-a", "first"), turn("model-a", "second")]);
+    let rules: Vec<egui::Rect> = fills_of(&output)
+        .into_iter()
+        .filter(|(rect, fill)| {
+            (rect.width() - theme::RULE).abs() < 0.5
+                && *fill == theme::speaker(theme::Speaker::Model)
+        })
+        .map(|(rect, _)| rect)
+        .collect();
+    assert_eq!(rules.len(), 2, "{rules:?}");
+    let gap = rules[1].min.y - rules[0].max.y;
+    assert!(gap >= theme::space::M - 0.5, "gap {gap}");
+    let first = run(&output, "first");
+    let dividers = fills_of(&output)
+        .into_iter()
+        .filter(|(rect, _)| {
+            rect.height() <= 1.5
+                && rect.width() > 100.0
+                && rect.min.y > first.laid.max.y
+                && rect.max.y < rules[1].min.y
+        })
+        .count();
+    assert_eq!(dividers, 0, "no line between two entries");
+    // **And the body is prose**: laid at the leading, so one line of it
+    // stands taller than the header over it.
+    assert!(
+        first.laid.height() >= theme::type_scale::LEADING - 0.5,
+        "{:?}",
+        first.laid
+    );
+}

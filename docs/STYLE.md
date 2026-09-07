@@ -126,9 +126,14 @@ promises (DESIGN §4.32's density constraint), which the phone's smallest
 step overruns.
 
 Type is four sizes and no fifth (`theme::type_scale`): `SMALL 11 · MONO 12 ·
-BODY 13 · HEADING 18`. **Delta:** every size sits two points under the
-phone's, because a desktop is read at arm's length and holds three columns
-of prose where the phone holds one.
+BODY 14 · HEADING 18`. **Delta:** the body sits one point under the phone's
+and the heading two, because a desktop is read at arm's length and holds
+three columns of prose where the phone holds one; 13 was the first pass and
+read as spartan at 1440×900 (bl-f251), and 14 is the point the density
+constraint still admits. **Prose has a leading**, `LEADING 21` — one and a
+half bodies — laid only under a transcript body (`theme::paint::prose`); a
+row, a control and a label keep the font's own height, so that a paragraph
+and a list are told apart by the air between their lines.
 
 **Delta:** a list row stands `ROW 24` points tall where the phone's touch
 target is 48 — a pointer's target is not a thumb's, and a list of
@@ -161,9 +166,11 @@ error accent above the spend, and `S` of air before the transcript.
 
 **A block** (the transcript): aligned, ruled, never bubbled. Every block
 starts at the same left edge; a `RULE`-wide line in the speaker's weight
-stands beside its header; the body wraps at the width it has; a tool result
-folds to its head in `INK_WEAK` with the unfold control carrying the size of
-what is hidden.
+stands beside its header; the body is prose, laid at `LEADING` and wrapped
+at the width it has; a tool result folds to its head in `INK_WEAK` with the
+unfold control carrying the size of what is hidden. Blocks are parted by `M`
+of air and never by a line — the rule beside each is the speaker's, and a
+divider between them would make it read as one.
 
 **The composer** (`theme::paint::composer`): a `SURFACE` field
 `COMPOSER_ROWS` lines tall, no stroke at rest, the brand ring when focused,

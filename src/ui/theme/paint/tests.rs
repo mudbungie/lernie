@@ -1,7 +1,7 @@
 //! The anatomy on the glass: a row's words, ink, rule and tint; a block's
 //! rule; a section's word; a field's ring and glow.
 
-use super::{composer, elbow, field, rail, row, ruled, section};
+use super::{composer, elbow, field, prose, rail, row, ruled, section};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
 use crate::ui::theme::{
@@ -221,5 +221,35 @@ fn the_composer_is_rows_tall_with_the_send_inside_it() {
     assert_eq!(
         text, "\n",
         "one break from the shifted key and none from the bare one"
+    );
+}
+
+/// **Prose is laid at the leading** (bl-f251): a paragraph that wraps to
+/// two lines stands two leadings tall on the glass, where a label of the
+/// same words stands two font heights — and the words reach the glass in
+/// the ink they were given.
+#[test]
+fn prose_is_laid_at_the_leading_and_a_label_is_not() {
+    let window = Window::sized(200.0, 200.0);
+    let words = "a paragraph long enough that two hundred points cannot hold it on one line";
+    let body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            prose(ui, words, INK_WEAK);
+            ui.label(words);
+        });
+    };
+    let glyphs = seen(&window, body);
+    let (paragraph, label) = (&glyphs[0], &glyphs[1]);
+    assert_eq!(paragraph.ink, INK_WEAK);
+    assert!(
+        paragraph.laid.height() >= 2.0 * type_scale::LEADING - 1.0,
+        "{:?}",
+        paragraph.laid
+    );
+    assert!(
+        paragraph.laid.height() > label.laid.height() + type_scale::LEADING - type_scale::BODY,
+        "prose {:?} over label {:?}",
+        paragraph.laid,
+        label.laid
     );
 }

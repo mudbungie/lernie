@@ -1,15 +1,17 @@
-//! The four structural doors: their usage lines, their arity refusals, and
-//! that every word the usage lists can be asked about.
+//! The structural doors: their usage lines, their arity refusals, and that
+//! every word the usage lists can be asked about.
 
-use super::{ASK, ENTRIES, HELP, START, find, table};
+use super::{ASK, ENTRIES, HELP, OPS, START, find, table};
 
 /// **A door's usage line is what it prints**, including the shape a list of
-/// envelope field names cannot spell: an optional argument. Two doors have one
-/// — `help`'s word, and `start`'s work target (bl-4371).
+/// envelope field names cannot spell: an optional argument. Three doors have
+/// one — `help`'s word, `start`'s work target (bl-4371) and `ops`' depth
+/// (bl-28a4).
 #[test]
 fn every_door_prints_the_line_an_operator_types() {
     assert_eq!(START.usage(), "lernie start <workspace> <goal> [<dir>]");
     assert_eq!(ASK.usage(), "lernie ask <envelope>");
+    assert_eq!(OPS.usage(), "lernie ops [<max>]");
     assert_eq!(ENTRIES.usage(), "lernie entries");
     assert_eq!(HELP.usage(), "lernie help [<verb>]");
 }

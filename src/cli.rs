@@ -85,6 +85,13 @@ pub fn run(args: Vec<String>) -> Decided {
             model: (*model).to_owned(),
             form,
         },
+        // **The trail, with the depth defaulted** (bl-28a4). `ops` carries a
+        // NUMBER, so it is a door rather than a row (`crate::verbs::doors`),
+        // and the wire refuses an envelope without one — so the word answers
+        // that question from the constant the window's own pane asks with
+        // rather than making an operator answer it.
+        ["ops"] => Decided::Fanned(crate::verbs::ops(crate::verbs::DEPTH), form),
+        ["ops", depth] => trail(depth, form),
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => enroll(workspace, name, grade, tail),
@@ -104,6 +111,27 @@ fn started(address: &str, goal: &str, dir: Option<&str>, form: Form) -> Decided 
         dir: dir.map(str::to_owned),
         form,
     }
+}
+
+/// **The trail at a stated depth**, or the refusal a word that is not a number
+/// earns.
+///
+/// Read here, in the pure function, for exactly the reason [`ask`]'s body and
+/// [`enroll`]'s grade are: whether `max` is a number is decided entirely by
+/// what was typed, so it is the caller's typo, it earns the usage, and it
+/// costs no connection. The wire would refuse it too, in its own words
+/// (`non-integer field "max"`), a round trip later.
+fn trail(depth: &str, form: Form) -> Decided {
+    let Ok(max) = depth.parse::<u64>() else {
+        return Decided::Say(Verdict::refused(misplaced(
+            format!(
+                "`lernie ops` takes a depth in rows and got {depth:?} — usage: {}",
+                crate::verbs::doors::OPS.usage()
+            ),
+            &[depth],
+        )));
+    };
+    Decided::Fanned(crate::verbs::ops(max), form)
 }
 
 /// **Read the output form off the front**, and hand back the gesture that is

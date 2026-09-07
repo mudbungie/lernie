@@ -8,12 +8,21 @@
 //! whose parameters are not all strings … is not added as a special case"* —
 //! so this is a typed door beside [`super::tuning`]'s two, on exactly their
 //! terms: one builder, no second spelling of the gesture, and no row in the
-//! table `lernie help` prints. What argv spends instead is `lernie ask`.
+//! table `lernie help` prints.
 //!
 //! And `max` is required rather than defaulted: the wire refuses an envelope
 //! without it (`non-integer field "max"`). The default lives on yog's own line
 //! grammar, which is a different surface with a different reader; a seat that
 //! left the field out would be spelling a convenience it does not have.
+//!
+//! **What argv spells is `lernie ops [<max>]`** (bl-28a4), a door in
+//! [`super::doors`] beside the start composite's and for this file's own
+//! reason: a number is no more a word a table of named strings can hold than a
+//! nested object is. It answers the field it cannot leave out from [`DEPTH`],
+//! so the word spends the seat's written-down answer rather than making an
+//! operator answer a question the wire asked the SEAT — and `lernie ops` with
+//! no depth is the ordinary reading rather than *"unrecognised argument"*,
+//! which is what it used to earn.
 //!
 //! # It names no workspace, so its subject is every channel
 //!
@@ -33,13 +42,17 @@ pub const OPS: &str = "ops";
 /// The field that says how deep to read.
 const MAX: &str = "max";
 
-/// **How much of the trail the pane asks for.**
+/// **How much of the trail this seat asks for**, on both of its faces.
 ///
 /// A bound is required by the wire and this is the seat's own answer to it,
-/// stated once. It is deliberately larger than a screen: the pane scrolls, and
-/// an operator reading a trail is looking for the row before the one that
-/// broke — a depth that stopped at the visible rows would make *scroll down*
-/// answer nothing.
+/// stated once. It is deliberately larger than a screen: the pane scrolls and
+/// so does a terminal, and an operator reading a trail is looking for the row
+/// before the one that broke — a depth that stopped at the visible rows would
+/// make *scroll down* answer nothing.
+///
+/// **The word spends it too** (bl-28a4): `lernie ops` with no depth asks with
+/// this figure, which is what makes the two faces one answer rather than two
+/// that can drift.
 pub const DEPTH: u64 = 200;
 
 /// **The trail, as deep as [`DEPTH`]** — newest last, every action that

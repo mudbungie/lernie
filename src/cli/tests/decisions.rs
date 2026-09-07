@@ -36,6 +36,37 @@ fn the_verbs_decide_and_carry_what_they_were_given() {
     );
 }
 
+/// **The trail's depth is optional and the default is the seat's own**
+/// (bl-28a4). The wire refuses an envelope without `max` and `ops` carries a
+/// number rather than a string, so the word is a door — and a door that
+/// refused without a depth would be making the operator answer a question the
+/// wire asked the seat, which already has the answer written down.
+#[test]
+fn the_trail_defaults_its_depth_to_the_one_the_window_asks_with() {
+    assert_eq!(
+        fanned(&["ops"]),
+        json!({"op": "ops", "max": crate::verbs::DEPTH})
+    );
+    assert_eq!(fanned(&["ops", "5"]), json!({"op": "ops", "max": 5}));
+    assert_eq!(
+        fanned(&["ops"]),
+        asked_of_everything(),
+        "the word and the envelope it stands for decide alike"
+    );
+}
+
+/// The envelope `lernie ops` stands for, written out — the same property the
+/// test above it asserts for every other verb.
+fn asked_of_everything() -> serde_json::Value {
+    match run(argv(&[
+        "ask",
+        &format!(r#"{{"op":"ops","max":{}}}"#, crate::verbs::DEPTH),
+    ])) {
+        Decided::Ask(envelope, _) | Decided::Fanned(envelope, _) => envelope,
+        other => panic!("decided {other:?}"),
+    }
+}
+
 /// **A typed verb and a hand-written envelope arrive as one value.** That is
 /// the whole property: the verbs are a serialization of the envelope, not a
 /// second spelling of a gesture, so what leaves this function is identical

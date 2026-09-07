@@ -5,7 +5,11 @@
 //! parameters, *"all of them named strings"* — and that `start` and `ask`
 //! cannot be rows of it precisely because their arguments are not: a nested
 //! object is not a word an operator types. That reasoning holds and this
-//! module does not widen it. What it fixes is that the help surface did not
+//! module does not widen it. **The class is *a word whose grammar the gesture
+//! table cannot express*** (bl-28a4), which is what `ops` joins it on: its one
+//! parameter is a NUMBER, so it is no more a row than a nested object is —
+//! and it has an optional shape besides, which a list of field names cannot
+//! spell either. What it fixes is that the help surface did not
 //! know it (bl-6bda, bl-81dd): the usage listed eleven words, `lernie help
 //! <verb>` answered a page for seven, and the other four were refused with
 //! *"no verb named `ask`"* — a sentence that is false in the only sense the
@@ -137,6 +141,31 @@ pub const ENTRIES: Door = Door {
              operator's hand, out of channel, always.",
 };
 
+/// **The trail, as deep as it is asked for** — the one door that carries a
+/// number, and the reason [`super::trail::DEPTH`] is a constant rather than a
+/// literal at the pane.
+///
+/// **The depth is optional and the default is the seat's own** (bl-28a4). The
+/// wire refuses an envelope without `max`, so the word cannot simply leave it
+/// out; what it does instead is spell the same figure the window's pane asks
+/// for, from the same constant. A word that refused without a number would be
+/// making an operator answer a question the wire asked the SEAT — and the seat
+/// already has an answer written down.
+pub const OPS: Door = Door {
+    word: "ops",
+    takes: "[<max>]",
+    arity: (0, 1),
+    summary: "every act that crossed the boundary, newest last",
+    detail: "The trail of what an engine has DONE — one row per act, with the \
+             command it ran and how it ended. It names no workspace, so its \
+             subject is EVERY channel this box holds and the answer is their \
+             union. The depth is how many rows to ask for and it is optional: \
+             without one the word asks for the same depth the window's own \
+             trail pane does, which is deliberately larger than a screen \
+             because what an operator is looking for is the row before the one \
+             that broke.",
+};
+
 /// The word whose subject is this binary.
 pub const HELP: Door = Door {
     word: "help",
@@ -151,9 +180,9 @@ pub const HELP: Door = Door {
              no channel provisioned. `--help` and `-h` are the same word.",
 };
 
-/// Every door, in the order the usage prints them: the two that act, then the
-/// two that describe.
-const TABLE: &[Door] = &[START, ASK, ENTRIES, HELP];
+/// Every door, in the order the usage prints them: the three that cross a
+/// wire, then the two that answer with no engine up.
+const TABLE: &[Door] = &[START, ASK, OPS, ENTRIES, HELP];
 
 #[cfg(test)]
 mod tests;

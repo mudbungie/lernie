@@ -219,6 +219,22 @@ fn a_tail_that_is_not_the_flag_is_told_which_word_it_takes() {
     assert!(refused.text.contains("\"children\""), "{}", refused.text);
 }
 
+/// **A depth that is not a number is the caller's typo**, so it is read here
+/// rather than spent on a connection — the same division `ask`'s body and
+/// `enroll`'s grade are read on (bl-28a4). The wire would refuse it too, in
+/// its own words, a round trip later.
+#[test]
+fn a_trail_depth_that_is_not_a_number_earns_the_door_s_usage() {
+    let refusal = said(&["ops", "deep"]);
+    assert_eq!(refusal.code, REFUSED);
+    assert!(refusal.text.contains(r#"got "deep""#), "{}", refusal.text);
+    assert!(
+        refusal.text.contains(&crate::verbs::doors::OPS.usage()),
+        "{}",
+        refusal.text
+    );
+}
+
 /// **The spelling everybody tries first is the wrong one**, and the arity
 /// refusal is where that is paid: `lernie workspaces --json` is what the
 /// sibling tools take, and being told `workspaces` takes no argument answers a
@@ -229,6 +245,9 @@ fn a_trailing_json_flag_earns_the_sentence_that_says_where_it_goes() {
         vec!["workspaces", "--json"],
         vec!["entries", "--json"],
         vec!["conversations", "home", "--json"],
+        // …including the one door whose optional argument would otherwise
+        // have swallowed it as a depth (bl-28a4).
+        vec!["ops", "--json"],
     ] {
         let refusal = said(&words);
         assert_eq!(refusal.code, REFUSED, "{words:?}");

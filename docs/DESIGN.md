@@ -637,15 +637,64 @@ rots; `src/verbs/rows.rs`'s `TABLE` is the one home.
 The *roster* is the gestures whose replies §4.9 paints, and it grows with the
 paint surface: the ball that lands a pane adds its kind and its gesture in the
 same breath. The *table* is the subset a word can spell, and it trails the
-roster by exactly four gestures that cannot be rows. Two modules hold the
-four and each is the same rule
-applied. `src/verbs/start.rs`: `prepare` carries a payload rung and `prompt`
+roster by the gestures that cannot be rows. **Three modules hold them and each
+is the same rule applied**, and no count is written here — `src/verbs/`'s own
+files are the home, and the count that used to stand in this sentence was
+already wrong by one when bl-28a4 read it. `src/verbs/start.rs`: `prepare`
+carries a payload rung and `prompt`
 carries a prepared body, and a nested object is not a word an operator types, so
 what argv types instead is the composite below. `src/verbs/tuning.rs` (§4.17):
 `effort` carries a level that is a string **or null** — null being the whole of
 what *off* means, so a row would have to send a fifth word the boundary refuses
-by name — and `priority` carries a bool. Each is exactly the case the paragraph
+by name — and `priority` carries a bool. `src/verbs/trail.rs`: `ops` carries a
+**number**. Each is exactly the case the paragraph
 above refuses to special-case, and each is a typed door with no row.
+
+**A gesture with no row still needs a WORD, and `ops` is where that was
+learned** (bl-28a4). Having no row is a statement about the table; it was
+being read as a statement about the surface, and `lernie ops` answered
+*"unrecognised argument: ops"* — the sentence a typo earns, for a gesture this
+binary builds an envelope for and paints an answer to. So the class the
+`src/verbs/doors.rs` table holds is **a word whose grammar the gesture table
+cannot express**, not merely *a word this binary answers itself*: `start` composes two
+gestures, `ask` composes any, `entries` and `help` compose none, and `ops`
+composes one whose parameter is a number. All five are a word, a usage line and
+prose with no envelope builder in the table behind them, which is the whole of
+what kept the doors from being a second implementation.
+
+**And the depth is DEFAULTED, which is the half of this worth stating as a
+rule.** The wire refuses an `ops` envelope without `max`, so the word cannot
+leave the field out — but *this seat already knows what to ask for*: `DEPTH`
+is the figure the window's own trail pane spends, and it is deliberately larger
+than a screen because what an operator is looking for is the row before the one
+that broke. A word that refused without a number would be making an operator
+answer a question the wire asked the SEAT. So `lernie ops` is the ordinary
+reading and `lernie ops <max>` is the override, and the two faces ask with one
+figure from one constant rather than two that can drift. A depth that is not a
+number is read in `cli::run` and refused there, on `ask`'s body's and
+`enroll`'s grade's own division: decided entirely by what was typed, the
+caller's typo, earns the usage, costs no connection.
+
+**A staged body CAN be re-fired without `start`, and the word for it is `ask`**
+(bl-28a4). The complaint was that a prepared prompt has no seat spelling
+outside the composite, so a seat holding a staged body could not fire it. It
+can: `prompt` is an ordinary envelope, `lernie ask` carries any envelope
+verbatim, and it is **routed by the same one table every other gesture is** —
+`envelope::slot_mut` reads the workspace one level down inside `prepared`, so a
+hand-written fire goes down the channel that body names and is re-addressed
+into the host's spelling on the way, exactly as the composite's second act is.
+What has no typed WORD is the nested object itself, and that is this section's
+opening rule rather than a gap in it.
+
+**What `start` adds is the two things a second process cannot hold.** The
+local between the two acts — the staged body, held while the fire is composed —
+and the goal JOIN: the engine composes a prefill for every rung that has one
+(the path rung's §3.3 target preamble), and the composite sends the prefill and
+the operator's words as one goal, which is what a seat with a composer does by
+editing. A hand-written fire carries whatever goal it is given and no prefill,
+so a `prompt` typed by hand off a path-rung `prepare` starts a conversation
+without the preamble its rung meant it to have. That is the residual, and it is
+a fact about what a one-shot word can hold rather than about the vocabulary.
 
 **The two arguments the seat settles itself are `enroll`'s grade and its
 destination** (bl-07b9, bl-1554). The second is `--into <dir>`, the one optional
@@ -694,9 +743,9 @@ authority on grades** — the engine still decides what a grade means and whethe
 this box may ask for one at all, which §8.4 makes unknowable here — and the two
 words are read off `ui::Grade`'s own list rather than a second copy of it.
 
-**The four structural words are DOORS, and they have pages** (`src/verbs/doors.rs`,
-bl-6bda, bl-81dd). `start`, `ask`, `entries` and `help` are answered by this
-binary and cannot be rows of the gesture table for the reason above; the defect
+**The structural words are DOORS, and they have pages** (`src/verbs/doors.rs`,
+bl-6bda, bl-81dd; `ops` joined them in bl-28a4). `start`, `ask`, `entries` and
+`help` cannot be rows of the gesture table for the reason above; the defect
 was that the help surface did not know it. The usage listed eleven words,
 `lernie help <word>` answered a page for seven, and the other four were refused
 with *"no verb named `ask`"* — false in the only sense the operator means it,
@@ -3485,7 +3534,7 @@ of *what a seat printed*.
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~225 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~260 |
 | `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
@@ -3547,7 +3596,7 @@ of *what a seat printed*.
 | `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
-| `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth this seat asks for stated once (§4.27) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~90 |
+| `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth BOTH faces ask with stated once (§4.27, §4.10) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~100 |
 | `src/verbs/records.rs` | the conversation's records as rows — the steps ledger and the worktree listing, each with its typed door, admitted by the same test the four acts passed once §4.18 decoded their kinds. | ~65 |
 | `src/verbs/spine.rs` | the conversation's spine as rows — the notches and the governing commit — beside the `fork` door that shares their subject and cannot be a row, because it carries a list (§4.29). | ~115 |
 | `src/verbs/candidates.rs` | the n-attempt path's three envelopes — the spread, the acceptance and the release — as doors and never rows, because argv has no channel selector for a gesture naming no workspace (§4.36). | ~105 |
@@ -3562,7 +3611,7 @@ of *what a seat printed*.
 | `src/ui/roster/acts.rs` | the strip above the channels: the four ops whose subject is every channel, and the one of them that opens nothing (§4.21). | ~65 |
 | `src/verbs/tests/corpus/emits/ledger.rs` | the frames this seat's encoder cannot compose, by op, count and reason — split from the mechanism at the cap, because a builder changing and a surface not being built are two different reasons to edit. | ~120 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, and the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371). | ~130 |
-| `src/verbs/doors.rs` | the four words this binary answers itself: a word, a usage line and prose, with no envelope behind it. | ~150 |
+| `src/verbs/doors.rs` | the words whose grammar the gesture table cannot express: a word, a usage line and prose, with no envelope builder behind it. | ~190 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |

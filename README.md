@@ -271,6 +271,19 @@ version crates.io does not already serve — tagged `v<version>`, with a GitHub
 Release beside it. `release-plz.toml` holds the four policy decisions it reads
 and the reason for each.
 
+**A protocol bump waits for the engine** (bl-52b5). yog mints the wire protocol
+version and this crate *vendors* a copy of the constant; the wire is
+fail-closed on a mismatch and does not negotiate (yog `docs/REMOTE.md` §3). So
+`merge-release-pr` **holds every release while this repository's `PROTOCOL`
+exceeds the newest published yog's** — thrall took that road first, shipping 16
+while the published engine spoke 15, which composes with nothing. Strictly
+greater, not different: a seat *behind* the engine is the mirror-image defect
+and its release is the fix. Between the two gates — yog holds a bump until the
+consumers' mains carry it, each consumer holds a release until yog has
+published it — the ordering a bump requires is: **the consumers' mains first,
+then yog publishes, then the consumers publish.** The decision is
+`scripts/protocol-gate.sh`, proved both ways by `make protocol-gate`.
+
 Publishing is by **trusted publishing**: crates.io records that this one
 workflow file in this one repository may publish this one crate, and GitHub
 mints a short-lived signed token asserting exactly that at run time. There is no

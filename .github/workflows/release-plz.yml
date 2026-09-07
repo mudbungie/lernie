@@ -61,11 +61,40 @@ name: Release-plz
 #     push to `main`; the repository's "automatically delete head branches"
 #     setting only fires on MERGE and never sees them.
 #   * merge-release-pr (last, after the pruner) — merges the release PR the PR
-#     job just opened, under two conjunctive guards, and then DISPATCHES this
+#     job just opened, under three conjunctive guards, and then DISPATCHES this
 #     workflow, because a merge performed with `GITHUB_TOKEN` triggers no run at
 #     all. Merging is not the release gate — `release` above is, post-merge — so
 #     a human holding this PR only delays a decision the gate makes anyway. Its
 #     own header says why native auto-merge cannot stand in for it.
+#
+# ---------------------------------------------------------------------------
+# THE PROTOCOL GATE — A SEAT DOES NOT PUBLISH AHEAD OF THE ENGINE (bl-52b5)
+#
+# yog mints the wire protocol version; this crate, the foot (`thrall`) and the
+# phone (`yog-android`) each VENDOR a copy of the constant, and the wire is
+# fail-closed on a mismatch with no negotiation (yog `docs/REMOTE.md` §3 — the
+# authority, and the one place the two-direction rule is written out). The skew
+# is therefore two-directional and each direction is gated where it can be
+# decided:
+#
+#   1. yog publishing a bump ahead of its consumers — held at yog's own release
+#      pull request until this repository's `main`, thrall's and yog-android's
+#      carry the number. That is yog bl-bca2.
+#   2. THIS repository publishing a bump ahead of the engine — held by guard 3
+#      in `merge-release-pr`. thrall took that road first: 0.0.15 published
+#      PROTOCOL 16 while the newest published yog, 0.0.49, spoke 15, a
+#      component ahead of every engine a user can install.
+#
+# **The ordering the two gates produce**: the consumers' mains carry the number
+# first, then yog publishes, then the consumers publish. Landing the constant
+# on `main` is held by neither — it is what gate 1 waits for.
+#
+# **Strictly greater, not different.** A seat BEHIND the published engine is
+# direction 1's defect and its release is the fix; holding that would hold the
+# remedy shut. The published engine is yog's newest `v<x.y.z>` tag, cut in the
+# same act as the crates.io upload. The decision is
+# `scripts/protocol-gate.sh` — pure logic, no network — because this workflow
+# cannot run locally; `make protocol-gate` proves it both ways in `lint`.
 #
 # ONE-TIME REPOSITORY SETUP, both done:
 #   * Settings → Actions → General → "Allow GitHub Actions to create and approve
@@ -375,10 +404,19 @@ jobs:
       cancel-in-progress: false
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # No checkout: `gh` needs a repository, not a working tree, and this job
-      # reads and writes nothing on disk.
       GH_REPO: ${{ github.repository }}
+      # The engine whose published PROTOCOL a release here may not exceed
+      # (guard 3, below). The one fact about GitHub in the whole check, so it is
+      # named here and not in the script.
+      ENGINE_REPO: mudbungie/yog
     steps:
+      # The ONE thing this job needs on disk: `scripts/protocol-gate.sh`, from
+      # THIS repository's default branch — never from the pull request, whose
+      # diff is a version bump and has no business supplying the check that
+      # judges it. Everything else below is `gh` against a repository.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       # THE LISTING IS THE AUDIT TRAIL, and it prints whether or not anything is
       # merged: every open PR, with the verdict this job reaches on it and the
       # fields it reached it from. A guard that silently matches nothing looks
@@ -392,9 +430,10 @@ jobs:
                                and .author.login == "app/github-actions"
                                and (.headRefName | test("^release-plz-")))
                           then "MERGE " else "refuse" end)  #\(.number)  head=\(.headRefName)  bot=\(.author.is_bot)  author=\(.author.login)"'
-      # THE TWO GUARDS, and they are conjunctive. A candidate must have a
+      # THE THREE GUARDS, and they are conjunctive. A candidate must have a
       # `release-plz-*` head branch AND be authored by the Actions bot AND
-      # target `main`. Only release-plz names a branch that way and only a
+      # target `main` — and no release merges at all while guard 3, the protocol
+      # gate below, holds. Only release-plz names a branch that way and only a
       # workflow holding this repository's token can author a PR as that bot, so
       # neither half is forgeable by anyone who does not already have write
       # access. A HUMAN'S PR IS NEVER MERGED HERE, whatever its branch is named.
@@ -427,6 +466,38 @@ jobs:
           # this is where the chain stops on its own.
           if [ -z "$candidates" ]; then
             echo "no open bot-authored release PR — nothing to merge"
+            exit 0
+          fi
+
+          # GUARD 3: a release here may not speak a wire PROTOCOL that no
+          # PUBLISHED engine speaks (bl-52b5). yog's release job cuts the
+          # `v<x.y.z>` tag in the same act as the crates.io upload, so that tag
+          # IS the published engine. Both fetches truncate first and are
+          # `|| true`: a missing tag, a moved constant or a network fault reads
+          # as unreadable and HOLDS rather than merging. The verdict is one
+          # line, printed whether it merges or holds.
+          #
+          # It reads `main`, not a pull request head, and once per run rather
+          # than once per candidate: the release PR bumps `Cargo.toml` and
+          # `Cargo.lock` and nothing else, so its `hello.rs` IS main's — and
+          # main's tree is what the merged bump publishes.
+          gate="$(mktemp -d)"
+          hello="$(scripts/protocol-gate.sh hello)"
+          raw() {
+            gh api "repos/$1/contents/$3?ref=$2" \
+              -H "Accept: application/vnd.github.raw" >"$4" || true
+          }
+          engine_tag="$(gh api "repos/$ENGINE_REPO/releases/latest" -q .tag_name || true)"
+          [ -z "$engine_tag" ] || \
+            raw "$ENGINE_REPO" "$engine_tag" src/wire/hello.rs "$gate/published"
+          raw "$GH_REPO" main "$hello" "$gate/candidate"
+          gate_rc=0
+          gate_says="$(scripts/protocol-gate.sh judge \
+            "$gate/published" "$gate/candidate")" || gate_rc=$?
+          echo "protocol gate: $gate_says"
+          if [ "$gate_rc" != 0 ]; then
+            echo "held: land the number in yog and let it publish first;"
+            echo "  a later push to main, or a re-run of this workflow, re-judges."
             exit 0
           fi
 

@@ -29,10 +29,37 @@ third answer.
 ## The gate
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
-is `line-cap → deploy-selftest → leak-scan → clippy -D warnings → rules-audit →
-cargo deny check`. The pre-commit hook runs the same targets via
+is `line-cap → deploy-selftest → protocol-gate → leak-scan → clippy -D warnings
+→ rules-audit → cargo deny check`. The pre-commit hook runs the same targets via
 `scripts/pre-commit`; neither restates a step the Makefile defines. Run `make install-hooks` once per
 clone — it seats `pre-commit` **and** `commit-msg`.
+
+### A PROTOCOL bump is a four-repository act (bl-52b5; yog bl-bca2)
+
+yog mints the wire protocol version. This crate, the foot (`thrall`) and the
+phone (`yog-android`) each **vendor** a copy of the constant
+(`src/channel/hello.rs`), and the wire is fail-closed on a mismatch with no
+negotiation (yog `docs/REMOTE.md` §3 — the authority, and the one place the
+two-direction rule is written out). So the skew is two-directional and each
+direction is gated where it can be decided:
+
+1. **yog does not publish a bump ahead of its consumers** — its release pull
+   request is held until this repository's `main`, thrall's and yog-android's
+   carry the new number.
+2. **This repository does not publish a bump ahead of the engine** —
+   `merge-release-pr` holds every release while this repository's `PROTOCOL`
+   **exceeds** the newest published yog's (its newest `v<x.y.z>` tag, cut in
+   the same act as the crates.io upload). thrall took that road first: 0.0.15
+   shipped 16 while the published engine spoke 15, which composes with nothing.
+   Strictly greater, not different: a seat *behind* the engine is defect 1 and
+   its release is the fix.
+
+**The ordering this produces, and the whole of what to remember: the
+consumers' mains carry the number first, then yog publishes, then the consumers
+publish.** Landing the constant on `main` is held by neither gate — it is what
+gate 1 waits for. `scripts/protocol-gate.sh` is the decision (pure logic, no
+network, because the workflow that spends it cannot run locally) and
+`make protocol-gate` proves it both ways in `lint`.
 
 **And CI is that same target, run by a machine rather than by whoever
 remembered.** `.github/workflows/ci.yml` installs the three pinned tools the

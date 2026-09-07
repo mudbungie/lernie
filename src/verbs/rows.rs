@@ -164,8 +164,9 @@ pub const MESSAGE: Verb = Verb {
 /// **The enrollment's row.** Three named strings, so it is a row like any
 /// other — but the *reply* is not like any other, and `lernie enroll` therefore
 /// has its own arm in [`crate::cli`] rather than printing the reply stream the
-/// way every other verb does. The material must not reach a scrollback; what
-/// the arm prints is the symbol.
+/// way every other verb does. What the arm prints is the rendering the operator
+/// asked for — the symbol and the line, or, where `--into` named a directory,
+/// the receipt alone (bl-768a).
 pub const ENROLL: Verb = Verb {
     word: "enroll",
     params: &["workspace", "name", "grade"],
@@ -174,17 +175,20 @@ pub const ENROLL: Verb = Verb {
     detail: "The engine mints a leaf on its own CA, seats the client in that \
              workspace, answers the material and shreds the key. What comes \
              back is REMOTE §8.4's envelope — one line of compact JSON under \
-             `{\"yog-enroll\":1,…}` — and this seat says it three ways, because \
-             they are the same bytes: a QR symbol for a camera, the line itself \
-             for the paste box an android seat offers, and `--into <dir>` for a \
-             box with neither, which writes the four files an entry is \
-             (`ca.pem`, `client.pem`, `client.key`, `address`) into that \
-             directory for you to carry to the machine they are for. With no \
-             `--into` this seat keeps NOTHING: not a file, not a cache, not a \
-             log line. `grade` is `operator` or `foot`. It is refused unless \
-             this box's own leaf is operator-grade — the new box says nothing \
-             and performs no act, which is why this is not the in-channel \
-             bootstrap REMOTE §1.4 forbids.",
+             `{\"yog-enroll\":1,…}` — and there are three ways to take those \
+             same bytes: a QR symbol for a camera, the line itself for the \
+             paste box an android seat offers, and `--into <dir>` for a box \
+             with neither, which writes the four files an entry is (`ca.pem`, \
+             `client.pem`, `client.key`, `address`) into that directory for \
+             you to carry to the machine they are for. YOU PICK ONE: with no \
+             `--into` the symbol and the line are both printed and this seat \
+             keeps NOTHING — not a file, not a cache, not a log line; with \
+             one, the key goes to the files and never to this terminal, which \
+             is the one place the act could not shred it afterwards. `grade` \
+             is `operator` or `foot`. It is refused unless this box's own leaf \
+             is operator-grade — the new box says nothing and performs no act, \
+             which is why this is not the in-channel bootstrap REMOTE §1.4 \
+             forbids.",
 };
 
 /// The advance's row.

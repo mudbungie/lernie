@@ -5,7 +5,7 @@
 //! module doc above draws — this is the act arriving, and that is every way it
 //! does not.
 
-use super::super::{KEPT, enroll};
+use super::super::{ELSEWHERE, KEPT, enroll};
 use super::{CA, CERT, KEY, minted, spent, tree};
 use crate::cli::Stream;
 use crate::test_support::{Scratch, wire};
@@ -66,12 +66,14 @@ fn the_symbol_and_the_line_it_encodes_are_both_said() {
     );
 }
 
-/// **`--into` files the entry, and the act still says everything it says
-/// without one** (bl-1554). A foot is a box the operator is not sitting at, so
-/// the four files are the whole of what they would otherwise do by hand off a
-/// picture they had to decode first.
+/// **`--into` files the entry, and the material then reaches stdout by no
+/// route at all** (bl-1554 for the files, bl-768a for the silence). A foot is a
+/// box the operator is not sitting at, so the four files are the whole of what
+/// they would otherwise do by hand off a picture they had to decode first —
+/// and having asked for files, the operator did not also ask for a private key
+/// in a scrollback nothing can shred.
 #[test]
-fn a_named_destination_gets_the_four_files_and_the_material_is_still_said() {
+fn a_named_destination_gets_the_four_files_and_the_material_is_not_said() {
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let into = scratch.path().join("carry");
@@ -92,8 +94,29 @@ fn a_named_destination_gets_the_four_files_and_the_material_is_still_said() {
             format!("client.pem ({})", CERT.len()),
         ]
     );
-    // Still said, so a run that files is not a run that withholds.
-    assert!(verdict.text.contains("yog-enroll"), "{}", verdict.text);
+    // The key itself, its PEM banner, the envelope that carries it and the
+    // picture of that envelope: four ways the same bytes could reach a
+    // terminal, and the assertion is over all four rather than over the one
+    // this fix happened to remove.
+    for withheld in [KEY, "notreal-key", "-----BEGIN", "yog-enroll"] {
+        assert!(
+            !verdict.text.contains(withheld),
+            "{withheld:?} reached stdout after the material was filed:\n{}",
+            verdict.text
+        );
+    }
+    for glyph in ['\u{2588}', '\u{2580}'] {
+        assert!(
+            !verdict.text.contains(glyph),
+            "the symbol was drawn beside the files:\n{}",
+            verdict.text
+        );
+    }
+    // What IS said: who was minted, where the files went, and that the key is
+    // in them and nowhere else.
+    assert!(verdict.text.contains("phone-1"), "{}", verdict.text);
+    assert!(verdict.text.contains(ELSEWHERE), "{}", verdict.text);
+    assert!(!verdict.text.contains(KEPT), "{}", verdict.text);
 }
 
 /// **Nothing is written down. Anywhere.**

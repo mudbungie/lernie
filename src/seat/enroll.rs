@@ -1,14 +1,24 @@
 //! **The enrollment act, from argv** (yog's `docs/REMOTE.md` §8.4): one
 //! gesture, and its answer said in every form a box can take it in.
 //!
-//! # One artifact, drawn twice, and optionally filed
+//! # One artifact, three renderings, and the operator picks ONE
 //!
 //! The product of an enrollment is the **§8.4 envelope** — one line of compact
 //! JSON under `{"yog-enroll":1,…}`. A QR symbol is a picture of that line and
-//! nothing else, so this act prints both: the symbol for a camera, the line
-//! for a keyboard, and `--into <dir>` for a box that has neither. They are the
-//! same bytes and there is one place they are built
+//! nothing else, so there are three ways to take the same bytes: the symbol
+//! for a camera, the line for a keyboard, and `--into <dir>` for a box that
+//! has neither. There is one place they are built
 //! ([`crate::reply::enrolled::Enrolled::envelope`]).
+//!
+//! **Naming a destination picks one of the three, and the other two then stay
+//! unsaid** (bl-768a). `--into` is the operator saying *write it down for me*,
+//! and printing the symbol and the line beside the files it wrote would put a
+//! private key in the one place the act cannot reach afterwards: a scrollback,
+//! a `tmux` buffer, a capture, the job log of an unattended run. So a run that
+//! files says the caption and the receipt, and the receipt says where the key
+//! is. A run whose filing FAILED says everything, because then the screen is
+//! the only place the material can be — the engine has already minted and
+//! shredded, so a destination must never cost the material.
 //!
 //! It used to print the picture alone, and say so — *not written down
 //! anywhere*. Two components could not be seated through it. A **foot** is by
@@ -21,12 +31,14 @@
 //! reassemble it against §8.4. A seat that makes an operator reimplement the
 //! payload contract is not rendering the answer, it is withholding it.
 //!
-//! **The custody argument does not reach the text**, and that is why this is a
-//! change of one line's worth of behaviour rather than a relaxation. What §4.15
-//! rules out is a copy *nobody chose* — a cache, a log, a temporary file. The
-//! envelope was on the screen either way, drawn as a picture of itself; a
-//! photograph of a private key is a private key. What stays true is that this
-//! seat keeps nothing of its own accord: with no `--into`, not a byte is
+//! **The custody argument does not reach the text**, and that is why saying the
+//! line at all was not a relaxation. What §4.15 rules out is a copy *nobody
+//! chose* — a cache, a log, a temporary file. With no `--into` the envelope is
+//! on the screen either way, drawn as a picture of itself; a photograph of a
+//! private key is a private key. It is the same argument that withholds it once
+//! a destination was chosen: the files are the copy the operator asked for, and
+//! the scrollback is one they did not. What stays true on both paths is that
+//! this seat keeps nothing of its own accord: with no `--into`, not a byte is
 //! written, and the suite still asserts that over the whole tree.
 //!
 //! # Nothing is written unasked, and that is asserted rather than intended
@@ -53,6 +65,13 @@ mod entry;
 /// only one there will be until another `enroll` is spent.
 const KEPT: &str = "the seat keeps no copy — scan the symbol or take the line; they are the same \
      bytes. Enroll again if it is lost";
+
+/// The line under a receipt. It says the one thing the four files cannot: that
+/// the private key is in them and was not also printed here, so the terminal
+/// this ran in holds no copy of it.
+const ELSEWHERE: &str = "the private key is in that directory and was not printed here — this seat \
+     keeps no copy either, so those files are the only ones there are. Enroll \
+     again if they are lost";
 
 /// What the seat says when the gesture crossed and no answer came back.
 ///
@@ -102,9 +121,36 @@ pub fn enroll(
     }
 }
 
-/// The material: the caption, the picture where one fits, the line always, and
-/// where it was filed if a destination was named.
+/// The material, said the way the operator asked for it: filed and not drawn
+/// where a destination took it, drawn every way this seat can where none did.
+///
+/// **A rendering that landed is a rendering that is not also printed** (bl-768a).
+/// `--into` is the operator saying *this box has neither a camera nor a paste
+/// box; write it down for me*, and the moment the four files exist the symbol
+/// and the line are a second copy nobody asked for — one this seat cannot
+/// shred, because it is in a scrollback, a `tmux` buffer, an `asciinema`
+/// capture and the job log of anything that ran the act unattended. So the
+/// caption and the receipt are the whole of what is said, and the receipt
+/// names where the key is.
+///
+/// The rule reads on the failure the same way: when nothing was written, the
+/// screen is the only place the material can be, so it is all drawn there.
 fn said(material: &crate::reply::enrolled::Enrolled, into: Option<&Path>) -> Verdict {
+    let Some(dir) = into else {
+        return Verdict::ok(drawn(material));
+    };
+    match entry::written(dir, material) {
+        Ok(filed) => Verdict::ok(format!("{}\n{filed}\n{ELSEWHERE}", material.caption())),
+        // Nothing landed, so the screen is the only place the material can be:
+        // it is drawn in full, and only the exit code says the filing failed.
+        // The text is this run's product and belongs on stdout either way.
+        Err(why) => Verdict::answered(format!("{}\nnot filed: {why}", drawn(material)), false),
+    }
+}
+
+/// Every rendering of the material at once, for the runs that have nowhere
+/// else to put it: the caption, the picture where one fits, and the line.
+fn drawn(material: &crate::reply::enrolled::Enrolled) -> String {
     let envelope = material.envelope();
     // **A symbol that will not fit no longer costs the material.** The ceiling
     // is version 40 at correction level M and REMOTE §8.4 measures the envelope
@@ -117,17 +163,7 @@ fn said(material: &crate::reply::enrolled::Enrolled, into: Option<&Path>) -> Ver
         Ok(symbol) => symbol.block(),
         Err(too_long) => format!("(no symbol: the material will not fit one — {too_long})"),
     };
-    let text = format!("{}\n\n{picture}\n{envelope}\n\n{KEPT}", material.caption());
-    let Some(dir) = into else {
-        return Verdict::ok(text);
-    };
-    match entry::written(dir, material) {
-        Ok(filed) => Verdict::ok(format!("{text}\n{filed}")),
-        // The material is above, so nothing was lost — but the operator asked
-        // for files and has none, and only the exit code may say so: the text
-        // is this run's product and belongs on stdout whichever way it went.
-        Err(why) => Verdict::answered(format!("{text}\nnot filed: {why}"), false),
-    }
+    format!("{}\n\n{picture}\n{envelope}\n\n{KEPT}", material.caption())
 }
 
 #[cfg(test)]

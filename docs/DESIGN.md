@@ -1637,6 +1637,16 @@ with neither, which lays the envelope down as the four files §4.6's entry is.
 There is one place the envelope is built (`Enrolled::envelope`) and the
 renderings are of that, so no two of them can disagree.
 
+**Picking one is picking one** (bl-768a). `--into` says *this box has neither a
+camera nor a paste box; write it down for me*, so once the four files exist the
+symbol and the line are a copy nobody asked for — and it is the copy this seat
+can never reach afterwards: a terminal scrollback, a `tmux` buffer, a
+`script`/`asciinema` capture, the job log of an unattended run. A run that
+files therefore says the caption and the receipt and nothing else, and the
+receipt is what names where the key is. The rule is not a second custody
+policy; it is the one below, read on the one path where the operator has
+already named the copy they want.
+
 **It printed the picture alone until bl-1554, and that closed the act to two of
 the four components.** A **foot** is by definition a box the operator is not
 sitting at — no screen, no camera — so the one component the act exists to
@@ -1662,10 +1672,13 @@ path nobody thought of. A destination the operator NAMED is walked the same way
 and holds exactly the four files.
 
 **And a destination never costs the material.** The engine has already minted
-and shredded by the time any of this runs, so the answer is said on stdout
-whichever way the filing went, and only the exit code reports a directory that
-would not take it. Two rules follow from the same fact and neither is a
-convenience: a **symbol that will not fit** no longer refuses — it is one of
+and shredded by the time any of this runs, so a filing that FAILED says
+everything on stdout — the screen is then the only place the material can be —
+and only the exit code reports a directory that would not take it. That is the
+same fact the paragraph above rests on, read the other way: what is withheld
+beside a receipt is withheld because the files hold it, so no files means
+nothing withheld. Two more rules follow from it and neither is a convenience: a
+**symbol that will not fit** no longer refuses — it is one of
 three renderings and the other two still work, where refusing would burn a name
 over a drawing — and a **file already present** is never written over, because
 re-issuing distrusts nothing and a clobbered `client.pem` leaves two live

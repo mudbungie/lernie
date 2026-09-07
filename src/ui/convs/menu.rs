@@ -50,7 +50,8 @@
 //! reach for it deliberately.
 
 use crate::reply::convs::ConvRow;
-use crate::ui::composer::acts::{DELETE, FLAG, RETARGET, STOP};
+use crate::ui::composer::STOP;
+use crate::ui::composer::acts::{DELETE, FLAG, RETARGET};
 use crate::ui::{Aim, Fill, Model};
 
 /// **What a word wears when the item leads somewhere rather than acting.** The

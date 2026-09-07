@@ -1,10 +1,12 @@
 //! The anatomy on the glass: a row's words, ink, rule and tint; a block's
 //! rule; a section's word; a field's ring and glow.
 
-use super::{elbow, field, rail, row, ruled, section};
+use super::{composer, elbow, field, rail, row, ruled, section};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
-use crate::ui::theme::{BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, tint};
+use crate::ui::theme::{
+    BRAND, COMPOSER_ROWS, INK, INK_WEAK, RAISED, RULE, State, accent, tint, type_scale,
+};
 
 /// Every fill that reached the glass, widest first.
 fn fills(window: &Window, body: impl FnMut(&egui::Context)) -> Vec<(egui::Rect, egui::Color32)> {
@@ -171,4 +173,53 @@ fn a_field_glows_and_rings() {
     };
     click(&window, "say it", body);
     assert_eq!(window.focused(), Some(id), "the click put the caret in it");
+}
+
+/// **The composer stands its rows tall with the send inside it** (bl-f251):
+/// the field's fill spans at least [`COMPOSER_ROWS`] lines of body type, the
+/// send's words lie within that fill in the brand, and a shifted Enter breaks
+/// a line where a bare one leaves the text alone.
+#[test]
+fn the_composer_is_rows_tall_with_the_send_inside_it() {
+    let window = Window::sized(400.0, 200.0);
+    let id = egui::Id::new("the composer");
+    let mut text = String::new();
+    let mut body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            composer(ui, id, &mut text, "say it", None, "send");
+        });
+    };
+    let output = window.frame(Vec::new(), &mut body);
+    let send = crate::paint_probe::seen_of(&output)
+        .into_iter()
+        .find(|run| run.text == "send")
+        .expect("the send is on the glass");
+    assert_eq!(send.ink, BRAND);
+    let field = crate::paint_probe::fills_of(&output)
+        .into_iter()
+        .find(|(rect, _)| rect.contains_rect(send.laid) && rect.width() > 300.0)
+        .expect("the send lies inside the field");
+    let rows = f32::from(COMPOSER_ROWS);
+    assert!(field.0.height() >= rows * type_scale::BODY, "{field:?}");
+    let at = crate::paint_probe::frame::locate_in(&window, "say it", &mut body).expect("hint");
+    crate::paint_probe::frame::click(&window, at, &mut body);
+    window.frame(
+        vec![egui::Event::Key {
+            key: egui::Key::Enter,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::SHIFT,
+        }],
+        &mut body,
+    );
+    window.frame(
+        vec![crate::paint_probe::frame::press(egui::Key::Enter)],
+        &mut body,
+    );
+    window.frame(Vec::new(), &mut body);
+    assert_eq!(
+        text, "\n",
+        "one break from the shifted key and none from the bare one"
+    );
 }

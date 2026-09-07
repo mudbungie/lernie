@@ -211,3 +211,25 @@ fn install_sets_the_type_scale() {
     );
     assert_eq!(style.visuals.panel_fill, GROUND);
 }
+
+/// **Every glyph an act wears is in the body font** (bl-f251): a control
+/// whose icon is a tofu box is a control with no word on it, so the table is
+/// asserted against the font the window actually lays it in.
+#[test]
+fn every_act_glyph_has_a_glyph_in_the_body_font() {
+    let ctx = egui::Context::default();
+    let _ = ctx.run(egui::RawInput::default(), |ctx| {
+        let font = egui::FontId::proportional(super::type_scale::BODY);
+        for glyph in [
+            super::glyph::INTERRUPT,
+            super::glyph::NUDGE,
+            super::glyph::STOP,
+        ] {
+            assert!(
+                ctx.fonts(|fonts| fonts.has_glyphs(&font, glyph)),
+                "{glyph:?} has no glyph"
+            );
+        }
+    });
+    assert_eq!(super::worded(super::glyph::STOP, "stop"), "■ stop");
+}

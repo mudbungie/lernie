@@ -72,13 +72,18 @@ is coloured.
 **A conversation's facts are arranged, not listed.** Over the transcript, the
 subject line: its name in body ink, its state word in that state's accent,
 then — one step weaker — which model answered and what it has spent. Under
-the transcript, the composer: the field, and beside it `send` in the brand.
-Under the field, the controls band: the acts that advance the turn first
-(`send`, `interrupt`, `nudge`), then the acts on the conversation as an
-object (`records…`, `stop`, `revoke`, `restore`, `retarget`, `flag`,
-`delete`), the two parameter boxes beside the act each fills, the
-destructive one last (DESIGN §4.20). Every control keeps its `act:` token
-(DESIGN §4.16): what changed is the paint, never the ledger.
+the transcript, the composer, and **the composer is the pane's focal
+element** (bl-f251): a field `COMPOSER_ROWS` lines tall with `send` inside
+it, at its bottom right in the brand on a brand wash. Enter sends and
+Shift+Enter breaks a line, and the hint says both. Under the field, one
+compact row: the acts on the turn the conversation OFFERS — `interrupt` and
+`stop` while its driver runs, `nudge` while it rests, each a glyph and a word
+(`theme::glyph`) — then `records…`, then `…`, which opens the strip of acts
+on the conversation as an object: `revoke`, `restore`, `retarget`, `flag`
+with its reason box, and `delete` with its arming box, the destructive one
+last (DESIGN §4.20). A row of nine controls under every conversation read as
+a form; a row of what can be done now reads as a place. Every control keeps
+its `act:` token (DESIGN §4.16): what changed is the paint, never the ledger.
 
 **The composer glows when it is your turn.** While the selected conversation
 is asking for the operator the field is tinted with the attention accent
@@ -152,11 +157,16 @@ stands beside its header; the body wraps at the width it has; a tool result
 folds to its head in `INK_WEAK` with the unfold control carrying the size of
 what is hidden.
 
-**The composer**: a `SURFACE` field, no stroke at rest, the brand ring when
-focused, the attention tint when the conversation is asking; `send` beside
-it in the brand. **A control**: `SURFACE` fill, no stroke, `RADIUS` corners,
-its word in `INK`; `RAISED` pressed or open; `INK_FAINT` disabled and still
-on the glass; the attention accent on an armed irreversible act.
+**The composer** (`theme::paint::composer`): a `SURFACE` field
+`COMPOSER_ROWS` lines tall, no stroke at rest, the brand ring when focused,
+the attention tint when the conversation is asking; `send` inside it at the
+bottom right, in the brand on the brand's tint. Its height is allocated from
+the rows and grows only from the words, never from the panel it stands in.
+**A control**: `SURFACE` fill, no stroke, `RADIUS` corners, its word in
+`INK`; `RAISED` pressed or open; `INK_FAINT` disabled and still on the
+glass; the attention accent on an armed irreversible act. **A compact
+control** is a glyph and a word in one run — `theme::worded` — and the glyph
+is a token of the theme, asserted to have a glyph in the body font.
 
 **A notice**: one sentence under the top edge in the state's ink — `Error`
 for a refusal or an unreadable answer, `Annotation` for a note — with no

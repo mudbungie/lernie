@@ -1,14 +1,23 @@
 //! The composer: what it refuses to fire, what it composes when it does, and
 //! the draft that survives a mis-click.
 
+/// What the keyboard does to the composer: the two keys of the field, and
+/// the Tab order every control is already in.
+mod keys;
 /// What a refused act does to the box it came out of.
 mod refund;
 
-use super::{INTERRUPT, NOWHERE, NUDGE, SEND, render, start};
+use super::{ASKING, HINT, INTERRUPT, NOWHERE, NUDGE, SEND, render, start};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::Model;
+use crate::ui::theme::{self, glyph};
 use serde_json::json;
+
+/// The compact control's label, as the operator reads it.
+fn worded(glyph: &str, word: &str) -> String {
+    theme::worded(glyph, word)
+}
 
 /// **One box, three subjects, and what decides is the selection.** With no wall
 /// aimed at there is neither a conversation to speak to nor one to begin, and
@@ -74,7 +83,7 @@ fn cutting_composes_the_interrupt_off_the_same_box_the_deposit_spends() {
     let mut model = seated();
     model.draft = "no, this".to_owned();
     let window = Window::new();
-    click(&window, INTERRUPT, |ctx| {
+    click(&window, &worded(glyph::INTERRUPT, INTERRUPT), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
     assert_eq!(
@@ -95,7 +104,7 @@ fn cutting_composes_the_interrupt_off_the_same_box_the_deposit_spends() {
 fn an_empty_draft_cuts_nothing_because_that_gesture_has_its_own_control() {
     let mut model = seated();
     let window = Window::new();
-    click(&window, INTERRUPT, |ctx| {
+    click(&window, &worded(glyph::INTERRUPT, INTERRUPT), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
@@ -134,79 +143,6 @@ fn the_deposit_carries_the_address_the_channel_resolves() {
     assert_eq!(model.outbox[0].envelope["workspace"], json!("home"));
 }
 
-/// **Enter sends.** A composer an operator has to leave the keyboard for, once
-/// per message, is a composer they stop using; the button beside it is how they
-/// find out Enter works at all.
-#[test]
-fn enter_sends_what_was_typed() {
-    let mut model = seated();
-    let window = Window::new();
-    let mut body = |ctx: &egui::Context| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
-    };
-    let at = crate::paint_probe::frame::locate_in(&window, SEND, &mut body).expect("the hint");
-    crate::paint_probe::frame::click(&window, at, &mut body);
-    window.frame(vec![egui::Event::Text("ship it".to_owned())], &mut body);
-    window.frame(
-        vec![crate::paint_probe::frame::press(egui::Key::Enter)],
-        &mut body,
-    );
-    window.frame(Vec::new(), &mut body);
-    assert_eq!(
-        model.outbox,
-        vec![crate::ui::Posted::act(
-            json!({"op": "message", "workspace": "home",
-                    "agent": "20260830T051200Z-a1b2", "content": "ship it"})
-        )]
-    );
-}
-
-/// **Every control here is already keyboard-operable, and this proves it rather
-/// than assuming it.** egui moves focus with Tab and fires a focused control
-/// with Space, so neither act wants a binding of its own — and a binding that
-/// could fire something a click cannot would be a second surface.
-#[test]
-fn tab_and_space_fire_the_composer_s_controls_with_no_binding_of_their_own() {
-    let mut model = seated();
-    model.draft = "ship it".to_owned();
-    let window = Window::new();
-    // The body borrows the model, so it lives in a scope of its own and the
-    // assertions read the model back after it.
-    let mut reached = Vec::new();
-    {
-        let mut body = |ctx: &egui::Context| {
-            egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
-        };
-        window.frame(Vec::new(), &mut body);
-        for _ in 0..6 {
-            window.frame(
-                vec![crate::paint_probe::frame::press(egui::Key::Tab)],
-                &mut body,
-            );
-            reached.push(window.focused());
-            window.frame(
-                vec![crate::paint_probe::frame::press(egui::Key::Space)],
-                &mut body,
-            );
-            window.frame(Vec::new(), &mut body);
-        }
-    }
-    assert!(
-        reached.contains(&Some(egui::Id::new(crate::ui::keys::BOX_ID))),
-        "the box is in the tab order too: {reached:?}"
-    );
-    for op in ["message", "nudge"] {
-        assert!(
-            model
-                .outbox
-                .iter()
-                .any(|said| said.envelope["op"] == json!(op)),
-            "{op:?} was never fired from the keyboard: {:?}",
-            model.outbox
-        );
-    }
-}
-
 /// **The advance is a control beside the composer**, because it is the one
 /// thing an operator does to a conversation with nothing to say — and it is
 /// composed through the same table, so it carries no draft with it.
@@ -215,7 +151,7 @@ fn the_advance_composes_its_own_gesture_and_takes_no_draft() {
     let mut model = seated();
     model.draft = "not this".to_owned();
     let window = Window::new();
-    click(&window, NUDGE, |ctx| {
+    click(&window, &worded(glyph::NUDGE, NUDGE), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
     assert_eq!(
@@ -249,7 +185,7 @@ fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
         painted.contains("started «brisk-otter» in home"),
         "{painted}"
     );
-    for gone in [SEND, NUDGE] {
+    for gone in [SEND.to_owned(), worded(glyph::NUDGE, NUDGE)] {
         assert!(
             !painted.lines().any(|line| line == gone),
             "{gone:?} is still on the glass: {painted}"
@@ -258,9 +194,10 @@ fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
     assert!(model.outbox.is_empty());
 }
 
-/// **The field glows while the selected conversation is asking**
-/// (`docs/STYLE.md` §2): the attention tint stands under the box on an asking
-/// row and not on a quiet one, and the send wears the brand on both.
+/// **The field glows while the selected conversation is asking and its hint
+/// says so** (`docs/STYLE.md` §2): the attention tint stands under the box on
+/// an asking row and not on a quiet one, the hint names the asking there and
+/// the keys elsewhere, and the send wears the brand on both.
 #[test]
 fn the_field_glows_while_the_conversation_is_asking_and_the_send_wears_the_brand() {
     let glow = crate::ui::theme::tint(crate::ui::theme::State::Attention);
@@ -275,6 +212,13 @@ fn the_field_glows_while_the_conversation_is_asking_and_the_send_wears_the_brand
             .iter()
             .any(|(_, ink)| *ink == glow);
         assert_eq!(glowing, glows, "attention {attention}");
+        let hint = if glows { ASKING } else { HINT };
+        assert!(
+            crate::paint_probe::seen_of(&output)
+                .iter()
+                .any(|run| run.text == hint),
+            "the hint reads {hint:?}"
+        );
         let send = crate::paint_probe::seen_of(&output)
             .into_iter()
             .rfind(|run| run.text == SEND)

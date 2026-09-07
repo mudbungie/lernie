@@ -3968,6 +3968,36 @@ read the other way. Every other accent is a state on the six-colour ruling,
 read off the wire's own words through `theme::state_of` and
 `theme::tone_ink` — this seat never infers a state from prose.
 
+**The composer is the conversation pane's focal element** (bl-f251;
+`src/ui/composer.rs`, `src/ui/composer/offers.rs`, `src/ui/composer/acts.rs`,
+`src/ui/theme/paint/field.rs`). The first pass left it a one-line bar over a
+row of nine chips, which read as a form under a mostly empty pane. It is now
+a field `theme::COMPOSER_ROWS` lines tall with the send inside it, and its
+height is **allocated from the rows rather than left to the layout**: a
+bottom panel lays each frame out in the rect its content took last frame,
+and a bottom-aligned layout given the whole of that rect reported it whole,
+so the panel grew by a row a frame and the transcript's tail walked off the
+glass — the bound is what makes the composer's height a fact of its content.
+Enter sends and Shift+Enter breaks a line; the field consumes only the
+shifted key, and the bare one is read beside the act it fires, off the
+event's own modifiers. Under the field, **the row offers what the engine
+offers**: `interrupt` and `stop` while the conversation's own row says its
+driver may be stopped, `nudge` while it says an advance may be started, and
+all three until the engine has answered about it at all — an absent reading
+is not a refusal. That reverses §4.32's ruling that the composer's controls
+do not read the four gates; what stands here is the engine's own answer read
+off the same row the header paints, not a prediction, and a `nudge` offered
+on a streaming conversation was a control whose every press was a refusal.
+The acts on the conversation as an object stand behind one `…` control
+(`composer::MORE`), in §4.20's order with the deletion last; the strip's
+open state is the toolkit's memory, as a folded tool result's is, and a row
+menu's *flag…* or *delete…* opens it on the way to the box it named
+(`crate::ui::model::fill`) — so the parity walk has a world in which it
+stands open (`snapshot::worlds::filling`), because a control on a screen
+the walk never visits is unproven. Each compact control is a glyph and a
+word (`theme::glyph`, `theme::worded`), and every glyph is asserted to be in
+the body font.
+
 **A label off the window is a layout question** (`src/snapshot/clipped.rs`;
 bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
 marks selectable prose as clickable so a pointer can select it, so every

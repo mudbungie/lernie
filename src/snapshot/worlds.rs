@@ -137,6 +137,29 @@ fn unmaking() -> World {
     }
 }
 
+/// **The window sent to the deletion's arming box** (bl-f251) — a row menu's
+/// *delete…*, which lands the cursor in the box on the composer
+/// (`crate::ui::model::fill`), and so the one screen on which the composer's
+/// strip stands open with the acts it holds.
+///
+/// It is a world for the pinned wall's reason: the strip is behind one
+/// control, so the floor pair, the retarget, the flag and the deletion live
+/// on no screen the walk visits unless one is this. Photographed as the
+/// operator meets it — sent there, the strip open, the arming box empty and
+/// holding the caret.
+fn filling() -> World {
+    let mut model = seated();
+    let conversation = model
+        .conversation
+        .clone()
+        .unwrap_or_else(|| panic!("the seated fixture has a conversation selected"));
+    model.fill_in(&conversation, crate::ui::Fill::Arming);
+    World {
+        name: "filling",
+        model,
+    }
+}
+
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
     vec![
@@ -161,5 +184,6 @@ pub(crate) fn all() -> Vec<World> {
         config(),
         pinned_wall(),
         unmaking(),
+        filling(),
     ]
 }

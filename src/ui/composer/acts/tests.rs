@@ -1,7 +1,7 @@
 //! The three acts that spend no words: what each composes, and the arming that
 //! is the operator's until they delete something with it.
 
-use super::{ARM, DELETE, FLAG, RESTORE, RETARGET, REVOKE, STOP, WHY, render};
+use super::{ARM, DELETE, FLAG, RESTORE, RETARGET, REVOKE, WHY, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::{Aim, Model};
@@ -20,18 +20,18 @@ fn press(model: &mut Model, label: &str) {
     let (aim, agent) = subject(model);
     let window = Window::new();
     click(&window, label, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, model, &aim, &agent));
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, model, &aim, &agent, None));
     });
 }
 
-/// **All four are on the row**, and each box says what it is for rather than
-/// standing there unlabelled.
+/// **Every act is on the strip**, and each box says what it is for rather
+/// than standing there unlabelled.
 #[test]
-fn the_row_offers_the_four_acts_and_says_what_each_box_is_for() {
+fn the_strip_offers_every_act_and_says_what_each_box_is_for() {
     let mut model = seated();
     let (aim, agent) = subject(&model);
-    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
-    for word in [STOP, RETARGET, FLAG, DELETE, ARM, WHY] {
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent, None));
+    for word in [RETARGET, FLAG, DELETE, ARM, WHY] {
         assert!(
             painted.lines().any(|line| line == word),
             "{word:?}:\n{painted}"
@@ -44,10 +44,6 @@ fn the_row_offers_the_four_acts_and_says_what_each_box_is_for() {
 #[test]
 fn each_act_composes_the_envelope_its_verb_row_builds() {
     for (label, expected) in [
-        (
-            STOP,
-            json!({"op": "stop", "workspace": "home", "agent": "20260830T051200Z-a1b2"}),
-        ),
         (
             RETARGET,
             json!({"op": "retarget", "workspace": "home", "agent": "20260830T051200Z-a1b2"}),
@@ -92,8 +88,8 @@ fn the_typed_name_rides_the_deletion_verbatim_and_stays_the_operators() {
 }
 
 /// **The address is the aim's, not the row's name** — the same rule the deposit
-/// one row up follows, asserted here because these three build their own
-/// envelopes rather than going through its body.
+/// one row up follows, asserted here because these build their own envelopes
+/// rather than going through its body.
 #[test]
 fn the_acts_carry_the_address_the_channel_resolves() {
     let mut model = Model {
@@ -103,7 +99,7 @@ fn the_acts_carry_the_address_the_channel_resolves() {
         }),
         ..seated()
     };
-    press(&mut model, STOP);
+    press(&mut model, RETARGET);
     assert_eq!(model.outbox[0].envelope["workspace"], json!("elsewhere"));
 }
 
@@ -136,22 +132,22 @@ fn a_raise_with_no_words_is_offered_and_fires_nothing() {
     model.reason = "   ".to_owned();
     let (aim, agent) = subject(&model);
     let window = Window::new();
-    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent, None));
     assert!(painted.lines().any(|line| line == FLAG), "{painted}");
     click(&window, FLAG, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aim, &agent));
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aim, &agent, None));
     });
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
 }
 
-/// **Nothing fires from a frame nobody clicked.** The row paints three buttons
-/// and two boxes every frame the composer paints, and a frame that composed a
-/// deletion for having been drawn is the one failure this row cannot have.
+/// **Nothing fires from a frame nobody clicked.** The strip paints five
+/// controls and two boxes every frame it is open, and a frame that composed a
+/// deletion for having been drawn is the one failure it cannot have.
 #[test]
 fn painting_the_row_composes_nothing() {
     let mut model = seated();
     let (aim, agent) = subject(&model);
-    let _ = pane(|ui| render(ui, &mut model, &aim, &agent));
+    let _ = pane(|ui| render(ui, &mut model, &aim, &agent, None));
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
 }
 
@@ -163,7 +159,7 @@ fn painting_the_row_composes_nothing() {
 fn the_floor_pair_are_both_offered_and_each_asserts_its_own_direction() {
     let mut model = seated();
     let (aim, agent) = subject(&model);
-    let painted = pane(|ui| render(ui, &mut model, &aim, &agent));
+    let painted = pane(|ui| render(ui, &mut model, &aim, &agent, None));
     for word in [REVOKE, RESTORE] {
         assert!(
             painted.lines().any(|line| line == word),

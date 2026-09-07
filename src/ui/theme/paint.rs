@@ -12,6 +12,9 @@ use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
 use super::{BRAND, HAIRLINE, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, SURFACE, space};
 
+/// The two fields that take text: the one-line box and the composer.
+mod field;
+
 /// **One list row**: full width, [`ROW`] tall, its words at the left plus
 /// `indent` plus `M`, elided at the width it has, in `ink`. Bare ground at
 /// rest, `SURFACE` under the pointer, `RAISED` when it is the chosen one.
@@ -127,40 +130,7 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
     ui.label(egui::RichText::new(word).color(INK_WEAK));
 }
 
-/// **A field that takes text**: `SURFACE` with no stroke at rest, the brand
-/// ring while it holds the caret, and `glow`'s tint under it where the pane
-/// has something to say about the moment — the composer while its
-/// conversation is asking. The box wears `id`, which is what the keyboard's
-/// gate compares against (`crate::ui::keys`).
-pub fn field(
-    ui: &mut egui::Ui,
-    id: egui::Id,
-    text: &mut String,
-    hint: &str,
-    glow: Option<Color32>,
-) -> Response {
-    let focused = ui.memory(|memory| memory.has_focus(id));
-    let ring = if focused {
-        Stroke::new(1.0, BRAND)
-    } else {
-        Stroke::NONE
-    };
-    egui::Frame::none()
-        .fill(glow.unwrap_or(SURFACE))
-        .stroke(ring)
-        .rounding(RADIUS)
-        .inner_margin(egui::Margin::symmetric(space::S, space::XS))
-        .show(ui, |ui| {
-            ui.add(
-                egui::TextEdit::singleline(text)
-                    .id(id)
-                    .frame(false)
-                    .desired_width(f32::INFINITY)
-                    .hint_text(hint),
-            )
-        })
-        .inner
-}
+pub use field::{composer, field};
 
 #[cfg(test)]
 mod tests;

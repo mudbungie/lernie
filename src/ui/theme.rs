@@ -204,6 +204,31 @@ pub mod type_scale {
     pub const HEADING: f32 = 18.0;
 }
 
+/// **The glyph an act wears** (bl-f251) — an icon is a token exactly as a
+/// colour is: a pane asks for one by the name of the act, and this is the one
+/// place the character is spelled. Three, and each is the plainest sign for
+/// what the act does to the turn: a bolt cuts in, a play mark advances, a
+/// square stops. Every one is asserted to have a glyph in the body font
+/// (`tests`), because a tofu box is a control with no word on it.
+pub mod glyph {
+    pub const INTERRUPT: &str = "⚡";
+    pub const NUDGE: &str = "▶";
+    pub const STOP: &str = "■";
+}
+
+/// **An act's glyph and its word, as one run** — the one spelling of the
+/// compact control, so a test aims a click at what the operator reads.
+pub fn worded(glyph: &str, word: &str) -> String {
+    format!("{glyph} {word}")
+}
+
+/// **How tall the composer's field stands, in lines** (bl-f251). Three, so
+/// the field is the pane's focal element rather than a bar along its foot:
+/// a paragraph is composed in it and the height says so before a word is
+/// typed. Lines rather than points because the height follows the type
+/// scale, and Shift+Enter breaks one inside it.
+pub const COMPOSER_ROWS: u8 = 3;
+
 /// **A list row's height**, in points. **Desktop delta:** the phone's
 /// 48-point touch target is a thumb's; a pointer's is 24, and a list of
 /// conversations at 48 a row is a list that scrolls twice as much. A control

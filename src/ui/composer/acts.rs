@@ -1,50 +1,48 @@
-//! **The acts that spend no words** — what an operator does to the selected
-//! conversation as an *object*, rather than to the turn it is taking (bl-213c).
+//! **The acts that spend no words and are not offered every day** — what an
+//! operator does to the selected conversation as an *object*, rather than to
+//! the turn it is taking (bl-213c), behind the composer's one more control
+//! (bl-f251; [`super::offers`]).
 //!
-//! It is a second row of the composer and not a strip of its own, and that is
-//! this ball's one layout decision. The composer is already *the pane that acts
-//! on the selected conversation*: it holds the one box, and every verb that
-//! needs words spends that box. Putting these three anywhere else would be a
-//! second place to look for the same subject — and the chat pane, the only
-//! other candidate, is a **pure projection** of the transcript
-//! (`crate::ui::chat`), so a control there would be the first thing in it that
-//! is not.
+//! It is a strip of the composer and not a pane of its own, and that is this
+//! ball's one layout decision. The composer is already *the pane that acts on
+//! the selected conversation*: it holds the one box, and every verb that needs
+//! words spends that box. Putting these anywhere else would be a second place
+//! to look for the same subject — and the chat pane, the only other candidate,
+//! is a **pure projection** of the transcript (`crate::ui::chat`), so a
+//! control there would be the first thing in it that is not.
 //!
-//! So the split between the two rows is by what the act does to the turn, which
-//! is the distinction an operator is actually making:
+//! So the split between the row and this strip is by what the act does to the
+//! turn, which is the distinction an operator is actually making:
 //!
-//! - **row one advances it** — `send`, `interrupt`, `nudge`. Each ends with a
-//!   driver running, and the first two spend the box.
-//! - **row two does not** — [`STOP`] kills the driver, [`REVOKE`] and
-//!   [`RESTORE`] take away and give back its standing permission to make tool
-//!   calls, [`RETARGET`] marks the conversation for another lineage, [`FLAG`]
-//!   asks the operator to look at it later, [`DELETE`] unmakes it.
+//! - **the row advances it** — `send`, `interrupt`, `nudge`, and `stop`, each
+//!   offered where the engine offers it ([`super::offers`]).
+//! - **this strip does not** — [`REVOKE`] and [`RESTORE`] take away and give
+//!   back its standing permission to make tool calls, [`RETARGET`] marks the
+//!   conversation for another lineage, [`FLAG`] asks the operator to look at
+//!   it later, [`DELETE`] unmakes it.
 //!
 //! **The floor pair is here and the parked call's answer is not** (bl-bce2).
 //! A floor is standing policy about the conversation an operator is looking
-//! at, which is exactly this row's subject. `answer` is about one invocation
+//! at, which is exactly this strip's subject. `answer` is about one invocation
 //! that is waiting, and *what is waiting on you* is the decision queue's whole
 //! question — so it is a control there, on the row that already says what is
 //! parked (DESIGN §4.34).
 //!
-//! **The flag is on this row and not on the queue pane** (bl-f0ef), which is
+//! **The flag is on this strip and not on the queue pane** (bl-f0ef), which is
 //! the one placement decision that ball made here. A flag is *somebody asking
 //! the operator to look at this conversation*, so it is raised while looking at
 //! it — and `crate::ui::queue` covers the conversation, so a control there
 //! would flag something the operator cannot see. The queue is where a flag is
 //! READ; this is where one is raised.
 //!
-//! **Each of the three answers a captured run**, which is why they are here at
-//! all rather than in the exemption ledger beside the conversation's records: a
-//! reply this seat already paints is the difference between a control that
-//! answers and one that earns *"this build cannot read that kind"*
+//! **Each answers a captured run**, which is why they are here at all rather
+//! than in the exemption ledger beside the conversation's records: a reply
+//! this seat already paints is the difference between a control that answers
+//! and one that earns *"this build cannot read that kind"*
 //! (`crate::verbs::conversation`).
 
 use crate::ui::{Aim, Fill, Model, keys};
 
-/// The word that kills the driver. `nudge`'s opposite, and the reason it sits
-/// one row below rather than beside it: nudge leaves a driver running.
-pub const STOP: &str = "stop";
 /// The word that takes the conversation's tool auto-approval away.
 pub const REVOKE: &str = "revoke";
 /// The word that gives it back.
@@ -74,55 +72,14 @@ pub const ARM: &str = "its name, to take its children too";
 /// wrong here arms a cascade.
 const ARM_WIDTH: f32 = 200.0;
 
-/// Paint the row and take what it was given.
-pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str) {
+/// Paint the strip and take what it was given.
+///
+/// `wanted` is the box a row menu sent the operator to, taken once by the
+/// row above (bl-dbc9; `crate::ui::model::fill`) — it is what opened this
+/// strip, and the cursor lands in the box it names.
+pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, agent: &str, wanted: Option<Fill>) {
     let mut fired = None;
-    // **Taken once, before either box is painted** (bl-dbc9). A conversation
-    // row's menu cannot hold either of these boxes, so its two parameterized
-    // items send the operator here and ask for the cursor
-    // (`crate::ui::model::fill`). One read rather than one per box: a frame
-    // that paints this row spends the whole request, so half of one cannot be
-    // left standing for the next.
-    let wanted = model.filling();
     ui.horizontal_wrapped(|ui| {
-        // **The reads this gesture reaches** (bl-2cf7, bl-b52c, bl-3257),
-        // exactly as the wall's roster seat carries the conversation list's:
-        // opening the records pane is what makes this seat read the selected
-        // conversation's steps, its files, its spine, the config commit
-        // governing it, its own row and its undelivered mail
-        // (`crate::state::Standing`), and those six reads have no control of
-        // their own. The pane's seventh — one step's drill-in — is not among
-        // them: it hangs on the row that addresses it. It leads the row because it spends nothing — every
-        // control after it acts on the conversation, this one only looks.
-        let records = ui.button(crate::ui::records::OPEN);
-        crate::ui::act::tag(
-            &records,
-            &[
-                crate::verbs::STEPS.word,
-                crate::verbs::FILES.word,
-                crate::verbs::RAIL.word,
-                crate::verbs::GOVERNING.word,
-                crate::verbs::AGENT.word,
-                crate::verbs::INBOX.word,
-            ],
-        );
-        if records.clicked() {
-            model.begin_records();
-        }
-        let halt = ui.button(STOP);
-        crate::ui::act::tag(&halt, &[crate::verbs::STOP.word]);
-        if halt.clicked() {
-            // **The bare form, from this control** (bl-9fd1, bl-3686). The
-            // cascade is a second act with an arming of its own and it lives
-            // beside the records that say what is under there
-            // (`crate::ui::records::cascade`); this row is a routine surface
-            // and §4.20 keeps a subtree off one.
-            fired = Some(crate::verbs::stop(
-                aim.address.clone(),
-                agent.to_owned(),
-                false,
-            ));
-        }
         // **The floor's two acts, both always offered** (bl-bce2). They are
         // assertions rather than a toggle — DESIGN §4.25's rule — and the pin
         // pair's other half does not apply: a row is offered the control that

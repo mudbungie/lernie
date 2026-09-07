@@ -27,11 +27,13 @@
 //! # The four gates are painted as what the ENGINE offers, not as enablement
 //!
 //! `nudgeable`, `stoppable`, `stop_children` and `present` are the engine's
-//! answer to *what may be done to this conversation*, and the composer's own
-//! controls do not read them: a control that greyed itself out on a snapshot
-//! would be this end predicting a refusal the engine has not made yet. So they
-//! are painted as a sentence — the one place in this window that says what the
-//! far end thinks is available — and the controls stay live.
+//! answer to *what may be done to this conversation*. They are painted as a
+//! sentence here — the one place in this window that says what the far end
+//! thinks is available in words — and since bl-f251 the composer's row reads
+//! the same answer to decide which of its acts to offer
+//! (`crate::ui::composer::offers`): never greyed, which would predict a
+//! refusal, but withheld on the engine's own word and offered whole until
+//! the engine has said anything.
 
 use crate::reply::agent::{Agent, Fullness, Offer};
 use crate::reply::spend::Figure;
@@ -226,9 +228,9 @@ pub fn contextual(full: &Fullness) -> String {
     )
 }
 
-/// **What the engine says may be done to it.** A sentence rather than an
-/// enablement: the controls stay live, because a refusal is the far end's to
-/// make.
+/// **What the engine says may be done to it.** A sentence here, and the
+/// composer's row reads the same list to decide what it offers
+/// (`crate::ui::composer::offers`); a refusal is still the far end's to make.
 pub fn offered(row: &Agent) -> String {
     if !row.present {
         return ABSENT.to_owned();

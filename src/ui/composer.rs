@@ -23,16 +23,30 @@
 
 use crate::ui::{Model, theme};
 
-/// The acts that spend no words: kill the driver, retarget, unmake.
+/// The acts that spend no words and are not offered every day: the strip
+/// behind the more control.
 pub mod acts;
+/// The acts the conversation offers on its turn, and the control that opens
+/// the strip.
+pub mod offers;
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
+
+pub use offers::{MORE, STOP};
 
 /// What the composer says with no wall aimed at — the one case that is neither
 /// a deposit nor a start, because there is nowhere for either to go.
 pub const NOWHERE: &str = "pick a workspace to say anything or begin anything";
-/// The verb on the button, and the word the refusal above is about.
+/// The verb on the control, and the word the refusal above is about.
 pub const SEND: &str = "send";
+/// **What the field says while it is empty** — the two keys, because a field
+/// three lines tall is one an operator expects Enter to break a line in, and
+/// a composer whose one binding has to be guessed is one they leave the
+/// keyboard for (bl-f251).
+pub const HINT: &str = "say it — Enter sends, Shift+Enter breaks a line";
+/// **And what it says while the conversation is asking** (`docs/STYLE.md`
+/// §2): the field is where the answer goes, so it is where the asking is said.
+pub const ASKING: &str = "it is waiting on you — Enter sends";
 /// The deposit that cuts first: the driver is killed and the content deposited
 /// as one gesture. It spends the same box `send` does, because *what to say
 /// instead* is the same question as *what to say* — a second box for it would
@@ -56,8 +70,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     };
     // **A conversation this window has started is not addressable yet**, and
     // this seat knows it: the minted name resolves nowhere until its driver
-    // writes the branch (`crate::ui::model::claim`). So the box and both its
-    // buttons stand down and the start's own sentence stands in their place —
+    // writes the branch (`crate::ui::model::claim`). So the box and its
+    // controls stand down and the start's own sentence stands in their place —
     // a gesture composed here would be one this end knew the engine would
     // refuse. It is not a wedge: the claim retires on the engine's next
     // listing, and one arrow key leaves it before then.
@@ -65,67 +79,51 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(held.line());
         return;
     }
-    // **The field glows while the conversation is asking** (`docs/STYLE.md`
-    // §2): the box is where the answer goes, so it is where the asking is
-    // shown — the attention tint under the words, and nothing else on the
-    // composer changes.
-    let glow = asking(model, &agent).then(|| theme::tint(theme::State::Attention));
-    let entry = theme::paint::field(
+    // **The field is the pane's focal element** (bl-f251; `docs/STYLE.md`
+    // §2): three lines tall, the send inside it, and the glow under both
+    // while the conversation is asking — the attention tint and the hint
+    // that says so, because the box is where the answer goes.
+    let asking = asking(model, &agent);
+    let (entry, deposit) = theme::paint::composer(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
+        if asking { ASKING } else { HINT },
+        asking.then(|| theme::tint(theme::State::Attention)),
         SEND,
-        glow,
     );
-    // **Enter sends, and the button says so.** A composer that could only be
-    // fired by pointing at it is a composer an operator has to leave the
-    // keyboard for, once per message; a button that is the only way to discover
-    // Enter exists is why both are here.
-    let entered = entry.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-    let mut sent = entered;
-    let mut cut = false;
-    let mut nudged = false;
-    // **WRAPPED, because this pane is not as wide as the window** (bl-dc07).
-    // The composer is a bottom panel added AFTER both side panels, so what it
-    // gets is what they left: at a 400-point window the two lists are on their
-    // floor (`crate::ui::shell::SIDE_FLOOR`) and this row is laid out in about
-    // 120 points. An unwrapped row lays its buttons on one line however long
-    // they are, so `nudge` went off the right edge of the window entirely —
-    // painted, correct, and unreachable by any pointer. Wrapping costs a
-    // second line in a panel already sized to its content.
-    ui.horizontal_wrapped(|ui| {
-        // **The send wears the brand**: it is the operator's own act.
-        let deposit = ui.button(egui::RichText::new(SEND).color(theme::BRAND));
-        crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
-        sent |= deposit.clicked();
-        let cutting = ui.button(INTERRUPT);
-        crate::ui::act::tag(&cutting, &[crate::verbs::INTERRUPT.word]);
-        cut = cutting.clicked();
-        let advance = ui.button(NUDGE);
-        crate::ui::act::tag(&advance, &[crate::verbs::NUDGE.word]);
-        nudged = advance.clicked();
-    });
-    // **Enter is the deposit's and no other verb's.** A key that could fire the
-    // cut would be a key an operator reaches by muscle memory to say something
-    // and kills a running driver with; the two verbs differ by exactly that,
-    // and the one with the destructive half is the one that has to be pointed
-    // at (`crate::ui::model::acts` on why a binding never fires what a click
-    // cannot — this is the other direction, which is allowed).
-    if sent {
+    // **The send wears the brand**: it is the operator's own act.
+    crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
+    // **Enter sends and Shift+Enter breaks a line**, and the hint says so.
+    // The field consumes only the shifted key (`theme::paint::composer`), so
+    // a bare Enter reaches this read while the box holds the caret — and
+    // only then, because the same key on the send control is egui's own
+    // click and must not fire twice.
+    //
+    // **Enter is the deposit's and no other verb's.** A key that could fire
+    // the cut would be a key an operator reaches by muscle memory to say
+    // something and kills a running driver with; the two verbs differ by
+    // exactly that, and the one with the destructive half is the one that has
+    // to be pointed at (`crate::ui::model::acts` on why a binding never fires
+    // what a click cannot — this is the other direction, which is allowed).
+    let entered = entry.has_focus()
+        && ui.input(|i| {
+            i.events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::Key {
+                        key: egui::Key::Enter,
+                        pressed: true,
+                        modifiers,
+                        ..
+                    } if !modifiers.shift
+                )
+            })
+        });
+    if entered || deposit.clicked() {
         fire(model, crate::verbs::message, &aim.address, &agent);
     }
-    if cut {
-        fire(model, crate::verbs::interrupt, &aim.address, &agent);
-    }
-    if nudged {
-        model
-            .outbox
-            .push(crate::ui::Posted::act(crate::verbs::nudge(
-                aim.address.clone(),
-                agent.clone(),
-            )));
-    }
-    acts::render(ui, model, &aim, &agent);
+    offers::render(ui, model, &aim, &agent);
 }
 
 /// **Whether the selected conversation is asking for the operator** — read
@@ -150,7 +148,7 @@ fn asking(model: &Model, agent: &str) -> bool {
 /// branching inside it: `message` and `interrupt` take the same three named
 /// strings and differ only in the word, which is exactly what a function
 /// pointer carries.
-fn fire(
+pub(super) fn fire(
     model: &mut Model,
     door: fn(String, String, String) -> serde_json::Value,
     workspace: &str,

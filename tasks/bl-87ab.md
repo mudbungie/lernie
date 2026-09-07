@@ -1,7 +1,7 @@
 +++
 title = "three answers that mis-report: --json follow prints prose, follow right after start calls a starting conversation 'at rest', and ask names a workspace field that is present"
 created = 1788746112
-updated = 1788746744
+updated = 1788752233
 claimant = "Cantaloups-S8"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
@@ -65,3 +65,7 @@ read, so this is the only door to it.
 p3 each; filed together because they are one class — an answer that is right
 about the world and wrong about what the caller asked. Item 2 is the one that
 costs a user something every time.
+
+---
+
+Item 3 is not a lernie defect and is refiled as yog bl-edfc. The sentence 'missing or non-string field "workspace"' is yog's generic field reader (src/boundary/codec/fields.rs) reached from decode_file's 'brazen' arm in src/boundary/codec/config.rs; the seat never composes it. The seat cannot improve it either: lernie's src/envelope.rs states that the typed ask vocabulary is deliberately absent from the seat, so a seat that knew config needs target.workspace would be exactly the second table that module exists not to be. It routes the envelope correctly (top-level workspace wins in slot_mut) and prints the engine's sentence unadorned, which is the right division. Items 1 and 2 are fixed here.

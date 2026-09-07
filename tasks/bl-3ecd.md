@@ -1,7 +1,7 @@
 +++
 title = "lernie follow right after lernie message answers 'is at rest' in 0s: the obvious pair — say something, then watch it — never watches anything"
 created = 1788745985
-updated = 1788745985
+updated = 1788752231
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r2"]
@@ -45,3 +45,11 @@ distinguishes them: "at rest, with 1 deposit not yet taken".
 
 p3. The information is right, the moment is wrong, and the workaround is a
 sleep.
+
+---
+
+Fixed by bl-87ab's item 2, which is the same defect reached through `start` instead of `message`. The mechanism is the one this ball's Expected asked for: `follow` asks `inbox` when the state read says rest, and a rest whose inbox still holds mail is not an ending — the watch holds through it exactly as it holds on a live conversation, and says once (with the gutter, naming the state the engine gave and the count waiting) that it is waiting, so the hold never reads as a hang. Ctrl-C is the way out it always was.
+
+Three properties, all asserted in src/seat/follow/tests/waiting.rs: it costs one extra read only on the path that was wrong (a genuinely at-rest conversation has an empty inbox and answers as fast as it did; a working one is never asked); an inbox this seat could not READ is treated as no mail, on every way the probe can fail, so an unanswered question can never hold a connection open forever; and --json says nothing while it waits, because in the machine form this seat narrates nothing at all.
+
+Verify against a live engine and close if it holds — I could not drive one from this lane (the seat spoke PROTOCOL 13 against a yog on 16 when I started).

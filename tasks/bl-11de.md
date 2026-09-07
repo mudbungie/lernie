@@ -1,7 +1,8 @@
 +++
 title = "desktop design iteration 2, item 2 of bl-f251: a real conversation header — name at HEADING size, state as a coloured word, model and spend as weak ink on one line, the subtree path if any"
 created = 1788755495
-updated = 1788755495
+updated = 1788755751
+claimant = "Cantaloups-D5"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

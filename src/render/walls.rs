@@ -154,6 +154,32 @@ pub(crate) fn at_rest(agent: &str, state: &str, secs: i64) -> String {
     ))
 }
 
+/// **The line a watch ends on when the conversation is HELD** (bl-3a1f; REMOTE
+/// §5.5, PROTOCOL 18) — which is a rest, and is not the rest above.
+///
+/// The state read alone says `quiescent`, and [`at_rest`]'s sentence is then
+/// false in the only two words that matter: something more *will* arrive, and
+/// neither remedy it names will make it. A park is the conversation waiting on
+/// the **operator**, who is the person reading this line, so the line names the
+/// call, the control's own reason for holding it, and the one gesture that
+/// lifts it. On a foot lane every call to a non-shell tool is held, which makes
+/// this most of the endings rather than a corner.
+///
+/// The remedy is spelled with the address the watch was aimed at, because a
+/// sentence an operator has to complete from memory is a sentence they will
+/// complete wrongly.
+pub(crate) fn held_at(agent: &str, workspace: &str, held: &Held, secs: i64) -> String {
+    narrated(&format!(
+        "{agent} is holding {} ({}) for your answer after {} — {}; release or decline it \
+         with `lernie answer {workspace} {agent} pass|refuse` (a third word widens the \
+         answer to every call like it)",
+        held.tool,
+        held.tool_use,
+        age(secs),
+        held.reason
+    ))
+}
+
 /// **The line a watch says while it waits for a driver to take mail** (bl-87ab,
 /// bl-3ecd) — which conversation, the rest the engine reported, and how much is
 /// waiting. It is said once per watch, not once per look: the hold is the

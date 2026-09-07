@@ -929,6 +929,29 @@ rather than hiding it, since that reading is true and is the one the operator
 will see again in `conversations` a second later; what it adds is the fact that
 makes the at-rest sentence false.
 
+**A HELD conversation is not at rest either, and its ending is its own**
+(bl-3a1f; yog bl-58bb, PROTOCOL 18). The same correction as the mail above, one
+noun over and the other way round. The capability control parks a tool call
+*before* the executor is entered, so the state read says `quiescent` and the
+watch answered *"nothing more will arrive until it is nudged or messaged"* — false
+in both halves. Something more arrives the moment the operator answers, and
+neither remedy named is that answer; it said so at the exact moment the person
+reading the line was the thing the conversation was waiting for, and on a foot
+lane every call to a non-shell tool is held, which makes it most of the endings
+rather than a corner.
+
+**The fact was one field away the whole time**: the `agent` row this loop
+already reads to decide rest carries the hold mark — the same three facts
+`reply/follow`'s parked entry carries — so nothing new is asked and nothing new
+is computed. A park is a distinct KIND of rest and the difference from the mail
+case is *who the conversation is waiting for*: mail nobody has taken holds the
+line, because something is coming with nothing asked of the operator, and a
+park ENDS it, because nothing is coming until they act. The line names the
+call, the control's own reason, and `answer` — spelled with the address the
+watch was aimed at, because a remedy an operator has to complete from memory is
+one they complete wrongly. It asks no inbox: mail behind a park is still behind
+the park.
+
 **Under `--json` this seat narrates nothing** (bl-87ab). `--help` promises *"the
 frames exactly as they crossed, one envelope per line, which is what a script
 wants"*, and this word broke it on the one line that mattered: every frame of a
@@ -3976,7 +3999,8 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
 | `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. | ~115 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
-| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the state read that opens and ends the watch, the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~240 |
+| `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~190 |
+| `src/seat/follow/rest.rs` | when that watch stops and what it says then, split from the file above at the cap on the seam the word has (bl-3a1f): the three readings of the standing row — working, at rest, or PARKED at the capability boundary — the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), and the two sentences an ending can be. | ~170 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
 | `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
 | `src/channel/frame.rs` | the framing. | ~105 |

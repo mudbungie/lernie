@@ -146,3 +146,75 @@ fn the_json_form_says_nothing_while_it_waits_for_a_driver() {
         verdict.text
     );
 }
+
+/// A held conversation's own row: at rest by its state, and parked by its
+/// mark — which is the shape the defect lived in, since the two are read off
+/// the same object one field apart.
+fn holding() -> Value {
+    let mut row = agent("quiescent");
+    row["held"] = json!({"tool": "box2_service_status", "tool_use_id": "toolu_02",
+                         "reason": "classified opaque"});
+    row
+}
+
+/// **A HELD conversation is not at rest, and the ending says so** (bl-3a1f;
+/// yog bl-58bb). The capability control parks the call *before* the executor
+/// is entered, so the state read says `quiescent` and the ordinary ending is
+/// false in both halves: something more WILL arrive, and neither *nudge* nor
+/// *message* is what makes it. The line names the call, the control's own
+/// reason and `answer`, which is the gesture that lifts it — spelled with the
+/// address the watch was aimed at, because a remedy an operator has to
+/// complete from memory is one they complete wrongly.
+#[test]
+fn a_held_conversation_ends_the_watch_naming_the_call_and_the_answer() {
+    let scratch = Scratch::new();
+    wired(&scratch, &flat(), vec![vec![holding()]]);
+    let (verdict, _) = watched(&scratch);
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    for needle in [
+        "box2_service_status",
+        "toolu_02",
+        "classified opaque",
+        "for your answer",
+        "lernie answer home PelicanQuiet pass|refuse",
+    ] {
+        assert!(verdict.text.contains(needle), "{needle}: {}", verdict.text);
+    }
+    assert!(
+        !verdict.text.contains("nudged or messaged"),
+        "the two remedies are both wrong for a park: {}",
+        verdict.text
+    );
+}
+
+/// **It asks no inbox, because mail behind a park is still behind the park.**
+/// The probe that tells a rest about to end from one that is not has nothing
+/// to add here: what the conversation is waiting for is the operator, and it
+/// will go on waiting whatever is in the inbox.
+#[test]
+fn a_park_ends_the_watch_without_asking_what_is_waiting() {
+    let scratch = Scratch::new();
+    let engine = wired(&scratch, &flat(), vec![vec![holding()]]);
+    let (verdict, _) = watched(&scratch);
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    let ops: Vec<String> = asked(&engine)
+        .iter()
+        .map(|frame| frame["op"].as_str().unwrap_or_default().to_owned())
+        .collect();
+    assert_eq!(ops, vec!["agent"], "{ops:?}");
+}
+
+/// **And `--json` says nothing of this seat's own here either** (bl-87ab's
+/// rule, applied to the third sentence this word can write): what ends the
+/// watch is the `agent` frame that ended it, printed as it crossed — and that
+/// frame already carries the hold mark the rendered sentence is made of.
+#[test]
+fn the_json_form_ends_a_park_with_the_frame_that_ended_it() {
+    let scratch = Scratch::new();
+    wired(&scratch, &flat(), vec![vec![holding()]]);
+    let (verdict, said) = formed(&scratch, Form::Json);
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    assert!(said.is_empty(), "{said:?}");
+    let frame: Value = serde_json::from_str(verdict.text.trim()).expect("one envelope");
+    assert_eq!(frame["held"]["tool"], json!("box2_service_status"));
+}

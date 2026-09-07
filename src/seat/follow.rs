@@ -40,31 +40,6 @@
 //! ending, and printing the word, beats holding a connection open forever on a
 //! state nobody here understands.
 //!
-//! # Mail waiting is not rest (bl-87ab, bl-3ecd)
-//!
-//! `message` (or `start`) then `follow` is the pair every operator types, and
-//! it answered *"nothing more will arrive until it is nudged or messaged"* in
-//! zero seconds — about a conversation that took a lease twelve seconds later
-//! and then ran for another seventy-eight. The deposit had landed and no
-//! driver held the inbox lock yet, so the state read was correct as of that
-//! instant and the sentence it produced was false: something more was going to
-//! arrive, and nothing further was going to be asked of the operator.
-//!
-//! The engine has no field for *about to start* and inventing one here would
-//! be a guess. What it does have is the deposit itself: **an inbox with mail in
-//! it is a turn that has not begun**, so the state read alone was never enough
-//! and the second read is what makes the answer true. So a rest with mail
-//! waiting is not an ending — the watch holds, exactly as it holds on a live
-//! one, and says once that it is waiting so the hold never reads as a hang.
-//! Ctrl-C is the way out it always was.
-//!
-//! **It costs one read, and only on the path that was wrong.** A conversation
-//! genuinely at rest has an empty inbox and answers as fast as it ever did;
-//! nothing is asked before the state read, and nothing extra is asked while a
-//! conversation is working. And a mail count this seat could not READ is
-//! treated as no mail: the state read has already said rest, and a probe that
-//! failed is not grounds for holding somebody's connection open forever.
-//!
 //! # `--json` narrates nothing (bl-87ab)
 //!
 //! `--help` promises *"the frames exactly as they crossed, one envelope per
@@ -94,9 +69,16 @@ use serde_json::Value;
 use crate::channel::Reach;
 use crate::cli::Verdict;
 use crate::render::{Form, said};
-use crate::reply::convs::AgentState;
 use crate::reply::stream::Stream;
-use crate::reply::{Read, Reply, read};
+
+/// **When the watch stops, and what it says then** — the three readings of the
+/// standing row, and the two sentences an ending can be. Split from this file
+/// at the 300-line cap on the seam the word already has (bl-3a1f): above is
+/// the LOOP — ask, hold, print, ask again — and there is the ENDING, which is
+/// a different question and the one that keeps growing.
+mod rest;
+
+use rest::{Rest, ending, parked, resting, waiting};
 
 /// **How long a read that brought nothing waits before asking again.**
 ///
@@ -135,6 +117,21 @@ pub fn follow(
             // the product and the exit code is what says the watch never
             // started.
             Rest::Unreadable => return Verdict::answered(said(&standing, form), false),
+            // **A park ends the watch, and with its own sentence.** It is a
+            // rest — nothing advances until the operator acts — but the two
+            // remedies the ordinary ending names are both wrong for it, and
+            // the mail probe below has nothing to add: mail waiting behind a
+            // park is still behind the park.
+            Rest::Parked(held) => {
+                return Verdict::ok(parked(
+                    &standing,
+                    agent,
+                    workspace,
+                    &held,
+                    began.elapsed(),
+                    form,
+                ));
+            }
             Rest::At(state) => match waiting(data_root, &mail) {
                 // Rest with an empty inbox is the ending: nothing is coming.
                 0 => return Verdict::ok(ending(&standing, agent, &state, began.elapsed(), form)),
@@ -186,66 +183,6 @@ fn held(
         true
     })?;
     Ok(heard)
-}
-
-/// What the standing read says the conversation is doing.
-enum Rest {
-    /// A driver is on it, or it is streaming. Hold the line.
-    Working,
-    /// It has come to rest, in the engine's own word for how.
-    At(String),
-    /// The engine answered something no state can be read out of.
-    Unreadable,
-}
-
-/// Read the conversation's own state off its row.
-fn resting(standing: &[Value]) -> Rest {
-    let Some(Read::Answer(Reply::Agent(row))) = standing.last().map(read) else {
-        return Rest::Unreadable;
-    };
-    match row.state {
-        AgentState::Live | AgentState::InFlight => Rest::Working,
-        settled => Rest::At(settled.label()),
-    }
-}
-
-/// **How much mail is waiting to be taken**, which is what tells a rest that
-/// is about to end from one that is not.
-///
-/// **Unreadable is NO mail, deliberately.** The state read above has already
-/// said this conversation is at rest, so every way this probe can fail — a
-/// channel that dropped, a refusal, an answer of a kind this build does not
-/// paint — leaves the watch with exactly the reading it had before the probe
-/// existed. Holding a connection open forever on the strength of a question
-/// that was not answered is the one outcome worse than the sentence this
-/// exists to fix.
-fn waiting(data_root: &Path, mail: &Value) -> usize {
-    let Ok(frames) = super::sent(data_root, mail) else {
-        return 0;
-    };
-    match frames.last().map(read) {
-        Some(Read::Answer(Reply::Inbox(rows))) => rows.len(),
-        _ => 0,
-    }
-}
-
-/// **The line a watch ends on**, in the form the caller asked for.
-///
-/// Rendered, it is this seat's own sentence, said where every other line of
-/// its product is said ([`crate::render::at_rest`]) — and how long the watch
-/// held is the one fact only this end has, so it is measured here and rendered
-/// there. As JSON it is the `agent` frame that ended the watch, exactly as it
-/// crossed: `--json` is the frame stream and this seat adds nothing to it
-/// (bl-87ab).
-fn ending(standing: &[Value], agent: &str, state: &str, held: Duration, form: Form) -> String {
-    match form {
-        Form::Json => said(standing, form),
-        Form::Rendered => crate::render::at_rest(
-            agent,
-            state,
-            i64::try_from(held.as_secs()).unwrap_or(i64::MAX),
-        ),
-    }
 }
 
 #[cfg(test)]

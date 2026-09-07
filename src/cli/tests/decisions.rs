@@ -111,6 +111,7 @@ fn every_verb_in_the_table_is_typable() {
                 workspace,
                 name,
                 grade,
+                at,
                 into,
             } = run(argv(&words))
             else {
@@ -124,9 +125,10 @@ fn every_verb_in_the_table_is_typable() {
                     crate::ui::Grade::default().word().as_str()
                 )
             );
-            // **The three words alone write nothing**, which is what makes the
-            // destination the operator's choice rather than this seat's.
-            assert_eq!(into, None);
+            // **The three words alone write nothing and state no route**,
+            // which is what makes each of the two the operator's choice rather
+            // than this seat's.
+            assert_eq!((at, into), (None, None));
             continue;
         }
         // **`follow` is the other row whose word is not one ask** (bl-f076):

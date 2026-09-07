@@ -1,14 +1,17 @@
-//! **The rows** — the reads, the deposit, the advance and the enrollment, as
-//! data. The conversation's own four acts are [`super::conversation`]'s and the
-//! tuning family's two are [`super::tuning`]'s.
+//! **The rows** — the reads, the deposit and the advance, as data. The
+//! conversation's own four acts are [`super::conversation`]'s, the tuning
+//! family's two are [`super::tuning`]'s and the enrollment is
+//! [`super::enroll`]'s.
 //!
 //! Split from [`super`] at the design-time budget on the seam the module's own
 //! doc already draws: [`super`] is what a verb *is* and what it does with its
 //! arguments, and this is *which verbs there are*. A verb added moves this
 //! file and nothing else, which is the test that a seam is real.
 //!
-//! **[`TABLE`] is the whole roster and twenty-two of its rows are declared
-//! elsewhere**, in the eight files that own their subjects. The balls family's
+//! **[`TABLE`] is the whole roster and most of its rows are declared
+//! elsewhere**, in the files that own their subjects — the list below is the
+//! one census of which and how many, and no count is written here, two having
+//! rotted already (bl-971c). The balls family's
 //! seven — the box-wide binding table, the fleet board, one wall's own balls,
 //! the branch it tracks them on, and the three acts that claim, release and
 //! deliver a ball — are [`super::balls`]'s, beside the two authoring doors
@@ -27,8 +30,12 @@
 //! family's four are [`super::login`]'s, on the same terms: the table, one
 //! row's offering, the act that starts a run in the wall and the lane that
 //! streams it are one subject, and three of the four are reads while one is an
-//! act. What stays here is the enumeration: every verb this binary has a word
-//! for is in the one list below.
+//! act. And the **enrollment** is [`super::enroll`]'s (bl-971c), on the
+//! strongest form of the same terms: its reply is the only one this seat
+//! renders rather than prints, and its request is the only one carrying an
+//! optional field, so the row, that field's name and the door that states it
+//! are one subject. What stays here is the enumeration: every verb this binary
+//! has a word for is in the one list below.
 //!
 //! **Every row is also a `pub const`, with a typed door beside it**, because
 //! the window and the off-frame threads compose gestures by name at compile
@@ -56,12 +63,6 @@ pub fn message(workspace: String, agent: String, content: String) -> Value {
 /// The advance, on the same terms.
 pub fn nudge(workspace: String, agent: String) -> Value {
     NUDGE.built(vec![workspace, agent], &[])
-}
-
-/// The enrollment, on the same terms — the window composes it from a name and
-/// a grade the operator chose, and argv from three words.
-pub fn enroll(workspace: String, name: String, grade: String) -> Value {
-    ENROLL.built(vec![workspace, name, grade], &[])
 }
 
 /// The `workspaces` read's row.
@@ -161,36 +162,6 @@ pub const MESSAGE: Verb = Verb {
              transcript at its own pace.",
 };
 
-/// **The enrollment's row.** Three named strings, so it is a row like any
-/// other — but the *reply* is not like any other, and `lernie enroll` therefore
-/// has its own arm in [`crate::cli`] rather than printing the reply stream the
-/// way every other verb does. What the arm prints is the rendering the operator
-/// asked for — the symbol and the line, or, where `--into` named a directory,
-/// the receipt alone (bl-768a).
-pub const ENROLL: Verb = Verb {
-    word: "enroll",
-    params: &["workspace", "name", "grade"],
-    flags: &[],
-    summary: "mint a new box's material and say it as a code, a line and, if asked, four files",
-    detail: "The engine mints a leaf on its own CA, seats the client in that \
-             workspace, answers the material and shreds the key. What comes \
-             back is REMOTE §8.4's envelope — one line of compact JSON under \
-             `{\"yog-enroll\":1,…}` — and there are three ways to take those \
-             same bytes: a QR symbol for a camera, the line itself for the \
-             paste box an android seat offers, and `--into <dir>` for a box \
-             with neither, which writes the four files an entry is (`ca.pem`, \
-             `client.pem`, `client.key`, `address`) into that directory for \
-             you to carry to the machine they are for. YOU PICK ONE: with no \
-             `--into` the symbol and the line are both printed and this seat \
-             keeps NOTHING — not a file, not a cache, not a log line; with \
-             one, the key goes to the files and never to this terminal, which \
-             is the one place the act could not shred it afterwards. `grade` \
-             is `operator` or `foot`. It is refused unless this box's own leaf \
-             is operator-grade — the new box says nothing and performs no act, \
-             which is why this is not the in-channel bootstrap REMOTE §1.4 \
-             forbids.",
-};
-
 /// The advance's row.
 pub const NUDGE: Verb = Verb {
     word: "nudge",
@@ -210,9 +181,10 @@ pub const NUDGE: Verb = Verb {
 /// subject is one conversation; then the one act whose subject is a box.
 ///
 /// The conversation's four live in [`super::conversation`], its records' two in
-/// [`super::records`], the queue's three in [`super::queue`] and the wall's one
-/// in [`super::workspace`], named here rather than defined here — one table,
-/// six files, on the seams those files' own docs draw. [`super::window`]'s
+/// [`super::records`], the queue's three in [`super::queue`], the wall's one in
+/// [`super::workspace`] and the enrollment in [`super::enroll`], named here
+/// rather than defined here — one table, many files, on the seams those files'
+/// own docs draw. [`super::window`]'s
 /// other member has no row and says why: its word is `lernie help`'s.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
@@ -251,7 +223,7 @@ pub(super) const TABLE: &[Verb] = &[
     super::capability::REVOKE,
     super::capability::RESTORE,
     super::conversation::DELETE_AGENT,
-    ENROLL,
+    super::enroll::ENROLL,
     super::login::LOGIN,
     super::tuning::MODEL,
     super::workspace::PIN,

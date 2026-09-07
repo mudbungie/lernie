@@ -149,6 +149,31 @@ impl Verb {
     /// [`message`] and [`nudge`] are the typed doors for the window, and both
     /// arrive here — so a gesture has one spelling however it was composed.
     pub(super) fn built(&self, args: Vec<String>, raised: &[&str]) -> Value {
+        Value::Object(self.fields(args, raised))
+    }
+
+    /// **The same envelope with one optional string field stated**, for the
+    /// one gesture whose request carries one: `enroll`'s `address`, the route
+    /// the DEVICE will dial (REMOTE §8.4 as amended, yog bl-fec6).
+    ///
+    /// It is a door beside [`built`](Self::built) rather than a fourth kind of
+    /// row, because an optional string is not a parameter — the table's rule
+    /// is *a word and its parameters, all of them named strings*, and a
+    /// parameter is required by being one. **Absent is absent**: a field
+    /// nobody stated is not written, never written as `null`, which would be a
+    /// second spelling of the same absence the far end would then have to
+    /// read (yog's codec says so from the other side).
+    pub(super) fn stating(&self, args: Vec<String>, field: &str, value: Option<String>) -> Value {
+        let mut map = self.fields(args, &[]);
+        if let Some(stated) = value {
+            map.insert(field.to_owned(), Value::String(stated));
+        }
+        Value::Object(map)
+    }
+
+    /// The fields themselves — the op, the parameters in order, and each flag
+    /// raised. Both doors above are this map, wrapped.
+    fn fields(&self, args: Vec<String>, raised: &[&str]) -> Map<String, Value> {
         let mut map = Map::new();
         map.insert(
             crate::envelope::OP.to_owned(),
@@ -160,6 +185,6 @@ impl Verb {
         for flag in raised {
             map.insert((*flag).to_owned(), Value::Bool(true));
         }
-        Value::Object(map)
+        map
     }
 }

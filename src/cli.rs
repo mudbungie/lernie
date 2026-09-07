@@ -16,7 +16,11 @@ mod verdict;
 /// What one invocation decided to do.
 mod decided;
 
+/// `enroll`'s own grammar: three words and two optional ones.
+mod enroll;
+
 pub use decided::Decided;
+pub use enroll::{AT, INTO};
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
 
@@ -94,7 +98,9 @@ pub fn run(args: Vec<String>) -> Decided {
         ["ops", depth] => trail(depth, form),
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
-        ["enroll", workspace, name, grade, tail @ ..] => enroll(workspace, name, grade, tail),
+        ["enroll", workspace, name, grade, tail @ ..] => {
+            enroll::enroll(workspace, name, grade, tail)
+        }
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.
         [] => Decided::Window,
@@ -164,63 +170,6 @@ fn ask(text: &str, form: Form) -> Decided {
         Err(refusal) => Decided::Say(Verdict::refused(refusal)),
     }
 }
-
-/// **An enrollment, with the two arguments this binary can settle itself.**
-///
-/// The optional tail is read here for the same reason: `--into <dir>` is a
-/// destination on THIS box, so whether it was spelled correctly is decided
-/// entirely by what was typed. A tail that is anything else refuses naming the
-/// one word, rather than falling through to the verb table and earning an arity
-/// sentence about three arguments that says nothing about the fourth.
-///
-/// `grade` is a closed set of two words the boundary defines (REMOTE §8.4) and
-/// this binary already holds them — `lernie help enroll` says so in its own
-/// words. So a typo is read here, in the pure function, for exactly the reason
-/// [`ask`] reads a body here: it is decided entirely by what was typed, it is
-/// the caller's typo, it earns the usage, and it costs no connection (bl-07b9).
-/// It used to cost a full round trip and come back `unknown grade "OPERATOR"` —
-/// true, and naming neither of the two words that would have worked.
-///
-/// **It is not a second authority on grades.** The engine stays the place that
-/// decides what a grade means and whether this box may ask for one at all —
-/// §8.4 refuses the act unless this box's own leaf is operator-grade, which is
-/// not knowable here. What is settled here is only whether the word is one of
-/// the two, read off [`crate::ui::Grade`]'s own list rather than a second copy
-/// of it.
-fn enroll(workspace: &str, name: &str, grade: &str, tail: &[&str]) -> Decided {
-    let into = match tail {
-        [] => None,
-        [word, dir] if *word == INTO => Some((*dir).to_owned()),
-        _ => {
-            return Decided::Say(Verdict::refused(format!(
-                "`lernie enroll` takes one optional word after the three, and it is \
-                 `{INTO} <dir>` — not {:?}",
-                tail.join(" ")
-            )));
-        }
-    };
-    let words = crate::ui::Grade::both();
-    let Some(held) = words.iter().find(|known| known.word() == grade) else {
-        return Decided::Say(Verdict::refused(format!(
-            "unknown grade {grade:?} — `lernie enroll` takes {}",
-            words
-                .iter()
-                .map(|known| format!("{:?}", known.word()))
-                .collect::<Vec<String>>()
-                .join(" or ")
-        )));
-    };
-    Decided::Enroll {
-        workspace: workspace.to_owned(),
-        name: name.to_owned(),
-        grade: held.word(),
-        into,
-    }
-}
-
-/// The one word `enroll` takes after its three, and the one place it is spelled
-/// — the pattern that reads it and the refusal that teaches it both name this.
-pub const INTO: &str = "--into";
 
 /// A typed verb, a structural door, or a first word that is neither.
 ///

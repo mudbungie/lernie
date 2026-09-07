@@ -90,6 +90,8 @@ pub mod config;
 pub mod conversation;
 /// The words this binary answers itself — a page and a usage line, no envelope.
 pub mod doors;
+/// The one act whose subject is a box that has never connected.
+pub mod enroll;
 /// The fleet loop, the alignment monitor, and what a wall's agents changed.
 pub mod fleet;
 /// The roster and one word's page, answered here rather than by an engine.
@@ -129,6 +131,7 @@ pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};
 pub use conversation::{
     DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
 };
+pub use enroll::{ADDRESS, ENROLL, enroll};
 pub use fleet::{
     ARM, DISARM, DISBAND, FLEET, SCAN, SCIENCE, WORK_DIFF, arm, disarm, disband, fleet, scan,
     science, work_diff,
@@ -137,8 +140,8 @@ pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models,
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{AGENT, FILES, INBOX, STEP, STEPS, agent, files, inbox, step, steps};
 pub use rows::{
-    CONVERSATIONS, ENROLL, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, enroll,
-    follow, message, nudge, transcript, workspaces,
+    CONVERSATIONS, FOLLOW, MESSAGE, NUDGE, TRANSCRIPT, WORKSPACES, conversations, follow, message,
+    nudge, transcript, workspaces,
 };
 pub use spine::{FORK, GOVERNING, RAIL, fork, governing, rail};
 pub use start::{PREPARE, PROMPT, prepare, prompt};

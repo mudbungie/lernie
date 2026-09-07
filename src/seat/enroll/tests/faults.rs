@@ -26,6 +26,7 @@ fn a_destination_that_refuses_still_says_the_material_and_fails() {
         "home",
         "phone-1",
         "foot",
+        None,
         Some(&blocked.join("under")),
     );
     assert_eq!(verdict.code, 1, "{}", verdict.text);
@@ -77,7 +78,7 @@ fn an_answer_of_another_kind_says_nothing_was_minted() {
 #[test]
 fn a_root_with_no_channel_fails_before_anything_is_asked() {
     let scratch = Scratch::new();
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None);
+    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
     assert_eq!(verdict.stream, Stream::Err);
     assert_eq!(verdict.code, 1);
     assert_eq!(tree(scratch.path()), Vec::<String>::new());
@@ -120,7 +121,7 @@ fn an_enrollment_that_crossed_with_no_answer_is_in_doubt_and_says_not_to_repeat(
         &wire::flat(),
         vec![crate::test_support::engine::Answer::Hangup],
     );
-    let verdict = enroll(scratch.path(), "home", "phone", "seat", None);
+    let verdict = enroll(scratch.path(), "home", "phone", "seat", None, None);
     assert_eq!(verdict.code, 1);
     assert!(verdict.text.contains(INDOUBT), "{}", verdict.text);
     assert!(

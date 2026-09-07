@@ -67,6 +67,7 @@ fn main() -> ExitCode {
             workspace,
             name,
             grade,
+            at,
             into,
         } => rooted(|root| {
             lernie::seat::enroll(
@@ -74,6 +75,7 @@ fn main() -> ExitCode {
                 &workspace,
                 &name,
                 &grade,
+                at,
                 into.as_deref().map(std::path::Path::new),
             )
         }),

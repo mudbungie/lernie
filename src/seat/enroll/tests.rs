@@ -72,7 +72,7 @@ fn spent(answer: Vec<Value>) -> (crate::cli::Verdict, Vec<String>, Vec<String>) 
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![answer]);
     let before = tree(scratch.path());
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None);
+    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
     let after = tree(scratch.path());
     (verdict, before, after)
 }

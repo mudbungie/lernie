@@ -86,14 +86,21 @@ const INDOUBT: &str = "the enrollment crossed with no answer, so it is IN DOUBT 
      `lernie ask '{\"op\":\"clients\"}'` says which clients that engine holds";
 
 /// **Enroll a new box**, and say the material every way it can be taken.
+///
+/// `at` is the route the enrolled box will dial and rides the gesture only when
+/// the operator stated one (bl-971c); `into` is where the material is written
+/// down on THIS box. They are independent — the first is a fact about the far
+/// device and the second about this terminal — so each is read on its own and
+/// neither is inferred from the other.
 pub fn enroll(
     data_root: &Path,
     workspace: &str,
     name: &str,
     grade: &str,
+    at: Option<String>,
     into: Option<&Path>,
 ) -> Verdict {
-    let gesture = crate::verbs::enroll(workspace.to_owned(), name.to_owned(), grade.to_owned());
+    let gesture = crate::verbs::enroll(workspace.to_owned(), name.to_owned(), grade.to_owned(), at);
     let stream = match crate::seat::sent(data_root, &gesture) {
         Ok(stream) => stream,
         Err(reach) if reach.crossed() => {

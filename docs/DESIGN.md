@@ -1610,7 +1610,7 @@ delete the branch and close its pull request in the same breath.
 ### 4.15 Enrollment: the one reply this seat draws and refuses to keep (REMOTE §8.4)
 
 `src/reply/enrolled.rs`, `src/seat/enroll.rs`, `src/seat/enroll/entry.rs`,
-`src/ui/enroll.rs`, `src/qr/`.
+`src/verbs/enroll.rs`, `src/cli/enroll.rs`, `src/ui/enroll.rs`, `src/qr/`.
 
 **What the act is.** `enroll` names a workspace, a name and a grade, and the
 engine mints that box's leaf on its own CA, seats the registration, answers the
@@ -1636,6 +1636,37 @@ for the paste box an android seat offers — *one line of JSON beginning
 with neither, which lays the envelope down as the four files §4.6's entry is.
 There is one place the envelope is built (`Enrolled::envelope`) and the
 renderings are of that, so no two of them can disagree.
+
+**The route the NEW box will dial is stated, not assumed** (bl-971c, on yog
+bl-fec6's `--at`). REMOTE §8.4's request carries an optional `address`, and it
+is a fact about the device being enrolled rather than a setting on the engine:
+the box being provisioned is by definition not the box the engine runs on, so
+the route it reaches that engine by need not be the one the engine wrote for
+itself — an emulator reaches its host through the emulator's alias, a phone
+over the LAN, an overlay peer by name. Unstated is the engine's own
+`wire/address`, which is right only for a device sharing this box's view of it.
+
+The seat could not state it, and **the failure was silent at both ends**: the
+four files `--into` wrote were correct in every byte except `address`, so the
+foot came up, dialled an address it cannot reach, printed nothing and waited,
+while the engine held the registration and the roster showed the client absent.
+Nothing anywhere said why. The only workaround was `yog gesture` on the
+engine's own box with the reply taken apart by hand — which is available to
+every operator except the one a seat is for.
+
+So `lernie enroll <workspace> <name> <grade> [--at <host>:<port>] [--into
+<dir>]`: **two optional words, independent and in either order.** They address
+different things — `--at` the far box, `--into` this terminal — so neither
+implies the other and one refusal teaches both. What the seat settles is only
+that a word was given a value; whether the value names an endpoint a device can
+dial is the engine's judgement, which it makes on its own address and a stated
+one alike and answers with the remedy it names. A second copy of that rule here
+would be a second authority on addresses that could disagree with the first.
+`address` is the field on the wire and `--at` is the word argv spells it with —
+the same word yog's own line reader takes, so an operator who learned it at one
+face has learned it at both. **The window states none**, and that is a control
+it owes rather than a `None` to fill in: it has no field for a route, and an
+operator sitting at a window is on a box that dialled this engine successfully.
 
 **Picking one is picking one** (bl-768a). `--into` says *this box has neither a
 camera nor a paste box; write it down for me*, so once the four files exist the
@@ -3580,7 +3611,8 @@ of *what a seat printed*.
 |---|---|---|
 | `src/main.rs` | the process entry: argv in, the environment folded once, a stream and an exit code out. The one `tarpaulin.toml` exclusion, and it is honest because it decides nothing. | small |
 | `src/lib.rs` | the crate doc and the module list. | small |
-| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~260 |
+| `src/cli.rs` | the command line as a **pure function**: arguments in, a `Decided` out. No argv, no environment, no streams, no exit. | ~210 |
+| `src/cli/enroll.rs` | `enroll`'s own grammar: its three words, the grade read off a closed set of two, and the two optional words — `--at <host>:<port>`, the route the new box will dial, and `--into <dir>`, where this box writes the material down (§4.15, bl-971c). Its own file for the reason yog's line reader cut the same seam at: a verb whose grammar is more than words is its own file. | ~120 |
 | `src/cli/decided.rs` | what one invocation decided to DO — the value `run` hands back and the whole of what `src/main.rs` acts on. Split from the deciding at the cap: a word added moves the match, a kind of act moves this. | ~100 |
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
@@ -3639,8 +3671,9 @@ of *what a seat printed*.
 | `src/reply/step.rs` | one step's records (§4.32): the record vocabulary, the capture-log vocabulary beside it, and the parsed tree that is deliberately not decoded. | ~155 |
 | `src/reply/inbox.rs` | the undelivered mail (§4.32): the forgiving parse read as a reading, and the two facts only a result message states. | ~85 |
 | `src/verbs.rs` | the typed gesture surface: which words exist, which module each row lives in, and what the table is for. | ~155 |
-| `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the one envelope it becomes. Split from the surface at the wall, because the two change for different reasons. | ~160 |
-| `src/verbs/rows.rs` | the reads, the deposit, the advance and the enrollment, as data — each with the typed door the window composes by name. | ~105 |
+| `src/verbs/verb.rs` | what a verb IS: the row, the usage it computes, the flags its own word can raise (§4.10, bl-9fd1), and the two doors onto the one envelope it becomes — the second stating an optional string field, for the one request that carries one (bl-971c). Split from the surface at the wall, because the two change for different reasons. | ~160 |
+| `src/verbs/rows.rs` | the reads, the deposit and the advance, as data — each with the typed door the window composes by name — beside the one table that enumerates every row wherever it is declared. | ~240 |
+| `src/verbs/enroll.rs` | the enrollment: its row, `address` — the one optional field a request on this surface carries (§4.15, bl-971c) — and the door both faces compose it through. One subject, one file: its reply is the only one this seat renders rather than prints. | ~70 |
 | `src/verbs/conversation.rs` | the conversation's own four acts as rows — the cut, the kill, the change of lineage and the unmaking. Here and not in the exemption ledger because every one of them answers a captured run, which is a kind this seat already paints. | ~110 |
 | `src/verbs/queue.rs` | the decision queue's three ops as rows — the fan that names no workspace, the raise and the answer, the last of which replies with a queue rather than a receipt (§4.19). | ~90 |
 | `src/verbs/trail.rs` | the trail's read as a typed door rather than a row, its bound being a number, and the depth BOTH faces ask with stated once (§4.27, §4.10) — beside its two acts, which carry no field at all and are therefore rows (§4.35). | ~100 |

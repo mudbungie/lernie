@@ -142,11 +142,20 @@ impl Enrolling {
 
     /// The gesture this enrollment composes, built from the same row
     /// `lernie enroll` spends.
+    ///
+    /// **It states no address**, so the engine's own is what the new box is
+    /// handed. The pane has no field for one and does not need a placeholder:
+    /// an operator sitting at a window is on a box that dialled this engine
+    /// successfully, so an enrolment they compose here is for a device whose
+    /// route they can state at the command line if it differs
+    /// (`lernie enroll … --at <host>:<port>`, bl-971c). Adding the field is a
+    /// control this pane owes when a ball asks for it, not a `None` to fill in.
     pub fn gesture(&self) -> serde_json::Value {
         crate::verbs::enroll(
             self.aim.address.clone(),
             self.name.trim().to_owned(),
             self.grade.word(),
+            None,
         )
     }
 }

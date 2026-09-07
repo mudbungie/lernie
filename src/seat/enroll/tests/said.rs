@@ -77,7 +77,7 @@ fn a_named_destination_gets_the_four_files_and_the_material_is_not_said() {
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let into = scratch.path().join("carry");
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", Some(&into));
+    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, Some(&into));
     assert_eq!(verdict.code, 0, "{}", verdict.text);
     assert_eq!(verdict.stream, Stream::Out);
     assert!(
@@ -138,11 +138,45 @@ fn the_act_writes_no_file_at_all() {
 fn the_gesture_that_crossed_is_the_verb_table_s_own() {
     let scratch = Scratch::new();
     let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
-    let _ = enroll(scratch.path(), "home", "phone-1", "foot", None);
+    let _ = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
     let heard = engine.heard();
     let request = heard.last().expect("the engine was handed a request");
     assert_eq!(
         request,
-        &crate::verbs::enroll("home".to_owned(), "phone-1".to_owned(), "foot".to_owned())
+        &crate::verbs::enroll(
+            "home".to_owned(),
+            "phone-1".to_owned(),
+            "foot".to_owned(),
+            None,
+        )
+    );
+}
+
+/// **A stated route crosses** (bl-971c). It is the field that produces no error
+/// message anywhere when it is wrong — a foot handed the engine's own LAN
+/// address dials nothing, prints nothing and waits, while the engine holds the
+/// registration and the roster shows it absent — so what is asserted is that
+/// the word an operator typed reaches the wire under §8.4's own name.
+#[test]
+fn a_stated_route_crosses_as_the_enrollment_s_address() {
+    let scratch = Scratch::new();
+    let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let verdict = enroll(
+        scratch.path(),
+        "home",
+        "phone-1",
+        "foot",
+        Some("host.containers.internal:7773".to_owned()),
+        None,
+    );
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    let heard = engine.heard();
+    let request = heard.last().expect("the engine was handed a request");
+    assert_eq!(
+        request.get(crate::verbs::ADDRESS),
+        Some(&serde_json::Value::String(
+            "host.containers.internal:7773".to_owned()
+        )),
+        "{request}"
     );
 }

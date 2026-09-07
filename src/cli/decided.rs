@@ -54,10 +54,17 @@ pub enum Decided {
     ///
     /// `into` is the destination the operator named, and it is `None` on the
     /// ordinary path — the seat writes nothing it was not asked to write.
+    ///
+    /// `at` is the route the ENROLLED box will dial (REMOTE §8.4 as amended,
+    /// yog bl-fec6), and it is `None` when the engine's own address is right —
+    /// which it is only for a device that shares this engine's view of itself.
+    /// The two are independent: a foot behind an alias needs `at` whether or
+    /// not it needs `into` (bl-971c).
     Enroll {
         workspace: String,
         name: String,
         grade: String,
+        at: Option<String>,
         into: Option<String>,
     },
     /// Send this gesture envelope down the channel it names. Needs the data

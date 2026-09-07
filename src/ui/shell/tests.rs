@@ -149,10 +149,15 @@ fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
         ..Model::default()
     };
     let window = Window::sized(900.0, 260.0);
-    let last = crate::ui::roster::line(&wall("wall-23"));
+    // **A roster row is elided at the column's width** (`theme::paint::row`),
+    // so the row reads back on the glass as its head and a `…`. The assertion
+    // is on what was SHOWN and so it is aimed at the head — reading the whole
+    // line back would be reading the string that went in, which is the one
+    // thing `crate::paint_probe` exists to refuse.
+    let last = "wall-23";
     let first = seen(&window, |ctx| render(ctx, &mut model));
     assert!(
-        !first.iter().any(|run| run.text == last),
+        !first.iter().any(|run| run.text.starts_with(last)),
         "the fold is real, or this test proves nothing"
     );
     for _ in 0..24 {
@@ -171,7 +176,7 @@ fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
     window.frame(Vec::new(), |ctx| render(ctx, &mut model));
     let shown = seen(&window, |ctx| render(ctx, &mut model));
     assert!(
-        shown.iter().any(|run| run.text == last),
+        shown.iter().any(|run| run.text.starts_with(last)),
         "the walked-to row is on the glass: {:?}",
         shown.iter().map(|run| &run.text).collect::<Vec<&String>>()
     );
@@ -256,4 +261,29 @@ fn a_long_refusal_wraps_and_its_remedy_reaches_the_glass() {
         "so the remedy's last words are on the glass: {:?}",
         bar.text
     );
+}
+
+/// **A notice is said in its state's ink** (`docs/STYLE.md` §5): a failure in
+/// the error accent, a receipt in the annotation accent, and neither in a box.
+#[test]
+fn a_notice_wears_its_state_s_ink() {
+    use crate::ui::theme::{State, accent};
+    for (notice, ink) in [
+        (Notice::Refused("no".to_owned()), accent(State::Error)),
+        (
+            Notice::Said("the floor stands".to_owned()),
+            accent(State::Annotation),
+        ),
+    ] {
+        let mut model = Model {
+            notice: Some(notice.clone()),
+            ..seated()
+        };
+        let window = Window::new();
+        let run = seen(&window, |ctx| render(ctx, &mut model))
+            .into_iter()
+            .find(|run| run.text == notice.line())
+            .expect("the notice is on the glass");
+        assert_eq!(run.ink, ink, "{notice:?}");
+    }
 }

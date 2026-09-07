@@ -11,6 +11,9 @@ use crate::reply::roster::{WorkspaceKind, WsRow};
 use crate::test_support::window::{click, own, pane, seated, wall};
 use crate::ui::{Aim, Channel, Chunk, Model};
 
+/// What the pane is painted IN: the state rules, the raise on the aimed row,
+/// the band entry that goes green, and the faint unaddressable row.
+mod paint;
 /// What a SECTION says: its header, its address, and what it has instead of
 /// walls.
 mod sections;

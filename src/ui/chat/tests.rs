@@ -9,12 +9,15 @@
 mod anchor;
 /// A machine's answer on the glass: folded, and one gesture from the whole.
 mod machinery;
+/// What the weight at a block's edge says about who is speaking.
+mod weight;
 
 use super::{LIVE, NO_CONVERSATION, Row, render, rows};
 use crate::reply::stream::{Delta, Stream};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{pane, said, seated};
 use crate::ui::Model;
+use crate::ui::theme::Speaker;
 
 fn of(kind: EntryKind) -> Transcript {
     Transcript {
@@ -36,11 +39,11 @@ fn a_delivered_message_names_its_sender_and_its_ending() {
             },
             None
         ),
-        vec![Row {
-            who: "op".to_owned(),
-            said: "port it".to_owned(),
-            fold: None,
-        }]
+        vec![Row::plain(
+            "op".to_owned(),
+            "port it".to_owned(),
+            Speaker::Operator,
+        )]
     );
     let ended = of(EntryKind::Delivered {
         sender: "child".to_owned(),
@@ -127,11 +130,11 @@ fn a_compacted_span_says_what_went() {
     });
     assert_eq!(
         rows(&gap, None),
-        vec![Row {
-            who: "compacted 4–9".to_owned(),
-            said: "six were squashed".to_owned(),
-            fold: None,
-        }]
+        vec![Row::plain(
+            "compacted 4–9".to_owned(),
+            "six were squashed".to_owned(),
+            Speaker::Peer,
+        )]
     );
 }
 
@@ -218,11 +221,11 @@ fn a_committed_half_with_nothing_in_it_is_no_row_either() {
     });
     assert_eq!(
         rows(&turn, None),
-        vec![Row {
-            who: "model-a".to_owned(),
-            said: "the seam is real".to_owned(),
-            fold: None,
-        }]
+        vec![Row::plain(
+            "model-a".to_owned(),
+            "the seam is real".to_owned(),
+            Speaker::Model,
+        )]
     );
     // And the other half, the same way: a turn that has only thought so far.
     let thinking_only = of(EntryKind::Model {

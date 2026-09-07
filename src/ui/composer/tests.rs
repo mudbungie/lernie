@@ -257,3 +257,28 @@ fn a_started_conversation_the_engine_cannot_resolve_yet_has_no_box() {
     }
     assert!(model.outbox.is_empty());
 }
+
+/// **The field glows while the selected conversation is asking**
+/// (`docs/STYLE.md` §2): the attention tint stands under the box on an asking
+/// row and not on a quiet one, and the send wears the brand on both.
+#[test]
+fn the_field_glows_while_the_conversation_is_asking_and_the_send_wears_the_brand() {
+    let glow = crate::ui::theme::tint(crate::ui::theme::State::Attention);
+    for (attention, glows) in [(0, false), (2, true)] {
+        let mut model = seated();
+        model.convs[0].attention = attention;
+        let window = Window::new();
+        let output = window.frame(Vec::new(), |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        });
+        let glowing = crate::paint_probe::fills_of(&output)
+            .iter()
+            .any(|(_, ink)| *ink == glow);
+        assert_eq!(glowing, glows, "attention {attention}");
+        let send = crate::paint_probe::seen_of(&output)
+            .into_iter()
+            .rfind(|run| run.text == SEND)
+            .expect("the send is on the glass");
+        assert_eq!(send.ink, crate::ui::theme::BRAND);
+    }
+}

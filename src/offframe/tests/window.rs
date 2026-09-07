@@ -39,7 +39,9 @@ fn the_window_paints_what_a_real_engine_answered() {
     let window = crate::paint_probe::frame::Window::new();
     let deadline = std::time::Instant::now() + Duration::from_secs(20);
     let mut painted = String::new();
-    while !painted.contains("home  (named)  3 conversations  2 waiting  running")
+    // The row elides at the roster's width (bl-d1ae), so the head of the
+    // line is what the glass carries; the rollups are the roster's own suite.
+    while !painted.contains("home  (named)  3 conversations  2 waiting")
         && std::time::Instant::now() < deadline
     {
         std::thread::sleep(Duration::from_millis(5));
@@ -51,7 +53,7 @@ fn the_window_paints_what_a_real_engine_answered() {
         worker.join().expect("a worker");
     }
     assert!(
-        painted.contains("home  (named)  3 conversations  2 waiting  running"),
+        painted.contains("home  (named)  3 conversations  2 waiting"),
         "the engine's own answer never reached the glass:\n{painted}"
     );
 }

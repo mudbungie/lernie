@@ -37,11 +37,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
             return;
         }
     }
-    let entry = ui.add(
-        egui::TextEdit::singleline(&mut model.draft)
-            .id(egui::Id::new(crate::ui::keys::BOX_ID))
-            .desired_width(f32::INFINITY)
-            .hint_text(GOAL),
+    let entry = crate::ui::theme::paint::field(
+        ui,
+        egui::Id::new(crate::ui::keys::BOX_ID),
+        &mut model.draft,
+        GOAL,
+        None,
     );
     // Enter begins it, and the button beside it is how an operator finds that
     // out — the same pairing the deposit's own Enter has, for the same reason.

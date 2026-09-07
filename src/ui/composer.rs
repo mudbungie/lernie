@@ -21,7 +21,7 @@
 //! seat composed against it would be answered
 //! (`crate::ui::model::claim`).
 
-use crate::ui::Model;
+use crate::ui::{Model, theme};
 
 /// The acts that spend no words: kill the driver, retarget, unmake.
 pub mod acts;
@@ -65,11 +65,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui.label(held.line());
         return;
     }
-    let entry = ui.add(
-        egui::TextEdit::singleline(&mut model.draft)
-            .id(egui::Id::new(crate::ui::keys::BOX_ID))
-            .desired_width(f32::INFINITY)
-            .hint_text(SEND),
+    // **The field glows while the conversation is asking** (`docs/STYLE.md`
+    // §2): the box is where the answer goes, so it is where the asking is
+    // shown — the attention tint under the words, and nothing else on the
+    // composer changes.
+    let glow = asking(model, &agent).then(|| theme::tint(theme::State::Attention));
+    let entry = theme::paint::field(
+        ui,
+        egui::Id::new(crate::ui::keys::BOX_ID),
+        &mut model.draft,
+        SEND,
+        glow,
     );
     // **Enter sends, and the button says so.** A composer that could only be
     // fired by pointing at it is a composer an operator has to leave the
@@ -88,7 +94,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // painted, correct, and unreachable by any pointer. Wrapping costs a
     // second line in a panel already sized to its content.
     ui.horizontal_wrapped(|ui| {
-        let deposit = ui.button(SEND);
+        // **The send wears the brand**: it is the operator's own act.
+        let deposit = ui.button(egui::RichText::new(SEND).color(theme::BRAND));
         crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
         sent |= deposit.clicked();
         let cutting = ui.button(INTERRUPT);
@@ -119,6 +126,16 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             )));
     }
     acts::render(ui, model, &aim, &agent);
+}
+
+/// **Whether the selected conversation is asking for the operator** — read
+/// off the row the list already paints, so the composer and the list agree
+/// about the one fact they both show.
+fn asking(model: &Model, agent: &str) -> bool {
+    model
+        .rows()
+        .iter()
+        .any(|row| row.root_id == agent && row.attention > 0)
 }
 
 /// **Compose one of the two deposits and clear the draft.**

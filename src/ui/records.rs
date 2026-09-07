@@ -23,25 +23,50 @@
 //!
 //! # What is painted is words, computed beside the paint
 //!
-//! Every line below comes off a pure function of the row, so the suite reads
-//! the sentence rather than the layout — the same reason `RoleRow::runs_on`
-//! is a method. The class tokens ride verbatim (`crate::reply` rung 3): a
-//! `framing` or a `wound` this build has no word for paints as itself.
+//! Every line a half paints comes off a pure function of the row, so the suite
+//! reads the sentence rather than the layout — the same reason
+//! `RoleRow::runs_on` is a method. The class tokens ride verbatim
+//! (`crate::reply` rung 3): a `framing` or a `wound` this build has no word
+//! for paints as itself. The two halves this file used to hold are modules of
+//! their own (bl-d1ae), and their sentences travel with the paint that says
+//! them; they are re-exported here, because a sentence's home on the crate's
+//! surface is the pane it is read on.
+
+//! # The vertical budget, measured (bl-d1ae)
+//!
+//! Six sections cost 42 points each — `L` of air, a hairline and the word's
+//! own line — where the rules they replaced cost ten. At 900x700 this pane is
+//! 420 points wide, because the two list columns keep 480, so nearly every
+//! sentence here wraps to two lines and the answered world stands 789 points
+//! tall in a 700-point window. What could be bought back inside the pane was:
+//! the close rides the subject's line, the header's notices share one row and
+//! its figures the next, the listing joins where the work lands, a deposit's
+//! header joins what it says, the fork's boxes carry a width, and a step with
+//! no wound paints no row for one. The nodes that still fall below the fold
+//! there are LABELS — every CONTROL is inside the window at both sizes — and
+//! `crate::snapshot::clipped` judges prose at all only because egui's
+//! `interaction.selectable_labels` makes a label a click target. The room
+//! that is left is not in this pane; it is the width next door.
 
 /// The cascade: the stop that takes the subtree with it.
 pub mod cascade;
 /// One step's records, under the row that addresses them.
 pub mod drill;
+/// The files half: where the work lands and what the worktree holds.
+mod files;
 /// The conversation's own row, as the pane's header.
 pub mod header;
 /// The undelivered mail waiting in its inbox.
 pub mod mail;
 /// The spine half: what the history is anchored to, and the fork off it.
 pub mod spine;
+/// The steps half: what the loop did, and the sentences a step carries.
+mod steps;
 
-use crate::reply::files::{Files, Preview};
-use crate::reply::steps::{StepRow, Steps};
 use crate::ui::{Model, theme};
+
+pub use files::{entry, previewed};
+pub use steps::{auth, headline, orphaned, provenance, wounded};
 
 /// The word that opens the pane, on the selected conversation.
 pub const OPEN: &str = "records…";
@@ -74,224 +99,43 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.showing(crate::ui::Listing::Records) {
         return false;
     }
-    ui.heading(HEADING);
-    if let Some(conversation) = model.conversation.clone() {
-        ui.label(format!("on {conversation}"));
-    }
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_records();
+    // **The heading, then one line carrying the subject and the way out**
+    // (`docs/STYLE.md` §5, *a covering pane*): the pane's name at heading size
+    // in full ink, what it is open ON one step weaker beside it, and the close
+    // at the end of that same line. Three lines became two, which is the air
+    // the sections below are spent from.
+    ui.label(egui::RichText::new(HEADING).heading().color(theme::INK));
+    ui.horizontal(|ui| {
+        if let Some(conversation) = model.conversation.clone() {
+            ui.colored_label(theme::INK_WEAK, format!("on {conversation}"));
         }
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui.button(CLOSE).clicked() {
+                model.close_records();
+            }
+        });
     });
-    ui.separator();
-    // One scroll for both halves, and the heading above it fixed — the shape
+    // **No air under the subject line**, because the first section brings `L`
+    // of its own and this pane pays for every point it allocates.
+    //
+    // One scroll for every half, and the heading above it fixed — the shape
     // every pane here keeps, for the reason the tuning pane states: a pane cut
-    // off mid-row says nothing about having been cut.
+    // off mid-row says nothing about having been cut. **Each half opens with
+    // its own section** (`theme::paint::section`) rather than being divided by
+    // a rule painted here, so the word and the hairline that divide two halves
+    // are one thing on the glass and one call in the code.
     let (steps, files) = (model.records.steps.clone(), model.records.files.clone());
     egui::ScrollArea::vertical()
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
             header::render(ui, model);
-            ui.separator();
-            steps_half(ui, model, steps.as_ref());
-            ui.separator();
-            files_half(ui, files.as_ref());
-            ui.separator();
+            steps::half(ui, model, steps.as_ref());
+            files::half(ui, files.as_ref());
             spine::render(ui, model);
-            ui.separator();
             mail::render(ui, model);
         });
     true
-}
-
-/// The steps half: the orphan banner, then one row per step with the control
-/// that drills into it (bl-3257).
-fn steps_half(ui: &mut egui::Ui, model: &mut Model, steps: Option<&Steps>) {
-    // **The heading shares its line with its first fact** (§4.32; bl-3686),
-    // which is the rule the files, governing and spine halves already keep and
-    // the one this half and the inbox had not been swept to. It is not tidying:
-    // the pane's content has to FIT the window at the narrowest shape this
-    // layout promises, and `crate::snapshot::clipped` fails the whole matrix
-    // over one control laid out past the frame. The header's cascade is what
-    // wanted the room, and the room came from a line break rather than from
-    // anything the pane says.
-    ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(STEPS_HEAD).strong());
-        match steps {
-            None => {
-                ui.label(NOT_ANSWERED_STEPS);
-            }
-            Some(listing) => {
-                if let Some(said) = orphaned(listing) {
-                    ui.colored_label(theme::NOTICE, said);
-                }
-                if listing.rows.is_empty() {
-                    ui.label(NO_STEPS);
-                }
-            }
-        }
-    });
-    let Some(listing) = steps else {
-        return;
-    };
-    for row in &listing.rows {
-        step(ui, model, row);
-    }
-}
-
-/// One step: the headline, the provenance under it, what went wrong, and the
-/// drill-in its `seq` addresses.
-fn step(ui: &mut egui::Ui, model: &mut Model, row: &StepRow) {
-    // **The headline, the provenance and the drill-in control share one
-    // wrapped row.** This pane covers the window and its content has to fit
-    // it: a control laid out past the frame is unreachable, and there are
-    // seven halves under this one scroll (`crate::snapshot::clipped`).
-    ui.horizontal_wrapped(|ui| {
-        ui.label(headline(row));
-        if let Some(weak) = provenance(row) {
-            ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), weak);
-        }
-        drill::control(ui, model, &row.seq);
-    });
-    ui.horizontal_wrapped(|ui| {
-        for said in [wounded(row), auth(row)].into_iter().flatten() {
-            ui.colored_label(theme::NOTICE, said);
-        }
-    });
-    drill::records(ui, model, &row.seq);
-}
-
-/// The files half: where the work lands, the listing, and the preview.
-fn files_half(ui: &mut egui::Ui, files: Option<&Files>) {
-    let Some(answer) = files else {
-        ui.label(egui::RichText::new(FILES_HEAD).strong());
-        ui.label(NOT_ANSWERED_FILES);
-        return;
-    };
-    // **The heading shares its line with where the work lands**, and the
-    // walked entries share one wrapped line with each other: seven halves ride
-    // under this pane's one scroll and a control laid out past the frame is
-    // unreachable (`crate::snapshot::clipped`).
-    ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(FILES_HEAD).strong());
-        if let Some(dir) = &answer.working_dir {
-            ui.colored_label(
-                theme::tone_ink(&crate::reply::convs::Tone::Weak),
-                format!("working in {dir}"),
-            );
-        }
-    });
-    match &answer.listing {
-        None => {
-            ui.label(NO_WORKTREE);
-        }
-        Some(listing) if listing.rows.is_empty() => {
-            ui.label(EMPTY_WORKTREE);
-        }
-        Some(listing) => {
-            ui.horizontal_wrapped(|ui| {
-                for row in &listing.rows {
-                    ui.label(entry(row));
-                }
-                if listing.truncated {
-                    ui.colored_label(theme::NOTICE, TRUNCATED);
-                }
-            });
-        }
-    }
-    if let Some(preview) = &answer.preview {
-        ui.label(egui::RichText::new(previewed(preview)).monospace());
-    }
-}
-
-/// One walked entry as a line: a directory wears its slash, a file its size.
-pub fn entry(row: &crate::reply::files::FileRow) -> String {
-    if row.dir {
-        format!("{}/", row.path)
-    } else {
-        format!("{}  {} B", row.path, row.size)
-    }
-}
-
-/// A bounded preview as text — the engine's three classes, and the rung-3
-/// word painted as itself. Shared with the drill-in's two capture logs
-/// ([`drill`]), which are the same bounded reading.
-pub fn previewed(preview: &Preview) -> String {
-    match preview {
-        Preview::Text(text) => text.clone(),
-        Preview::Truncated { text, size } => format!("{text}\n… {size} bytes in all"),
-        Preview::Binary { size } => format!("binary — {size} bytes"),
-        Preview::Unknown(word) => format!("a {word:?} preview, which this seat cannot show"),
-    }
-}
-
-/// The orphan banner, or none: [`crate::reply::steps::NONE`] is the engine's
-/// own *nothing is orphaned* and paints as silence rather than as a badge.
-pub fn orphaned(listing: &Steps) -> Option<String> {
-    if listing.orphan == crate::reply::steps::NONE {
-        return None;
-    }
-    Some(match &listing.orphan_reason {
-        Some(reason) => format!("an orphaned {} tail — {reason}", listing.orphan),
-        None => format!("an orphaned {} tail", listing.orphan),
-    })
-}
-
-/// **The one line a step always gets**: its address, how it ended, what it
-/// cost — and the retries, where there were any.
-pub fn headline(row: &StepRow) -> String {
-    let said = format!("{}  {} — {} tokens", row.seq, row.framing, row.tokens.total);
-    if row.attempts > 1 {
-        return format!("{said}, {} attempts", row.attempts);
-    }
-    said
-}
-
-/// The weak line under it — when it ran and what commit read it — or none
-/// where the step's record carried neither.
-pub fn provenance(row: &StepRow) -> Option<String> {
-    let mut parts = Vec::new();
-    // A word and not an arrow: the toolkit's default font has no glyph for
-    // `→` and paints a box in its place — photographed, not guessed.
-    if let (Some(from), Some(to)) = (&row.started_at, &row.ended_at) {
-        parts.push(format!("{from} to {to}"));
-    }
-    if let Some(commit) = &row.commit {
-        parts.push(format!("at {commit}"));
-    }
-    (!parts.is_empty()).then(|| parts.join("  "))
-}
-
-/// The wound, said once: the class verbatim, and the adapter's own words
-/// where it left any.
-pub fn wounded(row: &StepRow) -> Option<String> {
-    if row.wound == crate::reply::steps::NONE {
-        return None;
-    }
-    Some(match &row.wound_reason {
-        Some(reason) => format!("wound: {} — {reason}", row.wound),
-        None => format!("wound: {}", row.wound),
-    })
-}
-
-/// The sign-in affordance: offered at all, and the provider row it points at
-/// when one was derivable.
-///
-/// **Offered on the wound's `refused` arm, not on a flag beside it.** The flag
-/// (`auth_failed`) was deleted from the row at PROTOCOL 9 because it said what
-/// the wound class already said, and two spellings of one fact are two things
-/// that can disagree — so the affordance and [`wounded`] above now read the
-/// same word, and a step cannot offer a sign-in while its badge denies there
-/// was a refusal.
-pub fn auth(row: &StepRow) -> Option<String> {
-    if row.wound != crate::reply::steps::REFUSED {
-        return None;
-    }
-    Some(match &row.auth_row {
-        Some(provider) => format!("a sign-in is wanted on {provider}"),
-        None => "a sign-in is wanted".to_owned(),
-    })
 }
 
 #[cfg(test)]

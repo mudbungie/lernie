@@ -26,6 +26,8 @@ pub mod subject;
 pub use fold::Fold;
 pub use rows::{Row, rows};
 
+use crate::ui::theme;
+
 /// **The word this pane wears**, and the name of the column it is (bl-dfda).
 /// It is painted by `crate::ui::shell` — above the pane in the broad shape, on
 /// the navigation bar in the narrow one — because a column's name has one home
@@ -80,16 +82,37 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
                 .into_iter()
                 .enumerate()
             {
-                ui.separator();
-                ui.strong(&row.who);
-                match &row.fold {
-                    Some(fold) => folded(ui, at, &row, fold),
-                    None => {
-                        ui.label(&row.said);
-                    }
-                }
+                ui.add_space(theme::space::S);
+                block(ui, at, &row);
             }
         });
+}
+
+/// **One entry as a ruled block** (STYLE §5): a [`theme::RULE`]-wide line in
+/// the speaker's weight standing beside a header in the same ink, and the body
+/// wrapping at the width it has. Aligned, ruled, never bubbled — every block
+/// starts at the same left edge, so a transcript reads as one column of prose
+/// and the weight at its edge says who is speaking without spending a hue.
+///
+/// **A failure is the one row painted in a STATE and not in a weight.** Colour
+/// means state (STYLE §1) and *this call failed* is the one thing a transcript
+/// says that is one — so an errored tool result wears the error accent on its
+/// rule and its header, where every other row wears `theme::speaker`.
+fn block(ui: &mut egui::Ui, at: usize, row: &Row) {
+    let ink = if row.failed {
+        theme::accent(theme::State::Error)
+    } else {
+        theme::speaker(row.weight)
+    };
+    theme::paint::ruled(ui, ink, |ui| {
+        ui.label(egui::RichText::new(&row.who).color(ink).strong());
+        match &row.fold {
+            Some(fold) => folded(ui, at, row, fold),
+            None => {
+                ui.label(&row.said);
+            }
+        }
+    });
 }
 
 /// **A machine's answer, folded**: its first few lines, and one control
@@ -115,7 +138,15 @@ fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
         open = !open;
         ui.data_mut(|d| d.insert_temp(id, open));
     }
-    ui.label(if open { &row.said } else { &fold.head });
+    // **The head is dimmed while there is more of it**, so *this is not all of
+    // it* is read off the weight of the text before anybody reads the control
+    // that says so — and the whole answer, once asked for, stands in body ink
+    // like every other row.
+    if open {
+        ui.label(&row.said);
+    } else {
+        ui.label(egui::RichText::new(&fold.head).color(theme::INK_WEAK));
+    }
 }
 
 #[cfg(test)]

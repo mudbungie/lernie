@@ -22,17 +22,24 @@
 use crate::reply::agent::Agent;
 use crate::reply::transcript::{EntryKind, Transcript};
 use crate::ui::records::header;
+use crate::ui::theme;
 
 /// **What the pane says over a conversation nobody has been answered about
 /// yet** — the records pane's own sentence, because it is the same absence.
 pub use header::NOT_ANSWERED;
 
-/// **The identity line**: what it is called, how it is resting, and — where
-/// the costing line below does not already say it — which model answered.
+/// **The identity line, as one string** — what it is called, how it is
+/// resting, and, where the costing line below does not already say it, which
+/// model answered.
 ///
 /// The tip the records pane's own `named` carries is left out on purpose: a
 /// branch oid is what a `git show` outside this seat takes, and the question
 /// this line answers is *am I reading something that is still running*.
+///
+/// **The glass paints its parts, not this string** ([`render`]): the three
+/// clauses carry three inks and a sentence carries one, so the joined form is
+/// what a reader outside the window is handed — a CLI line, a test, a
+/// message — and the header is the same three facts weighted.
 pub fn named(row: &Agent, transcript: &Transcript) -> String {
     let said = format!("{} — {}", row.display, header::resting(row));
     match answered_by(row, transcript) {
@@ -81,20 +88,32 @@ pub fn costing(row: &Agent) -> String {
 /// Paint the header, or the sentence for a conversation nobody has answered
 /// about yet.
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
-    let weak = crate::ui::theme::tone_ink(&crate::reply::convs::Tone::Weak);
     let Some(row) = model.records.agent.as_ref() else {
-        ui.colored_label(weak, NOT_ANSWERED);
+        ui.colored_label(theme::INK_WEAK, NOT_ANSWERED);
         return;
     };
-    ui.strong(named(row, &model.transcript));
+    // **The identity line is runs, not a sentence** (STYLE §2): the name in
+    // body ink because it is what the reader came for, the resting clause in
+    // that state's own accent because *is this still running* is the question
+    // the header exists to answer at a glance, and the model one step weaker
+    // because it is context for the two above it. An unknown wire word keeps
+    // body ink rather than borrowing a state it is not (`theme::state_ink`).
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new(&row.display).color(theme::INK).strong());
+        ui.label(egui::RichText::new(header::resting(row)).color(theme::state_ink(&row.state)));
+        if let Some(model_id) = answered_by(row, &model.transcript) {
+            ui.label(egui::RichText::new(model_id).color(theme::INK_WEAK));
+        }
+    });
     // **A conversation that died on a bad model id must not look like one that
     // finished**, which is the ball's own sentence: the provider's clause is
     // the one fact that tells the two apart, and it goes above the costing
-    // because it is why there is no more of it.
+    // because it is why there is no more of it. It is said in the error accent
+    // and not in a note's, because it will not mend itself.
     if let Some(failure) = &row.failure {
-        ui.colored_label(crate::ui::theme::NOTICE, failure);
+        ui.colored_label(theme::accent(theme::State::Error), failure);
     }
-    ui.colored_label(weak, costing(row));
+    ui.colored_label(theme::INK_WEAK, costing(row));
 }
 
 #[cfg(test)]

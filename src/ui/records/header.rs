@@ -34,7 +34,6 @@
 //! far end thinks is available — and the controls stay live.
 
 use crate::reply::agent::{Agent, Fullness, Offer};
-use crate::reply::convs::Tone;
 use crate::reply::spend::Figure;
 use crate::ui::{Model, theme};
 
@@ -55,26 +54,37 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // **Taken by value before anything is painted**, exactly as the pane's own
     // two halves take their listings: the offers line's control acts on the
     // model, and the row it reads is a snapshot of the same frame.
+    // **The section word is the divider** (`docs/STYLE.md` §5): `L` of air, a
+    // hairline and the word in weak ink, with the header's own line under it.
+    theme::paint::section(ui, HEAD);
     let Some(row) = model.records.agent.clone() else {
-        ui.label(egui::RichText::new(HEAD).strong());
         ui.label(NOT_ANSWERED);
         return;
     };
     let row = &row;
+    ui.label(named(row));
+    // **What is wrong with it shares one wrapped row, and the figures share
+    // the next** (bl-3686's rule, one turn further): the pane has to FIT the
+    // narrowest shape this layout promises, and what is dropped for the room
+    // is a line break, never a fact. The inks still tell them apart — a
+    // refusal is the error accent, a note the annotation one.
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(HEAD).strong());
-        ui.label(named(row));
+        if row.display_only {
+            ui.colored_label(theme::accent(theme::State::Annotation), DISPLAY_ONLY);
+        }
+        if let Some(said) = row.failure.clone() {
+            ui.colored_label(theme::accent(theme::State::Error), said);
+        }
+        if let Some(said) = parked(row) {
+            ui.colored_label(theme::accent(theme::State::Annotation), said);
+        }
     });
-    if row.display_only {
-        ui.colored_label(theme::NOTICE, DISPLAY_ONLY);
-    }
-    for said in [row.failure.clone(), parked(row)].into_iter().flatten() {
-        ui.colored_label(theme::NOTICE, said);
-    }
-    if let Some(said) = about(row) {
-        ui.colored_label(theme::tone_ink(&Tone::Weak), said);
-    }
-    ui.label(costing(row));
+    ui.horizontal_wrapped(|ui| {
+        if let Some(said) = about(row) {
+            ui.colored_label(theme::INK_WEAK, said);
+        }
+        ui.label(costing(row));
+    });
     // **The offers line and the one control that answers it share a row**
     // (bl-3686): the sentence says what the engine is offering, and the
     // cascade is the half of that sentence no other surface in this window
@@ -82,7 +92,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // unreachable (`crate::snapshot::clipped`), so it wraps rather than
     // taking a line of its own.
     ui.horizontal_wrapped(|ui| {
-        ui.colored_label(theme::tone_ink(&Tone::Weak), doing(row));
+        ui.colored_label(theme::INK_WEAK, doing(row));
         super::cascade::control(ui, model, row);
     });
 }

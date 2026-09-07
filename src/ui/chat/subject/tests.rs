@@ -86,10 +86,8 @@ fn the_costing_line_carries_the_spend_and_the_model() {
     );
 }
 
-/// **On the glass**, which is where the ball was filed from: the word
-/// *conversation* was the whole of what the pane said about its subject.
-#[test]
-fn the_pane_says_which_conversation_it_is_showing() {
+/// The stopped conversation the two beats below read, in the window.
+fn showing() -> crate::ui::Model {
     let mut model = seated();
     let mut row = row();
     row.display = "ZucchiniFrost".to_owned();
@@ -97,9 +95,65 @@ fn the_pane_says_which_conversation_it_is_showing() {
     row.refused = false;
     row.spend.tokens.total = 5_089_466;
     model.records.agent = Some(row);
+    model
+}
+
+/// **On the glass**, which is where the ball was filed from: the word
+/// *conversation* was the whole of what the pane said about its subject.
+///
+/// **The line is read as its parts** since bl-d1ae: the three clauses carry
+/// three inks and so are three runs, where [`named`] joins them for a reader
+/// outside the window.
+#[test]
+fn the_pane_says_which_conversation_it_is_showing() {
+    let model = showing();
     let painted = pane(|ui| crate::ui::chat::render(ui, &model));
-    assert!(painted.contains("ZucchiniFrost — stopped"), "{painted}");
-    assert!(painted.contains("5089466 tokens"), "{painted}");
+    for clause in ["ZucchiniFrost", "stopped", "5089466 tokens"] {
+        assert!(painted.contains(clause), "{painted}");
+    }
+}
+
+/// **The resting clause wears the state's own accent** (STYLE §2), which is
+/// what makes *is this still running* answerable at a glance rather than by
+/// reading a sentence. A stopped conversation will not mend itself, so it is
+/// said in the error accent.
+#[test]
+fn the_resting_clause_is_painted_in_the_state_s_accent() {
+    let mut model = showing();
+    let window = crate::paint_probe::frame::Window::new();
+    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let resting = runs
+        .iter()
+        .find(|run| run.text == "stopped")
+        .expect("the resting clause is on the glass");
+    assert_eq!(
+        resting.ink,
+        crate::ui::theme::accent(crate::ui::theme::State::Error)
+    );
+    let named = runs
+        .iter()
+        .find(|run| run.text == "ZucchiniFrost")
+        .expect("the name is on the glass");
+    assert_eq!(named.ink, crate::ui::theme::INK, "the name is body ink");
+}
+
+/// **The model that answered last stands on the line, one step weaker** —
+/// where the engine holds no context reading, which is the quiescent case the
+/// question is actually asked in.
+#[test]
+fn the_last_model_stands_on_the_line_in_weak_ink_where_the_engine_holds_no_reading() {
+    let mut model = showing();
+    model.transcript = answered("house-model-9");
+    if let Some(row) = model.records.agent.as_mut() {
+        row.context = None;
+    }
+    let window = crate::paint_probe::frame::Window::new();
+    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let answered_by = runs
+        .iter()
+        .find(|run| run.text == "house-model-9")
+        .expect("the model is on the glass");
+    assert_eq!(answered_by.ink, crate::ui::theme::INK_WEAK);
 }
 
 /// **A conversation that died on a bad model id must not look like one that
@@ -111,10 +165,16 @@ fn a_failed_conversation_says_so_where_it_is_being_read() {
     let mut row = row();
     row.failure = Some("no credential for provider row \"work\"".to_owned());
     model.records.agent = Some(row);
-    let painted = pane(|ui| crate::ui::chat::render(ui, &model));
-    assert!(
-        painted.contains("no credential for provider row"),
-        "{painted}"
+    let window = crate::paint_probe::frame::Window::new();
+    let said = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model))
+        .into_iter()
+        .find(|run| run.text.contains("no credential for provider row"))
+        .expect("the provider's clause is on the glass");
+    // **In the error accent, not a note's**: a conversation that died will not
+    // mend itself, which is the one state red means.
+    assert_eq!(
+        said.ink,
+        crate::ui::theme::accent(crate::ui::theme::State::Error)
     );
 }
 

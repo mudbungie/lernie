@@ -3838,6 +3838,41 @@ paint probe that reads one back, and nowhere else. The ink a run reached the
 glass in is already on the paint walk (`paint_probe::Seen::ink`), which is
 what makes *the asking row is green* an assertion rather than a picture.
 
+**The anatomy is paint, written once** (`src/ui/theme/paint.rs`; bl-d1ae).
+The window it replaces had a `selectable_label` here, a `Button` there and a
+fill painted under a run somewhere else, each with its own box, which is how
+a face ends up with no hierarchy. Five shapes now cover every pane and no pane
+draws its own: the **row** (full width, `ROW` tall, one elided run, a tint
+under the pointer, `RAISED` when chosen, and a `RULE`-wide accent at its left
+edge — the brand when chosen, else the row's state), the **rail** and the
+**elbow** (the phone's L-shaped threading, in faint ink), the **ruled block**
+(the transcript's shape: a `RULE` in the speaker's weight beside the block),
+the **section** (`L` of air, a hairline, a word in weak ink) and the **field**
+(`SURFACE`, the brand ring while it holds the caret, and a tint where the pane
+has something to say — the composer glows in the attention accent while its
+conversation is asking). A row is ONE run so a click aimed by painted glyphs
+lands on exactly what the pane composed, and the accessibility node it
+registers is labelled with the same words — which is what keeps the snapshot
+walk and the parity ledger reading the restyled window unchanged.
+
+**What the eye lands on is green, and only green.** A wall or a conversation
+that is asking wears the attention rule; the queue's entry in the roster's
+band wears the attention accent while anything waits; the composer glows. A
+window with nothing waiting has nothing green on it, which is the same fact
+read the other way. Every other accent is a state on the six-colour ruling,
+read off the wire's own words through `theme::state_of` and
+`theme::tone_ink` — this seat never infers a state from prose.
+
+**A label off the window is a layout question** (`src/snapshot/clipped.rs`;
+bl-d1ae). The assertion's own doc drew that line and its filter did not: egui
+marks selectable prose as clickable so a pointer can select it, so every
+sentence of a covering pane was judged as a control, and a pane could not
+grow a word of prose past the window even inside its own scroll — the records
+pane at the narrow shape was 89 points of wrapped prose over, with every
+control inside. Labels are now outside the set the walk judges, with the
+other-direction beat beside it; §4.32's density constraint still holds for
+every CONTROL, which is the reachability the assertion exists for.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -3944,6 +3979,7 @@ what makes *the asking row is green* an assertion rather than a picture.
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
 | `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
+| `src/ui/roster/wall/controls.rs` | the eight per-wall controls in one band under the aimed row, the unmaking last. Split from `wall.rs` at the design-time budget. | ~120 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
 | `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the engine's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |
@@ -3955,6 +3991,8 @@ what makes *the asking row is green* an assertion rather than a picture.
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
+| `src/ui/records/steps.rs` | the steps half: the orphan banner, one row per step with its drill-in, and the step's strings. Split from `records.rs` at the cap. | ~150 |
+| `src/ui/records/files.rs` | the files half: the worktree's listing, its preview in each of its four classes, and the sentence for a listing cut short. | ~75 |
 | `src/ui/records/header.rs` | the pane's header (§4.32): the conversation's own row, said several facts to a line because the pane has to fit the window. | ~215 |
 | `src/ui/records/cascade.rs` | the pane's one act on the conversation itself (§4.20, §4.32): the stop that takes the subtree, its arming, and the one site the boundary's `children` field has in this window. | ~95 |
 | `src/ui/records/drill.rs` | one step's records under the row that addresses them (§4.32): the control on the row, and the bytes rather than a tree. | ~155 |
@@ -4012,7 +4050,8 @@ what makes *the asking row is green* an assertion rather than a picture.
 | `src/offframe/signin.rs` | one pass of the sign-in lane: the held read on the followed provider row, stamped with what it is about (§4.24). | ~90 |
 | `src/ui/unmake.rs` | the unmaking pane (§4.20): the wall it would unmake, the refusal stated before the act, the arming box, and the act that is on the glass without being live until the name matches. | ~135 |
 | `src/ui/model/unmake.rs` | an unmaking between frames — the subject it holds rather than follows, the arming that is a readiness test and is never spent, and whether it has been asked. | ~105 |
-| `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the truncating headline with the selection drawn under it, and the two lines hung beneath a row. The row's own acts split out onto the seam a gesture draws (`convs/menu.rs`). | ~245 |
+| `src/ui/convs.rs` | the aimed wall's conversations: the four emptinesses, the headline, the age, and `continues` — whether a thread goes on past a row, which is what the connectors are drawn from. The row itself is `convs/row.rs`, its acts `convs/menu.rs`. | ~165 |
+| `src/ui/convs/row.rs` | one threaded row: the row with its state rule, the lines hung beneath it at its words' edge, the subtree control as a row under them, and the connectors — a rail per ancestor thread that continues, an elbow into the words. | ~200 |
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which of the composer's two parameter boxes a row menu asked for the cursor in, and the one door that names a conversation and goes there (§4.23). Taken once, by the frame that paints the box. | ~85 |
 | `src/ui/chat.rs` | the conversation pane: where it opens, what it follows, and how a folded row is painted. | ~110 |
@@ -4027,6 +4066,7 @@ what makes *the asking row is green* an assertion rather than a picture.
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~210 |
+| `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |

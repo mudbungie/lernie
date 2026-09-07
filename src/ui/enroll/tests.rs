@@ -16,8 +16,8 @@ use fixtures::{file, opened};
 
 use super::{CLOSE, HEADING, KEPT, MINTING, NAME_HINT, OPEN, SEND};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, painted, seated};
-use crate::ui::{Enrolling, Grade, Model};
+use crate::test_support::window::{click, painted, seated, seen};
+use crate::ui::{Enrolling, Grade, Model, theme};
 
 /// **The control hangs off the aimed row and off no other** — an enrollment
 /// mints the pair `(client, workspace)`, and the workspace is exactly what an
@@ -195,6 +195,57 @@ fn the_form_s_close_drops_an_unanswered_enrollment() {
     let window = Window::new();
     click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.enroll, None);
+}
+
+/// **The warning under the symbol is a note, and is said in the note's ink**
+/// (`docs/STYLE.md` §5, *a notice*): it is neither a failure nor a state of
+/// the box being enrolled, it is the one thing an operator cannot see by
+/// looking — so it wants salience and gets the annotation accent, never the
+/// error one.
+#[test]
+fn the_warning_that_the_material_is_kept_nowhere_is_note_ink() {
+    let mut model = opened();
+    fixtures::file(&mut model);
+    let window = Window::new();
+    let runs = seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let run = runs
+        .iter()
+        .find(|run| run.text == KEPT)
+        .expect("the warning reached the glass");
+    assert_eq!(run.ink, theme::accent(theme::State::Annotation));
+}
+
+/// **The two grades are rows, one per line, and clicking a word chooses it**
+/// (§5, *a row*): never a `selectable_label`, which draws a box, and never two
+/// on one line — this pane is the narrowest in the window and a pair of
+/// controls side by side is how its `foot` left the glass once (bl-dc07).
+#[test]
+fn the_grades_stand_one_row_per_line_and_a_click_on_one_chooses_it() {
+    let mut model = opened();
+    let window = Window::new();
+    let runs = seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let word = |grade: Grade| {
+        runs.iter()
+            .find(|run| run.text == grade.word())
+            .unwrap_or_else(|| panic!("{grade:?} is not on the glass"))
+            .laid
+    };
+    let (first, second) = (word(Grade::Operator), word(Grade::Foot));
+    assert!(
+        second.min.y - first.min.y >= theme::ROW - 1.0,
+        "one grade per line: {first:?} against {second:?}"
+    );
+    click(&window, &Grade::Foot.word(), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(model.enroll.as_ref().map(|e| e.grade), Some(Grade::Foot));
+    click(&window, &Grade::Operator.word(), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(
+        model.enroll.as_ref().map(|e| e.grade),
+        Some(Grade::Operator)
+    );
 }
 
 /// The fixtures both halves share.

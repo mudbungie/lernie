@@ -26,8 +26,8 @@
 //! be capability theatre; a bare box with no sentence would look like a free
 //! string. So it is a box with [`ROLE_SAID`] under it.
 
+use crate::reply::governing::Governing;
 use crate::reply::rail::{Card, Notch, Rail};
-use crate::reply::{convs::Tone, governing::Governing};
 use crate::ui::{Model, theme};
 
 /// The spine half's own heading.
@@ -56,13 +56,23 @@ pub const GOAL_HINT: &str = "what the fork is for";
 pub const ROLE_SAID: &str =
     "a role is a name the fork point's config declares, and this seat cannot list them yet";
 
+/// **What each of the fork's two boxes is worth**, in points, on
+/// `super::cascade::ARM_WIDTH`'s own reasoning: a `TextEdit` that asks for no
+/// width takes the whole of the line it starts on, so the role box, the goal
+/// box and the sentence that explains the first cost three lines where they
+/// fit in two — and this pane pays for every line it lays out
+/// (`crate::snapshot::clipped`).
+const BOX_WIDTH: f32 = 160.0;
+
 /// Paint the spine half: the governing commit, the draft, the notches and the
 /// cards hanging off them.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     governing_half(ui, model.records.governing.clone().as_ref());
-    ui.separator();
+    // **The section word is what divides the two halves** (`docs/STYLE.md`
+    // §5): the hairline and the word are one thing on the glass, so nothing
+    // else is painted between them and the draft opens with its own.
     let Some(spine) = model.records.rail.clone() else {
-        ui.label(egui::RichText::new(SPINE_HEAD).strong());
+        theme::paint::section(ui, SPINE_HEAD);
         ui.label(NOT_ANSWERED_SPINE);
         return;
     };
@@ -79,18 +89,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 /// The governing commit: the engine's own sentence, then the paths its tree
 /// holds.
 fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
+    theme::paint::section(ui, GOVERNING_HEAD);
     let Some(config) = answer else {
-        ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
         ui.label(NOT_ANSWERED_GOVERNING);
         return;
     };
-    // **One wrapped row, not two** (bl-3686): the heading, the engine's own
-    // sentence and the paths its tree holds are three facts about one commit,
-    // and the pane has to fit the narrowest shape this layout promises
+    // **One wrapped row, not two** (bl-3686): the engine's own sentence and
+    // the paths its tree holds are two facts about one commit, and the pane
+    // has to fit the narrowest shape this layout promises
     // (`crate::snapshot::clipped`, §4.32). What was dropped to make room for
     // the header's cascade is the line break, never a path.
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(GOVERNING_HEAD).strong());
         ui.label(format!("{} — {}", config.label(), config.oid));
         if config.files.is_empty() {
             ui.label(NO_FILES);
@@ -104,11 +113,19 @@ fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
 
 /// The two boxes a fork is composed from, and the sentence under the first.
 fn draft(ui: &mut egui::Ui, model: &mut Model) {
+    theme::paint::section(ui, SPINE_HEAD);
     ui.horizontal_wrapped(|ui| {
-        ui.label(egui::RichText::new(SPINE_HEAD).strong());
-        ui.add(egui::TextEdit::singleline(&mut model.forking.role).hint_text(ROLE_HINT));
-        ui.add(egui::TextEdit::singleline(&mut model.forking.goal).hint_text(GOAL_HINT));
-        ui.colored_label(theme::tone_ink(&Tone::Weak), ROLE_SAID);
+        ui.add(
+            egui::TextEdit::singleline(&mut model.forking.role)
+                .desired_width(BOX_WIDTH)
+                .hint_text(ROLE_HINT),
+        );
+        ui.add(
+            egui::TextEdit::singleline(&mut model.forking.goal)
+                .desired_width(BOX_WIDTH)
+                .hint_text(GOAL_HINT),
+        );
+        ui.colored_label(theme::INK_WEAK, ROLE_SAID);
     });
 }
 
@@ -117,7 +134,7 @@ fn notch(ui: &mut egui::Ui, model: &mut Model, row: &Notch) {
     ui.horizontal_wrapped(|ui| {
         ui.label(headline(row));
         if let Some(said) = seated(row) {
-            ui.colored_label(theme::tone_ink(&Tone::Weak), said);
+            ui.colored_label(theme::INK_WEAK, said);
         }
         let Some(commit) = row.commit.clone() else {
             return;
@@ -144,7 +161,7 @@ fn cards(ui: &mut egui::Ui, spine: &Rail) {
         ui.horizontal_wrapped(|ui| {
             ui.label(card(row));
             if let Some(said) = &row.tail {
-                ui.colored_label(theme::tone_ink(&Tone::Weak), said.clone());
+                ui.colored_label(theme::INK_WEAK, said.clone());
             }
         });
     }

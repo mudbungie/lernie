@@ -62,13 +62,19 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.showing(crate::ui::Listing::Queue) {
         return false;
     }
-    ui.heading(HEADING);
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_queue();
-        }
+    // **The heading, then one line carrying the way out** (`docs/STYLE.md` §5,
+    // *a covering pane*). This pane is the one that has no subject — the union
+    // over every channel is what it is about — so the line under the heading
+    // carries the close alone, at the end where the other panes' is.
+    ui.label(egui::RichText::new(HEADING).heading().color(theme::INK));
+    ui.horizontal(|ui| {
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if ui.button(CLOSE).clicked() {
+                model.close_queue();
+            }
+        });
     });
-    ui.separator();
+    ui.add_space(theme::space::S);
     let waiting = model.waiting.clone();
     if waiting.is_empty() {
         ui.label(NOT_ANSWERED);
@@ -94,8 +100,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                 if section.rows.is_empty() {
                     continue;
                 }
-                ui.separator();
-                ui.label(crate::ui::roster::header(&section.channel));
+                ui.add_space(theme::space::S);
+                ui.colored_label(theme::INK_WEAK, crate::ui::roster::header(&section.channel));
                 for row in &section.rows {
                     waiting_row(ui, model, row);
                 }
@@ -106,22 +112,36 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 
 /// One row: the headline, why it is asking, and what can be done about it.
 fn waiting_row(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
-    ui.label(headline(row));
-    // The flag first — it is the only line somebody wrote.
-    for said in [flagged(row), row.failure.clone(), parked(row)]
-        .into_iter()
-        .flatten()
-    {
-        ui.colored_label(theme::NOTICE, said);
+    // **Every row here wears the attention rule**, and it is the one pane
+    // where that is a tautology rather than a reading: a row is on this pane
+    // because it is asking for the operator (`docs/STYLE.md` §2, *the eye
+    // lands on green*). Never chosen — this pane selects nothing, and the
+    // brand would say the operator is standing on a row they are not.
+    theme::paint::row(
+        ui,
+        &headline(row),
+        theme::INK,
+        Some(theme::accent(theme::State::Attention)),
+        false,
+        0.0,
+    );
+    // The flag first — it is the only line somebody wrote. The failure is the
+    // one line that will not mend itself, so it alone is said in the error
+    // accent; the flag and the parked call are notes.
+    if let Some(said) = flagged(row) {
+        ui.colored_label(theme::accent(theme::State::Annotation), said);
+    }
+    if let Some(said) = row.failure.clone() {
+        ui.colored_label(theme::accent(theme::State::Error), said);
+    }
+    if let Some(said) = parked(row) {
+        ui.colored_label(theme::accent(theme::State::Annotation), said);
     }
     if let Some(said) = signalled(row) {
-        ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), said);
+        ui.colored_label(theme::INK_WEAK, said);
     }
     if !row.preview.is_empty() {
-        ui.colored_label(
-            theme::tone_ink(&crate::reply::convs::Tone::Weak),
-            row.preview.clone(),
-        );
+        ui.colored_label(theme::INK_WEAK, row.preview.clone());
     }
     acts(ui, model, row);
 }
@@ -129,12 +149,18 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
 /// The row's controls, or the sentence that stands where they would be.
 fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
     if model.wall(&row.workspace).is_none() {
-        ui.colored_label(theme::NOTICE, crate::ui::roster::NO_NAME_HERE);
+        ui.colored_label(
+            theme::accent(theme::State::Annotation),
+            crate::ui::roster::NO_NAME_HERE,
+        );
         return;
     }
     let mut fired = None;
     let mut verdict = None;
+    // **The acts band stands in from the row it answers**, so a column of
+    // rows reads as rows and the controls under one read as its own.
     ui.horizontal_wrapped(|ui| {
+        ui.add_space(theme::space::L);
         let answer = ui.button(SEEN);
         crate::ui::act::tag(&answer, &[crate::verbs::SEEN.word]);
         if answer.clicked() {

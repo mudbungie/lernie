@@ -106,22 +106,38 @@ fn lists(ctx: &egui::Context, model: &mut Model, roster_width: f32, convs_width:
         .resizable(false)
         .exact_width(roster_width)
         .show(ctx, |ui| {
-            ui.heading(keys::heading(
-                roster::HEADING,
-                model.focus == keys::Pane::Roster,
-            ));
+            heading(ui, roster::HEADING, model.focus == keys::Pane::Roster);
             roster::render(ui, model);
         });
     egui::SidePanel::left("conversations")
         .resizable(false)
         .exact_width(convs_width)
         .show(ctx, |ui| {
-            ui.heading(keys::heading(
-                convs::HEADING,
-                model.focus == keys::Pane::Conversations,
-            ));
+            heading(ui, convs::HEADING, model.focus == keys::Pane::Conversations);
             convs::render(ui, model);
         });
+}
+
+/// **A column's heading**: `HEADING` size, weak ink at rest, full ink with
+/// the brand mark when the arrows are its (`docs/STYLE.md` §5). No fill and
+/// no rule under it — the gap is the boundary.
+fn heading(ui: &mut egui::Ui, word: &str, focused: bool) {
+    let ink = if focused { theme::INK } else { theme::INK_WEAK };
+    ui.label(
+        egui::RichText::new(keys::heading(word, focused))
+            .heading()
+            .color(ink),
+    );
+}
+
+/// **The ink a notice is said in** — the state's, on the six-colour ruling:
+/// a failure of any of the five kinds is an error that will not mend itself
+/// until somebody acts, and a receipt is a note wanting salience.
+fn notice_ink(notice: &crate::ui::Notice) -> egui::Color32 {
+    match notice {
+        crate::ui::Notice::Said(_) => theme::accent(theme::State::Annotation),
+        _ => theme::accent(theme::State::Error),
+    }
 }
 
 /// **The narrow shape's navigation**: the three columns' own names, with the
@@ -194,7 +210,7 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
             // pane's heading stands above it here — the two list panes get
             // theirs from `lists` for the same reason.
             if broad {
-                ui.heading(chat::HEADING);
+                heading(ui, chat::HEADING, false);
             }
             chat::render(ui, model);
         }
@@ -226,7 +242,8 @@ fn notice(ctx: &egui::Context, model: &mut Model) {
             // instruction on the window. A second line in a bar already sized
             // to its content costs nothing that matters.
             ui.add(
-                egui::Label::new(egui::RichText::new(notice.line()).color(theme::NOTICE)).wrap(),
+                egui::Label::new(egui::RichText::new(notice.line()).color(notice_ink(&notice)))
+                    .wrap(),
             );
         });
     });

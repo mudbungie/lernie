@@ -20,6 +20,7 @@
 //! something the operator was not shown; it is something that was never said.
 
 use super::{Fold, fold};
+use crate::ui::theme::Speaker;
 
 /// The turn that has not settled yet.
 mod live;
@@ -41,22 +42,55 @@ use live::{half, live_rows, streaming};
 pub struct Row {
     pub who: String,
     pub said: String,
+    /// **Whose voice this is, told by weight and never by hue** (STYLE §5,
+    /// `theme::speaker`): the ink of the rule beside the block and of the
+    /// header over it. It is decided HERE, where the entry is read, because
+    /// the paint knows a row and only this knows what kind of entry made one.
+    pub weight: Speaker,
+    /// **Whether this row is a failure.** The one thing a transcript says that
+    /// is a STATE rather than a speaker — so it is the one row whose rule is
+    /// an accent (`State::Error`) instead of a weight, and colour still means
+    /// state.
+    pub failed: bool,
     /// What this row hides while it is folded, or `None` where it hides
     /// nothing — see [`fold`].
     pub fold: Option<Fold>,
 }
 
 impl Row {
-    /// **A row that hides nothing** — everything a person, a model or this
-    /// seat itself put on the glass. One constructor rather than a `fold: None`
-    /// at eight sites, because a row that hides something is the exception and
-    /// naming the exception is what keeps it visible.
-    fn plain(who: String, said: String) -> Self {
+    /// **A row that hides nothing and did not fail** — everything a person, a
+    /// model or this seat itself put on the glass. One constructor rather than
+    /// a `fold: None` at eight sites, because a row that hides something is
+    /// the exception and naming the exception is what keeps it visible.
+    pub(super) fn plain(who: String, said: String, weight: Speaker) -> Self {
         Self {
             who,
             said,
+            weight,
+            failed: false,
             fold: None,
         }
+    }
+}
+
+/// **The senders that are the operator's own.** litany writes a deposit from
+/// the seat with `user` (`corpus/answers/transcript.json`), and `op` is the
+/// same claim written short — the form a hand-written transcript and this
+/// crate's own fixtures carry. Reading either as a peer would paint the
+/// operator's own words in a peer's weight, which is the one weight on the
+/// glass a reader is certain about.
+const OPERATOR: [&str; 2] = ["user", "op"];
+
+/// **Who a delivered message is, by weight**: the operator's own deposit is
+/// their act and wears the brand, a sender the engine buried has ended, and
+/// anything else that speaks here is a peer.
+fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
+    if OPERATOR.contains(&sender) {
+        Speaker::Operator
+    } else if epitaph.is_some() {
+        Speaker::Ended
+    } else {
+        Speaker::Peer
     }
 }
 
@@ -89,12 +123,14 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             body,
         } => {
             let who = crate::reply::transcript::said_by(sender, sender_name.as_deref());
+            let weight = delivered(sender, epitaph.as_ref());
             vec![Row::plain(
                 match epitaph {
                     Some(word) => format!("{who} ({word})"),
                     None => who,
                 },
                 body.clone(),
+                weight,
             )]
         }
         EntryKind::Model {
@@ -110,6 +146,9 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
                 if *is_error { "failed" } else { "returned" }
             ),
             said: content.clone(),
+            // A tool answers for the model, not as it: a peer's weight.
+            weight: Speaker::Peer,
+            failed: *is_error,
             // **The one row in this pane that hides anything**, and only when
             // there is something to hide (`fold`).
             fold: fold::of(content),
@@ -122,6 +161,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
         } => vec![Row::plain(
             format!("compacted {first}–{last}"),
             summary.clone(),
+            Speaker::Peer,
         )],
         // The two unreadables, held apart: the engine could not read this one,
         // and this build does not know that one. Only the second is fixed by an
@@ -129,10 +169,12 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
         EntryKind::Raw => vec![Row::plain(
             format!("{} (unparsed)", entry.name),
             entry.raw.clone(),
+            Speaker::Peer,
         )],
         EntryKind::Unknown(word) => vec![Row::plain(
             format!("{} ({word}, which this seat cannot read)", entry.name),
             entry.raw.clone(),
+            Speaker::Peer,
         )],
     }
 }
@@ -152,10 +194,12 @@ fn block(model_id: &str, block: &Block) -> Option<Row> {
         Block::ToolUse { id, name, input } => Some(Row::plain(
             format!("{model_id} → {name} {id}"),
             input.clone(),
+            Speaker::Model,
         )),
         Block::Unknown(word) => Some(Row::plain(
             format!("{model_id} ({word}, which this seat cannot read)"),
             String::new(),
+            Speaker::Model,
         )),
     }
 }

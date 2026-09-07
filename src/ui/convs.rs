@@ -6,10 +6,15 @@
 //! chat pane, and a list that tried to be the pane would be neither.
 
 use crate::reply::convs::ConvRow;
-use crate::ui::{Aim, Model, theme};
+use crate::ui::Model;
 
 /// The row's own acts, on the menu a secondary click opens.
 pub mod menu;
+/// **One row on the glass**: its words, the lines under it, its subtree
+/// control and its threading connectors.
+mod row;
+
+pub use row::{HIDE, SHOW};
 
 /// What the list says with no wall aimed at.
 pub const NO_WALL: &str = "pick a workspace";
@@ -85,166 +90,35 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            for row in rows {
-                conversation(ui, model, &aim, &row, reveal);
+            for (at, conv) in rows.iter().enumerate() {
+                // **What a rail says is a fact about the LIST**, not about the
+                // row, so it is answered here where the whole list is in hand
+                // and handed down. Level `depth` itself is the row's own
+                // elbow and never a rail.
+                let rails: Vec<u64> = (1..conv.depth)
+                    .filter(|level| continues(&rows, at, *level))
+                    .collect();
+                row::conversation(ui, model, &aim, conv, &rails, reveal);
             }
         });
 }
 
-/// One row, indented to its depth under the conversation root.
-fn conversation(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, row: &ConvRow, reveal: bool) {
-    let selected = model.conversation.as_ref() == Some(&row.root_id);
-    ui.horizontal(|ui| {
-        ui.add_space(indent(row.depth));
-        subtree(ui, model, row);
-        // **The headline TRUNCATES, and that is a layout invariant rather than
-        // a nicety** (bl-b3b2). `Ui::selectable_label` lays its text with
-        // `TextWrapMode::Extend` — hard-coded, and doubly so inside a
-        // horizontal layout — so a long conversation name made the pane's inner
-        // `min_rect` wider than the pane. That is not merely an overflow: a
-        // side panel paints a frame sized to its own `max_width` and then
-        // reserves `inner_response.response.rect.max` from the layout, so the
-        // two disagree exactly when the shell's yield policy caps the pane
-        // below its content — and the strip between the painted frame and the
-        // reserved edge is covered by NO panel, with the central panel
-        // beginning after it. Nothing paints it, so what shows there is the
-        // window surface's own clear: black, or the desktop on the frames the
-        // alpha path lets through.
-        // **The selection is drawn UNDER the run** rather than by the widget,
-        // because the widget that drew it is the one that could not truncate.
-        // Same ink egui's own selectable seat uses, so a selected row is
-        // unchanged to look at.
-        //
-        // A RESERVED SLOT IS THE ONLY WAY TO GET IT THERE, and the first cut of
-        // this painted the fill after the label instead (bl-dc07). A painter
-        // appends to its layer, so "after" is "on top": the selected
-        // conversation became a solid bar of selection ink with its own name
-        // invisible underneath, which is the one row in the pane an operator is
-        // looking at. Nothing in the suite could see it — the glyphs WERE
-        // painted, so the paint walk read them back intact, and the defect
-        // lived entirely in what was drawn over them. `crate::snapshot` is the
-        // witness that caught it and the one that keeps it caught.
-        let ground = ui.painter().add(egui::Shape::Noop);
-        let seat = ui.add(
-            egui::Label::new(headline(row))
-                .truncate()
-                .selectable(false)
-                .sense(egui::Sense::click()),
-        );
-        // **Two reads hang off this one gesture** (`crate::ui::act`): selecting
-        // a conversation is what makes this seat read its transcript and open
-        // the follow lane on it, and neither has a control of its own.
-        crate::ui::act::tag(
-            &seat,
-            &[crate::verbs::TRANSCRIPT.word, crate::verbs::FOLLOW.word],
-        );
-        if selected {
-            ui.painter().set(
-                ground,
-                egui::Shape::rect_filled(
-                    seat.rect.expand2(ui.spacing().button_padding),
-                    ui.visuals().widgets.active.rounding,
-                    ui.visuals().selection.bg_fill,
-                ),
-            );
-        }
-        if selected && reveal {
-            seat.scroll_to_me(None);
-        }
-        if seat.clicked() {
-            model.select(&row.root_id.clone());
-        }
-        // **The row's own acts hang off the row** (bl-dbc9), on the gesture
-        // egui synthesizes from a right-click and from a touch long-press
-        // alike. It is hung on the same response the click above is taken
-        // from, so the menu is about the row a pointer is on and there is no
-        // second answer to *which conversation is this about*.
-        menu::show(&seat, model, aim, row);
-    });
-    // **The hue's own words** (REMOTE §9.10). A conversation whose latest model
-    // call failed paints red and, until this line, said nothing about why — so
-    // a wall whose provider row holds no credential was a list of red rows an
-    // operator opened one by one to learn the one thing all of them said.
-    //
-    // It goes ABOVE the preview because the preview is what was last said and
-    // this is why nothing more was: the row reads top-down as label, reason,
-    // last words. Both lines are painted in the row's own tone and neither is
-    // derived from the other — the engine states the hue and the clause
-    // separately, and a seat that inferred one would be holding a second
-    // opinion about a reading it did not take.
-    if let Some(failure) = &row.failure {
-        beneath(ui, row, failure);
-    }
-    if !row.preview.is_empty() {
-        beneath(ui, row, &row.preview);
-    }
-}
-
-/// **The control that opens what hangs under a conversation** (bl-00f5), on
-/// the rows that have anything under them and on no others.
+/// **Whether an ancestor level's thread continues past this row** — the whole
+/// of what a threading rail claims (`crate::ui::convs::row`).
 ///
-/// It names the act and how much of it there is — the pin pair's rule
-/// (§4.25) and the tool fold's (§4.11): two words rather than one that
-/// toggles, so a reader never has to work out which way it will go. The count
-/// is the engine's `members` less this row itself, which is the same number
-/// the headline already carries as *N members* and is not re-derived from the
-/// list.
-fn subtree(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
-    let Some(under) = row.members.checked_sub(1).filter(|under| *under > 0) else {
-        return;
-    };
-    let open = model.subtree_open(&row.root_id);
-    let word = if open {
-        format!("{HIDE} {under}")
-    } else {
-        format!("{SHOW} {under}")
-    };
-    if ui.small_button(word).clicked() {
-        model.toggle_subtree(&row.root_id.clone());
-    }
-}
-
-/// The word on the control while a subtree is folded — see [`subtree`].
-pub const SHOW: &str = "show";
-/// And the one it wears while it is open.
-pub const HIDE: &str = "hide";
-
-/// A line hung under a row's headline, at the row's own indent and in its own
-/// ink. One function rather than two blocks that must not drift: the second
-/// line of a row is a shape, and a second copy of it is a second shape.
+/// The engine's order is a root followed by its descendants, deepest last, so
+/// the answer is the first row below `at` that is NOT deeper than `level`: if
+/// it sits exactly at `level` the branch has another member coming and the
+/// rail carries on past this row; if it is shallower the branch ended here and
+/// a rail would be drawing a sibling that does not exist.
 ///
-/// **It TRUNCATES, for bl-b3b2's reason one line down** (bl-fef8). The headline
-/// above was made to truncate and this was left extending, which is the same
-/// defect with the same two costs. On the glass a preview ran flush into the
-/// next panel with no `…`, so a reader could not tell the sentence continued —
-/// while the wire's own `preview` field arrives already elided, which made the
-/// pane look like it was eliding when it was being cut. And in the layout it
-/// pushed the pane's `min_rect` past the panel's painted frame, and a side
-/// panel reserves the CONTENT's right edge from the layout while painting only
-/// its own: the strip between the two is covered by no panel at all, which is
-/// the ~150-point band of window surface the ball measured beside the list.
-/// Both are gone at once, because they were never two defects.
-fn beneath(ui: &mut egui::Ui, row: &ConvRow, said: &str) {
-    ui.horizontal(|ui| {
-        ui.add_space(indent(row.depth) + 12.0);
-        ui.add(
-            egui::Label::new(egui::RichText::new(said).color(theme::tone_ink(&row.tone)))
-                .truncate(),
-        );
-    });
-}
-
-/// How far a row hangs under its root, in points.
-///
-/// Added rather than multiplied, over a **bounded** count: there is no cast
-/// from the wire's own width to a screen coordinate, so there is no truncation
-/// to suppress a lint about. The cap is not a special case either — past it a
-/// list is unreadable whatever the indent says, and the label is what the extra
-/// width would have cost.
-fn indent(depth: u64) -> f32 {
-    const STEP: f32 = 16.0;
-    const DEEPEST: u64 = 8;
-    (0..depth.min(DEEPEST)).fold(0.0, |at, _| at + STEP)
+/// Pure, over the rows and an index, because that is the only shape of it a
+/// test can put a truth table against.
+fn continues(rows: &[ConvRow], at: usize, level: u64) -> bool {
+    rows.iter()
+        .skip(at + 1)
+        .find(|row| row.depth <= level)
+        .is_some_and(|row| row.depth == level)
 }
 
 /// A row's headline: its label, what it is doing, how long since it moved, and

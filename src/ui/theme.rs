@@ -18,6 +18,9 @@ use egui::Color32;
 
 use crate::reply::convs::{AgentState, Tone};
 
+/// The anatomy as paint: the row, the connector, the ruled block, the
+/// section and the field.
+pub mod paint;
 /// The adapter into egui: the tokens installed as a `Style` once per frame.
 mod visuals;
 

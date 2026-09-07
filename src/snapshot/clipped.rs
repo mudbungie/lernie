@@ -63,6 +63,15 @@ pub(crate) fn complaints(
     harness
         .query_all(by())
         .filter(|node| !node.is_hidden() && (node.is_clickable() || node.is_focusable()))
+        // **A label is not a control**, whatever the tree says about it: egui
+        // marks selectable text as clickable so a pointer can select it, and
+        // that made every sentence of a covering pane a thing this assertion
+        // judged — so a pane could not grow a word of prose past the window
+        // even inside its own scroll (bl-d1ae). The doc above already draws
+        // the line: a label that ran off the edge is a layout question. The
+        // role is read by its name because the type it comes in belongs to a
+        // crate this one does not declare (`fault`'s own reasoning, above).
+        .filter(|node| format!("{:?}", node.role()) != "Label")
         .filter_map(|node| {
             let bounds = node
                 .bounding_box()

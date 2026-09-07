@@ -3,6 +3,10 @@
 
 /// What hangs under a conversation, on the glass.
 mod subtree;
+/// The rule, the tint and the connectors a threaded row wears.
+mod threading;
+/// What the pane's own width does to the panels beside it.
+mod width;
 
 use super::{NO_CONVERSATIONS, NO_WALL, NOT_ANSWERED, age, headline, no_channel, render};
 use crate::paint_probe::frame::Window;
@@ -112,10 +116,18 @@ fn an_age_is_compact_and_never_negative() {
     }
 }
 
-/// A member hangs under its root, and its preview is painted in the row's own
-/// tone — which is not derivable from the state beside it.
+/// **A member hangs under its root, and its preview is a line after the
+/// first** — so it is weak ink (`docs/STYLE.md` §5), and it starts exactly
+/// where the row's own words do rather than at a second left edge.
+///
+/// **The fact this test used to hold moved with the restyle** (bl-d1ae): the
+/// preview carried the row's TONE, which put a second full-strength colour on
+/// a row whose one coloured thing is meant to be its rule. The tone is still
+/// the ink of the headline above it and of the failure clause beside it — both
+/// asserted below — and the preview is now the weak ink every line after the
+/// first is painted in.
 #[test]
-fn a_member_is_indented_and_its_preview_carries_the_row_s_tone() {
+fn a_member_is_indented_and_its_preview_is_weak_ink_at_the_row_s_own_edge() {
     let mut model = seated();
     model.convs = vec![crate::reply::convs::ConvRow {
         depth: 2,
@@ -123,11 +135,28 @@ fn a_member_is_indented_and_its_preview_carries_the_row_s_tone() {
         preview: "the galley lies about elision".to_owned(),
         ..conv("child", "a member")
     }];
-    let painted = pane(|ui| render(ui, &mut model));
-    assert!(painted.contains("a member"), "{painted}");
+    let window = Window::sized(900.0, 600.0);
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    let at = |needle: &str| {
+        runs.iter()
+            .find(|run| run.text.contains(needle))
+            .unwrap_or_else(|| panic!("{needle:?} is not on the glass"))
+            .clone()
+    };
+    let words = at("a member");
+    let preview = at("the galley lies about elision");
+    assert_eq!(preview.ink, crate::ui::theme::INK_WEAK);
     assert!(
-        painted.contains("the galley lies about elision"),
-        "{painted}"
+        (preview.laid.min.x - words.laid.min.x).abs() < 0.5,
+        "the preview starts under the words: {:?} vs {:?}",
+        preview.laid,
+        words.laid
+    );
+    assert!(
+        words.laid.min.y < preview.laid.min.y,
+        "and under them, not beside"
     );
 }
 
@@ -219,59 +248,4 @@ fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
         !painted.contains("[live]"),
         "no driver this seat has seen: {painted}"
     );
-}
-
-/// **The pane never takes more width than it paints** (bl-b3b2) — the operator
-/// sighting of a giant black box in the middle of the window, with the desktop
-/// flickering through it.
-///
-/// A side panel paints a frame sized to its own `max_width` and then reserves
-/// `inner_response.response.rect.max` from the layout. Those are two different
-/// numbers the moment the pane's content is wider than the cap
-/// `crate::ui::shell::widths` hands it — and the strip between them is covered
-/// by **no panel at all**, because the central panel begins after the reserved
-/// edge rather than after the painted one. Nothing paints that strip, so what
-/// shows is the window surface's own clear: black, or the compositor behind it
-/// on the frames the alpha path lets through. Paint that chose a wrong colour
-/// could never show the desktop; only paint that never happened can.
-///
-/// The cause was the row headline, laid by a widget that cannot truncate. So
-/// the assertion is the invariant rather than the widget: **at every width, the
-/// full-height panel grounds tile the window edge to edge with no gap.** 700
-/// points is the case the operator hit — the yield policy caps this pane at
-/// 149.3 there, well under the headline's natural width — and it left an
-/// 81-point hole.
-#[test]
-fn the_panel_grounds_tile_the_window_with_no_gap_for_the_clear_to_show_through() {
-    for width in [1400.0_f32, 1000.0, 900.0, 800.0, 700.0, 600.0] {
-        let mut model = seated();
-        model.convs = vec![conv(
-            "id",
-            "a conversation with a name long enough to overflow",
-        )];
-        let ctx = egui::Context::default();
-        let painted = ctx.run(
-            crate::paint_probe::frame::screen_sized(width, 600.0),
-            |ctx| crate::ui::render(ctx, &mut model),
-        );
-        let mut grounds: Vec<egui::Rect> = crate::paint_probe::fills_of(&painted)
-            .into_iter()
-            .filter(|(rect, ink)| rect.height() > 300.0 && ink.a() > 250)
-            .map(|(rect, _)| rect)
-            .collect();
-        grounds.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
-        let mut edge = 0.0_f32;
-        for ground in &grounds {
-            assert!(
-                (ground.min.x - edge).abs() < 0.5,
-                "at {width} points a strip of x{edge:.1}..{:.1} is painted by no panel: {grounds:?}",
-                ground.min.x
-            );
-            edge = ground.max.x;
-        }
-        assert!(
-            (edge - width).abs() < 0.5,
-            "at {width} points the grounds stop at {edge:.1}: {grounds:?}"
-        );
-    }
 }

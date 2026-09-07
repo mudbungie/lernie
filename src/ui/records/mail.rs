@@ -20,7 +20,6 @@
 //! is shown, and the file's own bytes ride under it — which is the only door
 //! this seat has to a deposit whose envelope the parse dropped.
 
-use crate::reply::convs::Tone;
 use crate::reply::inbox::Row;
 use crate::ui::{Model, theme};
 
@@ -38,7 +37,7 @@ pub const SAID_NOTHING: &str = "it says nothing";
 
 /// Paint the mail half.
 pub fn render(ui: &mut egui::Ui, model: &Model) {
-    ui.label(egui::RichText::new(HEAD).strong());
+    theme::paint::section(ui, HEAD);
     let Some(rows) = model.records.mail.as_ref() else {
         ui.label(NOT_ANSWERED);
         return;
@@ -47,13 +46,18 @@ pub fn render(ui: &mut egui::Ui, model: &Model) {
         ui.label(NO_MAIL);
         return;
     }
+    // **A deposit's header and what it says share a wrapped row**, for the
+    // reason the pane's other halves do: the room this pane's sections cost
+    // comes out of line breaks, never out of facts (bl-3686).
     for row in rows {
-        ui.label(headline(row));
-        if row.deposit.body.trim().is_empty() {
-            ui.colored_label(theme::tone_ink(&Tone::Weak), SAID_NOTHING);
-        } else {
-            ui.label(row.deposit.body.clone());
-        }
+        ui.horizontal_wrapped(|ui| {
+            ui.label(headline(row));
+            if row.deposit.body.trim().is_empty() {
+                ui.colored_label(theme::INK_WEAK, SAID_NOTHING);
+            } else {
+                ui.label(row.deposit.body.clone());
+            }
+        });
     }
 }
 

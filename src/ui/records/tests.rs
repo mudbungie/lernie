@@ -8,8 +8,8 @@ use super::{
 use crate::paint_probe::frame::Window;
 use crate::reply::files::{FileRow, Files, Listing, Preview};
 use crate::reply::steps::Steps;
-use crate::test_support::window::{click, pane, recorded, seated, step};
-use crate::ui::Model;
+use crate::test_support::window::{click, pane, recorded, seated, seen, step};
+use crate::ui::{Model, theme};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
 /// the conversation back where it was.
@@ -208,4 +208,52 @@ fn the_open_control_stands_the_pane_up_from_the_composer() {
     });
     assert!(model.showing(crate::ui::Listing::Records), "the pane is up");
     assert!(model.outbox.is_empty(), "a look composes nothing");
+}
+
+/// **The pane's anatomy is on the glass** (`docs/STYLE.md` §5, *a covering
+/// pane*): every half opens with its own word in weak ink, and the way out
+/// stands at the end of the subject's own line rather than on a line of its
+/// own.
+///
+/// It reads the runs and their ink rather than the layout, because the word
+/// that divides two halves is a claim about hierarchy and hierarchy here is
+/// spelled in ink: a section word in body ink would read as a fact.
+#[test]
+fn every_half_opens_with_its_word_in_weak_ink_and_the_close_rides_the_subject() {
+    let mut model = recorded();
+    let window = Window::new();
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            render(ui, &mut model);
+        });
+    });
+    let read = |word: &str| {
+        runs.iter()
+            .find(|run| run.text == word)
+            .unwrap_or_else(|| panic!("{word:?} is not on the glass"))
+            .clone()
+    };
+    for word in [
+        super::header::HEAD,
+        super::STEPS_HEAD,
+        super::FILES_HEAD,
+        super::spine::GOVERNING_HEAD,
+        super::spine::SPINE_HEAD,
+        super::mail::HEAD,
+    ] {
+        assert_eq!(read(word).ink, theme::INK_WEAK, "{word:?}");
+    }
+    let subject = read("on 20260830T051200Z-a1b2");
+    assert_eq!(
+        subject.ink,
+        theme::INK_WEAK,
+        "the subject is one step weaker"
+    );
+    let close = read(CLOSE);
+    assert!(
+        (close.laid.min.y - subject.laid.min.y).abs() <= theme::ROW,
+        "the close stands on the subject's line: {:?} against {:?}",
+        close.laid,
+        subject.laid
+    );
 }

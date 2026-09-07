@@ -6,8 +6,8 @@ use super::{
     signalled,
 };
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, pane, queued, seated, waiting};
-use crate::ui::{Asking, Model};
+use crate::test_support::window::{click, pane, queued, seated, seen, waiting};
+use crate::ui::{Asking, Model, theme};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
 /// the conversation back where it was.
@@ -182,4 +182,60 @@ fn a_verdict_composes_the_answer_and_names_no_invocation() {
             "agent": "20260830T051200Z-a1b2", "verdict": "refuse"
         }))]
     );
+}
+
+/// **Every row on this pane wears the attention rule, and none wears the
+/// brand** (`docs/STYLE.md` §2, *the eye lands on green*).
+///
+/// It is the one pane where the green is a tautology rather than a reading: a
+/// row is here BECAUSE it is asking for the operator, so the rule is on all
+/// three or the pane has stopped meaning what it says. The brand is the other
+/// half of the claim — this pane selects nothing, and a brand rule would say
+/// the operator is standing on a row they are not.
+#[test]
+fn every_row_wears_the_attention_rule_and_none_wears_the_brand() {
+    let mut model = queued();
+    let window = Window::new();
+    let mut body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            render(ui, &mut model);
+        });
+    };
+    let fills = crate::paint_probe::fills_of(&window.frame(Vec::new(), &mut body));
+    let ruled = |ink: egui::Color32| {
+        fills
+            .iter()
+            .filter(|(rect, fill)| *fill == ink && rect.width() <= theme::RULE + 0.5)
+            .count()
+    };
+    assert_eq!(
+        ruled(theme::accent(theme::State::Attention)),
+        3,
+        "one green rule per waiting row"
+    );
+    assert_eq!(ruled(theme::BRAND), 0, "this pane selects nothing");
+    let runs = seen(&window, &mut body);
+    let headline = runs
+        .iter()
+        .find(|run| run.text.starts_with("port the paint probe"))
+        .expect("the row's headline reached the glass");
+    assert_eq!(headline.ink, theme::INK, "the headline is body ink");
+    for (word, ink) in [
+        (
+            "flagged 2026-09-01T22:10Z",
+            theme::accent(theme::State::Annotation),
+        ),
+        ("Unauthorized", theme::accent(theme::State::Error)),
+        (
+            "held at the boundary",
+            theme::accent(theme::State::Annotation),
+        ),
+        ("it stopped on the third attempt", theme::INK_WEAK),
+    ] {
+        let run = runs
+            .iter()
+            .find(|run| run.text.starts_with(word))
+            .unwrap_or_else(|| panic!("{word:?} is not on the glass"));
+        assert_eq!(run.ink, ink, "{word:?}");
+    }
 }

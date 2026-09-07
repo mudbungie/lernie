@@ -237,6 +237,29 @@ fn the_walk_names_the_control_it_found_outside_the_window() {
     assert!(said.concat().contains("wholly outside"), "{said:?}");
 }
 
+/// **A label off the window is a layout question, not this assertion's**
+/// (bl-d1ae): the same shrunken window that faults a button says nothing
+/// about a sentence, because egui counts selectable prose as clickable and a
+/// covering pane's prose scrolls.
+#[test]
+fn a_label_outside_the_window_is_not_a_fault_where_a_control_is() {
+    let mut harness = HarnessBuilder::<Model>::default()
+        .with_size(egui::Vec2::new(200.0, 100.0))
+        .build_state(
+            |ctx: &egui::Context, _: &mut Model| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.label("a sentence");
+                    let _ = ui.button("a control");
+                });
+            },
+            Model::default(),
+        );
+    harness.run();
+    let said = clipped::complaints("toy", 4.0, 4.0, &harness).concat();
+    assert!(said.contains("a control"), "{said}");
+    assert!(!said.contains("a sentence"), "{said}");
+}
+
 #[test]
 fn a_control_hanging_over_an_edge_is_not_a_fault() {
     assert!(clipped::fault(Some((-10.0, -10.0, 5.0, 5.0)), 100.0, 100.0).is_none());

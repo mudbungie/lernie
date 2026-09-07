@@ -12,6 +12,7 @@ use super::super::LIVE;
 use super::Row;
 use crate::reply::stream::Stream;
 use crate::reply::stream::window::Window;
+use crate::ui::theme::Speaker;
 
 /// The live fold's rows: the two halves of the turn, then the tool window
 /// under them.
@@ -48,16 +49,23 @@ fn call(window: &Window) -> Vec<Row> {
     let opened = Row::plain(
         format!("{LIVE} → {named} {}", window.tool_use),
         window.input.clone().unwrap_or_default(),
+        Speaker::Model,
     );
     let landed = window.exit_code.map(|code| {
-        Row::plain(
-            format!(
-                "{} {}",
-                window.tool_use,
-                if code == 0 { RETURNED } else { FAILED }
-            ),
-            format!("exit {code}"),
-        )
+        let ok = code == 0;
+        Row {
+            who: format!("{} {}", window.tool_use, if ok { RETURNED } else { FAILED }),
+            said: format!("exit {code}"),
+            // **One call reads the same on both routes**, which is this
+            // module's own rule one noun over ([`half`]): the committed
+            // `ToolResult` this row becomes is a peer's weight and wears the
+            // error accent when it failed, so the live half does too. A live
+            // failure painted in the model's ink and a committed one painted
+            // red would be one call in two colours.
+            weight: Speaker::Peer,
+            failed: !ok,
+            fold: None,
+        }
     });
     std::iter::once(opened).chain(landed).collect()
 }
@@ -88,6 +96,7 @@ pub(super) fn half(speaker: &str, mark: &str, said: &str) -> Option<Row> {
                 format!("{speaker} ({mark})")
             },
             said.to_owned(),
+            Speaker::Model,
         )
     })
 }

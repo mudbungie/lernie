@@ -88,15 +88,23 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 
 /// One channel's section: its header, how current its answer is, and its walls.
 fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
-    ui.separator();
-    ui.label(header(&chunk.channel));
+    // **Air and a weak word, never a line** (`docs/STYLE.md` §1, rule 2): the
+    // separator that used to stand here was a stroke, and the one stroke this
+    // window spends is the brand ring on the field holding the caret. What
+    // divides two channels is the space between them.
+    ui.add_space(theme::space::S);
+    ui.colored_label(theme::INK_WEAK, header(&chunk.channel));
     // **A channel that cannot be reached says so HERE**, under its own header
     // and beside whatever it last answered — never in the shell-wide bar, which
     // is for what an engine said about a gesture (bl-e620). It stands above the
     // walls rather than in place of them: the rows are the last thing that
     // channel did say, and they are worth keeping while it is down.
     if let crate::ui::Held::Unheld(why) = &chunk.held {
-        ui.colored_label(theme::NOTICE, why);
+        // **A channel that will not dial is an error and not a note** (§1:
+        // red is an error that will not mend itself). It stood in the
+        // annotation orange, which is the colour of a thing worth reading;
+        // this is a thing that is broken until somebody mends it.
+        ui.colored_label(theme::accent(theme::State::Error), why);
     }
     for note in [chunk.stale.as_ref(), chunk.growth.as_ref()]
         .into_iter()

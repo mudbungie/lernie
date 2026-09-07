@@ -1,7 +1,8 @@
 +++
 title = "keyboard and focus pass: every control reachable, and the focused thing visibly the focused thing"
 created = 1788754422
-updated = 1788754422
+updated = 1788755310
+claimant = "Cantaloups-D4"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

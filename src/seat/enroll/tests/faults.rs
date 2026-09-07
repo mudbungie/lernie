@@ -7,27 +7,29 @@
 
 use serde_json::{Value, json};
 
-use super::super::{INDOUBT, enroll};
-use super::{minted, spent, tree};
+use super::super::INDOUBT;
+use super::{acted, minted, spent, tree};
 use crate::cli::Stream;
 use crate::test_support::{Scratch, wire};
 
 /// **A destination that will not take the material never costs it** (bl-1554).
 /// The enrollment is already spent at the engine, so the answer goes to stdout
-/// whichever way the filing went and only the exit code says no.
+/// whichever way the filing went and only the exit code says no — and the
+/// reason it was not filed is a diagnosis, so it is said on the other stream
+/// (bl-ac76), which is what lets the answer be one envelope under `--json`.
 #[test]
 fn a_destination_that_refuses_still_says_the_material_and_fails() {
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let blocked = scratch.path().join("occupied");
     std::fs::write(&blocked, "notreal").expect("the blocker was written");
-    let verdict = enroll(
+    let (verdict, warned) = acted(
         scratch.path(),
-        "home",
         "phone-1",
         "foot",
         None,
         Some(&blocked.join("under")),
+        crate::render::Form::Rendered,
     );
     assert_eq!(verdict.code, 1, "{}", verdict.text);
     assert_eq!(
@@ -35,7 +37,7 @@ fn a_destination_that_refuses_still_says_the_material_and_fails() {
         Stream::Out,
         "the product is still a product"
     );
-    assert!(verdict.text.contains("not filed"), "{}", verdict.text);
+    assert!(warned.concat().contains("not filed"), "{warned:?}");
     assert!(verdict.text.contains("yog-enroll"), "{}", verdict.text);
 }
 
@@ -78,7 +80,14 @@ fn an_answer_of_another_kind_says_nothing_was_minted() {
 #[test]
 fn a_root_with_no_channel_fails_before_anything_is_asked() {
     let scratch = Scratch::new();
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
+    let (verdict, _) = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        None,
+        crate::render::Form::Rendered,
+    );
     assert_eq!(verdict.stream, Stream::Err);
     assert_eq!(verdict.code, 1);
     assert_eq!(tree(scratch.path()), Vec::<String>::new());
@@ -121,7 +130,14 @@ fn an_enrollment_that_crossed_with_no_answer_is_in_doubt_and_says_not_to_repeat(
         &wire::flat(),
         vec![crate::test_support::engine::Answer::Hangup],
     );
-    let verdict = enroll(scratch.path(), "home", "phone", "seat", None, None);
+    let (verdict, _) = acted(
+        scratch.path(),
+        "phone",
+        "seat",
+        None,
+        None,
+        crate::render::Form::Rendered,
+    );
     assert_eq!(verdict.code, 1);
     assert!(verdict.text.contains(INDOUBT), "{}", verdict.text);
     assert!(

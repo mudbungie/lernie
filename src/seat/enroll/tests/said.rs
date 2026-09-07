@@ -5,9 +5,10 @@
 //! module doc above draws — this is the act arriving, and that is every way it
 //! does not.
 
-use super::super::{ELSEWHERE, KEPT, enroll};
-use super::{CA, CERT, KEY, minted, spent, tree};
+use super::super::{ELSEWHERE, KEPT};
+use super::{CA, CERT, KEY, acted, as_form, minted, spent, tree};
 use crate::cli::Stream;
+use crate::render::Form;
 use crate::test_support::{Scratch, wire};
 
 /// **The picture and the line are one artifact, and both are said** (bl-1554,
@@ -77,7 +78,14 @@ fn a_named_destination_gets_the_four_files_and_the_material_is_not_said() {
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
     let into = scratch.path().join("carry");
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, Some(&into));
+    let (verdict, _) = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        Some(&into),
+        Form::Rendered,
+    );
     assert_eq!(verdict.code, 0, "{}", verdict.text);
     assert_eq!(verdict.stream, Stream::Out);
     assert!(
@@ -138,7 +146,14 @@ fn the_act_writes_no_file_at_all() {
 fn the_gesture_that_crossed_is_the_verb_table_s_own() {
     let scratch = Scratch::new();
     let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
-    let _ = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
+    let _ = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        None,
+        Form::Rendered,
+    );
     let heard = engine.heard();
     let request = heard.last().expect("the engine was handed a request");
     assert_eq!(
@@ -161,13 +176,13 @@ fn the_gesture_that_crossed_is_the_verb_table_s_own() {
 fn a_stated_route_crosses_as_the_enrollment_s_address() {
     let scratch = Scratch::new();
     let engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
-    let verdict = enroll(
+    let (verdict, _) = acted(
         scratch.path(),
-        "home",
         "phone-1",
         "foot",
         Some("host.containers.internal:7773".to_owned()),
         None,
+        Form::Rendered,
     );
     assert_eq!(verdict.code, 0, "{}", verdict.text);
     let heard = engine.heard();
@@ -179,4 +194,89 @@ fn a_stated_route_crosses_as_the_enrollment_s_address() {
         )),
         "{request}"
     );
+}
+
+/// **`--json` prints the envelope and nothing else** (bl-ac76). One line, and
+/// it parses: the whole product of a run a script can capture with `head`, a
+/// `read`, or a pipe into a formatter. It printed the human rendering under
+/// the flag — an ANSI-coloured symbol ahead of the line — so the first lines a
+/// script kept were a picture of material the engine had already shredded, and
+/// the name was spent.
+#[test]
+fn the_machine_form_is_the_envelope_alone() {
+    let (verdict, warned) = as_form(None, Form::Json);
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    assert_eq!(verdict.stream, Stream::Out);
+    assert!(warned.is_empty(), "{warned:?}");
+    let parsed: serde_json::Value =
+        serde_json::from_str(&verdict.text).expect("the whole of stdout parses as the envelope");
+    assert_eq!(
+        parsed.get("yog-enroll").and_then(serde_json::Value::as_u64),
+        Some(1)
+    );
+    assert_eq!(verdict.text.lines().count(), 1, "{}", verdict.text);
+    // Not the picture, not the caption, not the note about keeping no copy.
+    for absent in ["\u{2588}", "\u{2580}", "\u{1b}[", KEPT, " — foot at "] {
+        assert!(
+            !verdict.text.contains(absent),
+            "{absent:?} reached the frame stream: {}",
+            verdict.text
+        );
+    }
+}
+
+/// **The two rules compose: a machine form that FILED says nothing at all**
+/// (bl-ac76 over bl-768a). The material went to the four files, so printing it
+/// would be the second copy bl-768a withholds — and the receipt naming them is
+/// prose about a file rather than a frame, so it is a diagnosis. stdout under
+/// `--json` therefore carries the envelope exactly when the material was not
+/// written down.
+#[test]
+fn a_machine_form_that_filed_says_nothing_on_stdout() {
+    let scratch = Scratch::new();
+    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let into = scratch.path().join("carry");
+    let (verdict, warned) = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        Some(&into),
+        Form::Json,
+    );
+    assert_eq!(verdict.code, 0, "{}", verdict.text);
+    assert_eq!(verdict.text, "", "{}", verdict.text);
+    assert_eq!(tree(&into).len(), 4, "the four files were still laid down");
+    let told = warned.concat();
+    assert!(told.contains("filed as an entry"), "{told}");
+    assert!(told.contains(ELSEWHERE), "{told}");
+    assert!(
+        !told.contains("yog-enroll"),
+        "the material was said: {told}"
+    );
+}
+
+/// **A destination that will not take the material still says it** (bl-768a),
+/// and under `--json` it says exactly the envelope (bl-ac76): the reason is on
+/// the other stream, where it cannot corrupt the one capture a script gets of
+/// an act that cannot be repeated.
+#[test]
+fn a_refused_destination_leaves_the_machine_form_intact() {
+    let scratch = Scratch::new();
+    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    let blocked = scratch.path().join("occupied");
+    std::fs::write(&blocked, "notreal").expect("the blocker was written");
+    let (verdict, warned) = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        Some(&blocked.join("under")),
+        Form::Json,
+    );
+    assert_eq!(verdict.code, 1, "{}", verdict.text);
+    assert_eq!(verdict.stream, Stream::Out);
+    assert_eq!(verdict.text.lines().count(), 1, "{}", verdict.text);
+    assert!(verdict.text.contains("yog-enroll"), "{}", verdict.text);
+    assert!(warned.concat().contains("not filed"), "{warned:?}");
 }

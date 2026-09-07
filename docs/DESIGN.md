@@ -1687,6 +1687,37 @@ own all the way up to `cli::Decided`. `lernie ask` still prints the raw frame,
 which is correct — an operator who spells the envelope by hand has asked for
 the stream, and nothing here is a boundary against the operator.
 
+**And `--json` is the envelope ALONE** (bl-ac76). The three renderings below
+are what a PERSON is offered; a script is offered one. Under `--json` stdout
+carries the envelope on one line and nothing else — no caption, no symbol, no
+colour, no receipt. It printed the whole human rendering under the flag, so a
+line-oriented capture (`head`, a `read`, a pipe into a formatter) took an
+ANSI-coloured block and left the material behind. That is not an ordinary
+rendering defect here: the engine has already minted and shredded by then and a
+second enrollment under one name is refused, so what the script kept was a
+picture of a key it could no longer ask for, and the name was spent. §4.37's
+rule — *every verb renders by default and `--json` is the machine form* —
+reaches the one verb that had no machine form at all; what differs is only
+WHICH object the machine form is, and that is already this act's whole
+exception (above): the frame is not the product, the envelope is.
+
+**The machine form and bl-768a's withholding compose into one sentence**:
+under `--json`, stdout carries the envelope exactly when the material was not
+written down. A run that FILED withholds it — the four files are the copy the
+operator chose — so stdout is empty and the receipt naming them goes to stderr,
+because a receipt is prose about a file and not a frame. A run whose filing
+FAILED says the envelope, for bl-768a's own reason: the screen is then the only
+place the material can be. And the sentence explaining a destination that would
+not take the files is a diagnosis on stderr in both forms, which is what this
+section already required — *the answer is said on stdout whichever way the
+filing went, and only the exit code reports a directory that would not take
+it*. `enroll` therefore takes a warning sink exactly as the role assignment
+does, and `src/main.rs` hands it `eprintln!`. The four words the gesture is
+made of ride as one value (`cli::Asking`) rather than as four parameters, so
+the act's signature separates what is being ASKED from what this box does with
+the answer — and argv's reading of those words and the act's parameters are one
+object rather than two lists in agreement.
+
 **One artifact, three renderings, and the operator picks which they can take**
 (bl-1554, bl-a8fd). The envelope is one line of compact JSON and everything
 else is a rendering of it: the **QR symbol** for a camera, the **line itself**

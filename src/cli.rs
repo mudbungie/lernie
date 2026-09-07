@@ -19,7 +19,7 @@ mod decided;
 /// `enroll`'s own grammar: three words and two optional ones.
 mod enroll;
 
-pub use decided::Decided;
+pub use decided::{Asking, Decided};
 pub use enroll::{AT, INTO};
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
@@ -99,7 +99,7 @@ pub fn run(args: Vec<String>) -> Decided {
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => {
-            enroll::enroll(workspace, name, grade, tail)
+            enroll::enroll(workspace, name, grade, tail, form)
         }
         // The bare invocation is the window, because a seat is a window. Every
         // other spelling is a way of reaching one gesture without one.

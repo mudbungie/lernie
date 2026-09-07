@@ -39,7 +39,11 @@ pub const ENROLL: Verb = Verb {
              `--into` the symbol and the line are both printed and this seat \
              keeps NOTHING — not a file, not a cache, not a log line; with \
              one, the key goes to the files and never to this terminal, which \
-             is the one place the act could not shred it afterwards. `grade` \
+             is the one place the act could not shred it afterwards. \
+             `lernie --json enroll …` is for a script: stdout is the envelope \
+             alone, on one line, with no symbol and nothing else — and with \
+             `--into` it is empty, because the material went to the files. \
+             `grade` \
              is `operator` or `foot`. It is refused unless this box's own leaf \
              is operator-grade — the new box says nothing and performs no act, \
              which is why this is not the in-channel bootstrap REMOTE §1.4 \

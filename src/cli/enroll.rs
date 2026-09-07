@@ -8,7 +8,8 @@
 //! decided entirely by what was typed — the two optional words, and the grade,
 //! which is a closed set of two this binary already holds.
 
-use super::{Decided, Verdict};
+use super::{Asking, Decided, Verdict};
+use crate::render::Form;
 
 /// **An enrollment, with the two arguments this binary can settle itself.**
 ///
@@ -43,7 +44,13 @@ use super::{Decided, Verdict};
 /// not knowable here. What is settled here is only whether the word is one of
 /// the two, read off [`crate::ui::Grade`]'s own list rather than a second copy
 /// of it.
-pub(super) fn enroll(workspace: &str, name: &str, grade: &str, tail: &[&str]) -> Decided {
+pub(super) fn enroll(
+    workspace: &str,
+    name: &str,
+    grade: &str,
+    tail: &[&str],
+    form: Form,
+) -> Decided {
     let (at, into) = match stated(tail) {
         Ok(pair) => pair,
         Err(refusal) => return Decided::Say(Verdict::refused(refusal)),
@@ -60,11 +67,14 @@ pub(super) fn enroll(workspace: &str, name: &str, grade: &str, tail: &[&str]) ->
         )));
     };
     Decided::Enroll {
-        workspace: workspace.to_owned(),
-        name: name.to_owned(),
-        grade: held.word(),
-        at,
+        asking: Asking {
+            workspace: workspace.to_owned(),
+            name: name.to_owned(),
+            grade: held.word(),
+            at,
+        },
         into,
+        form,
     }
 }
 

@@ -41,6 +41,25 @@
 //! this seat keeps nothing of its own accord: with no `--into`, not a byte is
 //! written, and the suite still asserts that over the whole tree.
 //!
+//! # And `--json` is the envelope ALONE, because a picture is not capturable
+//!
+//! The three renderings above are what a PERSON is offered. A script is
+//! offered one (bl-ac76): under `--json` stdout carries the §8.4 envelope on
+//! one line and nothing else — no caption, no symbol, no colour, no receipt.
+//! It printed the whole human rendering under the flag, so
+//! `lernie --json enroll … | head` captured an ANSI block and left the
+//! material behind; and because the engine has already minted and shredded by
+//! then, and a second enrollment under one name is refused, what the script
+//! kept was a picture of a key it could no longer ask for.
+//!
+//! **The two rules compose rather than colliding**, and the composition is one
+//! sentence: under `--json`, stdout carries the envelope exactly when the
+//! material was not written down. A run that FILED withholds it (bl-768a,
+//! above) and so says nothing at all on stdout — the four files are the
+//! answer, and the receipt naming them is a diagnosis on stderr, because it is
+//! not a frame. A run whose filing failed says the envelope, for bl-768a's own
+//! reason: the screen is then the only place the material can be.
+//!
 //! # Nothing is written unasked, and that is asserted rather than intended
 //!
 //! No file, no cache, no log line, no temporary anything. The material lives in
@@ -53,8 +72,9 @@
 
 use std::path::Path;
 
-use crate::cli::Verdict;
+use crate::cli::{Asking, Verdict};
 use crate::qr::Symbol;
+use crate::render::Form;
 use crate::reply::{Read, Reply};
 
 /// The envelope as an entry, where the operator names one.
@@ -92,15 +112,24 @@ const INDOUBT: &str = "the enrollment crossed with no answer, so it is IN DOUBT 
 /// down on THIS box. They are independent — the first is a fact about the far
 /// device and the second about this terminal — so each is read on its own and
 /// neither is inferred from the other.
+///
+/// `warn` takes what is a diagnosis rather than a product: a destination that
+/// would not take the files, and — under `--json`, where stdout is a frame and
+/// not prose — the receipt for one that did.
 pub fn enroll(
     data_root: &Path,
-    workspace: &str,
-    name: &str,
-    grade: &str,
-    at: Option<String>,
+    asking: &Asking,
     into: Option<&Path>,
+    form: Form,
+    warn: &mut dyn FnMut(&str),
 ) -> Verdict {
-    let gesture = crate::verbs::enroll(workspace.to_owned(), name.to_owned(), grade.to_owned(), at);
+    let Asking {
+        workspace,
+        name,
+        grade,
+        at,
+    } = asking;
+    let gesture = crate::verbs::enroll(workspace.clone(), name.clone(), grade.clone(), at.clone());
     let stream = match crate::seat::sent(data_root, &gesture) {
         Ok(stream) => stream,
         Err(reach) if reach.crossed() => {
@@ -112,7 +141,7 @@ pub fn enroll(
         return Verdict::failed("the engine answered nothing at all".to_owned());
     };
     match crate::reply::read(frame) {
-        Read::Answer(Reply::Enrolled(material)) => said(&material, into),
+        Read::Answer(Reply::Enrolled(material)) => said(&material, into, form, warn),
         // A refusal is the engine answering, so it is this run's product and
         // goes to stdout with the exit code saying no — the same rule
         // [`crate::seat::ask`] keeps. It carries no material to withhold.
@@ -129,7 +158,8 @@ pub fn enroll(
 }
 
 /// The material, said the way the operator asked for it: filed and not drawn
-/// where a destination took it, drawn every way this seat can where none did.
+/// where a destination took it, drawn every way this seat can where none did —
+/// and for a machine, the envelope alone or nothing.
 ///
 /// **A rendering that landed is a rendering that is not also printed** (bl-768a).
 /// `--into` is the operator saying *this box has neither a camera nor a paste
@@ -142,16 +172,44 @@ pub fn enroll(
 ///
 /// The rule reads on the failure the same way: when nothing was written, the
 /// screen is the only place the material can be, so it is all drawn there.
-fn said(material: &crate::reply::enrolled::Enrolled, into: Option<&Path>) -> Verdict {
+fn said(
+    material: &crate::reply::enrolled::Enrolled,
+    into: Option<&Path>,
+    form: Form,
+    warn: &mut dyn FnMut(&str),
+) -> Verdict {
     let Some(dir) = into else {
-        return Verdict::ok(drawn(material));
+        return Verdict::ok(match form {
+            Form::Json => material.envelope(),
+            Form::Rendered => drawn(material),
+        });
     };
     match entry::written(dir, material) {
-        Ok(filed) => Verdict::ok(format!("{}\n{filed}\n{ELSEWHERE}", material.caption())),
+        Ok(filed) => match form {
+            // The receipt is prose about a file, not a frame, so under the
+            // machine form it is a diagnosis — and stdout stays empty, which
+            // is the honest answer to "what material did this print": none.
+            Form::Json => {
+                warn(&format!("{filed}\n{ELSEWHERE}"));
+                Verdict::ok(String::new())
+            }
+            Form::Rendered => Verdict::ok(format!("{}\n{filed}\n{ELSEWHERE}", material.caption())),
+        },
         // Nothing landed, so the screen is the only place the material can be:
-        // it is drawn in full, and only the exit code says the filing failed.
-        // The text is this run's product and belongs on stdout either way.
-        Err(why) => Verdict::answered(format!("{}\nnot filed: {why}", drawn(material)), false),
+        // it is said in full, and only the exit code says the filing failed.
+        // The text is this run's product and belongs on stdout either way; the
+        // reason is a diagnosis and goes beside it, so that the machine form is
+        // still one envelope and nothing else.
+        Err(why) => {
+            warn(&format!("not filed: {why}"));
+            Verdict::answered(
+                match form {
+                    Form::Json => material.envelope(),
+                    Form::Rendered => drawn(material),
+                },
+                false,
+            )
+        }
     }
 }
 

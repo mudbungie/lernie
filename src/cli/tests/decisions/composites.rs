@@ -28,7 +28,7 @@ fn the_start_word_carries_a_workspace_and_a_goal() {
 /// on this box is decided entirely by what was typed (bl-1554).
 #[test]
 fn the_enrollment_carries_the_destination_it_was_given() {
-    let Decided::Enroll { into, grade, .. } = run(argv(&[
+    let Decided::Enroll { into, asking, .. } = run(argv(&[
         "enroll",
         "ops",
         "box-1",
@@ -39,7 +39,7 @@ fn the_enrollment_carries_the_destination_it_was_given() {
         panic!("`enroll` with a destination is still an enrollment");
     };
     assert_eq!(into.as_deref(), Some("/home/u/carry"));
-    assert_eq!(grade, "foot");
+    assert_eq!(asking.grade, "foot");
 }
 
 /// **`--at <host>:<port>` is read here too** (bl-971c) — the route the enrolled
@@ -48,7 +48,7 @@ fn the_enrollment_carries_the_destination_it_was_given() {
 /// it whether or not the material is being written down.
 #[test]
 fn the_enrollment_carries_the_route_the_new_box_will_dial() {
-    let Decided::Enroll { at, into, .. } = run(argv(&[
+    let Decided::Enroll { asking, into, .. } = run(argv(&[
         "enroll",
         "ops",
         "alpha2",
@@ -58,7 +58,7 @@ fn the_enrollment_carries_the_route_the_new_box_will_dial() {
     ])) else {
         panic!("`enroll` with a route is still an enrollment");
     };
-    assert_eq!(at.as_deref(), Some("host.containers.internal:7773"));
+    assert_eq!(asking.at.as_deref(), Some("host.containers.internal:7773"));
     assert_eq!(into, None, "the route says nothing about writing files");
 }
 
@@ -89,11 +89,11 @@ fn the_two_optional_words_are_independent_and_unordered() {
             "alias:7773",
         ],
     ] {
-        let Decided::Enroll { at, into, .. } = run(argv(&tail)) else {
+        let Decided::Enroll { asking, into, .. } = run(argv(&tail)) else {
             panic!("{tail:?} is an enrollment");
         };
         assert_eq!(
-            (at.as_deref(), into.as_deref()),
+            (asking.at.as_deref(), into.as_deref()),
             (Some("alias:7773"), Some("/home/u/carry")),
             "{tail:?}"
         );

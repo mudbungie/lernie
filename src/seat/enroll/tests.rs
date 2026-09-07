@@ -66,13 +66,58 @@ fn walk(root: &std::path::Path, at: &std::path::Path, out: &mut Vec<String>) {
     }
 }
 
+/// **The act, and everything it said on either stream — the suite's one call
+/// site.**
+///
+/// A closure per call site would be a closure BODY per call site, and the
+/// calls with nothing to warn about would never run theirs; one sink for the
+/// whole suite is one body, exercised by the runs that do warn.
+fn acted(
+    root: &std::path::Path,
+    name: &str,
+    grade: &str,
+    at: Option<String>,
+    into: Option<&std::path::Path>,
+    form: crate::render::Form,
+) -> (crate::cli::Verdict, Vec<String>) {
+    let mut warned: Vec<String> = Vec::new();
+    let asking = crate::cli::Asking {
+        workspace: "home".to_owned(),
+        name: name.to_owned(),
+        grade: grade.to_owned(),
+        at,
+    };
+    let verdict = enroll(root, &asking, into, form, &mut |said| {
+        warned.push(said.to_owned());
+    });
+    (verdict, warned)
+}
+
+/// A minted answer taken in the form named, with the destination named — and
+/// everything the run said on the other stream.
+fn as_form(
+    into: Option<&std::path::Path>,
+    form: crate::render::Form,
+) -> (crate::cli::Verdict, Vec<String>) {
+    let scratch = Scratch::new();
+    let _engine = wire::wired(&scratch, &wire::flat(), vec![vec![minted()]]);
+    acted(scratch.path(), "phone-1", "foot", None, into, form)
+}
+
 /// Stand a wired root up with one scripted answer, and run the act on it with
 /// no destination named — the ordinary path, which writes nothing.
 fn spent(answer: Vec<Value>) -> (crate::cli::Verdict, Vec<String>, Vec<String>) {
     let scratch = Scratch::new();
     let _engine = wire::wired(&scratch, &wire::flat(), vec![answer]);
     let before = tree(scratch.path());
-    let verdict = enroll(scratch.path(), "home", "phone-1", "foot", None, None);
+    let (verdict, _) = acted(
+        scratch.path(),
+        "phone-1",
+        "foot",
+        None,
+        None,
+        crate::render::Form::Rendered,
+    );
     let after = tree(scratch.path());
     (verdict, before, after)
 }

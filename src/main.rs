@@ -63,20 +63,19 @@ fn main() -> ExitCode {
             dir,
             form,
         } => rooted(|root| lernie::seat::start(root, &address, &goal, dir.as_deref(), form)),
-        Decided::Enroll {
-            workspace,
-            name,
-            grade,
-            at,
-            into,
-        } => rooted(|root| {
+        // **The filing diagnosis is a diagnosis, so it goes to stderr** — the
+        // material under it is the product and stays on stdout, which is what
+        // lets `--json` put one envelope there and nothing else.
+        // **The filing diagnosis is a diagnosis, so it goes to stderr** — the
+        // material under it is the product and stays on stdout, which is what
+        // lets `--json` put one envelope there and nothing else.
+        Decided::Enroll { asking, into, form } => rooted(|root| {
             lernie::seat::enroll(
                 root,
-                &workspace,
-                &name,
-                &grade,
-                at,
+                &asking,
                 into.as_deref().map(std::path::Path::new),
+                form,
+                &mut |said| eprintln!("{said}"),
             )
         }),
         Decided::Window => rooted(window),

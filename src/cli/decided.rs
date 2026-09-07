@@ -60,12 +60,19 @@ pub enum Decided {
     /// which it is only for a device that shares this engine's view of itself.
     /// The two are independent: a foot behind an alias needs `at` whether or
     /// not it needs `into` (bl-971c).
+    ///
+    /// It carries a [`Form`] like every other act that prints, and it is the
+    /// one whose two forms are not the same object: `Rendered` is the caption
+    /// with the symbol and the line (or the receipt where a destination took
+    /// them), and `Json` is the §8.4 envelope alone — or nothing, where the
+    /// material was filed (bl-ac76). See [`crate::seat::enroll`].
     Enroll {
-        workspace: String,
-        name: String,
-        grade: String,
-        at: Option<String>,
+        /// The four words that become the §8.4 gesture.
+        asking: Asking,
+        /// Where this box writes the material down, if the operator said.
         into: Option<String>,
+        /// Which form the answer is said in.
+        form: Form,
     },
     /// Send this gesture envelope down the channel it names. Needs the data
     /// root for the same reason.
@@ -114,4 +121,22 @@ pub enum Decided {
     /// hatch for one channel, and `{"op":"workspaces","workspace":"<leaf>"}` is
     /// how an operator asks exactly one of them.
     Fanned(serde_json::Value, Form),
+}
+
+/// **What an enrollment asks for**: the wall, the name the new box will wear,
+/// its grade, and — where the operator stated one — the route that box will
+/// dial (REMOTE §8.4 as amended, bl-971c).
+///
+/// The four are held together because they are one question, and because the
+/// act's other three parameters are about something else entirely: `into` is
+/// where THIS box writes the answer down, the form is who is reading it, and
+/// the warning sink is where a diagnosis goes. It lives here rather than in
+/// [`crate::seat::enroll`] so that argv's reading of the words and the act's
+/// parameters are one object and cannot drift.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Asking {
+    pub workspace: String,
+    pub name: String,
+    pub grade: String,
+    pub at: Option<String>,
 }

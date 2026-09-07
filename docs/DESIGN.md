@@ -3552,6 +3552,21 @@ says elsewhere is said here by the ROW, because the two ends being compared are
 the row's two refs and the two commits they resolved to — decoded since the
 vocabulary was written and printed nowhere until bl-2e1d.
 
+**The follow lane has two writers and one column tells them apart** (bl-293d).
+It is the one surface where the model's prose and the seat's own narration
+arrive interleaved, a line at a time, as the turn is written — and an operator
+watching an agent administer two boxes read a thinking marker and two sentences
+while eight commands ran. So the model's answer keeps the left margin, unmarked,
+and **everything this seat says about the run rides behind `┊`**
+(`render/parts.rs`'s `GUTTER`): the heartbeat, the line the watch ends on, and
+the tool window's activity rows when the frame carries one (bl-183b, which is
+where `tools` is decoded — until it lands there is no call on this frame to
+count, which is why the closing line carries an elapsed and not yet a tally of
+calls). **One glyph and no locale branch**: a terminal that cannot draw `┊`
+cannot draw the `…` every elision on this surface ends in nor the `→` half the
+rows carry, so a fallback here would be one line's exception to a bet the whole
+rendering already makes.
+
 **One place, three surfaces.** `crate::render::said` is what
 `crate::seat::lines` used to be — the one place this seat's product is written
 — so the rendering reaches one gesture, the fan across channels and the
@@ -3590,7 +3605,7 @@ of *what a seat printed*.
 | `src/render.rs` | the rendering (§4.37): the two forms, and the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable. | ~105 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |
-| `src/render/walls.rs` | the roster, the conversation list, the decision queue and the live tail. | ~130 |
+| `src/render/walls.rs` | the roster, the conversation list, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~155 |
 | `src/render/chat.rs` | the conversation as prose: its transcript, and its own whole row with the engine's offers on it. | ~165 |
 | `src/render/records.rs` | one conversation's records: its steps, its worktree, its inbox, its spine, and the commit governing it. | ~155 |
 | `src/render/step.rs` | one step drilled into — its captured documents printed as what they are, never parsed. | ~75 |

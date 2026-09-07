@@ -37,6 +37,8 @@ use serde_json::Value;
 
 use crate::reply::{Read, read};
 
+pub(crate) use walls::at_rest;
+
 /// The receipts and the runs — what an ACT answers with.
 mod acts;
 /// The per-kind renderings, in the one match that dispatches them.

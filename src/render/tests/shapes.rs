@@ -254,9 +254,12 @@ fn a_follow_frame_is_the_text_that_landed_or_a_heartbeat() {
         rendered(&frame(json!({"delta": "thinking", "thinking": "counting"}))),
         "(thinking) counting"
     );
+    // **The heartbeat is the seat talking, so it rides the gutter** (bl-293d):
+    // the model's prose above keeps the left margin, and the column is what
+    // stops an eye reading a line to find out which of the two wrote it.
     assert_eq!(
         rendered(&frame(json!({"delta": "thinking"}))),
-        "…  thinking"
+        "┊ …  thinking"
     );
-    assert_eq!(rendered(&frame(json!({}))), "…");
+    assert_eq!(rendered(&frame(json!({}))), "┊ …");
 }

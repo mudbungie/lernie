@@ -9,7 +9,9 @@ use crate::reply::queue::{Held, QueueRow};
 use crate::reply::roster::Workspaces;
 use crate::reply::stream::{Delta, Stream};
 
-use super::parts::{age, brief, clause, line, line_over, listing, quoted, tally, things, when};
+use super::parts::{
+    age, brief, clause, line, line_over, listing, narrated, quoted, tally, things, when,
+};
 
 /// **The roster.** One row a wall, and the derivation's own currency under it.
 ///
@@ -120,10 +122,36 @@ pub(super) fn follow(stream: &Stream) -> String {
     // nothing at all is the silence this word was fixed for. What is left to
     // say is which kind of work the engine says is going on, once per frame,
     // which is a heartbeat.
-    line(vec![
+    //
+    // **And it rides the gutter, because it is the seat talking about the
+    // run** (bl-293d). On this lane the model's prose and the seat's own
+    // narration arrive interleaved, a line at a time, and a column is what
+    // stops an eye having to read one to find out which it was. The prose
+    // above keeps the left margin; everything the seat says about the work
+    // goes behind the mark, which is where the tool window's activity rows
+    // land when the frame carries one (bl-183b).
+    narrated(&line(vec![
         Some("…".to_owned()),
         stream.last_delta.as_ref().map(Delta::label),
-    ])
+    ]))
+}
+
+/// **The line a watch ends on** — which conversation, what state it came to
+/// rest in, how long the watch held it, and what makes it move again, because
+/// a watch that simply stopped is the silence the word was fixed for
+/// (bl-3dca).
+///
+/// It is this seat's narration rather than any frame's rendering, so it rides
+/// the same gutter the heartbeat does — and it carries the elapsed, because
+/// *what did that turn take* is otherwise a number nobody has (bl-293d). The
+/// count of tool calls belongs on it too and is not here: the frame carries no
+/// call to count until bl-183b lands the tool window.
+pub(crate) fn at_rest(agent: &str, state: &str, secs: i64) -> String {
+    narrated(&format!(
+        "{agent} is at rest ({state}) after {} — nothing more will arrive \
+         until it is nudged or messaged",
+        age(secs)
+    ))
 }
 
 /// A turn in progress: what it is thinking, and what it has said.

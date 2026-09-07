@@ -49,7 +49,7 @@
 //! entirely in the library, where a test reads it back.
 
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde_json::Value;
 
@@ -79,6 +79,10 @@ pub fn follow(
 ) -> Verdict {
     let asking = crate::verbs::agent(workspace.to_owned(), agent.to_owned());
     let holding = crate::verbs::follow(workspace.to_owned(), agent.to_owned());
+    // **What the closing line's elapsed is measured from** (bl-293d): the
+    // whole of what this seat can say a duration about. The engine's own
+    // turn started before the watch did and is not this end's to time.
+    let began = Instant::now();
     loop {
         let standing = match super::sent(data_root, &asking) {
             Ok(frames) => frames,
@@ -90,7 +94,7 @@ pub fn follow(
             // the product and the exit code is what says the watch never
             // started.
             Rest::Unreadable => return Verdict::answered(said(&standing, form), false),
-            Rest::At(state) => return Verdict::ok(rested(agent, &state)),
+            Rest::At(state) => return Verdict::ok(rested(agent, &state, began.elapsed())),
             Rest::Working => {}
         }
         match held(data_root, &holding, form, say) {
@@ -142,13 +146,14 @@ fn resting(standing: &[Value]) -> Rest {
     }
 }
 
-/// **The line a watch ends on.** It says which conversation, what state it
-/// came to rest in, and what makes it move again — because a watch that simply
-/// stopped is the silence this word was fixed for.
-fn rested(agent: &str, state: &str) -> String {
-    format!(
-        "{agent} is at rest ({state}) — nothing more will arrive until it is \
-         nudged or messaged"
+/// **The line a watch ends on**, said where every other line of this seat's
+/// product is said ([`crate::render::at_rest`]). How long the watch held is
+/// the one fact only this end has, so it is measured here and rendered there.
+fn rested(agent: &str, state: &str, held: Duration) -> String {
+    crate::render::at_rest(
+        agent,
+        state,
+        i64::try_from(held.as_secs()).unwrap_or(i64::MAX),
     )
 }
 

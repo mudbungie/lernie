@@ -68,6 +68,11 @@ fn a_quiescent_conversation_answers_at_once_and_succeeds() {
         "{}",
         verdict.text
     );
+    // **The closing line is the seat's own, so it wears the gutter and
+    // carries how long the watch held** (bl-293d) — a watch that answers no
+    // duration leaves "what did that take" a question nobody can answer.
+    assert!(verdict.text.starts_with("┊ "), "{}", verdict.text);
+    assert!(verdict.text.contains(" after 0s "), "{}", verdict.text);
     assert!(said.is_empty(), "no tail was held: {said:?}");
     assert_eq!(
         asked(&engine),

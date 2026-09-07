@@ -1,6 +1,8 @@
 //! The vocabulary's own arms — both of every absence, and each band of an age.
 
-use super::{age, brief, clause, indent, line, line_over, listing, quoted, tally, things, when};
+use super::{
+    age, brief, clause, indent, line, line_over, listing, narrated, quoted, tally, things, when,
+};
 
 /// A listing with rows, and the sentence one with none earns instead.
 #[test]
@@ -70,4 +72,26 @@ fn a_brief_is_one_line_and_says_when_it_cut() {
     assert_eq!(cut.chars().count(), super::BRIEF + 1);
     assert_eq!(quoted("said"), Some("\"said\"".to_owned()));
     assert_eq!(quoted("   "), None);
+}
+
+/// **The gutter is a column and not a prefix** (bl-293d): narration of more
+/// than one line keeps the mark on every one of them, because a column that
+/// stops at the first newline is exactly the ambiguity it was drawn for.
+#[test]
+fn narration_carries_the_gutter_on_every_line_of_itself() {
+    assert_eq!(narrated("one"), "┊ one");
+    assert_eq!(narrated("one\ntwo"), "┊ one\n┊ two");
+    assert_eq!(narrated(""), "");
+}
+
+/// **The line a watch ends on** says the state, how long it held, and the two
+/// acts that move it again.
+#[test]
+fn a_watch_ends_on_a_line_that_says_how_long_it_held() {
+    let said = crate::render::at_rest("bright-otter", "quiescent", 92);
+    assert_eq!(
+        said,
+        "┊ bright-otter is at rest (quiescent) after 1m — nothing more will \
+         arrive until it is nudged or messaged"
+    );
 }

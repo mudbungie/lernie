@@ -15,6 +15,30 @@
 /// text is one `--json` away.
 pub(crate) const BRIEF: usize = 100;
 
+/// **The mark on a line this SEAT wrote about the work**, as against a line
+/// the work itself produced.
+///
+/// The follow lane is the one surface where the two are interleaved as they
+/// arrive — the model's prose, and this seat's narration of what the engine is
+/// doing while it writes it — and without a column an eye tells them apart by
+/// reading them (bl-293d). So the model's answer keeps the left margin,
+/// unmarked, and everything the seat says about the run rides behind this.
+///
+/// **One glyph and no locale branch.** A terminal that cannot draw `┊` cannot
+/// draw the `…` every elision on this surface ends in, nor the `→` half the
+/// rows carry, so a fallback here would be one line's exception to a bet the
+/// whole rendering already makes.
+pub(crate) const GUTTER: &str = "┊";
+
+/// **A line said behind the gutter**, every line of it — a column that stops
+/// at the first newline is not a column.
+pub(crate) fn narrated(said: &str) -> String {
+    said.lines()
+        .map(|said| format!("{GUTTER} {said}"))
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
 /// **A heading with its rows under it**, or the sentence an empty listing
 /// earns.
 ///

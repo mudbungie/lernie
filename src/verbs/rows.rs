@@ -93,7 +93,13 @@ pub const CONVERSATIONS: Verb = Verb {
     detail: "The rows a window's middle pane paints: each conversation's \
                  label, its state, a first-line preview, its age and how far it \
                  hangs under its root. The id it answers with is the address \
-                 every other verb here takes.",
+                 every other verb here takes. IT PRINTS THE ROOTS: what hangs \
+                 under a conversation — its compactors, a fork's candidates — \
+                 is named on that conversation's own line rather than listed \
+                 beside it, because an index whose majority is machinery is an \
+                 index people stop reading. Every name printed is an address \
+                 `agent`, `transcript` and `follow` take, and `--json` answers \
+                 every row.",
 };
 
 /// The `transcript` read's row.

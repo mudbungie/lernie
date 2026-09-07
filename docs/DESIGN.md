@@ -1239,6 +1239,30 @@ could — the second surface `crate::ui::keys` exists in order not to have.
 default costs no state at all, and it is a navigation the operator performed,
 which is `Model::column`'s own standing.
 
+**And the same fold reaches the typed word, which is the surface a headless
+operator has** (`src/render/walls/convs.rs`, bl-96cd). The fix above landed on
+`Model::rows` alone — the window's list — and the typed `lernie conversations`
+kept answering the flat forest: one lane of ordinary work later it printed
+twelve rows of which SEVEN were compactors, three of them under one
+conversation, worse than the five this ball was filed for on the same amount of
+work. That is the surface reached over `ssh`, from a script, and by this
+campaign's own test lanes.
+
+**The subtree is NAMED there rather than opened**, and that is the one place
+the two faces differ. The window folds against a set of what is open, which is
+a navigation the operator performed; a command has no such state and should not
+grow one — a flag on the verb would cross the wire (`Verb::flags` writes
+envelope fields, and yog's REMOTE §8.5 keeps folds off the boundary on purpose:
+*views gain no boundary representation*), and a second rendered form beside
+`--json` would be a third §4.37 `Form`. So a root says how many hang under it
+and what they are CALLED, on one line, elided at a preview's width. That is the
+CLI's version of *one gesture away*: every name printed is the address `agent`,
+`transcript` and `follow` already take, so nothing is out of reach and nothing
+costs a second round trip. `--json` still answers every row, as it must — and a
+deep row with no root above it is printed as its own row rather than dropped,
+because a listing that quietly loses rows is a worse failure than one that
+indents oddly.
+
 **What the attention rows say is not this seat's half.** Every compactor in
 that session earned an `attention` row reading *came to rest — your turn*,
 which is false of a finished compaction; that is a fact the engine answers, and
@@ -3822,7 +3846,8 @@ of *what a seat printed*.
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |
-| `src/render/walls.rs` | the roster, the conversation list, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~155 |
+| `src/render/walls.rs` | the roster, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~210 |
+| `src/render/walls/convs.rs` | the conversation index, which is the one of the four whose listing has a RULE and not just a row shape: the fold to roots, and the subtree named on its root's line (§4.11, bl-96cd). | ~110 |
 | `src/render/chat.rs` | the conversation as prose: its transcript, and its own whole row with the engine's offers on it. | ~165 |
 | `src/render/records.rs` | one conversation's records: its steps, its worktree, its inbox, its spine, and the commit governing it. | ~155 |
 | `src/render/step.rs` | one step drilled into — its captured documents printed as what they are, never parsed. | ~75 |

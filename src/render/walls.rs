@@ -4,15 +4,19 @@
 //! ([`super::chat`]) because a transcript is a different shape: a listing of
 //! prose rather than a listing of rows.
 
-use crate::reply::convs::ConvRow;
 use crate::reply::queue::{Held, QueueRow};
 use crate::reply::roster::Workspaces;
 use crate::reply::stream::window::Window;
 use crate::reply::stream::{Delta, Stream};
 
-use super::parts::{
-    age, brief, clause, line, line_over, listing, narrated, quoted, tally, things, when,
-};
+use super::parts::{age, brief, clause, line, line_over, listing, narrated, tally, things, when};
+
+/// The conversation index and its fold, which is a listing with a rule of its
+/// own (bl-96cd) — split from here at the 300-line cap on the seam this
+/// module's doc already draws between its four reads.
+mod convs;
+
+pub(super) use convs::conversations;
 
 /// **The roster.** One row a wall, and the derivation's own currency under it.
 ///
@@ -44,32 +48,6 @@ pub(super) fn workspaces(roster: &Workspaces) -> String {
         &head,
         rows,
         "none yet — `lernie start home \"<goal>\"` founds the first",
-    )
-}
-
-/// **One wall's conversations.** The row a person scans, and the preview under
-/// it: what was last said is what tells one row from another.
-pub(super) fn conversations(rows: &[ConvRow]) -> String {
-    let painted = rows
-        .iter()
-        .map(|row| {
-            let head = line(vec![
-                Some(row.display.clone()),
-                Some(row.state.label()),
-                when(row.uncertain, "(uncertain)"),
-                Some(age(row.age_secs)),
-                things(row.members, "member"),
-                tally(row.depth, "deep"),
-                tally(row.attention, "waiting"),
-                clause("failed:", row.failure.as_deref().map(brief).as_deref()),
-            ]);
-            line_over(&head, quoted(&row.preview))
-        })
-        .collect();
-    listing(
-        "conversations",
-        painted,
-        "none yet — `lernie start <workspace> \"<goal>\"` begins one",
     )
 }
 

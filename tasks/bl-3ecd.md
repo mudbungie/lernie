@@ -1,7 +1,7 @@
 +++
 title = "lernie follow right after lernie message answers 'is at rest' in 0s: the obvious pair — say something, then watch it — never watches anything"
 created = 1788745985
-updated = 1788752293
+updated = 1788752466
 claimant = "Cantaloups-S7"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
@@ -54,3 +54,7 @@ Fixed by bl-87ab's item 2, which is the same defect reached through `start` inst
 Three properties, all asserted in src/seat/follow/tests/waiting.rs: it costs one extra read only on the path that was wrong (a genuinely at-rest conversation has an empty inbox and answers as fast as it did; a working one is never asked); an inbox this seat could not READ is treated as no mail, on every way the probe can fail, so an unanswered question can never hold a connection open forever; and --json says nothing while it waits, because in the machine form this seat narrates nothing at all.
 
 Verify against a live engine and close if it holds — I could not drive one from this lane (the seat spoke PROTOCOL 13 against a yog on 16 when I started).
+
+---
+
+The behaviour landed under bl-87ab, which cites this ball: a watch that finds a conversation at rest asks inbox, holds while anything is waiting to be read, and says once that it is waiting. That is this ball's first remedy rather than its fallback, and it is bounded by Ctrl-C rather than by a grace, which agrees with the word's own rule (hold until it rests or the user quits). The residual left here is the page: 'lernie help follow' still promised that a conversation already at rest is told to you at once, with no exception, so the one behaviour a first-time user would read as a hang was the one the page denied.

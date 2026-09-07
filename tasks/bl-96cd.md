@@ -1,7 +1,8 @@
 +++
 title = "bl-00f5's fold landed in the window only: the typed lernie conversations still lists compactors as peers, and it is the surface a headless operator has"
 created = 1788746052
-updated = 1788746052
+updated = 1788752524
+claimant = "Cantaloups-S7"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r2"]

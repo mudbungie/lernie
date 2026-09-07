@@ -55,6 +55,14 @@ pub fn row(
     if let Some(accent) = chosen.then_some(BRAND).or(state) {
         rule_at(ui, rect.left_top(), rect.height(), accent);
     }
+    // **The row that holds the keyboard wears the brand ring** (bl-2d6b): a
+    // row is in the Tab order and Space fires it, and the one stroke the
+    // language leaves on the glass is the ring on whatever holds the keyboard
+    // — so a Tab that landed here is visible where it landed.
+    if seat.has_focus() {
+        ui.painter()
+            .rect_stroke(rect, RADIUS, Stroke::new(1.0, BRAND));
+    }
     let left = rect.min.x + RULE + indent + space::M;
     let galley = elided(ui, words, ink, rect.max.x - left - space::S);
     let at = Pos2::new(left, rect.center().y - galley.size().y / 2.0);

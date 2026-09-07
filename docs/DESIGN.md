@@ -1515,6 +1515,19 @@ subtracts rather than adds.
   question the roster's own paint asks (`roster::aimable`), so a row no pointer
   can aim at is a row no key can aim at either. **A binding that could fire
   something a click cannot is a second surface.**
+- **The focused thing is visibly the focused thing, and Tab agrees with the
+  arrows** (bl-2d6b). Round one measured two costs: a Tab focus that drew
+  nothing an operator could see on the dark ground, and a Tab focus that was
+  not the selection while an arrow's was — one keyboard with two models of
+  *where I am*. Whatever holds the keyboard wears the brand ring, the one
+  stroke the language leaves on the glass (`docs/STYLE.md` §1; egui paints a
+  focused control with its `active` visuals, which is where the ring is
+  installed, and `theme::paint::row` rings itself). And a Tab that lands on a
+  list's row hands the arrows to that list, so the mark on the heading moves
+  with the ring; Space on the ringed row does what a click does. The paint
+  probe projects strokes for exactly this (`paint_probe::strokes_of`) — a
+  ring is a stroke, and a focus that cannot be asserted is a focus that
+  will silently stop painting.
 - **The gate is the composer's box by name, not egui's "is anything focused".**
   `wants_keyboard_input` answers *is any widget focused*, buttons included, so
   tabbing to Send would have turned the arrows off. The box wears one id and the

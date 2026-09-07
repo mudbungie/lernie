@@ -5,6 +5,10 @@
 //! for the same reason: a galley reports the string that went in, so an
 //! assertion made against the input is blind to what the toolkit did with it.
 
+/// The focused thing is visibly the focused thing, and Tab agrees with the
+/// arrows.
+mod focus;
+
 use super::{HERE, Pane, moved};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{conv, own, seated, wall};

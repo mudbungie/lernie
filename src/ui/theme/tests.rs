@@ -166,17 +166,21 @@ fn the_window_is_dark_and_unboxed() {
     assert!(v.dark_mode);
     assert_eq!(v.panel_fill, GROUND);
     assert_eq!(v.window_stroke, egui::Stroke::NONE);
-    for rung in [v.widgets.inactive, v.widgets.hovered, v.widgets.active] {
+    for rung in [v.widgets.inactive, v.widgets.hovered] {
         assert_eq!(
             rung.bg_stroke,
             egui::Stroke::NONE,
             "no outline on a control"
         );
+    }
+    for rung in [v.widgets.inactive, v.widgets.hovered, v.widgets.active] {
         assert!(
             rung.expansion.abs() < f32::EPSILON,
             "a control tints, it does not grow"
         );
     }
+    // The one stroke left: the ring on whatever holds the keyboard.
+    assert_eq!(v.widgets.active.bg_stroke.color, super::BRAND);
     assert_eq!(v.widgets.noninteractive.bg_stroke.color, HAIRLINE);
     assert_eq!(v.selection.stroke.color, super::BRAND);
     assert_eq!(v.selection.bg_fill, tint(State::Working));

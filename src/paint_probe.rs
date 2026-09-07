@@ -69,6 +69,7 @@ pub(crate) type Filled = (egui::Rect, egui::Color32);
 struct Walked {
     text: Vec<(String, egui::Rect, egui::Color32)>,
     fills: Vec<Filled>,
+    strokes: Vec<Filled>,
 }
 
 /// **The one walk.** Glyphs with their rect and ink, filled rectangles with
@@ -81,10 +82,30 @@ fn descend(shape: &egui::Shape, out: &mut Walked) {
             t.galley.rect.translate(t.pos.to_vec2()),
             ink(t),
         )),
-        egui::Shape::Rect(r) => out.fills.push((r.rect, r.fill)),
+        egui::Shape::Rect(r) => {
+            out.fills.push((r.rect, r.fill));
+            if r.stroke.width > 0.0 {
+                out.strokes.push((r.rect, r.stroke.color));
+            }
+        }
         egui::Shape::Vec(shapes) => shapes.iter().for_each(|s| descend(s, out)),
         _ => {}
     }
+}
+
+/// **Every rectangle one finished frame OUTLINED**, with the colour of its
+/// stroke (bl-2d6b). The language leaves one stroke on the glass — the brand
+/// ring on whatever holds the keyboard — so *the focused thing is visibly the
+/// focused thing* is answerable only as a stroke, and a stroke is on the same
+/// `RectShape` a fill is, so the one walk carries it and this projects it.
+pub(crate) fn strokes_of(output: &egui::FullOutput) -> Vec<Filled> {
+    let mut out = Vec::new();
+    for clipped in &output.shapes {
+        let mut here = Walked::default();
+        descend(&clipped.shape, &mut here);
+        out.extend(here.strokes);
+    }
+    out
 }
 
 /// **Every filled rectangle one finished frame put on the glass**, each

@@ -82,6 +82,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if aimed && reveal {
         seat.scroll_to_me(None);
     }
+    // **Tab and the arrows agree** (bl-2d6b): a Tab that lands on a wall's
+    // row hands the arrows to the roster, so the mark on the heading moves
+    // with the ring on the row and one keyboard has one model of where it is.
+    if seat.gained_focus() {
+        model.focus = crate::ui::keys::Pane::Roster;
+    }
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
     }

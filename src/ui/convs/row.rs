@@ -77,6 +77,11 @@ pub(super) fn conversation(
     if selected && reveal {
         seat.scroll_to_me(None);
     }
+    // **Tab and the arrows agree** (bl-2d6b), as on the roster's rows: a Tab
+    // that lands here hands the arrows to the list.
+    if seat.gained_focus() {
+        model.focus = crate::ui::keys::Pane::Conversations;
+    }
     if seat.clicked() {
         model.select(&row.root_id.clone());
     }

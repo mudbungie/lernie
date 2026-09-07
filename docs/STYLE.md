@@ -25,7 +25,11 @@ it looks like and where a person's eye goes first.
 2. **No outlines.** No pane is boxed and no control is bordered. The three
    columns meet at a `HAIRLINE`; a row is bare ground and tints under the
    pointer; a control is a `SURFACE` tint with no stroke; the one stroke on
-   the glass is the brand ring on the field that holds the caret. The window
+   the glass is the brand ring on **whatever holds the keyboard** — the field
+   with the caret, the control a Tab landed on, the row it landed on.
+   **Delta:** the phone rings only the caret's field, because a thumb never
+   tabs; a desktop is driven from the keyboard, and a focus that cannot be
+   seen is a focus nobody can use (DESIGN §4.11). The window
    it replaces was a grid of grey chips — every act a bordered button, every
    pane a framed box — and a grid of chips is a face with no hierarchy.
 3. **One module.** `src/ui/theme.rs` holds every byte, size and gap;

@@ -92,7 +92,12 @@ pub fn visuals() -> egui::Visuals {
     v.widgets.noninteractive = widget(GROUND, Stroke::new(1.0, HAIRLINE), INK);
     v.widgets.inactive = widget(SURFACE, Stroke::NONE, INK);
     v.widgets.hovered = widget(RAISED, Stroke::NONE, INK);
-    v.widgets.active = widget(RAISED, Stroke::NONE, INK);
+    // **A control that holds the keyboard wears the brand ring** (bl-2d6b):
+    // egui paints a focused control with its `active` visuals, so the ring on
+    // whatever holds the keyboard — the one stroke the language leaves — is
+    // this slot. A pressed control wears it for the instant it is pressed,
+    // which is the same instant it holds the keyboard.
+    v.widgets.active = widget(RAISED, Stroke::new(1.0, BRAND), INK);
     v.widgets.open = widget(RAISED, Stroke::NONE, INK);
     v.button_frame = true;
     v.striped = false;

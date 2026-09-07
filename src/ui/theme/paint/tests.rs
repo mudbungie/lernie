@@ -57,6 +57,45 @@ fn a_chosen_row_is_raised_and_wears_the_brand() {
     );
 }
 
+/// **The row that holds the keyboard wears the brand ring** (bl-2d6b), and a
+/// row at rest wears no stroke at all.
+#[test]
+fn a_row_rings_while_it_holds_the_keyboard_and_not_otherwise() {
+    let window = Window::sized(300.0, 100.0);
+    let mut body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            row(ui, "first", INK, None, false, 0.0);
+            row(ui, "second", INK, None, false, 0.0);
+        });
+    };
+    let ringed = |output: &egui::FullOutput| {
+        crate::paint_probe::strokes_of(output)
+            .into_iter()
+            .filter(|(_, ink)| *ink == BRAND)
+            .count()
+    };
+    assert_eq!(ringed(&window.frame(Vec::new(), &mut body)), 0, "at rest");
+    window.frame(
+        vec![crate::paint_probe::frame::press(egui::Key::Tab)],
+        &mut body,
+    );
+    let output = window.frame(Vec::new(), &mut body);
+    assert_eq!(ringed(&output), 1, "one row holds the keyboard");
+    let ring = crate::paint_probe::strokes_of(&output)
+        .into_iter()
+        .find(|(_, ink)| *ink == BRAND)
+        .map(|(rect, _)| rect)
+        .expect("the ring");
+    let first = seen(&window, &mut body)
+        .into_iter()
+        .find(|run| run.text == "first")
+        .expect("the first row");
+    assert!(
+        ring.contains_rect(first.laid),
+        "the ring is around the first row"
+    );
+}
+
 /// **A row is a control**: a click on its words lands on it.
 #[test]
 fn a_row_takes_a_click_on_its_words() {

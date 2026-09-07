@@ -64,7 +64,7 @@ pub fn headline(row: &Row) -> String {
     let said = format!(
         "{} — from {} at {}",
         row.name,
-        row.deposit.from.clone().unwrap_or(UNSTATED.to_owned()),
+        row.deposit.said_by().unwrap_or(UNSTATED.to_owned()),
         row.deposit
             .deposited_at
             .clone()

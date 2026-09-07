@@ -109,6 +109,7 @@ pub(crate) fn deposit() -> crate::reply::inbox::Row {
         raw: "---\nfrom: user\n---\nhi".to_owned(),
         deposit: crate::reply::inbox::Deposit {
             from: Some("user".to_owned()),
+            from_name: None,
             deposited_at: Some("2026-08-30T05:10Z".to_owned()),
             epitaph: Some("final-response".to_owned()),
             terminal_ref: Some("refs/litany/agents/c-1".to_owned()),

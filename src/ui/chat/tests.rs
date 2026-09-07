@@ -44,6 +44,7 @@ fn a_delivered_message_names_its_sender_and_its_ending() {
     );
     let ended = of(EntryKind::Delivered {
         sender: "child".to_owned(),
+        sender_name: None,
         epitaph: Some("delivered".to_owned()),
         body: "landed".to_owned(),
     });
@@ -179,6 +180,7 @@ fn a_live_fold_replaces_the_streaming_entry_rather_than_standing_beside_it() {
         text: Some("half a sentence".to_owned()),
         thinking: None,
         last_delta: Some(Delta::Text),
+        tools: Vec::new(),
     };
     let shown = rows(&committed, Some(&newer));
     assert_eq!(shown.len(), 2, "{shown:?}");

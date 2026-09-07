@@ -240,26 +240,34 @@ fn every_gate_the_engine_can_offer_has_a_word() {
     says(&frame, &["offers: nudge, stop, stop children"]);
 }
 
-/// **A follow frame renders what LANDED** (bl-f076), and a frame that landed
-/// nothing is still the tail moving: the delta is a heartbeat, where the
-/// frame's own shape said the same eight characters forever.
+/// **The trail names the author** (REMOTE §9.20): the identity that made the
+/// act, beside the origin rather than in a detail, because it is what tells two
+/// rows spelling the same `argv`, `cwd` and `exit` apart.
 #[test]
-fn a_follow_frame_is_the_text_that_landed_or_a_heartbeat() {
-    let frame = |stream| json!({"ok": true, "kind": "follow", "stream": stream});
-    assert_eq!(
-        rendered(&frame(json!({"delta": "text", "text": "391"}))),
-        "391"
+fn a_trail_row_says_who_made_the_act() {
+    says(
+        &json!({"ok": true, "kind": "ops", "rows": [
+            {"ts": "1700", "client": "phone-1", "origin": "balls", "standing": "clean",
+             "failed": false, "exit_label": "exit 0", "exit": 0, "argv": "bl list",
+             "cwd": "/p", "stdout": "", "stderr": ""}]}),
+        &["phone-1", "balls", "bl list"],
     );
-    assert_eq!(
-        rendered(&frame(json!({"delta": "thinking", "thinking": "counting"}))),
-        "(thinking) counting"
+}
+
+/// **A machine that has never dialled says so** (REMOTE §5, PROTOCOL 14), and
+/// it is the row an operator can safely remove. On this surface presence reads
+/// false for every row — every verb opens and closes its own connection — so
+/// the stamp's absence is the only thing here that chooses.
+#[test]
+fn a_client_that_has_never_dialled_is_the_row_that_says_it() {
+    // Absent rather than null, which is the wire's own spelling of it
+    // (REMOTE §5: "absent for a client that has never dialled").
+    says(
+        &json!({"ok": true, "kind": "clients", "rows": [
+            {"client": "minted", "present": false, "tools": []}]}),
+        &["minted", "never dialled"],
     );
-    // **The heartbeat is the seat talking, so it rides the gutter** (bl-293d):
-    // the model's prose above keeps the left margin, and the column is what
-    // stops an eye reading a line to find out which of the two wrote it.
-    assert_eq!(
-        rendered(&frame(json!({"delta": "thinking"}))),
-        "┊ …  thinking"
-    );
-    assert_eq!(rendered(&frame(json!({}))), "┊ …");
+    let dialled = rendered(&json!({"ok": true, "kind": "clients", "rows": [
+        {"client": "real", "present": false, "tools": [], "last_seen": 1_757_000_000_i64}]}));
+    assert!(!dialled.contains("never dialled"), "{dialled}");
 }

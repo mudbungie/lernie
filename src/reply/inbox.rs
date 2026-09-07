@@ -43,8 +43,14 @@ pub struct Row {
 /// One deposit as parsed: four optional frontmatter facts, and the body.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Deposit {
-    /// Who sent it.
+    /// Who sent it — the framing sender, which is the origin token the
+    /// engine's own inbox scan addresses by.
     pub from: Option<String>,
+    /// **That sender's display name**, present exactly when the sender is an
+    /// agent wearing one (REMOTE §9.21, PROTOCOL 17) — the transcript's
+    /// `sender_name` on the deposit envelope. It never replaces [`Self::from`],
+    /// which stays the durable handle.
+    pub from_name: Option<String>,
     /// When it was deposited.
     pub deposited_at: Option<String>,
     /// **How the sending agent ended**, on a result message — its epitaph,
@@ -56,6 +62,18 @@ pub struct Deposit {
     /// The content. Always stated, and empty is a real reading: a result
     /// whose agent never spoke.
     pub body: String,
+}
+
+impl Deposit {
+    /// **Who sent it, as a person reads it** — the display name where the
+    /// sender wears one with the handle beside it, the handle alone where it
+    /// does not, and `None` where the frontmatter stated no sender at all,
+    /// which is a third reading and not an empty string.
+    pub fn said_by(&self) -> Option<String> {
+        self.from
+            .as_deref()
+            .map(|from| super::transcript::said_by(from, self.from_name.as_deref()))
+    }
 }
 
 /// One row, strictly ([`super`]'s rung 1). The deposit object is required —
@@ -73,6 +91,7 @@ pub(crate) fn row(value: &Value) -> Result<Row, String> {
 fn deposit(obj: &Map<String, Value>) -> Result<Deposit, String> {
     Ok(Deposit {
         from: fields::opt_text(obj, "from")?,
+        from_name: fields::opt_text(obj, "from_name")?,
         deposited_at: fields::opt_text(obj, "deposited_at")?,
         epitaph: fields::opt_text(obj, "epitaph")?,
         terminal_ref: fields::opt_text(obj, "terminal_ref")?,

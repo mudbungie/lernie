@@ -118,7 +118,7 @@ fn each_kind_lands_in_the_pane_that_paints_it() {
     assert_eq!(model.transcript.entries.len(), 1);
     model.absorb(
         &flat,
-        read(&json!({"ok": true, "kind": "follow", "stream": {"text": "so far"}})),
+        read(&json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "so far"}})),
     );
     assert_eq!(
         model.live.as_ref().and_then(|s| s.text.clone()),

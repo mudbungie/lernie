@@ -10,6 +10,7 @@ use super::{CLEAN, row};
 fn a_row_carries_what_ran_how_it_ended_and_where_its_alarm_stands() {
     let read = row(&json!({
         "argv": "bl close x",
+        "client": "phone-1",
         "cwd": "/ws/home",
         "exit": 1,
         "exit_label": "exit 1",
@@ -31,6 +32,10 @@ fn a_row_carries_what_ran_how_it_ended_and_where_its_alarm_stands() {
     assert_eq!(read.stderr, "the gate said no");
     assert_eq!(read.stdout, "");
     assert_eq!(read.ts, "1700");
+    // **Who made the act** (REMOTE §9.20). Read strictly, like `standing`: it
+    // is the one fact on this row that nothing later can recover, because
+    // presence is a point-in-time observation by design.
+    assert_eq!(read.client, "phone-1");
 }
 
 /// **The handoff is not a failure**, and the sentinel exit that says so is
@@ -40,6 +45,7 @@ fn a_row_carries_what_ran_how_it_ended_and_where_its_alarm_stands() {
 fn a_detached_row_is_not_failed_and_keeps_its_sentinel() {
     let read = row(&json!({
         "argv": "litany prompt c-1",
+        "client": "local",
         "cwd": "/ws/home",
         "exit": -2,
         "exit_label": "detached — handed off, no exit to observe",
@@ -52,6 +58,11 @@ fn a_detached_row_is_not_failed_and_keeps_its_sentinel() {
     }))
     .expect("a detached row reads");
     assert!(!read.failed);
+    assert_eq!(
+        read.client, "local",
+        "the reserved in-world identity: a row yog wrote about itself has a \
+         true answer rather than a blank"
+    );
     assert_eq!(read.exit, -2);
     assert_ne!(read.standing, CLEAN);
 }
@@ -62,7 +73,7 @@ fn a_detached_row_is_not_failed_and_keeps_its_sentinel() {
 #[test]
 fn a_standing_this_build_does_not_know_rides_verbatim() {
     let read = row(&json!({
-        "argv": "bl close x", "cwd": "/ws/home", "exit": 0,
+        "argv": "bl close x", "client": "local", "cwd": "/ws/home", "exit": 0,
         "exit_label": "exit 0", "failed": false, "origin": "balls",
         "standing": "quarantined", "stderr": "", "stdout": "", "ts": "1"
     }))
@@ -78,7 +89,7 @@ fn a_row_missing_a_field_refuses_and_names_it() {
     let why = row(&json!("a string")).expect_err("a row that is not an object refuses");
     assert!(why.contains("not an object"), "{why}");
     let why = row(&json!({
-        "argv": "x", "cwd": "/ws/home", "exit": "one",
+        "argv": "x", "client": "local", "cwd": "/ws/home", "exit": "one",
         "exit_label": "exit 1", "failed": true, "origin": "balls",
         "standing": "live", "stderr": "", "stdout": "", "ts": "1"
     }))
@@ -91,7 +102,7 @@ fn a_row_missing_a_field_refuses_and_names_it() {
 #[test]
 fn an_exit_no_i32_holds_refuses() {
     let why = row(&json!({
-        "argv": "x", "cwd": "/ws/home", "exit": 5_000_000_000_i64,
+        "argv": "x", "client": "local", "cwd": "/ws/home", "exit": 5_000_000_000_i64,
         "exit_label": "exit", "failed": true, "origin": "balls",
         "standing": "live", "stderr": "", "stdout": "", "ts": "1"
     }))

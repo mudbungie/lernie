@@ -118,6 +118,15 @@ fn the_headline_is_the_command_and_the_label_and_the_detail_carries_the_rest() {
     for part in ["1700", "balls", "/ws/home", "exit 1"] {
         assert!(said.contains(part), "{said}");
     }
+    // **And who made it** (REMOTE §9.20): two seats depositing into one
+    // conversation in the same second left two rows spelling everything else
+    // alike, and this is the one fact nothing later can recover.
+    assert!(said.contains("by local"), "{said}");
+    let phone = crate::reply::ops::OpRow {
+        client: "phone-1".to_owned(),
+        ..row
+    };
+    assert!(provenance(&phone).contains("by phone-1"), "{said}");
 }
 
 /// **What it said is one line, the complaint first**, and a child that printed

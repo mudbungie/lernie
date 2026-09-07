@@ -75,6 +75,12 @@ pub(super) fn clients(rows: &[ClientRow]) -> String {
                 &line(vec![
                     Some(row.client.clone()),
                     when(row.present, "present"),
+                    // **The absence is the fact** (`clients::NEVER`): on a
+                    // command line every row reads "not present", because
+                    // every verb opens and closes its own connection — so the
+                    // reading a roster is scanned for here is which row has
+                    // never dialled at all.
+                    when(row.last_seen.is_none(), crate::reply::clients::NEVER),
                     things(row.tools.len() as u64, "tool"),
                 ]),
                 Some(

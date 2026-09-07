@@ -125,7 +125,12 @@ pub const FOLLOW: Verb = Verb {
              EACH FRAME IS AN APPEND, not the whole answer (REMOTE §5.5): \
              absorb every frame of a read, in order, onto an empty fold, and \
              what you hold after the last one is what you have. A missed frame \
-             is missed text — which is what the holding is for.",
+             is missed text — which is what the holding is for. It prints the \
+             TOOL WINDOW beside the prose: a line as each call is dispatched \
+             (what ran, on which machine, and its input) and another when its \
+             capture lands (its exit code). A routed call carries the box in \
+             its own name, `<client>_<tool>`, so what is being run on your \
+             machines is on the line that says it is running.",
 };
 
 /// The roster read, typed. **Four reads and two acts, each a door whose arity

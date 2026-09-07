@@ -20,6 +20,10 @@ pub(super) fn ops(rows: &[OpRow]) -> String {
         .map(|row| {
             line(vec![
                 Some(row.ts.clone()),
+                // **Who made the act** (REMOTE §9.20). It is beside the
+                // origin rather than in the detail because it is what tells
+                // two identical rows apart, and nothing later can recover it.
+                Some(row.client.clone()),
                 Some(row.origin.clone()),
                 Some(row.standing.clone()),
                 when(row.failed, &format!("{} ({})", row.exit_label, row.exit)),

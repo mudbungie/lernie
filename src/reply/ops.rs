@@ -18,6 +18,17 @@
 //! integer is carried because it is what an operator asks for after the label,
 //! and the words are what the pane paints.
 //!
+//! # And the row says WHO, because nothing later can (PROTOCOL 16)
+//!
+//! REMOTE §9.20 put [`OpRow::client`] on the row for the reason presence is
+//! not on it: *"presence is a point-in-time observation by design, so nothing
+//! after the fact can say who a row belonged to"*. Two seats depositing into
+//! one conversation in the same second left two rows spelling `argv`, `cwd`,
+//! `origin` and `exit` and nothing that told them apart. The vocabulary is the
+//! registry's own — a certificate common name, or the reserved `local` for the
+//! window, the gestures inbox and yog's own loops — so a trail row and a
+//! roster row spell one identity one way.
+//!
 //! # The standing is total, and rides verbatim
 //!
 //! `clean` / `detached` / `live` / `retired` / `acked` — the outcome folded
@@ -47,6 +58,12 @@ pub const CLEAN: &str = "clean";
 pub struct OpRow {
     /// When it ran, in the engine's own spelling.
     pub ts: String,
+    /// **Who made the act** — a connection's certificate common name, or
+    /// `local` for the window, the gestures inbox and the engine's own loops
+    /// (REMOTE §9.20). Read strictly, like [`Self::standing`]: it is the
+    /// second field on this row a reader cannot recompute from the line beside
+    /// it, and the one that cannot be recovered later at all.
+    pub client: String,
     /// **What subject it belongs to** — the field a failure banner groups by.
     /// It is stored on the line because it cannot be derived (REMOTE §9.17).
     pub origin: String,
@@ -76,6 +93,7 @@ pub(crate) fn row(value: &Value) -> Result<OpRow, String> {
     let obj: &Map<String, Value> = value.as_object().ok_or("ops row: not an object")?;
     Ok(OpRow {
         ts: fields::text(obj, "ts")?,
+        client: fields::text(obj, "client")?,
         origin: fields::text(obj, "origin")?,
         standing: fields::text(obj, "standing")?,
         failed: fields::flag(obj, "failed")?,

@@ -19,9 +19,14 @@
 //! — see [`half`], which is that rule's one home. An empty half is not
 //! something the operator was not shown; it is something that was never said.
 
-use super::{Fold, LIVE, fold};
+use super::{Fold, fold};
+
+/// The turn that has not settled yet.
+mod live;
+
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
+use live::{half, live_rows, streaming};
 
 /// One painted row: who is speaking, and what they said.
 ///
@@ -79,15 +84,19 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
     match &entry.kind {
         EntryKind::Delivered {
             sender,
+            sender_name,
             epitaph,
             body,
-        } => vec![Row::plain(
-            match epitaph {
-                Some(word) => format!("{sender} ({word})"),
-                None => sender.clone(),
-            },
-            body.clone(),
-        )],
+        } => {
+            let who = crate::reply::transcript::said_by(sender, sender_name.as_deref());
+            vec![Row::plain(
+                match epitaph {
+                    Some(word) => format!("{who} ({word})"),
+                    None => who,
+                },
+                body.clone(),
+            )]
+        }
         EntryKind::Model {
             model_id, blocks, ..
         } => blocks.iter().filter_map(|b| block(model_id, b)).collect(),
@@ -149,45 +158,4 @@ fn block(model_id: &str, block: &Block) -> Option<Row> {
             String::new(),
         )),
     }
-}
-
-/// The live fold's rows.
-fn streaming(stream: &Stream) -> Vec<Row> {
-    live_rows(
-        stream.thinking.as_deref().unwrap_or_default(),
-        stream.text.as_deref().unwrap_or_default(),
-    )
-}
-
-/// **The one rule for a half of a turn, and its one home.** Reasoning and
-/// answer are each a row of its own and each omitted when it is empty: a model
-/// that has only thought so far, or one that answered without reasoning. An
-/// empty half is simply no row — never a blank one, which would claim something
-/// was said.
-///
-/// It is stated once because a turn reaches this pane by two routes — the live
-/// fold at write cadence, the committed entry at ask cadence — and a second
-/// copy of the filter is a rule one of the two will stop obeying. It did: the
-/// committed path painted a `(thinking)` header over nothing for every empty
-/// thinking block the engine emitted, which reads as *the model thought
-/// something and this seat lost it* (bl-beb7).
-fn half(speaker: &str, mark: &str, said: &str) -> Option<Row> {
-    (!said.is_empty()).then(|| {
-        Row::plain(
-            if mark.is_empty() {
-                speaker.to_owned()
-            } else {
-                format!("{speaker} ({mark})")
-            },
-            said.to_owned(),
-        )
-    })
-}
-
-/// The two halves of a turn in flight, by [`half`]'s rule.
-fn live_rows(thinking: &str, text: &str) -> Vec<Row> {
-    [("thinking", thinking), ("", text)]
-        .into_iter()
-        .filter_map(|(mark, said)| half(LIVE, mark, said))
-        .collect()
 }

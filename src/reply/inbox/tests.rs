@@ -55,3 +55,35 @@ fn a_malformed_row_refuses_and_names_the_field() {
     let why = row(&json!("a string")).expect_err("a row that is not an object refuses");
     assert!(why.contains("not an object"), "{why}");
 }
+
+/// **The name is beside the handle and never instead of it** (REMOTE §9.21,
+/// PROTOCOL 17). Every message a child sent was headed by sixty characters of
+/// timestamped hex; the display name is what a person reads, and the origin
+/// token stays because it is the durable handle once an agent is deleted and
+/// its name recycled. Three readings, not two: a named sender, an unnamed one,
+/// and a deposit whose frontmatter stated no sender at all.
+#[test]
+fn a_deposit_says_the_name_beside_the_handle_and_the_handle_alone_without_one() {
+    let of = |deposit| {
+        row(&json!({"name": "d.md", "raw": "", "deposit": deposit}))
+            .expect("a row")
+            .deposit
+    };
+    let named = of(json!({"from": "20260814T000000Z-ab12",
+                          "from_name": "DulcetMongoose", "body": ""}));
+    assert_eq!(named.from_name.as_deref(), Some("DulcetMongoose"));
+    assert_eq!(
+        named.said_by().as_deref(),
+        Some("DulcetMongoose (20260814T000000Z-ab12)")
+    );
+    assert_eq!(
+        of(json!({"from": "user", "body": ""})).said_by().as_deref(),
+        Some("user"),
+        "`user` never wears a name, and the absence is the fact"
+    );
+    assert_eq!(
+        of(json!({"body": ""})).said_by(),
+        None,
+        "and a deposit that stated no sender at all is a third reading"
+    );
+}

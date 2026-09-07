@@ -132,6 +132,7 @@ pub(crate) fn finding() -> Model {
 pub(crate) fn trailed(argv: &str, standing: &str) -> crate::reply::ops::OpRow {
     crate::reply::ops::OpRow {
         ts: "1700".to_owned(),
+        client: "local".to_owned(),
         origin: "balls".to_owned(),
         standing: standing.to_owned(),
         failed: standing != crate::reply::ops::CLEAN,

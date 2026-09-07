@@ -21,7 +21,7 @@ fn agent(state: &str) -> Value {
 
 /// One frame of a live tail.
 fn tail(text: &str) -> Value {
-    json!({"ok": true, "kind": "follow", "stream": {"delta": "text", "text": text}})
+    json!({"ok": true, "kind": "follow", "tools": [], "stream": {"delta": "text", "text": text}})
 }
 
 /// The gestures an engine was asked, without the version preface each

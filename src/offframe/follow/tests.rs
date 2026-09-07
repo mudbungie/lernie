@@ -50,11 +50,11 @@ fn every_frame_of_the_held_read_is_absorbed_onto_an_empty_fold() {
         &scratch,
         &flat(),
         vec![vec![
-            json!({"ok": true, "kind": "follow",
+            json!({"ok": true, "kind": "follow", "tools": [],
                    "stream": {"text": "half a ", "delta": "text"}}),
-            json!({"ok": true, "kind": "follow",
+            json!({"ok": true, "kind": "follow", "tools": [],
                    "stream": {"thinking": "hm. ", "delta": "thinking"}}),
-            json!({"ok": true, "kind": "follow",
+            json!({"ok": true, "kind": "follow", "tools": [],
                    "stream": {"text": "sentence", "delta": "text"}}),
         ]],
     );
@@ -97,9 +97,9 @@ fn a_second_read_replaces_rather_than_appending() {
         &scratch,
         &flat(),
         vec![
-            vec![json!({"ok": true, "kind": "follow",
+            vec![json!({"ok": true, "kind": "follow", "tools": [],
                         "stream": {"text": "the whole answer", "delta": "text"}})],
-            vec![json!({"ok": true, "kind": "follow",
+            vec![json!({"ok": true, "kind": "follow", "tools": [],
                         "stream": {"text": "the whole answer, and more", "delta": "text"}})],
         ],
     );
@@ -146,12 +146,16 @@ fn a_tail_for_a_conversation_the_operator_left_is_dropped() {
     link.live(
         &own(),
         "the-one-that-was-left",
-        crate::reply::read(&json!({"ok": true, "kind": "follow", "stream": {"text": "stale"}})),
+        crate::reply::read(
+            &json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "stale"}}),
+        ),
     );
     link.live(
         &own(),
         "20260830T051200Z-a1b2",
-        crate::reply::read(&json!({"ok": true, "kind": "follow", "stream": {"text": "wanted"}})),
+        crate::reply::read(
+            &json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "wanted"}}),
+        ),
     );
     let mut model = watching();
     link.settle(&mut model);
@@ -207,7 +211,7 @@ fn a_held_read_that_answers_something_other_than_a_tail_crosses_untouched() {
         &scratch,
         &flat(),
         vec![vec![
-            json!({"ok": true, "kind": "follow", "stream": {"text": "said. "}}),
+            json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "said. "}}),
             json!({"ok": false, "error": "the driver is gone"}),
         ]],
     );

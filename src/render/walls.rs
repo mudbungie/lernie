@@ -7,6 +7,7 @@
 use crate::reply::convs::ConvRow;
 use crate::reply::queue::{Held, QueueRow};
 use crate::reply::roster::Workspaces;
+use crate::reply::stream::window::Window;
 use crate::reply::stream::{Delta, Stream};
 
 use super::parts::{
@@ -107,11 +108,32 @@ pub(super) fn parked(held: &Held) -> String {
 /// rendering is the appended text — printed in order, one frame a line, it
 /// reads as the turn being written. Folding here and re-printing the whole
 /// accumulation each frame would be the same answer at quadratic cost.
+///
+/// **The tool window rides under the prose** (REMOTE §5.5, PROTOCOL 15), and
+/// it is the half an operator watching an agent administer their machines is
+/// actually watching: prose alone said "thinking" and two sentences while
+/// eight commands ran on two boxes. Each entry is a whole line — what ran,
+/// where, and how it ended — because a terminal cannot go back and amend the
+/// line it printed a minute ago; the pairing an interface would do by
+/// redrawing a row is done by [`Stream::appended`] before this is called.
 pub(super) fn follow(stream: &Stream) -> String {
-    let landed = line(vec![
-        clause("(thinking)", stream.thinking.as_deref()),
-        stream.text.clone(),
-    ]);
+    let landed = line_over(
+        &line(vec![
+            clause("(thinking)", stream.thinking.as_deref()),
+            stream.text.clone(),
+        ]),
+        // **The window rides the gutter** (bl-293d): what a tool is doing is
+        // the seat narrating the run, not the model's answer, and on this lane
+        // the two arrive interleaved a line at a time.
+        Some(narrated(
+            &stream
+                .tools
+                .iter()
+                .map(running)
+                .collect::<Vec<String>>()
+                .join("\n"),
+        )),
+    );
     if !landed.is_empty() {
         return landed;
     }
@@ -153,6 +175,29 @@ pub(crate) fn at_rest(agent: &str, state: &str, secs: i64) -> String {
         age(secs)
     ))
 }
+
+/// **One tool call, whole.** What ran and on which machine — REMOTE §5.1
+/// presents a routed tool as `<client>_<tool>`, so the name is the box — the
+/// input the engine already bounded, and how it ended.
+///
+/// **The status is the presence of an exit code** and never a third reading:
+/// absent is a call in flight. And a call whose opening half this reader never
+/// saw is named by its id rather than dropped — the id is what the frame
+/// carried, and a line that said `exit 0` about nothing at all would be worse
+/// than one that says which invocation.
+fn running(call: &Window) -> String {
+    line(vec![
+        Some(
+            call.exit_code
+                .map_or_else(|| RUNNING.to_owned(), |code| format!("exit {code}")),
+        ),
+        Some(call.tool.clone().unwrap_or_else(|| call.tool_use.clone())),
+        call.input.as_deref().map(brief),
+    ])
+}
+
+/// What a call with no exit code yet is said to be doing.
+const RUNNING: &str = "running";
 
 /// A turn in progress: what it is thinking, and what it has said.
 pub(super) fn tail(thinking: &str, text: &str) -> String {

@@ -108,6 +108,9 @@ pub(crate) fn machine(client: &str, present: bool) -> crate::reply::clients::Cli
     crate::reply::clients::ClientRow {
         client: client.to_owned(),
         present,
+        // A machine that has dialled: the never-dialled row is its own fixture
+        // where a pane asserts it, because the absence is the reading.
+        last_seen: Some(1_700),
         tools: vec![
             crate::reply::clients::ToolRow {
                 name: "Bash".to_owned(),

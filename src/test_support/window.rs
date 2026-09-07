@@ -88,6 +88,7 @@ pub(crate) fn said(sender: &str, body: &str) -> Entry {
         raw: body.to_owned(),
         kind: EntryKind::Delivered {
             sender: sender.to_owned(),
+            sender_name: None,
             epitaph: None,
             body: body.to_owned(),
         },

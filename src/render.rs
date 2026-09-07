@@ -35,7 +35,8 @@
 
 use serde_json::Value;
 
-use crate::reply::{Read, read};
+use crate::reply::stream::Stream;
+use crate::reply::{Read, Reply, read};
 
 pub(crate) use walls::at_rest;
 
@@ -91,11 +92,39 @@ pub fn said(stream: &[Value], form: Form) -> String {
         .join("\n")
 }
 
+/// **One frame of a HELD read**, rendered against the fold the follower holds.
+///
+/// Every other surface renders a frame alone, because every other frame stands
+/// alone. A follow frame does not: it is an append, and the closing half of a
+/// tool window *"restates neither name nor input — key it by `tool_use`"*
+/// (REMOTE §5.5). So a caller printing frames as they land — the one surface
+/// that cannot go back and amend a line — hands its fold in, and what comes
+/// back is this frame's own append with every call in it named.
+///
+/// It is the one entry point here that takes state, and the state is the
+/// caller's: one read is one fold, and the fold's whole lifetime is that call
+/// (`crate::seat::follow`, `crate::offframe::follow`).
+pub fn tail(frame: &Value, fold: &mut Stream, form: Form) -> String {
+    match (form, read(frame)) {
+        (Form::Json, _) => frame.to_string(),
+        (Form::Rendered, Read::Answer(Reply::Follow(later))) => {
+            answer::answer(&Reply::Follow(fold.appended(later)))
+        }
+        (Form::Rendered, other) => painted(other),
+    }
+}
+
 /// One frame, read and rendered. **Read here rather than by the caller**: a
 /// rendering is a statement about what a frame turned out to be, and
 /// [`crate::reply::read`] is the one thing that can say.
 fn rendered(frame: &Value) -> String {
-    match read(frame) {
+    painted(read(frame))
+}
+
+/// What a reading looks like to a person — the three answers [`Read`] has, and
+/// the one place each is worded.
+fn painted(answered: Read) -> String {
+    match answered {
         Read::Answer(reply) => answer::answer(&reply),
         // The engine's own sentence, unadorned. It is the answer to what was
         // asked, so it is printed rather than interpreted — this seat has

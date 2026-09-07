@@ -62,6 +62,12 @@ pub enum EntryKind {
     /// authority it implements against, which is a way of being wrong.
     Delivered {
         sender: String,
+        /// **The sender's display name**, present exactly when the sender is an
+        /// agent wearing one (REMOTE §9.21, PROTOCOL 17). It never replaces
+        /// [`Self::Delivered::sender`], which is the framing origin token and
+        /// the durable handle once an agent is deleted and its name recycled —
+        /// so both ride, and this is the one a person reads first.
+        sender_name: Option<String>,
         epitaph: Option<String>,
         body: String,
     },
@@ -118,11 +124,28 @@ fn entry(v: &Value) -> Result<Entry, String> {
     })
 }
 
+/// **Who said it, as a person reads it** — the display name where the sender
+/// wears one, with the id beside it, and the id alone where it does not.
+///
+/// One spelling, because a delivered message reaches two faces (the window's
+/// transcript rows and the command line's rendering) and a second copy of this
+/// rule is a rule one of them will stop obeying. The id is never dropped:
+/// REMOTE §9.21 keeps it riding *"as the durable handle once the agent is
+/// deleted and the name recycled"*, and a header that showed only a recycled
+/// name would attribute one agent's words to another.
+pub fn said_by(sender: &str, sender_name: Option<&str>) -> String {
+    match sender_name {
+        Some(name) => format!("{name} ({sender})"),
+        None => sender.to_owned(),
+    }
+}
+
 /// The kind discriminant and the fields it brings with it.
 fn kind(o: &Map<String, Value>) -> Result<EntryKind, String> {
     Ok(match fields::text(o, "kind")?.as_str() {
         "delivered" => EntryKind::Delivered {
             sender: fields::text(o, "sender")?,
+            sender_name: fields::opt_text(o, "sender_name")?,
             epitaph: fields::opt_text(o, "epitaph")?,
             body: fields::text(o, "body")?,
         },

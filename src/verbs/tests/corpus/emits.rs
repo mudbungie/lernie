@@ -19,8 +19,9 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    CREATE, DELIVER, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE, UPDATE, create,
-    deliver, effort, fan, find, fork, ops, prepare, priority, prompt, retire, update,
+    ADDRESS, CREATE, DELIVER, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE,
+    UPDATE, create, deliver, effort, enroll, fan, find, fork, ops, prepare, priority, prompt,
+    retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -54,6 +55,43 @@ fn text(obj: &Map<String, Value>, key: &str) -> String {
         .to_owned()
 }
 
+/// **One row of the verb table, rebuilt from a frame.**
+///
+/// Split out of [`rebuilt`] at clippy's function-length gate, on the seam the
+/// function already has: this is the GENERIC arm — every op that is a row of
+/// named strings and boolean flags — where everything above and below it is an
+/// op with a door of its own.
+fn from_row(verb: crate::verbs::Verb, obj: &Map<String, Value>) -> Option<Value> {
+    // **A frame carrying a field the row does not name cannot be composed
+    // here**, and that is a general rule rather than one op's arm: the
+    // builder writes exactly `op`, this row's parameters and whichever of
+    // its flags the frame raises, so a field beyond them can only ever
+    // come out missing. It answers `None` and lands in the ledger below
+    // with its reason, which is the decision being recorded instead of an
+    // assertion nobody could satisfy.
+    //
+    // **A flag is raised by the word and never by `false`** (bl-9fd1): a
+    // frame that spells one `false` is a field this seat's builder does
+    // not write, so it is declined here rather than round-tripped into an
+    // assertion nobody made.
+    let raised: Vec<String> = verb
+        .flags
+        .iter()
+        .filter(|flag| obj.get(**flag) == Some(&json!(true)))
+        .map(|flag| (*flag).to_owned())
+        .collect();
+    if obj.len() != verb.params.len() + raised.len() + 1 {
+        return None;
+    }
+    let args = verb
+        .params
+        .iter()
+        .map(|p| text(obj, p))
+        .chain(raised)
+        .collect();
+    Some(verb.envelope(args).expect("the shape's own arity"))
+}
+
 /// **This seat's own encoding of one frame**, or `None` where it has no way to
 /// compose that frame at all.
 ///
@@ -71,35 +109,22 @@ fn text(obj: &Map<String, Value>, key: &str) -> String {
 fn rebuilt(frame: &Value) -> Option<Value> {
     let obj = frame.as_object().expect("a gesture envelope");
     let op = text(obj, envelope::OP);
+    // **The one row with a door beside it** (bl-971c): `enroll` is in the verb
+    // table and its request carries an optional field, so the generic arm
+    // below — which composes exactly the row's parameters and its raised flags
+    // — declines the `--at` form on arity alone. It is composed here through
+    // the same door both faces use, absence and all: `address` unstated is the
+    // engine's own, which is a value rather than a field left short.
+    if op == ENROLL.word {
+        return Some(enroll(
+            text(obj, envelope::WORKSPACE),
+            text(obj, "name"),
+            text(obj, "grade"),
+            said(obj, ADDRESS),
+        ));
+    }
     if let Some(verb) = find(&op) {
-        // **A frame carrying a field the row does not name cannot be composed
-        // here**, and that is a general rule rather than one op's arm: the
-        // builder writes exactly `op`, this row's parameters and whichever of
-        // its flags the frame raises, so a field beyond them can only ever
-        // come out missing. It answers `None` and lands in the ledger below
-        // with its reason, which is the decision being recorded instead of an
-        // assertion nobody could satisfy.
-        //
-        // **A flag is raised by the word and never by `false`** (bl-9fd1): a
-        // frame that spells one `false` is a field this seat's builder does
-        // not write, so it is declined here rather than round-tripped into an
-        // assertion nobody made.
-        let raised: Vec<String> = verb
-            .flags
-            .iter()
-            .filter(|flag| obj.get(**flag) == Some(&json!(true)))
-            .map(|flag| (*flag).to_owned())
-            .collect();
-        if obj.len() != verb.params.len() + raised.len() + 1 {
-            return None;
-        }
-        let args = verb
-            .params
-            .iter()
-            .map(|p| text(obj, p))
-            .chain(raised)
-            .collect();
-        return Some(verb.envelope(args).expect("the shape's own arity"));
+        return from_row(verb, obj);
     }
     match op.as_str() {
         // **Both rungs this seat composes** (bl-4371): the bare payload, and

@@ -33,6 +33,7 @@ fn every_entry_kind_reads_back_as_itself() {
         vec![
             EntryKind::Delivered {
                 sender: "op".to_owned(),
+                sender_name: None,
                 epitaph: None,
                 body: "port it".to_owned(),
             },
@@ -120,4 +121,36 @@ fn an_entry_that_will_not_read_refuses_by_name() {
         let refusal = read(&json!({"rows": rows})).expect_err("refused");
         assert!(refusal.contains(said), "{rows}: {refusal}");
     }
+}
+
+/// **A delivered row carries the sender's display name beside its handle**
+/// (REMOTE §9.21, PROTOCOL 17), present exactly when the sender is an agent
+/// wearing one. The handle keeps riding: it is what stays true once the agent
+/// is deleted and the name recycled, so a header that showed only the name
+/// would attribute one agent's words to another.
+#[test]
+fn a_delivered_row_carries_the_display_name_beside_the_durable_handle() {
+    let read = super::transcript(
+        json!({"ok": true, "kind": "transcript", "rows": [
+            {"name": "001-20260814T000000Z-ab12.md", "raw": "{}", "kind": "delivered",
+             "sender": "20260814T000000Z-ab12", "sender_name": "DulcetMongoose",
+             "body": "landed"}]})
+        .as_object()
+        .expect("an object"),
+    )
+    .expect("a transcript");
+    assert_eq!(
+        read.entries[0].kind,
+        EntryKind::Delivered {
+            sender: "20260814T000000Z-ab12".to_owned(),
+            sender_name: Some("DulcetMongoose".to_owned()),
+            epitaph: None,
+            body: "landed".to_owned(),
+        }
+    );
+    assert_eq!(
+        super::said_by("20260814T000000Z-ab12", Some("DulcetMongoose")),
+        "DulcetMongoose (20260814T000000Z-ab12)"
+    );
+    assert_eq!(super::said_by("user", None), "user");
 }

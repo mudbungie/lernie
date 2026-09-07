@@ -463,6 +463,20 @@ and `reply/help` is still filed in `corpus/unreadable/` because nothing paints
 a help pane. What reads the field is the corpus walk, which reads every frame
 whatever this build does with it.
 
+**PROTOCOL 17 is the sentence with both halves full, in one bump** (bl-183b).
+A delivered row and a deposit envelope gained the sender's DISPLAY name
+(`sender_name`, `from_name`) — painted at once, on both faces, because the
+defect was on the glass: the framing sender is the addressing token litany's
+own inbox scan derives from, so every message a child sent was headed by sixty
+characters of timestamped hex. The name rides BESIDE the handle and never
+instead of it (`reply::transcript::said_by`, one spelling for two faces): the
+handle is what stays true once an agent is deleted and its name recycled, and a
+header showing only a recycled name would attribute one agent's words to
+another. The same bump's other half cost nothing — the §6 signal vocabulary
+gained a value, `truncated`, which this seat already carries as itself on rung
+3 — and its third brought two new shapes, `doctor` and its request, which land
+in `corpus/unreadable/` with the parity ledger carrying the op's line (§4.16).
+
 **The per-bump ledger is the `PROTOCOL` constant and this section does not
 restate it** — one fact, one home, and a list here would rot the way every
 count this repository stopped writing down rotted. What belongs here is the
@@ -537,6 +551,36 @@ unchanged, being a comparison on the stamp and not on the content. And **the
 wire spelling did not move** — the body is still `{"delta", "text",
 "thinking"}` — so no field signature can see this change, which is why the
 protocol integer carries it and why this paragraph exists at all.
+
+**The frame carries the TOOL WINDOW beside the prose** (REMOTE §5.5, PROTOCOL
+15; bl-183b): two entries a call, appended by the rule the prose already obeys.
+An operator watching an agent administer their machines saw a thinking marker
+and two sentences while eight commands ran on two boxes, and that is the
+omission this closes — the box is precisely the thing that cannot be inspected
+afterwards. Three facts about the shape and one about this seat:
+
+- **`exit_code`'s presence is the status.** Absent is a call in flight, and
+  there is no arm for *complete, status unknown*, so two readings cannot
+  disagree.
+- **The closing entry restates neither name nor input**, being keyed by
+  `tool_use`, and **the machine is already in the name**: REMOTE §5.1 presents
+  a routed tool as `<client>_<tool>`, always, so this end never takes that
+  composition apart and never joins the registry instead — the registry answers
+  where a call *would route now*, which is a different question.
+- **`tools` is required, empty included**, and this seat reads it strictly:
+  absent would make *this build has no window* and *nothing ran* one shape,
+  which is the reassuring answer on exactly the build that cannot tell.
+
+**And the window is what makes a fold necessary on the command line too.** The
+window pane already held one (`offframe::follow::tick`, above) and paints the
+accumulation; the CLI prints frames as they land, because a terminal is already
+a fold and re-printing the accumulation would be quadratic. But a line already
+printed cannot be amended, so a closing entry rendered alone could only say
+`exit 0` about an invocation it can no longer name. `seat::follow::held` now
+holds a fold of its own for exactly that: `Stream::appended` absorbs the frame
+and answers it back with the append's prose and its calls WHOLE, and
+`render::tail` is the one entry point in the rendering that takes state — the
+caller's, whose lifetime is one read.
 
 **The corpus is a directory, not a test table** (`corpus/`, with its own
 README), and **the frames in it are not this repository's** (bl-6b8e). yog
@@ -816,6 +860,21 @@ at quadratic cost. A frame that carried no content at all — the
 as the delta alone, which is a heartbeat: printing the frame's own shape there
 said the same eight characters forever, and printing nothing is the silence
 this word was fixed for.
+
+**Under the prose the same frame prints the TOOL WINDOW** (REMOTE §5.5,
+PROTOCOL 15; bl-183b), which is the half an operator watching an agent
+administer their machines is actually watching. Each entry is a whole line —
+how it ended, what ran and on which box (§5.1's `<client>_<tool>` composition
+carries the machine), and the input the engine already bounded — because a
+terminal cannot go back and amend the line it printed a minute ago. **The rows
+ride the gutter** (§4.37's column, bl-293d): what a tool is doing is the seat
+narrating the run rather than the model's answer, and on this lane the two
+arrive interleaved a line at a time. That is
+also why this one read holds a fold where every other rendering is a pure
+function of one frame: the closing half of a window restates neither name nor
+input, so without the fold a landed call could only be said as `exit 0` about
+an id. `render::tail` is the entry point that takes it, and the fold's whole
+lifetime is one held read.
 
 **`lernie start <workspace> <goal>` is a serialization of BOTH acts, not a
 third gesture** (`src/seat/start.rs`). Nothing new crosses the wire: a
@@ -1805,6 +1864,15 @@ it makes.
   rotted (the roster no longer classes it a control). Deleting a line
   re-reddens the gate and changes no code, which is the severability test.
 
+**And the ledger's first line since it emptied is `doctor`** (PROTOCOL 17,
+yog bl-28f4; bl-183b). It is round-1 ruling 7 — *one gesture answers "is this
+box wired": wire material, address, wall rows, role credentials, git identity,
+enrolled feet, protocol pins* — whose engine half landed upstream and whose
+seat half has not. Its reply kind sits in `corpus/unreadable/` for §4.9's
+reason, so the decode and the pane arrive in one commit and that commit deletes
+the line. The two halves of a protocol bump are decided separately: the number
+moves for the wire, the paint moves for the panes.
+
 **The inventory instrument is §4.11's harness and never a second one**, for the
 reason a second paint walk was refused: two instruments disagreeing about what
 is on the window is a defect about the instruments. Presence is the whole
@@ -2702,6 +2770,17 @@ enum, on §4.9's rung 3: this seat knows exactly one of the five words
 ordinary run would bury the rows the pane exists for — so a vocabulary that
 grew upstream costs a badge and not a decode.
 
+**And the row says WHO, on both faces** (REMOTE §9.20, PROTOCOL 16; bl-183b).
+`client` is the identity that made the act — a connection's certificate common
+name, or the reserved `local` for the window, the gestures inbox and yog's own
+loops — and it is read strictly, exactly as `standing` is. It is the one fact
+on a row that cannot be recovered later: presence is a point-in-time
+observation by design, so two seats depositing into one conversation within the
+same second left two rows spelling `argv`, `cwd`, `origin` and `exit` and
+nothing that told them apart. The pane carries it in the provenance line beside
+the origin and the CLI carries it beside the stamp, because on both surfaces it
+is what makes two identical-looking rows two facts.
+
 **The depth is the seat's own answer to a required field.** `ops` carries
 `max`, and the wire refuses an envelope without it; the *"defaults to the last
 50"* an operator reads belongs to yog's line grammar, which is a different
@@ -2744,6 +2823,19 @@ beside a full set as the ordinary thing: a tool host holds its connection only
 while it is waiting for work (REMOTE §5), so a busy machine and an absent one
 are indistinguishable from here, and the sentence says so rather than leaving an
 operator to read *absent* as *broken*.
+
+**And a third fact, whose ABSENCE is the reading** (REMOTE §5, PROTOCOL 14;
+bl-183b). `last_seen` is the unix second a client last spoke, durable where
+presence is not, and this seat paints the half that decides something: a row
+with no stamp at all has **never dialled** — an enrolment minted and abandoned,
+which is the row an operator can safely remove. The other half, *how long ago*
+a machine that has dialled last spoke, is an age, and an age needs a `now`.
+This crate holds no clock and every other age on this surface is one the engine
+computed and sent (`age_secs`), so painting one here would be this seat
+asserting a time nobody handed it. **The command line is where this matters
+most**: `present` reads false for every row there, because every verb opens and
+closes its own connection, so the stamp's absence is the only thing on a
+terminal roster that chooses.
 
 **The consent is stated on every tool, present or absent.** `subject_cwd` is
 what yog's worktree lane routes on (REMOTE §5.1) — the advertising box
@@ -3634,7 +3726,7 @@ of *what a seat printed*.
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/render.rs` | the rendering (§4.37): the two forms, and the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable. | ~105 |
+| `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |
 | `src/render/walls.rs` | the roster, the conversation list, the decision queue and the live tail — plus the line a watch ends on, which is the seat's own narration rather than a frame's rendering and rides the same gutter (§4.37). | ~155 |
@@ -3662,7 +3754,8 @@ of *what a seat printed*.
 | `src/ui/enroll/symbol.rs` | the symbol as geometry (bl-5e0e): the module pitch, which is a whole number of device pixels and as many of them as the pane has room for, and the one mesh every dark module is drawn in rather than a feathered rectangle apiece. | ~120 |
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |
 | `src/ui/model/enroll.rs` | an enrollment between the control that opened it and the symbol it ends at, and the only secret this window holds. | ~135 |
-| `src/reply/stream.rs` | the live tail's fold. | ~105 |
+| `src/reply/stream.rs` | the live tail's fold: the prose that accretes, the tool window beside it, and the append a follower answers a frame with. | ~195 |
+| `src/reply/stream/window.rs` | the tool window (REMOTE §5.5): two transitions a call, merged onto one call by the id both carry, where the exit code's presence is the status. | ~95 |
 | `src/reply/steps.rs` | the steps a conversation's loop has taken: one strict row per step, the nested spend, and the class tokens carried verbatim with `"none"` the one word the pane reads (§4.18). | ~135 |
 | `src/reply/files.rs` | what a conversation's worktree holds: the listing whose absence is a fact, the bounded preview's three classes plus the rung-3 word, and where the work lands (§4.18). | ~125 |
 | `src/reply/rail.rs` | the conversation's spine (§4.29): the notches, the two absences each is read as a pair, and the label derived off the commit that stores it. | ~170 |
@@ -3781,7 +3874,8 @@ of *what a seat printed*.
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which of the composer's two parameter boxes a row menu asked for the cursor in, and the one door that names a conversation and goes there (§4.23). Taken once, by the frame that paints the box. | ~85 |
 | `src/ui/chat.rs` | the conversation pane: where it opens, what it follows, and how a folded row is painted. | ~110 |
-| `src/ui/chat/rows.rs` | one conversation as rows, and the live fold the lane hands over whole. A half of a turn with nothing in it is no row, on either path, because the rule has one home (`half`) rather than one copy per route. | ~190 |
+| `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected. | ~160 |
+| `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/chat/subject.rs` | which conversation the pane is showing: name, resting clause, failure and costing, read off the records header rather than re-derived. | ~65 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |

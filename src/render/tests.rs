@@ -14,6 +14,9 @@ use crate::test_support::corpus;
 /// The shapes the corpus does not carry a fixture of, built by hand.
 mod shapes;
 
+/// The held read, whose rendering has a memory.
+mod tail;
+
 /// **Every answer upstream can emit renders, and none of them renders as
 /// JSON.** The first half is the census assertion — a kind added to
 /// [`crate::reply::Reply`] with no arm here does not compile, and a kind

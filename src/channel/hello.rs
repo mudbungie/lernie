@@ -153,16 +153,56 @@ use super::{Reach, frame};
 ///   spelling rows the same way.
 /// - **13** — `reply/config` gained `settings`, the file's own schema applied
 ///   to the bytes answered beside it.
+/// - **14** — two additive fields on two shapes in use, landed at one version
+///   because two bumps a minute apart would make every client re-pin twice for
+///   one wave. `request/enroll` gained an optional `address` — what the DEVICE
+///   will dial, which need not be the engine's own view of itself — and this
+///   seat composes no door for it (`verbs::tests::corpus::emits`'s ledger,
+///   bl-2f18). `reply/clients` gained an optional `last_seen`, and this seat
+///   paints the half that decides something: **absent is a machine that has
+///   never once dialled**, which on a terminal is the only reading available,
+///   since presence reads false for every row when every verb opens and closes
+///   its own connection.
+/// - **15** — `reply/follow` gained `tools`, the TOOL WINDOW: an entry as a
+///   call is dispatched and another when its capture lands. Required rather
+///   than absent-reads-empty, on `reply/advertised`'s precedent at 8 — absent
+///   would read as *nothing ran*, the reassuring answer, on exactly the build
+///   that cannot tell. It is the first bump this seat spends on the lane it
+///   was already following: the CLI's follower now holds a fold so a closing
+///   entry that restates nothing can still be named
+///   (`crate::render::tail`), and the window paints the window under the live
+///   turn.
+/// - **17** — two shapes at one version, both the same litany 0.0.11 pin
+///   landing upstream. A delivered row gained an optional `sender_name`, and
+///   the deposit envelope in `reply/inbox` the same fact as `from_name`: the
+///   sender's DISPLAY name, present exactly when the sender is an agent
+///   wearing one. Painted on both faces beside the handle and never instead of
+///   it (`reply::transcript::said_by`) — the framing sender is the addressing
+///   key and stays true once an agent is deleted and its name recycled, where
+///   every message a child sent was otherwise headed by sixty characters of
+///   timestamped hex. The version's other half is a VALUE and not a field: the
+///   §6 signal vocabulary gained `truncated`, which this seat already carries
+///   as itself on rung 3, so it costs the integer and no decode. And two new
+///   shapes arrived with it — `reply/doctor` and its request — which land in
+///   `corpus/unreadable/` because nothing here paints a doctor yet; the
+///   parity ledger carries the op's line, citing the ball that will.
+/// - **16** — `reply/ops` rows gained `client`, the identity that made the act.
+///   Read strictly, like `standing`, and painted on both faces: it is the one
+///   fact on a trail row that nothing later can recover, because presence is a
+///   point-in-time observation by design.
 ///
 /// **The ledger absorbs the rest, which is the arrangement working rather than
-/// a debt.** `ops` and `config` are already `corpus/unreadable/` files here, so
-/// their gains cost a refresh and nothing else; `acknowledged` and `login` are
-/// new shapes and land there the same way; and the `wounded` entry falls to
+/// a debt.** At the 13 refresh `ops` and `config` were still
+/// `corpus/unreadable/` files here, so their gains cost a refresh and nothing
+/// else — both have since been claimed by the panes that paint them, which is
+/// why 16's gain on `ops` is a decode and not a line in that directory;
+/// `acknowledged` and `login` were new shapes and landed there the same way;
+/// and the `wounded` entry falls to
 /// [`crate::reply::transcript::EntryKind::Unknown`], which is total by design.
 /// Four new ops are classed `control` — `login`, `login-tail`, `pin`, `unpin`
 /// — so `parity.toml` gains four lines rather than the gate reddening, each
 /// citing the ball that will delete it.
-pub const PROTOCOL: u32 = 13;
+pub const PROTOCOL: u32 = 17;
 
 /// The preface's one key, and the whole of its shape.
 const KEY: &str = "protocol";

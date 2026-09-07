@@ -12,16 +12,19 @@ fn read(v: &Value) -> Result<Stream, String> {
 #[test]
 fn a_frame_carries_the_whole_accumulated_fold() {
     assert_eq!(
-        read(&json!({"ok": true, "kind": "follow", "stream": {
-            "thinking": "weighing the two seams",
-            "text": "the seam is real",
-            "delta": "text",
-        }}))
+        read(
+            &json!({"ok": true, "kind": "follow", "tools": [], "stream": {
+                "thinking": "weighing the two seams",
+                "text": "the seam is real",
+                "delta": "text",
+            }})
+        )
         .expect("a fold"),
         Stream {
             text: Some("the seam is real".to_owned()),
             thinking: Some("weighing the two seams".to_owned()),
             last_delta: Some(Delta::Text),
+            tools: Vec::new(),
         }
     );
 }
@@ -32,11 +35,12 @@ fn a_frame_carries_the_whole_accumulated_fold() {
 #[test]
 fn an_empty_fold_is_waiting_and_not_an_empty_answer() {
     assert_eq!(
-        read(&json!({"stream": {}})).expect("a fold"),
+        read(&json!({"stream": {}, "tools": []})).expect("a fold"),
         Stream::default()
     );
     let thinking_only =
-        read(&json!({"stream": {"thinking": "…", "delta": "thinking"}})).expect("a fold");
+        read(&json!({"stream": {"thinking": "…", "delta": "thinking"}, "tools": []}))
+            .expect("a fold");
     assert_eq!(thinking_only.text, None);
     assert_eq!(thinking_only.last_delta, Some(Delta::Thinking));
 }
@@ -47,7 +51,8 @@ fn an_empty_fold_is_waiting_and_not_an_empty_answer() {
 /// avoid painting one word, while the operator is watching the tail move.
 #[test]
 fn an_unknown_delta_keeps_the_turn_rather_than_the_strictness() {
-    let read = read(&json!({"stream": {"text": "so far", "delta": "summary"}})).expect("a fold");
+    let read = read(&json!({"stream": {"text": "so far", "delta": "summary"}, "tools": []}))
+        .expect("a fold");
     assert_eq!(read.text.as_deref(), Some("so far"));
     assert_eq!(
         read.last_delta,
@@ -69,8 +74,18 @@ fn an_unknown_delta_keeps_the_turn_rather_than_the_strictness() {
 fn a_frame_with_no_fold_in_it_refuses() {
     for (frame, said) in [
         (json!({"ok": true, "kind": "follow"}), "\"stream\""),
-        (json!({"stream": []}), "\"stream\""),
-        (json!({"stream": {"text": 7}}), "\"text\""),
+        (json!({"stream": [], "tools": []}), "\"stream\""),
+        (json!({"stream": {"text": 7}, "tools": []}), "\"text\""),
+        // **The window is required, empty included** (REMOTE §5.5): a frame
+        // that omits it is a build this seat cannot tell "nothing ran" from,
+        // so it refuses by name rather than reading the reassuring answer.
+        (json!({"stream": {}}), "\"tools\""),
+        (json!({"stream": {}, "tools": {}}), "\"tools\""),
+        (
+            json!({"stream": {}, "tools": ["toolu_01"]}),
+            "not a JSON object",
+        ),
+        (json!({"stream": {}, "tools": [{}]}), "\"tool_use\""),
     ] {
         let refusal = read(&frame).expect_err("refused");
         assert!(refusal.contains(said), "{frame}: {refusal}");
@@ -84,9 +99,9 @@ fn a_frame_with_no_fold_in_it_refuses() {
 #[test]
 fn absorbing_the_append_is_reading_the_whole() {
     let split = [
-        json!({"stream": {"thinking": "weighing ", "delta": "thinking"}}),
-        json!({"stream": {"text": "the answer ", "delta": "text"}}),
-        json!({"stream": {"text": "so far.", "delta": "text"}}),
+        json!({"stream": {"thinking": "weighing ", "delta": "thinking"}, "tools": []}),
+        json!({"stream": {"text": "the answer ", "delta": "text"}, "tools": []}),
+        json!({"stream": {"text": "so far.", "delta": "text"}, "tools": []}),
     ];
     let mut fold = Stream::default();
     for frame in &split {
@@ -94,7 +109,7 @@ fn absorbing_the_append_is_reading_the_whole() {
     }
     assert_eq!(
         fold,
-        read(&json!({"stream": {"thinking": "weighing ",
+        read(&json!({"tools": [], "stream": {"thinking": "weighing ",
                                 "text": "the answer so far.", "delta": "text"}}))
         .expect("a fold"),
         "fold(a).absorb(fold(b)) == fold(a ++ b)"
@@ -109,9 +124,11 @@ fn absorbing_the_append_is_reading_the_whole() {
 #[test]
 fn a_frame_that_appended_nothing_leaves_the_fold_standing() {
     let mut fold = Stream::default();
-    fold.absorb(read(&json!({"stream": {"text": "said", "delta": "text"}})).expect("a fold"));
+    fold.absorb(
+        read(&json!({"stream": {"text": "said", "delta": "text"}, "tools": []})).expect("a fold"),
+    );
     let whole = fold.clone();
-    fold.absorb(read(&json!({"stream": {}})).expect("a fold"));
+    fold.absorb(read(&json!({"stream": {}, "tools": []})).expect("a fold"));
     assert_eq!(fold, whole, "an empty append is not a reset");
     assert_eq!(fold.last_delta, Some(Delta::Text));
     assert_eq!(fold.thinking, None, "and silence is not an empty string");

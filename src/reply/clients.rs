@@ -12,6 +12,17 @@
 //! that is not currently waiting for work — not a stale answer — and the pane
 //! says both rather than folding them into one word.
 //!
+//! # And a third fact, because presence could not tell a ghost from a sleeper
+//!
+//! [`ClientRow::last_seen`] is durable where presence is not (REMOTE §5,
+//! PROTOCOL 14): `present` reads `false` for a machine that spoke ten seconds
+//! ago and for one that has never once connected, and **on this seat's command
+//! line it reads `false` for everything**, because every verb opens and closes
+//! its own connection. So a roster read from a terminal was a list of names
+//! with nothing to choose by, and the operator's `rm` was unusable — no row
+//! said which was safe to delete. **Absent is the answer, not a gap**: a row
+//! with no stamp has never dialled, and it is precisely the row that can go.
+//!
 //! # `subject_cwd` is the consent, and its absence is the answer
 //!
 //! REMOTE §5.1: *"`true` states that the advertising box consents to run this
@@ -48,6 +59,11 @@ pub struct ClientRow {
     pub present: bool,
     /// What it has advertised, as of the last set it presented.
     pub tools: Vec<ToolRow>,
+    /// **When it last spoke**, in unix seconds — absent for a machine that has
+    /// never once dialled, which is the reading that matters (REMOTE §5,
+    /// PROTOCOL 14). Durable, unlike [`Self::present`]: the question it
+    /// answers is asked *about a client that is not connected now*.
+    pub last_seen: Option<i64>,
 }
 
 /// One tool a machine offers.
@@ -70,6 +86,7 @@ pub(crate) fn row(value: &Value) -> Result<ClientRow, String> {
         client: fields::text(obj, "client")?,
         present: fields::flag(obj, "present")?,
         tools: fields::list(obj, "tools", tool)?,
+        last_seen: fields::opt_secs(obj, "last_seen")?,
     })
 }
 
@@ -89,13 +106,29 @@ impl ClientRow {
     /// painted under it and a number is what a glance wants.
     pub fn line(&self) -> String {
         format!(
-            "{}  — {}, {} tool(s)",
+            "{}  — {}, {} tool(s){}",
             self.client,
             if self.present { HERE } else { AWAY },
-            self.tools.len()
+            self.tools.len(),
+            if self.last_seen.is_none() {
+                format!(", {NEVER}")
+            } else {
+                String::new()
+            }
         )
     }
 }
+
+/// **What a row says of a machine that has never once dialled.**
+///
+/// The one half of [`ClientRow::last_seen`] this seat paints, and it is the
+/// half that decides something: it names the enrolment that was minted and
+/// abandoned, which is the row an operator can safely remove. The other half —
+/// *how long ago* a machine that HAS dialled last spoke — is an age, and an
+/// age needs a `now`. This crate holds no clock and every other age on this
+/// surface is one the engine computed and sent (`age_secs`), so painting one
+/// here would mean this seat asserting a time nobody handed it.
+pub const NEVER: &str = "never dialled";
 
 /// What a row says of a machine holding a connection at the moment it answered.
 pub const HERE: &str = "connected now";

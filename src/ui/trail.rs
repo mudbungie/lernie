@@ -167,13 +167,19 @@ pub fn standing(row: &OpRow) -> Option<String> {
     (row.standing != CLEAN).then(|| row.standing.clone())
 }
 
-/// When and where it ran, and what subject it belongs to — the field a failure
-/// banner groups by, carried here because it is what makes two rows with the
-/// same argv two different facts.
+/// When it ran, WHO made it, where it ran, and what subject it belongs to —
+/// the fields that make two rows with the same argv two different facts.
+///
+/// **The client is one of them and it is the one nothing can recover**
+/// (REMOTE §9.20): presence is a point-in-time observation by design, so a row
+/// that did not carry the identity when it was written can never be told from
+/// the row beside it. `local` is the reserved in-world identity — the window,
+/// the gestures inbox and the engine's own loops — so a row yog wrote about
+/// itself has a true answer rather than a blank.
 pub fn provenance(row: &OpRow) -> String {
     format!(
-        "{}  {}  in {}  (exit {})",
-        row.ts, row.origin, row.cwd, row.exit
+        "{}  {}  by {}  in {}  (exit {})",
+        row.ts, row.origin, row.client, row.cwd, row.exit
     )
 }
 

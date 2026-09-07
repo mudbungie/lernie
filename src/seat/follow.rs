@@ -57,6 +57,7 @@ use crate::channel::Reach;
 use crate::cli::Verdict;
 use crate::render::{Form, said};
 use crate::reply::convs::AgentState;
+use crate::reply::stream::Stream;
 use crate::reply::{Read, Reply, read};
 
 /// **How long a read that brought nothing waits before asking again.**
@@ -107,6 +108,14 @@ pub fn follow(
 
 /// One held read, printed as it arrives. Answers how many frames landed, which
 /// is the one fact the loop above needs from it.
+///
+/// **The fold's whole lifetime is this call**, which is the whole of how REMOTE
+/// §5.5's *"onto an empty fold"* is implemented here: one read is one `held`,
+/// so a read boundary needs no flag and no field — it is a local's scope. What
+/// is printed is still the frame's own append, because a terminal is already a
+/// fold and re-printing the accumulation would be the same answer at quadratic
+/// cost; the fold exists for the half that CANNOT be printed twice, which is
+/// the tool window's closing entry ([`crate::render::tail`]).
 fn held(
     data_root: &Path,
     envelope: &Value,
@@ -117,8 +126,9 @@ fn held(
         .sent
         .map_err(Reach::Unsent)?;
     let mut heard = 0usize;
+    let mut fold = Stream::default();
     channel.follow(&carried, &mut |frame| {
-        say(&said(std::slice::from_ref(&frame), form));
+        say(&crate::render::tail(&frame, &mut fold, form));
         heard += 1;
         true
     })?;

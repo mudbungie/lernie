@@ -137,3 +137,13 @@
 # word and op follow the row's own rank, so `pin` and `unpin` are both tagged
 # and neither is in this ledger. They are the strip's acts and not the
 # conversation row's, which is why bl-dbc9's context menu was the wrong home.
+
+# The doctor arrived at PROTOCOL 17 (yog bl-28f4) and is the first line this
+# ledger has carried since the panes above emptied it. It is the whole of what
+# round-1 ruling 7 asks for — *one gesture answers "is this box wired": wire
+# material, address, wall rows, role credentials, git identity, enrolled feet,
+# protocol pins* — and the ruling names this seat's half beside the engine's.
+# Its reply kind sits in `corpus/unreadable/` for §4.9's reason (a kind nothing
+# renders is a kind nobody has to carry), so the pane and the decode land in
+# one commit, and this line is deleted by it.
+doctor = "yog bl-28f4 landed the engine's half at PROTOCOL 17; the seat owes it a control and a rendering, which is round-1 ruling 7's lernie half"

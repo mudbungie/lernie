@@ -20,7 +20,13 @@
 //! are the *appended* part rather than the accumulated one. Nothing in a field
 //! signature can see that, so this paragraph is the record.
 //!
-//! **Absence is a reading in all three fields.** `text` and `thinking` are
+//! **The frame carries the tool window beside the prose** (REMOTE §5.5,
+//! PROTOCOL 15), by the same rule: concatenate the lists of a read's frames in
+//! order. [`window`] holds it, and the one thing to know here is that the two
+//! accumulate together — a frame is *what landed*, and what landed is some
+//! prose, some window, or both.
+//!
+//! **Absence is a reading in all three prose fields.** `text` and `thinking` are
 //! absent until a delta of that kind has landed — which is not the same claim
 //! as an empty string — and `delta` is absent while the stream has produced
 //! nothing at all, which under an open response file is exactly *waiting for
@@ -30,6 +36,11 @@
 use serde_json::{Map, Value};
 
 use super::fields;
+
+/// The tool window the fold carries beside the prose.
+pub mod window;
+
+use window::Window;
 
 /// This reply's kind token. One word for the query and the reply alike, on the
 /// engine's side; this end only ever reads it.
@@ -49,6 +60,10 @@ pub struct Stream {
     /// The kind of the **last** delta seen — which of the two the model is
     /// doing right now.
     pub last_delta: Option<Delta>,
+    /// **The tool window** (REMOTE §5.5): what ran, where, and how it ended.
+    /// Folded into calls by [`window::fold`], so the two transitions the wire
+    /// spends per call are one entry here.
+    pub tools: Vec<Window>,
 }
 
 impl Stream {
@@ -64,6 +79,48 @@ impl Stream {
         append(&mut self.text, later.text);
         append(&mut self.thinking, later.thinking);
         self.last_delta = later.last_delta.or(self.last_delta.take());
+        for entry in later.tools {
+            window::fold(&mut self.tools, entry);
+        }
+    }
+
+    /// **Absorb one frame's append and answer what THAT FRAME said**, with
+    /// every call it moved whole.
+    ///
+    /// It is the follower's half of REMOTE §5.5's window rule. A closing entry
+    /// *"restates neither name nor input — key it by `tool_use`"*, so a
+    /// surface that prints frames as they land — the command line, where a
+    /// line already printed cannot be gone back to — would say `exit 0` about
+    /// a call it could no longer name. The fold is the only thing that can
+    /// name it, and this is the fold answering.
+    ///
+    /// The prose is the APPEND rather than the accumulation, because that is
+    /// what such a surface prints; the window entries are the frame's own, each
+    /// looked up whole. A surface that paints the accumulation — the window's
+    /// transcript — absorbs and paints [`self`] instead.
+    #[must_use]
+    pub fn appended(&mut self, later: Self) -> Self {
+        let moved: Vec<String> = later
+            .tools
+            .iter()
+            .map(|entry| entry.tool_use.clone())
+            .collect();
+        let said = Self {
+            text: later.text.clone(),
+            thinking: later.thinking.clone(),
+            last_delta: later.last_delta.clone(),
+            tools: Vec::new(),
+        };
+        self.absorb(later);
+        Self {
+            tools: self
+                .tools
+                .iter()
+                .filter(|call| moved.contains(&call.tool_use))
+                .cloned()
+                .collect(),
+            ..said
+        }
     }
 }
 
@@ -127,6 +184,10 @@ pub(crate) fn follow(obj: &Map<String, Value>) -> Result<Stream, String> {
             THINKING => Delta::Thinking,
             _ => Delta::Unknown(word.clone()),
         }),
+        // Beside the fold rather than inside it, which is where the wire puts
+        // it: the prose is what the model is saying and the window is what the
+        // step is doing, and the two accumulate by the same rule.
+        tools: window::windows(obj)?,
     })
 }
 

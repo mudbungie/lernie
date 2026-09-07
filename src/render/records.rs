@@ -96,7 +96,7 @@ pub(super) fn inbox(rows: &[InboxRow]) -> String {
             line_over(
                 &line(vec![
                     Some(row.name.clone()),
-                    clause("from", row.deposit.from.as_deref()),
+                    clause("from", row.deposit.said_by().as_deref()),
                     clause("at", row.deposit.deposited_at.as_deref()),
                     clause("epitaph:", row.deposit.epitaph.as_deref()),
                     clause("ref", row.deposit.terminal_ref.as_deref()),

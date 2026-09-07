@@ -36,11 +36,15 @@ fn reading(kind: &EntryKind) -> (String, Option<String>) {
     match kind {
         EntryKind::Delivered {
             sender,
+            sender_name,
             epitaph,
             body,
         } => (
             line(vec![
-                Some(format!("from {sender}")),
+                Some(format!(
+                    "from {}",
+                    crate::reply::transcript::said_by(sender, sender_name.as_deref())
+                )),
                 clause("epitaph:", epitaph.as_deref()),
             ]),
             Some(body.clone()),

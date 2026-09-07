@@ -52,6 +52,7 @@ fn an_unstated_fact_is_said_rather_than_dropped() {
         raw: "bare".to_owned(),
         deposit: Deposit {
             from: None,
+            from_name: None,
             deposited_at: None,
             epitaph: None,
             terminal_ref: None,

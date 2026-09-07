@@ -7,7 +7,7 @@ use serde_json::json;
 /// A well-formed row with both kinds of tool on it, as the corpus carries one.
 fn full() -> serde_json::Value {
     json!({"ok": true, "kind": "clients", "rows": [
-        {"client": "laptop", "present": true, "tools": [
+        {"client": "laptop", "present": true, "last_seen": 1_757_000_000_i64, "tools": [
             {"name": "Bash", "description": "run a command",
              "input_schema": {"type": "object"}},
             {"name": "bash", "description": "run it where the caller says",
@@ -32,8 +32,17 @@ fn a_row_carries_presence_the_set_and_each_tool_s_consent() {
             .collect::<Vec<(String, bool)>>(),
         vec![("Bash".to_owned(), false), ("bash".to_owned(), true)]
     );
+    assert_eq!(
+        rows[0].last_seen,
+        Some(1_757_000_000),
+        "when it last spoke is durable, unlike presence"
+    );
     assert!(!rows[1].present, "presence is a fact about the moment");
     assert!(rows[1].tools.is_empty(), "and the set is its own fact");
+    assert_eq!(
+        rows[1].last_seen, None,
+        "and an absent stamp is a machine that has never once dialled"
+    );
 }
 
 /// **A tool's `input_schema` rides through unread**, which is the vocabulary's
@@ -117,8 +126,12 @@ fn the_line_says_presence_and_how_much_is_offered() {
         rows[0].line(),
         format!("laptop  — {}, 2 tool(s)", super::HERE)
     );
+    // **The row that has never dialled says so**, and it is the only half of
+    // `last_seen` this seat paints: presence reads false for a sleeping
+    // machine and for one that was minted and abandoned, and on the command
+    // line it reads false for everything.
     assert_eq!(
         rows[1].line(),
-        format!("phone  — {}, 0 tool(s)", super::AWAY)
+        format!("phone  — {}, 0 tool(s), {}", super::AWAY, super::NEVER)
     );
 }

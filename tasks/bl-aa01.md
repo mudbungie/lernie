@@ -1,7 +1,8 @@
 +++
 title = "grows-only reader and the edition replay: PROTOCOL 19 as a major, projection + mutation over the vendored corpus, edition in the hello greys what the engine cannot spell, unpainted kinds leave unreadable/"
 created = 1788926008
-updated = 1788926008
+updated = 1788926091
+claimant = "Cantaloups-P3"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

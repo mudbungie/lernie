@@ -26,6 +26,15 @@
 #
 # SEVERABILITY, which is the house test: deleting a line re-reddens the gate and
 # changes no code. Adding a control deletes a line and changes no config.
+#
+# WHAT IT RECORDS IS WHAT IS NOT RENDERED, NEVER WHAT IS REFUSED (bl-aa01, yog
+# REMOTE 3.2). A reply kind this seat does not paint is refused BY NAME at the
+# decoder and filed in `corpus/unpainted/`, which is the ledger of unrendered
+# KINDS; this file is the ledger of unsurfaced OPS. Two ledgers because they
+# answer two questions — one asks what a frame becomes, the other what an
+# operator can reach — and neither may borrow the other's vocabulary: a refusal
+# recorded here would read as an absence somebody owes a control, and an
+# absence recorded there would read as a defect.
 
 # bl-d2af landed the ball pane's READ half and bl-f7ae landed its ACT half, so
 # all nine of the family's ops are gone from this ledger: `balls`, `board`,

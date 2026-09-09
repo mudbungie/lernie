@@ -19,7 +19,7 @@ use super::super::{
     CREATE, DELIVER, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE, UPDATE, table,
 };
 use crate::envelope;
-use crate::test_support::corpus::{Fixture, files, fixture, record, root};
+use crate::test_support::corpus::{Fixture, Signature, files, fixture, record, root};
 
 /// Rule 2, and the record of what this seat cannot compose.
 mod emits;
@@ -60,8 +60,8 @@ fn request(word: &str) -> Fixture {
 /// says which of those places it routes by. The two are read against each
 /// other below, so a holder added on one side and not the other is red here
 /// rather than on a connection (bl-4a36).
-fn addressed(signature: &[String], frame: &Value) -> Option<String> {
-    let named = |field: &str| signature.iter().any(|f| f == field);
+fn addressed(signature: &Signature, frame: &Value) -> Option<String> {
+    let named = |field: &str| signature.contains_key(field);
     if named("/workspace:string") {
         return frame[envelope::WORKSPACE].as_str().map(str::to_owned);
     }

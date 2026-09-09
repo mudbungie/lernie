@@ -7,6 +7,10 @@ use serde_json::json;
 /// The corpus replay — every frame in `corpus/`, through the real reader.
 mod corpus;
 
+/// The same frames as an older engine and a newer one would have written them:
+/// the grows-only contract, replayed.
+mod editions;
+
 /// The answer path, end to end: a frame with a kind this build paints becomes
 /// the typed value the window draws.
 #[test]

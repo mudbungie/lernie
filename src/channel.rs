@@ -23,12 +23,15 @@
 use std::net::{IpAddr, TcpStream};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
 use rustls::pki_types::ServerName;
 use rustls::{ClientConfig, ClientConnection, StreamOwned};
 use serde_json::Value;
 
+/// What each end of the wire can SPELL, which is not what it must AGREE about.
+pub mod edition;
 /// The client-side workspaces this box holds elsewhere.
 pub mod entries;
 /// The wire's framing.
@@ -66,6 +69,18 @@ pub struct Channel {
     /// paths costs nothing and is what turns rustls' own wording into a remedy.
     anchors: PathBuf,
     chain: PathBuf,
+    /// **What the engine at the far end could spell, as of the last dial**
+    /// (yog's `docs/REMOTE.md` §3.2). A capability rather than an agreement:
+    /// the major is settled by the preface's strict equality, and this decides
+    /// only whether one control paints a fact or greys it.
+    ///
+    /// It starts at [`edition::FLOOR`] — the least an engine of this major can
+    /// be — so a channel that has never dialled answers about the fields this
+    /// major requires and about nothing else. An atomic and not a lock: it is
+    /// one integer written by whichever thread dialled last, the crate's locks
+    /// live in `crate::state` by rule, and there is no invariant here spanning
+    /// two words.
+    spelled: AtomicU32,
 }
 
 impl Channel {
@@ -79,7 +94,20 @@ impl Channel {
             name: server_name(&m.address)?,
             anchors: m.anchors.clone(),
             chain: m.chain.clone(),
+            spelled: AtomicU32::new(edition::FLOOR),
         })
+    }
+
+    /// **Whether the engine can spell one field of one shape** (yog's
+    /// `docs/REMOTE.md` §3.2, [`edition`]).
+    ///
+    /// The question a control asks before it paints a fact that arrived after
+    /// this major was cut: `false` says *this engine cannot say*, which is a
+    /// different claim from the field's default and the only reason to ask. A
+    /// channel that has not dialled answers for the floor, which is every
+    /// field this major requires.
+    pub fn spells(&self, shape: &str, key: &str) -> bool {
+        edition::spells(self.spelled.load(Ordering::Relaxed), shape, key)
     }
 
     /// The address it dials.
@@ -164,7 +192,8 @@ impl Channel {
         let mut tls = StreamOwned::new(conn, tcp);
         hello::state(&mut tls).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
         frame::write_value(&mut tls, request).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
-        hello::confirm(&mut tls)?;
+        self.spelled
+            .store(hello::confirm(&mut tls)?, Ordering::Relaxed);
         Ok(tls)
     }
 

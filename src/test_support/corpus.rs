@@ -26,9 +26,21 @@ use serde_json::Value;
 
 use crate::channel::hello::PROTOCOL;
 
-/// The three assertion directories, which are the three outcomes a reply
-/// frame can have. `corpus/README.md` is the contract they carry.
-pub(crate) const CLASSES: [&str; 3] = ["answers", "refusals", "unreadable"];
+/// **Projecting a frame back to an older edition, and mutating a word in it**
+/// — the two edits the grows-only contract is judged by.
+pub(crate) mod editions;
+
+/// The four assertion directories. `corpus/README.md` is the contract they
+/// carry.
+///
+/// Three of them are the three outcomes a reply frame can have. The fourth,
+/// `unpainted/`, is a *reading* of the third rather than a fourth outcome: a
+/// perfectly good frame of a kind no pane here renders, refused by name on
+/// rung 2 (`crate::reply::read::unpainted`). It was split out of `unreadable/`
+/// because the two say opposite things about this seat — one is a defect on
+/// the wire or in a decoder, the other is a pane nobody has built, which is a
+/// parity fact with a reason and never an unreadability.
+pub(crate) const CLASSES: [&str; 4] = ["answers", "refusals", "unpainted", "unreadable"];
 
 /// The upstream envelope's discriminant: present exactly on a vendored file.
 const DIRECTION: &str = "direction";
@@ -105,13 +117,29 @@ pub(crate) fn fixture(path: &Path) -> Fixture {
 }
 
 /// **The standing shape record** — `corpus/shapes.json`, vendored whole: every
-/// shape upstream has, with the field signature each last moved at.
+/// shape upstream has, with every field path in it stamped with the EDITION it
+/// appeared at.
+///
+/// The signature used to be a bare list of paths and is now a map from path to
+/// stamp (yog's `docs/REMOTE.md` §3.2): additions no longer move `PROTOCOL`, so
+/// the record has to say *when* each path arrived or no client could tell a
+/// field an older engine cannot spell from one it left out.
 pub(crate) struct Record {
     /// The version the corpus as a whole is for.
     pub(crate) protocol: u64,
-    /// Each `<direction>/<shape>` key, and the signature under it.
-    pub(crate) shapes: BTreeMap<String, Vec<String>>,
+    /// The edition the current major was cut at: every path stamped at or below
+    /// it is required on every engine of this major.
+    pub(crate) floor: u64,
+    /// Each `<direction>/<shape>` key, and under it every `<path>:<type>`
+    /// upstream spells with the edition it appeared at.
+    pub(crate) shapes: BTreeMap<String, Signature>,
+    /// What upstream has announced it will remove: a whole shape, or one field
+    /// path inside one spelled `<shape><path>` with no type suffix.
+    pub(crate) deprecated: Vec<String>,
 }
+
+/// One shape's field paths, each stamped with the edition it appeared at.
+pub(crate) type Signature = BTreeMap<String, u64>;
 
 /// Read it. The corpus-wide protocol is checked by the caller that can say
 /// what a mismatch means; the per-shape stamps are [`fixture`]'s.
@@ -120,19 +148,36 @@ pub(crate) fn record() -> Record {
     let value: Value = serde_json::from_str(&text).expect("shapes.json is JSON");
     Record {
         protocol: value["protocol"].as_u64().expect("a corpus protocol"),
+        floor: value["floor"].as_u64().expect("a corpus floor"),
         shapes: value["shapes"]
             .as_object()
             .expect("the shape record")
             .iter()
-            .map(|(key, shape)| {
-                let signature = shape["signature"]
-                    .as_array()
-                    .expect("a signature")
-                    .iter()
-                    .map(|field| field.as_str().expect("a field").to_owned())
-                    .collect();
-                (key.clone(), signature)
-            })
+            .map(|(key, shape)| (key.clone(), signature(shape)))
+            .collect(),
+        deprecated: value["deprecated"]
+            .as_array()
+            .expect("a deprecation list")
+            .iter()
+            .map(|named| named.as_str().expect("a deprecated name").to_owned())
             .collect(),
     }
+}
+
+/// One shape's stamped signature, read strictly: every path carries an edition
+/// and a path that does not is a record this build cannot be judged by.
+fn signature(shape: &Value) -> Signature {
+    shape["signature"]
+        .as_object()
+        .expect("a signature")
+        .iter()
+        .map(|(path, stamp)| {
+            (
+                path.clone(),
+                stamp
+                    .as_u64()
+                    .unwrap_or_else(|| panic!("{path} carries no edition")),
+            )
+        })
+        .collect()
 }

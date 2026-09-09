@@ -190,20 +190,22 @@ answer is a stream, so a follow-class read is the general path with more than
 one frame in it. `Channel::ask` is written in terms of `Channel::follow` rather
 than beside it, so there is one reader and it cannot drift.
 
-### 4.3 The version preface (§3)
+### 4.3 The version preface (§3, §3.2)
 
-Each end writes `{"protocol": <n>}` before it reads the peer's, so neither
-waits on the other. A mismatch is fail-closed, names **both** versions, and is
-the upgrade prompt: there is no negotiation, no version list and no compat
-shim. `src/channel/hello.rs` — where the number is *included*, never
-declared: the repo-root `PROTOCOL` file states it and `build.rs` compiles it in
-(bl-55b1), because the release gates that read it are other repositories
-fetching one path out of a tree they do not build. The per-bump LEDGER — the
-prose beside the re-export, saying what each version moved and what this seat
-did about it — is `src/channel/hello/ledger.rs` (bl-c515), because it grows one
-entry every bump where the mechanism above it has not changed in five. Two
-homes and neither is a copy of the other: the file says what the number is, the
-ledger says why it is that.
+Each end writes `{"protocol": <n>, "edition": <n>}` before it reads the peer's,
+so neither waits on the other. **Only the first key can refuse.** `protocol` is
+the MAJOR — it moves on a break and nothing else — and a mismatch is
+fail-closed, names **both** versions, and is the upgrade prompt: no
+negotiation, no version list, no compat shim. `edition` is what that end can
+SPELL, it refuses nothing, and an end that states none is at the floor (§4.9).
+`src/channel/hello.rs` — where the number is *included*, never declared: the
+repo-root `PROTOCOL` file states it and `build.rs` compiles it in (bl-55b1),
+because the release gates that read it are other repositories fetching one path
+out of a tree they do not build. The LEDGER — the prose beside the re-export,
+saying what each version moved and what this seat did about it — is
+`src/channel/hello/ledger.rs`, with the closed 2-to-18 era whole in
+`ledger/exact.rs` (bl-c515, bl-aa01). Two homes and neither is a copy of the
+other: the file says what the number is, the ledger says why it is that.
 
 **This is why a separate crate needs it.** Until the split, one crate shipped
 both ends of every connection and the wire could not skew. A seat is installed
@@ -351,7 +353,7 @@ it became — it tells its own in-process window in RAM. A separately installed
 seat cannot be told that, so a flat root naming `:0` refuses with the sentence
 rather than the raw connect error port zero would otherwise earn.
 
-### 4.9 The reply vocabulary is reimplemented, and it decodes only what it paints (§8, §9.7)
+### 4.9 The reply vocabulary is reimplemented, it decodes only what it paints, and it grows only (§8, §3.2, §9.7)
 
 `src/reply/`. REMOTE §8 is explicit that *"what the seat reimplements is this
 document … no shared protocol crate was created and none should be"* — a shared
@@ -385,7 +387,7 @@ the refusal envelope, which is not a kind at all. A kind nothing renders is a ki
 lands a pane is the ball that adds its kind.
 
 **`roles` is the worked example of that last sentence** (bl-4a2c). It sat in
-`corpus/unreadable/` from the PROTOCOL 6 refresh — a perfectly good frame of a
+the ledger directory from the PROTOCOL 6 refresh — a perfectly good frame of a
 kind nothing painted — and the commit that moved it to `corpus/answers/` is the
 commit that built the pane. The diff of that move is the record of what the
 release added, which is exactly what the ledger is for. The records pair
@@ -405,10 +407,10 @@ three (`armed`, `science`, `work-diff`) made it in the commit that built
 `floored`) made it in the commit that built §4.34's controls (bl-bce2), and the
 trail's two (`acked`, `trail-cleared`) in the commit that built §4.35's acts
 (bl-b8f7) — which between them spend the ledger's last conversation read and
-leave `unreadable/` holding only shapes addressed to a different kind of
-client, and the malformed frames upstream's codec cannot emit.
+leave the ledger holding only shapes addressed to a different kind of
+client.
 
-**And a shape can sit in `unreadable/` because it is addressed to a different
+**And a shape can sit in `unpainted/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
 `invocations` is a tool host's own work queue: it is follow-class, it *drains*,
 and the queue it answers is the one addressed to the certificate that asked
@@ -421,133 +423,129 @@ engine's own help table says so: all five are `surface: machine`, so no seat
 owes any of them a control. Their ledger lines are not balls waiting to be
 built, and `src/verbs/clients.rs` states it where an implementer will look.
 
-**A protocol bump is not a shopping list, and PROTOCOL 4 is the worked example**
-(bl-d774). REMOTE §9.10 and §9.11 put four new facts on the wire in one
-unreleased cycle: a `failure` clause on the conversation row, the same clause on
-the §6 queue row and on the `agent` answer, and a `flag` object beside a new
-`flagged` signal token on the queue row. **That release consumed exactly one of
-them** — the conversation row's clause, because the conversation list is the
-pane that paints the row it hangs on, and a red row that says nothing about why
-it is red is a list an operator opens one by one to learn the one thing every
-row in it says. The other three rode through unread and their shapes stayed in
-`corpus/unreadable/`, which was the ledger doing its job rather than a
-shortfall: nothing here painted an `agent` answer or a decision queue, so a
-field carried for them would have been a field held for no glass. **The number
-moves for the wire; the fields move for the panes**, and the two are decided
-separately.
+**`PROTOCOL` is a MAJOR, and an addition no longer moves it** (yog's
+`docs/REMOTE.md` §3.2; yog bl-e598, here bl-aa01). Through 18 the integer moved
+for any change to an existing shape, a gained field included, and every client
+re-pinned for each one — five bumps in a week, all but two of them additive.
+It now moves only on a **break**: a field removed or re-typed, a meaning
+changed under a spelling in use, a field the engine newly requires. The preface
+is unchanged — strict equality, fail-closed, no negotiation — and what changed
+is how rarely it can refuse.
 
-**And the fields moved when the pane did** (bl-f0ef). §4.19 lands the decision
-queue, so `attention` and `flagged` moved to `corpus/answers/` in the commit
-that built it and two of PROTOCOL 4's four facts — the queue row's `failure`
-clause and its `flag` object with the `flagged` token beside it — are painted.
-The fourth is still unread and its ledger line still stands: nothing here paints
-an `agent` answer, and that half belongs with the provider rungs (bl-b180,
-bl-e3c5) rather than with a queue. The interval between the bump and the paint
-is the ledger's whole product — one diff, naming exactly what a release added.
+**An addition ships under the same major, stamped with an EDITION.** The old
+integer line continues as the edition line: `corpus/shapes.json` now stamps
+every field PATH with the edition it appeared at, and carries the **floor** —
+the edition the current major was cut at. Every path at or below the floor is
+required on every engine of this major; every later path is optional to READ.
+Two numbers, two questions, and only one of them can refuse a connection.
 
-**PROTOCOL 5 and 6 are that sentence with the second half empty**, and the
-pair is why the ordinary bump costs this seat an integer and nothing else. 5
-(bl-e6ee, REMOTE §9.12) took `branch` off `reply/governing` for `follows` and
-`diverged_lineages`; 6 (bl-675e, REMOTE §9.13) gave `reply/providers`' rows
-`effort` and `priority`, two booleans saying which tuning that provider row
-takes. **Neither shape was decoded here at the time**, so both times the seat
-paid the number and no field, and the correct amount of new paint was none.
-**Both have since been claimed and each interval is the ledger's product**:
-§4.24's pane reads `reply/providers` — the two booleans among its fields — and
-the commit that built it is the diff saying so, three protocol bumps after the
-fields landed; §4.29's half reads `reply/governing` under 5's *new* meaning,
-which is the harder half of the same product and is why the next paragraph's
-trap is restated at that decoder rather than only at `PROTOCOL`.
+**This seat's copy of the three facts is `src/channel/edition.rs`** — the floor,
+this build's edition (the newest stamp in the corpus it vendors) and the ledger
+of the paths above the floor. Vendored on `PROTOCOL`'s own precedent rather
+than derived at build time, and held equal to `corpus/shapes.json` by its own
+tests, both directions: a stamp with no row is as red as a row with no stamp.
+The corpus is `cfg(test)` apparatus and is not packaged, so the constants are
+what a released binary carries and the test is what makes them true. **The
+ledger is EMPTY at the cut**, which is the design and not a gap — the floor is
+where the major was cut, so at that instant nothing is above it, and a row is
+added by the same commit that re-vendors the corpus which grew the path.
 
-**PROTOCOL 7 is the first bump this seat reads a field out of, and no pane
-paints it** (bl-8758 upstream, bl-38d4 here). Every `reply/help` row gained
-`surface`, classing the op `control` or `machine` — and the consumer is a GATE,
-not a pane: it is the roster §4.16's parity assertion judges this window
-against. That is a third answer to *what does a bump cost this seat*, beside
-"an integer" and "an integer and some paint": a field can be load-bearing for
-what the suite may assert while the glass stays exactly as it was. It does not
-loosen §4.9 — the reply vocabulary still decodes only what the window renders,
-and `reply/help` is still filed in `corpus/unreadable/` because nothing paints
-a help pane. What reads the field is the corpus walk, which reads every frame
-whatever this build does with it.
+**A fourth fact is vendored beside them and it is a WARNING with a deadline**:
+`DEPRECATED`, upstream's list of what it will remove. REMOTE §3.2's window rule
+removes a field or a shape only at a major, only after listing it in a
+PUBLISHED yog release, and never within three releases of that listing — so a
+name arriving in that list is the one moment a consumer can act with three
+releases in hand, and a vendored copy is what makes the arrival visible rather
+than a line in a generated file nobody diffs. It is `cfg(test)`, because
+nothing at runtime consumes a deprecation: a released binary reads the fields
+it reads, and the whole product of the list is the diff that carries a name
+into it.
 
-**PROTOCOL 17 is the sentence with both halves full, in one bump** (bl-183b).
-A delivered row and a deposit envelope gained the sender's DISPLAY name
-(`sender_name`, `from_name`) — painted at once, on both faces, because the
-defect was on the glass: the framing sender is the addressing token litany's
-own inbox scan derives from, so every message a child sent was headed by sixty
-characters of timestamped hex. The name rides BESIDE the handle and never
-instead of it (`reply::transcript::said_by`, one spelling for two faces): the
-handle is what stays true once an agent is deleted and its name recycled, and a
-header showing only a recycled name would attribute one agent's words to
-another. The same bump's other half cost nothing — the §6 signal vocabulary
-gained a value, `truncated`, which this seat already carries as itself on rung
-3 — and its third brought two new shapes, `doctor` and its request, which land
-in `corpus/unreadable/` with the parity ledger carrying the op's line (§4.16).
+**The preface states the edition beside the major** (`src/channel/hello.rs`),
+and it refuses nothing. An end that states no edition is at the floor, because
+that is the least an engine of this major can be; absent, mistyped and out of
+range are one answer for that one reason. The engine's is kept on the channel,
+where `Channel::spells(shape, key)` answers whether it can spell one field —
+and a `false` there says *this engine cannot say*, which is a different
+sentence from the field's default and the only reason to ask. A control whose
+fact is stamped above the far end's edition greys rather than painting the
+reassuring answer. **Nothing greys today** because nothing is above the floor
+today; the first consumer is whatever control lands on the first post-floor
+field.
 
-**PROTOCOL 18 is the bump that spends every reading it has** (bl-c515; yog
-bl-58bb, bl-ab53, bl-dd88, bl-94a5). Four shapes off three lanes at one
-version, and this seat's answer to each is a different one of §4.9's own
-readings — which is why it is worth writing down once rather than restating the
-ledger:
+**The reader is GROWS-ONLY by rule and not by luck**, which is what makes the
+above safe. Four clauses, each answered where it lives:
 
-- **A field gained and PAINTED.** `reply/follow`'s tool-window entry gained
-  `held`, the capability control's reason for parking a call. A held
-  invocation is stopped before the executor is entered, so litany lands neither
-  of the two files the window is made of and the lane said nothing at the one
-  moment the operator was the blocker. Painted on both faces at once for the
-  reason `sender_name` was at 17 — the defect is on the glass — and painted as
-  a transition rather than a status: the park is a row of its own, the dispatch
-  row it replaces does not appear because there was no dispatch, and an
-  answered park keeps its row and gains the two it was waiting for.
-- **A VALUE gained and nothing to build.** `reply/steps` gained a fourth
-  `framing` word, `in_flight`. Rung 3 already carries it: a class token paints
-  as itself. What the bump costs is one assertion — that the word arrives and
-  is not read as `killed`, which is the word an interrupt writes and the one
-  thing a healthy conversation must never be described by.
-- **Two ops at no version cost, and the ledger split in half.** `proposals`
-  and `proposal` are the learning loop's operator half (REMOTE §9.22). New ops
-  are free by §3's rule, so what a client owes is a re-vendor and not a
-  re-pin — and this release paid the *wire* half whole (the reply decoded, both
-  gestures composed, the command line painting the listing and the proposal
-  whole) while the GLASS half is two lines in `parity.toml` citing bl-a1d6.
-  That is the number-moves-for-the-wire / fields-move-for-the-panes rule
-  splitting one shape rather than one release.
-- **A field gained that cost NO decode at all.** The `prepared` body gained
-  `role`, and every shape carrying a `prepared` gained it — four. Rung 4 in the
-  write direction had already paid for it: the body crosses back verbatim, so
-  the field rode through untouched from the moment it existed. What it cost is
-  the other kind of grammar — `prepare` answers `null` and the SEAT states what
-  the operator asked for on the fire (`lernie start … --role <name>`,
-  `crate::cli::start`), because which role a conversation is born on is the
-  choice made between the two acts and plan mode is exactly that choice. It is
-  the one exception to the verbatim carry, and it is the carry's own rule
-  rather than a hole in it: the body is handed back untouched except where this
-  seat has something to say, which was the workspace and is now the workspace
-  and the role.
-- **A field gained that cost a GRAMMAR.** `request/answer` and
-  `reply/answered` gained `scope`, how far one capability answer stands.
-  Required in both directions and optional to type, which is a shape the verb
-  table cannot express — *a word and its parameters, all of them named
-  strings* — so it rides a door of its own (`crate::cli::answer`) on
-  `enroll`'s precedent, and the window offers the two wider reaches as rows
-  that name themselves rather than as a picker, because a sticky picker makes
-  *wider* a thing an operator arrives at by accident and the wire refuses a
-  default for exactly that reason.
+- **An unknown key is ignored, structurally.** Every reader indexes by key, so
+  a field the engine added rides through untouched. Rung 4, and it costs
+  nothing.
+- **A post-floor key absent reads as its DEFAULT, and the default is the fact
+  before the field existed.** Written at the field readers
+  (`src/reply/fields.rs`), because that is where a required reading is chosen,
+  and asserted by projection below rather than by a promise per field.
+- **An unknown WORD in any vocabulary becomes a named catch-all carrying the
+  word**, rendered honestly — never the nearest known word, and never a refusal
+  of the row. Rung 3, and it is why every vocabulary here is either an enum
+  with an `Unknown(String)` arm or a bare `String`: both carry the word and
+  paint it as itself.
+- **The reply `kind` stays STRICT, by name.** A reader asks only what it
+  paints, so a kind nothing renders is refused rather than guessed at, and the
+  refusal names it (`crate::reply::read::unpainted`). Rung 2, and the one place
+  the opposite rule holds.
 
-**The per-bump ledger is the `PROTOCOL` constant and this section does not
-restate it** — one fact, one home, and a list here would rot the way every
-count this repository stopped writing down rotted. What belongs here is the
-rule the two bumps are instances of, and the one trap they exposed.
+**And it is replayed, not merely asserted** (`src/reply/tests/editions.rs`).
+The vendored frames are what the NEWEST engine writes, which is the one engine
+a seat never has trouble with; the two it actually meets are made here out of
+that frame and the stamps beside it. **Projection** deletes every key stamped
+later than `e` and replays at every `e` from the floor to this build's edition
+— an older engine's frame. **Word mutation** sets every string-typed path
+upstream spells, `kind` excepted, to a token no build has heard of — a newer
+engine's vocabulary. Neither may cost a refusal. Both are vacuous the day a
+major is cut, so the walkers are unit-tested against shapes the corpus does not
+have (`src/test_support/corpus/editions.rs`): an arm that waits for the first
+addition to be exercised is an arm nobody has evidence about.
 
-**A shape whose meaning moves under an unchanged spelling is the one drift a
-corpus replay cannot catch.** 5 is the plainest case: `oid` stopped naming the
-fork commit and started naming the followed lineage's head, so the bytes stay
-well-formed, the fixture stays in the class it was already in, and every
-mechanical check this repository owns stays green while a future pane paints a
-plausible number that has been wrong since the bump. The ledger catches a shape
-that CHANGED; only prose catches a shape that changed its MIND, so that trap is
-written at `PROTOCOL` where whoever lands the pane will be reading.
+**A valid frame of a kind nothing paints is a PARITY fact, never an
+unreadability**, and that is why `corpus/unpainted/` is split out of
+`corpus/unreadable/` (bl-aa01). The two land on one `Read` arm and are opposite
+claims: one is a defect — on the wire, or in a decoder — and the other is a pane
+nobody has built. The assertion the second owes is therefore not *it refuses*
+but *it refuses BY NAME*, so that class asserts the exact rung-2 sentence; and
+each direction is structural rather than listed — `unpainted/` holds only
+vendored frames, `unreadable/` only frames this repository wrote, upstream's
+codec being unable to emit a malformed one. `parity.toml` records what this
+seat does not RENDER and never what it refuses.
+
+**The number moves for the wire; the fields move for the panes**, and the two
+are decided separately. The closed era is a hundred worked examples of that
+sentence and **the ledger is where they stay**: PROTOCOL 2 through 18, one
+entry per bump, in `src/channel/hello/ledger/exact.rs` — closed at 18, and
+there will never be a nineteenth. This section does not restate them; one fact
+has one home, and the copy is what rots. Two of them are rules rather than
+entries, and those are kept here:
+
+- **A protocol bump is not a shopping list** (bl-d774, bl-f0ef). PROTOCOL 4 put
+  four new facts on the wire and that release consumed exactly one, because one
+  pane painted the row it hung on. The other three rode through unread and
+  their shapes stayed in the ledger directory until §4.19 landed the queue that
+  paints two of them. **The interval between the arrival and the pane is the
+  ledger's whole product** — one diff, naming exactly what a release added.
+- **A field can be load-bearing while the glass stays exactly as it was**
+  (bl-38d4). PROTOCOL 7 gave every `reply/help` row a `surface`, and its
+  consumer is a GATE rather than a pane: the roster §4.16's parity assertion
+  judges this window against. It does not loosen this section — the vocabulary
+  still decodes only what the window renders — and what reads the field is the
+  corpus walk, which reads every frame whatever this build does with it.
+
+**A shape whose meaning moves under an unchanged spelling is the one drift no
+replay can catch**, and it is now the class the major exists FOR. PROTOCOL 5 is
+the plainest case: `oid` stopped naming the fork commit and started naming the
+followed lineage's head, so the bytes stay well-formed, the fixture stays in
+the class it was already in, and every mechanical check this repository owns
+stays green while a future pane paints a plausible number that has been wrong
+since the bump. Projection cannot see it, mutation cannot see it and a
+signature cannot see it — only prose can, so that trap is written in the
+ledger where whoever lands the pane will be reading.
 
 **And a bump reaches the WRITE direction even when it paints nothing.** 6 added
 two ops rather than only a field, and a new op is free by §3's rule — the peer
@@ -557,7 +555,7 @@ including the sixty-odd this seat has no word for, and asserts each routes by
 the address upstream's own signature says it carries. That is where a miss
 would cost something and would do it silently — a gesture routed by a slot the
 seat does not look in goes down the wrong channel — so the request half is
-checked on every bump whether or not a pane moved.
+checked on every re-vendor whether or not a pane moved.
 
 **The staged body is carried whole, which is rung 4 read in the WRITE
 direction** (`src/reply/start.rs`). `prepared` is the one reply a seat hands
@@ -573,11 +571,14 @@ nothing in this crate spent.
 
 **The decode policy is four rungs and the module doc is its one statement.**
 Shape refuses; an unknown **kind** refuses, naming itself, which is REMOTE §3's
-own in-band correction and is the upgrade prompt; an unknown **token** inside a
+own in-band correction; an unknown **token** inside a
 row keeps its word and paints as itself, because refusing there would drop a
 whole readable listing to avoid one word; an unknown **field** is ignored
 structurally, which is the other half of §3's rule that a new field is not a
-protocol bump. Nothing is a panic path and nothing is defaulted to a known
+protocol bump — and under §3.2 it is not even an edition a reader has to know
+about. Rungs 2 to 4 are three of the grows-only clauses above, stated as a
+posture rather than as a version contract; the fourth, an absent post-floor key
+reading as its default, is the same policy meeting a field that arrived late. Nothing is a panic path and nothing is defaulted to a known
 neighbour: a token painted as a word it is not is a lie, where a token painted
 as itself is merely unstyled.
 
@@ -650,10 +651,10 @@ thing a reimplemented vocabulary cannot afford.
 
 **The layout reconciles two shapes and keeps the better half of each.** The
 frames and their stamps are upstream's, whole; the **directory is still this
-seat's assertion** — `answers/`, `refusals/`, `unreadable/` — because a
-classification is a decision this end makes and never one copied in. So the
-refresh does not classify: a shape already filed goes back where it was, and a
-shape yog has grown lands in `unreadable/` as a new file the diff shows. A
+seat's assertion** — `answers/`, `refusals/`, `unpainted/`, `unreadable/` —
+because a classification is a decision this end makes and never one copied in.
+So the refresh does not classify: a shape already filed goes back where it was,
+and a shape yog has grown lands in `unpainted/` as a new file the diff shows. A
 silent pass is the outcome the arrangement excludes. There is still no
 manifest and no expected-value sidecar; a frame captured off a live engine
 still drops in as a bare file, which is how the malformed and rung-3 readings
@@ -2055,7 +2056,7 @@ it makes.
 yog bl-28f4; bl-183b). It is round-1 ruling 7 — *one gesture answers "is this
 box wired": wire material, address, wall rows, role credentials, git identity,
 enrolled feet, protocol pins* — whose engine half landed upstream and whose
-seat half has not. Its reply kind sits in `corpus/unreadable/` for §4.9's
+seat half has not. Its reply kind sits in `corpus/unpainted/` for §4.9's
 reason, so the decode and the pane arrive in one commit and that commit deletes
 the line. The two halves of a protocol bump are decided separately: the number
 moves for the wire, the paint moves for the panes.
@@ -4071,10 +4072,12 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~190 |
 | `src/seat/follow/rest.rs` | when that watch stops and what it says then, split from the file above at the cap on the seam the word has (bl-3a1f): the three readings of the standing row — working, at rest, or PARKED at the capability boundary — the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), and the two sentences an ending can be. | ~170 |
 | `src/seat/model.rs` | the role assignment, against the list the same seat can already fetch (§4.10, bl-1e5a): the read that goes ahead of the write, the warning a listing nobody offers earns, and every way a silent read costs the assignment nothing. | ~95 |
-| `src/channel.rs` | one wire to one engine: dial, ask, follow. | ~150 |
+| `src/channel.rs` | one wire to one engine: dial, ask, follow, and what the engine at the far end could SPELL as of the last dial (§4.9). | ~165 |
 | `src/channel/frame.rs` | the framing. | ~105 |
-| `src/channel/hello.rs` | the version preface: write, confirm, and the refusal that names both numbers. | ~100 |
-| `src/channel/hello/ledger.rs` | the per-bump ledger, and the re-export of the constant `build.rs` compiles from the repo-root `PROTOCOL` file. Split from the file above at PROTOCOL 18 (bl-c515) because the two grow for different reasons — that one is what the preface DOES and has not changed in five versions, this one is an entry longer after every bump, forever. | ~280 |
+| `src/channel/hello.rs` | the version preface: write the major and this build's edition, confirm, and the refusal that names both numbers. The edition refuses nothing (§4.9). | ~120 |
+| `src/channel/hello/ledger.rs` | the discipline in force, and the re-export of the constant `build.rs` compiles from the repo-root `PROTOCOL` file. Split from the file above at PROTOCOL 18 (bl-c515) because the two grow for different reasons — that one is what the preface DOES, this one is the record of what it has carried. | ~90 |
+| `src/channel/hello/ledger/exact.rs` | the closed era, 2 through 18: one entry per bump, whole and unedited, in a module of nothing but prose. Split off at 19 (bl-aa01) when the major stopped moving for additions — that ledger will never gain a nineteenth entry. | ~245 |
+| `src/channel/edition.rs` | what each end can SPELL (§4.9, REMOTE §3.2): the floor, this build's edition, and the ledger of post-floor paths — vendored, and held equal to `corpus/shapes.json` by its own tests. | ~90 |
 | `src/channel/tls.rs` | the mTLS configuration. | ~90 |
 | `src/channel/leaf.rs` | the grade, read off this box's own leaf: the one fault it names, and the DER walk that names it. | ~200 |
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
@@ -4271,10 +4274,10 @@ every CONTROL, which is the reachability the assertion exists for.
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |
 | `src/snapshot/parity/roster.rs` | which ops owe this seat a control, read off the vendored corpus's `reply/help` rows and decided nowhere here. `cfg(test)`. | ~80 |
 | `src/snapshot/parity/exempt.rs` | `parity.toml`, and the strict subset of TOML it is allowed to be — no crate parses it. `cfg(test)`. | ~90 |
-| `parity.toml` | the exemption ledger: one line per control-classed op this seat does not surface, each citing the ball that will build it. | config |
+| `parity.toml` | the exemption ledger: one line per control-classed op this seat does not surface, each citing the ball that will build it. It records what is not RENDERED and never what is refused (§4.9). | config |
 | `src/ui/act.rs` | the `act:<op>` token a control carries, written into AccessKit's `author_id` where no label can drift into it. | ~85 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
-| `corpus/` | yog's wire conformance corpus, vendored: `shapes.json`, `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
+| `corpus/` | yog's wire conformance corpus, vendored: `shapes.json` — every field path stamped with the edition it appeared at — `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unpainted/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |
 | `.github/workflows/store-scan.yml` | the published store ref, judged by the source's own rule table. | config |
 | `.github/workflows/release-plz.yml` | the release path (§6.2) and the proof of the seat's one artifact (§6.3). Its FILENAME is matched literally against the registry's trusted-publisher claim — renaming it stops publishing. | config |
@@ -4282,8 +4285,10 @@ every CONTROL, which is the reachability the assertion exists for.
 | `scripts/mac-verify.sh` | reads the produced Mach-O and says what it IS — architecture, filetype, target OS, every `LC_LOAD_DYLIB`, whether it is signed at all — with five malformed inputs it must refuse first. | ~230 |
 | `tests/packaged_files.rs` | what `cargo publish` would ship, over the real `cargo package --list` — the manifest's `include` allowlist, restated so a widening edit is red here. | ~200 |
 | `scripts/refresh-corpus.sh` | the vendoring, from a yog checkout. It copies and sweeps; it never classifies. | ~90 |
-| `src/test_support/corpus.rs` | the one walk over the corpus, and the protocol stamp checked on every file read. `cfg(test)`. | ~130 |
-| `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, and every upstream shape is classified exactly once. | ~140 |
+| `src/test_support/corpus.rs` | the one walk over the corpus, the stamped shape record, and the protocol stamp checked on every file read. `cfg(test)`. | ~160 |
+| `src/test_support/corpus/editions.rs` | projecting a frame back to an older edition and mutating a word in it — the two engines a seat meets that nobody can vendor. `cfg(test)`. | ~130 |
+| `src/reply/tests/corpus.rs` | the replay, reply direction: every frame lands in the class its directory names, every upstream shape is classified exactly once, and an unpainted kind is refused BY NAME. | ~175 |
+| `src/reply/tests/editions.rs` | the grows-only replay: every answer at every edition of this major, and every vocabulary word replaced by one no build has heard of. | ~110 |
 | `src/verbs/tests/corpus.rs` | the replay, request direction, read half: every frame in the vocabulary decodes as a gesture and routes by the address its shape carries. | ~120 |
 | `src/verbs/tests/corpus/emits.rs` | the write half: every frame this seat composes round-trips, and what it cannot compose is recorded by count and reason. | ~110 |
 | `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~85 |

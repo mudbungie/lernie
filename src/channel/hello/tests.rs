@@ -1,6 +1,7 @@
 //! The preface: what this end states, and every way a peer can fail to agree.
 
 use super::{PROTOCOL, confirm, state};
+use crate::channel::edition;
 use crate::channel::{Reach, frame};
 use serde_json::{Value, json};
 
@@ -11,15 +12,16 @@ fn stated(v: &Value) -> Vec<u8> {
     wire
 }
 
-/// What this end writes is one frame carrying one key.
+/// What this end writes is one frame carrying the major it must agree about
+/// and the edition it can spell.
 #[test]
-fn this_end_states_one_integer_in_one_frame() {
+fn this_end_states_its_major_and_its_edition_in_one_frame() {
     let mut wire = Vec::new();
     state(&mut wire).expect("state");
     let mut read = wire.as_slice();
     assert_eq!(
         frame::read_value(&mut read).expect("read"),
-        Some(json!({ "protocol": PROTOCOL })),
+        Some(json!({ "protocol": PROTOCOL, "edition": edition::EDITION })),
     );
     assert_eq!(
         frame::read_value(&mut read).ok(),
@@ -28,11 +30,30 @@ fn this_end_states_one_integer_in_one_frame() {
     );
 }
 
-/// An engine speaking this version is admitted, and says nothing about it.
+/// An engine speaking this major is admitted, and what it answers is what that
+/// engine can SPELL.
 #[test]
-fn an_engine_of_this_version_is_confirmed() {
-    let wire = stated(&json!({ "protocol": PROTOCOL }));
-    assert_eq!(confirm(&mut wire.as_slice()), Ok(()));
+fn an_engine_of_this_major_is_confirmed_and_answers_its_edition() {
+    let wire = stated(&json!({ "protocol": PROTOCOL, "edition": edition::EDITION + 3 }));
+    assert_eq!(confirm(&mut wire.as_slice()), Ok(edition::EDITION + 3));
+}
+
+/// **An engine that states no edition is at the floor, and so is one that
+/// states nonsense there.** Absent, mistyped and out of range are one answer
+/// because they are one fact: an engine of this major requires every path at
+/// or below the floor whatever it says about editions. Nothing here refuses —
+/// that is the whole difference between the preface's two keys.
+#[test]
+fn an_engine_that_states_no_edition_is_read_at_the_floor() {
+    for said in [
+        json!({ "protocol": PROTOCOL }),
+        json!({ "protocol": PROTOCOL, "edition": "nineteen" }),
+        json!({ "protocol": PROTOCOL, "edition": -1 }),
+        json!({ "protocol": PROTOCOL, "edition": u64::from(u32::MAX) + 1 }),
+    ] {
+        let wire = stated(&said);
+        assert_eq!(confirm(&mut wire.as_slice()), Ok(edition::FLOOR), "{said}");
+    }
 }
 
 /// A mismatch names BOTH versions and the remedy. That is the requirement, not

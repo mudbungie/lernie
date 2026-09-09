@@ -19,6 +19,7 @@
 
 use std::collections::BTreeSet;
 
+use super::super::read::unpainted;
 use super::super::{Read, read};
 use crate::channel::hello::PROTOCOL;
 use crate::test_support::corpus::{CLASSES, files, fixture, record, root};
@@ -54,15 +55,60 @@ fn the_refusals_are_refusals() {
     replay("refusals", |answered| matches!(answered, Read::Refusal(_)));
 }
 
-/// Every frame this seat cannot read — malformed ones, and the perfectly good
-/// answers of kinds no pane paints yet. **This directory is the ledger**: a
-/// vendored shape sits here until a pane lands, and the diff that moves it to
-/// `answers/` is the record of what that release added.
+/// Every frame this seat cannot read. **Only malformed ones**: a frame whose
+/// envelope, discriminant or required field is wrong, which is rung 1 refusing
+/// shape. Upstream's codec cannot emit one, so every file here is
+/// seat-authored — and that is asserted rather than assumed, because a
+/// vendored frame landing here would be a valid answer filed as a defect.
 #[test]
 fn the_unreadable_are_unreadable() {
     replay("unreadable", |answered| {
         matches!(answered, Read::Unreadable(_))
     });
+    for path in files("unreadable") {
+        let file = fixture(&path);
+        assert!(
+            file.shape.is_none(),
+            "{} is a vendored frame filed as malformed — a valid answer of a \
+             kind no pane paints belongs in unpainted/",
+            file.path.display()
+        );
+    }
+}
+
+/// **The unpainted class, and it is refused BY NAME.** A perfectly good answer
+/// of a kind nothing here renders — a board, an inbox, a tool host's own work
+/// queue. It reads as [`Read::Unreadable`] like a malformed frame does, and the
+/// two are not the same claim at all, so the assertion is the exact rung-2
+/// sentence rather than the arm: nothing is guessed at, and the kind is named.
+///
+/// **This directory is the ledger** (`corpus/README.md`): a vendored shape sits
+/// here until a pane lands, and the diff that moves it to `answers/` is the
+/// record of what that release added. Every file in it is vendored — a
+/// hand-written frame here would be this seat asserting against its own
+/// invention.
+#[test]
+fn the_unpainted_are_refused_by_name() {
+    for path in files("unpainted") {
+        let file = fixture(&path);
+        let shape = file.shape.clone().unwrap_or_else(|| {
+            panic!(
+                "{} is seat-authored — unpainted/ holds upstream's own frames",
+                file.path.display()
+            )
+        });
+        for frame in &file.frames {
+            let kind = frame["kind"]
+                .as_str()
+                .unwrap_or_else(|| panic!("{shape} carries a frame with no kind"));
+            assert_eq!(
+                read(frame),
+                Read::Unreadable(unpainted(kind)),
+                "{} is filed unpainted and is not refused by name",
+                file.path.display()
+            );
+        }
+    }
 }
 
 /// **Nothing in the corpus is unreplayed.** A frame dropped at the corpus root

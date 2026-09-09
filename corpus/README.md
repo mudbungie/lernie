@@ -16,14 +16,16 @@ which `src/reply/tests/corpus.rs` fails on in a sentence naming both numbers.
 
 ## Layout
 
-    shapes.json        vendored: every shape upstream has, its field signature,
-                       and the protocol the corpus as a whole is for
+    shapes.json        vendored: every shape upstream has, every field path
+                       stamped with the EDITION it appeared at, the floor the
+                       current major was cut at, and what is deprecated
     request/           vendored whole: one file per request `op`
     answers/   \
-    refusals/   > the assertion layer — reply frames, filed by what `read` must
-    unreadable/       answer for them
+    refusals/   \ the assertion layer — reply frames, filed by what `read` must
+    unpainted/  /  answer for them
+    unreadable/
 
-## The three directories are the assertion
+## The four directories are the assertion
 
 There is no sidecar, no manifest and no expected-value file. A reply frame's
 directory **is** its expectation, and the replay asserts nothing else:
@@ -32,7 +34,19 @@ directory **is** its expectation, and the replay asserts nothing else:
 |---|---|
 | `answers/` | `Read::Answer` — this build paints it |
 | `refusals/` | `Read::Refusal` — the engine said no, in its own words |
-| `unreadable/` | `Read::Unreadable` — this seat cannot read it |
+| `unpainted/` | `Read::Unreadable`, and the exact rung-2 sentence NAMING the kind — a valid answer nothing here renders |
+| `unreadable/` | `Read::Unreadable` — malformed: this seat cannot read the bytes |
+
+**The last two are one arm and two claims, which is why they are two
+directories.** A malformed frame is a defect — on the wire, or in a decoder. A
+valid frame of a kind no pane paints is a pane nobody has built: a **parity**
+fact with a reason, never an unreadability. Filing them together made the
+ledger say the seat was broken every time it was merely incomplete, and made
+the assertion "it refuses" where the assertion owed is "it refuses BY NAME".
+So each direction is structural rather than listed: `unpainted/` holds only
+vendored frames, `unreadable/` only frames this repository wrote — upstream's
+codec cannot emit a malformed frame, and a seat must not assert against its own
+invention.
 
 Field-level assertions are **not** here. They live in each type's own unit
 tests, where a failure names the field. This replay answers one question — does
@@ -56,20 +70,26 @@ replay to tell them apart:
 A file named exactly for a wire shape is the vendored one. Anything else is
 named for what it *is* — `workspaces-empty.json`, not `workspaces-ok.json`.
 
-## `unreadable/` is the ledger, and the refresh writes into it
+## `unpainted/` is the ledger, and the refresh writes into it
 
-Most of it is not malformed at all. Thirty-odd of its files are perfectly good
-frames of kinds this build does not paint — a board, an inbox, a decision
-queue. They are unreadable *to this seat*, which is the honest reading of
-DESIGN §4.9: the vocabulary decodes only what the window renders.
+Its files are perfectly good frames of kinds this build does not paint — a
+board, an inbox, a tool host's own work queue. They are unpainted *by this
+seat*, which is the honest reading of DESIGN §4.9: the vocabulary decodes only
+what the window renders.
 
-So the directory doubles as **the ledger of what is not painted yet**, and the
-refresh is what keeps it honest. `scripts/refresh-corpus.sh` never classifies:
-a shape already filed goes back where it was, and a shape yog has **grown**
-lands here, as a new file the diff shows. A kind moves to `answers/` in the
-release that starts painting it, and the diff of that move is the record of
-exactly what the release added. A kind that ought to be painted and sits here
-is a filed ball, not an oversight.
+So the directory is **the ledger of what is not rendered yet**, and the refresh
+is what keeps it honest. `scripts/refresh-corpus.sh` never classifies: a shape
+already filed goes back where it was, and a shape yog has **grown** lands here,
+as a new file the diff shows. A kind moves to `answers/` in the release that
+starts painting it, and the diff of that move is the record of exactly what the
+release added. A kind that ought to be painted and sits here is a filed ball,
+not an oversight.
+
+**A new kind is not a version bump and never was** (yog `docs/REMOTE.md` §3.2).
+An addition — a kind, an op, a field, a word — ships at the same `PROTOCOL` and
+is stamped an EDITION in `shapes.json`, so a shape landing here costs a
+re-vendor and nothing else. What the ledger records is the interval between
+that arrival and the pane, which is the whole of what a client owes.
 
 ## The request direction
 

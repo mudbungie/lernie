@@ -133,17 +133,37 @@ fn decode(frame: &Value) -> Result<Read, String> {
         start::STARTED => Reply::Started {
             conversation: start::started(obj)?,
         },
-        // Rung 2. The kind is named because naming it is the whole remedy: an
-        // operator reading it knows which end is behind, exactly as the
-        // version preface's mismatch names both numbers.
-        other => {
-            return Err(format!(
-                "reply: this seat cannot paint a {other:?} answer — the engine \
-                 speaks a kind this build does not; upgrade the seat"
-            ));
-        }
+        // Rung 2, and the sentence is [`unpainted`]'s so the corpus can assert
+        // the exact answer rather than match prose.
+        other => return Err(unpainted(other)),
     };
     Ok(Read::Answer(reply))
+}
+
+/// **Rung 2's refusal, as a function** — what a `kind` this build does not
+/// paint answers with.
+///
+/// It is a function rather than a `format!` at the one site because
+/// `corpus/unpainted/` asserts it: that class holds valid frames of kinds no
+/// pane here renders, and the assertion it carries is *refused BY NAME*, which
+/// is only an assertion if the exact sentence can be composed by the test. A
+/// test matching prose would go on passing against a reworded remedy.
+///
+/// **It names two readings and one of them is not an upgrade.** Under the
+/// edition discipline (yog `docs/REMOTE.md` §3.2) a new reply kind ships with
+/// no version bump at all, so an unknown kind no longer implies this build is
+/// behind: it equally means nothing here renders that kind, which is a parity
+/// fact with a reason rather than a defect. Naming the kind is what lets the
+/// operator tell which — exactly as the version preface's mismatch names both
+/// numbers.
+pub(crate) fn unpainted(kind: &str) -> String {
+    format!(
+        "reply: this seat does not paint a {kind:?} answer. The kind is refused \
+         by name and never guessed at: either this build is older than the \
+         engine, and the remedy is to upgrade the seat, or nothing here renders \
+         that kind at all — which corpus/unpainted/ and parity.toml record \
+         between them."
+    )
 }
 
 /// The kind-less envelope, and nothing else may wear that shape: a refusal is

@@ -1,6 +1,7 @@
 //! One channel against something that speaks the protocol: a real listener, a
 //! real mTLS handshake, a real version preface, real frames.
 
+use super::edition;
 use super::hello::PROTOCOL;
 use super::material::{CHAIN, KEY, Material, read_dir};
 use super::{Channel, server_name};
@@ -46,9 +47,33 @@ fn one_ask_states_a_version_carries_the_request_and_answers_the_reply() {
     assert_eq!(channel.ask(&request), Ok(vec![answered()]));
     assert_eq!(
         engine.heard(),
-        vec![json!({ "protocol": PROTOCOL }), request],
+        vec![
+            json!({ "protocol": PROTOCOL, "edition": edition::EDITION }),
+            request
+        ],
         "the preface rides beside the gesture, never inside it"
     );
+}
+
+/// **A channel answers for the floor until it has dialled, and for what the
+/// engine stated afterwards.**
+///
+/// The floor is the least an engine of this major can be, so a channel that has
+/// never dialled already answers about every field this major REQUIRES — which
+/// is the whole reply surface until the first addition lands. The other arm,
+/// where an edition is short of a path's stamp and the control greys, is
+/// `super::edition::tests`': at the cut nothing is stamped above the floor, so
+/// there is no path on the wire that any engine could fail to spell.
+#[test]
+fn a_channel_spells_this_majors_required_fields_before_and_after_a_dial() {
+    let (_scratch, _engine, held) = wired(PROTOCOL, vec![vec![answered()]]);
+    let channel = Channel::open(&held).expect("opened");
+    assert!(channel.spells("reply/workspaces", "/rows/[]/name"));
+    assert_eq!(
+        channel.ask(&json!({"op": "workspaces"})),
+        Ok(vec![answered()])
+    );
+    assert!(channel.spells("reply/workspaces", "/rows/[]/name"));
 }
 
 /// **The streaming form is not a second form.** An answer of several frames

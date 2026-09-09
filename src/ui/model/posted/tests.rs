@@ -32,7 +32,7 @@ fn naming_no_workspace_does_not_make_a_gesture_a_read() {
         .filter_map(|(name, signature)| {
             let op = name.strip_prefix("request/")?;
             let addressed = signature
-                .iter()
+                .keys()
                 .any(|slot| slot.starts_with("/workspace") || slot.starts_with("/prepared"));
             (!addressed).then(|| op.to_owned())
         })

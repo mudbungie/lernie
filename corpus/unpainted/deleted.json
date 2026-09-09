@@ -2,10 +2,10 @@
   "direction": "reply",
   "frames": [
     {
-      "kind": "applied",
+      "kind": "deleted",
       "ok": true
     }
   ],
-  "protocol": 1,
-  "shape": "applied"
+  "protocol": 19,
+  "shape": "deleted"
 }

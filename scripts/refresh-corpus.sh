@@ -15,9 +15,14 @@
 # assertion about it (corpus/README.md), and an assertion is a decision this
 # repository makes, never one copied in from upstream. So a shape already
 # filed goes back to the directory that holds it, and a shape yog has GROWN
-# lands in `unreadable/` — the ledger — where it shows up in the diff as a new
-# file that says "this build does not read this yet". A silent pass is the one
-# outcome the arrangement excludes.
+# lands in `unpainted/` — the ledger — where it shows up in the diff as a new
+# file that says "this build does not RENDER this yet". A silent pass is the
+# one outcome the arrangement excludes.
+#
+# `unpainted/` and not `unreadable/`, which is the honest default: a frame
+# upstream's own codec emitted is by construction well-formed, so the one thing
+# it cannot be is malformed. `unreadable/` holds what this repository wrote to
+# hold rung 1 down, and nothing here ever writes into it.
 #
 #   scripts/refresh-corpus.sh ../yog
 set -euo pipefail
@@ -37,8 +42,8 @@ for required in "$upstream/shapes.json" "$upstream/request" "$upstream/reply"; d
   fi
 done
 
-# The three assertion directories, in the order a shape is looked for.
-classes=(answers refusals unreadable)
+# The four assertion directories, in the order a shape is looked for.
+classes=(answers refusals unpainted unreadable)
 
 # The shape record and the whole request direction ride across verbatim: a
 # request has no Read class, so nothing here is the seat's to decide.
@@ -60,9 +65,9 @@ for fixture in "$upstream"/reply/*.json; do
     if [ -e "$here/$class/$shape" ]; then target="$class"; break; fi
   done
   if [ -z "$target" ]; then
-    target="unreadable"
+    target="unpainted"
     added=$((added + 1))
-    echo "  new shape ${shape%.json} -> unreadable/ (the ledger; move it when a pane paints it)"
+    echo "  new shape ${shape%.json} -> unpainted/ (the ledger; move it when a pane paints it)"
   else
     refreshed=$((refreshed + 1))
   fi

@@ -1,7 +1,8 @@
 +++
 title = "every visible pane edge drags: the list's edge against the conversation and the composer's top, the dragged width and height are the seat's own in the place file, and the policy keeps only the default and the floors (DESIGN §4.39)"
 created = 1789705009
-updated = 1789705009
+updated = 1789705262
+claimant = "Cruises-A"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ux-overhaul"]

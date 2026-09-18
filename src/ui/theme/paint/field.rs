@@ -9,7 +9,7 @@
 
 use egui::{Color32, Key, KeyboardShortcut, Modifiers, Response, Stroke};
 
-use super::super::{BRAND, COMPOSER_ROWS, RADIUS, SURFACE, State, space, tint};
+use super::super::{BRAND, RADIUS, SURFACE, State, space, tint};
 
 /// **A field that takes text**: `SURFACE` with no stroke at rest, the brand
 /// ring while it holds the caret, and `glow`'s tint under it where the pane
@@ -35,7 +35,9 @@ pub fn field(
         .inner
 }
 
-/// **The composer**: [`COMPOSER_ROWS`] lines tall, the act inside it at the
+/// **The composer**: `rows` lines tall — [`COMPOSER_ROWS`](super::super::COMPOSER_ROWS)
+/// until the operator
+/// drags the panel's top edge (DESIGN §4.39) — the act inside it at the
 /// bottom right in the brand on a brand wash, and the glow where the field
 /// alone used to carry it. Enter is the caller's to read — the field breaks a
 /// line on **Shift+Enter** and consumes nothing else — so the one key that
@@ -47,7 +49,8 @@ pub fn field(
 /// what makes *one composer* an assertion a test can read off the glass as a
 /// height rather than a claim in prose.
 ///
-/// **The height is allocated, never left to the layout.** A bottom panel
+/// **The height is HANDED to the field and never read back off it.** A bottom
+/// panel
 /// remembers the rect its content took and lays the next frame out in it;
 /// a bottom-aligned layout given the whole of that rect places its items at
 /// its foot and reports the rect whole, so the panel grew by one row every
@@ -65,8 +68,9 @@ pub fn composer(
     hint: &str,
     glow: Option<Color32>,
     send: &str,
+    rows: u8,
 ) -> (Response, Response) {
-    let height = f32::from(COMPOSER_ROWS) * ui.text_style_height(&egui::TextStyle::Body);
+    let height = f32::from(rows) * ui.text_style_height(&egui::TextStyle::Body);
     frame(ui, id, glow, space::S)
         .show(ui, |ui| {
             ui.allocate_ui_with_layout(
@@ -81,7 +85,7 @@ pub fn composer(
                         egui::TextEdit::multiline(text)
                             .id(id)
                             .frame(false)
-                            .desired_rows(usize::from(COMPOSER_ROWS))
+                            .desired_rows(usize::from(rows))
                             .desired_width(ui.available_width())
                             .hint_text(hint)
                             .return_key(KeyboardShortcut::new(Modifiers::SHIFT, Key::Enter)),

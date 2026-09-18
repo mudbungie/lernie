@@ -10,6 +10,9 @@ use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{conv, own, painted, seated, seen, wall};
 use crate::ui::{Chunk, Model};
 
+/// Every visible edge, dragged: the width that holds, the clamp that does not
+/// overwrite, and the composer's rows.
+mod drag;
 /// The narrow shape: one column at a time, and the bar that names the three.
 mod narrow;
 /// The notice bar: where it stands, whose ink it wears, and how it is put

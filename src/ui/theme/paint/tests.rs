@@ -186,7 +186,7 @@ fn the_composer_is_rows_tall_with_the_send_inside_it() {
     let mut text = String::new();
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            composer(ui, id, &mut text, "say it", None, "send");
+            composer(ui, id, &mut text, "say it", None, "send", COMPOSER_ROWS);
         });
     };
     let output = window.frame(Vec::new(), &mut body);

@@ -55,7 +55,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
             return;
         }
     }
-    // **The same shape as the deposit, at the same rows** (§4.39): the act
+    // **The same shape as the deposit, at the same rows** (§4.39) — including
+    // the rows the operator dragged the panel's top edge to, because one box
+    // in two modes is one box: the act
     // stands inside the field rather than beside it, and its word is the only
     // thing that differs. The start has nothing to glow about — a glow is the
     // selected conversation asking, and there is no conversation.
@@ -65,6 +67,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // by the frame when the engine's reply lands (`crate::ui::model::start`),
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
+    let rows = model.composer_rows();
     let (entry, begin) = crate::ui::theme::paint::composer(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
@@ -72,6 +75,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         GOAL,
         None,
         START,
+        rows,
     );
     crate::ui::act::tag(&begin, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
     // Enter begins it, as it always did — through the deposit's own read, now

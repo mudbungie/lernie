@@ -3,7 +3,7 @@
 
 use super::{Place, at, read, write};
 use crate::test_support::Scratch;
-use crate::ui::{Aim, Engines};
+use crate::ui::{Aim, Dragged, Engines};
 
 /// The wall a window was aimed at.
 fn aimed() -> Aim {
@@ -18,6 +18,7 @@ fn pointed() -> Place {
     Place {
         aim: Some(aimed()),
         engines: Engines::default(),
+        dragged: Dragged::default(),
     }
 }
 
@@ -50,9 +51,41 @@ fn the_accordion_comes_back_with_the_aim() {
                 .into_iter()
                 .collect(),
         },
+        dragged: Dragged::default(),
     };
     write(scratch.path(), &arranged).expect("written");
     assert_eq!(read(scratch.path()), arranged);
+}
+
+/// **The edges an operator dragged come back with the aim** (DESIGN §4.39,
+/// bl-46e5): two widths and a row count, in the same file and on the same
+/// terms — so a seat comes back laid out the way it was left.
+#[test]
+fn every_edge_the_operator_dragged_comes_back_beside_the_aim() {
+    let scratch = Scratch::new();
+    let laid_out = Place {
+        dragged: Dragged {
+            roster: Some(360.5),
+            convs: Some(240.0),
+            rows: Some(7),
+        },
+        ..pointed()
+    };
+    write(scratch.path(), &laid_out).expect("written");
+    assert_eq!(read(scratch.path()), laid_out);
+}
+
+/// **A file that names no edge is a file with no drag** — which is the absence
+/// the width policy already answers, and not a zero it would have to refuse.
+#[test]
+fn a_file_that_names_no_edge_reads_back_as_no_drag_at_all() {
+    let scratch = Scratch::new();
+    std::fs::write(
+        at(scratch.path()),
+        r#"{"aim": {"channel": "(this box's own engine)", "address": "home"}}"#,
+    )
+    .expect("write");
+    assert_eq!(read(scratch.path()), pointed());
 }
 
 /// **The root is made, not required.** A first run has no state directory at
@@ -84,6 +117,11 @@ fn nothing_a_file_can_be_wrong_about_refuses() {
         r#"{"aim": {"address": "home"}}"#,
         r#"{"aim": {"channel": 7, "address": "home"}}"#,
         r#"{"open": 7, "opened": [], "aimed": "lab"}"#,
+        r#"{"roster_width": "wide"}"#,
+        r#"{"convs_width": null}"#,
+        r#"{"composer_rows": 900}"#,
+        r#"{"composer_rows": -1}"#,
+        r#"{"composer_rows": 3.5}"#,
     ] {
         std::fs::write(at(scratch.path()), body).expect("write");
         assert_eq!(read(scratch.path()), Place::default(), "{body}");
@@ -141,6 +179,7 @@ fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     let held = Place::of(&model);
     assert_eq!(held.aim, model.aim);
     assert_eq!(held.engines, model.engines);
+    assert_eq!(held.dragged, model.dragged);
 }
 
 /// **A write answers its refusal rather than swallowing it**: by the time it

@@ -36,6 +36,14 @@
 
 use crate::ui::keys::Pane;
 
+/// **What an operator's drag is worth**, and what this policy still owns of it
+/// — the default and the floors (DESIGN §4.39). Split from this file on the
+/// seam §4.39 itself draws: the yield below is what a WINDOW's width buys, and
+/// that is what a SEAT's drag buys once the window has answered.
+pub mod edges;
+
+pub use edges::{TAIL_FLOOR, rows, shown, span};
+
 /// **What the two list panes are worth when the window is wide enough**, in
 /// points: the roster holds a handful of short words, the conversation list
 /// holds a headline and a preview under it.

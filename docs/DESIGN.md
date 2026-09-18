@@ -1179,22 +1179,56 @@ worth and nothing is over. So there is no constant for the growth, no hinge to
 tune, and every answer at or below that width is the one the yield already
 gave.
 
-**The panel's width is the policy's, EXACTLY** (`shell::lists`; bl-fef8), and
-this is the half the policy could not state. egui stores a side panel's state
-as the rect its CONTENT took and reads that back as the width on the next pass,
-so a `default_width` plus a `max_width` is a request the panel stops honouring
-after one frame: a pane narrower than its cap shrinks to its content and can
-never grow again. A window opened at 800 points and widened to 1440 kept a
-175-point roster with every row in it wrapped after two words — the policy said
-280 and nothing ever asked it a second time. `exact_width` clamps the stored
-rect to a point range, so what a pane took last frame cannot outvote what this
-window is worth. It costs the drag handle, which is subtraction rather than
-loss: a dragged width is a second home for a fact the policy owns, and the drag
-never worked — a pane pulled wider than its content snapped back to the content
-on the next pass. **Reversed by §4.39 (bl-46e5)**: the snap-back was
-egui flooring the content at the range's minimum, not the drag, and a dragged
-width is REMOTE §7's per-seat state rather than the policy's fact — the policy
-keeps the default and the floors, and every visible edge drags.
+**The panel's width is the policy's until an operator says otherwise**
+(`shell::lists`, `shell::drag`, `shell::policy::edges`; bl-fef8, amended
+bl-46e5). egui stores a side panel's state as the rect its CONTENT took and
+reads that back as the width on the next pass, so a `default_width` plus a
+`max_width` is a request the panel stops honouring after one frame: a pane
+narrower than its cap shrinks to its content and can never grow again. A window
+opened at 800 points and widened to 1440 kept a 175-point roster with every row
+in it wrapped after two words — the policy said 280 and nothing ever asked it a
+second time. `exact_width` clamps the stored rect to a point range, so what a
+pane took last frame cannot outvote what this window is worth, and that is
+still how a pane nobody has dragged is shown.
+
+bl-fef8 concluded that this **cost the drag handle**, and called that
+subtraction rather than loss: *a dragged width is a second home for a fact the
+policy owns, and the drag never worked — a pane pulled wider than its content
+snapped back to the content on the next pass.* **§4.39 reverses both clauses
+and this paragraph now states the amended rule** (bl-46e5). The snap-back was
+egui flooring the content at the width RANGE's minimum — `ui.set_min_width(
+(width_range.min - frame.inner_margin.sum().x).at_least(0.0))`, one line of
+`SidePanel::show_inside_dyn` — so a pane whose body's first act is
+`ui.set_min_width(ui.available_width())` fills what it was given and the drag
+holds; `TopBottomPanel` does that itself, which is why the composer never had
+this half of the defect. And the fact is not the policy's: REMOTE §7 makes
+per-seat UI state the seat's own, and a width an operator set is its plainest
+member.
+
+So **the policy keeps the DEFAULT and the FLOORS, and the seat keeps the
+drag**. The shown width is the dragged one where the seat holds one, else the
+yield's, clamped on every frame to `SIDE_FLOOR` at the least and, at the most,
+what leaves the conversation `CHAT_FLOOR` beside the other list
+(`policy::edges::shown`, `policy::edges::span`). **A window narrower than the
+drag CLAMPS it and never overwrites it** — what is narrowed is the shown width,
+so a window briefly made small costs nothing — and a width the clamp imposed is
+never taken back as the operator's, which is why `shell::drag` reads a width
+back only while the resize handle is being dragged. **Only a drag is clamped**:
+the yield is this window's own answer, and below the width where the two list
+panes are on their own floor it already spends the overrun on the conversation,
+so clamping it would be the policy arguing with itself. **The narrow shape
+consults no drag**, because nothing competes for a width there.
+
+**The composer's top edge is the window's one horizontal drag**, and what it
+sets is the field's ROW COUNT with `theme::COMPOSER_ROWS` as the default
+(`policy::edges::rows`). Rows and not points, which is §4.38's bound kept
+rather than worked around: the panel is handed a height computed from a row
+count and never reads one back off its content. One row is the floor, and
+`policy::edges::TAIL_FLOOR` is the ceiling — `CHAT_FLOOR` one axis over,
+because the drag is written down and a composer dragged over the whole window
+would be a seat that opens next time with no transcript at all. Both widths and
+the row count live on the `Model` and are written to the place file with the
+aim (§4.13).
 
 **A list row's second line truncates, exactly as its headline does**
 (`convs::beneath`; bl-fef8, bl-b3b2's rule one line down). The headline was
@@ -1787,12 +1821,21 @@ checking it here would be a second answer to a settled question.
 **It is a JSON object and not two lines**, so the next fact §7 names is a key
 beside this one rather than a format: an unknown key is ignored and a missing
 key is absence, which is §4.9's rungs 3 and 4 applied to this box's own file.
+Three subjects live there today — the aim, the accordion's arrangement
+(`open`, `opened`, `aimed`) and the edges the operator dragged
+(`roster_width`, `convs_width`, `composer_rows`), both of the last two §4.39's
+— and **absence is spelled per FIELD**, so a file this build can half read is
+half a place kept rather than none.
 
-**And it costs the frame nothing.** The aim is already across the lock —
-`Standing` is published on every settle — so the place is a projection of what
-the workers were reading, read once at boot and written once after the event
-loop returns. No fourth thread, no write on a frame, and nothing new crossing
-the lock to carry it.
+**And it costs the frame nothing.** The place is a **projection of the model**
+(`place::Place::of`), published by the settle that already publishes the
+standing set — the same lock acquisition, on the same terms, derived so there
+is nothing to invalidate. It is read once at boot and written once after the
+event loop returns, which is where it has to be written: by then `eframe` owns
+the model and `src/main.rs` does not, so the crossing is what makes the write
+possible rather than a cost the aim avoided. No fourth thread, no write on a
+frame, and no second copy of anything (amended by bl-46e5, which added the
+dragged edges beside the aim — §4.39).
 
 ### 4.14 The gate is run by a machine, and the store is judged on the ref
 
@@ -4288,7 +4331,7 @@ and the rows are folded under an accordion that already exists.
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
-| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, and the wall last aimed under each. Every way the file can be wrong is one answer: the empty place. | ~150 |
+| `src/place.rs` | where the seat was pointed, how its engines were arranged and how it was laid out, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, the wall last aimed under each, the two dragged list widths and the composer's rows. Every way the file can be wrong is absence, per field. | ~190 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
@@ -4372,7 +4415,9 @@ and the rows are folded under an accordion that already exists.
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the accordion (`model/engines.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
-| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~275 |
+| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, and every field documented where it is declared. | ~285 |
+| `src/ui/model/held/asked.rs` | the two questions asked of the model that no pane owns: how many rows the composer's field stands at (§4.39), and whether a keyboard walk owes its selection a place on the glass. Split from the file above at the cap when the drag added the second — a field is what a pane learned to hold, a question is what two panes need one answer to. | ~35 |
+| `src/ui/model/dragged.rs` | the edges the operator has dragged (§4.39): two widths and a row count, each an option because absence is the policy's own answer — and the shape that goes in the place file beside the aim. | ~25 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/engines.rs` | **the accordion** (§4.39): which engine is open, what each engine's last opening ranks as, the wall last aimed under each, and the three derivations over them — which one is open on a seat nobody has told, the order the pane paints, and what an opening aims at. The seat's own and in the place file, never across the boundary. | ~145 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
@@ -4451,7 +4496,7 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
-| `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it. | ~175 |
+| `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). | ~200 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~155 |
@@ -4476,8 +4521,11 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection — over two kinds of row since the roster became an accordion (§4.39) — and the one binding that is not a walk, Enter on the engine row the cursor stands on. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~255 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
-| `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
-| `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
+| `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and where the three panes with an edge are put. | ~230 |
+| `src/ui/shell/notice.rs` | **the notice bar**: the last thing the seat heard that was not content, the ink the state says it in, and the control that puts it down. Split from the file above at the drag (bl-46e5) on the seam its doc already drew — the layout is the shapes a window takes, and this is the strip that stands where content would have been. | ~60 |
+| `src/ui/shell/drag.rs` | **the two edges an operator drags** (§4.39): the one line of egui that makes a side panel's drag hold, the rule that a width is the operator's only while they are dragging it, and the composer's top edge answered in rows. | ~105 |
+| `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~190 |
+| `src/ui/shell/policy/edges.rs` | **what an operator's drag is worth** (§4.39): the shown width — the drag where the seat holds one, the yield otherwise — the floors a drag is clamped to, and the composer's row count with the tail's own floor. Split from the file above on the seam §4.39 draws: that is what a WINDOW's width buys, this is what a SEAT's drag buys once the window has answered. | ~95 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |

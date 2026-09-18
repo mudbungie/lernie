@@ -35,6 +35,8 @@ mod clients;
 mod config;
 /// The deeper records between frames: the one read the pane posts.
 mod deep;
+/// The edges the operator has dragged, and what absence means on each.
+mod dragged;
 /// **The accordion**: which engine is open, and how the rest are ordered.
 mod engines;
 /// An enrollment, between the control that opened it and the symbol it ends at.
@@ -77,6 +79,7 @@ pub use board::block::Authoring;
 pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};
 pub use config::Configuring;
+pub use dragged::Dragged;
 pub use engines::Engines;
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;

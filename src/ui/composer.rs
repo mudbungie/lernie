@@ -84,6 +84,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // while the conversation is asking — the attention tint and the hint
     // that says so, because the box is where the answer goes.
     let asking = asking(model, &agent);
+    let rows = model.composer_rows();
     let (entry, deposit) = theme::paint::composer(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
@@ -91,6 +92,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         if asking { ASKING } else { HINT },
         asking.then(|| theme::tint(theme::State::Attention)),
         SEND,
+        // **The rows are the seat's own where the operator dragged the panel's
+        // top edge** (§4.39): the field is HANDED a height, which is §4.38's
+        // bound, and the drag changes the number it is computed from rather
+        // than the direction the height is decided in.
+        rows,
     );
     // **The send wears the brand**: it is the operator's own act.
     crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);

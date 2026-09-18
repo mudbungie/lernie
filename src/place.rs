@@ -25,11 +25,13 @@
 //!
 //! # What it holds, and how it grows
 //!
-//! The wall the window was aimed at, and the accordion beside it (DESIGN
-//! §4.39): which engine is open, what each engine's last opening ranks as, and
-//! the wall last aimed under each. **A JSON object rather than lines**, so the
-//! next fact REMOTE §7 names — a scroll, a draft, a dragged width — is a key
-//! beside these rather than a format. An unknown key is ignored and a missing
+//! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
+//! which engine is open, what each engine's last opening ranks as, and the
+//! wall last aimed under each — and the edges the operator dragged, which are
+//! the widths of the two list panes and how many rows the composer's field
+//! stands at (§4.39 again, bl-46e5). **A JSON object rather than lines**, so
+//! the next fact REMOTE §7 names — a scroll, a draft — is a key beside these
+//! rather than a format. An unknown key is ignored and a missing
 //! key is absence, which is the reply vocabulary's own rungs 3 and 4 applied to
 //! this box's own file: a build that reads a file a newer build wrote loses
 //! what it does not know and keeps what it does.
@@ -44,7 +46,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
 
-use crate::ui::{Aim, Engines};
+use crate::ui::{Aim, Dragged, Engines};
 
 /// The file, under the state root. One name, so there is nothing to configure.
 const FILE: &str = "place.json";
@@ -56,17 +58,27 @@ const ADDRESS: &str = "address";
 const OPEN: &str = "open";
 const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
+/// The dragged edges, one key each and flat: a width and a row count are
+/// facts an operator set one at a time, not one object with a shape to keep.
+const ROSTER_WIDTH: &str = "roster_width";
+const CONVS_WIDTH: &str = "convs_width";
+const COMPOSER_ROWS: &str = "composer_rows";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
 /// returned, so nothing here costs a frame anything.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+///
+/// **`Eq` is not derived** and cannot be: a dragged width is points, and a
+/// float has no total equality. Nothing here needs one.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct Place {
     /// The wall the window was aimed at, or nothing — which an operator who
     /// left the roster comes back to.
     pub aim: Option<Aim>,
     /// How the engines were arranged (`crate::ui::Engines`).
     pub engines: Engines,
+    /// The edges the operator dragged (`crate::ui::Dragged`).
+    pub dragged: Dragged,
 }
 
 impl Place {
@@ -77,6 +89,7 @@ impl Place {
         Self {
             aim: model.aim.clone(),
             engines: model.engines.clone(),
+            dragged: model.dragged,
         }
     }
 }
@@ -100,7 +113,25 @@ pub fn read(root: &Path) -> Place {
             opened: table(&held, OPENED, Value::as_u64),
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
         },
+        // **Every number is read through serde and never through a cast** —
+        // `f64 as f32` is the one narrowing this crate's lint set denies with
+        // no home for a suppression but the manifest (`crate::mark`'s own
+        // reasoning). A key that is absent, null or some other shape entirely
+        // is absence, which is rung 4 read on this box's own file — and here
+        // absence is the policy's own answer rather than a missing number.
+        dragged: Dragged {
+            roster: width(&held, ROSTER_WIDTH),
+            convs: width(&held, CONVS_WIDTH),
+            rows: held
+                .get(COMPOSER_ROWS)
+                .and_then(|rows| serde_json::from_value::<u8>(rows.clone()).ok()),
+        },
     }
+}
+
+/// One dragged width, in points, or absence.
+fn width(held: &Value, key: &str) -> Option<f32> {
+    serde_json::from_value(held.get(key)?.clone()).ok()
 }
 
 /// The aim, where the file carries a whole one. A half-written aim is no aim:
@@ -143,6 +174,9 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         OPEN: place.engines.open,
         OPENED: place.engines.opened,
         AIMED: place.engines.aimed,
+        ROSTER_WIDTH: place.dragged.roster,
+        CONVS_WIDTH: place.dragged.convs,
+        COMPOSER_ROWS: place.dragged.rows,
     });
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
     std::fs::write(at(root), body.to_string()).map_err(|e| format!("{}: {e}", at(root).display()))

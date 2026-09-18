@@ -14,15 +14,28 @@
 //! themselves know nothing about either shape: what changed is where they are
 //! put, and — because a column's name has one home — where their heading is
 //! painted.
+//!
+//! **What the policy owns of a width is the DEFAULT and the FLOORS** (§4.39,
+//! bl-46e5). Every visible edge in this window drags — the two list panes'
+//! and the composer's top — and what an operator dragged is the seat's own
+//! state (REMOTE §7), held on the [`Model`], written to the place file, and
+//! clamped to the policy's range on every frame. `drag` is the mechanism and
+//! the one line of egui that makes either edge hold.
 
 use crate::ui::{
     Model, board, chat, clear, clients, commands, composer, config, convs, enroll, find, fleet,
     keys, login, queue, records, roster, theme, trail, tuning, unmake,
 };
 
+/// The two edges an operator drags, and the one line of egui that makes
+/// either of them hold.
+mod drag;
+/// The notice bar: what the seat last heard that was not content.
+mod notice;
 /// The width policy: the yield, the two shapes, and the three columns.
 pub mod policy;
 
+pub use notice::DISMISS;
 pub use policy::{CHAT_FLOOR, Column, SIDE_FLOOR, Shape, shape, widths};
 
 /// Paint one frame of the whole window.
@@ -38,13 +51,13 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // Nothing here is a control of its own: every binding calls the door the
     // click beneath it calls (`crate::ui::keys`).
     keys::handle(ctx, model);
-    notice(ctx, model);
+    notice::render(ctx, model);
     // **The shown column is the shape's answer, not the model's**: in the broad
     // shape every column is on the glass, so the central panel is the
     // conversation's and the model's own column is not consulted at all.
     let (shown, broad) = match shape(ctx.screen_rect().width()) {
-        Shape::Broad { roster, convs } => {
-            lists(ctx, model, roster, convs);
+        Shape::Broad { .. } => {
+            lists(ctx, model);
             (Column::Conversation, true)
         }
         Shape::Narrow => {
@@ -72,7 +85,17 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // selected conversation, and in the narrow shape the conversation is on the
     // glass only when its own column is.
     if !model.covered() && shown == Column::Conversation {
-        egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
+        // **The composer's top edge is the window's one horizontal drag**
+        // (§4.39). What it sets is the field's row count and not a height:
+        // the panel is handed a height it computes from rows and never reads
+        // one back off its content (§4.38, `theme::paint::composer`).
+        let rows = model.composer_rows();
+        if let Some(dragged) = drag::bottom(ctx, "composer", rows, |ui| {
+            composer::render(ui, model);
+            ui.text_style_height(&egui::TextStyle::Body)
+        }) {
+            model.dragged.rows = Some(dragged);
+        }
     }
     egui::CentralPanel::default().show(ctx, |ui| central(ui, model, shown, broad));
 }
@@ -88,34 +111,38 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
 /// bl-e5d2's rule structural: the heading is outside the pane, and therefore
 /// outside the region the pane scrolls.
 ///
-/// **The width is [`policy`]'s, EXACTLY, and a panel asked for a default plus a
-/// cap does not obey one** (bl-fef8). egui stores a side panel's state as the
-/// rect its CONTENT took and reads that back as the width on the next pass, so
-/// a pane narrower than its cap shrank to its content and could never grow
-/// again: a window opened at 800 points and then widened to 1440 kept a
-/// 175-point roster forever, every row in it wrapped after two words, because
-/// nothing in the loop consulted the policy a second time. `exact_width` makes
-/// the policy the whole of the answer — the stored rect is clamped to a point
-/// range, so what a pane took last frame cannot outvote what this window is
-/// worth. It costs the drag handle, and that is subtraction rather than loss: a
-/// dragged width is a second home for a fact the policy already owns, and the
-/// drag did not work anyway — a pane pulled wider than its content snapped back
-/// to the content on the next pass.
-fn lists(ctx: &egui::Context, model: &mut Model, roster_width: f32, convs_width: f32) {
-    egui::SidePanel::left("roster")
-        .resizable(false)
-        .exact_width(roster_width)
-        .show(ctx, |ui| {
-            heading(ui, roster::HEADING, model.focus == keys::Pane::Roster);
-            roster::render(ui, model);
-        });
-    egui::SidePanel::left("conversations")
-        .resizable(false)
-        .exact_width(convs_width)
-        .show(ctx, |ui| {
-            heading(ui, convs::HEADING, model.focus == keys::Pane::Conversations);
+/// **The width is the seat's where the operator set one, and the policy's
+/// otherwise** (§4.39, reversing bl-fef8's *subtraction rather than loss*).
+/// Both edges drag, both widths are clamped to the policy's floors on every
+/// frame, and a width the clamp imposed is never taken back as the operator's
+/// — which is what lets a window briefly made small narrow the pane without
+/// costing the drag. The mechanism, and the one line of egui the drag used to
+/// die on, is `drag`.
+///
+/// **The narrow shape consults none of it**, because it never calls this:
+/// nothing competes for the width there, so there is no edge to drag.
+fn lists(ctx: &egui::Context, model: &mut Model) {
+    let window = ctx.screen_rect().width();
+    let (roster, convs) = policy::shown(window, (model.dragged.roster, model.dragged.convs));
+    let focused = model.focus;
+    if let Some(width) = drag::side(ctx, "roster", roster, policy::span(window, convs), |ui| {
+        heading(ui, roster::HEADING, focused == keys::Pane::Roster);
+        roster::render(ui, model);
+    }) {
+        model.dragged.roster = Some(width);
+    }
+    if let Some(width) = drag::side(
+        ctx,
+        "conversations",
+        convs,
+        policy::span(window, roster),
+        |ui| {
+            heading(ui, convs::HEADING, focused == keys::Pane::Conversations);
             convs::render(ui, model);
-        });
+        },
+    ) {
+        model.dragged.convs = Some(width);
+    }
 }
 
 /// **A column's heading**: `HEADING` size, weak ink at rest, full ink with
@@ -128,16 +155,6 @@ fn heading(ui: &mut egui::Ui, word: &str, focused: bool) {
             .heading()
             .color(ink),
     );
-}
-
-/// **The ink a notice is said in** — the state's, on the six-colour ruling:
-/// a failure of any of the five kinds is an error that will not mend itself
-/// until somebody acts, and a receipt is a note wanting salience.
-fn notice_ink(notice: &crate::ui::Notice) -> egui::Color32 {
-    match notice {
-        crate::ui::Notice::Said(_) => theme::accent(theme::State::Annotation),
-        _ => theme::accent(theme::State::Error),
-    }
 }
 
 /// **The narrow shape's navigation**: the three columns' own names, with the
@@ -216,42 +233,6 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
         }
     }
 }
-
-/// The notice bar: the last thing the seat heard that was not content, in the
-/// words of whoever said it, and dismissible.
-///
-/// It is a **bar rather than a modal** because a refusal about one pane must not
-/// stop the operator reading the other three: the engine refusing a deposit says
-/// nothing about the roster beside it.
-fn notice(ctx: &egui::Context, model: &mut Model) {
-    let Some(notice) = model.notice.clone() else {
-        return;
-    };
-    egui::TopBottomPanel::top("notice").show(ctx, |ui| {
-        ui.horizontal_top(|ui| {
-            if ui.button(DISMISS).clicked() {
-                model.dismiss();
-            }
-            // **The sentence WRAPS** (bl-3d0f). A horizontal layout lays its
-            // labels on one line however long they are, and the panel cuts what
-            // reaches the frame — with no ellipsis, because the galley was
-            // never truncated and so never had one added. Every refusal this
-            // seat paints puts the fact first and the remedy last, so the half
-            // that was cut was always the half that says what to do; the first
-            // run of a seat on an unprovisioned box loses the whole of the one
-            // instruction on the window. A second line in a bar already sized
-            // to its content costs nothing that matters.
-            ui.add(
-                egui::Label::new(egui::RichText::new(notice.line()).color(notice_ink(&notice)))
-                    .wrap(),
-            );
-        });
-    });
-}
-
-/// The word that puts a notice down. An operator who has read it should not
-/// have to wait for the next answer to clear it.
-pub const DISMISS: &str = "×";
 
 #[cfg(test)]
 mod tests;

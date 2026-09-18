@@ -1,15 +1,21 @@
-//! **What the window holds between frames** — the struct, and the one question
-//! asked of it that no pane owns.
+//! **What the window holds between frames** — the struct, and nothing else.
 //!
 //! Split from [`super`] at the 300-line cap on the seam that module's own doc
 //! draws: [`super`] is the module list and the re-export surface, and this is
 //! the snapshot a frame reads. Nothing here paints and nothing here dials, so
 //! every rule for changing it is a pure function a test reads back as a value.
+//!
+//! **The questions asked of it are [`asked`]**, split off at the same cap when
+//! the drag added the second of them: a field is what a pane learned to hold,
+//! and a question is what two panes turned out to need one answer to.
+
+/// The two questions asked of the model that no pane owns.
+mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Engines, Enrolling, Fill, Fleet,
-    Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start, Trail, Tuning,
-    Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Dragged, Engines, Enrolling,
+    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start,
+    Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -186,6 +192,11 @@ pub struct Model {
     pub notice: Option<Notice>,
     /// Which wall the window is aimed at.
     pub aim: Option<Aim>,
+    /// **The edges the operator has dragged** (`dragged`; DESIGN §4.39). One
+    /// field rather than three, because the three are one fact — what this
+    /// seat holds of its own layout — and they are written down together
+    /// (`crate::place`).
+    pub dragged: Dragged,
     /// **How the engines are arranged** (DESIGN §4.39, `engines`): which one
     /// is open, when each was last opened here, and the wall last aimed under
     /// each. One field rather than three, because the three are one subject
@@ -277,13 +288,4 @@ pub struct Model {
     /// Each carries whether it is an ACT, said by the control that composed it,
     /// because a lost reply means opposite things for the two ([`Posted`]).
     pub outbox: Vec<Posted>,
-}
-
-impl Model {
-    /// **Whether `pane` must bring its selection onto the glass this frame**,
-    /// answered once: the flag is taken, so two panes cannot both act on one
-    /// keypress and a stale one cannot fight the next frame's scroll.
-    pub fn revealing(&mut self, pane: crate::ui::keys::Pane) -> bool {
-        self.focus == pane && std::mem::take(&mut self.reveal)
-    }
 }

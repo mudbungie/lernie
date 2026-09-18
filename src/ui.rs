@@ -44,7 +44,7 @@ pub mod commands;
 pub mod composer;
 /// The config pane: the files a wall's policy is written in, and their settings.
 pub mod config;
-/// The conversation list.
+/// A conversation's row under its wall, and the words a row is made of.
 pub mod convs;
 /// The enrollment pane: a name, a grade, and the symbol that comes back.
 pub mod enroll;
@@ -62,7 +62,8 @@ pub mod model;
 pub mod queue;
 /// The records pane: what a conversation's loop did, and what it touched.
 pub mod records;
-/// The roster: every workspace this seat can reach, grouped by channel.
+/// The window's one list: the engines, their walls, and the aimed wall's
+/// conversations.
 pub mod roster;
 /// The layout, and the notice that stands where content would have been.
 pub mod shell;
@@ -75,7 +76,6 @@ pub mod tuning;
 /// The unmaking pane: the seat's one destructive act, and the idiom it sets.
 pub mod unmake;
 
-pub use keys::Pane;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Dragged, Edit,
     Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login, Lookup, Model,

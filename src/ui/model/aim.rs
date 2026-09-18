@@ -7,11 +7,17 @@
 //! the reply door, the acts, the panes. This is the aim, which is the subject
 //! every composed gesture is addressed by.
 //!
-//! **The two readings here are the aim's, and they are the same fact from two
-//! ends.** [`Model::holds`] asks whether this box has a channel by that name
-//! at all, which is the one aim whose emptiness is permanent; [`Model::aimed_at`]
-//! asks whether a given row is the one the window is on. Both are pure
-//! functions of the roster and the aim, so a test reads each back as a value.
+//! **The readings here are the aim's own.** [`Model::channel`] resolves the
+//! channel a gesture goes down and [`Model::holds`] asks whether this box has
+//! one by that name at all, which is the one aim whose emptiness is permanent.
+//! Both are pure functions of the roster and the aim, so a test reads each
+//! back as a value.
+//!
+//! **`Model::aimed_at` went with the middle column** (DESIGN §4.39, bl-b9a3).
+//! It asked whether a row was the aimed one, for a pane that painted rows
+//! about a wall it was not standing under; a wall's row now builds the [`Aim`]
+//! it would compose and compares that, which is the same question asked with
+//! the value the click already needs.
 
 use super::Model;
 
@@ -51,14 +57,6 @@ impl Model {
         self.roster
             .iter()
             .any(|chunk| chunk.channel.name == channel)
-    }
-
-    /// Whether this row is the one the window is aimed at.
-    pub fn aimed_at(&self, channel: &str, address: Option<&String>) -> bool {
-        match (&self.aim, address) {
-            (Some(aim), Some(address)) => aim.channel == channel && aim.address == *address,
-            _ => false,
-        }
     }
 }
 

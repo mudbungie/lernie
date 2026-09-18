@@ -49,7 +49,7 @@ fn run(glyphs: &[Seen], text: &str) -> Seen {
 /// **A window widened is a window whose panes widen with it.**
 ///
 /// The defect: a seat opened at 800 points and then resized to 1440 kept a
-/// 175-point roster with every row wrapped after two words, because the panel's
+/// 175-point list with every row wrapped after two words, because the panel's
 /// width came from the content it had held rather than from the policy. The
 /// second window here is the SAME context — the same stored panel state the
 /// operator's resized window had.
@@ -63,13 +63,12 @@ fn a_pane_that_was_narrow_takes_the_width_the_policy_gives_a_wider_window() {
     glass(&window, &mut model);
     window.resize(1440.0, 900.0);
     let glyphs = glass(&window, &mut model);
-    let (roster, convs) = widths(1440.0);
+    let list = widths(1440.0);
     let heading = run(&glyphs, crate::ui::chat::HEADING);
     assert!(
-        heading.laid.min.x >= roster + convs - 8.0,
-        "the conversation starts where the two lists end: {} against {}",
-        heading.laid.min.x,
-        roster + convs
+        heading.laid.min.x >= list - 8.0,
+        "the conversation starts where the list ends: {} against {list}",
+        heading.laid.min.x
     );
 }
 
@@ -99,12 +98,11 @@ fn an_overrunning_preview_is_elided_rather_than_cut_and_reserves_no_dead_band() 
         preview.laid,
         preview.shown
     );
-    let (roster, convs) = widths(1440.0);
+    let list = widths(1440.0);
     let heading = run(&glyphs, crate::ui::chat::HEADING);
     assert!(
-        heading.laid.min.x < roster + convs + 24.0,
-        "no band stands between the list and the conversation: {} against {}",
-        heading.laid.min.x,
-        roster + convs
+        heading.laid.min.x < list + 24.0,
+        "no band stands between the list and the conversation: {} against {list}",
+        heading.laid.min.x
     );
 }

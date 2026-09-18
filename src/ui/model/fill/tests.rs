@@ -12,7 +12,7 @@ use crate::ui::Column;
 #[test]
 fn going_to_a_box_selects_the_row_moves_to_its_column_and_is_taken_once() {
     let mut model = seated();
-    model.column = Column::Channels;
+    model.column = Column::Engines;
     model.fill_in("another conversation", Fill::Reason);
     assert_eq!(model.conversation.as_deref(), Some("another conversation"));
     assert_eq!(model.column, Column::Conversation);

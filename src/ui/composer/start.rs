@@ -39,7 +39,7 @@
 //! absent rather than greyed, by the offers row's own rule that only what is
 //! offered is on the row.
 
-use crate::ui::{Aim, Model};
+use crate::ui::{Aim, Fill, Model};
 
 /// The word on the control that begins a conversation.
 pub const START: &str = "start";
@@ -49,6 +49,10 @@ pub const GOAL: &str = "what this conversation is for";
 
 /// Paint the start composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
+    // **Taken before anything is painted**, so a start in flight — which
+    // paints its sentence and no box — spends the request rather than holding
+    // it for whichever frame paints a box next (`crate::ui::model::fill`).
+    let wanted = model.filling() == Some(Fill::Goal);
     if let Some(held) = model.start.clone() {
         ui.label(held.line());
         if held.outstanding() {
@@ -78,6 +82,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         rows,
     );
     crate::ui::act::tag(&begin, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
+    // **The `+` on an engine's row lands the caret here** (§4.39): the control
+    // is on the other column and the box is this one, so what crosses between
+    // them is a request the frame that paints the box answers.
+    if wanted {
+        entry.request_focus();
+    }
     // Enter begins it, as it always did — through the deposit's own read, now
     // that the box is the deposit's own box (`super::entered`).
     if super::entered(ui, &entry) || begin.clicked() {

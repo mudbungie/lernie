@@ -2,9 +2,9 @@
 //! the row itself, the lines hung under it, the control that opens its
 //! subtree, and the connectors that say what it hangs from.
 //!
-//! Split out of [`super`] at the design-time budget on the seam the pane
-//! already has: there is the LIST — four emptinesses, a scroll area, and the
-//! two pure functions a row's words are made of — and here is what one row
+//! Split out of [`super`] at the design-time budget on the seam the list
+//! already has: there is the LIST — the two emptinesses, the rail question and
+//! the pure functions a row's words are made of — and here is what one row
 //! puts on the glass. The first changes when a wall answers differently; the
 //! second when the visual language does.
 //!
@@ -76,11 +76,6 @@ pub(super) fn conversation(
     );
     if selected && reveal {
         seat.scroll_to_me(None);
-    }
-    // **Tab and the arrows agree** (bl-2d6b), as on the roster's rows: a Tab
-    // that lands here hands the arrows to the list.
-    if seat.gained_focus() {
-        model.focus = crate::ui::keys::Pane::Conversations;
     }
     if seat.clicked() {
         model.select(&row.root_id.clone());
@@ -196,11 +191,14 @@ fn at_level(left: f32, level: u64) -> f32 {
     left + indent(level.saturating_sub(1)) + STEP / 2.0
 }
 
-/// How far a row hangs under its root, in points.
+/// How far a row stands from the pane's left edge, in points: one [`STEP`]
+/// under the wall it hangs from (DESIGN §4.39 — a conversation is a level
+/// below its workspace, and the fold is what made that a thing the glass can
+/// show), plus one more per level of descent inside the thread.
 ///
 /// Added rather than multiplied, over a **bounded** count: there is no cast
 /// from the wire's own width to a screen coordinate, so there is no truncation
 /// to suppress a lint about.
 fn indent(depth: u64) -> f32 {
-    (0..depth.min(DEEPEST)).fold(0.0, |at, _| at + STEP)
+    (0..depth.min(DEEPEST)).fold(STEP, |at, _| at + STEP)
 }

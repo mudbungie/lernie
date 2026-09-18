@@ -11,7 +11,8 @@
 //! *does a rail belong here*, and the row's own words at the indent the elbow
 //! is drawn to, which is the whole of *where does it point*.
 
-use super::super::{continues, render, row::STEP};
+use super::super::{continues, row::STEP};
+use super::beneath;
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, ConvRow};
 use crate::test_support::window::{conv, seated, seen};
@@ -22,7 +23,7 @@ use crate::ui::theme::{BRAND, RAISED, RULE, State, accent};
 fn fills(model: &mut Model) -> Vec<(egui::Rect, egui::Color32)> {
     let window = Window::sized(600.0, 400.0);
     crate::paint_probe::fills_of(&window.frame(Vec::new(), |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, model));
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, model));
     }))
 }
 
@@ -175,7 +176,7 @@ fn a_member_s_words_stand_one_step_per_level_in_from_its_root_s() {
     model.toggle_subtree("id-1");
     let window = Window::sized(600.0, 400.0);
     let runs = seen(&window, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, &mut model));
     });
     let at = |n: usize| {
         let word = format!("row {n}");

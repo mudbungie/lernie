@@ -101,9 +101,12 @@ conversation's driver runs there, and the engine's own target preamble is fired
 ahead of the goal. A directory named in the goal's prose is a request the
 agent's tools are free to ignore; the rung is not.
 
-**Bare `lernie` opens the window**: the roster grouped by channel, the
-conversation list, the chat pane and the composer, painted from a snapshot and
-firing gestures through the same doors the command line spends. The composer
+**Bare `lernie` opens the window**: two columns. On the left an accordion of
+the engines this seat reaches, the open one's workspaces under it and the
+aimed workspace's conversations under their own row, with a `+` on each
+engine that begins a conversation on it; on the right the chat pane with the
+composer under it. Both are painted from a snapshot and fire gestures through
+the same doors the command line spends. The composer
 speaks to the conversation that is selected and **begins one** where none is,
 holding the staged body between the start's two acts — so the window can start a
 conversation and not only continue one. Behind it are three threads — the asker
@@ -113,9 +116,11 @@ on the focused conversation.
 
 **Everything it does is reachable from the keyboard.** Most of that is egui's —
 Tab moves focus between the controls and Space fires the focused one — and what
-Tab cannot make *usable* is a list, so the arrows walk the roster and the
-conversation list, left and right say which of the two they belong to, and
-Escape puts a notice down. Moving in a list **selects**, so the cursor and the
+Tab cannot make *usable* is a list, so the arrows walk the one list the window
+has — engine rows, the open engine's workspaces, and the aimed one's
+conversations, in the order the glass paints them — and Escape puts a notice
+down. Enter or Space on an engine's row opens it; left and right step between
+the columns where the window is too narrow to stand them side by side. Moving in a list **selects**, so the cursor and the
 selection are one thing and the highlight the pointer paints is where the
 keyboard is. Every binding calls the same door the click beneath it calls.
 

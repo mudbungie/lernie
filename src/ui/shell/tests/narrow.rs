@@ -1,16 +1,16 @@
 //! **The narrow shape** (bl-dfda): one column at a time, and the bar that names
-//! the three.
+//! the two.
 //!
-//! The defect these are written against is a picture — at 400x800 the three
-//! columns stood side by side, each about 120 points wide, with every line in
-//! every one of them wrapped to two or three words. The assertions are about
-//! the layout rather than the pixels: what is on the glass, what is not, and
-//! what one gesture on the bar changes.
+//! The defect these are written against is a picture — at 400x800 the columns
+//! stood side by side, each about 120 points wide, with every line in every one
+//! of them wrapped to two or three words. The assertions are about the layout
+//! rather than the pixels: what is on the glass, what is not, and what one
+//! gesture on the bar changes.
 
 use super::super::{Column, render};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{click, seated, wall};
-use crate::ui::{Enrolling, Model, Pane, chat, composer, convs, roster};
+use crate::ui::{Enrolling, Model, chat, composer, roster};
 
 /// A phone-shaped window: the size the ball named, and narrower than the width
 /// at which the yield can still leave the conversation its floor.
@@ -18,14 +18,14 @@ fn phone() -> Window {
     Window::sized(400.0, 800.0)
 }
 
-/// **One column at a time, and the bar names all three.** The roster's rows are
+/// **One column at a time, and the bar names both.** The roster's rows are
 /// not on the glass beside the conversation, which is the whole of the change:
 /// they are one gesture away instead of 120 points wide.
 #[test]
-fn the_narrow_window_paints_one_column_and_a_bar_naming_the_three() {
+fn the_narrow_window_paints_one_column_and_a_bar_naming_both() {
     let mut model = seated();
     let shown = phone().text(|ctx| render(ctx, &mut model));
-    for word in [roster::HEADING, convs::HEADING, chat::HEADING] {
+    for word in [roster::HEADING, chat::HEADING] {
         assert!(shown.contains(word), "the bar names {word:?}:\n{shown}");
     }
     assert!(
@@ -44,11 +44,11 @@ fn a_gesture_on_the_bar_brings_that_column_to_the_glass() {
     let mut model = seated();
     let window = phone();
     click(&window, roster::HEADING, |ctx| render(ctx, &mut model));
-    assert_eq!(model.column, Column::Channels);
+    assert_eq!(model.column, Column::Engines);
     let shown = window.text(|ctx| render(ctx, &mut model));
     assert!(
         shown.contains(&roster::line(&wall("home"))),
-        "the channels column is on the glass:\n{shown}"
+        "the engines column is on the glass:\n{shown}"
     );
     assert!(
         !shown.contains("port it"),
@@ -69,7 +69,7 @@ fn the_composer_stands_with_its_conversation_and_nowhere_else() {
             .contains(composer::SEND),
         "the box is under the conversation"
     );
-    model.column = Column::Conversations;
+    model.column = Column::Engines;
     assert!(
         !window
             .text(|ctx| render(ctx, &mut model))
@@ -98,62 +98,51 @@ fn a_covering_pane_takes_the_bar_with_the_columns_and_its_close_brings_it_back()
         "the pane covers the window:\n{covered}"
     );
     assert!(
-        !covered.contains(convs::HEADING),
+        !covered.contains(roster::HEADING),
         "and the bar is not standing under it:\n{covered}"
     );
     click(&window, crate::ui::enroll::CLOSE, |ctx| {
         render(ctx, &mut model);
     });
     let back = window.text(|ctx| render(ctx, &mut model));
-    assert!(back.contains(convs::HEADING), "the bar is back:\n{back}");
+    assert!(back.contains(roster::HEADING), "the bar is back:\n{back}");
 }
 
 /// **Left and right name a place, and in this shape the place is a column** —
-/// and the arrows follow it, because the column on the glass is the only list
-/// there is to walk.
+/// the one shape where they name anything at all, since the broad window has
+/// both columns on the glass already (DESIGN §4.39).
 #[test]
-fn the_side_keys_step_the_column_and_the_arrows_follow_it() {
+fn the_side_keys_step_the_column_and_stop_at_the_ends() {
     let mut model = seated();
     let window = phone();
-    for (key, column, arrows) in [
-        (
-            egui::Key::ArrowLeft,
-            Column::Conversations,
-            Pane::Conversations,
-        ),
-        (egui::Key::ArrowLeft, Column::Channels, Pane::Roster),
-        (egui::Key::ArrowLeft, Column::Channels, Pane::Roster),
-        (
-            egui::Key::ArrowRight,
-            Column::Conversations,
-            Pane::Conversations,
-        ),
+    for (key, column) in [
+        (egui::Key::ArrowLeft, Column::Engines),
+        (egui::Key::ArrowLeft, Column::Engines),
+        (egui::Key::ArrowRight, Column::Conversation),
+        (egui::Key::ArrowRight, Column::Conversation),
     ] {
         window.frame(vec![press(key)], |ctx| render(ctx, &mut model));
         assert_eq!(model.column, column, "after {key:?}");
-        assert_eq!(model.focus, arrows, "the arrows are the column's");
     }
 }
 
-/// **A walk in the narrow shape moves the list that is on the glass**, whatever
-/// a wider window last left the focus on. The seated fixture opens on the
-/// conversation column, whose list is the conversations — so a step down
-/// selects, and the chat pane behind it is the row it landed on.
+/// **The walk is the same one list in either shape** (DESIGN §4.39): the
+/// narrow window paints the engines column, and a step down it moves the one
+/// cursor — here off the aimed wall and onto its first conversation, which is
+/// what the conversation column behind it then shows.
 #[test]
-fn an_arrow_walks_the_column_on_the_glass_rather_than_the_focus_a_wider_window_left() {
+fn an_arrow_walks_the_one_list_in_the_narrow_shape_too() {
     let mut model = Model {
-        focus: Pane::Roster,
-        column: Column::Conversations,
+        column: Column::Engines,
         conversation: None,
         ..seated()
     };
     phone().frame(vec![press(egui::Key::ArrowDown)], |ctx| {
         render(ctx, &mut model);
     });
-    assert_eq!(model.focus, Pane::Conversations);
     assert_eq!(
         model.conversation,
         Some("20260830T051200Z-a1b2".to_owned()),
-        "the walk landed in the list the column shows"
+        "the walk landed on the aimed wall's first conversation"
     );
 }

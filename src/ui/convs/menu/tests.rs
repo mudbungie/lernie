@@ -21,7 +21,9 @@ fn asking() -> ConvRow {
     }
 }
 
-/// **The seat standing on the conversations column in the narrow shape.**
+/// **The seat standing on the engines column in the narrow shape**, which is
+/// where a conversation's row is since DESIGN §4.39 folded the rows under
+/// their wall.
 ///
 /// That width is chosen rather than convenient: the composer stands down off
 /// the conversation's own column there (`crate::ui::shell`), so every word the
@@ -29,7 +31,7 @@ fn asking() -> ConvRow {
 /// row's under another name.
 fn narrow() -> Model {
     Model {
-        column: Column::Conversations,
+        column: Column::Engines,
         convs: vec![asking()],
         ..seated()
     }

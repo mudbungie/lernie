@@ -1,12 +1,39 @@
-//! **The conversation list** for the wall the window is aimed at.
+//! **The conversations that stand under a wall** (DESIGN §4.39) — the rows
+//! themselves, the two sentences a wall with none says, and the words a row is
+//! made of.
 //!
 //! A row is a glance, not a transcript: what it is called, what it is doing,
 //! how long since it moved, why its latest model call failed if it did, and
 //! the first line of what was said. Everything deeper is one click away in the
 //! chat pane, and a list that tried to be the pane would be neither.
+//!
+//! # It was a pane and it is a level (bl-b9a3)
+//!
+//! Until DESIGN §4.39 this was the window's middle column, with a heading, a
+//! scroll region and four emptinesses of its own. The fold put these rows
+//! under the wall they belong to, inside the roster's one scroll region, so
+//! what is left here is a row and the facts a row is made of — [`under`] is
+//! called by `crate::ui::roster::wall` and nothing paints a pane.
+//!
+//! **Two of the four emptinesses went with the pane and neither is missed.**
+//! *pick a workspace under channels to list its conversations* was the pane
+//! saying it had no subject; there is no pane, and a wall's rows only ever
+//! stand under that wall's own row, so the subject is on the glass by
+//! construction. And the sentence for an aim naming a channel this seat does
+//! not hold (bl-f780's permanent case) has no row to stand under at all: a
+//! stale aim read back out of the place file now shows as an accordion with
+//! nothing aimed in it, which is what it is.
+//!
+//! # And it stayed HERE rather than moving under `roster/`
+//!
+//! §4.39 left the choice open. The roster is its only caller, but it is not
+//! its only reader: `crate::ui::queue` spells a row's age and its uncertainty
+//! mark with [`age`] and [`UNCERTAIN`], because a conversation's age reads the
+//! same wherever it is written. A vocabulary two panes share is a module
+//! beside them, not inside one of them.
 
 use crate::reply::convs::ConvRow;
-use crate::ui::Model;
+use crate::ui::{Aim, Model, theme};
 
 /// The row's own acts, on the menu a secondary click opens.
 pub mod menu;
@@ -16,69 +43,36 @@ mod row;
 
 pub use row::{HIDE, SHOW};
 
-/// What the list says with no wall aimed at.
-pub const NO_WALL: &str = "pick a workspace under channels to list its conversations";
-/// What it says for a wall that answered, and answered nothing.
-pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one in the box below";
+/// What a wall says when it answered and holds no conversation. **It names the
+/// next act** (§4.38), and the act is the `+` on the engine's own row above it
+/// (`crate::ui::roster::engine::BEGIN`).
+pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one with + on the engine";
 /// **What it says for a wall it has not been ANSWERED about** (bl-f780).
 ///
-/// The third sentence, and it is the [`UNCERTAIN`] doctrine one level up: *no
-/// conversations here* is a definite fact about a wall nobody has looked at
-/// yet, and the pane already refuses to state a definite fact about a
-/// conversation nobody could take a reading of. It stands from the keypress
-/// that aims until the answer lands — a round trip on a wire, not the
-/// millisecond it is on loopback.
+/// The [`UNCERTAIN`] doctrine one level up: *no conversations here* is a
+/// definite fact about a wall nobody has looked at yet, and this pane already
+/// refuses to state a definite fact about a conversation nobody could take a
+/// reading of. It stands from the keypress that aims until the answer lands —
+/// a round trip on a wire, not the millisecond it is on loopback.
 pub const NOT_ANSWERED: &str = "waiting to hear about this wall";
 
-/// **What it says for an aim this seat cannot ask about at all**, which is
-/// permanent rather than transient.
-///
-/// `crate::place` restores a saved aim without checking it, on the ground that
-/// a stale one is inert — `crate::state::Standing::aimed` finds no channel by
-/// that name and asks nothing. Inert is right about the dialling and wrong
-/// about the paint: nothing is ever asked, so [`NOT_ANSWERED`] would stand
-/// forever over a wall that has no channel to answer it. The refusal that was
-/// silent is said here instead.
-pub fn no_channel(channel: &str) -> String {
-    format!(
-        "this seat holds no channel named {channel:?}, so nothing is asked about this wall — pick one from the channels beside it"
-    )
-}
-
-/// The word this pane wears, and the subject the arrows act on when it is
-/// focused. **It is painted by `crate::ui::shell`** — above the pane in the
-/// broad shape, on the navigation bar in the narrow one (bl-dfda) — because a
-/// column's name has one home and which one it is depends on the shape.
-pub const HEADING: &str = "conversations";
 /// The mark a state nothing observed wears, inside the badge it qualifies.
 pub const UNCERTAIN: &str = "?";
 
-/// Paint the list and take a click on it. **The heading is the shell's** —
-/// see [`HEADING`].
-pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    let Some(aim) = model.aim.clone() else {
-        crate::ui::theme::paint::empty(ui, NO_WALL);
-        return;
-    };
-    ui.label(aim.address.clone());
-    // **An aim on a channel this seat does not hold is asked about by nobody**,
-    // so it gets its own sentence rather than one that implies an answer came
-    // back. The roster carries every channel this box holds from boot, off the
-    // disk and before anything is dialled, so this is a question about the
-    // model and not about a socket.
-    if !model.holds(&aim.channel) {
-        crate::ui::theme::paint::empty(ui, &no_channel(&aim.channel));
-        return;
-    }
-    // **The list is the model's, not this pane's**: a conversation this window
-    // has started but the engine cannot resolve yet stands in it as a row of
-    // its own (`crate::ui::model::claim`), and it stands there for the pointer
-    // and the keyboard alike because both walk the one list.
+/// **The conversations that stand under the aimed wall**, and the sentence
+/// that stands there when it holds none.
+///
+/// **The list is the model's, not this file's**: a conversation this window
+/// has started but the engine cannot resolve yet stands in it as a row of its
+/// own (`crate::ui::model::claim`), and it stands there for the pointer and
+/// the keyboard alike because both walk the one list
+/// (`crate::ui::roster::track`).
+pub(crate) fn under(ui: &mut egui::Ui, model: &mut Model, aim: &Aim, reveal: bool) {
     let rows = model.rows();
     if rows.is_empty() {
-        crate::ui::theme::paint::empty(
+        theme::paint::empty(
             ui,
-            if model.answered.as_ref() == Some(&aim) {
+            if model.answered.as_ref() == Some(aim) {
                 NO_CONVERSATIONS
             } else {
                 NOT_ANSWERED
@@ -86,24 +80,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         );
         return;
     }
-    // The list scrolls; the heading and the address above it do not (bl-e5d2,
-    // and `crate::ui::roster` for why the heading stays out).
-    let reveal = model.revealing(crate::ui::keys::Pane::Conversations);
-    egui::ScrollArea::vertical()
-        .id_salt(HEADING)
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            for (at, conv) in rows.iter().enumerate() {
-                // **What a rail says is a fact about the LIST**, not about the
-                // row, so it is answered here where the whole list is in hand
-                // and handed down. Level `depth` itself is the row's own
-                // elbow and never a rail.
-                let rails: Vec<u64> = (1..conv.depth)
-                    .filter(|level| continues(&rows, at, *level))
-                    .collect();
-                row::conversation(ui, model, &aim, conv, &rails, reveal);
-            }
-        });
+    for (at, conv) in rows.iter().enumerate() {
+        // **What a rail says is a fact about the LIST**, not about the row, so
+        // it is answered here where the whole list is in hand and handed down.
+        // Level `depth` itself is the row's own elbow and never a rail.
+        let rails: Vec<u64> = (1..conv.depth)
+            .filter(|level| continues(&rows, at, *level))
+            .collect();
+        row::conversation(ui, model, aim, conv, &rails, reveal);
+    }
 }
 
 /// **Whether an ancestor level's thread continues past this row** — the whole

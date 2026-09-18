@@ -37,11 +37,24 @@ impl Model {
     /// `address` is what a gesture must carry rather than the name the row
     /// wears; the two differ exactly where an entry renames, and the roster is
     /// what maps one to the other.
+    ///
+    /// **Aiming where the window is already aimed retires nothing** (DESIGN
+    /// §4.39, bl-b9a3). Since the conversations stand under their wall, the
+    /// one cursor crosses the aimed wall's own row every time it moves between
+    /// the engine above it and the rows beneath it — and a cursor passing over
+    /// a row is not an operator asking about that wall again. Re-asking would
+    /// empty the list under the cursor and put *waiting to hear about this
+    /// wall* where the rows had been, which is bl-f780's transient defect made
+    /// reachable by an arrow key. What an aim always does is put the cursor on
+    /// the wall and drop the selection under it; what it does only when it
+    /// MOVED is retire everything that was about the wall it left.
     pub fn aim_at(&mut self, channel: &str, address: &str) {
-        self.aim = Some(Aim {
+        let aim = Aim {
             channel: channel.to_owned(),
             address: address.to_owned(),
-        });
+        };
+        let moved = self.aim.as_ref() != Some(&aim);
+        self.aim = Some(aim);
         // **The engine remembers the wall it was left on** (DESIGN §4.39), so
         // an engine an operator comes back to is the engine they left. It is
         // recorded here rather than by each surface that aims, for this
@@ -54,11 +67,17 @@ impl Model {
         // engine row without selecting it; an aim is a selection, so the two
         // cannot both be where the operator is.
         self.standing = None;
-        self.convs.clear();
-        self.answered = None;
+        // **The selection goes whichever wall this is**, because the cursor is
+        // on the wall now: `Model::select` is the only thing that puts it back
+        // on a conversation, and it is the same clearing that one does.
         self.conversation = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
+        if !moved {
+            return;
+        }
+        self.convs.clear();
+        self.answered = None;
         // **The tuning pane goes with the wall it was opened on** (bl-4a2c).
         // It holds no aim of its own, deliberately — every gesture it composes
         // reads `Model::aim` at the moment of composing — so leaving it open

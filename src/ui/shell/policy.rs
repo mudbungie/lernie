@@ -1,5 +1,5 @@
-//! **What a window's width buys it**, and the three columns a window is made
-//! of (bl-e5d2, bl-dfda).
+//! **What a window's width buys it**, and the two columns a window is made of
+//! (bl-e5d2, bl-dfda, bl-b9a3).
 //!
 //! This is the layout's own policy and the one place it is stated. It is a
 //! **pure function of one number**, so what the window does as it narrows is a
@@ -9,20 +9,30 @@
 //!
 //! # Two shapes, and the second is the answer the policy used to lack
 //!
-//! [`widths`] is the yield: the conversation keeps a floor and the two list
-//! panes give way to it, together and in proportion to what each is worth,
-//! until they reach their own floor. Past that **nothing yields**, and until
-//! bl-dfda that was where the policy stopped — at a phone-shaped viewport the
-//! three columns were still laid side by side, each about 120 points wide, with
-//! every line in every one of them wrapped to two or three words.
+//! [`widths`] is the yield: the conversation keeps a floor and the one list
+//! pane gives way to it until it reaches its own floor. Past that **nothing
+//! yields**, and until bl-dfda that was where the policy stopped — at a
+//! phone-shaped viewport the columns were still laid side by side, each about
+//! 120 points wide, with every line in every one of them wrapped to two or
+//! three words.
 //!
 //! The answer is not more yielding, because there is none left to do: it is a
 //! second **shape**. Below the width at which the yield still leaves the
 //! conversation its floor, the window shows [`Column`] — one column at a time,
-//! with a bar naming the three. That is the covering-pane idiom this seat
+//! with a bar naming the two. That is the covering-pane idiom this seat
 //! already has ([`crate::ui::enroll`], [`crate::ui::tuning`],
 //! [`crate::ui::records`]) read across the whole layout rather than only the
 //! central panel: a surface you navigate to, act in, and come back from.
+//!
+//! # The policy LOST a term when the middle column went (DESIGN §4.39)
+//!
+//! It used to yield two list panes together and in proportion to what each was
+//! worth. The conversations stand under their wall in the roster now
+//! ([`crate::ui::roster`]), so there is one list, one width to answer and one
+//! edge to drag — and every expression below is the old one with the second
+//! term struck out rather than a new regime. What the list is worth is still
+//! [`CONVS`], because its widest row is still a conversation's headline with a
+//! preview under it; the engine and wall rows above them are shorter.
 //!
 //! # There is no floor under the narrow shape, and that is not an omission
 //!
@@ -34,8 +44,6 @@
 //! What a very small window costs is elision inside the content, which is the
 //! content's own business and every pane's own rule.
 
-use crate::ui::keys::Pane;
-
 /// **What an operator's drag is worth**, and what this policy still owns of it
 /// — the default and the floors (DESIGN §4.39). Split from this file on the
 /// seam §4.39 itself draws: the yield below is what a WINDOW's width buys, and
@@ -44,78 +52,59 @@ pub mod edges;
 
 pub use edges::{TAIL_FLOOR, rows, shown, span};
 
-/// **What the two list panes are worth when the window is wide enough**, in
-/// points: the roster holds a handful of short words, the conversation list
-/// holds a headline and a preview under it.
-pub(crate) const ROSTER: f32 = 280.0;
-/// The conversation list's own worth, on the same reading.
+/// **What the one list pane is worth when the window is wide enough**, in
+/// points: its widest row is a conversation's headline with a preview under
+/// it, which is what it was worth as a column of its own and is what it is
+/// worth now that the engines stand above the same rows.
 pub(crate) const CONVS: f32 = 320.0;
 
 /// **The floor the conversation and its composer keep** in the broad shape.
 /// Below this a chat pane is a strip: a message elides inside its own width,
 /// the composer's box shows the first few words of a draft, and `send` sits
-/// against the frame. It is what the two list panes yield to, and the width at
+/// against the frame. It is what the list pane yields to, and the width at
 /// which it can no longer be kept is where the narrow shape begins.
 pub const CHAT_FLOOR: f32 = 420.0;
 
-/// **The width a list pane never goes under** while it is on the glass beside
-/// another. A pane below it shows nothing at all, which is worse than a chat
-/// pane under its floor — so this is the one thing the floor yields to.
+/// **The width the list pane never goes under** while it is on the glass
+/// beside the conversation. A pane below it shows nothing at all, which is
+/// worse than a chat pane under its floor — so this is the one thing the floor
+/// yields to.
 pub const SIDE_FLOOR: f32 = 140.0;
 
-/// **One of the three columns the window is made of.**
+/// **One of the two columns the window is made of** (DESIGN §4.39).
 ///
-/// In the broad shape all three are on the glass at once and this says nothing;
+/// In the broad shape both are on the glass at once and this says nothing;
 /// in the narrow shape it is the one that IS on the glass, and the bar that
-/// names all three is how an operator moves between them
+/// names both is how an operator moves between them
 /// (`crate::ui::shell`). It is held on the model because it is a navigation an
 /// operator performed, which is not a thing any other fact can be asked for.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Column {
-    /// The roster: every workspace this seat can reach. **The window opens
-    /// here**, for `crate::ui::keys::Pane`'s own reason — a seat with nothing
-    /// aimed at has exactly one thing to do next.
+    /// The accordion of engines, their walls and the aimed wall's
+    /// conversations — the window's one list. **The window opens here**: a
+    /// seat with nothing aimed at has exactly one thing to do next.
     #[default]
-    Channels,
-    /// The aimed wall's conversations.
-    Conversations,
+    Engines,
     /// The selected conversation, and the composer under it.
     Conversation,
 }
 
 impl Column {
-    /// **The three, left to right** — the order the broad shape lays them in,
+    /// **The two, left to right** — the order the broad shape lays them in,
     /// so the bar reads the same way the wide window does and a step sideways
     /// means the same thing in both shapes.
-    pub(crate) fn all() -> [Column; 3] {
-        [Self::Channels, Self::Conversations, Self::Conversation]
+    pub(crate) fn all() -> [Column; 2] {
+        [Self::Engines, Self::Conversation]
     }
 
     /// **The column's one name, which is the pane's own heading.** The bar does
     /// not get a vocabulary of its own: a second word for a column is a second
-    /// thing to keep in step, and an operator reading *channels* on a bar and
+    /// thing to keep in step, and an operator reading *engines* on a bar and
     /// something else over the pane would be reading about two places.
     pub(crate) fn word(self) -> &'static str {
         match self {
-            Self::Channels => crate::ui::roster::HEADING,
-            Self::Conversations => crate::ui::convs::HEADING,
+            Self::Engines => crate::ui::roster::HEADING,
             Self::Conversation => crate::ui::chat::HEADING,
-        }
-    }
-
-    /// **Which list the arrows walk while this column is the one on the
-    /// glass.**
-    ///
-    /// In the narrow shape the arrows have no choice to make: there is one
-    /// column on the window, so it is the one they belong to, and
-    /// `crate::ui::keys` spends this at the top of every frame rather than
-    /// letting a focus set at another width walk a list nobody can see. The
-    /// conversation column answers the conversation LIST, because the row a
-    /// walk lands on is exactly what the chat pane is showing.
-    pub(crate) fn arrows(self) -> Pane {
-        match self {
-            Self::Channels => Pane::Roster,
-            Self::Conversations | Self::Conversation => Pane::Conversations,
         }
     }
 
@@ -133,55 +122,49 @@ impl Column {
     }
 }
 
-/// **What a window of this width gets**: every column at once, or one at a
+/// **What a window of this width gets**: both columns at once, or one at a
 /// time.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Shape {
-    /// **All three columns on the glass together**, with the two list panes
-    /// capped at these widths.
+    /// **Both columns on the glass together**, with the list pane capped at
+    /// this width.
     Broad {
-        /// What the roster pane may take.
-        roster: f32,
-        /// What the conversation list may take.
-        convs: f32,
+        /// What the list pane may take.
+        list: f32,
     },
-    /// **One column at a time**, and a bar naming the three.
+    /// **One column at a time**, and a bar naming both.
     Narrow,
 }
 
 /// **The width every column is worth together** — the one window width at
-/// which each of the three gets exactly what it is worth and nothing is left
+/// which each of the two gets exactly what it is worth and nothing is left
 /// over. It is derived and never written down twice: it is the crossing point
-/// of [`widths`]' two clauses, so tuning any of the three moves it.
+/// of [`widths`]' two clauses, so tuning either of the two moves it.
 fn worth() -> f32 {
-    ROSTER + CONVS + CHAT_FLOOR
+    CONVS + CHAT_FLOOR
 }
 
-/// **The two list panes' widths at a given window width** — the yield, and the
+/// **The list pane's width at a given window width** — the yield, and the
 /// policy the window had none of (bl-e5d2, bl-fef8).
 ///
 /// The side panels used to keep their widths as the window narrowed and the
 /// central panel absorbed the whole loss, so at 900 points the pane the window
 /// exists for was a ~140-point strip while the roster kept 280. The rule is the
-/// other way round: **the conversation has a floor and the list panes yield to
-/// it**, together and in proportion to what each is worth, until they reach
-/// their own floor.
+/// other way round: **the conversation has a floor and the list pane yields to
+/// it**, until it reaches its own floor.
 ///
 /// **And a window WIDER than every column's worth is the same rule read the
-/// other way** (bl-fef8): the lists' share stopped growing at 1.0, so every
+/// other way** (bl-fef8): the list's share stopped growing at 1.0, so every
 /// pixel of a large display landed in the one pane whose content is already
-/// prose, and the two navigation columns stayed the width they are worth at a
-/// 1020-point window forever. Both are one expression — the share is the
+/// prose, and the navigation column stayed the width it is worth at a
+/// 740-point window forever. Both are one expression — the share is the
 /// SMALLER of *this column's proportion of the window* and *what is left after
 /// the conversation keeps its floor* — and the two clauses cross at exactly
 /// [`worth`], which is what makes the growth a continuation of the yield
 /// rather than a second regime with a constant of its own.
-pub fn widths(window: f32) -> (f32, f32) {
-    let share = (window / worth()).min((window - CHAT_FLOOR) / (ROSTER + CONVS));
-    (
-        (ROSTER * share).max(SIDE_FLOOR),
-        (CONVS * share).max(SIDE_FLOOR),
-    )
+pub fn widths(window: f32) -> f32 {
+    let share = (window / worth()).min((window - CHAT_FLOOR) / CONVS);
+    (CONVS * share).max(SIDE_FLOOR)
 }
 
 /// **The shape a window of this width takes**, and the whole of the decision.
@@ -193,9 +176,9 @@ pub fn widths(window: f32) -> (f32, f32) {
 /// would be a copy of a policy that already lives in one function, and the two
 /// would part company on the first tuning of either.
 pub fn shape(window: f32) -> Shape {
-    let (roster, convs) = widths(window);
-    if window - roster - convs >= CHAT_FLOOR {
-        Shape::Broad { roster, convs }
+    let list = widths(window);
+    if window - list >= CHAT_FLOOR {
+        Shape::Broad { list }
     } else {
         Shape::Narrow
     }

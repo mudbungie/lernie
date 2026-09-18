@@ -1,5 +1,5 @@
-//! **One wall's row**, and the band of per-wall controls that hangs off the
-//! aimed one ([`controls`]).
+//! **One wall's row**, the band of per-wall controls that hangs off the aimed
+//! one ([`controls`]), and the conversations that stand beneath it.
 //!
 //! Split from [`super`] at the design-time budget on the seam that module's own
 //! doc draws twice over: it is *the channels and their sections*, `acts` is
@@ -9,7 +9,7 @@
 //! sentence; this one when a wall-level op lands a control.
 
 use crate::reply::roster::WsRow;
-use crate::ui::{Chunk, Model, theme};
+use crate::ui::{Chunk, Model, convs, theme};
 
 /// The eight acts on one aimed wall, and the band they lie in.
 mod controls;
@@ -61,7 +61,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
         );
         return;
     };
-    let aimed = model.aimed_at(&chunk.channel.name, Some(&address));
+    let aim = crate::ui::Aim {
+        channel: chunk.channel.name.clone(),
+        address: address.clone(),
+    };
+    let aimed = model.aim.as_ref() == Some(&aim);
     // **The row's rule is its state and the aim is the brand** (§2: *the eye
     // lands on green*). Asking outranks running because asking is the one that
     // wants a person; the aimed row keeps the brand over both, which
@@ -82,31 +86,37 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     if aimed && reveal {
         seat.scroll_to_me(None);
     }
-    // **Tab and the arrows agree** (bl-2d6b): a Tab that lands on a wall's
-    // row hands the arrows to the roster, so the mark on the heading moves
-    // with the ring on the row and one keyboard has one model of where it is.
-    if seat.gained_focus() {
-        model.focus = crate::ui::keys::Pane::Roster;
-    }
     if seat.clicked() {
         model.aim_at(&chunk.channel.name.clone(), &address);
+    }
+    if !aimed {
+        return;
     }
     // **All eight per-wall controls hang off the aimed row and off no other**,
     // and all eight stand down while a pane already covers the conversation:
     // what they open would replace what is standing there, so offering them is
     // offering to lose it without saying so.
-    if !aimed || model.covered() {
-        return;
-    }
+    //
     // **They are ONE compact strip under the row, indented, in the order the
     // ledger reads them** (`docs/STYLE.md` §2, DESIGN §4.20): the acts on the
     // wall as an object, a short verb apiece, wrapping at the column's width,
     // with the destructive one last (bl-f251). A column of eight full-width
     // controls under a row would read as eight more rows.
-    ui.horizontal_wrapped(|ui| {
-        ui.add_space(theme::space::L);
-        controls::render(ui, model, row);
-    });
+    if !model.covered() {
+        ui.horizontal_wrapped(|ui| {
+            ui.add_space(theme::space::L);
+            controls::render(ui, model, row);
+        });
+    }
+    // **And under the strip, this wall's conversations** (DESIGN §4.39): the
+    // rows the middle column used to paint, standing where the operator's own
+    // sentence put them. They hang off the AIMED wall and off no other,
+    // because the standing read set asks about one wall (§4.12) and a seat
+    // that painted rows under a wall nobody has asked about would be painting
+    // an emptiness it has no evidence for. Unlike the controls they stand
+    // under a covering pane: a covering pane replaces the CONVERSATION, and
+    // the list beside it goes on being the list.
+    convs::under(ui, model, &aim, reveal);
 }
 
 /// One wall's line: what it is called, how it is classified, and its rollups.

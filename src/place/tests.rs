@@ -58,15 +58,14 @@ fn the_accordion_comes_back_with_the_aim() {
 }
 
 /// **The edges an operator dragged come back with the aim** (DESIGN §4.39,
-/// bl-46e5): two widths and a row count, in the same file and on the same
-/// terms — so a seat comes back laid out the way it was left.
+/// bl-46e5, bl-b9a3): one width and a row count, in the same file and on the
+/// same terms — so a seat comes back laid out the way it was left.
 #[test]
 fn every_edge_the_operator_dragged_comes_back_beside_the_aim() {
     let scratch = Scratch::new();
     let laid_out = Place {
         dragged: Dragged {
-            roster: Some(360.5),
-            convs: Some(240.0),
+            list: Some(360.5),
             rows: Some(7),
         },
         ..pointed()
@@ -117,8 +116,13 @@ fn nothing_a_file_can_be_wrong_about_refuses() {
         r#"{"aim": {"address": "home"}}"#,
         r#"{"aim": {"channel": 7, "address": "home"}}"#,
         r#"{"open": 7, "opened": [], "aimed": "lab"}"#,
-        r#"{"roster_width": "wide"}"#,
-        r#"{"convs_width": null}"#,
+        r#"{"list_width": "wide"}"#,
+        r#"{"list_width": null}"#,
+        // **The keys the fold retired** (bl-b9a3): a file two builds old
+        // names the two widths the window used to have, and this build reads
+        // it as a seat that has dragged nothing — an unknown key is ignored,
+        // which costs exactly one drag.
+        r#"{"roster_width": 360.5, "convs_width": 240.0}"#,
         r#"{"composer_rows": 900}"#,
         r#"{"composer_rows": -1}"#,
         r#"{"composer_rows": 3.5}"#,

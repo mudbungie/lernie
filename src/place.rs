@@ -28,8 +28,8 @@
 //! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
 //! which engine is open, what each engine's last opening ranks as, and the
 //! wall last aimed under each — and the edges the operator dragged, which are
-//! the widths of the two list panes and how many rows the composer's field
-//! stands at (§4.39 again, bl-46e5). **A JSON object rather than lines**, so
+//! the width of the one list pane and how many rows the composer's field
+//! stands at (§4.39 again, bl-46e5, bl-b9a3). **A JSON object rather than lines**, so
 //! the next fact REMOTE §7 names — a scroll, a draft — is a key beside these
 //! rather than a format. An unknown key is ignored and a missing
 //! key is absence, which is the reply vocabulary's own rungs 3 and 4 applied to
@@ -60,8 +60,13 @@ const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
 /// The dragged edges, one key each and flat: a width and a row count are
 /// facts an operator set one at a time, not one object with a shape to keep.
-const ROSTER_WIDTH: &str = "roster_width";
-const CONVS_WIDTH: &str = "convs_width";
+///
+/// **One width key since DESIGN §4.39's fold** (bl-b9a3). It was
+/// `roster_width` and `convs_width`, and neither is read any more: a file
+/// written by a build that had two is read by this one as a seat that has
+/// dragged nothing, which is this module's own rung-4 rule — an unknown key
+/// is ignored and a missing key is absence — costing exactly one drag.
+const LIST_WIDTH: &str = "list_width";
 const COMPOSER_ROWS: &str = "composer_rows";
 
 /// **Everything the seat remembers between runs.** One value, because it is
@@ -120,8 +125,7 @@ pub fn read(root: &Path) -> Place {
         // is absence, which is rung 4 read on this box's own file — and here
         // absence is the policy's own answer rather than a missing number.
         dragged: Dragged {
-            roster: width(&held, ROSTER_WIDTH),
-            convs: width(&held, CONVS_WIDTH),
+            list: width(&held, LIST_WIDTH),
             rows: held
                 .get(COMPOSER_ROWS)
                 .and_then(|rows| serde_json::from_value::<u8>(rows.clone()).ok()),
@@ -174,8 +178,7 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         OPEN: place.engines.open,
         OPENED: place.engines.opened,
         AIMED: place.engines.aimed,
-        ROSTER_WIDTH: place.dragged.roster,
-        CONVS_WIDTH: place.dragged.convs,
+        LIST_WIDTH: place.dragged.list,
         COMPOSER_ROWS: place.dragged.rows,
     });
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;

@@ -12,6 +12,9 @@
 //! So this is a pure function of the window and whatever the seat holds, and
 //! nothing here is a second regime: with no drag at all every answer below is
 //! exactly [`super::widths`]'.
+//!
+//! **There is ONE list edge since the middle column went** (DESIGN §4.39,
+//! bl-b9a3), so nothing here is asked what another pane took.
 
 use super::{CHAT_FLOOR, SIDE_FLOOR, widths};
 
@@ -22,18 +25,23 @@ use super::{CHAT_FLOOR, SIDE_FLOOR, widths};
 /// run would open on a window whose transcript is gone.
 pub const TAIL_FLOOR: f32 = 120.0;
 
-/// **What a list pane may be dragged between**, given `beside` — what the
-/// other list pane is shown at. The floor is [`SIDE_FLOOR`], because a pane
-/// under it shows nothing at all; the cap is what still leaves the
-/// conversation [`CHAT_FLOOR`] beside the two of them, and it yields to the
-/// floor for the policy's own reason — two panes showing nothing buys the
-/// chat pane a width it still cannot use.
-pub fn span(window: f32, beside: f32) -> (f32, f32) {
-    (SIDE_FLOOR, (window - CHAT_FLOOR - beside).max(SIDE_FLOOR))
+/// **What the list pane may be dragged between.** The floor is [`SIDE_FLOOR`],
+/// because a pane under it shows nothing at all; the cap is what still leaves
+/// the conversation [`CHAT_FLOOR`] beside it, and it yields to the floor for
+/// the policy's own reason — a pane showing nothing buys the chat pane a width
+/// it still cannot use.
+///
+/// **It lost its second argument with the middle column** (DESIGN §4.39,
+/// bl-b9a3). It used to be asked what the OTHER list pane was shown at,
+/// because two edges dragged past the frame had to settle rather than fight
+/// over one window. There is one edge, so there is nothing to settle against
+/// and the cap is a function of the window alone.
+pub fn span(window: f32) -> (f32, f32) {
+    (SIDE_FLOOR, (window - CHAT_FLOOR).max(SIDE_FLOOR))
 }
 
-/// **What the two list panes are SHOWN at**: the dragged width where the seat
-/// holds one, else the yield's.
+/// **What the list pane is SHOWN at**: the dragged width where the seat holds
+/// one, else the yield's.
 ///
 /// **Only a drag is clamped**, because only a drag can be out of date: the
 /// yield is this window's own answer and clamping it would be the policy
@@ -43,25 +51,10 @@ pub fn span(window: f32, beside: f32) -> (f32, f32) {
 ///
 /// The clamp is why a window briefly made small does not cost the operator
 /// their drag: what is narrowed is the shown width and never the held one, so
-/// the pane comes back to what they set when the window does. Each pane is
-/// judged against what the OTHER asked for — the second against what the first
-/// was shown — so two edges both dragged past the frame settle rather than
-/// fight over one window.
-pub fn shown(window: f32, dragged: (Option<f32>, Option<f32>)) -> (f32, f32) {
-    let (yielded, yielded_convs) = widths(window);
-    let asked = dragged.1.unwrap_or(yielded_convs);
-    let roster = dragged
-        .0
-        .map_or(yielded, |held| clamped(held, span(window, asked)));
-    let convs = dragged
-        .1
-        .map_or(yielded_convs, |held| clamped(held, span(window, roster)));
-    (roster, convs)
-}
-
-/// One width, held between a span's ends.
-fn clamped(width: f32, span: (f32, f32)) -> f32 {
-    width.clamp(span.0, span.1)
+/// the pane comes back to what they set when the window does.
+pub fn shown(window: f32, dragged: Option<f32>) -> f32 {
+    let (floor, cap) = span(window);
+    dragged.map_or_else(|| widths(window), |held| held.clamp(floor, cap))
 }
 
 /// **How many rows the composer's field stands at** for a top edge dragged to

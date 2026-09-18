@@ -25,10 +25,14 @@ impl Model {
         self.dragged.rows.unwrap_or(crate::ui::theme::COMPOSER_ROWS)
     }
 
-    /// **Whether `pane` must bring its selection onto the glass this frame**,
-    /// answered once: the flag is taken, so two panes cannot both act on one
-    /// keypress and a stale one cannot fight the next frame's scroll.
-    pub fn revealing(&mut self, pane: crate::ui::keys::Pane) -> bool {
-        self.focus == pane && std::mem::take(&mut self.reveal)
+    /// **Whether the list must bring its selection onto the glass this
+    /// frame**, answered once: the flag is taken, so a stale request cannot
+    /// fight the next frame's scroll.
+    ///
+    /// It used to ask WHICH pane, because two of them held a list and only the
+    /// focused one owed its selection a place. There is one list since DESIGN
+    /// §4.39's fold (bl-b9a3), so the question is the flag.
+    pub fn revealing(&mut self) -> bool {
+        std::mem::take(&mut self.reveal)
     }
 }

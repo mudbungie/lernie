@@ -10,11 +10,11 @@
 //!
 //! Every control here is a button or a text box, and egui already moves focus
 //! between them with Tab and fires a focused one with Space or Enter. So Send,
-//! Nudge, Start and the notice's dismiss are keyboard-operable with nothing
-//! written — `tests` proves it rather than assuming it. What Tab cannot make
-//! *usable* is a list: tabbing through thirty walls to reach the composer is
-//! reachability without operability, and that is the whole of what this module
-//! adds.
+//! Nudge, Start, the `+` that begins a conversation and the notice's dismiss
+//! are keyboard-operable with nothing written — `tests` proves it rather than
+//! assuming it. What Tab cannot make *usable* is a list: tabbing through thirty
+//! rows to reach the composer is reachability without operability, and that is
+//! the whole of what this module adds.
 //!
 //! # The cursor IS the selection, so there is nothing to keep in step
 //!
@@ -22,27 +22,26 @@
 //! two ways to disagree. There is no cursor: **moving in a list selects**, so
 //! the highlight the pointer already paints is where the keyboard is, and the
 //! reads that follow a selection follow a keypress for free (the standing set
-//! is derived — `crate::state::Standing`). What is left to paint is only
-//! *which list the arrows belong to*, which is [`Pane`], and it is marked on
-//! that pane's own heading: a focus that cannot be seen is a focus nobody can
-//! use.
+//! is derived — `crate::state::Standing`). The one exception is an engine's own
+//! row, which the walk may stand on without opening it ([`walk`]).
 //!
-//! # It names controls; it never adds one
+//! # There is ONE list, so there is nothing to ask which list this is
 //!
-//! Every binding below calls the same door a click calls
-//! (`crate::ui::model::acts`), and the roster walk asks the same question the
-//! roster's own paint asks — so a row no pointer can aim at is a row no key can
-//! aim at either. A binding that could fire something a click cannot is a
-//! second surface.
+//! The walk used to be two tracks behind a `Pane` field on the model, because
+//! the roster and the conversations were two panes. DESIGN §4.39 folded the
+//! conversations under their wall, so there is one list, one track and one
+//! order — engine rows, the open engine's walls, and the aimed wall's
+//! conversations, exactly as the glass paints them
+//! (`crate::ui::roster::track`). The field, the enum and the mark on a heading
+//! that said which of the two was live all go with the second track: an answer
+//! with no alternative is not an answer worth holding.
 //!
 //! # The narrow shape does not add a binding; it changes what a place IS
 //!
 //! With one column on the glass at a time (`crate::ui::shell::policy`), left
-//! and right name a **column** rather than one of two panes, and the arrows
-//! belong to whichever column is showing — asked of [`Pane`] as always, set
-//! from the column once per frame. Nothing else here knows: the walk, the
-//! reveal and the mark on a heading read the one field they always read, and no
-//! pane has to ask which shape it is in.
+//! and right name a **column**. In the broad shape they name nothing, because
+//! both columns are already on the glass and only one of them is a list — so
+//! they gain no meaning there rather than acquiring a second one.
 //!
 //! **A box that is taking text takes every key**, which is the one gate: while
 //! a text box holds the focus nothing here runs, so an arrow is a cursor move
@@ -68,33 +67,6 @@ pub use boxes::{
     REASON_ID, SUMMARY_ID, TITLE_ID, WORKFLOW_ID,
 };
 
-/// Which list the arrows belong to. Two, because two of the four panes hold a
-/// list; the chat pane scrolls and the composer takes text, and both are
-/// reached the way every control is, with Tab.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum Pane {
-    /// The roster, and the window opens on it: a seat with nothing aimed at has
-    /// exactly one thing to do next.
-    #[default]
-    Roster,
-    /// The aimed wall's conversations.
-    Conversations,
-}
-
-/// The mark a focused pane's heading wears — and the heading is where it goes
-/// because a pane's heading is the one thing on it that is always painted, even
-/// when it holds nothing at all.
-pub const HERE: &str = "›";
-
-/// The heading a pane paints, with the mark when the arrows are its.
-pub fn heading(word: &str, focused: bool) -> String {
-    if focused {
-        format!("{HERE} {word}")
-    } else {
-        word.to_owned()
-    }
-}
-
 /// **Take this frame's keys.** Called at the top of the frame, so what a key
 /// changed is what the frame paints.
 pub fn handle(ctx: &egui::Context, model: &mut Model) {
@@ -106,7 +78,7 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
         model.escape();
     }
     // **A covering pane owns the arrows** (bl-7574; the tuning pane joined it
-    // in bl-4a2c). While one covers the window the lists behind it are not the
+    // in bl-4a2c). While one covers the window the list behind it is not the
     // subject of anything, and a walk under it would re-aim the roster beneath
     // the material — and would take the arrows out of the box the operator is
     // typing into. That second half is what makes this the gate for every pane
@@ -121,70 +93,60 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     if model.covered() {
         return;
     }
-    // Left and right name a **place**, not a step in a cycle: the roster is
-    // left of the conversation list on the glass, so the key that points at it
-    // is the key that goes there, and an operator never has to know where the
-    // focus was to know where it will be.
-    //
-    // **In the narrow shape the place is a COLUMN** (bl-dfda), because that is
-    // what left and right mean when one column is on the glass at a time — and
-    // there are three of them, so the key steps rather than names, saturating
-    // at the ends the way the walk below does.
-    let narrow = matches!(
+    // **Left and right name a COLUMN, and only where there are two to choose
+    // between** (bl-dfda, DESIGN §4.39). In the narrow shape one column is on
+    // the glass at a time, so the key steps between them, saturating at the
+    // ends the way the walk below does. In the broad shape both are already
+    // painted and one of them is the only list there is, so the key has no
+    // place to name and names none.
+    if matches!(
         crate::ui::shell::shape(ctx.screen_rect().width()),
         crate::ui::Shape::Narrow
-    );
-    for (key, step) in [(egui::Key::ArrowLeft, -1), (egui::Key::ArrowRight, 1)] {
-        if pressed(key) {
-            sideways(model, narrow, step);
+    ) {
+        for (key, step) in [(egui::Key::ArrowLeft, -1), (egui::Key::ArrowRight, 1)] {
+            if pressed(key) {
+                model.column = model.column.stepped(step);
+            }
         }
-    }
-    // **In the narrow shape the arrows belong to the column on the glass**,
-    // because it is the only list there is: a focus set at another width would
-    // otherwise walk a selection nobody can see. It is spent here, once, so
-    // everything below — the walk, the reveal, the mark on a heading — reads
-    // one field and no pane has to ask which shape it is in.
-    if narrow {
-        model.focus = model.column.arrows();
     }
     for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
         if pressed(key) {
             walk(model, step);
         }
     }
-    // **Enter or Space opens the engine the roster's walk is standing on**
-    // (DESIGN §4.39) — the one binding this module has that is not a walk, and
-    // it exists because the cursor on an engine row is deliberately NOT the
-    // selection: the walk has to be able to pass a closed engine without
-    // opening it, so opening is a second keypress.
-    //
-    // It names a control rather than adding one: [`Model::open_engine`] is the
-    // door `crate::ui::roster::engine`'s own click calls. The gate is the
-    // cursor itself — nothing stands on an engine row unless a walk or a Tab
-    // put it there, and both are the roster's.
-    let opening = pressed(egui::Key::Enter) || pressed(egui::Key::Space);
-    let standing = model.standing.clone();
-    if let Some(name) = standing.filter(|_| opening && model.focus == Pane::Roster) {
+    opening(
+        ctx,
+        model,
+        pressed(egui::Key::Enter) || pressed(egui::Key::Space),
+    );
+}
+
+/// **Enter or Space opens the engine the walk is standing on** (DESIGN §4.39)
+/// — the one binding this module has that is not a walk, and it exists because
+/// the cursor on an engine row is deliberately NOT the selection: the walk has
+/// to be able to pass a closed engine without opening it, so opening is a
+/// second keypress.
+///
+/// It names a control rather than adding one: [`Model::open_engine`] is the
+/// door `crate::ui::roster::engine`'s own click calls.
+///
+/// **It fires only while nothing holds the keyboard**, which is the whole of
+/// why it is a binding at all. An arrow key walks the list without focusing
+/// anything, so egui has no widget to fire and this stands in for the click;
+/// the moment a Tab has put the keyboard on a control — the engine's row, the
+/// `+` beside it, anything — egui fires THAT control itself, and a binding
+/// running beside it would spend a second act the operator did not ask for.
+fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
+    if !pressed || ctx.memory(egui::Memory::focused).is_some() {
+        return;
+    }
+    if let Some(name) = model.standing.clone() {
         model.open_engine(&name);
     }
 }
 
-/// **Sideways**: the place a left or right key names, in the shape the window
-/// is in. Two panes hold the arrows in the broad shape and there is one of each
-/// key, so the key IS the place; the narrow shape has three columns and one on
-/// the glass, so the key is a step off wherever the operator is.
-fn sideways(model: &mut Model, narrow: bool, step: isize) {
-    if narrow {
-        model.column = model.column.stepped(step);
-    } else if step < 0 {
-        model.focus = Pane::Roster;
-    } else {
-        model.focus = Pane::Conversations;
-    }
-}
-
-/// Move the focused list's selection by one, and say the pane owes the new
-/// selection a place on the glass.
+/// Move the one list's cursor by one, and say the pane owes the new selection a
+/// place on the glass.
 ///
 /// **The walk is the surface that can leave the glass behind.** A list longer
 /// than its pane scrolls ([`crate::ui::shell`]), and a key that moved the
@@ -193,44 +155,27 @@ fn sideways(model: &mut Model, narrow: bool, step: isize) {
 /// the cursor IS the selection, so the selection has to be somewhere an
 /// operator can see it.
 ///
-/// **The roster's track crosses two kinds of row** since the pane became an
-/// accordion (DESIGN §4.39): landing on a wall aims it, exactly as a click
-/// does, and landing on an engine's row only STANDS there — the row takes the
-/// keyboard, and Enter or Space fires the same click a pointer fires, because
-/// a walk that opened every engine it moved through would be a walk nobody
-/// could use to reach the one below. There is no binding for it here: opening
-/// is the row's own control.
+/// **The track crosses three kinds of row** (DESIGN §4.39): landing on a wall
+/// aims it and landing on a conversation selects it, exactly as a click does,
+/// and landing on an engine's row only STANDS there — the row takes the
+/// keyboard, and Enter or Space fires the same act a pointer fires, because a
+/// walk that opened every engine it moved through would be a walk nobody could
+/// use to reach the one below.
 fn walk(model: &mut Model, step: isize) {
-    match model.focus {
-        Pane::Roster => {
-            let rows = roster::track(model);
-            let at = rows.iter().position(|row| row.holding(model));
-            match moved(rows.len(), at, step).and_then(|i| rows.get(i).cloned()) {
-                Some(roster::Step::Engine(name)) => {
-                    model.standing = Some(name);
-                    model.reveal = true;
-                }
-                Some(roster::Step::Wall(aim)) => {
-                    model.aim_at(&aim.channel, &aim.address);
-                    model.reveal = true;
-                }
-                None => {}
-            }
-        }
-        Pane::Conversations => {
-            // `Model::rows`, not `convs`: the list the pane paints carries a
-            // started conversation's own row before the engine can answer one,
-            // and a row the pointer can aim at is a row a key can aim at.
-            let rows: Vec<String> = model.rows().iter().map(|row| row.root_id.clone()).collect();
-            let at = rows
-                .iter()
-                .position(|id| model.conversation.as_ref() == Some(id));
-            if let Some(id) = moved(rows.len(), at, step).and_then(|i| rows.get(i)) {
-                model.select(&id.clone());
-                model.reveal = true;
-            }
-        }
+    let rows = roster::track(model);
+    let at = rows.iter().position(|row| row.holding(model));
+    let Some(row) = moved(rows.len(), at, step).and_then(|i| rows.get(i).cloned()) else {
+        return;
+    };
+    match row {
+        roster::Step::Engine(name) => model.standing = Some(name),
+        roster::Step::Wall(aim) => model.aim_at(&aim.channel, &aim.address),
+        // `Model::rows`, not `convs`: the list the glass paints carries a
+        // started conversation's own row before the engine can answer one, and
+        // a row the pointer can aim at is a row a key can aim at.
+        roster::Step::Conversation(root_id) => model.select(&root_id),
     }
+    model.reveal = true;
 }
 
 /// Where the cursor lands.

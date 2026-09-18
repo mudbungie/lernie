@@ -1,5 +1,10 @@
-//! **The roster**: the engines this seat reaches, as an accordion, with the
-//! open one's workspaces under it (DESIGN §4.39).
+//! **The window's one list** (DESIGN §4.39): the engines this seat reaches as
+//! an accordion, the open one's workspaces under it, and the AIMED workspace's
+//! conversations under their own wall's row.
+//!
+//! It is one list and one scroll region because the middle column is gone:
+//! what `crate::ui::convs` painted as a pane is a level of this one, a tree
+//! under one heading rather than two panes disagreeing about what is selected.
 //!
 //! The grouping is the point. A seat holds one channel per workspace it
 //! participates in elsewhere plus this box's own engine (§8.2), and those are
@@ -12,9 +17,14 @@
 //! row and whatever it has to say about itself, and no walls. Opening one
 //! closes the other, so the arrangement is one fact and not a set of flags.
 //!
+//! **And a wall that is not the aimed one paints no conversations**, not even
+//! an emptiness (§4.39, §4.12): the standing read set asks about the aimed
+//! wall, so this seat holds no rows for any other and no evidence that there
+//! are none — aiming is the act that asks.
+//!
 //! **A row carries the channel it came from as a client-side stamp** and no
-//! origin ever crosses the wire; the stamp is applied where the answer is
-//! absorbed ([`crate::ui::Model::absorb`]) and read here.
+//! origin crosses the wire; the stamp is applied where the answer is absorbed
+//! ([`crate::ui::Model::absorb`]) and read here.
 
 use crate::reply::roster::WsRow;
 use crate::ui::{Channel, Chunk, Model, theme};
@@ -32,10 +42,10 @@ pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
 
 /// **What a section says while nothing has come down its channel yet.**
 ///
-/// The [`crate::ui::convs`] pane's doctrine one noun over: an empty list is not
+/// The [`crate::ui::convs`] rows' doctrine one noun over: an empty list is not
 /// evidence that a thing holds nothing until somebody has looked. It stands
-/// from the window's first paint — which happens before any engine is dialled,
-/// deliberately — until the first roster answer lands.
+/// from the window's first paint — before any engine is dialled, deliberately
+/// — until the first roster answer lands.
 pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
 
 /// What a section says for an engine that answered and holds no workspace. A
@@ -70,7 +80,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // keyboard walked onto rows the pane had never painted. The heading stays
     // out of it because it is the one thing on this pane that is always
     // painted, and it carries the mark saying whose the arrows are.
-    let reveal = model.revealing(crate::ui::keys::Pane::Roster);
+    let reveal = model.revealing();
     egui::ScrollArea::vertical()
         .id_salt(HEADING)
         .auto_shrink(false)

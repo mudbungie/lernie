@@ -1,97 +1,99 @@
-//! The policy as a value: the yield, where the two shapes meet, and the three
+//! The policy as a value: the yield, where the two shapes meet, and the two
 //! columns.
 
-use super::{CHAT_FLOOR, Column, SIDE_FLOOR, Shape, shape, widths};
-use crate::ui::Pane;
+use super::{CHAT_FLOOR, CONVS, Column, SIDE_FLOOR, Shape, shape, widths};
+
+/// **The width every column is worth together**, which is where the yield and
+/// the growth cross. Derived here exactly as the policy derives it, so a
+/// tuning of either constant moves this suite's subject with it.
+const WORTH: f32 = CONVS + CHAT_FLOOR;
 
 /// **The policy the window had none of** (bl-e5d2): the conversation has a
-/// floor and the two list panes yield to it, together and in proportion, until
-/// they reach their own floor — where nothing yields, because two panes showing
-/// nothing buys the chat pane a width it still cannot use.
+/// floor and the list pane yields to it until it reaches its own floor —
+/// where nothing yields, because a pane showing nothing buys the chat pane a
+/// width it still cannot use.
 #[test]
-fn the_list_panes_yield_to_the_conversation_s_floor_and_then_stop() {
-    assert_eq!(
-        widths(1020.0),
-        (280.0, 320.0),
+fn the_list_pane_yields_to_the_conversation_s_floor_and_then_stops() {
+    assert!(
+        (widths(WORTH) - CONVS).abs() < 0.01,
         "every column worth exactly what it is worth"
     );
-    let (roster, convs) = widths(900.0);
+    let list = widths(600.0);
     assert!(
-        (roster - 224.0).abs() < 0.5 && (convs - 256.0).abs() < 0.5,
-        "the loss is shared in proportion: {roster}, {convs}"
+        (list - 180.0).abs() < 0.5,
+        "the whole loss is the list's: {list}"
     );
     assert!(
-        900.0 - roster - convs >= CHAT_FLOOR,
+        600.0 - list >= CHAT_FLOOR,
         "the conversation kept its floor"
     );
-    assert_eq!(
-        widths(400.0),
-        (SIDE_FLOOR, SIDE_FLOOR),
-        "past their own floor the list panes stop yielding"
+    let floored = widths(400.0);
+    assert!(
+        (floored - SIDE_FLOOR).abs() < f32::EPSILON,
+        "past its own floor the list pane stops yielding: {floored}"
     );
 }
 
 /// **Above the width every column is worth, the yield keeps going the other
 /// way** (bl-fef8). The share used to stop at 1.0, so every pixel of a large
-/// display landed in the one pane whose content is already prose while the two
-/// navigation columns stayed the width they are worth at a 1020-point window
+/// display landed in the one pane whose content is already prose while the
+/// navigation column stayed the width it is worth at a 740-point window
 /// forever. It is the same expression rather than a second regime: the share
 /// is the smaller of *this column's proportion of the window* and *what is
 /// left once the conversation keeps its floor*, and the two clauses cross at
 /// exactly the width every column is worth.
 #[test]
-fn a_window_wider_than_every_column_s_worth_grows_all_three_together() {
-    let (roster, convs) = widths(1400.0);
-    assert!(roster > 280.0 && convs > 320.0, "{roster}, {convs}");
+fn a_window_wider_than_every_column_s_worth_grows_both_together() {
+    let list = widths(1400.0);
+    assert!(list > CONVS, "{list}");
     assert!(
-        (roster / convs - 280.0 / 320.0).abs() < 0.01,
-        "each grows in proportion to what it is worth: {roster}, {convs}"
-    );
-    assert!(
-        1400.0 - roster - convs > CHAT_FLOOR,
-        "and the conversation grows too, not only the lists"
+        1400.0 - list > CHAT_FLOOR,
+        "and the conversation grows too, not only the list"
     );
     // Monotone, so no width is served worse than a narrower one.
     let mut before = 0.0;
-    for width in [1020.0_f32, 1200.0, 1400.0, 2560.0] {
-        let (roster, _) = widths(width);
-        assert!(roster > before, "{width}: {roster} is not past {before}");
-        before = roster;
+    for width in [WORTH, 900.0, 1400.0, 2560.0] {
+        let list = widths(width);
+        assert!(list > before, "{width}: {list} is not past {before}");
+        before = list;
     }
 }
 
 /// **The two clauses cross at the width every column is worth**, which is what
 /// makes the growth a continuation of the yield rather than a hinge: on either
-/// side of 1020 the answer is one expression, and at 1020 both clauses give
-/// the same number.
+/// side of it the answer is one expression, and at it both clauses give the
+/// same number.
 #[test]
 fn the_yield_and_the_growth_meet_at_the_width_every_column_is_worth() {
-    let (below, _) = widths(1019.0);
-    let (at, _) = widths(1020.0);
-    let (above, _) = widths(1021.0);
+    let below = widths(WORTH - 1.0);
+    let at = widths(WORTH);
+    let above = widths(WORTH + 1.0);
     assert!(below < at && at < above, "{below}, {at}, {above}");
-    assert!((at - 280.0).abs() < 0.01, "{at}");
+    assert!((at - CONVS).abs() < 0.01, "{at}");
 }
 
 /// **Where the two shapes meet, and that the line is the yield itself**
-/// (bl-dfda): the broad shape holds exactly as long as the panes' yield still
+/// (bl-dfda): the broad shape holds exactly as long as the pane's yield still
 /// leaves the conversation its floor, and the first width it cannot is the
 /// first width one column at a time is the better answer.
+///
+/// **The turn moved when the middle column went** (DESIGN §4.39): it used to
+/// stand where two panes on their own floor could no longer keep
+/// `CHAT_FLOOR`, and one pane on its floor can keep it for 140 points longer.
 #[test]
 fn the_shape_turns_over_at_the_width_the_yield_can_no_longer_keep_the_floor() {
-    for wide in [1400.0_f32, 900.0, 720.0] {
-        let (roster, convs) = widths(wide);
+    for wide in [1400.0_f32, 900.0, WORTH, SIDE_FLOOR + CHAT_FLOOR] {
         assert_eq!(
             shape(wide),
-            Shape::Broad { roster, convs },
+            Shape::Broad { list: widths(wide) },
             "at {wide} the conversation still gets its floor"
         );
     }
-    for narrow in [719.0_f32, 700.0, 400.0, 120.0] {
+    for narrow in [SIDE_FLOOR + CHAT_FLOOR - 1.0, 500.0, 400.0, 120.0] {
         assert_eq!(
             shape(narrow),
             Shape::Narrow,
-            "at {narrow} the three columns cannot stand together"
+            "at {narrow} the two columns cannot stand together"
         );
     }
 }
@@ -104,9 +106,8 @@ fn the_shape_turns_over_at_the_width_the_yield_can_no_longer_keep_the_floor() {
 #[test]
 fn a_window_of_any_width_at_all_is_promised_a_shape() {
     for width in [0.0_f32, 1.0, 400.0, 4000.0] {
-        let (roster, convs) = widths(width);
         assert!(
-            roster >= SIDE_FLOOR && convs >= SIDE_FLOOR,
+            widths(width) >= SIDE_FLOOR,
             "the yield never goes under the floor: {width}"
         );
         assert!(
@@ -122,22 +123,8 @@ fn a_window_of_any_width_at_all_is_promised_a_shape() {
 fn each_column_is_named_by_the_pane_it_shows() {
     assert_eq!(
         Column::all().map(Column::word),
-        [
-            crate::ui::roster::HEADING,
-            crate::ui::convs::HEADING,
-            crate::ui::chat::HEADING,
-        ]
+        [crate::ui::roster::HEADING, crate::ui::chat::HEADING]
     );
-}
-
-/// **The arrows belong to the column on the glass**, and the conversation
-/// column answers the conversation list: the row a walk lands on is exactly
-/// what the chat pane is showing.
-#[test]
-fn each_column_says_which_list_the_arrows_walk() {
-    assert_eq!(Column::Channels.arrows(), Pane::Roster);
-    assert_eq!(Column::Conversations.arrows(), Pane::Conversations);
-    assert_eq!(Column::Conversation.arrows(), Pane::Conversations);
 }
 
 /// **A step sideways saturates at the ends**, for the reason the walk down a
@@ -145,17 +132,15 @@ fn each_column_says_which_list_the_arrows_walk() {
 /// the start* once, with nothing on the glass to say which it will be.
 #[test]
 fn a_step_sideways_moves_one_column_and_stops_at_the_ends() {
-    assert_eq!(Column::Channels.stepped(1), Column::Conversations);
-    assert_eq!(Column::Conversations.stepped(1), Column::Conversation);
+    assert_eq!(Column::Engines.stepped(1), Column::Conversation);
     assert_eq!(Column::Conversation.stepped(1), Column::Conversation);
-    assert_eq!(Column::Conversation.stepped(-1), Column::Conversations);
-    assert_eq!(Column::Conversations.stepped(-1), Column::Channels);
-    assert_eq!(Column::Channels.stepped(-1), Column::Channels);
+    assert_eq!(Column::Conversation.stepped(-1), Column::Engines);
+    assert_eq!(Column::Engines.stepped(-1), Column::Engines);
 }
 
-/// The window opens on the roster: a seat with nothing aimed at has exactly one
-/// thing to do next.
+/// The window opens on the engines: a seat with nothing aimed at has exactly
+/// one thing to do next.
 #[test]
-fn the_window_opens_on_the_channels_column() {
-    assert_eq!(Column::default(), Column::Channels);
+fn the_window_opens_on_the_engines_column() {
+    assert_eq!(Column::default(), Column::Engines);
 }

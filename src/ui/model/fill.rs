@@ -35,12 +35,17 @@
 
 use super::Model;
 
-/// **Which of the composer's two parameter boxes wants the cursor.**
+/// **Which box on the composer wants the cursor.**
 ///
-/// Two variants and no third: these are exactly the acts on a conversation
-/// whose extra parameter has a box of its OWN. `message` and `interrupt` share
-/// the composer's one draft, so pointing at it would name neither — which is
-/// why neither is on the row's menu (`crate::ui::convs::menu`).
+/// Two of them are the acts on a conversation whose extra parameter has a box
+/// of its OWN. `message` and `interrupt` share the composer's one draft, so
+/// pointing at it would name neither — which is why neither is on the row's
+/// menu (`crate::ui::convs::menu`).
+///
+/// **The third is the draft itself, in the composer's other mode** (DESIGN
+/// §4.39, bl-b9a3): the `+` on an engine's row lands the caret in the box that
+/// begins a conversation, which is the same navigation the menu items are and
+/// wanted no second field to say so.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Fill {
     /// The words a flag is raised with (`crate::ui::composer::acts::WHY`).
@@ -48,6 +53,10 @@ pub enum Fill {
     /// The name that admits a conversation's descendants into its deletion
     /// (`crate::ui::composer::acts::ARM`).
     Arming,
+    /// What a conversation is begun FOR
+    /// (`crate::ui::composer::start::GOAL`), asked for by the `+` on an
+    /// engine's row (`crate::ui::model::Model::begin_on`).
+    Goal,
 }
 
 impl Model {

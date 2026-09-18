@@ -5,24 +5,26 @@ use crate::test_support::window::seated;
 use crate::ui::{Aim, Model};
 
 /// The aim is a pair, because two channels may both hold a wall called `home`
-/// and a seat that matched on the name alone would highlight the wrong row.
+/// and a seat that matched on the name alone would resolve the wrong channel.
 #[test]
 fn the_aim_is_a_channel_and_an_address_together() {
+    let aim = Aim {
+        channel: "one".to_owned(),
+        address: "home".to_owned(),
+    };
     let model = Model {
-        aim: Some(Aim {
-            channel: "one".to_owned(),
-            address: "home".to_owned(),
-        }),
+        aim: Some(aim.clone()),
         ..seated()
     };
-    assert!(model.aimed_at("one", Some(&"home".to_owned())));
-    assert!(!model.aimed_at("two", Some(&"home".to_owned())));
-    assert!(!model.aimed_at("one", Some(&"other".to_owned())));
-    assert!(
-        !model.aimed_at("one", None),
-        "an unreachable row is never aimed at"
+    assert_eq!(model.aim.as_ref(), Some(&aim));
+    assert_ne!(
+        model.aim.as_ref(),
+        Some(&Aim {
+            channel: "one".to_owned(),
+            address: "other".to_owned(),
+        })
     );
-    assert!(!Model::default().aimed_at("one", Some(&"home".to_owned())));
+    assert_eq!(Model::default().aim, None);
 }
 
 /// **A channel this seat no longer holds is one no worker will ask about** —

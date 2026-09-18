@@ -120,6 +120,34 @@ impl Model {
         }
     }
 
+    /// **Begin a conversation on this engine** — the whole of what the `+` at
+    /// the right edge of its row does (§4.39,
+    /// `crate::ui::roster::engine::BEGIN`).
+    ///
+    /// It opens the engine, which aims the wall this seat last aimed under it;
+    /// clears the selection, because the composer's start mode is *a wall and
+    /// no conversation* (§4.38) and this control is how an operator reaches it
+    /// without hunting for a way to deselect; and asks for the caret in the
+    /// box, which is `crate::ui::model::fill`'s own door one box over.
+    ///
+    /// **Opening it is not a side effect**: a start is a use, and the engine
+    /// an operator just began a conversation on is the one they are using, so
+    /// it takes the rank every other opening takes.
+    ///
+    /// **It crosses no wire and carries no `act:` token** (§4.16): an aim, a
+    /// selection and a focus are views, and views are out of the parity
+    /// contract. What the start itself fires is still the composer's own
+    /// control, still tagged there.
+    pub fn begin_on(&mut self, name: &str) {
+        self.open_engine(name);
+        // Explicitly, and not as `aim_at`'s doing: an engine holding no wall
+        // this seat can address aims nothing, and the start mode is still
+        // where the operator asked to be.
+        self.conversation = None;
+        self.column = crate::ui::Column::Conversation;
+        self.fill = Some(crate::ui::Fill::Goal);
+    }
+
     /// The wall an opening aims at: the one last aimed under it while this
     /// seat can still address it, else its first by `ordered`.
     fn opening_aim(&self, name: &str) -> Option<String> {

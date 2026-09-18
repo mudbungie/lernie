@@ -90,7 +90,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             ui.label(NO_ROLES);
         }
         // The list scrolls, and the heading and the wall above it do not — the
-        // same shape the two list panes keep, and for the same reason: a wall
+        // same shape the list pane keeps, and for the same reason: a wall
         // with a dozen roles is longer than a pane at any width this seat opens
         // at, and a pane cut off mid-row says nothing about having been cut.
         Some(rows) => {

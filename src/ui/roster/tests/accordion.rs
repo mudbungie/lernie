@@ -115,3 +115,79 @@ fn a_closed_engine_still_says_it_cannot_be_dialled() {
     assert!(painted.contains("connect: refused"), "{painted}");
     assert!(!painted.contains("bench"), "{painted}");
 }
+
+/// **The aimed wall's conversations stand under it, and no other wall's do**
+/// (DESIGN §4.39). The fold's whole point, and the decision that came with it:
+/// the standing read set asks about one wall (§4.12), so a seat has rows for
+/// the aimed wall and no evidence at all about the others — and painting an
+/// emptiness under a wall nobody has asked about would be reporting a fact
+/// this seat does not hold.
+#[test]
+fn the_aimed_wall_s_conversations_stand_under_it_and_no_other_wall_s() {
+    let mut model = Model {
+        roster: vec![Chunk {
+            walls: vec![wall("home"), wall("spare")],
+            ..own()
+        }],
+        ..seated()
+    };
+    let painted = pane(|ui| render(ui, &mut model));
+    let at = |needle: &str| {
+        painted
+            .find(needle)
+            .unwrap_or_else(|| panic!("{needle:?} is on the glass:\n{painted}"))
+    };
+    let row = crate::ui::convs::headline(&model.convs[0].clone());
+    assert!(at("home  (named)") < at(&row), "under its own wall's row");
+    assert!(at(&row) < at("spare"), "and above the next wall's");
+    assert_eq!(
+        painted.matches(&row).count(),
+        1,
+        "once, under the wall it belongs to:\n{painted}"
+    );
+    // The wall nobody aimed at says nothing at all — not the wait, and not
+    // the emptiness.
+    assert!(
+        !painted.contains(crate::ui::convs::NOT_ANSWERED),
+        "{painted}"
+    );
+}
+
+/// **The `+` at the right edge of an engine's row begins a conversation on
+/// it** (DESIGN §4.39): the selection cleared, the aim on the engine's own
+/// wall, the engine opened — a start is a use — and the caret asked for in the
+/// composer's box.
+#[test]
+fn the_plus_on_an_engine_row_begins_a_conversation_on_it() {
+    let mut model = two();
+    let window = Window::new();
+    click(&window, super::super::engine::BEGIN, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    assert_eq!(
+        model.engine_open().as_deref(),
+        Some("(this box's own engine)"),
+        "the first row's `+` is the first engine's"
+    );
+    assert_eq!(model.conversation, None, "the selection is cleared");
+    assert_eq!(
+        model.aim.as_ref().map(|aim| aim.address.clone()),
+        Some("home".to_owned())
+    );
+    assert_eq!(model.fill, Some(crate::ui::Fill::Goal));
+}
+
+/// **And it stands down under a covering pane**, which is the per-wall
+/// controls' own rule: what it does is put the caret in the composer's box,
+/// and the composer stands down under every pane that covers the conversation.
+#[test]
+fn the_plus_stands_down_while_a_pane_covers_the_conversation() {
+    let mut model = two();
+    model.begin_records();
+    assert!(model.covered(), "the records pane is standing");
+    let painted = pane(|ui| render(ui, &mut model));
+    assert!(
+        !painted.contains(super::super::engine::BEGIN),
+        "no + is offered under a covering pane:\n{painted}"
+    );
+}

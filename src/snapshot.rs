@@ -62,9 +62,9 @@ mod tests;
 /// `phone` is the size the ball named and the one that finds things: it is
 /// under the width at which the broad layout can still leave the conversation
 /// its floor, so it is the one size that renders in the narrow shape — one
-/// column at a time (`crate::ui::shell::policy`). `narrow` is the width the
-/// side panels have yielded to their limit at, and `desk` is the window with
-/// room to spare — the one where a defect hides.
+/// column at a time (`crate::ui::shell::policy`). `narrow` is a mid-width
+/// window — broad, and near the width its columns are worth — and `desk` is
+/// the window with room to spare, the one where a defect hides.
 pub(crate) const SIZES: [(&str, f32, f32); 3] = [
     ("phone", 400.0, 800.0),
     ("narrow", 900.0, 700.0),

@@ -98,7 +98,9 @@ fn an_aim_retires_the_pane_and_both_its_answers() {
         "a selection retired a pane it is not about"
     );
     let aim = model.aim.clone().expect("the fixture is aimed");
-    model.aim_at(&aim.channel, &aim.address);
+    // Another wall: an aim that did not move retires nothing
+    // (`crate::ui::model::acts`).
+    model.aim_at(&aim.channel, "another wall entirely");
     assert!(model.fleet.is_none());
     assert!(model.attempts.is_none());
     assert!(model.work.is_none());

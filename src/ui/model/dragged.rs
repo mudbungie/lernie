@@ -13,10 +13,12 @@
 /// What the operator has dragged, in the seat's own points and rows.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Dragged {
-    /// **The roster pane's own width**, where the operator set one.
-    pub roster: Option<f32>,
-    /// **The conversation list's**, on the same terms.
-    pub convs: Option<f32>,
+    /// **The list pane's own width**, where the operator set one.
+    ///
+    /// One width and not two since DESIGN §4.39's fold (bl-b9a3): the middle
+    /// column went, so the window has one draggable vertical edge and the
+    /// place file has one key for it.
+    pub list: Option<f32>,
     /// **How many rows the composer's field stands at**, where the operator
     /// dragged its top edge. `crate::ui::theme::COMPOSER_ROWS` is the default,
     /// which is what absence here means.

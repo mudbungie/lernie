@@ -59,7 +59,10 @@ fn an_aim_retires_the_wall_s_answers_and_leaves_the_pane_standing() {
         "a selection retired the wall's balls"
     );
     let aim = model.aim.clone().expect("the fixture is aimed");
-    model.aim_at(&aim.channel, &aim.address);
+    // **Another wall**, because an aim that did not move retires nothing
+    // (`crate::ui::model::acts`): the one cursor crosses the aimed wall's own
+    // row on its way to the conversations under it.
+    model.aim_at(&aim.channel, "another wall entirely");
     assert!(model.boarding(), "an aim retired a pane it is not about");
     assert!(
         model.holding.is_none(),

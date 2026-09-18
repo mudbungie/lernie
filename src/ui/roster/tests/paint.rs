@@ -168,7 +168,7 @@ fn a_row_no_entry_names_is_faint_and_takes_no_click() {
 #[test]
 fn the_two_bands_are_compact_strips_at_the_rosters_width() {
     let mut model = seated();
-    let window = Window::sized(crate::ui::shell::policy::ROSTER, 600.0);
+    let window = Window::sized(crate::ui::shell::policy::CONVS, 600.0);
     let runs = seen(&window, |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });

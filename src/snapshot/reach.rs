@@ -6,8 +6,8 @@
 //! The ball that filed this asked for *the settings panel, reachable from the
 //! main screen in a bounded number of gestures at every matrix size*. **This
 //! seat has no settings panel** — the window is a notice bar, the roster, the
-//! conversation list, the composer and the conversation, and there is no
-//! preferences surface anywhere in `crate::ui`. The premise was written from
+//! composer and the conversation, and there is no preferences surface
+//! anywhere in `crate::ui`. The premise was written from
 //! the shape a desktop app usually has.
 //!
 //! What the assertion is *about* survives that intact: a window has surfaces
@@ -30,6 +30,12 @@
 //! every control the walk spends is on the glass for the same two gestures it
 //! always was. An engine row is not a leg: it opens a section of the one list
 //! rather than a pane to come back from.
+//!
+//! **And neither did the fold** (bl-b9a3). The middle column went, so the
+//! columns below are two rather than three — but every control still hangs
+//! off the same strip or the same band, and the one on the composer still
+//! hangs off the conversation's own column. A conversation's row is not a leg
+//! either: it selects, which is what the column beside it is already showing.
 //!
 //! **And the bound is a fact about the SHAPE, so it is asked per shape**
 //! (bl-dfda). The narrow layout puts one column on the glass at a time, which
@@ -95,61 +101,61 @@ struct Covered {
 /// on the same terms — two of its four reads name no workspace (bl-d2af).
 const PANES: [Covered; 11] = [
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: queue::OPEN,
         close: queue::CLOSE,
         heading: queue::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: tuning::OPEN,
         close: tuning::CLOSE,
         heading: tuning::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: enroll::OPEN,
         close: enroll::CLOSE,
         heading: enroll::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: login::OPEN,
         close: login::CLOSE,
         heading: login::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: fleet::OPEN,
         close: fleet::CLOSE,
         heading: fleet::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: unmake::OPEN,
         close: unmake::CLOSE,
         heading: unmake::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: trail::OPEN,
         close: trail::CLOSE,
         heading: trail::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: board::OPEN,
         close: board::CLOSE,
         heading: board::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: commands::OPEN,
         close: commands::CLOSE,
         heading: commands::HEADING,
     },
     Covered {
-        column: Column::Channels,
+        column: Column::Engines,
         open: find::OPEN,
         close: find::CLOSE,
         heading: find::HEADING,

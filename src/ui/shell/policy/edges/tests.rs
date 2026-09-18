@@ -16,21 +16,17 @@ const CHROME: f32 = 40.0;
 #[test]
 fn a_seat_that_has_dragged_nothing_is_shown_exactly_what_the_yield_gives_it() {
     for window in [400.0, 700.0, 900.0, 1020.0, 1440.0, 2560.0_f32] {
-        assert_eq!(
-            shown(window, (None, None)),
-            widths(window),
-            "at {window} points"
-        );
+        let (was, is) = (shown(window, None), widths(window));
+        assert!((was - is).abs() < f32::EPSILON, "at {window} points");
     }
 }
 
 /// **A dragged width is the operator's and the policy stands aside** — the
-/// half of bl-fef8 §4.39 reverses. The other pane keeps the policy's answer,
-/// because one edge moved is one fact.
+/// half of bl-fef8 §4.39 reverses.
 #[test]
 fn an_edge_the_operator_dragged_is_the_width_the_pane_is_shown_at() {
-    let (_, convs) = widths(1440.0);
-    assert_eq!(shown(1440.0, (Some(200.0), None)), (200.0, convs));
+    let held = shown(1440.0, Some(200.0));
+    assert!((held - 200.0).abs() < f32::EPSILON, "{held}");
 }
 
 /// **A window narrower than the drag CLAMPS it and never overwrites it.** The
@@ -38,49 +34,43 @@ fn an_edge_the_operator_dragged_is_the_width_the_pane_is_shown_at() {
 /// operator set, so the pane comes back to it when the window does.
 #[test]
 fn a_window_too_narrow_for_the_drag_narrows_the_pane_and_not_the_fact() {
-    let held = (Some(600.0), Some(SIDE_FLOOR));
-    let (roster, _) = shown(900.0, held);
-    assert!(roster < 600.0, "the window cannot afford 600: {roster}");
-    let whole = shown(1440.0, held).0;
+    let held = Some(600.0);
+    let list = shown(900.0, held);
+    assert!(list < 600.0, "the window cannot afford 600: {list}");
+    let whole = shown(1440.0, held);
     assert!(
         (whole - 600.0).abs() < f32::EPSILON,
         "and the window that can shows it whole: {whole}"
     );
 }
 
-/// **The conversation keeps its floor against both drags together**, which is
-/// the one thing the policy still owns: an edge dragged to the frame would
-/// leave the pane the window exists for with nothing.
+/// **The conversation keeps its floor against the drag**, which is the one
+/// thing the policy still owns: an edge dragged to the frame would leave the
+/// pane the window exists for with nothing.
 #[test]
-fn two_edges_dragged_to_the_frame_still_leave_the_conversation_its_floor() {
-    let (roster, convs) = shown(1440.0, (Some(2000.0), Some(2000.0)));
+fn an_edge_dragged_to_the_frame_still_leaves_the_conversation_its_floor() {
+    let list = shown(1440.0, Some(2000.0));
     assert!(
-        1440.0 - roster - convs >= CHAT_FLOOR,
-        "the conversation is under its floor: {roster} + {convs} of 1440"
+        1440.0 - list >= CHAT_FLOOR,
+        "the conversation is under its floor: {list} of 1440"
     );
 }
 
 /// **And under the floor nothing yields**, exactly as the yield itself stops:
-/// two panes showing nothing buys the chat pane a width it still cannot use,
-/// so [`SIDE_FLOOR`] is the one thing the cap gives way to.
+/// a pane showing nothing buys the chat pane a width it still cannot use, so
+/// [`SIDE_FLOOR`] is the one thing the cap gives way to.
 #[test]
-fn a_window_with_no_room_at_all_holds_both_panes_at_their_own_floor() {
-    assert_eq!(span(200.0, 400.0), (SIDE_FLOOR, SIDE_FLOOR));
-    assert_eq!(
-        shown(200.0, (Some(50.0), Some(50.0))),
-        (SIDE_FLOOR, SIDE_FLOOR)
-    );
+fn a_window_with_no_room_at_all_holds_the_pane_at_its_own_floor() {
+    assert_eq!(span(200.0), (SIDE_FLOOR, SIDE_FLOOR));
+    let floored = shown(200.0, Some(50.0));
+    assert!((floored - SIDE_FLOOR).abs() < f32::EPSILON, "{floored}");
 }
 
-/// **A cap is what is left once the conversation and the other pane are
-/// paid**, and it is stated once so a test reads it back rather than looking
-/// at a window.
+/// **The cap is what is left once the conversation is paid**, and it is stated
+/// once so a test reads it back rather than looking at a window.
 #[test]
-fn the_cap_on_one_pane_is_what_the_other_pane_and_the_conversation_leave() {
-    assert_eq!(
-        span(1440.0, 320.0),
-        (SIDE_FLOOR, 1440.0 - CHAT_FLOOR - 320.0)
-    );
+fn the_cap_on_the_pane_is_what_the_conversation_leaves() {
+    assert_eq!(span(1440.0), (SIDE_FLOOR, 1440.0 - CHAT_FLOOR));
 }
 
 /// **The composer's rows are the pointer's, rounded to the nearest line.**

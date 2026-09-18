@@ -1,5 +1,5 @@
-//! The conversation list: the empty states, the headline, the age, the indent,
-//! and the click that selects.
+//! The conversations under a wall: the two empty states, the headline, the
+//! age, the indent, and the click that selects.
 
 /// What hangs under a conversation, on the glass.
 mod subtree;
@@ -8,58 +8,47 @@ mod threading;
 /// What the pane's own width does to the panels beside it.
 mod width;
 
-use super::{NO_CONVERSATIONS, NO_WALL, NOT_ANSWERED, age, headline, no_channel, render};
+use super::{NO_CONVERSATIONS, NOT_ANSWERED, age, headline};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, Tone};
 use crate::test_support::window::{click, conv, pane, seated, seen};
 use crate::ui::Model;
 
-/// **Four empty states and they are four different facts** (bl-f780): nothing
-/// aimed at, a wall nobody has been answered about yet, a wall that answered
-/// nothing, and an aim on a channel this seat does not hold.
-///
-/// The third used to be said about all three of the last three, which states a
-/// definite fact about a wall nobody looked at — the same thing
-/// `super::UNCERTAIN` refuses to do one level down.
-#[test]
-fn the_empty_states_say_four_different_things() {
-    let mut nowhere = Model::default();
-    assert!(pane(|ui| render(ui, &mut nowhere)).contains(NO_WALL));
+/// **The rows as the roster paints them** — [`super::under`] against the
+/// fixture's own aim, which is what `crate::ui::roster::wall` hands it.
+pub(super) fn beneath(ui: &mut egui::Ui, model: &mut Model) {
+    let aim = model.aim.clone().expect("the fixture is aimed at a wall");
+    super::under(ui, model, &aim, false);
+}
 
+/// **Two empty states and they are two different facts** (bl-f780): a wall
+/// nobody has been answered about yet, and a wall that answered nothing.
+///
+/// The second used to be said about both, which states a definite fact about a
+/// wall nobody looked at — the same thing `super::UNCERTAIN` refuses to do one
+/// level down. **The other two went with the pane** (DESIGN §4.39): *pick a
+/// workspace* had no subject to name once the rows stand under their own
+/// wall's row, and an aim naming a channel this seat does not hold has no row
+/// to stand under at all.
+#[test]
+fn the_empty_states_say_two_different_things() {
     let mut waiting = seated();
     waiting.convs.clear();
     waiting.answered = None;
-    let painted = pane(|ui| render(ui, &mut waiting));
+    let painted = pane(|ui| beneath(ui, &mut waiting));
     assert!(painted.contains(NOT_ANSWERED), "{painted}");
     assert!(!painted.contains(NO_CONVERSATIONS), "{painted}");
-    assert!(
-        painted.contains("home"),
-        "the wall is still named: {painted}"
-    );
 
     let mut empty = seated();
     empty.convs.clear();
     empty.answered = empty.aim.clone();
-    let painted = pane(|ui| render(ui, &mut empty));
+    let painted = pane(|ui| beneath(ui, &mut empty));
     assert!(painted.contains(NO_CONVERSATIONS), "{painted}");
-
-    let mut stale = seated();
-    stale.convs.clear();
-    stale.aim = Some(crate::ui::Aim {
-        channel: "a channel this box lost".to_owned(),
-        address: "home".to_owned(),
-    });
-    let painted = pane(|ui| render(ui, &mut stale));
-    assert!(
-        painted.contains(&no_channel("a channel this box lost")),
-        "{painted}"
-    );
-    assert!(!painted.contains(NOT_ANSWERED), "{painted}");
 }
 
 /// **Aiming somewhere else retires the ANSWER with the rows.** The transient
-/// face of the same defect: between the keypress and the reply the pane held
-/// the new wall's name over an empty list, and said the wall held nothing.
+/// face of the same defect: between the keypress and the reply the list stood
+/// under the new wall's row and said that wall held nothing.
 #[test]
 fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
     let mut model = seated();
@@ -71,7 +60,7 @@ fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
     assert_eq!(model.answered, model.aim, "the answer is about the aim");
     model.aim_at("(this box's own engine)", "elsewhere");
     assert_eq!(model.answered, None, "and it is retired with the rows");
-    let painted = pane(|ui| render(ui, &mut model));
+    let painted = pane(|ui| beneath(ui, &mut model));
     assert!(painted.contains(NOT_ANSWERED), "{painted}");
 }
 
@@ -137,7 +126,7 @@ fn a_member_is_indented_and_its_preview_is_weak_ink_at_the_row_s_own_edge() {
     }];
     let window = Window::sized(900.0, 600.0);
     let runs = seen(&window, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, &mut model));
     });
     let at = |needle: &str| {
         runs.iter()
@@ -180,7 +169,7 @@ fn a_failed_row_paints_its_clause_above_its_preview_and_in_its_own_tone() {
     }];
     let window = Window::sized(900.0, 600.0);
     let runs = seen(&window, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, &mut model));
     });
     let at = |needle: &str| {
         runs.iter()
@@ -206,7 +195,7 @@ fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
     model.conversation = None;
     let window = Window::new();
     click(&window, &headline(&model.convs[0].clone()), |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, &mut model));
     });
     assert_eq!(model.conversation.as_deref(), Some("20260830T051200Z-a1b2"));
     assert!(model.transcript.entries.is_empty());
@@ -241,7 +230,7 @@ fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
         }),
         ..seated()
     };
-    let painted = pane(|ui| render(ui, &mut model));
+    let painted = pane(|ui| beneath(ui, &mut model));
     assert!(painted.contains("brisk-otter  [quiescent?]"), "{painted}");
     assert!(painted.contains("port the paint probe"), "{painted}");
     assert!(

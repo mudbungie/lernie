@@ -3,7 +3,7 @@
 //!
 //! The width policy's own arithmetic is `super::policy`'s suite; what is
 //! asserted here is the layout it produces, and [`narrow`] holds the shape the
-//! window takes when it can no longer produce three columns.
+//! window takes when it can no longer stand its columns side by side.
 
 use super::{render, widths};
 use crate::paint_probe::frame::{Window, press};
@@ -50,7 +50,7 @@ fn one_frame_paints_the_roster_the_list_the_conversation_and_the_composer() {
 /// **An empty window is not a blank one: every pane says what it is waiting
 /// for** — and the window under test is seeded the way `src/main.rs` seeds one,
 /// off a data root holding nothing at all (bl-08b6). That is the first run of a
-/// seat on a new box, and the channels pane is the whole of what it has.
+/// seat on a new box, and the engines list is the whole of what it has.
 #[test]
 fn an_empty_window_says_what_each_pane_is_waiting_for() {
     let scratch = crate::test_support::Scratch::new();
@@ -61,7 +61,7 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
     let shown = painted(&mut model);
     assert!(
         shown.contains("nothing provisioned at"),
-        "the channels pane says what it holds and why it is empty:\n{shown}"
+        "the engines list says what it holds and why it is empty:\n{shown}"
     );
     assert!(
         shown.contains("the seat mints nothing"),
@@ -72,7 +72,10 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
     // missing, and say it one step under content.
     let window = crate::paint_probe::frame::Window::new();
     let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
-    for empty in [crate::ui::convs::NO_WALL, crate::ui::chat::NO_CONVERSATION] {
+    for empty in [
+        crate::ui::chat::NO_CONVERSATION,
+        crate::ui::composer::NOWHERE,
+    ] {
         let run = runs
             .iter()
             .find(|run| run.text == empty)
@@ -80,7 +83,6 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
         assert_eq!(run.ink, crate::ui::theme::INK_WEAK, "{empty:?}");
     }
     for expected in [
-        crate::ui::convs::NO_WALL,
         crate::ui::chat::NO_CONVERSATION,
         crate::ui::composer::NOWHERE,
     ] {
@@ -92,7 +94,7 @@ fn an_empty_window_says_what_each_pane_is_waiting_for() {
 }
 
 /// The policy on the glass: at 900 points the conversation used to be a
-/// ~140-point strip while the roster kept 280. Now the panes yield, and a
+/// ~140-point strip while the roster kept 280. Now the list pane yields, and a
 /// message in the chat pane starts where the floor says it does.
 #[test]
 fn a_narrow_window_paints_the_conversation_at_its_floor() {
@@ -102,10 +104,10 @@ fn a_narrow_window_paints_the_conversation_at_its_floor() {
         .into_iter()
         .find(|run| run.text == "port it")
         .expect("the conversation is on the glass");
-    let (roster, convs) = widths(900.0);
+    let list = widths(900.0);
     assert!(
-        said.laid.min.x < roster + convs + 40.0,
-        "the chat pane begins where the two list panes end: {:?}",
+        said.laid.min.x < list + 40.0,
+        "the chat pane begins where the list pane ends: {:?}",
         said.laid
     );
 }
@@ -160,14 +162,16 @@ fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
     );
 }
 
-/// The conversation list, on the same rule and through the same walk.
+/// The conversations under the aimed wall, on the same rule and through the
+/// same walk — which since DESIGN §4.39 is the same list and the same scroll
+/// region as the rows above them.
 #[test]
-fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
+fn the_conversation_rows_scroll_and_a_walk_puts_one_on_the_glass() {
     let mut model = Model {
         convs: (0..24)
             .map(|i| conv(&format!("id-{i:02}"), &format!("conv-{i:02}")))
             .collect(),
-        focus: crate::ui::keys::Pane::Conversations,
+        conversation: None,
         ..seated()
     };
     let window = Window::sized(900.0, 260.0);
@@ -178,9 +182,9 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
             .any(|run| run.text == last),
         "the fold is real, or this test proves nothing"
     );
-    // Twenty-five, because the engine's own row is the walk's first stop and
-    // its walls follow it (DESIGN §4.39).
-    for _ in 0..25 {
+    // Twenty-four, because the cursor starts on the aimed wall and the rows
+    // under it are the stops that follow (DESIGN §4.39).
+    for _ in 0..24 {
         window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
             render(ctx, &mut model);
         });

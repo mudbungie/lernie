@@ -27,8 +27,9 @@
 //! back out of the answers those channels carry; and the [`verbs`] an operator
 //! types instead of writing one out by hand.
 //!
-//! And the [`ui`]: the window itself — the roster, the conversation list, the
-//! chat pane and the composer, painted from a snapshot and firing gestures
+//! And the [`ui`]: the window itself — the roster with each wall's
+//! conversations under it, the chat pane and the composer, painted from a
+//! snapshot and firing gestures
 //! through the same verb table the command line spends. **The frame never
 //! dials.** What fills it is [`offframe`], three threads that meet the frame at
 //! the one lock [`state`] holds: the asker over the standing question set, the

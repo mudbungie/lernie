@@ -55,3 +55,22 @@ fn dismissing_puts_the_notice_down_and_changes_nothing_else() {
     assert_eq!(model.notice, None);
     assert!(model.aim.is_some() && model.conversation.is_some());
 }
+
+/// **Aiming where the window is already aimed retires nothing but the
+/// selection** (DESIGN §4.39). The one cursor crosses the aimed wall's own row
+/// on its way between the engine above it and the conversations beneath it, so
+/// a walk over that row must not empty the list under the cursor and put
+/// *waiting to hear about this wall* where the rows had been.
+#[test]
+fn aiming_where_the_window_already_is_keeps_the_rows_and_drops_the_selection() {
+    let mut model = seated();
+    model.convs = vec![conv("a", "one")];
+    model.answered = model.aim.clone();
+    let aim = model.aim.clone().expect("the fixture is aimed");
+    model.aim_at(&aim.channel, &aim.address);
+    assert_eq!(model.aim, Some(aim), "the aim is where it was");
+    assert_eq!(model.convs.len(), 1, "the rows stayed");
+    assert!(model.answered.is_some(), "and so did what they answer");
+    assert_eq!(model.conversation, None, "the selection went");
+    assert!(model.transcript.entries.is_empty());
+}

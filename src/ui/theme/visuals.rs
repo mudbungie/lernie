@@ -23,7 +23,7 @@ pub fn install(ctx: &egui::Context) {
         ..egui::Style::default()
     };
     // **The gaps are the scale's** (STYLE §4): the default item gap is `S`
-    // across and — a desktop delta — `XXS` down, because three columns of
+    // across and — a desktop delta — `XXS` down, because columns of
     // single-line rows at the phone's gap is a window one third empty and a
     // covering pane at it overruns the narrowest shape the layout promises.
     // A control is padded `S` across and `XXS` down for the same reason, and

@@ -1,30 +1,31 @@
 //! **The layout** — the two shapes a window takes, and the notice that stands
 //! where content would have been.
 //!
-//! One function, and it is the whole window: a notice bar, the roster, the
-//! conversation list, and the conversation with its composer under it. There is
-//! no per-pane enablement to drift — a pane with nothing to show says so in its
-//! own words, which is a sentence an operator can act on rather than a control
-//! that only looks actionable.
+//! One function, and it is the whole window: a notice bar, the roster — which
+//! since DESIGN §4.39 is the engines, their walls AND the aimed wall's
+//! conversations, one list — and the conversation with its composer under it.
+//! There is no per-pane enablement to drift: a pane with nothing to show says
+//! so in its own words, which is a sentence an operator can act on rather than
+//! a control that only looks actionable.
 //!
 //! **What a width buys is [`policy`]'s** and nothing here decides it. Wide
-//! enough, and the three columns stand side by side with the two lists yielding
-//! to the conversation's floor; narrower than that, the window shows one
-//! [`Column`] at a time and a bar naming the three (bl-dfda). The panes
+//! enough, and the two columns stand side by side with the list yielding to
+//! the conversation's floor; narrower than that, the window shows one
+//! [`Column`] at a time and a bar naming the two (bl-dfda, bl-b9a3). The panes
 //! themselves know nothing about either shape: what changed is where they are
 //! put, and — because a column's name has one home — where their heading is
 //! painted.
 //!
 //! **What the policy owns of a width is the DEFAULT and the FLOORS** (§4.39,
-//! bl-46e5). Every visible edge in this window drags — the two list panes'
+//! bl-46e5). Every visible edge in this window drags — the list pane's edge
 //! and the composer's top — and what an operator dragged is the seat's own
 //! state (REMOTE §7), held on the [`Model`], written to the place file, and
 //! clamped to the policy's range on every frame. `drag` is the mechanism and
 //! the one line of egui that makes either edge hold.
 
 use crate::ui::{
-    Model, board, chat, clear, clients, commands, composer, config, convs, enroll, find, fleet,
-    keys, login, queue, records, roster, theme, trail, tuning, unmake,
+    Model, board, chat, clear, clients, commands, composer, config, enroll, find, fleet, keys,
+    login, queue, records, roster, theme, trail, tuning, unmake,
 };
 
 /// The two edges an operator drags, and the one line of egui that makes
@@ -32,7 +33,7 @@ use crate::ui::{
 mod drag;
 /// The notice bar: what the seat last heard that was not content.
 mod notice;
-/// The width policy: the yield, the two shapes, and the three columns.
+/// The width policy: the yield, the two shapes, and the two columns.
 pub mod policy;
 
 pub use notice::DISMISS;
@@ -57,7 +58,7 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // conversation's and the model's own column is not consulted at all.
     let (shown, broad) = match shape(ctx.screen_rect().width()) {
         Shape::Broad { .. } => {
-            lists(ctx, model);
+            list(ctx, model);
             (Column::Conversation, true)
         }
         Shape::Narrow => {
@@ -100,12 +101,12 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     egui::CentralPanel::default().show(ctx, |ui| central(ui, model, shown, broad));
 }
 
-/// **The two list panes, side by side with the conversation** — the broad
-/// shape, and the only one that has side panels at all.
+/// **The one list pane, side by side with the conversation** — the broad
+/// shape, and the only one that has a side panel at all.
 ///
 /// **The heading is painted here rather than by the pane** (bl-dfda). A
 /// column's name has one home, and in the narrow shape that home is the bar:
-/// two nodes carrying the word `channels` would be two things an operator — and
+/// two nodes carrying the word `engines` would be two things an operator — and
 /// the accessibility tree the snapshot harness walks — has to tell apart. So
 /// the pane paints its content and the layout paints its name, which also keeps
 /// bl-e5d2's rule structural: the heading is outside the pane, and therefore
@@ -113,58 +114,46 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
 ///
 /// **The width is the seat's where the operator set one, and the policy's
 /// otherwise** (§4.39, reversing bl-fef8's *subtraction rather than loss*).
-/// Both edges drag, both widths are clamped to the policy's floors on every
-/// frame, and a width the clamp imposed is never taken back as the operator's
-/// — which is what lets a window briefly made small narrow the pane without
-/// costing the drag. The mechanism, and the one line of egui the drag used to
-/// die on, is `drag`.
+/// The edge drags, the width is clamped to the policy's floors on every frame,
+/// and a width the clamp imposed is never taken back as the operator's — which
+/// is what lets a window briefly made small narrow the pane without costing the
+/// drag. The mechanism, and the one line of egui the drag used to die on, is
+/// `drag`.
 ///
 /// **The narrow shape consults none of it**, because it never calls this:
 /// nothing competes for the width there, so there is no edge to drag.
-fn lists(ctx: &egui::Context, model: &mut Model) {
+fn list(ctx: &egui::Context, model: &mut Model) {
     let window = ctx.screen_rect().width();
-    let (roster, convs) = policy::shown(window, (model.dragged.roster, model.dragged.convs));
-    let focused = model.focus;
-    if let Some(width) = drag::side(ctx, "roster", roster, policy::span(window, convs), |ui| {
-        heading(ui, roster::HEADING, focused == keys::Pane::Roster);
+    let want = policy::shown(window, model.dragged.list);
+    if let Some(width) = drag::side(ctx, "engines", want, policy::span(window), |ui| {
+        heading(ui, roster::HEADING);
         roster::render(ui, model);
     }) {
-        model.dragged.roster = Some(width);
-    }
-    if let Some(width) = drag::side(
-        ctx,
-        "conversations",
-        convs,
-        policy::span(window, roster),
-        |ui| {
-            heading(ui, convs::HEADING, focused == keys::Pane::Conversations);
-            convs::render(ui, model);
-        },
-    ) {
-        model.dragged.convs = Some(width);
+        model.dragged.list = Some(width);
     }
 }
 
-/// **A column's heading**: `HEADING` size, weak ink at rest, full ink with
-/// the brand mark when the arrows are its (`docs/STYLE.md` §5). No fill and
-/// no rule under it — the gap is the boundary.
-fn heading(ui: &mut egui::Ui, word: &str, focused: bool) {
-    let ink = if focused { theme::INK } else { theme::INK_WEAK };
-    ui.label(
-        egui::RichText::new(keys::heading(word, focused))
-            .heading()
-            .color(ink),
-    );
+/// **A column's heading**: `HEADING` size, in weak ink (`docs/STYLE.md` §5).
+/// No fill and no rule under it — the gap is the boundary.
+///
+/// **It wears no mark saying whose the arrows are**, and that is the fold
+/// subtracting rather than losing (DESIGN §4.39, bl-b9a3). The mark existed to
+/// tell two list panes apart: one heading carried it and the other did not, so
+/// an operator could see which list an arrow key would walk. There is one
+/// list, so there is nothing to tell apart — a mark on the only answer says
+/// nothing, and a window with one of them lit and no alternative reads as a
+/// state that can change.
+fn heading(ui: &mut egui::Ui, word: &str) {
+    ui.label(egui::RichText::new(word).heading().color(theme::INK_WEAK));
 }
 
-/// **The narrow shape's navigation**: the three columns' own names, with the
+/// **The narrow shape's navigation**: the two columns' own names, with the
 /// one on the glass showing as chosen.
 ///
-/// It is a bar of all three rather than a *back* control, because a stack would
-/// make the roster two gestures from the conversation and put the number of
-/// gestures a pane costs at the mercy of where the operator happened to be. One
-/// seat each is one gesture from anywhere to anywhere, which is the bound
-/// `crate::snapshot::reach` asserts.
+/// It is a bar of both rather than a *back* control, because a stack would put
+/// the number of gestures a pane costs at the mercy of where the operator
+/// happened to be. One seat each is one gesture from anywhere to anywhere,
+/// which is the bound `crate::snapshot::reach` asserts.
 ///
 /// **It stands down under a covering pane**, exactly as the composer does: a
 /// pane that covers the window is a modal, and a navigation control that
@@ -220,14 +209,13 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
         return;
     }
     match shown {
-        Column::Channels => roster::render(ui, model),
-        Column::Conversations => convs::render(ui, model),
+        Column::Engines => roster::render(ui, model),
         Column::Conversation => {
             // The broad shape has no bar to carry the name, so the conversation
-            // pane's heading stands above it here — the two list panes get
-            // theirs from `lists` for the same reason.
+            // pane's heading stands above it here — the list pane gets its own
+            // from `list` for the same reason.
             if broad {
-                heading(ui, chat::HEADING, false);
+                heading(ui, chat::HEADING);
             }
             chat::render(ui, model);
         }

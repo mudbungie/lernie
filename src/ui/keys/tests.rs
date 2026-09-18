@@ -8,15 +8,21 @@
 /// The focused thing is visibly the focused thing, and Tab agrees with the
 /// arrows.
 mod focus;
+/// **The one cursor track**, walked by the arrows: where a step lands and what
+/// landing there means. Split from this file at the 300-line cap on the seam
+/// the module itself has (DESIGN §4.39) — the walk is one subject, and what
+/// stays here is everything that is NOT a walk: the keys that stand it down,
+/// the binding beside it, and the cursor's own arithmetic.
+mod walk;
 
-use super::{HERE, Pane, moved};
+use super::moved;
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{conv, own, seated, wall};
-use crate::ui::{Channel, Chunk, Model, Notice, convs, roster};
+use crate::ui::{Channel, Chunk, Model, Notice, roster};
 
 /// A window on two channels holding three addressable walls and one that no
 /// envelope can reach, with two conversations under the aimed one.
-fn stocked() -> Model {
+pub(super) fn stocked() -> Model {
     Model {
         roster: vec![
             own(),
@@ -36,7 +42,7 @@ fn stocked() -> Model {
 }
 
 /// Run `keys` frame by frame over a real window and hand back what it painted.
-fn typed(model: &mut Model, keys: &[egui::Key]) -> String {
+pub(super) fn typed(model: &mut Model, keys: &[egui::Key]) -> String {
     let window = Window::new();
     let mut painted = String::new();
     for key in keys {
@@ -45,119 +51,6 @@ fn typed(model: &mut Model, keys: &[egui::Key]) -> String {
         }));
     }
     painted
-}
-
-/// **The window opens on the roster and says so.** A focus that cannot be seen
-/// is a focus nobody can use, so the pane that owns the arrows wears the mark.
-#[test]
-fn the_pane_the_arrows_belong_to_is_marked_on_the_glass() {
-    let mut model = stocked();
-    let painted = typed(&mut model, &[egui::Key::ArrowRight]);
-    assert!(
-        painted
-            .lines()
-            .any(|line| line == format!("{HERE} {}", convs::HEADING)),
-        "{painted}"
-    );
-    assert!(
-        painted.lines().any(|line| line == roster::HEADING),
-        "the pane that does not hold the arrows wears no mark:\n{painted}"
-    );
-    let painted = typed(&mut model, &[egui::Key::ArrowLeft]);
-    assert!(
-        painted
-            .lines()
-            .any(|line| line == format!("{HERE} {}", roster::HEADING)),
-        "{painted}"
-    );
-}
-
-/// **The roster's walk crosses two kinds of row** (DESIGN §4.39): landing on
-/// a wall aims it, exactly as a click does, and landing on an engine's row
-/// only STANDS there — a walk that opened every engine it moved through would
-/// be a walk nobody could use to reach the one below.
-#[test]
-fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
-    let mut model = Model {
-        aim: None,
-        ..stocked()
-    };
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(
-        model.standing.as_deref(),
-        Some("(this box's own engine)"),
-        "a list nobody has entered opens at its first row, which is an engine"
-    );
-    assert_eq!(model.aim, None, "and standing there selects nothing");
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(
-        model.aim.as_ref().map(|aim| aim.address.clone()),
-        Some("home".to_owned()),
-        "the open engine's wall is the next stop, and landing on it aims it"
-    );
-    assert_eq!(model.standing, None, "an aim is where the cursor is");
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(
-        model.standing.as_deref(),
-        Some("elsewhere"),
-        "and the closed engine's own row is next, never its walls"
-    );
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(
-        model.standing.as_deref(),
-        Some("elsewhere"),
-        "the end saturates rather than wrapping"
-    );
-    typed(&mut model, &[egui::Key::ArrowUp]);
-    assert_eq!(
-        model.aim.as_ref().map(|aim| aim.address.clone()),
-        Some("home".to_owned())
-    );
-}
-
-/// **Enter opens the engine the walk is standing on**, through the same door
-/// the row's own click calls — which is what keeps the binding from being a
-/// second surface. It is a second keypress and not the walk's own act, because
-/// the walk has to be able to pass a closed engine without opening it.
-#[test]
-fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
-    let mut model = Model {
-        aim: None,
-        ..stocked()
-    };
-    typed(
-        &mut model,
-        &[
-            egui::Key::ArrowDown,
-            egui::Key::ArrowDown,
-            egui::Key::ArrowDown,
-            egui::Key::Enter,
-        ],
-    );
-    assert_eq!(model.engines.open.as_deref(), Some("elsewhere"));
-    assert_eq!(
-        model.aim.as_ref().map(|aim| aim.address.clone()),
-        Some("elsewhere".to_owned()),
-        "opening aims the engine's first addressable wall"
-    );
-}
-
-/// The conversation list walks the same way, and the selection it moves is the
-/// one every read follows.
-#[test]
-fn the_arrows_walk_the_conversation_list_and_the_walk_is_the_selection() {
-    let mut model = Model {
-        conversation: None,
-        ..stocked()
-    };
-    typed(&mut model, &[egui::Key::ArrowRight, egui::Key::ArrowDown]);
-    assert_eq!(model.conversation.as_deref(), Some("a"));
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(model.conversation.as_deref(), Some("b"));
-    // The end saturates: the same press means *next* every time, and never
-    // "back to the top" without anything on the glass to say so.
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(model.conversation.as_deref(), Some("b"));
 }
 
 /// **Escape puts a notice down**, which is the × button's own act reached by
@@ -220,41 +113,14 @@ fn a_cursor_saturates_and_an_empty_list_has_nowhere_to_go() {
     assert_eq!(moved(3, Some(1), 1), Some(2));
 }
 
-/// The default is the roster, because a seat with nothing aimed at has exactly
-/// one thing to do next.
+/// A box that has been asked nothing has no row to walk, which is the walk's
+/// own empty case rather than a state anybody has to handle.
 #[test]
-fn a_fresh_window_opens_with_the_roster_holding_the_arrows() {
-    assert_eq!(Model::default().focus, Pane::Roster);
+fn a_fresh_window_has_nothing_to_walk() {
     assert_eq!(
         roster::track(&Model::default()),
         Vec::new(),
         "a box that has been asked nothing offers no row to walk"
-    );
-}
-
-/// **A row the pointer can aim at is a row a key can aim at.** The pending row
-/// a start puts in the list is in the one list both walk, so an arrow leaves it
-/// for the first conversation the engine actually answered — which is also how
-/// an operator escapes a claim whose driver never wrote its branch.
-#[test]
-fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
-    let mut model = Model {
-        conversation: Some("brisk-otter".to_owned()),
-        start: Some(crate::ui::model::Start {
-            address: "home".to_owned(),
-            goal: "port it".to_owned(),
-            phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
-            spread: None,
-        }),
-        ..stocked()
-    };
-    let painted = typed(&mut model, &[egui::Key::ArrowRight]);
-    assert!(painted.contains("brisk-otter"), "{painted}");
-    typed(&mut model, &[egui::Key::ArrowDown]);
-    assert_eq!(
-        model.conversation.as_deref(),
-        Some("a"),
-        "one step down out of the pending row and into the list"
     );
 }
 
@@ -273,7 +139,6 @@ fn the_two_parameter_boxes_stand_the_arrows_down_as_the_draft_does() {
         (crate::ui::Fill::Arming, super::ARM_ID),
     ] {
         let mut model = stocked();
-        model.focus = Pane::Conversations;
         model.fill_in("a", fill);
         let window = Window::new();
         let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);

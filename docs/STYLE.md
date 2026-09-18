@@ -61,10 +61,12 @@ in a column, readable from across the room; a window with none is a window
 with nothing green on it, which is the same fact read the other way.
 
 **Navigation reads from layout, not labels.** A row is a place you go: click
-it or arrow to it and the column to its right fills in. The three headings
-say which column the arrows belong to by wearing the brand mark, and a
-column's rows say what state each thing is in by their rule. No control
-says *open* or *select*; position says it. The window-level acts — the queue
+it or arrow to it and the column to its right fills in. There is one list, so
+no heading has to say whose the arrows are — what a heading carries is the
+column's name — and a column's rows say what state each thing is in by their
+rule. No control says *open* or *select*; position says it, and the one
+exception is the `+` at the right edge of an engine's row, which begins a
+conversation on it (DESIGN §4.39). The window-level acts — the queue
 of what is waiting, the trail, the board, the engines' vocabulary, a search,
 and asking every channel again — are a **compact strip** across the top of
 the roster column, where a desktop's global navigation is expected: one
@@ -125,7 +127,7 @@ window is, because a camera reads it and no theme may tune it.
 Spacing is the phone's, `XS 4 · S 8 · M 12 · L 16 · XL 24`, plus one step
 under it, `XXS 2` (`theme::space`). **Delta:** the default item gap is `S`
 across and `XXS` down, and a control is padded `S` across and `XXS` down.
-Three columns of single-line rows at the phone's gap is a window one third
+Columns of single-line rows at the phone's gap is a window one third
 empty; a desktop reads a stack of short lines as prose rather than as a list
 of targets; and a covering pane must fit the narrowest shape the layout
 promises (DESIGN §4.32's density constraint), which the phone's smallest
@@ -134,7 +136,7 @@ step overruns.
 Type is four sizes and no fifth (`theme::type_scale`): `SMALL 11 · MONO 12 ·
 BODY 14 · HEADING 18`. **Delta:** the body sits one point under the phone's
 and the heading two, because a desktop is read at arm's length and holds
-three columns of prose where the phone holds one; 13 was the first pass and
+its columns of prose side by side where the phone holds one; 13 was the first pass and
 read as spartan at 1440×900 (bl-f251), and 14 is the point the density
 constraint still admits. **Prose has a leading**, `LEADING 21` — one and a
 half bodies — laid only under a transcript body (`theme::paint::prose`); a
@@ -196,10 +198,9 @@ stand on two lines and the eight on three. A verb that opens a pane carries
 the ellipsis; the one that only asks does not.
 
 **An empty state** (`theme::paint::empty`): one sentence in `INK_WEAK`,
-wrapped, that names the next act — *pick a workspace under channels to list
-its conversations*, *no conversations here yet — begin one in the box
-below*, *nothing is waiting on you — a conversation that asks will appear
-here* — never only what is missing. Weak because it is the absence of
+wrapped, that names the next act — *no conversations here yet — begin one
+with + on the engine*, *nothing is waiting on you — a conversation that asks
+will appear here* — never only what is missing. Weak because it is the absence of
 content said once; a wait (*waiting to hear…*) is the same shape, because it
 resolves itself and the reader needs to know only that.
 

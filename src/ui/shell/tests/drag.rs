@@ -2,6 +2,10 @@
 //! asserted on the glass rather than in the policy — `super::super::policy::
 //! edges`' suite holds the arithmetic.
 //!
+//! **There are two of them since the fold** (bl-b9a3): the list's edge against
+//! the conversation, and the composer's top. The third — between the two list
+//! panes — went with the middle column.
+//!
 //! The regression these exist for is the SNAP-BACK. egui floors a side panel's
 //! content at the width range's minimum and stores the content's rect, so a
 //! pane pulled wider than its rows reported the rows' width and shrank to it on
@@ -66,15 +70,15 @@ fn drag(window: &Window, from: egui::Pos2, to: egui::Pos2, mut body: impl FnMut(
 }
 
 /// **A pane dragged WIDER than its rows stays there.** The snap-back, which is
-/// the whole reason the handle was taken away: the roster's rows are a few
-/// short words, so a pane pulled to 520 points reported ~200 on the next frame
-/// and shrank to it. Three idle frames after the release, because once was
-/// never the failure.
+/// the whole reason the handle was taken away: the list's rows are a few short
+/// words, so a pane pulled to 520 points reported ~200 on the next frame and
+/// shrank to it. Three idle frames after the release, because once was never
+/// the failure.
 #[test]
 fn a_pane_dragged_wider_than_its_rows_does_not_snap_back_to_them() {
     let mut model = seated();
     let window = Window::sized(WIDE.0, WIDE.1);
-    let edge = panel(&window, "roster", &mut model).right();
+    let edge = panel(&window, "engines", &mut model).right();
     let at = egui::pos2(edge, 400.0);
     drag(&window, at, egui::pos2(520.0, 400.0), |ctx| {
         render(ctx, &mut model);
@@ -82,13 +86,13 @@ fn a_pane_dragged_wider_than_its_rows_does_not_snap_back_to_them() {
     assert!(
         model
             .dragged
-            .roster
+            .list
             .is_some_and(|width| (width - 520.0).abs() < 1.0),
         "the seat holds what the operator dragged: {:?}",
-        model.dragged.roster
+        model.dragged.list
     );
     for pass in 0..3 {
-        let held = panel(&window, "roster", &mut model).width();
+        let held = panel(&window, "engines", &mut model).width();
         assert!(
             (held - 520.0).abs() < 1.0,
             "pass {pass}: the pane snapped back to {held}"
@@ -103,23 +107,23 @@ fn a_pane_dragged_wider_than_its_rows_does_not_snap_back_to_them() {
 fn a_narrower_window_clamps_the_drag_and_never_overwrites_it() {
     let mut model = seated();
     let mut window = Window::sized(WIDE.0, WIDE.1);
-    let edge = panel(&window, "roster", &mut model).right();
+    let edge = panel(&window, "engines", &mut model).right();
     drag(
         &window,
         egui::pos2(edge, 400.0),
         egui::pos2(520.0, 400.0),
         |ctx| render(ctx, &mut model),
     );
-    window.resize(1000.0, 900.0);
-    let squeezed = panel(&window, "roster", &mut model).width();
+    window.resize(900.0, 900.0);
+    let squeezed = panel(&window, "engines", &mut model).width();
     assert!(squeezed < 520.0, "the narrow window shows {squeezed}");
     assert_eq!(
-        model.dragged.roster.map(f32::round),
+        model.dragged.list.map(f32::round),
         Some(520.0),
         "and the seat still holds the drag"
     );
     window.resize(WIDE.0, WIDE.1);
-    let back = panel(&window, "roster", &mut model).width();
+    let back = panel(&window, "engines", &mut model).width();
     assert!((back - 520.0).abs() < 1.0, "it came back to {back}");
 }
 
@@ -130,33 +134,14 @@ fn a_narrower_window_clamps_the_drag_and_never_overwrites_it() {
 fn an_edge_nobody_dragged_still_follows_the_policy_when_the_window_moves() {
     let mut model = seated();
     let mut window = Window::sized(800.0, 600.0);
-    panel(&window, "roster", &mut model);
+    panel(&window, "engines", &mut model);
     window.resize(WIDE.0, WIDE.1);
-    let held = panel(&window, "roster", &mut model).width();
-    assert_eq!(model.dragged.roster, None, "nobody dragged anything");
+    let held = panel(&window, "engines", &mut model).width();
+    assert_eq!(model.dragged.list, None, "nobody dragged anything");
     assert!(
-        (held - policy::widths(WIDE.0).0).abs() < 1.0,
+        (held - policy::widths(WIDE.0)).abs() < 1.0,
         "{held} against the policy's {}",
-        policy::widths(WIDE.0).0
-    );
-}
-
-/// **The other list pane's edge drags too** — both are visible, so both move.
-#[test]
-fn the_conversation_list_has_an_edge_of_its_own_and_it_drags() {
-    let mut model = seated();
-    let window = Window::sized(WIDE.0, WIDE.1);
-    let edge = panel(&window, "conversations", &mut model).right();
-    drag(
-        &window,
-        egui::pos2(edge, 400.0),
-        egui::pos2(edge - 120.0, 400.0),
-        |ctx| render(ctx, &mut model),
-    );
-    let held = model.dragged.convs.expect("the seat holds the drag");
-    assert!(
-        (held - (edge - 120.0 - panel(&window, "roster", &mut model).right())).abs() < 2.0,
-        "the conversation list is what the drag left it: {held}"
+        policy::widths(WIDE.0)
     );
 }
 
@@ -198,16 +183,16 @@ fn the_composers_top_edge_sets_the_rows_and_both_directions_work() {
 fn the_narrow_shape_has_no_edge_and_reads_no_drag() {
     let mut model = Model {
         dragged: crate::ui::Dragged {
-            roster: Some(600.0),
+            list: Some(600.0),
             ..crate::ui::Dragged::default()
         },
         ..seated()
     };
     let window = Window::sized(400.0, 800.0);
     assert_eq!(
-        panel(&window, "roster", &mut model),
+        panel(&window, "engines", &mut model),
         egui::Rect::ZERO,
-        "there is no roster panel at all"
+        "there is no list panel at all"
     );
-    assert_eq!(model.dragged.roster, Some(600.0), "and nothing wrote to it");
+    assert_eq!(model.dragged.list, Some(600.0), "and nothing wrote to it");
 }

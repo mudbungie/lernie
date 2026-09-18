@@ -1,7 +1,8 @@
 +++
 title = "the roster's heading is engines and the pane is an accordion of them: one open at most, painted first, the rest ordered by when each was last opened on this seat, the open state and the order in the place file (DESIGN §4.39)"
 created = 1789705010
-updated = 1789705010
+updated = 1789705265
+claimant = "Cruises-B"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ux-overhaul"]

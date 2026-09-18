@@ -1,7 +1,8 @@
 +++
 title = "the middle column is gone: a wall's conversations stand beneath it in the engines accordion, a + on the engine row begins a conversation, the keyboard walks one list, and the width policy has two columns (DESIGN §4.39)"
 created = 1789705011
-updated = 1789705011
+updated = 1789705882
+claimant = "Cruises-F"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ux-overhaul"]

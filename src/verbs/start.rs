@@ -93,6 +93,14 @@ const DIR: &str = "dir";
 /// the door that writes it and the grammar that reads it cannot disagree.
 pub const ROLE: &str = "role";
 
+/// **The role plan mode is**, spelled once. yog's `docs/REMOTE.md` §9.21 names
+/// it outright — *"the seat deposits the body back as `/prompt` with `"role":
+/// "planner"`"* — so it is the wire's own word for the one role choice this
+/// suite has a name for, and not a name this seat invented. A wall whose
+/// governing config declares no such role refuses the fire in litany's own
+/// words, which is the module doc's *a role this seat does not check*.
+pub const PLANNER: &str = "planner";
+
 /// **Stage a start** in the workspace `address` names — on the path rung when
 /// a work target is named, and on the bare rung when none is.
 ///

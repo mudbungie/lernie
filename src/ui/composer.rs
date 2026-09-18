@@ -96,9 +96,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
     // **Enter sends and Shift+Enter breaks a line**, and the hint says so.
     // The field consumes only the shifted key (`theme::paint::composer`), so
-    // a bare Enter reaches this read while the box holds the caret — and
-    // only then, because the same key on the send control is egui's own
-    // click and must not fire twice.
+    // a bare Enter reaches [`entered`] while the box holds the caret.
     //
     // **Enter is the deposit's and no other verb's.** A key that could fire
     // the cut would be a key an operator reaches by muscle memory to say
@@ -106,7 +104,20 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // exactly that, and the one with the destructive half is the one that has
     // to be pointed at (`crate::ui::model::acts` on why a binding never fires
     // what a click cannot — this is the other direction, which is allowed).
-    let entered = entry.has_focus()
+    if entered(ui, &entry) || deposit.clicked() {
+        fire(model, crate::verbs::message, &aim.address, &agent);
+    }
+    offers::render(ui, model, &aim, &agent);
+}
+
+/// **The one key that fires the box**, read beside the act rather than inside
+/// the field — and read once, because the box is one box in both of its modes
+/// (DESIGN §4.39) and two spellings of *Enter* would be two boxes again.
+///
+/// `entry` must hold the caret: the same key on a control is egui's own click
+/// and firing on it would spend the gesture twice.
+pub(super) fn entered(ui: &egui::Ui, entry: &egui::Response) -> bool {
+    entry.has_focus()
         && ui.input(|i| {
             i.events.iter().any(|event| {
                 matches!(
@@ -119,11 +130,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
                     } if !modifiers.shift
                 )
             })
-        });
-    if entered || deposit.clicked() {
-        fire(model, crate::verbs::message, &aim.address, &agent);
-    }
-    offers::render(ui, model, &aim, &agent);
+        })
 }
 
 /// **Whether the selected conversation is asking for the operator** — read

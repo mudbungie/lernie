@@ -20,6 +20,24 @@
 //! second start is refused: not by a disarmed control, but by there being no
 //! control. The receipt is the one state that paints the sentence *and* the box
 //! — the minted name stays readable while the operator begins the next one.
+//!
+//! # One composer, in both of its modes (DESIGN §4.39)
+//!
+//! *Being* the same control and *looking* like it are two things, and until
+//! bl-b3c3 this mode only had the first: it painted a one-line
+//! [`crate::ui::theme::paint::field`] and a button beside it while the deposit
+//! painted [`crate::ui::theme::paint::composer`] — the field
+//! [`crate::ui::theme::COMPOSER_ROWS`] tall with the act inside it — so the
+//! pane's focal element shrank to a bar whenever nothing was selected. It is
+//! now laid through the same shape at the same rows, with [`START`] inside the
+//! field where the deposit says `send`, and under it the same offers row
+//! carrying what applies to a start ([`super::offers::starting`]).
+//!
+//! **What the row does NOT carry is the rule, not an omission.** `records…`,
+//! `interrupt`, `stop`, `nudge` and the `…` strip are acts on a conversation's
+//! turn or on a conversation as an object, and there is neither — so they are
+//! absent rather than greyed, by the offers row's own rule that only what is
+//! offered is on the row.
 
 use crate::ui::{Aim, Model};
 
@@ -37,27 +55,31 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
             return;
         }
     }
-    let entry = crate::ui::theme::paint::field(
+    // **The same shape as the deposit, at the same rows** (§4.39): the act
+    // stands inside the field rather than beside it, and its word is the only
+    // thing that differs. The start has nothing to glow about — a glow is the
+    // selected conversation asking, and there is no conversation.
+    //
+    // **Both halves of the start ride this one control** (`crate::ui::act`):
+    // the click composes `prepare`, and the `prompt` that finishes it is fired
+    // by the frame when the engine's reply lands (`crate::ui::model::start`),
+    // from no widget at all. A walk over the accessibility tree can only ever
+    // see the control that begins the pair, so both tokens ride it.
+    let (entry, begin) = crate::ui::theme::paint::composer(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
         GOAL,
         None,
+        START,
     );
-    // Enter begins it, and the button beside it is how an operator finds that
-    // out — the same pairing the deposit's own Enter has, for the same reason.
-    let mut fired = entry.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-    // **Both halves of the start ride this one control** (`crate::ui::act`):
-    // the click composes `prepare`, and the `prompt` that finishes it is fired
-    // by the frame when the engine's reply lands (`crate::ui::model::start`),
-    // from no widget at all. A walk over the accessibility tree can only ever
-    // see the control that begins the pair.
-    let begin = ui.button(START);
     crate::ui::act::tag(&begin, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
-    fired |= begin.clicked();
-    if fired {
+    // Enter begins it, as it always did — through the deposit's own read, now
+    // that the box is the deposit's own box (`super::entered`).
+    if super::entered(ui, &entry) || begin.clicked() {
         model.stage(&aim.address);
     }
+    super::offers::starting(ui, model);
 }
 
 #[cfg(test)]

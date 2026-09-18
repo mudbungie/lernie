@@ -224,6 +224,7 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
             super::glyph::INTERRUPT,
             super::glyph::NUDGE,
             super::glyph::STOP,
+            super::glyph::PLAN,
         ] {
             assert!(
                 ctx.fonts(|fonts| fonts.has_glyphs(&font, glyph)),

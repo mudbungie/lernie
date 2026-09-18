@@ -1,6 +1,10 @@
 //! The start composer: the case it takes over, what Enter composes, and the
 //! start in flight that refuses a second one.
 
+/// What the start mode LOOKS like (DESIGN §4.39): the deposit's own field,
+/// its act tags, and the row under it.
+mod shape;
+
 use super::{GOAL, START, render};
 use crate::paint_probe::frame::{Window, locate_in, press};
 use crate::test_support::window::{click, pane, seated};

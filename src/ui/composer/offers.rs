@@ -46,6 +46,20 @@ pub const STOP: &str = "stop";
 /// `crate::ui::convs::menu::leads_to`'s convention with no word before it:
 /// what it leads to is every act that is not on this row.
 pub const MORE: &str = "…";
+/// **The word on the start mode's one control** (DESIGN §4.39): the role the
+/// conversation is born on, asked for as the mode it puts the conversation in
+/// rather than as the role's own name.
+///
+/// It is a WORD and not a picker or a box, and the reasoning is
+/// `crate::ui::records::spine`'s own one noun over. A role resolves against
+/// the governing config, this seat cannot list what that config declares, and
+/// *"a picker over a list this seat cannot obtain would be capability
+/// theatre"*. What it can do honestly is offer the one role choice the wire
+/// itself names — REMOTE §9.21: *"the seat deposits the body back as
+/// `/prompt` with `"role": "planner"`"* — which is a choice an operator
+/// already has a word for and which claims to enumerate nothing. The day a
+/// standing read lists a wall's roles, this control is where they go.
+pub const PLAN: &str = "plan";
 /// Whether the strip is open — the toolkit's memory rather than the model's,
 /// for the reason a folded tool result's is (`crate::ui::chat`): a view state
 /// no wire gesture corresponds to and no other fact can be asked for.
@@ -66,6 +80,34 @@ fn control(ui: &mut egui::Ui, glyph: &str, word: &str, op: &str) -> bool {
     let seat = ui.button(theme::worded(glyph, word));
     crate::ui::act::tag(&seat, &[op]);
     seat.clicked()
+}
+
+/// **The same row under the composer's other mode** (DESIGN §4.39), carrying
+/// what applies to a conversation that does not exist yet.
+///
+/// That is one thing: the start's own parameter. Every act [`render`] offers
+/// is an act on a conversation's turn and every act behind [`MORE`] is an act
+/// on a conversation as an object, so none of them is offered here — absent
+/// and not greyed, which is this row's own rule read on a row with nothing to
+/// read it against.
+///
+/// **It carries no `act:` token**, and that is the parity ledger holding
+/// rather than moving (§4.16): this control fires no op. It states a field of
+/// the `prompt` the start control is already tagged for, so a token here would
+/// be a second control claiming one op — which is what the ledger counts.
+pub fn starting(ui: &mut egui::Ui, model: &mut Model) {
+    ui.horizontal_wrapped(|ui| {
+        // A seat rather than a button, because it is a state and not an act:
+        // what it says is *the next start is a plan*, and it says so until it
+        // is pressed again — the tuning pane's own reading of a control that
+        // holds rather than fires.
+        if ui
+            .selectable_label(model.plan, theme::worded(theme::glyph::PLAN, PLAN))
+            .clicked()
+        {
+            model.plan = !model.plan;
+        }
+    });
 }
 
 /// Paint the row and take what it was given.

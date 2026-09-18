@@ -232,6 +232,19 @@ pub struct Model {
     /// triage — so the control is disabled until there are any, and the box is
     /// SPENT on firing: what a flag says is said, exactly as a deposit is.
     pub reason: String,
+    /// **Whether the next conversation is born on the planner role** (DESIGN
+    /// §4.39; REMOTE §9.21, PROTOCOL 18) — the one parameter a start has, and
+    /// the whole of what the composer's start-mode row carries
+    /// (`crate::ui::composer::offers`).
+    ///
+    /// It is held here and not with the start itself because it is stated
+    /// **between** the stage and the fire: the frame that absorbs `prepare`'s
+    /// receipt is what writes the field onto the body it hands back
+    /// (`start::Model::fire`), and that frame reads the window, not the
+    /// gesture. A bool rather than the role's own name, because the name is
+    /// `crate::verbs::start::PLANNER` and a second copy of it here would be a
+    /// second place for the wire's word to live.
+    pub plan: bool,
     /// **A start, while it is happening** — the one thing this window holds
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).

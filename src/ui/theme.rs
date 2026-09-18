@@ -215,14 +215,18 @@ pub mod type_scale {
 
 /// **The glyph an act wears** (bl-f251) — an icon is a token exactly as a
 /// colour is: a pane asks for one by the name of the act, and this is the one
-/// place the character is spelled. Three, and each is the plainest sign for
-/// what the act does to the turn: a bolt cuts in, a play mark advances, a
-/// square stops. Every one is asserted to have a glyph in the body font
-/// (`tests`), because a tofu box is a control with no word on it.
+/// place the character is spelled. Three are the plainest sign for what the
+/// act does to the turn: a bolt cuts in, a play mark advances, a square stops.
+/// The fourth is not an act on a turn at all — it is the composer's other
+/// mode, where the row carries the start's own parameter (DESIGN §4.39), and a
+/// pencil is the plainest sign for *drafted rather than done*. Every one is
+/// asserted to have a glyph in the body font (`tests`), because a tofu box is
+/// a control with no word on it.
 pub mod glyph {
     pub const INTERRUPT: &str = "⚡";
     pub const NUDGE: &str = "▶";
     pub const STOP: &str = "■";
+    pub const PLAN: &str = "✏";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the

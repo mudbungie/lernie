@@ -141,15 +141,17 @@ impl Model {
             self.start = None;
             return;
         }
-        // **No role, which is the body as the engine answered it** (REMOTE
-        // §9.21): the composer has no role picker, and a seat that guessed one
-        // would be born on a soul nobody chose. What the window fires is
-        // byte-identical to what it fired before the field existed.
+        // **The role the composer's start-mode row asked for** (DESIGN §4.39;
+        // REMOTE §9.21): plan mode is a choice made between the stage and the
+        // fire, and this is the frame between them. Unstated is `None`, which
+        // leaves the body exactly as the engine answered it — byte-identical
+        // to what this window fired before the field existed — so a seat that
+        // was never asked still guesses no soul.
         self.outbox.push(super::Posted::act(crate::verbs::prompt(
             prepared,
             address.clone(),
             goal.clone(),
-            None,
+            self.plan.then(|| crate::verbs::start::PLANNER.to_owned()),
         )));
         self.start = Some(Start {
             address,

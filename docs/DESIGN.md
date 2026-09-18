@@ -3986,7 +3986,14 @@ so the panel grew by a row a frame and the transcript's tail walked off the
 glass — the bound is what makes the composer's height a fact of its content.
 Enter sends and Shift+Enter breaks a line; the field consumes only the
 shifted key, and the bare one is read beside the act it fires, off the
-event's own modifiers. Under the field, **the row offers what the engine
+event's own modifiers — **one read, shared by both modes**
+(`composer::entered`), because the second mode below is the same box and two
+spellings of Enter would be two boxes again. Everything in this paragraph is
+said of the deposit and holds of the START as well since §4.39's ruling
+landed: that mode is the same field at the same rows with `start` inside it
+where this one says `send`, and the sentences below about what the row
+offers are the deposit's alone — what the start's row carries is §4.39's.
+Under the field, **the row offers what the engine
 offers**: `interrupt` and `stop` while the conversation's own row says its
 driver may be stopped, `nudge` while it says an advance may be started, and
 all three until the engine has answered about it at all — an absent reading
@@ -4216,6 +4223,31 @@ and the fire and which today only plan mode sets. The `…` strip's acts are
 acts on a conversation as an object, and stand down with it. A `+` lands the
 caret in this box.
 
+**Built in bl-b3c3, and the role control's shape is the one decision that
+ball made.** The mode is laid through `theme::paint::composer` at
+`theme::COMPOSER_ROWS`, `composer/start.rs` keeps both `act:` tokens on the
+one control the walk can see (§4.16 unmoved — the row's control carries
+none, because it fires no op: it states a field of the `prompt` the start
+control is already tagged for, and a second token would be a second control
+claiming one op), and the row is `composer::offers::starting`. The control
+is **a seat worded `plan`** — a glyph and a word, as every compact control
+on this row is — and not a picker over the wall's roles and not a box. The
+reasoning is `ui/records/spine.rs`'s own, one noun over: a role resolves
+against the governing config, this seat holds no standing read that lists
+what that config declares, and *a picker over a list this seat cannot obtain
+would be capability theatre*. What it can offer honestly is the one role
+choice the WIRE names — REMOTE §9.21: *"the seat deposits the body back as
+`/prompt` with `"role": "planner"`"* — which enumerates nothing and is the
+choice an operator already has a word for. A wall whose config declares no
+such role is refused by litany before the fork, in its own words, which
+REMOTE §9.21 rules is the right division. The day a standing read lists a
+wall's roles, this seat is where they go and the fold is one control wide.
+The choice is held as `Model::plan`, because the field is written by the
+frame that absorbs `prepare`'s receipt (`ui/model/start.rs::fire`) and that
+frame reads the window rather than the gesture; a fan's candidates still
+carry no role, the spread being fired from the fleet pane where this control
+is not on the glass.
+
 **The order the four land in.** The drag (edges, the place file's width
 keys) and the accordion (the heading, the engine rows, the order and the
 open state, the place file's engine keys) share nothing but the place file
@@ -4319,12 +4351,12 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
 | `src/ui/roster/acts.rs` | the strip above the channels: the four ops whose subject is every channel, and the one of them that opens nothing (§4.21). | ~65 |
 | `src/verbs/tests/corpus/emits/ledger.rs` | the frames this seat's encoder cannot compose, by op, count and reason — split from the mechanism at the cap, because a builder changing and a surface not being built are two different reasons to edit. | ~120 |
-| `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, and the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371). | ~130 |
+| `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371), and the born-on role's field and the one word plan mode is (REMOTE §9.21). | ~175 |
 | `src/verbs/doors.rs` | the words whose grammar the gesture table cannot express: a word, a usage line and prose, with no envelope builder behind it. | ~190 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
 | `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
-| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~240 |
+| `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~275 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
 | `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |
@@ -4332,7 +4364,7 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
-| `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, and the refusal that retires it with the goal back in the box (§4.26). | ~240 |
+| `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, the born-on role written onto the body the fire carries back (§4.39), and the refusal that retires it with the goal back in the box (§4.26). | ~255 |
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
@@ -4420,13 +4452,14 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/chat/subject.rs` | which conversation the pane is showing: name, resting clause, failure and costing, read off the records header rather than re-derived. | ~65 |
-| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the row of verbs that advance the turn. | ~150 |
+| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, the row of verbs that advance the turn, and the one read of Enter both of the box's modes share (§4.39). | ~180 |
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
-| `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one. | ~55 |
+| `src/ui/composer/offers.rs` | the row under the field: the acts the engine offers on the conversation's turn, the control that opens the strip, and the start mode's own row — one seat, the role a conversation is born on (§4.38, §4.39). | ~195 |
+| `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every one of the seven boxes that take text, named (§4.23). | ~265 |
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
-| `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~210 |
+| `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |

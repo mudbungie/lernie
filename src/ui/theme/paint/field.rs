@@ -35,11 +35,17 @@ pub fn field(
         .inner
 }
 
-/// **The composer**: [`COMPOSER_ROWS`] lines tall, the send inside it at the
+/// **The composer**: [`COMPOSER_ROWS`] lines tall, the act inside it at the
 /// bottom right in the brand on a brand wash, and the glow where the field
 /// alone used to carry it. Enter is the caller's to read — the field breaks a
 /// line on **Shift+Enter** and consumes nothing else — so the one key that
-/// sends is decided beside the act it fires, not here.
+/// fires is decided beside the act, not here.
+///
+/// **`send` is a parameter because the box has two modes and not two shapes**
+/// (DESIGN §4.39): the deposit words it `send` and the start words it
+/// `start`, and the word is the whole of what differs between them — which is
+/// what makes *one composer* an assertion a test can read off the glass as a
+/// height rather than a claim in prose.
 ///
 /// **The height is allocated, never left to the layout.** A bottom panel
 /// remembers the rect its content took and lays the next frame out in it;

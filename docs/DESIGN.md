@@ -1081,7 +1081,9 @@ property the whole surface exists for.
 
 ### 4.11 The window renders a snapshot, and the paint layer can testify about it (§7, §8.2, §9.7)
 
-`src/ui/`. Four panes and a notice bar: the roster grouped by the channel each
+`src/ui/`. Four panes and a notice bar (**three since §4.39, bl-46e5: the
+conversations stand beneath their wall in the roster, which is an accordion of
+engines, and the middle column is gone**): the roster grouped by the channel each
 row came down, the aimed wall's conversations, the selected conversation, and
 the composer — with seven more that COVER the conversation when they are open
 (§4.15's enrollment, §4.17's tuning, §4.18's records, §4.19's decision queue,
@@ -1189,7 +1191,10 @@ rect to a point range, so what a pane took last frame cannot outvote what this
 window is worth. It costs the drag handle, which is subtraction rather than
 loss: a dragged width is a second home for a fact the policy owns, and the drag
 never worked — a pane pulled wider than its content snapped back to the content
-on the next pass.
+on the next pass. **Reversed by §4.39 (bl-46e5)**: the snap-back was
+egui flooring the content at the range's minimum, not the drag, and a dragged
+width is REMOTE §7's per-seat state rather than the policy's fact — the policy
+keeps the default and the floors, and every visible edge drags.
 
 **A list row's second line truncates, exactly as its headline does**
 (`convs::beneath`; bl-fef8, bl-b3b2's rule one line down). The headline was
@@ -3933,8 +3938,8 @@ orange annotates, grey is done, red is an error), no outlines, and one module
 every colour and size is read from. This seat adopts the palette byte for
 byte and carries only its deltas, each named beside its token with its
 reason: a smaller body and heading, a 28-point row where the phone's is a
-48-point touch target, and the three-column shape the width policy of §4.11
-already answers for.
+48-point touch target, and the column shape the width policy of §4.11
+already answers for (two columns since §4.39).
 
 **The adapter installs the tokens at the top of every frame**
 (`theme::install`, called by `ui::render`), so the offscreen frame every
@@ -4047,6 +4052,179 @@ pane at the narrow shape was 89 points of wrapped prose over, with every
 control inside. Labels are now outside the set the walk judges, with the
 other-direction beat beside it; §4.32's density constraint still holds for
 every CONTROL, which is the reachability the assertion exists for.
+
+### 4.39 The two-column window: engines, their conversations beneath, and edges an operator can drag (bl-46e5)
+
+Operator ruling 2026-09-17, and it reverses two settled things at once: the
+three-column shape §4.11 and `docs/STYLE.md` §2 stand on, and bl-fef8's
+ruling in §4.11 that a dragged width is *subtraction rather than loss*. The
+ruling in the operator's own terms: the three columns cannot be dragged and
+every pane edge should be; *channels* at the top left means nothing; the
+pane is the engines this seat reaches, by name, as a list where the last-used
+one is open and pinned to the top, at most one is ever open, the rest are
+ordered by when each was last opened, and the open one shows its conversations
+beneath it; a `+` to the right of the engine's name begins a conversation;
+and while no conversation is selected the same box stands at the bottom with
+the same options. Four parts, each gated on this section and each its own
+ball, and the order they land in is stated at the end.
+
+**The word on the glass is *engines*, and the crate's word stays *channel*.**
+A channel is what this crate calls the client-side entry that reaches one
+engine (§4.6: the `<leaf>` is the client's name, the fifth file the host's),
+and that is the right word for a thing in `wire/workspaces/`. It is the wrong
+word over a list an operator reads, because what they are looking at is yogs:
+the box's own and the ones it dials, each by the name this box gave it. So
+`roster::HEADING` becomes `engines`, the narrow bar's word follows it for
+free (§4.11: a column's name has ONE home), and nothing under `src/channel/`
+or `src/ui/model/channel.rs` is renamed — the rename is of a word a person
+reads, and one home for it is the whole point of §4.11's rule.
+
+**The roster is an accordion of engines, and it is the window's one list.**
+Each engine is a row — `roster::header`'s words, the host's name beside it
+where the two differ and its dial state after — carrying one control at its
+right edge, the `+` below. At most one engine is *open*. The open one is
+painted first, above the rest; the rest follow in the order each was last
+opened on this seat, most recent first, and the name breaks a tie. Opening
+one closes the other, so the arrangement is a single fact — *which* — and
+not a set of flags to keep consistent. Under the open engine stand its
+walls, and under each wall row the conversations that wall holds: the rows
+§4.11's middle pane painted, `convs::row::conversation` with its rails,
+elbows and menu (§4.23) carried across unchanged, because a threaded row was
+never a fact about which column it sat in. The middle column is gone. What
+it painted is now beneath the wall it belonged to, which is where the
+operator's sentence put it — *conversations are pinned under the engine* —
+and a two-level tree under one heading is one scroll region rather than two
+panes disagreeing about what is selected.
+
+**The wall stays, as a heading and not a level to navigate to.** The
+operator's sentence names engines and conversations and no workspace, and
+the interpretation is stated here rather than taken silently: a conversation
+is begun IN a workspace (yog DESIGN §3.1 — a world bootstraps `home` when its
+first conversation is started), an engine that holds two walls holds two
+lists, and a seat that flattened them would have to write the wall's name on
+every row to say what a `+` would begin in. So the wall is a row between the
+engine and its conversations, `ordered` as §4.25 already orders it, wearing
+its own state rule and its five controls when it is the aimed one — and an
+engine with one wall, which is the common case, reads as an engine with its
+conversations under it and one weak line between. Clicking a wall aims it;
+clicking a conversation selects it and aims its wall in the same act, which
+is §4.11's *one door for a click and a keypress* with the second list folded
+into the first. Opening an engine aims the wall this seat last aimed in it,
+and its first wall by `ordered` where it has never aimed one, so an open
+engine is never open over nothing.
+
+**What opens and in what order is the seat's own, and that is not the pin's
+exception.** §4.25 rules that a pin crosses the boundary because it is *an
+assertion about the world, not an arrangement of one screen*. This is the
+other case, and the line between them is §4.6's: a channel is a client-side
+fact, named by this box and held by no other, so the order this box shows
+its channels in can be nobody else's and there is no engine to assert it
+into. It goes in the place file (§4.13), as keys beside `aim`: the open
+engine's name, the instant each engine was last opened, and the wall last
+aimed under each — unknown keys ignored, a missing key absence, a first run
+opening the aim's own engine and, with no aim, the first by name. *Last
+used* means last OPENED on this seat, by the click on its row or by the `+`;
+a beat that answered down a channel is not a use, or the list would reorder
+itself under the pointer.
+
+**The `+` is the start, reached without leaving the list.** It clears the
+selection, keeps the aim on the engine's aimed wall, opens the engine if it
+was closed, and puts the caret in the box — which is the composer's own
+start mode (§4.38, `src/ui/composer/start.rs`: *a wall, no conversation →
+the start*), reached by a control rather than by finding a way to deselect.
+It crosses no wire: `prepare` and `prompt` still fire from the `start`
+control the box carries and stay tagged there (§4.16), so the parity ledger
+does not move. A `+` on a closed engine opens it because a start is a use,
+and an engine that just began a conversation is the one an operator is
+using.
+
+**The keyboard walks one list, in paint order.** The two cursor tracks
+(`keys::Pane::Roster` over `roster::aimable`, `Pane::Conversations` over
+`Model::rows`) were two because the lists were two panes; there is one pane,
+so there is one track — engine rows, wall rows and conversation rows in the
+order the glass paints them, derived from the same rows and the same order
+the paint uses, which is the rule `roster::aimable` already keeps. Landing
+on a wall aims it and landing on a conversation selects it, exactly as the
+pointer does; landing on an engine row stands there, and Enter or Space
+opens it, since the walk moving through a closed engine must not open every
+engine it passes. Left and right keep their narrow-shape meaning (a column
+sideways) and gain none. yog's QUALITY F1 stands: every act the pointer
+reaches here, a key reaches.
+
+**Two columns, and the policy loses a term rather than gaining a case.**
+`shell::policy::widths` yields one list pane to the conversation's floor
+instead of two, the list's worth being `CONVS`'s (its widest row is a
+conversation's headline and preview; the engine and wall rows are shorter),
+`Column` has two variants, the bar names two, and the narrow shape's floor
+is where the one list can no longer keep `CHAT_FLOOR` beside it. `SIDE_FLOOR`
+stays what it is. `convs.rs`'s pane-level render and its `HEADING` go; its
+`headline`, `age`, `continues` and the row module stay where they are and
+are called from the roster, because they are facts about a row and its
+thread. `snapshot::worlds` and `snapshot::reach` are re-read against the
+two-column matrix, and the parity walk is what says the fold lost no
+control.
+
+**Every edge an operator can see is one they can drag, and bl-fef8's ruling
+is reversed in both of its halves.** §4.11 says *it costs the drag handle,
+which is subtraction rather than loss: a dragged width is a second home for
+a fact the policy owns, and the drag never worked — a pane pulled wider than
+its content snapped back to the content on the next pass.* Both clauses are
+wrong and each for its own reason. The drag never worked because of egui and
+not because of the design: `SidePanel::show_inside_dyn` floors its content
+at the RANGE's minimum and stores the content's rect —
+
+    ui.set_min_width((width_range.min - frame.inner_margin.sum().x).at_least(0.0));
+
+(egui 0.30, `containers/panel.rs`) — so a pane whose rows were narrower than
+the width it was pulled to reported the rows' width and shrank to it. A pane
+whose body's first act is `ui.set_min_width(ui.available_width())` fills
+what it was given, the stored rect is the dragged one, and the drag holds;
+`TopBottomPanel` does exactly that itself, one function down in the same
+file, which is why the composer never had the defect. And the fact is not
+the policy's. REMOTE §7 rules that per-seat UI state — *focus, scroll, tab
+selection, drafts* — is the seat's own, and a width an operator set is the
+plainest member of that list. The policy owns the DEFAULT and the FLOORS:
+the width a pane gets until somebody drags it, the least it may be while it
+stands beside another, and the most it may be while the conversation keeps
+`CHAT_FLOOR`. So the shown width is the dragged one where the seat holds
+one, else the policy's, clamped to the policy's range on every frame — a
+window narrower than the stored width clamps it and does not overwrite it,
+so a drag survives a window that was briefly small — and the narrow shape
+consults no drag, since nothing competes there. Two edges exist in the broad
+shape and both drag: the list's edge against the conversation, and the
+composer's top edge, whose dragged height sets how many rows the field is
+(`theme::COMPOSER_ROWS` becomes the default), keeping §4.38's bound that the
+panel is handed a height rather than reading one back off its content. A
+covering pane has no edge, and the notice bar and the narrow bar are not
+panes. Both values go in the place file with the rest, written once after
+the event loop returns (§4.13: nothing new crosses the lock on a frame).
+
+**One composer, in both of its modes.** The start mode paints a bare field
+and a `start` button (`composer/start.rs`) where the deposit paints the
+composer field with the send inside it, the offers row and the `…` strip
+(§4.38); the two are one control with two subjects and did not look like
+one. The ruling is that they do: the start is laid through
+`theme::paint::composer` at the same rows, the act inside the field worded
+`start` rather than `send`, and under it the same row of controls, offering
+what applies to a conversation that does not exist yet. `records…`,
+`interrupt`, `stop` and `nudge` are acts on a conversation's turn and there
+is no turn — they are absent, not greyed, by the offers row's own rule that
+only what is offered is on the row. What the row carries in the start mode
+is the start's own parameter: the role the conversation is born on
+(`verbs::start::ROLE`, PROTOCOL 18), which the seat states between the stage
+and the fire and which today only plan mode sets. The `…` strip's acts are
+acts on a conversation as an object, and stand down with it. A `+` lands the
+caret in this box.
+
+**The order the four land in.** The drag (edges, the place file's width
+keys) and the accordion (the heading, the engine rows, the order and the
+open state, the place file's engine keys) share nothing but the place file
+and land in parallel; the composer's second mode shares nothing with either.
+The fold — the middle column deleted, the conversations beneath the wall,
+the `+`, the one cursor track, the two-variant policy — lands last, gated on
+the first two, so the policy is reshaped once with the drag already in it
+and the rows are folded under an accordion that already exists.
+
 
 ## 5. Module map
 

@@ -40,14 +40,17 @@ it looks like and where a person's eye goes first.
 
 ## 2. Information architecture: what a person sees first
 
-**The window is three columns, left to right: where, which, what.** The
-roster (every workspace this seat can reach), the aimed workspace's
-conversations, and the selected conversation with its composer under it.
-That shape stands: it is the desktop's one structural delta from the phone
-(which shows one column at a time), it is what a wide display is for, and
-the width policy that yields the two lists to the conversation's floor and
-collapses to one column below it (DESIGN §4.11, `src/ui/shell/policy.rs`)
-already answers every width. What was wrong was never the columns; it was
+**The window is two columns, left to right: where, what** (DESIGN §4.39,
+bl-46e5; it was three until the operator's ruling of 2026-09-17). The left
+column is an accordion of engines — the yogs this seat reaches, by name, the
+open one first and its walls and their conversations beneath it, the rest
+ordered by when each was last opened — and the right is the selected
+conversation with its composer under it. That shape is the desktop's one
+structural delta from the phone (which shows one column at a time), it is
+what a wide display is for, and the width policy that yields the list to the
+conversation's floor and collapses to one column below it (DESIGN §4.11,
+`src/ui/shell/policy.rs`) answers every width; the edge between the two and
+the composer's top edge both drag, and a dragged width is the seat's own. What was wrong was never the columns; it was
 that nothing in them was weighted.
 
 **The eye lands on green.** A workspace row and a conversation row that are

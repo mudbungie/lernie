@@ -1,7 +1,8 @@
 +++
 title = "the start mode is the same composer: the field at the same rows with start inside it, and the offers row carrying the one parameter a start has, the role (DESIGN §4.39)"
 created = 1789705010
-updated = 1789705010
+updated = 1789705267
+claimant = "Cruises-C"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ux-overhaul"]

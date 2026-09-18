@@ -65,6 +65,25 @@ fn a_settle_files_hands_over_and_publishes() {
     assert!(link.compose().is_empty(), "a drain takes it once");
 }
 
+/// **The seat's own place is published on the same settle** (DESIGN §4.13,
+/// §4.39): the aim and the accordion are a projection of the frame's model, so
+/// what `src/main.rs` writes down after the event loop returns costs no thread
+/// and no write on a frame.
+#[test]
+fn a_settle_publishes_the_place_the_entry_point_writes_down() {
+    let link = link();
+    assert_eq!(
+        link.place(),
+        crate::place::Place::default(),
+        "a link nobody has settled is aimed at nothing and arranged not at all"
+    );
+    let mut model = seated();
+    model.open_engine(&own().channel.name.clone());
+    link.settle(&mut model);
+    assert_eq!(link.place(), crate::place::Place::of(&model));
+    assert_eq!(link.place().engines.open, model.engines.open);
+}
+
 /// **A leg that never reached an engine reads as neither of the other two.**
 /// The three remedies are three different acts: type something else, upgrade
 /// the seat, or look at this box's files.

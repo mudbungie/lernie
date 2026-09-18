@@ -4093,8 +4093,14 @@ right edge, the `+` below. At most one engine is *open*. The open one is
 painted first, above the rest; the rest follow in the order each was last
 opened on this seat, most recent first, and the name breaks a tie. Opening
 one closes the other, so the arrangement is a single fact — *which* — and
-not a set of flags to keep consistent. Under the open engine stand its
-walls, and under each wall row the conversations that wall holds: the rows
+not a set of flags to keep consistent. **What the fold hides is the WALLS,
+never what an engine says about itself** (bl-cff1): §4.7's ruling is that a
+channel that cannot be dialled says so under its own header and never in the
+shell-wide bar, which holds one sentence and keeps the last writer's — so a
+seat with two unreachable engines could discover only one of them from the
+glass if a closed row went silent. A closed engine paints its row and its
+own sentences; its walls are what standing under an open one buys. Under the
+open engine stand its walls, and under each wall row the conversations that wall holds: the rows
 §4.11's middle pane painted, `convs::row::conversation` with its rails,
 elbows and menu (§4.23) carried across unchanged, because a threaded row was
 never a fact about which column it sat in. The middle column is gone. What
@@ -4127,12 +4133,22 @@ other case, and the line between them is §4.6's: a channel is a client-side
 fact, named by this box and held by no other, so the order this box shows
 its channels in can be nobody else's and there is no engine to assert it
 into. It goes in the place file (§4.13), as keys beside `aim`: the open
-engine's name, the instant each engine was last opened, and the wall last
+engine's name, what each engine's last opening RANKS as, and the wall last
 aimed under each — unknown keys ignored, a missing key absence, a first run
 opening the aim's own engine and, with no aim, the first by name. *Last
 used* means last OPENED on this seat, by the click on its row or by the `+`;
 a beat that answered down a channel is not a use, or the list would reorder
 itself under the pointer.
+
+**A rank and not a clock reading** (bl-cff1, amending the sentence above,
+which said *instant*). Ordering is the only question ever asked of the
+number: an opening writes one past the highest any engine holds, so the
+engine just opened outranks every opening before it by construction. Two
+engines opened inside one tick of a wall clock would TIE, and the tie-break
+is the name — which would order them alphabetically at the exact moment the
+operator's two most recent choices are what the list is supposed to be
+about. A counter cannot tie, needs no clock injected into a pure model, and
+round-trips through the place file as the integer it already is.
 
 **The `+` is the start, reached without leaving the list.** It clears the
 selection, keeps the aim on the engine's aimed wall, opens the engine if it
@@ -4272,7 +4288,7 @@ and the rows are folded under an accordion that already exists.
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
-| `src/place.rs` | where the seat was pointed, remembered between runs. Every way the file can be wrong is one answer: no place. | ~85 |
+| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, and the wall last aimed under each. Every way the file can be wrong is one answer: the empty place. | ~150 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
@@ -4355,9 +4371,10 @@ and the rows are folded under an accordion that already exists.
 | `src/verbs/doors.rs` | the words whose grammar the gesture table cannot express: a word, a usage line and prose, with no envelope builder behind it. | ~190 |
 | `src/verbs/help.rs` | the two rosters and one word's page, answered with no engine up. | ~110 |
 | `src/ui.rs` | the window's module list and what a frame may not do. | small |
-| `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
+| `src/ui/model.rs` | the model's module list and re-export surface. Four pieces split out at the cap onto seams this row used to name: the door a reply comes in through (`model/absorb.rs`), the aim (`model/aim.rs`), the accordion (`model/engines.rs`), the records pane's seven answers held as one value (`model/records.rs`'s `Records`), and the struct itself (`model/held.rs`). | ~95 |
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, every field documented where it is declared, and the one question asked of it that no pane owns. | ~275 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two questions asked about a channel's name. | ~50 |
+| `src/ui/model/engines.rs` | **the accordion** (§4.39): which engine is open, what each engine's last opening ranks as, the wall last aimed under each, and the three derivations over them — which one is open on a seat nobody has told, the order the pane paints, and what an opening aims at. The seat's own and in the place file, never across the boundary. | ~145 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
 | `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
@@ -4368,7 +4385,8 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
-| `src/ui/roster.rs` | every workspace this seat can reach, grouped by channel: the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), and one wall's own row with it (`roster/wall.rs`). | ~175 |
+| `src/ui/roster.rs` | the engines this seat reaches as an accordion (§4.39), the open one's workspaces under it: the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
+| `src/ui/roster/engine.rs` | **one engine's row and the pane's cursor track** (§4.39): the row an operator clicks to open one, and the two kinds of stop the walk makes — an engine's row, which it only stands on, and a wall under the open one, which it aims. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~105 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, and the five per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25). | ~145 |
 | `src/ui/roster/wall/controls.rs` | the eight per-wall controls in one band under the aimed row, the unmaking last. Split from `wall.rs` at the design-time budget. | ~120 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
@@ -4456,7 +4474,8 @@ and the rows are folded under an accordion that already exists.
 | `src/ui/composer/acts.rs` | the second row: the acts that spend no words — kill the driver, retarget, raise a flag, and the unmaking with the name that arms its descendants. Its two boxes wear ids and take the cursor a row menu asked for (§4.23). | ~165 |
 | `src/ui/composer/offers.rs` | the row under the field: the acts the engine offers on the conversation's turn, the control that opens the strip, and the start mode's own row — one seat, the role a conversation is born on (§4.38, §4.39). | ~195 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
-| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection, and the gate — every one of the seven boxes that take text, named (§4.23). | ~265 |
+| `src/ui/keys.rs` | the keyboard: which list the arrows belong to, the walk that is the selection — over two kinds of row since the roster became an accordion (§4.39) — and the one binding that is not a walk, Enter on the engine row the cursor stands on. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~255 |
+| `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: the two shapes a window takes, each column's heading, the narrow shape's navigation bar, and the notice that stands where content would have been. | ~210 |
 | `src/ui/shell/policy.rs` | **the width policy**: the yield the list panes give the conversation, the two shapes and where they meet, and the three columns a window is made of. A pure function of one number, so what the window does as it narrows is a value a test reads back. | ~180 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
@@ -4478,7 +4497,7 @@ and the rows are folded under an accordion that already exists.
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
 | `src/snapshot/worlds/covered.rs` | the covered states, one world per pane that stands over the conversation, each answered because an unanswered pane offers no control at all and `PARITY.md` §5 reads unproven as red. `cfg(test)`. | ~175 |
-| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
+| `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one engine open and another closed, which a one-engine seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |

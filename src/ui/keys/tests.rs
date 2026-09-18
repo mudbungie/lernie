@@ -72,27 +72,41 @@ fn the_pane_the_arrows_belong_to_is_marked_on_the_glass() {
     );
 }
 
-/// **Moving in a list selects**, so the cursor and the selection are one thing
-/// and there is nothing to keep in step — the highlight the pointer paints is
-/// where the keyboard is.
+/// **The roster's walk crosses two kinds of row** (DESIGN §4.39): landing on
+/// a wall aims it, exactly as a click does, and landing on an engine's row
+/// only STANDS there — a walk that opened every engine it moved through would
+/// be a walk nobody could use to reach the one below.
 #[test]
-fn the_arrows_walk_the_roster_and_the_walk_is_the_aim() {
+fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
     let mut model = Model {
         aim: None,
         ..stocked()
     };
     typed(&mut model, &[egui::Key::ArrowDown]);
     assert_eq!(
+        model.standing.as_deref(),
+        Some("(this box's own engine)"),
+        "a list nobody has entered opens at its first row, which is an engine"
+    );
+    assert_eq!(model.aim, None, "and standing there selects nothing");
+    typed(&mut model, &[egui::Key::ArrowDown]);
+    assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
         Some("home".to_owned()),
-        "a list nobody has entered opens at its first row"
+        "the open engine's wall is the next stop, and landing on it aims it"
+    );
+    assert_eq!(model.standing, None, "an aim is where the cursor is");
+    typed(&mut model, &[egui::Key::ArrowDown]);
+    assert_eq!(
+        model.standing.as_deref(),
+        Some("elsewhere"),
+        "and the closed engine's own row is next, never its walls"
     );
     typed(&mut model, &[egui::Key::ArrowDown]);
-    let aim = model.aim.as_ref().expect("an aim");
     assert_eq!(
-        (aim.channel.as_str(), aim.address.as_str()),
-        ("elsewhere", "elsewhere"),
-        "the walk crosses channels in the order the pane paints them"
+        model.standing.as_deref(),
+        Some("elsewhere"),
+        "the end saturates rather than wrapping"
     );
     typed(&mut model, &[egui::Key::ArrowUp]);
     assert_eq!(
@@ -101,30 +115,30 @@ fn the_arrows_walk_the_roster_and_the_walk_is_the_aim() {
     );
 }
 
-/// **A key walks only rows a click can reach.** A wall this seat holds no name
-/// for is addressed by no envelope it can write, so the pointer offers it as a
-/// plain line and the keyboard skips it — one question, asked once, by both.
+/// **Enter opens the engine the walk is standing on**, through the same door
+/// the row's own click calls — which is what keeps the binding from being a
+/// second surface. It is a second keypress and not the walk's own act, because
+/// the walk has to be able to pass a closed engine without opening it.
 #[test]
-fn the_walk_skips_every_row_no_gesture_could_address() {
-    let model = stocked();
-    let track = roster::aimable(&model);
-    assert_eq!(
-        track
-            .iter()
-            .map(|aim| aim.address.clone())
-            .collect::<Vec<String>>(),
-        vec!["home".to_owned(), "elsewhere".to_owned()],
-        "the second channel's unreachable wall is on neither surface"
+fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
+    let mut model = Model {
+        aim: None,
+        ..stocked()
+    };
+    typed(
+        &mut model,
+        &[
+            egui::Key::ArrowDown,
+            egui::Key::ArrowDown,
+            egui::Key::ArrowDown,
+            egui::Key::Enter,
+        ],
     );
-    // Down twice lands on the last addressable row and stays there rather than
-    // stepping onto the row nothing can address.
-    let mut walked = Model { aim: None, ..model };
-    for _ in 0..3 {
-        typed(&mut walked, &[egui::Key::ArrowDown]);
-    }
+    assert_eq!(model.engines.open.as_deref(), Some("elsewhere"));
     assert_eq!(
-        walked.aim.as_ref().map(|aim| aim.address.clone()),
-        Some("elsewhere".to_owned())
+        model.aim.as_ref().map(|aim| aim.address.clone()),
+        Some("elsewhere".to_owned()),
+        "opening aims the engine's first addressable wall"
     );
 }
 
@@ -212,8 +226,8 @@ fn a_cursor_saturates_and_an_empty_list_has_nowhere_to_go() {
 fn a_fresh_window_opens_with_the_roster_holding_the_arrows() {
     assert_eq!(Model::default().focus, Pane::Roster);
     assert_eq!(
-        roster::aimable(&Model::default()),
-        Vec::<crate::ui::Aim>::new(),
+        roster::track(&Model::default()),
+        Vec::new(),
         "a box that has been asked nothing offers no row to walk"
     );
 }

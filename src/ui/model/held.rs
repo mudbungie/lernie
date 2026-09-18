@@ -7,8 +7,9 @@
 //! every rule for changing it is a pure function a test reads back as a value.
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Enrolling, Fill, Fleet, Forking,
-    Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Engines, Enrolling, Fill, Fleet,
+    Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start, Trail, Tuning,
+    Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -185,6 +186,22 @@ pub struct Model {
     pub notice: Option<Notice>,
     /// Which wall the window is aimed at.
     pub aim: Option<Aim>,
+    /// **How the engines are arranged** (DESIGN §4.39, `engines`): which one
+    /// is open, when each was last opened here, and the wall last aimed under
+    /// each. One field rather than three, because the three are one subject
+    /// and they are written down together ([`crate::place`]).
+    pub engines: Engines,
+    /// **Which engine row the roster's walk is standing on**, or `None` where
+    /// the cursor is on a wall.
+    ///
+    /// It is the one place in this window where the cursor is NOT the
+    /// selection, and DESIGN §4.39 says why: opening an engine is an act, so a
+    /// walk that moved through a closed engine would open every engine it
+    /// passed. So the walk stands on the row, the row takes the keyboard, and
+    /// Enter or Space fires the same click a pointer fires. It rides here
+    /// beside [`Self::focus`] and not on `Engines`, because it is a cursor and
+    /// nothing durable.
+    pub standing: Option<String>,
     /// **Which list the arrow keys belong to**, and the one thing the keyboard
     /// holds that the pointer does not need: a click names its own row, and a
     /// key has to be told which list it is in ([`crate::ui::keys`]).

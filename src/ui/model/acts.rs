@@ -42,6 +42,18 @@ impl Model {
             channel: channel.to_owned(),
             address: address.to_owned(),
         });
+        // **The engine remembers the wall it was left on** (DESIGN §4.39), so
+        // an engine an operator comes back to is the engine they left. It is
+        // recorded here rather than by each surface that aims, for this
+        // module's own reason: two spellings of *what aiming means* would
+        // drift, and the one that drifted would be the one nobody points at.
+        self.engines
+            .aimed
+            .insert(channel.to_owned(), address.to_owned());
+        // **And the roster's cursor is a wall again.** The walk stands on an
+        // engine row without selecting it; an aim is a selection, so the two
+        // cannot both be where the operator is.
+        self.standing = None;
         self.convs.clear();
         self.answered = None;
         self.conversation = None;

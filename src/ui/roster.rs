@@ -1,24 +1,33 @@
-//! **The roster**: every workspace this seat can reach, grouped by the channel
-//! it came down.
+//! **The roster**: the engines this seat reaches, as an accordion, with the
+//! open one's workspaces under it (DESIGN §4.39).
 //!
 //! The grouping is the point. A seat holds one channel per workspace it
 //! participates in elsewhere plus this box's own engine (§8.2), and those are
 //! separate trust relationships that share nothing — not anchors, not leaves,
 //! not addresses. Painting them as one flat list would say they are one thing.
 //!
+//! **At most one engine is open**, and it is painted first; the rest follow in
+//! the order each was last opened on this seat, most recent first, the name
+//! breaking a tie (`crate::ui::model::Engines`). A closed engine paints its
+//! row and whatever it has to say about itself, and no walls. Opening one
+//! closes the other, so the arrangement is one fact and not a set of flags.
+//!
 //! **A row carries the channel it came from as a client-side stamp** and no
 //! origin ever crosses the wire; the stamp is applied where the answer is
 //! absorbed ([`crate::ui::Model::absorb`]) and read here.
 
 use crate::reply::roster::WsRow;
-use crate::ui::{Aim, Channel, Chunk, Model, theme};
+use crate::ui::{Channel, Chunk, Model, theme};
 
 /// The four ops whose subject is every channel, and the strip they hang on.
 pub mod acts;
+/// One engine's row, the order the rows stand in, and the pane's cursor track.
+pub mod engine;
 /// One wall's row, and the five per-wall controls that hang off the aimed one.
 pub mod wall;
 
 pub use acts::REFRESH;
+pub use engine::{Step, track};
 pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
 
 /// **What a section says while nothing has come down its channel yet.**
@@ -37,30 +46,15 @@ pub const NO_WALLS: &str =
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused. **It is painted by `crate::ui::shell`** — above the pane in the
 /// broad shape, on the navigation bar in the narrow one (bl-dfda) — because a
-/// column's name has one home and which one it is depends on the shape.
-pub const HEADING: &str = "channels";
-
-/// **Every wall this seat can aim at, in the order the pane paints them.**
+/// column's name has one home and which one it is depends on the shape, and
+/// the narrow bar's word follows this one for free.
 ///
-/// It is the keyboard's cursor track and it is a **query**, derived from the
-/// same rows and the same order [`render`] draws — so a key cannot walk onto a
-/// row a click cannot reach, and cannot walk in an order the glass does not
-/// show. A row this seat holds no name for is in neither: no envelope can
-/// address it, so neither surface offers it.
-pub fn aimable(model: &Model) -> Vec<Aim> {
-    let mut rows = Vec::new();
-    for chunk in &model.roster {
-        for row in ordered(&chunk.walls) {
-            if let Some(address) = chunk.channel.address(&row) {
-                rows.push(Aim {
-                    channel: chunk.channel.name.clone(),
-                    address,
-                });
-            }
-        }
-    }
-    rows
-}
+/// **The word is *engines*, and the crate's word stays *channel*** (§4.39).
+/// A channel is what this crate calls the client-side entry that reaches one
+/// engine (§4.6), which is the right word for a thing in `wire/workspaces/`
+/// and the wrong one over a list an operator reads: what they are looking at
+/// is yogs, each by the name this box gave it.
+pub const HEADING: &str = "engines";
 
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
@@ -81,20 +75,29 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            for chunk in model.roster.clone() {
-                section(ui, model, &chunk, reveal);
+            let open = model.engine_open();
+            for chunk in model.engine_rows() {
+                let showing = open.as_deref() == Some(chunk.channel.name.as_str());
+                section(ui, model, &chunk, showing, reveal);
             }
         });
 }
 
-/// One channel's section: its header, how current its answer is, and its walls.
-fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
+/// One engine's section: its row, what it has to say about itself, and — while
+/// it is the open one — its walls.
+///
+/// **What it says about itself is painted open or closed** (bl-e620): the bar
+/// holds one sentence and the last writer wins, so a seat with two unreachable
+/// engines could discover only one of them from the glass. A channel that
+/// cannot be dialled says so under its own row whether or not anybody has
+/// opened it. What the accordion folds away is the WALLS.
+fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reveal: bool) {
     // **Air and a weak word, never a line** (`docs/STYLE.md` §1, rule 2): the
     // separator that used to stand here was a stroke, and the one stroke this
     // window spends is the brand ring on the field holding the caret. What
-    // divides two channels is the space between them.
+    // divides two engines is the space between them.
     ui.add_space(theme::space::S);
-    ui.colored_label(theme::INK_WEAK, header(&chunk.channel));
+    engine::render(ui, model, chunk, open, reveal);
     // **A channel that cannot be reached says so HERE**, under its own header
     // and beside whatever it last answered — never in the shell-wide bar, which
     // is for what an engine said about a gesture (bl-e620). It stands above the
@@ -112,6 +115,9 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, reveal: bool) {
         .flatten()
     {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), note);
+    }
+    if !open {
+        return;
     }
     if chunk.walls.is_empty() {
         // **An empty section says which emptiness it is** (bl-08b6). The pane

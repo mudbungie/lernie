@@ -58,7 +58,15 @@
 //! box that takes text wears an id, [`BOXES`] is the whole list of them, and
 //! the gate compares against it.
 
-use crate::ui::{Aim, Model};
+use crate::ui::{Model, roster};
+
+/// Every box on the glass that takes text, and the gate that reads them.
+mod boxes;
+
+pub use boxes::{
+    ARM_ID, BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, NOTE_ID, PROJECT_ID,
+    REASON_ID, SUMMARY_ID, TITLE_ID, WORKFLOW_ID,
+};
 
 /// Which list the arrows belong to. Two, because two of the four panes hold a
 /// list; the chat pane scrolls and the composer takes text, and both are
@@ -71,81 +79,6 @@ pub enum Pane {
     Roster,
     /// The aimed wall's conversations.
     Conversations,
-}
-
-/// **The id the composer's box wears**, and the whole of what the keyboard has
-/// to know about it. The deposit's box and the start's are one control with two
-/// subjects and are never painted together, so they wear one id — and the gate
-/// below is a comparison rather than a guess about what "focused" means.
-pub const BOX_ID: &str = "the composer's box";
-
-/// **The id the flag's reason box wears** (`crate::ui::composer::acts::WHY`).
-pub const REASON_ID: &str = "the flag's reason box";
-
-/// **The id the deletion's arming box wears**
-/// (`crate::ui::composer::acts::ARM`).
-pub const ARM_ID: &str = "the deletion's arming box";
-
-/// **The id the config editor's box wears** (`crate::ui::config::edit`).
-pub const CONFIG_ID: &str = "the config editor's box";
-
-/// **The id the workflow name box wears** (`crate::ui::config`).
-pub const WORKFLOW_ID: &str = "the workflow name box";
-
-/// **The id the fan's goal box wears** (`crate::ui::fleet::candidates`).
-pub const FAN_GOAL_ID: &str = "the fan's goal box";
-
-/// **The id the delivery subject's box wears** (`crate::ui::fleet::candidates`).
-pub const SUMMARY_ID: &str = "the delivery subject's box";
-
-/// **The five the ball pane's authoring block wears** (bl-f7ae,
-/// `crate::ui::board::acts`) — the project a new ball is filed in, its title
-/// and body, the journal note an amendment appends, and the id typed back that
-/// arms a delivery.
-///
-/// Five ids for one block because the gate is a comparison against a FOCUSED
-/// id: two boxes sharing one would be one box as far as the keyboard is
-/// concerned, and an arrow taken from inside the second would walk the roster
-/// under a half-typed title.
-pub const PROJECT_ID: &str = "the new ball's project box";
-pub const TITLE_ID: &str = "the ball's title box";
-pub const BODY_ID: &str = "the ball's body box";
-pub const NOTE_ID: &str = "the ball's journal box";
-pub const DELIVER_ID: &str = "the delivery's arming box";
-
-/// **Every box on the glass that takes text, so the gate can name them all**
-/// (bl-dbc9).
-///
-/// It was one id, and one was enough while the only way into the other two was
-/// Tab — a hazard, but one an operator walked into deliberately. A conversation
-/// row's menu now LANDS the cursor in the reason box and in the arming box
-/// (`crate::ui::model::fill`), and an arrow taken from inside either would have
-/// walked the conversation list under a half-typed reason and flagged the row
-/// it landed on. The gate is still a comparison rather than
-/// `wants_keyboard_input` — which answers *is anything focused*, buttons
-/// included — and this is the whole list of what it compares against. A fourth
-/// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 12] = [
-    BOX_ID,
-    REASON_ID,
-    ARM_ID,
-    CONFIG_ID,
-    WORKFLOW_ID,
-    FAN_GOAL_ID,
-    SUMMARY_ID,
-    PROJECT_ID,
-    TITLE_ID,
-    BODY_ID,
-    NOTE_ID,
-    DELIVER_ID,
-];
-
-/// Whether a box that takes text holds the keyboard right now.
-fn typing(ctx: &egui::Context) -> bool {
-    let focused = ctx.memory(egui::Memory::focused);
-    BOXES
-        .iter()
-        .any(|name| focused == Some(egui::Id::new(*name)))
 }
 
 /// The mark a focused pane's heading wears — and the heading is where it goes
@@ -165,7 +98,7 @@ pub fn heading(word: &str, focused: bool) -> String {
 /// **Take this frame's keys.** Called at the top of the frame, so what a key
 /// changed is what the frame paints.
 pub fn handle(ctx: &egui::Context, model: &mut Model) {
-    if typing(ctx) {
+    if boxes::typing(ctx) {
         return;
     }
     let pressed = |key| ctx.input(|i| i.key_pressed(key));
@@ -219,6 +152,21 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
             walk(model, step);
         }
     }
+    // **Enter or Space opens the engine the roster's walk is standing on**
+    // (DESIGN §4.39) — the one binding this module has that is not a walk, and
+    // it exists because the cursor on an engine row is deliberately NOT the
+    // selection: the walk has to be able to pass a closed engine without
+    // opening it, so opening is a second keypress.
+    //
+    // It names a control rather than adding one: [`Model::open_engine`] is the
+    // door `crate::ui::roster::engine`'s own click calls. The gate is the
+    // cursor itself — nothing stands on an engine row unless a walk or a Tab
+    // put it there, and both are the roster's.
+    let opening = pressed(egui::Key::Enter) || pressed(egui::Key::Space);
+    let standing = model.standing.clone();
+    if let Some(name) = standing.filter(|_| opening && model.focus == Pane::Roster) {
+        model.open_engine(&name);
+    }
 }
 
 /// **Sideways**: the place a left or right key names, in the shape the window
@@ -241,17 +189,32 @@ fn sideways(model: &mut Model, narrow: bool, step: isize) {
 /// **The walk is the surface that can leave the glass behind.** A list longer
 /// than its pane scrolls ([`crate::ui::shell`]), and a key that moved the
 /// selection past the fold without moving the fold would put the two surfaces
-/// back into the disagreement `crate::ui::roster::aimable` exists to prevent —
+/// back into the disagreement `crate::ui::roster::track` exists to prevent —
 /// the cursor IS the selection, so the selection has to be somewhere an
 /// operator can see it.
+///
+/// **The roster's track crosses two kinds of row** since the pane became an
+/// accordion (DESIGN §4.39): landing on a wall aims it, exactly as a click
+/// does, and landing on an engine's row only STANDS there — the row takes the
+/// keyboard, and Enter or Space fires the same click a pointer fires, because
+/// a walk that opened every engine it moved through would be a walk nobody
+/// could use to reach the one below. There is no binding for it here: opening
+/// is the row's own control.
 fn walk(model: &mut Model, step: isize) {
     match model.focus {
         Pane::Roster => {
-            let rows: Vec<Aim> = crate::ui::roster::aimable(model);
-            let at = rows.iter().position(|row| model.aim.as_ref() == Some(row));
-            if let Some(row) = moved(rows.len(), at, step).and_then(|i| rows.get(i)) {
-                model.aim_at(&row.channel.clone(), &row.address.clone());
-                model.reveal = true;
+            let rows = roster::track(model);
+            let at = rows.iter().position(|row| row.holding(model));
+            match moved(rows.len(), at, step).and_then(|i| rows.get(i).cloned()) {
+                Some(roster::Step::Engine(name)) => {
+                    model.standing = Some(name);
+                    model.reveal = true;
+                }
+                Some(roster::Step::Wall(aim)) => {
+                    model.aim_at(&aim.channel, &aim.address);
+                    model.reveal = true;
+                }
+                None => {}
             }
         }
         Pane::Conversations => {

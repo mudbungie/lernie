@@ -23,6 +23,14 @@
 //! assertion is, and it is the same bound whether the seat has one such pane or
 //! seven.
 //!
+//! **The accordion moved nothing here** (bl-cff1, DESIGN §4.39). The walk's
+//! counts were re-read against it and stand: all eleven controls hang off the
+//! roster's own acts strip or off the aimed wall's band, the aimed wall is
+//! always under the OPEN engine, and a seat is never open over nothing — so
+//! every control the walk spends is on the glass for the same two gestures it
+//! always was. An engine row is not a leg: it opens a section of the one list
+//! rather than a pane to come back from.
+//!
 //! **And the bound is a fact about the SHAPE, so it is asked per shape**
 //! (bl-dfda). The narrow layout puts one column on the glass at a time, which
 //! is the very thing that makes a pane's control unreachable when a window

@@ -1,9 +1,9 @@
 //! The place: the round trip, every way a file can fail to be one, and the
 //! growth rule.
 
-use super::{at, read, write};
+use super::{Place, at, read, write};
 use crate::test_support::Scratch;
-use crate::ui::Aim;
+use crate::ui::{Aim, Engines};
 
 /// The wall a window was aimed at.
 fn aimed() -> Aim {
@@ -13,16 +13,46 @@ fn aimed() -> Aim {
     }
 }
 
+/// A place aimed at that wall and nothing else remembered.
+fn pointed() -> Place {
+    Place {
+        aim: Some(aimed()),
+        engines: Engines::default(),
+    }
+}
+
 /// **The round trip, both ways round.** Aimed at nothing is a place too — an
 /// operator who left the roster comes back to it — so a run that wrote no aim
 /// reads back as no aim rather than as the last one.
 #[test]
 fn where_the_window_was_pointed_comes_back_and_so_does_nowhere() {
     let scratch = Scratch::new();
-    write(scratch.path(), Some(aimed())).expect("written");
-    assert_eq!(read(scratch.path()), Some(aimed()));
-    write(scratch.path(), None).expect("written");
-    assert_eq!(read(scratch.path()), None);
+    write(scratch.path(), &pointed()).expect("written");
+    assert_eq!(read(scratch.path()), pointed());
+    write(scratch.path(), &Place::default()).expect("written");
+    assert_eq!(read(scratch.path()), Place::default());
+}
+
+/// **The accordion round-trips with the aim** (DESIGN §4.39): which engine is
+/// open, what each engine's last opening ranks as, and the wall last aimed
+/// under each — so a seat comes back to the arrangement it was left in.
+#[test]
+fn the_accordion_comes_back_with_the_aim() {
+    let scratch = Scratch::new();
+    let arranged = Place {
+        aim: Some(aimed()),
+        engines: Engines {
+            open: Some("lab".to_owned()),
+            opened: [("lab".to_owned(), 7), ("home".to_owned(), 3)]
+                .into_iter()
+                .collect(),
+            aimed: [("lab".to_owned(), "bench".to_owned())]
+                .into_iter()
+                .collect(),
+        },
+    };
+    write(scratch.path(), &arranged).expect("written");
+    assert_eq!(read(scratch.path()), arranged);
 }
 
 /// **The root is made, not required.** A first run has no state directory at
@@ -32,8 +62,8 @@ fn where_the_window_was_pointed_comes_back_and_so_does_nowhere() {
 fn a_state_root_that_is_not_there_yet_is_made() {
     let scratch = Scratch::new();
     let root = scratch.join("never/made/before");
-    write(&root, Some(aimed())).expect("written");
-    assert_eq!(read(&root), Some(aimed()));
+    write(&root, &pointed()).expect("written");
+    assert_eq!(read(&root), pointed());
 }
 
 /// **Every way this can fail is one answer, and it is the answer a first run
@@ -42,7 +72,7 @@ fn a_state_root_that_is_not_there_yet_is_made() {
 #[test]
 fn nothing_a_file_can_be_wrong_about_refuses() {
     let scratch = Scratch::new();
-    assert_eq!(read(scratch.path()), None, "no file at all");
+    assert_eq!(read(scratch.path()), Place::default(), "no file at all");
     for body in [
         "",
         "not json",
@@ -53,17 +83,43 @@ fn nothing_a_file_can_be_wrong_about_refuses() {
         r#"{"aim": {"channel": "own"}}"#,
         r#"{"aim": {"address": "home"}}"#,
         r#"{"aim": {"channel": 7, "address": "home"}}"#,
+        r#"{"open": 7, "opened": [], "aimed": "lab"}"#,
     ] {
         std::fs::write(at(scratch.path()), body).expect("write");
-        assert_eq!(read(scratch.path()), None, "{body}");
+        assert_eq!(read(scratch.path()), Place::default(), "{body}");
     }
+}
+
+/// **A table drops the row it cannot read and keeps the rest** — rung 3 per
+/// row rather than per key, so one entry a newer build wrote costs one entry
+/// and never the arrangement.
+#[test]
+fn a_row_this_build_cannot_read_costs_one_row_and_not_the_table() {
+    let scratch = Scratch::new();
+    std::fs::write(
+        at(scratch.path()),
+        r#"{"opened": {"lab": 7, "home": "whenever"},
+            "aimed": {"lab": "bench", "home": 3}}"#,
+    )
+    .expect("write");
+    let held = read(scratch.path());
+    assert_eq!(
+        held.engines.opened,
+        [("lab".to_owned(), 7)].into_iter().collect()
+    );
+    assert_eq!(
+        held.engines.aimed,
+        [("lab".to_owned(), "bench".to_owned())]
+            .into_iter()
+            .collect()
+    );
 }
 
 /// **A key this build does not know is ignored and one it wants is absence** —
 /// the reply vocabulary's own rungs 3 and 4, applied to this box's own file. It
-/// is what lets the next fact REMOTE §7 names be a key beside this one rather
-/// than a format, and what lets an older build read a newer build's file
-/// without losing the half it does understand.
+/// is what lets the next fact REMOTE §7 names be a key beside these rather than
+/// a format, and what lets an older build read a newer build's file without
+/// losing the half it does understand.
 #[test]
 fn an_unknown_key_is_ignored_so_the_next_fact_is_a_key_and_not_a_format() {
     let scratch = Scratch::new();
@@ -73,7 +129,18 @@ fn an_unknown_key_is_ignored_so_the_next_fact_is_a_key_and_not_a_format() {
                     "scrolled_to": 42}, "draft": "not read yet"}"#,
     )
     .expect("write");
-    assert_eq!(read(scratch.path()), Some(aimed()));
+    assert_eq!(read(scratch.path()), pointed());
+}
+
+/// **The place a model IS**, as a projection: the aim and the accordion are the
+/// model's own fields, so there is nothing to keep in step.
+#[test]
+fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
+    let mut model = crate::test_support::window::seated();
+    model.engines.open = Some("(this box's own engine)".to_owned());
+    let held = Place::of(&model);
+    assert_eq!(held.aim, model.aim);
+    assert_eq!(held.engines, model.engines);
 }
 
 /// **A write answers its refusal rather than swallowing it**: by the time it
@@ -84,6 +151,6 @@ fn a_root_that_cannot_be_made_says_so_and_names_itself() {
     let scratch = Scratch::new();
     let blocked = scratch.join("a-file");
     std::fs::write(&blocked, b"not a directory").expect("write");
-    let refusal = write(&blocked.join("under"), None).expect_err("refused");
+    let refusal = write(&blocked.join("under"), &Place::default()).expect_err("refused");
     assert!(refusal.contains("under"), "{refusal}");
 }

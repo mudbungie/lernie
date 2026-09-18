@@ -120,9 +120,11 @@ fn window(root: &std::path::Path) -> Verdict {
     // process cannot name costs a forgotten selection and nothing else, so it
     // is folded to nothing rather than refused.
     let keep = lernie::paths::state_root().ok();
+    let place = keep.as_deref().map(lernie::place::read).unwrap_or_default();
     let mut model = Model {
         roster: lernie::seat::channels(root),
-        aim: keep.as_deref().and_then(lernie::place::read),
+        aim: place.aim,
+        engines: place.engines,
         ..Model::default()
     };
     let link = Link::new(BEAT);
@@ -168,7 +170,7 @@ fn window(root: &std::path::Path) -> Verdict {
     // own — and writing it here, once, is what keeps it off the frame.
     if let Some(said) = keep
         .as_deref()
-        .and_then(|at| lernie::place::write(at, link.standing().aim).err())
+        .and_then(|at| lernie::place::write(at, &link.place()).err())
     {
         eprintln!("the seat could not keep its place: {said}");
     }

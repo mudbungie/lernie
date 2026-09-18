@@ -27,7 +27,7 @@ fn one_frame_paints_the_roster_the_list_the_conversation_and_the_composer() {
     let mut model = seated();
     let shown = painted(&mut model);
     for expected in [
-        "channels",
+        crate::ui::roster::HEADING,
         "(this box's own engine)",
         "home  (named)  2 conversations",
         "conversations",
@@ -111,7 +111,7 @@ fn a_narrow_window_paints_the_conversation_at_its_floor() {
 /// row along** (bl-e5d2). The overflow used to be cut at the panel edge
 /// mid-glyph, with nothing saying it had been cut — while the arrow walk moved
 /// the selection onto rows the glass had never painted, which is exactly the
-/// disagreement `crate::ui::roster::aimable` exists to prevent.
+/// disagreement `crate::ui::roster::track` exists to prevent.
 #[test]
 fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
     let mut model = Model {
@@ -133,7 +133,9 @@ fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
         !first.iter().any(|run| run.text.starts_with(last)),
         "the fold is real, or this test proves nothing"
     );
-    for _ in 0..24 {
+    // Twenty-five, because the engine's own row is the walk's first stop and
+    // its walls follow it (DESIGN §4.39).
+    for _ in 0..25 {
         window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
             render(ctx, &mut model);
         });
@@ -173,7 +175,9 @@ fn the_conversation_list_scrolls_and_a_walk_puts_its_row_on_the_glass() {
             .any(|run| run.text == last),
         "the fold is real, or this test proves nothing"
     );
-    for _ in 0..24 {
+    // Twenty-five, because the engine's own row is the walk's first stop and
+    // its walls follow it (DESIGN §4.39).
+    for _ in 0..25 {
         window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
             render(ctx, &mut model);
         });

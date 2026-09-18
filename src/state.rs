@@ -42,6 +42,7 @@ struct Shared {
     heard: Vec<Heard>,
     outbox: Vec<Posted>,
     standing: Standing,
+    place: crate::place::Place,
     stopped: bool,
 }
 
@@ -105,6 +106,12 @@ impl Link {
         }
         shared.outbox.append(&mut model.outbox);
         shared.standing = Standing::of(model);
+        // **And the seat's own place, on the standing set's own terms**
+        // (DESIGN §4.13): a projection of the frame's model, published where
+        // the question set already is, so the entry point can write it down
+        // once the event loop has returned without a thread or a write of its
+        // own. Nothing reads it until then.
+        shared.place = crate::place::Place::of(model);
     }
 
     /// A worker's report.
@@ -119,13 +126,11 @@ impl Link {
     /// about. Already read, because a follow frame is an append and only the
     /// lane knows which read it belongs to (REMOTE §5.5).
     pub fn live(&self, channel: &Channel, conversation: &str, read: crate::reply::Read) {
-        self.heard(
-            channel,
-            Said::Live {
-                conversation: conversation.to_owned(),
-                read,
-            },
-        );
+        let said = Said::Live {
+            conversation: conversation.to_owned(),
+            read,
+        };
+        self.heard(channel, said);
     }
 
     /// One sign-in lane's fold so far, stamped with the provider row it is
@@ -142,6 +147,12 @@ impl Link {
     /// What to ask, as of the last frame.
     pub fn standing(&self) -> Standing {
         self.hold().standing.clone()
+    }
+
+    /// **Where the seat was pointed and how it was arranged**, as of the last
+    /// frame — what `src/main.rs` writes down after the window closes.
+    pub fn place(&self) -> crate::place::Place {
+        self.hold().place.clone()
     }
 
     /// Everything the frame composed since the last drain.

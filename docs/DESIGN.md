@@ -4502,8 +4502,14 @@ first landed predated all four and carried every defect they fixed:
 
 Defaults α 8, K 8, a 1 s deadline per query (`Config::deadline`, formerly a
 2 s `round`) and 64 queries; the bootstrap is the engine's four mainline
-hosts. The engine's vote on BEP 42's `ip` is not ported — a seat never
-publishes where it is seen from. What yog measured after all four: lookup
+hosts. **The engine's vote on BEP 42's `ip` is ported** (bl-53be, from yog
+bl-efae): a reply's `ip` — six bytes or eighteen, anything else is no claim —
+is one node's word on where it saw the query come from, the walk keeps one
+per answering node (the door's included), and `Dht::observed` answers per
+family the endpoint named more often than any other, nothing on a tie, and
+nothing after a dark walk. A seat publishes no presence, but its call is an
+endpoint list too, and on a hotspot or a carrier NAT the observed address is
+the only one the engine can reach (yog's `docs/REMOTE.md` §13.8). What yog measured after all four: lookup
 10/10 at a median of ~6.5 s, `put` 10/10 and `get` 9/10 at ~7.5 s.
 
 **A dial climbs a ladder, cheapest rung first** (`src/channel/ladder.rs`),
@@ -4519,8 +4525,10 @@ and nothing above `Channel::dial` knows which rung answered:
    found, with no DHT round trip.
 4. **The full rendezvous** — `get` presence under `(engine key, presence
    salt)`, open it, `put` a sealed call under the derived inbox keypair
-   naming this box's route-local addresses at its punch port with a fresh
-   nonce and a rising sequence, then punch. **The DHT is touched here and
+   naming this box's route-local addresses, then every address the `get`
+   walk observed that is not one of them — all at its punch port, never the
+   observed port, which is the DHT socket's UDP mapping (yog's
+   `docs/REMOTE.md` §13.2) — with a fresh nonce and a rising sequence, then punch. **The DHT is touched here and
    nowhere else**: a seat pays nothing for the machinery when idle, and only
    the engine polls.
 
@@ -4577,9 +4585,10 @@ it.
 **What this leaves for the engine, and for a later ball.** The engine's
 `wire-certs` does not yet lay `rendezvous.pub` beside a client leaf — the
 public key of its `rendezvous.key` — so an operator derives it by hand until
-it does (named to yog on bl-653a). Presence and the call both carry
-*route-local* addresses at the punch port; the observed endpoint a carrier
-mints (§13.8) is yog's bl-efae on both ends, and the enrollment envelope
+it does (named to yog on bl-653a). The call carries the observed ADDRESS
+beside the route-local ones and trusts port preservation; a carrier that
+rewrites the port (yog's `docs/REMOTE.md` §13.8) is the case it does not
+reach, and stays open. The enrollment envelope
 (§4.15) carries no rendezvous material until the engine's reply does. The
 cadence defaults — a five-second direct bound, a forty-second punch window
 covering the engine's fifteen-second poll and its own twenty-second window —
@@ -4623,14 +4632,14 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
 | `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence, the wall for a BEP 44 sequence (§4.40). | ~50 |
-| `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, re-punch, rendezvous — and the knobs the roving rungs turn (§4.40). | ~200 |
+| `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, re-punch, rendezvous — and the knobs the roving rungs turn; the call names the observed address beside the local ones (§4.40). | ~220 |
 | `src/channel/line.rs` | one line to one engine: what a rung handed back, the ping discard, the liveness check, and what is kept of it between asks (§4.40). | ~150 |
 | `src/channel/rendezvous.rs` | the two files an entry may carry beside `ca.pem`, and the four HKDF derivations both ends must agree on (§4.40). | ~130 |
 | `src/channel/rendezvous/item.rs` | presence and the call: the sealed byte format, mirrored from the engine and pinned to its bytes (§4.40). | ~140 |
 | `src/channel/rendezvous/punch.rs` | the simultaneous open from one port, and the box's route-local addresses (§4.40). | ~190 |
-| `src/dht.rs` | the seat's DHT client root: the walk's parameters, the client, the id it queries as (§4.40). | ~120 |
+| `src/dht.rs` | the seat's DHT client root: the walk's parameters, the client, the id it queries as, and the vote on where the commons sees it (§4.40). | ~150 |
 | `src/dht/bencode.rs` | bencode, canonical out and strict in. | ~180 |
-| `src/dht/krpc.rs` | the KRPC query shape and the two datagrams read back; compact node parsing. | ~135 |
+| `src/dht/krpc.rs` | the KRPC query shape and the two datagrams read back, a reply's BEP 42 `ip` among them; compact address parsing. | ~135 |
 | `src/dht/mutable.rs` | BEP 44's signed mutable item: sign, verify, the target, the exact bytes a signature covers. | ~145 |
 | `src/dht/lookup.rs` | the iterative walk: the bootstrap as a door asked `find_node` and re-asked when dry, the window refilled on every event, bounded twice over against a hostile commons. | ~110 |
 | `src/dht/frontier.rs` | a walk's state — every node heard of, asked, replied — and the frontier read off it: the K closest live nodes, the next to ask, whether any is in the air. | ~120 |
@@ -4638,7 +4647,7 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once. | ~60 |
 | `src/dht/transport.rs` | the datagram seam: one trait, and the std UDP socket that fills it. | ~75 |
 | `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves. `cfg(test)`. | ~215 |
-| `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, compact routing. `cfg(test)`. | ~50 |
+| `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, a BEP 42 claim, compact routing. `cfg(test)`. | ~55 |
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |

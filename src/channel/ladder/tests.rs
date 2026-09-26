@@ -38,12 +38,17 @@ impl Bench {
     /// `address` is what the entry names; `held` is what presence publishes,
     /// if anything.
     fn new(address: SocketAddr, held: Option<Mutable>) -> Bench {
+        Bench::seen(address, held, Mood::Answer)
+    }
+
+    /// As [`Bench::new`], over a node of `mood` — how it says it sees us.
+    fn seen(address: SocketAddr, held: Option<Mutable>, mood: Mood) -> Bench {
         let scratch = Scratch::new();
         mint::material(scratch.path());
         provision(scratch.path());
         std::fs::write(scratch.join(ADDRESS), address.to_string()).unwrap();
         let mut node = FakeNode::bind(NodeId([1u8; 20]));
-        node.serve(vec![], Mood::Answer, held.into_iter().collect());
+        node.serve(vec![], mood, held.into_iter().collect());
         let mut door = FakeNode::bind(NodeId([0u8; 20]));
         door.serve(vec![node.node()], Mood::Router, vec![]);
         Bench {
@@ -229,5 +234,34 @@ fn the_punch_port_is_bound_once_for_the_run() {
     assert_eq!(
         b.call().map(|c| c.endpoints),
         Some(vec![SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port)])
+    );
+}
+
+#[test]
+fn the_call_carries_the_observed_address_at_the_punch_port_once() {
+    let seen = |claim: IpAddr| {
+        let (listener, at) = listener();
+        let b = Bench::seen(
+            dead(),
+            Some(presence(at)),
+            Mood::Claim(SocketAddr::new(claim, 6881)),
+        );
+        let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes()]);
+        assert!(b.channel().ask(&request(1)).is_ok());
+        (b.call().map(|c| c.endpoints), b.punch_port())
+    };
+    let local = |port| SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
+    let far: IpAddr = "203.0.113.7".parse().unwrap();
+    let (endpoints, port) = seen(far);
+    assert_eq!(
+        endpoints,
+        Some(vec![local(port), SocketAddr::new(far, port)]),
+        "the observed address, at the punch port and never the observed one"
+    );
+    let (endpoints, port) = seen(IpAddr::V4(Ipv4Addr::LOCALHOST));
+    assert_eq!(
+        endpoints,
+        Some(vec![local(port)]),
+        "a local address is not said twice"
     );
 }

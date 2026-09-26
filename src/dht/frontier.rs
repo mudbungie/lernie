@@ -38,6 +38,9 @@ pub(crate) struct Walk {
     /// at two addresses is two nodes, and iteration is closest first.
     pool: BTreeMap<([u8; 20], SocketAddr), Node>,
     pub(crate) out: Outcome,
+    /// Where each answering node — the door included — said it saw this
+    /// client (BEP 42), one claim per reply, for `Dht::observed` to vote on.
+    pub(crate) claims: Vec<SocketAddr>,
 }
 
 impl Walk {
@@ -49,6 +52,7 @@ impl Walk {
             replied: BTreeSet::new(),
             pool: BTreeMap::new(),
             out: Outcome::default(),
+            claims: Vec::new(),
         }
     }
 
@@ -89,7 +93,7 @@ impl Walk {
     /// names no id is heard and is nothing.
     pub(crate) fn heard(&mut self, query: Query, message: Message) {
         match message {
-            Message::Reply { r, .. } => {
+            Message::Reply { r, ip, .. } => {
                 let Some(id) = r
                     .get(b"id".as_slice())
                     .and_then(|v| v.as_bytes())
@@ -101,6 +105,7 @@ impl Walk {
                     id,
                     addr: query.addr,
                 };
+                self.claims.extend(ip);
                 let this = (!query.door).then_some(node);
                 for near in krpc::nodes_of(&r).into_iter().chain(this) {
                     self.pool

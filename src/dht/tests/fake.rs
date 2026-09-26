@@ -16,7 +16,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::Duration;
-use wire::{error, reply, routing};
+use wire::{claim, error, reply, routing};
 
 mod wire;
 
@@ -42,6 +42,9 @@ pub(crate) enum Mood {
     Rotor,
     /// Answers everything but `put`: offers a token and never spends it.
     Mute,
+    /// Answers as `Answer`, and says it saw the query come from this
+    /// address (BEP 42's `ip`).
+    Claim(SocketAddr),
 }
 
 pub(crate) struct FakeNode {
@@ -151,6 +154,7 @@ fn run(
             Mood::Anonymous => reply(&tid, Dict::new()),
             Mood::Stray => reply(b"stray", Dict::from([entry("id", bytes(&id.0))])),
             Mood::Answer | Mood::Router | Mood::Mute => answer(&tid, id, peers, &mut items, &q),
+            Mood::Claim(ip) => claim(answer(&tid, id, peers, &mut items, &q), ip),
         };
         socket.send_to(&datagram, from).unwrap();
     }

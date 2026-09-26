@@ -167,8 +167,19 @@ fn rung_rendezvous(ch: &Channel, pairing: &Pairing) -> Result<TcpStream, String>
         return Err("the presence item will not open under this pairing salt".to_owned());
     };
     let punch = punch_for(ch)?;
-    let advertised = ch.roving.advertise.clone().unwrap_or_else(punch::local_ips);
-    let endpoints = advertised
+    // The route-local addresses, then every address the presence walk's
+    // nodes agreed they saw us at that is not one of them (yog bl-efae) —
+    // all at the punch port. The observed PORT is the DHT socket's UDP
+    // mapping, not the punch port's, so only the address is taken (yog's
+    // `docs/REMOTE.md` §13.2; a carrier that rewrites the port, §13.8, is
+    // the case this does not reach).
+    let mut ips = ch.roving.advertise.clone().unwrap_or_else(punch::local_ips);
+    for ip in dht.observed().iter().map(SocketAddr::ip) {
+        if !ips.contains(&ip) {
+            ips.push(ip);
+        }
+    }
+    let endpoints = ips
         .into_iter()
         .map(|ip| SocketAddr::new(ip, punch.port()))
         .collect();

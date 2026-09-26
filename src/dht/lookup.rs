@@ -8,9 +8,10 @@
 //! silent is never asked again and leaves the frontier. Bounded twice over
 //! against a hostile commons: a query ends at its deadline, and the walk at
 //! `max_queries` however many "closer" nodes the answers keep inventing.
-//! This is yog's walk rule for rule (yog bl-f6e1, bl-9408, bl-d00f, bl-d9c1);
-//! the one thing the seat leaves out is the engine's vote on BEP 42's `ip`,
-//! because a seat never publishes where it is seen from.
+//! This is yog's walk rule for rule (yog bl-f6e1, bl-9408, bl-d00f, bl-d9c1),
+//! and like yog's (bl-efae) it keeps every answering node's BEP 42 `ip`
+//! claim for [`Dht::observed`](super::Dht::observed) — the last walk's, so a
+//! dark walk leaves none.
 
 use super::Dht;
 use super::bencode::{Dict, bytes, entry};
@@ -89,6 +90,7 @@ impl Dht {
                 break;
             }
         }
+        self.claims = walk.claims;
         let mut out = walk.out;
         if out.replies.is_empty() && out.errors.is_empty() {
             return Err(format!("no DHT node answered {q} for {target}"));

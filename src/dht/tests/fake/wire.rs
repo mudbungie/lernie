@@ -25,6 +25,13 @@ fn compact(addr: SocketAddr) -> Vec<u8> {
     out
 }
 
+/// `datagram` with an `ip` saying the query came from `addr`.
+pub(super) fn claim(datagram: Vec<u8>, addr: SocketAddr) -> Vec<u8> {
+    let mut d = Value::decode(&datagram).unwrap().as_dict().unwrap().clone();
+    d.insert(b"ip".to_vec(), bytes(&compact(addr)));
+    Value::Dict(d).encode()
+}
+
 pub(super) fn reply(tid: &[u8], r: Dict) -> Vec<u8> {
     Value::Dict(Dict::from([
         entry("t", bytes(tid)),

@@ -16,8 +16,9 @@
 //! The shape the ladder consumes is this module root: hand [`Dht::new`] a
 //! [`Transport`] (the std UDP socket [`Udp`], or a stand-in), the bootstrap
 //! addresses and a [`Config`], then ask [`Dht::get`] for the newest item
-//! under a key and salt, or [`Dht::put`] to store one a [`Keypair`] signed.
-//! Everything the commons answers is untrusted until it verifies: an item
+//! under a key and salt, or [`Dht::put`] to store one a [`Keypair`] signed
+//! — and, after either, [`Dht::observed`] for where the commons saw it come
+//! from (yog bl-efae). Everything the commons answers is untrusted until it verifies: an item
 //! without a good signature under the asked-for key is not an item.
 //!
 //! Four files under this root, one concern each: `bencode` the encoding,
@@ -45,6 +46,7 @@ pub use mutable::{Keypair, Mutable, target_of};
 pub use transport::{Transport, Udp};
 
 use ring::rand::SecureRandom;
+use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::time::Duration;
 
@@ -85,6 +87,10 @@ pub struct Dht {
     config: Config,
     id: NodeId,
     tid: u16,
+    /// What the last walk's answering nodes said this client's address is
+    /// (BEP 42), one claim per node — raw, because [`Dht::observed`] is the
+    /// vote over them and a vote is computed, not kept.
+    claims: Vec<SocketAddr>,
 }
 
 impl Dht {
@@ -102,7 +108,22 @@ impl Dht {
             config,
             id: NodeId(id),
             tid: 0,
+            claims: Vec::new(),
         })
+    }
+
+    /// Where the commons sees this client, per address family, as the last
+    /// walk's answering nodes voted (BEP 42's `ip`): the endpoint the most of
+    /// them named, and nothing for a family whose top count is tied or that
+    /// no node spoke to. One node's claim is only a claim — a single liar
+    /// can outvote nobody. The vote is over the whole endpoint: nodes that
+    /// agree on the address but not the port are seeing a mapping that moves
+    /// per destination, and no one port of it is this client's.
+    pub fn observed(&self) -> Vec<SocketAddr> {
+        [true, false]
+            .into_iter()
+            .filter_map(|v4| plurality(self.claims.iter().copied().filter(|a| a.is_ipv4() == v4)))
+            .collect()
     }
 
     /// The next transaction id: two bytes, wrapping, never reused within a
@@ -111,6 +132,18 @@ impl Dht {
         self.tid = self.tid.wrapping_add(1);
         self.tid.to_be_bytes().to_vec()
     }
+}
+
+/// The one claim named more often than any other, or nothing.
+fn plurality(claims: impl Iterator<Item = SocketAddr>) -> Option<SocketAddr> {
+    let mut counts: BTreeMap<SocketAddr, usize> = BTreeMap::new();
+    for claim in claims {
+        *counts.entry(claim).or_default() += 1;
+    }
+    let top = counts.values().max()?;
+    let mut leaders = counts.iter().filter(|(_, n)| *n == top);
+    let (winner, _) = leaders.next()?;
+    leaders.next().is_none().then_some(*winner)
 }
 
 /// Fill `buf` from the system's randomness.

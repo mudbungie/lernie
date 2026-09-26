@@ -1,7 +1,8 @@
 +++
 title = "the client rendezvous and the four-rung dial ladder: an entry grows the engine's rendezvous public key and the pairing salt, a dial climbs held connection, direct address, re-punch at cached endpoints, full rendezvous over the seat's own DHT client, and a punched connection is held between asks (yog bl-653a; REMOTE §13.2–§13.4)"
 created = 1790392652
-updated = 1790392652
+updated = 1790392653
+claimant = "Urinalyses-Q"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["wire", "rendezvous"]

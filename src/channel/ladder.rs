@@ -47,7 +47,9 @@ pub struct Roving {
     /// The DHT walk's parameters.
     pub dht: Config,
     /// The mainline's bootstrap nodes, resolved at the moment of a rendezvous
-    /// and never before — a name lookup is a network act.
+    /// and never before — a name lookup is a network act. The four yog's
+    /// `mainline()` names: each is a door into the keyspace and never a
+    /// result, and the walk re-asks them whenever its frontier runs dry.
     pub bootstrap: Vec<String>,
     /// The addresses this box advertises in a call, at the punch port; `None`
     /// is the box's own route-local addresses, read when the call is written.
@@ -63,6 +65,8 @@ impl Default for Roving {
             bootstrap: vec![
                 "router.bittorrent.com:6881".to_owned(),
                 "dht.transmissionbt.com:6881".to_owned(),
+                "router.utorrent.com:6881".to_owned(),
+                "dht.aelitis.com:6881".to_owned(),
             ],
             advertise: None,
         }

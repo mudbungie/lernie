@@ -22,13 +22,18 @@
 //!
 //! Four files under this root, one concern each: `bencode` the encoding,
 //! `krpc` the datagram shapes, `mutable` the signed item, `transport` the
-//! socket seam; `lookup` is the walk and `items` the two verbs over it.
+//! socket seam; `lookup` is the walk, `frontier` its state, `flight` the
+//! window of queries in the air, and `items` the two verbs over it. The walk
+//! is yog's as rebuilt on live measurement (yog's `docs/REMOTE.md` §13.7
+//! ruling 3; yog bl-f6e1, bl-9408, bl-d00f, bl-d9c1), rule for rule.
 //! Synchronous throughout — `std::net` with socket timeouts, no tokio — and
 //! every duration is a [`Config`] field a test can shorten, so the fake DHT
 //! the suite runs on loopback UDP answers in milliseconds where the commons
 //! answers in seconds.
 
 pub mod bencode;
+mod flight;
+mod frontier;
 mod items;
 pub mod krpc;
 mod lookup;
@@ -44,15 +49,18 @@ use std::net::SocketAddr;
 use std::time::Duration;
 
 /// The walk's parameters — stated so a test can shrink them and a caller
-/// can widen them; the defaults are BEP 5's.
+/// can widen them. K is BEP 5's; the deadline and α are yog's measurement
+/// (its `docs/REMOTE.md` §13.7 ruling 3): on the live mainline p99 of
+/// answers landed inside 0.9 s, and with ~40% of queried nodes silent a
+/// window of 8 walked in about half the time BEP 5's 3 did, losing no result.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// Queries in flight per round.
+    /// Walk queries in the air at once — the sliding window.
     pub alpha: usize,
     /// How many closest nodes a walk converges on and a `put` writes to.
     pub k: usize,
-    /// How long one round waits for its answers.
-    pub round: Duration,
+    /// How long one query waits for its answer before its slot is refilled.
+    pub deadline: Duration,
     /// The most queries one walk may send, however the commons answers.
     pub max_queries: usize,
 }
@@ -60,9 +68,9 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Config {
         Config {
-            alpha: 3,
+            alpha: 8,
             k: 8,
-            round: Duration::from_secs(2),
+            deadline: Duration::from_secs(1),
             max_queries: 64,
         }
     }

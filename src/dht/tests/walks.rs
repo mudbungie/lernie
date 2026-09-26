@@ -1,5 +1,5 @@
-//! The iterative walk, seen through the one verb that reads: it hops, it is
-//! bounded, and every way a node misbehaves leaves it standing.
+//! The iterative walk: it hops, it converges closest-first, it is bounded,
+//! and every way a node misbehaves leaves it standing.
 
 use super::*;
 
@@ -9,10 +9,22 @@ fn far() -> Mutable {
 }
 
 #[test]
-fn a_walk_hops_toward_the_target_and_finds_what_the_far_node_holds() {
+fn a_walk_hops_toward_the_target_and_answers_closest_first() {
+    let mut nodes = topology();
+    serve(&mut nodes, vec![], vec![]);
+    let mut dht = client(vec![nodes[0].addr], quick());
+    let found = lookup(&mut dht, id(0xff)).unwrap();
+    assert_eq!(
+        found,
+        vec![nodes[3].node(), nodes[2].node(), nodes[1].node()]
+    );
+}
+
+#[test]
+fn a_get_hops_toward_the_target_and_finds_what_the_far_node_holds() {
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![far()]);
-    let mut dht = client(vec![nodes[0].addr], quick());
+    let mut dht = client(vec![nodes[0].addr], Config { k: 8, ..quick() });
     assert_eq!(
         dht.get(keypair().public(), b"s".to_vec()).unwrap(),
         Some(far())
@@ -22,22 +34,28 @@ fn a_walk_hops_toward_the_target_and_finds_what_the_far_node_holds() {
 #[test]
 fn a_walk_stops_at_its_query_cap() {
     let mut nodes = topology();
-    serve(&mut nodes, vec![], vec![far()]);
+    serve(&mut nodes, vec![], vec![]);
     let mut dht = client(
         vec![nodes[0].addr],
         Config {
-            max_queries: 1,
+            max_queries: 3,
             ..quick()
         },
     );
-    assert_eq!(dht.get(keypair().public(), b"s".to_vec()).unwrap(), None);
+    // The bootstrap and two more — `C` and `B`, never a fourth: `D`, two hops
+    // out and learned from `B`, is never asked, because the window counts
+    // every query against the cap as it sends it.
+    assert_eq!(
+        lookup(&mut dht, id(0xff)).unwrap(),
+        vec![nodes[2].node(), nodes[1].node()]
+    );
 }
 
 #[test]
 fn no_bootstrap_is_an_error_before_any_datagram() {
     let mut dht = client(vec![], quick());
     assert_eq!(
-        dht.get(keypair().public(), vec![]).unwrap_err(),
+        lookup(&mut dht, id(1)).unwrap_err(),
         "no bootstrap node to ask"
     );
 }
@@ -47,27 +65,26 @@ fn a_silent_commons_is_an_error() {
     let mut a = FakeNode::bind(id(0));
     a.serve(vec![], Mood::Silent, vec![]);
     let mut dht = client(vec![a.addr], quick());
-    let key = keypair().public();
-    let e = dht.get(key, vec![]).unwrap_err();
+    let e = lookup(&mut dht, id(0xff)).unwrap_err();
     assert_eq!(
         e,
-        format!("no DHT node answered get for {}", target_of(&key, &[]))
+        format!("no DHT node answered find_node for {}", "ff".repeat(20))
     );
 }
 
 #[test]
-fn a_zero_round_never_waits() {
+fn a_zero_deadline_never_waits() {
     let mut a = FakeNode::bind(id(0));
     a.serve(vec![], Mood::Answer, vec![]);
     let mut dht = client(
         vec![a.addr],
         Config {
-            round: Duration::ZERO,
+            deadline: Duration::ZERO,
             ..quick()
         },
     );
     assert!(
-        dht.get(keypair().public(), vec![])
+        lookup(&mut dht, id(0xff))
             .unwrap_err()
             .starts_with("no DHT node answered")
     );
@@ -75,10 +92,11 @@ fn a_zero_round_never_waits() {
 
 #[test]
 fn a_node_that_refuses_is_heard_but_is_no_result() {
-    let mut a = FakeNode::bind(id(0));
+    let mut a = FakeNode::bind(id(1));
     a.serve(vec![], Mood::Refuse, vec![]);
-    let mut dht = client(vec![a.addr], quick());
-    assert_eq!(dht.get(keypair().public(), vec![]).unwrap(), None);
+    let door = router(vec![a.node()]);
+    let mut dht = client(vec![door.addr], quick());
+    assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![]);
 }
 
 #[test]
@@ -90,17 +108,15 @@ fn noise_on_the_socket_is_not_an_answer() {
     let mut stray = FakeNode::bind(id(3));
     stray.serve(vec![], Mood::Stray, vec![]);
     let mut a = FakeNode::bind(id(4));
-    a.serve(vec![], Mood::Answer, vec![far()]);
-    let bootstrap = vec![garbage.addr, anonymous.addr, stray.addr, a.addr];
+    a.serve(vec![], Mood::Answer, vec![]);
+    let noisy = [&garbage, &anonymous, &stray, &a];
+    let door = router(noisy.iter().map(|n| n.node()).collect());
     let mut dht = client(
-        bootstrap,
+        vec![door.addr],
         Config {
             alpha: 4,
             ..quick()
         },
     );
-    assert_eq!(
-        dht.get(keypair().public(), b"s".to_vec()).unwrap(),
-        Some(far())
-    );
+    assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![a.node()]);
 }

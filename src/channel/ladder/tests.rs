@@ -25,10 +25,12 @@ use crate::test_support::roving::{Fate, Reply, Roving as Engine};
 use crate::test_support::{Scratch, mint};
 
 /// A scratch box: the operator's material, the fixture pairing, an address,
-/// and one fake DHT node answering as the commons.
+/// and one fake DHT node answering as the commons behind a bootstrap router
+/// that names it — the router is a door and never holds an item.
 struct Bench {
     scratch: Scratch,
     node: FakeNode,
+    door: FakeNode,
     clock: FakeClock,
 }
 
@@ -42,9 +44,12 @@ impl Bench {
         std::fs::write(scratch.join(ADDRESS), address.to_string()).unwrap();
         let mut node = FakeNode::bind(NodeId([1u8; 20]));
         node.serve(vec![], Mood::Answer, held.into_iter().collect());
+        let mut door = FakeNode::bind(NodeId([0u8; 20]));
+        door.serve(vec![node.node()], Mood::Router, vec![]);
         Bench {
             scratch,
             node,
+            door,
             clock: FakeClock::new(),
         }
     }
@@ -62,7 +67,7 @@ impl Bench {
             direct: Duration::from_millis(300),
             window: Duration::from_secs(3),
             dht: quick(),
-            bootstrap: vec![self.node.addr.to_string()],
+            bootstrap: vec![self.door.addr.to_string()],
             advertise: Some(vec![IpAddr::V4(Ipv4Addr::LOCALHOST)]),
         }
     }

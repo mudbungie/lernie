@@ -4472,6 +4472,40 @@ dialled* true of the rendezvous itself. It links `ring` directly, the
 provider rustls already brought, and nothing new. The bare `find_node` walk
 the engine keeps is not here: the two BEP 44 verbs are all a rendezvous asks.
 
+**The walk is the engine's, rule for rule, as rebuilt on live measurement**
+(bl-e437; yog bl-f6e1, bl-9408, bl-d00f, bl-d9c1 — the four measurement
+tables are yog's `docs/REMOTE.md` §13.7 ruling 3). The copy this section
+first landed predated all four and carried every defect they fixed:
+
+- **The bootstrap is a door, never a result.** The mainline's routers answer
+  `find_node` and never BEP 44's `get`, so a walk that asked them `get` was
+  dark in one round. They are asked `find_node` whatever the verb; every node
+  they open onto is asked the verb; nothing they say is in the outcome, so a
+  walk whose learned nodes were all silent is the dark-commons `Err`, not an
+  empty `Ok`.
+- **The walk converges on a frontier, not on the pool:** the K closest nodes
+  that replied, are not yet asked, or are still in the air. A node silent
+  past its deadline, one that answered only an error (live, a `get` refused
+  as an unknown query), and one this socket cannot send to (a v6 address
+  from a v4 socket — skipped before a query is spent) all leave it, so dead
+  nodes never hold the slots a live one past them needs. A node is one
+  `(id, address)`, so a router naming one node eight times names it once.
+- **The door is re-asked whenever the frontier runs dry** short of K
+  replies, as long as it has named anyone; `max_queries` bounds it, and the
+  door's queries hold no window slot. Measured, the one router that answers
+  names a single random node per query, so its first seeds are both silent
+  about one walk in three and a re-ask draws fresh ones.
+- **A sliding window, not lockstep rounds:** up to α queries in the air, each
+  with its own deadline, the next node asked the moment any answers or times
+  out — a silent node costs its own slot and never delays an answer beside
+  it. `put` spends every holder's token in one flight at once.
+
+Defaults α 8, K 8, a 1 s deadline per query (`Config::deadline`, formerly a
+2 s `round`) and 64 queries; the bootstrap is the engine's four mainline
+hosts. The engine's vote on BEP 42's `ip` is not ported — a seat never
+publishes where it is seen from. What yog measured after all four: lookup
+10/10 at a median of ~6.5 s, `put` 10/10 and `get` 9/10 at ~7.5 s.
+
 **A dial climbs a ladder, cheapest rung first** (`src/channel/ladder.rs`),
 and nothing above `Channel::dial` knows which rung answered:
 
@@ -4598,10 +4632,13 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/dht/bencode.rs` | bencode, canonical out and strict in. | ~180 |
 | `src/dht/krpc.rs` | the KRPC query shape and the two datagrams read back; compact node parsing. | ~135 |
 | `src/dht/mutable.rs` | BEP 44's signed mutable item: sign, verify, the target, the exact bytes a signature covers. | ~145 |
-| `src/dht/lookup.rs` | the iterative walk, bounded twice over against a hostile commons. | ~130 |
-| `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders. | ~70 |
+| `src/dht/lookup.rs` | the iterative walk: the bootstrap as a door asked `find_node` and re-asked when dry, the window refilled on every event, bounded twice over against a hostile commons. | ~110 |
+| `src/dht/frontier.rs` | a walk's state — every node heard of, asked, replied — and the frontier read off it: the K closest live nodes, the next to ask, whether any is in the air. | ~120 |
+| `src/dht/flight.rs` | the window of queries in the air, each with its own deadline; waiting for one event at a time. | ~85 |
+| `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once. | ~60 |
 | `src/dht/transport.rs` | the datagram seam: one trait, and the std UDP socket that fills it. | ~75 |
 | `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves. `cfg(test)`. | ~215 |
+| `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, compact routing. `cfg(test)`. | ~50 |
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
 | `src/render/answer.rs` | the one dispatch — an answer, and the family that renders it. A kind added to the census is a match arm missing here. | ~85 |

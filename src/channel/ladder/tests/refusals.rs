@@ -74,7 +74,15 @@ fn the_defaults_are_the_stated_ones() {
     let r = Roving::default();
     assert_eq!(r.direct, Duration::from_secs(5));
     assert_eq!(r.window, Duration::from_secs(40));
-    assert_eq!(r.bootstrap.len(), 2);
+    assert_eq!(
+        r.bootstrap,
+        [
+            "router.bittorrent.com:6881",
+            "dht.transmissionbt.com:6881",
+            "router.utorrent.com:6881",
+            "dht.aelitis.com:6881",
+        ]
+    );
     assert_eq!(r.advertise, None);
     assert_eq!(r.dht.k, 8);
 }

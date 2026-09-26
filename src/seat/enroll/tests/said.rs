@@ -32,6 +32,7 @@ fn the_symbol_and_the_line_it_encodes_are_both_said() {
         ca: CA.to_owned(),
         cert: CERT.to_owned(),
         key: KEY.to_owned(),
+        rendezvous: None,
     }
     .envelope();
     // REMOTE §8.4's marker and version, and the two fields that do not travel.

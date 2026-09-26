@@ -134,3 +134,6 @@ fn the_caption_names_the_box_and_never_the_material() {
         assert!(!said.contains(secret), "{secret} is in the caption: {said}");
     }
 }
+
+/// The rendezvous pair, against the engine's own fixture.
+mod rendezvous;

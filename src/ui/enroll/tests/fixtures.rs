@@ -19,6 +19,7 @@ pub(super) fn material() -> Enrolled {
         ca: "-----BEGIN CERTIFICATE-----\nnotreal-ca\n-----END CERTIFICATE-----\n".to_owned(),
         cert: "-----BEGIN CERTIFICATE-----\nnotreal-leaf\n-----END CERTIFICATE-----\n".to_owned(),
         key: "-----BEGIN notreal KEY-----\nnotreal-key\n-----END notreal KEY-----\n".to_owned(),
+        rendezvous: None,
     }
 }
 

@@ -1937,7 +1937,7 @@ exception (above): the frame is not the product, the envelope is.
 
 **The machine form and bl-768a's withholding compose into one sentence**:
 under `--json`, stdout carries the envelope exactly when the material was not
-written down. A run that FILED withholds it — the four files are the copy the
+written down. A run that FILED withholds it — the files are the copy the
 operator chose — so stdout is empty and the receipt naming them goes to stderr,
 because a receipt is prose about a file and not a frame. A run whose filing
 FAILED says the envelope, for bl-768a's own reason: the screen is then the only
@@ -1957,9 +1957,27 @@ object rather than two lists in agreement.
 else is a rendering of it: the **QR symbol** for a camera, the **line itself**
 for the paste box an android seat offers — *one line of JSON beginning
 `{"yog-enroll": 1`*, in that screen's own words — and `--into <dir>` for a box
-with neither, which lays the envelope down as the four files §4.6's entry is.
-There is one place the envelope is built (`Enrolled::envelope`) and the
-renderings are of that, so no two of them can disagree.
+with neither, which lays the envelope down as the four files §4.6's entry is —
+six, from an engine holding rendezvous material (below). There is one place the
+envelope is built (`Enrolled::envelope`) and the renderings are of that, so no
+two of them can disagree.
+
+**The envelope carries the rendezvous pair when the reply does** (bl-5378, on
+yog bl-9043, edition 20). REMOTE §8.4's reply grew two optional keys beside the
+six facts, `rendezvous_pub` and `pairing_salt` — the engine's public rendezvous
+key and the pairing salt, 32 bytes of hex each, present together or not at all
+— and a phone reads its roving material (REMOTE §13.3) from exactly this
+envelope. `Enrolled` re-said a fixed six, so the symbol this seat drew for a
+phone dropped both and the phone could never find a moved engine; and `--into`
+wrote the four entry files and not the two `crate::channel::rendezvous` reads,
+so a foot filed that way could not rove either. Now `Enrolled` carries the pair
+as one `Option`, the reader refuses one key without the other, the envelope
+writes both when present (still `serde_json`'s sorted order, pinned byte for
+byte against the engine's own corpus fixture), and `--into` lays down
+`rendezvous.pub` (`0644`, as the engine mints it) and `pairing.salt` (`0600`)
+beside the entry. A loopback engine sends neither and everything here is what it
+was. The caption stays the three facts that are not material — the salt is
+shared with the engine, so it is material.
 
 **The route the NEW box will dial is stated, not assumed** (bl-971c, on yog
 bl-fec6's `--at`). REMOTE §8.4's request carries an optional `address`, and it
@@ -2024,7 +2042,7 @@ whose whole product is the forgetting. `seat::enroll`'s suite walks a throwaway
 root before and after the act and compares — over the **tree** rather than over
 the paths the code happens to know about, because a defect here is precisely a
 path nobody thought of. A destination the operator NAMED is walked the same way
-and holds exactly the four files.
+and holds exactly the four files (six with the rendezvous pair).
 
 **And a destination never costs the material.** The engine has already minted
 and shredded by the time any of this runs, so a filing that FAILED says
@@ -2045,8 +2063,11 @@ afterwards, so the key is never readable off the account even for an instant.
 level M, no new dependency. A QR symbol is a fully specified algorithm rather
 than a research problem, and the manifest's dependency set is an approved list
 a ball has to argue its way onto. REMOTE §8.4 measures the envelope at 1567
-bytes and states the rule as *PEM as minted, at level M or lower*; level M
-carries 2331. The encoder's own module doc holds the rulings, and its suite
+bytes from a loopback engine and ~1730 with the rendezvous pair, and states the
+rule as *PEM as minted, at level M or lower*; level M carries 2331, and the pair
+is what took the envelope past level Q's 1663 — a level this encoder never
+emitted, so nothing moved here, and `reply::enrolled`'s suite builds an envelope
+at the measured sizes and encodes it. The encoder's own module doc holds the rulings, and its suite
 pins three whole symbols and all forty versions against an **independent**
 implementation — because an encoder that agrees with itself proves nothing, and
 two reference implementations disagreeing with each other is how two of this
@@ -4603,9 +4624,9 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/reply/transcript.rs` | the conversation's entries — the envelope of one, and which origin wrote it. | ~155 |
 | `src/reply/transcript/blocks.rs` | what one model entry says: the canonical blocks, and the provider's own counters. | ~115 |
 | `src/reply/start.rs` | the start family's three receipts: the staged body carried whole, one of those per candidate of a spread (§4.36), and the minted name. | ~110 |
-| `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields spelled once, read and re-said. | ~130 |
+| `src/reply/enrolled.rs` | a new box's material, and the one envelope a camera carries it in — the six fields and the optional rendezvous pair spelled once, read and re-said. | ~175 |
 | `src/seat/enroll.rs` | the §8.4 act from argv: one gesture, and its envelope said as a symbol, as a line, and — where the operator names a destination — as an entry. | ~135 |
-| `src/seat/enroll/entry.rs` | the envelope decomposed into §4.6's four files, under `material`'s own names, created narrow and never over material already there. | ~90 |
+| `src/seat/enroll/entry.rs` | the envelope decomposed into §4.6's four files — six with the rendezvous pair, under `rendezvous`'s names — under `material`'s own names, created narrow and never over material already there. | ~110 |
 | `src/ui/enroll.rs` | the enrollment pane: a name, a grade, and the symbol that comes back — the one pane that covers another. | ~140 |
 | `src/ui/enroll/symbol.rs` | the symbol as geometry (bl-5e0e): the module pitch, which is a whole number of device pixels and as many of them as the pane has room for, and the one mesh every dark module is drawn in rather than a feathered rectangle apiece. | ~120 |
 | `src/qr.rs` and `src/qr/*` | a QR symbol drawn by this crate: the field, the tables, the zigzag, the four scoring rules, and the terminal rendering. Seven files, none over 250. | ~250 |

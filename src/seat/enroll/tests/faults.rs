@@ -94,8 +94,9 @@ fn a_root_with_no_channel_fails_before_anything_is_asked() {
 }
 
 /// **Material too big for any symbol costs the picture, never the material.**
-/// REMOTE §8.4 measures the envelope at about 1567 bytes against a 2331-byte
-/// ceiling, so this is a recipe that moved — an RSA key, a longer chain — and
+/// REMOTE §8.4 measures the envelope at about 1730 bytes with the rendezvous
+/// pair (1567 without) against a 2331-byte ceiling, so this is a recipe that
+/// moved — an RSA key, a longer chain — and
 /// saying the size is what makes that legible rather than mysterious. But the
 /// enrollment is already spent at the engine, so withholding the answer over a
 /// drawing would burn the name: the line is said, and the symbol is what is

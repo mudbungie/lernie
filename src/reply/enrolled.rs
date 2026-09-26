@@ -1,5 +1,6 @@
 //! **A new box's material** (yog's `docs/REMOTE.md` §8.4) — the six fields the
-//! `enroll` act answers, and the one envelope a camera carries them in.
+//! `enroll` act answers, the rendezvous pair beside them when the engine holds
+//! one, and the one envelope a camera carries them in.
 //!
 //! # The reply this seat must not keep
 //!
@@ -23,6 +24,11 @@
 //!   which is a field an operator can paste into `openssl x509 -text`;
 //! - under `"yog-enroll": 1`, the marker a scanner recognises it by and the
 //!   version it will be told about if the fields ever move;
+//! - the **rendezvous pair** (`rendezvous_pub`, `pairing_salt`; edition 20,
+//!   yog bl-9043) when the reply carried it, and neither key when it did not
+//!   — the phone reads its roving material (REMOTE §13.3) from exactly this
+//!   envelope, so a seat that re-said only the six drew a symbol whose device
+//!   could never find a moved engine (bl-5378);
 //! - and **without `ok` and `kind`**, which say what a *wire answer* is. A
 //!   photograph is not one.
 //!
@@ -50,6 +56,10 @@ const ADDRESS: &str = "address";
 const CA: &str = "ca";
 const CERT: &str = "cert";
 const KEY: &str = "key";
+/// The rendezvous pair's two keys — the files' own names (`rendezvous.pub`,
+/// `pairing.salt`) with the dot a JSON key would not want.
+const PUBLIC: &str = "rendezvous_pub";
+const SALT: &str = "pairing_salt";
 
 /// **What a new box needs to dial this engine, and nothing more.**
 ///
@@ -73,11 +83,29 @@ pub struct Enrolled {
     /// That leaf's private key. **The one field on this surface that is a
     /// secret**, and the reason this reply is never written down.
     pub key: String,
+    /// **The rendezvous hand-off** (REMOTE §8.4, §13.2): how the new box finds
+    /// this engine off its stated address. `None` from a loopback-only engine,
+    /// which has nothing to rendezvous for.
+    pub rendezvous: Option<Handoff>,
+}
+
+/// **The engine's rendezvous public key and the pairing salt**, 32 bytes of
+/// lowercase hex each, exactly as the files `rendezvous.pub` and
+/// `pairing.salt` hold them. One type because they travel together: half a
+/// pairing derives nothing a device could use.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Handoff {
+    /// `rendezvous_pub`.
+    pub public: String,
+    /// `pairing_salt` — shared with the engine, and so material, never said
+    /// out loud.
+    pub salt: String,
 }
 
 impl Enrolled {
     /// **The envelope a symbol carries**, per REMOTE §8.4 — compact JSON, the
-    /// six fields verbatim, under the marker and its version.
+    /// six fields verbatim and the rendezvous pair when there is one, under the
+    /// marker and its version.
     pub fn envelope(&self) -> String {
         let mut map = Map::new();
         map.insert(MARKER.to_owned(), Value::from(VERSION));
@@ -90,6 +118,10 @@ impl Enrolled {
             (KEY, &self.key),
         ] {
             map.insert(key.to_owned(), Value::String(value.clone()));
+        }
+        if let Some(Handoff { public, salt }) = &self.rendezvous {
+            map.insert(PUBLIC.to_owned(), Value::String(public.clone()));
+            map.insert(SALT.to_owned(), Value::String(salt.clone()));
         }
         Value::Object(map).to_string()
     }
@@ -113,7 +145,8 @@ impl Enrolled {
 
 /// Read the material. **Rung 1 throughout**: every field is required and every
 /// refusal names the field, because a half-read enrollment is a symbol that
-/// scans into a box that cannot dial.
+/// scans into a box that cannot dial. The rendezvous pair is optional as a
+/// PAIR — both or neither — and one without the other refuses naming both.
 pub(crate) fn enrolled(obj: &Map<String, Value>) -> Result<Enrolled, String> {
     Ok(Enrolled {
         grade: fields::text(obj, GRADE)?,
@@ -122,7 +155,19 @@ pub(crate) fn enrolled(obj: &Map<String, Value>) -> Result<Enrolled, String> {
         ca: fields::text(obj, CA)?,
         cert: fields::text(obj, CERT)?,
         key: fields::text(obj, KEY)?,
+        rendezvous: handoff(obj)?,
     })
+}
+
+/// The pair, both or neither.
+fn handoff(obj: &Map<String, Value>) -> Result<Option<Handoff>, String> {
+    match (fields::opt_text(obj, PUBLIC)?, fields::opt_text(obj, SALT)?) {
+        (None, None) => Ok(None),
+        (Some(public), Some(salt)) => Ok(Some(Handoff { public, salt })),
+        _ => Err(format!(
+            "{PUBLIC} and {SALT} travel together, and this enrollment carried one of them"
+        )),
+    }
 }
 
 #[cfg(test)]

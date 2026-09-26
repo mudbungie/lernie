@@ -81,8 +81,9 @@ fn material_arriving_for_a_closed_pane_is_reported_rather_than_dropped() {
 
 /// Material too big for any symbol: an anchor chain nothing would mint, which
 /// is what the refusal exists for. REMOTE §8.4 measures the real envelope at
-/// about 1567 bytes against a 2331-byte ceiling, so this is a recipe that moved
-/// rather than a picture that could have been drawn smaller.
+/// about 1730 bytes with the rendezvous pair (1567 without) against a 2331-byte
+/// ceiling, so this is a recipe that moved rather than a picture that could
+/// have been drawn smaller.
 fn oversized() -> Enrolled {
     Enrolled {
         ca: "notreal".repeat(400),

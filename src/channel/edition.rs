@@ -41,7 +41,7 @@ pub(crate) const FLOOR: u32 = 18;
 ///
 /// Stated in the preface beside the major so the far end knows what this one
 /// can read, and re-read from the corpus by [`tests`] on every run.
-pub(crate) const EDITION: u32 = 18;
+pub(crate) const EDITION: u32 = 20;
 
 /// **The post-floor ledger**: `(shape, field path, the edition it appeared
 /// at)`, for every path stamped above [`FLOOR`].
@@ -55,7 +55,71 @@ pub(crate) const EDITION: u32 = 18;
 /// A plain slice, searched linearly. It holds what one major has added since
 /// its cut, which is a handful of paths — an index over it would be a second
 /// representation of a list short enough to read.
-pub(crate) const STAMPS: &[(&str, &str, u32)] = &[];
+pub(crate) const STAMPS: &[(&str, &str, u32)] = &[
+    ("reply/enrolled", "/pairing_salt", 20),
+    ("reply/enrolled", "/rendezvous_pub", 20),
+    ("reply/governing", "/workflow_mark", 19),
+    ("reply/governing", "/workflow_mark/holder", 19),
+    ("reply/governing", "/workflow_mark/lineage", 19),
+    ("reply/governing", "/workflow_mark/oid", 19),
+    ("reply/governing", "/workflow_mark/short_oid", 19),
+    ("reply/prices", "", 19),
+    ("reply/prices", "/ceiling", 19),
+    ("reply/prices", "/kind", 19),
+    ("reply/prices", "/ok", 19),
+    ("reply/prices", "/released", 19),
+    ("reply/prices", "/rows", 19),
+    ("reply/prices", "/rows/[]", 19),
+    ("reply/prices", "/rows/[]/cache_read", 19),
+    ("reply/prices", "/rows/[]/cache_write", 19),
+    ("reply/prices", "/rows/[]/input", 19),
+    ("reply/prices", "/rows/[]/model", 19),
+    ("reply/prices", "/rows/[]/output", 19),
+    ("reply/prices", "/rows/[]/provider", 19),
+    ("reply/prices", "/spent", 19),
+    ("reply/prices", "/spent/micro_usd", 19),
+    ("reply/prices", "/spent/unpriced_tokens", 19),
+    ("reply/prices", "/spent/usd", 19),
+    ("reply/rail", "/rows/[]/cost", 19),
+    ("reply/rail", "/rows/[]/cost/micro_usd", 19),
+    ("reply/rail", "/rows/[]/cost/unpriced_tokens", 19),
+    ("reply/rail", "/rows/[]/cost/usd", 19),
+    ("reply/science", "/rows/[]/cost", 19),
+    ("reply/science", "/rows/[]/cost/micro_usd", 19),
+    ("reply/science", "/rows/[]/cost/unpriced_tokens", 19),
+    ("reply/science", "/rows/[]/cost/usd", 19),
+    ("reply/steps", "/rows/[]/cost", 19),
+    ("reply/steps", "/rows/[]/cost/micro_usd", 19),
+    ("reply/steps", "/rows/[]/cost/unpriced_tokens", 19),
+    ("reply/steps", "/rows/[]/cost/usd", 19),
+    ("reply/workspaces", "/rows/[]/spend", 19),
+    ("reply/workspaces", "/rows/[]/spend/micro_usd", 19),
+    ("reply/workspaces", "/rows/[]/spend/unpriced_tokens", 19),
+    ("reply/workspaces", "/rows/[]/spend/usd", 19),
+    ("request/ceiling", "", 19),
+    ("request/ceiling", "/op", 19),
+    ("request/ceiling", "/usd", 19),
+    ("request/clear-workflow", "", 19),
+    ("request/clear-workflow", "/agent", 19),
+    ("request/clear-workflow", "/op", 19),
+    ("request/clear-workflow", "/workspace", 19),
+    ("request/price", "", 19),
+    ("request/price", "/model", 19),
+    ("request/price", "/op", 19),
+    ("request/price", "/provider", 19),
+    ("request/price", "/rates", 19),
+    ("request/price", "/rates/cache_read", 19),
+    ("request/price", "/rates/cache_write", 19),
+    ("request/price", "/rates/input", 19),
+    ("request/price", "/rates/output", 19),
+    ("request/prices", "", 19),
+    ("request/prices", "/op", 19),
+    ("request/workflow", "", 19),
+    ("request/workflow", "/agent", 19),
+    ("request/workflow", "/config", 19),
+    ("request/workflow", "/op", 19),
+    ("request/workflow", "/workspace", 19),
+];
 
 /// **What upstream has announced it will remove**, vendored the same way and
 /// for a different reason: this one is a WARNING with a deadline on it.

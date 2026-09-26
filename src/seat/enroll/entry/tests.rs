@@ -2,7 +2,8 @@
 
 use super::{FRESH, written};
 use crate::channel::material::{self, ADDRESS, ANCHORS, CHAIN, KEY};
-use crate::reply::enrolled::Enrolled;
+use crate::channel::rendezvous::{self, PUBLIC, SALT};
+use crate::reply::enrolled::{Enrolled, Handoff};
 use crate::test_support::Scratch;
 
 /// Fabricated material, marked `notreal` throughout: the disclosure gate reads
@@ -16,6 +17,7 @@ fn minted() -> Enrolled {
         ca: "-----BEGIN CERTIFICATE-----\nnotreal-ca\n-----END CERTIFICATE-----\n".to_owned(),
         cert: "-----BEGIN CERTIFICATE-----\nnotreal-leaf\n-----END CERTIFICATE-----\n".to_owned(),
         key: "-----BEGIN notreal KEY-----\nnotreal-key\n-----END notreal KEY-----\n".to_owned(),
+        rendezvous: None,
     }
 }
 
@@ -102,4 +104,84 @@ fn a_destination_that_is_not_a_directory_says_so() {
     std::fs::write(&blocked, "notreal").expect("the blocker was written");
     let refused = written(&blocked.join("under"), &minted()).expect_err("it was refused");
     assert!(refused.contains("under"), "{refused}");
+}
+
+/// [`minted`] from an engine holding rendezvous material (REMOTE §8.4,
+/// edition 20).
+fn roving() -> Enrolled {
+    Enrolled {
+        rendezvous: Some(Handoff {
+            public: "ab".repeat(32),
+            salt: "cd".repeat(32),
+        }),
+        ..minted()
+    }
+}
+
+/// The file names under `dir`, sorted.
+fn names(dir: &std::path::Path) -> Vec<String> {
+    let mut found: Vec<String> = std::fs::read_dir(dir)
+        .expect("the entry")
+        .flatten()
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    found.sort();
+    found
+}
+
+/// **Six files with the pair, four without** — and the two extra are exactly
+/// what this seat's own rendezvous reader opens, so the entry roves without a
+/// hand touching it (bl-5378).
+#[test]
+fn the_pair_lands_as_the_two_files_the_rendezvous_reader_reads() {
+    let scratch = Scratch::new();
+    let plain = scratch.path().join("plain");
+    written(&plain, &minted()).expect("filed");
+    assert_eq!(names(&plain), [ADDRESS, ANCHORS, KEY, CHAIN]);
+    assert_eq!(rendezvous::read_dir(&plain), Ok(None));
+
+    let dir = scratch.path().join("roving");
+    let said = written(&dir, &roving()).expect("filed");
+    assert_eq!(names(&dir), [ADDRESS, ANCHORS, KEY, CHAIN, SALT, PUBLIC]);
+    for named in [PUBLIC, SALT] {
+        assert!(said.contains(named), "{named} unsaid: {said}");
+    }
+    let pairing = rendezvous::read_dir(&dir)
+        .expect("it reads")
+        .expect("it holds a pairing");
+    assert_eq!(pairing.engine, [0xab; 32]);
+    assert_eq!(pairing.salt, [0xcd; 32]);
+    assert_eq!(
+        std::fs::read_to_string(dir.join(PUBLIC)).expect(PUBLIC),
+        format!("{}\n", "ab".repeat(32))
+    );
+}
+
+/// **The modes the engine mints**: the public key is readable, the salt is
+/// not — it is shared with the engine and is material.
+#[cfg(unix)]
+#[test]
+fn the_public_key_is_open_and_the_salt_is_narrow() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let scratch = Scratch::new();
+    let dir = scratch.path().join("roving");
+    written(&dir, &roving()).expect("filed");
+    let mode = |leaf: &str| {
+        std::fs::metadata(dir.join(leaf))
+            .expect(leaf)
+            .permissions()
+            .mode()
+    };
+    assert_eq!(
+        mode(SALT) & 0o077,
+        0,
+        "the salt is readable off this account"
+    );
+    assert_eq!(
+        mode(PUBLIC) & 0o022,
+        0,
+        "the public key is writable by others"
+    );
+    assert_eq!(mode(PUBLIC) & 0o400, 0o400, "the public key is unreadable");
 }

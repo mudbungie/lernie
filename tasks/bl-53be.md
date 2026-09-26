@@ -1,7 +1,8 @@
 +++
 title = "the seat's call carries only its route-local addresses, which on a hotspot or carrier NAT are private: read the DHT-observed address (BEP 42 ip) and put it in the call, as yog bl-efae does for presence"
 created = 1790394983
-updated = 1790394983
+updated = 1790394989
+claimant = "Urinalyses-Z7"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

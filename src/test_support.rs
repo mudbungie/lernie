@@ -18,6 +18,8 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// The suite's clock: an offset the test advances by hand.
+pub(crate) mod clock;
 /// The one walk over the wire conformance corpus, shared by both replays.
 pub(crate) mod corpus;
 /// The far end of the wire, so a channel can be tested against something that
@@ -25,6 +27,9 @@ pub(crate) mod corpus;
 pub(crate) mod engine;
 /// The operator's out-of-channel act, performed by the suite.
 pub(crate) mod mint;
+/// The far end of a PUNCHED wire: an engine that serves a held line, or
+/// that calls back what the seat wrote to its inbox.
+pub(crate) mod roving;
 /// The window's fixtures, and the two ways a test looks at one.
 pub(crate) mod window;
 /// A data root with an engine behind one of its channels.

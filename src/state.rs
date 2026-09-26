@@ -26,9 +26,13 @@
 //! there is nothing to invalidate and nothing that can disagree with the focus
 //! — a click changes the model, and what is asked next follows from it.
 
-use std::sync::{Arc, Mutex, PoisonError};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 use std::time::Duration;
 
+use crate::channel::line::Held;
+use crate::channel::rendezvous::punch::Punch;
 use crate::ui::{Channel, Model, Posted};
 
 /// What crosses the lock, and what the frame publishes for the workers to ask.
@@ -182,6 +186,46 @@ impl Link {
     fn hold(&self) -> std::sync::MutexGuard<'_, Shared> {
         self.shared.lock().unwrap_or_else(PoisonError::into_inner)
     }
+}
+
+/// **What worked for one entry, this run** (DESIGN §4.40) — the second
+/// tenant of this file, and the runtime half of yog's `docs/REMOTE.md` §8's
+/// `:0` discipline: never disk. A punched line is held between asks, the
+/// endpoints a rendezvous found are punched again before the commons is
+/// asked twice, the punch port is bound once so the engine's peer sees one
+/// port, and the inbox sequence rises across calls. Keyed by the entry's
+/// directory, because entries share nothing (§4.6): what worked for one
+/// engine says nothing about another.
+///
+/// It is here rather than in the channel because a channel is opened per
+/// gesture and the four off-frame threads each open their own — the fact
+/// that a connection exists outlives every one of them, and it is shared
+/// across all of them, which is exactly the state this chokepoint exists to
+/// inventory.
+#[derive(Default)]
+pub(crate) struct Worked {
+    /// Punched lines kept between asks, newest last.
+    pub(crate) held: Vec<Held>,
+    /// Where the engine was last found.
+    pub(crate) endpoints: Vec<SocketAddr>,
+    /// The port this end punches from, for the run.
+    pub(crate) punch: Option<Arc<Punch>>,
+    /// The last inbox sequence written, so two calls in one second still
+    /// move forward — a node refuses a `seq` that does not.
+    pub(crate) last_seq: i64,
+}
+
+static WORKED: OnceLock<Mutex<HashMap<String, Worked>>> = OnceLock::new();
+
+/// Act on what worked for the entry `key` names. **`f` runs under the lock
+/// and must not touch a socket** — it moves things in and out, and a
+/// liveness check on a held line happens outside, on the line it took.
+pub(crate) fn worked<T>(key: &str, f: impl FnOnce(&mut Worked) -> T) -> T {
+    let mut table = WORKED
+        .get_or_init(Mutex::default)
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
+    f(table.entry(key.to_owned()).or_default())
 }
 
 #[cfg(test)]

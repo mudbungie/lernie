@@ -13,6 +13,14 @@
 //! is [`Channel::follow`]: the same one request, with each frame handed over as
 //! it arrives instead of collected. No second envelope, no second reader.
 //!
+//! **And where the entry carries rendezvous material, the connection is
+//! climbed for rather than dialled** (REMOTE §13.4; [`ladder`]): a live held
+//! line, the direct address, a re-punch where the engine was last found, the
+//! full rendezvous over the commons. A punched line is held between asks
+//! ([`line`]), because first contact costs seconds. Nothing above `dial`
+//! knows which rung answered, and nothing about what is trusted changes with
+//! it — the same mTLS verifies the same name off the same address.
+//!
 //! **The engine's name comes from the address and from nowhere else.** A dotted
 //! quad or a bracketed v6 literal is verified as an IP address — the engine's
 //! leaf must carry the matching `IP:` subject alternative name — and anything
@@ -20,16 +28,19 @@
 //! disagree with what was dialled (REMOTE §8: *"the name a client verifies is
 //! read off the address it dialled"*).
 
-use std::net::{IpAddr, TcpStream};
+use std::net::IpAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::time::Duration;
 
+use rustls::ClientConfig;
 use rustls::pki_types::ServerName;
-use rustls::{ClientConfig, ClientConnection, StreamOwned};
 use serde_json::Value;
 
+/// The seat's one reading of time, injected.
+pub mod clock;
+/// How a socket is obtained and first spoken on.
+mod dial;
 /// What each end of the wire can SPELL, which is not what it must AGREE about.
 pub mod edition;
 /// The client-side workspaces this box holds elsewhere.
@@ -38,25 +49,23 @@ pub mod entries;
 pub mod frame;
 /// The version preface.
 pub mod hello;
+/// The four rungs a dial climbs.
+pub mod ladder;
 /// The grade, read off this box's own certificate before anything is dialled.
 pub mod leaf;
+/// One line to one engine, and what is kept of it between asks.
+pub(crate) mod line;
 /// What the operator carried to this box.
 pub mod material;
 /// Why an exchange produced no answer, and whether the request crossed.
 pub mod reach;
+/// The rendezvous material, the two sealed items and the punch.
+pub mod rendezvous;
 /// The mTLS configuration.
 pub mod tls;
 
 use material::Material;
 pub use reach::Reach;
-
-/// How long one read may wait before the channel is judged gone.
-///
-/// It is a bound on the **transport**, not on the wait. An ordinary ask is
-/// answered at once; a follow-class read is answered by the engine at the rate
-/// the thing being followed writes, so this has to sit comfortably above that
-/// cadence or an idle tail would read as a dead channel.
-const READ_TIMEOUT: Duration = Duration::from_mins(2);
 
 /// A seat's end of one wire.
 #[derive(Debug)]
@@ -64,6 +73,13 @@ pub struct Channel {
     config: Arc<ClientConfig>,
     address: String,
     name: ServerName<'static>,
+    /// The rendezvous material the entry carries, or none (§13.4).
+    pairing: Option<rendezvous::Pairing>,
+    /// The entry's directory: what the run's RAM cache of what worked is
+    /// keyed by ([`crate::state::worked`]).
+    key: String,
+    clock: Arc<dyn clock::Clock>,
+    roving: ladder::Roving,
     /// The two files a failed handshake is about, kept so the sentence can name
     /// them (bl-e620). They are read once at [`Channel::open`]; holding the
     /// paths costs nothing and is what turns rustls' own wording into a remedy.
@@ -92,10 +108,30 @@ impl Channel {
             config: tls::client_config(m)?,
             address: m.address.clone(),
             name: server_name(&m.address)?,
+            pairing: m.pairing,
+            key: m
+                .anchors
+                .parent()
+                .map(|dir| dir.display().to_string())
+                .unwrap_or_default(),
+            clock: clock::system(),
+            roving: ladder::Roving::default(),
             anchors: m.anchors.clone(),
             chain: m.chain.clone(),
             spelled: AtomicU32::new(edition::FLOOR),
         })
+    }
+
+    /// The same channel with the roving rungs' knobs and the clock replaced
+    /// — the suite's door, so a rendezvous runs against a fake DHT in
+    /// milliseconds and a held line's silence is crossed by hand.
+    #[cfg(test)]
+    pub(crate) fn tuned(self, roving: ladder::Roving, clock: Arc<dyn clock::Clock>) -> Self {
+        Self {
+            clock,
+            roving,
+            ..self
+        }
     }
 
     /// **Whether the engine can spell one field of one shape** (yog's
@@ -154,76 +190,19 @@ impl Channel {
         request: &Value,
         on_frame: &mut dyn FnMut(Value) -> bool,
     ) -> Result<(), Reach> {
-        let mut tls = self.dial(request)?;
+        let mut line = self.dial(request)?;
         while let Some(chunk) =
-            frame::read_value(&mut tls).map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
+            line::read(&mut line.tls).map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
         {
             if !on_frame(chunk) {
                 return Ok(());
             }
         }
+        // The whole answer is in, so a kept line goes back to its pool; a
+        // follower that stopped early returned above and dropped its line,
+        // which is the word to the engine.
+        line.give_back(&self.key, self.clock.now());
         Ok(())
-    }
-
-    /// Connect, handshake and send. The TLS handshake happens inside the first
-    /// write, and the one frame read here is the engine's version preface — so
-    /// what this hands back is a socket with a request on it and no *answer*
-    /// yet read.
-    ///
-    /// **Both ends state a version before either reads** (REMOTE §3), and the
-    /// request goes out in the same breath as this end's preface — so
-    /// confirming the engine's costs no round trip, and a mismatch refuses
-    /// before a frame of the answer is decoded.
-    ///
-    /// **It is also where the doubt begins** (REMOTE §3, bl-3969). Everything
-    /// refused here is [`Reach::Unsent`] and nothing crossed — a socket that
-    /// would not open, a handshake that did not verify, a write that failed, a
-    /// peer of another protocol, which refuses *"before any gesture is
-    /// decoded"*. The one exception is a preface this end could not READ, which
-    /// [`hello::confirm`] classes for itself: the request went out in the same
-    /// breath as this end's preface, so a connection that broke before the
-    /// engine's answer got back may have broken after it ran the gesture.
-    fn dial(&self, request: &Value) -> Result<StreamOwned<ClientConnection, TcpStream>, Reach> {
-        let tcp = TcpStream::connect(&self.address)
-            .and_then(|tcp| tcp.set_read_timeout(Some(READ_TIMEOUT)).map(|()| tcp))
-            .map_err(|e| Reach::Unsent(format!("connect {}: {e}", self.address)))?;
-        let conn = ClientConnection::new(Arc::clone(&self.config), self.name.clone())
-            .map_err(|e| Reach::Unsent(format!("tls {}: {e}", self.address)))?;
-        let mut tls = StreamOwned::new(conn, tcp);
-        hello::state(&mut tls).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
-        frame::write_value(&mut tls, request).map_err(|e| Reach::Unsent(self.wrote(&e)))?;
-        self.spelled
-            .store(hello::confirm(&mut tls)?, Ordering::Relaxed);
-        Ok(tls)
-    }
-
-    /// **What a failed write says.**
-    ///
-    /// The TLS handshake happens inside the first write, so an error here is
-    /// usually not a socket at all — it is the two ends failing to accept each
-    /// other's certificates, and rustls says so in its own words: *"invalid
-    /// peer certificate: UnknownIssuer"*, which names no file and no act
-    /// (bl-e620, driven live: a wrong anchor produced that and nothing else,
-    /// anywhere).
-    ///
-    /// So the one class that is always a fact about **this box's own material**
-    /// carries the remedy, and every other write error is still said in the
-    /// transport's own words: a certificate fault is read off the typed
-    /// `rustls::Error` rather than off its wording, so a rewritten message
-    /// cannot silently stop matching.
-    fn wrote(&self, e: &std::io::Error) -> String {
-        let Some(rustls::Error::InvalidCertificate(fault)) = e
-            .get_ref()
-            .and_then(|inner| inner.downcast_ref::<rustls::Error>())
-        else {
-            return format!("send: {e}");
-        };
-        format!(
-            "the handshake with {} did not verify ({fault:?}): {} must hold the anchors of THAT engine's CA, and {} must be a leaf that CA issued. Both are carried here by hand; the seat mints nothing",
-            self.address,
-            self.anchors.display(),
-            self.chain.display()
-        )
     }
 }
 

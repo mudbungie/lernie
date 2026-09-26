@@ -102,9 +102,10 @@ publish = true
 # dependency added "for later" is one nobody ever reviewed, because it is
 # linked by no code and so no gate and no reviewer ever reads it.
 #
-# LINKED SO FAR: `rustls` and `serde_json`, both by the wire client.
-# `thiserror` is approved and still absent — every refusal on this surface is
-# one `String` a caller prints, so there is no error enum for it to derive yet.
+# LINKED SO FAR: `rustls` and `serde_json`, both by the wire client; `ring`
+# and `socket2`, both by the punched wire (bl-65ee). `thiserror` is approved
+# and still absent — every refusal on this surface is one `String` a caller
+# prints, so there is no error enum for it to derive yet.
 #
 # THIS COMMENT IS THE APPROVED SET. The house rule is "zero new dependencies
 # without explicit approval"; what follows is the authority for what may be
@@ -124,6 +125,20 @@ publish = true
 #   thiserror — the error enums, house standard rule 10. Its companion half,
 #     `anyhow`, is NOT approved: `main.rs` is a thin entry with no
 #     error-plumbing layer that would justify one.
+#   ring — named directly for the rendezvous (yog's docs/REMOTE.md §13.2):
+#     ed25519 signs the BEP 44 inbox item, HKDF-SHA256 derives the four
+#     pairing facts, ChaCha20-Poly1305 seals both items and SHA-1 names a
+#     target. It is the provider rustls already links, so naming it adds no
+#     crate, no licence and no advisory — the lockfile gains one edge. The
+#     same argument the engine made when it named it.
+#   socket2 — THE ONE APPROVED NEW DEPENDENCY, by operator ruling 2026-09-23
+#     (§13.7 ruling 1), granted to this crate on the terms the engine got it:
+#     `=0.6.5` exact, `default-features = false`, the `all` feature (where
+#     `set_reuse_port` lives), MIT OR Apache-2.0 so no new licence value. It
+#     sets `SO_REUSEADDR`/`SO_REUSEPORT` on the sockets a TCP simultaneous
+#     open binds to one port, which std does not expose; the alternative was
+#     `setsockopt` under an `unsafe` confinement, refused because these calls
+#     run per connection rather than once at the process edge.
 #
 #   eframe / egui — THE WINDOW, and the largest approval this crate will ever
 #     make. Approved and linked by the ball that landed the window (bl-428f),
@@ -174,6 +189,13 @@ rustls = { version = "0.23", default-features = false, features = [
 # wire adds nothing to the boundary), so this crate parses one only far enough
 # to route it, and reads a reply back as the kinds the window paints.
 serde_json = "1"
+# The rendezvous (yog's docs/REMOTE.md §13.2): ed25519, HKDF, ChaCha20-Poly1305
+# and SHA-1 out of the provider rustls already links. No new crate.
+ring = "0.17"
+# The punch (§13.3; operator ruling 2026-09-23): port reuse on the sockets a
+# simultaneous open binds to one port. The one approved new dependency —
+# pure Rust over libc, no C toolchain, MIT OR Apache-2.0, exact-pinned.
+socket2 = { version = "=0.6.5", default-features = false, features = ["all"] }
 # The window, and the reason this crate exists at all. The three feature terms
 # are the approval's: no defaults, because they select the wgpu stack; `glow`,
 # because a seat draws text and rectangles; `default_fonts`, because without

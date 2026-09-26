@@ -147,7 +147,7 @@ fn serve(
 /// certificate the operator CA issued. Requiring one is the point — a stand-in
 /// that accepted an anonymous connection would prove nothing about the channel
 /// the seat actually opens.
-fn server_config(dir: &Path) -> Arc<ServerConfig> {
+pub(crate) fn server_config(dir: &Path) -> Arc<ServerConfig> {
     let provider = Arc::new(rustls::crypto::ring::default_provider());
     let anchors = tls::anchors(&dir.join(material::ANCHORS)).expect("the operator CA");
     let verifier =

@@ -153,7 +153,12 @@ written by lernie:
 
 where the data root is `$XDG_DATA_HOME/lernie` or `$HOME/.local/share/lernie`.
 Each directory holds `ca.pem`, `client.pem`, `client.key` and `address`, plus an
-optional `workspace` file naming what that workspace is called on its host.
+optional `workspace` file naming what that workspace is called on its host —
+and, for an engine that roves behind a NAT with no dialable listener, the pair
+`rendezvous.pub` and `pairing.salt`, with which a dial finds the engine over
+the mainline DHT and punches a connection to it (`docs/DESIGN.md` §4.40; yog's
+`docs/REMOTE.md` §13). An entry without the pair is dialled at its address and
+nowhere else.
 Certificates arrive out of channel, by the operator's hand; **lernie mints
 nothing**, and there is no bootstrap flow and must never be one.
 

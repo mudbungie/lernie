@@ -29,7 +29,10 @@
 //! operator's act depend on which program was installed. §8.2 names a fifth,
 //! `workspace`, and it is not here on purpose: it is not material, it is the
 //! name the workspace bears on its host, and it lives with the entry that
-//! carries it ([`entries`](super::entries)).
+//! carries it ([`entries`](super::entries)). §13.2 names two more —
+//! `rendezvous.pub` and `pairing.salt`, the roving material — and they are
+//! read here through [`rendezvous`](super::rendezvous), optional as a pair:
+//! an entry without them is dialled at its address and nowhere else.
 
 use std::path::{Path, PathBuf};
 
@@ -110,6 +113,10 @@ pub struct Material {
     pub key: PathBuf,
     /// `host:port` — the engine this channel dials.
     pub address: String,
+    /// The rendezvous material, where the entry carries it (DESIGN §4.40):
+    /// `None` is an entry with no roving, dialled at its address and nowhere
+    /// else.
+    pub pairing: Option<super::rendezvous::Pairing>,
 }
 
 /// Read one directory as the channel it claims to be. See the module doc for
@@ -151,6 +158,7 @@ pub fn read_dir(dir: &Path, whose: Whose) -> Result<Option<Material>, String> {
         chain: dir.join(CHAIN),
         key: dir.join(KEY),
         address,
+        pairing: super::rendezvous::read_dir(dir)?,
     }))
 }
 

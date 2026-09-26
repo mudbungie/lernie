@@ -4494,7 +4494,17 @@ first landed predated all four and carried every defect they fixed:
   replies, as long as it has named anyone; `max_queries` bounds it, and the
   door's queries hold no window slot. Measured, the one router that answers
   names a single random node per query, so its first seeds are both silent
-  about one walk in three and a re-ask draws fresh ones.
+  about one walk in three and a re-ask draws fresh ones. **A re-ask knocks
+  only where the door answered** (yog bl-f519): a bootstrap address silent
+  past its first deadline leaves the door for the rest of the walk, as a
+  silent node leaves the frontier. From the deployed engine box the roster
+  resolves to five addresses of which three never answer, and re-asking all
+  five spent three of every five door queries on nothing — in the walks that
+  ended dark, most of the cap.
+- **`put` names which zero it met** (yog bl-f519). A walk that reached no
+  token holder sends nothing and fails *no DHT node near T offered a write
+  token*; *no DHT node stored the item* is kept for holders that were sent
+  the item and none stored it. The two used to read as one.
 - **A sliding window, not lockstep rounds:** up to α queries in the air, each
   with its own deadline, the next node asked the moment any answers or times
   out — a silent node costs its own slot and never delays an answer beside
@@ -4641,10 +4651,10 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/dht/bencode.rs` | bencode, canonical out and strict in. | ~180 |
 | `src/dht/krpc.rs` | the KRPC query shape and the two datagrams read back, a reply's BEP 42 `ip` among them; compact address parsing. | ~135 |
 | `src/dht/mutable.rs` | BEP 44's signed mutable item: sign, verify, the target, the exact bytes a signature covers. | ~145 |
-| `src/dht/lookup.rs` | the iterative walk: the bootstrap as a door asked `find_node` and re-asked when dry, the window refilled on every event, bounded twice over against a hostile commons. | ~110 |
-| `src/dht/frontier.rs` | a walk's state — every node heard of, asked, replied — and the frontier read off it: the K closest live nodes, the next to ask, whether any is in the air. | ~120 |
+| `src/dht/lookup.rs` | the iterative walk: the bootstrap as a door asked `find_node` and re-asked when dry — only at the addresses that answered (yog bl-f519) — the window refilled on every event, bounded twice over against a hostile commons. | ~130 |
+| `src/dht/frontier.rs` | a walk's state — every node heard of, asked, replied, and the door addresses that answered — and the frontier read off it: the K closest live nodes, the next to ask, whether any is in the air. | ~140 |
 | `src/dht/flight.rs` | the window of queries in the air, each with its own deadline; waiting for one event at a time. | ~85 |
-| `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once. | ~60 |
+| `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once, and a walk that found no holder its own error, sending nothing (yog bl-f519). | ~70 |
 | `src/dht/transport.rs` | the datagram seam: one trait, and the std UDP socket that fills it. | ~75 |
 | `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves. `cfg(test)`. | ~215 |
 | `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, a BEP 42 claim, compact routing. `cfg(test)`. | ~55 |

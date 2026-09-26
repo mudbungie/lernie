@@ -1,0 +1,9 @@
++++
+title = "the client rendezvous and the four-rung dial ladder: an entry grows the engine's rendezvous public key and the pairing salt, a dial climbs held connection, direct address, re-punch at cached endpoints, full rendezvous over the seat's own DHT client, and a punched connection is held between asks (yog bl-653a; REMOTE §13.2–§13.4)"
+created = 1790392652
+updated = 1790392652
+priority = 2
+root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
+tags = ["wire", "rendezvous"]
++++
+yog bl-653a is the upstream ball and REMOTE §13.2–§13.4 the authority; the engine end landed in yog bl-4263 and its item, material and punch code is the byte-for-byte reference. Scope, in the seat: (1) an entry's material grows `rendezvous.pub` (the engine's 32-byte ed25519 public key, hex) and `pairing.salt` (32 bytes, hex) beside `ca.pem`; both absent is an entry with no roving, one absent is a refusal. (2) Every dial runs the ladder — a live held connection, the entry's direct address, a re-punch at the RAM-cached endpoints, the full rendezvous (presence get, a sealed call put in the inbox, a simultaneous open from one port) — and touches the DHT only on the last rung; inner mTLS verifies the same engine name whichever rung answered. (3) A held connection discards ping frames, is judged gone one ping before the two-minute bound, and re-enters the ladder at the next ask when dropped. The seat carries its own bencode/KRPC/BEP 44 client (REMOTE §13.7 ruling 2: reimplement per component) over ring and std UDP, and socket2 for the punch's port reuse (operator ruling 2026-09-23). Tests: the sealed item and every HKDF derivation against fixture bytes produced by yog's own code, each rung taken and each falling through against a fake DHT on loopback UDP and a stand-in engine, the ping discard and the silence bound on an injected clock. The network stays out of the suite.

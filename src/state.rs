@@ -213,6 +213,9 @@ pub(crate) struct Worked {
     /// The last inbox sequence written, so two calls in one second still
     /// move forward — a node refuses a `seq` that does not.
     pub(crate) last_seq: i64,
+    /// What each source of the rendezvous path's lines said last, so a
+    /// repeated outcome is said once (`channel::say::tell`).
+    pub(crate) said: HashMap<&'static str, Vec<String>>,
 }
 
 static WORKED: OnceLock<Mutex<HashMap<String, Worked>>> = OnceLock::new();

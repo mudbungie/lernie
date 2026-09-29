@@ -116,7 +116,11 @@ impl Roving {
         let (script, seen, connections) = roving.handles(script);
         std::thread::spawn(move || {
             let inbox = pairing.inbox_keypair().unwrap().public();
+            // Sleep first: the call is never there before the seat has
+            // walked, and a loop that could break on its first pass leaves
+            // its sleep uncovered whenever the timing says it did.
             let call = loop {
+                std::thread::sleep(Duration::from_millis(20));
                 let found = store
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner)
@@ -126,7 +130,6 @@ impl Roving {
                 if let Some(call) = found {
                     break call;
                 }
-                std::thread::sleep(Duration::from_millis(20));
             };
             for endpoint in call.endpoints {
                 if let Ok(tcp) = TcpStream::connect(endpoint) {

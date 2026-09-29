@@ -2,7 +2,7 @@
 //! §4.40): what a dial climbs to get a connection, cheapest first.
 //!
 //! 1. **A live held line** — a punched connection kept from an earlier ask,
-//!    still inside the silence bound and still open ([`Held::alive`]).
+//!    still inside the silence bound and still open ([`Held::gone`]).
 //! 2. **The entry's direct address** — a LAN, a stable server, loopback. An
 //!    entry with no rendezvous material stops here, exactly as it always did:
 //!    the connect is unbounded and its refusal is the sentence. With material
@@ -20,18 +20,23 @@
 //! inner mTLS over it, verifying the same engine name off the same address —
 //! the ladder decides how a socket is obtained and nothing about what is
 //! trusted on it.
+//!
+//! **Every rung is said** ([`say`]; yog's REMOTE §13.4, "The operator's view
+//! of the loop"): on an entry with rendezvous material, each climb's rungs,
+//! punches and held-line events reach stderr as families and counts, never
+//! an address, and a climb that saw what the last one saw is not said again.
 
-use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream, ToSocketAddrs};
-use std::sync::Arc;
+use std::net::{IpAddr, SocketAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
-use super::Channel;
 use super::line::{Held, Line};
-use super::rendezvous::Pairing;
-use super::rendezvous::item::{Call, Presence};
-use super::rendezvous::punch::{self, Punch};
-use crate::dht::{Config, Dht, Udp};
+use super::rendezvous::punch::Punch;
+use super::{Channel, say};
+use crate::dht::Config;
 use crate::state;
+
+/// Rung 4, the one that touches the commons.
+mod commons;
 
 /// Every knob the roving rungs turn — stated defaults, and a test's to
 /// shorten.
@@ -54,6 +59,8 @@ pub struct Roving {
     /// The addresses this box advertises in a call, at the punch port; `None`
     /// is the box's own route-local addresses, read when the call is written.
     pub advertise: Option<Vec<IpAddr>>,
+    /// Where the rungs' lines go ([`say`]): stderr unless replaced.
+    pub say: say::Say,
 }
 
 impl Default for Roving {
@@ -69,59 +76,77 @@ impl Default for Roving {
                 "dht.aelitis.com:6881".to_owned(),
             ],
             advertise: None,
+            say: say::Say::default(),
         }
     }
 }
 
 /// Climb the ladder for `ch`: a line with a stream on it, or the sentence
 /// saying why none of the rungs answered. `held` says whether the first rung
-/// is climbed at all.
+/// is climbed at all. What the climb saw is said once it is over
+/// ([`say::tell`]); an entry with no rendezvous material says nothing.
 pub(crate) fn climb(ch: &Channel, held: bool) -> Result<Line, String> {
-    if held && let Some(line) = rung_held(ch) {
+    let mut said = Vec::new();
+    let line = rungs(ch, held, &mut said);
+    say::tell(ch, "climb", said);
+    line
+}
+
+fn rungs(ch: &Channel, held: bool, said: &mut Vec<String>) -> Result<Line, String> {
+    if held && let Some(line) = rung_held(ch, said) {
         return Ok(line);
     }
-    let direct = match rung_direct(ch) {
+    let direct = rung_direct(ch);
+    if ch.pairing.is_some() {
+        let outcome = direct.as_ref().map(|_| ()).map_err(std::io::Error::kind);
+        said.push(say::direct(outcome, ch.roving.direct));
+    }
+    let direct = match direct {
         Ok(tcp) => return ch.line(tcp, false),
-        Err(refusal) => refusal,
+        Err(e) => format!("connect {}: {e}", ch.address),
     };
     let Some(pairing) = ch.pairing else {
         return Err(direct);
     };
-    if let Some(tcp) = rung_repunch(ch) {
-        return ch.line(tcp, true);
-    }
-    match rung_rendezvous(ch, &pairing) {
-        Ok(tcp) => ch.line(tcp, true),
-        Err(refusal) => Err(format!("{direct}; rendezvous: {refusal}")),
-    }
+    let tcp = match rung_repunch(ch, said) {
+        Some(tcp) => tcp,
+        None => commons::rung(ch, &pairing, said)
+            .map_err(|refusal| format!("{direct}; rendezvous: {refusal}"))?,
+    };
+    said.push(say::kept());
+    ch.line(tcp, true)
 }
 
 /// Rung 1: the newest held line that is still alive. The pool is taken out
 /// of the lock to be asked — a liveness check touches the socket — and what
-/// was not taken goes back.
-fn rung_held(ch: &Channel) -> Option<Line> {
+/// was not taken goes back. A line found gone is dropped, and said with why.
+fn rung_held(ch: &Channel, said: &mut Vec<String>) -> Option<Line> {
     let mut pool = state::worked(&ch.key, |w| std::mem::take(&mut w.held));
     let now = ch.clock.now();
     let mut chosen: Option<Held> = None;
     while chosen.is_none()
         && let Some(mut held) = pool.pop()
     {
-        if held.alive(now) {
-            chosen = Some(held);
+        match held.gone(now) {
+            None => chosen = Some(held),
+            Some(why) => said.push(say::dropped(why)),
         }
     }
     state::worked(&ch.key, |w| w.held.append(&mut pool));
-    chosen.map(Line::from_held)
+    let line = chosen.map(Line::from_held);
+    if line.is_some() {
+        said.push(say::taken());
+    }
+    line
 }
 
 /// Rung 2: the address the entry names.
-fn rung_direct(ch: &Channel) -> Result<TcpStream, String> {
-    let tcp = if ch.pairing.is_none() {
+fn rung_direct(ch: &Channel) -> std::io::Result<TcpStream> {
+    if ch.pairing.is_none() {
         TcpStream::connect(&ch.address)
     } else {
         bounded(&ch.address, ch.roving.direct)
-    };
-    tcp.map_err(|e| format!("connect {}: {e}", ch.address))
+    }
 }
 
 /// A connect that gives each address of `address` at most `within`.
@@ -137,85 +162,30 @@ fn bounded(address: &str, within: Duration) -> std::io::Result<TcpStream> {
 }
 
 /// Rung 3: punch again at the endpoints the last rendezvous found.
-fn rung_repunch(ch: &Channel) -> Option<TcpStream> {
+fn rung_repunch(ch: &Channel, said: &mut Vec<String>) -> Option<TcpStream> {
     let (endpoints, punch) = state::worked(&ch.key, |w| (w.endpoints.clone(), w.punch.clone()));
     if endpoints.is_empty() {
         return None;
     }
-    punch?.punch(endpoints, ch.roving.window)
+    let punch = punch?;
+    punched(&punch, "re-punch", endpoints, ch.roving.window, said)
 }
 
-/// Rung 4: presence off the commons, a call into the inbox, a punch.
-fn rung_rendezvous(ch: &Channel, pairing: &Pairing) -> Result<TcpStream, String> {
-    let bootstrap: Vec<SocketAddr> = ch
-        .roving
-        .bootstrap
-        .iter()
-        .filter_map(|name| name.to_socket_addrs().ok())
-        .flatten()
-        .collect();
-    if bootstrap.is_empty() {
-        return Err("no bootstrap node resolved".to_owned());
-    }
-    let udp = Udp::bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0))
-        .map_err(|e| format!("udp: {e}"))?;
-    let mut dht = Dht::new(Box::new(udp), bootstrap, ch.roving.dht.clone())?;
-    let Some(item) = dht.get(pairing.engine, pairing.presence_salt())? else {
-        return Err("no presence is published under this pairing".to_owned());
-    };
-    let Some(presence) = Presence::open(&pairing.seal_key(), &item.value) else {
-        return Err("the presence item will not open under this pairing salt".to_owned());
-    };
-    let punch = punch_for(ch)?;
-    // The route-local addresses, then every address the presence walk's
-    // nodes agreed they saw us at that is not one of them (yog bl-efae) —
-    // all at the punch port. The observed PORT is the DHT socket's UDP
-    // mapping, not the punch port's, so only the address is taken (yog's
-    // `docs/REMOTE.md` §13.2; a carrier that rewrites the port, §13.8, is
-    // the case this does not reach).
-    let mut ips = ch.roving.advertise.clone().unwrap_or_else(punch::local_ips);
-    for ip in dht.observed().iter().map(SocketAddr::ip) {
-        if !ips.contains(&ip) {
-            ips.push(ip);
-        }
-    }
-    let endpoints = ips
-        .into_iter()
-        .map(|ip| SocketAddr::new(ip, punch.port()))
-        .collect();
-    let mut nonce = [0u8; 8];
-    crate::dht::random(&mut nonce)?;
-    let call = Call {
-        nonce: u64::from_be_bytes(nonce),
-        endpoints,
-    };
-    let sealed = call.seal(&pairing.seal_key())?;
-    let unix = ch.clock.unix();
-    let seq = state::worked(&ch.key, |w| {
-        w.last_seq = unix.max(w.last_seq + 1);
-        w.last_seq
+/// A punch, said as it starts and as it ends: `what` names which.
+fn punched(
+    punch: &Punch,
+    what: &str,
+    targets: Vec<SocketAddr>,
+    window: Duration,
+    said: &mut Vec<String>,
+) -> Option<TcpStream> {
+    said.push(say::started(what, &targets, window));
+    let tcp = punch.punch(targets, window);
+    said.push(match &tcp {
+        Some(tcp) => say::landed(what, tcp.peer_addr().ok().map(|at| at.ip())),
+        None => say::expired(what, window),
     });
-    let signed = pairing
-        .inbox_keypair()?
-        .sign(pairing.inbox_salt(), seq, sealed)?;
-    dht.put(signed)?;
-    let targets = presence.endpoints;
-    state::worked(&ch.key, |w| w.endpoints.clone_from(&targets));
-    match punch.punch(targets, ch.roving.window) {
-        Some(tcp) => Ok(tcp),
-        None => Err("nothing answered the punch inside its window".to_owned()),
-    }
-}
-
-/// The entry's punch port for the run: bound once, kept in RAM.
-fn punch_for(ch: &Channel) -> Result<Arc<Punch>, String> {
-    if let Some(punch) = state::worked(&ch.key, |w| w.punch.clone()) {
-        return Ok(punch);
-    }
-    let bound = Arc::new(Punch::bind(0)?);
-    Ok(state::worked(&ch.key, |w| {
-        Arc::clone(w.punch.get_or_insert(bound))
-    }))
+    tcp
 }
 
 #[cfg(test)]

@@ -94,10 +94,17 @@ pub(crate) struct Held {
 }
 
 impl Held {
-    /// Whether this line is still one the engine would answer on: inside the
-    /// silence bound with a ping to spare, and not hung up at the far end.
-    pub(crate) fn alive(&mut self, now: Instant) -> bool {
-        now.saturating_duration_since(self.heard) + PING < GONE && open(&mut self.tls)
+    /// Why this line is no longer one the engine would answer on — past the
+    /// silence bound with no ping to spare, or hung up at the far end — or
+    /// `None` while it still is.
+    pub(crate) fn gone(&mut self, now: Instant) -> Option<&'static str> {
+        if now.saturating_duration_since(self.heard) + PING >= GONE {
+            Some("past the silence bound")
+        } else if open(&mut self.tls) {
+            None
+        } else {
+            Some("closed at the far end")
+        }
     }
 }
 
@@ -129,11 +136,12 @@ fn open(tls: &mut Tls) -> bool {
 
 /// Read one frame that is not a ping: `Some` a frame of the answer, `None`
 /// the terminator. The engine's ping is discarded here, wherever a frame is
-/// read, because it is never part of any answer.
-pub(crate) fn read(r: &mut dyn io::Read) -> io::Result<Option<Value>> {
+/// read, because it is never part of any answer — and counted into `pings`,
+/// so the discard can be said.
+pub(crate) fn read(r: &mut dyn io::Read, pings: &mut usize) -> io::Result<Option<Value>> {
     loop {
         match frame::read_value(r)? {
-            Some(frame) if frame == ping() => {}
+            Some(frame) if frame == ping() => *pings += 1,
             other => return Ok(other),
         }
     }
@@ -164,7 +172,13 @@ mod tests {
         frame::write_value(&mut bytes, &ping()).unwrap();
         frame::write_end(&mut bytes).unwrap();
         let mut cursor = std::io::Cursor::new(bytes);
-        assert_eq!(read(&mut cursor).unwrap(), Some(json!({"n": 1})));
-        assert_eq!(read(&mut cursor).unwrap(), None);
+        let mut pings = 0;
+        assert_eq!(
+            read(&mut cursor, &mut pings).unwrap(),
+            Some(json!({"n": 1}))
+        );
+        assert_eq!(pings, 2);
+        assert_eq!(read(&mut cursor, &mut pings).unwrap(), None);
+        assert_eq!(pings, 3);
     }
 }

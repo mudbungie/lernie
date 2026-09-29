@@ -61,6 +61,8 @@ pub mod material;
 pub mod reach;
 /// The rendezvous material, the two sealed items and the punch.
 pub mod rendezvous;
+/// What the rendezvous path says on stderr: families and counts only.
+pub mod say;
 /// The mTLS configuration.
 pub mod tls;
 
@@ -191,8 +193,9 @@ impl Channel {
         on_frame: &mut dyn FnMut(Value) -> bool,
     ) -> Result<(), Reach> {
         let mut line = self.dial(request)?;
-        while let Some(chunk) =
-            line::read(&mut line.tls).map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
+        let mut pings = 0;
+        while let Some(chunk) = line::read(&mut line.tls, &mut pings)
+            .map_err(|e| Reach::Unanswered(format!("receive: {e}")))?
         {
             if !on_frame(chunk) {
                 return Ok(());
@@ -200,7 +203,13 @@ impl Channel {
         }
         // The whole answer is in, so a kept line goes back to its pool; a
         // follower that stopped early returned above and dropped its line,
-        // which is the word to the engine.
+        // which is the word to the engine. A ping discarded on the way is
+        // said, the way the climb's rungs were (`say::tell`).
+        say::tell(
+            self,
+            "pings",
+            (pings > 0).then(say::pinged).into_iter().collect(),
+        );
         line.give_back(&self.key, self.clock.now());
         Ok(())
     }

@@ -1,12 +1,16 @@
 //! Every rung taken, against a fake DHT on loopback UDP and a stand-in
 //! engine on a held line. The bench every file under here stands on is
 //! this one's; `held` is what happens to a line between asks, `refusals`
-//! is every rung falling through.
+//! is every rung falling through, `call` is what the call carries and from
+//! which port, and `said` is every line the climb says, off a captured sink.
 
+mod call;
 mod held;
 mod refusals;
+mod said;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener};
+use std::sync::{Arc, mpsc};
 use std::time::Duration;
 
 use serde_json::{Value, json};
@@ -14,8 +18,9 @@ use serde_json::{Value, json};
 use super::*;
 use crate::channel::line::{GONE, PING};
 use crate::channel::material::{ADDRESS, Whose, read_dir};
-use crate::channel::rendezvous::item::Call;
+use crate::channel::rendezvous::item::{Call, Presence};
 use crate::channel::rendezvous::tests::{pairing, provision};
+use crate::channel::say::Say;
 use crate::channel::{Channel, Reach};
 use crate::dht::tests::fake::{FakeNode, Mood};
 use crate::dht::tests::quick;
@@ -32,6 +37,9 @@ struct Bench {
     node: FakeNode,
     door: FakeNode,
     clock: FakeClock,
+    /// Every line the rungs said, off the captured sink.
+    heard: mpsc::Receiver<String>,
+    say: Say,
 }
 
 impl Bench {
@@ -51,11 +59,16 @@ impl Bench {
         node.serve(vec![], mood, held.into_iter().collect());
         let mut door = FakeNode::bind(NodeId([0u8; 20]));
         door.serve(vec![node.node()], Mood::Router, vec![]);
+        let (tx, heard) = mpsc::channel();
         Bench {
             scratch,
             node,
             door,
             clock: FakeClock::new(),
+            heard,
+            say: Say::new(Arc::new(move |line: &str| {
+                let _ = tx.send(line.to_owned());
+            })),
         }
     }
 
@@ -71,10 +84,22 @@ impl Bench {
         Roving {
             direct: Duration::from_millis(300),
             window: Duration::from_secs(3),
-            dht: quick(),
+            // A walk's deadline with room for a loaded box: the full suite
+            // under coverage starves a 300 ms one, and a node that answers
+            // costs no part of it — only the dark ones wait it out.
+            dht: Config {
+                deadline: Duration::from_secs(2),
+                ..quick()
+            },
             bootstrap: vec![self.door.addr.to_string()],
             advertise: Some(vec![IpAddr::V4(Ipv4Addr::LOCALHOST)]),
+            say: self.say.clone(),
         }
+    }
+
+    /// What the rungs said since this was last asked.
+    fn said(&self) -> Vec<String> {
+        self.heard.try_iter().collect()
     }
 
     /// The call the seat wrote into the inbox, opened.
@@ -212,56 +237,4 @@ fn the_engines_own_syn_lands_on_this_listener() {
     assert!(channel.ask(&request(1)).is_ok());
     assert_eq!(engine.connections(), 1);
     assert_eq!(ops(&engine.heard()), vec![1]);
-}
-
-#[test]
-fn the_punch_port_is_bound_once_for_the_run() {
-    let (listener, at) = listener();
-    let b = Bench::new(dead(), Some(presence(at)));
-    let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let engine = Engine::listen(b.scratch.path(), listener, script);
-    let channel = b.channel();
-    assert!(channel.ask(&request(1)).is_ok());
-    let (port, asked) = (b.punch_port(), b.node.queries());
-    // As if the engine had never been found this run — but the port stands.
-    crate::state::worked(&b.scratch.path().display().to_string(), |w| {
-        w.endpoints.clear();
-    });
-    assert!(channel.ask(&request(2)).is_ok());
-    assert_eq!(engine.connections(), 2);
-    assert!(b.node.queries() > asked, "the commons was asked again");
-    assert_eq!(b.punch_port(), port, "the same port, so the peer sees one");
-    assert_eq!(
-        b.call().map(|c| c.endpoints),
-        Some(vec![SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port)])
-    );
-}
-
-#[test]
-fn the_call_carries_the_observed_address_at_the_punch_port_once() {
-    let seen = |claim: IpAddr| {
-        let (listener, at) = listener();
-        let b = Bench::seen(
-            dead(),
-            Some(presence(at)),
-            Mood::Claim(SocketAddr::new(claim, 6881)),
-        );
-        let _engine = Engine::listen(b.scratch.path(), listener, vec![Reply::yes()]);
-        assert!(b.channel().ask(&request(1)).is_ok());
-        (b.call().map(|c| c.endpoints), b.punch_port())
-    };
-    let local = |port| SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port);
-    let far: IpAddr = "203.0.113.7".parse().unwrap();
-    let (endpoints, port) = seen(far);
-    assert_eq!(
-        endpoints,
-        Some(vec![local(port), SocketAddr::new(far, port)]),
-        "the observed address, at the punch port and never the observed one"
-    );
-    let (endpoints, port) = seen(IpAddr::V4(Ipv4Addr::LOCALHOST));
-    assert_eq!(
-        endpoints,
-        Some(vec![local(port)]),
-        "a local address is not said twice"
-    );
 }

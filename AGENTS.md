@@ -30,9 +30,14 @@ third answer.
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
 is `line-cap → deploy-selftest → protocol-gate → leak-scan → clippy -D warnings
-→ rules-audit → cargo deny check`. The pre-commit hook runs the same targets via
-`scripts/pre-commit`; neither restates a step the Makefile defines. Run `make install-hooks` once per
-clone — it seats `pre-commit` **and** `commit-msg`.
+→ rules-audit → cargo deny check`. The pre-commit hook (`scripts/pre-commit`)
+does not run them on this machine: it leak-scans locally, then asks
+`bl-speculate check` for a verified verdict on the staged tree and otherwise
+has the noodlezoo builder run `make check` and sign one (`bl-remote-gate`,
+~/ops/noodlezoo/docs/builder.md; ops bl-3e3f). There is no local build path
+in the hook; nobody restates a step the Makefile defines. Run
+`make install-hooks` once per clone — it seats `pre-commit` **and**
+`commit-msg`.
 
 ### A PROTOCOL bump is a four-repository act (bl-52b5; yog bl-bca2)
 

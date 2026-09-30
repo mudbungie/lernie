@@ -93,7 +93,15 @@ fn a_quiescent_conversation_answers_at_once_and_succeeds() {
     // carries how long the watch held** (bl-293d) — a watch that answers no
     // duration leaves "what did that take" a question nobody can answer.
     assert!(verdict.text.starts_with("┊ "), "{}", verdict.text);
-    assert!(verdict.text.contains(" after 0s "), "{}", verdict.text);
+    // Whole seconds, whatever the count: on a loaded box two reads can take
+    // one, and "at once" is the two reads and no tail below, not the clock.
+    let held = verdict
+        .text
+        .split(" after ")
+        .nth(1)
+        .and_then(|rest| rest.split("s — ").next())
+        .and_then(|secs| secs.parse::<u64>().ok());
+    assert!(held.is_some(), "{}", verdict.text);
     assert!(said.is_empty(), "no tail was held: {said:?}");
     // **Two reads and no held connection.** The state read says at rest and the
     // inbox read is what makes that sentence TRUE rather than true-as-of-an-

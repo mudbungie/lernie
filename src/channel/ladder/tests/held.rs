@@ -64,7 +64,17 @@ fn a_line_the_engine_ended_re_enters_the_ladder_however_it_ended() {
         let channel = b.channel();
         let first = channel.ask(&request(1));
         assert!(first.is_ok(), "{fate:?}: {first:?}");
-        std::thread::sleep(Duration::from_millis(300));
+        // The fate is on the wire when THIS end's line can see it — waited
+        // for, not slept past: a fixed pause is a bet against the box's load,
+        // and a loaded builder collected. Sleep first, so the sleep is run.
+        let key = b.scratch.path().display().to_string();
+        let now = b.clock.arc().now();
+        loop {
+            std::thread::sleep(Duration::from_millis(20));
+            if crate::state::worked(&key, |w| w.held.iter_mut().any(|h| h.gone(now).is_some())) {
+                break;
+            }
+        }
         let again = channel.ask(&request(2));
         assert!(again.is_ok(), "{fate:?}: {again:?}");
         assert_eq!(engine.connections(), 2, "{fate:?}");

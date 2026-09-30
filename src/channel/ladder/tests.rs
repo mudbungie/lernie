@@ -2,10 +2,12 @@
 //! engine on a held line. The bench every file under here stands on is
 //! this one's; `held` is what happens to a line between asks, `refusals`
 //! is every rung falling through, `call` is what the call carries and from
-//! which port, and `said` is every line the climb says, off a captured sink.
+//! which port, `recall` is rung 3 and its cache, and `said` is every line the
+//! climb says, off a captured sink.
 
 mod call;
 mod held;
+mod recall;
 mod refusals;
 mod said;
 
@@ -203,24 +205,6 @@ fn rung_four_reads_presence_writes_a_call_punches_and_the_line_is_held() {
         heard.iter().filter(|v| v.get("protocol").is_some()).count(),
         1,
         "one preface per connection, none per ask"
-    );
-}
-
-#[test]
-fn rung_three_punches_again_where_the_engine_was_without_the_commons() {
-    let (listener, at) = listener();
-    let b = Bench::new(dead(), Some(presence(at)));
-    let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let engine = Engine::listen(b.scratch.path(), listener, script);
-    let channel = b.channel();
-    assert!(channel.ask(&request(1)).is_ok());
-    let asked = b.node.queries();
-    assert!(channel.ask(&request(2)).is_ok());
-    assert_eq!(engine.connections(), 2, "the closed line was not reused");
-    assert_eq!(
-        b.node.queries(),
-        asked,
-        "the re-punch cost no DHT round trip"
     );
 }
 

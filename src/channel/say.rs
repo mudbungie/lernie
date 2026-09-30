@@ -135,6 +135,14 @@ pub(crate) fn call(nonce: u64, seq: i64, endpoints: &[SocketAddr], acks: usize) 
     )
 }
 
+/// Rung 3's call: the presence was cached, so no walk read it.
+pub(crate) fn recall(nonce: u64, seq: i64, endpoints: &[SocketAddr], acks: usize) -> String {
+    format!(
+        "{P} re-call from cached presence — nonce {nonce}, seq {seq}, {}, {acks} ack(s)",
+        counted(endpoints)
+    )
+}
+
 pub(crate) fn started(what: &str, targets: &[SocketAddr], window: Duration) -> String {
     format!(
         "{P} {what} started — {}, window {window:?}",

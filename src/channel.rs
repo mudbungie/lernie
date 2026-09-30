@@ -15,7 +15,7 @@
 //!
 //! **And where the entry carries rendezvous material, the connection is
 //! climbed for rather than dialled** (REMOTE §13.4; [`ladder`]): a live held
-//! line, the direct address, a re-punch where the engine was last found, the
+//! line, the direct address, a re-call from the presence last found, the
 //! full rendezvous over the commons. A punched line is held between asks
 //! ([`line`]), because first contact costs seconds. Nothing above `dial`
 //! knows which rung answered, and nothing about what is trusted changes with

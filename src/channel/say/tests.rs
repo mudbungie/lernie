@@ -40,7 +40,8 @@ fn every_line_is_the_house_shape_and_names_no_address() {
         call(7, 9, &endpoints(), 2),
         started("punch for nonce 7", &endpoints(), w),
         landed("punch for nonce 7", Some(IpAddr::V6(Ipv6Addr::LOCALHOST))),
-        expired("re-punch", w),
+        expired("punch for nonce 7", w),
+        recall(7, 9, &endpoints(), 1),
         kept(),
         pinged(),
     ];
@@ -63,8 +64,12 @@ fn every_line_is_the_house_shape_and_names_no_address() {
         "lernie: rendezvous: direct rung refused — connection refused"
     );
     assert_eq!(
-        landed("re-punch", None),
-        "lernie: rendezvous: re-punch landed (none)"
+        landed("punch for nonce 7", None),
+        "lernie: rendezvous: punch for nonce 7 landed (none)"
+    );
+    assert_eq!(
+        recall(7, 9, &endpoints(), 1),
+        "lernie: rendezvous: re-call from cached presence — nonce 7, seq 9, 3 endpoint(s) (1 v6, 2 v4), 1 ack(s)"
     );
 }
 

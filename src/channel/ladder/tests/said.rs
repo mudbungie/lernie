@@ -3,16 +3,16 @@
 
 use super::*;
 
-const P: &str = "lernie: rendezvous:";
+pub(super) const P: &str = "lernie: rendezvous:";
 
 /// The nonce and sequence of the call the seat wrote, off the inbox.
-fn written(b: &Bench) -> (u64, i64) {
+pub(super) fn written(b: &Bench) -> (u64, i64) {
     let inbox = pairing().inbox_keypair().unwrap().public();
     let seq = b.node.items().iter().find(|i| i.key == inbox).unwrap().seq;
     (b.call().unwrap().nonce, seq)
 }
 
-fn refused() -> String {
+pub(super) fn refused() -> String {
     format!("{P} direct rung refused — connection refused")
 }
 
@@ -65,71 +65,6 @@ fn a_direct_answer_is_said_once_and_an_entry_without_material_says_nothing() {
         .tuned(b.roving(), b.clock.arc());
     assert!(channel.ask(&request(1)).is_err());
     assert_eq!(b.said(), Vec::<String>::new());
-}
-
-#[test]
-fn a_held_line_found_gone_is_said_with_why_and_the_re_punch_with_how() {
-    for (fate, advance, why) in [
-        (Fate::Stay, GONE, "past the silence bound"),
-        (Fate::Fin, Duration::ZERO, "closed at the far end"),
-    ] {
-        let (listener, at) = listener();
-        let b = Bench::new(dead(), Some(presence(at)));
-        let script = vec![Reply::yes().then(fate), Reply::yes()];
-        let _engine = Engine::listen(b.scratch.path(), listener, script);
-        let channel = b.channel();
-        assert!(channel.ask(&request(1)).is_ok());
-        b.said();
-        std::thread::sleep(Duration::from_millis(200));
-        b.clock.advance(advance);
-        assert!(channel.ask(&request(2)).is_ok());
-        assert_eq!(
-            b.said(),
-            [
-                format!("{P} held line dropped — {why}"),
-                refused(),
-                format!("{P} re-punch started — 1 endpoint(s) (1 v4), window 3s"),
-                format!("{P} re-punch landed (1 v4)"),
-                format!("{P} punched line held between asks"),
-            ]
-        );
-    }
-}
-
-#[test]
-fn a_re_punch_that_expires_is_said_before_the_commons_is_asked() {
-    let (listener, at) = listener();
-    let b = Bench::new(dead(), Some(presence(at)));
-    let script = vec![Reply::yes().then(Fate::Fin), Reply::yes()];
-    let _engine = Engine::listen(b.scratch.path(), listener, script);
-    let channel = b.channel().tuned(
-        Roving {
-            window: Duration::from_millis(500),
-            ..b.roving()
-        },
-        b.clock.arc(),
-    );
-    assert!(channel.ask(&request(1)).is_ok());
-    crate::state::worked(&b.scratch.path().display().to_string(), |w| {
-        w.endpoints = vec![dead()];
-    });
-    b.said();
-    std::thread::sleep(Duration::from_millis(200));
-    assert!(channel.ask(&request(2)).is_ok());
-    let said = b.said();
-    assert_eq!(
-        said.get(..4).unwrap(),
-        [
-            format!("{P} held line dropped — closed at the far end"),
-            refused(),
-            format!("{P} re-punch started — 1 endpoint(s) (1 v4), window 500ms"),
-            format!("{P} re-punch expired after 500ms with no stream"),
-        ]
-    );
-    assert_eq!(
-        said.get(4).unwrap(),
-        &format!("{P} presence read — seq 1, 1 endpoint(s) (1 v4)")
-    );
 }
 
 #[test]

@@ -8,14 +8,17 @@
 //!    the connect is unbounded and its refusal is the sentence. With material
 //!    below it the connect is bounded, because a NAT that drops the SYN would
 //!    otherwise cost minutes before the next rung is tried.
-//! 3. **A re-punch at the RAM-cached endpoints** — where the engine was last
-//!    found, without a DHT round trip.
+//! 3. **A re-call from cached presence** — the engine's endpoints from the
+//!    last call that landed: write a fresh call and punch, one DHT walk and
+//!    not two (yog bl-278f). Never a client-only re-punch: an engine behind a
+//!    NAT holds no mapping once its served stream ends, so only a call opens
+//!    one, and the held line's pings are what keep one alive.
 //! 4. **The full rendezvous** — read presence off the commons, write a sealed
-//!    call into the inbox, punch. The DHT is touched here and nowhere else:
-//!    a seat pays nothing for the machinery when idle.
+//!    call into the inbox, punch. Rungs 3 and 4 are the DHT's and nowhere else
+//!    touches it: a seat pays nothing for the machinery when idle.
 //!
 //! What worked stays RAM for the run and never disk ([`crate::state`]): the
-//! endpoints, the punch port, the held lines. Whichever rung answered, the
+//! cached presence, the punch port, the held lines. Whichever rung answered, the
 //! stream is handed back as a bare `TcpStream` and the caller runs the same
 //! inner mTLS over it, verifying the same engine name off the same address —
 //! the ladder decides how a socket is obtained and nothing about what is
@@ -26,16 +29,15 @@
 //! punches and held-line events reach stderr as families and counts, never
 //! an address, and a climb that saw what the last one saw is not said again.
 
-use std::net::{IpAddr, SocketAddr, TcpStream, ToSocketAddrs};
+use std::net::{IpAddr, TcpStream, ToSocketAddrs};
 use std::time::Duration;
 
 use super::line::{Held, Line};
-use super::rendezvous::punch::Punch;
 use super::{Channel, say};
 use crate::dht::Config;
 use crate::state;
 
-/// Rung 4, the one that touches the commons.
+/// Rungs 3 and 4, the ones that touch the commons.
 mod commons;
 
 /// Every knob the roving rungs turn — stated defaults, and a test's to
@@ -108,11 +110,8 @@ fn rungs(ch: &Channel, held: bool, said: &mut Vec<String>) -> Result<Line, Strin
     let Some(pairing) = ch.pairing else {
         return Err(direct);
     };
-    let tcp = match rung_repunch(ch, said) {
-        Some(tcp) => tcp,
-        None => commons::rung(ch, &pairing, said)
-            .map_err(|refusal| format!("{direct}; rendezvous: {refusal}"))?,
-    };
+    let tcp = commons::rungs(ch, &pairing, said)
+        .map_err(|refusal| format!("{direct}; rendezvous: {refusal}"))?;
     said.push(say::kept());
     ch.line(tcp, true)
 }
@@ -159,33 +158,6 @@ fn bounded(address: &str, within: Duration) -> std::io::Result<TcpStream> {
         }
     }
     Err(refusal)
-}
-
-/// Rung 3: punch again at the endpoints the last rendezvous found.
-fn rung_repunch(ch: &Channel, said: &mut Vec<String>) -> Option<TcpStream> {
-    let (endpoints, punch) = state::worked(&ch.key, |w| (w.endpoints.clone(), w.punch.clone()));
-    if endpoints.is_empty() {
-        return None;
-    }
-    let punch = punch?;
-    punched(&punch, "re-punch", endpoints, ch.roving.window, said)
-}
-
-/// A punch, said as it starts and as it ends: `what` names which.
-fn punched(
-    punch: &Punch,
-    what: &str,
-    targets: Vec<SocketAddr>,
-    window: Duration,
-    said: &mut Vec<String>,
-) -> Option<TcpStream> {
-    said.push(say::started(what, &targets, window));
-    let tcp = punch.punch(targets, window);
-    said.push(match &tcp {
-        Some(tcp) => say::landed(what, tcp.peer_addr().ok().map(|at| at.ip())),
-        None => say::expired(what, window),
-    });
-    tcp
 }
 
 #[cfg(test)]

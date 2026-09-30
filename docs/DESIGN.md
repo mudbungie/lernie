@@ -4531,15 +4531,25 @@ and nothing above `Channel::dial` knows which rung answered:
    and its refusal is the sentence. With material below it the connect is
    bounded (`Roving::direct`), because a NAT that drops the SYN would
    otherwise cost minutes before the next rung.
-3. **A re-punch at the RAM-cached endpoints** — where the engine was last
-   found, with no DHT round trip.
+3. **A re-call from cached presence** (yog bl-278f) — the engine's
+   endpoints at its punch port, as the last call that LANDED found them:
+   write a fresh call naming this box (its route-local addresses and the
+   addresses the last walk observed, since a re-call writes before it walks)
+   and punch. One DHT walk, not two. **It replaced a client-only re-punch at
+   the same endpoints, which cannot land against an engine behind a NAT**:
+   measured 2026-09-29, the engine's home NAT holds no mapping once its
+   served stream ends and the engine sends no SYN outside a call's window,
+   so a re-punch's SYNs reach nothing. The held line's pings are the only
+   thing that keeps a mapping alive, so a dropped line is always a call. A
+   call that expires unanswered — re-call or full — clears the cache, so the
+   climb falls to presence and the next climb reads it again.
 4. **The full rendezvous** — `get` presence under `(engine key, presence
    salt)`, open it, `put` a sealed call under the derived inbox keypair
    naming this box's route-local addresses, then every address the `get`
    walk observed that is not one of them — all at its punch port, never the
    observed port, which is the DHT socket's UDP mapping (yog's
-   `docs/REMOTE.md` §13.2) — with a fresh nonce and a rising sequence, then punch. **The DHT is touched here and
-   nowhere else**: a seat pays nothing for the machinery when idle, and only
+   `docs/REMOTE.md` §13.2) — with a fresh nonce and a rising sequence, then punch. **The DHT is touched by rungs 3
+   and 4 and nowhere else**: a seat pays nothing for the machinery when idle, and only
    the engine polls.
 
 Whichever rung produced the stream, `Channel::line` runs the same inner mTLS
@@ -4580,8 +4590,8 @@ which was always the word to the engine (§4.2), and a line with an answer
 still on it is never reused.
 
 **What worked stays RAM for the run and never disk** (`state::worked`; the
-runtime half of REMOTE §8's `:0` discipline). The held lines, the endpoints
-a rendezvous found, the punch port bound once so the engine's peer sees one
+runtime half of REMOTE §8's `:0` discipline). The held lines, the cached
+presence a landed call answered to and where the commons last saw this end, the punch port bound once so the engine's peer sees one
 port, and the inbox sequence. Keyed by the entry's directory, because entries
 share nothing (§4.6). It is the **second tenant of `src/state.rs`** and it
 belongs there on the rule's own terms: a channel is opened per gesture and
@@ -4602,14 +4612,13 @@ binary's name:
     lernie: rendezvous: held line taken up — no dial
     lernie: rendezvous: held line dropped — past the silence bound | closed at the far end
     lernie: rendezvous: direct rung answered | refused — <io error class> | timed out after <d>
-    lernie: rendezvous: re-punch started — <k> endpoint(s) (1 v6, 1 v4), window <d>
-    lernie: rendezvous: re-punch landed (1 v4) | expired after <d> with no stream
     lernie: rendezvous: no bootstrap node resolved — no rendezvous
     lernie: rendezvous: presence not read — the DHT walk failed (reason withheld: it names nodes)
     lernie: rendezvous: no presence is published under this pairing
     lernie: rendezvous: presence seq <s> did not open under this pairing's seal key
     lernie: rendezvous: presence read — seq <s>, <k> endpoint(s) (<families>)
     lernie: rendezvous: every address the call carries (<families>) is in an overlay or carrier-NAT range — an engine outside that network cannot reach it
+    lernie: rendezvous: re-call from cached presence — nonce <n>, seq <s>, <k> endpoint(s) (<families>), <a> ack(s)
     lernie: rendezvous: call nonce <n> written — seq <s>, <k> endpoint(s) (<families>), <a> ack(s)
     lernie: rendezvous: call nonce <n> not written — the DHT walk failed (reason withheld: it names nodes)
     lernie: rendezvous: punch for nonce <n> started — <k> endpoint(s) (<families>), window <d>
@@ -4684,9 +4693,9 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
 | `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence, the wall for a BEP 44 sequence (§4.40). | ~50 |
-| `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, re-punch, rendezvous — the knobs the roving rungs turn, and each climb's transcript handed to `say` (§4.40). | ~190 |
-| `src/channel/ladder/commons.rs` | rung 4, the one that touches the DHT: presence read, the call written — the observed address beside the local ones — and the punch, each step said (§4.40). Split from the ladder at the budget. | ~105 |
-| `src/channel/say.rs` | what the rendezvous path says on stderr (yog REMOTE §13.4, "The operator's view of the loop"): every line built here, families and counts and never an address; a transcript identical to the entry's last is not said again; the sink injected (§4.40). | ~190 |
+| `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, then the commons' two — the knobs the roving rungs turn, and each climb's transcript handed to `say` (§4.40). | ~165 |
+| `src/channel/ladder/commons.rs` | rungs 3 and 4, the ones that touch the DHT: the re-call from cached presence, else presence read; either way the call written — the observed address beside the local ones — and the punch, each step said, and the cache kept only for a call that landed (§4.40). Split from the ladder at the budget. | ~165 |
+| `src/channel/say.rs` | what the rendezvous path says on stderr (yog REMOTE §13.4, "The operator's view of the loop"): every line built here, families and counts and never an address; a transcript identical to the entry's last is not said again; the sink injected (§4.40). | ~205 |
 | `src/channel/line.rs` | one line to one engine: what a rung handed back, the ping discard (counted, so it can be said), the liveness check and why it failed, and what is kept of it between asks (§4.40). | ~180 |
 | `src/channel/rendezvous.rs` | the two files an entry may carry beside `ca.pem`, and the four HKDF derivations both ends must agree on (§4.40). | ~130 |
 | `src/channel/rendezvous/item.rs` | presence and the call: the sealed byte format, mirrored from the engine and pinned to its bytes (§4.40). | ~140 |

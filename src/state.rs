@@ -27,7 +27,7 @@
 //! — a click changes the model, and what is asked next follows from it.
 
 use std::collections::HashMap;
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex, OnceLock, PoisonError};
 use std::time::Duration;
 
@@ -191,8 +191,8 @@ impl Link {
 /// **What worked for one entry, this run** (DESIGN §4.40) — the second
 /// tenant of this file, and the runtime half of yog's `docs/REMOTE.md` §8's
 /// `:0` discipline: never disk. A punched line is held between asks, the
-/// endpoints a rendezvous found are punched again before the commons is
-/// asked twice, the punch port is bound once so the engine's peer sees one
+/// presence a landed call answered to is re-called without reading it again
+/// (yog bl-278f), the punch port is bound once so the engine's peer sees one
 /// port, and the inbox sequence rises across calls. Keyed by the entry's
 /// directory, because entries share nothing (§4.6): what worked for one
 /// engine says nothing about another.
@@ -206,8 +206,11 @@ impl Link {
 pub(crate) struct Worked {
     /// Punched lines kept between asks, newest last.
     pub(crate) held: Vec<Held>,
-    /// Where the engine was last found.
+    /// The cached presence: the engine's endpoints at its punch port, as the
+    /// last call that LANDED found them. A call that expires clears it.
     pub(crate) endpoints: Vec<SocketAddr>,
+    /// Where the commons last saw this end, for a re-call that writes first.
+    pub(crate) observed: Vec<IpAddr>,
     /// The port this end punches from, for the run.
     pub(crate) punch: Option<Arc<Punch>>,
     /// The last inbox sequence written, so two calls in one second still

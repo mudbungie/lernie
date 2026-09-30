@@ -30,14 +30,20 @@ third answer.
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
 is `line-cap → deploy-selftest → protocol-gate → leak-scan → clippy -D warnings
-→ rules-audit → cargo deny check`. The pre-commit hook (`scripts/pre-commit`)
-does not run them on this machine: it leak-scans locally, then asks
-`bl-speculate check` for a verified verdict on the staged tree and otherwise
-has the noodlezoo builder run `make check` and sign one (`bl-remote-gate`,
-~/ops/noodlezoo/docs/builder.md; ops bl-3e3f). There is no local build path
-in the hook; nobody restates a step the Makefile defines. Run
-`make install-hooks` once per clone — it seats `pre-commit` **and**
-`commit-msg`.
+→ rules-audit → cargo deny check`. The pre-commit hook (`.githooks/pre-commit`,
+the mainline refusal) execs `scripts/pre-commit`, which is `exec bl-gate "$@"`:
+the gate is `bl-gate` from userconf (`~/userconf/bin/bl-gate`, ops bl-1f80,
+`~/ops/remote-builds.md` "Phase 2"), the one copy every repo on this machine
+runs. This laptop does not compile in the gate, and `cargo tarpaulin` /
+`cargo llvm-cov` are shimmed here and refuse to run: bl-gate leak-scans
+locally, then asks `bl-speculate check` for a verified verdict on the staged
+tree and otherwise has the noodlezoo builder run `make check` and sign one
+(`bl-remote-gate`, ~/ops/noodlezoo/docs/builder.md). Exit 0 pass, 1 the builder
+failed the tree (`ssh builder cat /tank/build/out/<sha>/log`), 75 no verdict
+(commit refused), never `cargo test`. `bl-remote-run <target>` runs any make
+target on the builder when you want tests before committing. Nobody restates a
+step the Makefile defines. Run `make install-hooks` once per clone — it seats
+`pre-commit` **and** `commit-msg`.
 
 ### A PROTOCOL bump is a four-repository act (bl-52b5; yog bl-bca2)
 

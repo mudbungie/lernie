@@ -1,7 +1,8 @@
 +++
 title = "the doctor has no control or rendering on the seat: reply/doctor sits in corpus/unpainted/ and parity.toml's doctor row cites only the engine's ball (yog REMOTE bl-28f4, round-1 ruling 7)"
 created = 1791438069
-updated = 1791438069
+updated = 1791438755
+claimant = "Mystical-9bbb"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

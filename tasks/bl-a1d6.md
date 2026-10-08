@@ -1,7 +1,8 @@
 +++
 title = "the learning loop has no control on the glass: the config pane owes proposals a listing and its two verdicts"
 created = 1788754622
-updated = 1788754622
+updated = 1791438054
+claimant = "Mystical-a1d6"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

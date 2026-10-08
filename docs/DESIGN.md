@@ -4735,7 +4735,7 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/channel/reach.rs` | why an exchange produced no answer, and the one fact a sentence cannot carry: whether the request crossed (§4.22). | ~70 |
 | `src/channel/material.rs` | what the operator carried here, and what its absence means — the two remedies its absence earns, and which of them is the caller's fact (§4.5, bl-ad7f, bl-5cbe). | ~160 |
 | `src/channel/entries.rs` | the client-side workspaces this box holds elsewhere. | ~165 |
-| `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence, the wall for a BEP 44 sequence (§4.40). | ~50 |
+| `src/channel/clock.rs` | the seat's one reading of time, injected: monotonic for a held line's silence and a DHT query's deadline, the wall for a BEP 44 sequence (§4.40). The DHT reads the system's always — its waits are on a real socket — and only its own suite steers it (bl-7b83). | ~50 |
 | `src/channel/ladder.rs` | the four rungs a dial climbs — held line, direct address, then the commons' two — the knobs the roving rungs turn, and each climb's transcript handed to `say` (§4.40). | ~165 |
 | `src/channel/ladder/commons.rs` | rungs 3 and 4, the ones that touch the DHT: the re-call from cached presence, else presence read; either way the call written — the observed address beside the local ones — and the punch, each step said, and the cache kept only for a call that landed (§4.40). Split from the ladder at the budget. | ~165 |
 | `src/channel/say.rs` | what the rendezvous path says on stderr (yog REMOTE §13.4, "The operator's view of the loop"): every line built here, families and counts and never an address; a transcript identical to the entry's last is not said again; the sink injected (§4.40). | ~205 |
@@ -4749,10 +4749,11 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/dht/mutable.rs` | BEP 44's signed mutable item: sign, verify, the target, the exact bytes a signature covers. | ~145 |
 | `src/dht/lookup.rs` | the iterative walk: the bootstrap as a door asked `find_node` and re-asked when dry — only at the addresses that answered (yog bl-f519) — the window refilled on every event, bounded twice over against a hostile commons. | ~130 |
 | `src/dht/frontier.rs` | a walk's state — every node heard of, asked, replied, and the door addresses that answered — and the frontier read off it: the K closest live nodes, the next to ask, whether any is in the air. | ~140 |
-| `src/dht/flight.rs` | the window of queries in the air, each with its own deadline; waiting for one event at a time. | ~85 |
+| `src/dht/flight.rs` | the window of queries in the air, each with its own deadline read off the client's clock; waiting for one event at a time. | ~85 |
 | `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once, and a walk that found no holder its own error, sending nothing (yog bl-f519). | ~70 |
 | `src/dht/transport.rs` | the datagram seam: one trait, and the std UDP socket that fills it. | ~75 |
-| `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves. `cfg(test)`. | ~215 |
+| `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves — and the one rule for which queries a mood leaves unanswered. `cfg(test)`. | ~230 |
+| `src/dht/tests/steered.rs` | a walk whose silence the fakes declare: every answer owed is waited for, and the client's clock moves only past silence, so a deadline under test never bets on the box's load (bl-7b83). `cfg(test)`. | ~80 |
 | `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, a BEP 42 claim, compact routing. `cfg(test)`. | ~55 |
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |

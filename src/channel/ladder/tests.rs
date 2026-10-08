@@ -159,6 +159,21 @@ fn ops(heard: &[Value]) -> Vec<u64> {
     heard.iter().filter_map(|v| v.get("n")?.as_u64()).collect()
 }
 
+/// Wait until this end's held line can see it is gone, judged at the bench's
+/// clock — so a test that drops it by advancing time advances first. Waited
+/// for, not slept past: a fixed pause is a bet against the box's load, and a
+/// loaded builder collected (bl-7b83). Sleep first, so the sleep is run.
+fn ended(b: &Bench) {
+    let key = b.scratch.path().display().to_string();
+    let now = b.clock.arc().now();
+    loop {
+        std::thread::sleep(Duration::from_millis(20));
+        if crate::state::worked(&key, |w| w.held.iter_mut().any(|h| h.gone(now).is_some())) {
+            break;
+        }
+    }
+}
+
 #[test]
 fn rung_two_the_direct_address_answers_and_is_not_held() {
     let (listener, at) = listener();

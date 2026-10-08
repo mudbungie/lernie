@@ -22,6 +22,14 @@ use serde_json::json;
 /// The beats that drive the whole seat and read the glass.
 mod window;
 
+/// How long a test waits on the threads before it calls them HUNG — never how
+/// long a slow box gets (bl-7b83). Twenty seconds was a bet, and the builder
+/// under coverage, other suites beside it, lost it before the first dial
+/// answered. Every wait on it ends on the state it watches, so a healthy box
+/// spends milliseconds; it sits under tarpaulin's own 300 s so the failure
+/// that names the wait is this suite's and not the runner's.
+const HUNG: Duration = Duration::from_mins(4);
+
 /// **A pass runs, then the loop asks whether to run again.** So a stop is seen
 /// between passes and never during one — which is what lets every worker's body
 /// be a plain function with nothing to check halfway through.
@@ -85,7 +93,7 @@ fn the_threads_carry_a_real_answer_to_a_real_frame() {
     // Settle until the answer lands or the deadline says the threads are not
     // working. A bare sleep would be a race written down; a deadline is the
     // assertion that this finishes at all.
-    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    let deadline = std::time::Instant::now() + HUNG;
     while model.roster[0].walls.is_empty() && std::time::Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(5));
         link.settle(&mut model);

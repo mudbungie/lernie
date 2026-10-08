@@ -45,9 +45,11 @@ pub use krpc::{Node, NodeId};
 pub use mutable::{Keypair, Mutable, target_of};
 pub use transport::{Transport, Udp};
 
+use crate::channel::clock::{self, Clock};
 use ring::rand::SecureRandom;
 use std::collections::BTreeMap;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 
 /// The walk's parameters — stated so a test can shrink them and a caller
@@ -91,6 +93,12 @@ pub struct Dht {
     /// (BEP 42), one claim per node — raw, because [`Dht::observed`] is the
     /// vote over them and a vote is computed, not kept.
     claims: Vec<SocketAddr>,
+    /// What a query's deadline is read against. The system's, always, and
+    /// not the channel's: a walk waits on a real socket, so its deadlines
+    /// must pass on their own, where the ladder's suite moves the channel's
+    /// clock by hand. The field exists so this module's suite can steer it
+    /// (bl-7b83) — a deadline under test is one the test decides has passed.
+    clock: Arc<dyn Clock>,
 }
 
 impl Dht {
@@ -109,6 +117,7 @@ impl Dht {
             id: NodeId(id),
             tid: 0,
             claims: Vec::new(),
+            clock: clock::system(),
         })
     }
 

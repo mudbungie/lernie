@@ -84,8 +84,13 @@ fn a_v6_loopback_punch_lands_where_the_box_has_v6() {
     let target: SocketAddr = format!("[::1]:{}", engine.port()).parse().unwrap();
     let has_v6 = engine.listeners.len() == 2;
     let client = Punch::bind(0).unwrap();
-    let served = std::thread::spawn(move || engine.punch(vec![], Duration::from_millis(600)));
-    let landed = client.punch(vec![target], Duration::from_millis(500));
+    // Where a v6 listener stands, both punches return the moment the SYN
+    // lands, so the window is how long a HUNG one gets and never a bet on the
+    // box's load — 600 ms was, and a loaded builder lost it (bl-7b83). Where
+    // none stands, nothing can land however long either waits.
+    let window = Duration::from_millis(if has_v6 { 60_000 } else { 500 });
+    let served = std::thread::spawn(move || engine.punch(vec![], window));
+    let landed = client.punch(vec![target], window);
     assert_eq!(
         landed.is_some(),
         has_v6,

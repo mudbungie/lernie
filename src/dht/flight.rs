@@ -38,7 +38,7 @@ impl Dht {
         let datagram = krpc::query(&tid, &self.id, q, args);
         let sent = self.transport.send(addr, &datagram).is_ok();
         if sent {
-            let deadline = Instant::now() + self.config.deadline;
+            let deadline = self.clock.now() + self.config.deadline;
             flight.insert(
                 tid,
                 Query {
@@ -58,7 +58,7 @@ impl Dht {
     /// noise, and answers to transactions not in the air, are read past.
     pub(crate) fn land(&mut self, flight: &mut Flight) -> Result<Option<(Query, Message)>, String> {
         loop {
-            let now = Instant::now();
+            let now = self.clock.now();
             let before = flight.len();
             flight.retain(|_, q| q.deadline > now);
             let nearest = flight.values().map(|q| q.deadline).min();

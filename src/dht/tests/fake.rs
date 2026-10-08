@@ -55,6 +55,8 @@ pub(crate) struct FakeNode {
     thread: Option<JoinHandle<()>>,
     items: Arc<Mutex<Vec<Mutable>>>,
     queries: Arc<AtomicUsize>,
+    /// How it was told to serve — `None` until it was.
+    pub(crate) mood: Option<Mood>,
 }
 
 impl FakeNode {
@@ -72,6 +74,7 @@ impl FakeNode {
             thread: None,
             items: Arc::new(Mutex::new(Vec::new())),
             queries: Arc::new(AtomicUsize::new(0)),
+            mood: None,
         }
     }
 
@@ -102,6 +105,7 @@ impl FakeNode {
 
     pub(crate) fn serve(&mut self, peers: Vec<Node>, mood: Mood, items: Vec<Mutable>) {
         let socket = self.socket.take().unwrap();
+        self.mood = Some(mood);
         let (id, stop) = (self.id, Arc::clone(&self.stop));
         *self.items.lock().unwrap_or_else(PoisonError::into_inner) = items;
         let (store, queries) = (Arc::clone(&self.items), Arc::clone(&self.queries));
@@ -117,6 +121,18 @@ impl Drop for FakeNode {
         if let Some(t) = self.thread.take() {
             t.join().unwrap();
         }
+    }
+}
+
+/// Whether a node in `mood` lets a `verb` query go unanswered — the one rule
+/// [`run`] keeps, and the one a steered walk reads to know what it is owed
+/// (bl-7b83).
+pub(crate) fn ignores(mood: Mood, verb: &[u8]) -> bool {
+    match mood {
+        Mood::Silent => true,
+        Mood::Router | Mood::Rotor => verb != b"find_node",
+        Mood::Mute => verb == b"put",
+        _ => false,
     }
 }
 
@@ -140,10 +156,10 @@ fn run(
         let q = Value::decode(&buf[..n]).unwrap();
         let tid = q.get("t").unwrap().as_bytes().unwrap().to_vec();
         let verb = q.get("q").unwrap().as_bytes().unwrap();
+        if ignores(mood, verb) {
+            continue;
+        }
         let datagram = match mood {
-            Mood::Silent => continue,
-            Mood::Router | Mood::Rotor if verb != b"find_node" => continue,
-            Mood::Mute if verb == b"put" => continue,
             Mood::Rotor => {
                 turn += 1;
                 let one = vec![peers[(turn - 1) % peers.len()]; 8];
@@ -153,7 +169,10 @@ fn run(
             Mood::Refuse => error(&tid, 201, "refused"),
             Mood::Anonymous => reply(&tid, Dict::new()),
             Mood::Stray => reply(b"stray", Dict::from([entry("id", bytes(&id.0))])),
-            Mood::Answer | Mood::Router | Mood::Mute => answer(&tid, id, peers, &mut items, &q),
+            // `Silent` ignored the query above; it answers nothing here.
+            Mood::Answer | Mood::Router | Mood::Mute | Mood::Silent => {
+                answer(&tid, id, peers, &mut items, &q)
+            }
             Mood::Claim(ip) => claim(answer(&tid, id, peers, &mut items, &q), ip),
         };
         socket.send_to(&datagram, from).unwrap();

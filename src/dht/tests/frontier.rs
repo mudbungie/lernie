@@ -1,7 +1,12 @@
 //! The walk's frontier (yog bl-d00f): a silent node leaves it, a node the socket
 //! cannot reach never spends a query, and a dry frontier re-asks the door
 //! while the door names anyone at all, until the query cap.
+//!
+//! Every walk here is [`steered`]: it knows which fakes will not answer, so a
+//! deadline passes when the test's clock says so and never because a loaded
+//! box was slow to schedule a live fake (bl-7b83).
 
+use super::steered::steered;
 use super::*;
 
 fn node(fill: u8, mood: Mood, items: Vec<Mutable>) -> FakeNode {
@@ -36,12 +41,13 @@ fn silent_nodes_leave_the_frontier_for_the_live_ones_past_them() {
         n.serve(vec![], mood, items);
     }
     let door = router(ranked.iter().map(FakeNode::node).collect());
-    let mut dht = client(vec![door.addr], quick());
+    let silent: Vec<&FakeNode> = ranked[..3].iter().collect();
+    let (mut dht, _) = steered(vec![door.addr], quick(), &silent);
     assert_eq!(
         dht.get(kp.public(), b"s".to_vec()).unwrap(),
         Some(item.clone())
     );
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &silent);
     assert_eq!(
         lookup(&mut dht, item.target()).unwrap(),
         vec![ranked[3].node(), ranked[4].node()]
@@ -64,7 +70,7 @@ fn a_node_the_socket_cannot_reach_spends_no_query() {
         max_queries: 2,
         ..quick()
     };
-    let mut dht = client(vec![unreachable.addr, door.addr], config);
+    let (mut dht, _) = steered(vec![unreachable.addr, door.addr], config, &[]);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![a.node()]);
 }
 
@@ -83,14 +89,15 @@ fn a_dry_frontier_asks_the_door_again_for_fresh_seeds() {
         Mood::Rotor,
         vec![],
     );
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&silent[0], &silent[1]]);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![live.node()]);
 }
 
 /// A door that only ever names a dead node is asked again until the query
 /// cap, and the walk is the dark-commons `Err`: the dead node is asked once
 /// and waited out once, and every later door ask names only it, so the cap
-/// of six ends the knocking in one deadline and a few loopback answers.
+/// of six ends the knocking in one deadline and a few loopback answers —
+/// measured on the steered clock, which moves only past silence.
 #[test]
 fn a_door_naming_only_the_dead_is_asked_until_the_cap() {
     let silent = node(0x41, Mood::Silent, vec![]);
@@ -100,10 +107,10 @@ fn a_door_naming_only_the_dead_is_asked_until_the_cap() {
         deadline: Duration::from_millis(100),
         ..quick()
     };
-    let mut dht = client(vec![door.addr], config);
-    let started = std::time::Instant::now();
+    let (mut dht, clock) = steered(vec![door.addr], config, &[&silent]);
+    let started = clock.arc().now();
     assert!(lookup(&mut dht, id(0xff)).is_err());
-    assert!(started.elapsed() < Duration::from_secs(1));
+    assert_eq!(clock.arc().now() - started, Duration::from_millis(100));
 }
 
 /// A node that answers the walk's verb with an error — live, a `get` refused
@@ -115,7 +122,7 @@ fn a_refusal_is_no_reply_and_the_door_is_asked_again() {
     let live = node(0x43, Mood::Answer, vec![]);
     let mut door = FakeNode::bind(id(0x00));
     door.serve(vec![refusing.node(), live.node()], Mood::Rotor, vec![]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[]);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![live.node()]);
 }
 
@@ -128,7 +135,7 @@ fn a_walk_short_of_k_replies_asks_the_door_again() {
     let second = node(0x42, Mood::Answer, vec![]);
     let mut door = FakeNode::bind(id(0x00));
     door.serve(vec![first.node(), second.node()], Mood::Rotor, vec![]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[]);
     assert_eq!(
         lookup(&mut dht, id(0xff)).unwrap(),
         vec![second.node(), first.node()]
@@ -158,6 +165,7 @@ fn a_silent_router_leaves_the_door_after_its_first_deadline() {
         deadline: Duration::from_millis(100),
         ..quick()
     };
-    let mut dht = client(vec![dead_router.addr, rotor.addr], config);
+    let silence: Vec<&FakeNode> = silent.iter().chain([&dead_router]).collect();
+    let (mut dht, _) = steered(vec![dead_router.addr, rotor.addr], config, &silence);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![live.node()]);
 }

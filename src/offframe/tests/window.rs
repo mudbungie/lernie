@@ -37,7 +37,7 @@ fn the_window_paints_what_a_real_engine_answered() {
     link.settle(&mut model);
     let workers = run(&link, scratch.path());
     let window = crate::paint_probe::frame::Window::new();
-    let deadline = std::time::Instant::now() + Duration::from_secs(20);
+    let deadline = std::time::Instant::now() + super::HUNG;
     let mut painted = String::new();
     // The row elides at the roster's width (bl-d1ae), so the head of the
     // line is what the glass carries — and the head is the state (bl-cecd).

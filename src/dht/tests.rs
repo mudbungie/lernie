@@ -7,6 +7,7 @@ pub(crate) mod fake;
 mod frontier;
 mod items;
 mod observed;
+mod steered;
 mod walks;
 mod window;
 

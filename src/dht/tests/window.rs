@@ -1,9 +1,12 @@
 //! The sliding window (yog bl-d9c1): a silent query costs its own slot for one
 //! deadline and never delays an answer beside it, and a slot is refilled the
 //! moment its query answers or times out.
+//!
+//! Time is the [`steered`] clock's, which moves only past silence: a wait is
+//! measured exactly, and never against how loaded the box was (bl-7b83).
 
+use super::steered::steered;
 use super::*;
-use std::time::Instant;
 
 /// The door names a live node and a silent one together, and the live one
 /// names a closer live one. Lockstep, the walk waited out the silent query's
@@ -24,13 +27,13 @@ fn a_silent_node_does_not_delay_an_answer_in_the_same_window() {
         deadline: Duration::from_secs(2),
         ..quick()
     };
-    let mut dht = client(vec![door.addr], config);
-    let started = Instant::now();
+    let (mut dht, clock) = steered(vec![door.addr], config, &[&silent]);
+    let started = clock.arc().now();
     assert_eq!(
         lookup(&mut dht, id(0xff)).unwrap(),
         vec![near.node(), live.node()]
     );
-    assert!(started.elapsed() < Duration::from_millis(500));
+    assert_eq!(clock.arc().now(), started, "no silence was waited on");
 }
 
 /// One slot, the closest node silent: its deadline passes, the slot is
@@ -47,12 +50,10 @@ fn the_window_refills_when_a_query_times_out() {
         deadline: Duration::from_millis(200),
         ..quick()
     };
-    let mut dht = client(vec![door.addr], config);
-    let started = Instant::now();
+    let (mut dht, clock) = steered(vec![door.addr], config, &[&silent]);
+    let started = clock.arc().now();
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![live.node()]);
-    let took = started.elapsed();
-    assert!(took >= Duration::from_millis(200), "{took:?}");
-    assert!(took < Duration::from_millis(800), "{took:?}");
+    assert_eq!(clock.arc().now() - started, Duration::from_millis(200));
 }
 
 /// A holder that offered a token and is silent to `put` costs its own
@@ -66,6 +67,6 @@ fn a_put_counts_the_holders_that_answer_past_a_silent_one() {
     let mut mute = FakeNode::bind(id(0x43));
     mute.serve(vec![], Mood::Mute, vec![]);
     let door = router(vec![holder.node(), mute.node()]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&mute]);
     assert_eq!(dht.put(item).unwrap(), 1);
 }

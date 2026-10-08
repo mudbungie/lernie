@@ -28,8 +28,8 @@ fn a_dropped_line_re_calls_from_cached_presence_and_lands() {
         let (first, seq) = written(&b);
         assert_eq!(cached(&b), [at], "a landed call caches its presence");
         b.said();
-        std::thread::sleep(Duration::from_millis(200));
         b.clock.advance(advance);
+        ended(&b);
         assert!(channel.ask(&request(2)).is_ok());
         assert_eq!(engine.connections(), 2, "the dropped line was not reused");
         let (nonce, again) = written(&b);
@@ -71,7 +71,7 @@ fn an_expired_re_call_clears_the_cache_and_presence_is_read_again() {
         w.endpoints = vec![dead()];
     });
     b.said();
-    std::thread::sleep(Duration::from_millis(200));
+    ended(&b);
     assert!(channel.ask(&request(2)).is_ok());
     let said = b.said();
     let recall = said.get(2).unwrap();
@@ -130,7 +130,7 @@ fn a_re_call_carries_where_the_last_walk_saw_this_end() {
     let _engine = Engine::listen(b.scratch.path(), listener, script);
     let channel = b.channel();
     assert!(channel.ask(&request(1)).is_ok());
-    std::thread::sleep(Duration::from_millis(200));
+    ended(&b);
     assert!(channel.ask(&request(2)).is_ok());
     let port = b.punch_port();
     assert_eq!(

@@ -1642,7 +1642,7 @@ dependencies = [
 
 [[package]]
 name = "lernie"
-version = "0.1.66"
+version = "0.1.67"
 dependencies = [
  "eframe",
  "egui",

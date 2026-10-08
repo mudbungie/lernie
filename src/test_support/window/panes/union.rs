@@ -189,3 +189,27 @@ pub(crate) fn clearing() -> Model {
         ..trailing()
     }
 }
+
+/// One doctor row, holding or not, with the remedy only where it does not.
+pub(crate) fn checked(check: &str, ok: bool) -> crate::reply::doctor::Check {
+    crate::reply::doctor::Check {
+        check: check.to_owned(),
+        fact: format!("what {check} was found to be"),
+        ok,
+        remedy: (!ok).then(|| format!("the engine's own remedy for {check}")),
+    }
+}
+
+/// **The seated model with the doctor pane open and answered** (bl-9bbb): a
+/// check that holds and one that does not, with its remedy — every sentence a
+/// row can carry.
+pub(crate) fn doctored() -> Model {
+    Model {
+        lookup: Some(crate::ui::Lookup::Doctor),
+        diagnoses: vec![crate::ui::Diagnosis {
+            channel: own().channel,
+            rows: vec![checked("listener", true), checked("address", false)],
+        }],
+        ..seated()
+    }
+}

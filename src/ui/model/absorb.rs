@@ -117,6 +117,9 @@ impl Model {
             // last said and leaves the others standing, exactly as a roster
             // answer and a queue answer do (`window`; bl-40ec).
             Reply::Help(rows) => self.paged(channel, rows),
+            // The doctor, on the same terms — each channel's own wiring
+            // replacing that channel's section (`doctor`; bl-9bbb).
+            Reply::Doctor(rows) => self.diagnosed(channel, rows),
             // The trail, on the same terms — every action that crossed ONE
             // engine's boundary, replacing that channel's section (`trail`).
             Reply::Ops(rows) => self.crossed(channel, rows),

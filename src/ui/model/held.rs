@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Dragged, Engines, Enrolling,
-    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records, Start,
-    Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dragged, Engines,
+    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records,
+    Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -156,6 +156,8 @@ pub struct Model {
     pub pages: Vec<Pages>,
     /// **What each channel last found**, on the same terms (`window`).
     pub found: Vec<Hits>,
+    /// **What each channel said about its own wiring** (`doctor`; bl-9bbb).
+    pub diagnoses: Vec<Diagnosis>,
     /// **What to look for.** A box the find pane holds and does not spend on
     /// firing, because refining a needle is the common act — unlike the
     /// composer's draft, which was sent (`window`).

@@ -46,6 +46,7 @@ pub(super) fn answer(reply: &Reply) -> String {
         Reply::Ops(rows) => reads::ops(rows),
         Reply::Found(found) => reads::found(found),
         Reply::Help(rows) => reads::help(rows),
+        Reply::Doctor(rows) => reads::doctor(rows),
 
         Reply::Outcome(outcome) => acts::outcome(outcome),
         Reply::Prepared(prepared) => acts::prepared(prepared),

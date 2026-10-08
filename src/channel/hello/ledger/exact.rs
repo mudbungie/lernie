@@ -159,8 +159,9 @@
 //!   §6 signal vocabulary gained `truncated`, which this seat already carries
 //!   as itself on rung 3, so it costs the integer and no decode. And two new
 //!   shapes arrived with it — `reply/doctor` and its request — which land in
-//!   `corpus/unpainted/` because nothing here paints a doctor yet; the
-//!   parity ledger carries the op's line, citing the ball that will.
+//!   `corpus/unpainted/` because nothing here painted a doctor yet; the
+//!   parity ledger carried the op's line until bl-9bbb built the pane, moved
+//!   the fixture to `corpus/answers/` and deleted it.
 //! - **16** — `reply/ops` rows gained `client`, the identity that made the act.
 //!   Read strictly, like `standing`, and painted on both faces: it is the one
 //!   fact on a trail row that nothing later can recover, because presence is a

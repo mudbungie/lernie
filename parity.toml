@@ -147,15 +147,12 @@
 # and neither is in this ledger. They are the strip's acts and not the
 # conversation row's, which is why bl-dbc9's context menu was the wrong home.
 
-# The doctor arrived at PROTOCOL 17 (yog bl-28f4) and is the first line this
-# ledger has carried since the panes above emptied it. It is the whole of what
-# round-1 ruling 7 asks for — *one gesture answers "is this box wired": wire
-# material, address, wall rows, role credentials, git identity, enrolled feet,
-# protocol pins* — and the ruling names this seat's half beside the engine's.
-# Its reply kind sits in `corpus/unreadable/` for §4.9's reason (a kind nothing
-# renders is a kind nobody has to carry), so the pane and the decode land in
-# one commit, and this line is deleted by it.
-doctor = "yog bl-28f4 landed the engine's half at PROTOCOL 17; the seat owes it a control and a rendering, which is round-1 ruling 7's lernie half"
+# The doctor arrived at PROTOCOL 17 (yog bl-28f4), round-1 ruling 7's *one
+# gesture answers "is this box wired"*, and was the first line this ledger
+# carried after the panes above emptied it. bl-9bbb landed the seat's half: the
+# decode and the pane in one commit, as §4.9 asks, with `doctor` tagged on the
+# roster strip's control beside the verb table's — bare from an unaimed seat,
+# naming the wall from an aimed one. The line is gone.
 
 # The learning loop's two arrived at PROTOCOL 18 (yog bl-dd88, REMOTE §9.22),
 # and bl-c515 landed their wire half — the decode, both gestures and the command

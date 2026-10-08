@@ -29,10 +29,10 @@ fn entry(ui: &mut egui::Ui, word: &str, ink: egui::Color32) -> egui::Response {
 
 /// **Paint the band and take the clicks on it.**
 ///
-/// Seven ops name no workspace, so their subject is every channel this box
+/// Eight ops name no workspace, so their subject is every channel this box
 /// holds and none of them hangs off a row: the decision queue's `attention`,
 /// this pane's own `workspaces`, the trail's `ops`, the ball pane's `balls`
-/// and `board`, the engines' verb table and a search. The
+/// and `board`, the engines' verb table, the doctor and a search. The
 /// roster is their home because it is the pane that is already the union
 /// across channels, and they are offered on a seat that has aimed at nothing —
 /// which is the seat most likely to be asking any of them.
@@ -95,6 +95,14 @@ fn strip(ui: &mut egui::Ui, model: &mut Model) {
     crate::ui::act::tag(&answers, &[crate::verbs::HELP.word]);
     if answers.clicked() {
         model.begin_commands();
+    }
+    // **The doctor's control carries its token for the same reason** — opening
+    // the pane is what asks (`crate::ui::model::doctor`), about the aimed wall
+    // as well where there is one.
+    let doctor = entry(ui, crate::ui::doctor::OPEN, theme::INK_WEAK);
+    crate::ui::act::tag(&doctor, &[crate::verbs::DOCTOR]);
+    if doctor.clicked() {
+        model.begin_doctor();
     }
     // **The trail's control carries `ops` for the queue's reason** — the
     // read stands on the pane, so opening it is what asks (`crate::ui::

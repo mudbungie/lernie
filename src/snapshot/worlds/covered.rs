@@ -15,8 +15,8 @@
 use super::World;
 use crate::test_support::window::panes::board::{amending, filing};
 use crate::test_support::window::{
-    boarded, clearing, commanded, configured, finding, fleeting, machines, queued, recorded, role,
-    signing, trailing, tuned,
+    boarded, clearing, commanded, configured, doctored, finding, fleeting, machines, queued,
+    recorded, role, signing, trailing, tuned,
 };
 use crate::ui::{Edit, Model, Tuning};
 
@@ -143,6 +143,16 @@ pub(super) fn commands() -> World {
     World {
         name: "commands",
         model: commanded(),
+    }
+}
+
+/// **The window with the doctor pane open and answered** (bl-9bbb) — a check
+/// that holds beside one that does not and its remedy, which is every sentence
+/// a row can carry.
+pub(super) fn doctor() -> World {
+    World {
+        name: "doctor",
+        model: doctored(),
     }
 }
 

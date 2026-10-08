@@ -1,12 +1,14 @@
-//! **The three reads whose subject is an engine rather than a wall** (DESIGN
-//! §4.21, §4.27): its own verb table, what a needle found across everything it
-//! can see, and the trail of every act that crossed its boundary.
+//! **The reads whose subject is an engine rather than a wall** (DESIGN §4.21,
+//! §4.27): its own verb table, what a needle found across everything it can
+//! see, the trail of every act that crossed its boundary, and whether it is
+//! wired at all.
 //!
 //! Split from [`super::tasks`] at the design-time budget, on the seam the
 //! gestures themselves already have: these three name no workspace, so each is
 //! asked of every channel this box holds and answered per channel
 //! ([`crate::seat::fanned`]), where a ball or a board is one wall's.
 
+use crate::reply::doctor::{Check, failing};
 use crate::reply::help::HelpRow;
 use crate::reply::ops::OpRow;
 use crate::reply::search::Found;
@@ -68,4 +70,20 @@ pub(super) fn help(rows: &[HelpRow]) -> String {
         .map(|row| line(vec![Some(row.usage.clone()), Some(row.summary.clone())]))
         .collect();
     listing("the engine's own words", painted, "this engine names no op")
+}
+
+/// **Whether this box is wired** — one row per check, and under a row that
+/// does not hold, the engine's remedy verbatim. The head counts the rows that
+/// fail, because the answer carries no tally and a seat that wants one counts
+/// what it was handed (`crate::reply::doctor`).
+pub(super) fn doctor(rows: &[Check]) -> String {
+    let painted = rows
+        .iter()
+        .map(|row| line_over(&row.headline(), row.remedy.clone()))
+        .collect();
+    let head = match failing(rows) {
+        0 => "doctor: every check holds".to_owned(),
+        n => format!("doctor: {n} of {} checks do not hold", rows.len()),
+    };
+    listing(&head, painted, "the engine ran no check")
 }

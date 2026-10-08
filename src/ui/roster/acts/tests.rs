@@ -1,18 +1,24 @@
-//! The four controls on the strip: what each spends, and that they stand down
+//! The controls on the strip: what each spends, and that they stand down
 //! together under a covering pane.
 
 use super::{REFRESH, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
-use crate::ui::{Model, commands, find, queue};
+use crate::ui::{Model, commands, doctor, find, queue};
 
-/// **All four are offered on a seat that has aimed at nothing**, which is the
+/// **All of them are offered on a seat that has aimed at nothing**, which is the
 /// seat most likely to be asking any of them.
 #[test]
 fn every_act_is_offered_with_nothing_aimed_at() {
     let mut model = Model::default();
     let painted = pane(|ui| render(ui, &mut model));
-    for word in [REFRESH, queue::OPEN, commands::OPEN, find::OPEN] {
+    for word in [
+        REFRESH,
+        queue::OPEN,
+        commands::OPEN,
+        doctor::OPEN,
+        find::OPEN,
+    ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
 }
@@ -40,7 +46,7 @@ fn the_strip_stands_down_under_a_covering_pane() {
         ..seated()
     };
     let painted = crate::test_support::window::painted(&mut model);
-    for word in [REFRESH, commands::OPEN, find::OPEN] {
+    for word in [REFRESH, commands::OPEN, doctor::OPEN, find::OPEN] {
         assert!(!painted.contains(word), "{word:?}:\n{painted}");
     }
 }

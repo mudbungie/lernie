@@ -271,3 +271,27 @@ fn a_client_that_has_never_dialled_is_the_row_that_says_it() {
         {"client": "real", "present": false, "tools": [], "last_seen": 1_757_000_000_i64}]}));
     assert!(!dialled.contains("never dialled"), "{dialled}");
 }
+
+/// **The doctor's two other heads** — every check holding, and an engine that
+/// ran none — beside the corpus's own frame, which fails one and carries its
+/// remedy under it.
+#[test]
+fn a_doctor_says_how_many_checks_fail_and_the_remedy_under_each() {
+    says(
+        &json!({"ok": true, "kind": "doctor", "rows": [
+            {"check": "listener", "fact": "listening", "ok": true}]}),
+        &["every check holds", "ok  listener: listening"],
+    );
+    says(
+        &json!({"ok": true, "kind": "doctor", "rows": []}),
+        &["the engine ran no check"],
+    );
+    says(
+        &json!({"ok": true, "kind": "doctor", "rows": [
+            {"check": "address", "fact": "unset", "ok": false, "remedy": "run the mint"}]}),
+        &[
+            "1 of 1 checks do not hold",
+            "NOT OK  address: unset\n    run the mint",
+        ],
+    );
+}

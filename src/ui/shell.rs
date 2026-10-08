@@ -24,8 +24,8 @@
 //! the one line of egui that makes either edge hold.
 
 use crate::ui::{
-    Model, board, chat, clear, clients, commands, composer, config, enroll, find, fleet, keys,
-    login, queue, records, roster, theme, trail, tuning, unmake,
+    Model, board, chat, clear, clients, commands, composer, config, doctor, enroll, find, fleet,
+    keys, login, queue, records, roster, theme, trail, tuning, unmake,
 };
 
 /// The two edges an operator drags, and the one line of egui that makes
@@ -200,6 +200,7 @@ fn central(ui: &mut egui::Ui, model: &mut Model, shown: Column, broad: bool) {
         || board::render(ui, model)
         || fleet::render(ui, model)
         || commands::render(ui, model)
+        || doctor::render(ui, model)
         || find::render(ui, model)
         || login::render(ui, model)
         || clients::render(ui, model)

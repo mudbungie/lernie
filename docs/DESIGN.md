@@ -363,7 +363,7 @@ crate would make the versioned authority a dependency for one of the four
 components and an authority for the other three. So the reply spellings are
 read off REMOTE and implemented here, exactly as the android client does.
 
-**Thirty-three kinds, because thirty-three are painted.** The engine's reply
+**Thirty-four kinds, because thirty-four are painted.** The engine's reply
 surface is
 forty-odd variants and most of them belong to panes that do not exist here.
 What is carried is the roster (`workspaces`), the conversation list
@@ -384,8 +384,8 @@ holds (`lineages`) and one file's bytes with the settings its schema found in
 them (`config`), both §4.30's — a captured
 run (`outcome`), the detached advance's receipt
 (`nudged`), the start family's two — the staged body (`prepared`) and the
-minted name (`started`) — and a new box's material (`enrolled`, §4.15), plus
-the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
+minted name (`started`) — a new box's material (`enrolled`, §4.15) and
+whether the box is wired (`doctor`, §4.21), plus the refusal envelope, which is not a kind at all. A kind nothing renders is a kind nobody has to carry, and the ball that
 lands a pane is the ball that adds its kind.
 
 **`roles` is the worked example of that last sentence** (bl-4a2c). It sat in
@@ -410,7 +410,8 @@ three (`armed`, `science`, `work-diff`) made it in the commit that built
 trail's two (`acked`, `trail-cleared`) in the commit that built §4.35's acts
 (bl-b8f7) — which between them spend the ledger's last conversation read and
 leave the ledger holding only shapes addressed to a different kind of
-client.
+client. `doctor` arrived after that and made the same move in the commit that
+built §4.21's doctor pane (bl-9bbb).
 
 **And a shape can sit in `unpainted/` because it is addressed to a different
 KIND OF CLIENT, which is a third reading of that directory** (bl-e53c).
@@ -2150,14 +2151,16 @@ it makes.
   rotted (the roster no longer classes it a control). Deleting a line
   re-reddens the gate and changes no code, which is the severability test.
 
-**And the ledger's first line since it emptied is `doctor`** (PROTOCOL 17,
-yog bl-28f4; bl-183b). It is round-1 ruling 7 — *one gesture answers "is this
-box wired": wire material, address, wall rows, role credentials, git identity,
-enrolled feet, protocol pins* — whose engine half landed upstream and whose
-seat half has not. Its reply kind sits in `corpus/unpainted/` for §4.9's
-reason, so the decode and the pane arrive in one commit and that commit deletes
-the line. The two halves of a protocol bump are decided separately: the number
-moves for the wire, the paint moves for the panes.
+**And the ledger's first line since it emptied was `doctor`, and it left the
+way the rule says a line leaves** (PROTOCOL 17, yog bl-28f4; bl-183b filed it,
+bl-9bbb paid it). It is round-1 ruling 7 — *one gesture answers "is this box
+wired": wire material, address, wall rows, role credentials, git identity,
+enrolled feet, protocol pins* — whose engine half landed upstream first. Its
+reply kind sat in `corpus/unpainted/` for §4.9's reason, so the decode and the
+pane arrived in one commit and that commit deleted the line: `doctor` is tagged
+on the roster strip's control (§4.21), and the fixture moved to
+`corpus/answers/` beside it. The two halves of a protocol bump are decided
+separately: the number moves for the wire, the paint moves for the panes.
 
 **And PROTOCOL 18 added two more, which is the ledger doing the thing it was
 written to do** (bl-c515). `proposals` and `proposal` are the learning loop's
@@ -2575,6 +2578,27 @@ That is §4.19's decision about a parked invocation read one noun over: saying
 what was found is worth more than saying nothing while the address it names
 cannot be spent. **It is not in `parity.toml`** — the op is surfaced, and that
 file records absences.
+
+**The doctor joined the strip on the verb table's terms, with one difference
+the aim decides** (bl-9bbb; yog REMOTE, *"And one read asks all of it at
+once"*). `src/ui/doctor.rs`, `src/ui/model/doctor.rs`, `src/verbs/doctor.rs`.
+Bare, `doctor` names no workspace, so it is this family by the mechanical
+definition: it fans, each channel answers for its own box, and the pane is
+sectioned per channel with the roster's header. Its workspace is OPTIONAL —
+upstream's only workspace-addressed read where it is, because the box it is for
+may hold none — and naming one adds that wall's two checks and routes the read
+down that wall's channel alone. So the one control asks the deeper question
+when the window is aimed and the bare one when it is not, rather than a second
+control asking the second; argv spells both as `lernie doctor [<workspace>]`, a
+door in `crate::verbs::doors` because an optional parameter is not a row. The
+read is POSTED, `help`'s cadence, and the held sections are cleared on asking,
+which `help`'s are not: two asks may have two subjects, and a bare ask's
+sections left under an aimed one would say every channel had answered the
+narrower question. Every line on a row is the engine's — the check, the fact,
+the remedy verbatim — and the one thing the pane composes is whether a row
+holds, read off the row's own `ok`. The frame's top-level `ok` is not a verdict
+over the rows and is never read as one: upstream carries no tally, and the
+command line's head is a count of the rows that fail.
 
 ### 4.22 A lost reply leaves an act in doubt, and the recovery is a read (§3, bl-3969)
 
@@ -4846,6 +4870,10 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/ui/commands.rs` | the commands pane (§4.21): one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
+| `src/reply/doctor.rs` | whether this box is wired (§4.21): one row per check — three required fields and the remedy, optional and verbatim — the headline both faces paint, and the count of failing rows that is the only tally. | ~75 |
+| `src/verbs/doctor.rs` | the doctor's envelope (§4.21) — a door, because its one workspace is optional: bare it fans, named it is routed. | ~35 |
+| `src/ui/doctor.rs` | the doctor pane (§4.21): one section per channel, one row per check in the colour of its state, the remedy under a row that does not hold. | ~95 |
+| `src/ui/model/doctor.rs` | the doctor pane between frames — the ask, bare or carrying the aimed wall, cleared on asking, and each channel's checks replacing its own section. | ~70 |
 | `src/ui/roster/acts.rs` | the strip above the channels: the four ops whose subject is every channel, and the one of them that opens nothing (§4.21). | ~65 |
 | `src/verbs/tests/corpus/emits/ledger.rs` | the frames this seat's encoder cannot compose, by op, count and reason — split from the mechanism at the cap, because a builder changing and a surface not being built are two different reasons to edit. | ~120 |
 | `src/verbs/start.rs` | the start family's two envelopes — doors without rows, and why — the two rungs a `dir` chooses between, the join that fires a rung's prefill ahead of what was typed (§4.10, bl-4371), and the born-on role's field and the one word plan mode is (REMOTE §9.21). | ~175 |

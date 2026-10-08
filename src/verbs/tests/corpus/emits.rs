@@ -19,9 +19,9 @@ use std::collections::BTreeMap;
 use serde_json::{Map, Value, json};
 
 use super::super::super::{
-    ADDRESS, ANSWER, CREATE, DELIVER, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT,
-    PROPOSALS, RETIRE, UPDATE, answer, create, deliver, effort, enroll, fan, find, fork, ops,
-    prepare, priority, prompt, proposals, retire, update,
+    ADDRESS, ANSWER, CREATE, DELIVER, DOCTOR, EFFORT, ENROLL, FAN, FORK, OPS, PREPARE, PRIORITY,
+    PROMPT, PROPOSALS, RETIRE, UPDATE, answer, create, deliver, doctor, effort, enroll, fan, find,
+    fork, ops, prepare, priority, prompt, proposals, retire, update,
 };
 use super::{emitted, request};
 use crate::envelope;
@@ -170,11 +170,6 @@ fn rebuilt(frame: &Value) -> Option<Value> {
         PRIORITY => obj["on"]
             .as_bool()
             .map(|on| priority(text(obj, envelope::WORKSPACE), text(obj, "role"), on)),
-        // The trail's depth is a number, which is why it is a door at all —
-        // and it round-trips off the frame's own JSON type for the tuning
-        // pair's reason: a reading that went through a string would be the
-        // translation the doors exist to avoid.
-        OPS => obj["max"].as_u64().map(ops),
         // The fork's `skills` is the reason it is a door: a list is not a
         // named string. It round-trips off the frame's own array, so a frame
         // that pins a skill is declined here rather than composed short.
@@ -244,6 +239,22 @@ fn rebuilt(frame: &Value) -> Option<Value> {
             // would be testing this arm rather than the carry.
             prompt(&staged, address, text(obj, "goal"), None)
         }),
+        _ => window_door(&op, obj),
+    }
+}
+
+/// **The two window-level reads that are doors**, split from [`rebuilt`] at
+/// clippy's length budget.
+fn window_door(op: &str, obj: &Map<String, Value>) -> Option<Value> {
+    match op {
+        // The trail's depth is a number, which is why it is a door at all —
+        // and it round-trips off the frame's own JSON type for the tuning
+        // pair's reason: a reading that went through a string would be the
+        // translation the doors exist to avoid.
+        OPS => obj["max"].as_u64().map(ops),
+        // The doctor's workspace is optional (bl-9bbb): both spellings round-
+        // trip through its door, absence and all.
+        DOCTOR => Some(doctor(said(obj, envelope::WORKSPACE))),
         _ => None,
     }
 }

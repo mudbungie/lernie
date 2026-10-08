@@ -99,6 +99,13 @@ pub fn run(args: Vec<String>) -> Decided {
         // rather than making an operator answer it.
         ["ops"] => Decided::Fanned(crate::verbs::ops(crate::verbs::DEPTH), form),
         ["ops", depth] => trail(depth, form),
+        // **The doctor, with its workspace optional** (bl-9bbb): bare it fans,
+        // because its subject is every channel's wiring; named it is routed,
+        // because the wall's two checks are that wall's engine's to answer.
+        ["doctor"] => Decided::Fanned(crate::verbs::doctor(None), form),
+        ["doctor", workspace] => {
+            Decided::Ask(crate::verbs::doctor(Some((*workspace).to_owned())), form)
+        }
         // **The capability answer, with its reach defaulted** (PROTOCOL 18;
         // `ops`' own shape one noun over). The wire requires `scope` in both
         // directions and an operator may leave it off, which no row of named

@@ -61,19 +61,19 @@ fn two_walls() -> Model {
 /// **The Tab order runs the way the row reads**, and Space on a ringed row
 /// fires exactly what a click fires.
 ///
-/// Six window-level entries stand first, then the engine's own row, then the
+/// Seven window-level entries stand first, then the engine's own row, then the
 /// `+` beside it (DESIGN §4.39 — the row is allocated before the control, so
-/// the keyboard meets the name before the act on it), so the ninth Tab is the
+/// the keyboard meets the name before the act on it), so the tenth Tab is the
 /// first wall.
 #[test]
 fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
     let mut model = two_walls();
-    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; 9]);
+    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; 10]);
     assert_eq!(rings.len(), 1, "{rings:?}");
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..9 {
+    for _ in 0..10 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
@@ -86,7 +86,7 @@ fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
 }
 
 /// **The `+` is a control like any other, so a key reaches it** (F1): the
-/// eighth Tab is the one beside the engine's row, and Space on it begins a
+/// ninth Tab is the one beside the engine's row, and Space on it begins a
 /// conversation — the selection dropped and the caret in the box.
 ///
 /// **And the binding that opens a standing engine does NOT also fire**
@@ -99,7 +99,7 @@ fn a_tab_reaches_the_plus_and_space_on_it_begins_a_conversation() {
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..8 {
+    for _ in 0..9 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);

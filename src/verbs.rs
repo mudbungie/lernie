@@ -88,6 +88,8 @@ pub mod clients;
 pub mod config;
 /// The conversation's own acts — what an operator does TO one, as rows.
 pub mod conversation;
+/// Whether this box is wired — a door, because its workspace is optional.
+pub mod doctor;
 /// The words this binary answers itself — a page and a usage line, no envelope.
 pub mod doors;
 /// The one act whose subject is a box that has never connected.
@@ -134,6 +136,7 @@ pub use conversation::{
     CLEAR_WORKFLOW, DELETE_AGENT, INTERRUPT, RETARGET, STOP, WORKFLOW, clear_workflow,
     delete_agent, interrupt, retarget, stop, workflow,
 };
+pub use doctor::{DOCTOR, doctor};
 pub use enroll::{ADDRESS, ENROLL, enroll};
 pub use fleet::{
     ARM, DISARM, DISBAND, FLEET, SCAN, SCIENCE, WORK_DIFF, arm, disarm, disband, fleet, scan,

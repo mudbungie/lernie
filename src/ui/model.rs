@@ -35,6 +35,8 @@ mod clients;
 mod config;
 /// The deeper records between frames: the one read the pane posts.
 mod deep;
+/// The doctor pane between frames: open or not, and each channel's checks.
+mod doctor;
 /// The edges the operator has dragged, and what absence means on each.
 mod dragged;
 /// **The accordion**: which engine is open, and how the rest are ordered.
@@ -79,6 +81,7 @@ pub use board::block::Authoring;
 pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};
 pub use config::{Configuring, Proposing};
+pub use doctor::Diagnosis;
 pub use dragged::Dragged;
 pub use engines::Engines;
 pub use enroll::{Enrolling, Grade, Shown};

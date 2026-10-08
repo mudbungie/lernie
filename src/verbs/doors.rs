@@ -175,6 +175,23 @@ pub const OPS: Door = Door {
              that broke.",
 };
 
+/// **Whether this box is wired** (bl-9bbb) — the door whose one argument is
+/// optional because the box it diagnoses may hold no workspace at all.
+pub const DOCTOR: Door = Door {
+    word: crate::verbs::DOCTOR,
+    takes: "[<workspace>]",
+    arity: (0, 1),
+    summary: "whether this box is wired, one row per check",
+    detail: "One row per check — the wire material, the address it names, what \
+             the engine actually bound, the git identity it commits under — \
+             each saying what it found and whether that holds, with the \
+             engine's own remedy under a row that does not. Bare, its subject \
+             is EVERY channel this box holds, each answering for itself. \
+             Naming a workspace asks that wall's engine alone and adds two \
+             checks: whether a conversation there would reach a model, and who \
+             is registered to reach it. It reads and never writes.",
+};
+
 /// The word whose subject is this binary.
 pub const HELP: Door = Door {
     word: "help",
@@ -189,9 +206,9 @@ pub const HELP: Door = Door {
              no channel provisioned. `--help` and `-h` are the same word.",
 };
 
-/// Every door, in the order the usage prints them: the three that cross a
+/// Every door, in the order the usage prints them: the four that cross a
 /// wire, then the two that answer with no engine up.
-const TABLE: &[Door] = &[START, ASK, OPS, ENTRIES, HELP];
+const TABLE: &[Door] = &[START, ASK, OPS, DOCTOR, ENTRIES, HELP];
 
 #[cfg(test)]
 mod tests;

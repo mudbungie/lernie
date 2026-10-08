@@ -54,8 +54,8 @@
 //! set the question is about.
 
 use crate::ui::{
-    Column, Model, Shape, board, commands, enroll, find, fleet, login, queue, records, trail,
-    tuning, unmake,
+    Column, Model, Shape, board, commands, doctor, enroll, find, fleet, login, queue, records,
+    trail, tuning, unmake,
 };
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
@@ -81,7 +81,7 @@ struct Covered {
     heading: &'static str,
 }
 
-/// **The eleven covered panes this walk visits, in the order it visits them.**
+/// **The twelve covered panes this walk visits, in the order it visits them.**
 ///
 /// The tuning pane goes first because both roster-row controls stand the other
 /// down while one is open — so a walk that opened the enrollment first would
@@ -98,8 +98,9 @@ struct Covered {
 /// control is a fourth one on the aimed row and is walked among them too
 /// (bl-e3c5). The trail's hangs off the roster beside the queue's, its subject
 /// being every channel as well (bl-4c48), and the ball pane's beside those two
-/// on the same terms — two of its four reads name no workspace (bl-d2af).
-const PANES: [Covered; 11] = [
+/// on the same terms — two of its four reads name no workspace (bl-d2af). The
+/// doctor's hangs beside the verb table's, its bare form naming none (bl-9bbb).
+const PANES: [Covered; 12] = [
     Covered {
         column: Column::Engines,
         open: queue::OPEN,
@@ -153,6 +154,12 @@ const PANES: [Covered; 11] = [
         open: commands::OPEN,
         close: commands::CLOSE,
         heading: commands::HEADING,
+    },
+    Covered {
+        column: Column::Engines,
+        open: doctor::OPEN,
+        close: doctor::CLOSE,
+        heading: doctor::HEADING,
     },
     Covered {
         column: Column::Engines,

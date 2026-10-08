@@ -17,7 +17,7 @@
 //!
 //! **It decodes only what it paints.** The engine's reply surface is forty-odd
 //! kinds and most of them belong to panes that do not exist here.
-//! Thirty-three do
+//! Thirty-four do
 //! not: the roster, the conversation list, one workspace's role tuning, the
 //! transcript, the live tail, the conversation's records pair — the steps its
 //! loop took and what its worktree holds — its spine pair, the operable
@@ -28,10 +28,10 @@
 //! it tracks them on — the login pane's three — the provider
 //! table, what one row offers and a sign-in run — a captured run, the detached
 //! advance's receipt, the start family's two — the staged body and the minted
-//! name — and a new box's material. A kind nothing renders is a kind
-//! nobody has to carry, and the compiler of the window is what pulls in the
-//! next one — see [`Reply`] for the roster of what is here and DESIGN §4.9
-//! for what is not.
+//! name — a new box's material, and whether the box is wired at all. A kind
+//! nothing renders is a kind nobody has to carry, and the compiler of the
+//! window is what pulls in the next one — see [`Reply`] for the roster of
+//! what is here and DESIGN §4.9 for what is not.
 //!
 //! # The decode policy, stated once
 //!
@@ -89,6 +89,8 @@ pub mod config;
 pub mod convs;
 /// What one attempt changed — the row the work diff and a science row share.
 pub mod diff;
+/// Whether this box is wired: one row per check, the remedy verbatim.
+pub mod doctor;
 /// A new box's material, and the envelope a camera carries it in.
 pub mod enrolled;
 /// The strict field readers every decoder below shares.

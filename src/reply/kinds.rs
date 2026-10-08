@@ -13,12 +13,12 @@
 //! the ball that lands a pane is the ball that adds its kind.
 
 use super::{
-    agent, balls, board, clients, config, convs, diff, enrolled, files, governing, help, inbox,
-    lineages, login, ops, proposals, providers, queue, rail, roles, roster, science, search, start,
-    step, steps, stream, transcript,
+    agent, balls, board, clients, config, convs, diff, doctor, enrolled, files, governing, help,
+    inbox, lineages, login, ops, proposals, providers, queue, rail, roles, roster, science, search,
+    start, step, steps, stream, transcript,
 };
 
-/// **The kinds the window draws.** Thirty-three, and each is here because a
+/// **The kinds the window draws.** Thirty-four, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -194,6 +194,10 @@ pub enum Reply {
     /// moment it is asked and the advertised set is what that machine last
     /// presented, which are two lifetimes on one row and are painted as two.
     Clients(Vec<clients::ClientRow>),
+    /// **Whether this box is wired** — one row per check, the remedy verbatim
+    /// (bl-9bbb). Bare it is one channel's answer and the pane is the union;
+    /// naming a workspace it is that wall's channel alone.
+    Doctor(Vec<doctor::Check>),
     /// **One config file's bytes, and the settings its schema found in them**
     /// — the config pane's second read, standing on the destination it is
     /// pointed at (bl-5c53; DESIGN §4.30).

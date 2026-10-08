@@ -55,6 +55,21 @@ fn the_trail_defaults_its_depth_to_the_one_the_window_asks_with() {
     );
 }
 
+/// **The doctor fans bare and routes named** (bl-9bbb): bare it names no
+/// workspace and its subject is every channel's wiring; naming one asks that
+/// wall's engine alone. A third word earns the door's own usage.
+#[test]
+fn the_doctor_fans_bare_and_routes_when_a_workspace_is_named() {
+    assert_eq!(fanned(&["doctor"]), json!({"op": "doctor"}));
+    assert_eq!(
+        asked(&["doctor", "home"]),
+        json!({"op": "doctor", "workspace": "home"})
+    );
+    let v = said(&["doctor", "home", "extra"]);
+    assert_eq!(v.code, REFUSED);
+    assert!(v.text.contains("lernie doctor [<workspace>]"), "{}", v.text);
+}
+
 /// The envelope `lernie ops` stands for, written out — the same property the
 /// test above it asserts for every other verb.
 fn asked_of_everything() -> serde_json::Value {

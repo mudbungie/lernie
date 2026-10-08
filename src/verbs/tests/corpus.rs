@@ -16,7 +16,8 @@
 use serde_json::{Value, json};
 
 use super::super::{
-    CREATE, DELIVER, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE, UPDATE, table,
+    CREATE, DELIVER, DOCTOR, EFFORT, FAN, FORK, OPS, PREPARE, PRIORITY, PROMPT, RETIRE, UPDATE,
+    table,
 };
 use crate::envelope;
 use crate::test_support::corpus::{Fixture, Signature, files, fixture, record, root};
@@ -33,7 +34,8 @@ fn emitted() -> Vec<String> {
         .map(|verb| verb.word.to_owned())
         .chain(
             [
-                PREPARE, PROMPT, EFFORT, PRIORITY, OPS, FORK, CREATE, UPDATE, FAN, DELIVER, RETIRE,
+                PREPARE, PROMPT, EFFORT, PRIORITY, OPS, DOCTOR, FORK, CREATE, UPDATE, FAN, DELIVER,
+                RETIRE,
             ]
             .into_iter()
             .map(str::to_owned),

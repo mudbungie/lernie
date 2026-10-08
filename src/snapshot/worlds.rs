@@ -24,8 +24,8 @@ use crate::ui::{Channel, Chunk, Enrolling, Model, Unmaking};
 mod covered;
 
 use covered::{
-    assigning, ball_amending, ball_filing, board, clearing_trail, clients, commands, config, find,
-    fleet, login, queue, records, trail, tuning,
+    assigning, ball_amending, ball_filing, board, clearing_trail, clients, commands, config,
+    doctor, find, fleet, login, queue, records, trail, tuning,
 };
 
 /// One named state of the window, as the matrix files it.
@@ -206,6 +206,7 @@ pub(crate) fn all() -> Vec<World> {
         ball_amending(),
         fleet(),
         commands(),
+        doctor(),
         find(),
         login(),
         clients(),

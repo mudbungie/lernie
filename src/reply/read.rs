@@ -12,8 +12,8 @@ use serde_json::Value;
 
 use super::{
     ERROR, KIND, OK, Outcome, Read, Reply, agent, balls, board, clients, config, convs, diff,
-    enrolled, fields, files, governing, help, inbox, lineages, login, ops, proposals, providers,
-    queue, rail, roles, roster, science, search, start, step, steps, stream, transcript,
+    doctor, enrolled, fields, files, governing, help, inbox, lineages, login, ops, proposals,
+    providers, queue, rail, roles, roster, science, search, start, step, steps, stream, transcript,
 };
 
 /// The kind token each arm answers to. Its type's own file holds the rest, so
@@ -99,6 +99,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
         help::KIND => Reply::Help(fields::rows(obj, help::row)?),
         search::KIND => Reply::Found(search::found(obj)?),
         clients::KIND => Reply::Clients(fields::rows(obj, clients::row)?),
+        doctor::KIND => Reply::Doctor(fields::rows(obj, doctor::row)?),
         config::KIND => Reply::Config(config::config(obj)?),
         lineages::KIND => Reply::Lineages(fields::rows(obj, lineages::row)?),
         proposals::KIND => Reply::Proposals(proposals::proposals(obj)?),

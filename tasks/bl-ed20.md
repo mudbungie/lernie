@@ -1,7 +1,8 @@
 +++
 title = "the workflow mark has no control on the glass: workflow and clear-workflow are classed control by the engine roster (yog REMOTE §9.24, edition 19) and the seat surfaces neither"
 created = 1790393651
-updated = 1790393651
+updated = 1791438048
+claimant = "Mystical-ed20"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

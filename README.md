@@ -59,6 +59,8 @@ lernie nudge <workspace> <agent>
 lernie stop <workspace> <agent> [children]       # kill the driver held on it;
                                                  # `children` takes the subtree too
 lernie retarget <workspace> <agent>              # settle it onto its lineage's head
+lernie workflow <workspace> <agent> <config>     # read workflow.yaml from that lineage's head
+lernie clear-workflow <workspace> <agent>        # drop that mark; the tip's governs again
 lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
 lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace's own name
 

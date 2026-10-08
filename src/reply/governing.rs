@@ -36,6 +36,18 @@
 //! `GoverningConfig::label()`'s two wordings and composes no sentence of its
 //! own"* — so [`Governing::label`] is that function's text, and the pane
 //! paints what it answers.
+//!
+//! # The workflow mark rides BESIDE the commit, never instead of it
+//!
+//! REMOTE §9.24 (edition 19) grew `workflow_mark`: `null` on the general path
+//! — the followed tip's `workflow.yaml` governs — else `{holder, oid,
+//! short_oid, lineage}`, because a mark moves `workflow.yaml` alone while the
+//! models, souls and manifest keep following the tip. So [`Governing::oid`]
+//! still names the tip and [`Mark`] names the one file that comes from
+//! elsewhere. Absent reads as `null` does — *"a reader that never heard of the
+//! key reads the answer it always did"* — and a mark whose `lineage` is `null`
+//! is a commit its lineage has advanced past, which is a reading, never a
+//! refusal.
 
 use serde_json::{Map, Value};
 
@@ -59,6 +71,43 @@ pub struct Governing {
     /// Every path the governing commit's tree holds — the souls, the workflow,
     /// the provider table this conversation is actually running under.
     pub files: Vec<String>,
+    /// **The mark that moves `workflow.yaml` off the tip**, or `None` where
+    /// the tip's own governs (REMOTE §9.24).
+    pub workflow_mark: Option<Mark>,
+}
+
+/// **A standing workflow mark**: where `workflow.yaml` is read from instead of
+/// the followed tip.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Mark {
+    /// The descent id wearing the mark — this conversation's own, or the
+    /// ancestor's whose mark it inherits.
+    pub holder: String,
+    /// The marked commit, whole.
+    pub oid: String,
+    /// The same commit, as the engine clipped it.
+    pub short_oid: String,
+    /// The `config/*` lineage standing exactly on that commit, or `None` once
+    /// the lineage has advanced past it — an older commit pinned, not an error.
+    pub lineage: Option<String>,
+}
+
+impl Mark {
+    /// **The one line the mark is painted as.** The two arms are the two
+    /// things §9.24 says a mark can be: a lineage's head, or a commit that
+    /// lineage has since left behind.
+    pub fn line(&self) -> String {
+        match &self.lineage {
+            Some(lineage) => format!(
+                "workflow.yaml marked to config/{lineage} at {}, on {}",
+                self.short_oid, self.holder
+            ),
+            None => format!(
+                "workflow.yaml pinned at {}, a commit its lineage has moved past, on {}",
+                self.short_oid, self.holder
+            ),
+        }
+    }
 }
 
 /// **How the policy is settled**: one lineage followed, or several diverged
@@ -102,6 +151,17 @@ pub(crate) fn governing(obj: &Map<String, Value>) -> Result<Governing, String> {
         short_oid: fields::text(obj, "short_oid")?,
         governance,
         files: fields::list(obj, "files", path)?,
+        workflow_mark: fields::nested(obj, "workflow_mark", mark)?,
+    })
+}
+
+/// The mark, strictly: every key but `lineage` is always stated.
+fn mark(obj: &Map<String, Value>) -> Result<Mark, String> {
+    Ok(Mark {
+        holder: fields::text(obj, "holder")?,
+        oid: fields::text(obj, "oid")?,
+        short_oid: fields::text(obj, "short_oid")?,
+        lineage: fields::opt_text(obj, "lineage")?,
     })
 }
 

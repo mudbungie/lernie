@@ -116,7 +116,7 @@ pub(super) fn ask(
     }
 }
 
-/// **The records pane's five standing reads**, asked only while it is open.
+/// **The records pane's six standing reads**, asked only while it is open.
 ///
 /// A body of its own rather than six more calls inside [`ask`]: that function
 /// is *the questions that name one workspace*, and this is one pane's — the
@@ -128,7 +128,11 @@ pub(super) fn ask(
 /// were the conversation's own row and its undelivered mail, of which the row
 /// went back out to the conversation's own standing set at bl-7b03 — this pane
 /// still reads it, off the same field, but the header over the TRANSCRIPT
-/// needs it whether or not this pane is open.
+/// needs it whether or not this pane is open. The sixth is the wall's lineage
+/// listing (bl-ed20), the config pane's read asked here too, because the names
+/// it answers are the only arguments the workflow mark's control can carry
+/// (`crate::ui::records::workflow`) — the spine's reason, one read over. It
+/// lands on the one `Model::lineages` either pane fills.
 ///
 /// **The pane's seventh read is not here and never will be**: `step` is
 /// addressed at one row of the ledger rather than at the pane, so the control
@@ -140,6 +144,7 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
         crate::verbs::rail(wall.to_owned(), conversation.to_owned()),
         crate::verbs::governing(wall.to_owned(), conversation.to_owned()),
         crate::verbs::inbox(wall.to_owned(), conversation.to_owned()),
+        crate::verbs::lineages(wall.to_owned()),
     ] {
         aimed(link, root, channel, &ask);
     }

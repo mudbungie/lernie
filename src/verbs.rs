@@ -131,7 +131,8 @@ pub use capability::{ANSWER, RESTORE, REVOKE, SCOPES, VERDICTS, answer, restore,
 pub use clients::{CLIENTS, clients};
 pub use config::{CONFIG, LINEAGES, Where, config, lineages, write};
 pub use conversation::{
-    DELETE_AGENT, INTERRUPT, RETARGET, STOP, delete_agent, interrupt, retarget, stop,
+    CLEAR_WORKFLOW, DELETE_AGENT, INTERRUPT, RETARGET, STOP, WORKFLOW, clear_workflow,
+    delete_agent, interrupt, retarget, stop, workflow,
 };
 pub use enroll::{ADDRESS, ENROLL, enroll};
 pub use fleet::{

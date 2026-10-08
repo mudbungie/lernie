@@ -148,11 +148,23 @@ pub(crate) fn drilled(seq: &str) -> crate::reply::step::Step {
     }
 }
 
+/// A workflow mark held by the root, on `lineage` — or, with `None`, on a
+/// commit its lineage has moved past (REMOTE §9.24).
+pub(crate) fn mark(lineage: Option<&str>) -> crate::reply::governing::Mark {
+    crate::reply::governing::Mark {
+        holder: "r-0".to_owned(),
+        oid: "dddddddddddddddddddddddddddddddddddddddd".to_owned(),
+        short_oid: "dddddddd".to_owned(),
+        lineage: lineage.map(str::to_owned),
+    }
+}
+
 /// **The seated model with the records pane open and answered** (bl-2cf7,
 /// bl-b52c): a quiet step and a wounded one, a walked worktree with work
 /// landing elsewhere, a spine with one operable notch and one unreachable
-/// one, a child hanging off it, and the config commit governing the whole —
-/// every sentence the pane can say, on one screen.
+/// one, a child hanging off it, and the config commit governing the whole
+/// under a workflow mark, with the wall's lineages to re-mark it to — every
+/// sentence the pane can say, on one screen.
 pub(crate) fn recorded() -> Model {
     let wounded = crate::reply::steps::StepRow {
         seq: "002".to_owned(),
@@ -220,9 +232,11 @@ pub(crate) fn recorded() -> Model {
                 short_oid: "bbbbbbbb".to_owned(),
                 governance: crate::reply::governing::Governance::Follows("default".to_owned()),
                 files: vec!["workflow.yaml".to_owned()],
+                workflow_mark: Some(mark(Some("strict"))),
             }),
             ..crate::ui::Records::default()
         },
+        lineages: Some(vec![super::lineage("default"), super::lineage("strict")]),
         ..seated()
     }
 }

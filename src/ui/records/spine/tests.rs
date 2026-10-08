@@ -91,6 +91,7 @@ fn every_empty_state_is_its_own_sentence() {
                 short_oid: "c".to_owned(),
                 governance: Governance::Held { diverged: 2 },
                 files: Vec::new(),
+                workflow_mark: None,
             }),
             ..recorded().records
         },

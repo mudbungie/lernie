@@ -1,10 +1,11 @@
-//! **The conversation's own acts** — the four gestures an operator makes *to* a
+//! **The conversation's own acts** — the gestures an operator makes *to* a
 //! conversation rather than *into* one (bl-213c).
 //!
 //! A second rows file, on the seam [`super::rows`]'s own doc already draws.
 //! That file is the reads the window paints and the deposit it composes; this
 //! is what an operator does to the conversation as an object — cut its turn
-//! off, kill its driver, settle it onto another lineage, unmake it. A verb
+//! off, kill its driver, settle it onto another lineage, mark where its
+//! `workflow.yaml` is read from (REMOTE §9.24, bl-ed20), unmake it. A verb
 //! added to either moves one file, which is the test that a seam is real.
 //!
 //! **Every one of them answers a captured run**, which is the reason these four
@@ -80,6 +81,36 @@ pub const RETARGET: Verb = Verb {
              running whatever it was running.",
 };
 
+/// **The workflow mark** (REMOTE §9.24): `workflow.yaml` read from a named
+/// lineage's head instead of the followed tip. The op token is the direction,
+/// on the pin pair's precedent, so a clear can never read as a set that lost
+/// its field — and `config` is required, because choosing the lineage is the
+/// act's whole point.
+pub const WORKFLOW: Verb = Verb {
+    word: "workflow",
+    params: &["workspace", "agent", "config"],
+    flags: &[],
+    summary: "mark a conversation to read workflow.yaml from a config lineage's head",
+    detail: "Writes the conversation's standing workflow mark onto the head of \
+             the named `config/*` lineage, so its workflow.yaml comes from \
+             there while its models, souls and manifest keep following the tip \
+             it already follows. Marking a root switches its whole tree. An \
+             unknown lineage, or a head whose version or workflow.yaml will \
+             not parse, comes back in the engine's own words before anything \
+             is written. `governing` reads which mark, if any, answers now.",
+};
+
+/// **The mark's removal**, the other half of the pair.
+pub const CLEAR_WORKFLOW: Verb = Verb {
+    word: "clear-workflow",
+    params: &["workspace", "agent"],
+    flags: &[],
+    summary: "delete a conversation's workflow mark, so the followed tip's workflow.yaml governs",
+    detail: "Deletes the mark this conversation wears. A mark it inherits from \
+             an ancestor is that ancestor's to clear, and `governing` names \
+             which descent holds the one answering now.",
+};
+
 /// **The unmaking**, and the one row here whose third parameter is an *arming*
 /// rather than content: the name typed back is what admits the descendants.
 pub const DELETE_AGENT: Verb = Verb {
@@ -118,6 +149,16 @@ pub fn stop(workspace: String, agent: String, children: bool) -> Value {
 /// The change of lineage, typed.
 pub fn retarget(workspace: String, agent: String) -> Value {
     RETARGET.built(vec![workspace, agent], &[])
+}
+
+/// The workflow mark, typed.
+pub fn workflow(workspace: String, agent: String, config: String) -> Value {
+    WORKFLOW.built(vec![workspace, agent, config], &[])
+}
+
+/// Its removal, typed.
+pub fn clear_workflow(workspace: String, agent: String) -> Value {
+    CLEAR_WORKFLOW.built(vec![workspace, agent], &[])
 }
 
 /// The unmaking, typed. `typed` is the arming and an empty string is the bare

@@ -170,5 +170,3 @@ doctor = "yog bl-28f4 landed the engine's half at PROTOCOL 17; the seat owes it 
 ceiling = "bl-9111 reads and sets the spend ceiling beside the price table; the op arrived at edition 19"
 price = "bl-9111 sets one model's price in the price table; the op arrived at edition 19"
 prices = "bl-9111 paints the price table the op reads; the op arrived at edition 19"
-workflow = "bl-ed20 hangs the workflow mark on the selected conversation; the op arrived at edition 19"
-clear-workflow = "bl-ed20 hangs the mark's removal beside it; the op arrived at edition 19"

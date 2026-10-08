@@ -71,3 +71,60 @@ fn a_malformed_answer_refuses_and_names_the_field() {
     .expect_err("a non-string path refuses");
     assert!(why.contains("files"), "{why}");
 }
+
+/// One answer with `workflow_mark` spelled as given.
+fn marked(mark: Option<serde_json::Value>) -> Result<super::Governing, String> {
+    let mut answer = json!({
+        "oid": "b", "short_oid": "b", "follows": "default",
+        "diverged_lineages": 0, "files": []
+    });
+    if let Some(mark) = mark {
+        answer["workflow_mark"] = mark;
+    }
+    governing(answer.as_object().expect("an object"))
+}
+
+/// **Null and absent are one reading** (REMOTE §9.24): the tip's own
+/// `workflow.yaml` governs, and a reader that never heard of the key reads
+/// the answer it always did.
+#[test]
+fn a_null_or_absent_mark_is_no_mark() {
+    for mark in [None, Some(serde_json::Value::Null)] {
+        assert_eq!(marked(mark).expect("reads").workflow_mark, None);
+    }
+}
+
+/// **A present mark reads whole, and a null lineage is a pinned older commit**
+/// — a reading, never a refusal.
+#[test]
+fn a_present_mark_reads_and_a_null_lineage_is_the_pinned_commit() {
+    let read = marked(Some(json!({"holder": "r-0", "oid": "dddd",
+                                  "short_oid": "dd", "lineage": "strict"})))
+    .expect("reads");
+    let mark = read.workflow_mark.expect("a mark");
+    assert_eq!(mark.lineage.as_deref(), Some("strict"));
+    assert_eq!(
+        mark.line(),
+        "workflow.yaml marked to config/strict at dd, on r-0"
+    );
+    let read = marked(Some(json!({"holder": "r-0-c-1", "oid": "eeee",
+                                  "short_oid": "ee", "lineage": null})))
+    .expect("reads");
+    let mark = read.workflow_mark.expect("a mark");
+    assert_eq!(mark.lineage, None);
+    assert_eq!(mark.oid, "eeee");
+    assert_eq!(
+        mark.line(),
+        "workflow.yaml pinned at ee, a commit its lineage has moved past, on r-0-c-1"
+    );
+}
+
+/// A mark missing a stated key, or not an object, refuses by name.
+#[test]
+fn a_malformed_mark_refuses_and_names_the_field() {
+    let why = marked(Some(json!({"oid": "d", "short_oid": "d", "lineage": null})))
+        .expect_err("a mark with no holder refuses");
+    assert!(why.contains("holder"), "{why}");
+    let why = marked(Some(json!("strict"))).expect_err("a non-object mark refuses");
+    assert!(why.contains("workflow_mark"), "{why}");
+}

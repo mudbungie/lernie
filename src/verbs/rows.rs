@@ -233,6 +233,8 @@ pub(super) const TABLE: &[Verb] = &[
     NUDGE,
     super::conversation::STOP,
     super::conversation::RETARGET,
+    super::conversation::WORKFLOW,
+    super::conversation::CLEAR_WORKFLOW,
     super::queue::FLAG,
     super::queue::SEEN,
     super::proposals::PROPOSAL,

@@ -3206,8 +3206,8 @@ fork whose `from` is one of the first.
 **It is in that pane and not a pane of its own**, because the subject is the
 same noun. A second covering pane over the selected conversation would be a
 second place to look for one thing, and the two reads stand on the same
-`Standing::records` the other two do — so opening the pane is four questions
-per beat and closing it is none.
+`Standing::records` the other two do — so opening the pane is a fixed set of
+questions per beat and closing it is none.
 
 **The act is here because its argument is only discoverable here.** `fork`
 takes a `from`, which is a **ref**, and upstream refuses an empty one — *"a
@@ -3251,6 +3251,41 @@ the trap is restated at the decoder, where whoever paints the number is
 reading, and the sentence painted beside it is upstream's own
 `GoverningConfig::label()` rather than a third wording composed here (REMOTE
 §9.7 rules that directly).
+
+**The workflow mark rides the governing read, and its two acts hang beside it**
+(REMOTE §9.24, edition 19; bl-ed20, `src/ui/records/workflow.rs`).
+`reply/governing` grew `workflow_mark`: `null` where the followed tip's
+`workflow.yaml` governs, else `{holder, oid, short_oid, lineage}`. It sits
+**beside** the commit, never instead of it — a mark moves `workflow.yaml` alone,
+so `oid` still names the tip — and the seat decodes it into
+`Governing::workflow_mark` with absent read as `null`, *"a reader that never
+heard of the key reads the answer it always did"*. Three renderings, each a
+pure function of the mark: `null` paints nothing, which is the absence it is; a
+named lineage paints *workflow.yaml marked to config/<lineage> at <short>, on
+<holder>*; and a `lineage: null` beside an oid paints the pinned older commit
+its lineage has moved past — a reading, never a refusal.
+
+`workflow <lineage>` and `clear-workflow` are rows of `src/verbs/conversation.rs`
+beside `retarget`, on the pin pair's precedent: the op token is the direction,
+so a clear cannot read as a set that lost its field. **Their controls are here,
+not on the composer's strip beside `retarget`, for the fork's reason above**:
+`workflow`'s `config` is a lineage name, §9.24 rules that what a conversation
+can be marked to *is* `request/lineages`, and that listing is a read — so the
+control is one button per lineage the wall holds, each carrying its own name,
+on the half that already paints which mark answers. The listing therefore
+stands on `Standing::records` as a sixth read, landing on the one
+`Model::lineages` the config pane fills (§4.30); with none answered nothing is
+offered. `clear-workflow` is offered only where a mark is read, the pin pair's
+rule (§4.25) — a mark inherited from an ancestor still gets it, because the
+holder is a descent id this seat does not map to an address, and the engine's
+own outcome says whose mark it was.
+
+**Neither is §4.20's unmaking.** A mark is a ref litany writes and deletes; the
+conversation, its history and the marked commit all stand either way, and
+marking again is the other thing. The one thing a clear leaves unrecoverable
+from this seat is a mark pinned to a commit its lineage has moved past — a mark
+can only be set to a lineage's head — and that is the same loss `retarget`
+already accepts without an arming. So both are plain buttons, as `retarget` is.
 
 ### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18, §9.22; bl-5c53, bl-4855, bl-a1d6)
 
@@ -4848,6 +4883,7 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
 | `src/ui/records/spine.rs` | the pane's third half (§4.29): the governing commit, the notches, the cards off them, and the one fork control an operable notch carries. | ~180 |
+| `src/ui/records/workflow.rs` | the workflow mark on the governing half (§4.29, REMOTE §9.24): its three renderings, one `workflow` control per lineage the wall holds, and the clear where a mark is read. | ~85 |
 | `src/ui/records/steps.rs` | the steps half: the orphan banner, one row per step with its drill-in, and the step's strings. Split from `records.rs` at the cap. | ~150 |
 | `src/ui/records/files.rs` | the files half: the worktree's listing, its preview in each of its four classes, and the sentence for a listing cut short. | ~75 |
 | `src/ui/records/header.rs` | the pane's header (§4.32): the conversation's own row, said several facts to a line because the pane has to fit the window. | ~215 |

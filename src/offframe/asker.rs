@@ -10,7 +10,8 @@
 //! can sign in to (bl-e3c5). The selected conversation is asked for its
 //! transcript,
 //! and — while the records pane is open on it — for its steps, its worktree's
-//! files (bl-2cf7), its spine and the config commit governing it (bl-b52c).
+//! files (bl-2cf7), its spine and the config commit governing it (bl-b52c),
+//! and the wall's lineages a workflow mark can name (bl-ed20).
 //!
 //! **The roles read is standing rather than one-shot**, which is what lets
 //! every control on that pane state the engine's fact instead of this end's

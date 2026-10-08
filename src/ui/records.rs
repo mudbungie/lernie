@@ -62,6 +62,8 @@ pub mod mail;
 pub mod spine;
 /// The steps half: what the loop did, and the sentences a step carries.
 mod steps;
+/// The workflow mark on the governing half, and the two acts on it.
+pub mod workflow;
 
 use crate::ui::{Model, theme};
 

@@ -22,7 +22,7 @@ pub(crate) mod union;
 
 pub(crate) use board::{boarded, column, figure};
 pub(crate) use fleet::{attempt, diff, fleeting};
-pub(crate) use records::{deposit, drilled, notch, own_row, recorded, step};
+pub(crate) use records::{deposit, drilled, mark, notch, own_row, recorded, step};
 pub(crate) use union::{
     clearing, commanded, finding, helped, hit, queued, trailed, trailing, waiting,
 };

@@ -67,7 +67,7 @@ const BOX_WIDTH: f32 = 160.0;
 /// Paint the spine half: the governing commit, the draft, the notches and the
 /// cards hanging off them.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    governing_half(ui, model.records.governing.clone().as_ref());
+    governing_half(ui, model, model.records.governing.clone().as_ref());
     // **The section word is what divides the two halves** (`docs/STYLE.md`
     // §5): the hairline and the word are one thing on the glass, so nothing
     // else is painted between them and the draft opens with its own.
@@ -86,9 +86,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     cards(ui, &spine);
 }
 
-/// The governing commit: the engine's own sentence, then the paths its tree
-/// holds.
-fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
+/// The governing commit: the engine's own sentence, the paths its tree
+/// holds, then the workflow mark beside it and the acts on it (bl-ed20).
+fn governing_half(ui: &mut egui::Ui, model: &mut Model, answer: Option<&Governing>) {
     theme::paint::section(ui, GOVERNING_HEAD);
     let Some(config) = answer else {
         ui.label(NOT_ANSWERED_GOVERNING);
@@ -103,11 +103,11 @@ fn governing_half(ui: &mut egui::Ui, answer: Option<&Governing>) {
         ui.label(format!("{} — {}", config.label(), config.oid));
         if config.files.is_empty() {
             ui.label(NO_FILES);
-            return;
         }
         for path in &config.files {
             ui.label(path.clone());
         }
+        super::workflow::row(ui, model, config.workflow_mark.as_ref());
     });
 }
 

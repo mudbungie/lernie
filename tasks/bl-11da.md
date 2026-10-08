@@ -1,8 +1,7 @@
 +++
 title = "tarpaulin maps a dependency's src/state.rs line numbers onto ours, so a static declaration in our state.rs reads as uncovered whenever it lands on a line the dependency has code on; bl-32d0 dodged it by shifting a doc line — configure the exclusion instead"
 created = 1790734443
-updated = 1791438572
-claimant = "Mystical-11da"
+updated = 1791438573
 priority = 4
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

@@ -39,6 +39,8 @@
 
 /// The box the new bytes are typed into, and the two controls it enables.
 mod edit;
+/// What a reviewer has staged for this wall's config, and the two verdicts.
+pub mod proposals;
 /// The typed view of what the engine reads in those bytes.
 mod settings;
 
@@ -93,6 +95,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         .auto_shrink(false)
         .show(ui, |ui| {
             destinations(ui, model);
+            ui.separator();
+            proposals::render(ui, model);
             ui.separator();
             file(ui, model);
         });

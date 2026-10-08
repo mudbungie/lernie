@@ -156,16 +156,26 @@ pub(crate) fn lineage(name: &str) -> crate::reply::lineages::Lineage {
 /// **The seated model with the config pane open, pointed at a file and
 /// answered** (bl-5c53): a lineage to index into, a typed setting the engine
 /// has faulted, a bounded one it has not, and the bytes they were read out of
-/// — every sentence the pane can say about a file, on one screen.
+/// — every sentence the pane can say about a file, on one screen. And a
+/// reviewer's proposal named and answered whole (bl-a1d6), so both verdicts
+/// are on the glass.
 pub(crate) fn configured() -> Model {
     Model {
         configuring: Some(crate::ui::Configuring {
             at: Some(crate::verbs::Where::Brazen {
                 workspace: "home".to_owned(),
             }),
+            proposal: Some(crate::ui::Proposing {
+                id: PROPOSED.to_owned(),
+                ..crate::ui::Proposing::default()
+            }),
             ..crate::ui::Configuring::default()
         }),
         lineages: Some(vec![lineage("default")]),
+        proposals: Some(crate::reply::proposals::Proposals {
+            rows: vec![proposed(PROPOSED, true)],
+            whole: Some(WHOLE.to_owned()),
+        }),
         config: Some(crate::reply::config::Config {
             text: "roles:\n  worker:\n    provider: gone\n".to_owned(),
             settings: vec![
@@ -196,5 +206,34 @@ pub(crate) fn configured() -> Model {
             ],
         }),
         ..seated()
+    }
+}
+
+/// The staged proposal the config fixture names.
+pub(crate) const PROPOSED: &str = "20260906T090000Z-r001";
+
+/// **Its message and diff**, with the indentation and the long line a reflow
+/// would be the first thing to break.
+pub(crate) const WHOLE: &str = "teach the worker to stop retrying\n\n\
+     --- a/roles.yaml\n\
+     +++ b/roles.yaml\n\
+     @@ -1,2 +1,2 @@\n\
+     \x20 worker:\n\
+     -    retries: 3\n\
+     +    retries: 0  # a long trailing comment that no pane is allowed to wrap onto a second line\n";
+
+/// One staged proposal row.
+pub(crate) fn proposed(id: &str, fresh: bool) -> crate::reply::proposals::Proposal {
+    crate::reply::proposals::Proposal {
+        id: id.to_owned(),
+        lineages: if fresh {
+            vec!["default".to_owned()]
+        } else {
+            Vec::new()
+        },
+        parent: "9f2c1ab4".to_owned(),
+        fresh,
+        diffstat: "1 file changed, 1 insertion(+), 1 deletion(-)".to_owned(),
+        subject: "teach the worker to stop retrying".to_owned(),
     }
 }

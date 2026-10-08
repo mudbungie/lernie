@@ -79,6 +79,6 @@ pub mod unmake;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Dragged, Edit,
     Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login, Lookup, Model,
-    Notice, Pages, Posted, Records, Shown, Trail, Tuning, Unmaking,
+    Notice, Pages, Posted, Proposing, Records, Shown, Trail, Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

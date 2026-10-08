@@ -36,6 +36,23 @@ fn walked() -> BTreeSet<String> {
     found
 }
 
+/// **The learning loop's two are on the config world's glass** (bl-a1d6): the
+/// row control that names a proposal carries `act:proposals`, and each verdict
+/// carries `act:proposal` — so their `parity.toml` lines are gone because the
+/// walk sees them, not because somebody deleted them.
+#[test]
+fn the_config_world_carries_both_proposal_tags() {
+    let world = worlds::all()
+        .into_iter()
+        .find(|world| world.name == "config")
+        .expect("the config world is walked");
+    let (_, width, height) = SIZES[SIZES.len() - 1];
+    let seen = inventory(&seat(world.model, width, height));
+    for op in ["proposals", "proposal"] {
+        assert!(seen.contains(op), "{op}: {seen:?}");
+    }
+}
+
 /// **The gate** (yog's `docs/PARITY.md` §5).
 #[test]
 fn every_control_op_is_either_tagged_here_or_recorded_absent_with_a_citation() {

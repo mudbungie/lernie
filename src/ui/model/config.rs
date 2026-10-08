@@ -53,7 +53,10 @@
 /// pointed at*, and that one is *what the box and the file have to say to each
 /// other*.
 mod draft;
+/// The staged proposals' row state: which is named, and the arming on it.
+mod proposal;
 pub use draft::Draft;
+pub use proposal::Proposing;
 
 use super::Model;
 use crate::verbs::Where;
@@ -78,6 +81,9 @@ pub struct Configuring {
     /// (DESIGN §4.30), so the box is the listing. Empty is not a destination,
     /// which is what keeps the control an enablement rather than a refusal.
     pub workflow: String,
+    /// **The staged proposal the pane has named**, or `None` where it shows
+    /// the bare listing — the standing read's depth (`proposal`, bl-a1d6).
+    pub proposal: Option<Proposing>,
 }
 
 impl Model {
@@ -200,6 +206,7 @@ impl Model {
         self.configuring = None;
         self.config = None;
         self.lineages = None;
+        self.proposals = None;
     }
 }
 

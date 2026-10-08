@@ -70,6 +70,8 @@ pub struct Model {
     pub config: Option<crate::reply::config::Config>,
     /// **The aimed wall's config lineages**, on the same standing (`config`).
     pub lineages: Option<Vec<crate::reply::lineages::Lineage>>,
+    /// **What a reviewer has staged for it**, on the same standing (bl-a1d6).
+    pub proposals: Option<crate::reply::proposals::Proposals>,
     /// **The login pane, while it is open** — the eighth covering pane, and
     /// the second whose subject is the aimed wall (`login`; DESIGN §4.24). A
     /// struct rather than a flag because it holds two questions of its own:

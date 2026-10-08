@@ -58,9 +58,11 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
+            vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
+            vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "config", "text": "x", "settings": []})],
         ],
     );
@@ -77,9 +79,10 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
             "conversations",
             "workspaces",
             "conversations",
-            "lineages"
+            "lineages",
+            "proposals"
         ],
-        "the listing stands on the pane, and no file has been picked"
+        "the listings stand on the pane, and no file has been picked"
     );
     model.read_config(&Where::Brazen {
         workspace: "b".to_owned(),
@@ -94,6 +97,7 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
         "the answer is filed"
     );
     assert_eq!(model.lineages, Some(Vec::new()));
+    assert_eq!(model.proposals.map(|held| held.rows), Some(Vec::new()));
 }
 
 /// **A destination that names no workspace addresses the CHANNEL** (DESIGN
@@ -110,6 +114,7 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
+            vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "config", "text": "cadence:\n", "settings": []})],
         ],
     );
@@ -120,7 +125,13 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
     tick(&link, scratch.path());
     assert_eq!(
         asked(&engine),
-        vec!["workspaces", "conversations", "lineages", "config"],
+        vec![
+            "workspaces",
+            "conversations",
+            "lineages",
+            "proposals",
+            "config"
+        ],
         "the engine the window is aimed at answered it"
     );
     link.settle(&mut model);
@@ -131,5 +142,43 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
     assert_eq!(
         model.notice, None,
         "and nothing fell through to a flat root"
+    );
+}
+
+/// **Naming a staged row deepens the one proposals read to it** (bl-a1d6) —
+/// the same op, carrying the id, rather than a second read beside it.
+#[test]
+fn a_named_proposal_is_asked_at_its_own_depth() {
+    let scratch = Scratch::new();
+    let row = json!({"id": "r1", "lineages": ["default"], "parent": "9f2c1ab4",
+        "fresh": true, "diffstat": "1 file changed", "subject": "s"});
+    let engine = wired(
+        &scratch,
+        &entry("b"),
+        vec![
+            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
+            vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "lineages", "rows": []})],
+            vec![json!({"ok": true, "kind": "proposals", "rows": [row], "whole": "d"})],
+        ],
+    );
+    let mut model = aimed_at_an_entry();
+    model.begin_configuring();
+    model.proposals = Some(crate::reply::proposals::Proposals {
+        rows: vec![crate::test_support::window::panes::proposed("r1", true)],
+        whole: None,
+    });
+    model.name_proposal("r1");
+    let link = asking(&model);
+    tick(&link, scratch.path());
+    let deep = engine
+        .heard()
+        .into_iter()
+        .find(|said| said["op"] == "proposals");
+    assert_eq!(deep.map(|said| said["id"].clone()), Some(json!("r1")));
+    link.settle(&mut model);
+    assert_eq!(
+        model.proposals.and_then(|held| held.whole),
+        Some("d".to_owned())
     );
 }

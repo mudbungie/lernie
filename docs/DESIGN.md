@@ -2164,8 +2164,9 @@ written to do** (bl-c515). `proposals` and `proposal` are the learning loop's
 operator half and both are classed `control`, so both owe this seat an
 interactable and neither has one — the reply is decoded, both gestures are
 composed and the command line paints them, and the GLASS is bl-a1d6's. The
-lines say so and cite it, which is the difference between a gap and a debt with
-an owner. Note what does NOT put a line here: `answer` gained a `scope` at the
+lines said so and cited it, which is the difference between a gap and a debt
+with an owner — and bl-a1d6 paid it on the config pane (§4.30), deleting both.
+Note what does NOT put a line here: `answer` gained a `scope` at the
 same bump and stays tagged, because the roster's unit is the op and the op is
 surfaced — how RICH a surfaced control is, is not this ledger's question and
 must not become one, or the file stops being a list of absences.
@@ -3251,10 +3252,11 @@ reading, and the sentence painted beside it is upstream's own
 `GoverningConfig::label()` rather than a third wording composed here (REMOTE
 §9.7 rules that directly).
 
-### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18; bl-5c53, bl-4855)
+### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18, §9.22; bl-5c53, bl-4855, bl-a1d6)
 
 `src/ui/config.rs`, `src/ui/config/settings.rs`, `src/ui/config/edit.rs`,
-`src/ui/model/config.rs`, `src/ui/model/config/draft.rs`,
+`src/ui/config/proposals.rs`, `src/ui/model/config.rs`,
+`src/ui/model/config/draft.rs`, `src/ui/model/config/proposal.rs`,
 `src/reply/config.rs`, `src/reply/lineages.rs`, `src/verbs/config.rs`,
 `src/ui/model/posted.rs`, `src/offframe/poster.rs`. **The eleventh covering pane,
 and the fourth whose subject is the aimed wall** — §4.17's is what its roles are
@@ -3369,6 +3371,47 @@ five.
 knowing.** The ledger is per-op and cannot express *half an op*; `config`
 carried a control from the read half onward. This section is the record that
 the other half now exists.
+
+**The learning loop's candidates hang on this pane, not beside it** (bl-a1d6;
+REMOTE §9.22). A reviewer stages what it learned as a real config commit on
+`proposal/<reviewer-id>`, a branch no lineage points at until somebody says so
+— the same subject this pane browses, one branch away. So it is one more
+standing read on the pane's own terms rather than a pane of its own, and the
+two verdicts hang on its row:
+
+- **The listing stands while the pane does**, and a row is the id, the
+  standing, the lineage it would move, the diffstat and the reviewer's subject.
+  `fresh` and `stale` are the engine's own reading and never inferred here off
+  an empty `lineages` (§9.4): only the engine read the two in one pass.
+- **Naming a row deepens the one read; it does not post a second.**
+  `proposals` is one op at two depths, so the standing read is asked with the
+  named id and its answer carries the listing and that proposal whole. The
+  depth is a derivation — the named id **only while the last listing still
+  carries it** (`Model::proposing`) — because a settled proposal leaves the
+  listing and asking for it whole after that would earn a refusal every beat.
+  Naming another row drops the last one's whole: the answer carries no id, the
+  rule `read_config` keeps one read over.
+- **The whole is painted verbatim** — one monospace run, never wrapped, a long
+  line scrolling sideways — because a diff a seat reflowed is a diff nobody can
+  apply.
+- **Both verdicts are §4.20 acts, armed by the proposal's own id.** The wire
+  takes no `typed`, so by §4.20's amendment the arming is an enablement this
+  seat holds and never sends (surrounding whitespace forgiven), and it is
+  earned by scope: accept fast-forwards a lineage every conversation on it
+  resolves at its next step, and reject throws a reviewer's work away. The
+  opened row states its subject and what each verdict does before offering
+  them, the way out (`leave it staged`) comes first, the arming is not spent
+  on firing — a stale accept refuses in litany's own words — and firing is
+  said (`asked — waiting for the engine`). The subject is held for §4.20's
+  reason at no cost: the id is the pane's, and the workspace is the aim's,
+  which cannot move under this pane because the act that moves the aim
+  retires it.
+- **The answer to a verdict is `reply/outcome`**, filed like every §8.2
+  receipt: a refusal becomes the notice, and a success shows on the next
+  listing, where the row is gone.
+
+The row control carries `act:proposals` and each verdict `act:proposal`, so
+both lines left `parity.toml` in the commit that painted them.
 
 ### 4.31 The ball pane: the board, the bindings, and what a wall holds (bl-d2af)
 
@@ -4847,11 +4890,13 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/ui/config.rs` | the config pane: what can be read — the four destinations that are picked and the fifth that is typed (§4.30). | ~215 |
 | `src/ui/config/settings.rs` | the typed view: every setting the engine's schema found in those bytes, its bounds, and the engine's own judgement of the value (§4.30). | ~50 |
 | `src/ui/config/edit.rs` | the editor: the box the new bytes are typed into, the enablement that is its arming, and the sentence for a file that moved under it (§4.30). | ~90 |
+| `src/ui/config/proposals.rs` | what a reviewer has staged for the wall's config (§4.30, bl-a1d6): the listing in the engine's own standing, the named proposal whole and verbatim, and the two verdicts armed by its id under §4.20. | ~180 |
 | `src/ui/clients.rs` | the clients pane: the three empty states, the two lifetimes on a row, and the consent said on every tool (§4.28). | ~130 |
 | `src/ui/login.rs` | the login pane: the wall's two sentences, the provider table, and the two controls on a row. The followed run's half split out at the design-time budget (`login/run.rs`). | ~200 |
 | `src/ui/login/run.rs` | what one sign-in printed: both streams, the settled exit and the run-by-hand command (§4.24). | ~70 |
 | `src/ui/model/config.rs` | the config pane between frames — which file it is pointed at, the two reads that stand on it, the box, and the write it composes (§4.30). | ~195 |
 | `src/ui/model/config/draft.rs` | the box and the two readings it takes against the engine's answer: is there anything to write, and did the file go somewhere neither end of this box put it (§4.30). | ~75 |
+| `src/ui/model/config/proposal.rs` | the staged proposals between frames — which row is named, the depth the standing read is asked at (the named id while the listing still carries it), the arming, and the verdict it composes (§4.30). | ~140 |
 | `src/ui/model/clients.rs` | the clients pane between frames — the aim that gates it, and what it retires with (§4.28). | ~55 |
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |

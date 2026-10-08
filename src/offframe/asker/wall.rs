@@ -85,29 +85,7 @@ pub(super) fn ask(
             &crate::verbs::clients(aim.address.clone()),
         );
     }
-    // **The config pane's two, and the one whose subject is a CHANNEL**
-    // (bl-5c53). The lineage listing carries the aim's workspace and is routed
-    // by it like every other aimed read. The file read is routed by it only
-    // for the two destinations that name one: litany's globals and yog's own
-    // cadence file belong to the ENGINE, so what they address is the channel
-    // the window is aimed at — asked here the way a roster is, by name, rather
-    // than falling through to this box's own engine (DESIGN §4.30).
-    if standing.standing(&Open::Config(standing.at())) {
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::lineages(aim.address.clone()),
-        );
-        if let Some(at) = standing.at() {
-            let gesture = crate::verbs::config(&at);
-            if at.addresses_a_workspace() {
-                aimed(link, root, channel, &gesture);
-            } else {
-                read(link, down(link, root, channel, &gesture), channel);
-            }
-        }
-    }
+    config(link, root, standing, channel, aim);
     let Some(conversation) = standing.conversation.clone() else {
         return;
     };
@@ -197,4 +175,44 @@ fn fleet(
         channel,
         &crate::verbs::work_diff(aim.address.clone()),
     );
+}
+
+/// **The config pane's three reads, and the one whose subject is a CHANNEL**
+/// (bl-5c53). The lineage listing carries the aim's workspace and is routed by
+/// it like every other aimed read. The file read is routed by it only for the
+/// two destinations that name one: litany's globals and yog's own cadence file
+/// belong to the ENGINE, so what they address is the channel the window is
+/// aimed at — asked here the way a roster is, by name, rather than falling
+/// through to this box's own engine (DESIGN §4.30).
+///
+/// **The staged proposals stand beside them** (bl-a1d6), at the depth of the
+/// row the pane has named: one op at two depths, so naming a row deepens this
+/// read rather than posting a second one.
+///
+/// Its own function for [`fleet`]'s reason: [`ask`] is at the hundred-line
+/// budget clippy holds it to.
+fn config(
+    link: &Link,
+    root: &Path,
+    standing: &crate::state::Standing,
+    channel: &Channel,
+    aim: &crate::ui::Aim,
+) {
+    if !standing.standing(&Open::Config(standing.at(), standing.named())) {
+        return;
+    }
+    for ask in [
+        crate::verbs::lineages(aim.address.clone()),
+        crate::verbs::proposals(aim.address.clone(), standing.named()),
+    ] {
+        aimed(link, root, channel, &ask);
+    }
+    if let Some(at) = standing.at() {
+        let gesture = crate::verbs::config(&at);
+        if at.addresses_a_workspace() {
+            aimed(link, root, channel, &gesture);
+        } else {
+            read(link, down(link, root, channel, &gesture), channel);
+        }
+    }
 }

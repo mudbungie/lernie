@@ -221,6 +221,7 @@ pub(crate) struct Worked {
     pub(crate) said: HashMap<&'static str, Vec<String>>,
 }
 
+/// What worked, per entry — keyed by the entry it is about.
 static WORKED: OnceLock<Mutex<HashMap<String, Worked>>> = OnceLock::new();
 
 /// Act on what worked for the entry `key` names. **`f` runs under the lock

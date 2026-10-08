@@ -177,12 +177,11 @@ impl Model {
     /// is, whenever the composer has been standing down for this start, and a
     /// draft typed elsewhere in the meantime is not this start's to overwrite.
     pub(super) fn refuse_start(&mut self, why: String) {
-        let Some(mut start) = self.start.take() else {
-            return;
-        };
-        self.refund(&start.goal);
-        start.phase = Phase::Refused(why);
-        self.start = Some(start);
+        if let Some(mut start) = self.start.take() {
+            self.refund(&start.goal);
+            start.phase = Phase::Refused(why);
+            self.start = Some(start);
+        }
     }
 
     /// **A start whose act earned no answer this seat can read** — a frame it

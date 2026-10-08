@@ -180,9 +180,7 @@ fn serve(
     script: &Script,
     seen: &Arc<Mutex<Vec<Value>>>,
 ) {
-    let Ok(conn) = ServerConnection::new(Arc::clone(config)) else {
-        return;
-    };
+    let conn = ServerConnection::new(Arc::clone(config)).expect("the stand-in's own config");
     let mut tls = StreamOwned::new(conn, tcp);
     let _ = frame::write_value(
         &mut tls,

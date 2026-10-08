@@ -89,6 +89,9 @@ fn projecting_a_path_this_frame_does_not_carry_changes_nothing() {
     let signature = signature(&[
         ("/rows/[]/held/tool:string", 20),
         ("/absent/deep:string", 20),
+        // The root is no key of anything, so a later stamp on it deletes
+        // nothing either.
+        (":object", 20),
     ]);
     let frame = json!({"rows": [{"says": "one"}]});
     assert_eq!(project(&frame, &signature, 19), frame);

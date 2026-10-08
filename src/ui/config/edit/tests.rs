@@ -119,6 +119,19 @@ fn a_file_that_has_not_answered_offers_no_box() {
     assert_eq!(model.drafted(), None);
 }
 
+/// **No pane, no box**: the editor holds nothing of its own, so asked to
+/// paint over a model with no pane open it paints nothing and composes
+/// nothing.
+#[test]
+fn with_no_pane_open_the_editor_paints_nothing() {
+    let mut model = Model::default();
+    let at = Where::LitanyModels;
+    let painted = pane(|ui| super::render(ui, &mut model, &at, "beat: 1\n"));
+    assert!(!painted.contains(WRITE), "{painted}");
+    assert_eq!(model.drafted(), None);
+    assert!(model.outbox.is_empty());
+}
+
 /// A file that does not exist yet reads as no bytes and is edited all the
 /// same — writing it is how it comes to exist.
 #[test]

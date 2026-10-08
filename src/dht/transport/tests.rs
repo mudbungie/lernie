@@ -39,3 +39,12 @@ fn a_datagram_over_the_buffer_is_truncated() {
     let (_, bytes) = b.recv(Duration::from_secs(2)).unwrap().unwrap();
     assert_eq!(bytes.len(), DATAGRAM);
 }
+
+/// A socket failing is not a wait running out: only the two kinds a timed
+/// read reports elapse, and anything else is handed back as the error it is.
+#[test]
+fn only_a_timeout_is_an_elapsed_wait() {
+    assert!(elapsed(&io::ErrorKind::WouldBlock.into()));
+    assert!(elapsed(&io::ErrorKind::TimedOut.into()));
+    assert!(!elapsed(&io::ErrorKind::ConnectionRefused.into()));
+}

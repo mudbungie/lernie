@@ -73,6 +73,10 @@ pub fn tokens(ops: &[&str]) -> String {
 /// this pass, so the label, bounds and actions are already on it and this adds
 /// the one field nobody else writes.
 pub fn tag(response: &egui::Response, ops: &[&str]) {
+    // Named here, in every build, rather than in a release-only arm: the
+    // release lib is also linked by the integration tests, which never paint,
+    // so a line only that build carries is a line no test can ever reach.
+    let _ = (response, ops);
     #[cfg(test)]
     {
         let author = tokens(ops);
@@ -80,6 +84,4 @@ pub fn tag(response: &egui::Response, ops: &[&str]) {
             .ctx
             .accesskit_node_builder(response.id, move |node| node.set_author_id(author));
     }
-    #[cfg(not(test))]
-    let _ = (response, ops);
 }

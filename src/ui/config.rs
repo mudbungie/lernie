@@ -45,7 +45,7 @@ pub mod proposals;
 mod settings;
 
 use crate::reply::lineages::Lineage;
-use crate::ui::{Model, keys, theme};
+use crate::ui::{Aim, Model, keys, theme};
 use crate::verbs::Where;
 
 /// The word that opens the pane, on the wall the window is aimed at.
@@ -76,14 +76,16 @@ pub const NO_SETTINGS: &str = "this file has no typed settings — its bytes are
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
+///
+/// **The pane is about the aimed wall**, so it stands only where there is
+/// one: it opens only on an aim and the aim is never withdrawn, and taking
+/// both here hands every reader below the wall rather than a second question.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
-    if model.configuring.is_none() {
+    let (Some(_), Some(aim)) = (&model.configuring, model.aim.clone()) else {
         return false;
-    }
+    };
     ui.heading(HEADING);
-    if let Some(aim) = model.aim.clone() {
-        ui.label(format!("on {} — {}", aim.address, aim.channel));
-    }
+    ui.label(format!("on {} — {}", aim.address, aim.channel));
     ui.horizontal_wrapped(|ui| {
         if ui.button(CLOSE).clicked() {
             model.close_configuring();
@@ -94,7 +96,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            destinations(ui, model);
+            destinations(ui, model, &aim);
             ui.separator();
             proposals::render(ui, model);
             ui.separator();
@@ -105,10 +107,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 
 /// **What can be read**, in the order an operator meets them: the wall's own
 /// brazen file, the engine's two globals, then every path on every lineage.
-fn destinations(ui: &mut egui::Ui, model: &mut Model) {
-    let Some(aim) = model.aim.clone() else {
-        return;
-    };
+fn destinations(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     ui.horizontal_wrapped(|ui| {
         for at in [
             Where::Brazen {

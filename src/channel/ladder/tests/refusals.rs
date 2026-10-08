@@ -86,3 +86,20 @@ fn the_defaults_are_the_stated_ones() {
     assert_eq!(r.advertise, None);
     assert_eq!(r.dht.k, 8);
 }
+
+/// **A stand-in asked past its script hangs up**, so a test that asks more
+/// than it scripted fails on the ask rather than reading an answer nobody
+/// wrote.
+#[test]
+fn a_stand_in_asked_past_its_script_hangs_up() {
+    let (listener, at) = listener();
+    let b = Bench::new(at, None);
+    let engine = Engine::listen(b.scratch.path(), listener, Vec::new());
+    assert!(b.channel().ask(&request(1)).is_err());
+    assert_eq!(engine.connections(), 1);
+    assert_eq!(
+        ops(&engine.heard()),
+        vec![1],
+        "the ask was heard, not answered"
+    );
+}

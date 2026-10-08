@@ -144,14 +144,12 @@ fn attributes(name: &[u8], oid: [u8; 3]) -> Vec<String> {
     let mut found = Vec::new();
     for (_, rdn) in elements(name) {
         for (_, attribute) in elements(rdn) {
-            let parts = elements(attribute);
-            let (Some(&(tag, kind)), Some(&(_, value))) = (parts.first(), parts.get(1)) else {
-                continue;
-            };
-            if tag != OID || kind != oid {
-                continue;
-            }
-            if let Ok(text) = std::str::from_utf8(value) {
+            // An attribute is `SEQUENCE { OID, value }`: one too short, or
+            // naming another attribute, matches nothing and is passed over.
+            if let [(OID, kind), (_, value), ..] = elements(attribute).as_slice()
+                && **kind == oid
+                && let Ok(text) = std::str::from_utf8(value)
+            {
                 found.push(text.to_owned());
             }
         }

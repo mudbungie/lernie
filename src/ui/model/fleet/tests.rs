@@ -116,3 +116,13 @@ fn an_act_is_posted_as_one() {
     assert!(posted.act);
     assert_eq!(posted.envelope["op"], "disband");
 }
+
+/// **A candidate act is addressed down the aimed channel, or not composed at
+/// all** — a seat holding no such channel has nothing to address it to, and a
+/// fan would accept the candidate on every engine this box is a client of.
+#[test]
+fn a_candidate_with_no_channel_to_go_down_is_not_composed() {
+    let mut model = Model::default();
+    model.post_candidate(serde_json::json!({"op": "deliver"}));
+    assert!(model.outbox.is_empty());
+}

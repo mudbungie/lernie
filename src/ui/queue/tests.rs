@@ -199,3 +199,26 @@ fn every_row_wears_the_attention_rule_and_none_wears_the_brand() {
         assert_eq!(run.ink, ink, "{word:?}");
     }
 }
+
+/// **A quiet channel beside a busy one is silent**: no header over a blank,
+/// while the channel with rows still paints its own.
+#[test]
+fn a_quiet_section_beside_a_busy_one_paints_no_header() {
+    let quiet = crate::ui::Channel {
+        name: "a quiet engine".to_owned(),
+        ..crate::test_support::window::own().channel
+    };
+    let mut model = queued();
+    model.waiting.insert(
+        0,
+        Asking {
+            channel: quiet,
+            rows: Vec::new(),
+        },
+    );
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    assert!(!painted.contains("a quiet engine"), "{painted}");
+    assert!(painted.contains("(this box's own engine)"), "{painted}");
+}

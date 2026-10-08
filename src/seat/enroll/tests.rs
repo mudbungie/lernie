@@ -51,10 +51,7 @@ fn tree(at: &std::path::Path) -> Vec<String> {
 }
 
 fn walk(root: &std::path::Path, at: &std::path::Path, out: &mut Vec<String>) {
-    let Ok(entries) = std::fs::read_dir(at) else {
-        return;
-    };
-    for entry in entries.flatten() {
+    for entry in std::fs::read_dir(at).unwrap().flatten() {
         let path = entry.path();
         if path.is_dir() {
             walk(root, &path, out);

@@ -78,6 +78,17 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
     let painted = pane(|ui| render(ui, &mut model));
     assert!(painted.contains("personal"), "{painted}");
     assert!(painted.contains(NO_NAME_HERE), "{painted}");
+    assert_eq!(
+        super::track(&model),
+        vec![
+            super::Step::Engine("home".to_owned()),
+            super::Step::Wall(Aim {
+                channel: "home".to_owned(),
+                address: "home".to_owned(),
+            }),
+        ],
+        "and no stop on the keyboard's track: nothing typed can address it"
+    );
 }
 
 /// **Clicking a row aims the window at it**, and clears everything that was

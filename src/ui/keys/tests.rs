@@ -15,7 +15,7 @@ mod focus;
 /// the binding beside it, and the cursor's own arithmetic.
 mod walk;
 
-use super::moved;
+use super::{moved, walk};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{conv, own, seated, wall};
 use crate::ui::{Channel, Chunk, Model, Notice, roster};
@@ -117,11 +117,15 @@ fn a_cursor_saturates_and_an_empty_list_has_nowhere_to_go() {
 /// own empty case rather than a state anybody has to handle.
 #[test]
 fn a_fresh_window_has_nothing_to_walk() {
+    let mut model = Model::default();
     assert_eq!(
-        roster::track(&Model::default()),
+        roster::track(&model),
         Vec::new(),
         "a box that has been asked nothing offers no row to walk"
     );
+    walk(&mut model, 1);
+    assert!(!model.reveal, "and a walk over nothing moves nothing");
+    assert_eq!(model.aim, None);
 }
 
 /// **Every box that takes text stands the arrows down, not only the draft**

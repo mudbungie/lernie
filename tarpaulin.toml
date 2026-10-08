@@ -15,7 +15,17 @@
 # a convenience, and the reason belongs here beside it.
 #
 # `ignore-panics` excludes branches that only fire on programmer-error panics.
+#
+# `engine = "Llvm"` is the one engine setting, and it lives here because 0.35.2
+# ignores `--engine` on the command line whenever this file exists: the merge
+# never copies it, so a Makefile flag ran ptrace (the Linux default) silently.
+# ptrace resolves a dependency's relative `src/<name>.rs` DWARF rows to OUR
+# file of the same name, so a non-code line of ours that lands where a crate's
+# same-named file has code reads as uncovered — a phantom no glob can exclude.
+# llvm reads the profile's own paths and also counts untaken branches ptrace
+# never saw, which is a stricter floor, not a weaker one.
 [default]
+engine = "Llvm"
 exclude-files = ["src/main.rs"]
 ignore-panics = true
 timeout = "300s"

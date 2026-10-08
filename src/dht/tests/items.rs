@@ -1,7 +1,12 @@
 //! BEP 44 over the walk: the newest verified item wins a `get`, a `put` lands
 //! at the closest token holders and reads back, and a node's refusal is the
 //! caller's error.
+//!
+//! Every walk here is [`steered`]: it knows which fakes will not answer, so a
+//! deadline passes when the test's clock says so and never because a loaded
+//! box was slow to schedule a live fake (bl-7b83, bl-73f2).
 
+use super::steered::steered;
 use super::*;
 
 /// An item's target is a hash, not `0xff`, so the topology's closest three
@@ -20,7 +25,7 @@ fn get_reads_the_newest_verified_item_and_ignores_a_forged_one() {
     let newer = kp.sign(b"s".to_vec(), 5, b"new".to_vec()).unwrap();
     let mut nodes = topology();
     serve(&mut nodes, vec![newer.clone()], vec![older.clone()]);
-    let mut dht = client(vec![nodes[0].addr], wide());
+    let (mut dht, _) = steered(vec![nodes[0].addr], wide(), &[]);
     assert_eq!(
         dht.get(kp.public(), b"s".to_vec()).unwrap(),
         Some(newer.clone())
@@ -30,7 +35,7 @@ fn get_reads_the_newest_verified_item_and_ignores_a_forged_one() {
     forged.value = b"forged".to_vec();
     let mut nodes = topology();
     serve(&mut nodes, vec![forged], vec![older.clone()]);
-    let mut dht = client(vec![nodes[0].addr], wide());
+    let (mut dht, _) = steered(vec![nodes[0].addr], wide(), &[]);
     assert_eq!(dht.get(kp.public(), b"s".to_vec()).unwrap(), Some(older));
 }
 
@@ -38,7 +43,7 @@ fn get_reads_the_newest_verified_item_and_ignores_a_forged_one() {
 fn get_is_none_when_nobody_holds_one() {
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![]);
-    let mut dht = client(vec![nodes[0].addr], wide());
+    let (mut dht, _) = steered(vec![nodes[0].addr], wide(), &[]);
     assert_eq!(dht.get(keypair().public(), vec![]).unwrap(), None);
 }
 
@@ -55,7 +60,7 @@ fn bep44_walks_past_a_router_that_never_answers_get() {
     holder.serve(vec![], Mood::Answer, vec![]);
     let mut router = FakeNode::bind(id(0));
     router.serve(vec![holder.node()], Mood::Router, vec![]);
-    let mut dht = client(vec![router.addr], quick());
+    let (mut dht, _) = steered(vec![router.addr], quick(), &[&router]);
 
     let mut flight = flight::Flight::new();
     let target = bencode::Dict::from([bencode::entry("target", bencode::bytes(&item.target().0))]);
@@ -76,7 +81,7 @@ fn put_lands_at_the_closest_token_holders_and_reads_back() {
     let item = kp.sign(vec![], 1, b"presence".to_vec()).unwrap();
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![]);
-    let mut dht = client(vec![nodes[0].addr], wide());
+    let (mut dht, _) = steered(vec![nodes[0].addr], wide(), &[]);
     assert_eq!(dht.put(item.clone()).unwrap(), 3);
     assert_eq!(dht.get(kp.public(), vec![]).unwrap(), Some(item.clone()));
 
@@ -97,7 +102,7 @@ fn put_with_no_token_holder_is_an_error() {
     let mut a = FakeNode::bind(id(1));
     a.serve(vec![], Mood::Refuse, vec![]);
     let door = router(vec![a.node()]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&door]);
     let item = keypair().sign(vec![], 1, b"x".to_vec()).unwrap();
     let e = dht.put(item.clone()).unwrap_err();
     assert_eq!(
@@ -113,7 +118,7 @@ fn put_to_holders_that_never_answer_is_an_error() {
     let mut mute = FakeNode::bind(id(1));
     mute.serve(vec![], Mood::Mute, vec![]);
     let door = router(vec![mute.node()]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&door, &mute]);
     let item = keypair().sign(vec![], 1, b"x".to_vec()).unwrap();
     let e = dht.put(item.clone()).unwrap_err();
     assert_eq!(
@@ -128,7 +133,7 @@ fn a_forged_item_is_refused_by_the_node_not_the_client() {
     item.seq = 7;
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![]);
-    let mut dht = client(vec![nodes[0].addr], wide());
+    let (mut dht, _) = steered(vec![nodes[0].addr], wide(), &[]);
     let e = dht.put(item).unwrap_err();
     assert!(e.ends_with(": 206 invalid signature"), "{e}");
 }

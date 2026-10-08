@@ -16,6 +16,8 @@ fn the_punch_port_is_bound_once_for_the_run() {
     crate::state::worked(&b.scratch.path().display().to_string(), |w| {
         w.endpoints.clear();
     });
+    // The FIN is on the wire when this end's line can see it (bl-73f2).
+    ended(&b);
     assert!(channel.ask(&request(2)).is_ok());
     assert_eq!(engine.connections(), 2);
     assert!(b.node.queries() > asked, "the commons was asked again");

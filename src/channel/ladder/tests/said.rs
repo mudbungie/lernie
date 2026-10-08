@@ -31,7 +31,7 @@ fn a_rendezvous_says_every_step_then_the_held_line_is_said_once() {
             refused(),
             format!("{P} presence read — seq 1, 1 endpoint(s) (1 v4)"),
             format!("{P} call nonce {nonce} written — seq {seq}, 1 endpoint(s) (1 v4), 1 ack(s)"),
-            format!("{P} punch for nonce {nonce} started — 1 endpoint(s) (1 v4), window 3s"),
+            format!("{P} punch for nonce {nonce} started — 1 endpoint(s) (1 v4), window 240s"),
             format!("{P} punch for nonce {nonce} landed (1 v4)"),
             format!("{P} punched line held between asks"),
         ]
@@ -125,8 +125,12 @@ fn every_way_the_commons_can_disappoint_is_said_without_a_reason_that_names_node
     ];
     for (held, mood, door, last) in cases {
         let b = Bench::seen(dead(), held, mood);
+        // The dark door is silent, so its deadline is waited out: short, and
+        // a floor, because nothing in that walk answers at all.
+        let dark = door.as_ref().is_some_and(|d| !d.is_empty());
         let roving = Roving {
             bootstrap: door.map_or_else(|| b.roving().bootstrap, |d| vec![d]),
+            dht: if dark { quick() } else { b.roving().dht },
             ..b.roving()
         };
         assert!(
@@ -142,7 +146,22 @@ fn every_way_the_commons_can_disappoint_is_said_without_a_reason_that_names_node
 #[test]
 fn a_call_no_node_stored_and_a_punch_nothing_answered_are_said() {
     let b = Bench::seen(dead(), Some(presence(dead())), Mood::Mute);
-    assert!(b.channel().ask(&request(1)).is_err());
+    // The holder is silent to `put` and its deadline is waited out — the one
+    // walk here that is a bet as well, because the same holder must answer
+    // `get` inside it: 2 s is room for a loaded box (bl-73f2).
+    let mute = Roving {
+        dht: Config {
+            deadline: Duration::from_secs(2),
+            ..quick()
+        },
+        ..b.roving()
+    };
+    assert!(
+        b.channel()
+            .tuned(mute, b.clock.arc())
+            .ask(&request(1))
+            .is_err()
+    );
     let said = b.said();
     let last = said.last().unwrap();
     assert!(

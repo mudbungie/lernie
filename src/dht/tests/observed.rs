@@ -1,7 +1,12 @@
 //! The observed endpoint (BEP 42, yog bl-efae): the walk hears every
 //! answering node's claim, and `observed` answers only what the most of them
 //! agree on.
+//!
+//! Every walk here is [`steered`]: it knows which fakes will not answer, so a
+//! deadline passes when the test's clock says so and never because a loaded
+//! box was slow to schedule a live fake (bl-7b83, bl-73f2).
 
+use super::steered::steered;
 use super::*;
 
 /// One walk through a silent-about-us router onto nodes of `moods`, all
@@ -20,7 +25,7 @@ fn walk(moods: &[Mood]) -> Vec<SocketAddr> {
         k: n,
         ..quick()
     };
-    let mut dht = client(vec![door.addr], config);
+    let (mut dht, _) = steered(vec![door.addr], config, &[&door]);
     assert!(dht.observed().is_empty(), "no walk, no claim");
     lookup(&mut dht, id(0xff)).unwrap();
     dht.observed()
@@ -68,7 +73,7 @@ fn the_door_is_heard_as_well() {
     let us = at("203.0.113.7:6881");
     let mut door = FakeNode::bind(id(0x00));
     door.serve(vec![], Mood::Claim(us), vec![]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[]);
     // The door names nobody, so the walk is dark — and it still spoke.
     assert!(lookup(&mut dht, id(0xff)).is_err());
     assert_eq!(dht.observed(), vec![us]);
@@ -82,7 +87,7 @@ fn a_dark_walk_forgets_what_the_last_one_heard() {
     let door = router(vec![a.node()]);
     let mut dark = FakeNode::bind(id(2));
     dark.serve(vec![], Mood::Silent, vec![]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&door, &dark]);
     lookup(&mut dht, id(0xff)).unwrap();
     assert_eq!(dht.observed(), vec![us]);
     dht.bootstrap = vec![dark.addr];

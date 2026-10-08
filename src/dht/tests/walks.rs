@@ -1,6 +1,11 @@
 //! The iterative walk: it hops, it converges closest-first, it is bounded,
 //! and every way a node misbehaves leaves it standing.
+//!
+//! Every walk that can wait is [`steered`]: it knows which fakes will not answer, so a
+//! deadline passes when the test's clock says so and never because a loaded
+//! box was slow to schedule a live fake (bl-7b83, bl-73f2).
 
+use super::steered::steered;
 use super::*;
 
 /// The item the far node holds — reachable only by hopping through `B`.
@@ -12,7 +17,7 @@ fn far() -> Mutable {
 fn a_walk_hops_toward_the_target_and_answers_closest_first() {
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![]);
-    let mut dht = client(vec![nodes[0].addr], quick());
+    let (mut dht, _) = steered(vec![nodes[0].addr], quick(), &[]);
     let found = lookup(&mut dht, id(0xff)).unwrap();
     assert_eq!(
         found,
@@ -24,7 +29,7 @@ fn a_walk_hops_toward_the_target_and_answers_closest_first() {
 fn a_get_hops_toward_the_target_and_finds_what_the_far_node_holds() {
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![far()]);
-    let mut dht = client(vec![nodes[0].addr], Config { k: 8, ..quick() });
+    let (mut dht, _) = steered(vec![nodes[0].addr], Config { k: 8, ..quick() }, &[]);
     assert_eq!(
         dht.get(keypair().public(), b"s".to_vec()).unwrap(),
         Some(far())
@@ -35,13 +40,11 @@ fn a_get_hops_toward_the_target_and_finds_what_the_far_node_holds() {
 fn a_walk_stops_at_its_query_cap() {
     let mut nodes = topology();
     serve(&mut nodes, vec![], vec![]);
-    let mut dht = client(
-        vec![nodes[0].addr],
-        Config {
-            max_queries: 3,
-            ..quick()
-        },
-    );
+    let config = Config {
+        max_queries: 3,
+        ..quick()
+    };
+    let (mut dht, _) = steered(vec![nodes[0].addr], config, &[]);
     // The bootstrap and two more — `C` and `B`, never a fourth: `D`, two hops
     // out and learned from `B`, is never asked, because the window counts
     // every query against the cap as it sends it.
@@ -64,7 +67,7 @@ fn no_bootstrap_is_an_error_before_any_datagram() {
 fn a_silent_commons_is_an_error() {
     let mut a = FakeNode::bind(id(0));
     a.serve(vec![], Mood::Silent, vec![]);
-    let mut dht = client(vec![a.addr], quick());
+    let (mut dht, _) = steered(vec![a.addr], quick(), &[&a]);
     let e = lookup(&mut dht, id(0xff)).unwrap_err();
     assert_eq!(
         e,
@@ -95,7 +98,7 @@ fn a_node_that_refuses_is_heard_but_is_no_result() {
     let mut a = FakeNode::bind(id(1));
     a.serve(vec![], Mood::Refuse, vec![]);
     let door = router(vec![a.node()]);
-    let mut dht = client(vec![door.addr], quick());
+    let (mut dht, _) = steered(vec![door.addr], quick(), &[&door]);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![]);
 }
 
@@ -111,12 +114,10 @@ fn noise_on_the_socket_is_not_an_answer() {
     a.serve(vec![], Mood::Answer, vec![]);
     let noisy = [&garbage, &anonymous, &stray, &a];
     let door = router(noisy.iter().map(|n| n.node()).collect());
-    let mut dht = client(
-        vec![door.addr],
-        Config {
-            alpha: 4,
-            ..quick()
-        },
-    );
+    let config = Config {
+        alpha: 4,
+        ..quick()
+    };
+    let (mut dht, _) = steered(vec![door.addr], config, &[&door]);
     assert_eq!(lookup(&mut dht, id(0xff)).unwrap(), vec![a.node()]);
 }

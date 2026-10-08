@@ -11,6 +11,8 @@ fn a_dark_commons_is_said_after_the_direct_refusal() {
     let channel = b.channel().tuned(
         Roving {
             bootstrap: vec![node.addr.to_string()],
+            // The one node is silent: its deadline is waited out, a floor.
+            dht: quick(),
             ..b.roving()
         },
         b.clock.arc(),

@@ -15,7 +15,9 @@
 //!   must never do. That is precisely why it is here and not in the crate
 //!   proper.
 
+use std::net::{Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// The suite's clock: an offset the test advances by hand.
@@ -81,6 +83,34 @@ impl Drop for Scratch {
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.path);
     }
+}
+
+/// A loopback TCP address nothing answers, for as long as the process runs: a
+/// socket bound and never listening, so a SYN to it is reset, and held so the
+/// kernel never hands its port to anyone else.
+///
+/// Binding a port and dropping it is not this. The number goes back to the
+/// kernel's pool, and the next `bind(0)` — another test's listener or punch
+/// port, in this process or a concurrent one — may be handed it, so the "dead"
+/// address answers as somebody else: a punch aimed at it once handshook with a
+/// stranger's punch (bl-73f2). No reuse flag is set, so no other socket can
+/// share it.
+pub(crate) fn dead() -> SocketAddr {
+    static DEAD: OnceLock<(socket2::Socket, SocketAddr)> = OnceLock::new();
+    DEAD.get_or_init(|| {
+        let socket = socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::STREAM, None)
+            .expect("a TCP socket");
+        socket
+            .bind(&SocketAddr::from((Ipv4Addr::LOCALHOST, 0)).into())
+            .expect("a loopback port");
+        let at = socket
+            .local_addr()
+            .expect("bound")
+            .as_socket()
+            .expect("inet");
+        (socket, at)
+    })
+    .1
 }
 
 #[cfg(test)]

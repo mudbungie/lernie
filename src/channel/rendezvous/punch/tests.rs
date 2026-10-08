@@ -31,9 +31,7 @@ fn a_punch_lands_on_the_peers_listener_and_carries_bytes() {
 
 #[test]
 fn the_peers_syn_lands_on_this_listener_while_ours_goes_nowhere() {
-    let gone = TcpListener::bind("127.0.0.1:0").unwrap();
-    let nowhere = gone.local_addr().unwrap();
-    drop(gone);
+    let nowhere = crate::test_support::dead();
     let client = Punch::bind(0).unwrap();
     let here = loopback(client.port());
     let peer = std::thread::spawn(move || {
@@ -49,9 +47,7 @@ fn the_peers_syn_lands_on_this_listener_while_ours_goes_nowhere() {
 
 #[test]
 fn nobody_there_is_no_stream_at_the_end_of_the_window() {
-    let gone = TcpListener::bind("127.0.0.1:0").unwrap();
-    let target = gone.local_addr().unwrap();
-    drop(gone);
+    let target = crate::test_support::dead();
     let punch = Punch::bind(0).unwrap();
     let started = Instant::now();
     assert!(

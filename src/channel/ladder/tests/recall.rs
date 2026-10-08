@@ -43,7 +43,7 @@ fn a_dropped_line_re_calls_from_cached_presence_and_lands() {
                 format!(
                     "{P} re-call from cached presence — nonce {nonce}, seq {again}, 1 endpoint(s) (1 v4), 1 ack(s)"
                 ),
-                format!("{P} punch for nonce {nonce} started — 1 endpoint(s) (1 v4), window 3s"),
+                format!("{P} punch for nonce {nonce} started — 1 endpoint(s) (1 v4), window 240s"),
                 format!("{P} punch for nonce {nonce} landed (1 v4)"),
                 format!("{P} punched line held between asks"),
             ],
@@ -60,7 +60,9 @@ fn an_expired_re_call_clears_the_cache_and_presence_is_read_again() {
     let _engine = Engine::listen(b.scratch.path(), listener, script);
     let channel = b.channel().tuned(
         Roving {
-            window: Duration::from_millis(500),
+            // The re-call to where the engine was waits this out, a floor;
+            // the call after it lands inside it, a bet with room (bl-73f2).
+            window: Duration::from_secs(2),
             ..b.roving()
         },
         b.clock.arc(),
@@ -81,7 +83,7 @@ fn an_expired_re_call_clears_the_cache_and_presence_is_read_again() {
     );
     let expired = said.get(4).unwrap();
     assert!(
-        expired.ends_with(" expired after 500ms with no stream"),
+        expired.ends_with(" expired after 2s with no stream"),
         "{said:?}"
     );
     assert_eq!(

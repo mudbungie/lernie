@@ -45,8 +45,9 @@ fn pings_are_discarded_wherever_a_frame_is_read_and_keep_the_line_alive() {
         channel.ask(&request(1)),
         Ok(vec![Reply::yes().frames[0].clone()])
     );
-    // The three pings into the silence are on the socket before the next ask.
-    std::thread::sleep(Duration::from_millis(200));
+    // The three pings into the silence are on the socket before the next ask:
+    // waited for by count, never slept past (bl-73f2).
+    till(&|| engine.pinged() == 5);
     assert_eq!(
         channel.ask(&request(2)),
         Ok(vec![Reply::yes().frames[0].clone()])
@@ -64,6 +65,7 @@ fn a_line_the_engine_ended_re_enters_the_ladder_however_it_ended() {
         let channel = b.channel();
         let first = channel.ask(&request(1));
         assert!(first.is_ok(), "{fate:?}: {first:?}");
+        engine.taken();
         // The fate is on the wire when THIS end's line can see it.
         ended(&b);
         let again = channel.ask(&request(2));

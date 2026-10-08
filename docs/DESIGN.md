@@ -4915,7 +4915,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/dht/items.rs` | the two BEP 44 verbs over the walk: `get` the newest verified item, `put` at the closest token holders, every one at once, and a walk that found no holder its own error, sending nothing (yog bl-f519). | ~70 |
 | `src/dht/transport.rs` | the datagram seam: one trait, and the std UDP socket that fills it. | ~75 |
 | `src/dht/tests/fake.rs` | a fake DHT node on loopback UDP, with a store the test can read and a mood for each way a node misbehaves — and the one rule for which queries a mood leaves unanswered. `cfg(test)`. | ~230 |
-| `src/dht/tests/steered.rs` | a walk whose silence the fakes declare: every answer owed is waited for, and the client's clock moves only past silence, so a deadline under test never bets on the box's load (bl-7b83). `cfg(test)`. | ~80 |
+| `src/dht/tests/steered.rs` | a walk whose silence the fakes declare: every answer owed is waited for, and the client's clock moves only past silence, so a deadline under test never bets on the box's load (bl-7b83). Every DHT suite walk that can wait runs on it (bl-73f2). `cfg(test)`. | ~80 |
 | `src/dht/tests/fake/wire.rs` | the fake node's datagrams: a reply, an error, a BEP 42 claim, compact routing. `cfg(test)`. | ~55 |
 | `src/render.rs` | the rendering (§4.37): the two forms, the one place a reply stream becomes text — a frame read, then rendered, refused or named unreadable — and the held read's frame, rendered against the fold its follower holds. | ~140 |
 | `src/render/parts.rs` | the vocabulary every rendering is built from, and where the present/absent branches live so they are not written forty-one times. | ~115 |
@@ -5146,7 +5146,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/reply/tests/editions.rs` | the grows-only replay: every answer at every edition of this major, and every vocabulary word replaced by one no build has heard of. | ~110 |
 | `src/verbs/tests/corpus.rs` | the replay, request direction, read half: every frame in the vocabulary decodes as a gesture and routes by the address its shape carries. | ~120 |
 | `src/verbs/tests/corpus/emits.rs` | the write half: every frame this seat composes round-trips, and what it cannot compose is recorded by count and reason. | ~110 |
-| `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~85 |
+| `src/test_support.rs` | the scaffolding the suite shares and nothing production reads: the throwaway directory, a loopback address held dead for the process — bound, never listening, so no later bind is handed its port (bl-73f2) — and the two things that live here because the seat may not do them — mint a certificate, and listen. `cfg(test)`. | ~115 |
 | `src/test_support/wire.rs` | a data root with an engine standing behind one of its channels — the one fixture for both arrangements, the flat root and one entry. `cfg(test)`. | ~50 |
 | `src/test_support/window.rs` | the window's fixtures: the rows a pane is built from, and the model at work every pane's suite clicks in. `cfg(test)`. | ~155 |
 | `src/test_support/window/panes.rs` | the fixtures for the covering panes whose subject is a FOCUS — the aimed wall, one of its rows — each open and answered. `cfg(test)`. | ~100 |
@@ -5156,7 +5156,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/test_support/window/panes/board.rs` | the ball pane's fixtures (§4.31) — the one pane whose subject is both every channel and the aimed wall, so it is neither file's neighbour and gets its own. `cfg(test)`. | ~130 |
 | `src/test_support/mint.rs` | the operator's out-of-channel act, performed by the suite. **The crate's one spawn site.** | ~200 |
 | `src/test_support/engine.rs` | the stand-in engine: a real listener, a real handshake, a real preface. | ~150 |
-| `src/test_support/roving.rs` | the far end of a PUNCHED wire: an engine serving a held line — pinging it, ending it every way a line can end — or calling back what the seat wrote to its inbox (§4.40). `cfg(test)`. | ~220 |
+| `src/test_support/roving.rs` | the far end of a PUNCHED wire: an engine serving a held line — pinging it and counting the pings, ending it every way a line can end — a reset or garbage only on the test's word that the answer was taken (bl-73f2) — or calling back what the seat wrote to its inbox (§4.40). `cfg(test)`. | ~255 |
 | `src/test_support/clock.rs` | the suite's clock: an offset the test advances by hand (§4.40). `cfg(test)`. | ~60 |
 
 **The three confined files, and two of them do not exist.** A confinement rule

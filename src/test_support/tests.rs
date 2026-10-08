@@ -28,3 +28,17 @@ fn join_names_a_path_and_dir_makes_one() {
     assert!(made.is_dir());
     assert_eq!(made, scratch.join("present"));
 }
+
+/// The dead address is one address, and a connect to it is refused — it is
+/// bound, so no later bind is handed its port.
+#[test]
+fn the_dead_address_is_held_and_refuses() {
+    let at = super::dead();
+    assert_eq!(super::dead(), at);
+    let refused = std::net::TcpStream::connect(at).expect_err("nothing listens");
+    assert_eq!(refused.kind(), std::io::ErrorKind::ConnectionRefused);
+    assert!(
+        std::net::TcpListener::bind(at).is_err(),
+        "and nobody else may"
+    );
+}

@@ -17,7 +17,7 @@ use std::collections::VecDeque;
 use std::io::Write;
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
@@ -43,9 +43,11 @@ pub(crate) enum Fate {
     Fin,
     /// Say `close_notify`, then close — the engine's own hang-up.
     Farewell,
-    /// Reset: linger zero, so the peer reads a connection reset.
+    /// Reset: linger zero, so the peer reads a connection reset — once the
+    /// test says the answer was taken ([`Roving::taken`]).
     Reset,
-    /// Write bytes that are not TLS, then hold — a peer gone wrong.
+    /// Write bytes that are not TLS, then hold — a peer gone wrong — once the
+    /// test says the answer was taken ([`Roving::taken`]).
     Garbage,
 }
 
@@ -77,12 +79,20 @@ impl Reply {
     }
 }
 
-type Script = Arc<Mutex<VecDeque<Reply>>>;
+/// What every connection of one stand-in shares with the test.
+struct Shared {
+    script: Mutex<VecDeque<Reply>>,
+    seen: Mutex<Vec<Value>>,
+    connections: AtomicUsize,
+    /// Pings written, in answers and into silences alike.
+    pings: AtomicUsize,
+    /// The test's word that the answer is in its hands.
+    taken: AtomicBool,
+}
 
 /// The stand-in, and what it was told.
 pub(crate) struct Roving {
-    seen: Arc<Mutex<Vec<Value>>>,
-    connections: Arc<AtomicUsize>,
+    shared: Arc<Shared>,
 }
 
 impl Roving {
@@ -90,14 +100,13 @@ impl Roving {
     /// request across all of them, in order.
     pub(crate) fn listen(dir: &Path, listener: TcpListener, script: Vec<Reply>) -> Roving {
         let config = super::engine::server_config(dir);
-        let roving = Roving::new();
-        let (script, seen, connections) = roving.handles(script);
+        let roving = Roving::new(script);
+        let shared = Arc::clone(&roving.shared);
         std::thread::spawn(move || {
             while let Ok((tcp, _)) = listener.accept() {
-                connections.fetch_add(1, Ordering::Relaxed);
-                let (config, script, seen) =
-                    (Arc::clone(&config), Arc::clone(&script), Arc::clone(&seen));
-                std::thread::spawn(move || serve(&config, tcp, &script, &seen));
+                shared.connections.fetch_add(1, Ordering::Relaxed);
+                let (config, shared) = (Arc::clone(&config), Arc::clone(&shared));
+                std::thread::spawn(move || serve(&config, tcp, &shared));
             }
         });
         roving
@@ -112,8 +121,8 @@ impl Roving {
         script: Vec<Reply>,
     ) -> Roving {
         let config = super::engine::server_config(dir);
-        let roving = Roving::new();
-        let (script, seen, connections) = roving.handles(script);
+        let roving = Roving::new(script);
+        let shared = Arc::clone(&roving.shared);
         std::thread::spawn(move || {
             let inbox = pairing.inbox_keypair().unwrap().public();
             // Sleep first: the call is never there before the seat has
@@ -133,8 +142,8 @@ impl Roving {
             };
             for endpoint in call.endpoints {
                 if let Ok(tcp) = TcpStream::connect(endpoint) {
-                    connections.fetch_add(1, Ordering::Relaxed);
-                    serve(&config, tcp, &script, &seen);
+                    shared.connections.fetch_add(1, Ordering::Relaxed);
+                    serve(&config, tcp, &shared);
                     return;
                 }
             }
@@ -142,24 +151,22 @@ impl Roving {
         roving
     }
 
-    fn new() -> Roving {
+    fn new(script: Vec<Reply>) -> Roving {
         Roving {
-            seen: Arc::new(Mutex::new(Vec::new())),
-            connections: Arc::new(AtomicUsize::new(0)),
+            shared: Arc::new(Shared {
+                script: Mutex::new(script.into()),
+                seen: Mutex::new(Vec::new()),
+                connections: AtomicUsize::new(0),
+                pings: AtomicUsize::new(0),
+                taken: AtomicBool::new(false),
+            }),
         }
-    }
-
-    fn handles(&self, script: Vec<Reply>) -> (Script, Arc<Mutex<Vec<Value>>>, Arc<AtomicUsize>) {
-        (
-            Arc::new(Mutex::new(script.into())),
-            Arc::clone(&self.seen),
-            Arc::clone(&self.connections),
-        )
     }
 
     /// Every frame it has been handed, in order and across connections.
     pub(crate) fn heard(&self) -> Vec<Value> {
-        self.seen
+        self.shared
+            .seen
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .clone()
@@ -167,19 +174,30 @@ impl Roving {
 
     /// How many connections have reached it.
     pub(crate) fn connections(&self) -> usize {
-        self.connections.load(Ordering::Relaxed)
+        self.shared.connections.load(Ordering::Relaxed)
+    }
+
+    /// How many pings it has written. On loopback a write that returned is
+    /// in the seat's socket, so this is what says the pings arrived.
+    pub(crate) fn pinged(&self) -> usize {
+        self.shared.pings.load(Ordering::Relaxed)
+    }
+
+    /// The test has the answer: a [`Fate::Reset`] or [`Fate::Garbage`] may
+    /// now end the line. A reset discards what the peer has not yet read, and
+    /// bytes that are not TLS poison the record the answer rode in with, so
+    /// both wait on this word — a pause in its place was a bet against the
+    /// box's load, and a loaded one lost it before the seat had read the
+    /// answer (bl-73f2).
+    pub(crate) fn taken(&self) {
+        self.shared.taken.store(true, Ordering::Relaxed);
     }
 }
 
 /// One connection: state a version, then per request record what the seat
 /// wrote and answer the next [`Reply`]. The seat's own preface is the first
 /// frame of a fresh connection and is recorded like any other.
-fn serve(
-    config: &Arc<ServerConfig>,
-    tcp: TcpStream,
-    script: &Script,
-    seen: &Arc<Mutex<Vec<Value>>>,
-) {
+fn serve(config: &Arc<ServerConfig>, tcp: TcpStream, shared: &Shared) {
     let conn = ServerConnection::new(Arc::clone(config)).expect("the stand-in's own config");
     let mut tls = StreamOwned::new(conn, tcp);
     let _ = frame::write_value(
@@ -188,34 +206,31 @@ fn serve(
     );
     let mut preface_owed = true;
     while let Ok(Some(said)) = frame::read_value(&mut tls) {
-        seen.lock()
+        shared
+            .seen
+            .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .push(said);
         if preface_owed {
             preface_owed = false;
             continue;
         }
-        let Some(reply) = script
+        let Some(reply) = shared
+            .script
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .pop_front()
         else {
             return;
         };
-        for _ in 0..reply.pings {
-            let _ = frame::write_value(&mut tls, &line::ping());
-        }
+        ping(&mut tls, reply.pings, shared);
         for value in &reply.frames {
             let _ = frame::write_value(&mut tls, value);
         }
         let _ = frame::write_end(&mut tls);
         match reply.fate {
             Fate::Stay => {}
-            Fate::Pinged(n) => {
-                for _ in 0..n {
-                    let _ = frame::write_value(&mut tls, &line::ping());
-                }
-            }
+            Fate::Pinged(n) => ping(&mut tls, n, shared),
             Fate::Fin => return,
             Fate::Farewell => {
                 tls.conn.send_close_notify();
@@ -223,20 +238,36 @@ fn serve(
                 let _ = tls.sock.shutdown(Shutdown::Both);
                 return;
             }
-            // A reset discards what the peer has not yet read, and bytes that
-            // are not TLS poison the record the answer rode in with — so both
-            // wait for the answer to be taken before the line goes wrong.
             Fate::Reset => {
-                std::thread::sleep(Duration::from_millis(100));
+                taken(shared);
                 let _ = socket2::SockRef::from(&tls.sock).set_linger(Some(Duration::ZERO));
                 return;
             }
             Fate::Garbage => {
-                std::thread::sleep(Duration::from_millis(100));
+                taken(shared);
                 let _ = tls.sock.write_all(b"this is not a TLS record");
                 std::thread::sleep(Duration::from_secs(1));
                 return;
             }
+        }
+    }
+}
+
+/// Write `n` pings, counted once each is in the socket.
+fn ping(tls: &mut StreamOwned<ServerConnection, TcpStream>, n: usize, shared: &Shared) {
+    for _ in 0..n {
+        let _ = frame::write_value(tls, &line::ping());
+        shared.pings.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+/// Wait for the test's word that the answer was taken ([`Roving::taken`]).
+/// Sleep first, so the sleep is run.
+fn taken(shared: &Shared) {
+    loop {
+        std::thread::sleep(Duration::from_millis(5));
+        if shared.taken.load(Ordering::Relaxed) {
+            break;
         }
     }
 }

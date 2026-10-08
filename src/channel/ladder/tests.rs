@@ -29,7 +29,17 @@ use crate::dht::tests::quick;
 use crate::dht::{Keypair, Mutable, NodeId};
 use crate::test_support::clock::FakeClock;
 use crate::test_support::roving::{Fate, Reply, Roving as Engine};
-use crate::test_support::{Scratch, mint};
+use crate::test_support::{Scratch, dead, mint};
+
+/// How long the bench lets a dial, a DHT query or a punch run before it is
+/// HUNG — never how long a slow box gets (bl-73f2). Each ends the moment its
+/// answer lands, so a healthy box spends milliseconds; only what nothing will
+/// answer waits it out, and every test that leaves something unanswered
+/// tunes its own short bound, which is then a floor and never a bet. A 2 s
+/// walk deadline and a 3 s punch window were bets, and a loaded box lost
+/// them. It sits under the coverage runner's own 300 s, so the failure that
+/// names the wait is this suite's and not the runner's.
+const HUNG: Duration = Duration::from_mins(4);
 
 /// A scratch box: the operator's material, the fixture pairing, an address,
 /// and one fake DHT node answering as the commons behind a bootstrap router
@@ -84,13 +94,10 @@ impl Bench {
 
     fn roving(&self) -> Roving {
         Roving {
-            direct: Duration::from_millis(300),
-            window: Duration::from_secs(3),
-            // A walk's deadline with room for a loaded box: the full suite
-            // under coverage starves a 300 ms one, and a node that answers
-            // costs no part of it — only the dark ones wait it out.
+            direct: HUNG,
+            window: HUNG,
             dht: Config {
-                deadline: Duration::from_secs(2),
+                deadline: HUNG,
                 ..quick()
             },
             bootstrap: vec![self.door.addr.to_string()],
@@ -136,14 +143,6 @@ fn presence(at: SocketAddr) -> Mutable {
         .unwrap()
 }
 
-/// A loopback port nobody listens on.
-fn dead() -> SocketAddr {
-    let gone = TcpListener::bind("127.0.0.1:0").unwrap();
-    let addr = gone.local_addr().unwrap();
-    drop(gone);
-    addr
-}
-
 /// A listener, and its address.
 fn listener() -> (TcpListener, SocketAddr) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -166,9 +165,17 @@ fn ops(heard: &[Value]) -> Vec<u64> {
 fn ended(b: &Bench) {
     let key = b.scratch.path().display().to_string();
     let now = b.clock.arc().now();
+    till(&|| crate::state::worked(&key, |w| w.held.iter_mut().any(|h| h.gone(now).is_some())));
+}
+
+/// Wait until `done` says so — the one way this suite waits on another
+/// thread. Sleep first, so the sleep is run. Not generic: under the llvm
+/// coverage engine a generic copy per caller left two of its lines counted
+/// uncovered although every caller ran them.
+fn till(done: &dyn Fn() -> bool) {
     loop {
         std::thread::sleep(Duration::from_millis(20));
-        if crate::state::worked(&key, |w| w.held.iter_mut().any(|h| h.gone(now).is_some())) {
+        if done() {
             break;
         }
     }

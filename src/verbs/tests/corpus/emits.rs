@@ -28,8 +28,11 @@ use crate::envelope;
 
 /// The frames this seat's encoder cannot compose, by op, count and reason.
 mod ledger;
+/// The money doors, composed off the frame's own numbers.
+mod money;
 
 use ledger::UNEMITTED;
+use money::money;
 
 /// The rung this seat composes, and the only one it can (`src/verbs/start.rs`).
 const BARE: &str = "bare";
@@ -266,7 +269,7 @@ fn what_the_seat_emits_is_what_the_corpus_carries() {
     let mut declined: BTreeMap<String, usize> = BTreeMap::new();
     for word in emitted() {
         for frame in &request(&word).frames {
-            match rebuilt(frame) {
+            match money(frame).or_else(|| rebuilt(frame)) {
                 Some(built) => assert_eq!(&built, frame, "{word}"),
                 None => *declined.entry(word.clone()).or_default() += 1,
             }

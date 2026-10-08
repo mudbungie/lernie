@@ -90,9 +90,13 @@ pub fn orphaned(listing: &Steps) -> Option<String> {
 }
 
 /// **The one line a step always gets**: its address, how it ended, what it
-/// cost — and the retries, where there were any.
+/// cost — the money beside the count where the engine priced it (REMOTE
+/// §9.23) — and the retries, where there were any.
 pub fn headline(row: &StepRow) -> String {
-    let said = format!("{}  {} — {} tokens", row.seq, row.framing, row.tokens.total);
+    let said = crate::reply::spend::priced(
+        format!("{}  {} — {} tokens", row.seq, row.framing, row.tokens.total),
+        row.cost.as_ref(),
+    );
     if row.attempts > 1 {
         return format!("{said}, {} attempts", row.attempts);
     }

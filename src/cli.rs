@@ -20,6 +20,8 @@ mod decided;
 mod answer;
 /// `enroll`'s own grammar: three words and two optional ones.
 mod enroll;
+/// `price` and `ceiling`: numbers, or the word that deletes.
+mod prices;
 /// `start`'s own grammar: the rung's positional word, and the role's written one.
 mod start;
 
@@ -119,6 +121,12 @@ pub fn run(args: Vec<String>) -> Decided {
         ["answer", workspace, agent, verdict, scope] => {
             answer::answer(workspace, agent, verdict, Some(scope), form)
         }
+        // **The two money doors** (REMOTE §9.23): numbers, or `off`. Any
+        // other arity falls through to `typed`, where the door's usage answers.
+        ["price", provider, model, rates @ ..] if (1..=4).contains(&rates.len()) => {
+            prices::price(provider, model, rates, form)
+        }
+        ["ceiling", bound] => prices::ceiling(bound, form),
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => {

@@ -111,6 +111,8 @@ pub mod lineages;
 pub mod login;
 /// Every action that crossed the engine's boundary, and where its alarm stands.
 pub mod ops;
+/// The price table and the ceiling — the world's two money facts.
+pub mod prices;
 /// What a reviewer has staged for a workspace's config, and one of them whole.
 pub mod proposals;
 /// What a wall can sign in to, and what one row is offering.

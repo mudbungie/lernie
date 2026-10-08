@@ -31,6 +31,7 @@ fn a_roster_carries_its_rows_and_how_current_they_are() {
             agents: 7,
             running: true,
             pinned: Some(0),
+            spend: None,
         }]
     );
 }
@@ -91,4 +92,17 @@ fn a_row_that_is_not_a_row_refuses() {
     let listing = read(&json!({"ok": true, "kind": "workspaces", "rows": [7]}))
         .expect_err("a row that is not one");
     assert!(listing.contains("not an object"), "{listing}");
+}
+
+/// **The ledger column** (REMOTE §9.23): a wall's whole priced spend, read
+/// where it rode and `None` where the engine has no price table.
+#[test]
+fn a_row_carries_its_spend_where_one_rode() {
+    let bare = json!({ "workspace": "home", "kind": "named",
+        "attention": 0, "agents": 1, "running": false });
+    assert!(row(&bare).expect("a row").spend.is_none());
+    let mut priced = bare;
+    priced["spend"] = json!({ "micro_usd": 30000, "unpriced_tokens": 2, "usd": "$0.03" });
+    let spend = row(&priced).expect("a row").spend.expect("the spend rode");
+    assert_eq!(spend.usd, "$0.03");
 }

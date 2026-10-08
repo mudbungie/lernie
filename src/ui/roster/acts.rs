@@ -132,6 +132,18 @@ fn strip(ui: &mut egui::Ui, model: &mut Model) {
     if board.clicked() {
         model.begin_board();
     }
+    // **The prices pane's control carries `prices` and `providers`**: opening
+    // it asks every channel's table, and — where the window is aimed — that
+    // wall's provider roster, which the price control checks a row against
+    // (`crate::ui::model::pricing`).
+    let prices = entry(ui, crate::ui::prices::OPEN, theme::INK_WEAK);
+    crate::ui::act::tag(
+        &prices,
+        &[crate::verbs::PRICES.word, crate::verbs::PROVIDERS.word],
+    );
+    if prices.clicked() {
+        model.begin_prices();
+    }
     // **And this one carries none**: it opens a pane and crosses no wire.
     // `search` is spent by the control inside it, which is where the
     // needle it requires is (`crate::ui::find`) — the same division

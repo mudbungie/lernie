@@ -7,6 +7,7 @@
 use crate::reply::balls::{BallRow, BoundBall};
 use crate::reply::board::Board;
 use crate::reply::science::Attempt;
+use crate::reply::spend::priced;
 
 use super::parts::{brief, clause, line, line_over, listing, tally, things, when};
 
@@ -83,8 +84,10 @@ pub(super) fn workspace_balls(rows: &[BoundBall]) -> String {
                 Some(row.project.clone()),
                 Some(row.state.clone()),
                 Some(format!("owner {}", row.owner)),
-                Some(format!("{} tokens", row.spend.tokens.total)),
-                clause("$", row.spend.usd.as_deref()),
+                Some(priced(
+                    format!("{} tokens", row.spend.tokens.total),
+                    row.spend.cost.as_ref(),
+                )),
             ])
         })
         .collect();
@@ -103,7 +106,10 @@ pub(super) fn science(rows: &[Attempt]) -> String {
                     clause("as", row.conversation.as_deref()),
                     Some(format!("{} steps", row.steps)),
                     Some(format!("{}s", row.wall_secs)),
-                    Some(format!("{} in / {} out", row.usage.input, row.usage.output)),
+                    Some(priced(
+                        format!("{} in / {} out", row.usage.input, row.usage.output),
+                        row.cost.as_ref(),
+                    )),
                     clause("commit", row.outcome.commit.as_deref()),
                     clause("by", row.outcome.by.as_deref()),
                     things(row.verdicts.len() as u64, "verdict"),

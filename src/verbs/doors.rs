@@ -192,6 +192,39 @@ pub const DOCTOR: Door = Door {
              is registered to reach it. It reads and never writes.",
 };
 
+/// **One row of the price table, written or deleted** (REMOTE §9.23) — a door
+/// because its rates are numbers that may be absent ([`super::prices`]).
+pub const PRICE: Door = Door {
+    word: super::prices::PRICE,
+    takes: "<provider> <model> <input> <output> [<cache_read> [<cache_write>]] | off",
+    arity: (3, 6),
+    summary: "price one provider's model, in USD per million tokens, or unprice it",
+    detail: "Writes the row the engine prices that (provider, model) by — a \
+             `*` model covers every model that provider serves and the table \
+             does not name — and answers with the whole table as it now \
+             stands. A rate left off is zero, so `0 0` is a subscription: \
+             priced at nothing, which is a different fact from unpriced. \
+             `off` in place of the rates deletes the row. The provider must \
+             be a row the wall's `providers` names, and the engine refuses \
+             one it has no row for, in its own words. It names no workspace, \
+             so it is written to EVERY channel this box holds.",
+};
+
+/// **The spend bound, set or lifted** (REMOTE §9.23) — a door for
+/// [`PRICE`]'s reason: its one argument is a number or nothing.
+pub const CEILING: Door = Door {
+    word: super::prices::CEILING,
+    takes: "<usd> | off",
+    arity: (1, 1),
+    summary: "bound the world's priced spend, or lift the bound",
+    detail: "Sets the ceiling the engine parks every conversation at once \
+             the world's priced spend reaches it, and answers with the price \
+             table, the bound and the spend as they now stand. Moving the \
+             bound back over the spend — raising it, or `off` — wakes every \
+             conversation it had parked, and the answer says how many. It \
+             names no workspace, so it is set on EVERY channel this box holds.",
+};
+
 /// The word whose subject is this binary.
 pub const HELP: Door = Door {
     word: "help",
@@ -206,9 +239,9 @@ pub const HELP: Door = Door {
              no channel provisioned. `--help` and `-h` are the same word.",
 };
 
-/// Every door, in the order the usage prints them: the four that cross a
+/// Every door, in the order the usage prints them: the six that cross a
 /// wire, then the two that answer with no engine up.
-const TABLE: &[Door] = &[START, ASK, OPS, DOCTOR, ENTRIES, HELP];
+const TABLE: &[Door] = &[START, ASK, OPS, DOCTOR, PRICE, CEILING, ENTRIES, HELP];
 
 #[cfg(test)]
 mod tests;

@@ -203,6 +203,7 @@ pub const NUDGE: Verb = Verb {
 /// other member has no row and says why: its word is `lernie help`'s.
 pub(super) const TABLE: &[Verb] = &[
     WORKSPACES,
+    super::prices::PRICES,
     super::queue::ATTENTION,
     super::balls::BALLS,
     super::balls::BOARD,

@@ -102,3 +102,17 @@ fn the_answer_is_two_lists_and_the_cards_name_their_notches() {
     assert_eq!(read.cards.len(), 1);
     assert_eq!(read.cards[0].notch, 0);
 }
+
+/// **A notch's rollup, priced** (REMOTE §9.23) — present and absent.
+#[test]
+fn a_notch_carries_its_priced_rollup_where_one_rode() {
+    let bare = json!({ "seq": "001", "budget": 120 });
+    assert!(notch(&bare).expect("a notch").cost.is_none());
+    let mut priced = bare;
+    priced["cost"] = json!({ "micro_usd": 30000, "unpriced_tokens": 2, "usd": "$0.03" });
+    let cost = notch(&priced)
+        .expect("a notch")
+        .cost
+        .expect("the cost rode");
+    assert_eq!(cost.said(), "at least $0.03");
+}

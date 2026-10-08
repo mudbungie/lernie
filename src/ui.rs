@@ -60,6 +60,8 @@ pub mod keys;
 pub mod login;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
+/// The prices pane: each engine's price table, its ceiling, and the two acts.
+pub mod prices;
 /// The decision queue: everything waiting on the operator, anywhere.
 pub mod queue;
 /// The records pane: what a conversation's loop did, and what it touched.
@@ -81,6 +83,7 @@ pub mod unmake;
 pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Diagnosis,
     Dragged, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login,
-    Lookup, Model, Notice, Pages, Posted, Proposing, Records, Shown, Trail, Tuning, Unmaking,
+    Lookup, Model, Notice, Pages, Posted, PriceTable, Pricing, Proposing, Records, Shown, Trail,
+    Tuning, Unmaking,
 };
 pub use shell::{Column, Shape, render};

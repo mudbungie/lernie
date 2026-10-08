@@ -15,8 +15,8 @@
 use super::World;
 use crate::test_support::window::panes::board::{amending, filing};
 use crate::test_support::window::{
-    boarded, clearing, commanded, configured, doctored, finding, fleeting, machines, queued,
-    recorded, role, signing, trailing, tuned,
+    boarded, clearing, commanded, configured, doctored, finding, fleeting, machines, priced,
+    queued, recorded, role, signing, trailing, tuned,
 };
 use crate::ui::{Edit, Model, Tuning};
 
@@ -224,5 +224,14 @@ pub(super) fn clearing_trail() -> World {
     World {
         name: "clearing",
         model: clearing(),
+    }
+}
+
+/// **The window with the prices pane open and answered** (bl-9111) — the only
+/// screen `price` and `ceiling` have a control on.
+pub(super) fn prices() -> World {
+    World {
+        name: "prices",
+        model: priced(),
     }
 }

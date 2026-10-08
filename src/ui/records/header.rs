@@ -210,10 +210,10 @@ pub fn seated(row: &Agent) -> Option<String> {
 /// What it has spent: the counters' total, the money where there is a price
 /// table, and whose figure it is where that is not obvious.
 pub fn spent(figure: &Figure) -> String {
-    let mut said = format!("{} tokens", figure.tokens.total);
-    if let Some(usd) = &figure.usd {
-        said = format!("{said} — {usd}");
-    }
+    let said = crate::reply::spend::priced(
+        format!("{} tokens", figure.tokens.total),
+        figure.cost.as_ref(),
+    );
     match &figure.attribution.label {
         Some(label) => format!("{said}, {label}"),
         None => said,

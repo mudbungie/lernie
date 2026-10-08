@@ -51,7 +51,10 @@ fn a_busy_conversation_carries_every_fact_the_engine_holds() {
     );
     assert_eq!(read.strip.expect("a strip").facts, "Bash · 5s");
     assert_eq!(read.spend.tokens.total, 120);
-    assert_eq!(read.spend.usd.as_deref(), Some("$4.00"));
+    assert_eq!(
+        read.spend.cost.map(|cost| cost.usd).as_deref(),
+        Some("$4.00")
+    );
     assert_eq!(
         read.spend.attribution.label.as_deref(),
         Some("over 3 conversations")
@@ -90,7 +93,7 @@ fn a_resting_conversation_states_none_of_the_optional_facts() {
     assert!(read.seats.is_empty());
     assert!(read.strip.is_none());
     assert!(read.context.is_none());
-    assert!(read.spend.usd.is_none(), "no price table, no money");
+    assert!(read.spend.cost.is_none(), "no price table, no money");
     assert!(
         read.offers.is_empty(),
         "a stopped conversation is offered nothing"

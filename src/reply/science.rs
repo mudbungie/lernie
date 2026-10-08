@@ -54,6 +54,8 @@ pub struct Attempt {
     /// The instruction documents frozen onto its dispatch commit.
     pub pins: Vec<String>,
     pub usage: Usage,
+    /// **What those counters cost** (REMOTE §9.23), `None` where unpriced.
+    pub cost: Option<super::spend::Cost>,
     pub wall_secs: u64,
     pub steps: u64,
     /// Every message delivered into it.
@@ -103,6 +105,7 @@ pub(crate) fn row(value: &Value) -> Result<Attempt, String> {
         response: fields::opt_text(obj, "response")?,
         pins: fields::strings(obj, "pins")?,
         usage: usage(obj)?,
+        cost: super::spend::cost(obj, "cost")?,
         wall_secs: fields::count(obj, "wall_secs")?,
         steps: fields::count(obj, "steps")?,
         verdicts: fields::list(obj, "verdicts", verdict)?,

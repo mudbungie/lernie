@@ -16,12 +16,15 @@
 /// The covering panes whose subject is every channel this box holds.
 pub(crate) mod board;
 pub(crate) mod fleet;
+/// The prices pane, channel-wide and in a file of its own.
+pub(crate) mod prices;
 /// The records pane, whose four reads make it the fixture that grows.
 pub(crate) mod records;
 pub(crate) mod union;
 
 pub(crate) use board::{boarded, column, figure};
 pub(crate) use fleet::{attempt, diff, fleeting};
+pub(crate) use prices::priced;
 pub(crate) use records::{deposit, drilled, mark, notch, own_row, recorded, step};
 pub(crate) use union::{
     checked, clearing, commanded, doctored, finding, helped, hit, queued, trailed, trailing,

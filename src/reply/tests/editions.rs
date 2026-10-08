@@ -60,7 +60,17 @@ fn painted() -> Vec<(String, Signature, Vec<Value>)> {
 fn every_answer_reads_at_every_edition_of_this_major() {
     let mut replayed = 0_usize;
     for (shape, signature, frames) in painted() {
-        for at in FLOOR..=EDITION {
+        // **A shape is projected back only as far as it exists** (bl-9111):
+        // `reply/prices` was born whole at edition 19, so an engine of 18
+        // never writes one at all — stripping it to nothing and asking it to
+        // read would be judging a frame no engine sends. The shape's earliest
+        // stamp is its birth, because its root path is stamped then.
+        let born = signature
+            .values()
+            .min()
+            .and_then(|stamp| u32::try_from(*stamp).ok())
+            .map_or(FLOOR, |stamp| stamp.max(FLOOR));
+        for at in born..=EDITION {
             for frame in &frames {
                 let older = project(frame, &signature, at);
                 let answered = read(&older);

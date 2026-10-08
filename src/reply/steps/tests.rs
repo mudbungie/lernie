@@ -33,6 +33,7 @@ fn a_row_carries_the_summary_whole() {
                 cache_write: 44,
                 total: 99
             },
+            cost: None,
             commit: Some("abc".to_owned()),
             started_at: Some("t0".to_owned()),
             ended_at: Some("t1".to_owned()),
@@ -128,4 +129,16 @@ fn the_reader_reads_the_object_the_dispatch_hands_it() {
     let obj = json!({"rows": [], "orphan": "tool_window"});
     let listing = steps(obj.as_object().expect("an object")).expect("a listing");
     assert_eq!(listing.orphan, "tool_window");
+}
+
+/// **A step's own bill rides beside its counters** (REMOTE §9.23), read
+/// through the one money reader; [`full`] carries none and reads `None`.
+#[test]
+fn a_priced_step_carries_its_cost_and_an_unpriced_one_none() {
+    let mut priced = full();
+    priced["cost"] = json!({ "micro_usd": 30000, "unpriced_tokens": 2, "usd": "$0.03" });
+    let read = super::row(&priced).expect("a priced row");
+    let cost = read.cost.expect("the cost rode");
+    assert_eq!((cost.usd.as_str(), cost.unpriced_tokens), ("$0.03", 2));
+    assert!(super::row(&full()).expect("a row").cost.is_none());
 }

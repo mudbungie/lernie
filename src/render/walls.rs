@@ -6,6 +6,7 @@
 
 use crate::reply::queue::{Held, QueueRow};
 use crate::reply::roster::Workspaces;
+use crate::reply::spend::Cost;
 use crate::reply::stream::window::Window;
 use crate::reply::stream::{Delta, Stream};
 
@@ -36,6 +37,7 @@ pub(super) fn workspaces(roster: &Workspaces) -> String {
                 tally(row.attention, "waiting"),
                 when(row.running, "running"),
                 clause("pinned", row.pinned.map(|n| n.to_string()).as_deref()),
+                clause("spent", row.spend.as_ref().map(Cost::said).as_deref()),
             ])
         })
         .collect();

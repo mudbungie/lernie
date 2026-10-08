@@ -21,7 +21,10 @@ pub(crate) fn figure(usd: Option<&str>, label: Option<&str>) -> crate::reply::sp
             cache_write: 44,
             total: 99,
         },
-        usd: usd.map(str::to_owned),
+        cost: usd.map(|usd| crate::reply::spend::Cost {
+            usd: usd.to_owned(),
+            unpriced_tokens: 0,
+        }),
         attribution: crate::reply::spend::Attribution {
             kind: "conversations".to_owned(),
             label: label.map(str::to_owned),

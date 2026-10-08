@@ -162,8 +162,10 @@
 # control — and `proposal` carries a tag on each verdict, armed by the
 # proposal's own id under §4.20. Both rows are gone from this ledger.
 
-# The edition-19 ops arrived with bl-5378's re-vendor to edition 20, which was
-# for the enrollment envelope and surfaces none of them.
-ceiling = "bl-9111 reads and sets the spend ceiling beside the price table; the op arrived at edition 19"
-price = "bl-9111 sets one model's price in the price table; the op arrived at edition 19"
-prices = "bl-9111 paints the price table the op reads; the op arrived at edition 19"
+# The edition-19 money ops arrived with bl-5378's re-vendor to edition 20,
+# which was for the enrollment envelope and surfaced none of them. bl-9111
+# landed the prices pane (DESIGN §4.41, REMOTE §9.23): it hangs off the roster
+# beside the trail's, `prices` is tagged on the control that opens it, and each
+# channel's section carries `price` on its write and on every row's delete and
+# `ceiling` on its set and its lift — each addressed down that one channel,
+# never fanned. All three rows are gone from here.

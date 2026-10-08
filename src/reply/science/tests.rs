@@ -19,9 +19,17 @@ fn an_attempt_carries_its_inputs_its_figures_its_verdicts_and_its_ending() {
         "usage": { "cache_read_tokens": 33, "cache_write_tokens": 44,
                    "input_tokens": 11, "output_tokens": 22 },
         "verdicts": [{ "body": "candidate B reads cleaner", "sender": "judge-one" }],
-        "wall_secs": 90
+        "wall_secs": 90,
+        "cost": { "micro_usd": 7_500_000, "unpriced_tokens": 0, "usd": "$7.50" }
     }))
     .expect("a whole attempt reads");
+    assert_eq!(
+        read.cost
+            .as_ref()
+            .map(crate::reply::spend::Cost::said)
+            .as_deref(),
+        Some("$7.50")
+    );
     assert_eq!(read.diff.ball_id, "bl-1");
     assert_eq!(read.base.as_deref(), Some("f00dbeef"));
     assert_eq!(
@@ -72,6 +80,7 @@ fn a_bare_attempt_names_nothing_it_has_no_record_of() {
     assert!(read.governing.is_none());
     assert!(read.response.is_none());
     assert!(read.compacted.is_none());
+    assert!(read.cost.is_none(), "no price table, no money");
     assert!(read.pins.is_empty());
     assert!(read.verdicts.is_empty());
     assert_eq!(read.outcome.by.as_deref(), Some("at-0badcafe"));

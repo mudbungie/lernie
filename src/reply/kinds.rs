@@ -14,11 +14,11 @@
 
 use super::{
     agent, balls, board, clients, config, convs, diff, doctor, enrolled, files, governing, help,
-    inbox, lineages, login, ops, proposals, providers, queue, rail, roles, roster, science, search,
-    start, step, steps, stream, transcript,
+    inbox, lineages, login, ops, prices, proposals, providers, queue, rail, roles, roster, science,
+    search, start, step, steps, stream, transcript,
 };
 
-/// **The kinds the window draws.** Thirty-four, and each is here because a
+/// **The kinds the window draws.** Forty-five, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -211,6 +211,11 @@ pub enum Reply {
     /// same subject `lineages` browses and `config` writes, one branch away
     /// from governing anything.
     Proposals(proposals::Proposals),
+    /// **The world's price table and ceiling** (REMOTE §9.23; bl-9111) — the
+    /// prices pane's read, and the receipt `price` and `ceiling` both answer
+    /// with, re-derived after the write. It names no workspace, so it is one
+    /// channel's answer and the pane is the union.
+    Prices(prices::Prices),
     /// **The watermark landed** (bl-b8f7). It carries nothing for the reason
     /// [`Flagged`](Self::Flagged) carries nothing: what changed is on the
     /// trail, and the standing read answers `acked` on the rows that were

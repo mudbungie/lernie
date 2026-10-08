@@ -68,6 +68,9 @@ pub struct StepRow {
     pub attempts: u64,
     /// What the step cost, in the four counters and their total.
     pub tokens: Spend,
+    /// **That step's own bill**, priced by its own `(provider, model)`
+    /// (REMOTE §9.23) — `None` where the engine has no price table.
+    pub cost: Option<super::spend::Cost>,
     /// The read-state commit, where the step's record carried one.
     pub commit: Option<String>,
     pub started_at: Option<String>,
@@ -112,6 +115,7 @@ fn row(value: &Value) -> Result<StepRow, String> {
         framing: fields::text(obj, "framing")?,
         attempts: fields::count(obj, "attempts")?,
         tokens: spend(obj)?,
+        cost: super::spend::cost(obj, "cost")?,
         commit: fields::opt_text(obj, "commit")?,
         started_at: fields::opt_text(obj, "started_at")?,
         ended_at: fields::opt_text(obj, "ended_at")?,

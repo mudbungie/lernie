@@ -168,9 +168,13 @@ fn cards(ui: &mut egui::Ui, spine: &Rail) {
 }
 
 /// **The one line a notch always gets**: its step, the commit it read against
-/// — or the engine's own word for having none — and the spend as of it.
+/// — or the engine's own word for having none — and the spend as of it,
+/// with its money where the engine priced it (REMOTE §9.23).
 pub fn headline(row: &Notch) -> String {
-    format!("{}  {} — {} tokens", row.seq, row.short(), row.budget)
+    crate::reply::spend::priced(
+        format!("{}  {} — {} tokens", row.seq, row.short(), row.budget),
+        row.cost.as_ref(),
+    )
 }
 
 /// Where the chat seats this notch, or none where it has no seat: a call that

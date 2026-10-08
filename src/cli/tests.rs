@@ -13,6 +13,7 @@ use serde_json::Value;
 
 mod answer;
 mod decisions;
+mod prices;
 mod refusals;
 mod start;
 mod verdicts;

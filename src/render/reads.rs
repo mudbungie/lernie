@@ -1,7 +1,7 @@
 //! **The reads whose subject is an engine rather than a wall** (DESIGN §4.21,
-//! §4.27): its own verb table, what a needle found across everything it can
-//! see, the trail of every act that crossed its boundary, and whether it is
-//! wired at all.
+//! §4.27, §4.41): its own verb table, what a needle found across everything it
+//! can see, the trail of every act that crossed its boundary, whether it is
+//! wired at all, and its price table.
 //!
 //! Split from [`super::tasks`] at the design-time budget, on the seam the
 //! gestures themselves already have: these three name no workspace, so each is
@@ -11,6 +11,7 @@
 use crate::reply::doctor::{Check, failing};
 use crate::reply::help::HelpRow;
 use crate::reply::ops::OpRow;
+use crate::reply::prices::{Prices, Rate};
 use crate::reply::search::Found;
 
 use super::parts::{brief, line, line_over, listing, quoted, when};
@@ -70,6 +71,18 @@ pub(super) fn help(rows: &[HelpRow]) -> String {
         .map(|row| line(vec![Some(row.usage.clone()), Some(row.summary.clone())]))
         .collect();
     listing("the engine's own words", painted, "this engine names no op")
+}
+
+/// **The world's price table**, the bound and the spend against it in the
+/// heading, and what a ceiling act woke where it woke anything.
+pub(super) fn prices(table: &Prices) -> String {
+    let rows = table.rows.iter().map(Rate::said).collect();
+    let head = line(vec![
+        Some("prices".to_owned()),
+        Some(table.standing()),
+        table.woke(),
+    ]);
+    listing(&head, rows, "no row is priced, so no count carries money")
 }
 
 /// **Whether this box is wired** — one row per check, and under a row that

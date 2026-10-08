@@ -100,6 +100,8 @@ pub mod fleet;
 pub mod help;
 /// The sign-in family: the provider table, the offering, the act and its lane.
 pub mod login;
+/// The price table and the ceiling — one read row and two numeric doors.
+pub mod prices;
 /// The learning loop's two ops — what a reviewer staged, and the verdict on one.
 pub mod proposals;
 /// The decision queue's three ops — the read, the answer and the raise.
@@ -143,6 +145,7 @@ pub use fleet::{
     science, work_diff,
 };
 pub use login::{LOGIN, LOGIN_TAIL, MODELS, PROVIDERS, login, login_tail, models, providers};
+pub use prices::{CEILING, PRICE, PRICES, ceiling, price};
 pub use proposals::{PROPOSAL, PROPOSALS, proposal, proposals};
 pub use queue::{ATTENTION, FLAG, SEEN, attention, flag, seen};
 pub use records::{AGENT, FILES, INBOX, STEP, STEPS, agent, files, inbox, step, steps};

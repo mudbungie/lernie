@@ -67,6 +67,9 @@ pub struct Notch {
     /// including it, never this step's own figure. It rides so a seat does not
     /// fold the prefix itself, which would be deriving over an answer.
     pub budget: u64,
+    /// **That same rollup, priced** (REMOTE §9.23) — `None` where the engine
+    /// has no price table.
+    pub cost: Option<super::spend::Cost>,
     /// Where the notch sits in the chat, where the chat has a seat for it.
     pub seat: Option<Seat>,
 }
@@ -147,6 +150,7 @@ fn notch(value: &Value) -> Result<Notch, String> {
         seq: fields::text(obj, "seq")?,
         commit: fields::opt_text(obj, "commit")?,
         budget: fields::count(obj, "budget")?,
+        cost: super::spend::cost(obj, "cost")?,
         seat,
     })
 }

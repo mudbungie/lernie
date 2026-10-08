@@ -123,6 +123,9 @@ impl Model {
             // The trail, on the same terms — every action that crossed ONE
             // engine's boundary, replacing that channel's section (`trail`).
             Reply::Ops(rows) => self.crossed(channel, rows),
+            // The price table, on the same terms — and the receipt both money
+            // acts answer with, so an act replaces the section it fired from.
+            Reply::Prices(table) => self.priced(channel, table),
             // **The ball pane's two channel-wide reads**, on the same terms
             // again — each names no workspace, so each answer replaces its own
             // channel's section (`board`; bl-d2af).

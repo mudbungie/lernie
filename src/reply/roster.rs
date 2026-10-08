@@ -64,6 +64,9 @@ pub struct WsRow {
     /// back to sort them, which is the seat joining an answer against a
     /// document only the engine holds.
     pub pinned: Option<u64>,
+    /// **What the workspace has cost, whole** — the ledger column (REMOTE
+    /// §9.23), `None` where the engine has no price table.
+    pub spend: Option<super::spend::Cost>,
 }
 
 /// How the engine classifies a workspace.
@@ -126,6 +129,7 @@ fn row(v: &Value) -> Result<WsRow, String> {
             None | Some(Value::Null) => None,
             Some(_) => Some(fields::count(o, "pinned")?),
         },
+        spend: super::spend::cost(o, "spend")?,
     })
 }
 

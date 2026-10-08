@@ -80,8 +80,8 @@ pub fn worked(row: &BoardRow) -> Option<String> {
 /// the wire, read one noun over.
 pub fn cost(figure: &Figure) -> String {
     let mut said: Vec<String> = Vec::new();
-    if let Some(usd) = &figure.usd {
-        said.push(usd.clone());
+    if let Some(cost) = &figure.cost {
+        said.push(cost.said());
     }
     said.push(format!("{} tokens", figure.tokens.total));
     said.push(

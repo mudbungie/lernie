@@ -44,6 +44,7 @@ pub(crate) fn attempt(ball: &str, outcome: &str) -> crate::reply::science::Attem
             cache_read: 33,
             cache_write: 44,
         },
+        cost: None,
         wall_secs: 90,
         steps: 4,
         verdicts: Vec::new(),

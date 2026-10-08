@@ -7,6 +7,7 @@ use crate::reply::files::{Files, Preview};
 use crate::reply::governing::Governing;
 use crate::reply::inbox::Row as InboxRow;
 use crate::reply::rail::Rail;
+use crate::reply::spend::priced;
 use crate::reply::steps::Steps;
 
 use super::parts::{brief, clause, line, line_over, listing, things, when};
@@ -23,7 +24,10 @@ pub(super) fn steps(steps: &Steps) -> String {
                 Some(row.seq.clone()),
                 Some(row.framing.clone()),
                 things(row.attempts, "attempt"),
-                Some(format!("{} tokens", row.tokens.total)),
+                Some(priced(
+                    format!("{} tokens", row.tokens.total),
+                    row.cost.as_ref(),
+                )),
                 clause("commit", row.commit.as_deref()),
                 clause("started", row.started_at.as_deref()),
                 clause("ended", row.ended_at.as_deref()),
@@ -119,7 +123,10 @@ pub(super) fn rail(rail: &Rail) -> String {
                 Some(notch.seq.clone()),
                 Some(notch.short()),
                 when(!notch.operable(), "(not operable)"),
-                Some(format!("{} tokens", notch.budget)),
+                Some(priced(
+                    format!("{} tokens", notch.budget),
+                    notch.cost.as_ref(),
+                )),
                 clause(
                     "seat",
                     notch

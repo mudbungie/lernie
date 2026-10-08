@@ -37,7 +37,7 @@ pub struct Figure {
     /// ([`super::steps::Spend`], read from there rather than restated).
     pub tokens: Spend,
     /// The money, as the engine rendered it, or none where no rate priced it.
-    pub usd: Option<String>,
+    pub cost: Option<Cost>,
     /// What the figure sums over.
     pub attribution: Attribution,
 }
@@ -57,8 +57,59 @@ pub(crate) fn figure(value: &Value) -> Result<Figure, String> {
     let obj: &Map<String, Value> = value.as_object().ok_or("spend: not an object")?;
     Ok(Figure {
         tokens: super::steps::spend(obj)?,
-        usd: fields::opt_text(obj, "usd")?,
+        cost: money(obj)?,
         attribution: attribution(obj)?,
+    })
+}
+
+/// **What the engine put on a count**: its own rendering of the money, and
+/// how many of the tokens under it no rate priced.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Cost {
+    /// The money, verbatim — never computed here.
+    pub usd: String,
+    /// Tokens no row of the table priced. Above zero, `usd` is a floor.
+    pub unpriced_tokens: u64,
+}
+
+impl Cost {
+    /// The money as said: `$x`, or `at least $x` where it is a floor.
+    pub fn said(&self) -> String {
+        if self.unpriced_tokens > 0 {
+            format!("at least {}", self.usd)
+        } else {
+            self.usd.clone()
+        }
+    }
+}
+
+/// **A count and the cost beside it, as one clause** — `N tokens — $x`, or
+/// the count alone where the engine put no money on it. The one sentence
+/// every surface that paints a token count says it in (yog DESIGN §3.5).
+pub fn priced(count: String, cost: Option<&Cost>) -> String {
+    match cost {
+        Some(cost) => format!("{count} — {}", cost.said()),
+        None => count,
+    }
+}
+
+/// **The money half, read where any shape holds it** — `None` where no `usd`
+/// rode, which is a count no rate priced and never a zero.
+pub(crate) fn money(obj: &Map<String, Value>) -> Result<Option<Cost>, String> {
+    let Some(usd) = fields::opt_text(obj, "usd")? else {
+        return Ok(None);
+    };
+    Ok(Some(Cost {
+        usd,
+        unpriced_tokens: fields::opt_count(obj, "unpriced_tokens")?.unwrap_or(0),
+    }))
+}
+
+/// **A cost under its own key**, absent where the engine has no price table.
+/// Present, it is a priced figure and must say its money.
+pub(crate) fn cost(obj: &Map<String, Value>, key: &str) -> Result<Option<Cost>, String> {
+    fields::nested(obj, key, |held| {
+        money(held)?.ok_or_else(|| format!("field {key:?}: missing \"usd\""))
     })
 }
 

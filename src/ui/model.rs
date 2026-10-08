@@ -57,6 +57,8 @@ mod login;
 mod notice;
 /// What a frame composed, and what a lost reply would mean for it.
 mod posted;
+/// The prices pane between frames: each channel's table and the acts' draft.
+pub(crate) mod pricing;
 /// The decision queue between frames: what is asking, and the acts on a row.
 mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
@@ -92,6 +94,7 @@ pub use listing::Listing;
 pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
+pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::Asking;
 pub use records::Records;
 pub use spine::Forking;

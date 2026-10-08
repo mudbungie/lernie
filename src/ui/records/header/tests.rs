@@ -117,12 +117,16 @@ fn an_absent_conversation_says_so_rather_than_trailing_off() {
 #[test]
 fn an_unpriced_figure_says_only_its_counters() {
     let mut figure = own_row().spend;
-    figure.usd = None;
+    figure.cost = None;
     figure.attribution.label = None;
     assert_eq!(spent(&figure), "120 tokens");
     let mut priced = own_row().spend;
     priced.attribution.label = None;
     assert_eq!(spent(&priced), "120 tokens — $4.00");
+    if let Some(cost) = priced.cost.as_mut() {
+        cost.unpriced_tokens = 7;
+    }
+    assert_eq!(spent(&priced), "120 tokens — at least $4.00");
 }
 
 /// The percent is the engine's, painted as it came — including one that has

@@ -53,6 +53,26 @@ fn the_config_world_carries_both_proposal_tags() {
     }
 }
 
+/// **The money ops are on the glass** (bl-9111): the roster's control asks
+/// `prices` from the seat at work, and the prices world carries `price` on its
+/// write and every row's delete and `ceiling` on its set and its lift.
+#[test]
+fn the_prices_world_carries_the_three_money_tags() {
+    let (_, width, height) = SIZES[SIZES.len() - 1];
+    let tags = |name: &str| {
+        let world = worlds::all()
+            .into_iter()
+            .find(|world| world.name == name)
+            .expect("the world is walked");
+        inventory(&seat(world.model, width, height))
+    };
+    assert!(tags("seated").contains("prices"));
+    let seen = tags("prices");
+    for op in ["price", "ceiling"] {
+        assert!(seen.contains(op), "{op}: {seen:?}");
+    }
+}
+
 /// **The gate** (yog's `docs/PARITY.md` §5).
 #[test]
 fn every_control_op_is_either_tagged_here_or_recorded_absent_with_a_citation() {

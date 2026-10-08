@@ -24,7 +24,8 @@ pub(crate) mod panes;
 pub(crate) use panes::{
     attempt, boarded, checked, clearing, column, commanded, configured, deposit, diff, doctored,
     drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines, mark, notch,
-    own_row, pinned, provider, queued, recorded, signing, step, trailed, trailing, tuned, waiting,
+    own_row, pinned, priced, provider, queued, recorded, signing, step, trailed, trailing, tuned,
+    waiting,
 };
 
 /// One workspace row, named and otherwise quiet.
@@ -36,6 +37,7 @@ pub(crate) fn wall(name: &str) -> WsRow {
         agents: 2,
         running: false,
         pinned: None,
+        spend: None,
     }
 }
 

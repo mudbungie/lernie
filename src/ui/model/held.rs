@@ -14,8 +14,8 @@ mod asked;
 
 use super::{
     Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dragged, Engines,
-    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Records,
-    Start, Trail, Tuning, Unmaking,
+    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing,
+    Records, Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -154,6 +154,8 @@ pub struct Model {
     /// **What each channel last said it answers to** — the same per-channel
     /// reading, one noun over (`window`; bl-40ec).
     pub pages: Vec<Pages>,
+    /// **The prices pane's tables and draft**, on the same terms (`pricing`).
+    pub pricing: Pricing,
     /// **What each channel last found**, on the same terms (`window`).
     pub found: Vec<Hits>,
     /// **What each channel said about its own wiring** (`doctor`; bl-9bbb).

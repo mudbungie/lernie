@@ -41,14 +41,17 @@ pub fn attempt(row: &Attempt) -> Vec<String> {
     if let Some(goal) = &row.goal {
         said.push(goal.clone());
     }
-    said.push(format!(
-        "{} steps  {}s  {} in  {} out  {} cache-read  {} cache-write",
-        row.steps,
-        row.wall_secs,
-        row.usage.input,
-        row.usage.output,
-        row.usage.cache_read,
-        row.usage.cache_write
+    said.push(crate::reply::spend::priced(
+        format!(
+            "{} steps  {}s  {} in  {} out  {} cache-read  {} cache-write",
+            row.steps,
+            row.wall_secs,
+            row.usage.input,
+            row.usage.output,
+            row.usage.cache_read,
+            row.usage.cache_write
+        ),
+        row.cost.as_ref(),
     ));
     for (what, held) in [
         ("in", &row.conversation),

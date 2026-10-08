@@ -125,7 +125,13 @@ pub(super) fn agent(agent: &Agent) -> String {
         clause("flight:", agent.flight.as_deref()),
         clause("failed:", agent.failure.as_deref().map(brief).as_deref()),
         when(!agent.marks.is_empty(), &agent.marks.join(", ")),
-        clause("spend", Some(&agent.spend.tokens.total.to_string())),
+        clause(
+            "spend",
+            Some(&crate::reply::spend::priced(
+                format!("{} tokens", agent.spend.tokens.total),
+                agent.spend.cost.as_ref(),
+            )),
+        ),
         clause(
             "context",
             agent

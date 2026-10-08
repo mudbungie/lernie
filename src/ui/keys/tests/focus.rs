@@ -86,7 +86,7 @@ fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
 }
 
 /// **The `+` is a control like any other, so a key reaches it** (F1): the
-/// ninth Tab is the one beside the engine's row, and Space on it begins a
+/// tenth Tab is the one beside the engine's row, and Space on it begins a
 /// conversation — the selection dropped and the caret in the box.
 ///
 /// **And the binding that opens a standing engine does NOT also fire**
@@ -99,7 +99,7 @@ fn a_tab_reaches_the_plus_and_space_on_it_begins_a_conversation() {
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..9 {
+    for _ in 0..10 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);

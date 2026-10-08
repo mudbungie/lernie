@@ -130,6 +130,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
 /// weakest facts and go last, where losing them costs least. The two rollups
 /// are stated only when they are non-zero — a roster of `0 waiting` on every
 /// row teaches nothing and costs the one that says `3`.
+///
+/// **The ledger column** (REMOTE §9.23, DESIGN §4.41) is what the wall has
+/// cost, whole, where the engine priced it — after the state and before the
+/// weak facts, because money is what an operator scans a roster for second.
 pub fn line(row: &WsRow) -> String {
     let mut said = vec![row.workspace.clone()];
     if row.attention > 0 {
@@ -137,6 +141,9 @@ pub fn line(row: &WsRow) -> String {
     }
     if row.running {
         said.push("running".to_owned());
+    }
+    if let Some(cost) = &row.spend {
+        said.push(cost.said());
     }
     said.push(format!("{} conversations", row.agents));
     said.push(format!("({})", row.kind.label()));

@@ -22,6 +22,7 @@ pub(crate) fn step(seq: &str) -> crate::reply::steps::StepRow {
             cache_write: 44,
             total: 99,
         },
+        cost: None,
         commit: Some("abcdef1".to_owned()),
         started_at: Some("2026-08-30T05:12Z".to_owned()),
         ended_at: Some("2026-08-30T05:14Z".to_owned()),
@@ -38,6 +39,7 @@ pub(crate) fn notch(seq: &str) -> crate::reply::rail::Notch {
         seq: seq.to_owned(),
         commit: Some("abcdef1234567890".to_owned()),
         budget: 120,
+        cost: None,
         seat: Some(crate::reply::rail::Seat {
             row: "003-claude.json".to_owned(),
             cut: 2,
@@ -86,7 +88,10 @@ pub(crate) fn own_row() -> crate::reply::agent::Agent {
                 cache_write: 0,
                 total: 120,
             },
-            usd: Some("$4.00".to_owned()),
+            cost: Some(crate::reply::spend::Cost {
+                usd: "$4.00".to_owned(),
+                unpriced_tokens: 0,
+            }),
             attribution: crate::reply::spend::Attribution {
                 kind: "conversations".to_owned(),
                 label: Some("over 3 conversations".to_owned()),

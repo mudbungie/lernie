@@ -2263,6 +2263,13 @@ first exception to. The pane's seventh read is not among them: `step` is
 addressed at one row rather than at the pane, so its control hangs on the row
 (§4.32). Nothing about this pane is left in the exemption ledger.
 
+**A step row says its money** (yog REMOTE §9.23; bl-9111). Each row carries
+that step's own bill, priced by its own `(provider, model)`, and the row's
+headline paints it beside the count — `N tokens — $x.yz`, the count alone where
+the engine has no price table, and `at least $x.yz` where some of the step's
+tokens no rate priced (`crate::reply::spend::priced`, the one sentence every
+surface says a count in; §4.41).
+
 ### 4.19 The decision queue: the pane about no focus (bl-f0ef)
 
 `src/ui/queue.rs`. **The fourth covering pane, and the first whose subject is
@@ -3311,6 +3318,13 @@ from this seat is a mark pinned to a commit its lineage has moved past — a mar
 can only be set to a lineage's head — and that is the same loss `retarget`
 already accepts without an arming. So both are plain buttons, as `retarget` is.
 
+**A notch says its money** (yog REMOTE §9.23; bl-9111). The notch's figure is a
+rollup as of that step, and the engine prices the same rollup and sends it
+beside it — so the notch's headline says `N tokens — $x.yz` on §4.18's rule,
+the count alone where unpriced and `at least` where the rollup holds tokens no
+rate covered. A child's card carries no cost on this wire and so paints its
+count alone; a seat that summed one would be a second author of a price.
+
 ### 4.30 The config pane: the files a wall's policy is written in (REMOTE §9, §9.18, §9.22; bl-5c53, bl-4855, bl-a1d6)
 
 `src/ui/config.rs`, `src/ui/config/settings.rs`, `src/ui/config/edit.rs`,
@@ -3529,7 +3543,11 @@ clause, because a figure over one stamped conversation renders as no clause at
 all and the clause alone cannot tell that from *workspace-wide*. The four
 counters are `crate::reply::steps::Spend` read from where they already live,
 never restated — one shape on this wire, one encoder upstream, one reading
-here.
+here. **The money half is one reader too** (bl-9111): `Cost` — the engine's
+`usd` and how many tokens no rate priced — is read by `spend::money` wherever
+it rides, inline on a figure or under its own key on the four shapes REMOTE
+§9.23 gave one, and `unpriced_tokens` above zero makes it a floor the seat says
+as `at least` (§4.41).
 
 **One control carries four tokens**, which is PARITY §3's rule that the
 ledger's unit is the op rather than the widget, spent on the widest control
@@ -4022,6 +4040,12 @@ omitting it means *the engine's own focused ball* — a focus a seat does not
 have, since its gestures are composed off a row that already names one. The
 three ball-less frames are recorded in `src/verbs/tests/corpus/emits.rs` by
 count and reason.
+
+**A candidate says what it cost** (yog REMOTE §9.23; bl-9111). Each delivery
+attempt carries `cost` beside its four counters, and the fleet pane's attempt
+lines paint it after them on §4.18's rule — which is what an operator weighs
+candidates by besides the diff: the same obligation, spread n ways, at n
+prices.
 
 
 ### 4.37 The rendering: the seat is the part you look at (bl-6ae7, bl-b00f)
@@ -4758,6 +4782,85 @@ covering the engine's fifteen-second poll and its own twenty-second window —
 are stated so they can be wrong in public (§13.7 ruling 3).
 
 
+### 4.41 The prices pane and the ledger column: what the world is charged (yog REMOTE §9.23; bl-9111)
+
+`src/reply/prices.rs`, `src/reply/spend.rs`, `src/verbs/prices.rs`,
+`src/verbs/doors.rs`, `src/cli/prices.rs`, `src/ui/prices.rs`,
+`src/ui/model/pricing.rs`, `src/ui/roster/wall.rs`. **A token count is never
+painted without the cost the engine put beside it** (yog DESIGN §3.5), and this
+section is that rule's seat half: one sentence for every count, a column on the
+roster, and one window-level pane over the two money facts.
+
+**One sentence, said everywhere a count is.** `crate::reply::spend::priced` is
+`N tokens — $x.yz` where the engine priced the count, the count alone where it
+has no price table — an absent `cost` is UNPRICED, never zero, and a `$0.00` is
+a priced subscription — and `at least $x.yz` where `unpriced_tokens` is above
+zero, because then the figure is a floor. The step row (§4.18), the notch
+(§4.29), a candidate's attempt (§4.36), a ball's figure (§4.31) and the
+conversation's own spend all say it, on the glass and on the command line. The
+money is upstream's rendering, verbatim; nothing here multiplies.
+
+**The roster is a ledger.** `reply/workspaces` rows carry `spend`, the wall's
+whole priced figure, and the row's line paints it after the state rollups and
+before the weak facts — money is the second thing an operator scans a roster
+for, and the line is elided from the right (§4.39). `lernie workspaces` prints
+it as `spent $x`. A wall the engine has no table for says nothing, which is the
+fact.
+
+**The pane is §4.21's shape, one noun over.** `prices` names no workspace, so
+its subject is every channel this box holds: its control hangs off the roster's
+strip, it opens from an unaimed seat, it is sectioned per channel under the
+roster's header, and it shares `Lookup` with the window-level family. Each
+section paints the table — one row per `(provider, model)`, a `*` model as
+itself, the four rates as the operator wrote them — then the bound and the
+world's spend against it, and what the last ceiling act woke.
+
+Four decisions are its own:
+
+- **The read is POSTED, not standing.** The table moves only when an operator
+  writes it, and both writes answer with it re-derived, so the section an act
+  fired from is replaced by its own receipt. The spend line is the one fact
+  that drifts under the operator; opening the pane re-asks it. A standing read
+  would spend a round trip a beat on an answer that almost never moved.
+- **Each act goes down ONE channel.** Neither `price` nor `ceiling` names a
+  workspace, so the poster would fan either over every engine this box is a
+  client of — §4.30's hazard. Each control fires from its section and is
+  addressed down that channel (`Posted::down`). On argv the two are doors
+  (`lernie price <provider> <model> <input> <output> [<cache_read>
+  [<cache_write>]] | off`, `lernie ceiling <usd> | off`) and they fan, on
+  `lernie ack`'s terms: argv has no channel selector, and a box with one engine
+  — the ordinary case — has one channel to write. They are doors and not rows
+  because their arguments are numbers that may be absent, which the gesture
+  table's rule refuses (§4.10); `prices` takes nothing and is a row.
+- **A rate is a JSON number, never an `f64`.** The engine reads rates back
+  exactly as written, so `15` must go out as `15` and not `15.0` — the corpus
+  round-trip holds it. A word that is not a number is refused at the seat; a
+  negative number is a number, and the engine's in-band refusal names it.
+- **The provider is checked against the roster the seat already holds.** Where
+  the window is aimed at a wall on the section's channel and that wall has
+  answered `providers` (opening the pane asks it, which is why the opening
+  control carries `act:prices act:providers`), a provider it does not name
+  disables the price control with the reason beside it. Anywhere else — no aim,
+  another channel, `lernie price` — the engine's own refusal names it.
+
+**`ceiling` is not armed, and §4.20 is why.** A bound set under the world's
+spend PARKS every conversation over it — conversations no control on the pane
+names, which is the amended test's first half (*beyond the one named on
+screen*). The second half is what an arming protects against: an act whose
+undoing is per-object. The cascade stop is armed because its undoing is a
+`nudge` per conversation. A ceiling's undoing is ONE act — raising the bound or
+lifting it drives every conversation it parked, and the receipt's `released`
+says how many woke — and it sits on the same pane, beside a spend line that
+says what the bound is about to be measured against. A typed-name arming here
+would charge a retype for an act whose whole mistake is reversed by the next
+click. So the controls carry the enablement rule (disabled until the box holds
+a number or `off`, the reason beside it) and nothing more. `price … off` is not
+armed for the plainer reason that it names its row.
+
+The tags are `act:prices` on the opening control, `act:price` on each
+section's write and on every row's delete, `act:ceiling` on the set and the
+lift; the three `parity.toml` lines are gone.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -4867,6 +4970,11 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 | `src/reply/help.rs` | one engine's own verb table (§4.21): five required strings a row, the classification carried verbatim, and the headline the pane paints. It is the same shape `src/snapshot/parity/roster.rs` reads the parity roster off. | ~85 |
 | `src/reply/search.rs` | what a needle found (§4.21): the four facts about a match, the four address fields that are optional because a hit is one of three shapes, and the unreadable list that is a different claim from finding nothing. | ~135 |
 | `src/verbs/window.rs` | the window's own two ops (§4.21) — the engine's verb table, which has no argv row because its word is `lernie help`'s, and the search, which does. | ~80 |
+| `src/verbs/prices.rs` | the money ops (§4.41): `prices` as a row, `price` and `ceiling` as typed doors because their figures are numbers that may be absent, and the one reading of a typed rate or bound as a JSON number. | ~120 |
+| `src/reply/prices.rs` | the price table, the bound, the world's spend against it and what a ceiling act woke (§4.41) — rates held as JSON numbers so they read back as written. | ~125 |
+| `src/cli/prices.rs` | `price` and `ceiling` as argv spells them: a word that is not a number refused here with the door's usage. | ~40 |
+| `src/ui/prices.rs` | the prices pane (§4.41): each channel's table, its bound and spend, and the acts addressed down that channel, each disabled with its reason. | ~150 |
+| `src/ui/model/pricing.rs` | the prices pane between frames: the per-channel tables, the four draft boxes, the roster check and the four acts. | ~180 |
 | `src/ui/commands.rs` | the commands pane (§4.21): one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |

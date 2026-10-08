@@ -66,7 +66,7 @@
 # publishes on. A gate belongs immediately before the publisher, everywhere the
 # publisher runs.
 if [ "${1-}" = protocol ]; then
-  printf '{"protocol":[1],"ops":["create","update","claim","unclaim","close","drop"]}\n'
+  printf '{"protocol":[1],"ops":["create","update","claim","unclaim","close","drop","comment"]}\n'
   exit 0
 fi
 

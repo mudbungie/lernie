@@ -275,15 +275,17 @@ Wiring is one act per checkout, and this repo cannot perform it — the plugin
 schedule lives in the balls landing (`balls/config`), not in lernie's tree:
 
     bl install --bin lernie-leak-gate=<repo>/scripts/lernie-leak-gate
-    for op in create update claim unclaim close drop; do
+    for op in create update claim unclaim close drop comment; do
       bl conf prepend $op.post lernie-leak-gate
     done
 
 `prepend`, never `append`: plugins run in list order and only the irreversible
 belongs last, so the gate must sit ahead of whatever publishes and whatever
-squashes. Those six ops are exactly the ones a publisher runs on — *the gate
-goes immediately before the publisher, everywhere the publisher runs*. It is
-severable: `bl conf remove <op>.post lernie-leak-gate` deletes config, not code.
+squashes. Those seven ops are exactly the ones a publisher runs on — `comment`
+joined them when balls began dispatching `comment.post` and the tracker began
+pushing on it — *the gate goes immediately before the publisher, everywhere the
+publisher runs*. It is severable: `bl conf remove <op>.post lernie-leak-gate`
+deletes config, not code.
 
 **What it cannot do.** It stops the accident, not the author: the same agent can
 `bl conf remove` it, or commit inside the store clone by hand, exactly as

@@ -1,7 +1,8 @@
 +++
 title = "a wall's roster line elides its rollups at the column's own width: 'home  (named)  6 conversations  5 waiting  running' loses 'running' at 280 points, so the row says less than the wire does"
 created = 1788755364
-updated = 1788755364
+updated = 1791438033
+claimant = "Mystical-cecd"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["usability-r3"]

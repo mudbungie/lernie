@@ -27,13 +27,13 @@ mod sections;
 #[test]
 fn a_row_states_its_rollups_only_where_there_is_something_to_say() {
     let quiet = line(&wall("home"));
-    assert_eq!(quiet, "home  (named)  2 conversations");
+    assert_eq!(quiet, "home  2 conversations  (named)");
     let busy = line(&WsRow {
         attention: 3,
         running: true,
         ..wall("home")
     });
-    assert_eq!(busy, "home  (named)  2 conversations  3 waiting  running");
+    assert_eq!(busy, "home  3 waiting  running  2 conversations  (named)");
 }
 
 /// **Pinned first, in pin order**, then the rest by name. A rank rather than a
@@ -88,7 +88,7 @@ fn a_click_aims_the_window_and_drops_what_was_about_the_last_wall() {
     let mut model = seated();
     model.aim = None;
     let window = Window::new();
-    click(&window, "home  (named)  2 conversations", |ctx| {
+    click(&window, "home  2 conversations  (named)", |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
     assert_eq!(

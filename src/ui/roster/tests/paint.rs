@@ -208,3 +208,41 @@ fn the_two_bands_are_compact_strips_at_the_rosters_width() {
     ];
     assert!(lines(&wall_acts) <= 3, "the wall's strip");
 }
+
+/// **The state survives the column's own width** (bl-cecd). A row is one run
+/// elided at the roster's width, so what stands last is what a narrow roster
+/// cuts — and a busy wall at 280 points used to lose `running` to the `…`
+/// while the rule at its edge was the only place it was said. Read off the
+/// glyphs, because the string that went in is whole whatever the glass shows.
+#[test]
+fn a_busy_wall_at_280_points_still_says_its_state() {
+    let mut model = Model {
+        roster: vec![Chunk {
+            walls: vec![WsRow {
+                attention: 5,
+                agents: 6,
+                running: true,
+                ..wall("home")
+            }],
+            ..own()
+        }],
+        ..Model::default()
+    };
+    let window = Window::sized(800.0, 600.0);
+    let glyphs: Vec<String> = seen(&window, |ctx| {
+        egui::SidePanel::left("roster")
+            .exact_width(280.0)
+            .show(ctx, |ui| render(ui, &mut model));
+    })
+    .into_iter()
+    .map(|seen| seen.text)
+    .collect();
+    let row = glyphs
+        .iter()
+        .find(|text| text.starts_with("home  "))
+        .unwrap_or_else(|| panic!("the wall's row is on the glass: {glyphs:?}"));
+    assert!(
+        row.contains("5 waiting  running"),
+        "the state is cut: {row:?}"
+    );
+}

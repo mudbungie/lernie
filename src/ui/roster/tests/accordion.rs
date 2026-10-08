@@ -52,7 +52,7 @@ fn the_open_engine_s_walls_paint_and_the_closed_one_s_do_not() {
         assert!(painted.contains(&expected), "{expected:?}:\n{painted}");
     }
     assert!(
-        painted.contains("home  (named)"),
+        painted.contains("home  2 conversations"),
         "the open engine's wall:\n{painted}"
     );
     for folded in ["bench", "annex"] {
@@ -98,7 +98,7 @@ fn a_click_on_an_engine_row_opens_it_closes_the_other_and_aims_a_wall() {
     let painted = pane(|ui| render(ui, &mut model));
     assert!(painted.contains("annex"), "{painted}");
     assert!(
-        !painted.contains("home  (named)"),
+        !painted.contains("home  2 conversations"),
         "the engine that was open is closed:\n{painted}"
     );
 }
@@ -138,7 +138,10 @@ fn the_aimed_wall_s_conversations_stand_under_it_and_no_other_wall_s() {
             .unwrap_or_else(|| panic!("{needle:?} is on the glass:\n{painted}"))
     };
     let row = crate::ui::convs::headline(&model.convs[0].clone());
-    assert!(at("home  (named)") < at(&row), "under its own wall's row");
+    assert!(
+        at("home  2 conversations") < at(&row),
+        "under its own wall's row"
+    );
     assert!(at(&row) < at("spare"), "and above the next wall's");
     assert_eq!(
         painted.matches(&row).count(),

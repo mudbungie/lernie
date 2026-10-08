@@ -34,7 +34,7 @@ fn a_notice_stands_where_the_content_would_have_been_and_says_whose_it_is() {
         let shown = painted(&mut model);
         assert!(shown.contains(expected), "{expected:?}:\n{shown}");
         assert!(
-            shown.contains("home  (named)  2 conversations"),
+            shown.contains("home  2 conversations  (named)"),
             "a refusal about one pane does not stop the others:\n{shown}"
         );
     }

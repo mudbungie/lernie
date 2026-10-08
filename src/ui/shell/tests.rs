@@ -32,7 +32,7 @@ fn one_frame_paints_the_roster_the_list_the_conversation_and_the_composer() {
     for expected in [
         crate::ui::roster::HEADING,
         "(this box's own engine)",
-        "home  (named)  2 conversations",
+        "home  2 conversations  (named)",
         "conversations",
         "port the paint probe  [quiescent]  42s",
         "conversation",

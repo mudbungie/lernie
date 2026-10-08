@@ -119,22 +119,27 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     convs::under(ui, model, &aim, reveal);
 }
 
-/// One wall's line: what it is called, how it is classified, and its rollups.
-/// The two rollups are stated only when they are non-zero — a roster of `0
-/// waiting` on every row teaches nothing and costs the one that says `3`.
+/// One wall's line: what it is called, then the state it is in, then the
+/// facts that never change what the operator does next.
+///
+/// **The order is what survives the cut** (bl-cecd). The row is one run elided
+/// at the column's width ([`theme::paint::row`]), so whatever stands last is
+/// what a narrow roster loses. The rollups that carry a state — `N waiting`,
+/// `running` — follow the name, where the rule at the row's left edge is
+/// echoed in words; the count of conversations and the classification are the
+/// weakest facts and go last, where losing them costs least. The two rollups
+/// are stated only when they are non-zero — a roster of `0 waiting` on every
+/// row teaches nothing and costs the one that says `3`.
 pub fn line(row: &WsRow) -> String {
-    let mut said = vec![format!(
-        "{}  ({})  {} conversations",
-        row.workspace,
-        row.kind.label(),
-        row.agents
-    )];
+    let mut said = vec![row.workspace.clone()];
     if row.attention > 0 {
         said.push(format!("{} waiting", row.attention));
     }
     if row.running {
         said.push("running".to_owned());
     }
+    said.push(format!("{} conversations", row.agents));
+    said.push(format!("({})", row.kind.label()));
     said.join("  ")
 }
 

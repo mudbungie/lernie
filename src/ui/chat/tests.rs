@@ -7,13 +7,14 @@
 
 /// The tail anchor, the follow, and the scroll that releases it.
 mod anchor;
+/// The live fold: where it paints, and when it has nothing to paint over.
+mod live;
 /// A machine's answer on the glass: folded, and one gesture from the whole.
 mod machinery;
 /// What the weight at a block's edge says about who is speaking.
 mod weight;
 
 use super::{LIVE, NO_CONVERSATION, Row, render, rows};
-use crate::reply::stream::{Delta, Stream};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{pane, said, seated};
 use crate::ui::Model;
@@ -159,37 +160,6 @@ fn each_half_of_a_turn_in_flight_is_its_own_row_and_an_empty_one_is_none() {
         text: String::new(),
     });
     assert!(rows(&quiet, None).is_empty());
-}
-
-/// **The newest fold wins.** The tail reaches a seat by two routes at two
-/// cadences, and *replace* is the only reconciliation either needs — appending
-/// would paint the answer twice.
-#[test]
-fn a_live_fold_replaces_the_streaming_entry_rather_than_standing_beside_it() {
-    let committed = Transcript {
-        entries: vec![
-            said("op", "port it"),
-            Entry {
-                name: "«live»".to_owned(),
-                raw: "half a".to_owned(),
-                kind: EntryKind::Streaming {
-                    thinking: String::new(),
-                    text: "half a".to_owned(),
-                },
-            },
-        ],
-    };
-    let newer = Stream {
-        text: Some("half a sentence".to_owned()),
-        thinking: None,
-        last_delta: Some(Delta::Text),
-        tools: Vec::new(),
-    };
-    let shown = rows(&committed, Some(&newer));
-    assert_eq!(shown.len(), 2, "{shown:?}");
-    assert_eq!(shown[1].said, "half a sentence");
-    // With no newer fold the committed one still paints: the pull read's own.
-    assert_eq!(rows(&committed, None)[1].said, "half a");
 }
 
 /// The pane says what it is waiting for rather than showing an empty box.

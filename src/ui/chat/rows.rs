@@ -96,21 +96,34 @@ fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
 
 /// **The whole pane as data.**
 ///
-/// The live fold **replaces** any streaming entry the committed read already
-/// folded on, rather than appending beside it: the tail reaches a seat by two
-/// routes at two cadences — the pull read folds one on at ask cadence, the
-/// follow lane delivers a newer one at write cadence — and *the newest fold
-/// wins* is the only reconciliation either needs. Appending would paint the
-/// answer twice.
+/// The live fold **is a newer reading of the committed read's `Streaming`
+/// entry, and it paints only in that entry's place** (bl-f6b5). The tail
+/// reaches a seat by two routes at two cadences — the pull read folds one on
+/// at ask cadence, the follow lane delivers a newer one at write cadence — and
+/// *the newest fold wins* is the only reconciliation either needs.
+///
+/// **So a transcript with no `Streaming` entry has no turn in flight, and the
+/// fold is not painted at all.** The engine's streaming entry rides the open
+/// response (REMOTE §5.5), so its absence is the committed read saying the
+/// response closed — the turn is a `model` entry now, and a fold appended
+/// after it painted the answer twice, `«live»` under the committed one, for as
+/// long as the lane's last fold stood in [`crate::ui::Model::live`]. The rule
+/// is derived from the read rather than kept by clearing the field when the
+/// lane ends: a lane end is not the commit (the read can land while the lane
+/// is still open), while the read IS the commit, whichever order the two
+/// routes arrive in — and a field nothing writes cannot go stale. The cost
+/// is bounded and stated: a turn that has begun streaming but that no pull
+/// read has yet seen paints its tail from the next read on, one ask cadence
+/// late, rather than early.
 pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
-    let mut out: Vec<Row> = transcript
+    transcript
         .entries
         .iter()
-        .filter(|entry| live.is_none() || !matches!(entry.kind, EntryKind::Streaming { .. }))
-        .flat_map(entry_rows)
-        .collect();
-    out.extend(live.into_iter().flat_map(streaming));
-    out
+        .flat_map(|entry| match (&entry.kind, live) {
+            (EntryKind::Streaming { .. }, Some(fold)) => streaming(fold),
+            _ => entry_rows(entry),
+        })
+        .collect()
 }
 
 /// One entry's rows.

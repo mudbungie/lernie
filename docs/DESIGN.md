@@ -614,6 +614,17 @@ wire spelling did not move** — the body is still `{"delta", "text",
 "thinking"}` — so no field signature can see this change, which is why the
 protocol integer carries it and why this paragraph exists at all.
 
+**The fold paints only in the place of the committed read's `Streaming`
+entry** (bl-f6b5; `src/ui/chat/rows.rs` `rows`). The two routes describe one
+open response, and the engine's streaming entry rides exactly that (REMOTE
+§5.5), so a read with no `Streaming` entry is the read saying the response
+closed: the fold in `Model::live` then has nothing to be newer than and is not
+painted. Nothing clears the field when the lane ends, deliberately — the lane's
+end is not the commit (the committed read can land while the lane is still
+open), and a fold appended after the committed `model` entry painted the answer
+twice for as long as it stood. The cost is one ask cadence: a turn already
+streaming that no pull read has yet seen paints its tail from that read on.
+
 **The frame carries the TOOL WINDOW beside the prose** (REMOTE §5.5, PROTOCOL
 15; bl-183b): two entries a call, appended by the rule the prose already obeys.
 An operator watching an agent administer their machines saw a thinking marker
@@ -5088,7 +5099,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the engine row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
 | `src/ui/chat.rs` | the conversation pane: where it opens, what it follows, and how a folded row is painted. | ~110 |
-| `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected. | ~160 |
+| `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/chat/subject.rs` | which conversation the pane is showing: name, resting clause, failure and costing, read off the records header rather than re-derived. | ~65 |

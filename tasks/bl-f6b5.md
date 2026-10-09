@@ -1,7 +1,8 @@
 +++
 title = "the chat pane paints a committed answer twice: the live fold outlives the turn it was folding"
 created = 1791513611
-updated = 1791513611
+updated = 1791513634
+claimant = "Mystical-f6b5"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

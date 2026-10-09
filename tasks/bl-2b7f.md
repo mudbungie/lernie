@@ -1,7 +1,8 @@
 +++
 title = "verify the canonical scene end to end: an engine on one box, this window on another, over a stated address"
 created = 1788138699
-updated = 1788138699
+updated = 1791513571
+claimant = "Mystical-2b7f"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

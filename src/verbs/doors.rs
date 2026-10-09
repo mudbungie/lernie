@@ -196,8 +196,8 @@ pub const DOCTOR: Door = Door {
 /// because its rates are numbers that may be absent ([`super::prices`]).
 pub const PRICE: Door = Door {
     word: super::prices::PRICE,
-    takes: "<provider> <model> <input> <output> [<cache_read> [<cache_write>]] | off",
-    arity: (3, 6),
+    takes: "<provider> <model> <input> <output> [<cache_read> [<cache_write>]] | off [--on <channel>]",
+    arity: (3, 8),
     summary: "price one provider's model, in USD per million tokens, or unprice it",
     detail: "Writes the row the engine prices that (provider, model) by — a \
              `*` model covers every model that provider serves and the table \
@@ -206,23 +206,27 @@ pub const PRICE: Door = Door {
              priced at nothing, which is a different fact from unpriced. \
              `off` in place of the rates deletes the row. The provider must \
              be a row the wall's `providers` names, and the engine refuses \
-             one it has no row for, in its own words. It names no workspace, \
-             so it is written to EVERY channel this box holds.",
+             one it has no row for, in its own words. The table is one \
+             engine's, so the row is written down ONE channel: the one \
+             `--on` names (a name `lernie entries` lists), or the only one \
+             this box holds — a box holding several refuses an unnamed write, \
+             naming them.",
 };
 
 /// **The spend bound, set or lifted** (REMOTE §9.23) — a door for
 /// [`PRICE`]'s reason: its one argument is a number or nothing.
 pub const CEILING: Door = Door {
     word: super::prices::CEILING,
-    takes: "<usd> | off",
-    arity: (1, 1),
+    takes: "<usd> | off [--on <channel>]",
+    arity: (1, 3),
     summary: "bound the world's priced spend, or lift the bound",
     detail: "Sets the ceiling the engine parks every conversation at once \
              the world's priced spend reaches it, and answers with the price \
              table, the bound and the spend as they now stand. Moving the \
              bound back over the spend — raising it, or `off` — wakes every \
-             conversation it had parked, and the answer says how many. It \
-             names no workspace, so it is set on EVERY channel this box holds.",
+             conversation it had parked, and the answer says how many. The \
+             bound is one engine's, so it is set down ONE channel, chosen as \
+             `price` chooses it.",
 };
 
 /// The word whose subject is this binary.

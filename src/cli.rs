@@ -27,6 +27,7 @@ mod start;
 
 pub use decided::{Asking, Decided};
 pub use enroll::{AT, INTO};
+pub use prices::ON;
 pub use text::{usage, version};
 pub use verdict::{Stream, Verdict};
 
@@ -121,12 +122,12 @@ pub fn run(args: Vec<String>) -> Decided {
         ["answer", workspace, agent, verdict, scope] => {
             answer::answer(workspace, agent, verdict, Some(scope), form)
         }
-        // **The two money doors** (REMOTE §9.23): numbers, or `off`. Any
-        // other arity falls through to `typed`, where the door's usage answers.
-        ["price", provider, model, rates @ ..] if (1..=4).contains(&rates.len()) => {
-            prices::price(provider, model, rates, form)
-        }
-        ["ceiling", bound] => prices::ceiling(bound, form),
+        // **The two money doors** (REMOTE §9.23): numbers, or `off`, then the
+        // channel they write. Their tails are read in `prices`, which answers
+        // every shape with the door's usage; `price` with fewer than two words
+        // falls through to `typed`, where its arity does.
+        ["price", provider, model, tail @ ..] => prices::price(provider, model, tail, form),
+        ["ceiling", tail @ ..] => prices::ceiling(tail, form),
         // Ahead of the typed table, and only because of what the answer
         // carries: the row is the same row, and the envelope is built from it.
         ["enroll", workspace, name, grade, tail @ ..] => {

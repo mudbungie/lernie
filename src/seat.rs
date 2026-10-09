@@ -25,6 +25,8 @@ use std::path::Path;
 
 use serde_json::Value;
 
+/// A world-level act, down the one channel the operator named.
+mod aimed;
 /// The §8.4 enrollment act, whose reply is a picture rather than a stream.
 mod enroll;
 /// A gesture that names no workspace, asked of every channel this box holds.
@@ -40,6 +42,7 @@ mod route;
 /// The §8.1 start family's two acts, spelled as one word.
 mod start;
 
+pub use aimed::aimed;
 pub use enroll::enroll;
 pub use fan::fanned;
 pub use follow::follow;

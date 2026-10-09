@@ -64,6 +64,11 @@ lernie clear-workflow <workspace> <agent>        # drop that mark; the tip's gov
 lernie delete-agent <workspace> <agent> <typed>  # empty <typed>; its name takes the children
 lernie delete-workspace <workspace> <typed>      # <typed> must be the workspace's own name
 
+lernie prices                                    # every engine's price table, bound and spend
+lernie price <provider> <model> <rates…> | off [--on <channel>]   # one engine's row
+lernie ceiling <usd> | off [--on <channel>]      # one engine's bound; `--on` names which
+                                                 # where this box holds more than one
+
 lernie start <workspace> <goal> [<dir>]  # begin a conversation — two acts, one word;
                                          # a directory aims the driver there
 

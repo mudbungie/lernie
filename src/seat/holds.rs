@@ -51,7 +51,12 @@ pub fn dial(data_root: &Path, name: &str) -> Result<Channel, String> {
     entries::read_dir(&entries::dir(data_root))
         .into_iter()
         .find(|held| held.leaf == name)
-        .ok_or_else(|| format!("this box holds no channel named {name:?}"))?
+        .ok_or_else(|| {
+            format!(
+                "this box holds no channel named {name:?}; it holds {}",
+                names(data_root)
+            )
+        })?
         .open()
 }
 

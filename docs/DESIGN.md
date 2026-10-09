@@ -4812,7 +4812,7 @@ are stated so they can be wrong in public (§13.7 ruling 3).
 ### 4.41 The prices pane and the ledger column: what the world is charged (yog REMOTE §9.23; bl-9111)
 
 `src/reply/prices.rs`, `src/reply/spend.rs`, `src/verbs/prices.rs`,
-`src/verbs/doors.rs`, `src/cli/prices.rs`, `src/ui/prices.rs`,
+`src/verbs/doors.rs`, `src/cli/prices.rs`, `src/seat/aimed.rs`, `src/ui/prices.rs`,
 `src/ui/model/pricing.rs`, `src/ui/roster/wall.rs`. **A token count is never
 painted without the cost the engine put beside it** (yog DESIGN §3.5), and this
 section is that rule's seat half: one sentence for every count, a column on the
@@ -4854,9 +4854,17 @@ Four decisions are its own:
   client of — §4.30's hazard. Each control fires from its section and is
   addressed down that channel (`Posted::down`). On argv the two are doors
   (`lernie price <provider> <model> <input> <output> [<cache_read>
-  [<cache_write>]] | off`, `lernie ceiling <usd> | off`) and they fan, on
-  `lernie ack`'s terms: argv has no channel selector, and a box with one engine
-  — the ordinary case — has one channel to write. They are doors and not rows
+  [<cache_write>]] | off [--on <channel>]`, `lernie ceiling <usd> | off [--on
+  <channel>]`) and each goes down ONE channel too (bl-1bb9; `seat::aimed`):
+  the one `--on` names, opened by `seat::dial` — the same name-to-channel step
+  the window's control takes, since the act names no workspace and §4.7's
+  mapping has nothing to resolve — or, unnamed, the one channel the box holds,
+  counted off the fan's own enumeration. A box holding more refuses an unnamed
+  write, naming its channels; a name it holds no channel by refuses naming
+  them too, and never falls through to the flat root. They used to fan on
+  `lernie ack`'s terms, which wrote one typed number into every world the box
+  is a client of; an idempotent acknowledgement means every engine, a price
+  means one. `lernie prices`, the read, still fans. They are doors and not rows
   because their arguments are numbers that may be absent, which the gesture
   table's rule refuses (§4.10); `prices` takes nothing and is a row.
 - **A rate is a JSON number, never an `f64`.** The engine reads rates back
@@ -4907,7 +4915,8 @@ lift; the three `parity.toml` lines are gone.
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
 | `src/seat/holds.rs` | what this box says it holds, said without dialling any of it: the listing, the typed channel set the window stamps its rows with, and the one spelling of a channel's name. | ~150 |
-| `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. | ~115 |
+| `src/seat/fan.rs` | a gesture that names no workspace, asked of every channel this box holds — the union, stamped with where each answer came from, where an unprovisioned bare channel is an absence rather than a section. That enumeration is `held`, and `aimed` counts it too. | ~130 |
+| `src/seat/aimed.rs` | a workspace-less ACT down one channel (bl-1bb9): the one `--on` named, opened by `dial`, or the one the box holds — refused, naming them, where it holds more. | ~55 |
 | `src/seat/start.rs` | the §8.1 start family's two acts, spelled as one word — the composite, and the local between them. | ~80 |
 | `src/seat/follow.rs` | holding the line on one conversation until it comes to rest (§4.10, bl-3dca, bl-f076): the reads it holds across the engine's step boundaries, and the sink the product is written to as it arrives. | ~190 |
 | `src/seat/follow/rest.rs` | when that watch stops and what it says then, split from the file above at the cap on the seam the word has (bl-3a1f): the three readings of the standing row — working, at rest, or PARKED at the capability boundary — the inbox read that says whether a rest is one (bl-87ab, bl-3ecd), and the two sentences an ending can be. | ~170 |
@@ -4999,7 +5008,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/verbs/window.rs` | the window's own two ops (§4.21) — the engine's verb table, which has no argv row because its word is `lernie help`'s, and the search, which does. | ~80 |
 | `src/verbs/prices.rs` | the money ops (§4.41): `prices` as a row, `price` and `ceiling` as typed doors because their figures are numbers that may be absent, and the one reading of a typed rate or bound as a JSON number. | ~120 |
 | `src/reply/prices.rs` | the price table, the bound, the world's spend against it and what a ceiling act woke (§4.41) — rates held as JSON numbers so they read back as written. | ~125 |
-| `src/cli/prices.rs` | `price` and `ceiling` as argv spells them: a word that is not a number refused here with the door's usage. | ~40 |
+| `src/cli/prices.rs` | `price` and `ceiling` as argv spells them: a word that is not a number refused here with the door's usage, and the trailing `--on <channel>` read off. | ~75 |
 | `src/ui/prices.rs` | the prices pane (§4.41): each channel's table, its bound and spend, and the acts addressed down that channel, each disabled with its reason. | ~150 |
 | `src/ui/model/pricing.rs` | the prices pane between frames: the per-channel tables, the four draft boxes, the roster check and the four acts. | ~180 |
 | `src/ui/commands.rs` | the commands pane (§4.21): one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |

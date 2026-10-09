@@ -57,6 +57,9 @@ fn main() -> ExitCode {
         Decided::Fanned(envelope, form) => {
             rooted(|root| lernie::seat::fanned(root, &envelope, form))
         }
+        Decided::Aimed { on, envelope, form } => {
+            rooted(|root| lernie::seat::aimed(root, on.as_deref(), &envelope, form))
+        }
         Decided::Start {
             address,
             goal,

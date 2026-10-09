@@ -2,9 +2,10 @@
 //! window-level (yog's `docs/REMOTE.md` §9.23; DESIGN §4.41; bl-9111).
 //!
 //! The table and the bound are WORLD facts (yog DESIGN §4.1): none of the
-//! three names a workspace, so each one's subject is every channel this box
-//! holds, on [`super::window`]'s terms — the CLI fans them, and the window
-//! addresses each act down the channel whose section it fired from.
+//! three names a workspace, so the read's subject is every channel this box
+//! holds, on [`super::window`]'s terms, and the CLI fans it. The two ACTS go
+//! down one channel each (bl-1bb9) — the window's down the section it fired
+//! from, the CLI's down the one `--on` names or the one the box holds.
 //!
 //! # One is a row and two are doors, and the reason is the table's own rule
 //!

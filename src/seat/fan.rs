@@ -41,14 +41,8 @@ use crate::render::Form;
 /// channel's own answer indented under it — the shape [`super::listing`]
 /// already prints, because this is that listing *answered*.
 pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
-    let seated: Vec<(String, Result<crate::channel::Channel, String>)> =
-        entries::read_dir(&entries::dir(data_root))
-            .into_iter()
-            .map(|held| (holds::label(&held.leaf, &held.workspace), held.open()))
-            .collect();
-    let asked: Vec<(String, Result<Vec<Value>, String>)> = own(data_root, &seated)
+    let asked: Vec<(String, Result<Vec<Value>, String>)> = held(data_root)
         .into_iter()
-        .chain(seated)
         .map(|(name, channel)| {
             let said = channel
                 .map_err(crate::channel::Reach::Unsent)
@@ -67,6 +61,23 @@ pub fn fanned(data_root: &Path, envelope: &Value, form: Form) -> Verdict {
         .collect::<Vec<String>>()
         .join("\n");
     Verdict::answered(text, answered)
+}
+
+/// **Every channel this box holds, opened, under the name the roster spells
+/// it by** — this box's own engine first where it is held, then the entries
+/// in leaf order.
+///
+/// One enumeration with two readers: [`fanned`] asks every one of them, and
+/// [`super::aimed`] asks the one there is when an act names none — so "the
+/// channels this box holds" cannot mean one set to the fan and another to the
+/// count that decides whether a write may go unnamed.
+pub(super) fn held(data_root: &Path) -> Vec<(String, Result<crate::channel::Channel, String>)> {
+    let seated: Vec<(String, Result<crate::channel::Channel, String>)> =
+        entries::read_dir(&entries::dir(data_root))
+            .into_iter()
+            .map(|held| (holds::label(&held.leaf, &held.workspace), held.open()))
+            .collect();
+    own(data_root, &seated).into_iter().chain(seated).collect()
 }
 
 /// **This box's own engine, where it is a channel this box HOLDS** — and

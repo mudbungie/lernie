@@ -128,6 +128,16 @@ pub enum Decided {
     /// hatch for one channel, and `{"op":"workspaces","workspace":"<leaf>"}` is
     /// how an operator asks exactly one of them.
     Fanned(serde_json::Value, Form),
+    /// **Ask this workspace-less ACT of one channel** (bl-1bb9): the one `on`
+    /// names, or — where it names none — the one channel this box holds, and
+    /// a refusal naming them all on a box holding more. A write a person types
+    /// once means one engine, where [`Fanned`](Self::Fanned) is a read whose
+    /// subject is every one ([`crate::seat::aimed`]).
+    Aimed {
+        on: Option<String>,
+        envelope: serde_json::Value,
+        form: Form,
+    },
 }
 
 /// **What an enrollment asks for**: the wall, the name the new box will wear,

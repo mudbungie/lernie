@@ -1763,6 +1763,22 @@ held across a drain and three moves, and no worker holds it across a socket.
   conversation only where one is selected — and a channel that will not answer
   costs only itself, which is REMOTE §8.2's *"a refusal is one entry's, never
   the set's"* one layer above the file it was written about.
+
+  **The pass's order: the selection first, at every leg** (bl-1f22). A pass
+  is legs — one per channel's fan, then the aimed wall's reads — and before
+  each leg it re-reads the standing set and asks the selected conversation's
+  reads (transcript, row, and the records pane's when it is open) if they
+  have not been asked about that selection yet this pass, down the one
+  channel the selection names. A pass's first leg is that rule with nothing
+  asked, so the selection leads every pass; a click made mid-pass is answered
+  one leg later rather than after the rest of the fan and a beat. That is the
+  whole remedy for a selection painting an empty pane: `Model::select`
+  empties the transcript, and over a dialed wire the fan alone is seconds.
+  **The seat does not fill the gap with what it sent** — the engine's read is
+  the transcript's one authority, so the remedy is to ask sooner, never to
+  predict the answer. No leg is skipped for it: the sweep still visits every
+  channel, every pass. The beat between passes is not woken, and needs no
+  wake: it is one beat, and the next pass leads with the selection.
 - **The poster** (`src/offframe/poster.rs`) sends what a click composed, on its
   own thread because an act must not wait behind a read that is mid-pass. It is
   also where a gesture naming no workspace is **fanned** over every channel
@@ -5087,7 +5103,7 @@ lift; the three `parity.toml` lines are gone.
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is what worked for an entry this run — held lines, endpoints, the punch port (§4.40). | ~235 |
 | `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
-| `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~155 |
+| `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The selected conversation's reads lead every leg they have not yet been asked at (bl-1f22). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~190 |
 | `src/offframe/asker/wall.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed wall. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |
 | `src/offframe/poster.rs` | one pass of the outbox (§4.12): the gesture that is routed and its reply stamped with the op (§4.26) and with the channel it crossed (§4.7), the channels a workspace-less one goes down — the one it named, or every one where it named none (§4.30) — and which sentence a failed leg earns. | ~165 |
 | `src/offframe/follow.rs` | one pass of the follow lane: the held read on the focused conversation, stamped with what it is about (§4.12). | ~90 |

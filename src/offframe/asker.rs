@@ -36,14 +36,15 @@ mod wall;
 use crate::state::{Link, Open, Said};
 use crate::ui::Channel;
 
-/// Ask everything the last frame said to ask — the questions about every
-/// channel, then the questions about the focus.
+/// Ask everything the last frame said to ask — the selected conversation's
+/// reads first, then the questions about every channel, then the rest of the
+/// focus.
 ///
 /// **Split in two at the design-time budget on the seam the module's own doc
-/// draws** (bl-5c53): [`everywhere`] is the reads whose subject is *every
-/// channel this box holds*, and [`focused`] is the nest under the aim and the
-/// selection. One grows when a channel-wide op lands a pane; the other when a
-/// pane about a focus does.
+/// draws** (bl-5c53): [`fanned`], once per channel, is the reads whose subject
+/// is *every channel this box holds*, and [`focused`] is the nest under the aim. One
+/// grows when a channel-wide op lands a pane; the other when a pane about a
+/// focus does.
 ///
 /// **That seam is the wire's own** ([`crate::verbs::Verb::addresses_a_workspace`]):
 /// a question with no workspace field has no way to name a channel, so it goes
@@ -51,22 +52,53 @@ use crate::ui::Channel;
 /// aimed wall's alone. A pane that asks at BOTH widths therefore appears in
 /// both halves — which is a fact about its four ops rather than a special case
 /// (`crate::ui::board`, DESIGN §4.31).
+///
+/// **A selection is answered at the next leg, not at the next pass** (bl-1f22).
+/// Selecting a conversation empties its transcript, and over a dialed wire one
+/// pass of roster fans is seconds — so a selection that waited its turn showed
+/// an empty pane for all of them. Before every leg the pass re-reads the
+/// standing set, and a selection it has not asked about yet is asked about
+/// then, down the one channel it names. The pass's own first leg is the same
+/// rule with nothing asked so far, which is what puts the selection's reads
+/// ahead of the fan; no leg is skipped for it, so the sweep still visits every
+/// channel.
 pub fn tick(link: &Link, root: &Path) {
     let standing = link.standing();
-    everywhere(link, root, &standing);
+    let mut asked = None;
+    for channel in &standing.channels {
+        asked = caught_up(link, root, asked);
+        fanned(link, root, &standing, channel);
+    }
+    caught_up(link, root, asked);
     focused(link, root, &standing);
 }
 
-/// **The reads whose subject is every channel**: each channel's own roster,
-/// and the two pane-keyed unions composed across them.
-fn everywhere(link: &Link, root: &Path, standing: &crate::state::Standing) {
-    for channel in &standing.channels {
-        fanned(link, root, standing, channel);
+/// **The selection this pass has asked about**: the channel and wall it is on,
+/// and its id. A pair rather than the id alone, because a selection moves when
+/// either half does.
+type Asked = Option<(Channel, crate::ui::Aim, String)>;
+
+/// **Ask the selection's reads if the selection has moved since `asked`**,
+/// and answer what is now asked about.
+///
+/// The standing set is read fresh here rather than taken from the pass's start:
+/// it is the whole of how a click made mid-pass is seen before the pass ends.
+fn caught_up(link: &Link, root: &Path, asked: Asked) -> Asked {
+    let now = link.standing();
+    let selection = now
+        .aimed()
+        .zip(now.conversation.clone())
+        .map(|((channel, aim), conversation)| (channel, aim, conversation));
+    if selection != asked
+        && let Some((channel, aim, conversation)) = &selection
+    {
+        wall::selected(link, root, &now, channel, &aim.address, conversation);
     }
+    selection
 }
 
-/// **The nest under the focus**: the aimed wall's questions, the panes keyed
-/// on it, and the selected conversation's — all of it [`wall`]'s.
+/// **The nest under the aim**: the aimed wall's questions and the panes keyed
+/// on it — [`wall`]'s. The selected conversation's are [`caught_up`]'s.
 fn focused(link: &Link, root: &Path, standing: &crate::state::Standing) {
     let Some((channel, aim)) = standing.aimed() else {
         return;

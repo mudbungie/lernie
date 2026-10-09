@@ -10,7 +10,8 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::{Value, json};
 
 /// **The three questions nest.** With no aim only the rosters are asked; with
-/// an aim the conversations follow; with a conversation the transcript does.
+/// an aim the conversations follow; with a conversation the transcript is
+/// asked too — and FIRST, ahead of the rosters (bl-1f22).
 #[test]
 fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
     let scratch = Scratch::new();
@@ -21,9 +22,10 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "transcript", "rows": []})],
+            vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
-            vec![json!({"ok": true, "kind": "transcript", "rows": []})],
         ],
     );
     let own = Channel {
@@ -58,9 +60,10 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             "workspaces",
             "workspaces",
             "conversations",
+            "transcript",
+            "agent",
             "workspaces",
             "conversations",
-            "transcript",
         ]
     );
 }
@@ -175,8 +178,6 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
         &scratch,
         &flat(),
         vec![
-            vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
-            vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
@@ -218,8 +219,6 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
     assert_eq!(
         ops,
         vec![
-            "workspaces",
-            "conversations",
             "transcript",
             "agent",
             "workspaces",

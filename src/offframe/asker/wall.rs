@@ -86,14 +86,24 @@ pub(super) fn ask(
         );
     }
     config(link, root, standing, channel, aim);
-    let Some(conversation) = standing.conversation.clone() else {
-        return;
-    };
+}
+
+/// **The selected conversation's reads**, asked of the wall it is on — ahead
+/// of everything else in a pass, and again at the next leg when the selection
+/// moves mid-pass ([`super::caught_up`], bl-1f22).
+pub(super) fn selected(
+    link: &Link,
+    root: &Path,
+    standing: &crate::state::Standing,
+    channel: &Channel,
+    wall: &str,
+    conversation: &str,
+) {
     aimed(
         link,
         root,
         channel,
-        &crate::verbs::transcript(aim.address.clone(), conversation.clone()),
+        &crate::verbs::transcript(wall.to_owned(), conversation.to_owned()),
     );
     // **The conversation's own ROW stands with its transcript** (bl-7b03), and
     // not with the records pane it used to be asked for. It carries the four
@@ -106,13 +116,13 @@ pub(super) fn ask(
         link,
         root,
         channel,
-        &crate::verbs::agent(aim.address.clone(), conversation.clone()),
+        &crate::verbs::agent(wall.to_owned(), conversation.to_owned()),
     );
     // **The records pane's reads stand on the pane exactly as the roles read
     // does** (bl-2cf7): the selected conversation is asked what its loop did
     // and what its worktree holds only while somebody is looking.
     if standing.standing(&Open::Records) {
-        records(link, root, channel, &aim.address, &conversation);
+        records(link, root, channel, wall, conversation);
     }
 }
 

@@ -49,5 +49,7 @@ mod fleet;
 mod login;
 /// The three questions, and how each waits for the last to have an answer.
 mod nesting;
+/// The selection, read at the next leg and ahead of the fan.
+mod selection;
 /// The union across channels, and the channel that costs only itself.
 mod union;

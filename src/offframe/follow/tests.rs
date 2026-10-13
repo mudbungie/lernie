@@ -143,14 +143,14 @@ fn the_read_is_about_a_wall_and_a_conversation_together() {
 #[test]
 fn a_tail_for_a_conversation_the_operator_left_is_dropped() {
     let link = Link::new(Duration::from_millis(1));
-    link.live(
+    link.about(
         &own(),
         "the-one-that-was-left",
         crate::reply::read(
             &json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "stale"}}),
         ),
     );
-    link.live(
+    link.about(
         &own(),
         "20260830T051200Z-a1b2",
         crate::reply::read(

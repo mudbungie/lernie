@@ -37,7 +37,10 @@ pub struct Heard {
 pub enum Said {
     /// One reply frame, exactly as it crossed.
     Frame(Value),
-    /// **The held read's accumulation so far, stamped with what it is about.**
+    /// **A read about ONE conversation, stamped with which** — the follow
+    /// lane's accumulation so far, and the selection's own standing reads
+    /// (bl-19b8: a transcript read in flight when the selection moved was
+    /// filed under whatever was selected when it landed).
     ///
     /// The stamp is what makes a stale tail impossible rather than unlikely.
     /// The engine was asked about a conversation and answers about that one, so
@@ -50,11 +53,9 @@ pub enum Said {
     /// **Already read**, unlike [`Frame`](Self::Frame): a follow frame is an
     /// append (REMOTE §5.5), so it has to be absorbed onto the read's own fold
     /// before it means anything, and the lane is where a read begins and ends.
-    /// What crosses is therefore the whole tail, which is what lets the model
-    /// go on replacing.
-    Live { conversation: String, read: Read },
+    About { conversation: String, read: Read },
     /// **A sign-in lane's fold so far, stamped with the row it is about**
-    /// (REMOTE §8.3, bl-e3c5) — [`Live`](Self::Live)'s shape one noun over,
+    /// (REMOTE §8.3, bl-e3c5) — [`About`](Self::About)'s shape one noun over,
     /// and stamped for the identical reason: the engine was asked about one
     /// provider and answers about that one, so only the FRAME knows whether the
     /// operator is still following it. A run started on a second row replaces

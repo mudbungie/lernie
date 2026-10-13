@@ -83,7 +83,7 @@ impl Link {
                 // A tail for a conversation the operator has left is dropped
                 // here, where what is selected is known for certain. Filing it
                 // would paint one conversation's words under another's name.
-                Said::Live { conversation, read } => {
+                Said::About { conversation, read } => {
                     if model.conversation.as_deref() == Some(conversation.as_str()) {
                         model.absorb(&heard.channel, read);
                     }
@@ -129,11 +129,10 @@ impl Link {
         });
     }
 
-    /// The held read's accumulation so far, stamped with the conversation it is
-    /// about. Already read, because a follow frame is an append and only the
-    /// lane knows which read it belongs to (REMOTE §5.5).
-    pub fn live(&self, channel: &Channel, conversation: &str, read: crate::reply::Read) {
-        let said = Said::Live {
+    /// A read about one conversation, stamped with it ([`Said::About`]): the
+    /// follow lane's accumulation, and the selection's standing reads.
+    pub fn about(&self, channel: &Channel, conversation: &str, read: crate::reply::Read) {
+        let said = Said::About {
             conversation: conversation.to_owned(),
             read,
         };
@@ -141,7 +140,7 @@ impl Link {
     }
 
     /// One sign-in lane's fold so far, stamped with the provider row it is
-    /// about. Already read, for [`Self::live`]'s reason: a lane's frame is an
+    /// about. Already read, for [`Self::about`]'s reason: a lane's frame is an
     /// append and only the lane knows which read it belongs to (REMOTE §8.3).
     pub fn signing(&self, channel: &Channel, provider: &str, read: crate::reply::Read) {
         let said = Said::Signin {

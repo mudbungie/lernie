@@ -1814,6 +1814,13 @@ right now. The guard is therefore a pure comparison at the settle rather than a
 poll racing the socket the lane is parked on. Each lane's fold lives for exactly
 one `tick`, which is how REMOTE §5.5's *"onto an empty fold"* is implemented
 with no flag and no field: a read boundary is a local variable's scope.
+**So do the selection's own standing reads** (bl-19b8): the transcript, the
+conversation's row and the records pane's five are stamped with the
+conversation the asker asked about (`Said::About`, the follow lane's own
+variant), because a transcript names no conversation and a read in flight when
+`+ new` or a switch moved the selection used to be filed under whatever was
+selected when it landed — the old conversation's model on an empty start line,
+or its words under another's panel for a beat.
 
 **The standing set is a QUERY, never stored** (`Standing::of`). It is derived
 from the model on every settle — every channel's roster, the aim, the selection,

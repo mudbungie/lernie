@@ -92,10 +92,11 @@ pub(super) fn selected(
     wall: &str,
     conversation: &str,
 ) {
-    aimed(
+    about(
         link,
         root,
         channel,
+        conversation,
         &crate::verbs::transcript(wall.to_owned(), conversation.to_owned()),
     );
     // **The conversation's own ROW stands with its transcript** (bl-7b03), and
@@ -105,10 +106,11 @@ pub(super) fn selected(
     // is only true while a pane two clicks away is open is a header that is
     // usually not there. The records pane reads the same answer off the same
     // field, so this is one read MOVED and never a second copy of one.
-    aimed(
+    about(
         link,
         root,
         channel,
+        conversation,
         &crate::verbs::agent(wall.to_owned(), conversation.to_owned()),
     );
     // **The records pane's reads stand on the pane exactly as the roles read
@@ -147,9 +149,30 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
         crate::verbs::rail(wall.to_owned(), conversation.to_owned()),
         crate::verbs::governing(wall.to_owned(), conversation.to_owned()),
         crate::verbs::inbox(wall.to_owned(), conversation.to_owned()),
-        crate::verbs::lineages(wall.to_owned()),
     ] {
-        aimed(link, root, channel, &ask);
+        about(link, root, channel, conversation, &ask);
+    }
+    aimed(
+        link,
+        root,
+        channel,
+        &crate::verbs::lineages(wall.to_owned()),
+    );
+}
+
+/// **One read about the selected conversation, stamped with it** (bl-19b8):
+/// the frame drops what lands after the selection has moved, as it drops a
+/// stale follow tail ([`crate::state::Said::About`]). The aim alone cannot
+/// say it — `+ new` and a switch both keep the wall — and a transcript names
+/// no conversation, so only the leg that asked knows whose answer it is.
+fn about(link: &Link, root: &Path, channel: &Channel, conversation: &str, ask: &serde_json::Value) {
+    match asked(root, ask) {
+        Ok(stream) => {
+            for frame in stream {
+                link.about(channel, conversation, crate::reply::read(&frame));
+            }
+        }
+        Err(reach) => read(link, Err(reach), channel),
     }
 }
 

@@ -102,3 +102,42 @@ fn a_leg_boundary_asks_only_about_a_selection_that_moved() {
     assert_eq!(caught_up(&link, scratch.path(), asked), None);
     assert_eq!(ops(&own).len(), 2, "and no selection asks nothing");
 }
+
+/// **A selection's read that lands after the selection moved is dropped**
+/// (bl-19b8). The transcript names no conversation, so the leg stamps it with
+/// the one it asked about, and the settle files it only while that one is
+/// still selected — `+ new` keeps the wall and empties the selection, and
+/// the old transcript used to land in the empty one.
+#[test]
+fn a_selection_s_read_is_filed_only_while_it_is_selected() {
+    let transcript = || {
+        vec![json!({"ok": true, "kind": "transcript", "rows": [
+            {"name": "001-user.md", "raw": "ship it", "kind": "delivered",
+             "sender": "user", "body": "ship it"}
+        ]})]
+    };
+    let refused = || vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})];
+    let scratch = Scratch::new();
+    let _own = wired(
+        &scratch,
+        &flat(),
+        vec![transcript(), refused(), transcript(), refused()],
+    );
+    let mut model = aimed_home(&scratch);
+    model.select("20260830T051200Z-a1b2");
+    let link = asking(&model);
+    caught_up(&link, scratch.path(), None);
+    model.select("20260830T051200Z-a1b2");
+    model.conversation = None;
+    link.settle(&mut model);
+    assert!(model.transcript.entries.is_empty(), "left, so not filed");
+    model.select("20260830T051200Z-a1b2");
+    link.settle(&mut model);
+    caught_up(&link, scratch.path(), None);
+    link.settle(&mut model);
+    assert_eq!(
+        model.transcript.entries.len(),
+        1,
+        "still selected, so filed"
+    );
+}

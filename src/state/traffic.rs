@@ -53,7 +53,13 @@ pub enum Said {
     /// **Already read**, unlike [`Frame`](Self::Frame): a follow frame is an
     /// append (REMOTE §5.5), so it has to be absorbed onto the read's own fold
     /// before it means anything, and the lane is where a read begins and ends.
-    About { conversation: String, read: Read },
+    /// `op` is what was asked, the one fact a refusal cannot carry for
+    /// itself (bl-6dfd): a refused `agent` read says the subject is gone.
+    About {
+        conversation: String,
+        op: String,
+        read: Read,
+    },
     /// **A sign-in lane's fold so far, stamped with the row it is about**
     /// (REMOTE §8.3, bl-e3c5) — [`About`](Self::About)'s shape one noun over,
     /// and stamped for the identical reason: the engine was asked about one

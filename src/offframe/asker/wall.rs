@@ -168,8 +168,12 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
 fn about(link: &Link, root: &Path, channel: &Channel, conversation: &str, ask: &serde_json::Value) {
     match asked(root, ask) {
         Ok(stream) => {
+            let op = ask
+                .get(crate::envelope::OP)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or_default();
             for frame in stream {
-                link.about(channel, conversation, crate::reply::read(&frame));
+                link.about(channel, conversation, op, crate::reply::read(&frame));
             }
         }
         Err(reach) => read(link, Err(reach), channel),

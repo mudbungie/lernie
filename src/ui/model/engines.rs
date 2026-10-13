@@ -153,9 +153,7 @@ impl Model {
     /// (`crate::ui::composer::found`). Like [`Self::begin_at`] it is a view
     /// and crosses no wire.
     pub fn begin_founding(&mut self, channel: &str) {
-        self.conversation = None;
-        self.transcript = crate::reply::transcript::Transcript::default();
-        self.live = None;
+        self.deselect();
         self.founding = Some(channel.to_owned());
         self.fill = Some(crate::ui::Fill::Goal);
     }

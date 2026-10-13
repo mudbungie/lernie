@@ -49,6 +49,8 @@ mod fill;
 mod fleet;
 /// One engine, every name it is held under: the roster folded by address.
 mod fold;
+/// A selection the engine no longer knows, and what retires it.
+mod gone;
 /// **What the window holds between frames** — the struct itself.
 mod held;
 /// The three panes that are pure listings, and the field that says which is up.

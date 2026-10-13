@@ -44,7 +44,12 @@ pub fn tick(link: &Link, root: &Path) {
         .map_err(crate::channel::Reach::Unsent)
         .and_then(|(open, carried)| {
             open.follow(&carried, &mut |frame| {
-                link.about(&channel, &conversation, absorbed(&mut fold, &frame));
+                link.about(
+                    &channel,
+                    &conversation,
+                    crate::verbs::FOLLOW.word,
+                    absorbed(&mut fold, &frame),
+                );
                 !link.stopped() && still_on(link, &aim, &conversation)
             })
         });

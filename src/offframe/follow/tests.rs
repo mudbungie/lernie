@@ -146,6 +146,7 @@ fn a_tail_for_a_conversation_the_operator_left_is_dropped() {
     link.about(
         &own(),
         "the-one-that-was-left",
+        "follow",
         crate::reply::read(
             &json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "stale"}}),
         ),
@@ -153,6 +154,7 @@ fn a_tail_for_a_conversation_the_operator_left_is_dropped() {
     link.about(
         &own(),
         "20260830T051200Z-a1b2",
+        "follow",
         crate::reply::read(
             &json!({"ok": true, "kind": "follow", "tools": [], "stream": {"text": "wanted"}}),
         ),

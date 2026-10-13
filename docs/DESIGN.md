@@ -5202,7 +5202,14 @@ parts, in its vertical order, each with what it becomes here.
    (REMOTE §8.2), so it would found the wall on a different engine than the
    one it was offered under. The seat's card names it among the ways in, and
    the field with nothing aimed says *Ctrl+X for a conversation or a new
-   workspace*. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
+   workspace*. **A selection the engine no longer knows is put
+   down** (bl-6dfd): the selected conversation's own row is read every beat,
+   and a refusal of that `agent` read — deleted from another seat, or a row
+   aimed at the wrong engine — drops the selection back to the wall (the
+   start's hint, the seat's card) and stands in the bar once; held, it
+   re-posted every beat faster than Esc put it down. Which op a read about
+   the selection answered rides with it (`state::Said::About`), because a
+   refusal cannot say so itself. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
    and ranks (§4.39, `model/engines.rs`) are what the overlay paints, so the
    place file keeps those keys and loses the two layout ones.
 

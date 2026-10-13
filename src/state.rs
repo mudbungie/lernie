@@ -83,9 +83,13 @@ impl Link {
                 // A tail for a conversation the operator has left is dropped
                 // here, where what is selected is known for certain. Filing it
                 // would paint one conversation's words under another's name.
-                Said::About { conversation, read } => {
+                Said::About {
+                    conversation,
+                    op,
+                    read,
+                } => {
                     if model.conversation.as_deref() == Some(conversation.as_str()) {
-                        model.absorb(&heard.channel, read);
+                        model.about(&heard.channel, &op, read);
                     }
                 }
                 // The sign-in lane's guard, and it is the tail's verbatim: a
@@ -131,9 +135,10 @@ impl Link {
 
     /// A read about one conversation, stamped with it ([`Said::About`]): the
     /// follow lane's accumulation, and the selection's standing reads.
-    pub fn about(&self, channel: &Channel, conversation: &str, read: crate::reply::Read) {
+    pub fn about(&self, channel: &Channel, conversation: &str, op: &str, read: crate::reply::Read) {
         let said = Said::About {
             conversation: conversation.to_owned(),
+            op: op.to_owned(),
             read,
         };
         self.heard(channel, said);

@@ -4960,13 +4960,16 @@ parts, in its vertical order, each with what it becomes here.
    Shift+Enter breaks a line (§4.38's one read, `composer::entered`, kept).
    The start is the same line with the same glyph and a hint naming the wall
    a conversation would begin on; `✎ plan` becomes `/plan`, a toggle shown on
-   the rule while it is on. The row of offers under the field goes: `stop`
-   is **Ctrl+C**, hinted in the field while the driver runs (*Ctrl+C
-   stops…*), `interrupt` is Ctrl+C with a draft in the field — the same
-   gesture with something to say instead — and `nudge`, `records…`, `…` and
-   everything that strip opened are slash verbs (5). The draft's glow while
-   the conversation is asking stays, and the ask itself stands above the
-   field (6).
+   the rule while it is on. The row of offers under the field goes: `stop`,
+   `interrupt <words>` — the same cut with something to say instead —
+   `nudge`, `records…`, `…` and everything that strip opened are slash verbs
+   (5), listed only while the engine offers them. **The baseline's Ctrl+C
+   is not bound** (bl-3fd6): in egui's box the chord is *copy*, and a chord
+   that copied with a selection and killed a driver without one would be
+   two acts under one key, which `crate::ui::keys` refuses; the verbs are
+   typed, and the hint over the box says so. The draft's glow while the
+   conversation is asking stays, and the ask itself stands above the field
+   (6).
 
 4. **The transcript idiom** (`src/ui/chat.rs`; bl-a40c): an operator's turn
    is a row with the prompt's glyph in the gutter in the brand and its words
@@ -5091,9 +5094,9 @@ A stroke on a thing that floats says what is over what; a stroke on a control
 was the grid of chips the rule was written against.
 
 **Keyboard, whole**: Enter sends; Shift+Enter breaks a line; `/` opens the
-menu and Tab takes a row; Ctrl+X opens the switcher; Ctrl+C stops the driver
-(with a draft, interrupts); Esc closes the overlay, then the menu, then the
-notice; ↑↓ walk whatever is open; a digit answers the ask; Ctrl+T unfolds the
+menu and Tab takes a row; Ctrl+X opens the switcher; `/stop` and
+`/interrupt <words>` are typed, not chorded (item 3); Esc closes the overlay,
+then the menu, then the notice; ↑↓ walk whatever is open; a digit answers the ask; Ctrl+T unfolds the
 dock. Every act is a slash verb or a key, and every key calls the door the
 verb calls.
 

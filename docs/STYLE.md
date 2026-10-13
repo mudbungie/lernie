@@ -69,8 +69,7 @@ name, and the rule carries the one fact a heading carried.
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
 a line per line typed, the hint in weak ink while it is empty: *say it — Enter
 sends, Shift+Enter breaks a line*; *begin a conversation on `<wall>` — Enter
-starts* in start mode; *Ctrl+C stops…* while the driver runs; *it is waiting
-on you* while it asks. There is no send control and no row of controls under
+starts* in start mode; *it is waiting on you* while it asks. There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.
 
 **Navigation is typed.** `/` opens the completion menu — verb and summary,

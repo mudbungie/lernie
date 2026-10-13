@@ -1,7 +1,8 @@
 +++
 title = "window (§4.42): the ask above the field: the selected conversation's decision as a framed box with numbered choices and quick-pick keys; the waiting count on the rule"
 created = 1791862814
-updated = 1791862814
+updated = 1791864102
+claimant = "Surveying"
 parent = "bl-7859"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

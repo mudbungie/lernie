@@ -78,6 +78,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
         convs::KIND => Reply::Conversations(fields::rows(obj, convs::row)?),
         roles::KIND => Reply::Roles(fields::rows(obj, roles::row)?),
         queue::KIND => Reply::Attention(fields::rows(obj, queue::row)?),
+        queue::ACKNOWLEDGED => Reply::Acknowledged(queue::acknowledged(obj)?),
         FLAGGED => Reply::Flagged,
         ANSWERED => Reply::Answered {
             tool: fields::text(obj, "tool")?,

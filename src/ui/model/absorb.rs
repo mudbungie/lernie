@@ -98,6 +98,14 @@ impl Model {
             // replaces what this channel last said and leaves the others
             // standing, exactly as a roster answer does (`queue`).
             Reply::Attention(rows) => self.asking(channel, rows),
+            // **`seen`'s receipt carries the queue that remains** (bl-6802),
+            // so it is filed exactly as an attention answer from that channel
+            // is — which is what takes the ask box down on the frame the
+            // receipt lands — and the bar says what was answered.
+            Reply::Acknowledged(acked) => {
+                self.notice = Some(Notice::seen(&acked));
+                self.asking(channel, acked.rows);
+            }
             // The records pair, on the same terms as the roles above.
             Reply::Steps(listing) => self.records.steps = Some(listing),
             Reply::Files(answer) => self.records.files = Some(answer),

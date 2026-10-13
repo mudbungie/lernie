@@ -3,11 +3,12 @@
 //! PROTOCOL 3 and 4; bl-f0ef).
 //!
 //! It is the engine's *what needs you*: a flattened roster across every
-//! enumerated workspace, filtered to the rows that are asking, and the answer
-//! to two ops rather than one — `attention` asks for the whole of it, and
-//! `seen` answers with **the queue that remains** (`crate::verbs::queue`). So
-//! one reading serves both, and a seat that took the second for a receipt
-//! would throw away the only statement it gets about what is still waiting.
+//! enumerated workspace, filtered to the rows that are asking. `attention` asks
+//! for the whole of it, and `seen` answers with [`Acknowledged`] (PROTOCOL 12,
+//! bl-6802) — the item acted on **and the queue that remains**, re-derived after
+//! the write, in the same rows. So one row reader serves both, and a seat that
+//! took the second for a bare receipt would throw away the only statement it
+//! gets about what is still waiting.
 //!
 //! # The row addresses itself, and this seat does not address it back
 //!
@@ -43,6 +44,27 @@ use super::fields;
 
 /// The kind token this reading answers to.
 pub(crate) const KIND: &str = "attention";
+/// The kind token `seen`'s receipt answers to.
+pub(crate) const ACKNOWLEDGED: &str = "acknowledged";
+
+/// **`seen`'s receipt**: the conversation acted on, addressed as its host
+/// names it, and the whole queue that remains on that engine after the write.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Acknowledged {
+    pub workspace: String,
+    pub agent: String,
+    /// The queue that remains — the same rows [`KIND`] answers with.
+    pub rows: Vec<QueueRow>,
+}
+
+/// The receipt, strictly.
+pub(crate) fn acknowledged(obj: &Map<String, Value>) -> Result<Acknowledged, String> {
+    Ok(Acknowledged {
+        workspace: fields::text(obj, "workspace")?,
+        agent: fields::text(obj, "agent")?,
+        rows: fields::rows(obj, row)?,
+    })
+}
 
 /// One conversation asking for the operator, wherever it is.
 #[derive(Debug, Clone, PartialEq, Eq)]

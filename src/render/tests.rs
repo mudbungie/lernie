@@ -94,6 +94,10 @@ fn an_empty_roster_names_the_act_that_founds_the_first_wall() {
     assert!(said.contains("lernie start home"), "{said}");
     let queue = rendered(&json!({"ok": true, "kind": "attention", "rows": []}));
     assert!(queue.contains("nothing is waiting on you"), "{queue}");
+    let acked = rendered(&json!({"ok": true, "kind": "acknowledged",
+                                 "workspace": "home", "agent": "c-1", "rows": []}));
+    assert!(acked.starts_with("seen home/c-1\n"), "{acked}");
+    assert!(acked.contains("nothing is waiting on you"), "{acked}");
 }
 
 /// **A transcript is the entries and not their bytes.** Every entry carries a

@@ -96,6 +96,26 @@ impl Notice {
         })
     }
 
+    /// **What `seen` answered, and whether it took the row off the queue**
+    /// (bl-6802) — read off the queue the receipt says remains, never
+    /// predicted: new evidence or undelivered mail keeps a seen conversation
+    /// asking, and the sentence must not claim otherwise.
+    pub fn seen(acked: &crate::reply::queue::Acknowledged) -> Self {
+        let named = format!("{}/{}", acked.workspace, acked.agent);
+        let stays = acked
+            .rows
+            .iter()
+            .any(|row| row.workspace == acked.workspace && row.agent == acked.agent);
+        Self::Said(if stays {
+            format!("seen {named} — it is still asking: something newer keeps it on the queue")
+        } else {
+            format!(
+                "seen {named} — off the queue; {} still waiting on that engine",
+                acked.rows.len()
+            )
+        })
+    }
+
     /// **Whether a floor stands over the conversation now**, which is the
     /// engine's re-derivation and never an echo of the direction that was
     /// asked: restoring one whose ancestor is still revoked leaves it floored,

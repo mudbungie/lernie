@@ -21,6 +21,7 @@ pub(super) fn answer(reply: &Reply) -> String {
         Reply::Workspaces(roster) => walls::workspaces(roster),
         Reply::Conversations(rows) => walls::conversations(rows),
         Reply::Attention(rows) => walls::attention(rows),
+        Reply::Acknowledged(acked) => acts::acknowledged(acked),
         Reply::Transcript(transcript) => chat::transcript(transcript),
         Reply::Follow(stream) => walls::follow(stream),
         Reply::Agent(agent) => chat::agent(agent),

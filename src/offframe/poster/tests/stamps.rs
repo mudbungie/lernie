@@ -37,13 +37,21 @@ fn beside(aim: Option<Aim>, posted: crate::ui::Posted) -> (Link, Model) {
     (link, model)
 }
 
-/// One conversation still asking, which is what `seen` answers with: the queue
-/// that REMAINS, filed per channel.
+/// One conversation still asking — the queue as one channel answers it.
 fn asking() -> Value {
     json!({"ok": true, "kind": "attention", "rows": [
         {"workspace": "b", "agent": "c-2", "display": "Dun", "state": "live",
          "uncertain": false, "preview": "", "age_secs": 0, "pending": 0,
          "signals": [], "failure": null, "flag": null, "held": null}]})
+}
+
+/// `seen`'s own answer (bl-6802): the item acted on, and that same queue.
+fn acked() -> Value {
+    let mut frame = asking();
+    frame["kind"] = json!("acknowledged");
+    frame["workspace"] = json!("b");
+    frame["agent"] = json!("c-1");
+    frame
 }
 
 /// **A gesture naming no workspace is FANNED, not routed** (bl-40ec): it has
@@ -110,7 +118,7 @@ fn a_fanned_leg_that_reached_nothing_is_that_channels_own_sentence() {
 fn a_receipt_is_stamped_with_the_channel_it_crossed_and_not_the_aim() {
     let scratch = Scratch::new();
     wired(&scratch, &flat(), vec![vec![yes()]]);
-    wired(&scratch, &entry("b"), vec![vec![asking()]]);
+    wired(&scratch, &entry("b"), vec![vec![acked()]]);
     let (link, mut model) = beside(
         Some(Aim {
             channel: own().name,

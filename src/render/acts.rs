@@ -128,6 +128,18 @@ pub(super) fn answered(
     ])
 }
 
+/// **`seen` answered**: what it acted on, then the queue that remains on that
+/// engine — the same listing `attention` prints, because it is the same rows
+/// (bl-6802).
+pub(super) fn acknowledged(acked: &crate::reply::queue::Acknowledged) -> String {
+    format!(
+        "seen {}/{}\n{}",
+        acked.workspace,
+        acked.agent,
+        super::walls::attention(&acked.rows)
+    )
+}
+
 /// **A candidate was accepted**, and the identities its delivery acted on.
 pub(super) fn delivered(
     base: &str,

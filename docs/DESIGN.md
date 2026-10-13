@@ -2361,7 +2361,7 @@ Five decisions, and each is a choice rather than a mechanism:
   `Model::wall` asks it there. Two things follow and both are the point. A
   channel stamp becomes a display fact that cannot mis-aim a gesture, which
   mattered because a receipt's stamp was the *aimed* channel rather than the one
-  that answered (`src/offframe/poster.rs`) and `seen`'s reply is a queue rather
+  that answered (`src/offframe/poster.rs`) and `seen`'s reply carries a queue rather
   than a receipt — the residual that left was one beat of a section under the
   wrong header. **That residual is spent** (bl-c70d): `seat::route` answers the
   seat-side name it chose (§4.7) and the poster stamps it, so the aim is not
@@ -4104,13 +4104,15 @@ line of tens of kilobytes, each conversation twice over.
 **The rendering is per reply KIND, never per verb**, and that is what keeps it
 one implementation rather than a second table beside §4.10's. A verb is a
 serialization of a *gesture*; what comes back is a kind of
-`crate::reply::Reply`, and several verbs answer with one kind — `attention` and
-`seen` both answer a queue, `fleet`, `arm`, `disarm` and `disband` all answer
+`crate::reply::Reply`, and several verbs answer with one kind — `fleet`, `arm`, `disarm` and `disband` all answer
 `Armed`. A table keyed on the verb would hold four spellings of one rendering
 and they would disagree within a week. So the census §4.9 keeps is read in the
 other direction here: a kind added there is a match arm missing in
 `render/answer.rs`, which is the compiler saying the rendering half of a pane
-was not built.
+was not built. (`seen` answers `acknowledged`, its own kind since PROTOCOL 12 —
+the item acted on plus the queue that remains — and its rendering is that line
+over `attention`'s own listing, one rendering reused rather than spelled twice;
+bl-6802.)
 
 **The design note that was taken for a ruling.** The help said *"the reply
 stream prints one envelope per line"* and that sentence was read as a statement
@@ -5104,7 +5106,12 @@ parts, in its vertical order, each with what it becomes here.
    every conversation, and the count on the rule is its door. **The queue's
    read stands while the selected conversation asks** (`Standing::asking`),
    so the box is answered on the frame the row lands — the roster's own
-   word says it asks before the queue has said what.
+   word says it asks before the queue has said what. **And it goes down on
+   the frame the answer lands** (bl-6802): `seen` answers `acknowledged`,
+   the item acted on plus the whole queue that remains on that engine, and
+   it is filed as that channel's queue answer (`Model::asking`) with a
+   one-line receipt on the bar saying what was seen and whether it is still
+   asking — read off the remaining rows, never predicted.
 
 9. **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule
    while anything runs under the aimed wall — its conversations whose

@@ -18,7 +18,7 @@ use super::{
     search, start, step, steps, stream, transcript,
 };
 
-/// **The kinds the window draws.** Forty-five, and each is here because a
+/// **The kinds the window draws.** Forty-six, and each is here because a
 /// surface paints it; DESIGN §4.9 holds the ledger of what a later pane adds.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Reply {
@@ -46,10 +46,12 @@ pub enum Reply {
     Transcript(transcript::Transcript),
     /// **Everything waiting on the operator**, across every workspace the
     /// engine can see — the decision queue's rows, standing while its pane is
-    /// open (bl-f0ef). It is the answer to two ops rather than one: `attention`
-    /// asks for the whole queue and `seen` answers with the queue that remains,
-    /// so a reading of it is never a receipt to discard.
+    /// open (bl-f0ef).
     Attention(Vec<queue::QueueRow>),
+    /// **`seen`'s receipt** (PROTOCOL 12, bl-6802): the item acted on, and the
+    /// whole queue that remains on that engine, re-derived after the write —
+    /// so a reading of it is never a receipt to discard.
+    Acknowledged(queue::Acknowledged),
     /// **The parked invocation was answered** (§4.34, bl-bce2): which call the
     /// answer landed on, the verdict written, and whether the release actually
     /// drove the conversation on.

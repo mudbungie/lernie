@@ -15,10 +15,11 @@
 //! fans over the same set and prints each answer under the channel it came
 //! down.
 //!
-//! **[`SEEN`] answers with a queue rather than a receipt**, which is why it is
+//! **[`SEEN`] answers with a queue as well as a receipt**, which is why it is
 //! here beside the read instead of among the conversation's acts: the reply is
-//! `reply/attention`, the queue that remains, and a seat that filed it as a
-//! receipt would discard the one statement it gets about what is still asking.
+//! `reply/acknowledged` — the item acted on and the queue that remains, in
+//! `attention`'s own rows — and a seat that filed it as a bare receipt would
+//! discard the one statement it gets about what is still asking.
 //!
 //! **The rows are the wire's own field names**, in the order the envelope
 //! spells them; a `params` drifted off the wire's spelling fails in the corpus

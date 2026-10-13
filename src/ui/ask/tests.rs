@@ -170,3 +170,43 @@ fn the_box_wears_the_attention_accent() {
         "the frame is green"
     );
 }
+
+/// **The box goes down on the frame `seen`'s receipt lands** (bl-6802): the
+/// receipt carries the queue that remains, filed as that channel's queue
+/// answer, so the selected conversation's row is gone with it — and the bar
+/// says what was answered, never that this seat could not read it.
+#[test]
+fn the_box_goes_down_on_the_frame_the_receipt_lands() {
+    let mut model = asked();
+    let text = painted(&mut model);
+    assert!(text.contains(HEADING), "{text}");
+    let selected = row(&model).expect("a row").agent;
+    let remains = json!({
+        "workspace": "home", "agent": "c-2", "display": "c-2", "state": "quiescent",
+        "uncertain": true, "preview": "", "age_secs": 7, "pending": 0, "says": "",
+        "signals": [], "failure": null, "flag": null, "held": null,
+    });
+    let receipt = crate::reply::read(&json!({
+        "ok": true, "kind": "acknowledged", "workspace": "home", "agent": selected,
+        "rows": [remains],
+    }));
+    model.receipt(&crate::test_support::window::own().channel, "seen", receipt);
+    assert!(row(&model).is_none());
+    let text = painted(&mut model);
+    assert!(!text.contains(HEADING), "{text}");
+    assert!(text.contains(&format!("seen home/{selected}")), "{text}");
+    assert!(!text.contains("could not read"), "{text}");
+}
+
+/// **A seen conversation that still asks is said to, not claimed answered**:
+/// the receipt's own remaining queue decides the sentence.
+#[test]
+fn a_seen_row_that_still_asks_is_said_to() {
+    let acked = crate::reply::queue::Acknowledged {
+        workspace: "home".to_owned(),
+        agent: "c-2".to_owned(),
+        rows: vec![crate::test_support::window::waiting("home", "c-2")],
+    };
+    let said = crate::ui::model::Notice::seen(&acked).line();
+    assert!(said.contains("still asking"), "{said}");
+}

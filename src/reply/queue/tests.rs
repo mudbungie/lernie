@@ -151,3 +151,22 @@ fn the_queue_and_its_raise_are_answers() {
         Read::Answer(Reply::Flagged)
     );
 }
+
+/// **`seen`'s receipt is an answer**: the item acted on and the queue that
+/// remains, in the same rows (bl-6802).
+#[test]
+fn the_receipt_of_seen_carries_the_queue_that_remains() {
+    let frame = json!({"kind": "acknowledged", "ok": true, "workspace": "ws",
+                       "agent": "c-9", "rows": [full(), bare()]});
+    let Read::Answer(Reply::Acknowledged(acked)) = read(&frame) else {
+        panic!("an acknowledged answer");
+    };
+    assert_eq!(
+        (acked.workspace.as_str(), acked.agent.as_str()),
+        ("ws", "c-9")
+    );
+    assert_eq!(
+        acked.rows,
+        vec![row(&full()).expect("row"), row(&bare()).expect("row")]
+    );
+}

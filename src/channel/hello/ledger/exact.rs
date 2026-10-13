@@ -172,7 +172,8 @@
 //! `corpus/unpainted/` files here, so their gains cost a refresh and nothing
 //! else — both have since been claimed by the panes that paint them, which is
 //! why 16's gain on `ops` is a decode and not a line in that directory;
-//! `acknowledged` and `login` were new shapes and landed there the same way;
+//! `acknowledged` and `login` were new shapes and landed there the same way
+//! (both since claimed; `acknowledged` by bl-6802);
 //! and the `wounded` entry falls to
 //! [`crate::reply::transcript::EntryKind::Unknown`], which is total by design.
 //! Four new ops are classed `control` — `login`, `login-tail`, `pin`, `unpin`

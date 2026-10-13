@@ -1,7 +1,8 @@
 +++
 title = "/find with a long needle widens the overlay past the window: the 'looked for' line does not wrap and the box loses its right edge"
 created = 1791867945
-updated = 1791867945
+updated = 1791868618
+claimant = "LaneVerbs"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

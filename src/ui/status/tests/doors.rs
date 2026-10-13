@@ -25,8 +25,9 @@ fn answered() -> Model {
 }
 
 /// **The doors are the menu's own rows**: the name the switcher's, the model
-/// the model's — and a wall with no model answered says `no model` there,
-/// with the same door, while a window aimed nowhere has neither.
+/// the model's — and a wall with no model answered says the door's word
+/// there, or its worker's model where its roles are in hand (bl-0966), with
+/// the same door, while a window aimed nowhere has neither.
 #[test]
 fn the_name_and_the_model_are_the_menu_s_rows() {
     let door = |run: &super::super::Run| run.door.map(|row| row.word);
@@ -44,6 +45,19 @@ fn the_name_and_the_model_are_the_menu_s_rows() {
     });
     assert_eq!(bare[0].text, NO_MODEL);
     assert_eq!(door(&bare[0]), Some(crate::ui::tuning::MODEL));
+    let tuned = facts(&Model {
+        conversation: None,
+        roles: Some(vec![
+            crate::test_support::window::role("compactor"),
+            crate::reply::roles::RoleRow {
+                model: "worker-model".to_owned(),
+                ..crate::test_support::window::role("worker")
+            },
+        ]),
+        ..seated()
+    });
+    assert_eq!(tuned[0].text, "worker-model");
+    assert_eq!(door(&tuned[0]), Some(crate::ui::tuning::MODEL));
     assert!(
         facts(&Model::default())
             .iter()

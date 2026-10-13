@@ -5176,8 +5176,10 @@ parts, in its vertical order, each with what it becomes here.
     nothing, because `/attention` needs no aim), and the model segment opens
     the role tuning — where a wall's
     model per role is read and set — and a wall whose transcript has named
-    no model says `no model` in weak ink in that slot, so the door stands
-    before anything has answered. Each door **is a completion-menu row
+    no model says the worker role's model there where the wall's roles are
+    in hand, and `model…` in weak ink where they are not (bl-0966: `no
+    model` read as a misconfiguration the wall did not have), so the door
+    stands before anything has answered. Each door **is a completion-menu row
     painted elsewhere** (`status::door`): it is a door exactly while the
     menu offers its row, it wears that row's `act:` tags, and a click fires
     that row's word — `/conversations`, `/attention`, `/model` — so the rule opens nothing

@@ -40,9 +40,14 @@ pub const SEP: &str = theme::glyph::SEP;
 pub const READY: &str = "ready";
 /// The right end where nothing is aimed.
 pub const ENGINES: &str = "engines";
-/// The model slot on a wall whose transcript names none: the door to
-/// choosing one, said where the model would be.
-pub const NO_MODEL: &str = "no model";
+/// The model slot on a wall whose transcript names none and whose roles are
+/// not in hand: the door to choosing one, said where the model would be. It
+/// names the control and claims nothing about the wall (bl-0966): the wall's
+/// config names a model this seat has simply not read, and `no model` read as
+/// a misconfiguration that was not there.
+pub const NO_MODEL: &str = "model…";
+/// The role whose model a start runs on.
+const WORKER: &str = "worker";
 /// **The mode the next start is armed in**, first among the facts while
 /// `/plan` holds it (§4.42 item 3; bl-6f3f): the box's hint says it only
 /// until the first character is typed over it.
@@ -133,16 +138,24 @@ pub fn facts(model: &Model) -> Vec<Run> {
         out.push(run(PLAN, theme::BRAND));
     }
     let opens = door(model, crate::ui::tuning::MODEL);
-    match answered_by(model) {
-        Some(model_id) => out.push(Run {
+    // **The model slot**: what last answered; else the wall's worker model,
+    // where its roles are in hand — what the next turn will run on; else the
+    // door's own word, where there is a door.
+    let worker = || {
+        model
+            .roles
+            .as_ref()
+            .and_then(|roles| roles.iter().find(|row| row.role == WORKER))
+            .map(|row| row.model.clone())
+    };
+    if let Some(said) = answered_by(model)
+        .or_else(worker)
+        .or_else(|| opens.map(|_| NO_MODEL.to_owned()))
+    {
+        out.push(Run {
             door: opens,
-            ..run(model_id, theme::INK_WEAK)
-        }),
-        None if opens.is_some() => out.push(Run {
-            door: opens,
-            ..run(NO_MODEL, theme::INK_WEAK)
-        }),
-        None => {}
+            ..run(said, theme::INK_WEAK)
+        });
     }
     if let Some(agent) = model.agent() {
         out.push(run(

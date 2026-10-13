@@ -66,7 +66,8 @@ conversation's name, the wall's where none is selected, `engines` where
 nothing is aimed. There is no heading over the transcript: one pane needs no
 name, and the rule carries the one fact a heading carried. **The model and the
 name are doors** (DESIGN §4.42, item 10): the model opens the role tuning —
-`no model` stands there on a wall nothing has answered on — and the name opens
+on a wall nothing has answered on it says the worker role's model where the
+roles are in hand and `model…` where they are not (bl-0966) — and the name opens
 the switcher. What you talk to is changed where it is read.
 
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,

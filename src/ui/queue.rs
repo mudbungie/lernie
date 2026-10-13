@@ -33,9 +33,10 @@
 //! # What is painted is words, computed beside the paint
 //!
 //! Every line comes off a pure function of the row, so the suite reads the
-//! sentence rather than the layout — `crate::ui::records`' own rule. The state
-//! and the signals ride verbatim (`crate::reply` rung 3): a word this build has
-//! never seen paints as itself.
+//! sentence rather than the layout — `crate::ui::records`' own rule. The
+//! signals ride verbatim (`crate::reply` rung 3): a word this build has never
+//! seen paints as itself. The state is the switcher's glyph (bl-6e59), which
+//! on this pane is always the asking `?`.
 
 use crate::reply::queue::QueueRow;
 use crate::ui::{Channel, Model, theme};
@@ -124,8 +125,14 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &Qu
     // because it is asking for the operator (`docs/STYLE.md` §2, *the eye
     // lands on green*). Never chosen — this pane selects nothing, and the
     // brand would say the operator is standing on a row they are not.
-    theme::paint::row(
+    //
+    // **And it leads with the switcher's glyph** (bl-6e59): one idiom for a
+    // conversation's row wherever it stands — `?` in the attention accent,
+    // since every row here is asking — rather than a bracketed state word.
+    let (mark, ink) = mark(row);
+    theme::paint::marked(
         ui,
+        (&mark, ink),
         &headline(row),
         theme::INK,
         Some(theme::accent(theme::State::Attention)),
@@ -229,29 +236,29 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
     }
 }
 
-/// **The one line a row always gets**: what it is called, where it is, what it
-/// is doing, and how long it has waited.
+/// **The one line a row always gets** after its glyph: what it is called,
+/// where it is, and how long it has waited.
 ///
 /// The workspace is on it because this pane is the one place in the window
 /// where two rows may be on two different walls, so a label alone would not
 /// say which conversation an operator is looking at.
 pub fn headline(row: &QueueRow) -> String {
     let mut said = vec![format!(
-        "{}  on {}  [{}{}]  {}",
+        "{}  on {}  {}",
         row.display,
         row.workspace,
-        row.state.label(),
-        if row.uncertain {
-            crate::ui::convs::UNCERTAIN
-        } else {
-            ""
-        },
         crate::ui::convs::age(row.age_secs)
     )];
     if row.pending > 0 {
         said.push(format!("{} under it", row.pending));
     }
     said.join("  ")
+}
+
+/// **The row's glyph and its ink** — the switcher's own
+/// (`crate::ui::convs::glyph`), asking because the row is on this pane.
+pub fn mark(row: &QueueRow) -> (String, egui::Color32) {
+    crate::ui::convs::glyph(&row.state, row.uncertain, true)
 }
 
 /// **The raised flag, in the raiser's own words** — the line this pane was

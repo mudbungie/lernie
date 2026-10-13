@@ -142,19 +142,30 @@ pub(crate) fn words(row: &ConvRow) -> String {
 /// `■` stopped, each in its state's ink. A state this build does not know
 /// wears the note's dot in body ink rather than a glyph it is not.
 pub fn mark(row: &ConvRow) -> (String, egui::Color32) {
+    glyph(&row.state, row.uncertain, row.attention > 0)
+}
+
+/// **[`mark`] over the three facts it reads**, so a row of another kind — the
+/// decision queue's (bl-6e59) — wears the switcher's idiom from this one
+/// spelling rather than a second.
+pub fn glyph(
+    state: &crate::reply::convs::AgentState,
+    uncertain: bool,
+    asking: bool,
+) -> (String, egui::Color32) {
     use crate::reply::convs::AgentState;
-    let (glyph, ink) = if row.attention > 0 {
+    let (glyph, ink) = if asking {
         (theme::glyph::ASKING, theme::accent(theme::State::Attention))
     } else {
-        let glyph = match row.state {
+        let glyph = match state {
             AgentState::Live | AgentState::InFlight => theme::glyph::WORKING,
             AgentState::Quiescent => theme::glyph::AT_REST,
             AgentState::Stopped => theme::glyph::STOPPED,
             AgentState::Unknown(_) => theme::glyph::NOTE,
         };
-        (glyph, theme::state_ink(&row.state))
+        (glyph, theme::state_ink(state))
     };
-    let unsure = if row.uncertain { UNCERTAIN } else { "" };
+    let unsure = if uncertain { UNCERTAIN } else { "" };
     (format!("{glyph}{unsure}"), ink)
 }
 

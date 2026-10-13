@@ -9,7 +9,8 @@
 mod answer;
 
 use super::{
-    GO, HEADING, NOT_ANSWERED, NOTHING, SEEN, WORD, flagged, headline, parked, render, signalled,
+    GO, HEADING, NOT_ANSWERED, NOTHING, SEEN, WORD, flagged, headline, mark, parked, render,
+    signalled,
 };
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, escape, pane, queued, seated, seen, waiting};
@@ -37,7 +38,7 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
     });
     for word in [
         "(this box's own engine)",
-        "port the paint probe  on home  [stopped]  5s",
+        "? port the paint probe  on home  5s",
         "2 under it",
         "flagged 2026-09-01T22:10Z — it is rewriting an unrelated crate",
         "Unauthorized",
@@ -94,7 +95,12 @@ fn the_absences_paint_nothing_at_all() {
         (flagged(&row), parked(&row), signalled(&row)),
         (None, None, None)
     );
-    assert_eq!(headline(&row), "c-2  on home  [quiescent?]  7s");
+    assert_eq!(headline(&row), "c-2  on home  7s");
+    assert_eq!(
+        mark(&row).0,
+        "??",
+        "asking, and nobody looked: the switcher's mark"
+    );
 }
 
 /// **The control that answers a row composes `seen` for the address the roster
@@ -175,9 +181,13 @@ fn every_row_wears_the_attention_rule_and_none_wears_the_brand() {
     let runs = seen(&window, &mut body);
     let headline = runs
         .iter()
-        .find(|run| run.text.starts_with("port the paint probe"))
-        .expect("the row's headline reached the glass");
-    assert_eq!(headline.ink, theme::INK, "the headline is body ink");
+        .find(|run| run.text.starts_with("? port the paint probe"))
+        .expect("the row's headline reached the glass, led by the asking glyph");
+    assert_eq!(
+        headline.ink,
+        theme::accent(theme::State::Attention),
+        "the run leads with the switcher's asking glyph, in its accent"
+    );
     for (word, ink) in [
         (
             "flagged 2026-09-01T22:10Z",

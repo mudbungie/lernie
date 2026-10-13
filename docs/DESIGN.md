@@ -5222,7 +5222,10 @@ parts, in its vertical order, each with what it becomes here.
    helper `render::counted` (`1 conversation`, bl-967f) — with `+ new`
    under every wall, which is §4.39's `+` moved off the engine's row onto
    the wall it begins on (bl-d357: a bare `+` at the far edge of another
-   row was the begin a first-time operator did not find). **The model is
+   row was the begin a first-time operator did not find). The decision
+   queue's rows lead with the same glyph from the same spelling
+   (`convs::glyph`, bl-6e59) — always the asking `?` there — where they
+   said a bracketed state word. **The model is
    not on the row**: the wire's conversation row carries none, and the
    switcher does not invent one; the rule says it for the selected
    conversation. Enter selects, which is §4.11's

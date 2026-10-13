@@ -13,7 +13,6 @@ use super::{FLOOR, QUIET, count, module, paint, pitch, span};
 use crate::qr::Symbol;
 use crate::ui::Model;
 use egui_kittest::HarnessBuilder;
-use egui_kittest::wgpu::TestRenderer;
 
 /// Two screen distances are the same one. **A tolerance rather than a bit-for-
 /// bit compare** because clippy denies the second outright, and the margin is
@@ -125,7 +124,7 @@ fn glass(symbol: &Symbol, per_point: f32) -> image::RgbaImage {
             Model::default(),
         );
     harness.run();
-    TestRenderer::new().render(&harness)
+    crate::test_support::glass::glass().render(&harness)
 }
 
 /// **What this pixel reads as: the mark, the ground, or neither** — and the

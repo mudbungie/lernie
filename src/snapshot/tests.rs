@@ -15,7 +15,6 @@ use super::{SIZES, blank, clipped, name, reach, seat, shots, worlds};
 use crate::test_support::window::seated;
 use crate::ui::Model;
 use egui_kittest::HarnessBuilder;
-use egui_kittest::wgpu::TestRenderer;
 use image::{Rgba, RgbaImage};
 
 /// **The matrix**: every named world at every size, written out and judged.
@@ -25,7 +24,7 @@ use image::{Rgba, RgbaImage};
 /// the gate judged.
 #[test]
 fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
-    let renderer = TestRenderer::new();
+    let renderer = crate::test_support::glass::glass();
     let into = shots();
     std::fs::create_dir_all(&into).expect("the shot directory is creatable");
     let mut complaints = Vec::new();
@@ -147,7 +146,7 @@ const LEGIBLE: &str = "this has to stay legible";
 
 #[test]
 fn a_label_that_reached_the_glass_is_quiet_and_one_painted_over_is_not() {
-    let renderer = TestRenderer::new();
+    let renderer = crate::test_support::glass::glass();
     let clear = covered(false);
     let said = blank::complaints("clear", &renderer.render(&clear), &clear);
     assert!(

@@ -27,6 +27,8 @@ pub(crate) mod corpus;
 /// The far end of the wire, so a channel can be tested against something that
 /// speaks the protocol.
 pub(crate) mod engine;
+/// The one door to a GPU renderer, held under the binary's one lock.
+pub(crate) mod glass;
 /// The operator's out-of-channel act, performed by the suite.
 pub(crate) mod mint;
 /// The far end of a PUNCHED wire: an engine that serves a held line, or

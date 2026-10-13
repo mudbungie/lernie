@@ -156,6 +156,14 @@ fn firing_composes_the_envelope_the_strip_composed() {
     );
     assert!(!fire(&mut model, "no-such-verb", ""));
     assert_eq!(model.outbox.len(), before);
+    // **`/stop children` takes the subtree**, as the row's summary says
+    // (bl-0740); the bare word stops the root alone.
+    assert!(fire(&mut model, crate::verbs::STOP.word, "children"));
+    assert_eq!(
+        model.outbox.last().map(|p| p.envelope["children"].clone()),
+        Some(json!(true))
+    );
+    assert_eq!(model.outbox[1].envelope.get("children"), None);
 }
 
 /// **`/delete` is armed by the conversation's own name and nothing else**

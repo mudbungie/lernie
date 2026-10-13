@@ -60,7 +60,11 @@ fn conversation(model: &mut Model, word: &str, rest: &str) -> Option<bool> {
             return Some(true);
         }
         w if w == verbs::INTERRUPT.word => verbs::interrupt(address, agent, rest.to_owned()),
-        w if w == verbs::STOP.word => verbs::stop(address, agent, false),
+        // `children` is the one word `/stop` takes: the verb table's own
+        // summary offers it, so the word typed after it is spent (bl-0740).
+        w if w == verbs::STOP.word => {
+            verbs::stop(address, agent, rest == verbs::conversation::CHILDREN)
+        }
         w if w == verbs::NUDGE.word => verbs::nudge(address, agent),
         w if w == verbs::REVOKE.word => verbs::revoke(address, agent),
         w if w == verbs::RESTORE.word => verbs::restore(address, agent),

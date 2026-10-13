@@ -73,11 +73,14 @@ fn drafting(ui: &mut egui::Ui, model: &mut Model) {
     ui.horizontal_wrapped(|ui| {
         ui.add(egui::TextEdit::singleline(&mut draft.provider).hint_text("provider"));
         ui.add(egui::TextEdit::singleline(&mut draft.model).hint_text("model, or *"));
-        ui.add(
-            egui::TextEdit::singleline(&mut draft.rates)
-                .hint_text("input output [cache-read [cache-write]] per Mtok"),
-        );
     });
+    // **The rates take a line of their own** (bl-0740): the hint is the
+    // grammar, and at the default width it was cut mid-word.
+    ui.add(
+        egui::TextEdit::singleline(&mut draft.rates)
+            .desired_width(ui.available_width())
+            .hint_text("input output [cache-read [cache-write]] per Mtok"),
+    );
     ui.add(egui::TextEdit::singleline(&mut draft.bound).hint_text("ceiling in USD, or off"));
 }
 

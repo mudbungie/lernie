@@ -77,9 +77,13 @@ pub const ATTEMPTS: &str = "delivery attempts";
 pub const CHANGES: &str = "what the agents changed";
 /// What it says about a wall nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what this wall's agents have done";
-/// What it says about a wall that answered and has none.
+/// What it says about a wall that answered and has none — the controls that
+/// run a fleet stand ABOVE the two sections (bl-0740).
 pub const NOTHING: &str =
-    "this wall's agents have delivered nothing yet — run a fleet below to begin";
+    "this wall's agents have delivered nothing yet — run a fleet above to begin";
+/// What the second section says about a wall whose agents changed nothing:
+/// its own sentence, because the two sections answer two questions.
+pub const UNCHANGED: &str = "this wall's agents have changed nothing yet";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -193,7 +197,7 @@ fn listings(ui: &mut egui::Ui, model: &mut Model) {
             ui.label(CHANGES);
             match work.as_deref() {
                 None => drop(ui.label(NOT_ANSWERED)),
-                Some([]) => drop(crate::ui::theme::paint::empty(ui, NOTHING)),
+                Some([]) => drop(crate::ui::theme::paint::empty(ui, UNCHANGED)),
                 Some(rows) => candidates::render(ui, model, rows),
             }
         });

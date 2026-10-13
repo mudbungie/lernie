@@ -68,13 +68,13 @@ pub fn delete_workspace(workspace: String, typed: String) -> Value {
     DELETE_WORKSPACE.built(vec![workspace, typed], &[])
 }
 
-/// **The pin.** Float this wall to the front of the strip and keep it there.
+/// **The pin.** Rank this wall first in every seat's list and keep it there.
 pub const PIN: Verb = Verb {
     word: "pin",
     params: &["workspace"],
     flags: &[],
-    summary: "float this workspace to the front of the strip and keep it there",
-    detail: "It adds the workspace to the durable pin list every seat orders              its strip by: pinned first, in the order they were pinned, ahead              of the rest in name order. A pin is an assertion about the world              rather than an arrangement of one screen, so it is the same list              on every seat and it survives a restart. Pinning one already              pinned moves it to the end of the pinned run rather than saying              it twice. It answers the workspace listing with the ranks it now              carries.",
+    summary: "rank this workspace first in every seat's list of walls and keep it there",
+    detail: "It adds the workspace to the durable pin list every seat orders              its walls by: pinned first, in the order they were pinned, ahead              of the rest in name order. A pin is an assertion about the world              rather than an arrangement of one screen, so it is the same list              on every seat and it survives a restart. Pinning one already              pinned moves it to the end of the pinned run rather than saying              it twice. It answers the workspace listing with the ranks it now              carries.",
 };
 
 /// **The unpin.** Take it back out of the pinned run.

@@ -119,6 +119,7 @@ fn each_listing_says_which_emptiness_it_is_in() {
     };
     let glass = painted(&mut empty);
     assert!(glass.contains(NOTHING), "{glass}");
+    assert!(glass.contains(super::UNCHANGED), "{glass}");
     assert!(!glass.contains(NOT_ANSWERED), "{glass}");
 }
 

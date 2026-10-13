@@ -12,7 +12,8 @@
 //! onto one line: the model that answered, what the conversation has spent
 //! (§4.41's words, never `$0`), how many conversations across every engine
 //! are asking — in the attention accent, the one green on a resting window —
-//! and how many engines this seat reaches. The right end is the selected
+//! and how many engines this seat reaches, out of how many it holds where
+//! those differ ([`engines`]). The right end is the selected
 //! conversation's name, the aimed wall's where none is selected, and the word
 //! `engines` where nothing is aimed.
 //!
@@ -37,6 +38,11 @@
 
 use crate::ui::slash::Row;
 use crate::ui::{Model, theme};
+
+/// What the rule counts across every channel this seat holds.
+mod reach;
+
+pub use reach::{engines, waiting};
 
 /// The glyph the rule opens with, and the one that parts the facts from the
 /// name.
@@ -134,16 +140,6 @@ fn answered_by(model: &Model) -> Option<String> {
         })
 }
 
-/// How many conversations are asking, across every engine this seat reaches.
-pub fn waiting(model: &Model) -> u64 {
-    model
-        .roster
-        .iter()
-        .flat_map(|chunk| chunk.walls.iter())
-        .map(|wall| wall.attention)
-        .sum()
-}
-
 /// **The facts between the state and the name**, in order, each a run.
 pub fn facts(model: &Model) -> Vec<Run> {
     let mut out = Vec::new();
@@ -188,15 +184,7 @@ pub fn facts(model: &Model) -> Vec<Run> {
             )
         });
     }
-    let engines = model.roster.len();
-    out.push(run(
-        if engines == 1 {
-            "1 engine".to_owned()
-        } else {
-            format!("{engines} engines")
-        },
-        theme::INK_WEAK,
-    ));
+    out.push(engines(model));
     out
 }
 

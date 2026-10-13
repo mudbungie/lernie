@@ -5003,7 +5003,12 @@ parts, in its vertical order, each with what it becomes here.
    answered, what the conversation has spent (§4.41's words, never `$0`), how
    many conversations across every engine are asking (in the attention
    accent while it is non-zero — the one green on a resting window), and how
-   many engines this seat reaches. The right end is the selected
+   many engines this seat reaches. **Reaches, not holds** (bl-4cac): the
+   segment reads `N engines` while every channel has answered and `R of N
+   engines` while any has not — in the error accent where one will not dial,
+   weak while one is merely unheard — and the waiting count leaves out a
+   channel that will not dial, because a green read off walls nobody can
+   reach is a count nobody can act on. The right end is the selected
    conversation's name, the aimed wall's where none is selected, and the
    word `engines` where nothing is aimed. Segments drop from the right as the
    width runs out, the name last. While `/plan` is on, `plan` in the brand
@@ -5075,7 +5080,12 @@ parts, in its vertical order, each with what it becomes here.
    (§4.29's spine) — as one line each and the long ones behind `▸` folds; a
    window with nothing selected paints the **seat panel** there instead: the
    engines this seat reaches, one row each with its dial state, walls and
-   counts, the version, and the ways in — `/help for commands · Ctrl+X for a
+   counts — and **the dial state is read, not assumed** (bl-4cac): a channel
+   that will not dial says the wire's own sentence (`Held::Unheld`, the one
+   `lernie entries` prints — on a first run, *nothing provisioned*) whole
+   and wrapped in the error accent in place of its counts, and one not heard
+   from yet says *waiting to hear from this channel* in weak ink; the
+   version, and the ways in — `/help for commands · Ctrl+X for a
    conversation · /roles for the model · /login for a provider` (item 10).
 
 5. **The way in is a slash verb, and the slash verbs ARE §4.10's words**
@@ -5507,6 +5517,7 @@ dock.
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: one column (§4.42) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
+| `src/ui/status/reach.rs` | **what the rule counts across the roster** (bl-4cac): the conversations asking, leaving out a channel that will not dial, and the engines reached out of those held, in the error accent where one will not dial. | ~50 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |

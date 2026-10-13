@@ -54,3 +54,6 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
     let text = painted(&mut one);
     assert!(text.contains("1 wall, 1 conversation"), "{text}");
 }
+
+/// The dial state on the card and the rule.
+mod held;

@@ -98,11 +98,37 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
     });
 }
 
-/// **The seat's card**: each engine, the version, and the ways in.
+/// **The seat's card**: each engine with its dial state, the version, and the
+/// ways in.
 pub fn seat(ui: &mut egui::Ui, model: &Model) {
     card(ui, |ui| {
         line(ui, &version(), theme::INK);
         for chunk in &model.roster {
+            let header = crate::ui::roster::header(&chunk.channel);
+            // **The dial state first** (bl-4cac): a channel that will not dial
+            // says the wire's own sentence, whole and in the error accent, and
+            // one not heard from yet says so — neither has counts worth
+            // painting, because a count off walls nobody can reach reads as a
+            // healthy engine.
+            match &chunk.held {
+                crate::ui::Held::Unheld(why) => {
+                    line(
+                        ui,
+                        &format!("{header} — {why}"),
+                        theme::accent(theme::State::Error),
+                    );
+                    continue;
+                }
+                crate::ui::Held::Unheard => {
+                    line(
+                        ui,
+                        &format!("{header} — {}", crate::ui::roster::NOT_ANSWERED),
+                        theme::INK_WEAK,
+                    );
+                    continue;
+                }
+                crate::ui::Held::Heard => {}
+            }
             let walls = chunk.walls.len();
             let conversations: u64 = chunk.walls.iter().map(|wall| wall.agents).sum();
             let asking: u64 = chunk.walls.iter().map(|wall| wall.attention).sum();
@@ -112,8 +138,7 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) {
                 String::new()
             };
             let said = format!(
-                "{} — {walls} {}, {conversations} {}{waiting}",
-                crate::ui::roster::header(&chunk.channel),
+                "{header} — {walls} {}, {conversations} {}{waiting}",
                 if walls == 1 { "wall" } else { "walls" },
                 if conversations == 1 {
                     "conversation"

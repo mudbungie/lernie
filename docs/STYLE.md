@@ -97,7 +97,9 @@ under every wall. A control that opens a pane does not exist; the word does.
 transcript, the conversation panel: a framed card with its name, engine and
 wall, model, spend and where it hangs, one line each, the long ones behind
 `▸` folds. With nothing selected the seat panel stands there: the engines this
-seat reaches, one row each with its dial state and counts, the version, and
+seat reaches, one row each with its dial state and counts — an engine that
+will not dial says why in red in place of its counts, and the rule counts it
+as held and not reached (`1 of 2 engines`) — the version, and
 the ways in: *the verbs, a conversation, the model, a provider*. Under the
 transcript, the rule; under the rule, the prompt.
 

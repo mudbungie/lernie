@@ -53,6 +53,28 @@ fn ctrl_x_in_the_box_cuts_nothing() {
     assert_eq!(model.draft, "keep every word");
 }
 
+/// **Ctrl+X over an open pane replaces it** (bl-339d): the pane is put
+/// down, all the way, so choosing a conversation shows that conversation —
+/// and over the enrollment the chord does nothing.
+#[test]
+fn ctrl_x_replaces_the_pane_that_stood() {
+    let window = Window::new();
+    let mut model = seated();
+    model.begin_trail();
+    model.begin_clearing();
+    ctrl_x(&window, &mut model);
+    assert!(model.switching);
+    assert!(
+        !model.trailing() && !model.clearing(),
+        "put down, step and all"
+    );
+    model.chose();
+    assert!(!model.covered());
+    model.begin_enrollment();
+    ctrl_x(&window, &mut model);
+    assert!(!model.switching && model.enroll.is_some());
+}
+
 /// **The roster stands in it, under its name, and the prompt stands down.**
 #[test]
 fn the_roster_stands_in_it() {

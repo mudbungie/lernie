@@ -5137,7 +5137,7 @@ parts, in its vertical order, each with what it becomes here.
    switcher does not invent one; the rule says it for the selected
    conversation. Enter selects, which is §4.11's
    one door for a click and a keypress, and closes the overlay; `+ new` puts
-   the caret in the field in start mode. The accordion's order, open engine
+   the caret in the field in start mode. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
    and ranks (§4.39, `model/engines.rs`) are what the overlay paints, so the
    place file keeps those keys and loses the two layout ones.
 

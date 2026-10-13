@@ -25,7 +25,24 @@ pub const HEADING: &str = roster::HEADING;
 
 impl Model {
     /// **Open the switcher**, or close it: the one toggle Ctrl+X is.
+    ///
+    /// **Opening it puts down whatever stood** (bl-339d; DESIGN §4.42 item 6,
+    /// *one stands at a time*): the chord is the one way to a second overlay
+    /// while one is open, and a switcher stacked over a pane handed the
+    /// operator back to that pane after they chose a conversation. Each is
+    /// put down by its own Esc, so a pane with a step back (the clearing to
+    /// its trail, an assignment to its roles) goes all the way down. The
+    /// enrollment is the exception it is everywhere: it covers the window and
+    /// is only ever left by its own gesture.
     pub fn switch(&mut self) {
+        if self.enroll.is_some() {
+            return;
+        }
+        if !self.switching {
+            while self.covered() {
+                self.escape();
+            }
+        }
         self.switching = !self.switching;
     }
 

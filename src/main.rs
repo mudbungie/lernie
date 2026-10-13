@@ -155,7 +155,12 @@ fn window(root: &std::path::Path) -> Verdict {
         },
         Box::new({
             let link = link.clone();
-            move |_| {
+            move |cc: &eframe::CreationContext<'_>| {
+                // **The fallback face, once, before the first frame** (bl-3956,
+                // DESIGN §4.43): the first CJK face the system keeps, last in
+                // both families, or egui's own faces where it keeps none.
+                cc.egui_ctx
+                    .set_fonts(lernie::ui::theme::fonts(lernie::ui::theme::FALLBACKS));
                 Ok(Box::new(Seat {
                     model: std::mem::take(&mut model),
                     link,

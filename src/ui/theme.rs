@@ -18,12 +18,15 @@ use egui::Color32;
 
 use crate::reply::convs::{AgentState, Tone};
 
+/// The fallback face read off the system at window start (bl-3956).
+mod fonts;
 /// The anatomy as paint: the row, the connector, the ruled block, the
 /// section and the field.
 pub mod paint;
 /// The adapter into egui: the tokens installed as a `Style` once per frame.
 mod visuals;
 
+pub use fonts::{FALLBACKS, fonts};
 pub use visuals::{install, visuals};
 
 /// **The ground ladder** — each rung brighter than the one before, asserted.

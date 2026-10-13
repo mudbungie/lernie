@@ -5467,6 +5467,50 @@ switcher, the rule, the prompt line, the policy and drags deleted; then the
 ask above the field; then the transcript idiom and the two panels; then the
 dock.
 
+### 4.43 The fallback face: CJK read off the system, never shipped (bl-3956)
+
+**egui's four bundled faces have no ideograph, kana or hangul**, so CJK typed
+into the box, a `/find` needle or a transcript painted as tofu. Operator ruling
+2026-10-13: **load a fallback font at startup from a fixed list of system
+paths; no embedded font, no new crate, no new setting.** At window start
+(`src/main.rs`, the creation closure, once — not `theme::install`, which runs
+every frame) the seat reads the first file of `theme::FALLBACKS`
+(`src/ui/theme/fonts.rs`) that exists and carries an sfnt tag (TrueType,
+OpenType or a collection; egui panics on bytes it cannot parse, so a file that
+is not a font costs a face, never the window) and pushes it **last** in both
+the proportional and monospace families: every glyph the bundled faces have
+keeps its face, and only what was tofu gains one. The list, in order, each
+taking face 0:
+
+    /usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf
+    /usr/share/fonts/google-droid-sans-fonts/DroidSansFallbackFull.ttf
+    /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    /usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc
+    /usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc
+    /System/Library/Fonts/PingFang.ttc
+    /System/Library/Fonts/Hiragino Sans GB.ttc
+
+Droid comes first because it is one face in ~4 MB where the Noto collection is
+five in ~19.5 MB; face 0 of the Noto collection is its Japanese one. **A box
+with none of them keeps today's face and says nothing.** **Cost, measured on a
+stock Linux desktop holding the Droid file:** resident memory +8 MB (110 → 118
+MB at rest: the file's bytes stay resident and the face is parsed), and the
+first frame +3 ms (2.6 → 5.4 ms, warm page cache). **Emoji are not helped**:
+the only system emoji face on such a box is colour (Noto Color Emoji, Apple
+Color Emoji), which epaint draws nothing of, so none is listed and an emoji
+past the bundled 887 code points (🦀) is still tofu.
+
+**Why not a tracked font**: it would be the first binary in the tree, and the
+disclosure gate's allowlist of unreadable files is empty by design (CLAUDE.md
+*The disclosure gate*: "lernie's allowlist of tracked binaries is EMPTY") — a
+font is content no rule can read, and it would add 4–16 MB to every download
+for the operators who do not type CJK, when the ones who do already have a
+face on their system. **The paint harness never installs it**: `theme::fonts`
+takes the list as a parameter, the window passes `FALLBACKS` and the
+offscreen frames pass nothing, so the snapshot matrix is the same bytes on
+every box. `theme::tests`' act-glyph assertion stays about the BUNDLED faces:
+a control's glyph may not lean on a face the box may not have.
+
 ---
 
 ## 5. Module map
@@ -5719,6 +5763,7 @@ dock.
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
+| `src/ui/theme/fonts.rs` | **the fallback face** (§4.43): the fixed list of system paths a CJK face is kept at, and egui's faces with the first readable one pushed last in both families. | ~110 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
 | `src/mark/shape.rs` | the three primitives, each answering one geometry two ways: is this point inside me, and what element am I. | ~145 |
 | `src/mark/raster.rs` | the pixel loop: supersampling and nothing else. | ~120 |

@@ -214,7 +214,9 @@ fn install_sets_the_type_scale() {
 
 /// **Every glyph an act wears is in the body font** (bl-f251): a control
 /// whose icon is a tofu box is a control with no word on it, so the table is
-/// asserted against the font the window actually lays it in.
+/// asserted against the font the window actually lays it in. **The BUNDLED
+/// faces, deliberately**: the system fallback (bl-3956) is for prose an
+/// operator types, may be absent on any box, and a control may not lean on it.
 #[test]
 fn every_act_glyph_has_a_glyph_in_the_body_font() {
     let ctx = egui::Context::default();

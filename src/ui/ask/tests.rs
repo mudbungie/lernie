@@ -44,7 +44,7 @@ fn it_stands_on_the_selected_conversation_s_row_and_not_otherwise() {
 #[test]
 fn the_choices_are_the_queue_s_acts() {
     let model = asked();
-    let held = row(&model).expect("a row");
+    let (_, held) = row(&model).expect("a row");
     let offered: Vec<String> = choices(&held).into_iter().map(Choice::word).collect();
     assert_eq!(
         offered,
@@ -180,7 +180,7 @@ fn the_box_goes_down_on_the_frame_the_receipt_lands() {
     let mut model = asked();
     let text = painted(&mut model);
     assert!(text.contains(HEADING), "{text}");
-    let selected = row(&model).expect("a row").agent;
+    let selected = row(&model).expect("a row").1.agent;
     let remains = json!({
         "workspace": "home", "agent": "c-2", "display": "c-2", "state": "quiescent",
         "uncertain": true, "preview": "", "age_secs": 7, "pending": 0, "says": "",

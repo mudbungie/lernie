@@ -26,7 +26,7 @@
 //! the queue's row lands.
 
 use crate::reply::queue::QueueRow;
-use crate::ui::{Model, queue, theme};
+use crate::ui::{Channel, Model, queue, theme};
 
 /// The box's name.
 pub const HEADING: &str = "it is asking";
@@ -78,22 +78,33 @@ pub fn choices(row: &QueueRow) -> Vec<Choice> {
 }
 
 /// **The selected conversation's own row in what is waiting**, where the
-/// queue has answered one.
-pub fn row(model: &Model) -> Option<QueueRow> {
+/// queue has answered one — with the channel its section came down, which
+/// every answer is resolved within.
+///
+/// Matched on the conversation's id **and on its wall resolving to the aim**
+/// (bl-666f): ids and wall names are each only unique within one engine, so
+/// a row is the selected conversation's only where it is that id on the very
+/// wall, on the very channel, the operator is standing on.
+pub fn row(model: &Model) -> Option<(Channel, QueueRow)> {
     let id = model.conversation.as_ref()?;
-    model
-        .waiting
-        .iter()
-        .flat_map(|section| section.rows.iter())
-        .find(|row| row.agent == *id)
-        .cloned()
+    let aim = model.aim.as_ref()?;
+    model.waiting.iter().find_map(|section| {
+        section
+            .rows
+            .iter()
+            .find(|row| {
+                row.agent == *id
+                    && model.wall(&section.channel, &row.workspace).as_ref() == Some(aim)
+            })
+            .map(|row| (section.channel.clone(), row.clone()))
+    })
 }
 
 /// **Answer with one choice**: the same doors the queue pane spends.
-pub fn answer(model: &mut Model, row: &QueueRow, choice: Choice) {
+pub fn answer(model: &mut Model, (channel, row): &(Channel, QueueRow), choice: Choice) {
     match choice {
-        Choice::Seen => model.post_seen(row),
-        Choice::Verdict(verdict, scope) => model.post_answer(row, verdict, scope),
+        Choice::Seen => model.post_seen(channel, row),
+        Choice::Verdict(verdict, scope) => model.post_answer(channel, row, verdict, scope),
     }
 }
 
@@ -109,7 +120,7 @@ pub fn moved(ctx: &egui::Context, model: &Model, step: isize) {
     let Some(row) = row(model) else {
         return;
     };
-    let len = choices(&row).len();
+    let len = choices(&row.1).len();
     let at = chosen(ctx, len).saturating_add_signed(step).min(len - 1);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(CHOSEN_ID), at));
 }
@@ -119,7 +130,7 @@ pub fn confirm(ctx: &egui::Context, model: &mut Model) {
     let Some(row) = row(model) else {
         return;
     };
-    let offered = choices(&row);
+    let offered = choices(&row.1);
     if let Some(choice) = offered.get(chosen(ctx, offered.len())) {
         answer(model, &row, *choice);
     }
@@ -131,7 +142,10 @@ pub fn pick(model: &mut Model, n: usize) -> bool {
     let Some(row) = row(model) else {
         return false;
     };
-    let Some(choice) = n.checked_sub(1).and_then(|i| choices(&row).get(i).copied()) else {
+    let Some(choice) = n
+        .checked_sub(1)
+        .and_then(|i| choices(&row.1).get(i).copied())
+    else {
         return false;
     };
     answer(model, &row, choice);
@@ -140,7 +154,8 @@ pub fn pick(model: &mut Model, n: usize) -> bool {
 
 /// Paint the box for `row`, the selected conversation's own
 /// ([`row`]), which the shell has already found.
-pub fn render(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
+pub fn render(ui: &mut egui::Ui, model: &mut Model, asked: &(Channel, QueueRow)) {
+    let row = &asked.1;
     let accent = theme::accent(theme::State::Attention);
     let offered = choices(row);
     let at = chosen(ui.ctx(), offered.len());
@@ -176,7 +191,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
             }
         });
     if let Some(choice) = taken {
-        answer(model, row, choice);
+        answer(model, asked, choice);
     }
 }
 

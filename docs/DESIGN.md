@@ -2382,18 +2382,22 @@ Five decisions, and each is a choice rather than a mechanism:
 - **A fan's answer replaces its OWN channel's section**, leaving every other
   standing — §8.2's *"a refusal is one entry's, never the set's"*, the shape the
   roster already keeps.
-- **A row is addressed off the ROSTER, never off the section it came down.** A
-  queue row names its workspace as *its host* names it, which is not what a
-  gesture from this box carries when an entry renames. The window's half of that
-  mapping has one home — a roster row and `ui::Channel::address` — so
-  `Model::wall` asks it there. Two things follow and both are the point. A
-  channel stamp becomes a display fact that cannot mis-aim a gesture, which
-  mattered because a receipt's stamp was the *aimed* channel rather than the one
-  that answered (`src/offframe/poster.rs`) and `seen`'s reply carries a queue rather
-  than a receipt — the residual that left was one beat of a section under the
-  wrong header. **That residual is spent** (bl-c70d): `seat::route` answers the
-  seat-side name it chose (§4.7) and the poster stamps it, so the aim is not
-  read on that pass at all. And a row for a wall this seat
+- **A row is addressed off the ROSTER, within the channel its section came
+  down.** A queue row names its workspace as *its host* names it, which is not
+  what a gesture from this box carries when an entry renames. The window's half
+  of that mapping has one home — a roster row and `ui::Channel::address` — so
+  `Model::wall(channel, workspace)` asks it there, **in that channel's roster
+  chunk alone** (bl-666f): wall names are per engine and `home` is every fresh
+  engine's bootstrap wall, so a walk of the whole roster aimed a second engine's
+  rows at the first's `home`. Every door — *go to it*, `seen`, `answer`, and the
+  ask box (§4.42 item 8, which also requires the row's wall to resolve to the
+  aim, not merely its id to match the selection) — carries the section's
+  channel beside the row. Resolving within the stamp is sound because the
+  stamp is the channel that ANSWERED: it once was the *aimed* channel instead
+  (`src/offframe/poster.rs`), which is why this bullet used to call it a
+  display fact and resolve without it, and **that is spent** (bl-c70d) —
+  `seat::route` answers the seat-side name it chose (§4.7) and the poster
+  stamps it, so the aim is not read on that pass at all. And a row for a wall this seat
   holds no name for is honestly unaddressable, and says so in the roster's own
   sentence, rather than being aimed at a different wall by a guess.
 - **`flag` is on the composer's second row and not on this pane**, which is the

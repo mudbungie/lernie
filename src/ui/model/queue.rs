@@ -19,17 +19,21 @@
 //! §8.2's *"a refusal is one entry's, never the set's"*, the same shape
 //! [`Model::seat`](super::Model) keeps for the roster.
 //!
-//! # A row is addressed off the ROSTER, never off the section it came down
+//! # A row is addressed off the ROSTER, within the channel it came down
 //!
 //! A queue row names its workspace as **its host** names it, which is not what
 //! a gesture from this box must carry when an entry renames (§8.2). The
 //! resolution already has one home in this window — a roster row and
-//! `crate::ui::Channel::address` — so [`Model::wall`] asks it there rather than
-//! re-deriving it from the channel a frame was stamped with. Two things follow
-//! and both are the point. A stamp is a display fact and cannot mis-aim a
-//! gesture, which matters because a receipt's stamp is the *aimed* channel
-//! rather than the one that answered (`crate::offframe::poster`). And a row for
-//! a wall this seat holds no name for is honestly unaddressable, and paints as
+//! `crate::ui::Channel::address` — so [`Model::wall`] asks it there. **But
+//! only in the roster chunk of the channel the row's section came down**
+//! (bl-666f): a wall's name is per engine, and `home` is every fresh engine's
+//! bootstrap wall, so a walk of the whole roster for the first wall of that
+//! name aimed a second engine's rows at the first — *go to it* opened a
+//! conversation that did not exist there, and `seen` and `answer` went down
+//! the wrong channel. The section's stamp is the channel that answered
+//! (`crate::offframe::poster`, bl-c70d), so it is a fact to resolve within,
+//! and every door below takes it beside the row. A row for a wall this seat
+//! holds no name for on that channel is honestly unaddressable, and paints as
 //! such, rather than being aimed by a guess at a different wall.
 
 use super::{Aim, Model};
@@ -76,25 +80,29 @@ impl Model {
         }
     }
 
-    /// **The aim that reaches the wall a queue row names**, or `None` where
-    /// this seat holds no name for it.
+    /// **The aim that reaches the wall a queue row names on the channel it
+    /// came down**, or `None` where this seat holds no name for it there.
     ///
-    /// It walks the roster because the roster is where this window's half of
+    /// It reads the roster because the roster is where this window's half of
     /// §8.2's mapping lives: a wall's row plus the channel it came down is
     /// exactly what `Channel::address` answers, and asking it here means the
-    /// queue cannot hold a second opinion about how a wall is addressed.
-    pub fn wall(&self, workspace: &str) -> Option<Aim> {
-        self.roster.iter().find_map(|chunk| {
-            chunk
-                .walls
-                .iter()
-                .find(|wall| wall.workspace == workspace)
-                .and_then(|wall| chunk.channel.address(wall))
-                .map(|address| Aim {
-                    channel: chunk.channel.name.clone(),
-                    address,
-                })
-        })
+    /// queue cannot hold a second opinion about how a wall is addressed. It
+    /// reads ONE chunk of it — `channel`'s — because a wall's name is only
+    /// unique within one engine (bl-666f).
+    pub fn wall(&self, channel: &Channel, workspace: &str) -> Option<Aim> {
+        let chunk = self
+            .roster
+            .iter()
+            .find(|chunk| chunk.channel.name == channel.name)?;
+        chunk
+            .walls
+            .iter()
+            .find(|wall| wall.workspace == workspace)
+            .and_then(|wall| chunk.channel.address(wall))
+            .map(|address| Aim {
+                channel: chunk.channel.name.clone(),
+                address,
+            })
     }
 
     /// **Answer a row's place in the queue**, or do nothing where this seat
@@ -102,8 +110,8 @@ impl Model {
     /// separate check: a gesture with nowhere to go is a gesture nobody can
     /// compose, and the pane paints that row's own sentence instead of a
     /// control.
-    pub fn post_seen(&mut self, row: &QueueRow) {
-        if let Some(aim) = self.wall(&row.workspace) {
+    pub fn post_seen(&mut self, channel: &Channel, row: &QueueRow) {
+        if let Some(aim) = self.wall(channel, &row.workspace) {
             self.outbox.push(super::Posted::act(crate::verbs::seen(
                 aim.address,
                 row.agent.clone(),
@@ -121,8 +129,8 @@ impl Model {
     /// this end does say is the two words: the verdict, and **how far it
     /// stands** — stated on every gesture, `call` included, because the wire
     /// requires it in both directions.
-    pub fn post_answer(&mut self, row: &QueueRow, verdict: &str, scope: &str) {
-        if let Some(aim) = self.wall(&row.workspace) {
+    pub fn post_answer(&mut self, channel: &Channel, row: &QueueRow, verdict: &str, scope: &str) {
+        if let Some(aim) = self.wall(channel, &row.workspace) {
             self.outbox.push(super::Posted::act(crate::verbs::answer(
                 aim.address,
                 row.agent.clone(),
@@ -141,8 +149,8 @@ impl Model {
     /// two doors a click on the roster and a click on the list already spend,
     /// so a queue row reaches the conversation by the same gestures rather than
     /// by a third spelling of *look at this one*.
-    pub fn go_to(&mut self, row: &QueueRow) {
-        let Some(aim) = self.wall(&row.workspace) else {
+    pub fn go_to(&mut self, channel: &Channel, row: &QueueRow) {
+        let Some(aim) = self.wall(channel, &row.workspace) else {
             return;
         };
         self.aim_at(&aim.channel, &aim.address);

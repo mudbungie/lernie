@@ -68,32 +68,67 @@ fn one_channel_s_answer_leaves_every_other_standing() {
     assert_eq!(model.waiting[1].rows.len(), 1, "the other channel stands");
 }
 
-/// **A row is addressed off the roster**, so a stamp cannot aim a gesture: the
-/// wall a queue row names is resolved where every other aim is resolved, and a
-/// wall this seat holds no name for answers nothing.
+/// **A row is addressed off the roster, within its own channel's chunk**:
+/// the wall a queue row names is resolved where every other aim is resolved,
+/// and a wall this seat holds no name for ON THAT CHANNEL answers nothing —
+/// a channel the roster does not hold included.
 #[test]
-fn a_row_resolves_against_the_roster_and_not_against_its_section() {
+fn a_row_resolves_against_its_own_channel_s_roster() {
     let model = queued();
     assert_eq!(
-        model.wall("home"),
+        model.wall(&own(), "home"),
         Some(Aim {
             channel: "(this box's own engine)".to_owned(),
             address: "home".to_owned(),
         })
     );
-    assert_eq!(model.wall("elsewhere"), None);
-    // A section stamped with a channel that renames does not change the answer:
-    // the roster is the one authority, and the stamp is a display fact.
-    let mut renamed = model;
-    renamed.waiting = vec![Asking {
-        channel: Channel {
-            name: "wrong".to_owned(),
-            named_there: Some("theirs".to_owned()),
-            dials: None,
-        },
-        rows: vec![waiting("home", "c-1")],
+    assert_eq!(model.wall(&own(), "elsewhere"), None);
+    assert_eq!(model.wall(&side().channel, "home"), None);
+}
+
+/// A second engine whose bootstrap wall is ALSO called `home` on its host,
+/// under an entry this box names `side` — the arrangement every two-engine seat has (bl-666f).
+fn side() -> crate::ui::Chunk {
+    let mut chunk = crate::test_support::window::own();
+    chunk.channel = Channel {
+        name: "side".to_owned(),
+        named_there: Some("home".to_owned()),
+        dials: None,
+    };
+    chunk
+}
+
+/// **Two engines each holding `home`: a row aims at its OWN engine's**
+/// (bl-666f). Every door — the address, *go to it*, `seen`, `answer` and the
+/// ask box — resolves within the channel the row's section came down, so the
+/// second engine's row never reaches the first's wall.
+#[test]
+fn two_engines_holding_the_same_wall_name_each_keep_their_rows() {
+    let mut model = queued();
+    model.roster.push(side());
+    let theirs = side().channel;
+    let row = waiting("home", "c-401");
+    let aimed = model.wall(&theirs, "home").expect("their home");
+    assert_eq!(aimed.channel, "side");
+    assert_ne!(aimed, model.wall(&own(), "home").expect("our home"));
+    model.post_seen(&theirs, &row);
+    model.post_answer(&theirs, &row, "pass", crate::verbs::capability::CALL);
+    for posted in &model.outbox {
+        assert_eq!(posted.envelope["workspace"], aimed.address.as_str());
+    }
+    model.outbox.clear();
+    model.go_to(&theirs, &row);
+    assert_eq!(model.aim, Some(aimed.clone()));
+    assert_eq!(model.conversation.as_deref(), Some("c-401"));
+    // The ask box is the same row only on the same channel: the selected
+    // conversation's id on the OTHER engine's `home` is not this one.
+    model.waiting = vec![Asking {
+        channel: theirs.clone(),
+        rows: vec![row.clone()],
     }];
-    assert!(renamed.wall("home").is_some());
+    assert_eq!(crate::ui::ask::row(&model), Some((theirs, row)));
+    model.aim = model.wall(&own(), "home");
+    assert_eq!(crate::ui::ask::row(&model), None);
 }
 
 /// **The answer is composed against the resolved address**, and a row this
@@ -102,9 +137,9 @@ fn a_row_resolves_against_the_roster_and_not_against_its_section() {
 #[test]
 fn seen_is_composed_only_where_the_wall_resolves() {
     let mut model = queued();
-    model.post_seen(&waiting("elsewhere", "c-3"));
+    model.post_seen(&own(), &waiting("elsewhere", "c-3"));
     assert!(model.outbox.is_empty(), "no address, no gesture");
-    model.post_seen(&waiting("home", "c-1"));
+    model.post_seen(&own(), &waiting("home", "c-1"));
     assert_eq!(
         model.outbox,
         vec![crate::ui::Posted::act(crate::verbs::seen(
@@ -119,12 +154,12 @@ fn seen_is_composed_only_where_the_wall_resolves() {
 #[test]
 fn going_to_a_row_aims_selects_and_closes() {
     let mut model = queued();
-    model.go_to(&waiting("elsewhere", "c-3"));
+    model.go_to(&own(), &waiting("elsewhere", "c-3"));
     assert!(
         model.showing(crate::ui::Listing::Queue),
         "an unaddressable row leaves the pane standing"
     );
-    model.go_to(&waiting("home", "c-1"));
+    model.go_to(&own(), &waiting("home", "c-1"));
     assert!(!model.showing(crate::ui::Listing::Queue));
     assert_eq!(
         model.aim,

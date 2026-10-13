@@ -38,7 +38,7 @@
 //! never seen paints as itself.
 
 use crate::reply::queue::QueueRow;
-use crate::ui::{Model, theme};
+use crate::ui::{Channel, Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "attention";
@@ -107,7 +107,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                 ui.add_space(theme::space::S);
                 ui.colored_label(theme::INK_WEAK, crate::ui::roster::header(&section.channel));
                 for row in &section.rows {
-                    waiting_row(ui, model, row);
+                    waiting_row(ui, model, &section.channel, row);
                 }
             }
         });
@@ -115,7 +115,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 }
 
 /// One row: the headline, why it is asking, and what can be done about it.
-fn waiting_row(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
+fn waiting_row(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow) {
     // **Every row here wears the attention rule**, and it is the one pane
     // where that is a tautology rather than a reading: a row is on this pane
     // because it is asking for the operator (`docs/STYLE.md` §2, *the eye
@@ -147,12 +147,12 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
     if !row.preview.is_empty() {
         ui.colored_label(theme::INK_WEAK, row.preview.clone());
     }
-    acts(ui, model, row);
+    acts(ui, model, channel, row);
 }
 
 /// The row's controls, or the sentence that stands where they would be.
-fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
-    if model.wall(&row.workspace).is_none() {
+fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow) {
+    if model.wall(channel, &row.workspace).is_none() {
         ui.colored_label(
             theme::accent(theme::State::Annotation),
             crate::ui::roster::NO_NAME_HERE,
@@ -188,7 +188,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
         // view (PARITY §2) and tagging it would put a widget in a ledger whose
         // unit is an op.
         if ui.button(GO).clicked() {
-            model.go_to(row);
+            model.go_to(channel, row);
         }
     });
     // **The two wider reaches, each seat saying its own reach** (PROTOCOL 18,
@@ -219,10 +219,10 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, row: &QueueRow) {
         }
     }
     if let Some(row) = fired {
-        model.post_seen(&row);
+        model.post_seen(channel, &row);
     }
     if let Some((word, scope)) = verdict {
-        model.post_answer(row, word, scope);
+        model.post_answer(channel, row, word, scope);
     }
 }
 

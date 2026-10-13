@@ -1,7 +1,8 @@
 +++
 title = "window (§4.42): the transcript idiom: gutter glyphs, the trail tree, turn and response separators, the conversation panel and the seat panel"
 created = 1791862814
-updated = 1791862814
+updated = 1791864431
+claimant = "Surveying"
 parent = "bl-7859"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

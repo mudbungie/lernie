@@ -27,6 +27,13 @@
 //! **Segments drop from the right as the width runs out, the name last**:
 //! a rule that wrapped would be two lines, and a rule that elided the name
 //! would say everything but where you are.
+//!
+//! **A notice too long for the slot is never cut** (bl-7e3e; bl-3d0f ruled
+//! why: the half a cut sentence loses is the remedy) **and never costs a
+//! fact**. Where it does not fit beside every fact and the name, it stands
+//! whole on its own lines directly above the rule, wrapped, in its ink, until
+//! Esc — and the rule keeps its one line, the slot saying what it says with
+//! no notice.
 
 use crate::ui::slash::Row;
 use crate::ui::{Model, theme};
@@ -89,6 +96,12 @@ pub fn state(model: &Model) -> Run {
         };
         return run(notice.line(), ink);
     }
+    calm(model)
+}
+
+/// **The state slot with no notice in it** — what it says under a notice too
+/// long to stand there ([`render`]).
+pub fn calm(model: &Model) -> Run {
     match selected(model) {
         Some(row) => run(
             format!(
@@ -217,8 +230,7 @@ fn width(ui: &egui::Ui, text: &str) -> f32 {
 pub fn fitting(ui: &egui::Ui, state: &Run, facts: &[Run], name: &str, room: f32) -> usize {
     let gap = ui.spacing().item_spacing.x;
     let sep = width(ui, SEP) + 2.0 * gap;
-    let fixed = width(ui, LEAD) * 2.0 + width(ui, &state.text) + width(ui, name) + 6.0 * gap;
-    let mut used = fixed;
+    let mut used = width(ui, LEAD) * 2.0 + width(ui, &state.text) + width(ui, name) + 6.0 * gap;
     let mut shown = 0;
     for fact in facts {
         let more = sep + width(ui, &fact.text);
@@ -245,10 +257,20 @@ fn paint(ui: &mut egui::Ui, run: &Run) -> Option<&'static str> {
 
 /// Paint the rule, and open what a click on one of its doors opens.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    let state = state(model);
+    let mut state = state(model);
     let facts = facts(model);
     let name = name(model);
-    let shown = fitting(ui, &state, &facts, &name.text, ui.available_width());
+    let room = ui.available_width();
+    // **A notice the rule cannot hold whole stands above it** (bl-7e3e): its
+    // own lines, wrapped, in its ink, and the slot says what it would say
+    // without it — so the remedy at the sentence's end is read, and the rule
+    // still says where you are and what else is true.
+    if model.notice.is_some() && fitting(ui, &state, &facts, &name.text, room) < facts.len() {
+        let said = egui::RichText::new(&state.text).small().color(state.ink);
+        ui.add(egui::Label::new(said).wrap());
+        state = calm(model);
+    }
+    let shown = fitting(ui, &state, &facts, &name.text, room);
     let faint = |ui: &mut egui::Ui, text: &str| {
         ui.label(egui::RichText::new(text).small().color(theme::INK_FAINT));
     };

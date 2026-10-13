@@ -61,7 +61,9 @@ rows wear `?` in green. A window with nothing waiting has nothing green on it.
 **The rule says where you are and what it costs.** One line:
 `─ state · elapsed │ model │ spend │ N waiting │ N engines ─ name`. The state
 word is the wire's own, in its state's ink; the notice stands in that slot in
-its ink while there is one, and Esc puts it down. The right end is the
+its ink while there is one, and Esc puts it down — while it fits beside every
+fact and the name; a longer one stands whole, wrapped, on its own lines just
+above the rule, never cut and never costing a fact. The right end is the
 conversation's name, the wall's where none is selected, `engines` where
 nothing is aimed. There is no heading over the transcript: one pane needs no
 name, and the rule carries the one fact a heading carried. **The model and the
@@ -253,9 +255,10 @@ will appear here* — never only what is missing. Weak because it is the absence
 content said once; a wait (*waiting to hear…*) is the same shape, because it
 resolves itself and the reader needs to know only that.
 
-**A notice**: one sentence under the top edge in the state's ink — `Error`
-for a refusal or an unreadable answer, `Annotation` for a note — with no
-fill and no box, and a dismiss at its end.
+**A notice**: one sentence in the state's ink — `Error` for a refusal or an
+unreadable answer, `Annotation` for a note — with no fill and no box, in the
+rule's state slot, or whole and wrapped just above the rule where the slot
+cannot hold it beside every fact (§2); Esc dismisses it.
 
 **A covering pane** (records, queue, trail, enrollment and the rest): the
 pane's heading, its subject line one step weaker, its close as a control at

@@ -241,6 +241,20 @@ fn filling() -> World {
     }
 }
 
+/// **A notice longer than the rule** (bl-7e3e): it stands whole above the
+/// rule, and the rule keeps its facts and its name.
+fn noticed() -> World {
+    let mut model = seated();
+    model.notice = Some(crate::ui::Notice::InDoubt {
+        op: "message".to_owned(),
+        why: "the connection closed before the reply".to_owned(),
+    });
+    World {
+        name: "noticed",
+        model,
+    }
+}
+
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
     vec![
@@ -272,6 +286,7 @@ pub(crate) fn all() -> Vec<World> {
         switching(),
         asked_world(),
         docked(),
+        noticed(),
         unmaking(),
         filling(),
     ]

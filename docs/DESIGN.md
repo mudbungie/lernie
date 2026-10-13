@@ -4985,7 +4985,13 @@ parts, in its vertical order, each with what it becomes here.
    <name>`. The state is the wire's own word for the selected conversation
    in its state's ink (`theme::state_of`), `ready` in weak ink at rest, and
    **the notice stands in the state slot** in its own ink while there is one
-   — §4.21's notice bar is this slot, and the dismiss is Esc. The segments
+   — §4.21's notice bar is this slot, and the dismiss is Esc. **A notice
+   is never cut and never costs a fact** (bl-7e3e; bl-3d0f's ruling, that
+   the half a cut sentence loses is the remedy): it holds the slot only
+   while it fits beside every fact and the name, and otherwise stands whole
+   on its own lines directly above the rule, wrapped, in its ink, until Esc
+   — the rule keeping its one line, its slot saying what it says with no
+   notice (`status::calm`). The segments
    are the chat header's facts (§4.38) moved onto the rule: the model that
    answered, what the conversation has spent (§4.41's words, never `$0`), how
    many conversations across every engine are asking (in the attention

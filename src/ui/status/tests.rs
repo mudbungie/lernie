@@ -132,3 +132,6 @@ fn the_plan_stands_on_the_rule_while_it_is_on() {
     let glass = painted(&mut model);
     assert!(glass.lines().any(|line| line == super::PLAN), "{glass}");
 }
+
+/// A notice longer than the rule.
+mod notice;

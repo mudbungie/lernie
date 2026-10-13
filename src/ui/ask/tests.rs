@@ -265,3 +265,28 @@ fn a_seen_row_that_still_asks_is_said_to() {
     let said = crate::ui::model::Notice::seen(&acked, "c-2").line();
     assert!(said.contains("still asking"), "{said}");
 }
+
+/// **While the aimed engine will not dial, nothing is answered** (bl-8d6d):
+/// the choices go faint, the box's key line goes, a click, a digit and
+/// Enter post nothing, and the field's hint is the engine's own sentence.
+#[test]
+fn a_down_engine_s_ask_goes_faint_and_answers_nothing() {
+    let why = "nothing provisioned for this channel";
+    let mut model = asked();
+    model.roster[0].held = crate::ui::Held::Unheld(why.to_owned());
+    assert_eq!(super::hint(&model), why);
+    let window = Window::new();
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    let seen = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    let seen_row = seen
+        .iter()
+        .find(|run| run.text == "2. pass")
+        .expect("the choices stand");
+    assert_eq!(seen_row.ink, theme::INK_FAINT);
+    assert!(!seen.iter().any(|run| run.text == HINT), "no key line");
+    for key in [egui::Key::Num2, egui::Key::Enter] {
+        window.frame(vec![press(key)], |ctx| crate::ui::render(ctx, &mut model));
+    }
+    click(&window, "6. hold", |ctx| crate::ui::render(ctx, &mut model));
+    assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+}

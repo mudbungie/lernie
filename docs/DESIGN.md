@@ -5287,7 +5287,11 @@ parts, in its vertical order, each with what it becomes here.
    is offered, no digits before the queue's row lands). Round 2 found the
    caret held out of the box so a digit could answer, which sent typed
    words nowhere and spent Enter on the question. A click on a row is the
-   same answer. It is §4.19's
+   same answer. **While the aimed engine will not dial nothing is answered**
+   (bl-8d6d): the choices go faint and take no click, digit or Enter, the
+   box's key line goes, and the field's hint is the engine's own sentence
+   (`diagnostics::down`, bl-4cac's reading) — a box saying *Enter sends*
+   over an answer that cannot land was a promise the seat could not keep. It is §4.19's
    queue entry for the one conversation on the glass, painted where the
    answer is typed; the queue itself (`/attention`) is the same rows for
    every conversation, and the count on the rule is its door. **The queue's
@@ -5429,7 +5433,11 @@ parts, in its vertical order, each with what it becomes here.
     segment opens a framed list over it, opening upward from the rule — the
     overlay's frame over a span (`overlay::float_at`), a child region laid
     at the central panel's foot as the completion menu is, never an
-    `egui::Area`, so its first frame paints. It lists the **cached** rows at
+    `egui::Area`, so its first frame paints. **It is as wide as its longest row,
+    capped at the pane** (bl-8d6d), each row measured as the row paints it
+    (`theme::paint::row_width`, at the body size) — measured at the rule's
+    small size it came out short, and a long model id was cut with `…` at a
+    desk width with room to spare. It lists the **cached** rows at
     once and posts the read that refreshes them; the segment's mark is `⏶`
     in faint ink at rest, `↻` in the annotation accent while the read is
     out, and `✔` in the attention accent from the answer until the list
@@ -5771,7 +5779,8 @@ a control's glyph may not lean on a face the box may not have.
 | `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the engine row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
 | `src/ui/chat.rs` | the transcript read by its gutter (§4.42): the glyph per speaker, the trail under one fold on painted stems, the `response` line and the hairline between turns, and how a folded step is painted. | ~200 |
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
-| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows, the digit, the arrows and Enter that answer it. | ~190 |
+| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows, faint while its engine will not dial. | ~240 |
+| `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
 | `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |

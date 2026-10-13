@@ -99,9 +99,17 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let room = ui.max_rect();
     let air = 2.0 * theme::space::S;
     let words = |text: &str| super::width(ui, text) + air;
+    // **As wide as its longest row, capped at the pane** (bl-8d6d): each row
+    // measured as the row paints it, at the body size — measured at the
+    // rule's small size it came out short, and a long model id was cut with
+    // `…` at a desk width with room to spare — plus the bar a list taller
+    // than the box scrolls with.
+    let bar = ui.spacing().scroll.bar_width + ui.spacing().scroll.bar_inner_margin;
     let wide = choices
         .iter()
-        .map(|choice| words(&format!("{CURRENT} {}", choice.text)))
+        .map(|choice| {
+            theme::paint::row_width(ui, &format!("{CURRENT} {}", choice.text)) + air + bar
+        })
         .fold(words(HINT), f32::max)
         .min(room.width() - 2.0 * theme::space::L);
     let anchor = ui.data(|d| d.get_temp::<egui::Rect>(egui::Id::new(ANCHOR)));

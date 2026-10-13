@@ -173,3 +173,23 @@ fn the_waiting_count_is_the_queue_s_door_off_the_rule() {
         "a dead engine counts nothing"
     );
 }
+
+/// **The list is as wide as its longest row** (bl-8d6d): a long model id
+/// stands whole at the desk, never cut with `…` where there is room.
+#[test]
+fn a_long_model_id_stands_whole_at_the_desk() {
+    let long = "house-model-with-a-long-identifier-2026-10-01-preview-extended-context";
+    let mut model = selecting();
+    model
+        .offers
+        .insert("housevendor".to_owned(), vec![long.to_owned()]);
+    model.drop_up(Selector::Model);
+    let window = Window::sized(1400.0, 900.0);
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    let seen = glass(&window, &mut model);
+    let row = seen
+        .iter()
+        .find(|run| run.text.starts_with("house-model-with"))
+        .expect("the long row is on the glass");
+    assert_eq!(row.text, long, "cut: {:?}", row.text);
+}

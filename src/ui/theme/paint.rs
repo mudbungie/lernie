@@ -40,6 +40,20 @@ pub fn row(
     marked(ui, ("", ink), words, ink, state, chosen, indent)
 }
 
+/// **The width a row needs to say `words` uncut** (bl-8d6d): the geometry
+/// [`marked`] lays them in — the rule, the air either side, the words at
+/// the body size — so a list sized by it never elides its longest row.
+pub fn row_width(ui: &egui::Ui, words: &str) -> f32 {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let said = ui.fonts(|fonts| {
+        fonts
+            .layout_no_wrap(words.to_owned(), font, Color32::PLACEHOLDER)
+            .size()
+            .x
+    });
+    RULE + space::M + said + space::S
+}
+
 /// **A row led by a mark in its own ink** — a conversation's state glyph in
 /// the switcher (DESIGN §4.42 item 7). The mark and the words are still ONE
 /// run, `<mark> <words>`, on the glass and in the accessibility tree alike, so

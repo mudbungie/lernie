@@ -48,6 +48,15 @@ pub struct Asking {
     pub rows: Vec<QueueRow>,
 }
 
+/// **One ENGINE's queue as the pane paints it** (bl-52d2): its header — every
+/// name it is held under, `super::Engine::header` — and each asking row once,
+/// beside the channel a gesture at it goes down.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Section {
+    pub header: String,
+    pub rows: Vec<(Channel, QueueRow)>,
+}
+
 impl Model {
     /// **What the operator calls the conversation `seen` answered**
     /// (bl-c887): the display name its queue row carries — read before the
@@ -107,6 +116,63 @@ impl Model {
         {
             Some(held) => *held = answered,
             None => self.waiting.push(answered),
+        }
+    }
+
+    /// **The queue folded by engine** (bl-52d2; bl-13b9's fold, one pane
+    /// over). The fan asks every channel, so two channels dialling one
+    /// address each answer that engine's whole queue; the sections are keyed
+    /// by the engine and a row is kept once by `(workspace, agent)` — the
+    /// host's own spelling, which both answers carry alike — beside the first
+    /// channel that can address its wall. A query over [`Model::waiting`],
+    /// never a second store: the answers stay one per channel because each is
+    /// replaced by its own channel's next one.
+    pub fn sections(&self) -> Vec<Section> {
+        let engines = self.folded();
+        let mut out: Vec<(String, Section)> = Vec::new();
+        for asked in &self.waiting {
+            let key = self.engine_of(&asked.channel.name);
+            let at = out
+                .iter()
+                .position(|(held, _)| *held == key)
+                .unwrap_or_else(|| {
+                    let header = engines
+                        .iter()
+                        .find(|engine| engine.holds(&asked.channel.name))
+                        .map_or_else(
+                            || crate::ui::roster::header(&asked.channel),
+                            super::Engine::header,
+                        );
+                    out.push((
+                        key,
+                        Section {
+                            header,
+                            rows: Vec::new(),
+                        },
+                    ));
+                    out.len() - 1
+                });
+            if let Some((_, section)) = out.get_mut(at) {
+                self.keep(&mut section.rows, asked);
+            }
+        }
+        out.into_iter().map(|(_, section)| section).collect()
+    }
+
+    /// **File one channel's rows into its engine's section**: a row not yet
+    /// held is kept, and one held down a channel that cannot address its wall
+    /// moves to this one.
+    fn keep(&self, rows: &mut Vec<(Channel, QueueRow)>, asked: &Asking) {
+        for row in &asked.rows {
+            let seat = (asked.channel.clone(), row.clone());
+            match rows
+                .iter_mut()
+                .find(|(_, held)| held.workspace == row.workspace && held.agent == row.agent)
+            {
+                None => rows.push(seat),
+                Some(kept) if self.wall(&kept.0, &row.workspace).is_none() => *kept = seat,
+                Some(_) => {}
+            }
         }
     }
 

@@ -1455,7 +1455,11 @@ name beside it (*also held as …*), each wall once, and a gesture at a wall goe
 down the first of the engine's channels that can address it — this box's own
 engine leading, because it addresses every wall by its own name. The roster
 itself stays one chunk a channel, because a reply is stamped with the channel
-it came down. The unaddressable row's own
+it came down. **The decision queue folds on the same terms** (bl-52d2): the
+`attention` fan asks every channel, so both names answer the engine's whole
+queue; `Model::sections` keys the pane's sections by engine and keeps a row
+once by `(workspace, agent)` — the host's spelling, which both answers carry
+alike — beside the first channel that can address its wall. The unaddressable row's own
 sentence was reworded in the same breath: *"this seat holds no name for it"*
 fires on a perfectly correct provisioning and reads as an error about the row
 above it, where the fact is structural — an entry directory names one
@@ -5610,7 +5614,7 @@ dock.
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~190 |
 | `src/ui/tuning/offers.rs` | what a provider row offers, on the tuning pane (§4.17): the error-accent mark on a row whose model its provider's listing lacks, and the offered ids under the editor, each filling the model field. Split from `tuning.rs` on the read's seam — `roles` there, `models` here. | ~55 |
 | `src/ui/model/tuning/offers.rs` | the offerings between frames (§4.17): which provider rows the pane asks, each stamped answer filed under its row, and the one fact a listing in hand supports — absence is not evidence. | ~70 |
-| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered and the two wider reaches each names for itself (§4.34, PROTOCOL 18), and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, a section an engine (bl-52d2), every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered and the two wider reaches each names for itself (§4.34, PROTOCOL 18), and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
 | `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
@@ -5622,7 +5626,7 @@ dock.
 | `src/ui/records/cascade.rs` | the pane's one act on the conversation itself (§4.20, §4.32): the stop that takes the subtree, its arming, and the one site the boundary's `children` field has in this window. | ~95 |
 | `src/ui/records/drill.rs` | one step's records under the row that addresses them (§4.32): the control on the row, and the bytes rather than a tree. | ~155 |
 | `src/ui/records/mail.rs` | the undelivered mail (§4.32): the deposit's header with each unstated fact said as itself, and its body. | ~90 |
-| `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
+| `src/ui/model/queue.rs` | the queue between frames — a flag, the per-channel filing, its fold by engine (`sections`, bl-52d2), and the roster lookup that is the one place a row's address is resolved (§4.19). | ~135 |
 | `src/reply/spend.rs` | what a ball has cost and what the sum is over: the money as upstream rendered it, and the attribution that says the classification and the clause because the clause alone cannot say it (§4.28). | ~80 |
 | `src/reply/board.rs` | the fleet board: every live ball in its column, the column and the binding as two facts, and the armed loops — which ride here because there is no `fleet` read on this wire and are absent rather than empty (§4.31). | ~180 |
 | `src/reply/balls.rs` | the balls themselves — the whole box's binding table and its three absences, one wall's own balls with the figure that is required there and nowhere else, and the branch a wall tracks its tasks on (§4.31). | ~110 |

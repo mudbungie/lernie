@@ -79,12 +79,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     // carries the close alone, at the end where the other panes' is.
     crate::ui::overlay::name(ui, HEADING);
     ui.add_space(theme::space::S);
-    let waiting = model.waiting.clone();
-    if waiting.is_empty() {
+    if model.waiting.is_empty() {
         theme::paint::empty(ui, NOT_ANSWERED);
         return true;
     }
-    if waiting.iter().all(|section| section.rows.is_empty()) {
+    // **One section an ENGINE, each row once** (bl-52d2): two channels that
+    // dial one address each answer its whole queue, and painted a section a
+    // channel the same conversation stood twice (`Model::sections`).
+    let sections = model.sections();
+    if sections.iter().all(|section| section.rows.is_empty()) {
         theme::paint::empty(ui, NOTHING);
         return true;
     }
@@ -95,7 +98,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         .id_salt(HEADING)
         .auto_shrink(false)
         .show(ui, |ui| {
-            for section in &waiting {
+            for section in &sections {
                 // **A section that answered nothing is silent, not a sentence.**
                 // The union is the subject here; an engine holding nothing
                 // waiting is a fact the roster already carries per wall, and a
@@ -105,9 +108,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
                     continue;
                 }
                 ui.add_space(theme::space::S);
-                ui.colored_label(theme::INK_WEAK, crate::ui::roster::header(&section.channel));
-                for row in &section.rows {
-                    waiting_row(ui, model, &section.channel, row);
+                ui.colored_label(theme::INK_WEAK, section.header.clone());
+                for (channel, row) in &section.rows {
+                    waiting_row(ui, model, channel, row);
                 }
             }
         });

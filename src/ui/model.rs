@@ -101,7 +101,7 @@ pub use login::Login;
 pub use notice::Notice;
 pub use posted::Posted;
 pub use pricing::{Pricing, Table as PriceTable};
-pub use queue::Asking;
+pub use queue::{Asking, Section};
 pub use records::Records;
 pub use spine::Forking;
 pub use start::{Phase, Spread, Start};

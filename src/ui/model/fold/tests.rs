@@ -91,3 +91,74 @@ fn an_engine_is_reached_if_any_name_answered() {
     model.roster[0].held = Held::Unheard;
     assert_eq!(model.folded()[0].held(), Held::Unheard);
 }
+
+/// `rows` answered as `channel`'s queue.
+fn answer(model: &mut Model, channel: &str, rows: Vec<crate::reply::queue::QueueRow>) {
+    let channel = model
+        .roster
+        .iter()
+        .find(|chunk| chunk.channel.name == channel)
+        .map_or_else(
+            || Channel {
+                name: channel.to_owned(),
+                named_there: None,
+                dials: None,
+            },
+            |chunk| chunk.channel.clone(),
+        );
+    model.absorb(
+        &channel,
+        crate::reply::Read::Answer(crate::reply::Reply::Attention(rows)),
+    );
+}
+
+/// **The queue folds as the card does** (bl-52d2): both names answer the
+/// engine's whole queue, and the pane holds one section with each row once —
+/// beside the first channel that can address its wall, so a row only the
+/// lead can reach goes down the lead.
+#[test]
+fn the_queue_holds_one_engine_s_rows_once() {
+    use crate::test_support::window::waiting;
+    let mut model = doubled();
+    model.roster[1].walls.push(wall("far"));
+    let rows = vec![waiting("home", "c-1"), waiting("far", "c-2")];
+    answer(&mut model, "annex", rows.clone());
+    answer(&mut model, "(this box's own engine)", rows);
+    let sections = model.sections();
+    assert_eq!(sections.len(), 1);
+    assert!(sections[0].header.ends_with(&format!("{ALSO} annex")));
+    let down: Vec<(&str, &str)> = sections[0]
+        .rows
+        .iter()
+        .map(|(channel, row)| (channel.name.as_str(), row.agent.as_str()))
+        .collect();
+    assert_eq!(
+        down,
+        [("annex", "c-1"), ("(this box's own engine)", "c-2")],
+        "each row once, down a channel that reaches it"
+    );
+    answer(&mut model, "elsewhere", vec![waiting("x", "c-9")]);
+    assert_eq!(
+        model.sections()[1].header,
+        "elsewhere",
+        "an unheld channel stands alone"
+    );
+}
+
+/// **On the glass**: the open queue says each asking conversation once.
+#[test]
+fn the_open_queue_paints_each_asking_row_once() {
+    use crate::test_support::window::waiting;
+    let mut model = doubled();
+    let rows = vec![waiting("home", "c-1")];
+    answer(&mut model, "annex", rows.clone());
+    answer(&mut model, "(this box's own engine)", rows);
+    model.begin_queue();
+    let text = painted(&mut model);
+    assert_eq!(text.matches("c-1").count(), 1, "{text}");
+    assert_eq!(
+        text.matches(ALSO).count(),
+        2,
+        "the card and one section: {text}"
+    );
+}

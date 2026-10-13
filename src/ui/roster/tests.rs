@@ -81,11 +81,15 @@ fn a_row_the_entry_does_not_name_is_shown_and_said_to_be_unreachable() {
     assert_eq!(
         super::track(&model),
         vec![
-            super::Step::Engine("home".to_owned()),
+            super::Step::Stand(crate::ui::Stand::Engine("home".to_owned())),
             super::Step::Wall(Aim {
                 channel: "home".to_owned(),
                 address: "home".to_owned(),
             }),
+            super::Step::Stand(crate::ui::Stand::Begin(Aim {
+                channel: "home".to_owned(),
+                address: "home".to_owned(),
+            })),
         ],
         "and no stop on the keyboard's track: nothing typed can address it"
     );

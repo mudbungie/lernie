@@ -124,6 +124,8 @@ impl Model {
     pub fn select(&mut self, root_id: &str) {
         self.moving_to(Some(root_id));
         self.conversation = Some(root_id.to_owned());
+        // A selection is where the cursor is, as an aim is (bl-f991).
+        self.standing = None;
         self.founding = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;

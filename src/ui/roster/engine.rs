@@ -16,19 +16,19 @@
 //! surface.
 
 use crate::ui::model::Engine;
-use crate::ui::{Aim, Model, theme};
+use crate::ui::{Aim, Model, Stand, theme};
 
-/// **One stop on the window's cursor track**: an engine's own row, a wall
+/// **One stop on the window's cursor track**: a row the walk only stands on
+/// ([`Stand`] — an engine's own row, `+ new`, `+ new workspace`), a wall
 /// under the open one, or a conversation under the aimed wall.
 ///
-/// Three kinds because landing on them means three different things (§4.39):
-/// landing on a wall aims it and landing on a conversation selects it, exactly
-/// as a click does, and landing on an engine row only stands there — the walk
-/// must not open every engine it passes through.
+/// Landing on a wall aims it and landing on a conversation selects it, exactly
+/// as a click does; landing on a [`Stand`] only stands there (§4.39) — the walk
+/// must not open every engine it passes through, nor begin on every wall.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Step {
-    /// An engine's row, by the name this box calls it.
-    Engine(String),
+    /// A row the cursor stands on, and Enter fires.
+    Stand(Stand),
     /// A wall under the open engine, by what a gesture must carry.
     Wall(Aim),
     /// A conversation under the aimed wall, by its root id.
@@ -44,7 +44,7 @@ impl Step {
     /// at most one row answers yes.
     pub fn holding(&self, model: &Model) -> bool {
         match self {
-            Self::Engine(name) => model.standing.as_deref() == Some(name.as_str()),
+            Self::Stand(stand) => model.standing.as_ref() == Some(stand),
             Self::Wall(aim) => {
                 model.standing.is_none()
                     && model.conversation.is_none()
@@ -71,7 +71,7 @@ pub fn track(model: &Model) -> Vec<Step> {
     let mut rows = Vec::new();
     for engine in model.engine_rows() {
         let name = engine.name().to_owned();
-        rows.push(Step::Engine(name.clone()));
+        rows.push(Step::Stand(Stand::Engine(name.clone())));
         if open.as_deref() != Some(name.as_str()) {
             continue;
         }
@@ -80,7 +80,7 @@ pub fn track(model: &Model) -> Vec<Step> {
                 continue;
             };
             let aimed = model.aim.as_ref() == Some(&aim);
-            rows.push(Step::Wall(aim));
+            rows.push(Step::Wall(aim.clone()));
             if aimed {
                 rows.extend(
                     model
@@ -89,6 +89,11 @@ pub fn track(model: &Model) -> Vec<Step> {
                         .map(|row| Step::Conversation(row.root_id)),
                 );
             }
+            // `+ new` stands last under every wall (`super::wall::begin`).
+            rows.push(Step::Stand(Stand::Begin(aim)));
+        }
+        if let Some(channel) = founds(&engine) {
+            rows.push(Step::Stand(Stand::Found(channel.to_owned())));
         }
     }
     rows
@@ -108,7 +113,7 @@ pub fn track(model: &Model) -> Vec<Step> {
 /// already said — a start is *a wall and no conversation*.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, reveal: bool) {
     let name = engine.name().to_owned();
-    let standing = model.standing.as_deref() == Some(name.as_str());
+    let standing = model.standing == Some(Stand::Engine(name.clone()));
     let seat = theme::paint::row(
         ui,
         &engine.header(),
@@ -124,7 +129,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool,
     // lands on an engine's row stands the cursor there, so the next arrow
     // steps off the row the ring is on.
     if seat.gained_focus() {
-        model.standing = Some(name.clone());
+        model.standing = Some(Stand::Engine(name.clone()));
     }
     if seat.clicked() {
         model.open_engine(&name);
@@ -143,18 +148,25 @@ pub const FOUND: &str = "+ new workspace";
 /// typed under an entry's heading would found it on a different engine than
 /// the one it was offered under. It stands down where that channel will not
 /// dial and under a covering pane, `+ new`'s own rules.
-pub fn found(ui: &mut egui::Ui, model: &mut Model, engine: &Engine) {
-    // The box's own engine leads any fold it is in (`crate::ui::model::fold`).
-    let chunk = &engine.lead;
-    if chunk.channel.name != crate::seat::OWN
-        || matches!(chunk.held, crate::ui::Held::Unheld(_))
-        || (model.covered() && !model.switching)
-    {
+pub fn found(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, reveal: bool) {
+    let Some(channel) = founds(engine) else {
+        return;
+    };
+    if model.covered() && !model.switching {
         return;
     }
-    let seat = theme::paint::row(ui, FOUND, theme::INK_WEAK, None, false, 0.0);
-    if seat.clicked() {
-        model.begin_founding(&chunk.channel.name);
+    let stand = Stand::Found(channel.to_owned());
+    if super::wall::standing_row(ui, model, FOUND, stand, 0.0, reveal) {
+        model.begin_founding(channel);
         model.chose();
     }
+}
+
+/// **The channel `+ new workspace` founds on under this engine**, where it
+/// stands at all — one answer for the paint and the walk.
+fn founds(engine: &Engine) -> Option<&str> {
+    // The box's own engine leads any fold it is in (`crate::ui::model::fold`).
+    let chunk = &engine.lead;
+    (chunk.channel.name == crate::seat::OWN && !matches!(chunk.held, crate::ui::Held::Unheld(_)))
+        .then_some(chunk.channel.name.as_str())
 }

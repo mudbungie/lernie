@@ -120,6 +120,17 @@ impl Model {
         }
     }
 
+    /// **Fire the row the walk stands on** — Enter's door, the one its click
+    /// fires (bl-f991): open the engine, begin on the wall, or found.
+    pub fn fire_stand(&mut self, stand: &crate::ui::Stand) {
+        match stand {
+            crate::ui::Stand::Engine(name) => return self.open_engine(name),
+            crate::ui::Stand::Begin(aim) => self.begin_at(aim),
+            crate::ui::Stand::Found(channel) => self.begin_founding(channel),
+        }
+        self.chose();
+    }
+
     /// **Begin a conversation on this wall** — the whole of what `+ new`
     /// under every wall in the switcher does (§4.42 item 7, which is §4.39's
     /// `+` moved under the wall it begins on: `crate::ui::roster::wall::NEW`).
@@ -154,6 +165,7 @@ impl Model {
     /// and crosses no wire.
     pub fn begin_founding(&mut self, channel: &str) {
         self.deselect();
+        self.standing = None;
         self.founding = Some(channel.to_owned());
         self.fill = Some(crate::ui::Fill::Goal);
     }

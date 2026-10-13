@@ -4534,8 +4534,13 @@ the paint uses, which is the rule `roster::aimable` already keeps. Landing
 on a wall aims it and landing on a conversation selects it, exactly as the
 pointer does; landing on an engine row stands there, and Enter or Space
 opens it, since the walk moving through a closed engine must not open every
-engine it passes. Left and right keep their narrow-shape meaning (a column
-sideways) and gain none. yog's QUALITY F1 stands: every act the pointer
+engine it passes. **The two begins are stops of that kind too** (bl-f991):
+`+ new` under each wall and `+ new workspace` at the own engine's foot (§4.42
+item 7) are on the track where the glass paints them, the walk stands on
+them without beginning anything, and Enter or Space fires each as its click
+does — one `Model::standing` (`Stand`: an engine's row or a begin) for every
+row the cursor stands on without selecting, never a second track. Left and
+right keep their narrow-shape meaning (a column sideways) and gain none. yog's QUALITY F1 stands: every act the pointer
 reaches here, a key reaches.
 
 **Two columns, and the policy loses a term rather than gaining a case.**
@@ -5440,8 +5445,9 @@ model's dropup, as `/model` and a click on the rule's model do (item 11); `/stop
 `/interrupt <words>` are typed, not chorded (item 3); Esc closes a dropup,
 then the overlay, then the menu, then the notice; ↑↓ walk whatever is open
 and Enter picks in a dropup; a digit answers the ask; Ctrl+T unfolds the
-dock. Every act is a slash verb or a key, and every key calls the door the
-verb calls.
+dock; in the switcher the arrows walk onto `+ new` and `+ new workspace`
+too, and Enter begins or founds (bl-f991). Every act is a slash verb or a
+key, and every key calls the door the verb calls.
 
 **What is proven, and how it stays proven.** Every assertion keeps reading the
 glyphs that reached the glass (`src/paint_probe.rs`): the rule's segments are
@@ -5604,7 +5610,7 @@ dock.
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
 | `src/ui/roster.rs` | **the window's one list** (§4.39): the engines this seat reaches as an accordion, the open one's workspaces under it and the aimed wall's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
-| `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — an engine's row, which it only stands on; a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
+| `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — a row it only stands on (an engine's, or a begin: `+ new`, `+ new workspace`; bl-f991); a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed wall's conversations (§4.39), and `+ new` last under every wall (§4.42 item 7). | ~150 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
@@ -5699,7 +5705,7 @@ dock.
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the wall's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
 | `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in. A child region, never an `Area`. | ~135 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
-| `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the engine row the cursor stands on, fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
+| `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: one column (§4.42) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |

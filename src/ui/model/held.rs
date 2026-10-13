@@ -209,8 +209,8 @@ pub struct Model {
     /// each. One field rather than three, because the three are one subject
     /// and they are written down together ([`crate::place`]).
     pub engines: Engines,
-    /// **Which engine row the roster's walk is standing on**, or `None` where
-    /// the cursor is on a wall.
+    /// **Which row the roster's walk is standing on without selecting it**
+    /// ([`super::Stand`]), or `None` where the cursor is the aim or selection.
     ///
     /// It is the one place in this window where the cursor is NOT the
     /// selection, and DESIGN §4.39 says why: opening an engine is an act, so a
@@ -218,7 +218,7 @@ pub struct Model {
     /// passed. So the walk stands on the row, the row takes the keyboard, and
     /// Enter or Space fires the same click a pointer fires. It rides here and
     /// not on `Engines`, because it is a cursor and nothing durable.
-    pub standing: Option<String>,
+    pub standing: Option<super::Stand>,
     /// **Whether the switcher stands** (`crate::ui::switcher`; DESIGN §4.42):
     /// the one list of engines, walls and conversations, asked for by Ctrl+X
     /// and put down by a choice or Esc. A navigation the operator performed,

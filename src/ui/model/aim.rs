@@ -60,5 +60,21 @@ impl Model {
     }
 }
 
+/// **A row the switcher's walk stands on without selecting** (DESIGN §4.39,
+/// §4.42 item 7): an engine's row, whose opening is an act, and the two begins
+/// — `+ new` under a wall and `+ new workspace` at the foot (bl-f991) — whose
+/// firing is one too. Enter or Space fires each as its click does; the cursor
+/// on a wall or a conversation is the aim or the selection itself, so it has
+/// no arm here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Stand {
+    /// An engine's row, by the name this box calls it.
+    Engine(String),
+    /// `+ new` under this wall.
+    Begin(Aim),
+    /// `+ new workspace`, under the engine this channel names.
+    Found(String),
+}
+
 #[cfg(test)]
 mod tests;

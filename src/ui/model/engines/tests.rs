@@ -179,7 +179,7 @@ fn an_opening_aims_nothing_where_there_is_nothing_this_seat_can_address() {
 #[test]
 fn aiming_writes_the_wall_down_under_its_engine() {
     let mut model = seated();
-    model.standing = Some(own().channel.name.clone());
+    model.standing = Some(crate::ui::Stand::Engine(own().channel.name.clone()));
     model.aim_at("(this box's own engine)", "home");
     assert_eq!(
         model.engines.aimed.get("(this box's own engine)"),

@@ -82,7 +82,7 @@ mod unmake;
 /// The window's own two panes: the engines' verb table, and what a needle found.
 mod window;
 
-pub use aim::Aim;
+pub use aim::{Aim, Stand};
 pub use board::block::Authoring;
 pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};

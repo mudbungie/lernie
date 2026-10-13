@@ -222,8 +222,8 @@ fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
     if !pressed || ctx.memory(egui::Memory::focused).is_some() {
         return;
     }
-    if let Some(name) = model.standing.clone() {
-        model.open_engine(&name);
+    if let Some(stand) = model.standing.clone() {
+        model.fire_stand(&stand);
     } else if model.switching && model.conversation.is_some() {
         // **Enter on a selected conversation is the choosing** — the walk
         // selected it, and this is the operator saying *that one*.
@@ -254,7 +254,7 @@ fn walk(model: &mut Model, step: isize) {
         return;
     };
     match row {
-        roster::Step::Engine(name) => model.standing = Some(name),
+        roster::Step::Stand(stand) => model.standing = Some(stand),
         roster::Step::Wall(aim) => model.aim_at(&aim.channel, &aim.address),
         // `Model::rows`, not `convs`: the list the glass paints carries a
         // started conversation's own row before the engine can answer one, and

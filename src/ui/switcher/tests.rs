@@ -94,14 +94,17 @@ fn walking_keeps_it_open_and_choosing_closes_it() {
     let mut model = seated();
     model.switching = true;
     let window = Window::new();
-    window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
-        crate::ui::render(ctx, &mut model);
-    });
+    // Down onto the wall's `+ new` and Up back onto its one conversation.
+    for key in [egui::Key::ArrowDown, egui::Key::ArrowUp] {
+        window.frame(vec![press(key)], |ctx| crate::ui::render(ctx, &mut model));
+    }
     assert!(model.switching, "the walk keeps it");
+    assert!(model.standing.is_none() && model.conversation.is_some());
     window.frame(vec![press(egui::Key::Enter)], |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     assert!(!model.switching, "Enter on the selection chooses");
+    assert!(model.conversation.is_some(), "and keeps it");
 
     let mut model = seated();
     model.switching = true;
@@ -137,7 +140,9 @@ fn the_plus_closes_it_on_the_way_to_the_box() {
 fn the_walk_brings_the_standing_engine_into_view() {
     let mut model = seated();
     model.switching = true;
-    model.standing = Some("(this box's own engine)".to_owned());
+    model.standing = Some(crate::ui::Stand::Engine(
+        "(this box's own engine)".to_owned(),
+    ));
     model.reveal = true;
     let text = painted(&mut model);
     assert!(text.contains("(this box's own engine)"), "{text}");

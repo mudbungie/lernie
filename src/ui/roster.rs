@@ -156,7 +156,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
     for row in ordered(&walls) {
         wall::render(ui, model, engine.aim(&row), &row, reveal);
     }
-    engine::found(ui, model, engine);
+    engine::found(ui, model, engine, reveal);
 }
 
 /// The section header: what this box calls the channel, what its host calls the

@@ -148,7 +148,9 @@ fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
 #[test]
 fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     let mut model = two_walls();
-    model.standing = Some("a name no engine here has".to_owned());
+    model.standing = Some(crate::ui::Stand::Engine(
+        "a name no engine here has".to_owned(),
+    ));
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);

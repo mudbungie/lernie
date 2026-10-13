@@ -81,7 +81,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
     // the wall is aimed and straight under its row where it is not — read
     // after the wall's own click, so the begin is where a frame that fired
     // both ends (`begin`).
-    let offer = |ui: &mut egui::Ui, model: &mut Model| begin(ui, model, &aim);
+    let offer = |ui: &mut egui::Ui, model: &mut Model| begin(ui, model, &aim, reveal);
     // **The read this gesture reaches**, not the one that painted the row
     // (yog's `docs/PARITY.md` §2: the interactable a query owes a seat is the
     // affordance that reaches the view it populates). Aiming at a wall is what
@@ -125,15 +125,39 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
 /// **It stands down while a pane covers the conversation** — the per-wall
 /// controls' own rule: what it does is put the caret in the composer's box,
 /// and the composer stands down under every covering pane but the switcher.
-fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim) {
+fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim, reveal: bool) {
     if model.covered() && !model.switching {
         return;
     }
-    let seat = theme::paint::row(ui, NEW, theme::INK_WEAK, None, false, convs::STEP);
-    if seat.clicked() {
+    let stand = crate::ui::Stand::Begin(aim.clone());
+    if standing_row(ui, model, NEW, stand, convs::STEP, reveal) {
         model.begin_at(aim);
         model.chose();
     }
+}
+
+/// **A begin's row, which the walk can stand on** (bl-f991): the brand rule
+/// while the cursor stands there, a Tab that lands on it stands it there too,
+/// and the answer is whether it was clicked — the door Enter fires as well
+/// (`crate::ui::keys`).
+pub(super) fn standing_row(
+    ui: &mut egui::Ui,
+    model: &mut Model,
+    text: &str,
+    stand: crate::ui::Stand,
+    indent: f32,
+    reveal: bool,
+) -> bool {
+    let standing = model.standing.as_ref() == Some(&stand);
+    let rule = standing.then_some(theme::BRAND);
+    let seat = theme::paint::row(ui, text, theme::INK_WEAK, rule, false, indent);
+    if standing && reveal {
+        seat.scroll_to_me(None);
+    }
+    if seat.gained_focus() {
+        model.standing = Some(stand);
+    }
+    seat.clicked()
 }
 
 /// One wall's line: what it is called, then the state it is in, then the

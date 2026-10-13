@@ -42,6 +42,10 @@ pub const ENGINES: &str = "engines";
 /// The model slot on a wall whose transcript names none: the door to
 /// choosing one, said where the model would be.
 pub const NO_MODEL: &str = "no model";
+/// **The mode the next start is armed in**, first among the facts while
+/// `/plan` holds it (§4.42 item 3; bl-6f3f): the box's hint says it only
+/// until the first character is typed over it.
+pub const PLAN: &str = "plan";
 
 /// One run of the rule: its words, its ink, and the menu row it opens where
 /// it is a door.
@@ -124,6 +128,9 @@ pub fn waiting(model: &Model) -> u64 {
 /// **The facts between the state and the name**, in order, each a run.
 pub fn facts(model: &Model) -> Vec<Run> {
     let mut out = Vec::new();
+    if model.plan {
+        out.push(run(PLAN, theme::BRAND));
+    }
     let opens = door(model, crate::ui::tuning::MODEL);
     match answered_by(model) {
         Some(model_id) => out.push(Run {

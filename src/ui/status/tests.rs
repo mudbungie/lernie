@@ -117,3 +117,18 @@ fn the_spend_belongs_to_the_selection() {
 
 /// The rule's two doors.
 mod doors;
+
+/// **`/plan` stands on the rule while it is on** (bl-6f3f), first among the
+/// facts and in the brand — the operator's own arming — and not otherwise.
+#[test]
+fn the_plan_stands_on_the_rule_while_it_is_on() {
+    let mut model = seated();
+    model.conversation = None;
+    assert!(!facts(&model).iter().any(|run| run.text == super::PLAN));
+    model.plan = true;
+    let first = facts(&model).into_iter().next().expect("a fact");
+    assert_eq!(first.text, super::PLAN);
+    assert_eq!(first.ink, theme::BRAND);
+    let glass = painted(&mut model);
+    assert!(glass.lines().any(|line| line == super::PLAN), "{glass}");
+}

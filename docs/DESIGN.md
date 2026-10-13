@@ -4961,7 +4961,9 @@ parts, in its vertical order, each with what it becomes here.
    many engines this seat reaches. The right end is the selected
    conversation's name, the aimed wall's where none is selected, and the
    word `engines` where nothing is aimed. Segments drop from the right as the
-   width runs out, the name last. The rule replaces the conversation heading,
+   width runs out, the name last. While `/plan` is on, `plan` in the brand
+   stands first among the facts (bl-6f3f): the box's hint that also says so is
+   gone at the first character typed. The rule replaces the conversation heading,
    the subject block and the notice bar; nothing above the transcript names
    the pane, because there is one pane. **It stands down under an overlay**
    with the prompt (bl-eb29): every pane is built to fit the narrowest shape

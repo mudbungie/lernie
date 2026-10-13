@@ -1,7 +1,8 @@
 +++
 title = "with no wall aimed there is no prompt field: /attention, /help and every aim-free verb are unreachable, the seat panel offers '/help for commands' and 'begin one in the box below' that cannot be typed, and the green 'N waiting' is not a door"
 created = 1791867537
-updated = 1791867537
+updated = 1791867671
+claimant = "LaneAsks"
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

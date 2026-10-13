@@ -87,7 +87,17 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
             })
         })
     };
-    if chord(egui::Key::X) {
+    // **Ctrl+X reaches this frame as `Event::Cut`, not as a key** (bl-8c49):
+    // egui-winit turns the clipboard chords into their clipboard events and
+    // drops the key, so a read of `Event::Key { X }` matches nothing on a real
+    // window. The event is taken out of the frame's input as it is read, so
+    // the box the caret is in never cuts on it: one key, one act, and the
+    // chord is the switcher's (§4.42), not the box's.
+    if ctx.input_mut(|i| {
+        let before = i.events.len();
+        i.events.retain(|event| !matches!(event, egui::Event::Cut));
+        i.events.len() != before
+    }) {
         model.switch();
     }
     // **Ctrl+T unfolds the dock** (§4.42, item 9), the other chord.

@@ -6,18 +6,11 @@ use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{click, escape, painted, seated};
 use crate::ui::Model;
 
-/// The one chord, pressed on the whole window.
+/// **The one chord, as the platform delivers it**: egui-winit turns Ctrl+X
+/// into `Event::Cut` and sends no key at all (bl-8c49), so a beat that
+/// pressed `Key::X` with the command modifier proved a chord no window sees.
 fn ctrl_x(window: &Window, model: &mut Model) {
-    window.frame(
-        vec![egui::Event::Key {
-            key: egui::Key::X,
-            physical_key: None,
-            pressed: true,
-            repeat: false,
-            modifiers: egui::Modifiers::COMMAND,
-        }],
-        |ctx| crate::ui::render(ctx, model),
-    );
+    window.frame(vec![egui::Event::Cut], |ctx| crate::ui::render(ctx, model));
 }
 
 /// **Ctrl+X toggles it, from the box too**, and `/conversations` opens it.
@@ -32,6 +25,32 @@ fn ctrl_x_toggles_it_and_the_word_opens_it() {
     assert!(!model.switching);
     assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.switching);
+}
+
+/// **The chord is the switcher's, not the box's**: with the caret in a draft
+/// whose words are all selected, Ctrl+X opens the switcher and cuts nothing.
+#[test]
+fn ctrl_x_in_the_box_cuts_nothing() {
+    let mut model = seated();
+    "keep every word".clone_into(&mut model.draft);
+    let window = Window::new();
+    let id = egui::Id::new(crate::ui::keys::BOX_ID);
+    window.focus(id);
+    window.frame(Vec::new(), |ctx| {
+        crate::ui::render(ctx, &mut model);
+        let mut state = egui::text_edit::TextEditState::load(ctx, id).unwrap_or_default();
+        state
+            .cursor
+            .set_char_range(Some(egui::text::CCursorRange::two(
+                egui::text::CCursor::new(0),
+                egui::text::CCursor::new(model.draft.len()),
+            )));
+        state.store(ctx, id);
+    });
+    ctrl_x(&window, &mut model);
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    assert!(model.switching);
+    assert_eq!(model.draft, "keep every word");
 }
 
 /// **The roster stands in it, under its name, and the prompt stands down.**

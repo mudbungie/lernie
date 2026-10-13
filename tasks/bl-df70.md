@@ -1,7 +1,8 @@
 +++
 title = "/delete fires on any word, an empty one included, and deletes the selected conversation; and /flag, /interrupt and /delete with their words missing fire nothing and say nothing about why"
 created = 1791867688
-updated = 1791867953
+updated = 1791867954
+claimant = "LaneVerbs"
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

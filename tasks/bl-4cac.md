@@ -1,7 +1,8 @@
 +++
 title = "an engine that goes down is invisible on the glass: the rule keeps '1 engine' and the stale green 'N waiting', and the seat panel has no dial-state word at all — only a typed act's 'not sent' notice says anything"
 created = 1791867708
-updated = 1791868200
+updated = 1791868395
+claimant = "LaneAsks"
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

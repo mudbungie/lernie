@@ -100,10 +100,22 @@ impl Model {
 
     /// **Open `selector`'s dropup**, or close it where it is the one open —
     /// the toggle a click on its segment is.
+    ///
+    /// **Opening one puts down whatever stands** (bl-27dd), as the switcher's
+    /// chord does (`Model::switch`, bl-339d): `/model` and Ctrl+O reach it
+    /// from under a pane, and a dropup opened under a cover was closed by the
+    /// cover the same frame — the chord did nothing. The enrollment is the
+    /// exception it is everywhere.
     pub fn drop_up(&mut self, selector: Selector) {
         if self.dropup.as_ref().is_some_and(|d| d.selector == selector) {
             self.dropup = None;
             return;
+        }
+        if self.enroll.is_some() {
+            return;
+        }
+        while self.covered() {
+            self.escape();
         }
         let provider = self.worker().map(|row| row.provider.clone());
         self.open_on(selector, provider);

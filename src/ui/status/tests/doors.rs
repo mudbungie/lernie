@@ -127,7 +127,8 @@ fn a_click_on_each_door_opens_what_it_names() {
 }
 
 /// **Ctrl+O and `/model` open the model's dropup** where a wall is aimed, and
-/// nothing where none is, as the word is not offered there.
+/// nothing where none is, as the word is not offered there — and over a
+/// pane it replaces the pane, as Ctrl+X does.
 #[test]
 fn ctrl_o_opens_the_model_s_dropup_where_a_wall_is_aimed() {
     let ctrl_o = |model: &mut Model| {
@@ -151,6 +152,21 @@ fn ctrl_o_opens_the_model_s_dropup_where_a_wall_is_aimed() {
         Some(Selector::Model)
     );
     assert!(model.tuning.is_none(), "the pane is `/roles`'s now");
+    // **Over a pane the chord puts it down and opens** (bl-27dd), and the
+    // list is still standing on the glass the frame after.
+    model.dropup = None;
+    model.begin_trail();
+    ctrl_o(&mut model);
+    assert!(!model.covered(), "the trail is put down");
+    let text = crate::test_support::window::painted(&mut model);
+    assert!(text.contains(crate::ui::status::dropup::HINT), "{text}");
+    model.dropup = None;
+    model.begin_enrollment();
+    ctrl_o(&mut model);
+    assert!(
+        model.dropup.is_none() && model.enroll.is_some(),
+        "never over the enrollment"
+    );
     let mut nowhere = Model::default();
     ctrl_o(&mut nowhere);
     assert!(nowhere.dropup.is_none());

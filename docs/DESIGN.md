@@ -5370,7 +5370,9 @@ parts, in its vertical order, each with what it becomes here.
     it; an overlay or the completion menu puts it down. Each row wears the
     op its pick spends, each segment the read it posts. The role tuning
     stays as the per-role editor (`/roles`); **`/model` and Ctrl+O open the
-    model's dropup**. A Tab off the prompt lands on the selectors in order,
+    model's dropup** — from under a pane too: opening a dropup puts down
+    whatever stands, the enrollment excepted, as Ctrl+X does (bl-27dd;
+    a dropup opened under a cover was put down by it the same frame). A Tab off the prompt lands on the selectors in order,
     and the one that holds the keyboard wears the brand ring
     (`theme::paint::link`, bl-8e3e — STYLE §1's one stroke); Enter or
     Space opens it, as a click does.

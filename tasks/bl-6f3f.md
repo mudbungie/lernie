@@ -1,7 +1,8 @@
 +++
 title = "/plan on is not shown on the rule: only the box's hint changes, so the mode is invisible once a goal is typed over the hint"
 created = 1791868202
-updated = 1791868202
+updated = 1791868207
+claimant = "LaneDaily"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

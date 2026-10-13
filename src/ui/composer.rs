@@ -32,13 +32,52 @@ pub mod start;
 
 /// What the composer says with no wall aimed at — the one case that is neither
 /// a deposit nor a start, because there is nowhere for either to go.
-pub const NOWHERE: &str = "pick a workspace to say anything or begin anything";
-/// **What the field says while it is empty** — the two keys, because a field
-/// three lines tall is one an operator expects Enter to break a line in, and
-/// a composer whose one binding has to be guessed is one they leave the
+pub const NOWHERE: &str = "pick a workspace with Ctrl+X to say anything or begin anything";
+/// **What the field says while it is empty** — the key that sends, then the
+/// ways in ([`hint`]), then the key that breaks a line, because a field three
+/// lines tall is one an operator expects Enter to break a line in, and a
+/// composer whose one binding has to be guessed is one they leave the
 /// keyboard for (bl-f251).
-pub const HINT: &str =
-    "say it — Enter sends, Shift+Enter breaks a line, / for a verb, Ctrl+X for a conversation";
+pub const HINT: &str = "say it — Enter sends";
+/// The last of the hint's parts, and the first a narrow line drops.
+pub const BREAKS: &str = "Shift+Enter breaks a line";
+
+/// **The hint at the width the field has**: `lead`, then each of `parts` while
+/// the line still holds one line (bl-4e55) — dropped from the right as the
+/// rule drops its segments, because a hint that wrapped would be a field two
+/// lines tall before anything was typed, and one cut mid-word says a way in
+/// halfway.
+pub fn hint(ui: &egui::Ui, lead: &str, parts: &[&str]) -> String {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let wide = |text: &str| {
+        ui.fonts(|fonts| {
+            fonts
+                .layout_no_wrap(text.to_owned(), font.clone(), theme::INK)
+                .size()
+                .x
+        })
+    };
+    let room = ui.available_width()
+        - 2.0 * (theme::space::S + ui.spacing().item_spacing.x)
+        - wide(theme::glyph::PROMPT);
+    let mut said = lead.to_owned();
+    for part in parts {
+        let more = format!("{said}{}{part}", crate::ui::chat::panel::PART);
+        if wide(&more) > room {
+            break;
+        }
+        said = more;
+    }
+    said
+}
+
+/// The deposit's parts after [`HINT`]: the ways in, then [`BREAKS`].
+fn parts() -> Vec<&'static str> {
+    let mut out = crate::ui::chat::panel::WAYS.to_vec();
+    out.push(BREAKS);
+    out
+}
+
 /// **And what it says while the conversation is asking** (`docs/STYLE.md`
 /// §2): the field is where the answer goes, so it is where the asking is said.
 pub const ASKING: &str = "it is waiting on you — Enter sends";
@@ -85,7 +124,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
-        if asking { ASKING } else { HINT },
+        &if asking {
+            ASKING.to_owned()
+        } else {
+            hint(ui, HINT, &parts())
+        },
         asking.then(|| theme::tint(theme::State::Attention)),
     );
     // **The field is the control** (§4.42): there is no `send`, Enter fires

@@ -1,6 +1,6 @@
 //! The status rule: its state slot, its facts, its name, and what fits.
 
-use super::{ENGINES, LEAD, READY, SEP, facts, fitting, name, state, waiting};
+use super::{ENGINES, LEAD, NO_MODEL, READY, SEP, facts, fitting, name, state, waiting};
 use crate::reply::convs::AgentState;
 use crate::test_support::window::{painted, seated, wall};
 use crate::ui::{Model, Notice, theme};
@@ -32,7 +32,7 @@ fn the_state_slot_follows_the_selection_and_the_notice() {
 #[test]
 fn the_facts_count_the_engines_and_colour_the_waiting() {
     let quiet: Vec<String> = facts(&seated()).into_iter().map(|run| run.text).collect();
-    assert_eq!(quiet, vec!["1 engine".to_owned()]);
+    assert_eq!(quiet, vec![NO_MODEL.to_owned(), "1 engine".to_owned()]);
     assert_eq!(waiting(&seated()), 0);
     let mut asked = seated();
     asked.roster[0].walls.push(crate::reply::roster::WsRow {
@@ -55,11 +55,11 @@ fn the_facts_count_the_engines_and_colour_the_waiting() {
 /// **The right end**: the conversation, else the wall, else the window.
 #[test]
 fn the_name_is_the_conversation_the_wall_or_the_window() {
-    assert_eq!(name(&seated()), "port the paint probe");
+    assert_eq!(name(&seated()).text, "port the paint probe");
     let mut starting = seated();
     starting.conversation = None;
-    assert_eq!(name(&starting), "home");
-    assert_eq!(name(&Model::default()), ENGINES);
+    assert_eq!(name(&starting).text, "home");
+    assert_eq!(name(&Model::default()).text, ENGINES);
 }
 
 /// **Facts drop from the right as the width runs out, the name last**: none
@@ -73,8 +73,8 @@ fn facts_drop_from_the_right_as_the_width_runs_out() {
         egui::CentralPanel::default().show(ctx, |ui| {
             let (s, f, n) = (state(&model), facts(&model), name(&model));
             shown = (
-                fitting(ui, &s, &f, &n, 10.0),
-                fitting(ui, &s, &f, &n, 10_000.0),
+                fitting(ui, &s, &f, &n.text, 10.0),
+                fitting(ui, &s, &f, &n.text, 10_000.0),
             );
         });
     });
@@ -114,3 +114,6 @@ fn the_spend_belongs_to_the_selection() {
     });
     assert!(!texts(&other).contains(&spend), "{:?}", texts(&other));
 }
+
+/// The rule's two doors.
+mod doors;

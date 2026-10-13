@@ -154,3 +154,17 @@ pub(crate) fn locate_in(
 ) -> Option<egui::Pos2> {
     super::locate(&window.frame(Vec::new(), body), label)
 }
+
+/// [`locate_in`] for a run whose **head** is `lead` — a line fitted to its
+/// width (`crate::ui::composer::hint`), whose tail is the width's and whose
+/// head is the one thing a test can name.
+pub(crate) fn led_in(
+    window: &Window,
+    lead: &str,
+    body: impl FnMut(&egui::Context),
+) -> Option<egui::Pos2> {
+    super::seen_of(&window.frame(Vec::new(), body))
+        .into_iter()
+        .find(|seen| seen.text.starts_with(lead))
+        .map(|seen| seen.shown.center())
+}

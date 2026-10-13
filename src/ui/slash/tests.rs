@@ -173,6 +173,7 @@ fn every_opener_opens_what_its_word_names() {
             m.showing(crate::ui::Listing::Records)
         }),
         (crate::ui::tuning::WORD, |m: &Model| m.tuning.is_some()),
+        (crate::ui::tuning::MODEL, |m: &Model| m.tuning.is_some()),
         (crate::ui::login::WORD, |m: &Model| m.login.is_some()),
         (crate::ui::clients::WORD, |m: &Model| {
             m.showing(crate::ui::Listing::Clients)

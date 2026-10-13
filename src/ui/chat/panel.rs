@@ -6,8 +6,10 @@
 //! and the wall and engine it is on; the model that answered and what it has
 //! spent (§4.41's words); where it hangs where it hangs under anything
 //! (§4.29). The seat's card names each engine this seat reaches with its dial
-//! state and what it holds, the seat's own version, and the two ways in —
-//! because a window with nothing selected has exactly two things to do next.
+//! state and what it holds, the seat's own version, and the ways in — the
+//! verbs, the conversation, the model and the provider, because those are
+//! what a window with nothing selected is for and none of them is on the
+//! glass until it is named (bl-4e55).
 
 use crate::ui::{Model, theme};
 
@@ -15,8 +17,22 @@ use crate::ui::{Model, theme};
 pub fn version() -> String {
     crate::cli::version()
 }
-/// The two ways in, said once under the seat's card.
-pub const WAYS_IN: &str = "/help for commands · Ctrl+X for a conversation";
+/// **The ways in**, in the order they are dropped last to first where a
+/// line has no room for all of them (`crate::ui::composer::hint`): the verbs,
+/// what you talk in, what you talk to, and who pays for it.
+pub const WAYS: [&str; 4] = [
+    "/help for commands",
+    "Ctrl+X for a conversation",
+    "/roles for the model",
+    "/login for a provider",
+];
+/// What parts one way from the next.
+pub const PART: &str = " · ";
+
+/// The ways in as one line, said once under the seat's card, where it wraps.
+pub fn ways_in() -> String {
+    WAYS.join(PART)
+}
 
 /// The card every panel is laid in.
 fn card(ui: &mut egui::Ui, body: impl FnOnce(&mut egui::Ui)) {
@@ -82,7 +98,7 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
     });
 }
 
-/// **The seat's card**: each engine, the version, and the two ways in.
+/// **The seat's card**: each engine, the version, and the ways in.
 pub fn seat(ui: &mut egui::Ui, model: &Model) {
     card(ui, |ui| {
         line(ui, &version(), theme::INK);
@@ -112,7 +128,7 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) {
             };
             line(ui, &said, ink);
         }
-        line(ui, WAYS_IN, theme::INK_WEAK);
+        line(ui, &ways_in(), theme::INK_WEAK);
     });
 }
 

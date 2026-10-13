@@ -140,6 +140,25 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
     ui.label(egui::RichText::new(word).color(INK_WEAK));
 }
 
+/// **A run that is a door** (`docs/STYLE.md` §5, *the status rule*): `words`
+/// at `SMALL` in `ink`, laid exactly as wide as a label would lay them, so a
+/// line that measured its runs as labels still holds. Bare ground at rest,
+/// `SURFACE` under the pointer and the pointing hand over it — the row's own
+/// idiom at the size of a word, and never a box: a control on the rule is a
+/// fact you can open, not a button standing among the facts.
+pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
+    let font = egui::TextStyle::Small.resolve(ui.style());
+    let galley = ui.fonts(|fonts| fonts.layout_no_wrap(words.to_owned(), font, ink));
+    let (rect, seat) = ui.allocate_exact_size(galley.size(), Sense::click());
+    seat.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Link, ui.is_enabled(), words));
+    if seat.hovered() {
+        ui.painter()
+            .rect_filled(rect.expand(space::XS), RADIUS, SURFACE);
+    }
+    ui.painter().galley(rect.min, galley, ink);
+    seat.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
 pub use field::{field, prompt};
 
 /// **A paragraph of prose**: `words` wrapped at the width it has, in `ink`,

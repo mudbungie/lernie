@@ -19,7 +19,9 @@ pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
         w if w == crate::verbs::PIN.word => model.post_pin(true),
         w if w == crate::verbs::UNPIN.word => model.post_pin(false),
         w if w == crate::ui::enroll::WORD => model.begin_enrollment(),
-        w if w == crate::ui::tuning::WORD => model.begin_tuning(),
+        w if w == crate::ui::tuning::WORD || w == crate::ui::tuning::MODEL => {
+            model.begin_tuning();
+        }
         w if w == crate::ui::login::WORD => model.begin_login(),
         w if w == crate::ui::clients::WORD => model.begin_clients(),
         w if w == crate::ui::config::WORD => model.begin_configuring(),

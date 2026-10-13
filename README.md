@@ -112,6 +112,10 @@ agent's tools are free to ignore; the rung is not.
 terminal UI (`docs/DESIGN.md` §4.42). The transcript fills it; under the
 transcript a one-line status rule says where you are and what it costs; under
 the rule the prompt line, where Enter sends and Shift+Enter breaks a line.
+The rule's model is a link to the role tuning, where the model each role runs
+on is chosen (`/model`, Ctrl+O), and its name at the right end is a link to
+the switcher; the prompt's hint and the seat's card name the ways in —
+`/help`, Ctrl+X, `/roles`, `/login` for a provider's sign-in.
 Nothing else is on the glass until it is asked for: `/` opens a completion
 menu of every verb this seat offers right now — `/records`, `/trail`,
 `/attention`, `/stop`, `/flag <reason>` and the rest — and the word is the

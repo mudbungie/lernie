@@ -42,7 +42,7 @@ fn what_the_composer_is_for_follows_from_what_is_selected() {
         let mut model = model;
         let painted = pane(|ui| render(ui, &mut model));
         assert!(
-            painted.lines().any(|line| line == expected),
+            painted.lines().any(|line| line.starts_with(expected)),
             "{expected:?}:\n{painted}"
         );
     }
@@ -216,7 +216,7 @@ fn the_field_glows_while_the_conversation_is_asking_and_the_glyph_wears_the_bran
         assert!(
             crate::paint_probe::seen_of(&output)
                 .iter()
-                .any(|run| run.text == hint),
+                .any(|run| run.text.starts_with(hint)),
             "the hint reads {hint:?}"
         );
         let lead = crate::paint_probe::seen_of(&output)
@@ -225,4 +225,30 @@ fn the_field_glows_while_the_conversation_is_asking_and_the_glyph_wears_the_bran
             .expect("the glyph is on the glass");
         assert_eq!(lead.ink, crate::ui::theme::BRAND);
     }
+}
+
+/// **The hint names the ways in while it fits on one line, and drops them
+/// from the right where it does not** (bl-4e55): every one at the desk, the
+/// lead alone in no room at all, and never a part cut in half.
+#[test]
+fn the_hint_names_the_ways_in_and_drops_them_from_the_right() {
+    let mut wide = String::new();
+    let mut narrow = String::new();
+    let window = crate::paint_probe::frame::Window::new();
+    window.frame(Vec::new(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            wide = super::hint(ui, HINT, &super::parts());
+            ui.allocate_ui(egui::vec2(40.0, 20.0), |ui| {
+                narrow = super::hint(ui, HINT, &super::parts());
+            });
+        });
+    });
+    for way in [
+        "Ctrl+X for a conversation",
+        "/roles for the model",
+        "/login for a provider",
+    ] {
+        assert!(wide.contains(way), "{way:?}: {wide}");
+    }
+    assert_eq!(narrow, HINT);
 }

@@ -64,12 +64,18 @@ word is the wire's own, in its state's ink; the notice stands in that slot in
 its ink while there is one, and Esc puts it down. The right end is the
 conversation's name, the wall's where none is selected, `engines` where
 nothing is aimed. There is no heading over the transcript: one pane needs no
-name, and the rule carries the one fact a heading carried.
+name, and the rule carries the one fact a heading carried. **The model and the
+name are doors** (DESIGN §4.42, item 10): the model opens the role tuning —
+`no model` stands there on a wall nothing has answered on — and the name opens
+the switcher. What you talk to is changed where it is read.
 
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
 a line per line typed, the hint in weak ink while it is empty: *say it — Enter
-sends, Shift+Enter breaks a line*; *begin a conversation on `<wall>` — Enter
-starts* in start mode; *it is waiting on you* while it asks. There is no send control and no row of controls under
+sends · /help for commands · Ctrl+X for a conversation · /roles for the model ·
+/login for a provider · Shift+Enter breaks a line*, its trailing parts dropped
+one by one where the line has no room — one line, never wrapped, never a part
+cut in half; *what this conversation is for — Enter begins it* and the same
+ways in, in start mode; *it is waiting on you* while it asks. There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.
 
 **Navigation is typed.** `/` opens the completion menu — verb and summary,
@@ -77,7 +83,8 @@ narrowed as you type, Tab takes the row — and the word is the pane's noun or
 the verb's word, exactly as the control it replaced read: `/records`,
 `/trail`, `/board`, `/fleet`, `/clients`, `/roles`, `/config`, `/prices`,
 `/login`, `/enroll`, `/doctor`, `/find`, `/attention`, `/help`, `/unmake`,
-`/refresh`, `/pin`, `/stop`, `/nudge`, `/flag`, `/delete`. Ctrl+X opens
+`/refresh`, `/pin`, `/stop`, `/nudge`, `/flag`, `/delete`, and `/model`
+(Ctrl+O) for the role tuning by the word you reach for. Ctrl+X opens
 the switcher, the one list of engines, walls and conversations, with `+ new`
 under every wall. A control that opens a pane does not exist; the word does.
 
@@ -86,7 +93,8 @@ transcript, the conversation panel: a framed card with its name, engine and
 wall, model, spend and where it hangs, one line each, the long ones behind
 `▸` folds. With nothing selected the seat panel stands there: the engines this
 seat reaches, one row each with its dial state and counts, the version, and
-the two ways in. Under the transcript, the rule; under the rule, the prompt.
+the ways in: *the verbs, a conversation, the model, a provider*. Under the
+transcript, the rule; under the rule, the prompt.
 
 **A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
 a tree of stems the trail — `▾ tool calls (3)`, `├─ ● Bash("…") ✓`, `└─ ✗` in
@@ -163,7 +171,10 @@ its first line in the row's tone and every line after it in `INK_WEAK`.
 `INK_FAINT`, led by `─`; the state word in its state's ink, every other
 segment in `INK_WEAK`, the waiting count in the attention accent while it is
 non-zero, the name at the right end in `INK`. Segments drop from the right
-as the width runs out, the name last.
+as the width runs out, the name last. **The model and the name are links**
+(`theme::paint::link`): the same run at the same width, bare at rest,
+`SURFACE` under the pointer with the pointing hand — never a box, never a
+button, because a fact you can open is still a fact.
 
 **The prompt line** (`composer`): `›` in the brand at the left edge plus `M`,
 the draft in `INK` beside it at `BODY`, continuation lines indented to the

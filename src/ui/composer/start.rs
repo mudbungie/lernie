@@ -76,7 +76,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
-        if model.plan { PLANNED } else { GOAL },
+        &super::hint(
+            ui,
+            if model.plan { PLANNED } else { GOAL },
+            &crate::ui::chat::panel::WAYS,
+        ),
         None,
     );
     crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);

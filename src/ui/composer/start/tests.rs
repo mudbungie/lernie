@@ -35,7 +35,7 @@ fn a_wall_with_nothing_selected_offers_a_start() {
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
     for expected in [GOAL, glyph::PROMPT] {
         assert!(
-            painted.lines().any(|line| line == expected),
+            painted.lines().any(|line| line.starts_with(expected)),
             "{expected:?}:\n{painted}"
         );
     }
@@ -77,7 +77,7 @@ fn enter_begins_what_was_typed() {
     };
     // Aimed at the hint inside the box, not at the button: what Enter needs is
     // the box holding focus.
-    let at = locate_in(&window, GOAL, &mut body).expect("the box");
+    let at = crate::paint_probe::frame::led_in(&window, GOAL, &mut body).expect("the box");
     crate::paint_probe::frame::click(&window, at, &mut body);
     window.frame(
         vec![egui::Event::Text("do the thing".to_owned())],

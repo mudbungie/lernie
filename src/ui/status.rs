@@ -16,10 +16,18 @@
 //! conversation's name, the aimed wall's where none is selected, and the word
 //! `engines` where nothing is aimed.
 //!
+//! **Two of the runs are doors** (bl-4e55): the name opens the switcher and
+//! the model opens the role tuning — each by firing the completion menu's own
+//! row ([`door`]), so a click here is `/conversations` or `/model` typed, wears
+//! that row's `act:` tags, and is a control exactly where the row is offered.
+//! A wall whose transcript names no model says `no model` in weak ink in that
+//! slot, so the way to choose one is on the glass before anything answered.
+//!
 //! **Segments drop from the right as the width runs out, the name last**:
 //! a rule that wrapped would be two lines, and a rule that elided the name
 //! would say everything but where you are.
 
+use crate::ui::slash::Row;
 use crate::ui::{Model, theme};
 
 /// The glyph the rule opens with, and the one that parts the facts from the
@@ -31,19 +39,34 @@ pub const SEP: &str = theme::glyph::SEP;
 pub const READY: &str = "ready";
 /// The right end where nothing is aimed.
 pub const ENGINES: &str = "engines";
+/// The model slot on a wall whose transcript names none: the door to
+/// choosing one, said where the model would be.
+pub const NO_MODEL: &str = "no model";
 
-/// One run of the rule: its words and its ink.
+/// One run of the rule: its words, its ink, and the menu row it opens where
+/// it is a door.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Run {
     pub text: String,
     pub ink: egui::Color32,
+    pub door: Option<Row>,
 }
 
 fn run(text: impl Into<String>, ink: egui::Color32) -> Run {
     Run {
         text: text.into(),
         ink,
+        door: None,
     }
+}
+
+/// **The menu row `word` names, where this seat offers it right now** — the
+/// one answer to whether a run is a door, so a run opens nothing the menu
+/// would not.
+pub fn door(model: &Model, word: &str) -> Option<Row> {
+    crate::ui::slash::rows(model)
+        .into_iter()
+        .find(|row| row.word == word)
 }
 
 /// **The state slot**: the notice, else the selected conversation's state
@@ -101,8 +124,17 @@ pub fn waiting(model: &Model) -> u64 {
 /// **The facts between the state and the name**, in order, each a run.
 pub fn facts(model: &Model) -> Vec<Run> {
     let mut out = Vec::new();
-    if let Some(model_id) = answered_by(model) {
-        out.push(run(model_id, theme::INK_WEAK));
+    let opens = door(model, crate::ui::tuning::MODEL);
+    match answered_by(model) {
+        Some(model_id) => out.push(Run {
+            door: opens,
+            ..run(model_id, theme::INK_WEAK)
+        }),
+        None if opens.is_some() => out.push(Run {
+            door: opens,
+            ..run(NO_MODEL, theme::INK_WEAK)
+        }),
+        None => {}
     }
     if let Some(agent) = model.agent() {
         out.push(run(
@@ -129,15 +161,18 @@ pub fn facts(model: &Model) -> Vec<Run> {
     out
 }
 
-/// **The right end**: the conversation, the wall, or the window.
-pub fn name(model: &Model) -> String {
-    if let Some(row) = selected(model) {
-        return row.display;
+/// **The right end**: the conversation, the wall, or the window — and the
+/// door to the switcher, wherever it stands.
+pub fn name(model: &Model) -> Run {
+    let text = match (selected(model), &model.aim) {
+        (Some(row), _) => row.display,
+        (None, Some(aim)) => aim.address.clone(),
+        (None, None) => ENGINES.to_owned(),
+    };
+    Run {
+        door: door(model, crate::ui::switcher::WORD),
+        ..run(text, theme::INK)
     }
-    model
-        .aim
-        .as_ref()
-        .map_or_else(|| ENGINES.to_owned(), |aim| aim.address.clone())
 }
 
 /// The width one run takes at the rule's size.
@@ -170,25 +205,43 @@ pub fn fitting(ui: &egui::Ui, state: &Run, facts: &[Run], name: &str, room: f32)
     shown
 }
 
-/// Paint the rule.
-pub fn render(ui: &mut egui::Ui, model: &Model) {
+/// **Paint one run**: a label, or a door that tints under the pointer, wears
+/// its row's tags and fires its row's word. Answers the word it fired.
+fn paint(ui: &mut egui::Ui, run: &Run) -> Option<&'static str> {
+    let Some(row) = run.door else {
+        ui.label(egui::RichText::new(&run.text).small().color(run.ink));
+        return None;
+    };
+    let seat = theme::paint::link(ui, &run.text, run.ink);
+    crate::ui::act::tag(&seat, row.ops);
+    seat.clicked().then_some(row.word)
+}
+
+/// Paint the rule, and open what a click on one of its doors opens.
+pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let state = state(model);
     let facts = facts(model);
     let name = name(model);
-    let shown = fitting(ui, &state, &facts, &name, ui.available_width());
-    let small = |text: &str, ink| egui::RichText::new(text).small().color(ink);
+    let shown = fitting(ui, &state, &facts, &name.text, ui.available_width());
+    let faint = |ui: &mut egui::Ui, text: &str| {
+        ui.label(egui::RichText::new(text).small().color(theme::INK_FAINT));
+    };
+    let mut fired = None;
     ui.horizontal(|ui| {
-        ui.label(small(LEAD, theme::INK_FAINT));
-        ui.label(small(&state.text, state.ink));
+        faint(ui, LEAD);
+        paint(ui, &state);
         for fact in facts.iter().take(shown) {
-            ui.label(small(SEP, theme::INK_FAINT));
-            ui.label(small(&fact.text, fact.ink));
+            faint(ui, SEP);
+            fired = paint(ui, fact).or(fired);
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(small(&name, theme::INK));
-            ui.label(small(LEAD, theme::INK_FAINT));
+            fired = paint(ui, &name).or(fired);
+            faint(ui, LEAD);
         });
     });
+    if let Some(word) = fired {
+        crate::ui::slash::fire(model, word, "");
+    }
 }
 
 #[cfg(test)]

@@ -22,7 +22,7 @@ fn enter_sends_what_was_typed_and_shift_enter_breaks_a_line() {
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     };
-    let at = crate::paint_probe::frame::locate_in(&window, HINT, &mut body).expect("the hint");
+    let at = crate::paint_probe::frame::led_in(&window, HINT, &mut body).expect("the hint");
     crate::paint_probe::frame::click(&window, at, &mut body);
     window.frame(vec![egui::Event::Text("ship".to_owned())], &mut body);
     window.frame(

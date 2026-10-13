@@ -44,6 +44,10 @@ use crate::ui::{Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "roles";
+/// **The word that opens it to change the model** (bl-4e55; the baseline's
+/// Ctrl+O): the same pane by the noun an operator reaches for, and the door
+/// the rule's model segment and the chord both fire.
+pub const MODEL: &str = "model";
 /// The pane's own heading.
 pub const HEADING: &str = "role tuning";
 /// What it says for a wall nobody has been answered about yet.

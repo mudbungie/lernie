@@ -4965,6 +4965,7 @@ parts, in its vertical order, each with what it becomes here.
    with the prompt (bl-eb29): every pane is built to fit the narrowest shape
    the layout promises (§4.32), the rule's line is what the tallest of them
    needs there, and the overlay's own name line says where you are meanwhile.
+   **The model and the name are doors** (item 10).
 
 3. **The composer is a prompt line** (`src/ui/composer.rs`): the glyph `›`
    in the brand (the baseline's `❯` has no glyph in the body font, and a
@@ -5002,8 +5003,8 @@ parts, in its vertical order, each with what it becomes here.
    (§4.29's spine) — as one line each and the long ones behind `▸` folds; a
    window with nothing selected paints the **seat panel** there instead: the
    engines this seat reaches, one row each with its dial state, walls and
-   counts, the version, and the two ways in — `/help for commands`, `Ctrl+X
-   for a conversation`.
+   counts, the version, and the ways in — `/help for commands · Ctrl+X for a
+   conversation · /roles for the model · /login for a provider` (item 10).
 
 5. **The way in is a slash verb, and the slash verbs ARE §4.10's words**
    (`src/ui/slash.rs`). `/` at the head of the draft opens the **completion
@@ -5018,7 +5019,8 @@ parts, in its vertical order, each with what it becomes here.
    a verb's word fires the verb, so a hand that reached for `records…` types
    `/records` and nothing is renamed. The nouns: `/records`, `/attention`,
    `/help`, `/doctor`, `/trail`, `/board`, `/prices`, `/find`, `/enroll`,
-   `/roles`, `/login`, `/clients`, `/config`, `/fleet`, `/unmake`. The verbs:
+   `/roles` (and `/model`, the same pane by the word an operator reaches for
+   — item 10), `/login`, `/clients`, `/config`, `/fleet`, `/unmake`. The verbs:
    `/refresh`, `/pin` or `/unpin` by the wall's rank, `/interrupt`, `/stop`,
    `/nudge`, `/revoke`, `/restore`, `/retarget`, `/flag`, `/delete`, and
    `/plan` in the start's mode. Only what the engine offers on the selected
@@ -5096,6 +5098,32 @@ parts, in its vertical order, each with what it becomes here.
    as a fold's is. The fleet's runs (§4.33) join it when their read
    stands outside the fleet pane; until then they are the pane's.
 
+10. **What you talk to is changed from the glass, not only typed**
+    (bl-4e55). On the first run of this window the operator could not find
+    how to change the workspace, the provider or the model: the ways existed
+    — Ctrl+X, `/login`, `/roles` — and nothing on the glass named them. So
+    two runs of the rule are **doors**: the name at the right end opens the
+    switcher, and the model segment opens the role tuning — where a wall's
+    model per role is read and set — and a wall whose transcript has named
+    no model says `no model` in weak ink in that slot, so the door stands
+    before anything has answered. Each door **is a completion-menu row
+    painted elsewhere** (`status::door`): it is a door exactly while the
+    menu offers its row, it wears that row's `act:` tags, and a click fires
+    that row's word — `/conversations`, `/model` — so the rule opens nothing
+    the menu would not. A door is a run, not a button (`theme::paint::link`):
+    bare at rest, `SURFACE` under the pointer, the pointing hand over it —
+    the rule stays one line of facts. `/model` is **an alias row**, not a
+    focus: it opens the same pane `/roles` does, because the pane opens on a
+    standing read and a focus on a row that has not answered yet would be a
+    focus on nothing; the word exists so *change the model* is one word.
+    **Ctrl+O fires it** — the baseline's model picker — and is admitted by
+    the keyboard's rule because a click on the rule's model does the same
+    and nothing else. The provider is not a door on the rule: the rule
+    carries no provider fact, and a sign-in is the wall's (`/login`), so it
+    is named where the ways in are named instead — the seat's card and the
+    prompt's hint, which drops its trailing ways one by one where the line
+    has no room for them, as the rule drops its segments.
+
 **Colour stays the six-state ruling** (`docs/STYLE.md` §1, operator
 2026-09-06): the baseline's gold is its brand, and this seat keeps its own —
 the brand on the prompt glyph and the operator's gutter, the attention accent
@@ -5108,7 +5136,8 @@ A stroke on a thing that floats says what is over what; a stroke on a control
 was the grid of chips the rule was written against.
 
 **Keyboard, whole**: Enter sends; Shift+Enter breaks a line; `/` opens the
-menu and Tab takes a row; Ctrl+X opens the switcher; `/stop` and
+menu and Tab takes a row; Ctrl+X opens the switcher; Ctrl+O opens the
+role tuning, as `/model` and a click on the rule's model do (item 10); `/stop` and
 `/interrupt <words>` are typed, not chorded (item 3); Esc closes the overlay,
 then the menu, then the notice; ↑↓ walk whatever is open; a digit answers the ask; Ctrl+T unfolds the
 dock. Every act is a slash verb or a key, and every key calls the door the
@@ -5368,7 +5397,7 @@ dock.
 | `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the engine row the cursor stands on, fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: one column (§4.42) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
-| `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end. | ~190 |
+| `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |

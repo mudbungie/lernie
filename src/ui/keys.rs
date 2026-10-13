@@ -100,6 +100,12 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     }) {
         model.switch();
     }
+    // **Ctrl+O is `/model`** (bl-4e55; the baseline's model picker): it
+    // fires the menu's own row, so it opens the role tuning exactly where the
+    // word and the rule's model segment would, and nowhere a click could not.
+    if chord(egui::Key::O) {
+        crate::ui::slash::fire(model, crate::ui::tuning::MODEL, "");
+    }
     // **Ctrl+T unfolds the dock** (§4.42, item 9), the other chord.
     if chord(egui::Key::T) {
         crate::ui::dock::toggle(ctx);

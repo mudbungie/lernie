@@ -1,7 +1,7 @@
 //! The two panels: the conversation's facts over its transcript, and the
 //! seat's where nothing is selected.
 
-use super::{WAYS_IN, version};
+use super::{WAYS, version, ways_in};
 use crate::test_support::window::{painted, recorded, seated};
 use crate::ui::Model;
 
@@ -23,7 +23,8 @@ fn the_conversation_s_card_carries_its_facts() {
 }
 
 /// **The seat's card** stands where nothing is selected: the version, each
-/// engine with what it holds, and the two ways in.
+/// engine with what it holds, and the ways in — the conversation, the
+/// model and the provider among them (bl-4e55).
 #[test]
 fn the_seat_s_card_stands_where_nothing_is_selected() {
     let mut model = Model {
@@ -35,13 +36,16 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
     for word in [
         version().as_str(),
         "(this box's own engine) — 1 wall, 2 conversations, 2 waiting",
-        WAYS_IN,
+        "Ctrl+X for a conversation",
+        "/roles for the model",
+        "/login for a provider",
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
     let mut quiet = seated();
     let text = painted(&mut quiet);
-    assert!(!text.contains(WAYS_IN), "{text}");
+    assert!(!text.contains(&version()), "{text}");
+    assert!(WAYS.iter().all(|way| ways_in().contains(way)));
     let mut one = Model {
         conversation: None,
         ..seated()

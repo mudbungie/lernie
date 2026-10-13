@@ -1,7 +1,8 @@
 +++
 title = "a provider refusal paints '«wound» (wounded, which this seat cannot read)' in the transcript, and its remedy line says 'log in to carry it on' without naming /login or the provider"
 created = 1791867842
-updated = 1791867842
+updated = 1791867846
+claimant = "LaneAsks"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

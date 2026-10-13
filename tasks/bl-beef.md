@@ -1,7 +1,8 @@
 +++
 title = "the transcript paints a model's markdown raw: code fences, '##' headings and backticks are prose, a code block is not monospaced or set apart, and a long code line wraps as prose"
 created = 1791868202
-updated = 1791868202
+updated = 1791868206
+claimant = "LaneDaily"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

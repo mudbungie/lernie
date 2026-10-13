@@ -1,7 +1,8 @@
 +++
 title = "a selected conversation the engine no longer knows stays selected forever: its read is refused every beat, so 'the engine refused: unknown conversation' re-posts faster than Esc can put it down"
 created = 1791868176
-updated = 1791868176
+updated = 1791870057
+claimant = "FixA"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

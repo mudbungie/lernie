@@ -1,7 +1,8 @@
 +++
 title = "window (§4.42): one column: the switcher overlay replaces the roster column, the status rule replaces the headings and the notice bar, the composer becomes the prompt line; policy, drags and Column deleted"
 created = 1791862813
-updated = 1791862813
+updated = 1791863566
+claimant = "Surveying"
 parent = "bl-7859"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

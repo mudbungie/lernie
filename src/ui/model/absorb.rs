@@ -65,8 +65,10 @@ impl Model {
             // **A deposit's receipt is the transcript** (bl-9760): the words
             // the operator sent land in the pane they are looking at, so the
             // run's `ok` would only cover the conversation's own state in the
-            // slot after every send. Every other act's receipt is the bar's.
-            Read::Answer(Reply::Outcome(ref run)) if run.ok() && deposits(op) => {
+            // slot after every send. A role write's is the rule's own segment
+            // (bl-a7f5): the roles read repaints it on the next beat. Every
+            // other act's receipt is the bar's.
+            Read::Answer(Reply::Outcome(ref run)) if run.ok() && witnessed(op) => {
                 self.notice = None;
             }
             Read::Refusal(said) if self.starting(op) => self.refuse_start(said),
@@ -269,10 +271,18 @@ impl Model {
     }
 }
 
-/// Whether `op` puts the operator's own words on the transcript — the two acts
-/// whose receipt is already on the glass.
-fn deposits(op: &str) -> bool {
-    op == crate::verbs::MESSAGE.word || op == crate::verbs::INTERRUPT.word
+/// Whether `op`'s receipt is already on the glass: the two deposits put the
+/// operator's own words on the transcript, and the three role writes the
+/// rule's selectors spend repaint the segment they were picked on.
+fn witnessed(op: &str) -> bool {
+    [
+        crate::verbs::MESSAGE.word,
+        crate::verbs::INTERRUPT.word,
+        crate::verbs::MODEL.word,
+        crate::verbs::EFFORT,
+        crate::verbs::PRIORITY,
+    ]
+    .contains(&op)
 }
 
 #[cfg(test)]

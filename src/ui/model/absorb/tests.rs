@@ -71,15 +71,23 @@ fn a_successful_run_paints_its_own_sentence_in_the_annotation_ink() {
 }
 
 /// **A deposit's receipt leaves the slot to the conversation**: the words sent
-/// are on the transcript, so a send must not stand `ok` over its state.
+/// are on the transcript, so a send must not stand `ok` over its state — and
+/// nor must a role write the rule's selectors spend (bl-a7f5), whose receipt
+/// is the segment repainting.
 #[test]
-fn a_deposit_s_receipt_says_nothing_in_the_slot() {
+fn a_witnessed_act_s_receipt_says_nothing_in_the_slot() {
     let mut model = Model {
         notice: Some(Notice::Refused("stale".to_owned())),
         ..Model::default()
     };
     let flat = own().channel;
-    for op in [crate::verbs::MESSAGE.word, crate::verbs::INTERRUPT.word] {
+    for op in [
+        crate::verbs::MESSAGE.word,
+        crate::verbs::INTERRUPT.word,
+        crate::verbs::MODEL.word,
+        crate::verbs::EFFORT,
+        crate::verbs::PRIORITY,
+    ] {
         model.receipt(&flat, op, ran(0, "deposited", ""));
         assert_eq!(model.notice, None, "{op}");
     }
@@ -87,5 +95,45 @@ fn a_deposit_s_receipt_says_nothing_in_the_slot() {
     assert_eq!(
         model.notice,
         Some(Notice::Said("ok · nothing to retarget".to_owned()))
+    );
+}
+
+/// **A receipt goes with the conversation it was about** (bl-a7f5): moving the
+/// selection — to another conversation, or off every one to begin — retires
+/// it, so the slot says the new selection's state; re-selecting the same one
+/// keeps it, and a refusal is never retired by a move.
+#[test]
+fn a_receipt_is_retired_when_the_selection_moves_and_a_refusal_is_not() {
+    let said = || Some(Notice::Said("seen PortIt — off the queue".to_owned()));
+    let mut model = seated();
+    model.notice = said();
+    model.select("20260830T051200Z-a1b2");
+    assert_eq!(model.notice, said(), "the same selection keeps its receipt");
+    model.select("20260830T051300Z-c3d4");
+    assert_eq!(model.notice, None);
+    model.notice = said();
+    let aim = model.aim.clone().expect("seated is aimed");
+    model.begin_at(&aim);
+    assert_eq!(model.notice, None, "+ new leaves the conversation");
+    model.notice = Some(Notice::Refused("no".to_owned()));
+    model.select("20260830T051200Z-a1b2");
+    assert_eq!(model.notice, Some(Notice::Refused("no".to_owned())));
+}
+
+/// **On the glass**: after `+ new` the state slot reads the start's own
+/// `ready`, not the sentence about the conversation just left.
+#[test]
+fn after_a_move_the_slot_paints_the_new_selection_s_state() {
+    let mut model = seated();
+    model.notice = Some(Notice::Said("seen PortIt — off the queue".to_owned()));
+    let aim = model.aim.clone().expect("seated is aimed");
+    model.begin_at(&aim);
+    let window = crate::paint_probe::frame::Window::new();
+    let shown = seen(&window, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(!shown.iter().any(|run| run.text.contains("off the queue")));
+    assert!(
+        shown
+            .iter()
+            .any(|run| run.text == crate::ui::status::diagnostics::READY)
     );
 }

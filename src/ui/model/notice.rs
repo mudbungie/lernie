@@ -15,6 +15,20 @@
 //! being here is what makes it dismissible: an act is an event and not a
 //! state, so it does not re-post on a beat.
 
+impl super::Model {
+    /// **A receipt goes with the conversation it was spent on** (bl-a7f5). An
+    /// act's sentence — `seen`, a nudge, a retarget — is about the selection it
+    /// was fired at, and it stands in the state slot, which is the selected
+    /// conversation's: left standing after the selection moves, it hides the new
+    /// conversation's state under a sentence about another one. A failure is not
+    /// retired here — a refusal is the operator's to read, wherever they went.
+    pub(super) fn moving_to(&mut self, conversation: Option<&str>) {
+        if self.conversation.as_deref() != conversation {
+            self.notice.take_if(|said| matches!(said, Notice::Said(_)));
+        }
+    }
+}
+
 /// What the seat last heard that it could not turn into content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Notice {

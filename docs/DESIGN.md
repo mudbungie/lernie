@@ -3964,6 +3964,18 @@ Esc or the next notice. The one exception is a deposit (`message`,
 `ok` standing over the conversation's state after every send would hide the one
 fact the slot is for.
 
+**Amended again by bl-a7f5: a receipt is about the selection it was spent
+on.** Two holes the round-2 drive found. The rule's selectors (§4.42 item 11)
+spend `model`, `effort` and `priority`, whose success is a captured run with
+nothing to say, so every pick stood a bare `ok` over the state word until Esc
+— those three join the deposits, because their receipt is the segment the
+roles read repaints on the next beat. And a receipt outlived the conversation
+it was about: `seen` on one, then `+ new` and a whole turn of another, read
+`seen <the first> — off the queue` where `live · 3s` belonged. So moving the
+selection (`Model::select` to another conversation, `Model::aim_at` off every
+one) retires a standing `Notice::Said` — and only that arm: a refusal is the
+operator's to read wherever they went.
+
 ### 4.35 The ball pane's five acts: the stamp that is not an identity, and the one act with no undoing (bl-f7ae)
 
 `src/verbs/balls.rs`, `src/verbs/balls/edit.rs`, `src/ui/board/acts.rs`,

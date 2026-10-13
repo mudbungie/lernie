@@ -72,6 +72,7 @@ impl Model {
         // **The selection goes whichever wall this is**, because the cursor is
         // on the wall now: `Model::select` is the only thing that puts it back
         // on a conversation, and it is the same clearing that one does.
+        self.moving_to(None);
         self.conversation = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
@@ -121,6 +122,7 @@ impl Model {
 
     /// **Select a conversation**, by the id every gesture addresses it with.
     pub fn select(&mut self, root_id: &str) {
+        self.moving_to(Some(root_id));
         self.conversation = Some(root_id.to_owned());
         self.founding = None;
         self.transcript = crate::reply::transcript::Transcript::default();

@@ -180,7 +180,9 @@ fn the_box_goes_down_on_the_frame_the_receipt_lands() {
     let mut model = asked();
     let text = painted(&mut model);
     assert!(text.contains(HEADING), "{text}");
-    let selected = row(&model).expect("a row").1.agent;
+    let (selected, display) = row(&model)
+        .map(|(_, row)| (row.agent, row.display))
+        .expect("a row");
     let remains = json!({
         "workspace": "home", "agent": "c-2", "display": "c-2", "state": "quiescent",
         "uncertain": true, "preview": "", "age_secs": 7, "pending": 0, "says": "",
@@ -194,7 +196,7 @@ fn the_box_goes_down_on_the_frame_the_receipt_lands() {
     assert!(row(&model).is_none());
     let text = painted(&mut model);
     assert!(!text.contains(HEADING), "{text}");
-    assert!(text.contains(&format!("seen home/{selected}")), "{text}");
+    assert!(text.contains(&format!("seen {display} — off")), "{text}");
     assert!(!text.contains("could not read"), "{text}");
 }
 
@@ -207,6 +209,6 @@ fn a_seen_row_that_still_asks_is_said_to() {
         agent: "c-2".to_owned(),
         rows: vec![crate::test_support::window::waiting("home", "c-2")],
     };
-    let said = crate::ui::model::Notice::seen(&acked).line();
+    let said = crate::ui::model::Notice::seen(&acked, "c-2").line();
     assert!(said.contains("still asking"), "{said}");
 }

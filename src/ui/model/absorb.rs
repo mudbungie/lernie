@@ -114,7 +114,8 @@ impl Model {
             // is — which is what takes the ask box down on the frame the
             // receipt lands — and the bar says what was answered.
             Reply::Acknowledged(acked) => {
-                self.notice = Some(Notice::seen(&acked));
+                let named = self.seen_name(channel, &acked);
+                self.notice = Some(Notice::seen(&acked, &named));
                 self.asking(channel, acked.rows);
             }
             // The records pair, on the same terms as the roles above.

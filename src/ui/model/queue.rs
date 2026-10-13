@@ -49,6 +49,36 @@ pub struct Asking {
 }
 
 impl Model {
+    /// **What the operator calls the conversation `seen` answered**
+    /// (bl-c887): the display name its queue row carries — read before the
+    /// receipt refiles the queue — or the aimed wall's row for it, and the
+    /// internal id only where neither is at hand. The receipt names it by id,
+    /// which no other surface paints.
+    pub(super) fn seen_name(
+        &self,
+        channel: &Channel,
+        acked: &crate::reply::queue::Acknowledged,
+    ) -> String {
+        let aimed = self
+            .aim
+            .as_ref()
+            .is_some_and(|aim| aim.address == acked.workspace);
+        self.waiting
+            .iter()
+            .filter(|held| held.channel.name == channel.name)
+            .flat_map(|held| held.rows.iter())
+            .chain(&acked.rows)
+            .find(|row| row.workspace == acked.workspace && row.agent == acked.agent)
+            .map(|row| row.display.clone())
+            .or_else(|| {
+                self.rows()
+                    .into_iter()
+                    .find(|row| aimed && row.root_id == acked.agent)
+                    .map(|row| row.display)
+            })
+            .unwrap_or_else(|| format!("{}/{}", acked.workspace, acked.agent))
+    }
+
     /// **Open the queue pane.** It takes no subject, so nothing gates it: the
     /// question *what is waiting on me* is answerable from an unaimed,
     /// unselected seat, and that is the seat most likely to be asking it.

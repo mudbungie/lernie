@@ -209,3 +209,32 @@ fn the_raise_says_it_landed_and_files_nothing() {
     );
     assert!(model.waiting.is_empty());
 }
+
+/// **`seen`'s receipt names the conversation as every other surface does**
+/// (bl-c887): its queue row's display first, the aimed wall's row where the
+/// queue holds none, and the internal id only where nothing names it.
+#[test]
+fn seen_names_the_conversation_by_its_name() {
+    let acked = |agent: &str| crate::reply::queue::Acknowledged {
+        workspace: "home".to_owned(),
+        agent: agent.to_owned(),
+        rows: Vec::new(),
+    };
+    let mut model = seated();
+    let mut row = waiting("home", "q-1");
+    row.display = "IbexAzure".to_owned();
+    model.asking(&own(), vec![row]);
+    assert_eq!(model.seen_name(&own(), &acked("q-1")), "IbexAzure");
+    assert_eq!(
+        model.seen_name(&own(), &acked("20260830T051200Z-a1b2")),
+        "port the paint probe",
+        "the aimed wall's row"
+    );
+    assert_eq!(model.seen_name(&own(), &acked("x-9")), "home/x-9");
+    let receipt = crate::reply::read(&serde_json::json!({
+        "ok": true, "kind": "acknowledged", "workspace": "home", "agent": "q-1", "rows": [],
+    }));
+    model.receipt(&own(), "seen", receipt);
+    let said = model.notice.map(|notice| notice.line()).unwrap_or_default();
+    assert!(said.starts_with("seen IbexAzure — off the queue"), "{said}");
+}

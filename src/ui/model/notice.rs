@@ -99,9 +99,9 @@ impl Notice {
     /// **What `seen` answered, and whether it took the row off the queue**
     /// (bl-6802) — read off the queue the receipt says remains, never
     /// predicted: new evidence or undelivered mail keeps a seen conversation
-    /// asking, and the sentence must not claim otherwise.
-    pub fn seen(acked: &crate::reply::queue::Acknowledged) -> Self {
-        let named = format!("{}/{}", acked.workspace, acked.agent);
+    /// asking, and the sentence must not claim otherwise. `named` is what
+    /// every other surface calls it (`Model::seen_name`, bl-c887).
+    pub fn seen(acked: &crate::reply::queue::Acknowledged, named: &str) -> Self {
         let stays = acked
             .rows
             .iter()

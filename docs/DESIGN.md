@@ -5237,7 +5237,9 @@ parts, in its vertical order, each with what it becomes here.
    the frame the answer lands** (bl-6802): `seen` answers `acknowledged`,
    the item acted on plus the whole queue that remains on that engine, and
    it is filed as that channel's queue answer (`Model::asking`) with a
-   one-line receipt on the bar saying what was seen and whether it is still
+   one-line receipt on the bar saying what was seen — by the name the panel,
+   the rule and the switcher paint, read off its queue row or its wall's row
+   rather than the id the receipt carries (bl-c887) — and whether it is still
    asking — read off the remaining rows, never predicted.
 
 9. **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule

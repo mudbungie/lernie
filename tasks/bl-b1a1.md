@@ -1,7 +1,8 @@
 +++
 title = "the box never holds the caret on its own: not at launch, not after Ctrl+X picks a conversation, not after Esc clears the menu or closes an overlay — every keyboard path dead-ends until the operator clicks the box"
 created = 1791867943
-updated = 1791867943
+updated = 1791868158
+claimant = "LaneVerbs"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

@@ -124,10 +124,10 @@ fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
     assert_eq!(model.roles, Some(Vec::new()), "the answer is filed");
 }
 
-/// **The queue's read stands on its pane and fans with the roster** (bl-f0ef).
-/// It is the one standing question that is nobody's focus — `attention` names
-/// no workspace — so it rides beside each channel's roster read rather than
-/// under the aim, and a seat with the pane shut asks none of them.
+/// **The queue's read stands on its pane and goes down every channel**
+/// (bl-f0ef) — on its own lane (bl-5439): the asker's pass never asks it, so a
+/// slow `attention` holds up nothing else, and a seat with the pane shut asks
+/// none of it.
 #[test]
 fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel() {
     let scratch = Scratch::new();
@@ -151,11 +151,13 @@ fn the_queue_read_stands_only_while_its_pane_is_open_and_goes_down_every_channel
     };
     let link = asking(&model);
     tick(&link, scratch.path());
+    crate::offframe::queue::tick(&link, scratch.path());
     // No aim and no selection: the pane opens on a seat that has picked
     // nothing, which is the seat most likely to be asking the question.
     model.begin_queue();
     link.settle(&mut model);
     tick(&link, scratch.path());
+    crate::offframe::queue::tick(&link, scratch.path());
     let ops: Vec<String> = engine
         .heard()
         .iter()

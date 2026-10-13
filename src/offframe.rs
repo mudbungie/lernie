@@ -1,12 +1,13 @@
-//! **The off-frame threads** — the asker, the poster and the two held lanes.
+//! **The off-frame threads** — the asker, the poster, the queue lane and the
+//! two held lanes.
 //!
 //! A frame that never blocks means no read and no act happens on one. These are
-//! where they happen: four loops on four sockets, each talking to the window
+//! where they happen: five loops on five sockets, each talking to the window
 //! only through [`Link`](crate::state::Link) — frames that landed one way,
 //! gestures to send the other, and the standing question set published by the
 //! frame that last settled.
 //!
-//! # Four, because they wait for different things
+//! # Five, because they wait for different things
 //!
 //! The **asker** goes round the standing set at human cadence: every channel's
 //! roster, the aimed wall's conversations, the selected conversation's
@@ -15,6 +16,8 @@
 //! is mid-pass. The **follow lane** holds one connection open on the focused
 //! conversation and is answered as the tail moves, which is a read that
 //! deliberately never finishes and must therefore never be in the serial pass.
+//! The **queue lane** asks `attention`, which an engine can take half a
+//! minute to answer, so nothing else waits behind it (bl-5439).
 //!
 //! # Every pass is a function a test calls directly
 //!
@@ -45,6 +48,8 @@ pub mod asker;
 pub mod follow;
 /// One pass of the outbox.
 pub mod poster;
+/// One pass of the queue lane.
+pub mod queue;
 /// One pass of the sign-in lane.
 pub mod signin;
 
@@ -91,7 +96,13 @@ pub(crate) fn file(link: &Link, channel: &Channel, stream: Vec<Value>) {
 /// the link can wait for the passes in flight to finish; a caller that does not
 /// want to wait can drop them.
 pub fn run(link: &Link, root: &Path) -> Vec<JoinHandle<()>> {
-    let passes: [fn(&Link, &Path); 4] = [asker::tick, poster::tick, follow::tick, signin::tick];
+    let passes: [fn(&Link, &Path); 5] = [
+        asker::tick,
+        poster::tick,
+        follow::tick,
+        signin::tick,
+        queue::tick,
+    ];
     passes
         .into_iter()
         .map(|pass| {

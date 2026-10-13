@@ -5157,6 +5157,9 @@ parts, in its vertical order, each with what it becomes here.
    answer is typed; the queue itself (`/attention`) is the same rows for
    every conversation, and the count on the rule is its door. **The queue's
    read stands while the selected conversation asks** (`Standing::asking`),
+   **on a lane of its own** (`offframe::queue`, bl-5439: an engine can take
+   half a minute to answer `attention`, and the serial pass that asked it
+   starved every other pane and the transcript for as long),
    so the box is answered on the frame the row lands — the roster's own
    word says it asks before the queue has said what. **And it goes down on
    the frame the answer lands** (bl-6802): `seen` answers `acknowledged`,

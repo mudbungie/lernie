@@ -115,20 +115,10 @@ fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: 
         down(link, root, channel, &crate::verbs::workspaces()),
         channel,
     );
-    // **The queue fans with the roster** (bl-f0ef), and for the same
-    // reason: `attention` names no workspace, so its subject is every
-    // channel this box holds and the union is composed here. It stands on
-    // the PANE rather than on a focus, because nothing on the glass is its
-    // subject — see `crate::state::Standing::queue`.
-    // **Or while the selected conversation asks** (§4.42, item 8): the ask
-    // above the prompt is the queue's row for it, so the read stands for it.
-    if standing.standing(&Open::Queue) || standing.asking {
-        read(
-            link,
-            down(link, root, channel, &crate::verbs::attention()),
-            channel,
-        );
-    }
+    // **The queue is not asked here** (bl-5439): `attention` can take the
+    // engine half a minute, and a serial pass that waited for it starved
+    // every read behind it — the trail, the board, the records and the
+    // transcript's re-read. It has a lane of its own (`super::queue`).
     // **And the trail fans on the same terms** (bl-4c48): `ops` names no
     // workspace either, so its subject is every channel and the pane is
     // the union. It STANDS rather than being posted once, unlike the

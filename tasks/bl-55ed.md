@@ -1,7 +1,8 @@
 +++
 title = "/help lists the engine's op table spelled as slash words the box does not take (/scan, /workflow, /close, /assign…), and never lists the window's own words or keys"
 created = 1791867944
-updated = 1791867944
+updated = 1791868223
+claimant = "LaneVerbs"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

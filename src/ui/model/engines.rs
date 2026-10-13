@@ -19,7 +19,7 @@
 
 use std::collections::BTreeMap;
 
-use super::{Chunk, Model};
+use super::{Engine, Model};
 
 /// **How the engines are arranged**, and the whole of what the place file
 /// keeps about them.
@@ -76,11 +76,11 @@ impl Engines {
 }
 
 impl Model {
-    /// Every engine this seat holds, in the order it was asked.
+    /// Every engine this seat holds, by its lead's name (`super::fold`).
     fn engine_names(&self) -> Vec<String> {
-        self.roster
+        self.folded()
             .iter()
-            .map(|chunk| chunk.channel.name.clone())
+            .map(|engine| engine.name().to_owned())
             .collect()
     }
 
@@ -90,19 +90,19 @@ impl Model {
     /// is [`crate::place`]'s whole rule about a stale place.
     pub fn engine_open(&self) -> Option<String> {
         let names = self.engine_names();
-        let held = |name: Option<String>| name.filter(|name| names.contains(name));
-        held(self.engines.open.clone())
-            .or_else(|| held(self.aim.as_ref().map(|aim| aim.channel.clone())))
+        let held = |name: Option<&String>| name.and_then(|name| self.lead_of(name));
+        held(self.engines.open.as_ref())
+            .or_else(|| held(self.aim.as_ref().map(|aim| &aim.channel)))
             .or_else(|| names.iter().min().cloned())
     }
 
     /// **The roster in the order the pane paints it** — [`Engines::order`]
     /// read back as the sections themselves, so the paint and the keyboard's
     /// cursor track cannot disagree about it.
-    pub fn engine_rows(&self) -> Vec<Chunk> {
+    pub fn engine_rows(&self) -> Vec<Engine> {
         let open = self.engine_open();
-        let mut rows = self.roster.clone();
-        rows.sort_by_key(|chunk| self.engines.rank(&chunk.channel.name, open.as_deref()));
+        let mut rows = self.folded();
+        rows.sort_by_key(|engine| self.engines.rank(engine.name(), open.as_deref()));
         rows
     }
 
@@ -115,8 +115,8 @@ impl Model {
     pub fn open_engine(&mut self, name: &str) {
         self.engines.opening(name);
         self.standing = None;
-        if let Some(address) = self.opening_aim(name) {
-            self.aim_at(name, &address);
+        if let Some(aim) = self.opening_aim(name) {
+            self.aim_at(&aim.channel, &aim.address);
         }
     }
 
@@ -140,7 +140,8 @@ impl Model {
     /// contract. What the start itself fires is still the composer's own
     /// control, still tagged there.
     pub fn begin_at(&mut self, aim: &crate::ui::Aim) {
-        self.engines.opening(&aim.channel);
+        let lead = self.engine_of(&aim.channel);
+        self.engines.opening(&lead);
         self.aim_at(&aim.channel, &aim.address);
         self.fill = Some(crate::ui::Fill::Goal);
     }
@@ -179,22 +180,23 @@ impl Model {
     }
 
     /// The wall an opening aims at: the one last aimed under it while this
-    /// seat can still address it, else its first by `ordered`.
-    fn opening_aim(&self, name: &str) -> Option<String> {
-        let chunk = self
-            .roster
+    /// seat can still address it, else its first by `ordered` — down
+    /// whichever of the engine's channels addresses it (`super::fold`).
+    fn opening_aim(&self, name: &str) -> Option<super::Aim> {
+        let engine = self
+            .folded()
+            .into_iter()
+            .find(|engine| engine.name() == name)?;
+        let walls: Vec<super::Aim> = crate::ui::roster::ordered(&engine.walls())
             .iter()
-            .find(|chunk| chunk.channel.name == name)?;
-        let walls: Vec<String> = crate::ui::roster::ordered(&chunk.walls)
-            .iter()
-            .filter_map(|row| chunk.channel.address(row))
+            .filter_map(|row| engine.aim(row))
             .collect();
-        self.engines
-            .aimed
-            .get(name)
-            .filter(|last| walls.iter().any(|wall| wall == *last))
+        let last = self.engines.aimed.get(name);
+        walls
+            .iter()
+            .find(|aim| Some(&aim.address) == last)
+            .or_else(|| walls.first())
             .cloned()
-            .or_else(|| walls.first().cloned())
     }
 }
 

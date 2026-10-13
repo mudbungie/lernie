@@ -47,6 +47,8 @@ mod enroll;
 mod fill;
 /// The fleet pane between frames: three words, five acts and two reads.
 mod fleet;
+/// One engine, every name it is held under: the roster folded by address.
+mod fold;
 /// **What the window holds between frames** — the struct itself.
 mod held;
 /// The three panes that are pure listings, and the field that says which is up.
@@ -90,6 +92,7 @@ pub use engines::Engines;
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;
 pub use fleet::{Armed, Fleet};
+pub use fold::Engine;
 pub use held::Model;
 pub use listing::Listing;
 pub use login::Login;

@@ -164,7 +164,9 @@ fn a_dead_channel_keeps_the_walls_it_last_answered_under_its_sentence() {
 /// one fact that explains a duplicate: an entry whose `address` file holds what
 /// this box's own engine listens on paints every workspace of that engine
 /// twice, under two headers, and the window used to say nothing on either.
-/// `lernie entries` has always printed it.
+/// `lernie entries` has always printed it. **And since bl-13b9 the duplicate
+/// is one row**: the two channels fold into one engine, the address said once
+/// and the other name beside it.
 #[test]
 fn a_section_header_names_the_address_it_dials() {
     let scratch = crate::test_support::Scratch::new();
@@ -187,11 +189,8 @@ fn a_section_header_names_the_address_it_dials() {
         .collect();
     assert_eq!(
         carrying,
-        vec![
-            "(this box's own engine) — 127.0.0.1:7737",
-            "lab — 127.0.0.1:7737"
-        ],
-        "both headers name the one listener they share:\n{painted}"
+        vec!["(this box's own engine) — 127.0.0.1:7737 — also held as lab"],
+        "one engine, both names, the listener said once:\n{painted}"
     );
 }
 

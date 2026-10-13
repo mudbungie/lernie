@@ -1446,7 +1446,16 @@ accident, which paints every workspace of that engine twice, under two headers,
 with nothing on either saying they are the same server. `lernie entries` prints
 the address under every row and the window dropped it. The seat is the only
 thing that can see the duplication and it can see it for free, so the address
-goes on the header and a duplicate is self-evident. The unaddressable row's own
+goes on the header and a duplicate is self-evident. **Amended by bl-13b9: the
+duplicate is folded, not merely labelled.** Self-evident was not enough — the
+seat card listed the server twice and counted its waiting twice. The window's unit is the engine, so `Model::folded`
+(`src/ui/model/fold.rs`) groups the channels by the address they dial before
+anything is counted or painted: one row, the address said once, every other
+name beside it (*also held as …*), each wall once, and a gesture at a wall goes
+down the first of the engine's channels that can address it — this box's own
+engine leading, because it addresses every wall by its own name. The roster
+itself stays one chunk a channel, because a reply is stamped with the channel
+it came down. The unaddressable row's own
 sentence was reworded in the same breath: *"this seat holds no name for it"*
 fires on a perfectly correct provisioning and reads as an error about the row
 above it, where the fact is structural — an entry directory names one
@@ -5534,6 +5543,7 @@ dock.
 | `src/ui/model/held.rs` | **what the window holds between frames** — the snapshot a frame reads, and every field documented where it is declared. | ~285 |
 | `src/ui/model/held/asked.rs` | the two questions asked of the model that no pane owns: how many rows the composer's field stands at (§4.39), and whether a keyboard walk owes its selection a place on the glass — which since the fold asks no pane, there being one list. Split from the file above at the cap when the drag added the second — a field is what a pane learned to hold, a question is what two panes need one answer to. | ~35 |
 | `src/ui/model/aim.rs` | which wall the window is aimed at — the address every composed gesture is built from — and the two readings taken of its channel: the one a gesture goes down, and whether this box holds one by that name at all. | ~50 |
+| `src/ui/model/fold.rs` | **one engine, every name it is held under** (§4.6, bl-13b9): the roster folded by the address each channel dials — the engine the seat card, the switcher and the seat-wide waiting count read, its lead, its walls once each, and which channel a gesture at a wall goes down. A query over the roster, never a second one. | ~140 |
 | `src/ui/model/engines.rs` | **the accordion** (§4.39): which engine is open, what each engine's last opening ranks as, the wall last aimed under each, the three derivations over them — which one is open on a seat nobody has told, the order the pane paints, and what an opening aims at — and the `+`'s own act, which opens an engine, clears the selection and asks for the composer's box. The seat's own and in the place file, never across the boundary. | ~170 |
 | `src/ui/model/absorb.rs` | **the one door a reply comes in through**: what is filed, what becomes the notice, and the act's receipt — the same door knowing which act it answers (§4.26). | ~230 |
 | `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |

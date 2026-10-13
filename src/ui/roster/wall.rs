@@ -9,7 +9,7 @@
 //! sentence; this one when a wall-level op lands a control.
 
 use crate::reply::roster::WsRow;
-use crate::ui::{Chunk, Model, convs, theme};
+use crate::ui::{Aim, Model, convs, theme};
 
 /// **What a row this seat cannot address says instead of being hidden.**
 ///
@@ -48,8 +48,8 @@ pub const NEW: &str = "+ new";
 /// exactly what an aim is. Offering it on every row would be offering it before
 /// the operator had said which wall — and the answer to that question is
 /// already on the screen, once.
-pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, reveal: bool) {
-    let Some(address) = chunk.channel.address(row) else {
+pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRow, reveal: bool) {
+    let Some(aim) = aim else {
         // **It is a row, and it is faint** (`docs/STYLE.md` §5): the same
         // shape as the rows above and below it, so the list reads as one list,
         // in the ink that says *on the glass and not a target*. It carries no
@@ -63,10 +63,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
             0.0,
         );
         return;
-    };
-    let aim = crate::ui::Aim {
-        channel: chunk.channel.name.clone(),
-        address: address.clone(),
     };
     let aimed = model.aim.as_ref() == Some(&aim);
     // **The row's rule is its state and the aim is the brand** (§2: *the eye
@@ -95,7 +91,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
         seat.scroll_to_me(None);
     }
     if seat.clicked() {
-        model.aim_at(&chunk.channel.name.clone(), &address);
+        model.aim_at(&aim.channel, &aim.address);
     }
     if !aimed {
         offer(ui, model);

@@ -8,13 +8,15 @@
 
 use crate::ui::{Model, theme};
 
-/// **How many conversations are asking**, across every engine that dials.
+/// **How many conversations are asking**, across every engine that dials —
+/// counted an engine at a time (bl-13b9): two channels dialling one address
+/// are one server, and its queue counted twice is a lie in green.
 pub fn waiting(model: &Model) -> u64 {
     model
-        .roster
+        .folded()
         .iter()
-        .filter(|chunk| !matches!(chunk.held, crate::ui::Held::Unheld(_)))
-        .flat_map(|chunk| chunk.walls.iter())
+        .filter(|engine| !matches!(engine.held(), crate::ui::Held::Unheld(_)))
+        .flat_map(crate::ui::model::Engine::walls)
         .map(|wall| wall.attention)
         .sum()
 }

@@ -61,9 +61,10 @@ impl Model {
         // recorded here rather than by each surface that aims, for this
         // module's own reason: two spellings of *what aiming means* would
         // drift, and the one that drifted would be the one nobody points at.
-        self.engines
-            .aimed
-            .insert(channel.to_owned(), address.to_owned());
+        // Keyed by the engine and not the channel (bl-13b9): one engine
+        // held under two names is one place to come back to.
+        let engine = self.engine_of(channel);
+        self.engines.aimed.insert(engine, address.to_owned());
         // **And the roster's cursor is a wall again.** The walk stands on an
         // engine row without selecting it; an aim is a selection, so the two
         // cannot both be where the operator is.

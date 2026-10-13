@@ -15,7 +15,8 @@
 //! this file's click calls, which is what keeps it from being a second
 //! surface.
 
-use crate::ui::{Aim, Chunk, Model, theme};
+use crate::ui::model::Engine;
+use crate::ui::{Aim, Model, theme};
 
 /// **One stop on the window's cursor track**: an engine's own row, a wall
 /// under the open one, or a conversation under the aimed wall.
@@ -68,19 +69,15 @@ impl Step {
 pub fn track(model: &Model) -> Vec<Step> {
     let open = model.engine_open();
     let mut rows = Vec::new();
-    for chunk in model.engine_rows() {
-        let name = chunk.channel.name.clone();
+    for engine in model.engine_rows() {
+        let name = engine.name().to_owned();
         rows.push(Step::Engine(name.clone()));
         if open.as_deref() != Some(name.as_str()) {
             continue;
         }
-        for wall in super::ordered(&chunk.walls) {
-            let Some(address) = chunk.channel.address(&wall) else {
+        for wall in super::ordered(&engine.walls()) {
+            let Some(aim) = engine.aim(&wall) else {
                 continue;
-            };
-            let aim = Aim {
-                channel: name.clone(),
-                address,
             };
             let aimed = model.aim.as_ref() == Some(&aim);
             rows.push(Step::Wall(aim));
@@ -109,12 +106,12 @@ pub fn track(model: &Model) -> Vec<Step> {
 /// rather than a glyph at the far edge of a different row. An engine with no
 /// wall this seat can address has nothing to begin on, which the composer
 /// already said — a start is *a wall and no conversation*.
-pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reveal: bool) {
-    let name = chunk.channel.name.clone();
+pub fn render(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, reveal: bool) {
+    let name = engine.name().to_owned();
     let standing = model.standing.as_deref() == Some(name.as_str());
     let seat = theme::paint::row(
         ui,
-        &super::header(&chunk.channel),
+        &engine.header(),
         theme::INK,
         standing.then_some(theme::BRAND),
         open,
@@ -146,7 +143,9 @@ pub const FOUND: &str = "+ new workspace";
 /// typed under an entry's heading would found it on a different engine than
 /// the one it was offered under. It stands down where that channel will not
 /// dial and under a covering pane, `+ new`'s own rules.
-pub fn found(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk) {
+pub fn found(ui: &mut egui::Ui, model: &mut Model, engine: &Engine) {
+    // The box's own engine leads any fold it is in (`crate::ui::model::fold`).
+    let chunk = &engine.lead;
     if chunk.channel.name != crate::seat::OWN
         || matches!(chunk.held, crate::ui::Held::Unheld(_))
         || (model.covered() && !model.switching)

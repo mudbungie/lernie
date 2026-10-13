@@ -27,7 +27,8 @@
 //! ([`crate::ui::Model::absorb`]) and read here.
 
 use crate::reply::roster::WsRow;
-use crate::ui::{Channel, Chunk, Model, theme};
+use crate::ui::model::Engine;
+use crate::ui::{Channel, Model, theme};
 
 /// The four ops whose subject is every channel, and the strip they hang on.
 /// One engine's row, the order the rows stand in, and the pane's cursor track.
@@ -80,9 +81,9 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         .auto_shrink(false)
         .show(ui, |ui| {
             let open = model.engine_open();
-            for chunk in model.engine_rows() {
-                let showing = open.as_deref() == Some(chunk.channel.name.as_str());
-                section(ui, model, &chunk, showing, reveal);
+            for engine in model.engine_rows() {
+                let showing = open.as_deref() == Some(engine.name());
+                section(ui, model, &engine, showing, reveal);
             }
         });
 }
@@ -95,26 +96,35 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
 /// engines could discover only one of them from the glass. A channel that
 /// cannot be dialled says so under its own row whether or not anybody has
 /// opened it. What the accordion folds away is the WALLS.
-fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reveal: bool) {
+fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, reveal: bool) {
     // **Air and a weak word, never a line** (`docs/STYLE.md` §1, rule 2): the
     // separator that used to stand here was a stroke, and the one stroke this
     // window spends is the brand ring on the field holding the caret. What
     // divides two engines is the space between them.
     ui.add_space(theme::space::S);
-    engine::render(ui, model, chunk, open, reveal);
+    engine::render(ui, model, engine, open, reveal);
     // **A channel that cannot be reached says so HERE**, under its own header
     // and beside whatever it last answered — never in the shell-wide bar, which
     // is for what an engine said about a gesture (bl-e620). It stands above the
     // walls rather than in place of them: the rows are the last thing that
     // channel did say, and they are worth keeping while it is down.
-    if let crate::ui::Held::Unheld(why) = &chunk.held {
-        // **A channel that will not dial is an error and not a note** (§1:
-        // red is an error that will not mend itself). It stood in the
-        // annotation orange, which is the colour of a thing worth reading;
-        // this is a thing that is broken until somebody mends it.
-        ui.colored_label(theme::accent(theme::State::Error), why);
+    // Every channel's own sentence, once each: one engine held under two
+    // names is two sets of files, and either may be the one that is broken.
+    let mut said: Vec<&String> = Vec::new();
+    for chunk in engine.chunks() {
+        if let crate::ui::Held::Unheld(why) = &chunk.held
+            && !said.contains(&why)
+        {
+            // **A channel that will not dial is an error and not a note** (§1:
+            // red is an error that will not mend itself). It stood in the
+            // annotation orange, which is the colour of a thing worth reading;
+            // this is a thing that is broken until somebody mends it.
+            ui.colored_label(theme::accent(theme::State::Error), why);
+            said.push(why);
+        }
     }
-    for note in [chunk.stale.as_ref(), chunk.growth.as_ref()]
+    let lead = &engine.lead;
+    for note in [lead.stale.as_ref(), lead.growth.as_ref()]
         .into_iter()
         .flatten()
     {
@@ -123,7 +133,8 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reve
     if !open {
         return;
     }
-    if chunk.walls.is_empty() {
+    let walls = engine.walls();
+    if walls.is_empty() {
         // **An empty section says which emptiness it is** (bl-08b6). The pane
         // used to carry one sentence, for an empty ROSTER — which is
         // unreachable, because every box holds its own engine's slot whether or
@@ -131,7 +142,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reve
         // box the sentence was written for got a section header over a blank,
         // on the first run of a seat, which is the whole of what it has. The
         // unheld case is already said above, in its own words.
-        match &chunk.held {
+        match engine.held() {
             crate::ui::Held::Unheard => {
                 theme::paint::empty(ui, NOT_ANSWERED);
             }
@@ -142,10 +153,10 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reve
             crate::ui::Held::Unheld(_) => {}
         }
     }
-    for row in ordered(&chunk.walls) {
-        wall::render(ui, model, chunk, &row, reveal);
+    for row in ordered(&walls) {
+        wall::render(ui, model, engine.aim(&row), &row, reveal);
     }
-    engine::found(ui, model, chunk);
+    engine::found(ui, model, engine);
 }
 
 /// The section header: what this box calls the channel, what its host calls the

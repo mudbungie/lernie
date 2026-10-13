@@ -110,14 +110,16 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
     let mut asked = false;
     card(ui, |ui| {
         line(ui, &version(), theme::INK);
-        for chunk in &model.roster {
-            let header = crate::ui::roster::header(&chunk.channel);
+        // **One line an engine, not a channel** (bl-13b9): two names for one
+        // address are one server, counted once (`crate::ui::model::fold`).
+        for engine in model.folded() {
+            let header = engine.header();
             // **The dial state first** (bl-4cac): a channel that will not dial
             // says the wire's own sentence, whole and in the error accent, and
             // one not heard from yet says so — neither has counts worth
             // painting, because a count off walls nobody can reach reads as a
             // healthy engine.
-            match &chunk.held {
+            match engine.held() {
                 crate::ui::Held::Unheld(why) => {
                     line(
                         ui,
@@ -136,9 +138,10 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
                 }
                 crate::ui::Held::Heard => {}
             }
-            let walls = chunk.walls.len();
-            let conversations: u64 = chunk.walls.iter().map(|wall| wall.agents).sum();
-            let asking: u64 = chunk.walls.iter().map(|wall| wall.attention).sum();
+            let held = engine.walls();
+            let walls = held.len();
+            let conversations: u64 = held.iter().map(|wall| wall.agents).sum();
+            let asking: u64 = held.iter().map(|wall| wall.attention).sum();
             let waiting = if asking > 0 {
                 format!(", {asking} waiting")
             } else {

@@ -62,7 +62,7 @@ fn an_opening_outranks_every_opening_before_it() {
     model.open_engine("beta");
     assert_eq!(model.engines.open.as_deref(), Some("beta"));
     assert_eq!(
-        model.engine_rows()[0].channel.name,
+        model.engine_rows()[0].name(),
         "beta",
         "the open one paints first"
     );
@@ -70,7 +70,7 @@ fn an_opening_outranks_every_opening_before_it() {
     let order: Vec<String> = model
         .engine_rows()
         .iter()
-        .map(|chunk| chunk.channel.name.clone())
+        .map(|engine| engine.name().to_owned())
         .collect();
     assert_eq!(order, names(&["alpha", "beta"]));
 }

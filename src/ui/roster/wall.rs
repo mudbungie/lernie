@@ -33,6 +33,12 @@ pub const PIN: &str = "pin";
 /// control names the act it fires (`crate::verbs::workspace`).
 pub const UNPIN: &str = "unpin";
 
+/// **The row that begins a conversation on this wall** (§4.42 item 7, §4.39's
+/// `+` moved under the wall it begins on). A glyph and a word: `+` alone at
+/// the far edge of the engine's row was the one control a first-time operator
+/// did not find.
+pub const NEW: &str = "+ new";
+
 /// One wall: selectable when this seat can address it, a plain line when it
 /// cannot.
 ///
@@ -75,6 +81,11 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
         None
     };
     let seat = theme::paint::row(ui, &line(row), theme::INK, state, aimed, 0.0);
+    // **`+ new` stands last under every wall**, under the conversations where
+    // the wall is aimed and straight under its row where it is not — read
+    // after the wall's own click, so the begin is where a frame that fired
+    // both ends (`begin`).
+    let offer = |ui: &mut egui::Ui, model: &mut Model| begin(ui, model, &aim);
     // **The read this gesture reaches**, not the one that painted the row
     // (yog's `docs/PARITY.md` §2: the interactable a query owes a seat is the
     // affordance that reaches the view it populates). Aiming at a wall is what
@@ -87,6 +98,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
         model.aim_at(&chunk.channel.name.clone(), &address);
     }
     if !aimed {
+        offer(ui, model);
         return;
     }
     // **All eight per-wall controls hang off the aimed row and off no other**,
@@ -108,6 +120,24 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     // under a covering pane: a covering pane replaces the CONVERSATION, and
     // the list beside it goes on being the list.
     convs::under(ui, model, &aim, reveal);
+    offer(ui, model);
+}
+
+/// **`+ new`**: aim the wall, clear the selection, ask for the caret in the
+/// start, and close the switcher on the way (`Model::begin_at`).
+///
+/// **It stands down while a pane covers the conversation** — the per-wall
+/// controls' own rule: what it does is put the caret in the composer's box,
+/// and the composer stands down under every covering pane but the switcher.
+fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim) {
+    if model.covered() && !model.switching {
+        return;
+    }
+    let seat = theme::paint::row(ui, NEW, theme::INK_WEAK, None, false, convs::STEP);
+    if seat.clicked() {
+        model.begin_at(aim);
+        model.chose();
+    }
 }
 
 /// One wall's line: what it is called, then the state it is in, then the

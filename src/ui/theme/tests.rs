@@ -235,6 +235,10 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
             super::glyph::FAILED,
             super::glyph::OPEN,
             super::glyph::SHUT,
+            super::glyph::WORKING,
+            super::glyph::ASKING,
+            super::glyph::AT_REST,
+            super::glyph::STOPPED,
             super::glyph::ELIDED,
         ] {
             assert!(

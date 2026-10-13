@@ -250,6 +250,11 @@ pub mod glyph {
     /// font has no small triangles.
     pub const OPEN: &str = "−";
     pub const SHUT: &str = "+";
+    /// **A conversation's state in the switcher** (§4.42 item 7).
+    pub const WORKING: &str = "▶";
+    pub const ASKING: &str = "?";
+    pub const AT_REST: &str = "✔";
+    pub const STOPPED: &str = "■";
     /// **Where a line was cut** — a call's head on the trail.
     pub const ELIDED: &str = "…";
 }

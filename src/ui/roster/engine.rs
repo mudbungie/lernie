@@ -4,7 +4,7 @@
 //! Split from [`super`] at the design-time budget on the seam the pane now
 //! has: [`super`] is the list and what a section says, `wall` is one
 //! workspace, and this is the engine itself — the row an operator clicks to
-//! open one, the `+` at its right edge, and the order the rows stand in.
+//! open one, and the order the rows stand in.
 //!
 //! **The cursor here is not the selection, and it is the one place in this
 //! window where that is true** (§4.39). Landing on an engine's row only stands
@@ -16,17 +16,6 @@
 //! surface.
 
 use crate::ui::{Aim, Chunk, Model, theme};
-
-/// **The word on the control that begins a conversation on this engine**
-/// (§4.39) — one glyph, at the right edge of every engine's row.
-///
-/// A glyph with no word beside it, which is the one compact control in this
-/// window that has none (`docs/STYLE.md` §2). What a word would cost is the
-/// row: the engine's own name, its host and its dial state are what the row is
-/// for, and a control captioned *begin* on every one of them would take a
-/// third of the list's width away from the thing being listed. `+` is the one
-/// glyph a person reads as *another one of these* without being taught.
-pub const BEGIN: &str = "+";
 
 /// **One stop on the window's cursor track**: an engine's own row, a wall
 /// under the open one, or a conversation under the aimed wall.
@@ -108,60 +97,29 @@ pub fn track(model: &Model) -> Vec<Step> {
     rows
 }
 
-/// **Paint one engine's row with its `+`, and take a click on either.**
+/// **Paint one engine's row, and take a click on it.**
 ///
 /// The open one is the chosen row, which is what an accordion has instead of a
 /// disclosure triangle: the raise says which one you are inside. The standing
 /// one carries the brand rule, and takes the keyboard so the ring is on it and
 /// Enter fires it.
 ///
-/// **The row is handed a width with the `+` already taken out of it**, rather
-/// than painted full width with the control on top: two widgets over one
-/// rectangle is a click that fires both, and `theme::paint::row` fills
-/// whatever width it is given. The control is a square one row tall, so what
-/// it costs the name is a constant and the Tab order runs left to right the
-/// way the row reads.
-///
-/// **The `+` stands down while a pane covers the conversation**, which is the
-/// per-wall controls' own rule one row kind over (`super::wall`): what it does
-/// is put the caret in the composer's box, the composer stands down under
-/// every covering pane, so a `+` offered there would drop the selection and
-/// ask for a caret in a box that is not on the glass.
+/// **It carries no `+` any more** (§4.42 item 7): the start is `+ new` under
+/// each wall (`super::wall::NEW`), the row the conversation would hang from,
+/// rather than a glyph at the far edge of a different row. An engine with no
+/// wall this seat can address has nothing to begin on, which the composer
+/// already said — a start is *a wall and no conversation*.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reveal: bool) {
     let name = chunk.channel.name.clone();
     let standing = model.standing.as_deref() == Some(name.as_str());
-    let words = super::header(&chunk.channel);
-    let (seat, begun) = ui
-        .horizontal(|ui| {
-            let begins = !model.covered() || model.switching;
-            let taken = if begins {
-                theme::ROW + ui.spacing().item_spacing.x
-            } else {
-                0.0
-            };
-            let width = (ui.available_width() - taken).max(0.0);
-            let seat = ui
-                .allocate_ui(egui::vec2(width, theme::ROW), |ui| {
-                    theme::paint::row(
-                        ui,
-                        &words,
-                        theme::INK,
-                        standing.then_some(theme::BRAND),
-                        open,
-                        0.0,
-                    )
-                })
-                .inner;
-            let begun = begins
-                && ui
-                    .add_sized(
-                        [theme::ROW, theme::ROW],
-                        egui::Button::new(BEGIN).min_size(egui::Vec2::ZERO),
-                    )
-                    .clicked();
-            (seat, begun)
-        })
-        .inner;
+    let seat = theme::paint::row(
+        ui,
+        &super::header(&chunk.channel),
+        theme::INK,
+        standing.then_some(theme::BRAND),
+        open,
+        0.0,
+    );
     if standing && reveal {
         seat.scroll_to_me(None);
     }
@@ -173,13 +131,5 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, r
     }
     if seat.clicked() {
         model.open_engine(&name);
-    }
-    // **The `+` is read last**, so a frame in which both fired — which no
-    // pointer can produce and a Tab-and-Enter can — ends where the operator
-    // aimed: beginning a conversation is the more specific of the two acts and
-    // opens the engine on its way (`crate::ui::model::engines`).
-    if begun {
-        model.begin_on(&name);
-        model.chose();
     }
 }

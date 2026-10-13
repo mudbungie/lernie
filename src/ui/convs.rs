@@ -41,12 +41,13 @@ pub mod menu;
 /// control and its threading connectors.
 mod row;
 
+pub(crate) use row::STEP;
 pub use row::{HIDE, SHOW};
 
 /// What a wall says when it answered and holds no conversation. **It names the
-/// next act** (§4.38), and the act is the `+` on the engine's own row above it
-/// (`crate::ui::roster::engine::BEGIN`).
-pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one with + on the engine";
+/// next act** (§4.38), and the act is the `+ new` row under the wall's
+/// conversations (`crate::ui::roster::wall::NEW`).
+pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one with + new below";
 /// **What it says for a wall it has not been ANSWERED about** (bl-f780).
 ///
 /// The [`UNCERTAIN`] doctrine one level up: *no conversations here* is a
@@ -109,22 +110,23 @@ fn continues(rows: &[ConvRow], at: usize, level: u64) -> bool {
         .is_some_and(|row| row.depth == level)
 }
 
-/// A row's headline: its label, what it is doing, how long since it moved, and
-/// what is waiting under it.
+/// A row's headline: its state's glyph, its label, how long since it moved,
+/// and what is waiting under it (DESIGN §4.42 item 7).
 ///
-/// **The badge wears a `?` for a state nothing observed.** The engine answers a
-/// reading and whether it could take one, and painting the first without the
-/// second would state a definite fact about a conversation nobody looked at —
+/// **The glyph wears a `?` for a state nothing observed** — `✓?` is *at
+/// rest, as far as anyone has looked*. The engine answers a reading and
+/// whether it could take one, and painting the first without the second
+/// would state a definite fact about a conversation nobody looked at —
 /// including this window's own, between a start's receipt and its driver's
-/// first write.
+/// first write. The model is not on the row: the wire's conversation row
+/// does not carry one, and the switcher does not invent it.
 pub fn headline(row: &ConvRow) -> String {
-    let mut said = vec![format!(
-        "{}  [{}{}]  {}",
-        row.display,
-        row.state.label(),
-        if row.uncertain { UNCERTAIN } else { "" },
-        age(row.age_secs)
-    )];
+    format!("{} {}", mark(row).0, words(row))
+}
+
+/// The headline after its glyph — what the row paints in the row's own ink.
+pub(crate) fn words(row: &ConvRow) -> String {
+    let mut said = vec![format!("{}  {}", row.display, age(row.age_secs))];
     if row.attention > 0 {
         said.push(format!("{} waiting", row.attention));
     }
@@ -132,6 +134,28 @@ pub fn headline(row: &ConvRow) -> String {
         said.push(format!("{} members", row.members));
     }
     said.join("  ")
+}
+
+/// **A row's state glyph and its ink**: `?` in the attention accent while it
+/// asks — asking outranks the state, because it is the one that wants a
+/// person — else `▶` while its driver is live or in flight, `✓` at rest and
+/// `■` stopped, each in its state's ink. A state this build does not know
+/// wears the note's dot in body ink rather than a glyph it is not.
+pub fn mark(row: &ConvRow) -> (String, egui::Color32) {
+    use crate::reply::convs::AgentState;
+    let (glyph, ink) = if row.attention > 0 {
+        (theme::glyph::ASKING, theme::accent(theme::State::Attention))
+    } else {
+        let glyph = match row.state {
+            AgentState::Live | AgentState::InFlight => theme::glyph::WORKING,
+            AgentState::Quiescent => theme::glyph::AT_REST,
+            AgentState::Stopped => theme::glyph::STOPPED,
+            AgentState::Unknown(_) => theme::glyph::NOTE,
+        };
+        (glyph, theme::state_ink(&row.state))
+    };
+    let unsure = if row.uncertain { UNCERTAIN } else { "" };
+    (format!("{glyph}{unsure}"), ink)
 }
 
 /// A compact age: `42s`, `7m`, `3h`, `2d`. **Negative clamps to zero** — two

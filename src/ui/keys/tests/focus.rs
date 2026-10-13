@@ -62,19 +62,18 @@ fn two_walls() -> Model {
 /// **The Tab order runs the way the row reads**, and Space on a ringed row
 /// fires exactly what a click fires.
 ///
-/// The engine's own row stands first, then the `+` beside it (DESIGN §4.39 —
-/// the row is allocated before the control, so the keyboard meets the name
-/// before the act on it), so the third Tab is the first wall; the strips
-/// that stood ahead of them are rows of the menu now (§4.42).
+/// The engine's own row stands first and the first wall second; the `+`
+/// that stood beside the engine is `+ new` under each wall now (§4.42 item
+/// 7), and the strips that stood ahead of them are rows of the menu.
 #[test]
 fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
     let mut model = two_walls();
-    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; 3]);
+    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; 2]);
     assert_eq!(rings.len(), 1, "{rings:?}");
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..3 {
+    for _ in 0..2 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
@@ -86,26 +85,32 @@ fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
     );
 }
 
-/// **The `+` is a control like any other, so a key reaches it** (F1): the
-/// second Tab is the one beside the engine's row, and Space on it begins a
-/// conversation — the selection dropped and the caret in the box.
+/// **`+ new` is a control like any other, so a key reaches it** (F1): the
+/// third Tab is the one under the first wall, and Space on it begins a
+/// conversation there — the wall aimed, the selection dropped and the caret
+/// in the box.
 ///
 /// **And the binding that opens a standing engine does NOT also fire**
 /// (`super::super::opening`): something holds the keyboard, so egui fires that
 /// control and nothing here stands in for a click egui can already make.
 #[test]
-fn a_tab_reaches_the_plus_and_space_on_it_begins_a_conversation() {
+fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     let mut model = two_walls();
     model.standing = Some("a name no engine here has".to_owned());
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..2 {
+    for _ in 0..3 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
     window.frame(Vec::new(), &mut body);
     assert_eq!(model.conversation, None, "the selection is cleared");
+    assert_eq!(
+        model.aim.as_ref().map(|aim| aim.address.as_str()),
+        Some("first"),
+        "on the wall it stood under"
+    );
     assert_eq!(
         window.focused(),
         Some(egui::Id::new(crate::ui::keys::BOX_ID)),

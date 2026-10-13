@@ -188,16 +188,18 @@ fn aiming_writes_the_wall_down_under_its_engine() {
     assert_eq!(model.standing, None, "an aim is where the cursor is");
 }
 
-/// **The `+` opens the engine, aims its wall, drops the selection and asks for
-/// the box** (DESIGN §4.39) — and the opening is not a side effect: a start is
-/// a use, so the engine takes the rank every other opening takes.
+/// **`+ new` aims its wall, drops the selection and asks for the box**
+/// (DESIGN §4.42 item 7) — and the engine's opening ranks: a start is a use.
 #[test]
-fn beginning_on_an_engine_opens_it_aims_its_wall_and_asks_for_the_box() {
+fn beginning_on_a_wall_aims_it_ranks_its_engine_and_asks_for_the_box() {
     let mut model = Model {
-        roster: vec![own(), engine("lab", &["bench"])],
+        roster: vec![own(), engine("lab", &["bench", "annex"])],
         ..seated()
     };
-    model.begin_on("lab");
+    model.begin_at(&Aim {
+        channel: "lab".to_owned(),
+        address: "annex".to_owned(),
+    });
     assert_eq!(model.engine_open().as_deref(), Some("lab"));
     assert_eq!(
         model.engines.opened.get("lab").copied(),
@@ -206,35 +208,8 @@ fn beginning_on_an_engine_opens_it_aims_its_wall_and_asks_for_the_box() {
     );
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
-        Some("bench".to_owned())
+        Some("annex".to_owned())
     );
     assert_eq!(model.conversation, None);
-    assert_eq!(model.fill, Some(crate::ui::Fill::Goal));
-}
-
-/// **An engine holding no wall this seat can address aims nothing, and the
-/// start mode is still where the operator asked to be.** The selection is
-/// cleared here rather than by the aim, because there was no aim to make.
-#[test]
-fn beginning_on_an_engine_with_no_addressable_wall_still_clears_the_selection() {
-    let aimed = seated().aim.expect("the fixture is aimed");
-    let mut model = Model {
-        roster: vec![
-            own(),
-            Chunk {
-                channel: Channel {
-                    name: "lab".to_owned(),
-                    named_there: Some("theirs".to_owned()),
-                    dials: None,
-                },
-                walls: vec![wall("not-ours")],
-                ..engine("lab", &[])
-            },
-        ],
-        ..seated()
-    };
-    model.begin_on("lab");
-    assert_eq!(model.conversation, None, "the selection is cleared");
-    assert_eq!(model.aim, Some(aimed), "and the aim is left where it was");
     assert_eq!(model.fill, Some(crate::ui::Fill::Goal));
 }

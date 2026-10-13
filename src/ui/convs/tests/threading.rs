@@ -181,7 +181,7 @@ fn a_member_s_words_stand_one_step_per_level_in_from_its_root_s() {
     let at = |n: usize| {
         let word = format!("row {n}");
         runs.iter()
-            .find(|run| run.text.starts_with(&word))
+            .find(|run| run.text.contains(&word))
             .unwrap_or_else(|| panic!("{word:?} is on the glass"))
             .laid
             .min

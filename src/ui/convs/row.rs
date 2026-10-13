@@ -22,7 +22,7 @@ use crate::ui::{Aim, Model, theme};
 use theme::paint;
 
 /// How far one level of descent moves a row to the right, in points.
-pub(super) const STEP: f32 = 16.0;
+pub(crate) const STEP: f32 = 16.0;
 
 /// Past this the indent says nothing more: a list deeper than eight is
 /// unreadable at any width, and the label is what the extra width would have
@@ -59,9 +59,13 @@ pub(super) fn conversation(
     } else {
         theme::state_of(&row.state).map(theme::accent)
     };
-    let seat = paint::row(
+    // **The state glyph leads, in its own ink** (§4.42 item 7), and the run
+    // is the headline whole (`super::headline`).
+    let (glyph, ink) = super::mark(row);
+    let seat = paint::marked(
         ui,
-        &super::headline(row),
+        (&glyph, ink),
+        &super::words(row),
         theme::tone_ink(&row.tone),
         state,
         selected,

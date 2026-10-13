@@ -5074,8 +5074,15 @@ parts, in its vertical order, each with what it becomes here.
    `/conversations`): an overlay listing every engine as a heading row, each
    wall under it, and each conversation under its wall as one row — state
    glyph in its state's ink (`▶` working, `?` asking in the attention
-   accent, `✓` at rest, `■` stopped), the model, the name — with `+ new`
-   under every wall, which is §4.39's `+`. Enter selects, which is §4.11's
+   accent, `✔` at rest — the body font has no `✓`, and `theme::tests`
+   refuses a tofu box — `■` stopped, a trailing `?` where nothing observed
+   the state), the name, its age and what waits under it — with `+ new`
+   under every wall, which is §4.39's `+` moved off the engine's row onto
+   the wall it begins on (bl-d357: a bare `+` at the far edge of another
+   row was the begin a first-time operator did not find). **The model is
+   not on the row**: the wire's conversation row carries none, and the
+   switcher does not invent one; the rule says it for the selected
+   conversation. Enter selects, which is §4.11's
    one door for a click and a keypress, and closes the overlay; `+ new` puts
    the caret in the field in start mode. The accordion's order, open engine
    and ranks (§4.39, `model/engines.rs`) are what the overlay paints, so the
@@ -5313,8 +5320,8 @@ dock.
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
 | `src/ui/roster.rs` | **the window's one list** (§4.39): the engines this seat reaches as an accordion, the open one's workspaces under it and the aimed wall's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
-| `src/ui/roster/engine.rs` | **one engine's row, the `+` at its right edge, and the window's cursor track** (§4.39): the row an operator clicks to open one, the control that begins a conversation on it, and the three kinds of stop the walk makes — an engine's row, which it only stands on; a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
-| `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — and, under those, the aimed wall's conversations (§4.39). | ~150 |
+| `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — an engine's row, which it only stands on; a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
+| `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed wall's conversations (§4.39), and `+ new` last under every wall (§4.42 item 7). | ~150 |
 | `src/verbs/tuning.rs` | the role-tuning family: the `roles` read and the `model` assignment as rows, and `effort` and `priority` as doors without rows — a nullable level and a bool are not named strings. | ~155 |
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
 | `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the engine's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |

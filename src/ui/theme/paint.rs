@@ -37,13 +37,34 @@ pub fn row(
     chosen: bool,
     indent: f32,
 ) -> Response {
+    marked(ui, ("", ink), words, ink, state, chosen, indent)
+}
+
+/// **A row led by a mark in its own ink** — a conversation's state glyph in
+/// the switcher (DESIGN §4.42 item 7). The mark and the words are still ONE
+/// run, `<mark> <words>`, on the glass and in the accessibility tree alike, so
+/// a probe aims at what the operator reads; only the mark's ink differs.
+pub fn marked(
+    ui: &mut egui::Ui,
+    mark: (&str, Color32),
+    words: &str,
+    ink: Color32,
+    state: Option<Color32>,
+    chosen: bool,
+    indent: f32,
+) -> Response {
+    let said = [mark.0, words]
+        .into_iter()
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
     let (rect, seat) = ui.allocate_exact_size(vec2(ui.available_width(), ROW), Sense::click());
     seat.widget_info(|| {
         egui::WidgetInfo::selected(
             egui::WidgetType::SelectableLabel,
             ui.is_enabled(),
             chosen,
-            words,
+            &said,
         )
     });
     if !ui.is_rect_visible(rect) {
@@ -69,7 +90,8 @@ pub fn row(
             .rect_stroke(rect, RADIUS, Stroke::new(1.0, BRAND));
     }
     let left = rect.min.x + RULE + indent + space::M;
-    let galley = elided(ui, words, ink, rect.max.x - left - space::S);
+    let lead = said.len().saturating_sub(words.len());
+    let galley = elided(ui, &said, lead, (mark.1, ink), rect.max.x - left - space::S);
     let at = Pos2::new(left, rect.center().y - galley.size().y / 2.0);
     ui.painter().galley(at, galley, ink);
     seat
@@ -77,9 +99,25 @@ pub fn row(
 
 /// **One line of words that stop at a width**, with `…` where they were cut —
 /// so the cut is on the glass and a probe reads what an operator reads.
-fn elided(ui: &egui::Ui, words: &str, ink: Color32, width: f32) -> std::sync::Arc<egui::Galley> {
+///
+/// The first `lead` bytes are the mark and wear the first ink; the rest wear
+/// the second.
+fn elided(
+    ui: &egui::Ui,
+    said: &str,
+    lead: usize,
+    (marked, ink): (Color32, Color32),
+    width: f32,
+) -> std::sync::Arc<egui::Galley> {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let mut job = egui::text::LayoutJob::simple_singleline(words.to_owned(), font, ink);
+    let mut job = egui::text::LayoutJob::simple_singleline(said.to_owned(), font, ink);
+    if let Some(first) = job.sections.first_mut() {
+        first.byte_range = lead..said.len();
+        let mut mark = first.clone();
+        mark.byte_range = 0..lead;
+        mark.format.color = marked;
+        job.sections.insert(0, mark);
+    }
     job.wrap = egui::text::TextWrapping::truncate_at_width(width.max(0.0));
     ui.fonts(|fonts| fonts.layout_job(job))
 }

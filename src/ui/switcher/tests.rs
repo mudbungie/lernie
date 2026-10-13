@@ -94,14 +94,16 @@ fn walking_keeps_it_open_and_choosing_closes_it() {
     assert!(!model.switching, "Esc leaves");
 }
 
-/// **The `+` chooses too**: it begins a conversation, which is what the
+/// **`+ new` chooses too**: it begins a conversation, which is what the
 /// switcher was opened for.
 #[test]
 fn the_plus_closes_it_on_the_way_to_the_box() {
     let mut model = seated();
     model.switching = true;
     let window = Window::new();
-    click(&window, "+", |ctx| crate::ui::render(ctx, &mut model));
+    click(&window, crate::ui::roster::wall::NEW, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
     assert!(!model.switching);
     assert_eq!(model.conversation, None);
 }

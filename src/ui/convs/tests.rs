@@ -8,7 +8,7 @@ mod threading;
 /// What the pane's own width does to the panels beside it.
 mod width;
 
-use super::{NO_CONVERSATIONS, NOT_ANSWERED, age, headline};
+use super::{NO_CONVERSATIONS, NOT_ANSWERED, age, headline, mark};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::{AgentState, Tone};
 use crate::test_support::window::{click, conv, pane, seated, seen};
@@ -64,12 +64,12 @@ fn aiming_elsewhere_leaves_the_pane_waiting_rather_than_reporting_nothing() {
     assert!(painted.contains(NOT_ANSWERED), "{painted}");
 }
 
-/// A headline is a glance: the label, what it is doing, how long since it moved
-/// — and the two counts only where there is something to count.
+/// A headline is a glance: what it is doing as a glyph, the label, how long
+/// since it moved — and the two counts only where there is something to count.
 #[test]
 fn a_headline_says_the_state_the_age_and_only_the_counts_that_matter() {
     let quiet = headline(&conv("id", "port the probe"));
-    assert_eq!(quiet, "port the probe  [quiescent]  42s");
+    assert_eq!(quiet, "✔ port the probe  42s");
     let busy = headline(&crate::reply::convs::ConvRow {
         state: AgentState::Live,
         attention: 2,
@@ -78,7 +78,7 @@ fn a_headline_says_the_state_the_age_and_only_the_counts_that_matter() {
         ..conv("id", "port the probe")
     });
     assert!(quiet.len() < busy.len());
-    assert!(busy.contains("[live]"), "{busy}");
+    assert!(busy.starts_with("? "), "asking outranks the state: {busy}");
     assert!(busy.contains("2h"), "{busy}");
     assert!(busy.contains("2 waiting"), "{busy}");
     assert!(busy.contains("4 members"), "{busy}");
@@ -202,7 +202,7 @@ fn a_click_selects_the_conversation_and_drops_the_last_one_s_transcript() {
     assert_eq!(model.live, None);
 }
 
-/// **A state nothing observed wears a `?`**, inside the badge it qualifies. The
+/// **A state nothing observed wears a `?`** after the glyph it qualifies. The
 /// engine answers a reading and whether it could take one, and a badge that
 /// painted only the first would state a definite fact about a conversation
 /// nobody looked at.
@@ -212,7 +212,7 @@ fn an_unobserved_state_is_marked_rather_than_painted_as_definite() {
         uncertain: true,
         ..conv("id", "port the probe")
     });
-    assert_eq!(unsure, "port the probe  [quiescent?]  42s");
+    assert_eq!(unsure, "✔? port the probe  42s");
 }
 
 /// **The conversation this window just started stands in the list**, before the
@@ -231,10 +231,44 @@ fn a_started_conversation_stands_in_the_list_before_the_engine_can_answer() {
         ..seated()
     };
     let painted = pane(|ui| beneath(ui, &mut model));
-    assert!(painted.contains("brisk-otter  [quiescent?]"), "{painted}");
+    assert!(painted.contains("✔? brisk-otter"), "{painted}");
     assert!(painted.contains("port the paint probe"), "{painted}");
     assert!(
-        !painted.contains("[live]"),
+        !painted.contains("▶"),
         "no driver this seat has seen: {painted}"
     );
+}
+
+/// **The glyph is the state, in the state's ink** (DESIGN §4.42 item 7):
+/// `▶` for a driver live or in flight, `✔` at rest, `■` stopped, the note's
+/// dot for a state this build does not know — and the ink reaches the glass
+/// on the glyph, not only in the function that chose it.
+#[test]
+fn the_glyph_is_the_state_in_its_ink() {
+    use crate::ui::theme;
+    for (state, glyph) in [
+        (AgentState::Live, theme::glyph::WORKING),
+        (AgentState::InFlight, theme::glyph::WORKING),
+        (AgentState::Quiescent, theme::glyph::AT_REST),
+        (AgentState::Stopped, theme::glyph::STOPPED),
+        (AgentState::Unknown("parked".to_owned()), theme::glyph::NOTE),
+    ] {
+        let row = crate::reply::convs::ConvRow {
+            state: state.clone(),
+            ..conv("id", "port the probe")
+        };
+        assert_eq!(mark(&row), (glyph.to_owned(), theme::state_ink(&state)));
+    }
+    let mut model = seated();
+    model.convs[0].state = AgentState::Stopped;
+    model.convs[0].attention = 0;
+    let window = Window::sized(600.0, 400.0);
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| beneath(ui, &mut model));
+    });
+    let row = runs
+        .iter()
+        .find(|run| run.text.starts_with(theme::glyph::STOPPED))
+        .expect("the stopped row is on the glass");
+    assert_eq!(row.ink, theme::accent(theme::State::Error), "{}", row.text);
 }

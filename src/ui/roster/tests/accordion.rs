@@ -9,6 +9,7 @@
 use super::super::{HEADING, header, ordered, render};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, own, pane, seated, wall};
+use crate::ui::roster::wall::NEW;
 use crate::ui::{Channel, Chunk, Model};
 
 /// One engine holding the walls it is given.
@@ -156,22 +157,25 @@ fn the_aimed_wall_s_conversations_stand_under_it_and_no_other_wall_s() {
     );
 }
 
-/// **The `+` at the right edge of an engine's row begins a conversation on
-/// it** (DESIGN §4.39): the selection cleared, the aim on the engine's own
-/// wall, the engine opened — a start is a use — and the caret asked for in the
-/// composer's box.
+/// **`+ new` under a wall begins a conversation on it** (DESIGN §4.42 item
+/// 7): the selection cleared, the aim on that wall, and the caret asked for
+/// in the composer's box. It stands under every wall of the open engine, and
+/// no engine row carries a `+` of its own.
 #[test]
-fn the_plus_on_an_engine_row_begins_a_conversation_on_it() {
+fn new_under_a_wall_begins_a_conversation_on_it() {
+    let mut model = two();
+    model.open_engine("lab");
+    let painted = pane(|ui| render(ui, &mut model));
+    assert_eq!(
+        painted.matches(NEW).count(),
+        2,
+        "one under each of lab's walls:\n{painted}"
+    );
     let mut model = two();
     let window = Window::new();
-    click(&window, super::super::engine::BEGIN, |ctx| {
+    click(&window, NEW, |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
     });
-    assert_eq!(
-        model.engine_open().as_deref(),
-        Some("(this box's own engine)"),
-        "the first row's `+` is the first engine's"
-    );
     assert_eq!(model.conversation, None, "the selection is cleared");
     assert_eq!(
         model.aim.as_ref().map(|aim| aim.address.clone()),
@@ -184,13 +188,13 @@ fn the_plus_on_an_engine_row_begins_a_conversation_on_it() {
 /// controls' own rule: what it does is put the caret in the composer's box,
 /// and the composer stands down under every pane that covers the conversation.
 #[test]
-fn the_plus_stands_down_while_a_pane_covers_the_conversation() {
+fn new_stands_down_while_a_pane_covers_the_conversation() {
     let mut model = two();
     model.begin_records();
     assert!(model.covered(), "the records pane is standing");
     let painted = pane(|ui| render(ui, &mut model));
     assert!(
-        !painted.contains(super::super::engine::BEGIN),
-        "no + is offered under a covering pane:\n{painted}"
+        !painted.contains(NEW),
+        "no + new is offered under a covering pane:\n{painted}"
     );
 }

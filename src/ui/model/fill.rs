@@ -54,8 +54,8 @@ pub enum Fill {
     /// (`crate::ui::composer::acts::ARM`).
     Arming,
     /// What a conversation is begun FOR
-    /// (`crate::ui::composer::start::goal`), asked for by the `+` on an
-    /// engine's row (`crate::ui::model::Model::begin_on`).
+    /// (`crate::ui::composer::start::goal`), asked for by a wall's `+ new`
+    /// (`crate::ui::model::Model::begin_at`).
     Goal,
 }
 

@@ -1,7 +1,8 @@
 +++
 title = "a long notice in the rule's state slot is cut at the window edge mid-word, and it pushes every other segment off the rule — the waiting count, the engines and the conversation's name all vanish while it stands"
 created = 1791867659
-updated = 1791867659
+updated = 1791868068
+claimant = "LaneAsks"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

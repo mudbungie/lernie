@@ -5139,9 +5139,15 @@ parts, in its vertical order, each with what it becomes here.
    wore *«wound» (wounded, which this seat cannot read)* before, which read a
    provider refusal as a seat bug. A fenced code block in what was said reads
    as code (bl-beef): monospace on the surface, its fences unpainted, its
-   lines never wrapped but scrolled sideways inside the column; the fence is
-   the only markdown read, and an unclosed one (a turn still streaming) runs
-   to the end. The
+   lines never wrapped but scrolled sideways inside the column; an unclosed
+   fence (a turn still streaming) runs to the end. **The prose between
+   fences reads two inline shapes and no others** (bl-f5a7,
+   `chat::code::inline`): a `` `code` `` span on one line paints in the
+   monospace family at `MONO` on the surface without its ticks, and a line
+   opening with one to six `#` and a space paints without its marks at the
+   `HEADING` size — STYLE §1's *a heading is a size, not a hue*, there
+   being no bold face in the language to set one in. An unpaired tick and a
+   `#` with no space after it stay as typed. Both painted raw before. The
    ruled block of §4.38 goes with its side rules: who spoke is the gutter
    glyph, and weight is still the speaker's (`theme::speaker`). At the head of
    a transcript stands the **conversation panel**: a framed card carrying the
@@ -5785,6 +5791,7 @@ a control's glyph may not lean on a face the box may not have.
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/code.rs` | fenced code in what was said (bl-beef): the split on fences, pure, and the block painted monospace on the surface, scrolled sideways rather than wrapped. | ~100 |
+| `src/ui/chat/code/inline.rs` | the prose between fences (bl-f5a7): code spans and heading lines split, pure, and laid as one wrapped job with each run in its face. | ~115 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
 | `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42). | ~190 |
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the wall's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |

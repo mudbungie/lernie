@@ -7,14 +7,17 @@
 //! backticks, indistinguishable from the sentence around it, and a long line
 //! wraps as if it were a sentence too.
 //!
-//! **Only the fence is read**, not markdown: a line opening with three
+//! **The fence is the only block read** (the prose between fences reads its
+//! two inline shapes, a code span and a heading line — [`inline`]): a line opening with three
 //! backticks (an info string after them is allowed and not painted) begins a
 //! block, the next such line ends it, and a fence still open — the turn is
-//! streaming — runs to the end of the words. Everything else is prose and is
-//! laid exactly as before. No markdown crate: the one shape the glass got
+//! streaming — runs to the end of the words. Everything else is prose. No markdown crate: the one shape the glass got
 //! wrong is the one this reads.
 
 use crate::ui::theme;
+
+/// The code spans and heading lines inside prose.
+pub mod inline;
 
 /// The marker a fence line opens with.
 const FENCE: &str = "```";
@@ -64,7 +67,8 @@ pub fn paint(ui: &mut egui::Ui, at: usize, words: &str) {
     for (n, part) in parts(words).into_iter().enumerate() {
         match part {
             Part::Prose(text) => {
-                theme::paint::prose(ui, &text, theme::INK);
+                let job = inline::job(&text, ui.available_width());
+                ui.add(egui::Label::new(job).wrap());
             }
             Part::Code(text) => block(ui, (at, n), &text),
         }

@@ -1,7 +1,8 @@
 +++
 title = "the rule is the conversation's own line: workspace, provider, model, effort, priority as dropups that show the cached list and reload it (a reload mark until the answer lands, then a check), then the conversation's diagnostics — tokens in and out, spend, state, elapsed; the global waiting and engine counts leave it"
 created = 1791869353
-updated = 1791869353
+updated = 1791869367
+claimant = "LaneRule"
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

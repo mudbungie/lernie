@@ -5180,7 +5180,8 @@ parts, in its vertical order, each with what it becomes here.
    glyph in its state's ink (`▶` working, `?` asking in the attention
    accent, `✔` at rest — the body font has no `✓`, and `theme::tests`
    refuses a tofu box — `■` stopped, a trailing `?` where nothing observed
-   the state), the name, its age and what waits under it — with `+ new`
+   the state), the name, its age and what waits under it, every count worded by the one
+   helper `render::counted` (`1 conversation`, bl-967f) — with `+ new`
    under every wall, which is §4.39's `+` moved off the engine's row onto
    the wall it begins on (bl-d357: a bare `+` at the far edge of another
    row was the begin a first-time operator did not find). **The model is

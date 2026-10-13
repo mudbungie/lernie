@@ -89,10 +89,15 @@ pub(crate) fn tally(count: u64, word: &str) -> Option<String> {
 /// first because the first counts adverbs too, and `1 waitings` is worse than
 /// the wart it would fix.
 pub(crate) fn things(count: u64, singular: &str) -> Option<String> {
-    tally(
-        count,
-        &format!("{singular}{}", if count == 1 { "" } else { "s" }),
-    )
+    (count > 0).then(|| counted(count, singular))
+}
+
+/// **A count of a countable noun, always said** — the one place a count is
+/// worded for every surface that words one (bl-967f): `1 conversation`,
+/// `2 conversations`, `0 walls`. A surface that spelled its own plural said
+/// `1 conversations` beside a card that said it right.
+pub(crate) fn counted(count: u64, singular: &str) -> String {
+    format!("{count} {singular}{}", if count == 1 { "" } else { "s" })
 }
 
 /// The clauses that are there, in one line. `None` and the empty string both

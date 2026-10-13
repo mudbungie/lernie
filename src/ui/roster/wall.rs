@@ -162,7 +162,7 @@ pub fn line(row: &WsRow) -> String {
     if let Some(cost) = &row.spend {
         said.push(cost.said());
     }
-    said.push(format!("{} conversations", row.agents));
+    said.push(crate::render::counted(row.agents, "conversation"));
     said.push(format!("({})", row.kind.label()));
     said.join("  ")
 }

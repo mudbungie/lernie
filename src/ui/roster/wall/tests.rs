@@ -29,3 +29,20 @@ fn a_row_with_no_entry_naming_it_wears_the_line_and_no_control() {
         "{busy}"
     );
 }
+
+/// **A wall holding one conversation says `1 conversation`** (bl-967f), as
+/// the seat's card above it does: one helper words every count.
+#[test]
+fn one_conversation_is_singular() {
+    let mut one = wall("home");
+    one.agents = 1;
+    assert!(
+        super::line(&one).contains("1 conversation  "),
+        "{}",
+        super::line(&one)
+    );
+    one.agents = 2;
+    assert!(super::line(&one).contains("2 conversations"));
+    assert_eq!(crate::render::counted(0, "wall"), "0 walls");
+    assert_eq!(crate::render::counted(1, "line"), "1 line");
+}

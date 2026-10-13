@@ -148,13 +148,9 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
                 String::new()
             };
             let said = format!(
-                "{header} — {walls} {}, {conversations} {}{waiting}",
-                if walls == 1 { "wall" } else { "walls" },
-                if conversations == 1 {
-                    "conversation"
-                } else {
-                    "conversations"
-                }
+                "{header} — {}, {}{waiting}",
+                crate::render::counted(walls as u64, "wall"),
+                crate::render::counted(conversations, "conversation"),
             );
             let ink = if asking > 0 {
                 theme::accent(theme::State::Attention)

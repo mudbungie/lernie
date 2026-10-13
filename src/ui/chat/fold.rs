@@ -75,9 +75,9 @@ pub const UNFOLD: &str = "fold";
 fn whole(content: &str) -> String {
     let lines = content.lines().count();
     format!(
-        "show all {lines} {}, {} bytes",
-        if lines == 1 { "line" } else { "lines" },
-        content.len()
+        "show all {}, {}",
+        crate::render::counted(lines as u64, "line"),
+        crate::render::counted(content.len() as u64, "byte")
     )
 }
 

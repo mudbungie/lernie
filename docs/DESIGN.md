@@ -2265,6 +2265,26 @@ name — a config written by a hand, or by a newer engine — is §4.9's rung 3 
 the glass: painted as itself, because four unselected seats would otherwise say
 the level is *off*, which is a different claim from the one the file makes.
 
+**What each row's provider offers stands beside the roles** (bl-b7d9;
+`src/ui/tuning/offers.rs`). A role left on a model id its provider does not
+offer used to be painted like every healthy row, and the editor that mends it
+was two bare text boxes — while `lernie model` (`src/seat/model.rs`) already
+asked the row what it offers before writing. The pane now spends that same
+read, the `models` op and its `Reply::Models` decode: while it is open, every
+provider row its roles and its draft name is asked on the roles read's own
+standing (`Open::Tuning` carries the rows), and each answer is stamped with
+the row it was asked of (`Said::Offering`), because the reply names none. It
+stands rather than being posted as §4.24 posts it, because the rows to ask
+about ARE the standing roles answer: the question set is derived on every
+settle and no ledger of who was asked exists to drift. Two things follow on
+the glass. **A row whose provider's listing lacks its model says
+`<provider> does not offer <id>`, on that row, in the error accent**; a
+provider with no listing — a refusal, no answer, an empty list — marks
+nothing, the CLI's rule verbatim: absence is not evidence. And **the editor
+offers the draft provider's ids as seats that fill the model field**, which
+stays free text, because a list can be stale and the CLI's own stance is a
+warning, never a refusal.
+
 ### 4.18 The records pane: the conversation's own ledger, on the tuning pane's standing (bl-2cf7)
 
 `src/ui/records.rs`. **The third covering pane, and §4.17's shape one noun
@@ -5335,8 +5355,10 @@ dock.
 | `src/reply/queue.rs` | the decision queue's rows: what is asking, why, the flag somebody raised on it and the invocation parked at its boundary — three nullable facts each read as an absence (§4.19). | ~165 |
 | `src/reply/ops.rs` | the trail's rows: what crossed the boundary, how it ended in the engine's own words, and where its alarm stands — a classification that crosses so no seat re-derives it (§4.27). | ~95 |
 | `src/reply/roles.rs` | what one workspace's roles are set to: four required fields and the effort, which reports rather than asserts and so is an option carried verbatim. | ~80 |
-| `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~185 |
-| `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~180 |
+| `src/ui/tuning.rs` | the tuning pane: what a wall's roles are set to, the four seats and one toggle that retune each, and the assignment editor under its own row. **The settings surface `src/snapshot/reach.rs` was written to say this seat did not have.** | ~190 |
+| `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~190 |
+| `src/ui/tuning/offers.rs` | what a provider row offers, on the tuning pane (§4.17): the error-accent mark on a row whose model its provider's listing lacks, and the offered ids under the editor, each filling the model field. Split from `tuning.rs` on the read's seam — `roles` there, `models` here. | ~55 |
+| `src/ui/model/tuning/offers.rs` | the offerings between frames (§4.17): which provider rows the pane asks, each stamped answer filed under its row, and the one fact a listing in hand supports — absence is not evidence. | ~70 |
 | `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered and the two wider reaches each names for itself (§4.34, PROTOCOL 18), and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
 | `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
@@ -5397,7 +5419,7 @@ dock.
 | `src/ui/model/listing.rs` | the three panes that are pure listings, and the one field that says which is standing (§4.28). | ~70 |
 | `src/ui/model/login.rs` | the login pane between frames — two questions rather than two modes — the three acts its controls spend, and where the engine is, read off the channel stamp. | ~165 |
 | `src/state.rs` | **the link** (§4.12): what the frame and the off-frame threads say to each other, and the crate's one lock. `settle` is the frame's whole side of it, and it publishes two projections — what to ask, and what to keep (§4.13). Its second tenant is what worked for an entry this run — held lines, endpoints, the punch port (§4.40). | ~235 |
-| `src/state/traffic.rs` | what crosses the lock — a worker's report in its five kinds, the fifth being a routed gesture's reply stamped with the op it answers (§4.26), and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
+| `src/state/traffic.rs` | what crosses the lock — a worker's report in its kinds — among them a routed gesture's reply stamped with the op it answers (§4.26) and a `models` answer stamped with the provider row asked (§4.17) — and the standing question set the frame publishes, whose open pane is one field rather than a flag apiece (§4.12). | ~205 |
 | `src/offframe.rs` | the four off-frame threads (§4.12): the one leg both fanning workers share, the filing every answer goes through, and the pump that is a cadence rather than a timeout. | ~120 |
 | `src/offframe/asker.rs` | one pass of the standing set, in two halves: the reads whose subject is every channel, the nest under the focus, and the channel that costs only itself (§4.12). The selected conversation's reads lead every leg they have not yet been asked at (bl-1f22). The seam is the wire's own, so a pane asking at both widths appears in both halves rather than as a case (§4.31). | ~190 |
 | `src/offframe/asker/wall.rs` | the second half, split out at the design-time budget: every question that names one workspace, asked of the aimed wall. It is where six panes' pane-keyed reads nest, so it is the half that grows. | ~150 |

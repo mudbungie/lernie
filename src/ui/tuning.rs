@@ -111,6 +111,7 @@ fn role(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
         theme::tone_ink(&crate::reply::convs::Tone::Weak),
         row.runs_on(),
     );
+    offers::mark(ui, model, row);
     // **Every row here WRAPS**, because this pane stands in the central panel
     // and the central panel is what the two side panels leave (bl-dc07): at a
     // 400-point window that is about 120 points, and an unwrapped row lays its
@@ -174,6 +175,9 @@ fn assignment(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
             ui.add(egui::TextEdit::singleline(&mut edit.model).hint_text(MODEL_HINT));
         });
     }
+    if let Some(edit) = model.editing(&row.role) {
+        offers::pick(ui, model, &edit);
+    }
     ui.horizontal_wrapped(|ui| {
         let set = ui.add_enabled(ready, egui::Button::new(SET));
         crate::ui::act::tag(&set, &[crate::verbs::MODEL.word]);
@@ -185,6 +189,8 @@ fn assignment(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
         }
     });
 }
+
+pub mod offers;
 
 #[cfg(test)]
 mod tests;

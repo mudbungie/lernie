@@ -96,6 +96,9 @@ impl Link {
                         model.absorb(&heard.channel, read);
                     }
                 }
+                // Keyed by the row it was asked of, so no guard is owed: a
+                // frame for a row nobody shows is an entry nothing reads.
+                Said::Offering { provider, read } => model.offering(&provider, read),
                 Said::Unreachable(why) => model.unreachable(&heard.channel, why),
                 // **An act that earned no reply is an exchange, not a
                 // relationship** (REMOTE §3, bl-3969), so it goes to the bar
@@ -142,6 +145,16 @@ impl Link {
     /// append and only the lane knows which read it belongs to (REMOTE §8.3).
     pub fn signing(&self, channel: &Channel, provider: &str, read: crate::reply::Read) {
         let said = Said::Signin {
+            provider: provider.to_owned(),
+            read,
+        };
+        self.heard(channel, said);
+    }
+
+    /// One provider row's `models` answer, stamped with the row it was asked
+    /// of — [`Self::signing`]'s reason: the reply carries no name (bl-b7d9).
+    pub fn offering(&self, channel: &Channel, provider: &str, read: crate::reply::Read) {
+        let said = Said::Offering {
             provider: provider.to_owned(),
             read,
         };

@@ -61,6 +61,10 @@ pub enum Said {
     /// the first upstream, and an unstamped frame would paint one run's lines
     /// under the other's name.
     Signin { provider: String, read: Read },
+    /// **One provider row's `models` answer, stamped with the row asked**
+    /// (bl-b7d9). The reply names no provider, and the tuning pane asks every
+    /// row its roles run on in one pass, so only the asker knows whose it is.
+    Offering { provider: String, read: Read },
     /// This seat could not reach the far end, and here is the sentence.
     ///
     /// **A READ's failure, and only a read's.** It is a fact about a
@@ -112,8 +116,9 @@ pub enum Said {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Open {
     /// **The tuning pane** — the aimed wall's fourth question, what its roles
-    /// are set to (bl-4a2c).
-    Tuning,
+    /// are set to (bl-4a2c), carrying the provider rows its rows and draft
+    /// name, each asked what it offers on the same standing (bl-b7d9).
+    Tuning(Vec<String>),
     /// **The records pane** — the selected conversation's own second question,
     /// what its loop did and what its worktree holds (bl-2cf7).
     Records,
@@ -167,7 +172,7 @@ impl Open {
     /// window cannot reach rather than a precedence anybody spends.
     fn of(model: &Model) -> Option<Self> {
         if model.tuning.is_some() {
-            Some(Self::Tuning)
+            Some(Self::Tuning(model.tuned()))
         } else if model.showing(crate::ui::Listing::Records) {
             Some(Self::Records)
         } else if model.showing(crate::ui::Listing::Queue) {

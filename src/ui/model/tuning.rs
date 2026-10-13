@@ -184,5 +184,7 @@ impl Model {
     }
 }
 
+mod offers;
+
 #[cfg(test)]
 mod tests;

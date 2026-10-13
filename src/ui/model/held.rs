@@ -48,6 +48,10 @@ pub struct Model {
     /// **The tuning pane, while it is open** — the second pane in this window
     /// that covers the conversation ([`Tuning`]).
     pub tuning: Option<Tuning>,
+    /// **What each provider row the tuning pane asked offers**, keyed by the
+    /// row, because the reply names none (bl-b7d9). A row with no entry has
+    /// said nothing, and nothing is concluded from it.
+    pub offers: std::collections::BTreeMap<String, Vec<String>>,
     /// **Which of the three LISTING panes is standing**, if any — the records
     /// pane, the decision queue, or the clients pane (`listing`). One field
     /// rather than a flag each: they hold nothing of their own, no two ever

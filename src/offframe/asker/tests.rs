@@ -51,5 +51,7 @@ mod login;
 mod nesting;
 /// The selection, read at the next leg and ahead of the fan.
 mod selection;
+/// The tuning pane's offerings, stamped with the row each was asked of.
+mod tuning;
 /// The union across channels, and the channel that costs only itself.
 mod union;

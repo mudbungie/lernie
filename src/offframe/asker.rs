@@ -167,14 +167,19 @@ fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: 
 /// [`route`](crate::seat::route) resolves it over this box's entries and
 /// rewrites it to the host's spelling at the one place that mapping is spent.
 pub(super) fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
-    let asked = crate::seat::route(root, envelope)
-        .sent
-        .map_err(crate::channel::Reach::Unsent)
-        .and_then(|(open, carried)| open.ask(&carried));
-    match asked {
+    match asked(root, envelope) {
         Ok(stream) => super::file(link, channel, stream),
         Err(reach) => read(link, Err(reach), channel),
     }
+}
+
+/// **One aimed question's frames, or why there are none** — [`aimed`]'s leg
+/// without its filing, for a caller that has to stamp what comes back.
+pub(super) fn asked(root: &Path, envelope: &Value) -> Result<Vec<Value>, crate::channel::Reach> {
+    crate::seat::route(root, envelope)
+        .sent
+        .map_err(crate::channel::Reach::Unsent)
+        .and_then(|(open, carried)| open.ask(&carried))
 }
 
 /// **A read's failure is the channel's own relationship**, whichever leg

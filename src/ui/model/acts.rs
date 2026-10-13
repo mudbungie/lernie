@@ -87,6 +87,7 @@ impl Model {
         // asked yet, and the old wall's answer is not this wall's.
         self.tuning = None;
         self.roles = None;
+        self.offers.clear();
         // **The login pane goes with the wall too** (bl-e3c5), and for the
         // sharper form of the same reason: its act signs a credential into ONE
         // wall's own store, so a pane left standing over a new aim would offer

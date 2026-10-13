@@ -14,7 +14,7 @@
 
 use std::path::Path;
 
-use super::{aimed, down, read};
+use super::{aimed, asked, down, read};
 use crate::state::{Link, Open};
 use crate::ui::Channel;
 
@@ -32,14 +32,7 @@ pub(super) fn ask(
         channel,
         &crate::verbs::conversations(aim.address.clone()),
     );
-    if standing.standing(&Open::Tuning) {
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::roles(aim.address.clone()),
-        );
-    }
+    tuning(link, root, standing, channel, aim);
     // **And the ball pane's other two are AIMED** (bl-d2af), on the roles
     // read's own terms: the wall the operator is looking at is asked what
     // balls it holds and which branch it tracks them on, while the same pane
@@ -157,6 +150,45 @@ fn records(link: &Link, root: &Path, channel: &Channel, wall: &str, conversation
         crate::verbs::lineages(wall.to_owned()),
     ] {
         aimed(link, root, channel, &ask);
+    }
+}
+
+/// **The tuning pane's reads**: the wall's roles, and what each provider row
+/// its rows and its draft name offers (bl-b7d9).
+///
+/// The offerings stand beside the roles rather than being posted as the login
+/// pane posts its one: the rows to ask about ARE the standing roles answer, so
+/// the question set is derived on every settle and no ledger of who has been
+/// asked exists to drift. Each answer is stamped with its row, because the
+/// reply names none ([`Link::offering`]).
+fn tuning(
+    link: &Link,
+    root: &Path,
+    standing: &crate::state::Standing,
+    channel: &Channel,
+    aim: &crate::ui::Aim,
+) {
+    let Some(Open::Tuning(providers)) = &standing.open else {
+        return;
+    };
+    aimed(
+        link,
+        root,
+        channel,
+        &crate::verbs::roles(aim.address.clone()),
+    );
+    for provider in providers {
+        match asked(
+            root,
+            &crate::verbs::models(aim.address.clone(), provider.clone()),
+        ) {
+            Ok(stream) => {
+                for frame in stream {
+                    link.offering(channel, provider, crate::reply::read(&frame));
+                }
+            }
+            Err(reach) => read(link, Err(reach), channel),
+        }
     }
 }
 

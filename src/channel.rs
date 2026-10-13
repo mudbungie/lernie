@@ -158,15 +158,23 @@ impl Channel {
     /// several is a follow-class read collected — the same reader, which is
     /// REMOTE §3's *"the streaming form is not a second form"*.
     ///
+    /// **Except where the frames replace** ([`crate::verbs::queue::replaces`],
+    /// REMOTE §14.1): there the answer is whole on its first frame, and every
+    /// later one is the same answer restated after a change, so the read stops
+    /// at one and drops the line — which is the word to the engine that ends
+    /// its hold. Collecting to the terminator there is a 30 s wait for nothing
+    /// the first frame had not said (bl-09e1).
+    ///
     /// One `Err` for an unreadable answer and a socket that never opened alike:
     /// both are the same fact to a caller — this cannot be painted, and here is
     /// the sentence. What the [`Reach`] adds is the one fact a sentence cannot
     /// carry and an ACT needs: whether the request crossed (REMOTE §3).
     pub fn ask(&self, request: &Value) -> Result<Vec<Value>, Reach> {
+        let whole_at_first = crate::verbs::queue::replaces(request);
         let mut stream = Vec::new();
         self.follow(request, &mut |frame| {
             stream.push(frame);
-            true
+            !whole_at_first
         })?;
         Ok(stream)
     }

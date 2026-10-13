@@ -5,13 +5,13 @@ use super::edition;
 use super::hello::PROTOCOL;
 use super::material::{CHAIN, KEY, Material, read_dir};
 use super::{Channel, server_name};
-use crate::test_support::engine::Engine;
+use crate::test_support::engine::{Answer, Engine, HOLD};
 use crate::test_support::{Scratch, mint};
 use serde_json::{Value, json};
 
 /// A scratch box with an engine standing at the far end, answering the n-th
 /// dial with the n-th entry of `script`.
-fn wired(protocol: u32, script: Vec<Vec<Value>>) -> (Scratch, Engine, Material) {
+fn wired(protocol: u32, script: Vec<impl Into<Answer>>) -> (Scratch, Engine, Material) {
     let scratch = Scratch::new();
     mint::material(scratch.path());
     let engine = Engine::start(scratch.path(), protocol, script);
@@ -102,6 +102,21 @@ fn a_follower_takes_frames_one_at_a_time_and_can_stop_early() {
         })
         .expect("followed");
     assert_eq!(taken, vec![json!({"n": 1}), json!({"n": 2})]);
+}
+
+/// **A read whose frames replace is answered by its first frame** (REMOTE
+/// §14.1, bl-09e1). The engine holds the line after the answer at connect, so
+/// a reader that collected to the terminator would wait out the hold; the ask
+/// takes the one frame and drops the line, well inside it.
+#[test]
+fn a_replacing_read_is_answered_by_its_first_frame_without_waiting_out_the_hold() {
+    let first = json!({"ok": true, "kind": "attention", "rows": []});
+    let held = Answer::Held(vec![first.clone(), json!({"n": 2})]);
+    let (_scratch, _engine, material) = wired(PROTOCOL, vec![held]);
+    let channel = Channel::open(&material).expect("opened");
+    let began = std::time::Instant::now();
+    assert_eq!(channel.ask(&crate::verbs::attention()), Ok(vec![first]));
+    assert!(began.elapsed() < HOLD, "the ask waited out the hold");
 }
 
 /// **One connection per ask.** Two asks are two dials, and the engine sees both

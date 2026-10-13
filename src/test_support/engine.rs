@@ -43,6 +43,11 @@ use crate::channel::{frame, material, tls};
 /// How many frames a seat writes per connection: its preface, then its request.
 const FRAMES_IN: usize = 2;
 
+/// How long a [`Answer::Held`] connection holds before it terminates — the
+/// stand-in's bounded hold, far past anything a test that stops at the first
+/// frame takes.
+pub(crate) const HOLD: std::time::Duration = std::time::Duration::from_secs(10);
+
 /// **What the stand-in does on one connection.**
 ///
 /// A plain `Vec<Value>` converts into the ordinary arm, so every scripted
@@ -52,6 +57,11 @@ pub(crate) enum Answer {
     /// The frames, then the terminator: an answer, ended the way REMOTE §3 ends
     /// one.
     Frames(Vec<Value>),
+    /// **The frames, then HOLD** — the shape of a held read (yog's
+    /// `docs/REMOTE.md` §14.1): the answer at connect, and then nothing until
+    /// the seat drops the line or [`HOLD`] ends, and only then the terminator.
+    /// A seat that waits for the terminator here waits out the whole hold.
+    Held(Vec<Value>),
     /// **Read the request and close, saying nothing.** No frames and no
     /// terminator, so the seat's reader meets an EOF where a frame belongs.
     Hangup,
@@ -132,11 +142,18 @@ fn serve(
                 .push(said);
         }
     }
-    let Answer::Frames(frames) = answer else {
-        return;
+    let (frames, held) = match answer {
+        Answer::Frames(frames) => (frames, false),
+        Answer::Held(frames) => (frames, true),
+        Answer::Hangup => return,
     };
     for value in frames {
         let _ = frame::write_value(&mut tls, value);
+    }
+    if held {
+        // Hold until the seat drops the line (the read ends) or the hold does.
+        let _ = tls.sock.set_read_timeout(Some(HOLD));
+        let _ = frame::read_value(&mut tls);
     }
     let _ = frame::write_end(&mut tls);
 }

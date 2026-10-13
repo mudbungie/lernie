@@ -190,6 +190,16 @@ answer is a stream, so a follow-class read is the general path with more than
 one frame in it. `Channel::ask` is written in terms of `Channel::follow` rather
 than beside it, so there is one reader and it cannot drift.
 
+**A read whose frames REPLACE is whole on its first frame** (REMOTE §14.1,
+bl-09e1). Since PROTOCOL 10 an engine that can hold answers `attention` as a
+sequence — the answer at connect, a frame per change, until a bounded hold
+(30 s) ends — and *"frames replace; they never append"*. So `Channel::ask` stops
+after the first frame of any op `verbs::queue::REPLACING` names and drops the
+line, which is the word that ends the hold. Collecting to the terminator there
+cost every one-shot `attention` ask — the window's asker fan, `lernie
+attention` — the whole hold, and stalled the asker's single pass behind it. The
+list is the one place the knowledge lives; no call site names an op.
+
 ### 4.3 The version preface (§3, §3.2)
 
 Each end writes `{"protocol": <n>, "edition": <n>}` before it reads the peer's,
@@ -2337,6 +2347,10 @@ Five decisions, and each is a choice rather than a mechanism:
   (`Standing::queue`), and there the argument is sharper than tuning's: a fan
   costs one round trip per channel per beat, so a seat with nothing open pays
   none of them.
+- **The read is one-shot even against an engine that holds** (§4.2, bl-09e1):
+  the asker takes the first frame of each channel's answer and hangs up, so a
+  held `attention` lane costs a pass one round trip per channel and never its
+  30 s hold.
 - **A fan's answer replaces its OWN channel's section**, leaving every other
   standing — §8.2's *"a refusal is one entry's, never the set's"*, the shape the
   roster already keeps.

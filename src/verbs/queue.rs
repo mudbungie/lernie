@@ -73,6 +73,28 @@ pub const SEEN: Verb = Verb {
              remains, not with a receipt.",
 };
 
+/// **The reads whose frames REPLACE rather than append** (yog's
+/// `docs/REMOTE.md` §14.1, PROTOCOL 10) — the one list of them, so no call
+/// site has to know which ops hold.
+///
+/// An engine intake that can hold answers [`ATTENTION`] as a sequence: the
+/// answer at connect, then a frame per change, until the follow lane's bounded
+/// hold ends. *"Frames replace; they never append"* and *"a seat paints the
+/// last frame it holds"* — so a one-shot ask of one of these is whole on its
+/// FIRST frame, and a reader that waited for the terminator would wait out the
+/// hold (30 s, bl-09e1) to learn nothing the first frame had not said.
+pub const REPLACING: &[&str] = &[ATTENTION.word];
+
+/// **Whether one envelope's answer is whole on its first frame** — the
+/// question [`crate::channel::Channel::ask`] puts to every request, read off
+/// the envelope's own `op` and [`REPLACING`] and nowhere else.
+pub fn replaces(envelope: &Value) -> bool {
+    envelope
+        .get(crate::envelope::OP)
+        .and_then(Value::as_str)
+        .is_some_and(|op| REPLACING.contains(&op))
+}
+
 /// The queue read, typed — a door whose arity is its signature, on the same
 /// terms as every other row's.
 pub fn attention() -> Value {

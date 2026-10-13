@@ -27,10 +27,12 @@ fn the_ball_pane_s_four_reads_stand_only_while_it_is_open() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "balls", "rows": []})],
             vec![json!({"ok": true, "kind": "board", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspace-balls", "rows": []})],
             vec![json!({"ok": true, "kind": "marks", "branch": "balls/tasks"})],
         ],
@@ -64,10 +66,12 @@ fn the_ball_pane_s_four_reads_stand_only_while_it_is_open() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "balls",
             "board",
             "conversations",
+            "roles",
             "workspace-balls",
             "marks",
         ]

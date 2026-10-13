@@ -26,8 +26,10 @@ fn the_machines_read_stands_only_while_the_clients_pane_is_open() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "clients", "rows": [
                 {"client": "laptop", "present": true, "tools": []}]})],
         ],
@@ -61,8 +63,10 @@ fn the_machines_read_stands_only_while_the_clients_pane_is_open() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "conversations",
+            "roles",
             "clients",
         ]
     );

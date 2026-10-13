@@ -98,9 +98,11 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
     });
 }
 
-/// **The seat's card**: each engine with its dial state, the version, and the
-/// ways in.
-pub fn seat(ui: &mut egui::Ui, model: &Model) {
+/// **The seat's card**: each engine with its dial state, the version, the
+/// queue's door while anything waits, and the ways in. Answers whether the
+/// door was clicked.
+pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
+    let mut asked = false;
     card(ui, |ui| {
         line(ui, &version(), theme::INK);
         for chunk in &model.roster {
@@ -153,8 +155,10 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) {
             };
             line(ui, &said, ink);
         }
+        asked = crate::ui::status::waiting::door(ui, model);
         line(ui, &ways_in(), theme::INK_WEAK);
     });
+    asked
 }
 
 #[cfg(test)]

@@ -44,9 +44,9 @@ use crate::ui::{Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "roles";
-/// **The word that opens it to change the model** (bl-4e55; the baseline's
-/// Ctrl+O): the same pane by the noun an operator reaches for, and the door
-/// the rule's model segment and the chord both fire.
+/// **The word that changes the worker's model** (bl-4e55; the baseline's
+/// Ctrl+O): since bl-d74b it opens the rule's model dropup rather than this
+/// pane (`crate::ui::status::dropup`), and the chord fires it.
 pub const MODEL: &str = "model";
 /// The pane's own heading.
 pub const HEADING: &str = "role tuning";

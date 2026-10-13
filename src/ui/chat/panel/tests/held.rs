@@ -1,6 +1,6 @@
 //! **The dial state on the glass** (bl-4cac): a channel that will not dial
-//! says why on the seat's card and is not counted as reached on the rule, and
-//! one not heard from yet says that.
+//! says why on the seat's card, and one not heard from yet says that. The
+//! rule counts no engines (§4.42, item 11): the dead one is the card's.
 
 use crate::paint_probe::{Seen, frame::Window};
 use crate::test_support::window::seated;
@@ -49,7 +49,6 @@ fn an_unprovisioned_seat_says_why_and_claims_no_engine() {
         let error = theme::accent(theme::State::Error);
         let read = said_in(&seen, error);
         assert!(read.contains(&words(&why)), "at {w}: {read:?}");
-        assert!(read.contains("0 of 1 engine"), "at {w}: {read:?}");
         for run in seen.iter().filter(|run| run.ink == error) {
             assert_eq!(run.shown, run.laid, "at {w}: {:?} is cut", run.text);
         }
@@ -80,7 +79,6 @@ fn a_dead_engine_is_red_on_the_card_and_the_rule_and_its_count_is_not_green() {
         read.contains("(this box's own engine) — connection refused"),
         "{read:?}"
     );
-    assert!(read.contains("0 of 1 engine"), "{read:?}");
     assert!(!seen.iter().any(|run| run.text.contains("waiting")));
 }
 
@@ -102,5 +100,5 @@ fn an_unheard_engine_says_it_is_not_answered_yet() {
         crate::ui::roster::NOT_ANSWERED
     );
     assert!(weak.contains(&expected), "{weak:?}");
-    assert!(weak.contains("0 of 1 engine"), "{weak:?}");
+    assert!(!seen.iter().any(|run| run.text.contains("of 1 engine")));
 }

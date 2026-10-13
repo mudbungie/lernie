@@ -60,6 +60,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         return false;
     }
     crate::ui::overlay::name(ui, HEADING);
+    // **The queue's door stands at its head** (§4.42, item 11): the count
+    // left the rule, and the switcher is the other seat-wide list.
+    if crate::ui::status::waiting::door(ui, model) {
+        model.switching = false;
+        crate::ui::slash::fire(model, crate::ui::queue::WORD, "");
+    }
     roster::render(ui, model);
     true
 }

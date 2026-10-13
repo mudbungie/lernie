@@ -67,10 +67,17 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         if enroll::render(ui, model) {
             return;
         }
-        chat::render(ui, model);
+        // **The seat panel's waiting count is the queue's door** (§4.42,
+        // item 11), as the rule's was.
+        if chat::render(ui, model) {
+            slash::fire(model, crate::ui::queue::WORD, "");
+        }
         // **The menu floats over the box it completes** (§4.42, item 5): laid
         // last in the column, at its bottom, which is where the rule begins.
         slash::menu(ui, model);
+        // **A selector's dropup floats over its segment** (§4.42, item 11),
+        // laid at the same bottom edge for the menu's reason.
+        status::dropup::render(ui, model);
         // **Every other pane floats** (§4.42, item 6): painted last, over the
         // conversation it used to replace.
         overlay::stand(ui, model);

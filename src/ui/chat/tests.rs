@@ -170,16 +170,25 @@ fn each_half_of_a_turn_in_flight_is_its_own_row_and_an_empty_one_is_none() {
 #[test]
 fn the_pane_says_what_it_is_waiting_for() {
     let mut nothing = Model::default();
-    let unaimed = pane(|ui| render(ui, &nothing));
+    let unaimed = pane(|ui| {
+        render(ui, &nothing);
+    });
     assert!(unaimed.contains(NO_AIM), "{unaimed}");
     assert!(!unaimed.contains(NO_CONVERSATION), "{unaimed}");
     nothing = Model {
         conversation: None,
         ..seated()
     };
-    assert!(pane(|ui| render(ui, &nothing)).contains(NO_CONVERSATION));
+    assert!(
+        pane(|ui| {
+            render(ui, &nothing);
+        })
+        .contains(NO_CONVERSATION)
+    );
     nothing = seated();
-    let painted = pane(|ui| render(ui, &nothing));
+    let painted = pane(|ui| {
+        render(ui, &nothing);
+    });
     assert!(painted.contains("port it"), "{painted}");
 }
 
@@ -262,7 +271,9 @@ fn the_header_of_an_empty_half_never_reaches_the_glass() {
         ],
         usage: Usage::new(),
     });
-    let painted = pane(|ui| render(ui, &model));
+    let painted = pane(|ui| {
+        render(ui, &model);
+    });
     assert!(painted.contains("the seam is real"), "{painted}");
     assert!(!painted.contains("(thinking)"), "{painted}");
 }

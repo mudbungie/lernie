@@ -5000,7 +5000,9 @@ parts, in its vertical order, each with what it becomes here.
    snapshot matrix keeps its three sizes and the policy question it used to
    ask is gone rather than always answered yes.
 
-2. **The status rule** (`src/ui/status.rs`) is one line, left to right:
+2. *Superseded by item 11 for the segments; the notice's slot, the long
+   notice's place above the rule and the rule standing down under an overlay
+   stand as written.* **The status rule** (`src/ui/status.rs`) is one line, left to right:
    `─ <state> · <elapsed> │ <model> │ <spend> │ <N waiting> │ <N engines> ─
    <name>`. The state is the wire's own word for the selected conversation
    in its state's ink (`theme::state_of`), `ready` in weak ink at rest, and
@@ -5218,7 +5220,10 @@ parts, in its vertical order, each with what it becomes here.
    as a fold's is. The fleet's runs (§4.33) join it when their read
    stands outside the fleet pane; until then they are the pane's.
 
-10. **What you talk to is changed from the glass, not only typed**
+10. *Superseded by item 11 for the segments: the model and the waiting
+    count are no longer doors here, and `/model` and Ctrl+O open the model's
+    dropup rather than the role tuning; the name's door stands as written.*
+    **What you talk to is changed from the glass, not only typed**
     (bl-4e55). On the first run of this window the operator could not find
     how to change the workspace, the provider or the model: the ways existed
     — Ctrl+X, `/login`, `/roles` — and nothing on the glass named them. So
@@ -5249,14 +5254,108 @@ parts, in its vertical order, each with what it becomes here.
     prompt's hint, which drops its trailing ways one by one where the line
     has no room for them, as the rule drops its segments.
 
+11. **The rule is the conversation's line** (bl-d74b). Operator ruling
+    2026-10-12, verbatim: *"The selectors and interfaces are all full-ish
+    screen popovers. They should just be dropdowns (or dropups, since
+    they're usually near the bottom). Click it; it shows a cached list, and
+    triggers a reload. A little yellow reload icon until it happens, which
+    turns into a green checkbox. Leftmost should show the workspace, then
+    provider, then model, then context, then (if the API allows) priority.
+    After that, all the other diagnostics: tokens out and in, context window
+    usage, etc. The only thing along the bottom next to the chat bar should
+    be stuff about that conversation, so things like the 12 waiting
+    shouldn't be there."*
+
+    **The line, left to right**: `— workspace ⏶ | provider ⏶ | model ⏶ |
+    effort ⏶ | priority ⏶ | <state> · <elapsed> | <in> in · <out> out |
+    cache <r> read · <w> write | <cost> | context <N>% — <name>`. The five
+    are **selectors** (`status/selectors.rs`); the rest are this
+    conversation's **diagnostics** in weak ink (`status/diagnostics.rs`) —
+    the state slot first, in its state's ink, the notice in it while there
+    is one (item 2's rule, bl-7e3e's long notice above the rule, kept); the
+    tokens, the cache where either half is non-zero, the money in §4.41's
+    words and nothing where no rate priced it, and the context's own
+    percent, all off the selected conversation's `agent` row. The name at
+    the right end stays the switcher's door (item 10). **`N waiting` and
+    `N engines` leave the rule**: they are seat-wide. The waiting count —
+    still leaving out a channel that will not dial (bl-4cac) — is the
+    queue's door on the seat panel and at the switcher's head
+    (`status/waiting.rs`), beside `/attention`; the engines' dial state is
+    the seat panel's engine rows (bl-4cac's sentence in the error accent).
+    **The one dial fact that stays is this conversation's**: while the
+    aimed engine will not dial, the state slot says its sentence in the
+    error accent (`diagnostics::down`), under any notice.
+
+    **Three readings of the ruling, each checked against the wire.**
+    *Context* is read as **effort**: a role's facts on the wire are
+    provider, model, effort (a level word) and priority (a boolean), per
+    `reply/roles` rows, and there is no context knob to select — so effort
+    takes the slot the operator called context. *Context window usage* IS
+    stated — the `agent` row carries `context` (`prompt_tokens`, `window`,
+    the engine's own unclamped `percent`; `reply::agent::Fullness`) — so it
+    is painted as `context N%` and asks nothing upstream. *Yellow* is the
+    **annotation accent**: `docs/STYLE.md` §1's palette has no yellow, and
+    the accent that says *something is happening here, not wrong* is the
+    nearest it has; the check is the attention accent, the palette's green.
+
+    **What each selector holds, lists and fires.** The selectors speak for
+    the **worker** role — the role that answers — on the aimed wall, read
+    off the `roles` read, which now **stands on the aim** rather than on the
+    tuning pane (`offframe::asker::wall`): a selector that knew its fact
+    only while a pane two gestures away was open would usually be blank.
+    *Workspace* lists every wall the roster holds (with its engine where the
+    seat reaches more than one), reloads with `workspaces`, and a pick aims
+    — the switcher's own door, `Model::aim_at` with the engine's opening.
+    *Provider* lists the providers read's rows, reloads with `providers`,
+    and a pick opens the *model* list on that row rather than writing,
+    because a provider alone is half an assignment and the write takes the
+    pair (`Edit::ready`'s rule). *Model* lists what that row offers
+    (`Model::offers`, the tuning pane's own store, filed by the answer to
+    the `models` read it posts) with the worker's model first where the
+    listing lacks it, and a pick is `model` for the worker — the role
+    tuning's own door (`Model::post_model`). *Effort* lists the four levels
+    and *priority* `on` and `off`; both reload with `providers`, a pick is
+    `effort` or `priority` for the worker, and each stands only where the
+    worker's provider row's capability flag allows it — or where the
+    providers read has not said, because absence is not evidence. With
+    nothing aimed only the workspace stands.
+
+    **The dropup** (`status/dropup.rs`, `model/dropup.rs`): a click on a
+    segment opens a framed list over it, opening upward from the rule — the
+    overlay's frame over a span (`overlay::float_at`), a child region laid
+    at the central panel's foot as the completion menu is, never an
+    `egui::Area`, so its first frame paints. It lists the **cached** rows at
+    once and posts the read that refreshes them; the segment's mark is `⏶`
+    in faint ink at rest, `↻` in the annotation accent while the read is
+    out, and `✔` in the attention accent from the answer until the list
+    closes — the answer of the kind the list asked (`Selector::answered_by`)
+    is what turns it, and a refusal of that read's op puts the mark back to
+    rest while the notice says why (a reload that never ended would claim
+    one was still coming). ↑↓ walk, Enter picks, Esc closes — taken at the top
+    of the frame ahead of the prompt and of the overlay's Esc — and a click
+    on a row picks it, a click anywhere else or on its segment again closes
+    it; an overlay or the completion menu puts it down. Each row wears the
+    op its pick spends, each segment the read it posts. The role tuning
+    stays as the per-role editor (`/roles`); **`/model` and Ctrl+O open the
+    model's dropup**. A Tab off the prompt lands on the selectors in order,
+    and the one that holds the keyboard wears the brand ring
+    (`theme::paint::link`, bl-8e3e — STYLE §1's one stroke); Enter or
+    Space opens it, as a click does.
+
+    **The width**: what does not fit drops from the right — the
+    diagnostics, then priority, then effort — and workspace, provider and
+    model never drop: they are cut with `…` to one shared width, a short
+    one keeping its words and the rest sharing what is left, beside a name
+    held to a quarter of the line.
+
 **Colour stays the six-state ruling** (`docs/STYLE.md` §1, operator
 2026-09-06): the baseline's gold is its brand, and this seat keeps its own —
 the brand on the prompt glyph and the operator's gutter, the attention accent
-on the ask and the waiting count, every other accent read off the wire's own
+on the ask and a dropup's check, every other accent read off the wire's own
 words, and the frames, stems, gutters and the rule's dashes in the ink scale.
 **The frame is the one new shape**, and `docs/STYLE.md` §1's *no outlines* is
 amended by exactly it: an outline marks what FLOATS — an overlay, the menu,
-the ask — and the panel at the head of a transcript, and nothing else is boxed.
+a dropup, the ask — and the panel at the head of a transcript, and nothing else is boxed.
 A stroke on a thing that floats says what is over what; a stroke on a control
 was the grid of chips the rule was written against.
 
@@ -5266,15 +5365,17 @@ is not standing, the box takes it back, at launch, after the switcher picks,
 after Esc and after an overlay closes (bl-b1a1); a keystroke never needs a
 click first. Enter sends; Shift+Enter breaks a line; `/` opens the
 menu and Tab takes a row; Ctrl+X opens the switcher; Ctrl+O opens the
-role tuning, as `/model` and a click on the rule's model do (item 10); `/stop` and
-`/interrupt <words>` are typed, not chorded (item 3); Esc closes the overlay,
-then the menu, then the notice; ↑↓ walk whatever is open; a digit answers the ask; Ctrl+T unfolds the
+model's dropup, as `/model` and a click on the rule's model do (item 11); `/stop` and
+`/interrupt <words>` are typed, not chorded (item 3); Esc closes a dropup,
+then the overlay, then the menu, then the notice; ↑↓ walk whatever is open
+and Enter picks in a dropup; a digit answers the ask; Ctrl+T unfolds the
 dock. Every act is a slash verb or a key, and every key calls the door the
 verb calls.
 
 **What is proven, and how it stays proven.** Every assertion keeps reading the
 glyphs that reached the glass (`src/paint_probe.rs`): the rule's segments are
-runs, the menu's rows are tagged controls, an overlay is a world, and the
+runs, its selectors and a dropup's rows are tagged controls (a dropup is a
+world, `snapshot::worlds::dropped`), the menu's rows are tagged controls, an overlay is a world, and the
 ask's digits are controls the reach walk reaches. The reach bound (§4.11,
 `snapshot::reach`) tightens rather than loosens — every pane is two gestures
 from the field: `/`, the word.
@@ -5530,7 +5631,9 @@ dock.
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: one column (§4.42) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
-| `src/ui/status/reach.rs` | **what the rule counts across the roster** (bl-4cac): the conversations asking, leaving out a channel that will not dial, and the engines reached out of those held, in the error accent where one will not dial. | ~50 |
+| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11): the five selectors and their marks, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
+| `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
+| `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |

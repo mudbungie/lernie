@@ -44,10 +44,12 @@ fn a_selection_is_read_before_the_fan_and_the_fan_still_visits_every_channel() {
         vec![
             roster(),
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             roster(),
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
         ],
     );
     let far = wired(&scratch, &entry("far"), vec![roster(), roster()]);
@@ -62,10 +64,12 @@ fn a_selection_is_read_before_the_fan_and_the_fan_still_visits_every_channel() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "transcript",
             "agent",
             "workspaces",
             "conversations",
+            "roles",
         ]
     );
     assert_eq!(ops(&far), vec!["workspaces", "workspaces"]);

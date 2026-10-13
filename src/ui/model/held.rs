@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Engines, Enrolling,
-    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records,
-    Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dropup, Engines,
+    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing,
+    Records, Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -45,6 +45,8 @@ pub struct Model {
     /// been answered about them — one field where [`Self::convs`] needs a pair,
     /// because here the option carries the whole distinction (`tuning`).
     pub roles: Option<Vec<crate::reply::roles::RoleRow>>,
+    /// **The rule's open dropup**, if any (`dropup`; DESIGN §4.42 item 11).
+    pub dropup: Option<Dropup>,
     /// **The tuning pane, while it is open** — the second pane in this window
     /// that covers the conversation ([`Tuning`]).
     pub tuning: Option<Tuning>,

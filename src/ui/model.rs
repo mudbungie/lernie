@@ -37,7 +37,8 @@ mod config;
 mod deep;
 /// The doctor pane between frames: open or not, and each channel's checks.
 mod doctor;
-/// The edges the operator has dragged, and what absence means on each.
+/// A selector's dropup on the rule: which is open and whether it reloaded.
+mod dropup;
 /// **The accordion**: which engine is open, and how the rest are ordered.
 mod engines;
 /// An enrollment, between the control that opened it and the symbol it ends at.
@@ -83,6 +84,8 @@ pub use board::{Bindings, Columns};
 pub use channel::{Channel, Chunk, Held};
 pub use config::{Configuring, Proposing};
 pub use doctor::Diagnosis;
+pub(crate) use dropup::choices::lane;
+pub use dropup::{Choice, Dropup, Pick, Reload, Selector, WORKER};
 pub use engines::Engines;
 pub use enroll::{Enrolling, Grade, Shown};
 pub use fill::Fill;

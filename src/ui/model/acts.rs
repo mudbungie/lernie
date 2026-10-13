@@ -186,6 +186,8 @@ impl Model {
     pub fn escape(&mut self) {
         if self.enroll.is_some() {
             self.close_enrollment();
+        } else if self.dropup.is_some() {
+            self.close_dropup();
         } else if self.switching {
             self.switching = false;
         } else if matches!(self.tuning, Some(super::Tuning::Editing(_))) {

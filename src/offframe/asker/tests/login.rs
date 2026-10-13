@@ -29,8 +29,10 @@ fn the_provider_table_stands_only_while_the_login_pane_is_open() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "providers", "rows": []})],
         ],
     );
@@ -63,8 +65,10 @@ fn the_provider_table_stands_only_while_the_login_pane_is_open() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "conversations",
+            "roles",
             "providers",
         ]
     );

@@ -5,8 +5,8 @@ use crate::paint_probe::frame::Window;
 use crate::test_support::window::{painted, queued, seated};
 use crate::ui::theme;
 
-/// The rule's one run no other pane paints: the engines it counts.
-const RULE: &str = "1 engine";
+/// The rule's one run no other pane paints: the provider selector's door.
+const RULE: &str = crate::ui::status::selectors::NO_PROVIDER;
 
 /// **The window is the transcript, the rule and the prompt**, and no heading
 /// names a column: there is one.

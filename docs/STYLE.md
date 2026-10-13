@@ -54,23 +54,29 @@ transcript, above the prompt. A width buys wrapping and nothing else; there is
 no shape, no yield and no dragged edge.
 
 **The eye lands on green.** The ask above the prompt is a green-framed box;
-the waiting count on the rule is green while it is non-zero; the prompt line
+a dropup's check is green for the moment its list is fresh; the prompt line
 glows green while the selected conversation is asking; the switcher's asking
 rows wear `?` in green. A window with nothing waiting has nothing green on it.
 
-**The rule says where you are and what it costs.** One line:
-`─ state · elapsed │ model │ spend │ N waiting │ N engines ─ name`. The state
-word is the wire's own, in its state's ink; the notice stands in that slot in
-its ink while there is one, and Esc puts it down — while it fits beside every
-fact and the name; a longer one stands whole, wrapped, on its own lines just
-above the rule, never cut and never costing a fact. The right end is the
-conversation's name, the wall's where none is selected, `engines` where
-nothing is aimed. There is no heading over the transcript: one pane needs no
-name, and the rule carries the one fact a heading carried. **The model and the
-name are doors** (DESIGN §4.42, item 10): the model opens the role tuning —
-on a wall nothing has answered on it says the worker role's model where the
-roles are in hand and `model…` where they are not (bl-0966) — and the name opens
-the switcher. What you talk to is changed where it is read.
+**The rule is the conversation's own line** (DESIGN §4.42, item 11). One
+line: `— workspace ⏶ | provider ⏶ | model ⏶ | effort ⏶ | priority ⏶ | state
+· elapsed | tokens in · out | cost | context N% — name`. The five selectors
+come first, in body ink, each with `⏶` in faint ink beside it (the body font
+has no `▾`); a click opens a **dropup** — a small framed list over the
+segment, opening upward — showing what this seat holds at once and asking
+for it again, while the segment's mark is `↻` in the annotation accent
+(the palette has no yellow) and then `✔` in the attention accent once the
+answer has landed. After them, the conversation's diagnostics in weak ink,
+the state first in its state's ink — where the notice stands while there is
+one, and Esc puts it down; a notice longer than the line stands whole,
+wrapped, just above the rule. The name at the right end is the switcher's
+door. A selector or the name that holds the keyboard wears the brand ring,
+and Enter or Space opens it. Nothing seat-wide stands on the rule: how many conversations wait and
+how many engines answer are the seat panel's, the switcher's and
+`/attention`'s. What runs out of width drops from the right — diagnostics,
+then priority, then effort; workspace, provider and model never drop and are
+cut with `…` inside their share instead. What you talk to is changed where
+it is read.
 
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
 a line per line typed, the hint in weak ink while it is empty: *say it — Enter
@@ -98,8 +104,9 @@ transcript, the conversation panel: a framed card with its name, engine and
 wall, model, spend and where it hangs, one line each, the long ones behind
 `▸` folds. With nothing selected the seat panel stands there: the engines this
 seat reaches, one row each with its dial state and counts — an engine that
-will not dial says why in red in place of its counts, and the rule counts it
-as held and not reached (`1 of 2 engines`) — the version, and
+will not dial says why in red in place of its counts, and while it is the
+aimed engine the rule's state slot says the same in red — the queue's door
+`N waiting` in green while anything asks, the version, and
 the ways in: *the verbs, a conversation, the model, a provider*. Under the
 transcript, the rule; under the rule, the prompt.
 
@@ -174,14 +181,23 @@ box.
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.
 
-**The status rule** (`status`): one line of `SMALL` runs parted by `│` in
-`INK_FAINT`, led by `─`; the state word in its state's ink, every other
-segment in `INK_WEAK`, the waiting count in the attention accent while it is
-non-zero, the name at the right end in `INK`. Segments drop from the right
-as the width runs out, the name last. **The model and the name are links**
+**The status rule** (`status`): one line of `SMALL` runs parted by `|` in
+`INK_FAINT`, led by `—`; the five selectors in `INK` (a placeholder such as
+`model…` in `INK_WEAK`) each followed by its mark — `⏶` in `INK_FAINT` at
+rest, `↻` in the annotation accent while its list reloads, `✔` in the
+attention accent once it has — then the state word in its state's ink and
+every other diagnostic in `INK_WEAK`, the name at the right end in `INK`.
+Diagnostics drop from the right first, then priority, then effort; the first
+three selectors are cut instead. **The selectors and the name are links**
 (`theme::paint::link`): the same run at the same width, bare at rest,
 `SURFACE` under the pointer with the pointing hand — never a box, never a
 button, because a fact you can open is still a fact.
+
+**A dropup** (`status::dropup`): the overlay's frame (`SURFACE`, the hairline,
+`RADIUS`) over a span of the window rather than across it, its left edge at
+the segment's, its foot on the rule; the keys in `INK_WEAK` at `SMALL` on the
+first line, then one row per choice in the row idiom, the row in force led by
+`•`, the cursor's row selected.
 
 **The prompt line** (`composer`): `›` in the brand at the left edge plus `M`,
 the draft in `INK` beside it at `BODY`, continuation lines indented to the

@@ -47,17 +47,18 @@ pub const TRAIL: &str = "tool calls";
 /// What parts a trail from the prose that follows it.
 pub const RESPONSE: &str = "response";
 
-/// Paint the transcript.
-pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
+/// Paint the transcript. Answers whether the seat panel's queue door was
+/// clicked.
+pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
     let Some(conversation) = model.conversation.as_ref() else {
-        panel::seat(ui, model);
+        let asked = panel::seat(ui, model);
         let said = if model.aim.is_some() {
             NO_CONVERSATION
         } else {
             NO_AIM
         };
         theme::paint::empty(ui, said);
-        return;
+        return asked;
     };
     egui::ScrollArea::vertical()
         .id_salt(conversation)
@@ -93,6 +94,7 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
                 at += 1;
             }
         });
+    false
 }
 
 /// **The hairline between turns.**

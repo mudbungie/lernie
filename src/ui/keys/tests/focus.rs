@@ -169,3 +169,28 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
         "and the caret is in the box that begins one"
     );
 }
+
+/// **A Tab off the box lands on the rule's first selector, ringed** (bl-8e3e),
+/// and Enter or Space there opens its dropup.
+#[test]
+fn a_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
+    for key in [egui::Key::Enter, egui::Key::Space] {
+        let mut model = crate::test_support::window::selecting();
+        let (rings, _) = ringed(&mut model, &[egui::Key::Tab]);
+        assert_eq!(
+            rings.len(),
+            1,
+            "one ring, on what took the keyboard: {rings:?}"
+        );
+        let window = Window::new();
+        let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
+        for events in [Vec::new(), vec![press(egui::Key::Tab)], vec![press(key)]] {
+            window.frame(events, &mut body);
+        }
+        assert_eq!(
+            model.dropup.map(|open| open.selector),
+            Some(crate::ui::Selector::Workspace),
+            "{key:?} on the focused selector opens it"
+        );
+    }
+}

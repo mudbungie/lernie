@@ -235,3 +235,14 @@ pub(super) fn prices() -> World {
         model: priced(),
     }
 }
+
+/// **The model's dropup open over the rule** (DESIGN §4.42, item 11): the
+/// one screen a selector's list and its rows' tags are on.
+pub(super) fn dropped() -> World {
+    let mut model = crate::test_support::window::selecting();
+    model.drop_up(crate::ui::Selector::Model);
+    World {
+        name: "dropup",
+        model,
+    }
+}

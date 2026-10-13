@@ -68,7 +68,7 @@ impl Engines {
 
     /// **Record an opening.** The rank is one past the highest anybody holds,
     /// so the engine just opened is the most recently opened by construction.
-    fn opening(&mut self, name: &str) {
+    pub(super) fn opening(&mut self, name: &str) {
         let next = self.opened.values().copied().max().unwrap_or_default() + 1;
         self.opened.insert(name.to_owned(), next);
         self.open = Some(name.to_owned());

@@ -140,8 +140,8 @@ fn wall_rows(pinned: bool, out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::tuning::MODEL,
-        "change the model a role runs on — Ctrl+O",
-        &[verbs::ROLES.word],
+        "choose the model the worker runs on — Ctrl+O",
+        &[verbs::MODELS.word],
     ));
     out.push(Row::new(
         crate::ui::login::WORD,

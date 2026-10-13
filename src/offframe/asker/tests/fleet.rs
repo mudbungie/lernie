@@ -27,8 +27,10 @@ fn the_fleet_pane_s_two_reads_stand_only_while_it_is_open() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "science", "rows": []})],
             vec![json!({"ok": true, "kind": "work-diff", "rows": []})],
         ],
@@ -62,8 +64,10 @@ fn the_fleet_pane_s_two_reads_stand_only_while_it_is_open() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "conversations",
+            "roles",
             "science",
             "work-diff",
         ]

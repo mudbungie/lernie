@@ -193,6 +193,13 @@ pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
         ui.painter()
             .rect_filled(rect.expand(space::XS), RADIUS, SURFACE);
     }
+    // **A link that holds the keyboard wears the brand ring** (bl-8e3e;
+    // bl-2d6b's rule for a row): a Tab lands on the rule's doors, and Enter or
+    // Space opens one, so where it landed is visible.
+    if seat.has_focus() {
+        ui.painter()
+            .rect_stroke(rect.expand(space::XS), RADIUS, Stroke::new(1.0, BRAND));
+    }
     ui.painter().galley(rect.min, galley, ink);
     seat.on_hover_cursor(egui::CursorIcon::PointingHand)
 }

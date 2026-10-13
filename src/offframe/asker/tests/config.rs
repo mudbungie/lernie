@@ -55,12 +55,15 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
             vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
             vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "config", "text": "x", "settings": []})],
@@ -77,8 +80,10 @@ fn the_listing_stands_on_the_pane_and_the_file_read_on_the_destination() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "conversations",
+            "roles",
             "lineages",
             "proposals"
         ],
@@ -113,6 +118,7 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
             vec![json!({"ok": true, "kind": "proposals", "rows": []})],
             vec![json!({"ok": true, "kind": "config", "text": "cadence:\n", "settings": []})],
@@ -128,6 +134,7 @@ fn a_destination_naming_no_workspace_is_asked_down_the_aimed_channel() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "lineages",
             "proposals",
             "config"
@@ -158,6 +165,7 @@ fn a_named_proposal_is_asked_at_its_own_depth() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "lineages", "rows": []})],
             vec![json!({"ok": true, "kind": "proposals", "rows": [row], "whole": "d"})],
         ],

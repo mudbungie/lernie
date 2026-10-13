@@ -34,7 +34,10 @@ impl Model {
     /// here and nowhere else.
     pub fn absorb(&mut self, channel: &Channel, read: Read) {
         match read {
-            Read::Answer(reply) => self.file(channel, reply),
+            Read::Answer(reply) => {
+                self.landing(&reply);
+                self.file(channel, reply);
+            }
             Read::Refusal(said) => self.notice = Some(Notice::Refused(said)),
             Read::Unreadable(why) => self.notice = Some(Notice::Unreadable(why)),
         }
@@ -51,6 +54,7 @@ impl Model {
     /// nothing will ever answer is a composer with no box. Every other op's
     /// refusal is exactly what it was: the bar.
     pub fn receipt(&mut self, channel: &Channel, op: &str, read: Read) {
+        self.refused(op, &read);
         match read {
             // **The one kind whose meaning is the op and not the reply**
             // (bl-a43a): `fleet`, `disband`, `arm` and `disarm` all answer

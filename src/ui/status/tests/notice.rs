@@ -57,13 +57,19 @@ fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
             lowest <= rule.laid.min.y,
             "at {w}: the notice is above the rule"
         );
+        // At the phone the diagnostics have dropped (item 11): the selectors
+        // still say what you are talking to.
         assert!(
-            seen.iter().any(|run| run.text.contains("quiescent")),
-            "at {w}: the slot says the calm state"
+            seen.iter().any(|run| run.text == "home"),
+            "at {w}: the wall"
         );
         if w > 1000.0 {
             assert!(
-                seen.iter().any(|run| run.text == "1 engine"),
+                seen.iter().any(|run| run.text.contains("quiescent")),
+                "at {w}: the slot says the calm state"
+            );
+            assert!(
+                seen.iter().any(|run| run.text == super::super::NO_MODEL),
                 "at {w}: the notice costs no fact"
             );
         }

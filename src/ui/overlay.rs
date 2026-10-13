@@ -51,10 +51,28 @@ pub fn ceiling(ui: &egui::Ui) -> f32 {
 /// paint walk and the pointer alike.
 pub fn float(ui: &mut egui::Ui, name: &'static str, height: f32, body: impl FnOnce(&mut egui::Ui)) {
     let room = ui.max_rect();
+    let span = egui::Rangef::new(
+        room.left() + theme::space::L,
+        room.right() - theme::space::L,
+    );
+    float_at(ui, name, span, height, body);
+}
+
+/// **The same box over `span` of the pane's width** — a rule's dropup
+/// (`crate::ui::status::dropup`), which stands over its own segment rather
+/// than across the pane. Answers where it stood.
+pub fn float_at(
+    ui: &mut egui::Ui,
+    name: &'static str,
+    span: egui::Rangef,
+    height: f32,
+    body: impl FnOnce(&mut egui::Ui),
+) -> egui::Rect {
+    let room = ui.max_rect();
     let height = height.min(ceiling(ui));
     let rect = egui::Rect::from_min_max(
-        egui::pos2(room.left() + theme::space::L, room.bottom() - height),
-        egui::pos2(room.right() - theme::space::L, room.bottom()),
+        egui::pos2(span.min, room.bottom() - height),
+        egui::pos2(span.max, room.bottom()),
     );
     let mut child = ui.new_child(
         egui::UiBuilder::new()
@@ -80,6 +98,7 @@ pub fn float(ui: &mut egui::Ui, name: &'static str, height: f32, body: impl FnOn
                 .auto_shrink(false)
                 .show(ui, body);
         });
+    rect
 }
 
 /// **The name a pane paints at its head**, in body ink, with the way out said

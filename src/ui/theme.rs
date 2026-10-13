@@ -257,6 +257,12 @@ pub mod glyph {
     pub const STOPPED: &str = "■";
     /// **Where a line was cut** — a call's head on the trail.
     pub const ELIDED: &str = "…";
+    /// **A selector on the rule** (§4.42 item 11): it opens upward. The body
+    /// font has no `▾` or `▴`; it has this.
+    pub const DROP: &str = "⏶";
+    /// **A dropup's refresh in flight**, in the annotation accent — the
+    /// palette has no yellow (`docs/STYLE.md` §1).
+    pub const RELOAD: &str = "↻";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the

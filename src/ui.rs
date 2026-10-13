@@ -92,9 +92,11 @@ pub mod tuning;
 /// The unmaking pane: the seat's one destructive act, and the idiom it sets.
 pub mod unmake;
 
+pub(crate) use model::lane;
 pub use model::{
-    Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Diagnosis, Edit,
-    Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login, Lookup, Model,
-    Notice, Pages, Posted, PriceTable, Pricing, Proposing, Records, Shown, Trail, Tuning, Unmaking,
+    Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring,
+    Diagnosis, Dropup, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing,
+    Login, Lookup, Model, Notice, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Records,
+    Reload, Selector, Shown, Trail, Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

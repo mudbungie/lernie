@@ -241,3 +241,19 @@ pub(crate) fn proposed(id: &str, fresh: bool) -> crate::reply::proposals::Propos
         subject: "teach the worker to stop retrying".to_owned(),
     }
 }
+
+/// **The seated model with the worker's row, two provider rows and the
+/// worker's provider's models in hand** — the rule's five selectors with
+/// something to say, and every dropup with cached rows (bl-d74b).
+pub(crate) fn selecting() -> Model {
+    let mut model = Model {
+        roles: Some(vec![role("worker"), role("compactor")]),
+        providers: Some(vec![provider("housevendor"), provider("othervendor")]),
+        ..seated()
+    };
+    model.offers.insert(
+        "housevendor".to_owned(),
+        vec!["house-model-1".to_owned(), "house-model-2".to_owned()],
+    );
+    model
+}

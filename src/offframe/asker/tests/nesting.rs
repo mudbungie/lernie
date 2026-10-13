@@ -22,10 +22,12 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
         ],
     );
     let own = Channel {
@@ -60,20 +62,22 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             "workspaces",
             "workspaces",
             "conversations",
+            "roles",
             "transcript",
             "agent",
             "workspaces",
             "conversations",
+            "roles",
         ]
     );
 }
 
-/// **The fourth question is the pane's, not the aim's.** A wall this seat is
-/// aimed at is asked nothing about its roles until the tuning pane is open on
-/// it — the read is cheap, and a standing question nobody has a use for is one
-/// the engine answers on every beat forever.
+/// **The fourth question is the aim's** (bl-d74b): the rule's selectors paint
+/// the worker role's row on every aimed window, so a wall is asked its roles
+/// on every pass whether or not the tuning pane is open — and opening the pane
+/// asks nothing more of a wall whose rows name no provider.
 #[test]
-fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
+fn the_roles_read_stands_on_the_aim() {
     let scratch = Scratch::new();
     let engine = wired(
         &scratch,
@@ -81,6 +85,7 @@ fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
         vec![
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
@@ -115,6 +120,7 @@ fn the_roles_read_stands_only_while_the_tuning_pane_is_open() {
         vec![
             "workspaces",
             "conversations",
+            "roles",
             "workspaces",
             "conversations",
             "roles",
@@ -184,6 +190,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
+            vec![json!({"ok": true, "kind": "roles", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "steps", "rows": [], "orphan": "none"})],
@@ -225,6 +232,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
             "agent",
             "workspaces",
             "conversations",
+            "roles",
             "transcript",
             "agent",
             "steps",

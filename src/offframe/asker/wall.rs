@@ -176,8 +176,15 @@ fn about(link: &Link, root: &Path, channel: &Channel, conversation: &str, ask: &
     }
 }
 
-/// **The tuning pane's reads**: the wall's roles, and what each provider row
-/// its rows and its draft name offers (bl-b7d9).
+/// **The wall's roles, and the tuning pane's offerings**: what each provider
+/// row its rows and its draft name offer (bl-b7d9).
+///
+/// **The roles stand on the aim, not on the pane** (bl-d74b): the rule's
+/// selectors paint the worker role's provider, model, effort and priority on
+/// every window aimed at a wall, and a selector that read a fact only while a
+/// pane two gestures away was open would be a selector that is usually blank.
+/// It is one config-file read per pass; the offerings below still stand on
+/// the pane alone, because each is a provider listing.
 ///
 /// The offerings stand beside the roles rather than being posted as the login
 /// pane posts its one: the rows to ask about ARE the standing roles answer, so
@@ -191,15 +198,15 @@ fn tuning(
     channel: &Channel,
     aim: &crate::ui::Aim,
 ) {
-    let Some(Open::Tuning(providers)) = &standing.open else {
-        return;
-    };
     aimed(
         link,
         root,
         channel,
         &crate::verbs::roles(aim.address.clone()),
     );
+    let Some(Open::Tuning(providers)) = &standing.open else {
+        return;
+    };
     for provider in providers {
         match asked(
             root,

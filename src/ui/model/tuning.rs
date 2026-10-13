@@ -152,15 +152,19 @@ impl Model {
         let Some(edit) = self.draft_assignment().filter(|edit| edit.ready()).cloned() else {
             return;
         };
-        self.tune(&|address| {
-            crate::verbs::model(
-                address,
-                edit.role.clone(),
-                edit.provider.trim().to_owned(),
-                edit.model.trim().to_owned(),
-            )
-        });
+        self.post_model(
+            &edit.role,
+            edit.provider.trim().to_owned(),
+            edit.model.trim().to_owned(),
+        );
         self.cancel_assignment();
+    }
+
+    /// **Bind this role to `model` on the `provider` row.**
+    pub fn post_model(&mut self, role: &str, provider: String, model: String) {
+        self.tune(&|address| {
+            crate::verbs::model(address, role.to_owned(), provider.clone(), model.clone())
+        });
     }
 
     /// **Compose one tuning gesture against the aimed wall**, or none at all.

@@ -1,7 +1,8 @@
 +++
 title = "an act's receipt outlives what it was about: 'seen X' stands in the state slot over the next conversation's state, and a dropup's model/effort/priority pick leaves a bare 'ok' over the state word until Esc"
 created = 1791870719
-updated = 1791870719
+updated = 1791870732
+claimant = "LaneVerify"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

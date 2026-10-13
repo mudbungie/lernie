@@ -1,7 +1,8 @@
 +++
 title = "no wall aimed, no box: the window verbs (/help /doctor /attention /find /conversations) are unreachable by typing while the seat panel says /help for commands"
 created = 1791867538
-updated = 1791867538
+updated = 1791869487
+claimant = "LaneVerbs"
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

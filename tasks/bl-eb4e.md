@@ -1,7 +1,8 @@
 +++
 title = "the trail paints a call and its result as two steps under a tofu arrow: '→' has no glyph in the body font, tool-use ids lead both rows, the result is laid open six lines deep, and 'tool calls (N)' counts results as calls"
 created = 1791867737
-updated = 1791867737
+updated = 1791867742
+claimant = "LaneDaily"
 parent = "bl-957a"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

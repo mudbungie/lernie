@@ -9,7 +9,6 @@ use super::fixtures::{file, opened};
 use super::{CLOSE, HEADING, KEPT};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::seated;
-use crate::ui::composer::start::GOAL;
 use crate::ui::theme::glyph;
 use crate::ui::{Aim, Model};
 
@@ -83,6 +82,7 @@ fn the_composer_stands_down_while_an_enrollment_is_open() {
         conversation: None,
         ..seated()
     };
+    let goal = crate::ui::composer::start::goal("home", false);
     let window = Window::new();
     // **Two frames, because a panel sizes from the last one**: the composer's
     // buttons land on the row below its box, and a bottom panel that has never
@@ -92,7 +92,7 @@ fn the_composer_stands_down_while_an_enrollment_is_open() {
         window.text(|ctx| crate::ui::render(ctx, model))
     };
     let before = warm(&mut aimed);
-    for control in [glyph::PROMPT, GOAL] {
+    for control in [glyph::PROMPT, goal.as_str()] {
         assert!(
             before.contains(control),
             "{control:?} is there to lose:\n{before}"
@@ -100,7 +100,7 @@ fn the_composer_stands_down_while_an_enrollment_is_open() {
     }
     aimed.begin_enrollment();
     let during = warm(&mut aimed);
-    for control in [glyph::PROMPT, GOAL] {
+    for control in [glyph::PROMPT, goal.as_str()] {
         assert!(
             !during.contains(control),
             "{control:?} is live under the material:\n{during}"

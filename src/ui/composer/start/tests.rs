@@ -5,7 +5,7 @@
 /// its act tags, and the row under it.
 mod shape;
 
-use super::{GOAL, render};
+use super::{goal, render};
 use crate::paint_probe::frame::{Window, locate_in, press};
 use crate::test_support::window::{pane, seated};
 use crate::ui::model::{Phase, Start};
@@ -33,7 +33,7 @@ fn aimed() -> Aim {
 fn a_wall_with_nothing_selected_offers_a_start() {
     let mut model = unselected();
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
-    for expected in [GOAL, glyph::PROMPT] {
+    for expected in [goal("home", false).as_str(), glyph::PROMPT] {
         assert!(
             painted.lines().any(|line| line.starts_with(expected)),
             "{expected:?}:\n{painted}"
@@ -77,7 +77,8 @@ fn enter_begins_what_was_typed() {
     };
     // Aimed at the hint inside the box, not at the button: what Enter needs is
     // the box holding focus.
-    let at = crate::paint_probe::frame::led_in(&window, GOAL, &mut body).expect("the box");
+    let at = crate::paint_probe::frame::led_in(&window, &goal("home", false), &mut body)
+        .expect("the box");
     crate::paint_probe::frame::click(&window, at, &mut body);
     window.frame(
         vec![egui::Event::Text("do the thing".to_owned())],
@@ -186,4 +187,16 @@ fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back()
         painted.contains("do the thing"),
         "the goal is in the box:\n{painted}"
     );
+}
+
+/// **The hint names the wall the Enter begins on, and says when it begins a
+/// plan** (bl-9031).
+#[test]
+fn the_hint_names_the_wall_and_the_plan() {
+    let mut model = unselected();
+    let painted = pane(|ui| render(ui, &mut model, &aimed()));
+    assert!(painted.contains("on home is for"), "{painted}");
+    model.plan = true;
+    let planned = pane(|ui| render(ui, &mut model, &aimed()));
+    assert!(planned.contains(&goal("home", true)), "{planned}");
 }

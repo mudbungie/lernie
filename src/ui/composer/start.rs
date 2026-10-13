@@ -41,11 +41,20 @@
 
 use crate::ui::{Aim, Fill, Model};
 
-/// What the box asks for. A start's goal is what the conversation is *for*,
-/// which is a different question from what to say to one that exists.
-pub const GOAL: &str = "what this conversation is for — Enter begins it";
-/// The same, while `/plan` has said the next start is a plan.
-pub const PLANNED: &str = "what this conversation is for — begun as a plan";
+/// **What the box asks for, naming the wall the Enter begins on** (§4.42
+/// item 3; bl-9031). A start's goal is what the conversation is *for*, which
+/// is a different question from what to say to one that exists; and with two
+/// walls on one engine the box is the one place the operator is looking when
+/// the Enter decides where the conversation lands. While `/plan` has said the
+/// next start is a plan, the hint's tail says so instead.
+pub fn goal(wall: &str, plan: bool) -> String {
+    let tail = if plan {
+        "begun as a plan"
+    } else {
+        "Enter begins it"
+    };
+    format!("what this conversation on {wall} is for — {tail}")
+}
 
 /// Paint the start composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
@@ -78,7 +87,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         &mut model.draft,
         &super::hint(
             ui,
-            if model.plan { PLANNED } else { GOAL },
+            &goal(&aim.address, model.plan),
             &crate::ui::chat::panel::WAYS,
         ),
         None,

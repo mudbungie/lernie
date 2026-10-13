@@ -35,7 +35,7 @@ fn what_the_composer_is_for_follows_from_what_is_selected() {
                 conversation: None,
                 ..seated()
             },
-            start::GOAL,
+            start::goal("home", false).as_str(),
         ),
         (seated(), HINT),
     ] {

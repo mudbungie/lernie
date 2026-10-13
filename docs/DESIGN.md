@@ -4997,7 +4997,16 @@ parts, in its vertical order, each with what it becomes here.
    Bash("cargo test") ✓` a call, `└─ ✗` a failed one in the error accent, the
    result folded to its head and unfolded in place — and `└─ response` parts
    the trail from the prose that follows it; turns are parted by `───` in the
-   hairline; blank lines fall only where the kind of block changes. The
+   hairline; blank lines fall only where the kind of block changes. **A wound
+   ends the transcript in the error accent** (bl-d34f): the engine's virtual
+   `wounded` entry (PROTOCOL 9 — the class `refused`, `no_response` or
+   `output_limit`, the adapter's words, the provider row a refusal routed
+   to) is decoded rather than left to the unknown-entry fallback, and
+   `reply::transcript::wounded` projects it into one sentence naming the verb
+   that mends it — `/login` or `/roles` for a refusal, `/nudge` for a step
+   that produced nothing — which the command line's rendering prints too. It
+   wore *«wound» (wounded, which this seat cannot read)* before, which read a
+   provider refusal as a seat bug. The
    ruled block of §4.38 goes with its side rules: who spoke is the gutter
    glyph, and weight is still the speaker's (`theme::speaker`). At the head of
    a transcript stands the **conversation panel**: a framed card carrying the

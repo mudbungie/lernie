@@ -127,6 +127,11 @@ impl Row {
     }
 }
 
+/// **Who a wound's row is said by**: nobody — it is the conversation's
+/// state, so it wears the error rule and a word for what happened rather
+/// than the engine's virtual entry name.
+pub const WOUND: &str = "it stopped";
+
 /// **The senders that are the operator's own.** litany writes a deposit from
 /// the seat with `user` (`corpus/answers/transcript.json`), and `op` is the
 /// same claim written short — the form a hand-written transcript and this
@@ -234,6 +239,18 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
         // The two unreadables, held apart: the engine could not read this one,
         // and this build does not know that one. Only the second is fixed by an
         // upgrade, so they must not read alike.
+        EntryKind::Wounded {
+            wound,
+            reason,
+            auth_row,
+        } => vec![Row {
+            failed: true,
+            ..Row::plain(
+                WOUND.to_owned(),
+                crate::reply::transcript::wounded(wound, reason.as_deref(), auth_row.as_deref()),
+                Speaker::Peer,
+            )
+        }],
         EntryKind::Raw => vec![Row::plain(
             format!("{} (unparsed)", entry.name),
             entry.raw.clone(),

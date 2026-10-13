@@ -190,3 +190,30 @@ fn entries_are_parted_by_air_and_never_by_a_line() {
         first.laid
     );
 }
+
+/// **A wound ends the transcript in the error accent and names its mend**
+/// (bl-d34f). It used to fall to the unknown-entry fallback and read
+/// *«wound» (wounded, which this seat cannot read)* — a provider refusal
+/// painted as a seat bug, with the engine's own banner as its body.
+#[test]
+fn a_wound_wears_the_error_accent_and_names_the_verb_that_mends_it() {
+    let output = glass(vec![entry(EntryKind::Wounded {
+        wound: "refused".to_owned(),
+        reason: None,
+        auth_row: Some("anthropic".to_owned()),
+    })]);
+    let red = theme::accent(theme::State::Error);
+    assert_eq!(worn(&output, crate::ui::chat::rows::WOUND), red);
+    let said = crate::reply::transcript::wounded("refused", None, Some("anthropic"));
+    assert!(
+        said.contains("/login") && said.contains("anthropic"),
+        "{said}"
+    );
+    assert_eq!(body(&output, &said).ink, theme::INK);
+    assert!(
+        seen_of(&output)
+            .iter()
+            .all(|seen| !seen.text.contains("cannot read")),
+        "the fallback's sentence is not on the glass"
+    );
+}

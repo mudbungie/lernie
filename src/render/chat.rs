@@ -82,6 +82,14 @@ fn reading(kind: &EntryKind) -> (String, Option<String>) {
             format!("compacted {first}\u{2013}{last}"),
             Some(summary.clone()),
         ),
+        EntryKind::Wounded {
+            wound,
+            reason,
+            auth_row,
+        } => (
+            crate::reply::transcript::wounded(wound, reason.as_deref(), auth_row.as_deref()),
+            None,
+        ),
         EntryKind::Raw => ("raw".to_owned(), None),
         EntryKind::Unknown(word) => (
             format!("{word} (this seat has no reading of that entry)"),

@@ -99,6 +99,18 @@ pub enum EntryKind {
         last: u64,
         summary: String,
     },
+    /// **The wound** (yog's `docs/REMOTE.md`, PROTOCOL 9): a virtual
+    /// trailing entry saying this conversation is not coming back on its own.
+    /// The class token crosses and the sentence does not — `wound` is the
+    /// class (`refused`, `no_response`, `output_limit`, or a word this build
+    /// has not met), `reason` the adapter's own words where the no-response
+    /// class left any, and `auth_row` the provider row a refusal routed to.
+    /// The banner is this seat's projection of the three ([`wounded`]).
+    Wounded {
+        wound: String,
+        reason: Option<String>,
+        auth_row: Option<String>,
+    },
     /// The engine could not parse it, and surfaced it rather than dropping it.
     Raw,
     /// **This build** could not name it. The word is kept verbatim, and `raw`
@@ -140,6 +152,33 @@ pub fn said_by(sender: &str, sender_name: Option<&str>) -> String {
     }
 }
 
+/// **What a wound says, and what mends it** — the one projection of the
+/// three wire facts, shared by the window's row and the command line's.
+///
+/// The remedy is named as the verb that performs it, because an operator who
+/// reads *log in* still has to find out where; the slash word is the verb's
+/// own word on both faces (DESIGN §4.42, item 5). A class this build has not
+/// met rides verbatim — rung 3 — with no remedy guessed for it.
+pub fn wounded(wound: &str, reason: Option<&str>, auth_row: Option<&str>) -> String {
+    match wound {
+        "refused" => format!(
+            "{} refused the last call — sign it in with /login, or move the role with /roles",
+            auth_row.map_or_else(
+                || "the provider".to_owned(),
+                |row| format!("provider {row}")
+            )
+        ),
+        "no_response" => format!(
+            "the last step produced nothing{} — /nudge runs it again",
+            reason.map_or_else(String::new, |why| format!(": {why}"))
+        ),
+        "output_limit" => "the last step was cut off at its output cap — raise the role's \
+                           output limit, or ask for less in one step"
+            .to_owned(),
+        other => format!("the last step failed ({other})"),
+    }
+}
+
 /// The kind discriminant and the fields it brings with it.
 fn kind(o: &Map<String, Value>) -> Result<EntryKind, String> {
     Ok(match fields::text(o, "kind")?.as_str() {
@@ -167,6 +206,11 @@ fn kind(o: &Map<String, Value>) -> Result<EntryKind, String> {
             first: fields::count(o, "first")?,
             last: fields::count(o, "last")?,
             summary: fields::text(o, "summary")?,
+        },
+        "wounded" => EntryKind::Wounded {
+            wound: fields::text(o, "wound")?,
+            reason: fields::opt_text(o, "wound_reason")?,
+            auth_row: fields::opt_text(o, "auth_row")?,
         },
         "raw" => EntryKind::Raw,
         other => EntryKind::Unknown(other.to_owned()),

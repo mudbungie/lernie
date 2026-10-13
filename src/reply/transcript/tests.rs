@@ -154,3 +154,60 @@ fn a_delivered_row_carries_the_display_name_beside_the_durable_handle() {
     );
     assert_eq!(super::said_by("user", None), "user");
 }
+
+/// **The wound decodes whole** (bl-d34f): its class, the adapter's words and
+/// the row a refusal routed to, the last two absent where the engine wrote
+/// none — read off the vendored corpus, which carries every arm.
+#[test]
+fn a_wound_decodes_its_class_its_reason_and_its_row() {
+    let answered = read(&json!({"rows": [
+        {"name": "«wound»", "raw": "{}", "kind": "wounded", "wound": "refused",
+         "auth_row": "anthropic"},
+        {"name": "«wound»", "raw": "{}", "kind": "wounded", "wound": "no_response",
+         "wound_reason": "it hung up"},
+    ]}))
+    .expect("a transcript");
+    assert_eq!(
+        answered.entries[0].kind,
+        EntryKind::Wounded {
+            wound: "refused".to_owned(),
+            reason: None,
+            auth_row: Some("anthropic".to_owned()),
+        }
+    );
+    assert_eq!(
+        answered.entries[1].kind,
+        EntryKind::Wounded {
+            wound: "no_response".to_owned(),
+            reason: Some("it hung up".to_owned()),
+            auth_row: None,
+        }
+    );
+}
+
+/// **Each class says what happened and what mends it**, and a class this
+/// build has not met rides verbatim with no remedy guessed.
+#[test]
+fn each_wound_names_its_own_mend() {
+    use super::wounded;
+    for (said, wanted) in [
+        (
+            wounded("refused", None, Some("anthropic")),
+            "provider anthropic refused",
+        ),
+        (wounded("refused", None, None), "the provider refused"),
+        (wounded("refused", None, None), "/roles"),
+        (
+            wounded("no_response", Some("eof"), None),
+            "nothing: eof — /nudge",
+        ),
+        (
+            wounded("no_response", None, None),
+            "produced nothing — /nudge",
+        ),
+        (wounded("output_limit", None, None), "output cap"),
+        (wounded("frostbite", None, None), "failed (frostbite)"),
+    ] {
+        assert!(said.contains(wanted), "{said:?} lacks {wanted:?}");
+    }
+}

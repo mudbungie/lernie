@@ -112,7 +112,9 @@ fn response(ui: &mut egui::Ui) {
 /// **One thing said**: the gutter glyph, then who said it in their weight,
 /// then the words as prose.
 fn said(ui: &mut egui::Ui, row: &Row) {
+    let failed = theme::accent(theme::State::Error);
     let (mark, ink) = match row.weight {
+        _ if row.failed => (glyph::FAILED, failed),
         theme::Speaker::Operator => (glyph::PROMPT, theme::BRAND),
         theme::Speaker::Model => (glyph::MODEL, theme::INK_WEAK),
         _ => (glyph::NOTE, theme::INK_WEAK),
@@ -120,9 +122,15 @@ fn said(ui: &mut egui::Ui, row: &Row) {
     ui.horizontal_top(|ui| {
         ui.label(egui::RichText::new(mark).color(ink));
         ui.vertical(|ui| {
-            // A failure is a step of the trail, never something said, so
-            // the weight here is always the speaker's.
-            let who = theme::speaker(row.weight);
+            // A failed step is a step of the trail; the one failure that is
+            // said is the wound — the conversation's own state, which ends
+            // the transcript in the error accent rather than a speaker's
+            // weight (`rows::WOUND`).
+            let who = if row.failed {
+                failed
+            } else {
+                theme::speaker(row.weight)
+            };
             ui.label(egui::RichText::new(&row.who).color(who).strong());
             theme::paint::prose(ui, &row.said, theme::INK);
         });

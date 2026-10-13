@@ -78,7 +78,7 @@ pub(crate) fn down(
     let stream = crate::seat::dial(root, &channel.name)
         .map_err(Reach::Unsent)
         .and_then(|open| open.ask(envelope))?;
-    file(link, channel, stream);
+    file(link, channel, &crate::envelope::op(envelope), stream);
     Ok(())
 }
 
@@ -86,9 +86,14 @@ pub(crate) fn down(
 /// nothing**, which is what it is: the engine terminated the stream without
 /// saying anything, and a seat that invented a sentence for it would be
 /// speaking for an engine that did not.
-pub(crate) fn file(link: &Link, channel: &Channel, stream: Vec<Value>) {
+///
+/// **Every frame carries the op it answers** (bl-693d), a read's as an act's:
+/// a refusal wears no `kind`, and the roster read's refusal is the one that
+/// belongs on its channel's section rather than in the bar.
+pub(crate) fn file(link: &Link, channel: &Channel, op: &str, stream: Vec<Value>) {
     for frame in stream {
-        link.heard(channel, Said::Frame(frame));
+        let op = op.to_owned();
+        link.heard(channel, Said::Receipt { op, frame });
     }
 }
 

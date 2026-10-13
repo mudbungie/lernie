@@ -79,7 +79,6 @@ impl Link {
         let mut shared = self.hold();
         for heard in std::mem::take(&mut shared.heard) {
             match heard.said {
-                Said::Frame(frame) => model.absorb(&heard.channel, crate::reply::read(&frame)),
                 // A tail for a conversation the operator has left is dropped
                 // here, where what is selected is known for certain. Filing it
                 // would paint one conversation's words under another's name.

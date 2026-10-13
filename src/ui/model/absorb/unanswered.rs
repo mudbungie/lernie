@@ -46,6 +46,23 @@ impl Model {
         }
     }
 
+    /// **A roster read the engine refused**, said on that channel's own
+    /// section (bl-693d) for [`unreachable`](Self::unreachable)'s reason one
+    /// step on: the engine answered, so the channel is not down, but what it
+    /// refused is the channel's whole roster and it refuses it again every
+    /// beat — a relationship, not an exchange. In the bar it stood beside a
+    /// running conversation after a founding had made it false, until Esc.
+    pub fn unseated(&mut self, channel: &Channel, said: String) {
+        match self
+            .roster
+            .iter_mut()
+            .find(|chunk| chunk.channel.name == channel.name)
+        {
+            Some(held) => held.held = Held::Refused(said),
+            None => self.notice = Some(Notice::Refused(said)),
+        }
+    }
+
     /// **An act that earned no reply** (yog's `docs/REMOTE.md` §3, bl-3969).
     ///
     /// It goes to the bar and takes no channel, which is
@@ -90,6 +107,7 @@ impl Model {
     /// sentence says so — putting the words back under a box with `send` beside
     /// it would invite exactly the resend the contract forbids (REMOTE §3).
     pub fn acted(&mut self, op: &str, reach: &crate::channel::Reach, said: Option<String>) {
+        self.founded(op);
         if self.starting(op) {
             self.take_back_start();
         }

@@ -45,12 +45,13 @@ impl Engine {
     }
 
     /// **Reached if any of its channels answered**; else the first that says
-    /// why it will not dial; else not heard from yet.
+    /// why — it will not dial, or it refused the roster; else not heard from
+    /// yet.
     pub fn held(&self) -> Held {
         let all = || self.chunks().map(|chunk| &chunk.held);
         all()
             .find(|held| **held == Held::Heard)
-            .or_else(|| all().find(|held| matches!(held, Held::Unheld(_))))
+            .or_else(|| all().find(|held| **held != Held::Unheard))
             .unwrap_or(&self.lead.held)
             .clone()
     }

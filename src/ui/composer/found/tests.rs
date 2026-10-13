@@ -38,12 +38,14 @@ fn the_box_asks_for_a_name_then_a_goal() {
 }
 
 /// **`<name> <goal>` founds the workspace by starting on it**: the posted
-/// envelope is the start's own `prepare` naming the new workspace, the aim
-/// stands on it under this box's own engine, and the goal is held for the
-/// fire.
+/// envelope is the start's own `prepare` naming the new workspace and the goal
+/// is held for the fire — and **nothing is aimed until the `prepare` is
+/// answered** (bl-693d): the wall's reads asked ahead of the act that
+/// registers this client were refused into the bar.
 #[test]
 fn enter_stages_a_start_on_the_named_workspace() {
     let mut model = founding();
+    let before = model.aim.clone();
     model.draft = "lab  fix the build".to_owned();
     entered(&mut model);
     assert_eq!(
@@ -53,17 +55,44 @@ fn enter_stages_a_start_on_the_named_workspace() {
         )]
     );
     assert_eq!(
+        model.aim, before,
+        "nothing is asked of a wall not founded yet"
+    );
+    assert!(model.founding.is_some());
+    assert_eq!(
+        model.start.as_ref().map(|start| start.goal.clone()),
+        Some("fix the build".to_owned())
+    );
+    let own = model.roster[0].channel.clone();
+    model.receipt(&own, "message", crate::reply::Read::Refusal("x".to_owned()));
+    assert!(model.founding.is_some(), "only the prepare's answer aims");
+    model.receipt(
+        &own,
+        "prepare",
+        crate::reply::Read::Refusal("no key".to_owned()),
+    );
+    assert_eq!(
         model.aim,
         Some(Aim {
             channel: crate::seat::OWN.to_owned(),
             address: "lab".to_owned(),
         })
     );
-    assert_eq!(
-        model.start.as_ref().map(|start| start.goal.clone()),
-        Some("fix the build".to_owned())
-    );
     assert_eq!(model.founding, None, "the aim put the founding down");
+}
+
+/// **A `prepare` that never left this box aims too**: the founding is put
+/// down with the goal back in the box, under the wall it named.
+#[test]
+fn an_unsent_founding_aims_and_gives_the_goal_back() {
+    let mut model = founding();
+    model.draft = "lab fix the build".to_owned();
+    entered(&mut model);
+    let gone = crate::channel::Reach::Unsent("no route".to_owned());
+    model.acted("prepare", &gone, None);
+    assert_eq!(model.founding, None);
+    assert_eq!(model.aim.map(|aim| aim.address), Some("lab".to_owned()));
+    assert_eq!(model.draft, "fix the build");
 }
 
 /// **A name with no goal composes nothing**, the start's own rule, and the

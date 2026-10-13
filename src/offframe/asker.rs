@@ -158,7 +158,7 @@ fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: 
 /// rewrites it to the host's spelling at the one place that mapping is spent.
 pub(super) fn aimed(link: &Link, root: &Path, channel: &Channel, envelope: &Value) {
     match asked(root, envelope) {
-        Ok(stream) => super::file(link, channel, stream),
+        Ok(stream) => super::file(link, channel, &crate::envelope::op(envelope), stream),
         Err(reach) => read(link, Err(reach), channel),
     }
 }

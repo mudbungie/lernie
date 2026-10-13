@@ -115,28 +115,26 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
         for engine in model.folded() {
             let header = engine.header();
             // **The dial state first** (bl-4cac): a channel that will not dial
-            // says the wire's own sentence, whole and in the error accent, and
-            // one not heard from yet says so — neither has counts worth
-            // painting, because a count off walls nobody can reach reads as a
-            // healthy engine.
-            match engine.held() {
-                crate::ui::Held::Unheld(why) => {
-                    line(
-                        ui,
-                        &format!("{header} — {why}"),
-                        theme::accent(theme::State::Error),
-                    );
-                    continue;
-                }
-                crate::ui::Held::Unheard => {
-                    line(
-                        ui,
-                        &format!("{header} — {}", crate::ui::roster::NOT_ANSWERED),
-                        theme::INK_WEAK,
-                    );
-                    continue;
-                }
-                crate::ui::Held::Heard => {}
+            // says the wire's own sentence, whole and in the error accent — as
+            // does an engine that refused the roster (bl-693d) — and one not
+            // heard from yet says so. None has counts worth painting, because a
+            // count off walls nobody can reach reads as a healthy engine.
+            let state = engine.held();
+            if let Some(why) = state.said() {
+                line(
+                    ui,
+                    &format!("{header} — {why}"),
+                    theme::accent(theme::State::Error),
+                );
+                continue;
+            }
+            if state == crate::ui::Held::Unheard {
+                line(
+                    ui,
+                    &format!("{header} — {}", crate::ui::roster::NOT_ANSWERED),
+                    theme::INK_WEAK,
+                );
+                continue;
             }
             let held = engine.walls();
             let walls = held.len();

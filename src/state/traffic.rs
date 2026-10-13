@@ -35,8 +35,6 @@ pub struct Heard {
 /// reports one and the two read workers report the other.
 #[derive(Debug, Clone)]
 pub enum Said {
-    /// One reply frame, exactly as it crossed.
-    Frame(Value),
     /// **A read about ONE conversation, stamped with which** — the follow
     /// lane's accumulation so far, and the selection's own standing reads
     /// (bl-19b8: a transcript read in flight when the selection moved was
@@ -50,7 +48,7 @@ pub enum Said {
     /// comparison at the one place that holds the answer, rather than a poll
     /// racing the socket at the other.
     ///
-    /// **Already read**, unlike [`Frame`](Self::Frame): a follow frame is an
+    /// **Already read**, unlike [`Receipt`](Self::Receipt): a follow frame is an
     /// append (REMOTE §5.5), so it has to be absorbed onto the read's own fold
     /// before it means anything, and the lane is where a read begins and ends.
     /// `op` is what was asked, the one fact a refusal cannot carry for
@@ -98,17 +96,18 @@ pub enum Said {
         /// had come back.
         said: Option<String>,
     },
-    /// **A routed gesture's reply frame**, stamped with the op it answers
-    /// (bl-b180).
+    /// **One reply frame, exactly as it crossed**, stamped with the op it
+    /// answers (bl-b180).
     ///
     /// A refusal wears no `kind`, so a frame alone cannot say which exchange
     /// it closes — and the one thing this window holds across two acts, a
     /// start, has to know whether the sentence that came back is *its* refusal
     /// or somebody else's. The poster is the one place that still knows, for
     /// [`Acted`](Self::Acted)'s reason exactly, so it says so on the way in
-    /// rather than the model guessing from timing. A standing read's frame
-    /// stays a bare [`Frame`](Self::Frame): it is answered in place and
-    /// nothing is held against it.
+    /// rather than the model guessing from timing. **A standing read's frame
+    /// is stamped too** (bl-693d), and there is no bare frame left: the
+    /// roster read's refusal is a fact about the channel — this client is
+    /// registered nowhere there — and only its op can say so.
     Receipt { op: String, frame: Value },
 }
 

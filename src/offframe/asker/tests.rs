@@ -5,7 +5,6 @@ use std::time::Duration;
 
 use crate::state::{Link, Said};
 use crate::ui::Model;
-use serde_json::json;
 
 /// A link whose standing set is what this model implies.
 pub(super) fn asking(model: &Model) -> Link {
@@ -32,7 +31,7 @@ pub(super) fn reported(link: &Link) -> Vec<(String, Said)> {
         model
             .roster
             .into_iter()
-            .map(|chunk| (chunk.channel.name, Said::Frame(json!(chunk.walls.len())))),
+            .map(|c| (c.channel.name, Said::Unreachable(c.walls.len().to_string()))),
     );
     out
 }

@@ -165,16 +165,36 @@ impl Model {
     /// founds it there, registering this client (REMOTE §4) — so the receipt
     /// selects the conversation exactly as any start's does. A draft with no
     /// goal after the name fires nothing, the start's own rule.
+    ///
+    /// **The aim waits for the `prepare`'s answer** ([`Self::founded`];
+    /// bl-693d). Aimed at once, the wall's standing reads went out ahead of
+    /// the act that registers this client, and the engine refused them —
+    /// *registered in no workspace* — into the bar, where the sentence stood
+    /// beside the founded wall until Esc.
     pub fn found(&mut self) {
         let typed = self.draft.trim().to_owned();
-        let (Some(channel), Some((name, goal))) =
-            (self.founding.clone(), typed.split_once(char::is_whitespace))
-        else {
+        let (Some(_), Some((name, goal))) = (
+            self.founding.as_ref(),
+            typed.split_once(char::is_whitespace),
+        ) else {
             return;
         };
-        self.aim_at(&channel, name);
         goal.trim().clone_into(&mut self.draft);
         self.stage(name);
+    }
+
+    /// **The founding's `prepare` was answered**, however it was answered:
+    /// the wall exists and this client is registered in it, so it is aimed
+    /// now — which puts the founding down — and the start's receipt finds
+    /// the aim it selects against.
+    pub(super) fn founded(&mut self, op: &str) {
+        let (Some(channel), Some(start)) = (self.founding.clone(), self.start.as_ref()) else {
+            return;
+        };
+        if op == crate::verbs::PREPARE {
+            let address = start.address.clone();
+            self.aim_at(&channel, &address);
+        }
     }
 
     /// The wall an opening aims at: the one last aimed under it while this

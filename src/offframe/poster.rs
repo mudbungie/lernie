@@ -126,9 +126,8 @@ fn routed(link: &Link, root: &Path, posted: &Posted) {
         // know whether the sentence is its own. Every routed gesture is
         // stamped rather than only an act's, because the stamp is consulted
         // for exactly two ops and a second arm here for the reads nobody
-        // routes today would be a branch with no beat. The fanned path stays
-        // bare: it carries the window's own reads, which nothing is held
-        // against.
+        // routes today would be a branch with no beat. The fanned path is
+        // stamped the same way (`super::file`, bl-693d).
         Ok(stream) => {
             let op = crate::envelope::op(&posted.envelope);
             for frame in stream {

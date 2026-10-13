@@ -110,16 +110,16 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
     // channel did say, and they are worth keeping while it is down.
     // Every channel's own sentence, once each: one engine held under two
     // names is two sets of files, and either may be the one that is broken.
-    let mut said: Vec<&String> = Vec::new();
+    let mut said: Vec<String> = Vec::new();
     for chunk in engine.chunks() {
-        if let crate::ui::Held::Unheld(why) = &chunk.held
+        if let Some(why) = chunk.held.said()
             && !said.contains(&why)
         {
             // **A channel that will not dial is an error and not a note** (§1:
             // red is an error that will not mend itself). It stood in the
             // annotation orange, which is the colour of a thing worth reading;
             // this is a thing that is broken until somebody mends it.
-            ui.colored_label(theme::accent(theme::State::Error), why);
+            ui.colored_label(theme::accent(theme::State::Error), &why);
             said.push(why);
         }
     }
@@ -150,7 +150,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool, re
                 theme::paint::empty(ui, NO_WALLS);
             }
             // Already said above, in its own words.
-            crate::ui::Held::Unheld(_) => {}
+            crate::ui::Held::Unheld(_) | crate::ui::Held::Refused(_) => {}
         }
     }
     for row in ordered(&walls) {

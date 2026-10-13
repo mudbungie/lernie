@@ -54,6 +54,7 @@ impl Model {
     /// nothing will ever answer is a composer with no box. Every other op's
     /// refusal is exactly what it was: the bar.
     pub fn receipt(&mut self, channel: &Channel, op: &str, read: Read) {
+        self.founded(op);
         self.refused(op, &read);
         match read {
             // **The one kind whose meaning is the op and not the reply**
@@ -70,6 +71,12 @@ impl Model {
             // other act's receipt is the bar's.
             Read::Answer(Reply::Outcome(ref run)) if run.ok() && witnessed(op) => {
                 self.notice = None;
+            }
+            // **The roster's refusal is the channel's, not the bar's**
+            // (bl-693d): it re-posts every beat while it holds, and it stops
+            // holding the moment a founding registers this client.
+            Read::Refusal(said) if op == crate::verbs::WORKSPACES.word => {
+                self.unseated(channel, said);
             }
             Read::Refusal(said) if self.starting(op) => self.refuse_start(said),
             Read::Unreadable(_) if self.starting(op) => {

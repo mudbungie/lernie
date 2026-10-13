@@ -60,10 +60,11 @@ impl Channel {
 
 /// **What a section has instead of walls, when it has none** (bl-08b6).
 ///
-/// Three states and they are three different facts, which is why an empty
+/// Four states and they are four different facts, which is why an empty
 /// section cannot be one blank: a channel nobody has heard from yet, a channel
-/// this box cannot dial and knows why off its own files, and an engine that
-/// answered and holds no workspace. The roster used to have a sentence for the
+/// this box cannot dial and knows why off its own files, an engine that
+/// answered its roster with a refusal (bl-693d), and an engine that answered
+/// and holds no workspace. The roster used to have a sentence for the
 /// empty ROSTER and none for an empty section — and an empty roster is
 /// unreachable, because every box holds its own engine's slot whether or not
 /// anything is provisioned in it.
@@ -79,8 +80,29 @@ pub enum Held {
     /// unprovisioned, half-provisioned and naming the missing file, hollow, or
     /// a port only the engine that bound it knows.
     Unheld(String),
+    /// **It answered, and refused the roster** (bl-693d) — in its own words,
+    /// which today are *this client is registered in no workspace here*. The
+    /// engine is up and dialled, so this is neither of the two above: it is
+    /// not *waiting to hear* and not *down*, and the remedy it names — found
+    /// a workspace, or be enrolled in one — is a gesture on this section. The
+    /// next roster answer spends it, as it spends every other state.
+    Refused(String),
     /// It answered.
     Heard,
+}
+
+impl Held {
+    /// **The sentence a section stands on instead of walls**, where it has
+    /// one: why it will not dial, or what the engine refused — the latter in
+    /// [`super::Notice`]'s own words for a refusal, so it reads the same on
+    /// the section as it did in the bar.
+    pub fn said(&self) -> Option<String> {
+        match self {
+            Self::Unheld(why) => Some(why.clone()),
+            Self::Refused(said) => Some(super::Notice::Refused(said.clone()).line()),
+            Self::Unheard | Self::Heard => None,
+        }
+    }
 }
 
 /// One channel's answer, as the roster shows it: the section, what it has

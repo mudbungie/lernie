@@ -44,7 +44,10 @@ fn a_settle_files_hands_over_and_publishes() {
     let channel = own().channel;
     link.heard(
         &channel,
-        Said::Frame(json!({"ok": true, "kind": "workspaces", "rows": []})),
+        Said::Receipt {
+            op: "workspaces".to_owned(),
+            frame: json!({"ok": true, "kind": "workspaces", "rows": []}),
+        },
     );
     let mut model = Model {
         outbox: vec![crate::ui::Posted::act(json!({"op": "nudge"}))],

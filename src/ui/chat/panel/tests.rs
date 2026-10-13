@@ -58,3 +58,5 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
 
 /// The dial state on the card and the rule.
 mod held;
+/// The roster read refused: on the card and the switcher, never the bar.
+mod refused;

@@ -1502,6 +1502,22 @@ over), this box cannot dial it and knows why off its own files (the sentence
 surfaces), or the engine answered and holds no workspace. `seat::channels`
 seeds the second at boot; the first roster answer spends whichever was standing.
 
+**Amended by bl-693d: four facts, not three.** The engine can answer the
+roster read with a **refusal** — *this certificate is registered in no
+workspace on this engine* is what a fresh engine says to a fresh seat — and
+that is none of the three: the engine is up and has answered, so *waiting to
+hear* is false and *will not dial* is false. It went to the bar as any refusal
+does, re-posted every beat, and stood there beside a running conversation after
+a founding (§4.42 item 7's `+ new workspace`) had made it untrue, until Esc. So
+every frame the off-frame lanes file now carries the op it answers
+(`offframe::file`, `Said::Receipt` — there is no bare frame left), and a
+refusal of `workspaces` is filed as `Held::Refused` on that channel's section
+(`Model::unseated`): painted where `Unheld`'s sentence stands, in the bar's
+own words for a refusal, never counted as an engine that is down, and spent by
+the next roster answer like every other state — so the founding that registers
+the client takes it off the glass on the beat it lands. `+ new workspace`
+stands under a refusing engine, because founding is the remedy it names.
+
 **The notice wraps** (`src/ui/shell.rs`, bl-3d0f). It was a `ui.horizontal`
 holding the dismiss and one label, and a horizontal layout lays its label on
 one line however long it is — so the panel cut the sentence at the window's
@@ -5119,7 +5135,8 @@ parts, in its vertical order, each with what it becomes here.
    counts — and **the dial state is read, not assumed** (bl-4cac): a channel
    that will not dial says the wire's own sentence (`Held::Unheld`, the one
    `lernie entries` prints — on a first run, *nothing provisioned*) whole
-   and wrapped in the error accent in place of its counts, and one not heard
+   and wrapped in the error accent in place of its counts, as does an engine
+   that refused the roster (`Held::Refused`, bl-693d), and one not heard
    from yet says *waiting to hear from this channel* in weak ink; the
    version, and the ways in — `/help for commands · Ctrl+X for a
    conversation · /roles for the model · /login for a provider` (item 10).
@@ -5206,9 +5223,12 @@ parts, in its vertical order, each with what it becomes here.
    this client is registered in, so there is no `+ new` to pick, and the
    engine's own remedy is *a workspace this client founds itself registers
    it too* (REMOTE §4). It puts the caret in the field in a founding mode
-   whose hint asks for `<name> <what it is for>` on one line; Enter aims the
-   named wall and stages the ordinary start on it, whose `prepare` founds
-   the workspace on the host (REMOTE §4.1's raise) — one line rather than a
+   whose hint asks for `<name> <what it is for>` on one line; Enter stages
+   the ordinary start on the named wall, whose `prepare` founds the
+   workspace on the host (REMOTE §4.1's raise), and **the wall is aimed when
+   that `prepare` is answered** (`Model::founded`, bl-693d) — aimed at
+   Enter, its standing reads went out ahead of the act that registers the
+   client and were refused into the bar — one line rather than a
    two-step, because a name held between two Enters would be a second state
    to put down. Esc, an aim or a selection puts the mode down. It stands
    under no entry's engine: a name no entry holds routes to the flat root

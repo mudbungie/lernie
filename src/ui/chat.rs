@@ -20,6 +20,8 @@
 //! and the one state it keeps — which folds are open — is the toolkit's
 //! memory, a view state no wire gesture corresponds to.
 
+/// Fenced code in what was said, painted as code.
+pub mod code;
 pub mod fold;
 /// The two panels at the head of the pane: the conversation's facts, and the
 /// seat's where nothing is selected.
@@ -86,7 +88,7 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
                     response(ui);
                 }
                 ui.add_space(theme::space::S);
-                said(ui, row);
+                said(ui, at, row);
                 after_trail = false;
                 at += 1;
             }
@@ -119,7 +121,7 @@ fn response(ui: &mut egui::Ui) {
 
 /// **One thing said**: the gutter glyph, then who said it in their weight,
 /// then the words as prose.
-fn said(ui: &mut egui::Ui, row: &Row) {
+fn said(ui: &mut egui::Ui, at: usize, row: &Row) {
     let failed = theme::accent(theme::State::Error);
     let (mark, ink) = match row.weight {
         _ if row.failed => (glyph::FAILED, failed),
@@ -140,7 +142,7 @@ fn said(ui: &mut egui::Ui, row: &Row) {
                 theme::speaker(row.weight)
             };
             ui.label(egui::RichText::new(&row.who).color(who).strong());
-            theme::paint::prose(ui, &row.said, theme::INK);
+            code::paint(ui, at, &row.said);
         });
     });
 }

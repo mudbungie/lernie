@@ -48,6 +48,9 @@ pub(crate) struct Seen {
     /// The colour it was painted in — how a toned row is legible to a test at
     /// all, since a tone is an ink on the run and nothing about its rect.
     pub(crate) ink: egui::Color32,
+    /// The font family it was laid in — how a code block is legible to a test
+    /// as code rather than as prose that happens to hold code (bl-beef).
+    pub(crate) family: egui::FontFamily,
 }
 
 /// One filled rectangle that reached the glass: where it landed, and the
@@ -67,7 +70,7 @@ pub(crate) type Filled = (egui::Rect, egui::Color32);
 /// shape.
 #[derive(Default)]
 struct Walked {
-    text: Vec<(String, egui::Rect, egui::Color32)>,
+    text: Vec<(String, egui::Rect, egui::Color32, egui::FontFamily)>,
     fills: Vec<Filled>,
     strokes: Vec<Filled>,
 }
@@ -81,6 +84,13 @@ fn descend(shape: &egui::Shape, out: &mut Walked) {
             visible(&t.galley),
             t.galley.rect.translate(t.pos.to_vec2()),
             ink(t),
+            t.galley
+                .job
+                .sections
+                .first()
+                .map_or(egui::FontFamily::Proportional, |s| {
+                    s.format.font_id.family.clone()
+                }),
         )),
         egui::Shape::Rect(r) => {
             out.fills.push((r.rect, r.fill));
@@ -159,7 +169,7 @@ fn visible(galley: &egui::Galley) -> String {
 pub(crate) fn collect(shape: &egui::Shape, out: &mut Vec<Painted>) {
     let mut walked = Walked::default();
     descend(shape, &mut walked);
-    out.extend(walked.text.into_iter().map(|(text, rect, _)| (text, rect)));
+    out.extend(walked.text.into_iter().map(|(text, rect, ..)| (text, rect)));
 }
 
 /// The same, with the positions dropped — one line per galley.
@@ -189,15 +199,20 @@ pub(crate) fn seen_of(output: &egui::FullOutput) -> Vec<Seen> {
     for clipped in &output.shapes {
         let mut here = Walked::default();
         descend(&clipped.shape, &mut here);
-        out.extend(here.text.into_iter().filter_map(|(text, laid, ink)| {
-            let shown = laid.intersect(clipped.clip_rect);
-            (shown.width() > 0.5 && shown.height() > 0.5).then_some(Seen {
-                text,
-                laid,
-                shown,
-                ink,
-            })
-        }));
+        out.extend(
+            here.text
+                .into_iter()
+                .filter_map(|(text, laid, ink, family)| {
+                    let shown = laid.intersect(clipped.clip_rect);
+                    (shown.width() > 0.5 && shown.height() > 0.5).then_some(Seen {
+                        text,
+                        laid,
+                        shown,
+                        ink,
+                        family,
+                    })
+                }),
+        );
     }
     out
 }

@@ -218,7 +218,9 @@ the prompt's `›` in the brand for the operator, `¦` in `INK_WEAK` for the
 model, `·` in `INK_WEAK` for a peer, a tool's answer or the machinery —
 then who spoke in their weight (`theme::speaker`, the error accent on a
 failure) and the body as prose, laid at `LEADING` and wrapped at the width
-it has. A trail stands under its fold head, each step on a painted stem
+it has — save a fenced code block, which is laid in the monospace face on
+`SURFACE` at `RADIUS`, fences unpainted, never wrapped and scrolled sideways
+inside the column instead (`chat::code`, bl-beef). A trail stands under its fold head, each step on a painted stem
 (the roster's own rails and elbows) with `●` in the brand for a call, `✓`
 in `INK_WEAK` or `✗` in the error accent for a result, folded to its head
 with the unfold control carrying the size of what is hidden. A `response`

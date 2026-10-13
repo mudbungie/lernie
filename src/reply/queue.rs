@@ -89,6 +89,13 @@ pub struct QueueRow {
     /// **Why it is asking**, in the engine's own open vocabulary — rung 3, so
     /// a word this build does not know paints as itself.
     pub signals: Vec<String>,
+    /// **Why it is asking, in the engine's own sentence** (PROTOCOL 12,
+    /// bl-5507) — the signals read out with their remedy, e.g. *was cut off at
+    /// its output cap — nothing was committed; raise the role's
+    /// max_output_tokens…*. A missing key and an empty string are both `None`:
+    /// an engine that wrote no sentence has said nothing, and the signal words
+    /// stand in ([`QueueRow::why`]).
+    pub says: Option<String>,
     /// Why its latest model call failed, in one clause (§9.10).
     pub failure: Option<String>,
     /// **The flag somebody raised on it**, which is the whole point of a queue:
@@ -119,6 +126,18 @@ pub struct Held {
     pub reason: String,
 }
 
+impl QueueRow {
+    /// **Why it is asking, as one line** — the one place that choice is made,
+    /// for every surface that paints a row: the engine's own sentence where it
+    /// wrote one, the raw signal words joined by `sep` only where it did not,
+    /// and none where it named nothing.
+    pub fn why(&self, sep: &str) -> Option<String> {
+        self.says
+            .clone()
+            .or_else(|| (!self.signals.is_empty()).then(|| self.signals.join(sep)))
+    }
+}
+
 /// One row, strictly ([`super`]'s rung 1: every refusal names its field).
 pub(crate) fn row(value: &Value) -> Result<QueueRow, String> {
     let obj: &Map<String, Value> = value.as_object().ok_or("attention row: not an object")?;
@@ -132,6 +151,7 @@ pub(crate) fn row(value: &Value) -> Result<QueueRow, String> {
         age_secs: fields::secs(obj, "age_secs")?,
         pending: fields::count(obj, "pending")?,
         signals: fields::list(obj, "signals", word)?,
+        says: fields::opt_text(obj, "says")?.filter(|said| !said.is_empty()),
         failure: fields::opt_text(obj, "failure")?,
         flag: fields::nested(obj, "flag", flag)?,
         held: fields::nested(obj, "held", held)?,

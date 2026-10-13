@@ -272,10 +272,11 @@ pub fn parked(row: &QueueRow) -> Option<String> {
     ))
 }
 
-/// Why it is asking, as the engine's own words joined — or none where it named
-/// nothing, which is a row asking for a reason no token spells.
+/// Why it is asking: the engine's own sentence (`says`, bl-5507), the raw
+/// signal words only where it wrote none, or none where it named nothing —
+/// [`QueueRow::why`] makes the choice.
 pub fn signalled(row: &QueueRow) -> Option<String> {
-    (!row.signals.is_empty()).then(|| row.signals.join("  "))
+    row.why("  ")
 }
 
 #[cfg(test)]

@@ -24,6 +24,7 @@ pub(crate) fn waiting(workspace: &str, agent: &str) -> crate::reply::queue::Queu
         age_secs: 7,
         pending: 0,
         signals: Vec::new(),
+        says: None,
         failure: None,
         flag: None,
         held: None,

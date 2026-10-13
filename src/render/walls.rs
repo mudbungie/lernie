@@ -67,7 +67,7 @@ pub(super) fn attention(rows: &[QueueRow]) -> String {
                 when(row.uncertain, "(uncertain)"),
                 Some(age(row.age_secs)),
                 tally(row.pending, "queued"),
-                when(!row.signals.is_empty(), &row.signals.join(", ")),
+                row.why(", "),
                 clause("flagged:", row.flag.as_ref().map(|f| f.reason.as_str())),
                 clause("failed:", row.failure.as_deref().map(brief).as_deref()),
             ]);

@@ -13,6 +13,7 @@ fn full() -> serde_json::Value {
         "state": "stopped", "uncertain": false, "preview": "p",
         "age_secs": 5, "pending": 2,
         "signals": ["held", "mail", "flagged"],
+        "says": "parked a tool invocation for your answer",
         "failure": "Unauthorized",
         "flag": {"at": "2026-01-01T00:00:00Z", "reason": "please look at this one"},
         "held": {"tool": "Bash", "tool_use": "toolu_1", "reason": "writes"},
@@ -24,7 +25,7 @@ fn bare() -> serde_json::Value {
     json!({
         "workspace": "ws", "agent": "c-2", "display": "Dun",
         "state": "live", "uncertain": true, "preview": "",
-        "age_secs": 0, "pending": 0, "signals": [],
+        "age_secs": 0, "pending": 0, "signals": [], "says": "",
         "failure": null, "flag": null, "held": null,
     })
 }
@@ -43,6 +44,7 @@ fn a_row_carries_the_whole_ask() {
             age_secs: 5,
             pending: 2,
             signals: vec!["held".to_owned(), "mail".to_owned(), "flagged".to_owned()],
+            says: Some("parked a tool invocation for your answer".to_owned()),
             failure: Some("Unauthorized".to_owned()),
             flag: Some(Flag {
                 at: "2026-01-01T00:00:00Z".to_owned(),
@@ -150,6 +152,25 @@ fn the_queue_and_its_raise_are_answers() {
         read(&json!({"kind": "flagged", "ok": true})),
         Read::Answer(Reply::Flagged)
     );
+}
+
+/// **`says` is the engine's sentence, and the signals stand in only where it
+/// wrote none** (bl-5507): an empty string and a missing key are both absence
+/// (rung 4 reads a key an older engine never wrote as nothing said).
+#[test]
+fn the_engine_s_sentence_wins_and_the_signals_stand_in_without_it() {
+    let whole = row(&full()).expect("a queue row");
+    assert_eq!(
+        whole.why(", ").as_deref(),
+        Some("parked a tool invocation for your answer")
+    );
+    let mut unsaid = full();
+    unsaid.as_object_mut().expect("object").remove("says");
+    let unsaid = row(&unsaid).expect("a queue row");
+    assert_eq!(unsaid.says, None);
+    assert_eq!(unsaid.why(", ").as_deref(), Some("held, mail, flagged"));
+    let quiet = row(&bare()).expect("a queue row");
+    assert_eq!((quiet.says.clone(), quiet.why(", ")), (None, None));
 }
 
 /// **`seen`'s receipt is an answer**: the item acted on and the queue that

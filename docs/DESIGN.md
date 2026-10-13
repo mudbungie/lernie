@@ -2350,6 +2350,14 @@ which is what bl-d774 recorded and this ball spends. So it leads a row's detail,
 above the failure clause and the parked invocation: it is the only line on a row
 that somebody *wrote* rather than something the engine observed.
 
+**Why a row asks is the engine's sentence, not its tokens** (bl-5507). Every
+queue row has carried `says` since PROTOCOL 12 — the signals read out with the
+remedy, *was cut off at its output cap — nothing was committed; raise the
+role's max_output_tokens…* — and the pane, the ask box (§4.42 item 8) and
+`lernie attention` all paint it in place of the signal list. The signals stand
+in only where `says` is absent or empty, and `QueueRow::why` is the one place
+that choice is made.
+
 Five decisions, and each is a choice rather than a mechanism:
 
 - **Its control hangs off the roster, above the channels and off no row.** The
@@ -5115,8 +5123,9 @@ parts, in its vertical order, each with what it becomes here.
 8. **The ask stands above the field** (`src/ui/ask.rs`; bl-dc3d): while the
    selected conversation is asking, a framed box in the attention accent
    stands between the transcript and the rule carrying the queue row's own
-   words — the parked call, the flag, the signals, the failure, the last
-   words — and its choices as numbered rows: `1. seen`, and where a call is
+   words — the parked call, the flag, why it asks (the engine's own `says`
+   sentence, carrying its remedy, and the raw signal words only where the
+   engine wrote none; bl-5507), the failure, the last words — and its choices as numbered rows: `1. seen`, and where a call is
    parked `2. pass · 3. pass for this conversation · 4. pass for this
    workspace · 5. refuse · 6. hold` — the three scopes being the baseline's
    *once*, *this session* and *always* in this wire's own words, §4.19's

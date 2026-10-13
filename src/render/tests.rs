@@ -168,3 +168,16 @@ fn a_proposals_listing_says_the_standing_the_engine_read_and_never_infers_one() 
         "nothing staged is an empty answer, not a refusal"
     );
 }
+
+/// **The CLI's queue says why in the engine's words** (bl-5507): `says` in
+/// place of the raw signal list wherever the engine wrote one.
+#[test]
+fn a_queue_row_prints_the_engine_s_sentence_over_its_signals() {
+    let said = rendered(&json!({"ok": true, "kind": "attention", "rows": [
+        {"workspace": "home", "agent": "c-1", "display": "Cobalt", "state": "stopped",
+         "uncertain": false, "preview": "", "age_secs": 5, "pending": 0,
+         "signals": ["truncated"], "says": "was cut off at its output cap",
+         "failure": null, "flag": null, "held": null}]}));
+    assert!(said.contains("was cut off at its output cap"), "{said}");
+    assert!(!said.contains("truncated"), "{said}");
+}

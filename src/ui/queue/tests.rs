@@ -220,3 +220,26 @@ fn a_quiet_section_beside_a_busy_one_paints_no_header() {
     assert!(!painted.contains("a quiet engine"), "{painted}");
     assert!(painted.contains("(this box's own engine)"), "{painted}");
 }
+
+/// **The pane and the ask box paint the engine's sentence, not the signal
+/// words** (bl-5507), and fall back to the words only where it wrote none.
+#[test]
+fn a_row_says_why_in_the_engine_s_words() {
+    let says = "was cut off at its output cap — nothing was committed";
+    let mut model = queued();
+    model.waiting[0].rows[0].says = Some(says.to_owned());
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    assert!(painted.contains(says), "{painted}");
+    assert!(!painted.contains("held  mail  flagged"), "{painted}");
+    let row = model.waiting[0].rows[0].clone();
+    let said: Vec<String> = crate::ui::ask::words(&row)
+        .into_iter()
+        .map(|(s, _)| s)
+        .collect();
+    assert!(said.contains(&says.to_owned()), "{said:?}");
+    assert!(!said.iter().any(|s| s.contains("held  mail")), "{said:?}");
+    let unsaid = crate::reply::queue::QueueRow { says: None, ..row };
+    assert_eq!(signalled(&unsaid).as_deref(), Some("held  mail  flagged"));
+}

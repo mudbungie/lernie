@@ -79,7 +79,20 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
 
 /// The box and the act: what to look for, and the control that asks.
 fn asking(ui: &mut egui::Ui, model: &mut Model) {
-    ui.text_edit_singleline(&mut model.needle);
+    // **The field is as wide as the box and scrolls inside itself** (bl-4f8d).
+    // egui's one-line box allocates its text's overflow in the ui it is
+    // added to, clipped or not, so a long needle widened the whole overlay
+    // and every line under it wrapped at that width — off the window. It is
+    // laid in a child region whose one allocation is the field's own rect.
+    let (rect, _) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), ui.spacing().interact_size.y),
+        egui::Sense::hover(),
+    );
+    ui.new_child(egui::UiBuilder::new().max_rect(rect)).add(
+        egui::TextEdit::singleline(&mut model.needle)
+            .desired_width(rect.width())
+            .clip_text(true),
+    );
     let live = model.needled();
     let mut fired = false;
     ui.horizontal_wrapped(|ui| {
@@ -103,7 +116,7 @@ fn answered(ui: &mut egui::Ui, found: &crate::reply::search::Found) {
     // **The engine's own echo of the needle**, never the box's current
     // contents: these rows are an answer to what was asked, and an operator
     // mid-edit must not be told the old rows are about the new words.
-    ui.label(looked_for(found));
+    broken(ui, &looked_for(found), theme::INK);
     for why in &found.unreadable {
         ui.colored_label(theme::NOTICE, unread(why));
     }
@@ -118,12 +131,25 @@ fn answered(ui: &mut egui::Ui, found: &crate::reply::search::Found) {
 
 /// One hit: what it is in, where in it, and the words around the needle.
 fn hit(ui: &mut egui::Ui, row: &crate::reply::search::Hit) {
-    ui.label(row.subject());
-    ui.colored_label(
+    broken(ui, &row.subject(), theme::INK);
+    broken(
+        ui,
+        &row.at_field(),
         theme::tone_ink(&crate::reply::convs::Tone::Weak),
-        row.at_field(),
     );
-    ui.add(egui::Label::new(row.excerpt.clone()).wrap());
+    broken(ui, &row.excerpt, theme::INK);
+}
+
+/// **A line that breaks anywhere** (bl-4f8d). What these rows carry is the
+/// operator's needle and the engine's words around it, and a needle with no
+/// space in it — a path, a hash, a pasted line — is one word that egui's wrap
+/// will not break: it laid the run past the box's edge, and the box grew with
+/// it off the window. Breaking mid-word keeps every glyph inside the box.
+fn broken(ui: &mut egui::Ui, text: &str, ink: egui::Color32) {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let mut job = egui::text::LayoutJob::simple(text.to_owned(), font, ink, ui.available_width());
+    job.wrap.break_anywhere = true;
+    ui.label(job);
 }
 
 /// **What this section is an answer to**, in the engine's own words.

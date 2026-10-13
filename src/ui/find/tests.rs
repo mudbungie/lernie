@@ -151,3 +151,35 @@ fn the_roster_opens_it_and_the_act_inside_it_composes_the_search() {
     escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.finding());
 }
+
+/// **A needle with no space in it stays inside the box** (bl-4f8d): every
+/// glyph of the answer is laid within the phone-shaped window — the echo of a
+/// 300-character needle and an excerpt as long.
+#[test]
+fn a_needle_with_no_space_in_it_is_laid_inside_the_window() {
+    let long = "x".repeat(300);
+    let mut model = finding();
+    model.needle.clone_from(&long);
+    model.found[0].found.needle.clone_from(&long);
+    model.found[0].found.rows[0].excerpt = "y".repeat(300);
+    let window = Window::sized(420.0, 820.0);
+    for _ in 0..2 {
+        window.text(|ctx| crate::ui::render(ctx, &mut model));
+    }
+    let output = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    let seen = crate::paint_probe::seen_of(&output);
+    assert!(
+        seen.iter().any(|run| run.text.contains("xxxxxxxxxx")),
+        "the needle is painted"
+    );
+    // The needle's own field scrolls inside itself, as a one-line box does;
+    // every other run is the pane's and must be laid inside the window.
+    for run in seen.into_iter().filter(|run| run.text != long) {
+        assert!(
+            run.laid.max.x <= 420.5,
+            "{:?} laid to {}",
+            run.text,
+            run.laid.max.x
+        );
+    }
+}

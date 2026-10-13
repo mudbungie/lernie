@@ -1,13 +1,13 @@
 //! **Firing a word**: what each row does when it is taken (`super`).
 
-use super::{DELETE, PLAN, REFRESH, rows};
+use super::{DELETE, LEAD, PLAN, REFRESH, rows};
 use crate::ui::Model;
 
 /// **Fire one word with the words after it.** Answers whether anything was
 /// fired — a word this seat does not offer, or a verb without the parameter it
-/// requires, fires nothing and leaves the draft standing.
+/// requires ([`wanting`]), fires nothing and leaves the draft standing.
 pub fn fire(model: &mut Model, word: &str, rest: &str) -> bool {
-    if !rows(model).iter().any(|row| row.word == word) {
+    if !rows(model).iter().any(|row| row.word == word) || wanting(model, word, rest).is_some() {
         return false;
     }
     if let Some(fired) = conversation(model, word, rest) {
@@ -59,26 +59,55 @@ fn conversation(model: &mut Model, word: &str, rest: &str) -> Option<bool> {
             model.begin_records();
             return Some(true);
         }
-        w if w == verbs::INTERRUPT.word => {
-            if rest.is_empty() {
-                return Some(false);
-            }
-            verbs::interrupt(address, agent, rest.to_owned())
-        }
+        w if w == verbs::INTERRUPT.word => verbs::interrupt(address, agent, rest.to_owned()),
         w if w == verbs::STOP.word => verbs::stop(address, agent, false),
         w if w == verbs::NUDGE.word => verbs::nudge(address, agent),
         w if w == verbs::REVOKE.word => verbs::revoke(address, agent),
         w if w == verbs::RESTORE.word => verbs::restore(address, agent),
         w if w == verbs::RETARGET.word => verbs::retarget(address, agent),
-        w if w == verbs::FLAG.word => {
-            if rest.is_empty() {
-                return Some(false);
-            }
-            verbs::flag(address, agent, rest.to_owned())
-        }
-        DELETE => verbs::delete_agent(address, agent, rest.to_owned()),
+        w if w == verbs::FLAG.word => verbs::flag(address, agent, rest.to_owned()),
+        DELETE => verbs::delete_agent(address, agent, rest.trim().to_owned()),
         _ => return None,
     };
     model.outbox.push(crate::ui::Posted::act(gesture));
     Some(true)
+}
+
+/// **Why `word` cannot fire with `rest` after it**, in the window's words, or
+/// `None` where it can (bl-df70).
+///
+/// A verb that takes words takes them on the same line, and one with them
+/// missing fires nothing (DESIGN §4.42, item 5) — and says so, because a verb
+/// that silently does nothing reads as a key that is dead.
+///
+/// **`/delete` is armed by the conversation's own name and by nothing else.**
+/// The wire's typed name arms only the subtree: a leaf is deleted by any
+/// word, an empty one included. So the seat holds the arming §4.20 asks for
+/// itself — the name the engine compares (its display name, retyped,
+/// surrounding space forgiven) or no envelope at all — and states the subject
+/// in the refusal, as an unmaking states its subject before it offers the act.
+pub fn wanting(model: &Model, word: &str, rest: &str) -> Option<String> {
+    use crate::verbs;
+    match word {
+        w if w == verbs::FLAG.word && rest.is_empty() => Some(format!(
+            "{LEAD}{w} needs its reason after it — {LEAD}{w} <reason>"
+        )),
+        w if w == verbs::INTERRUPT.word && rest.is_empty() => Some(format!(
+            "{LEAD}{w} needs the words to say instead — {LEAD}{w} <words>"
+        )),
+        DELETE => {
+            let id = model.conversation.as_deref()?;
+            let name = model
+                .rows()
+                .into_iter()
+                .find(|row| row.root_id == id)
+                .map_or_else(|| id.to_owned(), |row| row.display);
+            (rest.trim() != name).then(|| {
+                format!(
+                    "{LEAD}{DELETE} is armed by the conversation's own name — {LEAD}{DELETE} {name}"
+                )
+            })
+        }
+        _ => None,
+    }
 }

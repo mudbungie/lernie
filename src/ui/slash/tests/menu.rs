@@ -54,6 +54,19 @@ fn the_keys_move_complete_fire_and_clear() {
         model.draft, "/flag",
         "a flag without its reason fires nothing and stays"
     );
+    // **And says why, on the glass, until the draft moves** (bl-df70).
+    let why =
+        super::super::wanting(&model, crate::verbs::FLAG.word, "").expect("a reason is wanted");
+    let said = crate::paint_probe::text_of(&window.frame(Vec::new(), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    }));
+    assert!(said.contains(&why), "{said}");
+    model.draft = "/flag ".to_owned();
+    let moved = crate::paint_probe::text_of(&window.frame(Vec::new(), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    }));
+    assert!(!moved.contains(&why), "{moved}");
+    model.draft = "/flag".to_owned();
     key(&mut model, egui::Key::Escape);
     assert_eq!(model.draft, "");
     // Escape is also egui's *leave the box*, so the caret goes back in.

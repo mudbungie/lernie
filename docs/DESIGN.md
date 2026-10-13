@@ -5084,7 +5084,13 @@ parts, in its vertical order, each with what it becomes here.
    verb table's own. A verb that takes words takes them on the same line —
    `/flag <reason>`, `/interrupt <words>`, `/delete <name>` is the arming,
    `/find <needle>` spends it; one with its parameter missing fires nothing,
-   as the disabled control it replaces fired nothing. The menu lays a window
+   as the disabled control it replaces fired nothing, **and the menu says
+   why** under its keys until the draft moves (bl-df70). **`/delete` is
+   armed by the conversation's own name and by nothing else**: the wire's
+   typed name arms only the subtree and deletes a leaf on any word, an empty
+   one included, so the seat composes no envelope until the word is the name
+   the engine compares, and the refusal states that name (§4.20: an
+   unmaking states its subject before it offers the act). The menu lays a window
    of rows around the chosen one and never scrolls, which is the baseline's
    shape and the one the matrix admits — every control laid is on the glass
    whole at every size.

@@ -48,7 +48,7 @@ mod fire;
 /// The rows this seat offers right now, and the table they are read from.
 mod rows;
 
-pub use fire::fire;
+pub use fire::{fire, wanting};
 pub use rows::rows;
 
 /// The glyph that opens the menu, and the one character a slash line starts
@@ -107,6 +107,10 @@ pub fn matching(model: &Model, draft: &str) -> Vec<Row> {
 /// Where the menu keeps which row is chosen — the toolkit's memory, as a
 /// folded tool result's is: a view state no wire gesture corresponds to.
 const CHOSEN_ID: &str = "the menu's chosen row";
+/// **Where it keeps why the last word did not fire**, beside the draft it was
+/// said about — the same kind of view state, and it stands only while that
+/// draft does, so the next keystroke takes it down.
+const WHY_ID: &str = "why the menu's word did not fire";
 
 /// **Paint the menu over the box and take what it was given**: a click on a
 /// row, ↑↓ moving the choice, Tab completing the word, Enter firing it.
@@ -145,7 +149,13 @@ pub fn menu(ui: &mut egui::Ui, model: &mut Model) {
     // rows around the chosen one and no others. The box is as tall as the
     // rows it lays, a line for the hint, and the frame's own air.
     let line = theme::ROW + ui.spacing().item_spacing.y;
-    let hint = ui.text_style_height(&egui::TextStyle::Small) + ui.spacing().item_spacing.y;
+    let why_id = egui::Id::new(WHY_ID);
+    let why = ui
+        .data(|d| d.get_temp::<(String, String)>(why_id))
+        .filter(|(said_of, _)| *said_of == draft)
+        .map(|(_, why)| why);
+    let small = ui.text_style_height(&egui::TextStyle::Small) + ui.spacing().item_spacing.y;
+    let hint = small + why.as_ref().map_or(0.0, |_| line);
     let room = crate::ui::overlay::ceiling(ui) - 2.0 * theme::space::S - hint;
     // Counted rather than divided: one row always, then one more for every
     // line that still fits — so no float is ever cast to a count.
@@ -163,6 +173,9 @@ pub fn menu(ui: &mut egui::Ui, model: &mut Model) {
     let height = tall + hint + 2.0 * theme::space::S;
     crate::ui::overlay::float(ui, "the completion menu", height, |ui| {
         ui.label(egui::RichText::new(HINT).small().color(theme::INK_WEAK));
+        if let Some(why) = &why {
+            ui.colored_label(theme::NOTICE, why);
+        }
         for (i, row) in shown.iter().enumerate() {
             let seat = theme::paint::row(ui, &row.line(), theme::INK, None, start + i == at, 0.0);
             crate::ui::act::tag(&seat, row.ops);
@@ -185,10 +198,13 @@ pub fn menu(ui: &mut egui::Ui, model: &mut Model) {
     if enter {
         chose = rows.get(at).copied();
     }
-    if let Some(row) = chose
-        && fire(model, row.word, rest)
-    {
-        model.draft.clear();
+    if let Some(row) = chose {
+        if fire(model, row.word, rest) {
+            model.draft.clear();
+        } else if let Some(why) = wanting(model, row.word, rest) {
+            ui.data_mut(|d| d.insert_temp(why_id, (draft, why)));
+            ui.ctx().request_repaint();
+        }
     }
 }
 

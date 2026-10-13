@@ -4,7 +4,7 @@
 /// The menu over the box: what it shows, and what the keys and a click do.
 mod menu;
 
-use super::{DELETE, PLAN, REFRESH, fire, matching, parsed, rows};
+use super::{DELETE, PLAN, REFRESH, fire, matching, parsed, rows, wanting};
 use crate::reply::agent::Offer;
 use crate::test_support::window::{pinned, seated};
 use crate::ui::Model;
@@ -156,6 +156,47 @@ fn firing_composes_the_envelope_the_strip_composed() {
     );
     assert!(!fire(&mut model, "no-such-verb", ""));
     assert_eq!(model.outbox.len(), before);
+}
+
+/// **`/delete` is armed by the conversation's own name and nothing else**
+/// (bl-df70): the wire deletes a leaf on any word, an empty one included, so
+/// a missing or mistyped name must compose no envelope at all — and every
+/// verb that fires nothing for a missing word says why.
+#[test]
+fn a_missing_or_wrong_word_fires_nothing_and_says_why() {
+    let mut model = seated();
+    for (word, rest) in [
+        (DELETE, ""),
+        (DELETE, "port the paint"),
+        (crate::verbs::FLAG.word, ""),
+        (crate::verbs::INTERRUPT.word, ""),
+    ] {
+        let why = wanting(&model, word, rest).expect("says why");
+        assert!(why.starts_with(&format!("/{word} ")), "{why}");
+        assert!(!fire(&mut model, word, rest), "{word} {rest:?}");
+    }
+    assert!(model.outbox.is_empty());
+    assert!(
+        wanting(&model, DELETE, "").is_some_and(|why| why.ends_with("port the paint probe")),
+        "the refusal states the name that arms it"
+    );
+    assert!(fire(&mut model, DELETE, "  port the paint probe "));
+    assert_eq!(
+        model.outbox[0].envelope["typed"],
+        json!("port the paint probe")
+    );
+    assert_eq!(wanting(&model, crate::verbs::STOP.word, ""), None);
+    model.conversation = Some("ghost".to_owned());
+    assert!(
+        wanting(&model, DELETE, "").is_some_and(|why| why.ends_with(" ghost")),
+        "a conversation the list does not carry is named by its id, as the engine names it"
+    );
+    model.conversation = None;
+    assert_eq!(
+        wanting(&model, DELETE, ""),
+        None,
+        "nothing selected, nothing to arm"
+    );
 }
 
 /// **Every opener opens its pane**, and the ones with a subject spend it:

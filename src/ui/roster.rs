@@ -48,8 +48,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
 
 /// What a section says for an engine that answered and holds no workspace. A
 /// fact about that engine, and the one empty state that is not a wait.
-pub const NO_WALLS: &str =
-    "this engine holds no workspace — make one with yog on its box, then refresh";
+pub const NO_WALLS: &str = "this engine holds no workspace this seat is in";
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused. **It is painted by `crate::ui::shell`** — above the pane in the
@@ -142,11 +141,11 @@ fn section(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, reve
             // Already said above, in its own words.
             crate::ui::Held::Unheld(_) => {}
         }
-        return;
     }
     for row in ordered(&chunk.walls) {
         wall::render(ui, model, chunk, &row, reveal);
     }
+    engine::found(ui, model, chunk);
 }
 
 /// The section header: what this box calls the channel, what its host calls the

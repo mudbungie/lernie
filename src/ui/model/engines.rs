@@ -145,6 +145,39 @@ impl Model {
         self.fill = Some(crate::ui::Fill::Goal);
     }
 
+    /// **Begin founding a workspace** — what the switcher's `+ new workspace`
+    /// does (§4.42 item 7; bl-673e). The selection goes, because a founding
+    /// is a start and a start is *no conversation*; the caret is asked for;
+    /// and the box reads its next Enter as `<name> <goal>`
+    /// (`crate::ui::composer::found`). Like [`Self::begin_at`] it is a view
+    /// and crosses no wire.
+    pub fn begin_founding(&mut self, channel: &str) {
+        self.conversation = None;
+        self.transcript = crate::reply::transcript::Transcript::default();
+        self.live = None;
+        self.founding = Some(channel.to_owned());
+        self.fill = Some(crate::ui::Fill::Goal);
+    }
+
+    /// **Found it**: the draft's first word is the new workspace's name and
+    /// the rest its first conversation's goal. The start is the ordinary one
+    /// aimed at a wall that does not exist yet — a `prepare` naming an
+    /// unknown workspace routes to this box's own engine (REMOTE §8.2) and
+    /// founds it there, registering this client (REMOTE §4) — so the receipt
+    /// selects the conversation exactly as any start's does. A draft with no
+    /// goal after the name fires nothing, the start's own rule.
+    pub fn found(&mut self) {
+        let typed = self.draft.trim().to_owned();
+        let (Some(channel), Some((name, goal))) =
+            (self.founding.clone(), typed.split_once(char::is_whitespace))
+        else {
+            return;
+        };
+        self.aim_at(&channel, name);
+        goal.trim().clone_into(&mut self.draft);
+        self.stage(name);
+    }
+
     /// The wall an opening aims at: the one last aimed under it while this
     /// seat can still address it, else its first by `ordered`.
     fn opening_aim(&self, name: &str) -> Option<String> {

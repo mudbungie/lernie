@@ -30,6 +30,8 @@
 
 use crate::ui::{Model, theme};
 
+/// The line that founds a workspace and begins its first conversation.
+pub mod found;
 /// The acts that spend no words and are not offered every day: the strip
 /// behind the more control.
 /// The acts the conversation offers on its turn, and the control that opens
@@ -42,7 +44,10 @@ pub mod start;
 /// still does ([`UNAIMED`]), dropped from the right as [`hint`] drops.
 pub const NOWHERE: &str = "nothing is aimed";
 /// The ways in that need no aim: the verbs, and the key that aims.
-pub const UNAIMED: [&str; 2] = ["/ for a verb", "Ctrl+X for a conversation"];
+pub const UNAIMED: [&str; 2] = [
+    "/ for a verb",
+    "Ctrl+X for a conversation or a new workspace",
+];
 /// **What the field says while it is empty** — the key that sends, then the
 /// ways in ([`hint`]), then the key that breaks a line, because a field three
 /// lines tall is one an operator expects Enter to break a line in, and a
@@ -104,6 +109,10 @@ pub const NUDGE: &str = "nudge";
 
 /// Paint the composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    if model.founding.is_some() {
+        found::render(ui, model);
+        return;
+    }
     let Some(aim) = model.aim.clone() else {
         // **The field with nothing aimed**: the slash line is the menu's
         // (`crate::ui::slash::menu`), and nothing else here fires — so the

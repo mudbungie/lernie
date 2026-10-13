@@ -29,9 +29,14 @@ pub const WAYS: [&str; 4] = [
 /// What parts one way from the next.
 pub const PART: &str = " · ";
 
+/// **The way to a wall where there is none** (bl-673e): the switcher's row
+/// that founds one, named on the card because a fresh engine holds nothing
+/// this seat is in and the card is the first thing it reads.
+pub const FOUNDING: &str = "Ctrl+X then + new workspace to found one";
+
 /// The ways in as one line, said once under the seat's card, where it wraps.
 pub fn ways_in() -> String {
-    WAYS.join(PART)
+    format!("{}{PART}{FOUNDING}", WAYS.join(PART))
 }
 
 /// The card every panel is laid in.

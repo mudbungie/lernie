@@ -55,6 +55,7 @@ impl Model {
         };
         let moved = self.aim.as_ref() != Some(&aim);
         self.aim = Some(aim);
+        self.founding = None;
         // **The engine remembers the wall it was left on** (DESIGN §4.39), so
         // an engine an operator comes back to is the engine they left. It is
         // recorded here rather than by each surface that aims, for this
@@ -120,6 +121,7 @@ impl Model {
     /// **Select a conversation**, by the id every gesture addresses it with.
     pub fn select(&mut self, root_id: &str) {
         self.conversation = Some(root_id.to_owned());
+        self.founding = None;
         self.transcript = crate::reply::transcript::Transcript::default();
         self.live = None;
         // **The records pane goes with the conversation it was opened on**
@@ -216,6 +218,8 @@ impl Model {
             self.close_login();
         } else if self.unmaking.is_some() {
             self.close_unmaking();
+        } else if self.founding.is_some() {
+            self.founding = None;
         } else {
             self.dismiss();
         }

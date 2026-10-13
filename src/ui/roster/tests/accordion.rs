@@ -198,3 +198,47 @@ fn new_stands_down_while_a_pane_covers_the_conversation() {
         "no + new is offered under a covering pane:\n{painted}"
     );
 }
+
+/// **`+ new workspace` stands under this box's own engine and no other**
+/// (§4.42 item 7; bl-673e): the open own engine offers it, even holding no
+/// wall; an entry's engine does not, because a name no entry holds routes
+/// to the flat root; and an own engine that will not dial does not either.
+/// Clicking it sends the box to found one and closes the switcher.
+#[test]
+fn new_workspace_stands_under_the_own_engine_and_founds_one() {
+    use crate::ui::roster::engine::FOUND;
+    let mut bare = Model {
+        roster: vec![Chunk {
+            walls: Vec::new(),
+            ..own()
+        }],
+        ..seated()
+    };
+    let painted = pane(|ui| render(ui, &mut bare));
+    assert_eq!(painted.matches(FOUND).count(), 1, "{painted}");
+    let mut lab = two();
+    lab.open_engine("lab");
+    let painted = pane(|ui| render(ui, &mut lab));
+    assert!(!painted.contains(FOUND), "not under an entry:\n{painted}");
+    let mut unheld = two();
+    unheld.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
+    let painted = pane(|ui| render(ui, &mut unheld));
+    assert!(
+        !painted.contains(FOUND),
+        "not where it cannot dial:\n{painted}"
+    );
+    let mut model = two();
+    model.switching = true;
+    let window = Window::new();
+    click(&window, FOUND, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
+    });
+    assert_eq!(
+        model.founding.as_deref(),
+        Some(crate::seat::OWN),
+        "the box is founding on its own engine"
+    );
+    assert_eq!(model.conversation, None, "the selection is cleared");
+    assert_eq!(model.fill, Some(crate::ui::Fill::Goal));
+    assert!(!model.switching, "the switcher closed");
+}

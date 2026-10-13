@@ -5179,7 +5179,21 @@ parts, in its vertical order, each with what it becomes here.
    switcher does not invent one; the rule says it for the selected
    conversation. Enter selects, which is §4.11's
    one door for a click and a keypress, and closes the overlay; `+ new` puts
-   the caret in the field in start mode. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
+   the caret in the field in start mode. **`+ new workspace` stands last
+   under this box's own engine** (bl-673e): a fresh engine holds no wall
+   this client is registered in, so there is no `+ new` to pick, and the
+   engine's own remedy is *a workspace this client founds itself registers
+   it too* (REMOTE §4). It puts the caret in the field in a founding mode
+   whose hint asks for `<name> <what it is for>` on one line; Enter aims the
+   named wall and stages the ordinary start on it, whose `prepare` founds
+   the workspace on the host (REMOTE §4.1's raise) — one line rather than a
+   two-step, because a name held between two Enters would be a second state
+   to put down. Esc, an aim or a selection puts the mode down. It stands
+   under no entry's engine: a name no entry holds routes to the flat root
+   (REMOTE §8.2), so it would found the wall on a different engine than the
+   one it was offered under. The seat's card names it among the ways in, and
+   the field with nothing aimed says *Ctrl+X for a conversation or a new
+   workspace*. **Opening it puts down whatever overlay stood** (bl-339d): one stands at a time, and a switcher stacked over a pane handed the operator back to the pane after they chose. The accordion's order, open engine
    and ranks (§4.39, `model/engines.rs`) are what the overlay paints, so the
    place file keeps those keys and loses the two layout ones.
 

@@ -133,3 +133,29 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, r
         model.open_engine(&name);
     }
 }
+
+/// **The row that founds a workspace** (§4.42 item 7; bl-673e), standing last
+/// under this box's own engine beside the walls' `+ new` rows.
+pub const FOUND: &str = "+ new workspace";
+
+/// **`+ new workspace`**: the box asks for `<name> <goal>`
+/// ([`Model::begin_founding`]), and the switcher closes on the way.
+///
+/// **Under this box's own engine and no other**: a gesture naming a
+/// workspace no entry holds goes down the flat root (REMOTE §8.2), so a name
+/// typed under an entry's heading would found it on a different engine than
+/// the one it was offered under. It stands down where that channel will not
+/// dial and under a covering pane, `+ new`'s own rules.
+pub fn found(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk) {
+    if chunk.channel.name != crate::seat::OWN
+        || matches!(chunk.held, crate::ui::Held::Unheld(_))
+        || (model.covered() && !model.switching)
+    {
+        return;
+    }
+    let seat = theme::paint::row(ui, FOUND, theme::INK_WEAK, None, false, 0.0);
+    if seat.clicked() {
+        model.begin_founding(&chunk.channel.name);
+        model.chose();
+    }
+}

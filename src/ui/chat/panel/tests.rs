@@ -39,6 +39,7 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
         "Ctrl+X for a conversation",
         "/roles for the model",
         "/login for a provider",
+        super::FOUNDING,
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }

@@ -279,6 +279,11 @@ pub struct Model {
     /// across a round trip, because starting is two acts and the second is
     /// composed from the first's answer ([`Start`]).
     pub start: Option<Start>,
+    /// **The engine the box is naming a new workspace on** (bl-673e): the
+    /// switcher's `+ new workspace` under it asked, and the next Enter reads
+    /// the draft as `<name> <goal>` ([`Model::found`]). Put down by any aim
+    /// or selection.
+    pub founding: Option<String>,
     /// **An enrollment, while it is happening** — the second thing this window
     /// holds across a round trip, and the only thing it ever holds that is a
     /// secret. It is dropped by a control and written down nowhere

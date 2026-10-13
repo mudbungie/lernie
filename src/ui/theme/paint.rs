@@ -140,7 +140,7 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
     ui.label(egui::RichText::new(word).color(INK_WEAK));
 }
 
-pub use field::{composer, field};
+pub use field::{field, prompt};
 
 /// **A paragraph of prose**: `words` wrapped at the width it has, in `ink`,
 /// laid at [`type_scale::LEADING`] rather than the font's own line height

@@ -2,11 +2,11 @@
 //! are held down until their box has something in it, and the two emptinesses.
 
 use super::{
-    ATTEMPTS, CHANGES, CLOSE, DISARM, DISBAND, FEWER, HEADING, MODEL_HINT, MORE, NOT_ANSWERED,
-    NOTHING, OPEN, PROJECT_HINT, RUN, SCAN, WATCH,
+    ATTEMPTS, CHANGES, DISARM, DISBAND, FEWER, HEADING, MODEL_HINT, MORE, NOT_ANSWERED, NOTHING,
+    PROJECT_HINT, RUN, SCAN, WATCH, WORD,
 };
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, fleeting, painted, seated};
+use crate::test_support::window::{click, escape, fleeting, painted, seated};
 use crate::ui::Model;
 
 /// **The control hangs off the aimed wall's row and opens the pane**, which is
@@ -14,12 +14,10 @@ use crate::ui::Model;
 #[test]
 fn the_wall_s_control_opens_the_pane() {
     let mut model = seated();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(model.fleet.is_some(), "the control opened nothing");
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
+    assert!(model.fleet.is_some(), "the word opened nothing");
     let glass = painted(&mut model);
     assert!(glass.contains(HEADING), "{glass}");
-    assert!(!glass.contains(OPEN), "{glass}");
 }
 
 /// **The close puts it down.**
@@ -27,7 +25,7 @@ fn the_wall_s_control_opens_the_pane() {
 fn the_close_puts_the_pane_down() {
     let mut model = fleeting();
     let window = Window::new();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(model.fleet.is_none());
 }
 

@@ -32,10 +32,8 @@
 
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "find…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "find";
 /// The pane's own heading.
 pub const HEADING: &str = "find text";
 /// The word on the control that spends the needle.
@@ -57,13 +55,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.finding() {
         return false;
     }
-    ui.heading(HEADING);
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_lookup();
-        }
-    });
-    ui.separator();
+    crate::ui::overlay::name(ui, HEADING);
     asking(ui, model);
     ui.separator();
     let found = model.found.clone();

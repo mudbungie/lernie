@@ -19,13 +19,6 @@
 /// below is a comparison rather than a guess about what "focused" means.
 pub const BOX_ID: &str = "the composer's box";
 
-/// **The id the flag's reason box wears** (`crate::ui::composer::acts::WHY`).
-pub const REASON_ID: &str = "the flag's reason box";
-
-/// **The id the deletion's arming box wears**
-/// (`crate::ui::composer::acts::ARM`).
-pub const ARM_ID: &str = "the deletion's arming box";
-
 /// **The id the config editor's box wears** (`crate::ui::config::edit`).
 pub const CONFIG_ID: &str = "the config editor's box";
 
@@ -68,10 +61,8 @@ pub const VERDICT_ID: &str = "the proposal's arming box";
 /// `wants_keyboard_input` — which answers *is anything focused*, buttons
 /// included — and this is the whole list of what it compares against. A fourth
 /// box belongs here in the commit that paints it.
-pub const BOXES: [&str; 13] = [
+pub const BOXES: [&str; 11] = [
     BOX_ID,
-    REASON_ID,
-    ARM_ID,
     CONFIG_ID,
     WORKFLOW_ID,
     FAN_GOAL_ID,

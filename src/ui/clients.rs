@@ -35,10 +35,8 @@
 use crate::reply::clients::{ClientRow, ToolRow};
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "machines…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "clients";
 /// The pane's own heading.
 pub const HEADING: &str = "machines";
 /// What it says for a wall nobody has been answered about yet.
@@ -63,16 +61,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.showing(crate::ui::Listing::Clients) {
         return false;
     }
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     if let Some(aim) = model.aim.clone() {
         ui.label(format!("on {} — {}", aim.address, aim.channel));
     }
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_clients();
-        }
-    });
-    ui.separator();
     match model.machines.clone() {
         None => {
             ui.label(NOT_ANSWERED);

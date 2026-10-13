@@ -3,19 +3,16 @@
 
 use super::Fill;
 use crate::test_support::window::seated;
-use crate::ui::Column;
 
 /// **It names the conversation, goes where the box is, and asks once.** All
 /// three matter: the composer acts on the selection, the narrow shape paints
 /// the composer on the conversation's own column and nowhere else, and a
 /// request that survived the frame answering it would drag the cursor back.
 #[test]
-fn going_to_a_box_selects_the_row_moves_to_its_column_and_is_taken_once() {
+fn going_to_a_box_selects_the_row_and_is_taken_once() {
     let mut model = seated();
-    model.column = Column::Engines;
     model.fill_in("another conversation", Fill::Reason);
     assert_eq!(model.conversation.as_deref(), Some("another conversation"));
-    assert_eq!(model.column, Column::Conversation);
     assert_eq!(model.filling(), Some(Fill::Reason));
     assert_eq!(model.filling(), None, "taken, not read");
 }
@@ -33,4 +30,13 @@ fn a_navigation_composes_no_gesture_at_all() {
         model.outbox
     );
     assert_eq!(model.filling(), Some(Fill::Arming));
+}
+
+/// **The goal types nothing**: the `+` lands the caret in the box and the
+/// goal is what the operator types there; the two verbs type their word.
+#[test]
+fn the_goal_types_nothing_and_the_two_verbs_type_their_word() {
+    assert_eq!(Fill::Goal.typed(), None);
+    assert_eq!(Fill::Reason.typed(), Some("flag"));
+    assert_eq!(Fill::Arming.typed(), Some("delete"));
 }

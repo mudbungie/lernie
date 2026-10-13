@@ -1,201 +1,57 @@
-//! The whole window in one frame: that every pane is on it, that a notice
-//! stands where content would have been, and that it can be put down.
-//!
-//! The width policy's own arithmetic is `super::policy`'s suite; what is
-//! asserted here is the layout it produces, and [`narrow`] holds the shape the
-//! window takes when it can no longer stand its columns side by side.
+//! The layout: one column — the transcript, the rule and the prompt — and what
+//! stands down under what.
 
-use super::{render, widths};
-use crate::paint_probe::frame::{Window, press};
-use crate::test_support::window::{conv, own, painted, seated, seen, wall};
-use crate::ui::{Chunk, Model};
+use crate::paint_probe::frame::Window;
+use crate::test_support::window::{painted, queued, seated};
+use crate::ui::theme;
 
-/// Every visible edge, dragged: the width that holds, the clamp that does not
-/// overwrite, and the composer's rows.
-mod drag;
-/// The narrow shape: one column at a time, and the bar that names the three.
-mod narrow;
-/// The notice bar: where it stands, whose ink it wears, and how it is put
-/// down.
-mod notice;
-/// What a list pane's width is on the glass, and the band that used to stand
-/// beside it.
-mod width;
+/// The rule's one run no other pane paints: the engines it counts.
+const RULE: &str = "1 engine";
 
-/// **One frame paints every pane.** The smoke test the whole ball is about: a
-/// window that opens and shows the roster, the list, the conversation and the
-/// composer, all from a snapshot and with nothing dialled.
+/// **The window is the transcript, the rule and the prompt**, and no heading
+/// names a column: there is one.
 #[test]
-fn one_frame_paints_the_roster_the_list_the_conversation_and_the_composer() {
+fn the_window_is_the_transcript_the_rule_and_the_prompt() {
     let mut model = seated();
-    let shown = painted(&mut model);
-    for expected in [
-        crate::ui::roster::HEADING,
-        "(this box's own engine)",
-        "home  2 conversations  (named)",
-        "conversations",
-        "port the paint probe  [quiescent]  42s",
-        "conversation",
-        "op",
-        "port it",
-        crate::ui::composer::SEND,
-    ] {
-        assert!(
-            shown.contains(expected),
-            "{expected:?} is not on the glass:\n{shown}"
-        );
+    let text = painted(&mut model);
+    for word in ["port it", RULE, theme::glyph::PROMPT] {
+        assert!(text.contains(word), "{word:?}:\n{text}");
     }
+    assert!(
+        !text.lines().any(|line| line == crate::ui::roster::HEADING),
+        "no column is named:\n{text}"
+    );
 }
 
-/// **An empty window is not a blank one: every pane says what it is waiting
-/// for** — and the window under test is seeded the way `src/main.rs` seeds one,
-/// off a data root holding nothing at all (bl-08b6). That is the first run of a
-/// seat on a new box, and the engines list is the whole of what it has.
+/// **It is one column at every size** — the phone's shape is the same window
+/// narrower, with the transcript and the prompt both on the glass.
 #[test]
-fn an_empty_window_says_what_each_pane_is_waiting_for() {
-    let scratch = crate::test_support::Scratch::new();
-    let mut model = Model {
-        roster: crate::seat::channels(scratch.path()),
-        ..Model::default()
-    };
-    let shown = painted(&mut model);
-    assert!(
-        shown.contains("nothing provisioned at"),
-        "the engines list says what it holds and why it is empty:\n{shown}"
-    );
-    assert!(
-        shown.contains("the seat mints nothing"),
-        "and names the act that fills it:\n{shown}"
-    );
-    // **And every one names the next act, in weak ink** (bl-f251, item 5):
-    // the window's three empty panes each say what to do rather than what is
-    // missing, and say it one step under content.
-    let window = crate::paint_probe::frame::Window::new();
-    let runs = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
-    for empty in [
-        crate::ui::chat::NO_CONVERSATION,
-        crate::ui::composer::NOWHERE,
-    ] {
-        let run = runs
-            .iter()
-            .find(|run| run.text == empty)
-            .unwrap_or_else(|| panic!("{empty:?} is on the glass whole"));
-        assert_eq!(run.ink, crate::ui::theme::INK_WEAK, "{empty:?}");
-    }
-    for expected in [
-        crate::ui::chat::NO_CONVERSATION,
-        crate::ui::composer::NOWHERE,
-    ] {
-        assert!(
-            shown.contains(expected),
-            "{expected:?} is not on the glass:\n{shown}"
-        );
-    }
-}
-
-/// The policy on the glass: at 900 points the conversation used to be a
-/// ~140-point strip while the roster kept 280. Now the list pane yields, and a
-/// message in the chat pane starts where the floor says it does.
-#[test]
-fn a_narrow_window_paints_the_conversation_at_its_floor() {
+fn it_is_one_column_at_the_phone_s_width_too() {
     let mut model = seated();
-    let window = Window::sized(900.0, 600.0);
-    let said = seen(&window, |ctx| render(ctx, &mut model))
-        .into_iter()
-        .find(|run| run.text == "port it")
-        .expect("the conversation is on the glass");
-    let list = widths(900.0);
-    assert!(
-        said.laid.min.x < list + 40.0,
-        "the chat pane begins where the list pane ends: {:?}",
-        said.laid
-    );
+    let text = Window::sized(400.0, 800.0).text(|ctx| crate::ui::render(ctx, &mut model));
+    for word in ["port it", theme::glyph::PROMPT] {
+        assert!(text.contains(word), "{word:?}:\n{text}");
+    }
 }
 
-/// **A list longer than its pane scrolls, and the keyboard walk brings its own
-/// row along** (bl-e5d2). The overflow used to be cut at the panel edge
-/// mid-glyph, with nothing saying it had been cut — while the arrow walk moved
-/// the selection onto rows the glass had never painted, which is exactly the
-/// disagreement `crate::ui::roster::track` exists to prevent.
+/// **The prompt and the rule stand down under an overlay**, and the
+/// overlay's own name line says where you are.
 #[test]
-fn the_roster_scrolls_and_a_walk_to_the_last_wall_puts_it_on_the_glass() {
-    let mut model = Model {
-        roster: vec![Chunk {
-            walls: (0..24).map(|i| wall(&format!("wall-{i:02}"))).collect(),
-            ..own()
-        }],
-        ..Model::default()
-    };
-    let window = Window::sized(900.0, 260.0);
-    // **A roster row is elided at the column's width** (`theme::paint::row`),
-    // so the row reads back on the glass as its head and a `…`. The assertion
-    // is on what was SHOWN and so it is aimed at the head — reading the whole
-    // line back would be reading the string that went in, which is the one
-    // thing `crate::paint_probe` exists to refuse.
-    let last = "wall-23";
-    let first = seen(&window, |ctx| render(ctx, &mut model));
-    assert!(
-        !first.iter().any(|run| run.text.starts_with(last)),
-        "the fold is real, or this test proves nothing"
-    );
-    // Twenty-five, because the engine's own row is the walk's first stop and
-    // its walls follow it (DESIGN §4.39).
-    for _ in 0..25 {
-        window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
-            render(ctx, &mut model);
-        });
-    }
-    assert_eq!(
-        model.aim.clone().map(|aim| aim.address),
-        Some("wall-23".to_owned())
-    );
-    // **One settle frame**, for `crate::snapshot`'s own reason: egui applies a
-    // scroll over the frame after the one that asked for it, so a single pass
-    // reads a window mid-layout. The keypress frame is where `scroll_to_me` is
-    // spent; this is where it has landed.
-    window.frame(Vec::new(), |ctx| render(ctx, &mut model));
-    let shown = seen(&window, |ctx| render(ctx, &mut model));
-    assert!(
-        shown.iter().any(|run| run.text.starts_with(last)),
-        "the walked-to row is on the glass: {:?}",
-        shown.iter().map(|run| &run.text).collect::<Vec<&String>>()
-    );
+fn the_prompt_and_the_rule_stand_down_under_an_overlay() {
+    let mut model = queued();
+    let text = painted(&mut model);
+    assert!(!text.contains(crate::ui::composer::HINT), "{text}");
+    assert!(!text.contains(RULE), "{text}");
+    assert!(text.contains(crate::ui::queue::HEADING), "{text}");
 }
 
-/// The conversations under the aimed wall, on the same rule and through the
-/// same walk — which since DESIGN §4.39 is the same list and the same scroll
-/// region as the rows above them.
+/// **Nothing live paints under the enrollment** (bl-7574): neither the
+/// prompt nor the rule.
 #[test]
-fn the_conversation_rows_scroll_and_a_walk_puts_one_on_the_glass() {
-    let mut model = Model {
-        convs: (0..24)
-            .map(|i| conv(&format!("id-{i:02}"), &format!("conv-{i:02}")))
-            .collect(),
-        conversation: None,
-        ..seated()
-    };
-    let window = Window::sized(900.0, 260.0);
-    let last = crate::ui::convs::headline(&conv("id-23", "conv-23"));
-    assert!(
-        !seen(&window, |ctx| render(ctx, &mut model))
-            .iter()
-            .any(|run| run.text == last),
-        "the fold is real, or this test proves nothing"
-    );
-    // Twenty-four, because the cursor starts on the aimed wall and the rows
-    // under it are the stops that follow (DESIGN §4.39).
-    for _ in 0..24 {
-        window.frame(vec![press(egui::Key::ArrowDown)], |ctx| {
-            render(ctx, &mut model);
-        });
-    }
-    // One settle frame, for the roster walk's reason above: the scroll lands
-    // on the frame after the one that asked for it.
-    window.frame(Vec::new(), |ctx| render(ctx, &mut model));
-    assert!(
-        seen(&window, |ctx| render(ctx, &mut model))
-            .iter()
-            .any(|run| run.text == last),
-        "the walked-to row is on the glass"
-    );
+fn nothing_live_paints_under_the_enrollment() {
+    let mut model = seated();
+    model.begin_enrollment();
+    let text = painted(&mut model);
+    assert!(!text.contains(crate::ui::composer::HINT), "{text}");
+    assert!(!text.contains(RULE), "{text}");
 }

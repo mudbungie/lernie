@@ -66,7 +66,8 @@ fn the_prices_world_carries_the_three_money_tags() {
             .expect("the world is walked");
         inventory(&seat(world.model, width, height))
     };
-    assert!(tags("seated").contains("prices"));
+    // The opener is a row of the menu now (§4.42), so it is on the menu's world.
+    assert!(tags("slashing").contains("prices"));
     let seen = tags("prices");
     for op in ["price", "ceiling"] {
         assert!(seen.contains(op), "{op}: {seen:?}");

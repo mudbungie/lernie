@@ -3,7 +3,7 @@
 
 use super::{Place, at, read, write};
 use crate::test_support::Scratch;
-use crate::ui::{Aim, Dragged, Engines};
+use crate::ui::{Aim, Engines};
 
 /// The wall a window was aimed at.
 fn aimed() -> Aim {
@@ -18,7 +18,6 @@ fn pointed() -> Place {
     Place {
         aim: Some(aimed()),
         engines: Engines::default(),
-        dragged: Dragged::default(),
     }
 }
 
@@ -51,27 +50,9 @@ fn the_accordion_comes_back_with_the_aim() {
                 .into_iter()
                 .collect(),
         },
-        dragged: Dragged::default(),
     };
     write(scratch.path(), &arranged).expect("written");
     assert_eq!(read(scratch.path()), arranged);
-}
-
-/// **The edges an operator dragged come back with the aim** (DESIGN §4.39,
-/// bl-46e5, bl-b9a3): one width and a row count, in the same file and on the
-/// same terms — so a seat comes back laid out the way it was left.
-#[test]
-fn every_edge_the_operator_dragged_comes_back_beside_the_aim() {
-    let scratch = Scratch::new();
-    let laid_out = Place {
-        dragged: Dragged {
-            list: Some(360.5),
-            rows: Some(7),
-        },
-        ..pointed()
-    };
-    write(scratch.path(), &laid_out).expect("written");
-    assert_eq!(read(scratch.path()), laid_out);
 }
 
 /// **A file that names no edge is a file with no drag** — which is the absence
@@ -183,7 +164,6 @@ fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     let held = Place::of(&model);
     assert_eq!(held.aim, model.aim);
     assert_eq!(held.engines, model.engines);
-    assert_eq!(held.dragged, model.dragged);
 }
 
 /// **A write answers its refusal rather than swallowing it**: by the time it

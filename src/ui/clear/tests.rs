@@ -1,7 +1,7 @@
 //! The place a trail is cut in: the control that opens it, the subject it
 //! states, the way out that cuts nothing, and the act.
 
-use super::{CLOSE, CONFIRM, HEADING, OPEN, REACH, WHAT};
+use super::{CONFIRM, HEADING, OPEN, REACH, WHAT};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, own, painted, trailing};
 use crate::ui::{Channel, Model, Trail};
@@ -50,8 +50,7 @@ fn it_names_every_engine_the_cut_would_reach() {
 fn the_way_out_cuts_nothing_and_returns_to_the_trail() {
     let mut model = trailing();
     model.begin_clearing();
-    let window = Window::new();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    model.escape();
     assert!(model.trailing(), "the way out left the operator nowhere");
     assert!(model.outbox.is_empty(), "the way out cut something");
 }

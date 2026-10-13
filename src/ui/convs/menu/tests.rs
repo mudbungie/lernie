@@ -6,9 +6,11 @@ use super::{leads_to, straight};
 use crate::paint_probe::frame::Window;
 use crate::reply::convs::ConvRow;
 use crate::test_support::window::{click, conv, right_click, seated};
-use crate::ui::composer::STOP;
-use crate::ui::composer::acts::{DELETE, FLAG, RETARGET};
-use crate::ui::{Column, Model, convs, keys, queue, records};
+const STOP: &str = crate::verbs::STOP.word;
+use crate::ui::slash::DELETE;
+const FLAG: &str = crate::verbs::FLAG.word;
+const RETARGET: &str = crate::verbs::RETARGET.word;
+use crate::ui::{Model, convs, keys, queue, records};
 use egui_kittest::Harness;
 use egui_kittest::kittest::{Queryable, by};
 
@@ -31,7 +33,7 @@ fn asking() -> ConvRow {
 /// row's under another name.
 fn narrow() -> Model {
     Model {
-        column: Column::Engines,
+        switching: true,
         convs: vec![asking()],
         ..seated()
     }
@@ -54,7 +56,8 @@ fn a_secondary_click_opens_the_row_s_acts_and_nothing_else_does() {
 
     right_click(&window, &label, |ctx| crate::ui::render(ctx, &mut model));
     let open = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    for word in [STOP, RETARGET, queue::SEEN, records::OPEN] {
+    let records = leads_to(records::WORD);
+    for word in [STOP, RETARGET, queue::SEEN, records.as_str()] {
         assert!(open.contains(word), "{word:?} is on the menu: {open}");
     }
     for word in [FLAG, DELETE] {
@@ -123,7 +126,7 @@ fn the_records_item_selects_the_row_and_opens_the_pane_on_it() {
         ..narrow()
     };
     right_click(&window, &label, |ctx| crate::ui::render(ctx, &mut model));
-    click(&window, records::OPEN, |ctx| {
+    click(&window, &leads_to(records::WORD), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     assert_eq!(
@@ -142,7 +145,7 @@ fn the_records_item_selects_the_row_and_opens_the_pane_on_it() {
 /// the glass, and nothing has been asked of any engine.
 #[test]
 fn flag_and_delete_land_the_cursor_in_their_box_and_ask_for_nothing() {
-    for (word, id) in [(FLAG, keys::REASON_ID), (DELETE, keys::ARM_ID)] {
+    for (word, typed) in [(FLAG, "/flag "), (DELETE, "/delete ")] {
         let (window, label) = row();
         let mut model = narrow();
         right_click(&window, &label, |ctx| crate::ui::render(ctx, &mut model));
@@ -155,17 +158,17 @@ fn flag_and_delete_land_the_cursor_in_their_box_and_ask_for_nothing() {
         for _ in 0..2 {
             window.text(|ctx| crate::ui::render(ctx, &mut model));
         }
-        assert_eq!(model.column, Column::Conversation, "{word:?}");
         assert_eq!(
             model.conversation.as_deref(),
             Some(asking().root_id.as_str()),
             "{word:?}"
         );
         assert!(model.outbox.is_empty(), "{word:?} fired nothing");
+        assert_eq!(model.draft, typed, "{word:?} typed its verb into the box");
         assert_eq!(
             window.focused(),
-            Some(egui::Id::new(id)),
-            "{word:?} put the cursor in its box"
+            Some(egui::Id::new(keys::BOX_ID)),
+            "{word:?} put the cursor in the box"
         );
     }
 }

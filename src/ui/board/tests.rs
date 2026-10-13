@@ -1,24 +1,21 @@
 //! The ball pane: the two emptinesses, every section it paints, the silence a
 //! quiet channel gets, and the control that opens it.
 
-use super::{BINDINGS, CLOSE, HEADING, NOT_ANSWERED, NOTHING, OPEN};
+use super::{BINDINGS, HEADING, NOT_ANSWERED, NOTHING, WORD};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{boarded, click, own, painted, seated};
+use crate::test_support::window::{boarded, escape, own, painted, seated};
 use crate::ui::{Bindings, Columns, Model};
 
 /// **The control hangs off the roster and opens the pane**, which is the only
 /// thing that says that button is wired to that door. It is offered from an
 /// unaimed seat, because two of its four reads take no subject.
 #[test]
-fn the_roster_s_control_opens_the_pane() {
+fn the_word_opens_the_pane() {
     let mut model = Model::default();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.boarding(), "the control opened nothing");
     let glass = painted(&mut model);
     assert!(glass.contains(HEADING), "{glass}");
-    // And the strip stands down while a pane covers the conversation.
-    assert!(!glass.contains(OPEN), "{glass}");
 }
 
 /// **The close puts it down**, and the roster comes back with it.
@@ -26,7 +23,7 @@ fn the_roster_s_control_opens_the_pane() {
 fn the_close_puts_the_pane_down() {
     let mut model = boarded();
     let window = Window::new();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.boarding());
 }
 

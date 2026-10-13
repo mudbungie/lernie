@@ -42,10 +42,8 @@
 use crate::reply::roles::RoleRow;
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "roles…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "roles";
 /// The pane's own heading.
 pub const HEADING: &str = "role tuning";
 /// What it says for a wall nobody has been answered about yet.
@@ -72,16 +70,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if model.tuning.is_none() {
         return false;
     }
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     if let Some(aim) = model.aim.clone() {
         ui.label(format!("on {} — {}", aim.address, aim.channel));
     }
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_tuning();
-        }
-    });
-    ui.separator();
     match model.roles.clone() {
         None => {
             ui.label(NOT_ANSWERED);

@@ -40,10 +40,8 @@
 use crate::reply::queue::QueueRow;
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "waiting on you…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "attention";
 /// The pane's own heading.
 pub const HEADING: &str = "waiting on you";
 /// What it says before any channel has answered.
@@ -79,14 +77,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     // *a covering pane*). This pane is the one that has no subject — the union
     // over every channel is what it is about — so the line under the heading
     // carries the close alone, at the end where the other panes' is.
-    ui.label(egui::RichText::new(HEADING).heading().color(theme::INK));
-    ui.horizontal(|ui| {
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(CLOSE).clicked() {
-                model.close_queue();
-            }
-        });
-    });
+    crate::ui::overlay::name(ui, HEADING);
     ui.add_space(theme::space::S);
     let waiting = model.waiting.clone();
     if waiting.is_empty() {

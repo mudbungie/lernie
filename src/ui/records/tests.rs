@@ -2,13 +2,13 @@
 //! sentences computed beside the paint, read as values.
 
 use super::{
-    CLOSE, EMPTY_WORKTREE, HEADING, NO_STEPS, NO_WORKTREE, NOT_ANSWERED_FILES, NOT_ANSWERED_STEPS,
-    OPEN, TRUNCATED, auth, entry, headline, orphaned, previewed, provenance, render, wounded,
+    EMPTY_WORKTREE, HEADING, NO_STEPS, NO_WORKTREE, NOT_ANSWERED_FILES, NOT_ANSWERED_STEPS,
+    TRUNCATED, WORD, auth, entry, headline, orphaned, previewed, provenance, render, wounded,
 };
 use crate::paint_probe::frame::Window;
 use crate::reply::files::{FileRow, Files, Listing, Preview};
 use crate::reply::steps::Steps;
-use crate::test_support::window::{click, pane, recorded, seated, seen, step};
+use crate::test_support::window::{pane, recorded, seated, seen, step};
 use crate::ui::{Model, theme};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
@@ -43,7 +43,6 @@ fn the_answered_pane_paints_both_halves_whole() {
         "src/a.rs  12 B",
         TRUNCATED,
         "working in /home/u/elsewhere",
-        CLOSE,
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
@@ -135,16 +134,11 @@ fn a_preview_paints_in_each_of_its_four_classes() {
     assert!(painted.contains("fn main() {}"), "{painted}");
 }
 
-/// The close control puts the pane down and nothing else.
+/// Escape puts the pane down and nothing else (`crate::ui::overlay`).
 #[test]
 fn the_done_control_closes_the_pane() {
     let mut model = recorded();
-    let window = Window::new();
-    click(&window, CLOSE, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            render(ui, &mut model);
-        });
-    });
+    model.escape();
     assert!(!model.showing(crate::ui::Listing::Records));
     assert!(model.records.steps.is_some(), "the answers stay");
 }
@@ -200,12 +194,7 @@ fn the_quiet_rows_say_nothing_and_the_half_absences_read_right() {
 #[test]
 fn the_open_control_stands_the_pane_up_from_the_composer() {
     let mut model = seated();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            crate::ui::composer::render(ui, &mut model);
-        });
-    });
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.showing(crate::ui::Listing::Records), "the pane is up");
     assert!(model.outbox.is_empty(), "a look composes nothing");
 }
@@ -248,12 +237,5 @@ fn every_half_opens_with_its_word_in_weak_ink_and_the_close_rides_the_subject() 
         subject.ink,
         theme::INK_WEAK,
         "the subject is one step weaker"
-    );
-    let close = read(CLOSE);
-    assert!(
-        (close.laid.min.y - subject.laid.min.y).abs() <= theme::ROW,
-        "the close stands on the subject's line: {:?} against {:?}",
-        close.laid,
-        subject.laid
     );
 }

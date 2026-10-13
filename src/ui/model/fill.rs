@@ -59,6 +59,18 @@ pub enum Fill {
     Goal,
 }
 
+impl Fill {
+    /// **The verb a fill types into the box**, where it types one: the flag's
+    /// and the deletion's words; the goal types nothing, the box is the goal.
+    pub fn typed(self) -> Option<&'static str> {
+        match self {
+            Fill::Reason => Some(crate::verbs::FLAG.word),
+            Fill::Arming => Some(crate::ui::slash::DELETE),
+            Fill::Goal => None,
+        }
+    }
+}
+
 impl Model {
     /// **Go to the box that fills an act on `root_id`.**
     ///
@@ -74,7 +86,16 @@ impl Model {
     /// land on a destruction* — read on a control rather than on a pane.
     pub fn fill_in(&mut self, root_id: &str, fill: Fill) {
         self.select(root_id);
-        self.column = crate::ui::Column::Conversation;
+        // **Going to the box is a choosing** (`crate::ui::switcher`): the
+        // row menu lives in the switcher, and the box is under it.
+        self.chose();
+        // **The two verbs are typed, not boxed** (DESIGN §4.42): the menu item
+        // puts the verb in the box with the caret after it, and what the
+        // operator types next is the reason or the name — the one box, with
+        // the words a verb takes on its line.
+        self.draft = fill
+            .typed()
+            .map_or_else(String::new, |word| format!("/{word} "));
         self.fill = Some(fill);
     }
 

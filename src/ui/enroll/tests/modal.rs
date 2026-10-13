@@ -9,7 +9,8 @@ use super::fixtures::{file, opened};
 use super::{CLOSE, HEADING, KEPT};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::seated;
-use crate::ui::composer::start::{GOAL, START};
+use crate::ui::composer::start::GOAL;
+use crate::ui::theme::glyph;
 use crate::ui::{Aim, Model};
 
 /// **Escape closes it, and forgets what it holds.** The pane's stated purpose
@@ -91,7 +92,7 @@ fn the_composer_stands_down_while_an_enrollment_is_open() {
         window.text(|ctx| crate::ui::render(ctx, model))
     };
     let before = warm(&mut aimed);
-    for control in [START, GOAL] {
+    for control in [glyph::PROMPT, GOAL] {
         assert!(
             before.contains(control),
             "{control:?} is there to lose:\n{before}"
@@ -99,7 +100,7 @@ fn the_composer_stands_down_while_an_enrollment_is_open() {
     }
     aimed.begin_enrollment();
     let during = warm(&mut aimed);
-    for control in [START, GOAL] {
+    for control in [glyph::PROMPT, GOAL] {
         assert!(
             !during.contains(control),
             "{control:?} is live under the material:\n{during}"

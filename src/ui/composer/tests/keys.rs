@@ -51,48 +51,29 @@ fn enter_sends_what_was_typed_and_shift_enter_breaks_a_line() {
     assert_eq!(model.draft, "", "sent, so no longer a draft");
 }
 
-/// **Every control here is already keyboard-operable, and this proves it rather
-/// than assuming it.** egui moves focus with Tab and fires a focused control
-/// with Space, so neither act wants a binding of its own — and a binding that
-/// could fire something a click cannot would be a second surface.
+/// **The box is in the Tab order**, and it is the one control the composer
+/// has (§4.42): Enter on it is the deposit, proven above, and there is
+/// nothing beside it for a Space to fire.
 #[test]
-fn tab_and_space_fire_the_composer_s_controls_with_no_binding_of_their_own() {
+fn tab_reaches_the_box() {
     let mut model = seated();
-    model.draft = "ship it".to_owned();
     let window = Window::new();
-    // The body borrows the model, so it lives in a scope of its own and the
-    // assertions read the model back after it.
     let mut reached = Vec::new();
     {
         let mut body = |ctx: &egui::Context| {
             egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model));
         };
         window.frame(Vec::new(), &mut body);
-        for _ in 0..6 {
+        for _ in 0..3 {
             window.frame(
                 vec![crate::paint_probe::frame::press(egui::Key::Tab)],
                 &mut body,
             );
             reached.push(window.focused());
-            window.frame(
-                vec![crate::paint_probe::frame::press(egui::Key::Space)],
-                &mut body,
-            );
-            window.frame(Vec::new(), &mut body);
         }
     }
     assert!(
         reached.contains(&Some(egui::Id::new(crate::ui::keys::BOX_ID))),
-        "the box is in the tab order too: {reached:?}"
+        "the box is in the tab order: {reached:?}"
     );
-    for op in ["message", "nudge"] {
-        assert!(
-            model
-                .outbox
-                .iter()
-                .any(|said| said.envelope["op"] == json!(op)),
-            "{op:?} was never fired from the keyboard: {:?}",
-            model.outbox
-        );
-    }
 }

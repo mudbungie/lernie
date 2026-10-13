@@ -1,26 +1,21 @@
 //! The trail pane: the three emptinesses, every sentence a row can carry, and
 //! the control that opens it.
 
-use super::{CLOSE, HEADING, NOT_ANSWERED, NOTHING, OPEN, headline, output, provenance, standing};
+use super::{HEADING, NOT_ANSWERED, NOTHING, WORD, headline, output, provenance, standing};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, own, painted, seated, trailed, trailing};
+use crate::test_support::window::{click, escape, own, painted, seated, trailed, trailing};
 use crate::ui::{Model, Trail};
 
 /// **The control hangs off the roster and opens the pane**, which is the only
 /// thing that says that button is wired to that door. It is offered from an
 /// unaimed seat, because the pane takes no subject.
 #[test]
-fn the_roster_s_control_opens_the_pane() {
+fn the_word_opens_the_pane() {
     let mut model = Model::default();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.trailing(), "the control opened nothing");
     let glass = painted(&mut model);
     assert!(glass.contains(HEADING), "{glass}");
-    // And the strip stands down while a pane covers the conversation — read
-    // as a whole run, because the pane's own cut control ends in the same
-    // word.
-    assert!(!glass.lines().any(|line| line == OPEN), "{glass}");
 }
 
 /// **The three emptinesses are three sentences.** Nobody has answered, the
@@ -153,7 +148,7 @@ fn a_row_that_printed_nothing_gets_no_line_and_one_that_did_leads_with_why() {
 fn the_pane_s_close_stands_it_down() {
     let mut model = trailing();
     let window = Window::new();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.trailing());
     // The rows outlive it — the next open is about the same trail.
     assert_eq!(model.trails.len(), 1);

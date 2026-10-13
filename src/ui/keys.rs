@@ -63,13 +63,37 @@ use crate::ui::{Model, roster};
 mod boxes;
 
 pub use boxes::{
-    ARM_ID, BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, NOTE_ID, PROJECT_ID,
-    REASON_ID, SUMMARY_ID, TITLE_ID, VERDICT_ID, WORKFLOW_ID,
+    BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, NOTE_ID, PROJECT_ID, SUMMARY_ID,
+    TITLE_ID, VERDICT_ID, WORKFLOW_ID,
 };
 
 /// **Take this frame's keys.** Called at the top of the frame, so what a key
 /// changed is what the frame paints.
 pub fn handle(ctx: &egui::Context, model: &mut Model) {
+    // **Ctrl+X opens the switcher from anywhere**, the box included
+    // (DESIGN §4.42): a chord is not a key a box takes.
+    let chord = |wanted: egui::Key| {
+        ctx.input(|i| {
+            i.events.iter().any(|event| {
+                matches!(
+                    event,
+                    egui::Event::Key {
+                        key,
+                        pressed: true,
+                        modifiers,
+                        ..
+                    } if *key == wanted && modifiers.command
+                )
+            })
+        })
+    };
+    if chord(egui::Key::X) {
+        model.switch();
+    }
+    // **Ctrl+T unfolds the dock** (§4.42, item 9), the other chord.
+    if chord(egui::Key::T) {
+        crate::ui::dock::toggle(ctx);
+    }
     if boxes::typing(ctx) {
         return;
     }
@@ -90,35 +114,64 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // **It asks `Model::covered`**, which is the one question the shell, the
     // roster's per-wall controls and this gate already share (bl-f0ef) — a
     // fifth pane listed here and not there is a pane the arrows walk under.
-    if model.covered() {
+    //
+    // **The switcher is the one overlay the arrows walk under** (§4.42): the
+    // list is what it holds, and the walk is how a list is used.
+    if model.covered() && !model.switching {
         return;
     }
-    // **Left and right name a COLUMN, and only where there are two to choose
-    // between** (bl-dfda, DESIGN §4.39). In the narrow shape one column is on
-    // the glass at a time, so the key steps between them, saturating at the
-    // ends the way the walk below does. In the broad shape both are already
-    // painted and one of them is the only list there is, so the key has no
-    // place to name and names none.
-    if matches!(
-        crate::ui::shell::shape(ctx.screen_rect().width()),
-        crate::ui::Shape::Narrow
-    ) {
-        for (key, step) in [(egui::Key::ArrowLeft, -1), (egui::Key::ArrowRight, 1)] {
+    // **The arrows walk the list while the switcher stands** — the one place
+    // the list is on the glass (§4.42) — **and the ask while it does** (item
+    // 8): a digit picks a row, the arrows move, Enter answers. Neither set
+    // of keys has a meaning where its surface is not on the glass.
+    if model.switching {
+        for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
             if pressed(key) {
-                model.column = model.column.stepped(step);
+                walk(model, step);
             }
         }
+        opening(
+            ctx,
+            model,
+            pressed(egui::Key::Enter) || pressed(egui::Key::Space),
+        );
+    } else if crate::ui::ask::row(model).is_some() {
+        asking(ctx, model);
     }
+}
+
+/// **The ask's keys**: a digit picks the row it numbers, the arrows move the
+/// choice, Enter answers with it — while nothing holds the keyboard, as the
+/// opening below.
+fn asking(ctx: &egui::Context, model: &mut Model) {
+    if ctx.memory(egui::Memory::focused).is_some() {
+        return;
+    }
+    let pressed = |key| ctx.input(|i| i.key_pressed(key));
     for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
         if pressed(key) {
-            walk(model, step);
+            crate::ui::ask::moved(ctx, model, step);
         }
     }
-    opening(
-        ctx,
-        model,
-        pressed(egui::Key::Enter) || pressed(egui::Key::Space),
-    );
+    if pressed(egui::Key::Enter) {
+        crate::ui::ask::confirm(ctx, model);
+    }
+    let digits = [
+        egui::Key::Num1,
+        egui::Key::Num2,
+        egui::Key::Num3,
+        egui::Key::Num4,
+        egui::Key::Num5,
+        egui::Key::Num6,
+        egui::Key::Num7,
+        egui::Key::Num8,
+        egui::Key::Num9,
+    ];
+    for (n, key) in digits.into_iter().enumerate() {
+        if pressed(key) {
+            crate::ui::ask::pick(model, n + 1);
+        }
+    }
 }
 
 /// **Enter or Space opens the engine the walk is standing on** (DESIGN §4.39)
@@ -142,6 +195,10 @@ fn opening(ctx: &egui::Context, model: &mut Model, pressed: bool) {
     }
     if let Some(name) = model.standing.clone() {
         model.open_engine(&name);
+    } else if model.switching && model.conversation.is_some() {
+        // **Enter on a selected conversation is the choosing** — the walk
+        // selected it, and this is the operator saying *that one*.
+        model.chose();
     }
 }
 

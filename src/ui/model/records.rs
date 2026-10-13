@@ -67,6 +67,7 @@ impl Model {
     /// would replace what is standing without saying so.
     pub fn covered(&self) -> bool {
         self.enroll.is_some()
+            || self.switching
             || self.tuning.is_some()
             || self.listing.is_some()
             || self.lookup.is_some()

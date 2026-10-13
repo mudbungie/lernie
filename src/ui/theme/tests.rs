@@ -225,6 +225,16 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
             super::glyph::NUDGE,
             super::glyph::STOP,
             super::glyph::PLAN,
+            super::glyph::PROMPT,
+            super::glyph::LEAD,
+            super::glyph::SEP,
+            super::glyph::MODEL,
+            super::glyph::NOTE,
+            super::glyph::CALL,
+            super::glyph::DONE,
+            super::glyph::FAILED,
+            super::glyph::OPEN,
+            super::glyph::SHUT,
         ] {
             assert!(
                 ctx.fonts(|fonts| fonts.has_glyphs(&font, glyph)),

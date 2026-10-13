@@ -49,10 +49,8 @@ mod candidates;
 /// The words a row wears, each a pure function of it.
 mod rows;
 
-/// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "fleet…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "fleet";
 /// The pane's own heading.
 pub const HEADING: &str = "the fleet";
 /// The word that starts the loop.
@@ -93,13 +91,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     else {
         return false;
     };
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     ui.label(format!("on {} — {}", at.address, at.channel));
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_fleet();
-        }
-    });
     if let Some(said) = &said {
         ui.colored_label(theme::NOTICE, receipt(said));
     }

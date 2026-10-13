@@ -9,11 +9,10 @@
 mod answer;
 
 use super::{
-    CLOSE, GO, HEADING, NOT_ANSWERED, NOTHING, OPEN, SEEN, flagged, headline, parked, render,
-    signalled,
+    GO, HEADING, NOT_ANSWERED, NOTHING, SEEN, WORD, flagged, headline, parked, render, signalled,
 };
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, pane, queued, seated, seen, waiting};
+use crate::test_support::window::{click, escape, pane, queued, seated, seen, waiting};
 use crate::ui::{Asking, Model, theme};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
@@ -48,7 +47,6 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
         crate::ui::roster::NO_NAME_HERE,
         SEEN,
         GO,
-        CLOSE,
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
@@ -138,9 +136,9 @@ fn the_go_control_leaves_the_pane_for_the_conversation() {
 fn the_roster_opens_it_and_its_own_word_shuts_it() {
     let window = Window::new();
     let mut model = seated();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.showing(crate::ui::Listing::Queue));
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.showing(crate::ui::Listing::Queue));
 }
 

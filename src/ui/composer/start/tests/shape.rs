@@ -9,11 +9,10 @@
 //! assertions use.
 
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, pane, seated};
-use crate::ui::composer::start::START;
-use crate::ui::composer::{self, INTERRUPT, MORE, NUDGE, SEND, STOP, offers};
-use crate::ui::theme::{self, glyph};
-use crate::ui::{Model, records};
+use crate::test_support::window::seated;
+use crate::ui::Model;
+use crate::ui::composer;
+use crate::ui::theme::glyph;
 use serde_json::json;
 
 /// A model aimed at a wall with nothing selected on it — the start's own case.
@@ -61,7 +60,7 @@ fn the_start_field_stands_as_tall_as_the_deposit_s_with_its_act_inside_it() {
             &mut |ctx: &egui::Context| {
                 egui::CentralPanel::default().show(ctx, |ui| composer::render(ui, &mut model));
             },
-            SEND,
+            glyph::PROMPT,
         )
     };
     let begun = {
@@ -72,7 +71,7 @@ fn the_start_field_stands_as_tall_as_the_deposit_s_with_its_act_inside_it() {
             &mut |ctx: &egui::Context| {
                 egui::CentralPanel::default().show(ctx, |ui| composer::render(ui, &mut model));
             },
-            START,
+            glyph::PROMPT,
         )
     };
     assert!(
@@ -95,51 +94,32 @@ fn the_start_control_still_carries_both_of_its_acts() {
     }
 }
 
-/// **The row under the start carries the start's one parameter and nothing
-/// else** (§4.39). `records…`, `interrupt`, `stop`, `nudge` and the `…` strip
-/// are acts on a conversation's turn or on a conversation as an object, and
-/// there is no conversation — so they are absent, not greyed, which is the
-/// offers row's own rule.
-#[test]
-fn the_row_in_start_mode_carries_the_role_and_none_of_the_conversation_s_acts() {
-    let mut model = unselected();
-    let painted = pane(|ui| composer::render(ui, &mut model));
-    let plan = theme::worded(glyph::PLAN, offers::PLAN);
-    assert!(
-        painted.lines().any(|line| line == plan),
-        "{plan:?}:\n{painted}"
-    );
-    for gone in [
-        records::OPEN.to_owned(),
-        MORE.to_owned(),
-        theme::worded(glyph::INTERRUPT, INTERRUPT),
-        theme::worded(glyph::STOP, STOP),
-        theme::worded(glyph::NUDGE, NUDGE),
-    ] {
-        assert!(
-            !painted.lines().any(|line| line == gone),
-            "{gone:?} is an act on a conversation and there is none:\n{painted}"
-        );
-    }
-}
-
 /// **The seat is what states the born-on role** (REMOTE §9.21): pressed, the
 /// fire this window composes from the staging receipt carries `planner`;
 /// unpressed, the body is byte-identical to what the engine answered.
 #[test]
-fn the_plan_seat_writes_the_born_on_role_onto_the_fire_and_nothing_else_does() {
+fn the_plan_verb_writes_the_born_on_role_onto_the_fire_and_nothing_else_does() {
     for (planning, born) in [(false, None), (true, Some(json!("planner")))] {
         let mut model = unselected();
         model.draft = "do the thing".to_owned();
+        if planning {
+            // `/plan`, typed: the toggle is a row of the menu (`crate::ui::slash`).
+            assert!(crate::ui::slash::fire(
+                &mut model,
+                crate::ui::slash::PLAN,
+                ""
+            ));
+        }
         let window = Window::sized(400.0, 400.0);
         let mut body = |ctx: &egui::Context| {
             egui::CentralPanel::default().show(ctx, |ui| composer::render(ui, &mut model));
         };
-        if planning {
-            let plan = theme::worded(glyph::PLAN, offers::PLAN);
-            click(&window, &plan, &mut body);
-        }
-        click(&window, START, &mut body);
+        window.frame(Vec::new(), &mut body);
+        window.focus(egui::Id::new(crate::ui::keys::BOX_ID));
+        window.frame(
+            vec![crate::paint_probe::frame::press(egui::Key::Enter)],
+            &mut body,
+        );
         assert_eq!(
             model.plan, planning,
             "the seat holds what it was pressed to"

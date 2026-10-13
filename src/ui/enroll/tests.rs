@@ -14,7 +14,7 @@
 
 use fixtures::{file, opened};
 
-use super::{CLOSE, HEADING, KEPT, MINTING, NAME_HINT, OPEN, SEND};
+use super::{CLOSE, HEADING, KEPT, MINTING, NAME_HINT, SEND, WORD};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, painted, seated, seen};
 use crate::ui::{Enrolling, Grade, Model, theme};
@@ -24,16 +24,17 @@ use crate::ui::{Enrolling, Grade, Model, theme};
 /// aim is.
 #[test]
 fn the_roster_offers_the_control_only_on_the_aimed_wall() {
-    let mut aimed = seated();
-    assert!(painted(&mut aimed).contains(OPEN));
-    let mut adrift = Model {
+    let offered = |model: &Model| {
+        crate::ui::slash::rows(model)
+            .iter()
+            .any(|row| row.word == WORD)
+    };
+    assert!(offered(&seated()));
+    let adrift = Model {
         aim: None,
         ..seated()
     };
-    assert!(
-        !painted(&mut adrift).contains(OPEN),
-        "offered with nothing aimed at"
-    );
+    assert!(!offered(&adrift), "offered with nothing aimed at");
 }
 
 /// **The control on the glass opens the pane**, which is the only thing that
@@ -41,12 +42,8 @@ fn the_roster_offers_the_control_only_on_the_aimed_wall() {
 #[test]
 fn the_roster_s_control_opens_the_pane() {
     let mut model = seated();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
-    assert!(model.enroll.is_some(), "the control opened nothing");
-    // And it stops being offered while one is open — a second would replace the
-    // first, name, grade and material together.
-    assert!(!painted(&mut model).contains(OPEN));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
+    assert!(model.enroll.is_some(), "the word opened nothing");
 }
 
 /// Opening it needs an aim, and does nothing without one — the same gate the

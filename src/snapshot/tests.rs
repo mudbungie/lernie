@@ -37,11 +37,10 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
             image.save(&file).expect("the shot is writable");
             let at = format!("{} at {size}", world.name);
             println!(
-                "{at}: {}x{} -> {} ({:?})",
+                "{at}: {}x{} -> {}",
                 image.width(),
                 image.height(),
-                file.display(),
-                crate::ui::shell::shape(width)
+                file.display()
             );
             complaints.extend(blank::complaints(&at, &image, &harness));
             complaints.extend(clipped::complaints(&at, width, height, &harness));
@@ -70,7 +69,7 @@ fn the_covered_pane_is_one_gesture_away_at_every_size() {
         complaints.extend(reach::complaints(
             &format!("seated at {size}"),
             &mut harness,
-            &reach::walk(crate::ui::shell::shape(width)),
+            &reach::walk(),
         ));
     }
     assert!(
@@ -100,7 +99,7 @@ fn toy(label: &'static str) -> egui_kittest::Harness<'static, Model> {
 fn a_walk_whose_first_control_is_not_there_says_so() {
     let mut harness = toy("a control");
     let walk = [reach::Step {
-        gesture: "not on this window",
+        gesture: reach::Gesture::Click("not on this window"),
         then: "never asked",
     }];
     let said = reach::complaints("toy", &mut harness, &walk);
@@ -112,7 +111,7 @@ fn a_walk_whose_first_control_is_not_there_says_so() {
 fn a_walk_whose_gesture_brings_nothing_says_so() {
     let mut harness = toy("a control");
     let walk = [reach::Step {
-        gesture: "a control",
+        gesture: reach::Gesture::Click("a control"),
         then: "a pane that never opens",
     }];
     let said = reach::complaints("toy", &mut harness, &walk);
@@ -190,6 +189,21 @@ fn flatness_is_measured_over_the_rectangle_and_not_the_image() {
         !blank::flat(&image, (40, 40, 60, 60)),
         "one lit pixel is not"
     );
+}
+
+/// **A control scrolled past the overlay's clip is not a fault**, and one
+/// beside the box or with no box to scroll is judged as before.
+#[test]
+fn a_control_scrolled_past_the_overlay_s_clip_is_not_a_fault() {
+    let clip = Some(egui::Rect::from_min_max(
+        egui::pos2(16.0, 100.0),
+        egui::pos2(384.0, 790.0),
+    ));
+    assert!(clipped::scrolled((20.0, 800.0, 200.0, 820.0), clip));
+    assert!(clipped::scrolled((20.0, 10.0, 200.0, 90.0), clip));
+    assert!(!clipped::scrolled((20.0, 300.0, 200.0, 320.0), clip));
+    assert!(!clipped::scrolled((390.0, 800.0, 500.0, 820.0), clip));
+    assert!(!clipped::scrolled((20.0, 800.0, 200.0, 820.0), None));
 }
 
 #[test]

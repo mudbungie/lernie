@@ -133,7 +133,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, r
     let words = super::header(&chunk.channel);
     let (seat, begun) = ui
         .horizontal(|ui| {
-            let begins = !model.covered();
+            let begins = !model.covered() || model.switching;
             let taken = if begins {
                 theme::ROW + ui.spacing().item_spacing.x
             } else {
@@ -180,5 +180,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, open: bool, r
     // opens the engine on its way (`crate::ui::model::engines`).
     if begun {
         model.begin_on(&name);
+        model.chose();
     }
 }

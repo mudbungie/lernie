@@ -59,10 +59,8 @@ use crate::ui::{Model, theme};
 /// command to run by hand.
 pub mod run;
 
-/// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "sign in…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "login";
 /// The pane's own heading.
 pub const HEADING: &str = "sign in";
 /// What it says for a wall nobody has been answered about yet.
@@ -94,7 +92,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if model.login.is_none() {
         return false;
     }
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     if let Some(aim) = model.aim.clone() {
         ui.label(format!("on {} — {}", aim.address, aim.channel));
     }
@@ -104,12 +102,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), ELSEWHERE);
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), LOOPBACK);
     }
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_login();
-        }
-    });
-    ui.separator();
     match model.providers.clone() {
         None => {
             ui.label(NOT_ANSWERED);

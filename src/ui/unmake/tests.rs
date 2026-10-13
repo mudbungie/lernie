@@ -1,7 +1,7 @@
 //! The unmaking pane: what it says, what it offers, and the one control that
 //! is on the glass without being live.
 
-use super::{ARM, ARMED, ASKED, CLOSE, CONFIRM, HEADING, NOT_ARMED, REFUSED_IF, render, said};
+use super::{ARM, ARMED, ASKED, CONFIRM, HEADING, NOT_ARMED, REFUSED_IF, render, said};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, seated};
 use crate::ui::{Model, Unmaking};
@@ -80,7 +80,7 @@ fn the_act_is_painted_unarmed_and_fires_nothing() {
     let painted = pane(|ui| {
         render(ui, &mut model);
     });
-    for word in [CONFIRM, CLOSE, NOT_ARMED] {
+    for word in [CONFIRM, NOT_ARMED] {
         assert!(
             painted.lines().any(|line| line == word),
             "{word:?}:\n{painted}"
@@ -112,23 +112,12 @@ fn armed_it_composes_the_unmaking_and_keeps_the_arming() {
     assert!(painted.lines().any(|line| line == ASKED), "{painted}");
 }
 
-/// **The way out unmakes nothing**, and it is painted before the act it stands
-/// beside — so the control an operator reaches for by reflex is the safe one.
+/// **The way out unmakes nothing**: Escape over the armed pane puts it down
+/// and composes no gesture (`crate::ui::overlay`).
 #[test]
-fn the_way_out_is_first_and_composes_nothing() {
+fn the_way_out_composes_nothing() {
     let mut model = armed();
-    let painted = pane(|ui| {
-        render(ui, &mut model);
-    });
-    let index = |word: &str| {
-        painted
-            .lines()
-            .position(|line| line == word)
-            .unwrap_or_else(|| panic!("{word:?}:\n{painted}"))
-    };
-    assert!(index(CLOSE) < index(CONFIRM), "{painted}");
-
-    press(&mut model, CLOSE);
+    model.escape();
     assert_eq!(model.unmaking, None);
     assert!(model.outbox.is_empty());
 }

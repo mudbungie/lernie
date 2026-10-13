@@ -1,11 +1,9 @@
 //! What the clients pane says: the three empty states, the two lifetimes on a
 //! row, and the consent said on every tool.
 
-use super::{
-    CLOSE, HEADING, NO_SUBJECT, NONE_REGISTERED, NOT_ANSWERED, OFFERS_NOTHING, SUBJECT, render,
-};
+use super::{HEADING, NO_SUBJECT, NONE_REGISTERED, NOT_ANSWERED, OFFERS_NOTHING, SUBJECT, render};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, machine, machines, pane, seated};
+use crate::test_support::window::{escape, machine, machines, pane, seated};
 use crate::ui::Model;
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
@@ -94,7 +92,7 @@ fn a_machine_with_no_set_says_it_has_advertised_none() {
 fn the_close_control_puts_the_pane_down() {
     let window = Window::new();
     let mut model = machines();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.showing(crate::ui::Listing::Clients));
     assert!(model.machines.is_some());
 }

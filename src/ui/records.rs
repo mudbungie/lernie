@@ -65,15 +65,13 @@ mod steps;
 /// The workflow mark on the governing half, and the two acts on it.
 pub mod workflow;
 
-use crate::ui::{Model, theme};
+use crate::ui::Model;
 
 pub use files::{entry, previewed};
 pub use steps::{auth, headline, orphaned, provenance, wounded};
 
-/// The word that opens the pane, on the selected conversation.
-pub const OPEN: &str = "records…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "records";
 /// The pane's own heading.
 pub const HEADING: &str = "records";
 /// The steps half's own heading.
@@ -106,17 +104,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     // in full ink, what it is open ON one step weaker beside it, and the close
     // at the end of that same line. Three lines became two, which is the air
     // the sections below are spent from.
-    ui.label(egui::RichText::new(HEADING).heading().color(theme::INK));
-    ui.horizontal(|ui| {
-        if let Some(conversation) = model.conversation.clone() {
-            ui.colored_label(theme::INK_WEAK, format!("on {conversation}"));
-        }
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(CLOSE).clicked() {
-                model.close_records();
-            }
-        });
-    });
+    let subject = model.conversation.clone().map(|c| format!("on {c}"));
+    crate::ui::overlay::about(ui, HEADING, subject.as_deref());
     // **No air under the subject line**, because the first section brings `L`
     // of its own and this pane pays for every point it allocates.
     //

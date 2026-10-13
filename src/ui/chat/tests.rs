@@ -7,6 +7,8 @@
 
 /// The tail anchor, the follow, and the scroll that releases it.
 mod anchor;
+/// The idiom: gutters, the trail under its fold, and what parts turns.
+mod idiom;
 /// The live fold: where it paints, and when it has nothing to paint over.
 mod live;
 /// A machine's answer on the glass: folded, and one gesture from the whole.

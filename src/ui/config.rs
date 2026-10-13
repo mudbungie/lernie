@@ -48,10 +48,8 @@ use crate::reply::lineages::Lineage;
 use crate::ui::{Aim, Model, keys, theme};
 use crate::verbs::Where;
 
-/// The word that opens the pane, on the wall the window is aimed at.
-pub const OPEN: &str = "config…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "config";
 /// The pane's own heading.
 pub const HEADING: &str = "config";
 /// The hint the workflow name box wears, and the control beside it.
@@ -84,14 +82,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     let (Some(_), Some(aim)) = (&model.configuring, model.aim.clone()) else {
         return false;
     };
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     ui.label(format!("on {} — {}", aim.address, aim.channel));
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_configuring();
-        }
-    });
-    ui.separator();
     egui::ScrollArea::vertical()
         .id_salt(HEADING)
         .auto_shrink(false)

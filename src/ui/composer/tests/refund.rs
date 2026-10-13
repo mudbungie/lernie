@@ -6,23 +6,30 @@
 //! the composer fires, the send leg fails the way a stopped engine fails it,
 //! and the words are read back off the glass.
 
-use super::{SEND, render};
+use super::render;
 use crate::channel::Reach;
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, pane, seated};
+use crate::test_support::window::{pane, seated};
 use crate::ui::Model;
 
 /// The paragraph an operator does not want to type twice.
 const GOAL: &str = "port the paint probe, and say what the walk cannot answer";
 
-/// **Compose a deposit the way a click does**, and hand back the act's own
+/// **Compose a deposit the way Enter does**, and hand back the act's own
 /// words as the send leg would carry them — off the envelope, never off the
 /// model, because that is the route the fix runs on.
 fn deposited(model: &mut Model) -> Option<String> {
     let window = Window::new();
-    click(&window, SEND, |ctx| {
+    window.frame(Vec::new(), |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, model));
     });
+    window.focus(egui::Id::new(crate::ui::keys::BOX_ID));
+    window.frame(
+        vec![crate::paint_probe::frame::press(egui::Key::Enter)],
+        |ctx| {
+            egui::CentralPanel::default().show(ctx, |ui| render(ui, model));
+        },
+    );
     let posted = model.outbox.last().expect("the click composed a deposit");
     crate::envelope::said(&posted.envelope)
 }

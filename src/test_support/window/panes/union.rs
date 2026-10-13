@@ -66,6 +66,16 @@ pub(crate) fn queued() -> Model {
     }
 }
 
+/// **The seated model with its conversation asking** (DESIGN §4.42, item
+/// 8): the queue's rows answered and no pane open, so the ask stands above
+/// the prompt.
+pub(crate) fn asked() -> Model {
+    let mut model = queued();
+    model.listing = None;
+    model.convs[0].attention = 1;
+    model
+}
+
 /// One help row, in the classification that owes a control.
 pub(crate) fn helped(verb: &str, surface: &str) -> crate::reply::help::HelpRow {
     crate::reply::help::HelpRow {

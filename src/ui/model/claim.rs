@@ -84,6 +84,17 @@ impl Model {
     /// **The conversation the standing set may ask about.** A claimed name
     /// resolves nowhere, so there is no transcript to ask for and no tail to
     /// hold open against it.
+    /// **Whether the selected conversation is asking for the operator** —
+    /// read off the row the list paints, so the prompt's glow, the ask above
+    /// it and the standing read all agree about the one fact they share.
+    pub fn asks(&self) -> bool {
+        self.conversation.as_ref().is_some_and(|id| {
+            self.rows()
+                .iter()
+                .any(|row| row.root_id == *id && row.attention > 0)
+        })
+    }
+
     pub fn asked(&self) -> Option<String> {
         match self.pending() {
             Some(_) => None,

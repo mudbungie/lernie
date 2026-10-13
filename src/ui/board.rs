@@ -54,10 +54,8 @@ mod rows;
 /// The aimed wall's half of the pane.
 pub mod wall;
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "board…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "board";
 /// The pane's own heading.
 pub const HEADING: &str = "the board";
 /// What it says before any channel has answered.
@@ -74,13 +72,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.boarding() {
         return false;
     }
-    ui.heading(HEADING);
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_lookup();
-        }
-    });
-    ui.separator();
+    crate::ui::overlay::name(ui, HEADING);
     let columns = model.columns.clone();
     let bindings = model.bindings.clone();
     // **The claim a click composed, spent after the walk** — the sections are

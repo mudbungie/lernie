@@ -227,6 +227,29 @@ pub mod glyph {
     pub const NUDGE: &str = "▶";
     pub const STOP: &str = "■";
     pub const PLAN: &str = "✏";
+    /// **The prompt** (§4.42): the glyph at the left edge of the line the
+    /// operator types into, in the brand.
+    pub const PROMPT: &str = "›";
+    /// **The rule's lead** (`crate::ui::status`), at both of its ends. An em
+    /// dash where the baseline draws a box-drawing line: the body font has
+    /// no `─`.
+    pub const LEAD: &str = "—";
+    /// **What parts the rule's facts** — a bar, for the same reason: no `│`.
+    pub const SEP: &str = "|";
+    /// **The model's gutter** (`crate::ui::chat`): a broken bar where the
+    /// baseline draws `┊`, which the body font has not.
+    pub const MODEL: &str = "¦";
+    /// **A note's gutter**: a peer, a tool's answer, the machinery's own word.
+    pub const NOTE: &str = "·";
+    /// **A call on the trail.**
+    pub const CALL: &str = "•";
+    /// **A call that returned**, and one that failed.
+    pub const DONE: &str = "✔";
+    pub const FAILED: &str = "✖";
+    /// **A fold, open and shut**: the minus and the plus, because the body
+    /// font has no small triangles.
+    pub const OPEN: &str = "−";
+    pub const SHUT: &str = "+";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the
@@ -234,13 +257,6 @@ pub mod glyph {
 pub fn worded(glyph: &str, word: &str) -> String {
     format!("{glyph} {word}")
 }
-
-/// **How tall the composer's field stands, in lines** (bl-f251). Three, so
-/// the field is the pane's focal element rather than a bar along its foot:
-/// a paragraph is composed in it and the height says so before a word is
-/// typed. Lines rather than points because the height follows the type
-/// scale, and Shift+Enter breaks one inside it.
-pub const COMPOSER_ROWS: u8 = 3;
 
 /// **A list row's height**, in points. **Desktop delta:** the phone's
 /// 48-point touch target is a thumb's; a pointer's is 24, and a list of

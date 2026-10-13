@@ -12,19 +12,6 @@
 use super::Model;
 
 impl Model {
-    /// **How many rows the composer's field stands at**: the operator's own
-    /// where they dragged the panel's top edge, else
-    /// [`crate::ui::theme::COMPOSER_ROWS`] — which is the whole of what
-    /// absence in [`crate::ui::Dragged`] means (DESIGN §4.39).
-    ///
-    /// It is asked here rather than by the composer because the layout asks it
-    /// too: `crate::ui::shell::drag` hands the panel the rows it stood at in
-    /// order to measure everything else the panel holds, and two readings of
-    /// one number would be two numbers.
-    pub fn composer_rows(&self) -> u8 {
-        self.dragged.rows.unwrap_or(crate::ui::theme::COMPOSER_ROWS)
-    }
-
     /// **Whether the list must bring its selection onto the glass this
     /// frame**, answered once: the flag is taken, so a stale request cannot
     /// fight the next frame's scroll.

@@ -59,15 +59,6 @@ impl Window {
         Self::sized(1200.0, 2400.0)
     }
 
-    /// **Resize this window, keeping its context** — the operator dragging a
-    /// corner, which is a different subject from a second window of the new
-    /// size. egui carries a panel's width, a scroll offset and a focus across
-    /// frames, so what a resize does to state a smaller window LEFT is a
-    /// question only one context can be asked (bl-fef8).
-    pub(crate) fn resize(&mut self, w: f32, h: f32) {
-        self.input.screen_rect = screen_sized(w, h).screen_rect;
-    }
-
     /// Run one frame on `events` and hand back everything it produced.
     pub(crate) fn frame(
         &self,
@@ -77,6 +68,12 @@ impl Window {
         let mut input = self.input.clone();
         input.events = events;
         self.ctx.run(input, |ctx| body(ctx))
+    }
+
+    /// **Put the keyboard on `id`** before the next frame — the operator's
+    /// caret in a box, for a test about what the keys do from inside it.
+    pub(crate) fn focus(&self, id: egui::Id) {
+        self.ctx.memory_mut(|memory| memory.request_focus(id));
     }
 
     /// **Which widget holds the keyboard right now**, so a keyboard beat can

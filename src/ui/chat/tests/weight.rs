@@ -7,7 +7,7 @@
 //! both are only on the frame. These beats read the frame.
 
 use crate::paint_probe::frame::Window;
-use crate::paint_probe::{fills_of, seen_of};
+use crate::paint_probe::seen_of;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{numbered, said, seated};
 use crate::ui::Model;
@@ -51,33 +51,48 @@ fn glass(entries: Vec<Entry>) -> egui::FullOutput {
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model))
 }
 
-/// The run reading exactly `header`, or a failure naming what is not there.
+/// The run reading exactly `header` that stands beside a gutter glyph — the
+/// block's own header, as against the same words on the rule under the
+/// transcript or in the card over it (`crate::ui::status`, `chat::panel`).
 fn run(output: &egui::FullOutput, header: &str) -> crate::paint_probe::Seen {
-    seen_of(output)
-        .into_iter()
-        .find(|seen| seen.text == header)
-        .unwrap_or_else(|| panic!("nothing on the glass reads {header:?}"))
+    let runs = seen_of(output);
+    let gutters = [
+        crate::ui::theme::glyph::PROMPT,
+        crate::ui::theme::glyph::MODEL,
+        crate::ui::theme::glyph::NOTE,
+        crate::ui::theme::glyph::CALL,
+        crate::ui::theme::glyph::DONE,
+        crate::ui::theme::glyph::FAILED,
+    ];
+    runs.iter()
+        .filter(|seen| seen.text == header)
+        .find(|seen| {
+            runs.iter().any(|glyph| {
+                gutters.contains(&glyph.text.as_str())
+                    && glyph.laid.max.x <= seen.laid.min.x
+                    && glyph.laid.min.y <= seen.laid.center().y
+                    && seen.laid.center().y <= glyph.laid.max.y
+            })
+        })
+        .cloned()
+        .unwrap_or_else(|| panic!("nothing on the glass reads {header:?} beside a gutter"))
 }
 
-/// **The colours of the rules standing beside the block `header` heads**: the
-/// [`theme::RULE`]-wide fills that span its line and stand just to its left,
-/// which is where `theme::paint::ruled` puts one. The horizontal window is
-/// what keeps another column's row rule, at the same height in another pane,
-/// out of the answer.
-fn beside(output: &egui::FullOutput, header: &str) -> Vec<egui::Color32> {
-    let head = run(output, header);
-    let (at, left) = (head.shown.center().y, head.laid.min.x);
-    fills_of(output)
+/// The topmost run reading exactly `text` — a body, which stands under its
+/// header rather than beside a gutter.
+fn body(output: &egui::FullOutput, text: &str) -> crate::paint_probe::Seen {
+    seen_of(output)
         .into_iter()
-        .filter(|(rect, _)| {
-            (rect.width() - theme::RULE).abs() < 0.5
-                && rect.min.y <= at
-                && at <= rect.max.y
-                && rect.max.x <= left
-                && left - rect.min.x < 40.0
-        })
-        .map(|(_, fill)| fill)
-        .collect()
+        .filter(|seen| seen.text == text)
+        .min_by(|a, b| a.laid.min.y.total_cmp(&b.laid.min.y))
+        .unwrap_or_else(|| panic!("nothing on the glass reads {text:?}"))
+}
+
+/// **The ink the words naming a speaker are painted in** — the weight,
+/// which the gutter's glyph stands beside (DESIGN §4.42, item 4; there is
+/// no rule beside a block any more).
+fn worn(output: &egui::FullOutput, header: &str) -> egui::Color32 {
+    run(output, header).ink
 }
 
 /// **The four weights, on the glass, in one transcript.** The operator's own
@@ -106,17 +121,17 @@ fn each_speaker_s_block_wears_its_own_weight() {
         ("child (delivered)", theme::speaker(theme::Speaker::Ended)),
         ("model-a", theme::speaker(theme::Speaker::Model)),
     ] {
-        assert!(
-            beside(&output, header).contains(&weight),
-            "{header:?} does not wear {weight:?}: {:?}",
-            beside(&output, header)
+        assert_eq!(
+            worn(&output, header),
+            weight,
+            "{header:?} does not wear {weight:?}"
         );
     }
     // And the operator's is the brand itself, which is what "their own act" is
     // worn in everywhere else on this glass.
-    assert!(beside(&output, "op").contains(&theme::BRAND));
+    assert_eq!(worn(&output, "op"), theme::BRAND);
     // The model's is body ink and not an accent: a speaker is never a hue.
-    assert!(beside(&output, "model-a").contains(&theme::INK));
+    assert_eq!(worn(&output, "model-a"), theme::INK);
 }
 
 /// **A call that failed is the one row painted in a STATE**, because *this
@@ -127,11 +142,11 @@ fn each_speaker_s_block_wears_its_own_weight() {
 fn a_failed_tool_result_wears_the_error_accent_and_a_returned_one_does_not() {
     let red = theme::accent(theme::State::Error);
     let output = glass(vec![tool("no such file", true)]);
-    assert_eq!(run(&output, "tu-1 failed").ink, red);
-    assert!(beside(&output, "tu-1 failed").contains(&red));
+    assert_eq!(worn(&output, "tu-1 failed"), red);
+    assert_eq!(body(&output, crate::ui::theme::glyph::FAILED).ink, red);
     let returned = glass(vec![tool("done", false)]);
-    assert_ne!(run(&returned, "tu-1 returned").ink, red);
-    assert!(!beside(&returned, "tu-1 returned").contains(&red));
+    assert_ne!(worn(&returned, "tu-1 returned"), red);
+    assert_ne!(body(&returned, crate::ui::theme::glyph::DONE).ink, red);
 }
 
 /// **A folded head is dimmed**, so *there is more of this* is read off the
@@ -146,31 +161,24 @@ fn a_folded_head_stands_in_weak_ink() {
     assert_eq!(head.ink, theme::INK_WEAK, "{:?}", head.text);
 }
 
-/// **Entries are parted by air, not by a line** (bl-f251): the rules beside
-/// two consecutive blocks stand at least `M` apart, and no hairline-wide
-/// fill spans the column between them.
+/// **Two of the model's turns are parted by air, not by a line** (bl-f251;
+/// §4.42 keeps it — the hairline parts the OPERATOR's turns): the second
+/// turn's gutter stands at least `S` under the first's words, and no
+/// hairline-wide fill spans the column between them.
 #[test]
 fn entries_are_parted_by_air_and_never_by_a_line() {
     let output = glass(vec![turn("model-a", "first"), turn("model-a", "second")]);
-    let rules: Vec<egui::Rect> = fills_of(&output)
-        .into_iter()
-        .filter(|(rect, fill)| {
-            (rect.width() - theme::RULE).abs() < 0.5
-                && *fill == theme::speaker(theme::Speaker::Model)
-        })
-        .map(|(rect, _)| rect)
-        .collect();
-    assert_eq!(rules.len(), 2, "{rules:?}");
-    let gap = rules[1].min.y - rules[0].max.y;
-    assert!(gap >= theme::space::M - 0.5, "gap {gap}");
-    let first = run(&output, "first");
-    let dividers = fills_of(&output)
+    let first = body(&output, "first");
+    let second = body(&output, "second");
+    let gap = second.laid.min.y - first.laid.max.y;
+    assert!(gap >= theme::space::S - 0.5, "gap {gap}");
+    let dividers = crate::paint_probe::fills_of(&output)
         .into_iter()
         .filter(|(rect, _)| {
             rect.height() <= 1.5
                 && rect.width() > 100.0
                 && rect.min.y > first.laid.max.y
-                && rect.max.y < rules[1].min.y
+                && rect.max.y < second.laid.min.y
         })
         .count();
     assert_eq!(dividers, 0, "no line between two entries");

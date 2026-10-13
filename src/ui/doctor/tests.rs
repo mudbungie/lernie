@@ -1,9 +1,9 @@
 //! What the doctor pane says in every state it can be in, and the control that
 //! opens it driven through the real window.
 
-use super::{CLOSE, HEADING, NO_CHECKS, NOT_ANSWERED, OPEN, render};
+use super::{HEADING, NO_CHECKS, NOT_ANSWERED, WORD, render};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{checked, click, doctored, own, pane, seated};
+use crate::test_support::window::{checked, doctored, escape, own, pane, seated};
 use crate::ui::{Diagnosis, Lookup, Model};
 
 /// A closed pane paints nothing and says so.
@@ -30,7 +30,6 @@ fn every_check_paints_its_state_its_fact_and_the_remedy_where_there_is_one() {
         "ok  listener: what listener was found to be",
         "NOT OK  address: what address was found to be",
         "the engine's own remedy for address",
-        CLOSE,
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
@@ -73,7 +72,7 @@ fn every_empty_state_is_its_own_sentence() {
 fn the_strip_opens_it_asking_and_its_own_word_shuts_it() {
     let window = Window::new();
     let mut model = seated();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.doctoring());
     assert_eq!(model.outbox.len(), 1);
     assert_eq!(
@@ -84,6 +83,6 @@ fn the_strip_opens_it_asking_and_its_own_word_shuts_it() {
         channel: own().channel,
         rows: vec![checked("listener", true)],
     }];
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.doctoring());
 }

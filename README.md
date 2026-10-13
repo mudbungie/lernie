@@ -108,28 +108,38 @@ conversation's driver runs there, and the engine's own target preamble is fired
 ahead of the goal. A directory named in the goal's prose is a request the
 agent's tools are free to ignore; the rung is not.
 
-**Bare `lernie` opens the window**: two columns. On the left an accordion of
-the engines this seat reaches, the open one's workspaces under it and the
-aimed workspace's conversations under their own row, with a `+` on each
-engine that begins a conversation on it; on the right the chat pane with the
-composer under it. Both are painted from a snapshot and fire gestures through
-the same doors the command line spends. The composer
-speaks to the conversation that is selected and **begins one** where none is,
-holding the staged body between the start's two acts — so the window can start a
-conversation and not only continue one. Behind it are three threads — the asker
-over the standing question set, the poster
-draining what a click composed, and the follow lane holding one connection open
-on the focused conversation.
+**Bare `lernie` opens the window**: one column, shaped after the Hermes Agent
+terminal UI (`docs/DESIGN.md` §4.42). The transcript fills it; under the
+transcript a one-line status rule says where you are and what it costs; under
+the rule the prompt line, where Enter sends and Shift+Enter breaks a line.
+Nothing else is on the glass until it is asked for: `/` opens a completion
+menu of every verb this seat offers right now — `/records`, `/trail`,
+`/attention`, `/stop`, `/flag <reason>` and the rest — and the word is the
+pane or the act; Ctrl+X opens the switcher, the one list of engines, their
+workspaces and their conversations, with a `+` on each engine that begins a
+conversation on it. What is asked for floats in a framed box over the
+transcript and Esc puts it down. While the selected conversation is asking,
+its decision stands above the rule as numbered choices a digit picks; while
+anything runs under the aimed workspace, a one-line dock above the rule says
+so and Ctrl+T unfolds it. All of it is painted from a snapshot and fires
+gestures through the same doors the command line spends. The prompt speaks to
+the conversation that is selected and **begins one** where none is, holding
+the staged body between the start's two acts — so the window can start a
+conversation and not only continue one. Behind it are three threads — the
+asker over the standing question set, the poster draining what a key
+composed, and the follow lane holding one connection open on the focused
+conversation.
 
 **Everything it does is reachable from the keyboard.** Most of that is egui's —
 Tab moves focus between the controls and Space fires the focused one — and what
-Tab cannot make *usable* is a list, so the arrows walk the one list the window
-has — engine rows, the open engine's workspaces, and the aimed one's
-conversations, in the order the glass paints them — and Escape puts a notice
-down. Enter or Space on an engine's row opens it; left and right step between
-the columns where the window is too narrow to stand them side by side. Moving in a list **selects**, so the cursor and the
-selection are one thing and the highlight the pointer paints is where the
-keyboard is. Every binding calls the same door the click beneath it calls.
+Tab cannot make *usable* is a list, so the arrows walk the switcher's one
+list — engine rows, the open engine's workspaces, and the aimed one's
+conversations, in the order the glass paints them — and Escape puts an
+overlay, then a notice, down. Enter or Space on an engine's row opens it;
+Enter on a selected conversation chooses it. Moving in the list **selects**,
+so the cursor and the selection are one thing and the highlight the pointer
+paints is where the keyboard is. Every binding calls the same door the click
+beneath it calls.
 
 **The frame never dials.** Every read and every act happens off it, and the
 frame's whole side is one `settle` at the top of an update: file what landed,

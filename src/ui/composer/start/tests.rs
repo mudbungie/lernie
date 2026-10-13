@@ -5,10 +5,11 @@
 /// its act tags, and the row under it.
 mod shape;
 
-use super::{GOAL, START, render};
+use super::{GOAL, render};
 use crate::paint_probe::frame::{Window, locate_in, press};
-use crate::test_support::window::{click, pane, seated};
+use crate::test_support::window::{pane, seated};
 use crate::ui::model::{Phase, Start};
+use crate::ui::theme::glyph;
 use crate::ui::{Aim, Model};
 use serde_json::json;
 
@@ -32,7 +33,7 @@ fn aimed() -> Aim {
 fn a_wall_with_nothing_selected_offers_a_start() {
     let mut model = unselected();
     let painted = pane(|ui| render(ui, &mut model, &aimed()));
-    for expected in [GOAL, START] {
+    for expected in [GOAL, glyph::PROMPT] {
         assert!(
             painted.lines().any(|line| line == expected),
             "{expected:?}:\n{painted}"
@@ -40,14 +41,18 @@ fn a_wall_with_nothing_selected_offers_a_start() {
     }
 }
 
-/// **The button composes the first act and holds the text.** It composes and
-/// does not send: the gesture lands in the outbox like every other.
+/// **Enter composes the first act and holds the text.** It composes and does
+/// not send: the gesture lands in the outbox like every other.
 #[test]
 fn starting_composes_the_staging_act_and_posts_nothing() {
     let mut model = unselected();
     model.draft = "do the thing".to_owned();
     let window = Window::new();
-    click(&window, START, |ctx| {
+    window.frame(Vec::new(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aimed()));
+    });
+    window.focus(egui::Id::new(crate::ui::keys::BOX_ID));
+    window.frame(vec![press(egui::Key::Enter)], |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aimed()));
     });
     assert_eq!(
@@ -84,6 +89,23 @@ fn enter_begins_what_was_typed() {
     assert_eq!(model.outbox[0].envelope["op"], json!("prepare"));
 }
 
+/// **A slash line is the menu's, not the start's** (`crate::ui::slash`):
+/// Enter on `/plan` begins nothing.
+#[test]
+fn enter_on_a_slash_line_begins_nothing() {
+    let mut model = unselected();
+    model.draft = "/plan".to_owned();
+    let window = Window::new();
+    let mut body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aimed()));
+    };
+    let at = locate_in(&window, "/plan", &mut body).expect("the box");
+    crate::paint_probe::frame::click(&window, at, &mut body);
+    window.frame(vec![press(egui::Key::Enter)], &mut body);
+    assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+    assert_eq!(model.start, None);
+}
+
 /// **A start in flight refuses a second one, by there being no control.** Two
 /// starts chained through one composer would spend one goal on two
 /// conversations and leave the first unfinished.
@@ -105,7 +127,7 @@ fn a_start_in_flight_paints_its_sentence_and_offers_no_second_start() {
             "{painted}"
         );
         assert!(
-            !painted.lines().any(|line| line == START),
+            !painted.lines().any(|line| line == glyph::PROMPT),
             "no control to press:\n{painted}"
         );
     }
@@ -130,7 +152,10 @@ fn a_finished_start_paints_its_name_over_the_box_that_begins_the_next() {
         painted.contains("started «brisk-otter» in home"),
         "{painted}"
     );
-    assert!(painted.lines().any(|line| line == START), "{painted}");
+    assert!(
+        painted.lines().any(|line| line == glyph::PROMPT),
+        "{painted}"
+    );
 }
 
 /// **A refused start paints its sentence over the box that carries the goal
@@ -153,7 +178,10 @@ fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back()
         painted.contains("not started in home: sign in first: no provider holds a credential"),
         "{painted}"
     );
-    assert!(painted.lines().any(|line| line == START), "{painted}");
+    assert!(
+        painted.lines().any(|line| line == glyph::PROMPT),
+        "{painted}"
+    );
     assert!(
         painted.contains("do the thing"),
         "the goal is in the box:\n{painted}"

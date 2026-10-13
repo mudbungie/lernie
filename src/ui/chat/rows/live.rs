@@ -9,7 +9,7 @@
 //! states it.
 
 use super::super::LIVE;
-use super::Row;
+use super::{Kind, Row};
 use crate::reply::stream::Stream;
 use crate::reply::stream::window::Window;
 use crate::ui::theme::Speaker;
@@ -61,6 +61,7 @@ fn call(window: &Window) -> Vec<Row> {
             reason.clone(),
             Speaker::Model,
         )
+        .as_(Kind::Call)
     });
     // **A parked call was not dispatched, so it gets no dispatch row.** litany
     // lands no `input.json` for one — the park stops it before the executor is
@@ -74,6 +75,7 @@ fn call(window: &Window) -> Vec<Row> {
             window.input.clone().unwrap_or_default(),
             Speaker::Model,
         )
+        .as_(Kind::Call)
     });
     let landed = window.exit_code.map(|code| {
         let ok = code == 0;
@@ -89,6 +91,7 @@ fn call(window: &Window) -> Vec<Row> {
             weight: Speaker::Peer,
             failed: !ok,
             fold: None,
+            kind: Kind::Result,
         }
     });
     parked.into_iter().chain(opened).chain(landed).collect()
@@ -131,10 +134,13 @@ pub(super) fn half(speaker: &str, mark: &str, said: &str) -> Option<Row> {
 
 /// The two halves of a turn in flight, by [`half`]'s rule.
 pub(super) fn live_rows(thinking: &str, text: &str) -> Vec<Row> {
-    [("thinking", thinking), ("", text)]
-        .into_iter()
-        .filter_map(|(mark, said)| half(LIVE, mark, said))
-        .collect()
+    [
+        ("thinking", thinking, Kind::Thinking),
+        ("", text, Kind::Said),
+    ]
+    .into_iter()
+    .filter_map(|(mark, said, kind)| half(LIVE, mark, said).map(|row| row.as_(kind)))
+    .collect()
 }
 
 #[cfg(test)]

@@ -25,25 +25,20 @@ use crate::ui::{Model, theme};
 
 /// The acts that spend no words and are not offered every day: the strip
 /// behind the more control.
-pub mod acts;
 /// The acts the conversation offers on its turn, and the control that opens
 /// the strip.
-pub mod offers;
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
-
-pub use offers::{MORE, STOP};
 
 /// What the composer says with no wall aimed at — the one case that is neither
 /// a deposit nor a start, because there is nowhere for either to go.
 pub const NOWHERE: &str = "pick a workspace to say anything or begin anything";
-/// The verb on the control, and the word the refusal above is about.
-pub const SEND: &str = "send";
 /// **What the field says while it is empty** — the two keys, because a field
 /// three lines tall is one an operator expects Enter to break a line in, and
 /// a composer whose one binding has to be guessed is one they leave the
 /// keyboard for (bl-f251).
-pub const HINT: &str = "say it — Enter sends, Shift+Enter breaks a line";
+pub const HINT: &str =
+    "say it — Enter sends, Shift+Enter breaks a line, / for a verb, Ctrl+X for a conversation";
 /// **And what it says while the conversation is asking** (`docs/STYLE.md`
 /// §2): the field is where the answer goes, so it is where the asking is said.
 pub const ASKING: &str = "it is waiting on you — Enter sends";
@@ -83,23 +78,19 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // §2): three lines tall, the send inside it, and the glow under both
     // while the conversation is asking — the attention tint and the hint
     // that says so, because the box is where the answer goes.
-    let asking = asking(model, &agent);
-    let rows = model.composer_rows();
-    let (entry, deposit) = theme::paint::composer(
+    let asking = model.asks();
+    let slashed = crate::ui::slash::parsed(&model.draft).is_some();
+    let wanted = model.filling().is_some();
+    let entry = theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
         if asking { ASKING } else { HINT },
         asking.then(|| theme::tint(theme::State::Attention)),
-        SEND,
-        // **The rows are the seat's own where the operator dragged the panel's
-        // top edge** (§4.39): the field is HANDED a height, which is §4.38's
-        // bound, and the drag changes the number it is computed from rather
-        // than the direction the height is decided in.
-        rows,
     );
-    // **The send wears the brand**: it is the operator's own act.
-    crate::ui::act::tag(&deposit, &[crate::verbs::MESSAGE.word]);
+    // **The field is the control** (§4.42): there is no `send`, Enter fires
+    // it, and the tag rides the field.
+    crate::ui::act::tag(&entry, &[crate::verbs::MESSAGE.word]);
     // **Enter sends and Shift+Enter breaks a line**, and the hint says so.
     // The field consumes only the shifted key (`theme::paint::composer`), so
     // a bare Enter reaches [`entered`] while the box holds the caret.
@@ -110,10 +101,21 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // exactly that, and the one with the destructive half is the one that has
     // to be pointed at (`crate::ui::model::acts` on why a binding never fires
     // what a click cannot — this is the other direction, which is allowed).
-    if entered(ui, &entry) || deposit.clicked() {
+    // **A row menu's *flag…* or *delete…* lands the caret here** with the verb
+    // already typed (`crate::ui::model::fill`), so the box it was sent to is
+    // the one box there is.
+    if wanted {
+        entry.request_focus();
+    }
+    // **A slash line is the menu's, not the deposit's** (`crate::ui::slash`):
+    // Enter on `/stop` fires the verb, and a deposit that read the same key
+    // would send the verb's spelling to the model as a message.
+    if slashed {
+        return;
+    }
+    if entered(ui, &entry) {
         fire(model, crate::verbs::message, &aim.address, &agent);
     }
-    offers::render(ui, model, &aim, &agent);
 }
 
 /// **The one key that fires the box**, read beside the act rather than inside
@@ -137,16 +139,6 @@ pub(super) fn entered(ui: &egui::Ui, entry: &egui::Response) -> bool {
                 )
             })
         })
-}
-
-/// **Whether the selected conversation is asking for the operator** — read
-/// off the row the list already paints, so the composer and the list agree
-/// about the one fact they both show.
-fn asking(model: &Model, agent: &str) -> bool {
-    model
-        .rows()
-        .iter()
-        .any(|row| row.root_id == agent && row.attention > 0)
 }
 
 /// **Compose one of the two deposits and clear the draft.**

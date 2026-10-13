@@ -2,11 +2,10 @@
 //! read, and the judgement that is the engine's.
 
 use super::{
-    CLOSE, HEADING, NO_BYTES, NO_LINEAGES, NO_SETTINGS, NOT_ANSWERED, NOT_READ, NOTHING_PICKED,
-    render,
+    HEADING, NO_BYTES, NO_LINEAGES, NO_SETTINGS, NOT_ANSWERED, NOT_READ, NOTHING_PICKED, render,
 };
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, configured, lineage, pane, seated};
+use crate::test_support::window::{click, configured, escape, lineage, pane, seated};
 use crate::ui::{Configuring, Model};
 use crate::verbs::Where;
 
@@ -148,7 +147,7 @@ fn clicking_a_destination_points_the_pane_at_that_file() {
 fn the_close_control_puts_the_pane_down() {
     let window = Window::new();
     let mut model = configured();
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert_eq!(model.configuring, None);
 }
 

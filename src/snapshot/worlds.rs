@@ -138,6 +138,59 @@ fn accordion() -> World {
 /// are assertions, so each row carries the one act that is not already true of
 /// it, and the world at work carries only `pin`. A control that lives on a
 /// screen this walk never visits fails honestly.
+/// **The completion menu over a seated window** (DESIGN §4.42, item 5) —
+/// the one screen every verb's row is on, which is where the parity walk
+/// reads the tags the strips used to carry.
+fn slashing() -> World {
+    let mut model = seated();
+    model.draft = crate::ui::slash::LEAD.to_string();
+    World {
+        name: "slashing",
+        model,
+    }
+}
+
+/// **The same menu over a pinned wall**, because the row offered there is
+/// `unpin` and nowhere else is (§4.25).
+fn unpinning() -> World {
+    let mut model = pinned();
+    model.draft = crate::ui::slash::LEAD.to_string();
+    World {
+        name: "unpinning",
+        model,
+    }
+}
+
+/// **The switcher over a seated window** (DESIGN §4.42, item 7): the one
+/// screen the roster's rows and their tags are on.
+fn switching() -> World {
+    let mut model = seated();
+    model.switching = true;
+    World {
+        name: "switching",
+        model,
+    }
+}
+
+/// **The ask above the prompt** (DESIGN §4.42, item 8): the one screen its
+/// numbered rows and their tags are on with no pane open.
+fn asked_world() -> World {
+    World {
+        name: "asked",
+        model: crate::test_support::window::asked(),
+    }
+}
+
+/// **The dock unfolded over a conversation at work** (DESIGN §4.42, item 9).
+fn docked() -> World {
+    let mut model = seated();
+    model.convs[0].state = crate::reply::convs::AgentState::InFlight;
+    World {
+        name: "docked",
+        model,
+    }
+}
+
 fn pinned_wall() -> World {
     World {
         name: "pinned",
@@ -214,6 +267,11 @@ pub(crate) fn all() -> Vec<World> {
         config(),
         accordion(),
         pinned_wall(),
+        slashing(),
+        unpinning(),
+        switching(),
+        asked_world(),
+        docked(),
         unmaking(),
         filling(),
     ]

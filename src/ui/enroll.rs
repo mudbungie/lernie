@@ -46,12 +46,14 @@
 
 use crate::ui::{Grade, Model, theme};
 
-/// The word that opens an enrollment, on the wall the window is aimed at.
-pub const OPEN: &str = "enroll…";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "enroll";
+/// **The word that closes it AND forgets the material.** The enrollment keeps
+/// its own close because it keeps its whole-window cover (§4.42): the one
+/// pane whose way out does something.
+pub const CLOSE: &str = "done — forget it";
 /// The word that spends it.
 pub const SEND: &str = "mint";
-/// The word that closes it and forgets the material.
-pub const CLOSE: &str = "done — forget it";
 /// The pane's own heading.
 pub const HEADING: &str = "enroll a box";
 /// What the name box says before anything is typed.

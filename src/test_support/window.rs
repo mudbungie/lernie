@@ -22,10 +22,10 @@ use crate::ui::{Aim, Channel, Chunk, Model};
 pub(crate) mod panes;
 
 pub(crate) use panes::{
-    attempt, boarded, checked, clearing, column, commanded, configured, deposit, diff, doctored,
-    drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines, mark, notch,
-    own_row, pinned, priced, provider, queued, recorded, signing, step, trailed, trailing, tuned,
-    waiting,
+    asked, attempt, boarded, checked, clearing, column, commanded, configured, deposit, diff,
+    doctored, drilled, figure, finding, fleeting, helped, hit, lineage, machine, machines, mark,
+    notch, own_row, pinned, priced, provider, queued, recorded, signing, step, trailed, trailing,
+    tuned, waiting,
 };
 
 /// One workspace row, named and otherwise quiet.
@@ -121,7 +121,6 @@ pub(crate) fn own() -> Chunk {
 /// the operator's own navigation is recorded.
 pub(crate) fn seated() -> Model {
     Model {
-        column: crate::ui::Column::Conversation,
         roster: vec![own()],
         convs: vec![conv("20260830T051200Z-a1b2", "port the paint probe")],
         transcript: Transcript {
@@ -170,6 +169,12 @@ pub(crate) fn pane(body: impl FnMut(&mut egui::Ui)) -> String {
 pub(crate) fn click(window: &Window, label: &str, mut body: impl FnMut(&egui::Context)) {
     let at = aim(window, label, &mut body);
     paint_probe::frame::click(window, at, body);
+}
+
+/// **Press Escape on the window** — the one key that closes whatever floats
+/// (`crate::ui::overlay`), reached the way an operator reaches it.
+pub(crate) fn escape(window: &Window, body: impl FnMut(&egui::Context)) {
+    window.frame(vec![paint_probe::frame::press(egui::Key::Escape)], body);
 }
 
 /// **Secondary-click the seat reading exactly `label`** — the gesture that

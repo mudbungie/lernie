@@ -185,6 +185,8 @@ impl Model {
     pub fn escape(&mut self) {
         if self.enroll.is_some() {
             self.close_enrollment();
+        } else if self.switching {
+            self.switching = false;
         } else if matches!(self.tuning, Some(super::Tuning::Editing(_))) {
             self.cancel_assignment();
         } else if self.tuning.is_some() {
@@ -199,6 +201,12 @@ impl Model {
             self.close_clients();
         } else if self.configuring.is_some() {
             self.close_configuring();
+        } else if self.fleet.is_some() {
+            self.close_fleet();
+        } else if self.clearing() {
+            // Back to the trail it was opened from, which is what the pane's
+            // own way out did (`crate::ui::clear`).
+            self.close_clearing();
         } else if self.lookup.is_some() {
             self.close_lookup();
         } else if self.login.is_some() {

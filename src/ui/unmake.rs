@@ -40,12 +40,8 @@
 
 use crate::ui::{Model, theme};
 
-/// The word that opens it, on the wall the window is aimed at.
-pub const OPEN: &str = "unmake…";
-/// The word that closes it, having unmade nothing. It says what it leaves
-/// rather than what it abandons: `cancel` on a destructive pane names the
-/// destruction as the thing in progress, and nothing is in progress.
-pub const CLOSE: &str = "keep it";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "unmake";
 /// The word that spends it.
 pub const CONFIRM: &str = "unmake it";
 /// The pane's own heading.
@@ -83,7 +79,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     let Some(aim) = model.unmaking.as_ref().map(|held| held.aim.clone()) else {
         return false;
     };
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     ui.label(format!("{} on {}", aim.address, aim.channel));
     ui.colored_label(theme::NOTICE, REFUSED_IF);
     ui.separator();
@@ -107,10 +103,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         armed = held.armed();
     }
     ui.horizontal_wrapped(|ui| {
-        // **The way out is first**, and therefore first in the tab order too.
-        if ui.button(CLOSE).clicked() {
-            model.close_unmaking();
-        }
         let spend = ui.add_enabled(armed, egui::Button::new(CONFIRM));
         crate::ui::act::tag(&spend, &[crate::verbs::DELETE_WORKSPACE.word]);
         if spend.clicked() {

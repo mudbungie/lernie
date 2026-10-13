@@ -209,7 +209,6 @@ fn beginning_on_an_engine_opens_it_aims_its_wall_and_asks_for_the_box() {
         Some("bench".to_owned())
     );
     assert_eq!(model.conversation, None);
-    assert_eq!(model.column, crate::ui::Column::Conversation);
     assert_eq!(model.fill, Some(crate::ui::Fill::Goal));
 }
 

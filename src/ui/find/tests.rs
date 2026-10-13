@@ -2,12 +2,12 @@
 //! beside the paint read as values, and the act driven through the real window.
 
 use super::{
-    CLOSE, FIND, HEADING, NEEDS_WORDS, NOT_ADDRESSABLE, NOT_ASKED, NOTHING, OPEN, looked_for,
-    render, unread,
+    FIND, HEADING, NEEDS_WORDS, NOT_ADDRESSABLE, NOT_ASKED, NOTHING, WORD, looked_for, render,
+    unread,
 };
 use crate::paint_probe::frame::Window;
 use crate::reply::search::Found;
-use crate::test_support::window::{click, finding, hit, own, pane, seated};
+use crate::test_support::window::{click, escape, finding, hit, own, pane, seated};
 use crate::ui::{Hits, Lookup, Model};
 
 /// A closed pane paints nothing and says so.
@@ -38,7 +38,6 @@ fn the_answered_pane_paints_the_subject_the_field_the_excerpt_and_why_it_is_read
         "the gate said no",
         "could not be read: p: balls unlistable",
         FIND,
-        CLOSE,
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
@@ -137,7 +136,7 @@ fn what_was_looked_for_and_what_could_not_be_read_are_two_claims() {
 fn the_roster_opens_it_and_the_act_inside_it_composes_the_search() {
     let window = Window::new();
     let mut model = seated();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.finding());
     assert!(model.outbox.is_empty(), "opening asks nothing");
     model.needle = "gate".to_owned();
@@ -149,6 +148,6 @@ fn the_roster_opens_it_and_the_act_inside_it_composes_the_search() {
         ))]
     );
     assert!(model.finding(), "searching does not close the pane");
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.finding());
 }

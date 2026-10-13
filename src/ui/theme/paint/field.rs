@@ -9,7 +9,7 @@
 
 use egui::{Color32, Key, KeyboardShortcut, Modifiers, Response, Stroke};
 
-use super::super::{BRAND, RADIUS, SURFACE, State, space, tint};
+use super::super::{BRAND, RADIUS, SURFACE, space};
 
 /// **A field that takes text**: `SURFACE` with no stroke at rest, the brand
 /// ring while it holds the caret, and `glow`'s tint under it where the pane
@@ -61,45 +61,43 @@ pub fn field(
 ///
 /// The two responses are the box and the send, in that order: the caller
 /// reads focus off the first and the click off the second.
-pub fn composer(
+/// **The prompt line** (`docs/STYLE.md` §5): the glyph in the brand at the
+/// left edge, the draft beside it a line per line typed, the hint in weak ink
+/// while it is empty; `SURFACE` under it, the brand ring while it holds the
+/// caret, the tint handed in while the conversation asks. As tall as its
+/// lines and never taller. **The field is the control**: there is nothing
+/// inside it to click, and Enter is read beside it by the composer.
+pub fn prompt(
     ui: &mut egui::Ui,
     id: egui::Id,
     text: &mut String,
     hint: &str,
     glow: Option<Color32>,
-    send: &str,
-    rows: u8,
-) -> (Response, Response) {
-    let height = f32::from(rows) * ui.text_style_height(&egui::TextStyle::Body);
+) -> Response {
+    // **A slash line keeps the caret through Tab**: the menu over the box reads
+    // Tab as *complete the word* (`crate::ui::slash`), and a Tab that walked
+    // the focus away would complete it into nothing.
+    let lock = text.starts_with(crate::ui::slash::LEAD);
     frame(ui, id, glow, space::S)
         .show(ui, |ui| {
-            ui.allocate_ui_with_layout(
-                egui::vec2(ui.available_width(), height),
-                egui::Layout::right_to_left(egui::Align::BOTTOM),
-                |ui| {
-                    let deposit = ui.add(
-                        egui::Button::new(egui::RichText::new(send).color(BRAND))
-                            .fill(tint(State::Working)),
-                    );
-                    let entry = ui.add(
-                        egui::TextEdit::multiline(text)
-                            .id(id)
-                            .frame(false)
-                            .desired_rows(usize::from(rows))
-                            .desired_width(ui.available_width())
-                            .hint_text(hint)
-                            .return_key(KeyboardShortcut::new(Modifiers::SHIFT, Key::Enter)),
-                    );
-                    (entry, deposit)
-                },
-            )
+            ui.horizontal_top(|ui| {
+                ui.label(egui::RichText::new(super::super::glyph::PROMPT).color(BRAND));
+                ui.add(
+                    egui::TextEdit::multiline(text)
+                        .id(id)
+                        .frame(false)
+                        .desired_rows(1)
+                        .desired_width(ui.available_width())
+                        .hint_text(hint)
+                        .lock_focus(lock)
+                        .return_key(KeyboardShortcut::new(Modifiers::SHIFT, Key::Enter)),
+                )
+            })
             .inner
         })
         .inner
 }
 
-/// The box both fields stand in: the glow or `SURFACE`, the ring while `id`
-/// holds the keyboard, and `down` of padding above and below the words.
 fn frame(ui: &egui::Ui, id: egui::Id, glow: Option<Color32>, down: f32) -> egui::Frame {
     let focused = ui.memory(|memory| memory.has_focus(id));
     let ring = if focused {

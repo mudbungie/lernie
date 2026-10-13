@@ -1,11 +1,11 @@
 //! The anatomy on the glass: a row's words, ink, rule and tint; a block's
 //! rule; a section's word; a field's ring and glow.
 
-use super::{composer, elbow, empty, field, prose, rail, row, ruled, section};
+use super::{elbow, empty, field, prompt, prose, rail, row, ruled, section};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
 use crate::ui::theme::{
-    BRAND, COMPOSER_ROWS, INK, INK_WEAK, RAISED, RULE, State, accent, tint, type_scale,
+    BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, glyph, tint, type_scale,
 };
 
 /// Every fill that reached the glass, widest first.
@@ -175,32 +175,33 @@ fn a_field_glows_and_rings() {
     assert_eq!(window.focused(), Some(id), "the click put the caret in it");
 }
 
-/// **The composer stands its rows tall with the send inside it** (bl-f251):
-/// the field's fill spans at least [`COMPOSER_ROWS`] lines of body type, the
-/// send's words lie within that fill in the brand, and a shifted Enter breaks
-/// a line where a bare one leaves the text alone.
+/// **The prompt wears its glyph in the brand and is as tall as its lines**
+/// (§4.42): the glyph stands inside the field's fill, the field is one line
+/// of body type tall while nothing is typed, and a shifted Enter breaks a
+/// line where a bare one leaves the text alone.
 #[test]
-fn the_composer_is_rows_tall_with_the_send_inside_it() {
+fn the_prompt_wears_its_glyph_and_shift_enter_breaks_a_line() {
     let window = Window::sized(400.0, 200.0);
-    let id = egui::Id::new("the composer");
+    let id = egui::Id::new("the prompt");
     let mut text = String::new();
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            composer(ui, id, &mut text, "say it", None, "send", COMPOSER_ROWS);
+            prompt(ui, id, &mut text, "say it", None);
         });
     };
     let output = window.frame(Vec::new(), &mut body);
-    let send = crate::paint_probe::seen_of(&output)
+    let lead = crate::paint_probe::seen_of(&output)
         .into_iter()
-        .find(|run| run.text == "send")
-        .expect("the send is on the glass");
-    assert_eq!(send.ink, BRAND);
+        .find(|run| run.text == glyph::PROMPT)
+        .expect("the glyph is on the glass");
+    assert_eq!(lead.ink, BRAND);
     let field = crate::paint_probe::fills_of(&output)
         .into_iter()
-        .find(|(rect, _)| rect.contains_rect(send.laid) && rect.width() > 300.0)
-        .expect("the send lies inside the field");
-    let rows = f32::from(COMPOSER_ROWS);
-    assert!(field.0.height() >= rows * type_scale::BODY, "{field:?}");
+        .find(|(rect, _)| {
+            rect.contains_rect(lead.laid) && rect.width() > 300.0 && rect.height() < 100.0
+        })
+        .expect("the glyph lies inside the field");
+    assert!(field.0.height() < 3.0 * type_scale::BODY, "{field:?}");
     let at = crate::paint_probe::frame::locate_in(&window, "say it", &mut body).expect("hint");
     crate::paint_probe::frame::click(&window, at, &mut body);
     window.frame(
@@ -270,4 +271,23 @@ fn an_empty_state_is_one_weak_sentence_that_wraps() {
     assert_eq!(run.ink, INK_WEAK);
     assert!(run.laid.height() > 1.5 * type_scale::BODY, "{:?}", run.laid);
     assert!(run.laid.max.x <= 160.0, "{:?}", run.laid);
+}
+
+/// **A row past the clip paints nothing**: in a window too short for the
+/// list, the rows beyond the scroll's edge are laid and not painted — their
+/// words are not on the glass, and the first row's are.
+#[test]
+fn a_row_past_the_clip_paints_nothing() {
+    let window = Window::sized(300.0, 60.0);
+    let runs = seen(&window, |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                for i in 0..30 {
+                    row(ui, &format!("row {i}"), INK, None, false, 0.0);
+                }
+            });
+        });
+    });
+    assert!(runs.iter().any(|run| run.text == "row 0"), "{runs:?}");
+    assert!(!runs.iter().any(|run| run.text == "row 29"), "{runs:?}");
 }

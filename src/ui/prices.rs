@@ -23,10 +23,8 @@
 
 use crate::ui::{Model, PriceTable, theme};
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "prices…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "prices";
 /// The pane's own heading.
 pub const HEADING: &str = "what the world is charged";
 /// What it says before any channel has answered.
@@ -48,13 +46,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.pricing() {
         return false;
     }
-    ui.heading(HEADING);
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_lookup();
-        }
-    });
-    ui.separator();
+    crate::ui::overlay::name(ui, HEADING);
     drafting(ui, model);
     ui.separator();
     let tables = model.pricing.tables.clone();

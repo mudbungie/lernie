@@ -79,6 +79,7 @@ pub(super) fn conversation(
     }
     if seat.clicked() {
         model.select(&row.root_id.clone());
+        model.chose();
     }
     // **The row's own acts hang off the row** (bl-dbc9), on the gesture egui
     // synthesizes from a right-click and from a touch long-press alike. It is

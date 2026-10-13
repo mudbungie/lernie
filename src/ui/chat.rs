@@ -1,139 +1,198 @@
-//! **The chat pane**: one conversation, entry by entry.
+//! **The transcript**: what was said, read by its gutter (DESIGN §4.42, item
+//! 4; `docs/STYLE.md` §5, *a transcript is read by its gutter*).
 //!
-//! Every entry becomes rows of `(who said it, what was said)`, and the
-//! projection is a **pure function** of the transcript and the live fold — so
-//! what the pane shows is a value a test reads back, and the paint below it is
-//! thin enough to have nothing of its own to get wrong.
+//! An operator's turn is a row with the prompt's glyph in the gutter in the
+//! brand and its words in body ink; the model's prose carries a bar in the
+//! gutter in weak ink; a peer's, a tool's answer and the machinery's own
+//! words carry a dot. The trail — the calls the model made, their results,
+//! and its reasoning — is one group under a fold, `tool calls (3)`, each
+//! step on a stem drawn as the roster draws its threading, a call with a
+//! dot and its mark, a result folded to its head and unfolded in place. A
+//! `response` line parts a trail from the prose that follows it, and a
+//! hairline parts one turn from the next. No block wears a side rule and no
+//! block is bubbled; who spoke is the gutter glyph, and weight is still the
+//! speaker's (`theme::speaker`) on the words that name them.
 //!
-//! **Nothing is dropped, including what nothing could parse.** An entry the
-//! engine could not read is surfaced as its raw bytes, and an entry of a kind
-//! this build does not know is surfaced as its own word beside them — the reply
-//! vocabulary's rung 3, on the glass. A transcript that quietly skipped an
-//! entry would be a conversation the operator reads as shorter than it was,
-//! which is the one failure a transcript must not have.
+//! At the head of a transcript stands the conversation's panel, and where
+//! nothing is selected the seat's ([`panel`]).
 //!
-//! The one thing that is **not** a row is a half of a turn with nothing in it
-//! — see [`half`], which is that rule's one home. An empty half is not
-//! something the operator was not shown; it is something that was never said.
+//! It is a **pure projection** of what the model holds: nothing here fires,
+//! and the one state it keeps — which folds are open — is the toolkit's
+//! memory, a view state no wire gesture corresponds to.
 
-/// What a machine's answer hides when it is folded, and the counts that say so.
 pub mod fold;
-/// Every entry of a transcript as the rows this pane paints.
+/// The two panels at the head of the pane: the conversation's facts, and the
+/// seat's where nothing is selected.
+pub mod panel;
 pub mod rows;
-/// Which conversation this is: the header over the transcript.
-pub mod subject;
 
 pub use fold::Fold;
-pub use rows::{Row, rows};
+pub use rows::{Kind, Row, rows};
 
-use crate::ui::theme;
+use crate::ui::theme::{self, glyph};
 
-/// **The word this pane wears**, and the name of the column it is (bl-dfda).
-/// It is painted by `crate::ui::shell` — above the pane in the broad shape, on
-/// the navigation bar in the narrow one — because a column's name has one home
-/// and which one it is depends on the shape.
+/// The pane's word, kept for the seat panel's sentence.
 pub const HEADING: &str = "conversation";
 
-/// What the pane says with no conversation selected.
-pub const NO_CONVERSATION: &str =
-    "pick a conversation from the list, or begin one in the box below";
-/// The name the live tail wears — no file backs it.
+/// What the pane says with nothing selected, under the seat's panel.
+pub const NO_CONVERSATION: &str = "Ctrl+X picks a conversation, or begin one in the box below";
 pub const LIVE: &str = "«live»";
+/// The fold's word over a trail, with the count of steps under it.
+pub const TRAIL: &str = "tool calls";
+/// What parts a trail from the prose that follows it.
+pub const RESPONSE: &str = "response";
 
-/// Paint the pane. **The heading is the shell's** — see [`HEADING`].
-///
-/// **The pane is anchored to the TAIL, and the anchoring is a scroll state per
-/// conversation rather than a gesture** (bl-83ae). Two facts do the whole of
-/// it and neither is a flag on the model.
-///
-/// The scroll state is salted with the conversation's own id, so *where I am
-/// in this transcript* is a property of the transcript rather than of the
-/// pane: selecting a conversation for the first time meets a fresh state,
-/// egui's fresh state is stuck-to-end, and the tail is what lands on the glass.
-/// A conversation scrolled up in and come back to is where it was left, which
-/// is the same rule read a second time.
-///
-/// [`egui::ScrollArea::stick_to_bottom`] is the following: while the offset is
-/// at the end the pane rides every append — the follow lane's write cadence
-/// included — and the first scroll away takes the stickiness off, because
-/// egui re-derives it from *is the offset at the end* on every frame. So
-/// scrolling back down starts it following again, with no control to press and
-/// nothing on the model to get out of step. Until this the pane opened at
-/// message 001 and stayed there: a live conversation's answer arrived thirty
-/// screens below the fold, which is the whole middle of the window unusable
-/// for the two things it is opened for.
+/// Paint the transcript.
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
     let Some(conversation) = model.conversation.as_ref() else {
+        panel::seat(ui, model);
         theme::paint::empty(ui, NO_CONVERSATION);
         return;
     };
-    // **Which conversation this is, above the transcript** (bl-7b03). The
-    // column's NAME is still the shell's — *conversation*, painted over the
-    // pane in the broad shape and on the bar in the narrow one — and this is
-    // its SUBJECT, which is content and belongs in the pane. It stands outside
-    // the scrolled region for `crate::ui::roster`'s reason: it is the one thing
-    // here that is always true of what is being read.
-    subject::render(ui, model);
     egui::ScrollArea::vertical()
         .id_salt(conversation)
         .stick_to_bottom(true)
         .auto_shrink([false, false])
         .show(ui, |ui| {
-            for (at, row) in rows(&model.transcript, model.live.as_ref())
-                .into_iter()
-                .enumerate()
-            {
-                // **Entries are parted by air, never by a line** (bl-f251):
-                // `M` between blocks, which is what lets the rule beside
-                // each read as the speaker's and not as a divider.
-                ui.add_space(theme::space::M);
-                block(ui, at, &row);
+            panel::conversation(ui, model, conversation);
+            let all = rows(&model.transcript, model.live.as_ref());
+            let mut at = 0;
+            let mut turns = 0;
+            let mut after_trail = false;
+            while let Some(row) = all.get(at) {
+                let rest = all.get(at..).unwrap_or(&[]);
+                let run = rest.iter().take_while(|row| row.kind != Kind::Said).count();
+                if run > 0 {
+                    ui.add_space(theme::space::S);
+                    trail(ui, at, rest.get(..run).unwrap_or(&[]));
+                    at += run;
+                    after_trail = true;
+                    continue;
+                }
+                if row.weight == theme::Speaker::Operator {
+                    if turns > 0 {
+                        parting(ui);
+                    }
+                    turns += 1;
+                } else if after_trail {
+                    response(ui);
+                }
+                ui.add_space(theme::space::S);
+                said(ui, row);
+                after_trail = false;
+                at += 1;
             }
         });
 }
 
-/// **One entry as a ruled block** (STYLE §5): a [`theme::RULE`]-wide line in
-/// the speaker's weight standing beside a header in the same ink, and the body
-/// wrapping at the width it has. Aligned, ruled, never bubbled — every block
-/// starts at the same left edge, so a transcript reads as one column of prose
-/// and the weight at its edge says who is speaking without spending a hue.
-///
-/// **A failure is the one row painted in a STATE and not in a weight.** Colour
-/// means state (STYLE §1) and *this call failed* is the one thing a transcript
-/// says that is one — so an errored tool result wears the error accent on its
-/// rule and its header, where every other row wears `theme::speaker`.
-fn block(ui: &mut egui::Ui, at: usize, row: &Row) {
-    let ink = if row.failed {
-        theme::accent(theme::State::Error)
-    } else {
-        theme::speaker(row.weight)
+/// **The hairline between turns.**
+fn parting(ui: &mut egui::Ui) {
+    ui.add_space(theme::space::M);
+    let (rect, _) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 1.0), egui::Sense::hover());
+    // A fill rather than a line, so the probe that reads fills off the glass
+    // can count it (`crate::paint_probe::fills_of`).
+    ui.painter().rect_filled(rect, 0.0, theme::HAIRLINE);
+}
+
+/// **The line that parts a trail from the prose after it**: an elbow and
+/// the word, in weak ink.
+fn response(ui: &mut egui::Ui) {
+    ui.add_space(theme::space::XS);
+    let x = ui.cursor().min.x + theme::space::S;
+    let top = ui.cursor().min.y;
+    ui.horizontal(|ui| {
+        ui.add_space(theme::space::L);
+        ui.label(egui::RichText::new(RESPONSE).small().color(theme::INK_WEAK));
+    });
+    let middle = ui.min_rect().max.y - theme::space::S;
+    theme::paint::elbow(ui, x, top, middle, x + theme::space::S);
+}
+
+/// **One thing said**: the gutter glyph, then who said it in their weight,
+/// then the words as prose.
+fn said(ui: &mut egui::Ui, row: &Row) {
+    let (mark, ink) = match row.weight {
+        theme::Speaker::Operator => (glyph::PROMPT, theme::BRAND),
+        theme::Speaker::Model => (glyph::MODEL, theme::INK_WEAK),
+        _ => (glyph::NOTE, theme::INK_WEAK),
     };
-    theme::paint::ruled(ui, ink, |ui| {
-        ui.label(egui::RichText::new(&row.who).color(ink).strong());
+    ui.horizontal_top(|ui| {
+        ui.label(egui::RichText::new(mark).color(ink));
+        ui.vertical(|ui| {
+            // A failure is a step of the trail, never something said, so
+            // the weight here is always the speaker's.
+            let who = theme::speaker(row.weight);
+            ui.label(egui::RichText::new(&row.who).color(who).strong());
+            theme::paint::prose(ui, &row.said, theme::INK);
+        });
+    });
+}
+
+/// **A trail**: the fold's head, then each step on its stem.
+fn trail(ui: &mut egui::Ui, at: usize, steps: &[Row]) {
+    let id = ui.make_persistent_id(("trail", at));
+    let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(true);
+    let head = format!(
+        "{} {TRAIL} ({})",
+        if open { glyph::OPEN } else { glyph::SHUT },
+        steps.len()
+    );
+    if ui
+        .add(
+            egui::Label::new(egui::RichText::new(head).color(theme::INK_WEAK))
+                .sense(egui::Sense::click()),
+        )
+        .clicked()
+    {
+        open = !open;
+        ui.data_mut(|d| d.insert_temp(id, open));
+    }
+    if !open {
+        return;
+    }
+    let x = ui.cursor().min.x + theme::space::S;
+    for (i, row) in steps.iter().enumerate() {
+        let top = ui.cursor().min.y;
+        ui.horizontal_top(|ui| {
+            ui.add_space(theme::space::L);
+            step(ui, at + i, row);
+        });
+        let bottom = ui.min_rect().max.y;
+        let middle = top + theme::space::S;
+        theme::paint::elbow(ui, x, top, middle, x + theme::space::S);
+        if i + 1 < steps.len() {
+            theme::paint::rail(ui, x, middle, bottom);
+        }
+    }
+}
+
+/// **One step**: its mark, its name, and what it said — folded to its head
+/// where there is more.
+fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
+    let (mark, ink) = match (row.kind, row.failed) {
+        (Kind::Result, true) => (glyph::FAILED, theme::accent(theme::State::Error)),
+        (Kind::Result, false) => (glyph::DONE, theme::INK_WEAK),
+        (Kind::Call, _) => (glyph::CALL, theme::BRAND),
+        _ => (glyph::NOTE, theme::INK_WEAK),
+    };
+    ui.label(egui::RichText::new(mark).color(ink));
+    ui.vertical(|ui| {
+        let who = if row.failed {
+            theme::accent(theme::State::Error)
+        } else {
+            theme::INK_WEAK
+        };
+        ui.label(egui::RichText::new(&row.who).color(who));
         match &row.fold {
             Some(fold) => folded(ui, at, row, fold),
             None => {
-                // **The body is prose** (STYLE §5): laid at the leading,
-                // in body ink, wrapped at the width it has.
-                theme::paint::prose(ui, &row.said, theme::INK);
+                theme::paint::prose(ui, &row.said, theme::INK_WEAK);
             }
         }
     });
 }
 
-/// **A machine's answer, folded**: its first few lines, and one control
-/// carrying the act and the size of what is hidden (bl-90d0).
-///
-/// **Whether one row is open is the TOOLKIT's memory, keyed on the row**, for
-/// [`render`]'s own reason one noun over: it is a per-row view state that no
-/// other fact can be asked for and that no gesture on the wire corresponds to,
-/// so putting it on the model would be plumbing a click through a snapshot to
-/// get back to the widget that took it. The key is the row's place in the
-/// transcript, under the id the scroll area already salted with the
-/// conversation, so two conversations' fifth rows are two rows.
-///
-/// Open, the head stands down and the whole answer takes its place — the head
-/// is a PREFIX of it, so painting both would paint the first six lines twice.
 fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
     let id = ui.make_persistent_id(at);
     let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(false);
@@ -144,10 +203,6 @@ fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
         open = !open;
         ui.data_mut(|d| d.insert_temp(id, open));
     }
-    // **The head is dimmed while there is more of it**, so *this is not all of
-    // it* is read off the weight of the text before anybody reads the control
-    // that says so — and the whole answer, once asked for, stands in body ink
-    // like every other row.
     if open {
         theme::paint::prose(ui, &row.said, theme::INK);
     } else {

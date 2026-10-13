@@ -46,7 +46,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
 
-use crate::ui::{Aim, Dragged, Engines};
+use crate::ui::{Aim, Engines};
 
 /// The file, under the state root. One name, so there is nothing to configure.
 const FILE: &str = "place.json";
@@ -58,16 +58,6 @@ const ADDRESS: &str = "address";
 const OPEN: &str = "open";
 const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
-/// The dragged edges, one key each and flat: a width and a row count are
-/// facts an operator set one at a time, not one object with a shape to keep.
-///
-/// **One width key since DESIGN §4.39's fold** (bl-b9a3). It was
-/// `roster_width` and `convs_width`, and neither is read any more: a file
-/// written by a build that had two is read by this one as a seat that has
-/// dragged nothing, which is this module's own rung-4 rule — an unknown key
-/// is ignored and a missing key is absence — costing exactly one drag.
-const LIST_WIDTH: &str = "list_width";
-const COMPOSER_ROWS: &str = "composer_rows";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
@@ -82,8 +72,6 @@ pub struct Place {
     pub aim: Option<Aim>,
     /// How the engines were arranged (`crate::ui::Engines`).
     pub engines: Engines,
-    /// The edges the operator dragged (`crate::ui::Dragged`).
-    pub dragged: Dragged,
 }
 
 impl Place {
@@ -94,7 +82,6 @@ impl Place {
         Self {
             aim: model.aim.clone(),
             engines: model.engines.clone(),
-            dragged: model.dragged,
         }
     }
 }
@@ -124,18 +111,7 @@ pub fn read(root: &Path) -> Place {
         // reasoning). A key that is absent, null or some other shape entirely
         // is absence, which is rung 4 read on this box's own file — and here
         // absence is the policy's own answer rather than a missing number.
-        dragged: Dragged {
-            list: width(&held, LIST_WIDTH),
-            rows: held
-                .get(COMPOSER_ROWS)
-                .and_then(|rows| serde_json::from_value::<u8>(rows.clone()).ok()),
-        },
     }
-}
-
-/// One dragged width, in points, or absence.
-fn width(held: &Value, key: &str) -> Option<f32> {
-    serde_json::from_value(held.get(key)?.clone()).ok()
 }
 
 /// The aim, where the file carries a whole one. A half-written aim is no aim:
@@ -178,8 +154,6 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         OPEN: place.engines.open,
         OPENED: place.engines.opened,
         AIMED: place.engines.aimed,
-        LIST_WIDTH: place.dragged.list,
-        COMPOSER_ROWS: place.dragged.rows,
     });
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
     std::fs::write(at(root), body.to_string()).map_err(|e| format!("{}: {e}", at(root).display()))

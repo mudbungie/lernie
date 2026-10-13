@@ -120,7 +120,9 @@ fn fanned(link: &Link, root: &Path, standing: &crate::state::Standing, channel: 
     // channel this box holds and the union is composed here. It stands on
     // the PANE rather than on a focus, because nothing on the glass is its
     // subject — see `crate::state::Standing::queue`.
-    if standing.standing(&Open::Queue) {
+    // **Or while the selected conversation asks** (§4.42, item 8): the ask
+    // above the prompt is the queue's row for it, so the read stands for it.
+    if standing.standing(&Open::Queue) || standing.asking {
         read(
             link,
             down(link, root, channel, &crate::verbs::attention()),

@@ -22,7 +22,11 @@ it looks like and where a person's eye goes first.
    size and alignment. So the selection highlight is a brand tint, not a
    colour of its own; a heading is a size, not a hue; and the one row a
    person needs is the one wearing green.
-2. **No outlines.** No pane is boxed and no control is bordered. The three
+2. **No outlines, except on what floats** (amended by DESIGN §4.42). No
+   control is bordered and no pane is boxed; an overlay, the completion
+   menu, the ask and the panel at the head of a transcript wear a one-point
+   frame in `HAIRLINE`, because a stroke on a thing that floats says what is
+   over what. The sentence that follows is the rule as it stood. The three
    columns meet at a `HAIRLINE`; a row is bare ground and tints under the
    pointer; a control is a `SURFACE` tint with no stroke; the one stroke on
    the glass is the brand ring on **whatever holds the keyboard** — the field
@@ -40,66 +44,55 @@ it looks like and where a person's eye goes first.
 
 ## 2. Information architecture: what a person sees first
 
-**The window is two columns, left to right: where, what** (DESIGN §4.39,
-bl-46e5; it was three until the operator's ruling of 2026-09-17). The left
-column is an accordion of engines — the yogs this seat reaches, by name, the
-open one first and its walls and their conversations beneath it, the rest
-ordered by when each was last opened — and the right is the selected
-conversation with its composer under it. That shape is the desktop's one
-structural delta from the phone (which shows one column at a time), it is
-what a wide display is for, and the width policy that yields the list to the
-conversation's floor and collapses to one column below it (DESIGN §4.11,
-`src/ui/shell/policy.rs`) answers every width; the edge between the two and
-the composer's top edge both drag, and a dragged width is the seat's own. What was wrong was never the columns; it was
-that nothing in them was weighted.
+**The window is one column** (DESIGN §4.42, bl-7859; it was two until the
+operator's ruling of 2026-10-12, and three before that). The baseline is the
+Hermes Agent terminal UI, aped part for part: the transcript fills the window,
+a one-line **status rule** stands under it, and the **prompt line** stands at
+the bottom. Nothing else is on the glass until it is asked for, and it is asked
+for by a slash verb or a key — and comes as a framed box floating over the
+transcript, above the prompt. A width buys wrapping and nothing else; there is
+no shape, no yield and no dragged edge.
 
-**The eye lands on green.** A workspace row and a conversation row that are
-asking for the operator wear the attention accent — the count in green ink
-and a three-point green rule at the row's left edge — and nothing else on the
-glass is green. A window with five conversations waiting is five green rules
-in a column, readable from across the room; a window with none is a window
-with nothing green on it, which is the same fact read the other way.
+**The eye lands on green.** The ask above the prompt is a green-framed box;
+the waiting count on the rule is green while it is non-zero; the prompt line
+glows green while the selected conversation is asking; the switcher's asking
+rows wear `?` in green. A window with nothing waiting has nothing green on it.
 
-**Navigation reads from layout, not labels.** A row is a place you go: click
-it or arrow to it and the column to its right fills in. There is one list, so
-no heading has to say whose the arrows are — what a heading carries is the
-column's name — and a column's rows say what state each thing is in by their
-rule. No control says *open* or *select*; position says it, and the one
-exception is the `+` at the right edge of an engine's row, which begins a
-conversation on it (DESIGN §4.39). The window-level acts — the queue
-of what is waiting, the trail, the board, the engines' vocabulary, a search,
-and asking every channel again — are a **compact strip** across the top of
-the roster column, where a desktop's global navigation is expected: one
-wrapped row of controls, a short verb apiece with the ellipsis on every one
-that leads somewhere (bl-f251). The first pass had them as six full-width
-rows of prose, which read as a list of things rather than a place to go. The
-aimed wall's acts are the same strip under its row. The queue's control
-wears the attention accent while anything is waiting, so the one control
-most worth pressing is the one that is coloured.
+**The rule says where you are and what it costs.** One line:
+`─ state · elapsed │ model │ spend │ N waiting │ N engines ─ name`. The state
+word is the wire's own, in its state's ink; the notice stands in that slot in
+its ink while there is one, and Esc puts it down. The right end is the
+conversation's name, the wall's where none is selected, `engines` where
+nothing is aimed. There is no heading over the transcript: one pane needs no
+name, and the rule carries the one fact a heading carried.
 
-**A conversation's facts are arranged, not listed.** Over the transcript, the
-header (bl-f251): its name at `HEADING` size in body ink with its state word
-beside it in that state's accent; under that, one line one step weaker —
-which model answered and what it has spent; and under that, where it hangs
-if it hangs under anything. A header at heading size is what makes the pane
-read as a place with a name rather than a list with a first row. Under the
-transcript, the composer, and **the composer is the pane's focal
-element** (bl-f251): a field `COMPOSER_ROWS` lines tall with `send` inside
-it, at its bottom right in the brand on a brand wash. Enter sends and
-Shift+Enter breaks a line, and the hint says both. Under the field, one
-compact row: the acts on the turn the conversation OFFERS — `interrupt` and
-`stop` while its driver runs, `nudge` while it rests, each a glyph and a word
-(`theme::glyph`) — then `records…`, then `…`, which opens the strip of acts
-on the conversation as an object: `revoke`, `restore`, `retarget`, `flag`
-with its reason box, and `delete` with its arming box, the destructive one
-last (DESIGN §4.20). A row of nine controls under every conversation read as
-a form; a row of what can be done now reads as a place. Every control keeps
-its `act:` token (DESIGN §4.16): what changed is the paint, never the ledger.
+**The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
+a line per line typed, the hint in weak ink while it is empty: *say it — Enter
+sends, Shift+Enter breaks a line*; *begin a conversation on `<wall>` — Enter
+starts* in start mode; *Ctrl+C stops…* while the driver runs; *it is waiting
+on you* while it asks. There is no send control and no row of controls under
+it: the field is the control, and the verbs are typed.
 
-**The composer glows when it is your turn.** While the selected conversation
-is asking for the operator the field is tinted with the attention accent
-and its hint says so; otherwise it rests on `SURFACE`. The field is where
-the answer goes, so it is where the asking is shown.
+**Navigation is typed.** `/` opens the completion menu — verb and summary,
+narrowed as you type, Tab takes the row — and the word is the pane's noun or
+the verb's word, exactly as the control it replaced read: `/records`,
+`/trail`, `/board`, `/fleet`, `/clients`, `/roles`, `/config`, `/prices`,
+`/login`, `/enroll`, `/doctor`, `/find`, `/attention`, `/help`, `/unmake`,
+`/refresh`, `/pin`, `/stop`, `/nudge`, `/flag`, `/delete`. Ctrl+X opens
+the switcher, the one list of engines, walls and conversations, with `+ new`
+under every wall. A control that opens a pane does not exist; the word does.
+
+**A conversation's facts are a card, then a rule.** At the head of its
+transcript, the conversation panel: a framed card with its name, engine and
+wall, model, spend and where it hangs, one line each, the long ones behind
+`▸` folds. With nothing selected the seat panel stands there: the engines this
+seat reaches, one row each with its dial state and counts, the version, and
+the two ways in. Under the transcript, the rule; under the rule, the prompt.
+
+**A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
+a tree of stems the trail — `▾ tool calls (3)`, `├─ ● Bash("…") ✓`, `└─ ✗` in
+the error accent — and `───` parts the turns. No block wears a side rule and
+no block is bubbled.
 
 ## 3. Ground, elevation, ink, accents — adopted verbatim
 
@@ -167,18 +160,61 @@ box.
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.
 
-**A conversation header** (`chat::subject`): the name at `HEADING` in
+**The status rule** (`status`): one line of `SMALL` runs parted by `│` in
+`INK_FAINT`, led by `─`; the state word in its state's ink, every other
+segment in `INK_WEAK`, the waiting count in the attention accent while it is
+non-zero, the name at the right end in `INK`. Segments drop from the right
+as the width runs out, the name last.
+
+**The prompt line** (`composer`): `›` in the brand at the left edge plus `M`,
+the draft in `INK` beside it at `BODY`, continuation lines indented to the
+draft's edge, the hint in `INK_WEAK`; `SURFACE` under it, the brand ring
+while it holds the caret, the attention tint while the conversation asks.
+It is as tall as its lines and never taller.
+
+**An overlay** (`overlay`): a `SURFACE` box with a `HAIRLINE` frame and
+`RADIUS` corners over the transcript, `S` under the top of the pane and `L`
+in from each side, padded `S`; its name on the first line in `INK` at `BODY`
+with what it is open on beside it in `INK_WEAK` and *Esc closes* at the
+line's other end in `INK_WEAK` at `SMALL`; its body under that. The
+completion menu is the same box as tall as the rows it lays — a window of
+them around the chosen one, never a scroll — with the keys said in one
+`SMALL` line above them; a row is the row above, its line `/word  summary`,
+and the chosen one wears `RAISED`.
+
+**The ask** (`ask`): the overlay's box with its frame and its name in the
+attention accent, standing between the transcript and the rule while the
+selected conversation asks: the queue row's words in the queue's own inks,
+then its choices as numbered rows, `1.` to `6.`, the chosen one `RAISED`.
+
+**A trail** (`chat`): stems `├─` `└─` `│` in `INK_FAINT`; the fold head
+`▾ tool calls (3)` in `INK_WEAK`; a call `● name("preview") ✓` with the dot in
+the brand, the mark in `INK_WEAK` or the error accent; a result folded to its
+head, unfolded in place at `MONO`.
+
+**A conversation header** (`chat::subject`, retired by §4.42; the rule carries it): the name at `HEADING` in
 `INK`, the state word beside it in its accent, the model-and-spend line in
 `INK_WEAK`, the subtree path in `INK_WEAK`, a provider's refusal in the
 error accent above the spend, and `S` of air before the transcript.
 
-**A block** (the transcript): aligned, ruled, never bubbled. Every block
-starts at the same left edge; a `RULE`-wide line in the speaker's weight
-stands beside its header; the body is prose, laid at `LEADING` and wrapped
-at the width it has; a tool result folds to its head in `INK_WEAK` with the
-unfold control carrying the size of what is hidden. Blocks are parted by `M`
-of air and never by a line — the rule beside each is the speaker's, and a
-divider between them would make it read as one.
+**A block** (the transcript, `chat`): aligned, guttered, never bubbled.
+Every block starts at the same left edge with its glyph in the gutter —
+the prompt's `›` in the brand for the operator, `¦` in `INK_WEAK` for the
+model, `·` in `INK_WEAK` for a peer, a tool's answer or the machinery —
+then who spoke in their weight (`theme::speaker`, the error accent on a
+failure) and the body as prose, laid at `LEADING` and wrapped at the width
+it has. A trail stands under its fold head, each step on a painted stem
+(the roster's own rails and elbows) with `●` in the brand for a call, `✓`
+in `INK_WEAK` or `✗` in the error accent for a result, folded to its head
+with the unfold control carrying the size of what is hidden. A `response`
+line on an elbow parts a trail from the prose after it; a `HAIRLINE` parts
+one turn from the next; `S` of air parts everything else.
+
+**The panel at the head** (`chat::panel`): a `SURFACE` card with a
+`HAIRLINE` frame and `RADIUS` corners, `M` across and `S` down inside, one
+fact a line — the name in `INK`, the rest in `INK_WEAK` — and the seat's
+card the same with each engine's line in the attention accent while any of
+its walls asks.
 
 **The composer** (`theme::paint::composer`): a `SURFACE` field
 `COMPOSER_ROWS` lines tall, no stroke at rest, the brand ring when focused,

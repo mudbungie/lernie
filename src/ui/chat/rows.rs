@@ -38,6 +38,18 @@ use live::{half, live_rows, streaming};
 /// KIND and never by size, which is the distinction that matters: a
 /// seven-hundred-line `bl --help` is not a long answer, it is bookkeeping in
 /// front of one.
+/// **What kind of row it is**, which is what the glass groups by (DESIGN
+/// §4.42, item 4): something said, or a step of the trail — a call, its
+/// result, or reasoning — which the paint gathers under one fold.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Kind {
+    #[default]
+    Said,
+    Call,
+    Result,
+    Thinking,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Row {
     pub who: String,
@@ -55,6 +67,8 @@ pub struct Row {
     /// What this row hides while it is folded, or `None` where it hides
     /// nothing — see [`fold`].
     pub fold: Option<Fold>,
+    /// Said, or a step of the trail — see [`Kind`].
+    pub kind: Kind,
 }
 
 impl Row {
@@ -69,7 +83,14 @@ impl Row {
             weight,
             failed: false,
             fold: None,
+            kind: Kind::Said,
         }
+    }
+
+    /// The same row as a step of the trail.
+    pub(super) fn as_(mut self, kind: Kind) -> Self {
+        self.kind = kind;
+        self
     }
 }
 
@@ -165,6 +186,7 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             // **The one row in this pane that hides anything**, and only when
             // there is something to hide (`fold`).
             fold: fold::of(content),
+            kind: Kind::Result,
         }],
         EntryKind::Streaming { thinking, text } => live_rows(thinking, text),
         EntryKind::Compacted {
@@ -203,12 +225,17 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
 fn block(model_id: &str, block: &Block) -> Option<Row> {
     match block {
         Block::Text(text) => half(model_id, "", text),
-        Block::Thinking(text) => half(model_id, "thinking", text),
-        Block::ToolUse { id, name, input } => Some(Row::plain(
-            format!("{model_id} → {name} {id}"),
-            input.clone(),
-            Speaker::Model,
-        )),
+        Block::Thinking(text) => {
+            half(model_id, "thinking", text).map(|row| row.as_(Kind::Thinking))
+        }
+        Block::ToolUse { id, name, input } => Some(
+            Row::plain(
+                format!("{model_id} → {name} {id}"),
+                input.clone(),
+                Speaker::Model,
+            )
+            .as_(Kind::Call),
+        ),
         Block::Unknown(word) => Some(Row::plain(
             format!("{model_id} ({word}, which this seat cannot read)"),
             String::new(),

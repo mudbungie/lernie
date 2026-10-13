@@ -6,17 +6,16 @@ mod surfaces;
 
 use serde_json::json;
 
-use super::{HEADING, LIFT, NO_ROWS, NOT_ANSWERED, OPEN, PRICE, SET, UNPRICE};
+use super::{HEADING, LIFT, NO_ROWS, NOT_ANSWERED, PRICE, SET, UNPRICE, WORD};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, own, painted, priced};
 use crate::ui::{Model, Posted};
 
 /// **The roster's control opens the pane**, from an unaimed seat.
 #[test]
-fn the_roster_s_control_opens_the_pane() {
+fn the_word_opens_the_pane() {
     let mut model = Model::default();
-    let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.pricing(), "the control opened nothing");
     assert!(painted(&mut model).contains(HEADING));
 }

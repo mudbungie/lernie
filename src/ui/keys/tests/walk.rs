@@ -8,32 +8,8 @@
 //! and this is the walk.
 
 use super::{stocked, typed};
-use crate::test_support::window::{painted, seated};
+use crate::test_support::window::painted;
 use crate::ui::Model;
-
-/// **Left and right name nothing in the broad shape** (DESIGN §4.39). They
-/// used to hand the arrows to one of two list panes; there is one list, so
-/// there is no place for the key to name and it names none — the cursor is
-/// exactly where it was, and the walk is the only thing that moves it.
-#[test]
-fn sideways_does_nothing_while_both_columns_are_on_the_glass() {
-    let mut model = stocked();
-    let was = model.column;
-    typed(
-        &mut model,
-        &[
-            egui::Key::ArrowLeft,
-            egui::Key::ArrowRight,
-            egui::Key::ArrowLeft,
-        ],
-    );
-    assert_eq!(model.column, was, "the column is the narrow shape's own");
-    assert_eq!(
-        model.conversation.as_deref(),
-        seated().conversation.as_deref(),
-        "and nothing was selected by a key that names no place"
-    );
-}
 
 /// **The roster's walk crosses two kinds of row** (DESIGN §4.39): landing on
 /// a wall aims it, exactly as a click does, and landing on an engine's row
@@ -43,6 +19,7 @@ fn sideways_does_nothing_while_both_columns_are_on_the_glass() {
 fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
     let mut model = Model {
         aim: None,
+        switching: true,
         ..stocked()
     };
     typed(&mut model, &[egui::Key::ArrowDown]);
@@ -86,6 +63,7 @@ fn the_arrows_walk_the_engine_rows_and_the_open_engine_s_walls() {
 fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
     let mut model = Model {
         aim: None,
+        switching: true,
         ..stocked()
     };
     typed(
@@ -113,6 +91,7 @@ fn enter_on_the_row_the_walk_stands_on_opens_that_engine() {
 fn the_walk_runs_on_through_the_aimed_wall_s_conversations() {
     let mut model = Model {
         conversation: None,
+        switching: true,
         ..stocked()
     };
     // The cursor is on the aimed wall, so one step down is its first
@@ -152,6 +131,7 @@ fn the_arrows_walk_the_started_conversation_s_row_like_any_other() {
             phase: crate::ui::model::Phase::Started("brisk-otter".to_owned()),
             spread: None,
         }),
+        switching: true,
         ..stocked()
     };
     let shown = painted(&mut model);

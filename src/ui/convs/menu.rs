@@ -50,8 +50,11 @@
 //! reach for it deliberately.
 
 use crate::reply::convs::ConvRow;
-use crate::ui::composer::STOP;
-use crate::ui::composer::acts::{DELETE, FLAG, RETARGET};
+const STOP: &str = crate::verbs::STOP.word;
+use crate::ui::slash::DELETE;
+
+const FLAG: &str = crate::verbs::FLAG.word;
+const RETARGET: &str = crate::verbs::RETARGET.word;
 use crate::ui::{Aim, Fill, Model};
 
 /// **What a word wears when the item leads somewhere rather than acting.** The
@@ -121,7 +124,7 @@ pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvR
         // composer's own control is: opening the pane is what makes this seat
         // read the conversation's steps and files, and the reads have no
         // control of their own.
-        let records = ui.button(crate::ui::records::OPEN);
+        let records = ui.button(leads_to(crate::ui::records::WORD));
         crate::ui::act::tag(
             &records,
             &[crate::verbs::STEPS.word, crate::verbs::FILES.word],

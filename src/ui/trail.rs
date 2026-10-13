@@ -37,10 +37,8 @@
 use crate::reply::ops::{CLEAN, OpRow};
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "trail…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "trail";
 /// The word on the control that appends the operator's watermark.
 pub const ACK: &str = "acknowledge every alarm";
 /// The pane's own heading.
@@ -66,11 +64,8 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.trailing() {
         return false;
     }
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_lookup();
-        }
         // **The watermark is a control on the pane and not on a row**, because
         // that is what the op is: `ack` takes no address at all and appends
         // one line every failure-derived alarm reads past. Offering it per row

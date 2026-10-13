@@ -30,6 +30,8 @@
 
 /// The `act:<op>` token a control carries so interface drift is catchable.
 pub mod act;
+/// The ask: the selected conversation's decision above the prompt (§4.42).
+pub mod ask;
 /// The ball pane: the board, the bindings, and what the aimed wall holds.
 pub mod board;
 /// The chat pane: one conversation, entry by entry.
@@ -46,6 +48,8 @@ pub mod composer;
 pub mod config;
 /// A conversation's row under its wall, and the words a row is made of.
 pub mod convs;
+/// The live dock: what runs under the aimed wall, folded above the rule (§4.42).
+pub mod dock;
 /// The doctor pane: whether this box is wired, one row per check.
 pub mod doctor;
 /// The enrollment pane: a name, a grade, and the symbol that comes back.
@@ -60,6 +64,8 @@ pub mod keys;
 pub mod login;
 /// What the window holds between frames, and how a reply becomes part of it.
 pub mod model;
+/// The overlay: the one frame every pane floats in (§4.42).
+pub mod overlay;
 /// The prices pane: each engine's price table, its ceiling, and the two acts.
 pub mod prices;
 /// The decision queue: everything waiting on the operator, anywhere.
@@ -71,6 +77,12 @@ pub mod records;
 pub mod roster;
 /// The layout, and the notice that stands where content would have been.
 pub mod shell;
+/// The slash verbs: the typed way into every pane and act (§4.42).
+pub mod slash;
+/// The status rule: where you are and what it costs (§4.42).
+pub mod status;
+/// The switcher: the roster as an overlay (§4.42).
+pub mod switcher;
 /// The ink a row is painted in.
 pub mod theme;
 /// The trail pane: every action that crossed an engine's boundary.
@@ -81,9 +93,8 @@ pub mod tuning;
 pub mod unmake;
 
 pub use model::{
-    Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Diagnosis,
-    Dragged, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login,
-    Lookup, Model, Notice, Pages, Posted, PriceTable, Pricing, Proposing, Records, Shown, Trail,
-    Tuning, Unmaking,
+    Aim, Armed, Asking, Authoring, Bindings, Channel, Chunk, Columns, Configuring, Diagnosis, Edit,
+    Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing, Login, Lookup, Model,
+    Notice, Pages, Posted, PriceTable, Pricing, Proposing, Records, Shown, Trail, Tuning, Unmaking,
 };
-pub use shell::{Column, Shape, render};
+pub use shell::render;

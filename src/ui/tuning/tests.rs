@@ -2,8 +2,8 @@
 //! composes.
 
 use super::{
-    ASSIGN, CANCEL, CLOSE, HEADING, MODEL_HINT, NO_ROLES, NOT_ANSWERED, OPEN, PRIORITY,
-    PROVIDER_HINT, SET, render, unseated,
+    ASSIGN, CANCEL, HEADING, MODEL_HINT, NO_ROLES, NOT_ANSWERED, PRIORITY, PROVIDER_HINT, SET,
+    WORD, render, unseated,
 };
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, role, seated, tuned};
@@ -135,16 +135,11 @@ fn clicking_a_level_and_the_lane_composes_the_two_tuning_writes() {
     }
 }
 
-/// The close control puts the pane down and nothing else.
+/// Escape puts the pane down and nothing else (`crate::ui::overlay`).
 #[test]
 fn the_done_control_closes_the_pane() {
     let mut model = tuned();
-    let window = Window::new();
-    click(&window, CLOSE, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            render(ui, &mut model);
-        });
-    });
+    model.escape();
     assert_eq!(model.tuning, None);
 }
 
@@ -226,12 +221,12 @@ fn set_spends_a_whole_draft_and_a_half_one_composes_nothing() {
 fn the_roster_control_opens_the_pane_and_the_pane_covers_the_conversation() {
     let mut model = seated();
     let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert_eq!(model.tuning, Some(Tuning::Rows));
     let painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
     assert!(painted.lines().any(|line| line == HEADING), "{painted}");
     assert!(
-        !painted.contains(crate::ui::composer::SEND),
+        !painted.contains(crate::ui::composer::HINT),
         "the composer stands down under it:\n{painted}"
     );
 }

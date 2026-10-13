@@ -13,9 +13,9 @@
 mod asked;
 
 use super::{
-    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Dragged, Engines,
-    Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing,
-    Records, Start, Trail, Tuning, Unmaking,
+    Aim, Asking, Authoring, Bindings, Chunk, Columns, Configuring, Diagnosis, Engines, Enrolling,
+    Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing, Records,
+    Start, Trail, Tuning, Unmaking,
 };
 use crate::reply::convs::ConvRow;
 use crate::reply::stream::Stream;
@@ -198,11 +198,6 @@ pub struct Model {
     pub notice: Option<Notice>,
     /// Which wall the window is aimed at.
     pub aim: Option<Aim>,
-    /// **The edges the operator has dragged** (`dragged`; DESIGN §4.39). One
-    /// field rather than three, because the three are one fact — what this
-    /// seat holds of its own layout — and they are written down together
-    /// (`crate::place`).
-    pub dragged: Dragged,
     /// **How the engines are arranged** (DESIGN §4.39, `engines`): which one
     /// is open, when each was last opened here, and the wall last aimed under
     /// each. One field rather than three, because the three are one subject
@@ -218,11 +213,11 @@ pub struct Model {
     /// Enter or Space fires the same click a pointer fires. It rides here and
     /// not on `Engines`, because it is a cursor and nothing durable.
     pub standing: Option<String>,
-    /// **Which column is on the glass in the narrow shape** — a navigation the
-    /// operator performed, so it is the one thing here no other fact can be
-    /// asked for. The broad shape never reads it, because every column is on
-    /// the glass there (`crate::ui::shell::policy`).
-    pub column: crate::ui::Column,
+    /// **Whether the switcher stands** (`crate::ui::switcher`; DESIGN §4.42):
+    /// the one list of engines, walls and conversations, asked for by Ctrl+X
+    /// and put down by a choice or Esc. A navigation the operator performed,
+    /// which is the one class of thing here no other fact can be asked for.
+    pub switching: bool,
     /// **Whether the list owes its selection a place on the glass**, set by a
     /// keyboard walk and taken by the pane that paints it
     /// ([`Model::revealing`]).
@@ -241,7 +236,7 @@ pub struct Model {
     /// costs no state at all: a seat that has never been told otherwise shows
     /// the conversations and not the machinery under them. It is a navigation
     /// the operator performed, which is the one class of thing on this struct
-    /// no other fact can be asked for — [`Self::column`]'s own standing.
+    /// no other fact can be asked for — [`Self::switching`]'s own standing.
     pub opened: std::collections::BTreeSet<String>,
     /// What the operator has typed and not yet sent.
     pub draft: String,

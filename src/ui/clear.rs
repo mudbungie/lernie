@@ -62,7 +62,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.clearing() {
         return false;
     }
-    ui.heading(HEADING);
+    crate::ui::overlay::name(ui, HEADING);
     ui.colored_label(theme::NOTICE, WHAT);
     ui.separator();
     ui.label(REACH);
@@ -80,10 +80,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     }
     ui.separator();
     ui.horizontal_wrapped(|ui| {
-        // **The way out is first**, and therefore first in the tab order too.
-        if ui.button(CLOSE).clicked() {
-            model.close_clearing();
-        }
         let spend = ui.button(CONFIRM);
         crate::ui::act::tag(&spend, &[crate::verbs::CLEAR_TRAIL.word]);
         if spend.clicked() {

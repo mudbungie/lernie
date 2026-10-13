@@ -216,6 +216,11 @@ pub struct Standing {
     /// pass for the whole of a healthy start. `Model::asked` is the reading
     /// that leaves it out (`crate::ui::model::claim`).
     pub conversation: Option<String>,
+    /// **Whether the selected conversation is asking** (`crate::ui::ask`):
+    /// the queue's read stands while it does, so the ask above the prompt
+    /// can be answered on the frame the queue's row lands. The roster's own
+    /// word, read before the queue has answered.
+    pub asking: bool,
 }
 
 impl Standing {
@@ -230,6 +235,7 @@ impl Standing {
             aim: model.aim.clone(),
             open: Open::of(model),
             conversation: model.asked(),
+            asking: model.asks(),
         }
     }
 

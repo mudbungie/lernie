@@ -37,10 +37,8 @@
 
 use crate::ui::{Model, theme};
 
-/// The word that opens the pane. It hangs off the roster, above the channels.
-pub const OPEN: &str = "verbs…";
-/// The word that closes it.
-pub const CLOSE: &str = "done";
+/// **The word typed after the slash** that opens it (`crate::ui::slash`).
+pub const WORD: &str = "help";
 /// The pane's own heading.
 pub const HEADING: &str = "what these engines answer";
 /// What it says before any channel has answered.
@@ -55,13 +53,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     if !model.commanding() {
         return false;
     }
-    ui.heading(HEADING);
-    ui.horizontal_wrapped(|ui| {
-        if ui.button(CLOSE).clicked() {
-            model.close_lookup();
-        }
-    });
-    ui.separator();
+    crate::ui::overlay::name(ui, HEADING);
     let pages = model.pages.clone();
     if pages.is_empty() {
         ui.label(NOT_ANSWERED);

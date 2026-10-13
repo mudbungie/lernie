@@ -11,9 +11,6 @@
 use crate::reply::roster::WsRow;
 use crate::ui::{Chunk, Model, convs, theme};
 
-/// The eight acts on one aimed wall, and the band they lie in.
-mod controls;
-
 /// **What a row this seat cannot address says instead of being hidden.**
 ///
 /// Dropping it would hide a workspace the operator has; addressing it by the
@@ -102,12 +99,6 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, chunk: &Chunk, row: &WsRow, 
     // wall as an object, a short verb apiece, wrapping at the column's width,
     // with the destructive one last (bl-f251). A column of eight full-width
     // controls under a row would read as eight more rows.
-    if !model.covered() {
-        ui.horizontal_wrapped(|ui| {
-            ui.add_space(theme::space::L);
-            controls::render(ui, model, row);
-        });
-    }
     // **And under the strip, this wall's conversations** (DESIGN §4.39): the
     // rows the middle column used to paint, standing where the operator's own
     // sentence put them. They hang off the AIMED wall and off no other,

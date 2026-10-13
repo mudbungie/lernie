@@ -1,9 +1,9 @@
 //! What the commands pane says in every state it can be in, and the control
 //! that opens it driven through the real window.
 
-use super::{CLOSE, HEADING, NO_OPS, NOT_ANSWERED, OPEN, render};
+use super::{HEADING, NO_OPS, NOT_ANSWERED, WORD, render};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::{click, commanded, helped, own, pane, seated};
+use crate::test_support::window::{commanded, escape, helped, own, pane, seated};
 use crate::ui::{Lookup, Model, Pages};
 
 /// A closed pane paints nothing and says so, which is what lets the shell put
@@ -34,7 +34,6 @@ fn the_answered_pane_paints_the_line_the_sentence_the_page_and_who_it_is_for() {
         "the page for message, at the length a page runs to",
         "/invocations <workspace>  [machine]",
         "what invocations is for",
-        CLOSE,
     ] {
         assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
@@ -97,12 +96,12 @@ fn a_section_wears_the_rosters_own_header() {
 fn the_roster_opens_it_asking_for_the_table_and_its_own_word_shuts_it() {
     let window = Window::new();
     let mut model = seated();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert!(model.commanding());
     assert_eq!(
         model.outbox,
         vec![crate::ui::Posted::read(crate::verbs::window::help())]
     );
-    click(&window, CLOSE, |ctx| crate::ui::render(ctx, &mut model));
+    escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.commanding());
 }

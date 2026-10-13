@@ -41,11 +41,11 @@
 
 use crate::ui::{Aim, Fill, Model};
 
-/// The word on the control that begins a conversation.
-pub const START: &str = "start";
 /// What the box asks for. A start's goal is what the conversation is *for*,
 /// which is a different question from what to say to one that exists.
-pub const GOAL: &str = "what this conversation is for";
+pub const GOAL: &str = "what this conversation is for — Enter begins it";
+/// The same, while `/plan` has said the next start is a plan.
+pub const PLANNED: &str = "what this conversation is for — begun as a plan";
 
 /// Paint the start composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
@@ -71,17 +71,15 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // by the frame when the engine's reply lands (`crate::ui::model::start`),
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
-    let rows = model.composer_rows();
-    let (entry, begin) = crate::ui::theme::paint::composer(
+    let slashed = crate::ui::slash::parsed(&model.draft).is_some();
+    let entry = crate::ui::theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
-        GOAL,
+        if model.plan { PLANNED } else { GOAL },
         None,
-        START,
-        rows,
     );
-    crate::ui::act::tag(&begin, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
+    crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
     // **The `+` on an engine's row lands the caret here** (§4.39): the control
     // is on the other column and the box is this one, so what crosses between
     // them is a request the frame that paints the box answers.
@@ -90,10 +88,12 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     }
     // Enter begins it, as it always did — through the deposit's own read, now
     // that the box is the deposit's own box (`super::entered`).
-    if super::entered(ui, &entry) || begin.clicked() {
+    if slashed {
+        return;
+    }
+    if super::entered(ui, &entry) {
         model.stage(&aim.address);
     }
-    super::offers::starting(ui, model);
 }
 
 #[cfg(test)]

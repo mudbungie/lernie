@@ -30,13 +30,11 @@ use crate::reply::roster::WsRow;
 use crate::ui::{Channel, Chunk, Model, theme};
 
 /// The four ops whose subject is every channel, and the strip they hang on.
-pub mod acts;
 /// One engine's row, the order the rows stand in, and the pane's cursor track.
 pub mod engine;
 /// One wall's row, and the five per-wall controls that hang off the aimed one.
 pub mod wall;
 
-pub use acts::REFRESH;
 pub use engine::{Step, track};
 pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
 
@@ -69,11 +67,8 @@ pub const HEADING: &str = "engines";
 /// Paint the roster and take a click on it. **The heading is the shell's** —
 /// see [`HEADING`].
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    // **The window's own acts hang here, above the channels** — see [`acts`]
-    // for which four they are and why this pane is their home.
-    if !model.covered() {
-        acts::render(ui, model);
-    }
+    // **No strip hangs here any more** (§4.42): the window's own acts are
+    // rows of the completion menu, typed into the one box.
     // **The list scrolls, and the heading above it does not** (bl-e5d2): a
     // roster longer than its pane used to be cut off mid-glyph at the panel
     // edge, with nothing on the glass saying anything had been cut — while the

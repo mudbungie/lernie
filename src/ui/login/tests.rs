@@ -1,8 +1,8 @@
 //! What the login pane says, what it offers, and what one click on it composes.
 
 use super::{
-    CLOSE, ELSEWHERE, HEADING, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS,
-    OFFERS_NOTHING, OPEN, SIGN_IN, render,
+    ELSEWHERE, HEADING, LOOPBACK, NO_PROVIDERS, NOT_ANSWERED, NOT_OFFERED, OFFERS, OFFERS_NOTHING,
+    SIGN_IN, WORD, render,
 };
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, pane, provider, seated, signing};
@@ -173,16 +173,11 @@ fn clicking_the_two_row_controls_composes_the_act_and_the_read() {
     }
 }
 
-/// The close control puts the pane down and nothing else.
+/// Escape puts the pane down and nothing else (`crate::ui::overlay`).
 #[test]
 fn the_done_control_closes_the_pane() {
     let mut model = signing();
-    let window = Window::new();
-    click(&window, CLOSE, |ctx| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            render(ui, &mut model);
-        });
-    });
+    model.escape();
     assert_eq!(model.login, None);
 }
 
@@ -192,12 +187,12 @@ fn the_done_control_closes_the_pane() {
 fn the_roster_control_opens_the_pane_and_the_pane_covers_the_conversation() {
     let mut model = seated();
     let window = Window::new();
-    click(&window, OPEN, |ctx| crate::ui::render(ctx, &mut model));
+    assert!(crate::ui::slash::fire(&mut model, WORD, ""));
     assert_eq!(model.login, Some(Login::default()));
     let painted = window.text(|ctx| crate::ui::render(ctx, &mut model));
     assert!(painted.lines().any(|line| line == HEADING), "{painted}");
     assert!(
-        !painted.contains(crate::ui::composer::SEND),
+        !painted.contains(crate::ui::composer::HINT),
         "the composer stands down under it:\n{painted}"
     );
 }

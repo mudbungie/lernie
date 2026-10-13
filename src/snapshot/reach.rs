@@ -23,6 +23,11 @@
 //! assertion is, and it is the same bound whether the seat has one such pane or
 //! seven.
 //!
+//! **The strips went and the words came** (bl-e016, DESIGN §4.42). Every
+//! pane's control used to hang off one of three strips; every pane is now a
+//! word typed into the one box, so the walk types. The bound tightened: two
+//! gestures from the box whichever pane, the word and Escape.
+//!
 //! **The accordion moved nothing here** (bl-cff1, DESIGN §4.39). The walk's
 //! counts were re-read against it and stand: all eleven controls hang off the
 //! roster's own acts strip or off the aimed wall's band, the aimed wall is
@@ -54,179 +59,156 @@
 //! set the question is about.
 
 use crate::ui::{
-    Column, Model, Shape, board, commands, doctor, enroll, find, fleet, login, prices, queue,
-    records, trail, tuning, unmake,
+    Model, board, clients, commands, config, doctor, enroll, find, fleet, keys, login, prices,
+    queue, records, theme, trail, tuning, unmake,
 };
 use egui_kittest::Harness;
 use egui_kittest::kittest::Queryable;
 
-/// **One leg of the walk**: the control to spend, and what has to be there
+/// **One gesture the walk spends.**
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Gesture {
+    /// A click on the control reading exactly this label.
+    Click(&'static str),
+    /// A slash verb typed into the box and fired with Enter (DESIGN §4.42,
+    /// item 5) — the way into every pane.
+    Type(&'static str),
+    /// Escape, the way out of every overlay (`crate::ui::overlay`).
+    Escape,
+}
+
+/// **One leg of the walk**: the gesture to spend, and what has to be there
 /// after spending it.
 pub(crate) struct Step {
-    /// The label of the control this leg clicks.
-    pub(crate) gesture: &'static str,
+    pub(crate) gesture: Gesture,
     /// A label that must be reachable once the frame has settled.
     pub(crate) then: &'static str,
 }
 
-/// **One covering pane, and the column its opening control lives on.**
-///
-/// The column is what makes the walk answerable in both shapes: in the broad
-/// shape every column is on the glass, so it costs nothing to be told; in the
-/// narrow shape it is exactly the gesture that has to be spent first.
+/// **One pane: the word that opens it, and the heading it stands under.**
 struct Covered {
-    column: Column,
-    open: &'static str,
-    close: &'static str,
+    word: &'static str,
     heading: &'static str,
 }
 
-/// **The thirteen covered panes this walk visits, in the order it visits them.**
-///
-/// The tuning pane goes first because both roster-row controls stand the other
-/// down while one is open — so a walk that opened the enrollment first would
-/// find the tuning control gone and complain about a seat that is behaving
-/// exactly as designed. The records pane goes last for the mirror of that
-/// reason: its control hangs off the composer, which every covering pane stands
-/// down, so it is walked once every roster-row pane has been closed again
-/// (bl-2cf7). The decision queue's control hangs off the roster too, above the
-/// channels rather than off a row, so it stands and falls with the others and
-/// is walked among them (bl-f0ef). The unmaking's control is a third one on the
-/// aimed row and is walked among them for the same reason (bl-48fa). The
-/// window's own two hang off the roster above the channels beside the queue's,
-/// and are walked among them for the same reason (bl-40ec). The login pane's
-/// control is a fourth one on the aimed row and is walked among them too
-/// (bl-e3c5). The trail's hangs off the roster beside the queue's, its subject
-/// being every channel as well (bl-4c48), and the ball pane's beside those two
-/// on the same terms — two of its four reads name no workspace (bl-d2af). The
-/// doctor's hangs beside the verb table's, its bare form naming none (bl-9bbb).
-/// The prices pane's hangs beside them for the same reason (bl-9111).
-const PANES: [Covered; 13] = [
+/// **The fifteen panes this walk visits.** Every one is two gestures from the
+/// box: the word, and Escape back out. The enrollment is among them because
+/// Escape closes it too — the one pane whose way out forgets something
+/// (`Model::escape`).
+const PANES: [Covered; 15] = [
     Covered {
-        column: Column::Engines,
-        open: queue::OPEN,
-        close: queue::CLOSE,
+        word: queue::WORD,
         heading: queue::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: tuning::OPEN,
-        close: tuning::CLOSE,
+        word: tuning::WORD,
         heading: tuning::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: enroll::OPEN,
-        close: enroll::CLOSE,
+        word: enroll::WORD,
         heading: enroll::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: login::OPEN,
-        close: login::CLOSE,
+        word: login::WORD,
         heading: login::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: fleet::OPEN,
-        close: fleet::CLOSE,
+        word: fleet::WORD,
         heading: fleet::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: unmake::OPEN,
-        close: unmake::CLOSE,
+        word: unmake::WORD,
         heading: unmake::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: trail::OPEN,
-        close: trail::CLOSE,
+        word: trail::WORD,
         heading: trail::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: board::OPEN,
-        close: board::CLOSE,
+        word: board::WORD,
         heading: board::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: commands::OPEN,
-        close: commands::CLOSE,
+        word: commands::WORD,
         heading: commands::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: doctor::OPEN,
-        close: doctor::CLOSE,
+        word: doctor::WORD,
         heading: doctor::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: find::OPEN,
-        close: find::CLOSE,
+        word: find::WORD,
         heading: find::HEADING,
     },
     Covered {
-        column: Column::Engines,
-        open: prices::OPEN,
-        close: prices::CLOSE,
+        word: prices::WORD,
         heading: prices::HEADING,
     },
     Covered {
-        column: Column::Conversation,
-        open: records::OPEN,
-        close: records::CLOSE,
+        word: records::WORD,
         heading: records::HEADING,
+    },
+    Covered {
+        word: clients::WORD,
+        heading: clients::HEADING,
+    },
+    Covered {
+        word: config::WORD,
+        heading: config::HEADING,
     },
 ];
 
-/// **The walk, and its length is the bound** — which is a fact about the SHAPE
-/// and so is answered per shape (bl-dfda).
-///
-/// Two legs per pane, one gesture in and one back out. The narrow shape adds
-/// exactly one more per pane, and adds it unconditionally rather than only
-/// where the column has to change: **go to the column the control lives on,
-/// open, close**. That the step is sometimes a click on the column already
-/// showing is the point — a bound that varied with where the walk happened to
-/// be standing would be a bound nobody could state.
-///
-/// A leg appearing beyond these is the assertion telling you a pane moved
-/// further away than the shape it is in accounts for.
-pub(crate) fn walk(shape: Shape) -> Vec<Step> {
+/// **The walk, and its length is the bound.** Two legs per pane: the word
+/// typed, and Escape — at every size, because there is one shape (§4.42). A
+/// leg appearing beyond these is the assertion telling you a pane moved
+/// further away than the box.
+pub(crate) fn walk() -> Vec<Step> {
     PANES
         .iter()
         .flat_map(|pane| {
-            let nav = matches!(shape, Shape::Narrow).then(|| Step {
-                gesture: pane.column.word(),
-                then: pane.open,
-            });
-            nav.into_iter().chain([
+            [
                 Step {
-                    gesture: pane.open,
+                    gesture: Gesture::Type(pane.word),
                     then: pane.heading,
                 },
                 Step {
-                    gesture: pane.close,
-                    then: pane.open,
+                    gesture: Gesture::Escape,
+                    then: theme::glyph::PROMPT,
                 },
-            ])
+            ]
         })
         .collect()
 }
 
 /// Whether anything reachable carries exactly this label.
 fn reachable(harness: &Harness<'_, Model>, label: &'static str) -> bool {
-    harness.query_by_label(label).is_some()
+    harness.query_all_by_label(label).next().is_some()
 }
 
-/// Spend one gesture on the control reading exactly `label`, if there is one.
-fn click(harness: &mut Harness<'_, Model>, label: &'static str) -> bool {
-    let Some(node) = harness.query_by_label(label) else {
-        return false;
-    };
-    node.click();
+/// Spend one gesture, and say whether there was anything to spend it on.
+fn spend(harness: &mut Harness<'_, Model>, gesture: Gesture) -> bool {
+    match gesture {
+        Gesture::Click(label) => {
+            let Some(node) = harness.query_by_label(label) else {
+                return false;
+            };
+            node.click();
+        }
+        Gesture::Type(word) => {
+            // The caret into the box, the line into it, Enter on it — the
+            // three things an operator does, in order, each a frame.
+            let id = egui::Id::new(keys::BOX_ID);
+            harness.ctx.memory_mut(|memory| memory.request_focus(id));
+            harness.run();
+            harness.input_mut().events.push(egui::Event::Text(format!(
+                "{}{word}",
+                crate::ui::slash::LEAD
+            )));
+            harness.run();
+            harness.press_key(egui::Key::Enter);
+        }
+        Gesture::Escape => harness.press_key(egui::Key::Escape),
+    }
     harness.run();
     true
 }
@@ -240,7 +222,7 @@ fn click(harness: &mut Harness<'_, Model>, label: &'static str) -> bool {
 pub(crate) fn complaints(at: &str, harness: &mut Harness<'_, Model>, walk: &[Step]) -> Vec<String> {
     let mut out = Vec::new();
     for step in walk {
-        if !click(harness, step.gesture) {
+        if !spend(harness, step.gesture) {
             out.push(format!(
                 "{at}: no control reads {:?} — the pane behind it cannot be reached",
                 step.gesture
@@ -249,7 +231,7 @@ pub(crate) fn complaints(at: &str, harness: &mut Harness<'_, Model>, walk: &[Ste
         }
         if !reachable(harness, step.then) {
             out.push(format!(
-                "{at}: one gesture on {:?} did not bring {:?}",
+                "{at}: one gesture, {:?}, did not bring {:?}",
                 step.gesture, step.then
             ));
             break;

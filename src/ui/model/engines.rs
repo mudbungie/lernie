@@ -144,7 +144,6 @@ impl Model {
         // this seat can address aims nothing, and the start mode is still
         // where the operator asked to be.
         self.conversation = None;
-        self.column = crate::ui::Column::Conversation;
         self.fill = Some(crate::ui::Fill::Goal);
     }
 

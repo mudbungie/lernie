@@ -29,8 +29,10 @@ fn the_window_paints_what_a_real_engine_answered() {
                         "rows": [{"workspace": "home", "kind": "named", "attention": 2,
                                   "agents": 3, "running": true}]});
     wired(&scratch, &flat(), vec![vec![roster]; 8]);
+    // The roster stands in the switcher (§4.42), so the window is opened on it.
     let mut model = Model {
         roster: crate::seat::channels(scratch.path()),
+        switching: true,
         ..Model::default()
     };
     let link = Link::new(Duration::from_millis(1));

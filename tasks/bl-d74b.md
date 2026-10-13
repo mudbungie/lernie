@@ -1,0 +1,10 @@
++++
+title = "the rule is the conversation's own line: workspace, provider, model, effort, priority as dropups that show the cached list and reload it (a reload mark until the answer lands, then a check), then the conversation's diagnostics — tokens in and out, spend, state, elapsed; the global waiting and engine counts leave it"
+created = 1791869353
+updated = 1791869353
+parent = "bl-957a"
+priority = 1
+root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
+tags = ["ui"]
++++
+Operator ruling 2026-10-12, second look at the §4.42 window: the selectors and interfaces are full-screen popovers and should be dropdowns — dropups, since they stand near the bottom. A click shows the cached list and triggers a reload; a small reload mark stands on the control until the fresh answer lands and then becomes a green check. The order along the bottom, left to right: workspace, provider, model, context, then priority where the provider row allows it; after those, the conversation's diagnostics — tokens out and in, context window usage and the like. Only facts about THIS conversation stand along the bottom beside the chat bar: the seat-wide waiting count and the engines count go (they are the seat panel's, the switcher's and /attention's). Facts the wire offers on a role (REMOTE §9.20-ish, reply/roles rows): provider, model, effort (a level word), priority (a boolean); there is no context knob, so effort takes the slot the ruling calls context and the context-window usage is a diagnostic only if the wire can state it. The selectors set the worker role (the role that answers), on the aimed workspace, through the same doors /roles and lernie model spend; the roles pane stays as the per-role editor. The lists: workspaces off the roster; providers off the providers read; models off the models read for the chosen provider; effort and priority off the provider row's own capability flags. Supersedes §4.42 item 2's segment list and item 10's doors where they differ; DESIGN and STYLE amended, the matrix and the reach bound kept green.

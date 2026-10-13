@@ -1,7 +1,7 @@
 +++
 title = "an engine that goes down is invisible on the glass: the rule keeps '1 engine' and the stale green 'N waiting', and the seat panel has no dial-state word at all — only a typed act's 'not sent' notice says anything"
 created = 1791867708
-updated = 1791868395
+updated = 1791868396
 claimant = "LaneAsks"
 parent = "bl-957a"
 priority = 1
@@ -20,3 +20,7 @@ Also on a seat holding three entries — its own engine up, one at a refused add
 ---
 
 Protocol skew (a scratch seat built with PROTOCOL 18 against engines speaking 19): the CLI says 'wire protocol mismatch: this seat speaks version 18, the engine speaks 19 ... upgrade the older component'; the window says 'ready · 2 engines', each engine '— 0 walls, 0 conversations', and offers the start hint on an aimed wall it cannot reach. Same cause: Held::Unheld is painted nowhere but the switcher, and the switcher shows the engine rows with no sentence either.
+
+---
+
+Acceptance case: first run with an empty data root (no wire material at all). The seat's own chunk is Held::Unheld carrying the 'nothing provisioned at ~/… the act is a COPY' sentence that 'lernie entries' prints; the seat panel must paint that sentence whole and wrapped instead of '0 walls, 0 conversations', and the rule must not claim it reaches an engine. The snapshot world 'unprovisioned' is that state.

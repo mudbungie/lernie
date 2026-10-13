@@ -77,6 +77,20 @@ impl Model {
             || self.unmaking.is_some()
     }
 
+    /// **The selected conversation's own row — where the read answered THAT
+    /// conversation** (bl-3b46). The read is filed for whatever it answered,
+    /// and nothing retires it when the selection is cleared for a start or an
+    /// answer lands after a switch; so every reader asks here, and the
+    /// question is derived from the selection rather than kept in step with
+    /// it. A spend, an offer or a descent read for one conversation is never
+    /// painted against another's name, or against none.
+    pub fn agent(&self) -> Option<&crate::reply::agent::Agent> {
+        self.records
+            .agent
+            .as_ref()
+            .filter(|row| self.conversation.as_deref() == Some(row.agent.as_str()))
+    }
+
     /// **Open the records pane on the selected conversation**, or do nothing
     /// where none is selected. The selection is the gate exactly as the aim is
     /// tuning's: the two reads it stands up are addressed, and a selected
@@ -134,9 +148,7 @@ impl Model {
             return;
         };
         let armed = self
-            .records
-            .agent
-            .as_ref()
+            .agent()
             .is_some_and(|row| crate::ui::records::cascade::armed(row, &self.cascade));
         if !armed {
             return;

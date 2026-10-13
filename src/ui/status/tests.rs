@@ -91,3 +91,26 @@ fn the_rule_reaches_the_glass() {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
 }
+
+/// **The spend is the selected conversation's, or nothing** (bl-3b46): the
+/// row the records read filed stays in hand after `+ new` clears the
+/// selection, and a row that answered another conversation is not this
+/// one's — neither is painted on the rule.
+#[test]
+fn the_spend_belongs_to_the_selection() {
+    let own = crate::test_support::window::panes::records::own_row();
+    let spend = crate::ui::records::header::costing(&own);
+    let texts =
+        |model: &Model| -> Vec<String> { facts(model).into_iter().map(|run| run.text).collect() };
+    let mut model = seated();
+    model.records.agent = Some(own.clone());
+    assert!(texts(&model).contains(&spend), "{:?}", texts(&model));
+    model.conversation = None;
+    assert!(!texts(&model).contains(&spend), "{:?}", texts(&model));
+    let mut other = seated();
+    other.records.agent = Some(crate::reply::agent::Agent {
+        agent: "20260101T000000Z-zzzz".to_owned(),
+        ..own
+    });
+    assert!(!texts(&other).contains(&spend), "{:?}", texts(&other));
+}

@@ -70,18 +70,13 @@ pub fn conversation(ui: &mut egui::Ui, model: &Model, id: &str) {
         if let Some(model_id) = answered_by(model) {
             cost.push(model_id);
         }
-        if let Some(agent) = &model.records.agent {
+        if let Some(agent) = model.agent() {
             cost.push(crate::ui::records::header::costing(agent));
         }
         if !cost.is_empty() {
             line(ui, &cost.join(" · "), theme::INK_WEAK);
         }
-        if let Some(path) = model
-            .records
-            .agent
-            .as_ref()
-            .and_then(crate::ui::records::header::descent)
-        {
+        if let Some(path) = model.agent().and_then(crate::ui::records::header::descent) {
             line(ui, &path, theme::INK_WEAK);
         }
     });

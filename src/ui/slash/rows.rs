@@ -29,11 +29,7 @@ fn aimed(model: &Model) -> Option<&crate::reply::roster::WsRow> {
 /// Whether the engine offers `act` on the selected conversation — and every
 /// act where it has not answered about it yet.
 fn offered(model: &Model, act: Offer) -> bool {
-    model
-        .records
-        .agent
-        .as_ref()
-        .is_none_or(|row| row.offers.contains(&act))
+    model.agent().is_none_or(|row| row.offers.contains(&act))
 }
 
 /// **Every row this seat offers right now**, in the order they are read: the

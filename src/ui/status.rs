@@ -104,7 +104,7 @@ pub fn facts(model: &Model) -> Vec<Run> {
     if let Some(model_id) = answered_by(model) {
         out.push(run(model_id, theme::INK_WEAK));
     }
-    if let Some(agent) = &model.records.agent {
+    if let Some(agent) = model.agent() {
         out.push(run(
             crate::ui::records::header::costing(agent),
             theme::INK_WEAK,

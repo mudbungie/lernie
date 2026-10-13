@@ -59,7 +59,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // **The section word is the divider** (`docs/STYLE.md` §5): `L` of air, a
     // hairline and the word in weak ink, with the header's own line under it.
     theme::paint::section(ui, HEAD);
-    let Some(row) = model.records.agent.clone() else {
+    let Some(row) = model.agent().cloned() else {
         ui.label(NOT_ANSWERED);
         return;
     };

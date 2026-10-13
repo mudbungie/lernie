@@ -1,7 +1,8 @@
 +++
 title = "the ask box stays up saying 'Enter sends' while that conversation's engine is down; and the model list cuts long model ids with … even at desk width"
 created = 1791871671
-updated = 1791871671
+updated = 1791871998
+claimant = "FixC"
 parent = "bl-957a"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

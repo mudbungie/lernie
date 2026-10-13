@@ -133,10 +133,15 @@ fn said(ui: &mut egui::Ui, row: &Row) {
 fn trail(ui: &mut egui::Ui, at: usize, steps: &[Row]) {
     let id = ui.make_persistent_id(("trail", at));
     let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(true);
+    // **The fold counts calls** (bl-eb4e), not the steps under it: a result
+    // stands on its call's row, and reasoning is not a call.
+    let calls = steps
+        .iter()
+        .filter(|row| matches!(row.kind, Kind::Call | Kind::Answered))
+        .count();
     let head = format!(
-        "{} {TRAIL} ({})",
+        "{} {TRAIL} ({calls})",
         if open { glyph::OPEN } else { glyph::SHUT },
-        steps.len()
     );
     if ui
         .add(
@@ -167,25 +172,38 @@ fn trail(ui: &mut egui::Ui, at: usize, steps: &[Row]) {
     }
 }
 
-/// **One step**: its mark, its name, and what it said — folded to its head
-/// where there is more.
+/// **One step**: its mark, its name — a call's with how it ended beside it
+/// — and what it said, folded to its head where there is more.
 fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
-    let (mark, ink) = match (row.kind, row.failed) {
-        (Kind::Result, true) => (glyph::FAILED, theme::accent(theme::State::Error)),
-        (Kind::Result, false) => (glyph::DONE, theme::INK_WEAK),
-        (Kind::Call, _) => (glyph::CALL, theme::BRAND),
+    let red = theme::accent(theme::State::Error);
+    let ended = |ui: &mut egui::Ui| {
+        let (mark, ink) = if row.failed {
+            (glyph::FAILED, red)
+        } else {
+            (glyph::DONE, theme::INK_WEAK)
+        };
+        ui.label(egui::RichText::new(mark).color(ink));
+    };
+    let (mark, ink) = match row.kind {
+        Kind::Call | Kind::Answered => (glyph::CALL, theme::BRAND),
         _ => (glyph::NOTE, theme::INK_WEAK),
     };
-    ui.label(egui::RichText::new(mark).color(ink));
+    if row.kind == Kind::Result {
+        ended(ui);
+    } else {
+        ui.label(egui::RichText::new(mark).color(ink));
+    }
     ui.vertical(|ui| {
-        let who = if row.failed {
-            theme::accent(theme::State::Error)
-        } else {
-            theme::INK_WEAK
-        };
-        ui.label(egui::RichText::new(&row.who).color(who));
+        let who = if row.failed { red } else { theme::INK_WEAK };
+        ui.horizontal_wrapped(|ui| {
+            ui.label(egui::RichText::new(&row.who).color(who));
+            if row.kind == Kind::Answered {
+                ended(ui);
+            }
+        });
         match &row.fold {
             Some(fold) => folded(ui, at, row, fold),
+            None if row.said.is_empty() => {}
             None => {
                 theme::paint::prose(ui, &row.said, theme::INK_WEAK);
             }

@@ -82,7 +82,7 @@ fn a_model_turn_becomes_one_row_per_block() {
         vec![
             "model-a (thinking)",
             "model-a",
-            "model-a → read tu-1",
+            "read(src/ui.rs)",
             "model-a (citation, which this seat cannot read)",
         ]
     );
@@ -98,7 +98,7 @@ fn a_tool_result_says_whether_it_failed() {
             content: "done".to_owned(),
             is_error,
         });
-        assert_eq!(rows(&entry, None)[0].who, format!("tu-1 {word}"));
+        assert_eq!(rows(&entry, None)[0].who, word);
     }
 }
 

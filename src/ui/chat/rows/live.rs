@@ -57,7 +57,7 @@ fn call(window: &Window) -> Vec<Row> {
     // waiting on the operator, which is neither an error nor a peer speaking.
     let parked = window.held.as_ref().map(|reason| {
         Row::plain(
-            format!("{LIVE} {HELD} {named} {}", window.tool_use),
+            format!("{LIVE} {HELD} {named}"),
             reason.clone(),
             Speaker::Model,
         )
@@ -70,37 +70,21 @@ fn call(window: &Window) -> Vec<Row> {
     // arrives under this same id and fills the input in.
     let dispatched = window.input.is_some() || window.held.is_none();
     let opened = dispatched.then(|| {
-        Row::plain(
-            format!("{LIVE} → {named} {}", window.tool_use),
-            window.input.clone().unwrap_or_default(),
-            Speaker::Model,
+        Row::call(
+            &format!("{LIVE} {named}"),
+            window.input.as_deref().unwrap_or_default(),
+            &window.tool_use,
         )
-        .as_(Kind::Call)
     });
-    let landed = window.exit_code.map(|code| {
-        let ok = code == 0;
-        Row {
-            who: format!("{} {}", window.tool_use, if ok { RETURNED } else { FAILED }),
-            said: format!("exit {code}"),
-            // **One call reads the same on both routes**, which is this
-            // module's own rule one noun over ([`half`]): the committed
-            // `ToolResult` this row becomes is a peer's weight and wears the
-            // error accent when it failed, so the live half does too. A live
-            // failure painted in the model's ink and a committed one painted
-            // red would be one call in two colours.
-            weight: Speaker::Peer,
-            failed: !ok,
-            fold: None,
-            kind: Kind::Result,
-        }
-    });
+    // **One call reads the same on both routes**, which is this module's own
+    // rule one noun over ([`half`]): the landing is the committed
+    // `ToolResult`'s own row, a peer's weight in the error accent when it
+    // failed, and it meets its call on one row the same way (`super::pair`).
+    let landed = window
+        .exit_code
+        .map(|code| Row::result(&window.tool_use, format!("exit {code}"), code != 0, None));
     parked.into_iter().chain(opened).chain(landed).collect()
 }
-
-/// The two words a settled call is said in — the committed transcript's own,
-/// so one call reads the same on both routes.
-const RETURNED: &str = "returned";
-const FAILED: &str = "failed";
 
 /// The word a parked call is said in — the agent row's own (`render::walls`),
 /// so the park reads the same whichever read carried it.

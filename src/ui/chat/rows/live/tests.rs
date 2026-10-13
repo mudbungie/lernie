@@ -28,8 +28,8 @@ fn the_window_paints_a_row_as_a_call_opens_and_another_when_it_lands() {
     let running = streaming(&fold);
     assert_eq!(running.len(), 2, "{running:?}");
     assert!(running[1].who.contains("box2_Bash"), "{:?}", running[1]);
-    assert!(running[1].who.contains("toolu_01"), "{:?}", running[1]);
-    assert_eq!(running[1].said, "{\"command\":\"uptime\"}");
+    assert!(!running[1].who.contains("toolu_01"), "{:?}", running[1]);
+    assert!(running[1].who.ends_with("(\"uptime\")"), "{:?}", running[1]);
 
     fold.tools = vec![call(Some(0))];
     let landed = streaming(&fold);
@@ -108,6 +108,6 @@ fn an_answered_park_keeps_its_row_and_gains_the_two_it_was_waiting_for() {
     let painted = streaming(&released);
     assert_eq!(painted.len(), 3, "{painted:?}");
     assert!(painted[0].who.contains("held"), "{:?}", painted[0]);
-    assert_eq!(painted[1].said, "{\"command\":\"uptime\"}");
+    assert!(painted[1].who.contains("uptime"), "{:?}", painted[1]);
     assert!(painted[2].who.contains("returned"), "{:?}", painted[2]);
 }

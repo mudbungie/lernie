@@ -4991,7 +4991,9 @@ parts, in its vertical order, each with what it becomes here.
    in body ink; the model's prose carries `¦` in the gutter in weak ink (the
    baseline's `┊` has no glyph in the body font, and its stems `├─ └─` are
    drawn as the roster draws its threading rather than typed); a tool call and its result are
-   one row of a **trail tree** under a fold — `▾ tool calls (3)` with `├─ ●
+   one row of a **trail tree** under a fold (met by the tool-use id both
+   halves carry, which never reaches the glass, and counted by calls —
+   bl-eb4e) — `▾ tool calls (3)` with `├─ ●
    Bash("cargo test") ✓` a call, `└─ ✗` a failed one in the error accent, the
    result folded to its head and unfolded in place — and `└─ response` parts
    the trail from the prose that follows it; turns are parted by `───` in the

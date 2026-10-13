@@ -250,6 +250,8 @@ pub mod glyph {
     /// font has no small triangles.
     pub const OPEN: &str = "−";
     pub const SHUT: &str = "+";
+    /// **Where a line was cut** — a call's head on the trail.
+    pub const ELIDED: &str = "…";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the

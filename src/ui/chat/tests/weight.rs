@@ -142,10 +142,10 @@ fn each_speaker_s_block_wears_its_own_weight() {
 fn a_failed_tool_result_wears_the_error_accent_and_a_returned_one_does_not() {
     let red = theme::accent(theme::State::Error);
     let output = glass(vec![tool("no such file", true)]);
-    assert_eq!(worn(&output, "tu-1 failed"), red);
+    assert_eq!(worn(&output, "failed"), red);
     assert_eq!(body(&output, crate::ui::theme::glyph::FAILED).ink, red);
     let returned = glass(vec![tool("done", false)]);
-    assert_ne!(worn(&returned, "tu-1 returned"), red);
+    assert_ne!(worn(&returned, "returned"), red);
     assert_ne!(body(&returned, crate::ui::theme::glyph::DONE).ink, red);
 }
 

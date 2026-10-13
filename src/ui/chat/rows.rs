@@ -24,6 +24,8 @@ use crate::ui::theme::Speaker;
 
 /// The turn that has not settled yet.
 mod live;
+/// A call and its result, met on one row.
+mod pair;
 
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
@@ -46,6 +48,9 @@ pub enum Kind {
     #[default]
     Said,
     Call,
+    /// A call whose result has landed and been folded into its row
+    /// ([`pair`]).
+    Answered,
     Result,
     Thinking,
 }
@@ -69,6 +74,10 @@ pub struct Row {
     pub fold: Option<Fold>,
     /// Said, or a step of the trail — see [`Kind`].
     pub kind: Kind,
+    /// **The tool-use id that meets a call with its result** ([`pair`]) —
+    /// carried for the pairing and never painted: an id is the wire's
+    /// bookkeeping, not anything the operator reads.
+    pub call: Option<String>,
 }
 
 impl Row {
@@ -84,6 +93,7 @@ impl Row {
             failed: false,
             fold: None,
             kind: Kind::Said,
+            call: None,
         }
     }
 
@@ -91,6 +101,29 @@ impl Row {
     pub(super) fn as_(mut self, kind: Kind) -> Self {
         self.kind = kind;
         self
+    }
+
+    /// **A call, as the trail names it**: `name(<head of its input>)`, the
+    /// id kept for the pairing and off the glass.
+    pub(super) fn call(name: &str, input: &str, id: &str) -> Self {
+        Self {
+            call: Some(id.to_owned()),
+            ..Self::plain(pair::head(name, input), String::new(), Speaker::Model).as_(Kind::Call)
+        }
+    }
+
+    /// **A result**, by the one word for how it ended.
+    pub(super) fn result(id: &str, said: String, failed: bool, fold: Option<Fold>) -> Self {
+        Self {
+            who: if failed { FAILED } else { RETURNED }.to_owned(),
+            said,
+            // A tool answers for the model, not as it: a peer's weight.
+            weight: Speaker::Peer,
+            failed,
+            fold,
+            kind: Kind::Result,
+            call: Some(id.to_owned()),
+        }
     }
 }
 
@@ -137,15 +170,21 @@ fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
 /// read has yet seen paints its tail from the next read on, one ask cadence
 /// late, rather than early.
 pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
-    transcript
-        .entries
-        .iter()
-        .flat_map(|entry| match (&entry.kind, live) {
-            (EntryKind::Streaming { .. }, Some(fold)) => streaming(fold),
-            _ => entry_rows(entry),
-        })
-        .collect()
+    pair::met(
+        transcript
+            .entries
+            .iter()
+            .flat_map(|entry| match (&entry.kind, live) {
+                (EntryKind::Streaming { .. }, Some(fold)) => streaming(fold),
+                _ => entry_rows(entry),
+            })
+            .collect(),
+    )
 }
+
+/// The two words a settled call is said in, on both routes.
+const RETURNED: &str = "returned";
+const FAILED: &str = "failed";
 
 /// One entry's rows.
 fn entry_rows(entry: &Entry) -> Vec<Row> {
@@ -174,20 +213,14 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             tool_use_id,
             content,
             is_error,
-        } => vec![Row {
-            who: format!(
-                "{tool_use_id} {}",
-                if *is_error { "failed" } else { "returned" }
-            ),
-            said: content.clone(),
-            // A tool answers for the model, not as it: a peer's weight.
-            weight: Speaker::Peer,
-            failed: *is_error,
+        } => vec![Row::result(
+            tool_use_id,
+            content.clone(),
+            *is_error,
             // **The one row in this pane that hides anything**, and only when
             // there is something to hide (`fold`).
-            fold: fold::of(content),
-            kind: Kind::Result,
-        }],
+            fold::of(content),
+        )],
         EntryKind::Streaming { thinking, text } => live_rows(thinking, text),
         EntryKind::Compacted {
             first,
@@ -228,14 +261,7 @@ fn block(model_id: &str, block: &Block) -> Option<Row> {
         Block::Thinking(text) => {
             half(model_id, "thinking", text).map(|row| row.as_(Kind::Thinking))
         }
-        Block::ToolUse { id, name, input } => Some(
-            Row::plain(
-                format!("{model_id} → {name} {id}"),
-                input.clone(),
-                Speaker::Model,
-            )
-            .as_(Kind::Call),
-        ),
+        Block::ToolUse { id, name, input } => Some(Row::call(name, input, id)),
         Block::Unknown(word) => Some(Row::plain(
             format!("{model_id} ({word}, which this seat cannot read)"),
             String::new(),

@@ -114,24 +114,21 @@ fn the_trail_stands_under_one_fold_and_the_head_shuts_it() {
     ]);
     let output = glass(&mut model);
     let seen = texts(&output);
-    let head = format!("{} {TRAIL} (3)", glyph::OPEN);
-    for word in [
-        &head,
-        glyph::CALL,
-        glyph::DONE,
-        "model-a → read tu-1",
-        "tu-1 returned",
-    ] {
+    // One call, met with its result on one row; the reasoning is a step
+    // and not a call (bl-eb4e).
+    let head = format!("{} {TRAIL} (1)", glyph::OPEN);
+    for word in [&head, glyph::CALL, glyph::DONE, "read(src/ui.rs)"] {
         assert!(seen.iter().any(|t| t == word), "{word:?}: {seen:?}");
     }
     let window = Window::sized(1400.0, 900.0);
     click(&window, &head, |ctx| crate::ui::render(ctx, &mut model));
     let shut = window.text(|ctx| crate::ui::render(ctx, &mut model));
     assert!(
-        shut.contains(&format!("{} {TRAIL} (3)", glyph::SHUT)),
+        shut.contains(&format!("{} {TRAIL} (1)", glyph::SHUT)),
         "{shut}"
     );
-    assert!(!shut.contains("tu-1 returned"), "{shut}");
+    assert!(!shut.contains("read(src/ui.rs)"), "{shut}");
+    assert!(!seen.iter().any(|t| t.contains("tu-1")), "no id: {seen:?}");
 }
 
 /// **A `response` line parts the trail from the prose after it**, and a
@@ -183,5 +180,19 @@ fn a_failed_step_wears_the_error_accent() {
             .any(|run| run.text == glyph::FAILED && run.ink == red),
         "{:?}",
         texts(&output)
+    );
+}
+
+/// **A call still in flight is its row and nothing more**: the call's mark
+/// and head, no mark of how it ended and no body under it (bl-eb4e).
+#[test]
+fn a_call_in_flight_wears_no_ending() {
+    let mut model = with(vec![working()]);
+    let output = glass(&mut model);
+    let seen = texts(&output);
+    assert!(seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
+    assert!(
+        !seen.iter().any(|t| t == glyph::DONE || t == glyph::FAILED),
+        "{seen:?}"
     );
 }

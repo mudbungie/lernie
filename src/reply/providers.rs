@@ -64,6 +64,17 @@ impl ProviderRow {
         self.blocked.is_none()
     }
 
+    /// **Whether this row holds no credential and needs one** (bl-7a77) —
+    /// read off the engine's own words for the row's credential fact, which
+    /// end in one of [`BARE`] exactly where its credential model needs a
+    /// secret and none is there (yog's `credential_words`). The wire carries
+    /// that fact as words and no flag, so the words are the reading; a row
+    /// whose fact this build cannot read is not called bare, because absence
+    /// of evidence claims nothing.
+    pub fn bare(&self) -> bool {
+        BARE.iter().any(|tail| self.fact.ends_with(tail))
+    }
+
     /// **What this row takes beyond a credential**, as one line, or none where
     /// it takes neither. A row that takes both says so once rather than in two
     /// badges an operator has to read together.
@@ -75,6 +86,10 @@ impl ProviderRow {
         (!said.is_empty()).then(|| format!("takes {}", said.join(" and ")))
     }
 }
+
+/// The engine's endings for a row that needs a credential and holds none: a
+/// sign-in row's, then a keyed row's.
+pub const BARE: [&str; 2] = ["not signed in", "no credential stored"];
 
 /// The two capability words, in the order a row states them.
 const EFFORT: &str = "effort";

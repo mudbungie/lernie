@@ -5089,7 +5089,15 @@ parts, in its vertical order, each with what it becomes here.
    is the control**, it wears the `message` tag, Enter fires it and
    Shift+Enter breaks a line (§4.38's one read, `composer::entered`, kept).
    The start is the same line with the same glyph and a hint naming the wall
-   a conversation would begin on; `✎ plan` becomes `/plan`, a toggle shown on
+   a conversation would begin on — **or, where the wall's worker role
+   resolves a provider row that holds no credential, `no provider yet —
+   /login or /config, then pick one on the rule`** (bl-7a77,
+   `start::unsigned`): the goal's question is the wrong one to ask first on
+   a wall whose start the engine will refuse. *Holds no credential* is read
+   off the providers read's own words — the row's fact ends `not signed in`
+   or `no credential stored` (`ProviderRow::bare`), because the wire carries
+   that fact as words and no flag; a fact this build cannot read claims
+   nothing; `✎ plan` becomes `/plan`, a toggle shown on
    the rule while it is on. **With nothing aimed it is the same line again**
    (bl-2cb0), never a sentence where a field was: the field is where every
    slash verb is typed, and the window's own — `/attention`, `/help`,
@@ -5372,6 +5380,15 @@ parts, in its vertical order, each with what it becomes here.
     **The one dial fact that stays is this conversation's**: while the
     aimed engine will not dial, the state slot says its sentence in the
     error accent (`diagnostics::down`), under any notice.
+    **A notice that names a menu word carries its door** (bl-7a77): each
+    `/word` in its sentence that is a row the menu offers right now stands
+    after the slot as a run in the brand firing that row, once each
+    (`diagnostics::named`) — so the engine's *sign in first … write its key
+    into this wall with /config brazen* is a click on `/config` as well as
+    a sentence. The engine words the remedy and the menu decides what is a
+    door; the seat names no verb of its own. A refused start's sentence,
+    which stands over the box rather than in the slot (`composer::start`),
+    carries the same doors after it.
 
     **Three readings of the ruling, each checked against the wire.**
     *Context* is read as **effort**: a role's facts on the wire are
@@ -5393,8 +5410,9 @@ parts, in its vertical order, each with what it becomes here.
     *Workspace* lists every wall the roster holds (with its engine where the
     seat reaches more than one), reloads with `workspaces`, and a pick aims
     — the switcher's own door, `Model::aim_at` with the engine's opening.
-    *Provider* lists the providers read's rows, reloads with `providers`,
-    and a pick opens the *model* list on that row rather than writing,
+    *Provider* lists the providers read's rows, reloads with `providers` —
+    a read that stands on the aim beside the roles' (bl-7a77; it stood on
+    the login pane alone before) — and a pick opens the *model* list on that row rather than writing,
     because a provider alone is half an assignment and the write takes the
     pair (`Edit::ready`'s rule). *Model* lists what that row offers
     (`Model::offers`, the tuning pane's own store, filed by the answer to

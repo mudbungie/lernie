@@ -61,6 +61,46 @@ pub fn calm(model: &Model) -> super::Run {
     }
 }
 
+/// **The menu rows a sentence names** (bl-7a77): every `/word` in it that
+/// is a row this seat offers right now, once each in the order said — so a
+/// refusal saying *sign in first … /config brazen* names `/config`, and the
+/// remedy can be a click as well as a word. The engine words the remedy and
+/// the menu decides what is a door ([`super::door`]); nothing here names a
+/// verb.
+pub fn named(model: &Model, sentence: &str) -> Vec<crate::ui::slash::Row> {
+    let mut out: Vec<crate::ui::slash::Row> = Vec::new();
+    for word in sentence.split_whitespace() {
+        let Some(word) = word.strip_prefix(crate::ui::slash::LEAD) else {
+            continue;
+        };
+        let word = word.trim_end_matches(|c: char| !c.is_alphanumeric());
+        if let Some(row) = super::door(model, word)
+            && !out.contains(&row)
+        {
+            out.push(row);
+        }
+    }
+    out
+}
+
+/// **The doors the notice names**, as runs in the brand beside it on the
+/// rule, each firing its row ([`named`]).
+pub fn doors(model: &Model) -> Vec<super::Run> {
+    let Some(notice) = &model.notice else {
+        return Vec::new();
+    };
+    named(model, &notice.line())
+        .into_iter()
+        .map(|row| super::Run {
+            door: Some(super::Door::Row(row)),
+            ..run(
+                format!("{}{}", crate::ui::slash::LEAD, row.word),
+                theme::BRAND,
+            )
+        })
+        .collect()
+}
+
 /// **A count as the rule says it**: whole below ten thousand, then `k` and
 /// `M` to one decimal.
 pub fn count(n: u64) -> String {
@@ -97,6 +137,7 @@ pub fn diagnostics(model: &Model) -> Vec<super::Run> {
         out.push(run(PLAN, theme::BRAND));
     }
     out.push(state(model));
+    out.extend(doors(model));
     let Some(row) = model.agent() else {
         return out;
     };

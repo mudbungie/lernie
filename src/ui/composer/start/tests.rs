@@ -189,6 +189,33 @@ fn a_refused_start_paints_its_sentence_over_the_box_that_carries_the_goal_back()
     );
 }
 
+/// **A refused start carries the doors its sentence names** (bl-7a77): the
+/// engine's *… /config brazen* stands with `/config` after it as a link, and
+/// a click on it opens what the menu's row opens; a sentence naming no row
+/// carries none.
+#[test]
+fn a_refused_start_carries_the_doors_it_names() {
+    let refused = |why: &str| Model {
+        start: Some(Start {
+            address: "home".to_owned(),
+            goal: "do the thing".to_owned(),
+            phase: Phase::Refused(why.to_owned()),
+            spread: None,
+        }),
+        ..unselected()
+    };
+    let mut model = refused("sign in first — write its key into this wall with /config brazen");
+    let mut body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| render(ui, &mut model, &aimed()));
+    };
+    let window = Window::new();
+    crate::test_support::window::click(&window, "/config", &mut body);
+    assert!(model.covered(), "the config pane stands");
+    let mut model = refused("sign in first: no provider holds a credential");
+    let painted = pane(|ui| render(ui, &mut model, &aimed()));
+    assert!(!painted.lines().any(|line| line == "/config"), "{painted}");
+}
+
 /// **The hint names the wall the Enter begins on, and says when it begins a
 /// plan** (bl-9031).
 #[test]
@@ -199,4 +226,48 @@ fn the_hint_names_the_wall_and_the_plan() {
     model.plan = true;
     let planned = pane(|ui| render(ui, &mut model, &aimed()));
     assert!(planned.contains(&goal("home", true)), "{planned}");
+}
+
+/// **A wall whose worker reaches no model says so before a goal is typed**
+/// (bl-7a77): the worker's provider row is bare, so the hint names the doors
+/// and the pick; a credentialed row, or a table not yet read, asks the goal.
+#[test]
+fn a_wall_whose_worker_holds_no_credential_names_the_doors() {
+    let worker = crate::reply::roles::RoleRow {
+        role: "worker".to_owned(),
+        provider: "anthropic".to_owned(),
+        model: "m".to_owned(),
+        priority: false,
+        effort: None,
+    };
+    let row = |fact: &str| crate::reply::providers::ProviderRow {
+        name: "anthropic".to_owned(),
+        fact: fact.to_owned(),
+        blocked: None,
+        effort: true,
+        priority: true,
+    };
+    for (providers, unsigned) in [
+        (Some(vec![row("auth api_key · no credential stored")]), true),
+        (Some(vec![row("auth api_key · credential stored")]), false),
+        (None, false),
+    ] {
+        let mut model = Model {
+            roles: Some(vec![worker.clone()]),
+            providers,
+            ..unselected()
+        };
+        assert_eq!(super::unsigned(&model), unsigned);
+        let painted = pane(|ui| render(ui, &mut model, &aimed()));
+        assert_eq!(painted.contains(super::UNSIGNED), unsigned, "{painted}");
+        assert_eq!(
+            painted.contains(&goal("home", false)),
+            !unsigned,
+            "{painted}"
+        );
+    }
+    assert!(
+        !super::unsigned(&unselected()),
+        "no roles read, nothing claimed"
+    );
 }

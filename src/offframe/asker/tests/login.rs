@@ -1,5 +1,5 @@
-//! The fifth question: the provider table, which stands on the login pane and
-//! on nothing else.
+//! The fifth question: the provider table, which stands on the aim (bl-7a77)
+//! and so under the login pane too.
 //!
 //! A module of its own rather than a member of [`super::nesting`], which is at
 //! the design-time budget — and the split is on the seam that file's own doc
@@ -15,13 +15,14 @@ use crate::test_support::wire::{flat, wired};
 use crate::ui::{Aim, Channel, Chunk, Model};
 use serde_json::{Value, json};
 
-/// **The fifth question is the pane's, not the aim's** — the roles read's rule
-/// one noun over. And the standing is what buys something here: a credential
-/// lands on the ENGINE while the operator is looking at the table, so a row
-/// that said *no credential* says otherwise on the next beat with nothing
-/// asked again.
+/// **The fifth question is the aim's** (bl-7a77) — the roles read's rule
+/// one noun over, because the start's hint reads the worker's row in it
+/// before any pane is open — and opening the login pane asks nothing more.
+/// The standing still buys what it bought there: a credential lands on the
+/// ENGINE while the operator is looking at the table, so a row that said
+/// *no credential* says otherwise on the next beat with nothing asked again.
 #[test]
-fn the_provider_table_stands_only_while_the_login_pane_is_open() {
+fn the_provider_table_stands_on_the_aim() {
     let scratch = Scratch::new();
     let engine = wired(
         &scratch,
@@ -30,6 +31,7 @@ fn the_provider_table_stands_only_while_the_login_pane_is_open() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
@@ -66,6 +68,7 @@ fn the_provider_table_stands_only_while_the_login_pane_is_open() {
             "workspaces",
             "conversations",
             "roles",
+            "providers",
             "workspaces",
             "conversations",
             "roles",

@@ -52,20 +52,6 @@ pub(super) fn ask(
         );
     }
     fleet(link, root, standing, channel, aim);
-    // **The provider table stands on the login pane** (bl-e3c5), on the roles
-    // read's own terms — and the standing is what makes it worth having: a
-    // credential lands on the engine while the operator is looking at the
-    // table, so a row that said *no credential* says otherwise on the next
-    // beat with nothing asked again. The run's own lines are the held lane's
-    // (`crate::offframe::signin`), never this pass's.
-    if standing.standing(&Open::Login(standing.signin())) {
-        aimed(
-            link,
-            root,
-            channel,
-            &crate::verbs::providers(aim.address.clone()),
-        );
-    }
     // **The machines stand on their pane** (bl-e53c), on the provider table's
     // own terms and for a sharper form of its reason: a row's presence is true
     // only at the instant the engine answered it, so the read that says a foot
@@ -207,6 +193,19 @@ fn tuning(
         root,
         channel,
         &crate::verbs::roles(aim.address.clone()),
+    );
+    // **The provider table stands on the aim** (bl-7a77), as the roles read
+    // does (bl-d74b): the start's hint says *no provider yet* off the worker's
+    // row in it, and the rule's effort and priority stand on its capability
+    // flags, before any pane is opened. It stood on the login pane first
+    // (bl-e3c5) for the reason it still serves there — a credential lands
+    // while the operator looks, and the row says so on the next beat. The
+    // run's own lines are the held lane's (`crate::offframe::signin`).
+    aimed(
+        link,
+        root,
+        channel,
+        &crate::verbs::providers(aim.address.clone()),
     );
     let Some(Open::Tuning(providers)) = &standing.open else {
         return;

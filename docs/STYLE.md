@@ -85,7 +85,9 @@ sends · /help for commands · Ctrl+X for a conversation · /roles for the model
 one by one where the line has no room — one line, never wrapped, never a part
 cut in half; *what this conversation is for — Enter begins it* and the same
 ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
-conversation or a new workspace* with no wall aimed, where prose goes nowhere and the verbs that
+conversation or a new workspace* with no wall aimed; *no provider yet —
+/login or /config, then pick one on the rule* on a wall whose worker's
+provider holds no credential (bl-7a77), where prose goes nowhere and the verbs that
 need no aim still fire; *it is asking — 1–6 answers, or say it — Enter sends* while it asks, the caret
 staying in the box (bl-1252). There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.

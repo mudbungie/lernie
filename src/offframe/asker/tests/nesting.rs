@@ -23,11 +23,13 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
         ],
     );
     let own = Channel {
@@ -63,11 +65,13 @@ fn the_questions_nest_and_each_one_waits_for_the_last_to_have_an_answer() {
             "workspaces",
             "conversations",
             "roles",
+            "providers",
             "transcript",
             "agent",
             "workspaces",
             "conversations",
             "roles",
+            "providers",
         ]
     );
 }
@@ -86,9 +90,11 @@ fn the_roles_read_stands_on_the_aim() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
         ],
     );
     let own = Channel {
@@ -121,9 +127,11 @@ fn the_roles_read_stands_on_the_aim() {
             "workspaces",
             "conversations",
             "roles",
+            "providers",
             "workspaces",
             "conversations",
             "roles",
+            "providers",
         ]
     );
     link.settle(&mut model);
@@ -191,6 +199,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "transcript", "rows": []})],
             vec![json!({"ok": true, "kind": "refused", "why": "no such agent"})],
             vec![json!({"ok": true, "kind": "steps", "rows": [], "orphan": "none"})],
@@ -233,6 +242,7 @@ fn the_records_reads_stand_only_while_the_records_pane_is_open() {
             "workspaces",
             "conversations",
             "roles",
+            "providers",
             "transcript",
             "agent",
             "steps",

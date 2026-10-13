@@ -123,3 +123,28 @@ fn the_frames_read_as_their_listings_and_one_bad_row_fails_it_all() {
     let frame = json!({"kind": KIND, "ok": true, "rows": [open(), broken]});
     assert!(matches!(read(&frame), Read::Unreadable(_)), "one bad row");
 }
+
+/// **A row is bare where the engine's words say it needs a credential and
+/// holds none** (bl-7a77): both endings, and never a stored, signed-in or
+/// keyless row, nor words this build cannot read.
+#[test]
+fn a_row_is_bare_only_where_the_engine_says_it_holds_no_credential() {
+    let said = |fact: &str| ProviderRow {
+        fact: fact.to_owned(),
+        ..row(&open()).expect("a provider row")
+    };
+    for fact in [
+        "auth oauth2 · not signed in",
+        "auth api_key · no credential stored",
+    ] {
+        assert!(said(fact).bare(), "{fact}");
+    }
+    for fact in [
+        "auth oauth2 · signed in",
+        "auth api_key · credential stored",
+        "auth none · no credential needed",
+        "credential present",
+    ] {
+        assert!(!said(fact).bare(), "{fact}");
+    }
+}

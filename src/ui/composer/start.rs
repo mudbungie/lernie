@@ -56,6 +56,53 @@ pub fn goal(wall: &str, plan: bool) -> String {
     format!("what this conversation on {wall} is for — {tail}")
 }
 
+/// **What the box says on a wall whose worker reaches no model yet**
+/// (bl-7a77): the worker role's provider row holds no credential, so a goal
+/// typed now would be refused — the hint names the two doors and the pick
+/// before the operator types one. It stands in the goal's place, not after
+/// it: the goal's question is the wrong one to ask first.
+pub const UNSIGNED: &str = "no provider yet — /login or /config, then pick one on the rule";
+
+/// **Whether the aimed wall's worker reaches no model yet**: its provider's
+/// row in the provider table is bare (`ProviderRow::bare`). Both reads stand
+/// on the aim; where either has not answered, nothing is claimed.
+pub fn unsigned(model: &Model) -> bool {
+    let Some(worker) = model.worker() else {
+        return false;
+    };
+    model
+        .providers
+        .iter()
+        .flatten()
+        .any(|row| row.name == worker.provider && row.bare())
+}
+
+/// **The start's own sentence, with the doors it names** (bl-7a77): a
+/// refused start says the engine's remedy — *sign in first … /config
+/// brazen* — and each menu row it names stands after it as a link in the
+/// brand that fires that row, as the notice's doors do on the rule.
+fn said(ui: &mut egui::Ui, model: &mut Model, line: &str) {
+    ui.label(line);
+    let rows = crate::ui::status::diagnostics::named(model, line);
+    if rows.is_empty() {
+        return;
+    }
+    let mut fired = None;
+    ui.horizontal(|ui| {
+        for row in rows {
+            let word = format!("{}{}", crate::ui::slash::LEAD, row.word);
+            let seat = crate::ui::theme::paint::link(ui, &word, crate::ui::theme::BRAND);
+            crate::ui::act::tag(&seat, row.ops);
+            if seat.clicked() {
+                fired = Some(row.word);
+            }
+        }
+    });
+    if let Some(word) = fired {
+        crate::ui::slash::fire(model, word, "");
+    }
+}
+
 /// Paint the start composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // **Taken before anything is painted**, so a start in flight — which
@@ -63,7 +110,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // it for whichever frame paints a box next (`crate::ui::model::fill`).
     let wanted = model.filling() == Some(Fill::Goal);
     if let Some(held) = model.start.clone() {
-        ui.label(held.line());
+        said(ui, model, &held.line());
         if held.outstanding() {
             return;
         }
@@ -81,15 +128,20 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
     // from no widget at all. A walk over the accessibility tree can only ever
     // see the control that begins the pair, so both tokens ride it.
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
+    let said = if unsigned(model) {
+        UNSIGNED.to_owned()
+    } else {
+        super::hint(
+            ui,
+            &goal(&aim.address, model.plan),
+            &crate::ui::chat::panel::WAYS,
+        )
+    };
     let entry = crate::ui::theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
-        &super::hint(
-            ui,
-            &goal(&aim.address, model.plan),
-            &crate::ui::chat::panel::WAYS,
-        ),
+        &said,
         None,
     );
     crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);

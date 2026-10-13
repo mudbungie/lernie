@@ -171,3 +171,30 @@ fn ctrl_o_opens_the_model_s_dropup_where_a_wall_is_aimed() {
     ctrl_o(&mut nowhere);
     assert!(nowhere.dropup.is_none());
 }
+
+/// **A notice's slash words are doors beside it** (bl-7a77): each menu row the
+/// sentence names, once, in the order said, in the brand — and a word the
+/// menu does not offer stays words. A click on one fires its row.
+#[test]
+fn a_refusal_carries_the_doors_it_names() {
+    let mut model = seated();
+    model.notice = Some(crate::ui::Notice::Refused(
+        "sign in first: `worker` holds no credential — write its key with /config brazen, \
+         /login a row, or /config again; /nowhere"
+            .to_owned(),
+    ));
+    let doors = crate::ui::status::diagnostics::doors(&model);
+    let said: Vec<&str> = doors.iter().map(|run| run.text.as_str()).collect();
+    assert_eq!(said, ["/config", "/login"]);
+    for run in &doors {
+        assert!(matches!(run.door, Some(Door::Row(row)) if run.text.ends_with(row.word)));
+        assert_eq!(run.ink, crate::ui::theme::BRAND);
+    }
+    let texts: Vec<String> = runs(&model).0.into_iter().map(|run| run.text).collect();
+    assert!(texts.contains(&"/login".to_owned()), "{texts:?}");
+    model.notice = None;
+    assert!(crate::ui::status::diagnostics::doors(&model).is_empty());
+    model.notice = Some(crate::ui::Notice::Refused("go /login now".to_owned()));
+    click_rule(&Window::new(), &mut model, "/login");
+    assert!(model.covered(), "the login pane stands");
+}

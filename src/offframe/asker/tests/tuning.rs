@@ -22,6 +22,7 @@ fn each_provider_row_the_roles_name_is_asked_and_its_answer_filed_under_it() {
             vec![json!({"ok": true, "kind": "workspaces", "rows": []})],
             vec![json!({"ok": true, "kind": "conversations", "rows": []})],
             vec![json!({"ok": true, "kind": "roles", "rows": []})],
+            vec![json!({"ok": true, "kind": "providers", "rows": []})],
             vec![json!({"ok": true, "kind": "models", "rows": ["house-model-2"]})],
         ],
     );
@@ -37,7 +38,16 @@ fn each_provider_row_the_roles_name_is_asked_and_its_answer_filed_under_it() {
         .iter()
         .filter_map(|said| said.get("op").and_then(Value::as_str))
         .collect();
-    assert_eq!(ops, ["workspaces", "conversations", "roles", "models"]);
+    assert_eq!(
+        ops,
+        [
+            "workspaces",
+            "conversations",
+            "roles",
+            "providers",
+            "models"
+        ]
+    );
     let asked = heard.iter().find(|said| said["op"] == "models");
     assert_eq!(
         asked.map(|said| &said["provider"]),

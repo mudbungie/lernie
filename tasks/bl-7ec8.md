@@ -2,6 +2,7 @@
 title = "/nudge fires silently: a successful act clears the notice, so the window says nothing where the CLI says 'nudged — the advance is running'"
 created = 1791868404
 updated = 1791869886
+claimant = "FixB"
 parent = "bl-957a"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

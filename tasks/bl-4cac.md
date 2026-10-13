@@ -1,7 +1,7 @@
 +++
 title = "an engine that goes down is invisible on the glass: the rule keeps '1 engine' and the stale green 'N waiting', and the seat panel has no dial-state word at all — only a typed act's 'not sent' notice says anything"
 created = 1791867708
-updated = 1791867720
+updated = 1791868200
 parent = "bl-957a"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
@@ -15,3 +15,7 @@ Why it matters: an operator reads a resting window as healthy while every read i
 ---
 
 Also on a seat holding three entries — its own engine up, one at a refused address, one whose ca.pem is another engine's CA: the panel paints both broken ones as '— 0 walls, 0 conversations' and the rule says '3 engines'. 'lernie workspaces' on the same roots prints the dial sentence for each (connection refused; the handshake did not verify (BadSignature) … must hold the anchors of THAT engine's CA). Same cause, same fix. And with NO material at all (first run) the panel says '0 walls, 0 conversations' and the rule '1 engine' where 'lernie entries' says 'nothing provisioned at … the act is a COPY …'.
+
+---
+
+Protocol skew (a scratch seat built with PROTOCOL 18 against engines speaking 19): the CLI says 'wire protocol mismatch: this seat speaks version 18, the engine speaks 19 ... upgrade the older component'; the window says 'ready · 2 engines', each engine '— 0 walls, 0 conversations', and offers the start hint on an aimed wall it cannot reach. Same cause: Held::Unheld is painted nowhere but the switcher, and the switcher shows the engine rows with no sentence either.

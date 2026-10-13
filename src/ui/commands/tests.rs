@@ -105,3 +105,37 @@ fn the_roster_opens_it_asking_for_the_table_and_its_own_word_shuts_it() {
     escape(&window, |ctx| crate::ui::render(ctx, &mut model));
     assert!(!model.commanding());
 }
+
+/// **The window answers first** (bl-55ed): every row of the menu, in the
+/// menu's order, and every key — then the engines' tables under a heading
+/// that says they are the engines' spelling, not the box's.
+#[test]
+fn the_window_s_own_words_and_keys_come_before_the_engines() {
+    let mut model = commanded();
+    let painted = pane(|ui| {
+        render(ui, &mut model);
+    });
+    // Each line's place on the glass, which must rise as the menu's order does.
+    let places: Vec<usize> = crate::ui::slash::rows(&model)
+        .iter()
+        .map(|row| {
+            let line = row.line();
+            painted
+                .match_indices(&line)
+                .map(|(at, _)| at)
+                .next()
+                .unwrap_or_else(|| panic!("{line:?}:\n{painted}"))
+        })
+        .collect();
+    assert!(places.is_sorted(), "the menu's order:\n{painted}");
+    let at = places.last().copied().unwrap_or_default();
+    for (key, does) in super::KEYS {
+        assert!(
+            painted.contains(&format!("{key}  {does}")),
+            "{key}:\n{painted}"
+        );
+    }
+    let engines = painted.find(super::ENGINES).expect("the engines' heading");
+    let message = painted.find("/message <workspace>").expect("an engine row");
+    assert!(at < engines && engines < message, "{painted}");
+}

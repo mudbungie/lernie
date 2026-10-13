@@ -1,5 +1,14 @@
-//! **What these engines answer**: every op each one has a word for, and what
-//! each is for (bl-40ec; DESIGN §4.21).
+//! **Help**: what this window takes — its slash words and its keys — and then
+//! what these engines answer, every op each one has a word for and what each
+//! is for (bl-40ec; DESIGN §4.21; the window's half, bl-55ed).
+//!
+//! # The window's own words come first
+//!
+//! The operator who types `/help` asked THIS window. The engines' tables are
+//! spelled in their own slash grammar (`/scan`, `/workflow <lineage>`), most
+//! of which this box does not take, so a pane that led with them taught words
+//! the menu answers *nothing here answers to that*. The window's half is read
+//! off the menu's own table, so the two never disagree about a word.
 //!
 //! # The sixth covering pane, and the second about no focus
 //!
@@ -39,8 +48,31 @@ use crate::ui::{Model, theme};
 
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "help";
-/// The pane's own heading.
-pub const HEADING: &str = "what these engines answer";
+/// The pane's own heading — what the operator asked for, which is what the
+/// window takes (bl-55ed).
+pub const HEADING: &str = "what this window takes";
+/// The window's own words, said above the rows they head.
+pub const WORDS: &str = "the words, typed after / in the box — the menu's own rows";
+/// The window's keys, said above the table.
+pub const KEYS_SAID: &str = "the keys";
+/// **Every key this window binds, and what it does** — DESIGN §4.42's
+/// *keyboard, whole*, as the operator reads it.
+pub const KEYS: [(&str, &str); 10] = [
+    ("Enter", "sends the box, or fires the chosen word"),
+    ("Shift+Enter", "breaks a line"),
+    ("/", "opens the words"),
+    ("Tab", "completes the chosen word into the box"),
+    ("Up, Down", "walk whatever is open"),
+    ("Esc", "closes the overlay, then the menu, then the notice"),
+    ("Ctrl+X", "every engine, its walls and their conversations"),
+    ("Ctrl+O", "changes the model a role runs on"),
+    ("Ctrl+T", "unfolds what is running"),
+    ("1 to 9", "answers the ask by its number"),
+];
+/// **The engines' section heading**: their op tables are a second subject —
+/// what each engine answers, in the engine's own spelling — and saying so is
+/// what keeps an operator from typing `/scan` into a box that does not take it.
+pub const ENGINES: &str = "what these engines answer — each engine's own op table, in its own spelling; the words above are what this box takes";
 /// What it says before any channel has answered.
 pub const NOT_ANSWERED: &str = "waiting to hear what these engines answer to";
 /// What a section says for an engine that answered and named no op at all — a
@@ -54,31 +86,42 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         return false;
     }
     crate::ui::overlay::name(ui, HEADING);
+    window(ui, model);
+    ui.separator();
+    ui.label(egui::RichText::new(ENGINES).color(theme::INK_WEAK));
     let pages = model.pages.clone();
     if pages.is_empty() {
         ui.label(NOT_ANSWERED);
         return true;
     }
-    // One scroll for the whole pane and the heading above it fixed — the shape
-    // every pane here keeps, for the reason the tuning pane states: a pane cut
-    // off mid-row says nothing about having been cut.
-    egui::ScrollArea::vertical()
-        .id_salt(HEADING)
-        .auto_shrink(false)
-        .show(ui, |ui| {
-            for section in &pages {
-                ui.separator();
-                ui.label(crate::ui::roster::header(&section.channel));
-                if section.rows.is_empty() {
-                    ui.label(NO_OPS);
-                    continue;
-                }
-                for row in &section.rows {
-                    op(ui, row);
-                }
-            }
-        });
+    for section in &pages {
+        ui.separator();
+        ui.label(crate::ui::roster::header(&section.channel));
+        if section.rows.is_empty() {
+            ui.label(NO_OPS);
+            continue;
+        }
+        for row in &section.rows {
+            op(ui, row);
+        }
+    }
     true
+}
+
+/// **What this window takes** (bl-55ed): the menu's rows — the same words in
+/// the same order, read off the one table (`crate::ui::slash::rows`) — and
+/// the keys. The operator who types `/help` asked the window, so the window
+/// answers first.
+fn window(ui: &mut egui::Ui, model: &Model) {
+    ui.label(egui::RichText::new(WORDS).color(theme::INK_WEAK));
+    for row in crate::ui::slash::rows(model) {
+        ui.add(egui::Label::new(row.line()).wrap());
+    }
+    ui.add_space(theme::space::XS);
+    ui.label(egui::RichText::new(KEYS_SAID).color(theme::INK_WEAK));
+    for (key, does) in KEYS {
+        ui.add(egui::Label::new(format!("{key}  {does}")).wrap());
+    }
 }
 
 /// One op: what to type and who it is for, then the sentence, then the page.

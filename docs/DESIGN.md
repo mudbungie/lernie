@@ -5075,7 +5075,10 @@ parts, in its vertical order, each with what it becomes here.
    `/records` and nothing is renamed. The nouns: `/records`, `/attention`,
    `/help`, `/doctor`, `/trail`, `/board`, `/prices`, `/find`, `/enroll`,
    `/roles` (and `/model`, the same pane by the word an operator reaches for
-   — item 10), `/login`, `/clients`, `/config`, `/fleet`, `/unmake`. The verbs:
+   — item 10), `/login`, `/clients`, `/config`, `/fleet`, `/unmake` — and **`/help` answers with what this window takes
+   first**, the menu's own rows in its order and the keys, then the engines'
+   op tables headed as each engine's own spelling, because most of those
+   words are not the box's (bl-55ed). The verbs:
    `/refresh`, `/pin` or `/unpin` by the wall's rank, `/interrupt`, `/stop`,
    `/nudge`, `/revoke`, `/restore`, `/retarget`, `/flag`, `/delete`, and
    `/plan` in the start's mode. Only what the engine offers on the selected

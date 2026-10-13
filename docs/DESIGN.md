@@ -5007,7 +5007,15 @@ parts, in its vertical order, each with what it becomes here.
    Shift+Enter breaks a line (§4.38's one read, `composer::entered`, kept).
    The start is the same line with the same glyph and a hint naming the wall
    a conversation would begin on; `✎ plan` becomes `/plan`, a toggle shown on
-   the rule while it is on. The row of offers under the field goes: `stop`,
+   the rule while it is on. **With nothing aimed it is the same line again**
+   (bl-2cb0), never a sentence where a field was: the field is where every
+   slash verb is typed, and the window's own — `/attention`, `/help`,
+   `/doctor`, `/prices`, `/board`, `/trail`, `/find`, `/refresh` — need no
+   aim, so the seat that has aimed at nothing (§4.19's seat *most likely to be
+   asking the question*) can still ask it. The hint says nothing is aimed and
+   names `/` and Ctrl+X; prose has nowhere to go, so Enter on it deposits
+   nothing, wears no tag and leaves the draft standing. The wall's and the
+   conversation's verbs are not on its menu. The row of offers under the field goes: `stop`,
    `interrupt <words>` — the same cut with something to say instead —
    `nudge`, `records…`, `…` and everything that strip opened are slash verbs
    (5), listed only while the engine offers them. **The baseline's Ctrl+C
@@ -5158,14 +5166,17 @@ parts, in its vertical order, each with what it becomes here.
     (bl-4e55). On the first run of this window the operator could not find
     how to change the workspace, the provider or the model: the ways existed
     — Ctrl+X, `/login`, `/roles` — and nothing on the glass named them. So
-    two runs of the rule are **doors**: the name at the right end opens the
-    switcher, and the model segment opens the role tuning — where a wall's
+    three runs of the rule are **doors**: the name at the right end opens the
+    switcher, the waiting count opens the queue (item 8's *the count on the
+    rule is its door*, made true by bl-2cb0 — and on a window aimed at
+    nothing, because `/attention` needs no aim), and the model segment opens
+    the role tuning — where a wall's
     model per role is read and set — and a wall whose transcript has named
     no model says `no model` in weak ink in that slot, so the door stands
     before anything has answered. Each door **is a completion-menu row
     painted elsewhere** (`status::door`): it is a door exactly while the
     menu offers its row, it wears that row's `act:` tags, and a click fires
-    that row's word — `/conversations`, `/model` — so the rule opens nothing
+    that row's word — `/conversations`, `/attention`, `/model` — so the rule opens nothing
     the menu would not. A door is a run, not a button (`theme::paint::link`):
     bare at rest, `SURFACE` under the pointer, the pointing hand over it —
     the rule stays one line of facts. `/model` is **an alias row**, not a

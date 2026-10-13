@@ -6,6 +6,8 @@
 mod keys;
 /// What a refused act does to the box it came out of.
 mod refund;
+/// The box with nothing aimed: what it offers and what it refuses.
+mod unaimed;
 
 use super::{ASKING, HINT, NOWHERE, render, start};
 use crate::paint_probe::frame::Window;
@@ -16,9 +18,8 @@ use serde_json::json;
 
 /// **One box, three subjects, and what decides is the selection.** With no wall
 /// aimed at there is neither a conversation to speak to nor one to begin, and
-/// that is the only case the composer refuses outright — a wall with nothing
-/// selected on it is where a conversation is *begun*, which used to be half of
-/// this refusal.
+/// the hint says so over a box that still takes a verb (bl-2cb0) — a wall
+/// with nothing selected on it is where a conversation is *begun*.
 #[test]
 fn what_the_composer_is_for_follows_from_what_is_selected() {
     for (model, expected) in [

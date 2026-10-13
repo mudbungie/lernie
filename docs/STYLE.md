@@ -75,7 +75,9 @@ sends · /help for commands · Ctrl+X for a conversation · /roles for the model
 /login for a provider · Shift+Enter breaks a line*, its trailing parts dropped
 one by one where the line has no room — one line, never wrapped, never a part
 cut in half; *what this conversation is for — Enter begins it* and the same
-ways in, in start mode; *it is waiting on you* while it asks. There is no send control and no row of controls under
+ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
+conversation* with no wall aimed, where prose goes nowhere and the verbs that
+need no aim still fire; *it is waiting on you* while it asks. There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.
 
 **Navigation is typed.** `/` opens the completion menu — verb and summary,

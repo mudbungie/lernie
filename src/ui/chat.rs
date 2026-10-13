@@ -36,6 +36,9 @@ pub const HEADING: &str = "conversation";
 
 /// What the pane says with nothing selected, under the seat's panel.
 pub const NO_CONVERSATION: &str = "Ctrl+X picks a conversation, or begin one in the box below";
+/// **And with nothing aimed**, where the box below begins nothing: a start
+/// needs a wall (bl-2cb0), so the sentence names the key that picks one.
+pub const NO_AIM: &str = "Ctrl+X picks a workspace to begin in, or a conversation";
 pub const LIVE: &str = "«live»";
 /// The fold's word over a trail, with the count of steps under it.
 pub const TRAIL: &str = "tool calls";
@@ -46,7 +49,12 @@ pub const RESPONSE: &str = "response";
 pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) {
     let Some(conversation) = model.conversation.as_ref() else {
         panel::seat(ui, model);
-        theme::paint::empty(ui, NO_CONVERSATION);
+        let said = if model.aim.is_some() {
+            NO_CONVERSATION
+        } else {
+            NO_AIM
+        };
+        theme::paint::empty(ui, said);
         return;
     };
     egui::ScrollArea::vertical()

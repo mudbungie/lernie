@@ -16,6 +16,13 @@
 //! wearing a sentence. A second box beside this one would be the same box
 //! twice, each with its own Enter.
 //!
+//! **With no wall aimed the box still stands** (bl-2cb0), because it is also
+//! where every slash verb is typed (`crate::ui::slash`) and the window's own
+//! verbs — the queue, help, the doctor — need no aim: a seat that has aimed
+//! at nothing is the one most likely to ask what is waiting on it. Prose
+//! typed there goes nowhere and the hint says nothing is aimed ([`NOWHERE`]):
+//! Enter on it deposits nothing and leaves the draft standing.
+//!
 //! **The one case with no box at all** is a conversation this window started
 //! and the engine cannot resolve yet: there is a selection, and nothing this
 //! seat composed against it would be answered
@@ -30,9 +37,12 @@ use crate::ui::{Model, theme};
 /// The half that begins a conversation rather than continuing one.
 pub mod start;
 
-/// What the composer says with no wall aimed at — the one case that is neither
-/// a deposit nor a start, because there is nowhere for either to go.
-pub const NOWHERE: &str = "pick a workspace with Ctrl+X to say anything or begin anything";
+/// **What the field says with no wall aimed at** — neither a deposit nor a
+/// start has anywhere to go, so the hint says so and then names what the field
+/// still does ([`UNAIMED`]), dropped from the right as [`hint`] drops.
+pub const NOWHERE: &str = "nothing is aimed";
+/// The ways in that need no aim: the verbs, and the key that aims.
+pub const UNAIMED: [&str; 2] = ["/ for a verb", "Ctrl+X for a conversation"];
 /// **What the field says while it is empty** — the key that sends, then the
 /// ways in ([`hint`]), then the key that breaks a line, because a field three
 /// lines tall is one an operator expects Enter to break a line in, and a
@@ -95,7 +105,16 @@ pub const NUDGE: &str = "nudge";
 /// Paint the composer and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let Some(aim) = model.aim.clone() else {
-        theme::paint::empty(ui, NOWHERE);
+        // **The field with nothing aimed**: the slash line is the menu's
+        // (`crate::ui::slash::menu`), and nothing else here fires — so the
+        // field carries no `act:` tag, because it composes no op of its own.
+        theme::paint::prompt(
+            ui,
+            egui::Id::new(crate::ui::keys::BOX_ID),
+            &mut model.draft,
+            &hint(ui, NOWHERE, &UNAIMED),
+            None,
+        );
         return;
     };
     let Some(agent) = model.conversation.clone() else {

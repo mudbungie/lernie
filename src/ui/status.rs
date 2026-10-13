@@ -16,9 +16,10 @@
 //! conversation's name, the aimed wall's where none is selected, and the word
 //! `engines` where nothing is aimed.
 //!
-//! **Two of the runs are doors** (bl-4e55): the name opens the switcher and
-//! the model opens the role tuning — each by firing the completion menu's own
-//! row ([`door`]), so a click here is `/conversations` or `/model` typed, wears
+//! **Three of the runs are doors** (bl-4e55, bl-2cb0): the name opens the
+//! switcher, the model opens the role tuning and the waiting count opens the
+//! queue — each by firing the completion menu's own row ([`door`]), so a
+//! click here is `/conversations`, `/model` or `/attention` typed, wears
 //! that row's `act:` tags, and is a control exactly where the row is offered.
 //! A wall whose transcript names no model says `no model` in weak ink in that
 //! slot, so the way to choose one is on the glass before anything answered.
@@ -151,10 +152,15 @@ pub fn facts(model: &Model) -> Vec<Run> {
     }
     let asking = waiting(model);
     if asking > 0 {
-        out.push(run(
-            format!("{asking} waiting"),
-            theme::accent(theme::State::Attention),
-        ));
+        // **The count is the queue's door** (§4.42, item 8; bl-2cb0), and
+        // the queue needs no aim, so it opens on every window that counts.
+        out.push(Run {
+            door: door(model, crate::ui::queue::WORD),
+            ..run(
+                format!("{asking} waiting"),
+                theme::accent(theme::State::Attention),
+            )
+        });
     }
     let engines = model.roster.len();
     out.push(run(

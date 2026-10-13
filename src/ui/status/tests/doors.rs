@@ -109,6 +109,32 @@ fn a_click_on_each_door_opens_its_overlay() {
     assert!(model.switching, "the name opens the switcher");
 }
 
+/// **The waiting count is the queue's door** (§4.42, item 8; bl-2cb0) — on
+/// a window aimed at nothing too, the seat most likely to be asking — and it
+/// wears `/attention`'s tag.
+#[test]
+fn a_click_on_the_waiting_count_opens_the_queue_with_nothing_aimed() {
+    let mut model = Model {
+        aim: None,
+        conversation: None,
+        ..seated()
+    };
+    model.roster[0].walls.push(crate::reply::roster::WsRow {
+        attention: 2,
+        ..crate::test_support::window::wall("annex")
+    });
+    let count = facts(&model)
+        .into_iter()
+        .find(|run| run.text == "2 waiting")
+        .expect("the count is a fact");
+    assert_eq!(
+        count.door.map(|row| row.ops),
+        Some(&[crate::verbs::ATTENTION.word][..])
+    );
+    click_rule(&mut model, "2 waiting");
+    assert!(model.showing(crate::ui::Listing::Queue), "the queue stands");
+}
+
 /// **Ctrl+O is `/model`** — from the box too — and opens nothing where no
 /// wall is aimed, as the word is not offered there.
 #[test]

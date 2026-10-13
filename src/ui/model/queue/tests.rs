@@ -188,11 +188,11 @@ fn escape_closes_the_queue_before_reaching_the_notice() {
     assert_eq!(model.notice, None, "the next escape reaches it");
 }
 
-/// The raise carries nothing, so what it does to the window is put the last
-/// notice down — the receipt says the gesture landed and the next queue says
-/// what it changed.
+/// The raise carries nothing, so what it does to the window is say it landed
+/// (bl-9760) — the next queue says what it changed, and the receipt files no
+/// row of its own.
 #[test]
-fn the_raise_clears_the_notice_and_files_nothing() {
+fn the_raise_says_it_landed_and_files_nothing() {
     let mut model = Model {
         notice: Some(crate::ui::Notice::Refused("earlier".to_owned())),
         ..seated()
@@ -201,6 +201,11 @@ fn the_raise_clears_the_notice_and_files_nothing() {
         &own(),
         crate::reply::Read::Answer(crate::reply::Reply::Flagged),
     );
-    assert!(model.notice.is_none());
+    assert_eq!(
+        model.notice,
+        Some(crate::ui::Notice::Said(
+            "flagged — it is on the queue now".to_owned()
+        ))
+    );
     assert!(model.waiting.is_empty());
 }

@@ -58,6 +58,13 @@ impl Model {
             // the alignment monitor. The poster still knows which was sent, so
             // the join happens here rather than by the pane guessing.
             Read::Answer(Reply::Armed(on)) => self.armed(op, on),
+            // **A deposit's receipt is the transcript** (bl-9760): the words
+            // the operator sent land in the pane they are looking at, so the
+            // run's `ok` would only cover the conversation's own state in the
+            // slot after every send. Every other act's receipt is the bar's.
+            Read::Answer(Reply::Outcome(ref run)) if run.ok() && deposits(op) => {
+                self.notice = None;
+            }
             Read::Refusal(said) if self.starting(op) => self.refuse_start(said),
             Read::Unreadable(_) if self.starting(op) => {
                 self.take_back_start();
@@ -191,18 +198,23 @@ impl Model {
             } => self.notice = Some(Notice::delivered(&base, &target, source, commit)),
             Reply::Retired { discarded } => self.notice = Some(Notice::retired(discarded)),
             Reply::Started { conversation } => self.started(conversation),
-            // The three receipts. None carries content, so what they change is
-            // whether the operator is told something happened — and a captured
-            // run that failed is told in the child's own words. The advance and
-            // the raise are ONE arm rather than two identical ones, which is
-            // the honest shape: what each changed arrives on the transcript and
-            // on the next queue respectively, and this end predicts neither.
-            // **The trail's two receipts join them** (bl-b8f7), and for the
-            // identical reason: what each changed is on the trail, and the
-            // standing read is what says so. A receipt that restated it would
-            // be this end predicting a listing.
-            Reply::Nudged | Reply::Flagged | Reply::Acked | Reply::TrailCleared => {
-                self.notice = None;
+            // **The receipts that carry no fact of their own, and a captured
+            // run that succeeded** (bl-9760, bl-7ec8). None is content, but
+            // each is the engine's answer to a gesture, and a window that
+            // cleared the slot on it could not tell an act that did nothing
+            // from one that never fired. So each stands in the state slot as
+            // the CLI's own sentence ([`crate::render::receipt`]) — one source
+            // for both seats — until Escape or the next notice replaces it. A
+            // run that failed is told in the child's own words instead.
+            Reply::Outcome(outcome) if !outcome.ok() => {
+                self.notice = Some(Notice::Refused(outcome.stderr));
+            }
+            said @ (Reply::Outcome(_)
+            | Reply::Nudged
+            | Reply::Flagged
+            | Reply::Acked
+            | Reply::TrailCleared) => {
+                self.notice = Some(Notice::Said(crate::render::receipt(&said)));
             }
             // **The capability boundary's two, which DO carry a fact**
             // (§4.34). Neither is content — there is no row either belongs
@@ -222,9 +234,6 @@ impl Model {
                 ));
             }
             Reply::Floored { standing } => self.notice = Some(Notice::floored(standing)),
-            Reply::Outcome(outcome) => {
-                self.notice = (!outcome.ok()).then_some(Notice::Refused(outcome.stderr));
-            }
         }
     }
 
@@ -254,3 +263,12 @@ impl Model {
         }
     }
 }
+
+/// Whether `op` puts the operator's own words on the transcript — the two acts
+/// whose receipt is already on the glass.
+fn deposits(op: &str) -> bool {
+    op == crate::verbs::MESSAGE.word || op == crate::verbs::INTERRUPT.word
+}
+
+#[cfg(test)]
+mod tests;

@@ -63,6 +63,18 @@ mod walls;
 /// What a wall's agents changed, as a diff rather than a row of counters.
 mod work;
 
+/// **An act's receipt as the one line a window's state slot holds** (bl-9760)
+/// — this module's own rendering of the reply, its lines joined, so the window
+/// and the terminal say one sentence from one source.
+pub(crate) fn receipt(reply: &Reply) -> String {
+    answer::answer(reply)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join(" · ")
+}
+
 /// **Which form a reply stream is printed in.**
 ///
 /// Two, and there will never be a third: one for a person and one for a

@@ -3943,6 +3943,18 @@ on the rows that were standing, and a truncated trail's first row is the cut
 itself. They join `nudged` and `flagged` in the one arm that predicts no
 listing (§4.9).
 
+**Amended by bl-9760: none of the four is silent any more.** Predicting no
+listing still holds; painting nothing did not — a `/nudge` with nothing to
+advance and a `/retarget` with nothing to retarget changed nothing any read
+would show, so the window could not tell an act that did nothing from one that
+never fired. Each receipt, and a successful captured run, now stands in the
+state slot (§4.42 item 2) as `Notice::Said` in the Annotation ink, carrying the
+CLI's own sentence (`crate::render::receipt`, one source for both seats), until
+Esc or the next notice. The one exception is a deposit (`message`,
+`interrupt`): its receipt is the operator's words on the transcript, and an
+`ok` standing over the conversation's state after every send would hide the one
+fact the slot is for.
+
 ### 4.35 The ball pane's five acts: the stamp that is not an identity, and the one act with no undoing (bl-f7ae)
 
 `src/verbs/balls.rs`, `src/verbs/balls/edit.rs`, `src/ui/board/acts.rs`,
@@ -4026,7 +4038,8 @@ would charge a retype for the engine's *no*.
 
 **Nothing new is decoded and no receipt is invented.** All five answer with a
 captured run, which §4.9 already paints: a refusal arrives in the child's own
-words on the bar, and a success says nothing. That silence is this pane's
+words on the bar, and a success says nothing (*amended by bl-9760: a success
+now says the CLI's own sentence in the state slot — §4.34's amendment*). That silence was this pane's
 standing reads paying for themselves (§4.31: all four STAND while somebody is
 looking) — a ball filed appears in the ready column within the beat, a claim
 moves a row, a close takes one away. A `Notice::Said` receipt here would be a

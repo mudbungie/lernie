@@ -3,7 +3,7 @@
 
 use super::{Channel, Chunk, Model, Notice};
 use crate::reply::roster::Workspaces;
-use crate::reply::{Outcome, Read, Reply, read};
+use crate::reply::{Read, Reply, read};
 use crate::test_support::window::{own, wall};
 use serde_json::json;
 
@@ -124,41 +124,6 @@ fn each_kind_lands_in_the_pane_that_paints_it() {
         model.live.as_ref().and_then(|s| s.text.clone()),
         Some("so far".to_owned())
     );
-}
-
-/// **The two receipts, and a captured run that failed is told in the child's
-/// own words.** A receipt with nothing to say clears the last notice; one that
-/// says the act did not land replaces it.
-#[test]
-fn a_receipt_either_clears_the_notice_or_carries_the_child_s_own_refusal() {
-    let mut model = Model {
-        notice: Some(Notice::Refused("stale".to_owned())),
-        ..Model::default()
-    };
-    let flat = own().channel;
-    model.absorb(&flat, Read::Answer(Reply::Nudged));
-    assert_eq!(model.notice, None);
-    model.absorb(
-        &flat,
-        Read::Answer(Reply::Outcome(Outcome {
-            exit: 1,
-            stdout: String::new(),
-            stderr: "the gate said no".to_owned(),
-        })),
-    );
-    assert_eq!(
-        model.notice,
-        Some(Notice::Refused("the gate said no".to_owned()))
-    );
-    model.absorb(
-        &flat,
-        Read::Answer(Reply::Outcome(Outcome {
-            exit: 0,
-            stdout: "deposited".to_owned(),
-            stderr: String::new(),
-        })),
-    );
-    assert_eq!(model.notice, None);
 }
 
 /// A channel with nothing behind it yet is what the roster holds before any

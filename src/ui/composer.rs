@@ -93,9 +93,6 @@ fn parts() -> Vec<&'static str> {
     out
 }
 
-/// **And what it says while the conversation is asking** (`docs/STYLE.md`
-/// §2): the field is where the answer goes, so it is where the asking is said.
-pub const ASKING: &str = "it is waiting on you — Enter sends";
 /// The deposit that cuts first: the driver is killed and the content deposited
 /// as one gesture. It spends the same box `send` does, because *what to say
 /// instead* is the same question as *what to say* — a second box for it would
@@ -148,15 +145,18 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     let asking = model.asks();
     let slashed = crate::ui::slash::parsed(&model.draft).is_some();
     let wanted = model.filling().is_some();
+    // While it asks, the field is where the answer goes, so it is where the
+    // asking is said (`docs/STYLE.md` §2; `crate::ui::ask::hint`).
+    let said = if asking {
+        crate::ui::ask::hint(model)
+    } else {
+        hint(ui, HINT, &parts())
+    };
     let entry = theme::paint::prompt(
         ui,
         egui::Id::new(crate::ui::keys::BOX_ID),
         &mut model.draft,
-        &if asking {
-            ASKING.to_owned()
-        } else {
-            hint(ui, HINT, &parts())
-        },
+        &said,
         asking.then(|| theme::tint(theme::State::Attention)),
     );
     // **The field is the control** (§4.42): there is no `send`, Enter fires

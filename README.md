@@ -125,7 +125,8 @@ pane or the act; Ctrl+X opens the switcher, the one list of engines, their
 workspaces and their conversations, with a `+` on each engine that begins a
 conversation on it. What is asked for floats in a framed box over the
 transcript and Esc puts it down. While the selected conversation is asking,
-its decision stands above the rule as numbered choices a digit picks; while
+its decision stands above the rule as numbered choices a digit picks on an
+empty prompt — words typed there are sent instead; while
 anything runs under the aimed workspace, a one-line dock above the rule says
 so and Ctrl+T unfolds it. All of it is painted from a snapshot and fires
 gestures through the same doors the command line spends. The prompt speaks to

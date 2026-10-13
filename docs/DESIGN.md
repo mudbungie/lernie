@@ -5268,8 +5268,18 @@ parts, in its vertical order, each with what it becomes here.
    workspace · 5. refuse · 6. hold` — the three scopes being the baseline's
    *once*, *this session* and *always* in this wire's own words, §4.19's
    acts and no others; `go to it` is not among them because the operator is
-   there. A digit picks, the arrows move, Enter answers, all while nothing
-   holds the keyboard; a click on a row is the same answer. It is §4.19's
+   there. **The prompt keeps the caret while it asks** (bl-1252; STYLE §1 —
+   a focus that is not where the words go is worse than none): a digit
+   picks, ↑↓ walk the choices and Enter answers the chosen row **only while
+   the draft is empty**, each taken out of the frame before the box reads
+   it (`ask::keys`); with words in the draft every key is the box's and
+   Enter sends them, or fires the slash line — typed words never go
+   nowhere. The field's hint while it asks says both: *it is asking — 1–6
+   answers, or say it — Enter sends* (`ask::hint`; `1` where only `seen`
+   is offered, no digits before the queue's row lands). Round 2 found the
+   caret held out of the box so a digit could answer, which sent typed
+   words nowhere and spent Enter on the question. A click on a row is the
+   same answer. It is §4.19's
    queue entry for the one conversation on the glass, painted where the
    answer is typed; the queue itself (`/attention`) is the same rows for
    every conversation, and the count on the rule is its door. **The queue's
@@ -5439,15 +5449,16 @@ A stroke on a thing that floats says what is over what; a stroke on a control
 was the grid of chips the rule was written against.
 
 **Keyboard, whole**: **the caret lives in the prompt line** — whenever
-nothing else holds the keyboard, nothing floats over the prompt and the ask
-is not standing, the box takes it back, at launch, after the switcher picks,
+nothing else holds the keyboard and nothing floats over the prompt — the
+ask standing included (bl-1252) — the box takes it back, at launch, after the switcher picks,
 after Esc and after an overlay closes (bl-b1a1); a keystroke never needs a
 click first. Enter sends; Shift+Enter breaks a line; `/` opens the
 menu and Tab takes a row; Ctrl+X opens the switcher; Ctrl+O opens the
 model's dropup, as `/model` and a click on the rule's model do (item 11); `/stop` and
 `/interrupt <words>` are typed, not chorded (item 3); Esc closes a dropup,
 then the overlay, then the menu, then the notice; ↑↓ walk whatever is open
-and Enter picks in a dropup; a digit answers the ask; Ctrl+T unfolds the
+and Enter picks in a dropup; on an empty draft a digit, ↑↓ and Enter answer
+the ask; Ctrl+T unfolds the
 dock; in the switcher the arrows walk onto `+ new` and `+ new workspace`
 too, and Enter begins or founds (bl-f991). Every act is a slash verb or a
 key, and every key calls the door the verb calls.

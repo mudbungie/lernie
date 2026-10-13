@@ -9,7 +9,7 @@ mod refund;
 /// The box with nothing aimed: what it offers and what it refuses.
 mod unaimed;
 
-use super::{ASKING, HINT, NOWHERE, render, start};
+use super::{HINT, NOWHERE, render, start};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{pane, seated};
 use crate::ui::Model;
@@ -213,7 +213,7 @@ fn the_field_glows_while_the_conversation_is_asking_and_the_glyph_wears_the_bran
             .iter()
             .any(|(_, ink)| *ink == glow);
         assert_eq!(glowing, glows, "attention {attention}");
-        let hint = if glows { ASKING } else { HINT };
+        let hint = if glows { crate::ui::ask::HEADING } else { HINT };
         assert!(
             crate::paint_probe::seen_of(&output)
                 .iter()

@@ -89,15 +89,14 @@ pub fn typing(ctx: &egui::Context) -> bool {
 /// Esc leaves the box, after an overlay closes. Typing is the way in, so a
 /// keystroke must land somewhere without a click first.
 ///
-/// **At rest** is the prompt standing with nothing over it and nothing
-/// asking: an overlay or the switcher unpaints the box, and while the ask
-/// stands its digits and arrows are the keys' (`super::asking` — *while
-/// nothing holds the keyboard*), so the box waits to be clicked into there.
-/// A control the operator tabbed to holds the keyboard, so nothing is taken
-/// from it.
+/// **At rest** is the prompt standing with nothing over it: an overlay or
+/// the switcher unpaints the box. **The ask does not take the caret away**
+/// (bl-1252): a focus that is not where the words go is worse than none, so
+/// the box keeps it and lends the ask its keys while the draft is empty
+/// (`crate::ui::ask::keys`). A control the operator tabbed to holds the
+/// keyboard, so nothing is taken from it.
 pub fn rest(ctx: &egui::Context, model: &crate::ui::Model) {
-    let resting =
-        !model.covered() && model.pending().is_none() && crate::ui::ask::row(model).is_none();
+    let resting = !model.covered() && model.pending().is_none();
     if resting && ctx.memory(egui::Memory::focused).is_none() {
         ctx.memory_mut(|memory| memory.request_focus(egui::Id::new(BOX_ID)));
     }

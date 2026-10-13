@@ -35,7 +35,9 @@ fn it_stands_on_the_selected_conversation_s_row_and_not_otherwise() {
     model.conversation = Some("c-9".to_owned());
     assert!(row(&model).is_none());
     let text = painted(&mut model);
-    assert!(!text.contains(HEADING), "{text}");
+    // The box's own key line, because its name is also the field's hint
+    // while the row still says it asks.
+    assert!(!text.contains(HINT), "{text}");
 }
 
 /// **The choices are the queue's acts**: `seen` alone where nothing is
@@ -91,6 +93,9 @@ fn a_digit_the_arrows_and_a_click_each_answer() {
         window.frame(vec![press(key)], |ctx| crate::ui::render(ctx, model));
     };
     let mut model = asked();
+    // The box takes the caret on the first frame and its arrows from the
+    // second: the keys arrive after the window has painted once.
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
     key(&mut model, egui::Key::ArrowDown);
     key(&mut model, egui::Key::ArrowDown);
     key(&mut model, egui::Key::ArrowUp);
@@ -114,25 +119,71 @@ fn a_digit_the_arrows_and_a_click_each_answer() {
     );
 }
 
-/// **A digit typed into the box is text, not a pick**: the keys are the
-/// ask's only while nothing holds the keyboard.
+/// **The box keeps the caret while it asks, and lends the ask its keys only
+/// while the draft is empty** (bl-1252): the caret is in the prompt on the
+/// first frame; a digit there answers and never reaches the draft; with
+/// words in the draft a digit is text, an arrow is the box's and Enter sends
+/// the words as a message; and a control a Tab landed on keeps its keys.
 #[test]
-fn a_digit_in_the_box_picks_nothing() {
+fn the_box_keeps_the_caret_and_an_empty_draft_lends_the_ask_its_keys() {
+    let field = egui::Id::new(crate::ui::keys::BOX_ID);
+    let typed = |text: &str| egui::Event::Text(text.to_owned());
     let mut model = asked();
     let window = Window::new();
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
-    window.focus(egui::Id::new(crate::ui::keys::BOX_ID));
-    window.frame(vec![press(egui::Key::Num1)], |ctx| {
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    assert_eq!(window.focused(), Some(field), "the caret is in the box");
+    window.frame(vec![press(egui::Key::Num2), typed("2")], |ctx| {
         crate::ui::render(ctx, &mut model);
     });
+    assert_eq!(last_op(&model), Some(json!("answer")));
+    assert!(model.draft.is_empty(), "{:?}", model.draft);
+
+    let mut model = asked();
+    model.draft = "go on".to_owned();
+    window.focus(field);
+    for key in [egui::Key::Num1, egui::Key::ArrowDown] {
+        window.frame(vec![press(key)], |ctx| crate::ui::render(ctx, &mut model));
+    }
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
-    // And a control holding the keyboard — a Tab landed on it — is egui's
-    // to fire, not the ask's: the digit stays with the control.
+    window.frame(vec![press(egui::Key::Enter)], |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert_eq!(last_op(&model), Some(json!("message")));
+    assert_eq!(
+        model.outbox.len(),
+        1,
+        "the words, and no answer beside them"
+    );
+
+    let mut model = asked();
     window.focus(egui::Id::new("a control the Tab landed on"));
     window.frame(vec![press(egui::Key::Num1)], |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     assert!(model.outbox.is_empty(), "{:?}", model.outbox);
+}
+
+/// **The field's hint while it asks names the digits and the words**
+/// (bl-1252): `1–6` where a call is parked, `1` where only `seen` is offered,
+/// and no digits before the queue's row has landed.
+#[test]
+fn the_hint_names_the_digits_and_the_words() {
+    let mut model = asked();
+    assert_eq!(
+        super::hint(&model),
+        "it is asking — 1–6 answers, or say it — Enter sends"
+    );
+    for section in &mut model.waiting {
+        for row in &mut section.rows {
+            row.held = None;
+        }
+    }
+    assert!(super::hint(&model).contains("— 1 answers, or say it"));
+    model.waiting.clear();
+    assert_eq!(super::hint(&model), "it is asking — say it — Enter sends");
+    let text = painted(&mut asked());
+    assert!(text.contains("1–6 answers"), "{text}");
 }
 
 /// **The doors and the moves are quiet where nothing asks.**
@@ -195,7 +246,9 @@ fn the_box_goes_down_on_the_frame_the_receipt_lands() {
     model.receipt(&crate::test_support::window::own().channel, "seen", receipt);
     assert!(row(&model).is_none());
     let text = painted(&mut model);
-    assert!(!text.contains(HEADING), "{text}");
+    // The box's own key line, because its name is also the field's hint
+    // while the row still says it asks.
+    assert!(!text.contains(HINT), "{text}");
     assert!(text.contains(&format!("seen {display} — off")), "{text}");
     assert!(!text.contains("could not read"), "{text}");
 }

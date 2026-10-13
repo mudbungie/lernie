@@ -119,6 +119,12 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // pressed where the keyboard was, and the box takes the next ones.
     let typing = boxes::typing(ctx);
     boxes::rest(ctx, model);
+    // **The ask's keys are read in the box** (§4.42, item 8; bl-1252): the
+    // caret stays in the prompt while it asks, and an empty draft lends the
+    // ask its digits, its arrows and its Enter.
+    if !model.covered() && !model.switching {
+        crate::ui::ask::keys(ctx, model);
+    }
     if typing {
         return;
     }
@@ -150,9 +156,7 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
         return;
     }
     // **The arrows walk the list while the switcher stands** — the one place
-    // the list is on the glass (§4.42) — **and the ask while it does** (item
-    // 8): a digit picks a row, the arrows move, Enter answers. Neither set
-    // of keys has a meaning where its surface is not on the glass.
+    // the list is on the glass (§4.42); they have no meaning where it is not.
     if model.switching {
         for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
             if pressed(key) {
@@ -164,42 +168,6 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
             model,
             pressed(egui::Key::Enter) || pressed(egui::Key::Space),
         );
-    } else if crate::ui::ask::row(model).is_some() {
-        asking(ctx, model);
-    }
-}
-
-/// **The ask's keys**: a digit picks the row it numbers, the arrows move the
-/// choice, Enter answers with it — while nothing holds the keyboard, as the
-/// opening below.
-fn asking(ctx: &egui::Context, model: &mut Model) {
-    if ctx.memory(egui::Memory::focused).is_some() {
-        return;
-    }
-    let pressed = |key| ctx.input(|i| i.key_pressed(key));
-    for (key, step) in [(egui::Key::ArrowUp, -1), (egui::Key::ArrowDown, 1)] {
-        if pressed(key) {
-            crate::ui::ask::moved(ctx, model, step);
-        }
-    }
-    if pressed(egui::Key::Enter) {
-        crate::ui::ask::confirm(ctx, model);
-    }
-    let digits = [
-        egui::Key::Num1,
-        egui::Key::Num2,
-        egui::Key::Num3,
-        egui::Key::Num4,
-        egui::Key::Num5,
-        egui::Key::Num6,
-        egui::Key::Num7,
-        egui::Key::Num8,
-        egui::Key::Num9,
-    ];
-    for (n, key) in digits.into_iter().enumerate() {
-        if pressed(key) {
-            crate::ui::ask::pick(model, n + 1);
-        }
     }
 }
 

@@ -86,7 +86,8 @@ one by one where the line has no room — one line, never wrapped, never a part
 cut in half; *what this conversation is for — Enter begins it* and the same
 ways in, in start mode; *nothing is aimed · / for a verb · Ctrl+X for a
 conversation or a new workspace* with no wall aimed, where prose goes nowhere and the verbs that
-need no aim still fire; *it is waiting on you* while it asks. There is no send control and no row of controls under
+need no aim still fire; *it is asking — 1–6 answers, or say it — Enter sends* while it asks, the caret
+staying in the box (bl-1252). There is no send control and no row of controls under
 it: the field is the control, and the verbs are typed.
 
 **Navigation is typed.** `/` opens the completion menu — verb and summary,

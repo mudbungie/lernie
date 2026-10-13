@@ -5214,7 +5214,11 @@ the ask — and the panel at the head of a transcript, and nothing else is boxed
 A stroke on a thing that floats says what is over what; a stroke on a control
 was the grid of chips the rule was written against.
 
-**Keyboard, whole**: Enter sends; Shift+Enter breaks a line; `/` opens the
+**Keyboard, whole**: **the caret lives in the prompt line** — whenever
+nothing else holds the keyboard, nothing floats over the prompt and the ask
+is not standing, the box takes it back, at launch, after the switcher picks,
+after Esc and after an overlay closes (bl-b1a1); a keystroke never needs a
+click first. Enter sends; Shift+Enter breaks a line; `/` opens the
 menu and Tab takes a row; Ctrl+X opens the switcher; Ctrl+O opens the
 role tuning, as `/model` and a click on the rule's model do (item 10); `/stop` and
 `/interrupt <words>` are typed, not chorded (item 3); Esc closes the overlay,

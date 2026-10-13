@@ -82,3 +82,23 @@ pub fn typing(ctx: &egui::Context) -> bool {
         .iter()
         .any(|name| focused == Some(egui::Id::new(*name)))
 }
+
+/// **The caret lives in the prompt line** (bl-b1a1; DESIGN §4.42, keyboard
+/// whole): whenever nothing else holds the keyboard and the window is at
+/// rest, the box takes it back — at launch, after the switcher picks, after
+/// Esc leaves the box, after an overlay closes. Typing is the way in, so a
+/// keystroke must land somewhere without a click first.
+///
+/// **At rest** is the prompt standing with nothing over it and nothing
+/// asking: an overlay or the switcher unpaints the box, and while the ask
+/// stands its digits and arrows are the keys' (`super::asking` — *while
+/// nothing holds the keyboard*), so the box waits to be clicked into there.
+/// A control the operator tabbed to holds the keyboard, so nothing is taken
+/// from it.
+pub fn rest(ctx: &egui::Context, model: &crate::ui::Model) {
+    let resting =
+        !model.covered() && model.pending().is_none() && crate::ui::ask::row(model).is_none();
+    if resting && ctx.memory(egui::Memory::focused).is_none() {
+        ctx.memory_mut(|memory| memory.request_focus(egui::Id::new(BOX_ID)));
+    }
+}

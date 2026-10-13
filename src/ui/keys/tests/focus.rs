@@ -32,18 +32,70 @@ fn ringed(model: &mut Model, keys: &[egui::Key]) -> (Vec<egui::Rect>, String) {
     (rings, crate::paint_probe::text_of(&output))
 }
 
-/// **A Tab is visible where it landed**: the first Tab rings exactly one
-/// thing, and nothing is ringed before any key is pressed.
+/// **At rest the one thing ringed is the prompt line**, because the caret
+/// lives there (bl-b1a1), and a Tab takes the keyboard on from it.
 #[test]
-fn the_first_tab_rings_one_thing_and_nothing_is_ringed_at_rest() {
+fn the_box_is_ringed_at_rest_and_a_tab_moves_on_from_it() {
     let mut model = seated();
     let (rings, _) = ringed(&mut model, &[]);
+    assert_eq!(rings.len(), 1, "the box holds the caret at rest: {rings:?}");
+    let window = Window::new();
+    let box_id = egui::Id::new(crate::ui::keys::BOX_ID);
+    for key in [None, Some(egui::Key::Tab)] {
+        let events = key.map(|key| vec![press(key)]).unwrap_or_default();
+        window.frame(events, |ctx| crate::ui::render(ctx, &mut model));
+    }
     assert!(
-        rings.is_empty(),
-        "nothing holds the keyboard at rest: {rings:?}"
+        window.focused().is_some_and(|id| id != box_id),
+        "the Tab took the keyboard on, and the box did not take it back"
     );
-    let (rings, _) = ringed(&mut model, &[egui::Key::Tab]);
-    assert_eq!(rings.len(), 1, "one thing holds the keyboard: {rings:?}");
+}
+
+/// **The caret comes back to the box** after every gesture that took it
+/// away — the switcher choosing, Esc leaving the box, an overlay closing —
+/// and stays off it while something stands over the prompt (bl-b1a1).
+#[test]
+fn the_caret_comes_back_to_the_box() {
+    let window = Window::new();
+    let id = egui::Id::new(crate::ui::keys::BOX_ID);
+    let mut model = seated();
+    let frame = |model: &mut Model, events: Vec<egui::Event>| {
+        window.frame(events, |ctx| crate::ui::render(ctx, model));
+    };
+    frame(&mut model, Vec::new());
+    assert_eq!(window.focused(), Some(id), "at launch");
+    let unaimed = Window::new();
+    unaimed.frame(Vec::new(), |ctx| {
+        crate::ui::render(ctx, &mut Model::default());
+    });
+    assert_eq!(
+        unaimed.focused(),
+        Some(id),
+        "with nothing aimed, the box still takes it"
+    );
+    model.notice = Some(crate::ui::Notice::Refused("no".to_owned()));
+    frame(&mut model, vec![press(egui::Key::Escape)]);
+    assert_eq!(model.notice, None, "Esc in the box is the notice's dismiss");
+    frame(&mut model, Vec::new());
+    assert_eq!(window.focused(), Some(id), "after Esc left the box");
+    model.begin_trail();
+    frame(&mut model, Vec::new());
+    frame(&mut model, Vec::new());
+    assert_ne!(window.focused(), Some(id), "an overlay unpaints the box");
+    frame(&mut model, vec![press(egui::Key::Escape)]);
+    frame(&mut model, Vec::new());
+    assert!(!model.covered());
+    assert_eq!(window.focused(), Some(id), "after the overlay closed");
+    "/re".clone_into(&mut model.draft);
+    model.notice = Some(crate::ui::Notice::Refused("no".to_owned()));
+    frame(&mut model, vec![press(egui::Key::Escape)]);
+    frame(&mut model, Vec::new());
+    assert_eq!(model.draft, "", "the menu took that Esc");
+    assert!(
+        model.notice.is_some(),
+        "and only the menu: the notice is next"
+    );
+    assert_eq!(window.focused(), Some(id), "after Esc cleared the menu");
 }
 
 /// A window on one engine holding two walls, which is the shape both beats

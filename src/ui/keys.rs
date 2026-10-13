@@ -45,10 +45,12 @@
 //!
 //! **A box that is taking text takes every key**, which is the one gate: while
 //! a text box holds the focus nothing here runs, so an arrow is a cursor move
-//! inside the draft and Escape is egui's own *leave the box*. Press it again
-//! with no box focused and it is [`Model::escape`] below — which closes the
-//! enrollment where one covers the window, and puts the notice down otherwise.
-//! One key, three contexts, and the contexts never overlap.
+//! inside the draft. **Esc is never a box's**: egui drops the keyboard on it
+//! before the frame runs, so it reaches [`Model::escape`] below — which puts
+//! the notice down — from wherever the operator is typing, and the caret goes
+//! back to the prompt line on the next frame ([`boxes::rest`], bl-b1a1). The
+//! menu takes a slash line's Esc for itself (`crate::ui::slash`), so Esc's
+//! order is the overlay, the menu, the notice.
 //!
 //! The gate asks for **those boxes by name** rather than for egui's
 //! `wants_keyboard_input`, which answers *is anything focused at all* — every
@@ -110,11 +112,19 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     if chord(egui::Key::T) {
         crate::ui::dock::toggle(ctx);
     }
-    if boxes::typing(ctx) {
+    // The gate is read BEFORE the caret goes back: this frame's keys were
+    // pressed where the keyboard was, and the box takes the next ones.
+    let typing = boxes::typing(ctx);
+    boxes::rest(ctx, model);
+    if typing {
         return;
     }
     let pressed = |key| ctx.input(|i| i.key_pressed(key));
-    if pressed(egui::Key::Escape) {
+    // **The menu's Esc is the menu's alone** (§4.42: the overlay, then the
+    // menu, then the notice): a slash line on the open prompt is cleared by
+    // `crate::ui::slash::menu`, and the notice waits for the next Esc.
+    let menu = !model.covered() && crate::ui::slash::parsed(&model.draft).is_some();
+    if pressed(egui::Key::Escape) && !menu {
         model.escape();
     }
     // **A covering pane owns the arrows** (bl-7574; the tuning pane joined it

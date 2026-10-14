@@ -1,8 +1,10 @@
-//! **The rule's five selectors** (DESIGN §4.42, item 11): workspace,
-//! provider, model, effort and priority, left to right — what this
-//! conversation talks to, each a dropup.
+//! **The rule's four selectors** (DESIGN §4.42, item 11, as §4.44 amends
+//! it): provider, model, effort and priority, left to right — what this
+//! conversation talks to, each a dropup. The workspace left the rule for the
+//! bar's foot (`crate::ui::bar`), because a workspace is not a fact of a
+//! conversation; its run is still spelled here ([`workspace`]), once.
 //!
-//! The four after the workspace are the **worker role's** row off the
+//! The four are the **worker role's** row off the
 //! `roles` read, which stands on the aim (`crate::offframe::asker::wall`).
 //! Effort and priority stand only where the worker's provider row takes them
 //! — or where the providers read has not said, because absence is not
@@ -11,8 +13,8 @@
 use super::{Door, Run, run};
 use crate::ui::{Model, Reload, Selector, theme};
 
-/// The workspace slot with nothing aimed.
-pub const NO_WORKSPACE: &str = "workspace…";
+/// The workspace's words with nothing aimed — `⏶` stands beside them.
+pub const NO_WORKSPACE: &str = "workspace";
 /// The provider slot where the worker's row is not in hand.
 pub const NO_PROVIDER: &str = "provider…";
 /// The model slot where neither the worker's row nor the transcript names
@@ -79,14 +81,20 @@ fn answered_by(model: &Model) -> Option<String> {
         })
 }
 
-/// **The selectors this window offers, in order**, and how many of them
-/// never drop: the workspace always; with a wall aimed the provider and the
-/// model, and effort and priority where the worker's row takes them.
-pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
+/// **The workspace's run** — the aimed wall's name, or [`NO_WORKSPACE`] —
+/// which the bar's foot paints and the rule does not (DESIGN §4.44 item 3).
+pub(crate) fn workspace(model: &Model) -> Run {
     let wall = model.aim.as_ref().map(|aim| aim.address.clone());
-    let mut out = vec![selector(model, Selector::Workspace, wall, NO_WORKSPACE)];
+    selector(model, Selector::Workspace, wall, NO_WORKSPACE)
+}
+
+/// **The selectors the rule offers, in order**, and how many of them never
+/// drop: with nothing aimed none stands; with a wall aimed the provider and
+/// the model, and effort and priority where the worker's row takes them.
+pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
+    let mut out = Vec::new();
     if model.aim.is_none() {
-        return (out, 1);
+        return (out, 0);
     }
     let worker = model.worker().cloned();
     out.push(selector(
@@ -101,7 +109,7 @@ pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
         .or_else(|| answered_by(model));
     out.push(selector(model, Selector::Model, said, NO_MODEL));
     let Some(worker) = worker else {
-        return (out, 3);
+        return (out, 2);
     };
     let row = model
         .providers
@@ -117,5 +125,5 @@ pub fn selectors(model: &Model) -> (Vec<Run>, usize) {
         let said = Some(format!("{PRIORITY} {}", crate::ui::lane(worker.priority)));
         out.push(selector(model, Selector::Priority, said, PRIORITY));
     }
-    (out, 3)
+    (out, 2)
 }

@@ -1,5 +1,7 @@
 //! **A selector's dropup** (DESIGN §4.42, item 11): the list a click on a
-//! rule segment opens, standing over that segment and opening upward.
+//! rule segment opens, standing over that segment and opening upward. The
+//! workspace's stands over the bar's foot instead (§4.44), on a layer of its
+//! own laid by `crate::ui::bar` — the same box over a different span.
 //!
 //! It is the overlay's frame over a span of the pane rather than across it
 //! (`crate::ui::overlay::float_at`), laid at the bottom of the central panel
@@ -51,6 +53,7 @@ fn ops(pick: &Pick) -> &'static [&'static str] {
     use crate::verbs;
     match pick {
         Pick::Wall(_) => &[verbs::CONVERSATIONS.word],
+        Pick::Found(_) => &[verbs::PREPARE, verbs::PROMPT],
         Pick::Provider(_) => &[verbs::MODELS.word],
         Pick::Model(_) => &[verbs::MODEL.word],
         Pick::Effort(_) => &[verbs::EFFORT],
@@ -85,9 +88,25 @@ pub fn keys(ctx: &egui::Context, model: &mut Model) {
     }
 }
 
-/// **Paint the open list over its segment**, and take a click on a row or
-/// anywhere else.
+/// **Paint the open list over its rule segment** — every selector's but the
+/// workspace's, which stands at the bar's foot (`crate::ui::bar`).
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
+    if !footed(model) {
+        stand(ui, model);
+    }
+}
+
+/// Whether the open list is the workspace's, which the bar's foot lays.
+pub fn footed(model: &Model) -> bool {
+    model
+        .dropup
+        .as_ref()
+        .is_some_and(|open| open.selector == Selector::Workspace)
+}
+
+/// **Paint the open list at the bottom of `ui` over its anchor**, and take
+/// a click on a row or anywhere else.
+pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
     let Some(cursor) = model.dropup.as_ref().map(|open| open.cursor) else {
         return;
     };

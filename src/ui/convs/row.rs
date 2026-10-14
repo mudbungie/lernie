@@ -48,17 +48,7 @@ pub(super) fn conversation(
     reveal: bool,
 ) {
     let selected = model.conversation.as_ref() == Some(&row.root_id);
-    // **Asking outranks the state word.** A row that wants the operator wears
-    // the attention accent whatever its driver is doing, because the whole of
-    // §2's *the eye lands on green* is that nothing else is green — a row
-    // asking while it streams would otherwise be purple and lost. Where
-    // nothing is waiting the rule is the state's, and a state this build does
-    // not know gets none rather than one it is not (`theme::state_of`).
-    let state = if row.attention > 0 {
-        Some(theme::accent(theme::State::Attention))
-    } else {
-        theme::state_of(&row.state).map(theme::accent)
-    };
+    let state = super::rule(row);
     // **The state glyph leads, in its own ink** (§4.42 item 7), and the run
     // is the headline whole (`super::headline`).
     let (glyph, ink) = super::mark(row);
@@ -204,6 +194,6 @@ fn at_level(left: f32, level: u64) -> f32 {
 /// Added rather than multiplied, over a **bounded** count: there is no cast
 /// from the wire's own width to a screen coordinate, so there is no truncation
 /// to suppress a lint about.
-fn indent(depth: u64) -> f32 {
+pub(crate) fn indent(depth: u64) -> f32 {
     (0..depth.min(DEEPEST)).fold(STEP, |at, _| at + STEP)
 }

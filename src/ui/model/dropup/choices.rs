@@ -66,9 +66,23 @@ impl Model {
     }
 
     /// **Every wall this seat can address**, in the roster's order — named
-    /// with its engine where the seat reaches more than one.
+    /// with its engine where the seat reaches more than one — and last,
+    /// `+ new workspace` under this box's own engine where it is held
+    /// (DESIGN §4.44: the switcher's row, beside the choice it belongs to).
     fn walls(&self) -> Vec<Choice> {
         let many = self.roster.len() > 1;
+        let found = self
+            .roster
+            .iter()
+            .find(|chunk| {
+                chunk.channel.name == crate::seat::OWN
+                    && !matches!(chunk.held, crate::ui::Held::Unheld(_))
+            })
+            .map(|chunk| Choice {
+                text: crate::ui::roster::engine::FOUND.to_owned(),
+                current: false,
+                pick: Pick::Found(chunk.channel.name.clone()),
+            });
         self.roster
             .iter()
             .flat_map(|chunk| {
@@ -89,6 +103,7 @@ impl Model {
                     })
                 })
             })
+            .chain(found)
             .collect()
     }
 }

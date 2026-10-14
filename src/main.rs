@@ -128,6 +128,10 @@ fn window(root: &std::path::Path) -> Verdict {
         roster: lernie::seat::channels(root),
         aim: place.aim,
         engines: place.engines,
+        bar: lernie::ui::bar::Bar {
+            pinned: place.pinned,
+            left_at: None,
+        },
         ..Model::default()
     };
     let link = Link::new(BEAT);

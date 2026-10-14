@@ -98,6 +98,11 @@ fn the_caret_comes_back_to_the_box() {
     assert_eq!(window.focused(), Some(id), "after Esc cleared the menu");
 }
 
+/// **The bar's controls come first in the Tab order** (DESIGN §4.44): it is
+/// painted before every other panel — its foot, its pin, its `+ new` and the
+/// one conversation's row — so a walk from nothing held crosses them first.
+const BAR: usize = 4;
+
 /// A window on one engine holding two walls, which is the shape both beats
 /// below Tab their way down.
 fn two_walls() -> Model {
@@ -120,12 +125,12 @@ fn two_walls() -> Model {
 #[test]
 fn a_tab_reaches_a_wall_s_row_and_space_on_it_aims() {
     let mut model = two_walls();
-    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; 2]);
+    let (rings, _) = ringed(&mut model, &[egui::Key::Tab; BAR + 2]);
     assert_eq!(rings.len(), 1, "{rings:?}");
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..2 {
+    for _ in 0..BAR + 2 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
@@ -154,7 +159,7 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     window.frame(Vec::new(), &mut body);
-    for _ in 0..3 {
+    for _ in 0..BAR + 3 {
         window.frame(vec![press(egui::Key::Tab)], &mut body);
     }
     window.frame(vec![press(egui::Key::Space)], &mut body);
@@ -173,7 +178,8 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
 }
 
 /// **A Tab off the box lands on the rule's first selector, ringed** (bl-8e3e),
-/// and Enter or Space there opens its dropup.
+/// and Enter or Space there opens its dropup — the provider's, since the
+/// workspace left the rule for the bar's foot (DESIGN §4.44).
 #[test]
 fn a_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
     for key in [egui::Key::Enter, egui::Key::Space] {
@@ -191,7 +197,7 @@ fn a_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
         }
         assert_eq!(
             model.dropup.map(|open| open.selector),
-            Some(crate::ui::Selector::Workspace),
+            Some(crate::ui::Selector::Provider),
             "{key:?} on the focused selector opens it"
         );
     }

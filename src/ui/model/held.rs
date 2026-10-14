@@ -204,11 +204,11 @@ pub struct Model {
     pub notice: Option<Notice>,
     /// Which wall the window is aimed at.
     pub aim: Option<Aim>,
-    /// **How the engines are arranged** (DESIGN §4.39, `engines`): which one
-    /// is open, when each was last opened here, and the wall last aimed under
-    /// each. One field rather than three, because the three are one subject
-    /// and they are written down together ([`crate::place`]).
+    /// **How the engines are arranged** (DESIGN §4.39, `engines`), one
+    /// subject written down together ([`crate::place`]).
     pub engines: Engines,
+    /// **The bar's pin and its linger** (`crate::ui::bar`; DESIGN §4.44).
+    pub bar: crate::ui::bar::Bar,
     /// **Which row the roster's walk is standing on without selecting it**
     /// ([`super::Stand`]), or `None` where the cursor is the aim or selection.
     ///

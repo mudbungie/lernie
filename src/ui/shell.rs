@@ -20,7 +20,7 @@
 //! pane that does, because what it holds must not be legible beside anything.
 
 use crate::ui::{
-    Model, ask, chat, composer, dock, enroll, keys, overlay, slash, status, tabs, theme,
+    Model, ask, bar, chat, composer, dock, enroll, keys, overlay, slash, status, tabs, theme,
 };
 
 /// Paint one frame of the whole window.
@@ -36,6 +36,9 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     // Nothing here is a control of its own: every binding calls the door the
     // click beneath it calls (`crate::ui::keys`).
     keys::handle(ctx, model);
+    // **The bar is laid first** (DESIGN §4.44), so it stands the window's
+    // full height and the column fits beside it at every size.
+    bar::render(ctx, model);
     // **Bottom panels stack upward in the order they are laid**: the prompt
     // takes the bottom edge, and the rule stands on it — which is the
     // baseline's order, the rule between the transcript and the prompt.

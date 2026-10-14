@@ -32,6 +32,8 @@
 pub mod act;
 /// The ask: the selected conversation's decision above the prompt (§4.42).
 pub mod ask;
+/// The bar: the aimed wall's conversations down the left edge (§4.44).
+pub mod bar;
 /// The ball pane: the board, the bindings, and what the aimed wall holds.
 pub mod board;
 /// The chat pane: one conversation, entry by entry.

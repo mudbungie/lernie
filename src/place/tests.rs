@@ -18,6 +18,7 @@ fn pointed() -> Place {
     Place {
         aim: Some(aimed()),
         engines: Engines::default(),
+        pinned: false,
     }
 }
 
@@ -50,6 +51,7 @@ fn the_accordion_comes_back_with_the_aim() {
                 .into_iter()
                 .collect(),
         },
+        pinned: true,
     };
     write(scratch.path(), &arranged).expect("written");
     assert_eq!(read(scratch.path()), arranged);

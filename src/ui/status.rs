@@ -1,9 +1,10 @@
 //! **The status rule**: the conversation's own line, between the transcript
 //! and the prompt (DESIGN §4.42, item 11; `docs/STYLE.md` §2).
 //!
-//! Left to right: `— <workspace> | <provider> | <model> | <effort> |
-//! <priority> | <state> · <age> | <tokens> | <spend> | <context> — <name>`.
-//! The first five are **selectors** ([`selectors`]): a click opens a dropup
+//! Left to right: `— <provider> | <model> | <effort> | <priority> |
+//! <state> · <age> | <tokens> | <spend> | <context> — <name>`. The workspace
+//! is not on it: it is the bar's foot (DESIGN §4.44, `crate::ui::bar`).
+//! The first four are **selectors** ([`selectors`]): a click opens a dropup
 //! over the segment listing what this seat already holds and posts the read
 //! that refreshes it ([`dropup`]). The rest are the conversation's
 //! **diagnostics** in weak ink ([`diagnostics`]) — the state slot first,
@@ -18,7 +19,7 @@
 //! Esc — and the slot says what it says with no notice.
 //!
 //! **What runs out of width drops from the right** — the diagnostics, then
-//! priority, then effort — and the workspace, provider and model never drop:
+//! priority, then effort — and the provider and model never drop:
 //! they elide inside an equal share of what is left, because a rule that lost
 //! them would say everything but what you are talking to.
 
@@ -29,7 +30,7 @@ use crate::ui::{Model, Selector, theme};
 pub mod diagnostics;
 /// A selector's list, floating over its segment.
 pub mod dropup;
-/// The five selectors.
+/// The four selectors, and the workspace's run the bar's foot paints.
 pub mod selectors;
 /// The seat-wide waiting count, as the queue's door off the rule.
 pub mod waiting;
@@ -178,8 +179,9 @@ pub fn fitting(ui: &egui::Ui, runs: &[Run], kept: usize, name: f32, room: f32) -
     (shown, f32::INFINITY)
 }
 
-/// **Paint one run**, answering whether it was clicked and where it stood.
-fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::Rect) {
+/// **Paint one run**, answering whether it was clicked and where it stood —
+/// on the rule, and at the bar's foot (`crate::ui::bar`).
+pub(crate) fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::Rect) {
     let Some(door) = run.door else {
         let seat = ui.label(egui::RichText::new(words).small().color(run.ink));
         return (false, seat.rect);

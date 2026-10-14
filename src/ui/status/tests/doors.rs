@@ -28,7 +28,7 @@ fn answered() -> Model {
 /// answered, else the door's own word — a dropup door every time.
 #[test]
 fn the_model_slot_is_the_worker_s_else_what_answered() {
-    let model_run = |model: &Model| runs(model).0.swap_remove(2);
+    let model_run = |model: &Model| runs(model).0.swap_remove(1);
     let said = model_run(&answered());
     assert_eq!(said.text, "model-a");
     assert_eq!(said.door, Some(Door::Drop(Selector::Model)));
@@ -65,12 +65,12 @@ fn effort_and_priority_follow_the_provider_row() {
 }
 
 /// **Every selector is a tagged link on the glass**, wearing the read its
-/// dropup posts, and the name is the switcher's.
+/// dropup posts, and the name is the switcher's. The workspace's is the
+/// bar's foot (`crate::ui::bar`'s suite).
 #[test]
 fn the_selectors_are_tagged_links() {
     let harness = crate::snapshot::seat(selecting(), 1400.0, 900.0);
     for (label, op) in [
-        ("home", crate::verbs::WORKSPACES.word),
         ("housevendor", crate::verbs::PROVIDERS.word),
         ("house-model-1", crate::verbs::MODELS.word),
         ("effort medium", crate::verbs::PROVIDERS.word),

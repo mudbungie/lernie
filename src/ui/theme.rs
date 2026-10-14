@@ -268,6 +268,8 @@ pub mod glyph {
     pub const RELOAD: &str = "↻";
     /// **A tab's close** (DESIGN §4.44 item 2), in faint ink.
     pub const CLOSE: &str = "×";
+    /// **The bar's pin** (DESIGN §4.44), alone at the collapsed head.
+    pub const PIN: &str = "📌";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the

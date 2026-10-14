@@ -46,10 +46,11 @@ fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
             assert_eq!(run.shown, run.laid, "at {w}: {:?} is cut", run.text);
             assert!(run.laid.max.x <= w, "at {w}: {:?} runs off", run.text);
         }
-        // The lowest run reading the name: the card at the head says it too.
+        // The lowest run reading the name — cut at the phone, where the bar
+        // takes its glyph column: the card at the head says it too.
         let rule = seen
             .iter()
-            .filter(|run| run.text == "port the paint probe")
+            .filter(|run| run.text.starts_with("port t"))
             .max_by(|a, b| a.laid.min.y.total_cmp(&b.laid.min.y))
             .unwrap_or_else(|| panic!("at {w}: the rule's name is on the glass"));
         let lowest = said.iter().map(|run| run.laid.max.y).fold(0.0, f32::max);
@@ -60,8 +61,8 @@ fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
         // At the phone the diagnostics have dropped (item 11): the selectors
         // still say what you are talking to.
         assert!(
-            seen.iter().any(|run| run.text == "home"),
-            "at {w}: the wall"
+            seen.iter().any(|run| run.text.starts_with("pro")),
+            "at {w}: the provider"
         );
         if w > 1000.0 {
             assert!(

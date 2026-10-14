@@ -15,6 +15,8 @@
 use crate::test_support::window::{pinned, seated, wall};
 use crate::ui::{Channel, Chunk, Enrolling, Model, Unmaking};
 
+/// The bar open, and its foot's list.
+mod bar;
 /// The covered states — one world per pane that stands over the conversation.
 mod covered;
 
@@ -36,13 +38,9 @@ pub(crate) struct World {
 /// which every pane has to say what it has instead of showing it.
 ///
 /// **Its roster is seeded the way `src/main.rs` seeds one** — off a data root
-/// holding nothing at all — rather than left empty (bl-dfda). An empty roster
-/// is unreachable on a real box, because `crate::seat::channels` answers a
-/// section for this box's own slot whether or not anything is provisioned in
-/// it (bl-08b6), and a `Vec` with no chunk in it is a state the pane has no
-/// sentence for: the narrow shape put that column alone on the glass and
-/// photographed a blank window, which is a picture of a fixture rather than of
-/// the seat.
+/// holding nothing at all — rather than left empty (bl-dfda): an empty roster
+/// is unreachable on a real box (`crate::seat::channels` answers this box's
+/// own slot regardless, bl-08b6), and photographing it photographed a fixture.
 fn unprovisioned() -> World {
     let scratch = crate::test_support::Scratch::new();
     World {
@@ -296,5 +294,7 @@ pub(crate) fn all() -> Vec<World> {
         noticed(),
         unmaking(),
         filling(),
+        bar::opened(),
+        bar::footed(),
     ]
 }

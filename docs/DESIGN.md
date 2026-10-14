@@ -5601,11 +5601,13 @@ as the keyboard's door and the whole seat's view.
    listing answers, as it does in the switcher.
 
    **Two widths, and the pointer decides.** Collapsed, the bar is
-   **a glyph column** `bar::SHUT` wide — room for the state glyph and the
-   first three characters of a name at the body size — so the eye keeps
-   the count and the greens with the transcript at full width. Expanded,
-   it is `bar::OPEN` wide, a quarter of the desk size's width and never
-   more than two fifths of the window's, and each row says the state glyph
+   **a glyph column** `bar::SHUT` wide (80 points) — room for the state
+   glyph and the first three characters of a name at the body size, and the
+   panel's margin — so the eye keeps the count and the greens with the
+   transcript at full width. Expanded, it is `bar::open_width` wide — a
+   function of the window rather than a constant, since it is a quarter of
+   the desk size's width (`bar::DESK`, 350 points) and never more than two
+   fifths of the window's (160 at the matrix's phone) — and each row says the state glyph
    in its state's ink, the name in body ink (the selected conversation's in
    the brand), the preview beneath it in weak ink on one line cut with `…`,
    and the age at the right end in weak ink. The bar expands the frame the
@@ -5614,7 +5616,15 @@ as the keyboard's door and the whole seat's view.
    (`ctx.input(|i| i.time)`, `Bar::left_at`) with a repaint asked for at
    the moment it lapses — a pointer that strays off a row for a moment is
    not made to re-cross the edge. Hover state and the clock are read, never
-   stored past the frame they are needed.
+   stored past the frame they are needed: `Bar::left_at` is the last
+   instant the pointer was seen over the bar, refreshed every frame it is
+   and forgotten when the linger lapses, and while it is held the pointer
+   is judged against the open width, so a pointer resting in the open bar
+   with no event to wake a frame keeps it open. With nothing to list the
+   open bar says why — the wall answered empty, the wall not answered yet
+   (`convs::NOT_ANSWERED`), nothing aimed — and the collapsed bar says
+   nothing. Its controls are painted before every other panel, so they
+   lead the Tab order.
 
    **The pin** (`bar::PIN`, at the bar's head on the left) stops the
    auto-hiding: pinned, the bar stays expanded whatever the pointer does;
@@ -5622,7 +5632,9 @@ as the keyboard's door and the whole seat's view.
    `pin` while unpinned and `unpin` while pinned, and **it persists**
    (`Place::pinned`, the place file) because where the bar stands is a
    layout the operator chose and §4.39's place file is where such choices
-   live. Collapsed, the head shows the pin's glyph alone.
+   live. Collapsed, the head shows the pin's glyph alone, `📌`
+   (`theme::glyph::PIN`, held to the body font's glyphs by the theme's
+   glyph test).
 
    **`+ new`** stands at the bar's head on the right (bl-d357's `+ new`
    from under the wall, on the bar too): it puts the caret in the field in
@@ -5639,10 +5651,22 @@ as the keyboard's door and the whole seat's view.
    a new listing, a new providers read, a new roles read and a new set of
    tabs (2), because the ruling's *entirely different yog backend* is the
    fact the aim already is. `+ new workspace` (bl-673e) is the dropup's
-   last row under this box's own engine, the switcher's row moved beside
-   the choice it belongs to. With nothing aimed the foot says `workspace ⏶`
-   and the list is the whole of what the bar shows. Collapsed, the foot is
-   the first three characters of the wall's name.
+   last row under this box's own engine where that engine is held
+   (`Pick::Found`), beside the choice it belongs to. **The switcher keeps
+   its row too** (bl-46b9): it is the keyboard's door (4), and the walk,
+   the field's hints and the refusal's remedy all name it there. With
+   nothing aimed the foot says `workspace ⏶` and the list is the whole of
+   what the bar shows. Collapsed, the foot is the first three characters of
+   the wall's name, with the selector's mark.
+
+   **The list stands inside the bar, and holds it open** (bl-46b9). It is
+   the rule's dropup (`status::dropup::stand`) laid on a foreground layer
+   whose room is the bar's own width and whose bottom is the foot's top;
+   while it stands the bar is open whatever the pointer does, because a
+   list opened from the bar is the bar in use. Laid over the column it
+   covered the rule's first segments at every size, which the matrix's
+   blank assertion read as a defect — and it was one: the column keeps
+   every word it had while the bar is in use.
 
    **A row is the one door.** A click on a row is `Model::select` on its
    root id — the switcher's, the queue's and the rule's one door — and so
@@ -5953,9 +5977,10 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
-| `src/ui/shell.rs` | the layout: one column (§4.42) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
+| `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
+| `src/ui/bar.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; bl-46b9): its two widths and the linger between them, the pin and `+ new` at its head; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~170, ~120, ~70 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
-| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11): the five selectors and their marks, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
+| `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |

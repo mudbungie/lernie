@@ -27,9 +27,8 @@
 //!
 //! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
 //! which engine is open, what each engine's last opening ranks as, and the
-//! wall last aimed under each — and the edges the operator dragged, which are
-//! the width of the one list pane and how many rows the composer's field
-//! stands at (§4.39 again, bl-46e5, bl-b9a3). **A JSON object rather than lines**, so
+//! wall last aimed under each — and whether the bar is pinned open (§4.44).
+//! **A JSON object rather than lines**, so
 //! the next fact REMOTE §7 names — a scroll, a draft — is a key beside these
 //! rather than a format. An unknown key is ignored and a missing
 //! key is absence, which is the reply vocabulary's own rungs 3 and 4 applied to
@@ -58,6 +57,8 @@ const ADDRESS: &str = "address";
 const OPEN: &str = "open";
 const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
+/// Whether the bar is pinned open (DESIGN §4.44).
+const PINNED: &str = "pinned";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
@@ -72,6 +73,9 @@ pub struct Place {
     pub aim: Option<Aim>,
     /// How the engines were arranged (`crate::ui::Engines`).
     pub engines: Engines,
+    /// **Whether the bar is pinned open** (DESIGN §4.44): where the bar
+    /// stands is a layout the operator chose, so it outlives the run.
+    pub pinned: bool,
 }
 
 impl Place {
@@ -82,6 +86,7 @@ impl Place {
         Self {
             aim: model.aim.clone(),
             engines: model.engines.clone(),
+            pinned: model.bar.pinned,
         }
     }
 }
@@ -105,6 +110,7 @@ pub fn read(root: &Path) -> Place {
             opened: table(&held, OPENED, Value::as_u64),
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
         },
+        pinned: held.get(PINNED).and_then(Value::as_bool).unwrap_or(false),
         // **Every number is read through serde and never through a cast** —
         // `f64 as f32` is the one narrowing this crate's lint set denies with
         // no home for a suppression but the manifest (`crate::mark`'s own
@@ -154,6 +160,7 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         OPEN: place.engines.open,
         OPENED: place.engines.opened,
         AIMED: place.engines.aimed,
+        PINNED: place.pinned,
     });
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
     std::fs::write(at(root), body.to_string()).map_err(|e| format!("{}: {e}", at(root).display()))

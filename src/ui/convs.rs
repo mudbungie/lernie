@@ -41,8 +41,8 @@ pub mod menu;
 /// control and its threading connectors.
 mod row;
 
-pub(crate) use row::STEP;
 pub use row::{HIDE, SHOW};
+pub(crate) use row::{STEP, indent};
 
 /// What a wall says when it answered and holds no conversation. **It names the
 /// next act** (§4.38), and the act is the `+ new` row under the wall's
@@ -134,6 +134,23 @@ pub(crate) fn words(row: &ConvRow) -> String {
         said.push(format!("{} members", row.members));
     }
     said.join("  ")
+}
+
+/// **A row's state rule**, the accent at its left edge.
+///
+/// **Asking outranks the state word.** A row that wants the operator wears
+/// the attention accent whatever its driver is doing, because the whole of
+/// §2's *the eye lands on green* is that nothing else is green — a row asking
+/// while it streams would otherwise be purple and lost. Where nothing is
+/// waiting the rule is the state's, and a state this build does not know gets
+/// none rather than one it is not (`theme::state_of`). The switcher and the
+/// bar both read it here (DESIGN §4.44).
+pub fn rule(row: &ConvRow) -> Option<egui::Color32> {
+    if row.attention > 0 {
+        Some(theme::accent(theme::State::Attention))
+    } else {
+        theme::state_of(&row.state).map(theme::accent)
+    }
 }
 
 /// **A row's state glyph and its ink**: `?` in the attention accent while it

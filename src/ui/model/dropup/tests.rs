@@ -19,7 +19,10 @@ fn each_list_is_the_held_rows_with_the_cursor_on_what_is_in_force() {
         |model: &Model| -> Vec<String> { model.choices().into_iter().map(|c| c.text).collect() };
     assert!(texts(&model).is_empty(), "nothing open, nothing listed");
     model.drop_up(Selector::Workspace);
-    assert_eq!(texts(&model), vec!["home"]);
+    assert_eq!(
+        texts(&model),
+        vec!["home", crate::ui::roster::engine::FOUND]
+    );
     assert_eq!(last(&model), Some(crate::verbs::workspaces()));
     model.drop_up(Selector::Model);
     assert_eq!(texts(&model), vec!["house-model-1", "house-model-2"]);

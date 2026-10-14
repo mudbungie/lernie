@@ -33,9 +33,10 @@ fn the_state_slot_follows_the_selection_and_the_notice() {
     assert_eq!(noted.ink, theme::accent(theme::State::Annotation));
 }
 
-/// **The rule's runs, left to right**: the five selectors, then the state —
+/// **The rule's runs, left to right**: the four selectors, then the state —
 /// and nothing seat-wide, however many conversations are asking or engines
-/// are reached.
+/// are reached. The workspace is the bar's foot (DESIGN §4.44), and with
+/// nothing aimed no selector stands.
 #[test]
 fn the_runs_are_the_selectors_then_the_conversation() {
     let mut model = selecting();
@@ -46,7 +47,6 @@ fn the_runs_are_the_selectors_then_the_conversation() {
     assert_eq!(
         texts(&model),
         vec![
-            "home",
             "housevendor",
             "house-model-1",
             "effort medium",
@@ -54,9 +54,9 @@ fn the_runs_are_the_selectors_then_the_conversation() {
             "quiescent · 42s",
         ]
     );
-    assert_eq!(runs(&model).1, 3, "three never drop");
+    assert_eq!(runs(&model).1, 2, "two never drop");
     let none = texts(&Model::default());
-    assert_eq!(none, vec![super::selectors::NO_WORKSPACE, READY]);
+    assert_eq!(none, vec![READY]);
     let glass = painted(&mut model);
     for gone in ["2 waiting", "1 engine"] {
         assert!(!glass.contains(gone), "{gone:?} is the seat's:\n{glass}");
@@ -162,7 +162,7 @@ fn runs_drop_from_the_right_and_the_kept_are_cut() {
 fn the_rule_reaches_the_glass() {
     let mut model = selecting();
     let text = painted(&mut model);
-    for word in [LEAD, SEP, "home", "housevendor", "quiescent · 42s"] {
+    for word in [LEAD, SEP, "housevendor", "quiescent · 42s"] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
     assert!(text.contains("port the paint probe"), "{text}");
@@ -190,8 +190,8 @@ fn the_plan_stands_on_the_rule_while_it_is_on() {
 
 /// **The drop order at the matrix's three widths**: at the desk every run
 /// stands; narrower the diagnostics go first, then priority, then effort;
-/// at the phone the workspace, provider and model still stand — cut, never
-/// dropped — beside the name.
+/// at the phone the provider and model still stand — cut, never dropped —
+/// beside the name.
 #[test]
 fn the_drop_order_at_the_three_widths() {
     let mut model = selecting();
@@ -214,7 +214,12 @@ fn the_drop_order_at_the_three_widths() {
             .collect()
     };
     let desk = on(1400.0, &model);
-    for word in ["home", "effort medium", "priority off", "context 50%"] {
+    for word in [
+        "housevendor",
+        "effort medium",
+        "priority off",
+        "context 50%",
+    ] {
         assert!(
             desk.contains(&word.to_owned()),
             "{word:?} at the desk: {desk:?}"
@@ -224,7 +229,6 @@ fn the_drop_order_at_the_three_widths() {
     assert!(narrow.contains(&"effort medium".to_owned()), "{narrow:?}");
     assert!(!narrow.contains(&"context 50%".to_owned()), "{narrow:?}");
     let phone = on(400.0, &model);
-    assert!(phone.contains(&"home".to_owned()), "{phone:?}");
     assert!(
         phone.iter().any(|run| run.starts_with("house")),
         "{phone:?}"

@@ -245,6 +245,7 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
             super::glyph::DROP,
             super::glyph::RELOAD,
             super::glyph::CLOSE,
+            super::glyph::PIN,
         ] {
             assert!(
                 ctx.fonts(|fonts| fonts.has_glyphs(&font, glyph)),

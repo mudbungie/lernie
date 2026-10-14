@@ -10,131 +10,14 @@
 
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
-use super::{
-    BRAND, HAIRLINE, INK, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, space, type_scale,
-};
+use super::{BRAND, HAIRLINE, INK, INK_FAINT, INK_WEAK, RADIUS, RULE, space, type_scale};
 
 /// The two fields that take text: the one-line box and the composer.
 mod field;
+/// The list row, one line or a block of them.
+mod row;
 
-/// **One list row**: full width, [`ROW`] tall, its words at the left plus
-/// `indent` plus `M`, elided at the width it has, in `ink`. Bare ground at
-/// rest, [`super::hover`] under the pointer, `RAISED` when it is the chosen one.
-///
-/// **The rule at its left edge says its state**: the brand when it is chosen,
-/// else `state`'s accent where it has one, else nothing. A chosen row that is
-/// also asking keeps the brand — the selection is where the operator IS, and
-/// the asking is said in the row's words.
-///
-/// The words are ONE run, so a test that aims a click by the painted glyphs
-/// aims at exactly what a pane composed (`crate::paint_probe::locate`), and
-/// the node the accessibility tree offers is labelled with the same words.
-pub fn row(
-    ui: &mut egui::Ui,
-    words: &str,
-    ink: Color32,
-    state: Option<Color32>,
-    chosen: bool,
-    indent: f32,
-) -> Response {
-    marked(ui, ("", ink), words, ink, state, chosen, indent)
-}
-
-/// **The width a row needs to say `words` uncut** (bl-8d6d): the geometry
-/// [`marked`] lays them in — the rule, the air either side, the words at
-/// the body size — so a list sized by it never elides its longest row.
-pub fn row_width(ui: &egui::Ui, words: &str) -> f32 {
-    let font = egui::TextStyle::Body.resolve(ui.style());
-    let said = ui.fonts(|fonts| {
-        fonts
-            .layout_no_wrap(words.to_owned(), font, Color32::PLACEHOLDER)
-            .size()
-            .x
-    });
-    RULE + space::M + said + space::S
-}
-
-/// **A row led by a mark in its own ink** — a conversation's state glyph in
-/// the switcher (DESIGN §4.42 item 7). The mark and the words are still ONE
-/// run, `<mark> <words>`, on the glass and in the accessibility tree alike, so
-/// a probe aims at what the operator reads; only the mark's ink differs.
-pub fn marked(
-    ui: &mut egui::Ui,
-    mark: (&str, Color32),
-    words: &str,
-    ink: Color32,
-    state: Option<Color32>,
-    chosen: bool,
-    indent: f32,
-) -> Response {
-    let said = [mark.0, words]
-        .into_iter()
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join(" ");
-    let (rect, seat) = ui.allocate_exact_size(vec2(ui.available_width(), ROW), Sense::click());
-    seat.widget_info(|| {
-        egui::WidgetInfo::selected(
-            egui::WidgetType::SelectableLabel,
-            ui.is_enabled(),
-            chosen,
-            &said,
-        )
-    });
-    if !ui.is_rect_visible(rect) {
-        return seat;
-    }
-    let fill = if chosen {
-        RAISED
-    } else if seat.hovered() {
-        super::hover()
-    } else {
-        Color32::TRANSPARENT
-    };
-    ui.painter().rect_filled(rect, RADIUS, fill);
-    if let Some(accent) = chosen.then_some(BRAND).or(state) {
-        rule_at(ui, rect.left_top(), rect.height(), accent);
-    }
-    // **The row that holds the keyboard wears the brand ring** (bl-2d6b): a
-    // row is in the Tab order and Space fires it, and the one stroke the
-    // language leaves on the glass is the ring on whatever holds the keyboard
-    // — so a Tab that landed here is visible where it landed.
-    if seat.has_focus() {
-        ui.painter()
-            .rect_stroke(rect, RADIUS, Stroke::new(1.0, BRAND));
-    }
-    let left = rect.min.x + RULE + indent + space::M;
-    let lead = said.len().saturating_sub(words.len());
-    let galley = elided(ui, &said, lead, (mark.1, ink), rect.max.x - left - space::S);
-    let at = Pos2::new(left, rect.center().y - galley.size().y / 2.0);
-    ui.painter().galley(at, galley, ink);
-    seat
-}
-
-/// **One line of words that stop at a width**, with `…` where they were cut —
-/// so the cut is on the glass and a probe reads what an operator reads.
-///
-/// The first `lead` bytes are the mark and wear the first ink; the rest wear
-/// the second.
-fn elided(
-    ui: &egui::Ui,
-    said: &str,
-    lead: usize,
-    (marked, ink): (Color32, Color32),
-    width: f32,
-) -> std::sync::Arc<egui::Galley> {
-    let font = egui::TextStyle::Body.resolve(ui.style());
-    let mut job = egui::text::LayoutJob::simple_singleline(said.to_owned(), font, ink);
-    if let Some(first) = job.sections.first_mut() {
-        first.byte_range = lead..said.len();
-        let mut mark = first.clone();
-        mark.byte_range = 0..lead;
-        mark.format.color = marked;
-        job.sections.insert(0, mark);
-    }
-    job.wrap = egui::text::TextWrapping::truncate_at_width(width.max(0.0));
-    ui.fonts(|fonts| fonts.layout_job(job))
-}
+pub use row::{Row, marked, row, row_width};
 
 /// **A state's rule**: [`RULE`] wide, `height` tall, from `top`.
 fn rule_at(ui: &egui::Ui, top: Pos2, height: f32, accent: Color32) {

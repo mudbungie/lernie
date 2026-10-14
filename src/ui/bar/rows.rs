@@ -47,70 +47,42 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, open: bool) {
     }
 }
 
-/// **One row**, answering the seat a click lands on.
+/// **One row**, answering the seat a click lands on. Open, it is the whole
+/// block — glyph and name, the age at the right end, the preview beneath —
+/// under one seat, so the tint fills what a click takes (DESIGN §4.44 item 5).
 fn one(ui: &mut egui::Ui, model: &Model, row: &ConvRow, open: bool) -> egui::Response {
     let selected = model.conversation.as_ref() == Some(&row.root_id);
     let ink = if selected { theme::BRAND } else { theme::INK };
     let (glyph, glyph_ink) = convs::mark(row);
-    let seat = if open {
-        let indent = convs::indent(row.depth) - convs::STEP;
-        let seat = aged(ui, row, |ui| {
-            theme::paint::marked(
-                ui,
-                (&glyph, glyph_ink),
-                &row.display,
-                ink,
-                convs::rule(row),
-                selected,
-                indent,
-            )
-        });
-        preview(ui, row, indent);
-        seat
-    } else {
-        theme::paint::marked(
-            ui,
-            (&glyph, glyph_ink),
-            &super::cut(&row.display),
-            ink,
-            convs::rule(row),
-            selected,
-            0.0,
-        )
-    };
+    let age = convs::age(row.age_secs);
+    let preview = row.preview.lines().next().filter(|line| !line.is_empty());
+    let beneath = preview
+        .filter(|_| open)
+        .map(|line| (line.to_owned(), theme::INK_WEAK, egui::TextStyle::Small))
+        .into_iter()
+        .collect();
+    let seat = theme::paint::Row {
+        mark: (glyph, glyph_ink),
+        words: if open {
+            row.display.clone()
+        } else {
+            super::cut(&row.display)
+        },
+        ink,
+        state: convs::rule(row),
+        chosen: selected,
+        indent: if open {
+            convs::indent(row.depth) - convs::STEP
+        } else {
+            0.0
+        },
+        aside: open.then_some(age),
+        beneath,
+    }
+    .paint(ui);
     crate::ui::act::tag(
         &seat,
         &[crate::verbs::TRANSCRIPT.word, crate::verbs::FOLLOW.word],
     );
     seat
-}
-
-/// **The row with its age at the right end**, in weak ink: the row takes the
-/// width the age leaves it, so a long name is cut before the age, never under.
-fn aged(
-    ui: &mut egui::Ui,
-    row: &ConvRow,
-    paint: impl FnOnce(&mut egui::Ui) -> egui::Response,
-) -> egui::Response {
-    let age = convs::age(row.age_secs);
-    let room = ui.available_width() - crate::ui::status::width(ui, &age) - theme::space::S;
-    let line = ui.horizontal(|ui| {
-        let seat = ui.allocate_ui(egui::vec2(room.max(0.0), theme::ROW), paint);
-        ui.label(egui::RichText::new(age).small().color(theme::INK_WEAK));
-        seat.inner
-    });
-    line.inner
-}
-
-/// **The preview beneath**, its first line in weak ink, cut with `…` — where
-/// the conversation has said anything at all.
-fn preview(ui: &mut egui::Ui, row: &ConvRow, indent: f32) {
-    let Some(line) = row.preview.lines().next().filter(|line| !line.is_empty()) else {
-        return;
-    };
-    ui.horizontal(|ui| {
-        ui.add_space(indent + theme::RULE + theme::space::M);
-        let words = egui::RichText::new(line).small().color(theme::INK_WEAK);
-        ui.add(egui::Label::new(words).truncate());
-    });
 }

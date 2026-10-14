@@ -6,6 +6,8 @@ use crate::paint_probe::{Seen, frame::Window, seen_of};
 use crate::test_support::window::{conv, seated};
 use crate::ui::{Model, theme};
 
+/// A row is its whole block.
+mod block;
 /// The edge's ease between its two widths.
 mod ease;
 /// The workspace at the foot, and its list.

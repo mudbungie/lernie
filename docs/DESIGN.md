@@ -5765,14 +5765,28 @@ as the keyboard's door and the whole seat's view.
    is a run — the rule's selectors and name, the bar's pin, `+ new` and foot,
    a tab and its close — is `theme::paint::link`/`link_marked`/`tab`, one
    private `door` under all three. Under the pointer each wears
-   `theme::hover()`: **the brand at half the selection tint's strength**
-   (`BRAND × TINT_ALPHA / 2`), not a new colour. It replaced `SURFACE`,
+   `theme::hover()`: **the brand at three quarters of the selection tint's
+   strength** (`BRAND × TINT_ALPHA × 0.75`; half read as faint on the real
+   window, bl-232e), not a new colour. It replaced `SURFACE`,
    which was the hover until here and lifted nothing where it stood on a
    popup's own `SURFACE` — a dropup's and the menu's rows did not tint at
    all — and barely lifted the glass. A wash lifts every ground it stands
    on; a chosen row keeps its `RAISED`, the stronger tint, under the pointer
    too. A tab was a sensed label and is now a `tab` door, so it lifts with
    the rest.
+
+   **A row is its whole block** (bl-232e). A row with lines beneath its
+   head — the bar's open row (glyph and name, the age at the right end, the
+   preview beneath) and the switcher's (the headline, the failure's own
+   words, the preview) — is one `theme::paint::Row`: one seat over every
+   line, edge to edge of the list, so the hover wash, the chosen `RAISED`,
+   the state rule and the focus ring all span exactly what a click takes,
+   and a click on the preview selects as a click on the name does. It was a
+   one-line row with labels hung under it, so the tint covered the name line
+   alone. The collapsed bar's rows are the same painter with nothing
+   beneath. The switcher's `show N`/`hide N` stays a row of its own: it is a
+   different act. The queue's rows are not pickable as a whole (their acts
+   are their controls) and keep their lines as labels.
 
    **The mark is in the door.** A selector's `⏶` (and its `↻` and `✔`) is
    painted inside the same seat as its words — one galley, `<words>
@@ -6045,7 +6059,7 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/bar.rs` | **the bar** (§4.44): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 1.5 s after it leaves, pinned by its head; `+ new` and the workspace dropup at its foot. | ~250 |
 | `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
-| `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
+| `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule (`paint/row.rs`: one line, or a block of lines under one seat), the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/ui/theme/fonts.rs` | **the fallback face** (§4.43): the fixed list of system paths a CJK face is kept at, and egui's faces with the first readable one pushed last in both families. | ~110 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |

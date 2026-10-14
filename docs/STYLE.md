@@ -183,10 +183,11 @@ brand `›` mark when the arrows are its. No fill, no rule under it.
 
 **A row** (`theme::paint::row`): full width, `ROW` tall, its words at the
 left edge plus `M`, elided at the width it has. Bare ground at rest,
-the hover wash (`theme::hover`, the brand at half the selection tint) under
-the pointer, `RAISED` tint plus a brand rule when it is the
+the hover wash (`theme::hover`, the brand at three quarters of the selection
+tint) under the pointer, `RAISED` tint plus a brand rule when it is the
 aimed or selected one; a state rule at its left edge when it has a state to
-show. Its words carry more than one ink on one line — name in `INK`, count
+show. A row with lines beneath its head (`theme::paint::Row`) is one block:
+the tint, the rule and the ring span every line of it. Its words carry more than one ink on one line — name in `INK`, count
 in `INK_WEAK`, the asking count in the attention accent — and that order is
 the hierarchy. Never a `Button` and never a `selectable_label`: both draw a
 box.

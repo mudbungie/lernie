@@ -110,10 +110,10 @@ pub fn tint(state: State) -> Color32 {
 const TINT_ALPHA: f32 = 0.16;
 
 /// **What a pickable thing wears under the pointer** (DESIGN §4.44 item 5):
-/// the selection's brand wash at half strength, lifting the glass and a
+/// the selection's brand wash at three quarters, lifting the glass and a
 /// popup's `SURFACE` alike, and under the `RAISED` a chosen row wears.
 pub fn hover() -> Color32 {
-    BRAND.gamma_multiply(TINT_ALPHA / 2.0)
+    BRAND.gamma_multiply(TINT_ALPHA * 0.75)
 }
 
 /// **The colour a refusal or an unreadable answer is said in** — the

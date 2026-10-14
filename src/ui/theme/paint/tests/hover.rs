@@ -30,7 +30,7 @@ fn pickables(ctx: &egui::Context, chosen: bool) {
 }
 
 /// **Under the pointer each lifts, and nothing does away from it** — the
-/// wash is the hover's alone, the brand at half the selection's strength.
+/// wash is the hover's alone, the brand at three quarters of the selection's.
 #[test]
 fn a_row_a_link_and_a_tab_lift_under_the_pointer() {
     let away = under(egui::pos2(290.0, 95.0), |ctx| pickables(ctx, false));
@@ -82,4 +82,45 @@ fn the_mark_is_inside_the_link() {
         output.platform_output.cursor_icon,
         egui::CursorIcon::PointingHand
     );
+}
+
+/// **A block row's seat is the block** (bl-232e): its aside and the lines
+/// beneath stand inside the one rect the wash and the chosen tint fill.
+#[test]
+fn a_block_row_is_one_seat_over_every_line() {
+    let body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            super::super::Row {
+                mark: ("?".to_owned(), INK),
+                words: "head".to_owned(),
+                ink: INK,
+                state: None,
+                chosen: false,
+                indent: 0.0,
+                aside: Some("2m".to_owned()),
+                beneath: vec![("beneath".to_owned(), INK_FAINT, egui::TextStyle::Small)],
+            }
+            .paint(ui);
+        });
+    };
+    let laid = under(egui::pos2(290.0, 95.0), body);
+    let at = |text: &str| {
+        seen_of(&laid)
+            .into_iter()
+            .find(|run| run.text == text)
+            .unwrap_or_else(|| panic!("{text:?}"))
+            .shown
+    };
+    let (aside, beneath) = (at("2m"), at("beneath"));
+    assert!(
+        aside.left() > at("? head").right(),
+        "the aside at the right end"
+    );
+    let output = under(beneath.center(), body);
+    let block = fills_of(&output)
+        .into_iter()
+        .find(|(_, fill)| *fill == hover())
+        .expect("the pointer on a line beneath lifts the block")
+        .0;
+    assert!(block.contains(aside.center()) && block.contains(beneath.center()));
 }

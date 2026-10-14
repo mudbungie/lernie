@@ -52,15 +52,31 @@ pub(super) fn conversation(
     // **The state glyph leads, in its own ink** (§4.42 item 7), and the run
     // is the headline whole (`super::headline`).
     let (glyph, ink) = super::mark(row);
-    let seat = paint::marked(
-        ui,
-        (&glyph, ink),
-        &super::words(row),
-        theme::tone_ink(&row.tone),
+    // **The row is the whole block** (DESIGN §4.44 item 5): its headline and
+    // the lines hung under it — the hue's own words, then the preview — are
+    // one seat, so the tint fills what a click takes.
+    let tone = theme::tone_ink(&row.tone);
+    let beneath = [
+        row.failure.clone().map(|failure| (failure, tone)),
+        Some(row.preview.clone())
+            .filter(|preview| !preview.is_empty())
+            .map(|preview| (preview, theme::INK_WEAK)),
+    ]
+    .into_iter()
+    .flatten()
+    .map(|(said, ink)| (said, ink, egui::TextStyle::Body))
+    .collect();
+    let seat = paint::Row {
+        mark: (glyph, ink),
+        words: super::words(row),
+        ink: tone,
         state,
-        selected,
-        indent(row.depth),
-    );
+        chosen: selected,
+        indent: indent(row.depth),
+        aside: None,
+        beneath,
+    }
+    .paint(ui);
     // **Two reads hang off this one gesture** (`crate::ui::act`): selecting a
     // conversation is what makes this seat read its transcript and open the
     // follow lane on it, and neither has a control of its own.
@@ -80,19 +96,6 @@ pub(super) fn conversation(
     // the same response the click above is taken from, so there is no second
     // answer to *which conversation is this about*.
     super::menu::show(&seat, model, aim, row);
-    // **The hue's own words** (REMOTE §9.10), above the preview because the
-    // preview is what was last said and this is why nothing more was: the row
-    // reads top-down as label, reason, last words. The clause keeps the row's
-    // own tone — the engine states the hue and the clause separately, and a
-    // seat that inferred one would hold a second opinion about a reading it
-    // did not take. The preview is a line after the first, so it is weak ink
-    // (§5).
-    if let Some(failure) = &row.failure {
-        beneath(ui, row, failure, theme::tone_ink(&row.tone));
-    }
-    if !row.preview.is_empty() {
-        beneath(ui, row, &row.preview, theme::INK_WEAK);
-    }
     subtree(ui, model, row);
     connectors(ui, row, rails, seat.rect);
 }
@@ -132,26 +135,6 @@ fn subtree(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
     }
 }
 
-/// A line hung under a row's headline, **aligned with the row's words** —
-/// the row's indent plus the state rule plus `M`, which is exactly where
-/// `theme::paint::row` lays its run. One function rather than two blocks that
-/// must not drift: the second line of a row is a shape, and a second copy of
-/// it is a second shape.
-///
-/// **It TRUNCATES, for bl-b3b2's reason one line down** (bl-fef8). A side
-/// panel paints a frame sized to its own `max_width` and reserves the
-/// CONTENT's right edge from the layout: an extending line pushes the second
-/// past the first, and the strip between them is covered by no panel at all —
-/// the ~150-point band of bare window surface the ball measured beside the
-/// list. On the glass it ran flush into the next panel with no `…`, so a
-/// reader could not tell the sentence continued.
-fn beneath(ui: &mut egui::Ui, row: &ConvRow, said: &str, ink: egui::Color32) {
-    ui.horizontal(|ui| {
-        ui.add_space(indent(row.depth) + theme::RULE + theme::space::M);
-        ui.add(egui::Label::new(egui::RichText::new(said).color(ink)).truncate());
-    });
-}
-
 /// **The threading connectors** — the phone's L-shaped idiom (yog-android
 /// bl-4d17), in faint ink.
 ///
@@ -174,7 +157,7 @@ fn connectors(ui: &egui::Ui, row: &ConvRow, rails: &[u64], seat: egui::Rect) {
             ui,
             at_level(seat.min.x, row.depth),
             seat.min.y,
-            seat.center().y,
+            seat.min.y + theme::ROW / 2.0,
             seat.min.x + theme::RULE + indent(row.depth) + theme::space::M,
         );
     }

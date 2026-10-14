@@ -236,14 +236,12 @@ pub struct Model {
     /// The selected conversation's id.
     pub conversation: Option<String>,
     /// **Which conversations have had their subtree opened** (`subtree`;
-    /// bl-00f5).
-    ///
-    /// A set of what is OPEN rather than of what is folded, so the default
-    /// costs no state at all: a seat that has never been told otherwise shows
-    /// the conversations and not the machinery under them. It is a navigation
-    /// the operator performed, which is the one class of thing on this struct
-    /// no other fact can be asked for — [`Self::switching`]'s own standing.
+    /// bl-00f5) — what is OPEN, so the default costs no state: a navigation
+    /// the operator performed, [`Self::switching`]'s own standing.
     pub opened: std::collections::BTreeSet<String>,
+    /// **Which conversations are open as tabs** (`tabs`; DESIGN §4.44 item 2),
+    /// on the same standing, per run and never in the place file.
+    pub tabs: Vec<super::Tab>,
     /// What the operator has typed and not yet sent.
     pub draft: String,
     /// **The arming for the unmaking** (`crate::ui::composer::acts`): the name

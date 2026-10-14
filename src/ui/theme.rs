@@ -266,6 +266,8 @@ pub mod glyph {
     /// **A dropup's refresh in flight**, in the annotation accent — the
     /// palette has no yellow (`docs/STYLE.md` §1).
     pub const RELOAD: &str = "↻";
+    /// **A tab's close** (DESIGN §4.44 item 2), in faint ink.
+    pub const CLOSE: &str = "×";
 }
 
 /// **An act's glyph and its word, as one run** — the one spelling of the

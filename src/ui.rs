@@ -83,6 +83,8 @@ pub mod slash;
 pub mod status;
 /// The switcher: the roster as an overlay (§4.42).
 pub mod switcher;
+/// The tab strip: the aimed wall's open conversations, over the transcript.
+pub mod tabs;
 /// The ink a row is painted in.
 pub mod theme;
 /// The trail pane: every action that crossed an engine's boundary.
@@ -97,6 +99,6 @@ pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring,
     Diagnosis, Dropup, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing,
     Login, Lookup, Model, Notice, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Records,
-    Reload, Selector, Shown, Stand, Trail, Tuning, Unmaking, WORKER,
+    Reload, Selector, Shown, Stand, Tab, Trail, Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

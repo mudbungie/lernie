@@ -131,7 +131,7 @@ impl Model {
         let Some(start) = self.start.as_ref() else {
             return;
         };
-        let Phase::Started(name) = &start.phase else {
+        let Phase::Started(name) = start.phase.clone() else {
             return;
         };
         let Some(row) = self
@@ -144,6 +144,7 @@ impl Model {
         let root = row.root_id.clone();
         let held = self.conversation.as_deref() == Some(name.as_str());
         self.start = None;
+        self.rename_tab(&name, &root);
         if held {
             self.select(&root);
         }

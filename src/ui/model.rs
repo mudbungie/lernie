@@ -73,6 +73,8 @@ mod spine;
 mod start;
 /// What hangs under a conversation, and whether it is on the glass.
 mod subtree;
+/// Which conversations are open as tabs, and what opens and closes one.
+mod tabs;
 /// The trail pane between frames: open or not, and what each channel has done.
 mod trail;
 /// The tuning pane between frames, and the four acts its controls spend.
@@ -105,6 +107,7 @@ pub use queue::{Asking, Section};
 pub use records::Records;
 pub use spine::Forking;
 pub use start::{Phase, Spread, Start};
+pub use tabs::Tab;
 pub use trail::Trail;
 pub use tuning::{Edit, Tuning};
 pub use unmake::Unmaking;

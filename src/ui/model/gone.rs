@@ -19,6 +19,10 @@ impl Model {
     /// [`Model::absorb`]'s.
     pub fn about(&mut self, channel: &Channel, op: &str, read: Read) {
         if op == crate::verbs::AGENT.word && matches!(read, Read::Refusal(_)) {
+            // A selection the engine put down is a tab put down (§4.44).
+            if let Some(id) = self.conversation.clone() {
+                self.shut(&id);
+            }
             self.deselect();
         }
         self.absorb(channel, read);

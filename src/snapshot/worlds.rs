@@ -1,11 +1,6 @@
 //! **The named world states the matrix renders**, and the reason there are
-//! sixteen rather than one.
-//!
-//! A snapshot of one model is a photograph of one moment; what an operator
-//! actually needs to see is the window in each of the shapes it takes. These
-//! are the shapes: nothing dialled yet, seated at a wall with a conversation
-//! open, the wall with none selected, and the twelve states of the eleven
-//! panes that cover the conversation.
+//! many rather than one: a snapshot of one model is a photograph of one
+//! moment, and what an operator needs to see is each shape the window takes.
 //!
 //! **The set is part of the parity instrument** and grows with it (yog's
 //! `docs/PARITY.md` §5, *unproven is red*): a control that lives only on a
@@ -131,13 +126,6 @@ fn accordion() -> World {
     }
 }
 
-/// **The window with the aimed wall pinned** (bl-7782) — not a covered state
-/// at all, and the only screen the `unpin` control is on.
-///
-/// It is a world for `crate::snapshot::parity`'s reason exactly: the pin pair
-/// are assertions, so each row carries the one act that is not already true of
-/// it, and the world at work carries only `pin`. A control that lives on a
-/// screen this walk never visits fails honestly.
 /// **The completion menu over a seated window** (DESIGN §4.42, item 5) —
 /// the one screen every verb's row is on, which is where the parity walk
 /// reads the tags the strips used to carry.
@@ -191,6 +179,23 @@ fn docked() -> World {
     }
 }
 
+/// **Two conversations open as tabs** (DESIGN §4.44, item 2): the one screen
+/// the strip and its tags are on.
+fn tabbed() -> World {
+    let mut model = seated();
+    let second = crate::test_support::window::conv("20260830T052000Z-b2c3", "tidy the rule");
+    model.convs.push(second);
+    for root in ["20260830T052000Z-b2c3", "20260830T051200Z-a1b2"] {
+        model.select(root);
+    }
+    model.transcript = seated().transcript;
+    World {
+        name: "tabbed",
+        model,
+    }
+}
+
+/// **The aimed wall pinned** (bl-7782): the only screen `unpin` is on.
 fn pinned_wall() -> World {
     World {
         name: "pinned",
@@ -287,6 +292,7 @@ pub(crate) fn all() -> Vec<World> {
         dropped(),
         asked_world(),
         docked(),
+        tabbed(),
         noticed(),
         unmaking(),
         filling(),

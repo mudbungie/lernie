@@ -5673,7 +5673,11 @@ as the keyboard's door and the whole seat's view.
    whose conversation the listing no longer knows leaves with it**
    (bl-6dfd's rule): a selection the engine put down is a tab put down. The
    strip stands only while a tab stands; a wall with nothing open is the
-   transcript's own empty column. Tabs are per run, never in the place
+   transcript's own empty column. **A start's tab is its claim's**
+   (bl-03c1): the receipt selects the minted name, so the tab opens under
+   it; no listing prunes that name while the claim stands, and the listing
+   that resolves it (`Model::resolve`) renames the tab to the root in place
+   rather than opening a second. Tabs are per run, never in the place
    file: which conversations are open is where an operator *was*, and a
    seat that reopened yesterday's tabs would be claiming a navigation
    nobody performed today. Each tab wears the `act:` tag its select
@@ -5848,6 +5852,7 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/model/start/spread.rs` | the same start with n in the middle (§4.36): the obligation it is over, the fan its staging receipt composes, and the one fire per candidate the fan's own answer does. | ~130 |
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
+| `src/ui/model/tabs.rs` | **the tabs between frames** (§4.44 item 2): `Tab`, the strip's query, the open `Model::select` performs, the close onto a neighbour or the wall, and the two ways the engine takes one — a listing that no longer knows it, a selection it put down — plus a start's claimed name renamed to the root it resolves to. | ~125 |
 | `src/ui/roster.rs` | **the window's one list** (§4.39): the engines this seat reaches as an accordion, the open one's workspaces under it and the aimed wall's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
 | `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — a row it only stands on (an engine's, or a begin: `+ new`, `+ new workspace`; bl-f991); a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed wall's conversations (§4.39), and `+ new` last under every wall (§4.42 item 7). | ~150 |
@@ -5955,7 +5960,7 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
 | `src/ui/bar.rs` | **the bar** (§4.44): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 1.5 s after it leaves, pinned by its head; `+ new` and the workspace dropup at its foot. | ~250 |
-| `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~200 |
+| `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |

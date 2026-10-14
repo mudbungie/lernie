@@ -3,9 +3,8 @@
 //! The acts the window affords beyond composing a gesture: aim at a wall,
 //! select a conversation, put a notice down, and the enrollment's four — open
 //! it, spend it, file what it answered, close it and forget. Each used to live
-//! inside the
-//! `if …clicked()` that made it, which is fine while a pointer is the only way
-//! to make it — and stops being fine the moment a key can make it too. Two
+//! inside the `if …clicked()` that made it, which is fine while a pointer is
+//! the only way to make it — and stops being fine once a key can make it. Two
 //! spellings of *what aiming means* would drift, and the one that drifted would
 //! be the one nobody points at.
 //!
@@ -124,7 +123,8 @@ impl Model {
     pub fn select(&mut self, root_id: &str) {
         self.moving_to(Some(root_id));
         self.conversation = Some(root_id.to_owned());
-        // A selection is where the cursor is, as an aim is (bl-f991).
+        // A selection is where the cursor is (bl-f991), and opens its tab.
+        self.open_tab(root_id);
         self.standing = None;
         self.founding = None;
         self.transcript = crate::reply::transcript::Transcript::default();

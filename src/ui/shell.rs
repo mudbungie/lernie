@@ -19,7 +19,9 @@
 //! paints under the enrollment (bl-7574): it covers the whole window, the one
 //! pane that does, because what it holds must not be legible beside anything.
 
-use crate::ui::{Model, ask, chat, composer, dock, enroll, keys, overlay, slash, status, theme};
+use crate::ui::{
+    Model, ask, chat, composer, dock, enroll, keys, overlay, slash, status, tabs, theme,
+};
 
 /// Paint one frame of the whole window.
 ///
@@ -67,6 +69,8 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         if enroll::render(ui, model) {
             return;
         }
+        // **The tabs stand over the transcript** (§4.44, item 2).
+        tabs::render(ui, model);
         // **The seat panel's waiting count is the queue's door** (§4.42,
         // item 11), as the rule's was.
         if chat::render(ui, model) {

@@ -10,7 +10,9 @@ use crate::ui::{Model, Notice, theme};
 fn long() -> Notice {
     Notice::InDoubt {
         op: "message".to_owned(),
-        why: "the connection closed before the reply".to_owned(),
+        why: "the connection closed before the reply, after the engine had read the \
+              whole request and could have begun to act on every part of it"
+            .to_owned(),
     }
 }
 

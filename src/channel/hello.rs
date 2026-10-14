@@ -124,9 +124,8 @@ fn spelled(stated: Option<&serde_json::Value>) -> u32 {
 fn mismatch(peer: Option<u64>) -> String {
     let peer = peer.map_or_else(|| UNSTATED.to_owned(), |v| v.to_string());
     format!(
-        "wire protocol mismatch: this seat speaks version {PROTOCOL}, \
-         the engine speaks {peer}. There is no negotiation — \
-         upgrade the older component until both speak one version."
+        "this lernie speaks protocol {PROTOCOL} and the engine speaks {peer} — \
+         update whichever is older, lernie or the engine, until both match"
     )
 }
 

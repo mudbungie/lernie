@@ -42,7 +42,7 @@ fn every_answer_in_the_corpus_renders_as_something_other_than_its_frame() {
                 path.display()
             );
             assert!(
-                !said.contains("cannot read that answer"),
+                !said.contains("could not read that answer"),
                 "{}: {said}",
                 path.display()
             );
@@ -80,7 +80,7 @@ fn the_json_form_is_the_frames_exactly_as_they_crossed() {
     );
     assert_eq!(
         said(&frames, Form::Rendered),
-        "nudged — the advance is running\nflagged — it is on the queue now"
+        "nudged — it is working again\nflagged — it is on the queue now"
     );
     assert_eq!(Form::default(), Form::Rendered);
 }

@@ -54,7 +54,7 @@ pub const STOP: Verb = Verb {
     word: "stop",
     params: &["workspace", "agent"],
     flags: &[CHILDREN],
-    summary: "kill the driver held on a conversation; `children` takes the subtree with it",
+    summary: "stop a conversation's work now; `children` stops what it started too",
     detail: "It kills the driver and leaves everything else standing: the \
              conversation's history, its worktree and its inbox are untouched, \
              and `nudge` starts a driver on it again. SAY `children` AS THE \
@@ -73,7 +73,7 @@ pub const RETARGET: Verb = Verb {
     word: "retarget",
     params: &["workspace", "agent"],
     flags: &[],
-    summary: "settle a conversation onto the head of the config lineage governing it",
+    summary: "move a conversation onto the latest version of its settings",
     detail: "Marks the conversation to be re-forked onto the head of the \
              config lineage that governs it, which its own executor lands at \
              the next step boundary. Nothing is rewritten now: what comes back \
@@ -117,7 +117,7 @@ pub const DELETE_AGENT: Verb = Verb {
     word: "delete-agent",
     params: &["workspace", "agent", "typed"],
     flags: &[],
-    summary: "delete a conversation; the typed name arms taking its children too",
+    summary: "delete a conversation; typing its name confirms it, and takes its children too",
     detail: "Removes the conversation and everything the engine holds for it — \
              its ref, worktree, steps and inbox. Refused while it is live, so a \
              conversation still working is not deleted out from under itself. \

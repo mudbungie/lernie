@@ -53,8 +53,7 @@ pub const ROLE_HINT: &str = "role";
 pub const GOAL_HINT: &str = "what the fork is for";
 /// **Why the role is typed and not chosen.** A role resolves against the fork
 /// point's own config, and the lineages have no pane in this seat.
-pub const ROLE_SAID: &str =
-    "a role is a name the fork point's config declares, and this seat cannot list them yet";
+pub const ROLE_SAID: &str = "type a role this workspace's settings name — /roles lists them";
 
 /// **What each of the fork's two boxes is worth**, in points, on
 /// `super::cascade::ARM_WIDTH`'s own reasoning: a `TextEdit` that asks for no

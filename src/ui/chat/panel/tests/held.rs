@@ -76,7 +76,7 @@ fn a_dead_engine_is_red_on_the_card_and_the_rule_and_its_count_is_not_green() {
     let seen = glass(&mut model, 1400.0, 900.0);
     let read = said_in(&seen, theme::accent(theme::State::Error));
     assert!(
-        read.contains("(this box's own engine) — connection refused"),
+        read.contains("(this box's own engine) — cannot reach this engine: connection refused"),
         "{read:?}"
     );
     assert!(!seen.iter().any(|run| run.text.contains("waiting")));

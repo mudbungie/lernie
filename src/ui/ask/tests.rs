@@ -28,7 +28,7 @@ fn it_stands_on_the_selected_conversation_s_row_and_not_otherwise() {
         "1. seen",
         "2. pass",
         "6. hold",
-        "held at the boundary",
+        "waiting for your approval",
     ] {
         assert!(text.contains(word), "{word:?}:\n{text}");
     }
@@ -67,7 +67,10 @@ fn the_choices_are_the_queue_s_acts() {
     };
     assert_eq!(choices(&quiet), vec![Choice::Seen]);
     let said: Vec<String> = words(&held).into_iter().map(|(s, _)| s).collect();
-    assert!(said.iter().any(|s| s.starts_with("held at the boundary")));
+    assert!(
+        said.iter()
+            .any(|s| s.starts_with("waiting for your approval"))
+    );
     assert!(said.iter().any(|s| s.starts_with("flagged")));
     assert!(said.contains(&"Unauthorized".to_owned()));
 }
@@ -274,7 +277,10 @@ fn a_down_engine_s_ask_goes_faint_and_answers_nothing() {
     let why = "nothing provisioned for this channel";
     let mut model = asked();
     model.roster[0].held = crate::ui::Held::Unheld(why.to_owned());
-    assert_eq!(super::hint(&model), why);
+    assert_eq!(
+        super::hint(&model),
+        format!("{}{why}", crate::ui::model::UNHELD)
+    );
     let window = Window::new();
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
     let seen = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));

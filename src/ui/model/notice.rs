@@ -29,6 +29,24 @@ impl super::Model {
     }
 }
 
+/// The door [`Notice::refused`] appends to a refused role write.
+pub const CONFIG_DOOR: &str = "/config opens the settings editors";
+
+/// **What an act is called in a sentence about it** (bl-8a4b): the words the
+/// operator sent and the start's two acts are not words they typed, so they
+/// are said as what they were; every other act is its own word. Never as
+/// `/word`: a slash word in a notice is a door (`diagnostics::named`), and a
+/// door to resend an act IN DOUBT is the one invitation it must not make.
+fn act_named(op: &str) -> String {
+    if op == crate::verbs::MESSAGE.word {
+        return "your message".to_owned();
+    }
+    if [crate::verbs::PREPARE, crate::verbs::PROMPT].contains(&op) {
+        return "the new conversation".to_owned();
+    }
+    format!("the {op}")
+}
+
 /// What the seat last heard that it could not turn into content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Notice {
@@ -95,14 +113,8 @@ impl Notice {
     /// verdict rides verbatim (`crate::reply`'s rung 3), and `advanced` is the
     /// half worth saying: `pass` and `refuse` both drive the branch on, where
     /// `hold` is the operator saying *stay parked* and launches nothing.
-    pub fn answered(
-        tool: &str,
-        tool_use: &str,
-        verdict: &str,
-        scope: &str,
-        advanced: bool,
-    ) -> Self {
-        let said = format!("answered {tool} ({tool_use}): {verdict} for this {scope}");
+    pub fn answered(tool: &str, verdict: &str, scope: &str, advanced: bool) -> Self {
+        let said = format!("{verdict} {tool} for this {scope}");
         Self::Said(if advanced {
             format!("{said} — the conversation is running again")
         } else {
@@ -138,9 +150,11 @@ impl Notice {
     pub fn floored(standing: bool) -> Self {
         Self::Said(
             if standing {
-                "a floor stands over this conversation: every tool call but a read waits for you"
+                "auto-approval is off for this conversation: every tool call but a read waits \
+                 for you — /restore gives it back"
             } else {
-                "the floor is lifted — its tool calls are adjudicated by the ordinary policy again"
+                "auto-approval is back for this conversation — its tool calls follow the \
+                 workspace's usual rules again"
             }
             .to_owned(),
         )
@@ -162,7 +176,7 @@ impl Notice {
         commit: Option<String>,
     ) -> Self {
         let from = source.map_or_else(
-            || "no source ref".to_owned(),
+            || "no branch to deliver".to_owned(),
             |source| format!("from {source}"),
         );
         let landed = commit.map_or_else(
@@ -170,8 +184,8 @@ impl Notice {
             |commit| format!("at {commit}"),
         );
         Self::Said(format!(
-            "delivered onto {target} {landed}, {from}, off the pinned {base} — the \
-             ball is not closed and what its close delivers is unchanged"
+            "delivered onto {target} {landed}, {from}, based on {base} — the ball stays \
+             open, and closing it still delivers what it would have"
         ))
     }
 
@@ -182,14 +196,28 @@ impl Notice {
     pub fn retired(discarded: bool) -> Self {
         Self::Said(
             if discarded {
-                "the candidate's worktree is released, and its source ref went with it: \
-                 this project's retention says the keep had expired"
+                "the candidate's worktree is released, and its branch is deleted: this \
+                 project keeps them only so long"
             } else {
-                "the candidate's worktree is released — its source ref, and so its whole \
-                 diff, is still addressable"
+                "the candidate's worktree is released — its branch, and so its changes, \
+                 are kept"
             }
             .to_owned(),
         )
+    }
+
+    /// **The seat's own door after an engine's refusal**, where the refused
+    /// op names one (bl-8a4b): a role write the engine will not make is
+    /// mended in the workspace's settings, which `/config` opens. Decided by
+    /// the op this seat sent and never by the engine's prose, which it quotes
+    /// untouched; the door is a run on the rule while the menu offers it
+    /// (`crate::ui::status::diagnostics::named`).
+    pub fn refused(op: &str, said: String) -> Self {
+        use crate::verbs::{EFFORT, MODEL, PRIORITY};
+        if [MODEL.word, EFFORT, PRIORITY].contains(&op) {
+            return Self::Refused(format!("{said} — {CONFIG_DOOR}"));
+        }
+        Self::Refused(said)
     }
 
     /// The line the shell paints, with the half that says whose sentence it is.
@@ -200,18 +228,20 @@ impl Notice {
     pub fn line(&self) -> String {
         match self {
             Self::Refused(said) => format!("the engine refused: {said}"),
-            Self::Unreadable(why) => format!("this seat could not read the answer: {why}"),
-            Self::Unreachable(why) => format!("this seat could not reach it: {why}"),
+            Self::Unreadable(why) => format!(
+                "lernie could not read the engine's answer ({why}) — updating lernie may fix it"
+            ),
+            Self::Unreachable(why) => format!("lernie could not reach {why}"),
             Self::InDoubt { op, why } => format!(
-                "`{op}` is IN DOUBT: it reached the engine and no answer came back \
-                 ({why}), so it may have run. This seat never resends an act — the \
-                 world is the record, and the reads on this window are already \
-                 asking it again."
+                "{} reached the engine but no answer came back ({why}), so it may have \
+                 run — look before doing it again; this window is already re-reading",
+                act_named(op)
             ),
             Self::Said(said) => said.clone(),
             Self::Unsent { op, why } => format!(
-                "`{op}` was not sent: it never left this seat ({why}), so nothing \
-                 happened — it is safe to do it again."
+                "{} never reached the engine ({why}), so nothing happened — it is safe \
+                 to do it again",
+                act_named(op)
             ),
         }
     }

@@ -40,7 +40,7 @@ pub const PROVIDERS: Verb = Verb {
     word: "providers",
     params: &["workspace"],
     flags: &[],
-    summary: "what this workspace's wall can sign in to",
+    summary: "the providers this workspace can sign in to",
     detail: "One row per provider the wall routes, in the engine's own \
              listing order — which is brazen's routing order, so the first \
              row that can answer is the one a turn goes down. Each says what \
@@ -56,7 +56,7 @@ pub const MODELS: Verb = Verb {
     word: "models",
     params: &["workspace", "provider"],
     flags: &[],
-    summary: "the model ids one provider row offers",
+    summary: "the models one provider offers",
     detail: "The ids that row answers to, as the engine has them — the \
              values `model` takes as its last argument. It is asked of one \
              row rather than of the wall, because two rows offering the same \
@@ -68,7 +68,7 @@ pub const LOGIN: Verb = Verb {
     word: "login",
     params: &["workspace", "provider"],
     flags: &[],
-    summary: "start a sign-in on one provider row, in that workspace's wall",
+    summary: "sign this workspace in to one provider",
     detail: "The run happens on the ENGINE, inside the named workspace's \
              wall, so the credential lands where the agents that need it run \
              — nothing credential-shaped ever crosses this wire. It answers \

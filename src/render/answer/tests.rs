@@ -12,8 +12,8 @@ fn every_receipt_is_the_one_sentence_its_frame_carries() {
     for (frame, expected) in [
         (json!({"ok": true, "kind": "nudged"}), "nudged"),
         (json!({"ok": true, "kind": "flagged"}), "flagged"),
-        (json!({"ok": true, "kind": "acked"}), "watermark"),
-        (json!({"ok": true, "kind": "trail-cleared"}), "truncated"),
+        (json!({"ok": true, "kind": "acked"}), "marked seen"),
+        (json!({"ok": true, "kind": "trail-cleared"}), "cleared"),
         (
             json!({"ok": true, "kind": "started", "conversation": "PelicanQuiet"}),
             "started PelicanQuiet",

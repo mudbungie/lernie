@@ -60,17 +60,17 @@ const NAME_WIDTH: f32 = 220.0;
 /// What it says before a file has been picked.
 pub const NOTHING_PICKED: &str = "pick a file to read";
 /// What it says for a wall nobody has been answered about yet.
-pub const NOT_ANSWERED: &str = "waiting to hear which lineages this wall holds";
+pub const NOT_ANSWERED: &str = "waiting to hear which settings this workspace holds";
 /// What it says for a wall that answered and holds no lineage — a fact about
 /// the workspace, and the one empty state here that is not a wait.
-pub const NO_LINEAGES: &str = "this wall holds no config lineage";
+pub const NO_LINEAGES: &str = "this workspace has no settings yet";
 /// What it says under a file that was asked for and has not answered.
 pub const NOT_READ: &str = "waiting to hear what this file holds";
 /// What it says for a destination that answered and is empty — a file that
 /// does not exist yet reads as no bytes rather than as a refusal.
 pub const NO_BYTES: &str = "this file has no bytes yet";
 /// What it says for a file whose destination has no schema at all.
-pub const NO_SETTINGS: &str = "this file has no typed settings — its bytes are the whole of it";
+pub const NO_SETTINGS: &str = "this file has no fields to edit one by one — edit its text instead";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

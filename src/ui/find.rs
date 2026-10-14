@@ -46,8 +46,8 @@ pub const NOT_ASKED: &str = "nothing has been looked for yet";
 pub const NOTHING: &str = "this engine found none of it — try fewer words";
 /// **Why a hit cannot be acted on** — the standing sentence, said once above
 /// the list rather than on every row (yog bl-ef16).
-pub const NOT_ADDRESSABLE: &str = "a hit says where it is in the engine's own path spelling, which no gesture \
-     from this box can carry — so these are read here and aimed at by hand";
+pub const NOT_ADDRESSABLE: &str = "a hit says where it is as the engine names it, which this window cannot \
+     open — Ctrl+X goes to the conversation by hand";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

@@ -91,6 +91,11 @@ pub enum Held {
     Heard,
 }
 
+/// **What leads the wire's own sentence for a channel that will not dial**
+/// (bl-8a4b): that sentence is `lernie entries`' too, and names files and
+/// transports — the lead says what it means for the window first.
+pub const UNHELD: &str = "cannot reach this engine: ";
+
 impl Held {
     /// **The sentence a section stands on instead of walls**, where it has
     /// one: why it will not dial, or what the engine refused — the latter in
@@ -98,7 +103,7 @@ impl Held {
     /// the section as it did in the bar.
     pub fn said(&self) -> Option<String> {
         match self {
-            Self::Unheld(why) => Some(why.clone()),
+            Self::Unheld(why) => Some(format!("{UNHELD}{why}")),
             Self::Refused(said) => Some(super::Notice::Refused(said.clone()).line()),
             Self::Unheard | Self::Heard => None,
         }

@@ -40,13 +40,11 @@ pub const WORD: &str = "clients";
 /// The pane's own heading.
 pub const HEADING: &str = "machines";
 /// What it says for a wall nobody has been answered about yet.
-pub const NOT_ANSWERED: &str = "waiting to hear which machines this wall holds";
+pub const NOT_ANSWERED: &str = "waiting to hear which machines this workspace holds";
 /// What it says for a wall that answered and holds no registration at all — a
 /// fact about the workspace, and the one empty state here that is not a wait.
-pub const NONE_REGISTERED: &str = "no machine is registered in this workspace: \
-                                   registering one is an operator's act on the \
-                                   server that holds it, never a gesture from \
-                                   here";
+pub const NONE_REGISTERED: &str = "no machine is registered in this workspace yet — \
+                                   /enroll lets one join";
 /// What a row says of a machine that has presented no set.
 pub const OFFERS_NOTHING: &str = "has advertised no tool";
 /// What a tool says when its box consents to a caller-named directory.

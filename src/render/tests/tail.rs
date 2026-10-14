@@ -135,7 +135,7 @@ fn a_held_read_says_a_refusal_and_prints_the_frame_where_asked() {
     );
     let unreadable = json!({"ok": true, "kind": "follow"});
     assert!(
-        tail(&unreadable, &mut fold, Form::Rendered).contains("cannot read"),
+        tail(&unreadable, &mut fold, Form::Rendered).contains("could not read"),
         "and a frame with no fold in it is this seat's own statement"
     );
     assert_eq!(

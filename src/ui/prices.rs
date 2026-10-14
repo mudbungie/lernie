@@ -26,11 +26,11 @@ use crate::ui::{Model, PriceTable, theme};
 /// **The word typed after the slash** that opens it (`crate::ui::slash`).
 pub const WORD: &str = "prices";
 /// The pane's own heading.
-pub const HEADING: &str = "what the world is charged";
+pub const HEADING: &str = "what the models cost";
 /// What it says before any channel has answered.
 pub const NOT_ANSWERED: &str = "waiting to hear what these engines charge";
 /// What a section with no row says — every count it reports is unpriced.
-pub const NO_ROWS: &str = "no row is priced, so no count carries money";
+pub const NO_ROWS: &str = "no model has a price yet, so nothing shows a cost — price one below";
 /// The act that writes the drafted row down one channel.
 pub const PRICE: &str = "price it";
 /// The act that deletes one row.
@@ -79,7 +79,7 @@ fn drafting(ui: &mut egui::Ui, model: &mut Model) {
     ui.add(
         egui::TextEdit::singleline(&mut draft.rates)
             .desired_width(ui.available_width())
-            .hint_text("input output [cache-read [cache-write]] per Mtok"),
+            .hint_text("input output [cache read [cache write]], USD per million tokens"),
     );
     ui.add(egui::TextEdit::singleline(&mut draft.bound).hint_text("ceiling in USD, or off"));
 }

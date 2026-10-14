@@ -29,10 +29,13 @@ fn an_act_that_never_left_this_box_says_so_and_says_it_is_safe_to_repeat() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     let said = model.notice.expect("a notice").line();
-    assert!(said.contains("`nudge` was not sent"), "{said}");
+    assert!(
+        said.contains("the nudge never reached the engine"),
+        "{said}"
+    );
     assert!(said.contains("nothing happened"), "{said}");
     assert!(said.contains("safe to do it again"), "{said}");
-    assert!(!said.contains("DOUBT"), "nothing crossed: {said}");
+    assert!(!said.contains("may have run"), "nothing crossed: {said}");
 }
 
 /// **An act that crossed and was not answered is IN DOUBT** — REMOTE §3's whole
@@ -59,11 +62,11 @@ fn an_act_that_crossed_with_no_answer_is_painted_in_doubt() {
     tick(&link, scratch.path());
     link.settle(&mut model);
     let said = model.notice.expect("a notice").line();
-    assert!(said.contains("`message` is IN DOUBT"), "{said}");
+    assert!(said.contains("your message reached the engine"), "{said}");
     assert!(said.contains("it may have run"), "{said}");
-    assert!(said.contains("never resends an act"), "{said}");
+    assert!(said.contains("look before doing it again"), "{said}");
     assert!(
-        said.contains("the world is the record"),
+        said.contains("already re-reading"),
         "the recovery is a read: {said}"
     );
 }
@@ -132,7 +135,7 @@ fn an_acts_sentence_survives_a_roster_answer() {
         crate::reply::read(&json!({"ok": true, "kind": "workspaces", "rows": []})),
     );
     let said = model.notice.expect("still there").line();
-    assert!(said.contains("IN DOUBT"), "{said}");
+    assert!(said.contains("may have run"), "{said}");
     assert!(
         matches!(model.roster[0].held, crate::ui::Held::Heard),
         "and the channel is not painted down over an act's failure"

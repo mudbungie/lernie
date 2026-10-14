@@ -249,7 +249,10 @@ fn an_aimed_engine_that_will_not_dial_says_so_in_the_slot() {
     let mut model = seated();
     model.roster[0].held = crate::ui::Held::Unheld("nothing provisioned".to_owned());
     let said = state(&model);
-    assert_eq!(said.text, "nothing provisioned");
+    assert_eq!(
+        said.text,
+        format!("{}nothing provisioned", crate::ui::model::UNHELD)
+    );
     assert_eq!(said.ink, theme::accent(theme::State::Error));
     model.notice = Some(Notice::Said("landed".to_owned()));
     assert_eq!(state(&model).text, "landed");

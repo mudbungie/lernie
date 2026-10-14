@@ -54,7 +54,7 @@ pub const HEADING: &str = "cutting every trail";
 pub const WHAT: &str =
     "every row before the cut is gone; the cut itself is logged as the new trail's first row";
 /// What it says about how far the cut reaches. The engines are named under it.
-pub const REACH: &str = "one gesture cuts the trail of every engine this box holds:";
+pub const REACH: &str = "this clears the trail on every engine this box reaches:";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

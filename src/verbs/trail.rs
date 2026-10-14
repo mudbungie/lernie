@@ -69,7 +69,7 @@ pub const ACK: Verb = Verb {
     word: "ack",
     params: &[],
     flags: &[],
-    summary: "acknowledge every alarm on the ops trail",
+    summary: "mark every alarm on the trail seen",
     detail: "Appends the acknowledgement line every failure-derived alarm \
              reads past, so a failure you have understood and chosen to leave \
              alone stops bannering. A new failure lands after the watermark \
@@ -82,7 +82,7 @@ pub const CLEAR_TRAIL: Verb = Verb {
     word: "clear-trail",
     params: &[],
     flags: &[],
-    summary: "truncate the ops trail; the clear is the new trail's first row",
+    summary: "clear the trail; the clearing is the new trail's first row",
     detail: "Starts a fresh trail. The clear itself is logged as the new \
              trail's first row, so the trail never lies about having been cut \
              — but the rows before it are gone. It names no workspace, so one \

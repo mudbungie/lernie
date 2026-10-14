@@ -46,7 +46,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear what this conversation is";
 /// Said of a name no stored fact backs, so no peer can address it.
 pub const DISPLAY_ONLY: &str = "a display name only — nothing can be addressed by it";
 /// Said of a conversation the engine's snapshot does not carry.
-pub const ABSENT: &str = "the engine's snapshot does not carry it";
+pub const ABSENT: &str = "the engine did not say";
 /// Said when the engine offers nothing on it.
 pub const NOTHING_OFFERED: &str = "the engine offers nothing on it";
 

@@ -277,8 +277,8 @@ pub fn flagged(row: &QueueRow) -> Option<String> {
 pub fn parked(row: &QueueRow) -> Option<String> {
     let held = row.held.as_ref()?;
     Some(format!(
-        "held at the boundary: {} ({}) — {}",
-        held.tool, held.tool_use, held.reason
+        "waiting for your approval: {} — {}",
+        held.tool, held.reason
     ))
 }
 

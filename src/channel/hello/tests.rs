@@ -65,11 +65,11 @@ fn a_mismatch_names_both_versions_and_the_remedy() {
     let reach = confirm(&mut wire.as_slice()).expect_err("refused");
     let refusal = reach.said();
     assert!(
-        refusal.contains(&format!("version {PROTOCOL}")),
+        refusal.contains(&format!("protocol {PROTOCOL}")),
         "{refusal}"
     );
     assert!(refusal.contains("engine speaks 99"), "{refusal}");
-    assert!(refusal.contains("upgrade the older component"), "{refusal}");
+    assert!(refusal.contains("update whichever is older"), "{refusal}");
     assert!(
         !refusal.contains("negotiat") || refusal.contains("no negotiation"),
         "the refusal must not offer a negotiation: {refusal}"

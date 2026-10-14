@@ -132,7 +132,9 @@ pub fn headline(call: &ToolCall) -> String {
 pub fn framing(doc: &Doc) -> Option<String> {
     match doc {
         Doc::Unparsed { note, .. } => Some(note.clone()),
-        Doc::Unknown(word) => Some(format!("a {word:?} record, which this seat cannot show")),
+        Doc::Unknown(word) => Some(format!(
+            "a {word:?} record, which this version of lernie cannot show"
+        )),
         Doc::Json { .. } | Doc::Absent => None,
     }
 }

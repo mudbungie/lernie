@@ -44,11 +44,11 @@ pub const ACK: &str = "acknowledge every alarm";
 /// The pane's own heading.
 pub const HEADING: &str = "the trail";
 /// What it says before any channel has answered.
-pub const NOT_ANSWERED: &str = "waiting to hear what has crossed the boundary";
+pub const NOT_ANSWERED: &str = "waiting to hear what has been done on these engines";
 /// What it says once they have and nothing has. A fact about the engines, and
 /// the one empty state here that is not a wait.
 pub const NOTHING: &str =
-    "nothing has crossed the boundary yet — every act from any seat lands here";
+    "nothing has been done here yet — every act, from any window or box, lands here";
 
 /// **Whether every channel that answered answered nothing** — the one reading
 /// of these rows this pane makes, and it is about the trail rather than about

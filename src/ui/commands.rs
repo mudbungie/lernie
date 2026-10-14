@@ -63,21 +63,27 @@ pub const KEYS: [(&str, &str); 10] = [
     ("/", "opens the words"),
     ("Tab", "completes the chosen word into the box"),
     ("Up, Down", "walk whatever is open"),
-    ("Esc", "closes the overlay, then the menu, then the notice"),
-    ("Ctrl+X", "every engine, its walls and their conversations"),
-    ("Ctrl+O", "changes the model a role runs on"),
+    (
+        "Esc",
+        "closes a dropup, then the overlay, then the menu, then the notice",
+    ),
+    (
+        "Ctrl+X",
+        "every engine, its workspaces and their conversations",
+    ),
+    ("Ctrl+O", "changes the model this workspace runs on"),
     ("Ctrl+T", "unfolds what is running"),
-    ("1 to 9", "answers the ask by its number"),
+    ("1 to 6", "answers the question it is asking, by its number"),
 ];
 /// **The engines' section heading**: their op tables are a second subject —
 /// what each engine answers, in the engine's own spelling — and saying so is
 /// what keeps an operator from typing `/scan` into a box that does not take it.
-pub const ENGINES: &str = "what these engines answer — each engine's own op table, in its own spelling; the words above are what this box takes";
+pub const ENGINES: &str = "what each engine answers to — its own commands, for the lernie command line; the words above are what this window takes";
 /// What it says before any channel has answered.
 pub const NOT_ANSWERED: &str = "waiting to hear what these engines answer to";
 /// What a section says for an engine that answered and named no op at all — a
 /// fact about that engine, and the one empty state here that is not a wait.
-pub const NO_OPS: &str = "this engine names no op";
+pub const NO_OPS: &str = "this engine lists no commands";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

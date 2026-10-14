@@ -55,7 +55,7 @@ fn conversation_rows(model: &Model, out: &mut Vec<Row>) {
     use crate::verbs;
     out.push(Row::new(
         crate::ui::records::WORD,
-        "the conversation's own ledger",
+        "this conversation's steps, files and history",
         &[
             verbs::STEPS.word,
             verbs::FILES.word,
@@ -160,7 +160,7 @@ fn wall_rows(pinned: bool, out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::fleet::WORD,
-        "the fleet: run this wall's balls and watch them",
+        "the fleet: run this workspace's balls and watch them",
         &[verbs::SCIENCE.word, verbs::WORK_DIFF.word],
     ));
     out.push(Row::new(
@@ -201,7 +201,7 @@ fn window_rows(out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::board::WORD,
-        "the balls every engine holds, and the aimed wall's",
+        "the balls every engine holds, and this workspace's",
         &[
             verbs::BALLS.word,
             verbs::BOARD.word,
@@ -221,7 +221,7 @@ fn window_rows(out: &mut Vec<Row>) {
     ));
     out.push(Row::new(
         crate::ui::switcher::WORD,
-        "every engine, its walls and their conversations — Ctrl+X",
+        "every engine, its workspaces and their conversations — Ctrl+X",
         &[],
     ));
 }

@@ -35,7 +35,7 @@ pub const HEADING: &str = "staged proposals";
 /// What it says for a wall nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear what a reviewer has staged";
 /// What it says for a wall with nothing staged — a fact, not a wait.
-pub const NOTHING_STAGED: &str = "nothing is staged for this wall";
+pub const NOTHING_STAGED: &str = "nothing is staged for this workspace";
 /// What it says under a named row that has not answered whole yet.
 pub const NOT_WHOLE: &str = "waiting to hear this proposal whole";
 /// What it says for a named row the engine's listing no longer carries.
@@ -52,9 +52,9 @@ pub const ARMED: &str = "armed";
 /// What it says once a verdict has been asked for.
 pub const ASKED: &str = "asked — waiting for the engine";
 /// What each verdict does, said before it is offered.
-pub const VERDICTS_DO: &str = "accept moves the lineage onto it and every conversation on \
-                               that lineage picks it up at its next step; reject deletes \
-                               the staging branch";
+pub const VERDICTS_DO: &str = "accept puts it into the settings, and every conversation \
+                               on them picks it up at its next step; reject throws it \
+                               away";
 
 /// How wide the arming box is — the unmaking's, for the same reason.
 const ARM_WIDTH: f32 = 200.0;

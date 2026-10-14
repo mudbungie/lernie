@@ -99,7 +99,7 @@ fn a_kind_this_build_does_not_paint_refuses_by_name_with_a_remedy() {
         panic!("an unpainted kind");
     };
     assert!(why.contains("\"invocations\""), "{why}");
-    assert!(why.contains("upgrade"), "{why}");
+    assert!(why.contains("this version of lernie"), "{why}");
 }
 
 /// **Rung 1**, at the envelope: bytes that are not a reply object at all, and

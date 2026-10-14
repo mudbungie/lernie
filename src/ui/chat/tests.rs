@@ -83,7 +83,7 @@ fn a_model_turn_becomes_one_row_per_block() {
             "model-a (thinking)",
             "model-a",
             "read(src/ui.rs)",
-            "model-a (citation, which this seat cannot read)",
+            "model-a (citation, which this version of lernie cannot read)",
         ]
     );
 }
@@ -112,7 +112,9 @@ fn the_engine_s_unreadable_and_this_seat_s_read_differently_and_both_are_kept() 
     assert!(raw[0].who.contains("unparsed"), "{:?}", raw[0]);
     let unknown = rows(&of(EntryKind::Unknown("annotation".to_owned())), None);
     assert!(
-        unknown[0].who.contains("this seat cannot read"),
+        unknown[0]
+            .who
+            .contains("this version of lernie cannot read"),
         "{:?}",
         unknown[0]
     );

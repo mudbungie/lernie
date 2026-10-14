@@ -52,7 +52,7 @@ pub const DELETE_WORKSPACE: Verb = Verb {
     word: "delete-workspace",
     params: &["workspace", "typed"],
     flags: &[],
-    summary: "unmake a workspace; the typed name is the arming",
+    summary: "delete a workspace; typing its name confirms it",
     detail: "It unmakes the workspace and releases the balls it held. Fail-closed \
              at fire time wherever it is asked: refused unless the workspace is \
              the engine's own, nothing in it is live, and `typed` matches the \
@@ -73,7 +73,7 @@ pub const PIN: Verb = Verb {
     word: "pin",
     params: &["workspace"],
     flags: &[],
-    summary: "rank this workspace first in every seat's list of walls and keep it there",
+    summary: "keep this workspace at the top of every list of workspaces",
     detail: "It adds the workspace to the durable pin list every seat orders              its walls by: pinned first, in the order they were pinned, ahead              of the rest in name order. A pin is an assertion about the world              rather than an arrangement of one screen, so it is the same list              on every seat and it survives a restart. Pinning one already              pinned moves it to the end of the pinned run rather than saying              it twice. It answers the workspace listing with the ranks it now              carries.",
 };
 
@@ -82,7 +82,7 @@ pub const UNPIN: Verb = Verb {
     word: "unpin",
     params: &["workspace"],
     flags: &[],
-    summary: "take this workspace back out of the pinned run",
+    summary: "let this workspace fall back into name order",
     detail: "It removes the workspace from the pin list, so it falls back into              name order with everything unpinned. It says what it means rather              than flipping whatever it found: unpinning one that is not pinned              leaves the list alone, which is what lets two seats send it at              once and agree. It answers the workspace listing with the ranks it              now carries.",
 };
 

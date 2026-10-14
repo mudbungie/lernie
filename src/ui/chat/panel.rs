@@ -23,7 +23,7 @@ pub fn version() -> String {
 pub const WAYS: [&str; 4] = [
     "/help for commands",
     "Ctrl+X for a conversation",
-    "/roles for the model",
+    "Ctrl+O for the model",
     "/login for a provider",
 ];
 /// What parts one way from the next.
@@ -147,7 +147,7 @@ pub fn seat(ui: &mut egui::Ui, model: &Model) -> bool {
             };
             let said = format!(
                 "{header} — {}, {}{waiting}",
-                crate::render::counted(walls as u64, "wall"),
+                crate::render::counted(walls as u64, "workspace"),
                 crate::render::counted(conversations, "conversation"),
             );
             let ink = if asking > 0 {

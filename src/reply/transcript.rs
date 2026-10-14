@@ -162,7 +162,7 @@ pub fn said_by(sender: &str, sender_name: Option<&str>) -> String {
 pub fn wounded(wound: &str, reason: Option<&str>, auth_row: Option<&str>) -> String {
     match wound {
         "refused" => format!(
-            "{} refused the last call — sign it in with /login, or move the role with /roles",
+            "{} refused the last call — /login signs it in, or /roles picks another",
             auth_row.map_or_else(
                 || "the provider".to_owned(),
                 |row| format!("provider {row}")
@@ -172,8 +172,8 @@ pub fn wounded(wound: &str, reason: Option<&str>, auth_row: Option<&str>) -> Str
             "the last step produced nothing{} — /nudge runs it again",
             reason.map_or_else(String::new, |why| format!(": {why}"))
         ),
-        "output_limit" => "the last step was cut off at its output cap — raise the role's \
-                           output limit, or ask for less in one step"
+        "output_limit" => "the last step was cut off at its output limit — /config raises the \
+                           limit, or ask for less in one step"
             .to_owned(),
         other => format!("the last step failed ({other})"),
     }

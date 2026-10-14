@@ -22,7 +22,7 @@ pub const ENROLL: Verb = Verb {
     word: "enroll",
     params: &["workspace", "name", "grade"],
     flags: &[],
-    summary: "mint a new box's material and say it as a code, a line and, if asked, four files",
+    summary: "let a new box connect: its credentials as a code to scan, a line to paste or, if asked, four files",
     detail: "The engine mints a leaf on its own CA, seats the client in that \
              workspace, answers the material and shreds the key. What comes \
              back is REMOTE §8.4's envelope — one line of compact JSON under \

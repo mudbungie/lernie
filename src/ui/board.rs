@@ -64,7 +64,7 @@ pub const NOT_ANSWERED: &str = "waiting to hear what is on the board";
 /// the one empty state here that is not a wait.
 pub const NOTHING: &str = "no ball is on any board here — file one below";
 /// The heading over the whole box's binding table.
-pub const BINDINGS: &str = "every ball⇄workspace binding";
+pub const BINDINGS: &str = "which workspace holds which ball";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

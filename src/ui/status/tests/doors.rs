@@ -199,3 +199,39 @@ fn a_refusal_carries_the_doors_it_names() {
     click_rule(&Window::new(), &mut model, "/login");
     assert!(model.covered(), "the login pane stands");
 }
+
+/// **A refused role write carries the seat's own door** (bl-8a4b): the
+/// engine's words untouched, `/config` after them and on the rule — decided
+/// by the op that was refused, so another op's refusal carries none. And an
+/// act that never left names the start as what it was, never as its op.
+#[test]
+fn a_refused_role_write_names_config_and_another_refusal_does_not() {
+    use crate::reply::Read;
+    let mut model = seated();
+    let flat = model.roster[0].channel.clone();
+    let said = "`qwen2.5:7b` is not a plain model id";
+    model.receipt(
+        &flat,
+        crate::verbs::MODEL.word,
+        Read::Refusal(said.to_owned()),
+    );
+    let line = model.notice.clone().expect("refused").line();
+    let door = crate::ui::model::CONFIG_DOOR;
+    assert_eq!(line, format!("the engine refused: {said} — {door}"));
+    let doors = crate::ui::status::diagnostics::doors(&model);
+    let words: Vec<&str> = doors.iter().map(|run| run.text.as_str()).collect();
+    assert_eq!(words, ["/config"]);
+    model.receipt(
+        &flat,
+        crate::verbs::NUDGE.word,
+        Read::Refusal(said.to_owned()),
+    );
+    let line = model.notice.clone().expect("refused").line();
+    assert_eq!(line, format!("the engine refused: {said}"));
+    let unsent = crate::channel::Reach::Unsent("no route".to_owned());
+    let line = crate::ui::Notice::act(crate::verbs::PREPARE, &unsent).line();
+    assert!(
+        line.starts_with("the new conversation never reached"),
+        "{line}"
+    );
+}

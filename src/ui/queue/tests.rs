@@ -42,7 +42,7 @@ fn the_answered_pane_paints_every_line_a_row_can_carry() {
         "2 under it",
         "flagged 2026-09-01T22:10Z — it is rewriting an unrelated crate",
         "Unauthorized",
-        "held at the boundary: Bash (toolu_1) — writes",
+        "waiting for your approval: Bash — writes",
         "held  mail  flagged",
         "it stopped on the third attempt",
         crate::ui::roster::NO_NAME_HERE,
@@ -195,7 +195,7 @@ fn every_row_wears_the_attention_rule_and_none_wears_the_brand() {
         ),
         ("Unauthorized", theme::accent(theme::State::Error)),
         (
-            "held at the boundary",
+            "waiting for your approval",
             theme::accent(theme::State::Annotation),
         ),
         ("it stopped on the third attempt", theme::INK_WEAK),

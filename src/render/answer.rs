@@ -77,10 +77,10 @@ pub(super) fn answer(reply: &Reply) -> String {
         // restated it would be this end predicting a listing
         // ([`crate::reply::Reply::Nudged`] on why).
         Reply::Started { conversation } => format!("started {conversation}"),
-        Reply::Nudged => "nudged — the advance is running".to_owned(),
+        Reply::Nudged => "nudged — it is working again".to_owned(),
         Reply::Flagged => "flagged — it is on the queue now".to_owned(),
-        Reply::Acked => "the trail's watermark is where you are".to_owned(),
-        Reply::TrailCleared => "the trail is truncated".to_owned(),
+        Reply::Acked => "every alarm on the trail is marked seen".to_owned(),
+        Reply::TrailCleared => "the trail is cleared".to_owned(),
         Reply::Retired { discarded } => acts::retired(*discarded),
         Reply::Floored { standing } => acts::floored(*standing),
         Reply::Armed(standing) => acts::armed(*standing),

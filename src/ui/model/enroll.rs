@@ -84,7 +84,7 @@ impl Shown {
                 symbol,
             })
             .map_err(|too_long| {
-                format!("the engine's material will not fit one symbol: {too_long}")
+                format!("the enrollment is too long to draw as one QR code: {too_long}")
             })
     }
 }

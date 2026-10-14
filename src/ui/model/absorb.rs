@@ -83,6 +83,9 @@ impl Model {
                 self.take_back_start();
                 self.absorb(channel, read);
             }
+            // **Every other refusal is the bar's**, with the seat's own door
+            // after it where the op names one (bl-8a4b).
+            Read::Refusal(said) => self.notice = Some(Notice::refused(op, said)),
             other => self.absorb(channel, other),
         }
     }
@@ -239,14 +242,12 @@ impl Model {
             // or whether a floor stands over it now.
             Reply::Answered {
                 tool,
-                tool_use,
                 verdict,
                 scope,
                 advanced,
+                ..
             } => {
-                self.notice = Some(Notice::answered(
-                    &tool, &tool_use, &verdict, &scope, advanced,
-                ));
+                self.notice = Some(Notice::answered(&tool, &verdict, &scope, advanced));
             }
             Reply::Floored { standing } => self.notice = Some(Notice::floored(standing)),
         }

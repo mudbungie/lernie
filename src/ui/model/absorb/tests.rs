@@ -27,10 +27,10 @@ fn a_receipt_replaces_the_notice_and_never_clears_it() {
     };
     let flat = own().channel;
     for (reply, said) in [
-        (Reply::Nudged, "nudged — the advance is running"),
+        (Reply::Nudged, "nudged — it is working again"),
         (Reply::Flagged, "flagged — it is on the queue now"),
-        (Reply::Acked, "the trail's watermark is where you are"),
-        (Reply::TrailCleared, "the trail is truncated"),
+        (Reply::Acked, "every alarm on the trail is marked seen"),
+        (Reply::TrailCleared, "the trail is cleared"),
     ] {
         model.absorb(&flat, Read::Answer(reply));
         assert_eq!(model.notice, Some(Notice::Said(said.to_owned())));

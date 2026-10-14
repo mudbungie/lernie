@@ -47,7 +47,7 @@ fn the_answered_drill_in_paints_the_records_the_stream_and_the_tool_call() {
         NO_BYTES,
         crate::reply::step::UNPARSED,
         "not json",
-        "a \"sideways\" record, which this seat cannot show",
+        "a \"sideways\" record, which this version of lernie cannot show",
         "toolu_1 — ended in error",
         "the adapter's last words",
     ] {

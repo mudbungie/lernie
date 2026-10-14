@@ -164,7 +164,7 @@ pub const OPS: Door = Door {
     word: "ops",
     takes: "[<max>]",
     arity: (0, 1),
-    summary: "every act that crossed the boundary, newest last",
+    summary: "everything done on this engine, from any window or box, newest last",
     detail: "The trail of what an engine has DONE — one row per act, with the \
              command it ran and how it ended. It names no workspace, so its \
              subject is EVERY channel this box holds and the answer is their \

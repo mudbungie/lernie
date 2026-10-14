@@ -161,13 +161,7 @@ fn decode(frame: &Value) -> Result<Read, String> {
 /// operator tell which — exactly as the version preface's mismatch names both
 /// numbers.
 pub(crate) fn unpainted(kind: &str) -> String {
-    format!(
-        "reply: this seat does not paint a {kind:?} answer. The kind is refused \
-         by name and never guessed at: either this build is older than the \
-         engine, and the remedy is to upgrade the seat, or nothing here renders \
-         that kind at all — which corpus/unpainted/ and parity.toml record \
-         between them."
-    )
+    format!("a {kind:?} answer, which this version of lernie does not show")
 }
 
 /// The kind-less envelope, and nothing else may wear that shape: a refusal is

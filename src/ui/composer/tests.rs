@@ -246,7 +246,7 @@ fn the_hint_names_the_ways_in_and_drops_them_from_the_right() {
     });
     for way in [
         "Ctrl+X for a conversation",
-        "/roles for the model",
+        "Ctrl+O for the model",
         "/login for a provider",
     ] {
         assert!(wide.contains(way), "{way:?}: {wide}");

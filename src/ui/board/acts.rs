@@ -51,7 +51,7 @@ pub const FILE: &str = "file a ball…";
 pub const ACT: &str = "act on it…";
 /// The control that claims a ready ball for the aimed wall — on a board row
 /// rather than in the block, because the row is its subject.
-pub const CLAIM: &str = "claim it for this wall";
+pub const CLAIM: &str = "claim it for this workspace";
 /// The way out, which changes nothing. It is not the pane's own `done`,
 /// because two controls reading the same word on one screen are one control to
 /// everything that aims at a word — the operator, the accessibility tree and

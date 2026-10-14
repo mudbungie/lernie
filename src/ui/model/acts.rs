@@ -276,9 +276,9 @@ impl Model {
     /// silent drop is the one thing this model's door does not do.
     pub(super) fn enrolled(&mut self, material: &crate::reply::enrolled::Enrolled) {
         let Some(enrolling) = self.enroll.as_mut() else {
-            self.notice = Some(super::Notice::Unreadable(format!(
-                "the engine enrolled {} while this pane was closed, so the \
-                 material is gone — enroll again to mint another",
+            self.notice = Some(super::Notice::Said(format!(
+                "the engine enrolled {} after the enroll pane closed, so its code is \
+                 gone — /enroll makes another",
                 material.caption()
             )));
             return;

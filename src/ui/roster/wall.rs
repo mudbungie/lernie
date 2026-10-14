@@ -23,7 +23,8 @@ use crate::ui::{Aim, Model, convs, theme};
 /// true is structural: an entry directory names one workspace, the channel
 /// enumerates every workspace that client is registered in, and the extras have
 /// no entry of their own — so no envelope this seat can write reaches them.
-pub const NO_NAME_HERE: &str = "no entry here names it, so nothing typed here can address it";
+pub const NO_NAME_HERE: &str =
+    "this box has no connection set up for it, so nothing here can reach it";
 
 /// **The word on the control that floats this wall to the front of the strip**,
 /// offered on an aimed row that is not pinned.

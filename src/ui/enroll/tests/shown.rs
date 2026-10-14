@@ -108,7 +108,7 @@ fn material_too_big_for_a_symbol_closes_the_pane_and_says_why() {
         .as_ref()
         .map(crate::ui::Notice::line)
         .unwrap_or_default();
-    assert!(said.contains("will not fit"), "{said}");
+    assert!(said.contains("too long to draw"), "{said}");
     assert!(!said.contains("notreal"), "the notice quoted it: {said}");
 }
 

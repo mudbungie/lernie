@@ -5160,9 +5160,9 @@ parts, in its vertical order, each with what it becomes here.
    `lernie entries` prints — on a first run, *nothing provisioned*) whole
    and wrapped in the error accent in place of its counts, as does an engine
    that refused the roster (`Held::Refused`, bl-693d), and one not heard
-   from yet says *waiting to hear from this channel* in weak ink; the
+   from yet says *waiting to hear from this engine* in weak ink; the
    version, and the ways in — `/help for commands · Ctrl+X for a
-   conversation · /roles for the model · /login for a provider` (item 10).
+   conversation · Ctrl+O for the model · /login for a provider` (item 10).
 
 5. **The way in is a slash verb, and the slash verbs ARE §4.10's words**
    (`src/ui/slash.rs`). `/` at the head of the draft opens the **completion
@@ -5399,6 +5399,31 @@ parts, in its vertical order, each with what it becomes here.
     door; the seat names no verb of its own. A refused start's sentence,
     which stands over the box rather than in the slot (`composer::start`),
     carries the same doors after it.
+
+    **The frame around the engine's sentence, and the seat's own door**
+    (bl-8a4b; operator 2026-10-13: *a ton of error message … is opaque to a
+    user that doesn't deeply understand the internals*, and a refusal naming
+    *the Config editors* with no way named to reach them). `the engine
+    refused:` is **kept**: it says the act did not happen and whose words
+    follow, so the nouns in them read as the engine's and not as this
+    window's — the seat never rewrites them, and an engine sentence that is
+    opaque is filed against the engine. Where the seat **knows** the door
+    because it knows the op it sent, it appends its own sentence after an
+    em dash: a refused `model`, `effort` or `priority` ends *— /config opens
+    the settings editors* (`Notice::refused`), which `named` then makes a
+    run like any other. The signal is the op the receipt answers, never the
+    engine's prose. A dial that will not open leads with *cannot reach this
+    engine:* before the wire's own sentence (`Held::said`, `UNHELD`) on the
+    card, the slot and the ask's hint alike, because that sentence is
+    `lernie entries`' too and names files and transports. The seat's own
+    sentences follow one test: a person who has never read the code knows
+    what happened and what to do next, the next thing named as the slash
+    word or key that does it — so an act in doubt or never sent names the
+    act as what it was (*your message*, *the new conversation*, *the
+    nudge*), never as `/word`, which would be a door inviting the resend
+    REMOTE §3 forbids; an unreadable answer says updating lernie may fix it;
+    and *wall*, *seat*, *channel*, *lineage*, *op* and *boundary* do not
+    reach the glass in this window's own words.
 
     **Three readings of the ruling, each checked against the wire.**
     *Context* is read as **effort**: a role's facts on the wire are

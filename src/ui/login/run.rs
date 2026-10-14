@@ -14,7 +14,7 @@ use crate::ui::{Model, theme};
 pub const NO_RUN: &str = "nobody has signed in to this row here";
 
 /// What the pane says above the engine's run-by-hand command.
-pub const BY_HAND: &str = "run it by hand, on the box that holds this wall:";
+pub const BY_HAND: &str = "run it by hand, on the box this workspace lives on:";
 
 /// The followed run, under the row it belongs to: its lines, the exit it
 /// settled on, and the command to run by hand where the engine composed one.

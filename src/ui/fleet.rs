@@ -76,14 +76,14 @@ pub const ATTEMPTS: &str = "delivery attempts";
 /// The heading over what changed.
 pub const CHANGES: &str = "what the agents changed";
 /// What it says about a wall nobody has been answered about yet.
-pub const NOT_ANSWERED: &str = "waiting to hear what this wall's agents have done";
+pub const NOT_ANSWERED: &str = "waiting to hear what this workspace's agents have done";
 /// What it says about a wall that answered and has none — the controls that
 /// run a fleet stand ABOVE the two sections (bl-0740).
 pub const NOTHING: &str =
-    "this wall's agents have delivered nothing yet — run a fleet above to begin";
+    "this workspace's agents have delivered nothing yet — run a fleet above to begin";
 /// What the second section says about a wall whose agents changed nothing:
 /// its own sentence, because the two sections answer two questions.
-pub const UNCHANGED: &str = "this wall's agents have changed nothing yet";
+pub const UNCHANGED: &str = "this workspace's agents have changed nothing yet";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

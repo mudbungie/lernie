@@ -55,7 +55,7 @@ pub const NO_CONVERSATIONS: &str = "no conversations here yet — begin one with
 /// refuses to state a definite fact about a conversation nobody could take a
 /// reading of. It stands from the keypress that aims until the answer lands —
 /// a round trip on a wire, not the millisecond it is on loopback.
-pub const NOT_ANSWERED: &str = "waiting to hear about this wall";
+pub const NOT_ANSWERED: &str = "waiting to hear about this workspace";
 
 /// The mark a state nothing observed wears, inside the badge it qualifies.
 pub const UNCERTAIN: &str = "?";

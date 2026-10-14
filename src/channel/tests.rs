@@ -160,7 +160,7 @@ fn an_engine_of_another_protocol_refuses_and_names_both_versions() {
     assert!(!reach.crossed(), "a stated mismatch adjudicates nothing");
     let refusal = reach.said();
     assert!(
-        refusal.contains(&format!("seat speaks version {PROTOCOL}")),
+        refusal.contains(&format!("lernie speaks protocol {PROTOCOL}")),
         "{refusal}"
     );
     assert!(

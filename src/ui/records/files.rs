@@ -68,6 +68,8 @@ pub fn previewed(preview: &Preview) -> String {
         Preview::Text(text) => text.clone(),
         Preview::Truncated { text, size } => format!("{text}\n… {size} bytes in all"),
         Preview::Binary { size } => format!("binary — {size} bytes"),
-        Preview::Unknown(word) => format!("a {word:?} preview, which this seat cannot show"),
+        Preview::Unknown(word) => {
+            format!("a {word:?} preview, which this version of lernie cannot show")
+        }
     }
 }

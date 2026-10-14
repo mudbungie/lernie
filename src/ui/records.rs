@@ -79,10 +79,10 @@ pub const STEPS_HEAD: &str = "steps";
 /// The files half's.
 pub const FILES_HEAD: &str = "files";
 /// What the steps half says before the first answer.
-pub const NOT_ANSWERED_STEPS: &str = "waiting to hear what this conversation's loop has done";
+pub const NOT_ANSWERED_STEPS: &str = "waiting to hear what this conversation has done";
 /// What it says for a loop that answered, and has taken no step. A fact about
 /// the conversation, and the one empty state here that is not a wait.
-pub const NO_STEPS: &str = "its loop has taken no step yet";
+pub const NO_STEPS: &str = "it has taken no step yet";
 /// What the files half says before the first answer.
 pub const NOT_ANSWERED_FILES: &str = "waiting to hear what its worktree holds";
 /// The worktree's absence — a different claim from an empty listing, and the

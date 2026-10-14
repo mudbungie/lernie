@@ -64,27 +64,27 @@ pub const WORD: &str = "login";
 /// The pane's own heading.
 pub const HEADING: &str = "sign in";
 /// What it says for a wall nobody has been answered about yet.
-pub const NOT_ANSWERED: &str = "waiting to hear what this wall can sign in to";
+pub const NOT_ANSWERED: &str = "waiting to hear what this workspace can sign in to";
 /// What it says for a wall that answered and routes no provider at all. A fact
 /// about the workspace, and the one empty state here that is not a wait.
-pub const NO_PROVIDERS: &str = "this wall routes no provider";
+pub const NO_PROVIDERS: &str = "this workspace uses no provider — /config names one";
 /// The word on the control that starts a sign-in on a row.
-pub const SIGN_IN: &str = "sign in to this row";
+pub const SIGN_IN: &str = "sign in to this provider";
 /// The word on the control that asks a row what it offers.
 pub const OFFERS: &str = "what it offers…";
 /// What it says under a row that was asked and has not answered.
-pub const NOT_OFFERED: &str = "waiting to hear what this row offers";
+pub const NOT_OFFERED: &str = "waiting to hear what this provider offers";
 /// What it says for a row that answered and offers nothing.
-pub const OFFERS_NOTHING: &str = "this row offers no model id";
+pub const OFFERS_NOTHING: &str = "this provider offers no model";
 /// The sentence that says where the sign-in is actually happening.
-pub const ELSEWHERE: &str = "this wall is held on another box, and the sign-in \
-                             runs there — the credential lands in its wall, not \
+pub const ELSEWHERE: &str = "this workspace lives on another box, and the sign-in \
+                             runs there — the credential is kept there, not \
                              on this one";
 /// The §8.3 remedy for a row whose flow wants a browser at the engine's own
 /// loopback, said wherever the engine is not this box.
-pub const LOOPBACK: &str = "if the flow opens an authorize URL, it redirects to \
-                            the ENGINE's loopback: finish it in a browser on \
-                            that box, or forward the port by hand";
+pub const LOOPBACK: &str = "if the sign-in opens a web page, that page expects \
+                            a browser on the engine's box: finish it there, or \
+                            forward the port by hand";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.

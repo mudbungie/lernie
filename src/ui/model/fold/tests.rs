@@ -71,10 +71,10 @@ fn the_seat_card_and_the_waiting_count_hold_one_engine_once() {
     let mut model = doubled();
     let text = painted(&mut model);
     assert!(
-        text.contains("1 wall, 2 conversations, 2 waiting"),
+        text.contains("1 workspace, 2 conversations, 2 waiting"),
         "{text}"
     );
-    assert_eq!(text.matches("1 wall,").count(), 1, "{text}");
+    assert_eq!(text.matches("1 workspace,").count(), 1, "{text}");
     assert!(text.contains("2 waiting"), "{text}");
     assert!(!text.contains("4 waiting"), "{text}");
 }

@@ -45,11 +45,11 @@ pub use wall::{NO_NAME_HERE, PIN, UNPIN, line};
 /// evidence that a thing holds nothing until somebody has looked. It stands
 /// from the window's first paint — before any engine is dialled, deliberately
 /// — until the first roster answer lands.
-pub const NOT_ANSWERED: &str = "waiting to hear from this channel";
+pub const NOT_ANSWERED: &str = "waiting to hear from this engine";
 
 /// What a section says for an engine that answered and holds no workspace. A
 /// fact about that engine, and the one empty state that is not a wait.
-pub const NO_WALLS: &str = "this engine holds no workspace this seat is in";
+pub const NO_WALLS: &str = "this engine holds no workspace this box is in";
 
 /// The word this pane wears, and the subject the arrows act on when it is
 /// focused. **It is painted by `crate::ui::shell`** — above the pane in the

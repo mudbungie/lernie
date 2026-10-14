@@ -58,7 +58,7 @@ fn every_frame_becomes_content_or_a_visible_notice() {
             .as_ref()
             .expect("a notice")
             .line()
-            .contains("this seat")
+            .contains("updating lernie")
     );
 }
 
@@ -160,7 +160,7 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
     );
     let said = model.notice.clone().expect("a receipt is a line").line();
     assert!(
-        said.contains("answered Bash (toolu_1): pass for this conversation"),
+        said.contains("pass Bash for this conversation"),
         "the reach the boundary took is the receipt's, not an echo of the ask: {said}"
     );
     assert!(said.contains("running again"), "{said}");
@@ -181,13 +181,13 @@ fn the_boundary_s_two_receipts_become_the_bar_s_one_line() {
     model.absorb(&flat, Read::Answer(Reply::Floored { standing: true }));
     let said = model.notice.clone().expect("a receipt is a line").line();
     assert!(
-        said.contains("a floor stands over this conversation"),
+        said.contains("auto-approval is off for this conversation"),
         "{said}"
     );
 
     model.absorb(&flat, Read::Answer(Reply::Floored { standing: false }));
     let said = model.notice.clone().expect("a receipt is a line").line();
-    assert!(said.contains("the floor is lifted"), "{said}");
+    assert!(said.contains("auto-approval is back"), "{said}");
 }
 
 /// **The candidate family's two receipts become the bar's one line**, and each
@@ -211,7 +211,7 @@ fn the_candidate_family_s_two_receipts_become_the_bar_s_one_line() {
     let said = model.notice.clone().expect("a receipt is a line").line();
     assert!(said.contains("delivered onto work/bl-1 at ccc3"), "{said}");
     assert!(said.contains("from attempt/at-1"), "{said}");
-    assert!(said.contains("the ball is not closed"), "{said}");
+    assert!(said.contains("the ball stays open"), "{said}");
 
     model.absorb(
         &flat,
@@ -224,15 +224,15 @@ fn the_candidate_family_s_two_receipts_become_the_bar_s_one_line() {
     );
     let said = model.notice.clone().expect("a receipt is a line").line();
     assert!(said.contains("nothing landed"), "{said}");
-    assert!(said.contains("no source ref"), "{said}");
+    assert!(said.contains("no branch to deliver"), "{said}");
 
     model.absorb(&flat, Read::Answer(Reply::Retired { discarded: false }));
     let said = model.notice.clone().expect("a receipt is a line").line();
-    assert!(said.contains("still addressable"), "{said}");
+    assert!(said.contains("are kept"), "{said}");
 
     model.absorb(&flat, Read::Answer(Reply::Retired { discarded: true }));
     let said = model.notice.clone().expect("a receipt is a line").line();
-    assert!(said.contains("the keep had expired"), "{said}");
+    assert!(said.contains("its branch is deleted"), "{said}");
 }
 
 /// **The spread's answer reaches the model through the one door**, and what it

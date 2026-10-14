@@ -51,10 +51,10 @@ pub const MODEL: &str = "model";
 /// The pane's own heading.
 pub const HEADING: &str = "role tuning";
 /// What it says for a wall nobody has been answered about yet.
-pub const NOT_ANSWERED: &str = "waiting to hear what this wall's roles are";
+pub const NOT_ANSWERED: &str = "waiting to hear what this workspace's roles are";
 /// What it says for a wall that answered, and declares no role. A fact about
 /// the workspace, and the one empty state here that is not a wait.
-pub const NO_ROLES: &str = "this workspace's config declares no role";
+pub const NO_ROLES: &str = "this workspace's settings name no role — /config adds one";
 /// The word on the seat that asks for the priority lane.
 pub const PRIORITY: &str = "priority";
 /// The word that opens the assignment editor on a row.
@@ -64,7 +64,7 @@ pub const SET: &str = "set";
 /// The word that puts one down without spending it.
 pub const CANCEL: &str = "cancel";
 /// What the two boxes ask for.
-pub const PROVIDER_HINT: &str = "provider row";
+pub const PROVIDER_HINT: &str = "provider";
 /// The second of them.
 pub const MODEL_HINT: &str = "model id";
 
@@ -156,7 +156,7 @@ fn role(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
 pub fn unseated(row: &RoleRow) -> Option<String> {
     let known = crate::verbs::tuning::levels().contains(&row.effort);
     let level = row.effort.clone()?;
-    (!known).then(|| format!("asking for {level:?}, which this seat has no seat for"))
+    (!known).then(|| format!("asking for {level:?}, a level this version of lernie does not offer"))
 }
 
 /// The assignment: the control that opens the editor, or the editor itself.

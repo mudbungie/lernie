@@ -147,7 +147,10 @@ fn painted(answered: Read) -> String {
         // rung 2). The frame is still on the wire and `--json` still prints it,
         // which is what makes the sentence actionable rather than a dead end.
         Read::Unreadable(why) => {
-            format!("this seat cannot read that answer: {why} (`--json` prints the frame)")
+            format!(
+                "lernie could not read that answer ({why}) — updating lernie may fix it; \
+                 `--json` prints it as it came"
+            )
         }
     }
 }

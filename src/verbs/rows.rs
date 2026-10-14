@@ -182,7 +182,7 @@ pub const NUDGE: Verb = Verb {
     word: "nudge",
     params: &["workspace", "agent"],
     flags: &[],
-    summary: "start a driver on a conversation that has gone quiet",
+    summary: "set a conversation that has gone quiet working again",
     detail: "It launches the advance and answers at once, carrying nothing \
              else, because there is nothing else yet: what the model does with \
              the turn arrives on the transcript, and a receipt that guessed at \

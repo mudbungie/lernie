@@ -35,9 +35,9 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
     let text = painted(&mut model);
     for word in [
         version().as_str(),
-        "(this box's own engine) — 1 wall, 2 conversations, 2 waiting",
+        "(this box's own engine) — 1 workspace, 2 conversations, 2 waiting",
         "Ctrl+X for a conversation",
-        "/roles for the model",
+        "Ctrl+O for the model",
         "/login for a provider",
         super::FOUNDING,
     ] {
@@ -53,7 +53,7 @@ fn the_seat_s_card_stands_where_nothing_is_selected() {
     };
     one.roster[0].walls[0].agents = 1;
     let text = painted(&mut one);
-    assert!(text.contains("1 wall, 1 conversation"), "{text}");
+    assert!(text.contains("1 workspace, 1 conversation"), "{text}");
 }
 
 /// The dial state on the card and the rule.

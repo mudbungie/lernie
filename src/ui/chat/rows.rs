@@ -257,7 +257,10 @@ fn entry_rows(entry: &Entry) -> Vec<Row> {
             Speaker::Peer,
         )],
         EntryKind::Unknown(word) => vec![Row::plain(
-            format!("{} ({word}, which this seat cannot read)", entry.name),
+            format!(
+                "{} ({word}, which this version of lernie cannot read)",
+                entry.name
+            ),
             entry.raw.clone(),
             Speaker::Peer,
         )],
@@ -280,7 +283,7 @@ fn block(model_id: &str, block: &Block) -> Option<Row> {
         }
         Block::ToolUse { id, name, input } => Some(Row::call(name, input, id)),
         Block::Unknown(word) => Some(Row::plain(
-            format!("{model_id} ({word}, which this seat cannot read)"),
+            format!("{model_id} ({word}, which this version of lernie cannot read)"),
             String::new(),
             Speaker::Model,
         )),

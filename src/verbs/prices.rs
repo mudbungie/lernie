@@ -35,7 +35,7 @@ pub const PRICES: Verb = Verb {
     word: "prices",
     params: &[],
     flags: &[],
-    summary: "the price table, the spend ceiling, and the world's spend against it",
+    summary: "what each model costs, the spend ceiling, and what has been spent",
     detail: "One row per (provider, model) the engine prices, with its four \
              rates in USD per million tokens as the operator wrote them — a \
              `*` model means every model that provider serves and the table \

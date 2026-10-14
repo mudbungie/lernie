@@ -39,10 +39,8 @@ pub fn down(model: &Model) -> Option<String> {
         .roster
         .iter()
         .find(|chunk| chunk.channel.name == aim.channel)
-        .and_then(|chunk| match &chunk.held {
-            crate::ui::Held::Unheld(why) => Some(why.clone()),
-            _ => None,
-        })
+        .filter(|chunk| matches!(chunk.held, crate::ui::Held::Unheld(_)))
+        .and_then(|chunk| chunk.held.said())
 }
 
 /// **The state slot with no notice in it** — what it says under a notice too

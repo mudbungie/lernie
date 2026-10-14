@@ -90,7 +90,7 @@ it is read.
 
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,
 a line per line typed, the hint in weak ink while it is empty: *say it — Enter
-sends · /help for commands · Ctrl+X for a conversation · /roles for the model ·
+sends · /help for commands · Ctrl+X for a conversation · Ctrl+O for the model ·
 /login for a provider · Shift+Enter breaks a line*, its trailing parts dropped
 one by one where the line has no room — one line, never wrapped, never a part
 cut in half; *what this conversation is for — Enter begins it* and the same
@@ -284,7 +284,7 @@ the ellipsis; the one that only asks does not.
 
 **An empty state** (`theme::paint::empty`): one sentence in `INK_WEAK`,
 wrapped, that names the next act — *no conversations here yet — begin one
-with + on the engine*, *nothing is waiting on you — a conversation that asks
+with + new below*, *nothing is waiting on you — a conversation that asks
 will appear here* — never only what is missing. Weak because it is the absence of
 content said once; a wait (*waiting to hear…*) is the same shape, because it
 resolves itself and the reader needs to know only that.

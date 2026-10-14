@@ -205,7 +205,10 @@ fn each_wound_names_its_own_mend() {
             wounded("no_response", None, None),
             "produced nothing — /nudge",
         ),
-        (wounded("output_limit", None, None), "output cap"),
+        (
+            wounded("output_limit", None, None),
+            "output limit — /config",
+        ),
         (wounded("frostbite", None, None), "failed (frostbite)"),
     ] {
         assert!(said.contains(wanted), "{said:?} lacks {wanted:?}");

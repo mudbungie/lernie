@@ -44,8 +44,17 @@ it looks like and where a person's eye goes first.
 
 ## 2. Information architecture: what a person sees first
 
-**The window is one column** (DESIGN §4.42, bl-7859; it was two until the
-operator's ruling of 2026-10-12, and three before that). The baseline is the
+**The window is one column beside a bar** (DESIGN §4.42, bl-7859; §4.44,
+bl-f772; it was two columns until the operator's ruling of 2026-10-12, and
+three before that). The **bar** on the left lists the aimed workspace's
+conversations: a glyph column a few characters wide until the pointer is
+over it, then its rows in full — state glyph, name, the first line beneath in
+weak ink, the age at the right — staying open 1.5 s after the pointer
+leaves, or always while pinned (the pin at its head, persisted). `+ new` is
+at its head on the right; its foot is the **workspace**, the one place a
+workspace is chosen, a dropup opening upward. Over the transcript stands a
+**tab strip**, one tab per conversation opened in that workspace, the
+selected one over a brand hairline, a faint `×` closing each. The baseline is the
 Hermes Agent terminal UI, aped part for part: the transcript fills the window,
 a one-line **status rule** stands under it, and the **prompt line** stands at
 the bottom. Nothing else is on the glass until it is asked for, and it is asked
@@ -58,9 +67,10 @@ a dropup's check is green for the moment its list is fresh; the prompt line
 glows green while the selected conversation is asking; the switcher's asking
 rows wear `?` in green. A window with nothing waiting has nothing green on it.
 
-**The rule is the conversation's own line** (DESIGN §4.42, item 11). One
-line: `— workspace ⏶ | provider ⏶ | model ⏶ | effort ⏶ | priority ⏶ | state
-· elapsed | tokens in · out | cost | context N% — name`. The five selectors
+**The rule is the conversation's own line** (DESIGN §4.42, item 11; §4.44
+took the workspace off it). One line: `— provider ⏶ | model ⏶ | effort ⏶ |
+priority ⏶ | state · elapsed | tokens in · out | cost | context N% — name`.
+The four selectors
 come first, in body ink, each with `⏶` in faint ink beside it (the body font
 has no `▾`); a click opens a **dropup** — a small framed list over the
 segment, opening upward — showing what this seat holds at once and asking
@@ -74,8 +84,8 @@ door. A selector or the name that holds the keyboard wears the brand ring,
 and Enter or Space opens it. Nothing seat-wide stands on the rule: how many conversations wait and
 how many engines answer are the seat panel's, the switcher's and
 `/attention`'s. What runs out of width drops from the right — diagnostics,
-then priority, then effort; workspace, provider and model never drop and are
-cut with `…` inside their share instead. What you talk to is changed where
+then priority, then effort; provider and model never drop and are cut with
+`…` inside their share instead. What you talk to is changed where
 it is read.
 
 **The prompt is a line, not a form.** `›` in the brand (the body font has no `❯`), the draft after it,

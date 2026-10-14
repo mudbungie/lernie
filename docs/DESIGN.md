@@ -5036,7 +5036,7 @@ verb table, the `act:` tag, the snapshot and parity instruments) are untouched.
 against a local model and read in its own source; the parts below are its
 parts, in its vertical order, each with what it becomes here.
 
-1. **One column.** The transcript fills the window; the composer stands at
+1. *Amended by §4.44: a left bar stands beside the column, and it is the one side column there is.* **One column.** The transcript fills the window; the composer stands at
    the bottom; a one-line **status rule** stands between them. There is no
    side column, no column bar, no narrow and broad shape and no dragged edge:
    §4.11's two shapes, §4.39's two columns and both drags, `shell/policy.rs`,
@@ -5226,7 +5226,7 @@ parts, in its vertical order, each with what it becomes here.
    replaced let a heading row overflow the column sideways, so the pane was
    judged at a width it did not have.
 
-7. **The roster is the switcher** (`src/ui/switcher.rs`, **Ctrl+X** or
+7. *Amended by §4.44: the bar is the pointer's door to one wall's rows; this stays the keyboard's and the whole seat's.* **The roster is the switcher** (`src/ui/switcher.rs`, **Ctrl+X** or
    `/conversations`): an overlay listing every engine as a heading row, each
    wall under it, and each conversation under its wall as one row — state
    glyph in its state's ink (`▶` working, `?` asking in the attention
@@ -5359,7 +5359,7 @@ parts, in its vertical order, each with what it becomes here.
     prompt's hint, which drops its trailing ways one by one where the line
     has no room for them, as the rule drops its segments.
 
-11. **The rule is the conversation's line** (bl-d74b). Operator ruling
+11. *Amended by §4.44: the workspace selector leaves the rule for the bar's foot (operator ruling 2026-10-13: a chat does not change workspace); the line is `— provider ⏶ | model ⏶ | effort ⏶ | priority ⏶ | diagnostics — name`.* **The rule is the conversation's line** (bl-d74b). Operator ruling
     2026-10-12, verbatim: *"The selectors and interfaces are all full-ish
     screen popovers. They should just be dropdowns (or dropups, since
     they're usually near the bottom). Click it; it shows a cached list, and
@@ -5555,6 +5555,155 @@ every box. `theme::tests`' act-glyph assertion stays about the BUNDLED faces:
 a control's glyph may not lean on a face the box may not have.
 
 ---
+
+### 4.44 The bar, the tabs, and the workspace that is not a choice made in the chat (bl-f772)
+
+Operator ruling 2026-10-13, verbatim: *"I think it's time to add the
+left-side bar. This bar is the pretty traditional list-of-chats view.
+Sessions, showing their name and title. Expand when you mouse over them,
+collapse to only a few characters wide when not (and remain expanded for
+1.5s after mousing out, to reduce friction there). At the bottom, the
+workspace selection. Different chats appear in different workspaces. I think
+I was wrong earlier about the leftmost element of the chat's options being
+workspace: a chat should not transition workspaces anyhow. Changing workspace
+is really getting a whole new list of chats, providers, etc; an entirely
+different yog backend. They should never crosstalk, so it's not really a
+choice that you make _in_ the chat. New chat button also goes, top right on
+this bar. Add a pin open/pin closed button that stops the auto-hiding of the
+chat interface. We're also going to add tabs. Tabs are very straightforward:
+just different views to see different open chats."*
+
+**Three readings, each checked against the wire.** *Sessions* are the
+wire's **conversations** — `Query::Conversations`' rows (`ConvRow`), the
+rows the switcher paints. *Title* is the row's **preview** — its first
+line, `ConvRow::preview` — because the wire carries no title, and the first
+line is what a traditional chat list shows under a name. *The chat
+interface* whose auto-hiding the pin stops is read as **the bar**: nothing
+else on the glass hides itself.
+
+**This section amends §4.42 items 1, 7 and 11**, each of which carries a
+line at its head saying so. Item 1's *no side column* is withdrawn for the
+one column this section adds; item 11's leftmost selector is withdrawn,
+since a workspace is not a fact of a conversation; item 7's switcher stands,
+as the keyboard's door and the whole seat's view.
+
+1. **The bar** (`src/ui/bar.rs`; bl-46b9) is a left panel
+   (`egui::SidePanel::left`) standing the window's full height beside the
+   column, painted before the column so the column fits beside it at every
+   size of the snapshot matrix (`snapshot::SIZES`: 400, 900 and 1400 wide).
+   It lists **the aimed workspace's conversations** — `Model::convs`, the
+   one listing the seat holds for the aimed wall, the rows the switcher
+   paints under that wall — one row each, in the listing's own order, with
+   the subtree's indent (`ConvRow::depth`). It is a second painter of one
+   listing and not a second listing: no row, state or count lives on the
+   bar that `convs::` does not already spell (`convs::mark`, `convs::age`,
+   `convs::words`), and a conversation appears on it the frame the
+   listing answers, as it does in the switcher.
+
+   **Two widths, and the pointer decides.** Collapsed, the bar is
+   **a glyph column** `bar::SHUT` wide — room for the state glyph and the
+   first three characters of a name at the body size — so the eye keeps
+   the count and the greens with the transcript at full width. Expanded,
+   it is `bar::OPEN` wide, a quarter of the desk size's width and never
+   more than two fifths of the window's, and each row says the state glyph
+   in its state's ink, the name in body ink (the selected conversation's in
+   the brand), the preview beneath it in weak ink on one line cut with `…`,
+   and the age at the right end in weak ink. The bar expands the frame the
+   pointer enters it and **stays expanded for 1.5 s after the pointer
+   leaves** (`bar::LINGER`), timed on egui's input clock
+   (`ctx.input(|i| i.time)`, `Bar::left_at`) with a repaint asked for at
+   the moment it lapses — a pointer that strays off a row for a moment is
+   not made to re-cross the edge. Hover state and the clock are read, never
+   stored past the frame they are needed.
+
+   **The pin** (`bar::PIN`, at the bar's head on the left) stops the
+   auto-hiding: pinned, the bar stays expanded whatever the pointer does;
+   unpinned, the pointer rules as above. It is one toggle with two words,
+   `pin` while unpinned and `unpin` while pinned, and **it persists**
+   (`Place::pinned`, the place file) because where the bar stands is a
+   layout the operator chose and §4.39's place file is where such choices
+   live. Collapsed, the head shows the pin's glyph alone.
+
+   **`+ new`** stands at the bar's head on the right (bl-d357's `+ new`
+   from under the wall, on the bar too): it puts the caret in the field in
+   start mode on the aimed wall, the switcher's own door
+   (`composer::start`), and stands only while a wall is aimed. Collapsed,
+   it is the bare `+`.
+
+   **The foot is the workspace** — the one place on the glass a workspace is
+   chosen. It is item 11's workspace selector moved whole: the aimed wall's
+   name with `⏶` beside it, a click opening the dropup (`status/dropup.rs`,
+   `Selector::Workspace`) **upward from the bar's foot** listing every wall
+   the roster holds with its engine where the seat reaches more than one,
+   reloading with `workspaces`, a pick aiming (`Model::aim_at`) — which is
+   a new listing, a new providers read, a new roles read and a new set of
+   tabs (2), because the ruling's *entirely different yog backend* is the
+   fact the aim already is. `+ new workspace` (bl-673e) is the dropup's
+   last row under this box's own engine, the switcher's row moved beside
+   the choice it belongs to. With nothing aimed the foot says `workspace ⏶`
+   and the list is the whole of what the bar shows. Collapsed, the foot is
+   the first three characters of the wall's name.
+
+   **A row is the one door.** A click on a row is `Model::select` on its
+   root id — the switcher's, the queue's and the rule's one door — and so
+   opens its tab (2). Each row wears the `act:` tag the switcher's rows wear;
+   the pin wears none (it posts nothing), `+ new` wears the start's. The
+   bar never covers an overlay and no overlay covers it: it stands beside
+   the column whatever the column shows, because what it lists is not what
+   the overlay is about.
+
+2. **The tabs** (`src/ui/tabs.rs`; bl-03c1) are a strip at the top of the
+   column, above the transcript, one tab per **open** conversation of the
+   aimed workspace: the name, with the asking `?` in the attention accent
+   before it while that conversation asks (`convs::mark`), the selected
+   tab in body ink over a brand hairline and the rest in weak ink, and a
+   close `×` in faint ink after each name. **Open is a navigation the
+   operator performed** — the class of fact `Model::opened` already holds
+   and no read can answer — so `Model::tabs` is a `Vec<Tab>` of the
+   conversations selected since their tab was closed, in the order they
+   were first selected, each with the aim it was selected under
+   (`Tab { aim: Aim, root_id: String }`), and the strip paints the ones
+   whose aim is the current one. It is filled by `Model::select` and by
+   nothing else: every door that selects — the bar, the switcher, the
+   queue, the rule's name, a start resolving (`Model::resolve`) — opens a
+   tab by selecting, so there is no second act that opens one. A click on a
+   tab selects; the close removes the tab, and where it was the selected
+   one the neighbour to its left (or right, at the left end) is selected,
+   or the selection is put down to the wall where it was the last. **A tab
+   whose conversation the listing no longer knows leaves with it**
+   (bl-6dfd's rule): a selection the engine put down is a tab put down. The
+   strip stands only while a tab stands; a wall with nothing open is the
+   transcript's own empty column. Tabs are per run, never in the place
+   file: which conversations are open is where an operator *was*, and a
+   seat that reopened yesterday's tabs would be claiming a navigation
+   nobody performed today. Each tab wears the `act:` tag its select
+   spends; the close wears none.
+
+3. **The rule without the workspace** (item 11 amended): the line is
+   `— provider ⏶ | model ⏶ | effort ⏶ | priority ⏶ | <diagnostics> —
+   <name>`; the four selectors and the diagnostics are as item 11 says, and
+   item 11's *with nothing aimed only the workspace stands* becomes *with
+   nothing aimed no selector stands* — the foot of the bar is where that is
+   answered. The width rule loses its first word: provider and model never
+   drop and share one cut width; priority, then effort, drop before them.
+   `Selector::Workspace` keeps its rows, its read and its pick, and loses
+   its segment: `status::selectors` no longer lists it, and the bar's foot
+   is its one segment.
+
+4. **What stays.** The switcher (item 7, Ctrl+X) stands as the keyboard's
+   door and the one view across every engine; the bar is one wall's view
+   with the pointer. Both paint `convs::` rows, so a glyph, a word or a
+   count changes in one place for both. The rule's name stays the
+   switcher's door (item 10). The seat's card still names Ctrl+X among the
+   ways in, and the field with nothing aimed still says so.
+
+**What this does not solve, and the principle that answers it.** A bar
+listing one wall is blind to another wall's asking conversations; the
+seat-wide green is the switcher's head, the seat panel and `/attention`
+(item 11's placement, kept), and a bar that showed every wall's rows would be
+the switcher again with the pointer over it. The 1.5 s is a number read off
+the ruling and held in one constant; the width constants are the bar's own
+and the matrix proves the column still fits beside them at 400 wide.
 
 ## 5. Module map
 
@@ -5805,6 +5954,8 @@ a control's glyph may not lean on a face the box may not have.
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
+| `src/ui/bar.rs` | **the bar** (§4.44): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 1.5 s after it leaves, pinned by its head; `+ new` and the workspace dropup at its foot. | ~250 |
+| `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~200 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule, the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |

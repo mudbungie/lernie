@@ -1,8 +1,7 @@
 +++
 title = "the first Ctrl+X after a click on a switcher row opens nothing; a second press opens the switcher"
 created = 1791872275
-updated = 1791872275
-parent = "bl-957a"
+updated = 1791941071
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 tags = ["ui"]

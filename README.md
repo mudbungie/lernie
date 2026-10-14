@@ -416,7 +416,12 @@ is the new one.
 left to cargo, so yanking a bad release makes the previous one newest-live; the
 next tick sees it differ from what is installed and puts it back, on every
 seat, with nobody logging in. That is what the explicit `--version` and
-`--force` are for — cargo will not move backwards without them.
+`--force` are for — cargo will not move backwards without them. **A version
+the index has never heard of is not rolled back**: a seat built from `main`
+and seated with `make install` is ahead of the registry until its release
+lands, and the tick leaves it standing, saying so, until the registry serves
+something newer (bl-d735; it used to put the older published version back
+within the hour).
 
 **A seat may run ahead of its engine, and the refusal is designed.** Engine
 boxes reconcile on their own hourly schedule, so a seat that updates first may

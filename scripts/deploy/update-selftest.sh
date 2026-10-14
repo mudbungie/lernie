@@ -123,6 +123,10 @@ rolled_back_to_4() {
 }
 # The negative arm, and it is an assertion about a NON-event: the recorder file
 # was never written, so nothing was installed.
+left_6() {
+    [ "$code" = 0 ] && [ -z "$log" ] \
+        && printf '%s' "$out" | grep -q 'installed 0\.1\.6 is ahead of the newest live 0\.1\.5 and is no published version'
+}
 no_install() {
     [ "$code" = 0 ] && [ -z "$log" ] \
         && printf '%s' "$out" | grep -q 'installed 0\.1\.5 is current'
@@ -149,6 +153,8 @@ run_case 'already newest -> does NOT invoke cargo' \
     current 0.1.5 no_install
 # The rollback lever, whole: a yank makes the previous version newest-live, the
 # compare sees it differ from what is installed, and the install goes BACKWARDS.
+run_case 'ahead of the registry on a version it never published -> leaves the local build' \
+    current 0.1.6 left_6
 run_case 'newest yanked -> rolls the box back a version' \
     tip_yanked 0.1.5 rolled_back_to_4
 # The era fence. With every seat release yanked the newest live version is the

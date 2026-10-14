@@ -92,10 +92,28 @@ at_or_above_fence() {
 # pipeline the exit status would be `tail`'s, so a registry that answered 503
 # would parse to an empty string and look like an empty index — two different
 # failures reported as one, and the wrong one. Read it, then judge it.
+# **A version the index has never heard of is a local build, and it stands.**
+# "Differs from the newest live version" used to be the whole install test,
+# and it is wrong in one direction: a seat built from `main` and seated with
+# `make install` is ahead of the registry until the release lands, and the next
+# tick put the registry's older newest back over it (bl-d735). Being ahead is
+# not the fact that decides; being PUBLISHED is. A yanked release is in the
+# index with `"yanked":true` and is rolled back as before; a version absent
+# from the index altogether was never published, so there is nothing to roll
+# back to and the tick says so and leaves it. It is replaced the moment the
+# registry serves something newer than it, which is the ordinary install.
+published() { # <version>: in the index at all, yanked or not
+    case $INDEX in
+        *'"vers":"'"$1"'"'*) return 0 ;;
+    esac
+    return 1
+}
+above() { # <a> <b>: a sorts after b and is not b
+    [ "$1" != "$2" ] \
+        && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -1)" = "$1" ]
+}
 latest_live() {
-    _index=$(curl -fsS --max-time 60 "$INDEX_URL") \
-        || die 'cannot reach the registry index'
-    printf '%s\n' "$_index" | while IFS= read -r _line; do
+    printf '%s\n' "$INDEX" | while IFS= read -r _line; do
         # One JSON object per line. Read it with parameter expansion rather
         # than a regex: `"vers"` occurs exactly once per line (a dependency
         # entry carries `"req"`, never `"vers"`), so there is nothing for a
@@ -119,6 +137,8 @@ installed() {
     "$BIN" --version 2>/dev/null | awk 'NR==1 {print $NF}'
 }
 
+INDEX=$(curl -fsS --max-time 60 "$INDEX_URL") \
+    || die 'cannot reach the registry index'
 want=$(latest_live)
 [ -n "$want" ] || die 'the registry index named no live version'
 at_or_above_fence "$want" \
@@ -130,6 +150,10 @@ have=$(installed)
 
 if [ "$want" = "$have" ]; then
     say "installed $have is current"
+    exit 0
+fi
+if [ -n "$have" ] && above "$have" "$want" && ! published "$have"; then
+    say "installed $have is ahead of the newest live $want and is no published version: a local build, left standing"
     exit 0
 fi
 

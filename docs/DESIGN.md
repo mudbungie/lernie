@@ -5346,7 +5346,7 @@ parts, in its vertical order, each with what it becomes here.
     menu offers its row, it wears that row's `act:` tags, and a click fires
     that row's word — `/conversations`, `/attention`, `/model` — so the rule opens nothing
     the menu would not. A door is a run, not a button (`theme::paint::link`):
-    bare at rest, `SURFACE` under the pointer, the pointing hand over it —
+    bare at rest, the hover wash under the pointer (§4.44 item 5), the pointing hand over it —
     the rule stays one line of facts. `/model` is **an alias row**, not a
     focus: it opens the same pane `/roles` does, because the pane opens on a
     standing read and a focus on a row that has not answered yet would be a
@@ -5611,7 +5611,12 @@ as the keyboard's door and the whole seat's view.
    in its state's ink, the name in body ink (the selected conversation's in
    the brand), the preview beneath it in weak ink on one line cut with `…`,
    and the age at the right end in weak ink. The bar expands the frame the
-   pointer enters it and **stays expanded for 1.5 s after the pointer
+   pointer enters it — **its edge easing** from one width to the other in
+   `bar::EASE` (0.12 s, `ctx.animate_value_with_time` on the input clock;
+   operator 2026-10-13: *very fast, but just less jarring than the
+   immediate snap*), while what it holds switches at once, so the open rows
+   ride out with the edge and the collapsed ones never stand in a wide bar —
+   and **stays expanded for 1.5 s after the pointer
    leaves** (`bar::LINGER`), timed on egui's input clock
    (`ctx.input(|i| i.time)`, `Bar::left_at`) with a repaint asked for at
    the moment it lapses — a pointer that strays off a row for a moment is
@@ -5644,7 +5649,7 @@ as the keyboard's door and the whole seat's view.
 
    **The foot is the workspace** — the one place on the glass a workspace is
    chosen. It is item 11's workspace selector moved whole: the aimed wall's
-   name with `⏶` beside it, a click opening the dropup (`status/dropup.rs`,
+   name with `⏶` inside its door (5), a click opening the dropup (`status/dropup.rs`,
    `Selector::Workspace`) **upward from the bar's foot** listing every wall
    the roster holds with its engine where the seat reaches more than one,
    reloading with `workspaces`, a pick aiming (`Model::aim_at`) — which is
@@ -5724,6 +5729,34 @@ as the keyboard's door and the whole seat's view.
    count changes in one place for both. The rule's name stays the
    switcher's door (item 10). The seat's card still names Ctrl+X among the
    ways in, and the field with nothing aimed still says so.
+
+5. **What lifts under the pointer, and where a selector's mark stands**
+   (bl-c72e; operator 2026-10-13: *mouseover highlight for interface
+   elements in lists to show that you're actually about to select it*, and
+   *the ^ arrow next to options menus should be a part of the button (it's a
+   natural place to click)*). **One wash, one painter**: every pickable row —
+   the bar's, the switcher's, a dropup's, the completion menu's, the queue's,
+   the ask's choices — is `theme::paint::row`/`marked`, and every door that
+   is a run — the rule's selectors and name, the bar's pin, `+ new` and foot,
+   a tab and its close — is `theme::paint::link`/`link_marked`/`tab`, one
+   private `door` under all three. Under the pointer each wears
+   `theme::hover()`: **the brand at half the selection tint's strength**
+   (`BRAND × TINT_ALPHA / 2`), not a new colour. It replaced `SURFACE`,
+   which was the hover until here and lifted nothing where it stood on a
+   popup's own `SURFACE` — a dropup's and the menu's rows did not tint at
+   all — and barely lifted the glass. A wash lifts every ground it stands
+   on; a chosen row keeps its `RAISED`, the stronger tint, under the pointer
+   too. A tab was a sensed label and is now a `tab` door, so it lifts with
+   the rest.
+
+   **The mark is in the door.** A selector's `⏶` (and its `↻` and `✔`) is
+   painted inside the same seat as its words — one galley, `<words>
+   <mark>`, the mark in its own ink (`link_marked`) — so a click on the mark
+   opens the dropup, the wash covers both, and the run is **one stop in the
+   Tab order** as it already was (the separate mark was a label, never a
+   stop). The door's accessible name stays its words: the mark is the
+   affordance, not the name. The rule's width rule measures the mark as the
+   space and glyph the door lays (`status::cost`).
 
 **What this does not solve, and the principle that answers it.** A bar
 listing one wall is blind to another wall's asking conversations; the

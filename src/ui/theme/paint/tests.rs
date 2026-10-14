@@ -8,6 +8,9 @@ use crate::ui::theme::{
     BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, glyph, tint, type_scale,
 };
 
+/// The hover wash, and the mark inside a link.
+mod hover;
+
 /// Every fill that reached the glass, widest first.
 fn fills(window: &Window, body: impl FnMut(&egui::Context)) -> Vec<(egui::Rect, egui::Color32)> {
     crate::paint_probe::fills_of(&window.frame(Vec::new(), body))

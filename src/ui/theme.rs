@@ -32,7 +32,7 @@ pub use visuals::{install, visuals};
 /// **The ground ladder** — each rung brighter than the one before, asserted.
 /// The glass; every pane's body; a row and a control at rest.
 pub const GROUND: Color32 = Color32::from_rgb(10, 8, 15);
-/// Elevation one: a field, a popup's body, a row under the pointer.
+/// Elevation one: a field, a popup's body.
 pub const SURFACE: Color32 = Color32::from_rgb(22, 20, 30);
 /// Elevation two: a control while pressed or open, a selected row's tint.
 pub const RAISED: Color32 = Color32::from_rgb(36, 33, 48);
@@ -108,6 +108,13 @@ pub fn tint(state: State) -> Color32 {
 
 /// How much of an accent a tint is: a wash, not a fill.
 const TINT_ALPHA: f32 = 0.16;
+
+/// **What a pickable thing wears under the pointer** (DESIGN §4.44 item 5):
+/// the selection's brand wash at half strength, lifting the glass and a
+/// popup's `SURFACE` alike, and under the `RAISED` a chosen row wears.
+pub fn hover() -> Color32 {
+    BRAND.gamma_multiply(TINT_ALPHA / 2.0)
+}
 
 /// **The colour a refusal or an unreadable answer is said in** — the
 /// annotation accent under the name every pane already spends.

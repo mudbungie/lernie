@@ -11,7 +11,7 @@
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
 use super::{
-    BRAND, HAIRLINE, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, SURFACE, space, type_scale,
+    BRAND, HAIRLINE, INK, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, space, type_scale,
 };
 
 /// The two fields that take text: the one-line box and the composer.
@@ -19,7 +19,7 @@ mod field;
 
 /// **One list row**: full width, [`ROW`] tall, its words at the left plus
 /// `indent` plus `M`, elided at the width it has, in `ink`. Bare ground at
-/// rest, `SURFACE` under the pointer, `RAISED` when it is the chosen one.
+/// rest, [`super::hover`] under the pointer, `RAISED` when it is the chosen one.
 ///
 /// **The rule at its left edge says its state**: the brand when it is chosen,
 /// else `state`'s accent where it has one, else nothing. A chosen row that is
@@ -87,7 +87,7 @@ pub fn marked(
     let fill = if chosen {
         RAISED
     } else if seat.hovered() {
-        SURFACE
+        super::hover()
     } else {
         Color32::TRANSPARENT
     };
@@ -195,17 +195,58 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
 /// **A run that is a door** (`docs/STYLE.md` §5, *the status rule*): `words`
 /// at `SMALL` in `ink`, laid exactly as wide as a label would lay them, so a
 /// line that measured its runs as labels still holds. Bare ground at rest,
-/// `SURFACE` under the pointer and the pointing hand over it — the row's own
+/// [`super::hover`] under the pointer with the pointing hand — the row's own
 /// idiom at the size of a word, and never a box: a control on the rule is a
 /// fact you can open, not a button standing among the facts.
 pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
-    let font = egui::TextStyle::Small.resolve(ui.style());
-    let galley = ui.fonts(|fonts| fonts.layout_no_wrap(words.to_owned(), font, ink));
+    door(ui, egui::TextStyle::Small, &[(words, ink)], words)
+}
+
+/// **A link with its mark inside it** (DESIGN §4.44 item 5): `<words>
+/// <mark>`, the mark in its own ink, ONE seat — the selector's `⏶` is where
+/// a hand reaches to open it, so it opens it, tints with it and is ringed
+/// with it, and the run is one stop in the Tab order. It is named by its
+/// words alone: the mark is the affordance, not the name.
+pub fn link_marked(
+    ui: &mut egui::Ui,
+    words: &str,
+    ink: Color32,
+    (mark, marked): (&str, Color32),
+) -> Response {
+    let mark = format!(" {mark}");
+    door(
+        ui,
+        egui::TextStyle::Small,
+        &[(words, ink), (&mark, marked)],
+        words,
+    )
+}
+
+/// **A tab** (DESIGN §4.44 item 2): a [`link`] at the body size.
+pub fn tab(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
+    door(ui, egui::TextStyle::Body, &[(words, ink)], words)
+}
+
+/// **The one door**: `parts` laid as one run at `style`, each in its own ink,
+/// one click seat over all of them named `name` — bare at rest, the hover
+/// wash under the pointer, the brand ring while it holds the keyboard.
+fn door(
+    ui: &mut egui::Ui,
+    style: egui::TextStyle,
+    parts: &[(&str, Color32)],
+    name: &str,
+) -> Response {
+    let font = style.resolve(ui.style());
+    let mut job = egui::text::LayoutJob::default();
+    for (text, ink) in parts {
+        job.append(text, 0.0, egui::TextFormat::simple(font.clone(), *ink));
+    }
+    let galley = ui.fonts(|fonts| fonts.layout_job(job));
     let (rect, seat) = ui.allocate_exact_size(galley.size(), Sense::click());
-    seat.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Link, ui.is_enabled(), words));
+    seat.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Link, ui.is_enabled(), name));
     if seat.hovered() {
         ui.painter()
-            .rect_filled(rect.expand(space::XS), RADIUS, SURFACE);
+            .rect_filled(rect.expand(space::XS), RADIUS, super::hover());
     }
     // **A link that holds the keyboard wears the brand ring** (bl-8e3e;
     // bl-2d6b's rule for a row): a Tab lands on the rule's doors, and Enter or
@@ -214,7 +255,7 @@ pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
         ui.painter()
             .rect_stroke(rect.expand(space::XS), RADIUS, Stroke::new(1.0, BRAND));
     }
-    ui.painter().galley(rect.min, galley, ink);
+    ui.painter().galley(rect.min, galley, INK);
     seat.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 

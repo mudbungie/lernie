@@ -4,8 +4,8 @@
 
 use super::{click_bar, said, tick};
 use crate::paint_probe::frame::Window;
-use crate::test_support::window::seated;
-use crate::ui::{Model, Selector, theme};
+use crate::test_support::window::{dropped, seated};
+use crate::ui::{Model, Selector};
 
 /// **The foot's words**: the wall's name and the selector's mark open, its
 /// first three characters shut, and `workspace` with nothing aimed.
@@ -14,16 +14,18 @@ fn the_foot_names_the_aimed_wall_or_the_word() {
     let ctx = egui::Context::default();
     let mut model = seated();
     let shut = said(&tick(&ctx, &mut model, 0.0, None));
-    assert!(shut.contains(&"hom".to_owned()), "{shut:?}");
-    assert!(shut.contains(&theme::glyph::DROP.to_owned()), "{shut:?}");
+    assert!(
+        shut.contains(&dropped("hom")),
+        "the mark in the door: {shut:?}"
+    );
     model.bar.pinned = true;
     let open = said(&tick(&ctx, &mut model, 0.0, None));
-    assert!(open.contains(&"home".to_owned()), "{open:?}");
+    assert!(open.contains(&dropped("home")), "{open:?}");
     let mut nowhere = Model::default();
     nowhere.bar.pinned = true;
     let unaimed = said(&tick(&ctx, &mut nowhere, 0.0, None));
     let word = crate::ui::status::selectors::NO_WORKSPACE;
-    assert!(unaimed.contains(&word.to_owned()), "{unaimed:?}");
+    assert!(unaimed.contains(&dropped(word)), "{unaimed:?}");
 }
 
 /// **A click opens the workspace's list upward from the foot** — every wall
@@ -37,7 +39,7 @@ fn a_click_opens_the_list_above_the_foot_and_a_pick_aims() {
     model.roster[0]
         .walls
         .push(crate::test_support::window::wall("annex"));
-    click_bar(&window, &mut model, "home");
+    click_bar(&window, &mut model, &dropped("home"));
     assert_eq!(
         model.dropup.as_ref().map(|o| o.selector),
         Some(Selector::Workspace)
@@ -49,7 +51,7 @@ fn a_click_opens_the_list_above_the_foot_and_a_pick_aims() {
     let seen = crate::test_support::window::seen(&window, |ctx| crate::ui::render(ctx, &mut model));
     let foot = seen
         .iter()
-        .filter(|run| run.text == "home")
+        .filter(|run| run.text == format!("home {}", crate::ui::theme::glyph::RELOAD))
         .max_by(|a, b| a.laid.min.y.total_cmp(&b.laid.min.y))
         .expect("the foot");
     let found = crate::ui::roster::engine::FOUND;
@@ -70,9 +72,10 @@ fn a_click_opens_the_list_above_the_foot_and_a_pick_aims() {
         Some("annex")
     );
     assert!(model.dropup.is_none(), "a pick closes it");
-    click_bar(&window, &mut model, "annex");
+    click_bar(&window, &mut model, &dropped("annex"));
     assert!(model.dropup.is_some());
-    click_bar(&window, &mut model, "annex");
+    let reloading = format!("annex {}", crate::ui::theme::glyph::RELOAD);
+    click_bar(&window, &mut model, &reloading);
     assert!(model.dropup.is_none(), "a second click closes it");
 }
 
@@ -82,7 +85,7 @@ fn a_click_opens_the_list_above_the_foot_and_a_pick_aims() {
 fn new_workspace_on_the_list_begins_the_founding() {
     let window = Window::sized(super::DESK, 900.0);
     let mut model = seated();
-    click_bar(&window, &mut model, "hom");
+    click_bar(&window, &mut model, &dropped("hom"));
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     let found = crate::ui::roster::engine::FOUND;
     crate::test_support::window::click(&window, found, &mut body);

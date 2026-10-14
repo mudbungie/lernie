@@ -5,7 +5,7 @@
 use super::doors::click_rule;
 use crate::paint_probe::frame::{Window, click, press};
 use crate::reply::{Read, Reply};
-use crate::test_support::window::{own, selecting};
+use crate::test_support::window::{dropped, own, selecting};
 use crate::ui::{Model, Selector, theme};
 use egui_kittest::kittest::Queryable;
 
@@ -14,9 +14,18 @@ fn glass(window: &Window, model: &mut Model) -> Vec<crate::paint_probe::Seen> {
     crate::test_support::window::seen(window, |ctx| crate::ui::render(ctx, model))
 }
 
-/// Whether `glyph` stands on the glass in `ink`.
-fn wears(seen: &[crate::paint_probe::Seen], glyph: &str, ink: egui::Color32) -> bool {
-    seen.iter().any(|run| run.text == glyph && run.ink == ink)
+/// **Whether the provider's door ends in `glyph`, and its run wears it in
+/// `ink`** — the glass says the mark inside the door (DESIGN §4.44 item 5),
+/// and the run the door is painted from says the mark's own ink.
+fn wears(
+    model: &Model,
+    seen: &[crate::paint_probe::Seen],
+    glyph: &str,
+    ink: egui::Color32,
+) -> bool {
+    let run = &crate::ui::status::runs(model).0[0];
+    let door = format!("{} {glyph}", run.text);
+    run.mark == Some((glyph, ink)) && seen.iter().any(|seen| seen.text == door)
 }
 
 /// **The cached rows paint before the read answers, under the reload mark in
@@ -26,7 +35,7 @@ fn wears(seen: &[crate::paint_probe::Seen], glyph: &str, ink: egui::Color32) -> 
 fn the_cached_list_stands_under_the_reload_until_the_answer_lands() {
     let window = Window::new();
     let mut model = selecting();
-    click_rule(&window, &mut model, "housevendor");
+    click_rule(&window, &mut model, &dropped("housevendor"));
     assert_eq!(
         model.outbox.last().map(|p| p.envelope.clone()),
         Some(crate::verbs::providers("home".to_owned()))
@@ -39,12 +48,15 @@ fn the_cached_list_stands_under_the_reload_until_the_answer_lands() {
         "the row in force: {texts:?}"
     );
     let annotation = theme::accent(theme::State::Annotation);
-    assert!(wears(&seen, theme::glyph::RELOAD, annotation), "{texts:?}");
+    assert!(
+        wears(&model, &seen, theme::glyph::RELOAD, annotation),
+        "{texts:?}"
+    );
     model.absorb(&own().channel, Read::Answer(Reply::Providers(Vec::new())));
     let seen = glass(&window, &mut model);
     let attention = theme::accent(theme::State::Attention);
-    assert!(wears(&seen, theme::glyph::DONE, attention));
-    assert!(!wears(&seen, theme::glyph::RELOAD, annotation));
+    assert!(wears(&model, &seen, theme::glyph::DONE, attention));
+    assert!(!wears(&model, &seen, theme::glyph::RELOAD, annotation));
     assert!(
         seen.iter()
             .any(|run| run.text == super::super::dropup::NOTHING)
@@ -83,7 +95,7 @@ fn the_keys_walk_and_pick() {
 fn a_click_on_a_row_picks_it() {
     let window = Window::new();
     let mut model = selecting();
-    click_rule(&window, &mut model, "priority off");
+    click_rule(&window, &mut model, &dropped("priority off"));
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     crate::test_support::window::click(&window, "on", &mut body);
     let on = crate::verbs::priority("home".to_owned(), "worker".to_owned(), true);

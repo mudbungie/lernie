@@ -51,14 +51,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             } else {
                 theme::INK_WEAK
             };
-            let tab = ui
-                .add(
-                    egui::Label::new(egui::RichText::new(&name).color(ink))
-                        .selectable(false)
-                        .extend()
-                        .sense(egui::Sense::click()),
-                )
-                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            let tab = theme::paint::tab(ui, &name, ink);
             // **Selecting reads its transcript and opens its follow lane**, as
             // a switcher row's select does (`crate::ui::convs::row`).
             crate::ui::act::tag(
@@ -76,16 +69,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
                 chosen = Some(root_id.clone());
             }
             // **The close posts nothing**, so it wears no `act:` tag.
-            let close = ui
-                .add(
-                    egui::Label::new(
-                        egui::RichText::new(theme::glyph::CLOSE).color(theme::INK_FAINT),
-                    )
-                    .selectable(false)
-                    .extend()
-                    .sense(egui::Sense::click()),
-                )
-                .on_hover_cursor(egui::CursorIcon::PointingHand);
+            let close = theme::paint::tab(ui, theme::glyph::CLOSE, theme::INK_FAINT);
             if close.clicked() {
                 closed = Some(root_id.clone());
             }

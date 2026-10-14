@@ -24,6 +24,10 @@ pub use rows::{EMPTY, NOTHING_AIMED};
 /// **How long the bar stays open after the pointer leaves**, in seconds —
 /// the number read off the ruling, held here and nowhere else.
 pub const LINGER: f64 = 1.5;
+/// **How long the bar's width takes to travel between its two ends**, in
+/// seconds (DESIGN §4.44 item 1): fast, so it is never waited on, and not
+/// zero, so a bar that opens under the pointer slides rather than snaps.
+pub const EASE: f32 = 0.12;
 /// **The collapsed width**, in points: the state glyph and three characters
 /// of a name at the body size, and the panel's margin either side.
 pub const SHUT: f32 = 80.0;
@@ -109,9 +113,17 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         ctx.request_repaint_after(std::time::Duration::from_secs_f64(left));
     }
     let open = held || model.bar.open(now);
+    // **The width eases; what it holds does not**: the rows say what `open`
+    // says from the first frame, and only the edge travels, on egui's own
+    // clock, so a test steps it like the linger.
+    let width = ctx.animate_value_with_time(
+        egui::Id::new("bar width"),
+        if open { wide } else { SHUT },
+        EASE,
+    );
     egui::SidePanel::left("bar")
         .resizable(false)
-        .exact_width(if open { wide } else { SHUT })
+        .exact_width(width)
         .frame(
             egui::Frame::none()
                 .fill(theme::GROUND)

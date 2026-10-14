@@ -28,6 +28,12 @@ pub(crate) use panes::{
     trailing, tuned, waiting,
 };
 
+/// **A selector's run as the glass says it** (DESIGN §4.44 item 5): its
+/// words with the resting mark inside the same door.
+pub(crate) fn dropped(words: &str) -> String {
+    format!("{words} {}", crate::ui::theme::glyph::DROP)
+}
+
 /// One workspace row, named and otherwise quiet.
 pub(crate) fn wall(name: &str) -> WsRow {
     WsRow {

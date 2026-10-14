@@ -70,7 +70,9 @@ fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
                 "at {w}: the slot says the calm state"
             );
             assert!(
-                seen.iter().any(|run| run.text == super::super::NO_MODEL),
+                seen.iter()
+                    .any(|run| run.text
+                        == crate::test_support::window::dropped(super::super::NO_MODEL)),
                 "at {w}: the notice costs no fact"
             );
         }

@@ -5,7 +5,7 @@
 use super::super::{Door, NO_MODEL, name, runs};
 use crate::paint_probe::frame::Window;
 use crate::reply::transcript::{Entry, EntryKind, Usage};
-use crate::test_support::window::{seated, selecting};
+use crate::test_support::window::{dropped, seated, selecting};
 use crate::ui::{Model, Selector};
 use egui_kittest::kittest::Queryable;
 
@@ -111,7 +111,7 @@ pub(super) fn click_rule(window: &Window, model: &mut Model, text: &str) {
 fn a_click_on_each_door_opens_what_it_names() {
     let window = Window::new();
     let mut model = selecting();
-    click_rule(&window, &mut model, "house-model-1");
+    click_rule(&window, &mut model, &dropped("house-model-1"));
     let open = model.dropup.clone().expect("the model's dropup stands");
     assert_eq!(open.selector, Selector::Model);
     let models = crate::verbs::models("home".to_owned(), "housevendor".to_owned());
@@ -119,7 +119,8 @@ fn a_click_on_each_door_opens_what_it_names() {
         model.outbox.last().map(|p| p.envelope.clone()),
         Some(models)
     );
-    click_rule(&window, &mut model, "house-model-1");
+    let reloading = format!("house-model-1 {}", crate::ui::theme::glyph::RELOAD);
+    click_rule(&window, &mut model, &reloading);
     assert!(model.dropup.is_none(), "a second click closes it");
     let mut model = seated();
     click_rule(&Window::new(), &mut model, "port the paint probe");

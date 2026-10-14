@@ -71,8 +71,8 @@ rows wear `?` in green. A window with nothing waiting has nothing green on it.
 took the workspace off it). One line: `— provider ⏶ | model ⏶ | effort ⏶ |
 priority ⏶ | state · elapsed | tokens in · out | cost | context N% — name`.
 The four selectors
-come first, in body ink, each with `⏶` in faint ink beside it (the body font
-has no `▾`); a click opens a **dropup** — a small framed list over the
+come first, in body ink, each with `⏶` in faint ink inside its door, where a
+hand reaches to open it (the body font has no `▾`); a click opens a **dropup** — a small framed list over the
 segment, opening upward — showing what this seat holds at once and asking
 for it again, while the segment's mark is `↻` in the annotation accent
 (the palette has no yellow) and then `✔` in the attention accent once the
@@ -183,7 +183,8 @@ brand `›` mark when the arrows are its. No fill, no rule under it.
 
 **A row** (`theme::paint::row`): full width, `ROW` tall, its words at the
 left edge plus `M`, elided at the width it has. Bare ground at rest,
-`SURFACE` under the pointer, `RAISED` tint plus a brand rule when it is the
+the hover wash (`theme::hover`, the brand at half the selection tint) under
+the pointer, `RAISED` tint plus a brand rule when it is the
 aimed or selected one; a state rule at its left edge when it has a state to
 show. Its words carry more than one ink on one line — name in `INK`, count
 in `INK_WEAK`, the asking count in the attention accent — and that order is
@@ -196,14 +197,14 @@ its first line in the row's tone and every line after it in `INK_WEAK`.
 
 **The status rule** (`status`): one line of `SMALL` runs parted by `|` in
 `INK_FAINT`, led by `—`; the five selectors in `INK` (a placeholder such as
-`model…` in `INK_WEAK`) each followed by its mark — `⏶` in `INK_FAINT` at
+`model…` in `INK_WEAK`) each with its mark inside the same door — `⏶` in `INK_FAINT` at
 rest, `↻` in the annotation accent while its list reloads, `✔` in the
 attention accent once it has — then the state word in its state's ink and
 every other diagnostic in `INK_WEAK`, the name at the right end in `INK`.
 Diagnostics drop from the right first, then priority, then effort; the first
 three selectors are cut instead. **The selectors and the name are links**
 (`theme::paint::link`): the same run at the same width, bare at rest,
-`SURFACE` under the pointer with the pointing hand — never a box, never a
+the hover wash under the pointer with the pointing hand — never a box, never a
 button, because a fact you can open is still a fact.
 
 **A dropup** (`status::dropup`): the overlay's frame (`SURFACE`, the hairline,

@@ -137,10 +137,12 @@ pub fn elide(ui: &egui::Ui, text: &str, room: f32) -> String {
     said
 }
 
-/// One run's width with its mark and the separator before it.
+/// One run's width with the mark inside it and the separator before it.
 fn cost(ui: &egui::Ui, run: &Run) -> f32 {
     let gap = ui.spacing().item_spacing.x;
-    let mark = run.mark.map_or(0.0, |(glyph, _)| width(ui, glyph) + gap);
+    let mark = run
+        .mark
+        .map_or(0.0, |(glyph, _)| width(ui, &format!(" {glyph}")));
     width(ui, SEP) + 2.0 * gap + width(ui, &run.text) + mark
 }
 
@@ -186,11 +188,13 @@ pub(crate) fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::R
         let seat = ui.label(egui::RichText::new(words).small().color(run.ink));
         return (false, seat.rect);
     };
-    let seat = theme::paint::link(ui, words, run.ink);
+    // **The mark is in the door** (DESIGN §4.44 item 5): one seat, one stop
+    // in the Tab order, the mark tinting and opening with the words.
+    let seat = match run.mark {
+        Some(mark) => theme::paint::link_marked(ui, words, run.ink, mark),
+        None => theme::paint::link(ui, words, run.ink),
+    };
     crate::ui::act::tag(&seat, selectors::ops(door));
-    if let Some((glyph, ink)) = run.mark {
-        ui.label(egui::RichText::new(glyph).small().color(ink));
-    }
     (seat.clicked(), seat.rect)
 }
 

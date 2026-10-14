@@ -3,7 +3,7 @@
 use super::diagnostics::{PLAN, count, diagnostics};
 use super::{ENGINES, LEAD, READY, SEP, elide, fitting, name, runs, state, width};
 use crate::reply::convs::AgentState;
-use crate::test_support::window::{painted, seated, selecting, wall};
+use crate::test_support::window::{dropped, painted, seated, selecting, wall};
 use crate::ui::{Model, Notice, theme};
 
 /// The texts of a model's runs between the leads.
@@ -215,9 +215,9 @@ fn the_drop_order_at_the_three_widths() {
     };
     let desk = on(1400.0, &model);
     for word in [
-        "housevendor",
-        "effort medium",
-        "priority off",
+        &dropped("housevendor"),
+        &dropped("effort medium"),
+        &dropped("priority off"),
         "context 50%",
     ] {
         assert!(
@@ -226,7 +226,7 @@ fn the_drop_order_at_the_three_widths() {
         );
     }
     let narrow = on(560.0, &model);
-    assert!(narrow.contains(&"effort medium".to_owned()), "{narrow:?}");
+    assert!(narrow.contains(&dropped("effort medium")), "{narrow:?}");
     assert!(!narrow.contains(&"context 50%".to_owned()), "{narrow:?}");
     let phone = on(400.0, &model);
     assert!(

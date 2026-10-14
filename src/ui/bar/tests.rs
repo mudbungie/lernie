@@ -6,6 +6,8 @@ use crate::paint_probe::{Seen, frame::Window, seen_of};
 use crate::test_support::window::{conv, seated};
 use crate::ui::{Model, theme};
 
+/// The edge's ease between its two widths.
+mod ease;
 /// The workspace at the foot, and its list.
 mod foot;
 
@@ -110,7 +112,9 @@ fn the_pointer_opens_it_and_it_lingers_after() {
     let open = |output: &egui::FullOutput| said(output).contains(&ROW.to_owned());
     assert!(!open(&tick(&ctx, &mut model, 0.0, None)), "shut at rest");
     let over = Some(egui::pos2(10.0, 300.0));
-    assert!(open(&tick(&ctx, &mut model, 1.0, over)), "open under it");
+    tick(&ctx, &mut model, 1.0, over);
+    let eased = 1.0 + f64::from(super::EASE);
+    assert!(open(&tick(&ctx, &mut model, eased, over)), "open under it");
     let inside = Some(egui::pos2(300.0, 300.0));
     assert!(
         open(&tick(&ctx, &mut model, 3.0, inside)),

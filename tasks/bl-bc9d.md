@@ -1,7 +1,8 @@
 +++
 title = "the bar head's + and pin are too small: the head grows so both are a comfortable target"
 created = 1792036095
-updated = 1792036095
+updated = 1792036421
+claimant = "Barring"
 parent = "bl-4446"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

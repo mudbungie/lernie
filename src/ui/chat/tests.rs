@@ -18,6 +18,9 @@ mod machinery;
 /// A message this seat sent: on the glass the frame it is sent, in the
 /// pending ink until acknowledged, and gone when the engine's row lands.
 mod sent;
+/// The working's three stages: whole in flight, compact once done, one line
+/// once the answer stands — and each a door.
+mod stages;
 /// What the weight at a block's edge says about who is speaking.
 mod weight;
 

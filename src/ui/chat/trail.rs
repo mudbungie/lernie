@@ -1,65 +1,35 @@
-//! **The trail painted**: the fold's head, then each step on its stem
-//! (DESIGN §4.42 item 4, §4.45 item 5; `docs/STYLE.md` §5, *a trail*).
+//! **One step of the working, whole** (DESIGN §4.42 item 4, §4.45 item 5;
+//! `docs/STYLE.md` §5, *a block*): its mark, its name — a call's with how it
+//! ended beside it — and what it said, a machine's answer folded to its head.
 //!
 //! Split from [`super`] at the cap on the seam that module's doc draws: the
-//! transcript is what was said and this is what was DONE between the saying —
-//! the calls the model made, their results, and its reasoning — one group
-//! under a fold, each step on a stem drawn as the roster draws its threading.
-//!
-//! **The fold's default is the turn's state** (§4.45 item 5): open while any
-//! of its steps is live or the turn it belongs to still runs, shut once the
-//! turn settled — the calls are read while they run and are bookkeeping once
-//! they have. The one state kept here is the operator's own toggle, the
-//! toolkit's memory of a view state; it is remembered as before, and the
-//! default decides only where nobody toggled. Nothing is dropped: the head
-//! still counts the calls, and a click opens it.
+//! transcript is what was said and this is what was DONE between the saying.
+//! Which stage a step is in — whole, compact, or hidden under the working's
+//! one line — is [`super::working`]'s decision; this paints the whole step it
+//! is handed, which is the step in flight and the finished step an operator
+//! opened. An intermediate prose stands whole on its own fill (§4.45 item 7),
+//! inside the working's: who spoke is still the fill, one rung up from the
+//! trail it stands on.
 
-use super::{Fold, Kind, Row, TRAIL, fold};
-use crate::ui::theme::{self, glyph};
+use super::{Fold, Kind, Row, code, fold};
+use crate::ui::theme::{self, Speaker, glyph};
 
-/// **A trail**: the fold's head, then each step on its stem.
-pub(super) fn trail(ui: &mut egui::Ui, at: usize, steps: &[Row]) {
-    let id = ui.make_persistent_id(("trail", at));
-    let live = steps.iter().any(|row| row.live);
-    let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(live);
-    // **The fold counts calls** (bl-eb4e), not the steps under it: a result
-    // stands on its call's row, and reasoning is not a call.
-    let calls = steps
-        .iter()
-        .filter(|row| matches!(row.kind, Kind::Call | Kind::Answered))
-        .count();
-    let head = format!(
-        "{} {TRAIL} ({calls})",
-        if open { glyph::OPEN } else { glyph::SHUT },
-    );
-    // **The head is a door** (§4.45 item 6): a link at the body size, so it
-    // lights under the pointer as every other clickable seat does.
-    if theme::paint::tab(ui, &head, theme::INK_WEAK).clicked() {
-        open = !open;
-        ui.data_mut(|d| d.insert_temp(id, open));
-    }
-    if !open {
-        return;
-    }
-    let x = ui.cursor().min.x + theme::space::S;
-    for (i, row) in steps.iter().enumerate() {
-        let top = ui.cursor().min.y;
-        ui.horizontal_top(|ui| {
-            ui.add_space(theme::space::L);
-            step(ui, at + i, row);
+/// **One step, whole.** With `door`, its name is the seat that shuts it
+/// again, and the answer is whether that seat was clicked; without, the name
+/// is a label and the answer is never.
+pub(super) fn step(ui: &mut egui::Ui, at: usize, row: &Row, door: bool) -> bool {
+    if row.kind == Kind::Said {
+        let mut shut = false;
+        theme::paint::bubbled(ui, theme::Bubble::Intermediate, |ui| {
+            shut = bare(ui, at, row, door);
         });
-        let bottom = ui.min_rect().max.y;
-        let middle = top + theme::space::S;
-        theme::paint::elbow(ui, x, top, middle, x + theme::space::S);
-        if i + 1 < steps.len() {
-            theme::paint::rail(ui, x, middle, bottom);
-        }
+        return shut;
     }
+    bare(ui, at, row, door)
 }
 
-/// **One step**: its mark, its name — a call's with how it ended beside it
-/// — and what it said, folded to its head where there is more.
-fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
+/// The step without its fill.
+fn bare(ui: &mut egui::Ui, at: usize, row: &Row, door: bool) -> bool {
     let red = theme::accent(theme::State::Error);
     let ended = |ui: &mut egui::Ui| {
         let (mark, ink) = if row.failed {
@@ -71,6 +41,7 @@ fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
     };
     let (mark, ink) = match row.kind {
         Kind::Call | Kind::Answered => (glyph::CALL, theme::BRAND),
+        Kind::Said if row.weight == Speaker::Model => (glyph::MODEL, theme::INK_WEAK),
         _ => (glyph::NOTE, theme::INK_WEAK),
     };
     if row.kind == Kind::Result {
@@ -78,10 +49,19 @@ fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
     } else {
         ui.label(egui::RichText::new(mark).color(ink));
     }
+    let mut shut = false;
     ui.vertical(|ui| {
-        let who = if row.failed { red } else { theme::INK_WEAK };
+        let who = match row.kind {
+            _ if row.failed => red,
+            Kind::Said => theme::speaker(row.weight),
+            _ => theme::INK_WEAK,
+        };
         ui.horizontal_wrapped(|ui| {
-            ui.label(egui::RichText::new(&row.who).color(who));
+            if door {
+                shut = theme::paint::tab(ui, &row.who, who).clicked();
+            } else {
+                ui.label(egui::RichText::new(&row.who).color(who));
+            }
             if row.kind == Kind::Answered {
                 ended(ui);
             }
@@ -89,11 +69,15 @@ fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
         match &row.fold {
             Some(fold) => folded(ui, at, row, fold),
             None if row.said.is_empty() => {}
+            // Prose is what was said, with its fences; a step's words are
+            // its machinery, in the weak ink.
+            None if row.kind == Kind::Said => code::paint(ui, at, &row.said, theme::INK),
             None => {
                 theme::paint::prose(ui, &row.said, theme::INK_WEAK);
             }
         }
     });
+    shut
 }
 
 /// **A machine's answer, folded to its head** (bl-90d0): the one control

@@ -4,18 +4,20 @@
 //! An operator's turn is a row with the prompt's glyph in the gutter in the
 //! brand and its words in body ink; the model's prose carries a bar in the
 //! gutter in weak ink; a peer's, a tool's answer and the machinery's own
-//! words carry a dot. The trail — the calls the model made, their results,
-//! and its reasoning — is one group under a fold, `tool calls (3)`
-//! ([`trail`]), open while the turn runs and shut once it settled. A
-//! `response` line parts a trail from the prose that follows it, and a
-//! hairline parts one turn from the next. No block wears a side rule, and
-//! **every block stands on a bubble that says its role** (§4.45 item 7;
-//! `theme::bubble`): the operator's on the brand's tint, a trail on the
-//! ground inside a hairline, intermediate prose on the surface, the turn's
-//! final prose raised — the gutter glyph inside it, so who spoke is still
-//! the glyph, and weight is still the speaker's (`theme::speaker`) on the
-//! words that name them. Which bubble a row gets is the projection's call
-//! ([`rows`]), never this painter's.
+//! words carry a dot. The turn's working — every row between the operator's
+//! turn and its final prose: the calls the model made, their results, its
+//! reasoning and the prose between — is one block on the trail's bubble
+//! that folds in three stages ([`working`], §4.45 item 5): whole while it
+//! happens, compact once a step is done, one counted line once the answer
+//! stands. A `response` line parts an open working from the prose that
+//! follows it, and a hairline parts one turn from the next. No block wears a
+//! side rule, and **every block stands on a bubble that says its role**
+//! (§4.45 item 7; `theme::bubble`): the operator's on the brand's tint, the
+//! working on the ground inside a hairline, intermediate prose on the
+//! surface inside it, the turn's final prose raised — the gutter glyph
+//! inside it, so who spoke is still the glyph, and weight is still the
+//! speaker's (`theme::speaker`) on the words that name them. Which bubble a
+//! row gets is the projection's call ([`rows`]), never this painter's.
 //!
 //! At the head of a transcript stands the conversation's panel, and where
 //! nothing is selected the seat's ([`panel`]). At its end stands each message
@@ -34,14 +36,16 @@ pub mod fold;
 /// seat's where nothing is selected.
 pub mod panel;
 pub mod rows;
-/// The trail painted: the fold's head and each step on its stem.
+/// One step of the working, whole.
 mod trail;
+/// The working in three stages: which each step and the turn are in.
+pub mod working;
 
 pub use fold::Fold;
 pub use rows::sent::whole;
 pub use rows::{Kind, Row, rows};
 
-use crate::ui::theme::{self, glyph};
+use crate::ui::theme::{self, Bubble, glyph};
 
 /// The pane's word, kept for the seat panel's sentence.
 pub const HEADING: &str = "conversation";
@@ -52,9 +56,7 @@ pub const NO_CONVERSATION: &str = "Ctrl+X picks a conversation, or begin one in 
 /// needs a wall (bl-2cb0), so the sentence names the key that picks one.
 pub const NO_AIM: &str = "Ctrl+X picks a workspace to begin in, or a conversation";
 pub const LIVE: &str = "«live»";
-/// The fold's word over a trail, with the count of steps under it.
-pub const TRAIL: &str = "tool calls";
-/// What parts a trail from the prose that follows it.
+/// What parts an open working from the prose that follows it.
 pub const RESPONSE: &str = "response";
 
 /// Paint the transcript. Answers whether the seat panel's queue door was
@@ -79,17 +81,22 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
             let all = whole(model);
             let mut at = 0;
             let mut turns = 0;
-            let mut after_trail = false;
+            // Whether the working just painted stands open, where one does.
+            let mut opened = None;
             while let Some(row) = all.get(at) {
                 let rest = all.get(at..).unwrap_or(&[]);
-                let run = rest.iter().take_while(|row| row.kind != Kind::Said).count();
+                let run = rest
+                    .iter()
+                    .take_while(|row| matches!(row.bubble, Bubble::Trail | Bubble::Intermediate))
+                    .count();
                 if run > 0 {
                     ui.add_space(theme::space::S);
-                    theme::paint::bubbled(ui, theme::Bubble::Trail, |ui| {
-                        trail::trail(ui, at, rest.get(..run).unwrap_or(&[]));
+                    let mut open = false;
+                    theme::paint::bubbled(ui, Bubble::Trail, |ui| {
+                        open = working::working(ui, at, rest.get(..run).unwrap_or(&[]));
                     });
                     at += run;
-                    after_trail = true;
+                    opened = Some(open);
                     continue;
                 }
                 if row.weight == theme::Speaker::Operator {
@@ -97,12 +104,12 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                         parting(ui);
                     }
                     turns += 1;
-                } else if after_trail {
+                } else if opened == Some(true) {
                     response(ui);
                 }
                 ui.add_space(theme::space::S);
                 theme::paint::bubbled(ui, row.bubble, |ui| said(ui, at, row));
-                after_trail = false;
+                opened = None;
                 at += 1;
             }
         });
@@ -119,8 +126,9 @@ fn parting(ui: &mut egui::Ui) {
     ui.painter().rect_filled(rect, 0.0, theme::HAIRLINE);
 }
 
-/// **The line that parts a trail from the prose after it**: an elbow and
-/// the word, in weak ink.
+/// **The line that parts an open working from the prose after it**: an
+/// elbow and the word, in weak ink. Folded, the working's one line is the
+/// parting (§4.45 item 5).
 fn response(ui: &mut egui::Ui) {
     ui.add_space(theme::space::XS);
     let x = ui.cursor().min.x + theme::space::S;

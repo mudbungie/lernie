@@ -34,16 +34,16 @@ fn spilling(n: usize) -> Model {
     model
 }
 
-/// **Open the trail the answer stands in** — a settled trail stands shut
-/// (§4.45 item 5), and these beats are about what is inside it.
+/// **Open the step the answer stands in** — a settled working is one line
+/// and a finished step is compact (§4.45 item 5), and these beats are about
+/// what is inside: the working's line, then the step's.
 fn opened(window: &Window, model: &mut Model) {
-    let head = format!(
-        "{} {} (0)",
-        crate::ui::theme::glyph::SHUT,
-        crate::ui::chat::TRAIL
-    );
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model));
-    click(window, &head, |ctx| crate::ui::render(ctx, model));
+    click(window, &super::idiom::head(false, 1, 0), |ctx| {
+        crate::ui::render(ctx, model);
+    });
+    let step = format!("{} returned", crate::ui::theme::glyph::DONE);
+    click(window, &step, |ctx| crate::ui::render(ctx, model));
 }
 
 /// What one settled window has on the glass, as whole runs.

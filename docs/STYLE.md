@@ -128,8 +128,9 @@ the ways in: *the verbs, a conversation, the model, a provider*. Under the
 transcript, the prompt; under the prompt, the rule.
 
 **A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
-a tree of stems the trail — `▾ tool calls (3)`, `├─ ● Bash("…") ✓`, `└─ ✗` in
-the error accent — and `───` parts the turns. No block wears a side rule and
+a tree of stems the working — `+ worked · 2 calls · 1 note` at rest, open
+`├─ ✓ Bash("…")` over one elided line of its output, `└─ ✗` in the error
+accent, a step in flight whole — and `───` parts the turns. No block wears a side rule and
 every block stands on a faint bubble that says its role (§5), and a
 message this seat sent stands at the end in `INK_WEAK` until the engine's
 row replaces it.
@@ -249,10 +250,12 @@ while the selected conversation asks — the rule is under the prompt
 then its choices as numbered rows, `1.` to at most `6.`, the chosen one
 `RAISED`.
 
-**A trail** (`chat`): stems `├─` `└─` `│` in `INK_FAINT`; the fold head
-`▾ tool calls (3)` in `INK_WEAK`; a call `● name("preview") ✓` with the dot in
-the brand, the mark in `INK_WEAK` or the error accent; a result folded to its
-head, unfolded in place at `MONO`.
+**A working** (`chat::working`): stems `├─` `└─` `│` in `INK_FAINT`; its
+one line `+ worked · 2 calls · 1 note` in `INK_WEAK`, a door; a finished
+call compact as a row, `✓ name("preview")` with the mark in `INK_WEAK` or
+the error accent and one line of its output elided beneath; a finished note
+`· who · first line…`; a step whole `● name("preview") ✓` with the dot in
+the brand, a result folded to its head and unfolded in place.
 
 **A conversation header** (`chat::subject`, retired by §4.42; the rule carries it): the name at `HEADING` in
 `INK`, the state word beside it in its accent, the model-and-spend line in

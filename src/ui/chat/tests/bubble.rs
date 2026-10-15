@@ -2,9 +2,10 @@
 //! under each block says its role, the gutter glyph stands inside it, and a
 //! streaming turn's prose stands on the intermediate rung.
 
-use super::idiom::{glass, prose, result, running, with, working};
+use super::idiom::{glass, head, prose, result, running, with, working};
+use crate::paint_probe::frame::Window;
 use crate::paint_probe::{fills_of, seen_of, strokes_of};
-use crate::test_support::window::said;
+use crate::test_support::window::{click, said};
 use crate::ui::theme::{Bubble, bubble, glyph};
 
 /// **The colours of the column-wide fills under any run reading `text`** —
@@ -30,6 +31,9 @@ fn fill(role: Bubble) -> egui::Color32 {
 }
 
 /// **One turn of each role, each on its fill, each glyph inside its fill.**
+/// The intermediate prose stands inside the working (§4.45 item 5), so it
+/// is two clicks from the settled transcript: the working's line, then its
+/// own compact line — and whole, it is on its own fill inside the trail's.
 #[test]
 fn each_block_stands_on_the_fill_its_role_wears_with_its_glyph_inside() {
     let mut model = with(vec![
@@ -39,7 +43,16 @@ fn each_block_stands_on_the_fill_its_role_wears_with_its_glyph_inside() {
         result("done", false),
         prose("the seam is real"),
     ]);
-    let output = glass(&mut model);
+    let window = Window::sized(1400.0, 900.0);
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    click(&window, &head(false, 1, 2), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    let line = format!("{} model-a {} first I will read", glyph::MODEL, glyph::NOTE);
+    click(&window, &line, |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    let output = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
     let operator = fill(Bubble::Operator);
     assert!(under(&output, "port it").contains(&operator));
     assert!(
@@ -57,11 +70,10 @@ fn each_block_stands_on_the_fill_its_role_wears_with_its_glyph_inside() {
     assert!(under(&output, glyph::MODEL).contains(&last));
     // The trail is the ground inside a hairline: the ground is the glass's
     // own colour, so what tells it from the pane is the stroke around it.
-    let head = format!("{} {} (1)", glyph::SHUT, super::super::TRAIL);
     let head = seen_of(&output)
         .into_iter()
-        .find(|seen| seen.text == head)
-        .expect("the fold's head is on the glass")
+        .find(|seen| seen.text == head(true, 1, 2))
+        .expect("the working's line is on the glass")
         .laid;
     let (_, ring) = bubble(Bubble::Trail);
     assert!(

@@ -1,10 +1,11 @@
 //! The idiom (DESIGN §4.42, item 4; §4.45 items 5 and 7): a gutter glyph per
-//! speaker, the trail under one fold on painted stems — open while its turn
-//! runs, shut once it settled, a toggle remembered — a `response` line after
-//! it, and a hairline between turns. The fills under the blocks are
-//! [`super::bubble`]'s.
+//! speaker, the working under its one line on painted stems — open while its
+//! turn runs, one line once it settled, a toggle remembered — a `response`
+//! line after it while it is open, and a hairline between turns. The fills
+//! under the blocks are [`super::bubble`]'s, and the three stages of the
+//! working are [`super::stages`]'s.
 
-use super::super::{RESPONSE, TRAIL};
+use super::super::RESPONSE;
 use crate::paint_probe::frame::Window;
 use crate::paint_probe::{fills_of, frame::locate_in, seen_of};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
@@ -113,19 +114,23 @@ fn the_gutter_says_who_spoke() {
     );
 }
 
-/// The fold's head, open or shut, over one call.
-fn head(open: bool) -> String {
+/// **The working's one line, open or shut**, in the exact words it is read
+/// in: the sign, then `worked` and its two counts parted by the note glyph.
+pub(super) fn head(open: bool, calls: u64, notes: u64) -> String {
     format!(
-        "{} {TRAIL} (1)",
-        if open { glyph::OPEN } else { glyph::SHUT }
+        "{} worked · {} · {}",
+        if open { glyph::OPEN } else { glyph::SHUT },
+        crate::render::counted(calls, "call"),
+        crate::render::counted(notes, "note")
     )
 }
 
-/// **A settled trail stands shut under one fold** (§4.45 item 5), the head
-/// counting its calls; a click opens it — a call with its dot and a result
-/// with its mark — and the toggle is remembered on the next frame.
+/// **A settled working stands as one line** (§4.45 item 5), counting what it
+/// holds; a click opens it to its compact steps — a call with the mark of
+/// how it ended and its output beneath — and the toggle is remembered on
+/// the next frame.
 #[test]
-fn a_settled_trail_stands_shut_and_the_head_opens_it() {
+fn a_settled_working_stands_as_one_line_and_the_line_opens_it() {
     let mut model = with(vec![
         said("op", "port it"),
         working(),
@@ -134,48 +139,56 @@ fn a_settled_trail_stands_shut_and_the_head_opens_it() {
     ]);
     let output = glass(&mut model);
     let seen = texts(&output);
-    assert!(seen.iter().any(|t| *t == head(false)), "{seen:?}");
-    assert!(!seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
+    assert!(seen.iter().any(|t| *t == head(false, 1, 1)), "{seen:?}");
+    assert!(
+        !seen.iter().any(|t| t.contains("read(src/ui.rs)")),
+        "{seen:?}"
+    );
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head(false), |ctx| {
+    click(&window, &head(false, 1, 1), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     let opened = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    assert!(opened.contains(&head(true)), "{opened}");
-    // One call, met with its result on one row; the reasoning is a step
-    // and not a call (bl-eb4e); the id never reaches the glass.
-    for word in [glyph::CALL, glyph::DONE, "read(src/ui.rs)"] {
+    assert!(opened.contains(&head(true, 1, 1)), "{opened}");
+    // One call, met with its result on one row, compact: the mark of how it
+    // ended leads the line and the output stands beneath; the reasoning is a
+    // step and not a call (bl-eb4e); the id never reaches the glass.
+    for word in [
+        &format!("{} read(src/ui.rs)", glyph::DONE),
+        "done",
+        "weighing two seams",
+    ] {
         assert!(opened.contains(word), "{word:?}: {opened}");
     }
     assert!(!opened.contains("tu-1"), "no id: {opened}");
 }
 
-/// **A running turn's trail stands open**, and shutting it is remembered
-/// against that default on the frames after.
+/// **A running turn's working stands open**, its call in flight whole, and
+/// shutting it is remembered against that default on the frames after.
 #[test]
-fn a_running_trail_stands_open_and_a_toggle_is_remembered() {
+fn a_running_working_stands_open_and_a_toggle_is_remembered() {
     let mut model = with(vec![said("op", "port it"), working(), running("")]);
     let seen = texts(&glass(&mut model));
-    assert!(seen.iter().any(|t| *t == head(true)), "{seen:?}");
+    assert!(seen.iter().any(|t| *t == head(true, 1, 1)), "{seen:?}");
     assert!(seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head(true), |ctx| {
+    click(&window, &head(true, 1, 1), |ctx| {
         crate::ui::render(ctx, &mut model);
     });
     for _ in 0..2 {
         let shut = window.text(|ctx| crate::ui::render(ctx, &mut model));
-        assert!(shut.contains(&head(false)), "{shut}");
+        assert!(shut.contains(&head(false, 1, 1)), "{shut}");
         assert!(!shut.contains("read(src/ui.rs)"), "{shut}");
     }
 }
 
-/// **The fold's head lights under the pointer** (§4.45 item 6): the hover
-/// wash under it, and nothing in that wash away from it.
+/// **The working's line lights under the pointer** (§4.45 item 6): the
+/// hover wash under it, and nothing in that wash away from it.
 #[test]
-fn the_fold_s_head_lights_under_the_pointer() {
+fn the_working_s_line_lights_under_the_pointer() {
     let mut model = with(vec![said("op", "port it"), working()]);
     let window = Window::sized(1400.0, 900.0);
-    let at = locate_in(&window, &head(false), |ctx| {
+    let at = locate_in(&window, &head(false, 1, 1), |ctx| {
         crate::ui::render(ctx, &mut model);
     })
     .expect("the head is on the glass");
@@ -192,9 +205,9 @@ fn the_fold_s_head_lights_under_the_pointer() {
     assert!(washed(&under), "lit under the pointer");
 }
 
-/// **A `response` line parts the trail from the prose after it**, and a
-/// hairline parts one turn from the next — and neither stands where there is
-/// nothing to part.
+/// **A `response` line parts an OPEN working from the prose after it** —
+/// folded, the one line is the parting — and a hairline parts one turn from
+/// the next; neither stands where there is nothing to part.
 #[test]
 fn a_response_line_and_a_hairline_part_what_follows() {
     let mut one = with(vec![said("op", "port it")]);
@@ -218,14 +231,20 @@ fn a_response_line_and_a_hairline_part_what_follows() {
     ]);
     let parted = glass(&mut two);
     assert!(
-        texts(&parted).iter().any(|t| t == RESPONSE),
-        "{:?}",
+        !texts(&parted).iter().any(|t| t == RESPONSE),
+        "folded, no elbow: {:?}",
         texts(&parted)
     );
     assert!(
         hairlines(&parted) > before,
         "a second turn is parted by a hairline"
     );
+    let window = Window::sized(1400.0, 900.0);
+    click(&window, &head(false, 1, 1), |ctx| {
+        crate::ui::render(ctx, &mut two);
+    });
+    let opened = window.text(|ctx| crate::ui::render(ctx, &mut two));
+    assert!(opened.contains(RESPONSE), "open, the elbow: {opened}");
 }
 
 /// **A failed result wears the error accent on its mark**, and the trail's

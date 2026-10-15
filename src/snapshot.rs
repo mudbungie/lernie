@@ -29,7 +29,9 @@
 //! reddens on every font, theme and layout tweak, spends an afternoon per
 //! rebaseline, and gets rebaselined without being looked at — which is a gate
 //! that has stopped reading. What gates instead is three properties that hold
-//! whatever the pixels are: [`reach`], [`blank`] and [`clipped`].
+//! whatever the pixels are: [`reach`], [`blank`] and [`clipped`] — and a
+//! fourth, [`lit`], that puts the pointer on every tagged control and reads
+//! the wash under it (DESIGN §4.45 item 6).
 //!
 //! **Every size is judged, and there is no width-gate any more** (bl-dfda).
 //! There was one — `promised`, a query into `crate::ui::shell::widths` asking
@@ -51,6 +53,7 @@ use egui_kittest::{Harness, HarnessBuilder};
 
 pub(crate) mod blank;
 pub(crate) mod clipped;
+pub(crate) mod lit;
 pub(crate) mod parity;
 pub(crate) mod reach;
 pub(crate) mod worlds;

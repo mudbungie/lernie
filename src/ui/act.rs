@@ -83,5 +83,29 @@ pub fn tag(response: &egui::Response, ops: &[&str]) {
         let _ = response
             .ctx
             .accesskit_node_builder(response.id, move |node| node.set_author_id(author));
+        response.ctx.data_mut(|data| {
+            data.get_temp_mut_or_default::<Bridge>(egui::Id::new(BRIDGE))
+                .insert(response.id.value(), response.id);
+        });
     }
+}
+
+/// **The way back from a tree node to the seat egui holds for it** (DESIGN
+/// §4.45 item 6). AccessKit's node id IS the egui id's value, and egui will
+/// say nothing about an id it is only handed as a number — so a tag records
+/// the seat beside the token, and [`seat_of`] answers the tree's id with the
+/// seat the lit instrument asks egui about: where it stands, and whether the
+/// pointer at its centre is on it rather than on whatever covers it.
+#[cfg(test)]
+pub(crate) type Bridge = std::collections::BTreeMap<u64, egui::Id>;
+
+/// Where the bridge is kept, in the context's own memory.
+#[cfg(test)]
+const BRIDGE: &str = "the act bridge";
+
+/// **The seat a tree node is**, or nothing where no tag recorded one.
+#[cfg(test)]
+pub(crate) fn seat_of(ctx: &egui::Context, node: u64) -> Option<egui::Id> {
+    ctx.data(|data| data.get_temp::<Bridge>(egui::Id::new(BRIDGE)))
+        .and_then(|bridge| bridge.get(&node).copied())
 }

@@ -5965,7 +5965,16 @@ changes.
    the row idiom, or wearing egui's own button hover where it is already a
    button. The instrument is a test that hovers each tagged control of each
    snapshot world and reads a fill under the pointer, so a control that
-   arrives bare fails the suite rather than the eye.
+   arrives bare fails the suite rather than the eye (`src/snapshot/lit.rs`,
+   assertion (d)). *Lit* means the fills inside the control's rectangle
+   changed between the frame at rest and the frame with the pointer on it,
+   and what it does not judge is stated as a fact of the control, never as
+   a name: a control egui does not report hovered with the pointer at its
+   centre (disabled, scrolled past its clip, or under an overlay), a
+   selected one (`RAISED` outranks the wash), and a field that takes text
+   (its answer is the caret). A label that senses a click is the one bare
+   shape the tree cannot tell from prose, which is why the audit was by
+   hand and the dock's line went through the door.
 
 7. **Four bubbles, by role** (`theme::bubble`, `chat`; bl-d50e). Under each
    block of the transcript stands a filled block at `RADIUS` — the gutter
@@ -6228,7 +6237,7 @@ that everything goes through one painter.
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
 | `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows, faint while its engine will not dial. | ~240 |
 | `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
-| `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
+| `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
 | `src/ui/chat/rows/sent.rs` | what this seat sent, as rows (§4.45 item 4): `whole`, the pane as data — the committed rows and the live fold, then one operator row per standing record for the selected conversation, pending until acknowledged — which paints what stands and retires nothing. | ~40 |
@@ -6276,11 +6285,12 @@ that everything goes through one painter.
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
+| `src/snapshot/lit.rs` | assertion (d): every tagged control lights under the pointer (§4.45 item 6) — the pointer put at its centre, the fills inside its rectangle read off the one paint walk and compared with the frame at rest; what is not judged is a fact the tree or egui states. `cfg(test)`. | ~135 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |
 | `src/snapshot/parity/roster.rs` | which ops owe this seat a control, read off the vendored corpus's `reply/help` rows and decided nowhere here. `cfg(test)`. | ~80 |
 | `src/snapshot/parity/exempt.rs` | `parity.toml`, and the strict subset of TOML it is allowed to be — no crate parses it. `cfg(test)`. | ~90 |
 | `parity.toml` | the exemption ledger: one line per control-classed op this seat does not surface, each citing the ball that will build it. It records what is not RENDERED and never what is refused (§4.9). | config |
-| `src/ui/act.rs` | the `act:<op>` token a control carries, written into AccessKit's `author_id` where no label can drift into it. | ~85 |
+| `src/ui/act.rs` | the `act:<op>` token a control carries, written into AccessKit's `author_id` where no label can drift into it — and, under test, the bridge back from the tree's node id to egui's seat, which the lit assertion asks egui about. | ~110 |
 | `src/paint_probe/frame.rs` | how a frame is produced: the offscreen input, the persistent window, the click. | ~120 |
 | `corpus/` | yog's wire conformance corpus, vendored: `shapes.json` — every field path stamped with the edition it appeared at — `request/` whole, and the reply frames filed under `answers/`/`refusals/`/`unpainted/`/`unreadable/`. The directory a reply frame sits in **is** this seat's assertion; `corpus/README.md` is the contract. | docs |
 | `.github/workflows/ci.yml` | the gate, run by a machine: the pinned tools, then `make ci`. Called by `release-plz.yml` on a push; triggered directly only by a pull request. | config |

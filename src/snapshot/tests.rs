@@ -11,7 +11,7 @@
 //! suite — a detector that matches nothing is green forever, which is the way
 //! this kind of check actually dies.
 
-use super::{SIZES, blank, clipped, name, reach, seat, shots, worlds};
+use super::{SIZES, blank, clipped, lit, name, reach, seat, shots, worlds};
 use crate::test_support::window::seated;
 use crate::ui::Model;
 use egui_kittest::HarnessBuilder;
@@ -28,9 +28,10 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
     let into = shots();
     std::fs::create_dir_all(&into).expect("the shot directory is creatable");
     let mut complaints = Vec::new();
+    let mut lit_judged = 0;
     for world in worlds::all() {
         for (size, width, height) in SIZES {
-            let harness = seat(world.model.clone(), width, height);
+            let mut harness = seat(world.model.clone(), width, height);
             let image = renderer.render(&harness);
             let file = into.join(name(world.name, size));
             image.save(&file).expect("the shot is writable");
@@ -43,6 +44,12 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
             );
             complaints.extend(blank::complaints(&at, &image, &harness));
             complaints.extend(clipped::complaints(&at, width, height, &harness));
+            // **Last, because it moves the pointer**: the shot and the two
+            // assertions above read the frame at rest, and this one drives it.
+            let (judged, said) = lit::complaints(&at, &mut harness);
+            println!("{at}: {judged} controls lit under the pointer");
+            lit_judged += judged;
+            complaints.extend(said);
         }
     }
     assert!(
@@ -50,6 +57,10 @@ fn the_matrix_renders_every_world_at_every_size_and_the_frame_holds() {
         "the rendered window is not sound:\n{}",
         complaints.join("\n")
     );
+    // **A lit assertion that judged nothing is one that has stopped reading**:
+    // the matrix has tagged controls on most of its screens, and a bridge
+    // that went quiet would pass every one of them.
+    assert!(lit_judged >= 100, "only {lit_judged} controls were judged");
 }
 
 /// **Assertion (a)**, at every size the matrix renders.

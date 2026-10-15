@@ -15,7 +15,8 @@
 //! is unfolded is the toolkit's memory, as a fold's is (`crate::ui::chat`):
 //! a view state no wire gesture corresponds to and no other fact can be
 //! asked for; Ctrl+T is the chord (`crate::ui::keys`) and a click on the
-//! line is the same toggle.
+//! line — a door, lit under the pointer (DESIGN §4.45 item 6) — is the same
+//! toggle.
 
 use crate::reply::convs::{AgentState, ConvRow};
 use crate::ui::{Model, theme};
@@ -74,14 +75,11 @@ pub fn toggle(ctx: &egui::Context) {
 /// Paint the dock for `rows`, which the shell has found non-empty.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[ConvRow]) {
     let open = unfolded(ui.ctx());
-    let head = ui.add(
-        egui::Label::new(
-            egui::RichText::new(line(rows, open))
-                .small()
-                .color(theme::accent(theme::State::Working)),
-        )
-        .sense(egui::Sense::click()),
-    );
+    // **The line is a door** (DESIGN §4.45 item 6): a label that sensed a
+    // click lit nothing under the pointer, so the one toggle a click on it is
+    // was a toggle the glass never offered. The same small run in the working
+    // accent, through the one painter that wears the hover wash.
+    let head = theme::paint::link(ui, &line(rows, open), theme::accent(theme::State::Working));
     if head.clicked() {
         toggle(ui.ctx());
     }

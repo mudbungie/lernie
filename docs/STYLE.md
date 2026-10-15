@@ -213,6 +213,12 @@ three selectors are cut instead. **The selectors and the name are links**
 the hover wash under the pointer with the pointing hand — never a box, never a
 button, because a fact you can open is still a fact.
 
+**The dock** (`dock`): one `SMALL` line in the working accent, a link
+(`theme::paint::link`) — bare at rest, the hover wash under the pointer —
+that unfolds it into a row apiece in the row idiom. Every seat that senses
+a click is one of these three — a row, a link or a tab, or egui's own
+button — and lights (DESIGN §4.45 item 6).
+
 **A dropup** (`status::dropup`): the overlay's frame (`SURFACE`, the hairline,
 `RADIUS`) over a span of the window rather than across it, its left edge at
 the segment's, its foot on the rule; the keys in `INK_WEAK` at `SMALL` on the

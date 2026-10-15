@@ -5644,7 +5644,7 @@ as the keyboard's door and the whole seat's view.
 
    **Two widths, and the pointer decides.** Collapsed, the bar is
    **a glyph column** `bar::SHUT` wide (80 points) — room for the state
-   glyph and the first three characters of a name at the body size, and the
+   glyph and, by §4.45 item 2, as much of a name as it holds (it was the first three characters), and the
    panel's margin — so the eye keeps the count and the greens with the
    transcript at full width. Expanded, it is `bar::open_width` wide — a
    function of the window rather than a constant, since it is a quarter of
@@ -5703,7 +5703,7 @@ as the keyboard's door and the whole seat's view.
    its row too** (bl-46b9): it is the keyboard's door (4), and the walk,
    the field's hints and the refusal's remedy all name it there. With
    nothing aimed the foot says `workspace ⏶` and the list is the whole of
-   what the bar shows. Collapsed, the foot is the first three characters of
+   what the bar shows. Collapsed, the foot is as much of
    the wall's name, with the selector's mark.
 
    **The list stands inside the bar, and holds it open** (bl-46b9). It is
@@ -5878,7 +5878,12 @@ changes.
    one, and the expanded width never more than two fifths of the window.
    The eased travel between the two (§4.44 item 1, bl-c72e) is unchanged: a
    drag moves one end of the travel and the ease still runs between the
-   ends.
+   ends. **And a collapsed bar dragged wider shows more of each name**
+   (bl-773e): a collapsed row paints the whole name and the foot the whole
+   wall, each elided with `…` at the width it has, as every row on the
+   glass is (STYLE §5) — §4.44's *first three characters* was a cut at the
+   default width and is withdrawn, since a width the operator set is the
+   width to use.
 
 3. **The box stands directly under the transcript, and every control
    stands under the box** (`src/ui/shell.rs`; bl-45ab). The bottom panels
@@ -5947,14 +5952,40 @@ changes.
    the box's Enter and the slash line's `/interrupt`, so there is no deposit
    on this window that is not on the glass the frame it is composed.
 
-5. **A trail folds itself once its calls are done** (`chat::trail`;
-   bl-d50e). The fold's default is open while any of its steps is live
-   (the `«live»` rows of the follow lane) or the turn it belongs to is still
-   running, and shut once the turn settled: the calls are read while they
-   run and are bookkeeping once they have. An explicit toggle is remembered
-   as it is now, the toolkit's memory of a view state; the default decides
-   only where nobody toggled. Nothing is dropped: the head still counts the
-   calls, and a click opens it.
+5. **The working folds in three stages** (`chat::trail`; bl-d50e, then
+   bl-0174). Operator ruling 2026-10-14, second round, verbatim: *"the
+   experience that I'm going for is verbose while it's happening, but
+   compact when it's done. While the tools are going, they should be
+   expanded, then once the tool call is done, it should collapse to just
+   one line for call and one line for output (truncated, it's to preview,
+   not to show the whole content), similarly for intermediate outputs, etc.
+   Once you get to the final output, the whole intermediate segment,
+   including tool calls and intermediates, thinking, etc, should
+   collapse."* **A turn's working** is every row between the operator's
+   turn and its final prose: the calls, their results, the reasoning, and
+   the intermediate prose between them. It is one block on the trail's
+   bubble (7), and what it shows is decided by the state of each step and
+   of the turn — never by size, which is bl-90d0's rule kept:
+   - **A step in flight stands whole**: the call with its input head, its
+     output as it arrives, a thinking or an intermediate prose as it
+     streams. The working is open while any step is in flight.
+   - **A finished step is compact**: a call whose result landed is its call
+     line and ONE line of its output, elided with `…` at the width it has
+     — a preview, not the content; a finished thinking or intermediate
+     prose (one a further step followed) is one elided line. Each compact
+     step is a door that opens it whole in place, and the fold's head and
+     whole (`chat::fold`) are what it opens to.
+   - **A settled turn's working is one line** — `+ worked · N calls · M
+     notes`, the counts of what it holds — standing between the operator's
+     turn and the final answer, so the transcript at rest reads as question
+     and answer. A click opens it to the compact steps; a second click on a
+     step opens that step.
+   An explicit toggle is remembered as before, the toolkit's memory of a
+   view state, and the stages decide only where nobody toggled. The
+   `response` elbow that parts the working from the prose after it stands
+   only while the working is open; folded, the one line is the parting.
+   Nothing is dropped at any stage: every word is one or two clicks away,
+   and the head counts what it hides.
 
 6. **Every clickable element lights under the pointer** (`theme::paint`;
    bl-52bb). §4.44 item 5 gave the hover wash to every row an operator can

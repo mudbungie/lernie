@@ -49,7 +49,8 @@ bl-f772; it was two columns until the operator's ruling of 2026-10-12, and
 three before that). The **bar** on the left lists the aimed workspace's
 conversations: a glyph column a few characters wide until the pointer is
 over it, then its rows in full — state glyph, name, the first line beneath in
-weak ink, the age at the right — staying open 0.75 s after the pointer
+weak ink, the age at the right — collapsed, the glyph and as much of the
+name as the dragged width holds — staying open 0.75 s after the pointer
 leaves, or always while pinned (the pin at its head, persisted); its edge
 drags either width, and both are remembered (DESIGN §4.45). `+ new` is
 at its head on the right; its foot is the **workspace**, the one place a
@@ -269,8 +270,11 @@ then who spoke in their weight (`theme::speaker`, the error accent on a
 failure) and the body as prose, laid at `LEADING` and wrapped at the width
 it has — save a fenced code block, which is laid in the monospace face on
 `SURFACE` at `RADIUS`, fences unpainted, never wrapped and scrolled sideways
-inside the column instead (`chat::code`, bl-beef). A trail stands under its fold head — open while it runs, shut once its turn
-settled, a toggle remembered — each step on a painted stem
+inside the column instead (`chat::code`, bl-beef). A turn's working (its calls, results, reasoning and the prose between) is
+one block on the trail's bubble that folds in three stages (DESIGN §4.45
+item 5): a step in flight whole, a finished step compact to a line or two
+elided at the width, a settled turn's working one counted line; a toggle
+remembered. Open, each step stands each step on a painted stem
 (the roster's own rails and elbows) with `●` in the brand for a call, `✓`
 in `INK_WEAK` or `✗` in the error accent for a result, folded to its head
 with the unfold control carrying the size of what is hidden. A `response`

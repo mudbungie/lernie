@@ -1,7 +1,8 @@
 +++
 title = "the layout: the rule and the dock stand under the box, so the box stands directly under the transcript; the dropups anchor on the rule where it now stands"
 created = 1792034029
-updated = 1792034029
+updated = 1792034216
+claimant = "Stacking"
 parent = "bl-4792"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

@@ -49,18 +49,21 @@ bl-f772; it was two columns until the operator's ruling of 2026-10-12, and
 three before that). The **bar** on the left lists the aimed workspace's
 conversations: a glyph column a few characters wide until the pointer is
 over it, then its rows in full — state glyph, name, the first line beneath in
-weak ink, the age at the right — staying open 1.5 s after the pointer
-leaves, or always while pinned (the pin at its head, persisted). `+ new` is
+weak ink, the age at the right — staying open 0.75 s after the pointer
+leaves, or always while pinned (the pin at its head, persisted); its edge
+drags either width, and both are remembered (DESIGN §4.45). `+ new` is
 at its head on the right; its foot is the **workspace**, the one place a
 workspace is chosen, a dropup opening upward. Over the transcript stands a
 **tab strip**, one tab per conversation opened in that workspace, the
 selected one over a brand hairline, a faint `×` closing each. The baseline is the
-Hermes Agent terminal UI, aped part for part: the transcript fills the window,
-a one-line **status rule** stands under it, and the **prompt line** stands at
-the bottom. Nothing else is on the glass until it is asked for, and it is asked
+Hermes Agent terminal UI, aped part for part, with one order reversed
+(DESIGN §4.45, bl-4792): the transcript fills the window, the **prompt
+line** stands directly under it, and the one-line **status rule** stands at
+the bottom, under the prompt, so the words typed are beside the words they
+answer. Nothing else is on the glass until it is asked for, and it is asked
 for by a slash verb or a key — and comes as a framed box floating over the
 transcript, above the prompt. A width buys wrapping and nothing else; there is
-no shape, no yield and no dragged edge.
+no shape and no yield; the one dragged edge is the bar's.
 
 **The eye lands on green.** The ask above the prompt is a green-framed box;
 a dropup's check is green for the moment its list is fresh; the prompt line
@@ -121,12 +124,14 @@ will not dial says why in red in place of its counts, and while it is the
 aimed engine the rule's state slot says the same in red — the queue's door
 `N waiting` in green while anything asks, the version, and
 the ways in: *the verbs, a conversation, the model, a provider*. Under the
-transcript, the rule; under the rule, the prompt.
+transcript, the prompt; under the prompt, the rule.
 
 **A transcript is read by its gutter.** `❯` is the operator, `┊` the model,
 a tree of stems the trail — `▾ tool calls (3)`, `├─ ● Bash("…") ✓`, `└─ ✗` in
 the error accent — and `───` parts the turns. No block wears a side rule and
-no block is bubbled.
+every block stands on a faint bubble that says its role (§5), and a
+message this seat sent stands at the end in `INK_WEAK` until the engine's
+row replaces it.
 
 ## 3. Ground, elevation, ink, accents — adopted verbatim
 
@@ -245,15 +250,20 @@ head, unfolded in place at `MONO`.
 `INK_WEAK`, the subtree path in `INK_WEAK`, a provider's refusal in the
 error accent above the spend, and `S` of air before the transcript.
 
-**A block** (the transcript, `chat`): aligned, guttered, never bubbled.
-Every block starts at the same left edge with its glyph in the gutter —
+**A block** (the transcript, `chat`): aligned, guttered, and bubbled by
+role (DESIGN §4.45 item 7): a fill at `RADIUS` behind the whole block, the
+operator's on the brand's tint, a trail on `GROUND` inside a `HAIRLINE`,
+intermediate prose on `SURFACE`, the turn's final prose on `RAISED` — the
+model's three rising toward what is read, the operator's the one hued fill,
+all faint (`theme::bubble`). Every block starts at the same left edge with its glyph in the gutter —
 the prompt's `›` in the brand for the operator, `¦` in `INK_WEAK` for the
 model, `·` in `INK_WEAK` for a peer, a tool's answer or the machinery —
 then who spoke in their weight (`theme::speaker`, the error accent on a
 failure) and the body as prose, laid at `LEADING` and wrapped at the width
 it has — save a fenced code block, which is laid in the monospace face on
 `SURFACE` at `RADIUS`, fences unpainted, never wrapped and scrolled sideways
-inside the column instead (`chat::code`, bl-beef). A trail stands under its fold head, each step on a painted stem
+inside the column instead (`chat::code`, bl-beef). A trail stands under its fold head — open while it runs, shut once its turn
+settled, a toggle remembered — each step on a painted stem
 (the roster's own rails and elbows) with `●` in the brand for a call, `✓`
 in `INK_WEAK` or `✗` in the error accent for a result, folded to its head
 with the unfold control carrying the size of what is hidden. A `response`

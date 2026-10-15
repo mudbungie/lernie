@@ -5048,7 +5048,8 @@ parts, in its vertical order, each with what it becomes here.
 
 2. *Superseded by item 11 for the segments; the notice's slot, the long
    notice's place above the rule and the rule standing down under an overlay
-   stand as written.* **The status rule** (`src/ui/status.rs`) is one line, left to right:
+   stand as written; §4.45 item 3 (bl-4792) moves the rule under the box,
+   at the window's bottom edge.* **The status rule** (`src/ui/status.rs`) is one line, left to right:
    `─ <state> · <elapsed> │ <model> │ <spend> │ <N waiting> │ <N engines> ─
    <name>`. The state is the wire's own word for the selected conversation
    in its state's ink (`theme::state_of`), `ready` in weak ink at rest, and
@@ -5082,7 +5083,9 @@ parts, in its vertical order, each with what it becomes here.
    needs there, and the overlay's own name line says where you are meanwhile.
    **The model and the name are doors** (item 10).
 
-3. **The composer is a prompt line** (`src/ui/composer.rs`): the glyph `›`
+3. **The composer is a prompt line** (`src/ui/composer.rs`). **Amended by
+   §4.45 item 3 (bl-4792): the box stands directly under the transcript,
+   and the rule under the box.** The glyph `›`
    in the brand (the baseline's `❯` has no glyph in the body font, and a
    tofu box is a control with no word on it — `theme::tests`), the draft after it, growing a line per line typed, with the
    hint in weak ink while it is empty. There is no `send` control: **the field
@@ -5117,7 +5120,11 @@ parts, in its vertical order, each with what it becomes here.
    conversation is asking stays, and the ask itself stands above the field
    (6).
 
-4. **The transcript idiom** (`src/ui/chat.rs`; bl-a40c): an operator's turn
+4. **The transcript idiom** (`src/ui/chat.rs`; bl-a40c). **Amended by
+   §4.45 items 4, 5 and 7 (bl-4792): every block stands on a bubble by
+   role, a trail folds itself once its turn settled, and a message this
+   seat sent stands at the end in the pending ink until the engine's row
+   replaces it.** An operator's turn
    is a row with the prompt's glyph in the gutter in the brand and its words
    in body ink; the model's prose carries `¦` in the gutter in weak ink (the
    baseline's `┊` has no glyph in the body font, and its stems `├─ └─` are
@@ -5315,7 +5322,9 @@ parts, in its vertical order, each with what it becomes here.
    rather than the id the receipt carries (bl-c887) — and whether it is still
    asking — read off the remaining rows, never predicted.
 
-9. **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule
+9. **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule —
+   **which §4.45 item 3 (bl-4792) puts under the box, so the dock stands
+   between the rule and the box** —
    while anything runs under the aimed wall — its conversations whose
    drivers are live or in flight, by the engine's own word, read off the
    rows the roster already carries so the dock asks nothing of its own —
@@ -5612,7 +5621,9 @@ one column this section adds; item 11's leftmost selector is withdrawn,
 since a workspace is not a fact of a conversation; item 7's switcher stands,
 as the keyboard's door and the whole seat's view.
 
-1. **The bar** (`src/ui/bar.rs`; bl-46b9) is a left panel
+1. **The bar** (`src/ui/bar.rs`; bl-46b9). **Amended by §4.45 items 1 and
+   2 (bl-4792): the linger is 0.75 s, and both widths below are the
+   defaults of two the operator drags.** It is a left panel
    (`egui::SidePanel::left`) standing the window's full height beside the
    column, painted before the column so the column fits beside it at every
    size of the snapshot matrix (`snapshot::SIZES`: 400, 900 and 1400 wide).
@@ -5805,6 +5816,161 @@ the switcher again with the pointer over it. The 1.5 s is a number read off
 the ruling and held in one constant; the width constants are the bar's own
 and the matrix proves the column still fits beside them at 400 wide.
 
+### 4.45 The chat as state: the box beside the transcript, a sent message on the glass at once, the bubble, the trail that folds, the door that lights, and the bar that is dragged (bl-4792)
+
+Operator ruling 2026-10-14, verbatim: *"Animation is good, but we can
+reduce the out of frame time to 0.75. Width on the side panel should be
+draggable, but while closed and while open. Flip all the chat controls to
+under the conversation box, so the box is right next to the chat. Then,
+(and this was implemented in an earlier version) when you send, it
+immediately snaps up, with a text color indication that it hasn't been
+acked by the remote machine yet. The design sensibility is that state
+should always be immediately represented: there should never be a
+half-second where your message is nowhere in the interface. Tool calls
+should autocollapse when done. In general, all clickable interface elements
+should have highlighting on mouseover. User, tool call, intermediate
+response, and final response should all have bubbles under them demarcating
+them, with slightly different colors. Not jarring, just enough that you know
+immediately, 'I'm reading the message I wrote'"*
+
+**One sentence of it is the principle and the rest are its instances**:
+*state should always be immediately represented*. A message the operator
+sent is state the moment Enter is pressed, whatever the engine has heard;
+which width the bar stands at is state the operator set; whether a trail is
+still running is state its fold should say; what a pointer is over is state
+the glass should show; and who said a block is state a fill can say faster
+than a glyph can be read. Each item below is that one rule applied to one
+surface, and none adds a fact the model did not already hold — the one new
+field (item 4) records a gesture the seat itself made.
+
+**This section amends §4.42 items 3, 4, 9 and 11 and §4.44 item 1**, each
+of which carries a line at its head saying so, and `docs/STYLE.md` §2 and
+§5, which stated the orders and the *never bubbled* rule this section
+changes.
+
+1. **The linger is 0.75 s** (`bar::LINGER`; bl-7578). The number read off
+   the ruling, in the one constant §4.44 holds it in; nothing else about the
+   bar's opening and closing changes, the ease included.
+
+2. **Both of the bar's widths are dragged** (`bar::Bar`, `place.rs`;
+   bl-7578). The bar's right edge is a drag handle in both of its states:
+   dragged while collapsed it sets the collapsed width, dragged while
+   expanded the expanded one — which width a drag writes is which state the
+   bar was in when the drag began, so a bar that opens under the pointer
+   mid-drag does not hand the drag to the other width. Each is a number the
+   operator set, which is §4.39's class of fact — *per-seat UI state … the
+   seat's own* — so each lives in the place file (`bar_shut`, `bar_open`,
+   floats read through serde and never through a cast), and §4.44's two
+   constants become **the defaults a seat that dragged nothing gets**. The
+   policy keeps the floors and the ceiling, applied by clamping on every
+   frame and never by overwriting (§4.39: *a window narrower than the stored
+   width clamps it and does not overwrite it*): the collapsed width is never
+   less than the glyph column with its margins nor more than the expanded
+   one, and the expanded width never more than two fifths of the window.
+   The eased travel between the two (§4.44 item 1, bl-c72e) is unchanged: a
+   drag moves one end of the travel and the ease still runs between the
+   ends.
+
+3. **The box stands directly under the transcript, and every control
+   stands under the box** (`src/ui/shell.rs`; bl-45ab). The bottom panels
+   are laid so the rule takes the window's bottom edge, the dock (§4.42
+   item 9) stands on the rule while anything runs, the prompt line stands on
+   those, and the transcript fills what is left — so the words an operator
+   types are beside the words they are answering, with no line of facts
+   between. **The ask stays above the box** (§4.42 item 8): it is the
+   model's question and not a control of the chat, and the box under it is
+   where its answer is typed; it is also transient, standing only while the
+   selected conversation asks. A selector's dropup still opens upward from
+   its segment's left edge, which is now over the box: it is laid on a
+   foreground layer anchored to the rule's rect, as the bar's foot lays the
+   workspace's list inside the bar (§4.44 item 1), and it covers the box
+   only while it stands. The slash menu keeps floating over the transcript's
+   foot, directly above the box it completes. The notice too long for the
+   rule still stands whole above the rule (§4.42 item 11) — above the rule,
+   under the box.
+
+4. **A sent message is on the glass the frame it is sent** (`Model::sent`,
+   `composer::fire`, `chat::rows`; bl-ca3d). The ruling's own sentence: *there
+   should never be a half-second where your message is nowhere*. The box
+   composes a `message` or `interrupt` act and clears the draft, and in that
+   same frame the model records what it composed — the conversation it was
+   addressed to, the words, and how many entries the committed transcript
+   held — beside the outbox. The transcript paints each such record as an
+   operator row at its end, after the committed rows and the live fold, with
+   the prompt's glyph in the gutter and **the words in the pending ink**
+   (`INK_WEAK`, the ink of what is not yet settled) until the act's receipt
+   lands, then in body ink. It is a row of the transcript and not a notice:
+   it stands where the message will stand, under the operator's bubble (7).
+   Three endings, each decided where the fact arrives:
+   - **The receipt** (`Model::receipt`, the `message` and `interrupt` ops):
+     an `ok` outcome marks it acknowledged, which is the ink changing and
+     nothing else — the row stays until the transcript carries the words,
+     because the read that will carry them lands at ask cadence and a row
+     retired on the receipt would be a message nowhere for exactly the
+     half-second the ruling forbids.
+   - **The transcript** (`chat::rows`): the frame the committed transcript
+     holds an operator delivery with those words at an index past the
+     recorded length, the record is dropped — the words are now the
+     engine's own row, and one row, never two.
+   - **A refusal**: the record is dropped and **the words go back in the
+     box**, the start's own rule (bl-b180: *the engine's refusal retires the
+     start into its own sentence with the goal back in the box*) — a refused
+     message cleared from the draft and gone from the transcript would be
+     state represented nowhere. A lost reply leaves the row standing in the
+     pending ink beside the in-doubt notice, which is the honest picture: the
+     engine may have it.
+   The records are keyed by conversation, so a tab change keeps each with its
+   own transcript, and they are per run like the tabs: a seat that reopened
+   carrying yesterday's unacknowledged words would be claiming a gesture
+   nobody made today.
+
+5. **A trail folds itself once its calls are done** (`chat::trail`;
+   bl-d50e). The fold's default is open while any of its steps is live
+   (the `«live»` rows of the follow lane) or the turn it belongs to is still
+   running, and shut once the turn settled: the calls are read while they
+   run and are bookkeeping once they have. An explicit toggle is remembered
+   as it is now, the toolkit's memory of a view state; the default decides
+   only where nobody toggled. Nothing is dropped: the head still counts the
+   calls, and a click opens it.
+
+6. **Every clickable element lights under the pointer** (`theme::paint`;
+   bl-52bb). §4.44 item 5 gave the hover wash to every row an operator can
+   pick; this item gives it to every seat that senses a click — the trail's
+   fold head, the panels' `▸` folds, the dock's line and rows, the ask's
+   cells, the overlay name lines, the queue's, records', config and tuning
+   panes' controls, the enrollment's — each through `theme::paint`'s door or
+   the row idiom, or wearing egui's own button hover where it is already a
+   button. The instrument is a test that hovers each tagged control of each
+   snapshot world and reads a fill under the pointer, so a control that
+   arrives bare fails the suite rather than the eye.
+
+7. **Four bubbles, by role** (`theme::bubble`, `chat`; bl-d50e). Under each
+   block of the transcript stands a filled block at `RADIUS` — the gutter
+   glyph kept inside it, STYLE §5's *read by its gutter* standing — and
+   the fill says the role: **the operator's turn** on the brand's tint (the
+   brand is the operator's colour on every surface, §4.42 item 4); **a
+   trail** on the ground inside a hairline, the lowest step; **intermediate
+   prose** — the model's prose a further trail follows within the same turn,
+   and the live turn's prose while it streams, since what follows it is not
+   known yet — on `SURFACE`; **the turn's final prose** on `RAISED`. The
+   model's three are the elevation ramp rising toward what is read, and the
+   operator's is the one hued fill, so *I'm reading the message I wrote* is
+   answered by hue and the rest by height. The fills are named once in
+   `theme` and derived from the palette — no new literal — and they are
+   faint: the ruling's *not jarring*. Which bubble a prose row gets is
+   decided in the projection (`chat::rows`), where the turn's shape is
+   known, and never by the painter counting.
+
+**What this does not solve, and the principle that answers it.** The
+pending row says what this seat sent and nothing about what the engine did
+with it; the engine's own row, when it lands, is the record, and the seat's
+row leaves the frame it does. A drag that narrows the collapsed bar below
+its own glyph is clamped, not refused, so the floor is one number and not a
+sentence. A control egui paints as a button already lights; the audit's
+rule is that nothing on the glass senses a click without saying so, not
+that everything goes through one painter.
+
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -5819,7 +5985,7 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
-| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, and the wall last aimed under each. The two layout keys went with the drags (§4.42). Every way the file can be wrong is absence, per field. | ~170 |
+| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, the wall last aimed under each, the bar's pin and its two dragged widths (§4.44, §4.45). Every way the file can be wrong is absence, per field. | ~190 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
@@ -6033,7 +6199,7 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/convs/row.rs` | one threaded row: the row with its state rule, the lines hung beneath it at its words' edge, the subtree control as a row under them, and the connectors — a rail per ancestor thread that continues, an elbow into the words. Its indent starts one step under the wall it hangs from (§4.39), and every connector reads that one function. | ~200 |
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the engine row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
-| `src/ui/chat.rs` | the transcript read by its gutter (§4.42): the glyph per speaker, the trail under one fold on painted stems, the `response` line and the hairline between turns, and how a folded step is painted. | ~200 |
+| `src/ui/chat.rs` | the transcript read by its gutter and its bubble (§4.42, §4.45): the glyph per speaker, the fill per role, the trail under one fold on painted stems that folds itself once the turn settled, the `response` line and the hairline between turns, and the sent row in the pending ink at the end. | ~250 |
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
 | `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows, faint while its engine will not dial. | ~240 |
 | `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
@@ -6043,22 +6209,22 @@ and the matrix proves the column still fits beside them at 400 wide.
 | `src/ui/chat/code.rs` | fenced code in what was said (bl-beef): the split on fences, pure, and the block painted monospace on the surface, scrolled sideways rather than wrapped. | ~100 |
 | `src/ui/chat/code/inline.rs` | the prose between fences (bl-f5a7): code spans and heading lines split, pure, and laid as one wrapped job with each run in its face. | ~115 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |
-| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42). | ~190 |
+| `src/ui/composer.rs` | what an operator types, and the gesture it becomes — one box, three subjects, and the one read of Enter both of the box's modes share (§4.39); a slash line is the menu's and not the deposit's (§4.42); a deposit is recorded as sent the frame it is composed (§4.45 item 4). | ~200 |
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the wall's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
 | `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in. A child region, never an `Area`. | ~135 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
 | `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
-| `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44) — the transcript, the rule and the prompt under it, the menu and the overlay over it, and what stands down under what. | ~60 |
-| `src/ui/bar.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; bl-46b9): its two widths and the linger between them, the pin and `+ new` at its head; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~170, ~120, ~70 |
+| `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
+| `src/ui/bar.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): its two widths, each dragged and remembered, and the linger between them, the pin and `+ new` at its head; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~170, ~120, ~70 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
-| `src/ui/bar.rs` | **the bar** (§4.44): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 1.5 s after it leaves, pinned by its head; `+ new` and the workspace dropup at its foot. | ~250 |
+| `src/ui/bar.rs` | **the bar** (§4.44, §4.45): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, each of its two widths dragged at its edge; `+ new` and the workspace dropup at its foot. | ~250 |
 | `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
-| `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the glyph a control wears, and the spacing and type scales — every byte once. | ~260 |
+| `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the four bubbles by role (§4.45), the glyph a control wears, and the spacing and type scales — every byte once. | ~280 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule (`paint/row.rs`: one line, or a block of lines under one seat), the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/ui/theme/fonts.rs` | **the fallback face** (§4.43): the fixed list of system paths a CJK face is kept at, and egui's faces with the first readable one pushed last in both families. | ~110 |

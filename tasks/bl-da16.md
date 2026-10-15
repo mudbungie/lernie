@@ -1,7 +1,8 @@
 +++
 title = "the ask offers 'pass for this conversation' and 'pass for this workspace' on a call the engine will refuse at any scope but call, so an operator who picks one is refused and the call stays parked: the choices follow the scopes the held row states"
 created = 1792036117
-updated = 1792036117
+updated = 1792036128
+claimant = "Scoping"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

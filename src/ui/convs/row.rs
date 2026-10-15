@@ -75,6 +75,7 @@ pub(super) fn conversation(
         indent: indent(row.depth),
         aside: None,
         beneath,
+        door: None,
     }
     .paint(ui);
     // **Two reads hang off this one gesture** (`crate::ui::act`): selecting a

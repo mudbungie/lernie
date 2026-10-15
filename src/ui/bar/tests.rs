@@ -18,6 +18,8 @@ mod ease;
 mod foot;
 /// The head's two doors, at the heading size with air inside the seat.
 mod head;
+/// The trashcan on a row under the pointer, and the confirmation it opens.
+mod trash;
 
 /// **One frame at `time` on the input clock**, the pointer at `at` (or gone),
 /// on a desk-sized window — what the bar's clock is steered by.

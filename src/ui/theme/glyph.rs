@@ -55,3 +55,6 @@ pub const RELOAD: &str = "↻";
 pub const CLOSE: &str = "×";
 /// **The bar's pin** (DESIGN §4.44), alone at the collapsed head.
 pub const PIN: &str = "📌";
+/// **A row's trashcan** (DESIGN §4.44 item 1; bl-e837), at its right end
+/// while the pointer is over it, in faint ink.
+pub const TRASH: &str = "🗑";

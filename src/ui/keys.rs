@@ -105,6 +105,10 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // **An open dropup takes its keys first** (§4.42, item 11), ahead of the
     // box and of the overlay's Esc: ↑↓ walk it, Enter picks, Esc closes.
     crate::ui::status::dropup::keys(ctx, model);
+    // **A deletion's confirmation takes Enter and Esc next** (§4.44 item 1;
+    // bl-e837): a question asked a moment ago is answered before the box or
+    // the ask reads either key.
+    crate::ui::bar::confirm::keys(ctx, model);
     // **Ctrl+O is `/model`** (bl-4e55; the baseline's model picker): it
     // fires the menu's own row, so it opens the model's dropup exactly where
     // the word and the rule's model segment would (bl-d74b).

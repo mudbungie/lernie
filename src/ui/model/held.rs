@@ -38,8 +38,7 @@ pub struct Model {
     /// nobody looked at — the same thing `crate::ui::convs::UNCERTAIN` refuses
     /// to do one level down, on a conversation nobody could take a reading of.
     ///
-    /// It is set and cleared at exactly the two places `convs` is, and nowhere
-    /// else.
+    /// It is set and cleared at the two places `convs` is, and nowhere else.
     pub answered: Option<Aim>,
     /// **What the aimed wall's roles are set to**, or `None` while nobody has
     /// been answered about them — one field where [`Self::convs`] needs a pair,
@@ -235,6 +234,8 @@ pub struct Model {
     pub reveal: bool,
     /// The selected conversation's id.
     pub conversation: Option<String>,
+    /// **A deletion awaiting its answer** (`delete`; bl-e837): the root id.
+    pub deleting: Option<String>,
     /// **Which conversations have had their subtree opened** (`subtree`;
     /// bl-00f5) — what is OPEN, so the default costs no state: a navigation
     /// the operator performed, [`Self::switching`]'s own standing.
@@ -272,9 +273,8 @@ pub struct Model {
     /// **between** the stage and the fire: the frame that absorbs `prepare`'s
     /// receipt is what writes the field onto the body it hands back
     /// (`start::Model::fire`), and that frame reads the window, not the
-    /// gesture. A bool rather than the role's own name, because the name is
-    /// `crate::verbs::start::PLANNER` and a second copy of it here would be a
-    /// second place for the wire's word to live.
+    /// gesture. A bool rather than the role's own name: the name is
+    /// `crate::verbs::start::PLANNER`, and a copy here would be a second home.
     pub plan: bool,
     /// **A start, while it is happening** — the one thing this window holds
     /// across a round trip, because starting is two acts and the second is

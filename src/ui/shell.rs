@@ -73,6 +73,16 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
                 .show(ctx, |ui| dock::render(ui, model, &running));
         }
         egui::TopBottomPanel::bottom("composer").show(ctx, |ui| composer::render(ui, model));
+        // **A deletion's confirmation stands on the box** (§4.44 item 1;
+        // bl-e837), where the ask stands: the question a trashcan asked.
+        if let Some(id) = model.deleting.clone() {
+            egui::TopBottomPanel::bottom("confirm")
+                .frame(
+                    egui::Frame::none()
+                        .inner_margin(egui::Margin::symmetric(theme::space::L, theme::space::XS)),
+                )
+                .show(ctx, |ui| bar::confirm::render(ui, model, &id));
+        }
         // **The ask stands above the box while the selected conversation
         // asks** (§4.42, item 8): the baseline's approval panel, between the
         // transcript and the line the answer is typed on.

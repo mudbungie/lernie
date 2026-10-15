@@ -205,6 +205,16 @@ inside each seat (`theme::paint::heading_link`; bl-bc9d) — the pin in
 a link is larger than its word, because a target a pointer reaches for at
 the top of a column is reached for often.
 
+**A bar row** (`bar::rows`): the row above led by the conversation's state
+glyph, and — while the pointer is over it — `🗑` in `INK_FAINT` at its right
+end under a seat of its own (`theme::paint::Row::door`; bl-e837), lit with the
+wash like every door, the age stepping left of it; the row keeps its wash
+while the pointer is on the trashcan. **The deletion's confirmation**
+(`bar::confirm`): the ask's box in the error accent, on the prompt — its name
+on the first line with *Enter deletes · Esc keeps* at the line's other end in
+`INK_WEAK` at `SMALL`, the conversation's name in `INK`, then `keep` in
+`INK_WEAK` and `delete` in the error accent, two tab doors, the way out first.
+
 **A threaded row** (the conversation list): the row above at its depth, with
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.

@@ -5205,7 +5205,11 @@ parts, in its vertical order, each with what it becomes here.
    typed name arms only the subtree and deletes a leaf on any word, an empty
    one included, so the seat composes no envelope until the word is the name
    the engine compares, and the refusal states that name (§4.20: an
-   unmaking states its subject before it offers the act). The menu lays a window
+   unmaking states its subject before it offers the act). **The bar's
+   trashcan is the second arming** (bl-e837; §4.44 item 1): a row under the
+   pointer offers it, and the seat types the row's own name into the one
+   envelope `/delete` sends (`Model::post_delete`), behind a confirmation
+   unless Ctrl is held. The menu lays a window
    of rows around the chosen one and never scrolls, which is the baseline's
    shape and the one the matrix admits — every control laid is on the glass
    whole at every size.
@@ -5735,6 +5739,19 @@ as the keyboard's door and the whole seat's view.
    the column whatever the column shows, because what it lists is not what
    the overlay is about.
 
+   **And a trashcan stands at the open row's right end while the pointer
+   is over it** (bl-e837; operator 2026-10-14: *on mouseover, a trashcan;
+   confirmation dialogue unless ctrl is held down*): `theme::glyph::TRASH`
+   in faint ink under a seat of its own (`theme::paint::Row::door`), lit
+   under the pointer as every door is, wearing `delete-agent`'s tag; the
+   age steps left of it, and the row keeps its wash while the pointer is on
+   it. Its click asks — a confirmation standing on the box where the ask
+   stands (`bar/confirm.rs`), naming the conversation, `keep` first and
+   `delete` after, Esc and Enter — and Ctrl+click fires the delete at once.
+   It is §4.42 item 5's `/delete` by a second door and the same envelope
+   (`Model::post_delete`, the one composition both go through), the seat
+   typing the name the row bears.
+
 2. **The tabs** (`src/ui/tabs.rs`; bl-03c1) are a strip at the top of the
    column, above the transcript, one tab per **open** conversation of the
    aimed workspace: the name, with the asking `?` in the attention accent
@@ -6183,6 +6200,7 @@ that everything goes through one painter.
 | `src/ui/model/absorb/unanswered.rs` | the leg that brought no reply at all: a channel this seat could not reach, said on its own section, and an act that earned no answer, said in the bar — with its words given back where nothing crossed (§4.26). | ~100 |
 | `src/ui/model/notice.rs` | what the seat last heard that was not content: six kinds — five failures and one act's receipt (§4.34, §4.36) — and the line that says whose sentence each is. | ~170 |
 | `src/ui/model/posted.rs` | a gesture on its way out: whether a lost reply leaves it in doubt (§4.22), and the channel it is addressed to where its envelope names no workspace (§4.30) — both recorded at the control because neither can be computed. | ~110 |
+| `src/ui/model/delete.rs` | **a conversation's deletion** (§4.44 item 1; §4.42 item 5; bl-e837): the name the engine compares, the confirmation's two answers, and `post_delete` — the one composition of `delete-agent` the trashcan and `/delete` share. | ~60 |
 | `src/ui/model/acts.rs` | what a control does, whichever control did it — the one home a binding and a click share: the aim, the selection, Escape's ladder, the enrollment's four and the wall's pin. | ~220 |
 | `src/ui/model/channel.rs` | what a channel is, what a gesture aimed down one must be addressed as, and what its section says when it has no walls. | ~110 |
 | `src/ui/model/start.rs` | a start between its two acts: what is held, what each receipt does to it, the born-on role written onto the body the fire carries back (§4.39), and the refusal that retires it with the goal back in the box (§4.26). | ~255 |
@@ -6296,7 +6314,7 @@ that everything goes through one painter.
 | `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
-| `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~200, ~130, ~90, ~60 |
+| `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed wall's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |

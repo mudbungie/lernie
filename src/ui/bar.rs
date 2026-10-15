@@ -9,6 +9,8 @@
 //! are [`Model::rows`], the switcher's under the aimed wall, spelled by
 //! `crate::ui::convs` ([`rows`]). Its head is the pin and `+ new`; its foot is
 //! the workspace, the one place on the glass a workspace is chosen ([`foot`]).
+//! A row under the pointer offers its trashcan, and the confirmation that
+//! click opens stands on the box ([`confirm`]; bl-e837).
 //!
 //! **Where the pointer is, is read; when it was last over the bar, is held**
 //! ([`Bar::left_at`]) — the one fact the linger needs that no frame can read
@@ -16,6 +18,8 @@
 
 use crate::ui::{Model, theme};
 
+/// The deletion's confirmation, standing on the box where the ask stands.
+pub mod confirm;
 /// The right edge, dragged: the two widths as set, clamped and written.
 pub mod drag;
 /// The workspace at the bar's foot, and its list opening upward.

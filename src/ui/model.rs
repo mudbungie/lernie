@@ -35,6 +35,8 @@ mod clients;
 mod config;
 /// The deeper records between frames: the one read the pane posts.
 mod deep;
+/// A conversation's deletion: the one door the trashcan and `/delete` share.
+mod delete;
 /// The doctor pane between frames: open or not, and each channel's checks.
 mod doctor;
 /// A selector's dropup on the rule: which is open and whether it reloaded.

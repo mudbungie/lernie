@@ -74,7 +74,12 @@ fn conversation(model: &mut Model, word: &str, rest: &str) -> Option<bool> {
         w if w == verbs::RESTORE.word => verbs::restore(address, agent),
         w if w == verbs::RETARGET.word => verbs::retarget(address, agent),
         w if w == verbs::FLAG.word => verbs::flag(address, agent, rest.to_owned()),
-        DELETE => verbs::delete_agent(address, agent, rest.trim().to_owned()),
+        // **The one door the bar's trashcan goes through too** (bl-e837):
+        // the word was held to the name by [`wanting`], so the seat types it.
+        DELETE => {
+            model.post_delete(&agent);
+            return Some(true);
+        }
         _ => return None,
     };
     model.outbox.push(crate::ui::Posted::act(gesture));
@@ -104,12 +109,7 @@ pub fn wanting(model: &Model, word: &str, rest: &str) -> Option<String> {
             "{LEAD}{w} needs the words to say instead — {LEAD}{w} <words>"
         )),
         DELETE => {
-            let id = model.conversation.as_deref()?;
-            let name = model
-                .rows()
-                .into_iter()
-                .find(|row| row.root_id == id)
-                .map_or_else(|| id.to_owned(), |row| row.display);
+            let name = model.name_of(model.conversation.as_deref()?);
             (rest.trim() != name).then(|| {
                 format!(
                     "{LEAD}{DELETE} is armed by the conversation's own name — {LEAD}{DELETE} {name}"

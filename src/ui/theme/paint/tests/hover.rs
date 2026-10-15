@@ -99,6 +99,7 @@ fn a_block_row_is_one_seat_over_every_line() {
                 indent: 0.0,
                 aside: Some("2m".to_owned()),
                 beneath: vec![("beneath".to_owned(), INK_FAINT, egui::TextStyle::Small)],
+                door: None,
             }
             .paint(ui);
         });

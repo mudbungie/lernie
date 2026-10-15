@@ -3,9 +3,9 @@
 //! seat, so the tint under the pointer and the chosen row's tint fill exactly
 //! what a click takes (DESIGN §4.44 item 5).
 
-use egui::{Color32, Pos2, Response, Sense, Stroke, vec2};
+use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
-use super::super::{BRAND, INK_WEAK, RADIUS, RAISED, ROW, RULE, space};
+use super::super::{BRAND, INK_FAINT, INK_WEAK, RADIUS, RAISED, ROW, RULE, space};
 
 /// **One list row**: full width, [`ROW`] tall, its words at the left plus
 /// `indent` plus `M`, elided at the width it has, in `ink`. Bare ground at
@@ -67,6 +67,7 @@ pub fn marked(
         indent,
         aside: None,
         beneath: Vec::new(),
+        door: None,
     }
     .paint(ui)
 }
@@ -86,11 +87,27 @@ pub struct Row {
     pub aside: Option<String>,
     /// The lines beneath the head, aligned with its words.
     pub beneath: Vec<(String, Color32, egui::TextStyle)>,
+    /// **A door at the head's right end, painted only while the pointer is
+    /// over the row** (DESIGN §4.44 item 1; bl-e837): its glyph, in faint ink
+    /// under a seat of its own, so its click is never the row's. The aside
+    /// steps left of it.
+    pub door: Option<&'static str>,
 }
 
 impl Row {
     /// **Paint the block**, answering its one seat.
     pub fn paint(&self, ui: &mut egui::Ui) -> Response {
+        self.paint_doored(ui).0
+    }
+
+    /// **Paint the block and, while the pointer is over it, its door**,
+    /// answering the row's seat and the door's where one was painted. The
+    /// door is laid after the row, so the hit test hands it the click. The
+    /// row asks whether the pointer is WITHIN it and not whether it is
+    /// hovered, because a pointer on the door is on the row — egui hands
+    /// `hovered` to the door alone — and a row whose wash went out the
+    /// moment its door was reached would say the hand had left it.
+    pub fn paint_doored(&self, ui: &mut egui::Ui) -> (Response, Option<Response>) {
         let said = [self.mark.0.as_str(), self.words.as_str()]
             .into_iter()
             .filter(|part| !part.is_empty())
@@ -113,11 +130,11 @@ impl Row {
             )
         });
         if !ui.is_rect_visible(rect) {
-            return seat;
+            return (seat, None);
         }
         let fill = if self.chosen {
             RAISED
-        } else if seat.hovered() {
+        } else if seat.contains_pointer() {
             super::super::hover()
         } else {
             Color32::TRANSPARENT
@@ -137,6 +154,21 @@ impl Row {
         let left = rect.min.x + RULE + self.indent + space::M;
         let mut right = rect.max.x - space::S;
         let middle = rect.min.y + ROW / 2.0;
+        let door = self.door.filter(|_| seat.contains_pointer()).map(|glyph| {
+            let head = Rect::from_min_max(
+                Pos2::new(left, rect.min.y),
+                Pos2::new(right, rect.min.y + ROW),
+            );
+            let mut child = ui.new_child(
+                egui::UiBuilder::new()
+                    .id_salt(seat.id)
+                    .max_rect(head)
+                    .layout(egui::Layout::right_to_left(egui::Align::Center)),
+            );
+            let door = super::tab(&mut child, glyph, INK_FAINT);
+            right = door.rect.min.x - space::S;
+            door
+        });
         if let Some(aside) = &self.aside {
             let small = egui::TextStyle::Small;
             let galley = elided(ui, aside, 0, (INK_WEAK, INK_WEAK), &small, f32::INFINITY);
@@ -164,7 +196,7 @@ impl Row {
             ui.painter().galley(Pos2::new(left, top), galley, *ink);
             top += tall(ui, style);
         }
-        seat
+        (seat, door)
     }
 }
 

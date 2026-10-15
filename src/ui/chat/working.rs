@@ -151,6 +151,7 @@ fn compact(ui: &mut egui::Ui, row: &Row) -> egui::Response {
         indent: 0.0,
         aside: None,
         beneath,
+        door: None,
     }
     .paint(ui)
 }

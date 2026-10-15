@@ -1,7 +1,8 @@
 +++
 title = "a sent message is on the glass the frame it is sent: an operator row at the transcript's end in the pending ink until the engine acknowledges it, retired when the transcript carries it, back in the box when refused"
 created = 1792034030
-updated = 1792034030
+updated = 1792034219
+claimant = "Sending"
 parent = "bl-4792"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

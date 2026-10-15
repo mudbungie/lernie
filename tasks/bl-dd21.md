@@ -1,7 +1,8 @@
 +++
 title = "verify the three-stage fold and the elided collapsed bar on the glass, then install and relaunch"
 created = 1792036018
-updated = 1792036018
+updated = 1792037116
+claimant = "Watching"
 parent = "bl-4446"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

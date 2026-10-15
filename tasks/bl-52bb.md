@@ -1,7 +1,8 @@
 +++
 title = "every clickable element on the glass lights under the pointer: the audit of every click seat outside chat.rs, and the ones that did not"
 created = 1792034032
-updated = 1792034032
+updated = 1792034230
+claimant = "Lighting"
 parent = "bl-4792"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

@@ -130,7 +130,8 @@ fn window(root: &std::path::Path) -> Verdict {
         engines: place.engines,
         bar: lernie::ui::bar::Bar {
             pinned: place.pinned,
-            left_at: None,
+            dragged: place.dragged,
+            ..Default::default()
         },
         ..Model::default()
     };

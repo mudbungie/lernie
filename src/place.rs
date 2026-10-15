@@ -27,7 +27,8 @@
 //!
 //! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
 //! which engine is open, what each engine's last opening ranks as, and the
-//! wall last aimed under each — and whether the bar is pinned open (§4.44).
+//! wall last aimed under each — and whether the bar is pinned open (§4.44)
+//! and the two widths its edge was dragged to (§4.45 item 2).
 //! **A JSON object rather than lines**, so
 //! the next fact REMOTE §7 names — a scroll, a draft — is a key beside these
 //! rather than a format. An unknown key is ignored and a missing
@@ -45,6 +46,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
 
+use crate::ui::bar::Dragged;
 use crate::ui::{Aim, Engines};
 
 /// The file, under the state root. One name, so there is nothing to configure.
@@ -59,6 +61,11 @@ const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
 /// Whether the bar is pinned open (DESIGN §4.44).
 const PINNED: &str = "pinned";
+/// The bar's two widths where the operator dragged them (DESIGN §4.45 item
+/// 2), one key each and flat — **written only where set**, so a seat that
+/// dragged nothing writes nothing and reads the policy's defaults.
+const BAR_SHUT: &str = "bar_shut";
+const BAR_OPEN: &str = "bar_open";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
@@ -76,6 +83,9 @@ pub struct Place {
     /// **Whether the bar is pinned open** (DESIGN §4.44): where the bar
     /// stands is a layout the operator chose, so it outlives the run.
     pub pinned: bool,
+    /// **The bar's two widths, where the operator dragged them** (DESIGN
+    /// §4.45 item 2; `crate::ui::bar::Dragged`).
+    pub dragged: Dragged,
 }
 
 impl Place {
@@ -87,6 +97,7 @@ impl Place {
             aim: model.aim.clone(),
             engines: model.engines.clone(),
             pinned: model.bar.pinned,
+            dragged: model.bar.dragged,
         }
     }
 }
@@ -117,7 +128,16 @@ pub fn read(root: &Path) -> Place {
         // reasoning). A key that is absent, null or some other shape entirely
         // is absence, which is rung 4 read on this box's own file — and here
         // absence is the policy's own answer rather than a missing number.
+        dragged: Dragged {
+            shut: width(&held, BAR_SHUT),
+            open: width(&held, BAR_OPEN),
+        },
     }
+}
+
+/// One dragged width, in points, or absence.
+fn width(held: &Value, key: &str) -> Option<f32> {
+    serde_json::from_value(held.get(key)?.clone()).ok()
 }
 
 /// The aim, where the file carries a whole one. A half-written aim is no aim:
@@ -152,7 +172,7 @@ fn table<T>(held: &Value, key: &str, read: impl Fn(&Value) -> Option<T>) -> BTre
 /// losing the operator's place in silence, and by the time this runs there is
 /// no window left to paint it in.
 pub fn write(root: &Path, place: &Place) -> Result<(), String> {
-    let body = json!({
+    let mut body = json!({
         AIM: place
             .aim
             .clone()
@@ -162,6 +182,15 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         AIMED: place.engines.aimed,
         PINNED: place.pinned,
     });
+    let widths = [
+        (BAR_SHUT, place.dragged.shut),
+        (BAR_OPEN, place.dragged.open),
+    ]
+    .into_iter()
+    .filter_map(|(key, width)| Some((key.to_owned(), json!(width?))));
+    if let Some(keys) = body.as_object_mut() {
+        keys.extend(widths);
+    }
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
     std::fs::write(at(root), body.to_string()).map_err(|e| format!("{}: {e}", at(root).display()))
 }

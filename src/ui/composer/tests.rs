@@ -22,28 +22,32 @@ use serde_json::json;
 /// with nothing selected on it is where a conversation is *begun*.
 #[test]
 fn what_the_composer_is_for_follows_from_what_is_selected() {
-    for (model, expected) in [
-        (Model::default(), NOWHERE),
+    // **Built one at a time**: four models side by side are more than the
+    // stack array clippy allows (`large_stack_arrays`), so the table holds
+    // how to build each rather than the four built.
+    let cases: [(fn() -> Model, String); 4] = [
+        (Model::default, NOWHERE.to_owned()),
         (
-            Model {
+            || Model {
                 aim: None,
                 ..seated()
             },
-            NOWHERE,
+            NOWHERE.to_owned(),
         ),
         (
-            Model {
+            || Model {
                 conversation: None,
                 ..seated()
             },
-            start::goal("home", false).as_str(),
+            start::goal("home", false),
         ),
-        (seated(), HINT),
-    ] {
-        let mut model = model;
+        (seated, HINT.to_owned()),
+    ];
+    for (build, expected) in cases {
+        let mut model = build();
         let painted = pane(|ui| render(ui, &mut model));
         assert!(
-            painted.lines().any(|line| line.starts_with(expected)),
+            painted.lines().any(|line| line.starts_with(&expected)),
             "{expected:?}:\n{painted}"
         );
     }

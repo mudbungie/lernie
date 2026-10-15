@@ -2,16 +2,8 @@
 //! glyph column and the open width in [`EASE`], on egui's input clock.
 
 use super::super::{EASE, LINGER, SHUT, open_width};
-use super::{DESK, tick};
+use super::{DESK, panel, tick};
 use crate::test_support::window::seated;
-
-/// **The width the bar's panel stood at** on the last frame.
-fn panel(ctx: &egui::Context) -> f32 {
-    egui::containers::panel::PanelState::load(ctx, egui::Id::new("bar"))
-        .expect("the bar stood")
-        .rect
-        .width()
-}
 
 /// **The edge eases between its two widths in [`EASE`]** (bl-c72e): the
 /// frame the pointer enters it is still near the glyph column, mid-way it is

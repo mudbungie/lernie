@@ -5863,7 +5863,10 @@ changes.
    dragged while collapsed it sets the collapsed width, dragged while
    expanded the expanded one — which width a drag writes is which state the
    bar was in when the drag began, so a bar that opens under the pointer
-   mid-drag does not hand the drag to the other width. Each is a number the
+   mid-drag does not hand the drag to the other width — and the edge is not
+   the bar: a pointer reaching for the collapsed bar's edge does not open
+   what it came to drag, and while the edge is in hand the bar stays in the
+   state it was grabbed in, whatever the pointer crosses. Each is a number the
    operator set, which is §4.39's class of fact — *per-seat UI state … the
    seat's own* — so each lives in the place file (`bar_shut`, `bar_open`,
    floats read through serde and never through a cast), and §4.44's two
@@ -6238,13 +6241,12 @@ that everything goes through one painter.
 | `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
-| `src/ui/bar.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): its two widths, each dragged and remembered, and the linger between them, the pin and `+ new` at its head; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~170, ~120, ~70 |
+| `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed wall's conversations as `convs::` spells them; and the workspace at its foot, with the workspace's dropup standing inside it. | ~200, ~130, ~90, ~60 |
 | `src/ui/status.rs` | **the status rule** (§4.42): the state slot — the notice, the selected conversation's word and age, or `ready` — the facts between it and the name, which facts fit at a width, and the name at the right end; the model and the name as doors, each the menu row it fires (item 10). | ~250 |
 | `src/ui/status/selectors.rs`, `status/diagnostics.rs`, `status/dropup.rs` | **the rule's line** (§4.42 item 11, §4.44 item 3): the four selectors and their marks, the workspace's run the bar's foot paints, this conversation's diagnostics and the aimed engine's dial sentence, and a selector's dropup — its list over the segment, its keys and its picks. | ~120 each |
 | `src/ui/status/waiting.rs` | **the seat-wide waiting count off the rule** (item 11, bl-4cac): leaving out a channel that will not dial, painted as the queue's door on the seat panel and at the switcher's head. | ~35 |
 | `src/ui/model/dropup.rs` | **a dropup between frames**: which selector is open, its cursor, whether its read has landed, the read it posts and what a pick fires (`dropup/choices.rs`: what each lists). | ~200 |
 | `src/ui/switcher.rs` | **the switcher** (§4.42): the roster as an overlay, opened by Ctrl+X or `/conversations`, kept open by the walk and closed by a choice. | ~55 |
-| `src/ui/bar.rs` | **the bar** (§4.44, §4.45): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, each of its two widths dragged at its edge; `+ new` and the workspace dropup at its foot. | ~250 |
 | `src/ui/tabs.rs` | **the tabs** (§4.44): the strip over the transcript, one tab per conversation opened in the aimed workspace, filled by `Model::select` alone, each with its close. | ~110 |
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, the four bubbles by role (§4.45), the glyph a control wears, and the spacing and type scales — every byte once. | ~280 |
 | `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule (`paint/row.rs`: one line, or a block of lines under one seat), the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |

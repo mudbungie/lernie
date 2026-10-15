@@ -1,13 +1,17 @@
 //! The bar: its two widths and the clock between them, the pin, its rows,
 //! its head's `+ new`, and what it says with nothing to list.
 
-use super::{Bar, DESK, EMPTY, LINGER, NOTHING_AIMED, SHUT, cut, open_width};
+use super::{Bar, DESK, EMPTY, LINGER, NOTHING_AIMED, open_width};
 use crate::paint_probe::{Seen, frame::Window, seen_of};
 use crate::test_support::window::{conv, seated};
 use crate::ui::{Model, theme};
 
 /// A row is its whole block.
 mod block;
+/// What bounds the two widths: the defaults, the floor, the ceiling.
+mod bounds;
+/// The edge, dragged: which width a drag writes, and the state it keeps.
+mod drag;
 /// The edge's ease between its two widths.
 mod ease;
 /// The workspace at the foot, and its list.
@@ -21,9 +25,23 @@ pub(super) fn tick(
     time: f64,
     at: Option<egui::Pos2>,
 ) -> egui::FullOutput {
-    let mut input = crate::paint_probe::frame::screen_sized(DESK, 900.0);
+    let moved = at.map_or(egui::Event::PointerGone, egui::Event::PointerMoved);
+    step(ctx, model, DESK, time, vec![moved])
+}
+
+/// **One frame at `time` carrying `events`**, on a window `width` wide and
+/// 900 tall — [`tick`] with the pointer's buttons and the window's width in
+/// hand, which a drag needs.
+pub(super) fn step(
+    ctx: &egui::Context,
+    model: &mut Model,
+    width: f32,
+    time: f64,
+    events: Vec<egui::Event>,
+) -> egui::FullOutput {
+    let mut input = crate::paint_probe::frame::screen_sized(width, 900.0);
     input.time = Some(time);
-    input.events = vec![at.map_or(egui::Event::PointerGone, egui::Event::PointerMoved)];
+    input.events = events;
     ctx.run(input, |ctx| crate::ui::render(ctx, model))
 }
 
@@ -36,7 +54,15 @@ pub(super) fn bar(output: &egui::FullOutput) -> Vec<Seen> {
 }
 
 /// The seated conversation's open row, glyph and name.
-const ROW: &str = "✔ port the paint probe";
+pub(super) const ROW: &str = "✔ port the paint probe";
+
+/// **The width the bar's panel stood at** on the last frame.
+pub(super) fn panel(ctx: &egui::Context) -> f32 {
+    egui::containers::panel::PanelState::load(ctx, egui::Id::new("bar"))
+        .expect("the bar stood")
+        .rect
+        .width()
+}
 
 /// **Click the bar's run reading `text`** — aimed off the glyphs the bar
 /// painted, since the same words can stand on the column too.
@@ -58,17 +84,18 @@ pub(super) fn said(output: &egui::FullOutput) -> Vec<String> {
 
 /// **The clock, as a value**: the pointer over keeps it open; leaving starts
 /// the linger, which asks for the repaint at the moment it lapses; at
-/// [`LINGER`] it shuts and forgets; and the pin holds it open with no repaint
-/// owed.
+/// [`LINGER`] — 0.75 s, the number read off the ruling (DESIGN §4.45 item
+/// 1) — it shuts and forgets; and the pin holds it open with no repaint owed.
 #[test]
 fn the_linger_runs_from_when_the_pointer_left() {
+    assert!((LINGER - 0.75).abs() < f64::EPSILON, "the ruling's number");
     let mut bar = Bar::default();
     assert!(!bar.open(0.0), "shut at rest");
     assert_eq!(bar.heard(0.0, false), None);
     assert_eq!(bar.heard(1.0, true), None);
     assert!(bar.open(1.0));
-    assert_eq!(bar.heard(2.0, false), Some(0.5), "half a second left");
-    assert!(bar.open(2.0), "lingering");
+    assert_eq!(bar.heard(1.5, false), Some(0.25), "a quarter second left");
+    assert!(bar.open(1.5), "lingering");
     assert!(!bar.open(1.0 + LINGER));
     assert_eq!(bar.heard(1.0 + LINGER, false), None);
     assert_eq!(bar.left_at, None, "forgotten once lapsed");
@@ -78,34 +105,7 @@ fn the_linger_runs_from_when_the_pointer_left() {
     assert_eq!(bar.heard(9.5, false), None, "a pinned bar owes no repaint");
 }
 
-/// **The widths**: a quarter of the desk, never more than two fifths of the
-/// window — so at the matrix's phone the column keeps three fifths — and the
-/// collapsed one holds a glyph and three characters uncut.
-#[test]
-fn the_widths_are_a_quarter_of_the_desk_and_a_glyph_column() {
-    let sizes = crate::snapshot::SIZES;
-    let near = |a: f32, b: f32| (a - b).abs() < 0.01;
-    assert!(near(sizes[2].1, DESK), "the desk is the matrix's");
-    assert!(near(open_width(sizes[2].1), 350.0));
-    assert!(near(open_width(sizes[1].1), 350.0));
-    assert!(
-        near(open_width(sizes[0].1), 160.0),
-        "two fifths of the phone"
-    );
-    assert_eq!(cut("port the paint probe"), "por");
-    assert_eq!(cut("ab"), "ab");
-    let ctx = egui::Context::default();
-    let shut = tick(&ctx, &mut seated(), 0.0, None);
-    let row = bar(&shut)
-        .into_iter()
-        .find(|run| run.text.ends_with("por"))
-        .expect("the collapsed row");
-    assert_eq!(row.text, format!("{} por", theme::glyph::AT_REST));
-    assert_eq!(row.shown, row.laid, "uncut");
-    assert!(row.laid.max.x <= SHUT, "inside the glyph column");
-}
-
-/// **The pointer expands it the frame it enters, and it lingers 1.5 s after
+/// **The pointer expands it the frame it enters, and it lingers 0.75 s after
 /// it leaves**, then shuts on the repaint it asked for.
 #[test]
 fn the_pointer_opens_it_and_it_lingers_after() {
@@ -123,16 +123,16 @@ fn the_pointer_opens_it_and_it_lingers_after() {
         "a pointer resting in the open bar keeps it open"
     );
     let away = Some(egui::pos2(900.0, 300.0));
-    let left = tick(&ctx, &mut model, 3.5, away);
+    let left = tick(&ctx, &mut model, 3.25, away);
     assert!(open(&left), "lingering");
     let owed = left.viewport_output[&egui::ViewportId::ROOT].repaint_delay;
     assert!(
         owed <= std::time::Duration::from_secs_f64(LINGER),
         "{owed:?}"
     );
-    // Last over at 3.0, so it shuts at 4.5.
-    assert!(open(&tick(&ctx, &mut model, 4.4, away)), "still lingering");
-    assert!(!open(&tick(&ctx, &mut model, 4.6, away)), "lapsed");
+    // Last over at 3.0, so it shuts at 3.75.
+    assert!(open(&tick(&ctx, &mut model, 3.7, away)), "still lingering");
+    assert!(!open(&tick(&ctx, &mut model, 3.8, away)), "lapsed");
     assert!(
         !open(&tick(&ctx, &mut model, 6.0, None)),
         "the pointer gone"

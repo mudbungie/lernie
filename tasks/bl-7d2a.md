@@ -1,7 +1,8 @@
 +++
 title = "DESIGN §4.45 items 2 and 5 amended: the collapsed bar elides at its width, and the working folds in three stages"
 created = 1792036015
-updated = 1792036015
+updated = 1792036018
+claimant = "Surveying"
 parent = "bl-4446"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

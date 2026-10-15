@@ -1,7 +1,8 @@
 +++
 title = "a step or working toggle in one conversation toggles the same row in every conversation: the fold's memory is keyed by row index alone"
 created = 1792037250
-updated = 1792037250
+updated = 1792037270
+claimant = "Keying"
 parent = "bl-4446"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

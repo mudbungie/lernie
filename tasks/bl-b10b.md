@@ -1,7 +1,8 @@
 +++
 title = "cargo deny fails every gate on RUSTSEC-2026-0349: rustls 0.23.45 in the lockfile predicts the server's key-exchange group from an unauthenticated ServerHello; the fix is 0.23.46 and the move is a lockfile update of an approved dependency"
 created = 1792034084
-updated = 1792034084
+updated = 1792034085
+claimant = "Surveying"
 priority = 1
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++

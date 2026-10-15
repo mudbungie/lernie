@@ -3,7 +3,8 @@ name: CI
 # **The gate, run by a machine rather than by whoever remembered.**
 #
 # `make ci` is `make check` and nothing here restates a step of it: fmt-check,
-# then lint (line-cap, leak-scan, clippy, rules-audit, cargo deny), then the
+# then lint (line-cap, leak-scan, clippy, rules-audit, cargo deny — bans,
+# licences, sources; advisories are advisories.yml's), then the
 # 100% coverage floor. A CI file that spelled out its own steps would be a
 # second definition of green, and the two would drift within a week.
 #

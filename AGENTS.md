@@ -30,7 +30,7 @@ third answer.
 
 `make check` is the complete gate: `fmt-check → lint → coverage`, where `lint`
 is `line-cap → deploy-selftest → protocol-gate → leak-scan → clippy -D warnings
-→ rules-audit → cargo deny check`. The pre-commit hook (`.githooks/pre-commit`,
+→ rules-audit → cargo deny check bans licenses sources`. The pre-commit hook (`.githooks/pre-commit`,
 the mainline refusal) execs `scripts/pre-commit`, which is `exec bl-gate "$@"`:
 the gate is `bl-gate` from userconf (`~/userconf/bin/bl-gate`, ops bl-1f80,
 `~/ops/remote-builds.md` "Phase 2"), the one copy every repo on this machine
@@ -41,7 +41,23 @@ tree and otherwise has the noodlezoo builder run `make check` and sign one
 (`bl-remote-gate`, ~/ops/noodlezoo/docs/builder.md). Exit 0 pass, 1 the builder
 failed the tree (`ssh builder cat /tank/build/out/<sha>/log`), 75 no verdict
 (commit refused), never `cargo test`. `bl-remote-run <target>` runs any make
-target on the builder when you want tests before committing. Nobody restates a
+target on the builder when you want tests before committing.
+
+**Advisories are not in the gate** (bl-9c29; ops bl-fb2c). A RustSec advisory
+is a fact about the day, not the tree: with `cargo deny check advisories` in
+`make check`, every tree in every Rust repo went red the hour one published
+(RUSTSEC-2026-0285, then -0349), each time with the same lockfile bump as the
+only answer and nothing in the refused commit to blame. So `make deny` judges
+bans, licences and sources, and the advisories are
+`.github/workflows/advisories.yml`'s: daily and on dispatch it runs `make
+advisories`, and on a finding `make mend-advisories` (every advised crate
+moved with `cargo update -p`, the names read off cargo-deny's JSON), commits
+the lockfile on a branch, dispatches `ci.yml` on that branch — the one
+definition of green — fast-forwards `main` on a pass, deletes the branch and
+dispatches `release-plz.yml`. A day `main` moved underneath, the push fails
+and the next day's run starts again from the new `main`; an advisory with no
+fixed version fails the run, which is the one case that is a hand's. A gate
+failure on `deny` is therefore about the tree, never about the calendar. Nobody restates a
 step the Makefile defines. Run `make install-hooks` once per clone — it seats
 `pre-commit` **and** `commit-msg`.
 

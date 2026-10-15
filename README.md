@@ -220,7 +220,9 @@ login shell's, so a bare name launches nothing wherever `~/.local/bin` reached
 entry whose `Exec` resolves nowhere; the tracked asset stays generic.
 
 `make lint` is `line-cap`, then `leak-scan`, then `cargo clippy --all-targets --
--D warnings`, then `rules-audit`, then `cargo deny check`.
+-D warnings`, then `rules-audit`, then `cargo deny check bans licenses
+sources` (advisories are the daily `advisories.yml` workflow's, which mends
+the lockfile itself — see `CLAUDE.md`, *Advisories are not in the gate*).
 
 ### Looking at the window without a compositor
 

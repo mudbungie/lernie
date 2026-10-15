@@ -1,7 +1,8 @@
 +++
 title = "DESIGN §4.45: the chat as state — the ruling, its seven readings, what each amends in §4.42/§4.44 and STYLE §2/§5, and the module-map rows"
 created = 1792034028
-updated = 1792034028
+updated = 1792034034
+claimant = "Surveying"
 parent = "bl-4792"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

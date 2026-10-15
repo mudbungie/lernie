@@ -4,12 +4,15 @@
 //! own laid by `crate::ui::bar` — the same box over a different span.
 //!
 //! It is the overlay's frame over a span of the pane rather than across it
-//! (`crate::ui::overlay::float_at`), laid at the bottom of the central panel
-//! where the rule begins — a child region and not an `egui::Area`, for the
-//! overlay's own reason: a fresh area paints nothing on its first frame. It
-//! lists what [`Model::choices`] holds at once, ↑↓ walk it, Enter or a click
-//! picks, Esc or a click anywhere else closes it — and it stands down with the
-//! rule under an overlay and under the completion menu.
+//! (`crate::ui::overlay::float_at`), **laid on a foreground layer whose foot
+//! is the rule's top edge** (§4.45 item 3): the rule stands under the box
+//! now, so a list opening upward from its segment floats over the box, as the
+//! workspace's floats over the bar's rows — and only while it stands. It is a
+//! child region and not an `egui::Area`, for the overlay's own reason: a
+//! fresh area paints nothing on its first frame. It lists what
+//! [`Model::choices`] holds at once, ↑↓ walk it, Enter or a click picks, Esc
+//! or a click anywhere else closes it — and it stands down with the rule
+//! under an overlay and under the completion menu.
 
 use crate::ui::{Model, Pick, Selector, theme};
 
@@ -19,6 +22,8 @@ const ANCHOR: &str = "the open selector's segment";
 /// The pass on which a segment was clicked, so that click is not also the
 /// click elsewhere that closes the list it opened.
 const TOGGLED: &str = "the pass a selector was clicked on";
+/// The list's layer, named once.
+const LAYER: &str = "a selector's dropup over the box";
 /// The box's own name.
 pub const NAME: &str = "a selector's dropup";
 /// What the list says under the rows while it has none.
@@ -88,12 +93,26 @@ pub fn keys(ctx: &egui::Context, model: &mut Model) {
     }
 }
 
-/// **Paint the open list over its rule segment** — every selector's but the
-/// workspace's, which stands at the bar's foot (`crate::ui::bar`).
-pub fn render(ui: &mut egui::Ui, model: &mut Model) {
-    if !footed(model) {
-        stand(ui, model);
+/// **Paint the open list over its rule segment, its foot on `foot`** — the
+/// rule's top edge — on a layer above the column `ui` is: every selector's
+/// list but the workspace's, which stands at the bar's foot
+/// (`crate::ui::bar`). The room is the column run down to `foot`, so the
+/// list keeps the column's margins and covers the box between.
+pub fn render(ui: &egui::Ui, model: &mut Model, foot: f32) {
+    if footed(model) {
+        return;
     }
+    let column = ui.max_rect();
+    let room = egui::Rect::from_min_max(column.left_top(), egui::pos2(column.right(), foot));
+    let id = egui::Id::new(LAYER);
+    let mut ui = egui::Ui::new(
+        ui.ctx().clone(),
+        id,
+        egui::UiBuilder::new()
+            .layer_id(egui::LayerId::new(egui::Order::Foreground, id))
+            .max_rect(room),
+    );
+    stand(&mut ui, model);
 }
 
 /// Whether the open list is the workspace's, which the bar's foot lays.

@@ -17,11 +17,16 @@ use crate::ui::{Chunk, Model};
 
 /// Every brand-ringed rectangle on the glass after `keys`, and the model.
 fn ringed(model: &mut Model, keys: &[egui::Key]) -> (Vec<egui::Rect>, String) {
+    ringed_by(model, keys.iter().map(|key| vec![press(*key)]).collect())
+}
+
+/// The same, after one frame per entry of `frames`, each with its events.
+fn ringed_by(model: &mut Model, frames: Vec<Vec<egui::Event>>) -> (Vec<egui::Rect>, String) {
     let window = Window::new();
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, model);
     window.frame(Vec::new(), &mut body);
-    for key in keys {
-        window.frame(vec![press(*key)], &mut body);
+    for events in frames {
+        window.frame(events, &mut body);
     }
     let output = window.frame(Vec::new(), &mut body);
     let rings = crate::paint_probe::strokes_of(&output)
@@ -33,7 +38,10 @@ fn ringed(model: &mut Model, keys: &[egui::Key]) -> (Vec<egui::Rect>, String) {
 }
 
 /// **At rest the one thing ringed is the prompt line**, because the caret
-/// lives there (bl-b1a1), and a Tab takes the keyboard on from it.
+/// lives there (bl-b1a1), and a Tab takes the keyboard on from it — onto
+/// what is laid after the box, or round to the bar's first control where
+/// nothing is (the seated window lays no strip and no fold after it), which
+/// egui gives on the frame after — and the box does not take it back.
 #[test]
 fn the_box_is_ringed_at_rest_and_a_tab_moves_on_from_it() {
     let mut model = seated();
@@ -41,7 +49,7 @@ fn the_box_is_ringed_at_rest_and_a_tab_moves_on_from_it() {
     assert_eq!(rings.len(), 1, "the box holds the caret at rest: {rings:?}");
     let window = Window::new();
     let box_id = egui::Id::new(crate::ui::keys::BOX_ID);
-    for key in [None, Some(egui::Key::Tab)] {
+    for key in [None, Some(egui::Key::Tab), None] {
         let events = key.map(|key| vec![press(key)]).unwrap_or_default();
         window.frame(events, |ctx| crate::ui::render(ctx, &mut model));
     }
@@ -177,14 +185,28 @@ fn a_tab_reaches_new_and_space_on_it_begins_a_conversation() {
     );
 }
 
-/// **A Tab off the box lands on the rule's first selector, ringed** (bl-8e3e),
-/// and Enter or Space there opens its dropup — the provider's, since the
-/// workspace left the rule for the bar's foot (DESIGN §4.44).
+/// One Shift+Tab: the key that walks the Tab order backward.
+fn back() -> egui::Event {
+    egui::Event::Key {
+        key: egui::Key::Tab,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::SHIFT,
+    }
+}
+
+/// **A Shift+Tab off the box lands on the rule, ringed** (bl-8e3e), and
+/// Enter or Space there opens its dropup. The Tab order is the laying order,
+/// and the rule is laid before the box since it stands under it (DESIGN
+/// §4.45 item 3; `crate::ui::shell`): so the walk back from the box is the
+/// rule read right to left — the name, then priority, which is the second
+/// stop — and the walk on from it is the transcript.
 #[test]
-fn a_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
+fn a_shift_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
     for key in [egui::Key::Enter, egui::Key::Space] {
         let mut model = crate::test_support::window::selecting();
-        let (rings, _) = ringed(&mut model, &[egui::Key::Tab]);
+        let (rings, _) = ringed_by(&mut model, vec![vec![back()], vec![back()]]);
         assert_eq!(
             rings.len(),
             1,
@@ -192,12 +214,12 @@ fn a_tab_lands_on_a_ringed_selector_that_enter_and_space_open() {
         );
         let window = Window::new();
         let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
-        for events in [Vec::new(), vec![press(egui::Key::Tab)], vec![press(key)]] {
+        for events in [Vec::new(), vec![back()], vec![back()], vec![press(key)]] {
             window.frame(events, &mut body);
         }
         assert_eq!(
             model.dropup.map(|open| open.selector),
-            Some(crate::ui::Selector::Provider),
+            Some(crate::ui::Selector::Priority),
             "{key:?} on the focused selector opens it"
         );
     }

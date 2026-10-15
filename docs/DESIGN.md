@@ -5472,8 +5472,11 @@ parts, in its vertical order, each with what it becomes here.
     **The dropup** (`status/dropup.rs`, `model/dropup.rs`): a click on a
     segment opens a framed list over it, opening upward from the rule — the
     overlay's frame over a span (`overlay::float_at`), a child region laid
-    at the central panel's foot as the completion menu is, never an
-    `egui::Area`, so its first frame paints. **It is as wide as its longest row,
+    on a foreground layer whose foot is the rule's top edge (§4.45 item 3:
+    the rule is under the box, so the list floats over the box, as the
+    workspace's floats over the bar's rows; it was laid at the central
+    panel's foot while the rule stood there), never an `egui::Area`, so its
+    first frame paints. **It is as wide as its longest row,
     capped at the pane** (bl-8d6d), each row measured as the row paints it
     (`theme::paint::row_width`, at the body size) — measured at the rule's
     small size it came out short, and a long model id was cut with `…` at a
@@ -5492,8 +5495,11 @@ parts, in its vertical order, each with what it becomes here.
     stays as the per-role editor (`/roles`); **`/model` and Ctrl+O open the
     model's dropup** — from under a pane too: opening a dropup puts down
     whatever stands, the enrollment excepted, as Ctrl+X does (bl-27dd;
-    a dropup opened under a cover was put down by it the same frame). A Tab off the prompt lands on the selectors in order,
-    and the one that holds the keyboard wears the brand ring
+    a dropup opened under a cover was put down by it the same frame). A Shift+Tab off the prompt lands on the rule — the name,
+    then the selectors right to left — and a Tab walks them in order
+    (§4.45 item 3: the Tab order is the laying order, and the rule is laid
+    before the box since it stands under it);
+    the one that holds the keyboard wears the brand ring
     (`theme::paint::link`, bl-8e3e — STYLE §1's one stroke); Enter or
     Space opens it, as a click does.
 
@@ -5887,7 +5893,12 @@ changes.
    only while it stands. The slash menu keeps floating over the transcript's
    foot, directly above the box it completes. The notice too long for the
    rule still stands whole above the rule (§4.42 item 11) — above the rule,
-   under the box.
+   under the box. **The Tab order follows**: egui walks widgets in the order
+   they are laid, and bottom panels are laid in their stacking order read
+   upward — the rule, the dock, the box, the ask — so a Shift+Tab off the
+   box lands on the rule's name and walks its selectors right to left, and
+   a Tab off the box goes on up into the transcript; every control is one
+   walk away, as before, and no binding is added to put the rule first.
 
 4. **A sent message is on the glass the frame it is sent** (`Model::sent`,
    `composer::fire`, `chat::rows`; bl-ca3d). The ruling's own sentence: *there

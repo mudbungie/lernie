@@ -4,7 +4,8 @@
 //!
 //! It is §4.19's queue entry for the one conversation on the glass, painted
 //! where the answer is typed: a framed box in the attention accent between
-//! the transcript and the rule, carrying what the queue's row says about it
+//! the transcript and the prompt line — the one thing that stands between
+//! them (§4.45 item 3) — carrying what the queue's row says about it
 //! — the parked call, the flag, the signals, the failure, the last words —
 //! and its choices as numbered rows. The prompt keeps the caret while it
 //! asks (bl-1252), so the digits pick, the arrows move and Enter answers only

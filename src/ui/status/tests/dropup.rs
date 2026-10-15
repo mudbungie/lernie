@@ -205,3 +205,46 @@ fn a_long_model_id_stands_whole_at_the_desk() {
         .expect("the long row is on the glass");
     assert_eq!(row.text, long, "cut: {:?}", row.text);
 }
+
+/// **The list's foot stands on the rule and the list floats over the box**
+/// (DESIGN §4.45 item 3), at the desk and at the phone: every row of it
+/// stands above the rule's line, and the lowest of them below the box's top
+/// — the rows cover the box, not the transcript's foot.
+#[test]
+fn the_list_stands_on_the_rule_over_the_box() {
+    for (w, h) in [(1400.0, 900.0), (400.0, 800.0)] {
+        let mut model = selecting();
+        model.drop_up(Selector::Model);
+        let window = Window::sized(w, h);
+        window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+        let seen = glass(&window, &mut model);
+        let lowest = |pick: &dyn Fn(&crate::paint_probe::Seen) -> bool| {
+            seen.iter()
+                .filter(|run| pick(run))
+                .map(|run| run.laid)
+                .max_by(|a, b| a.min.y.total_cmp(&b.min.y))
+        };
+        let rule = lowest(&|run| run.text == crate::ui::status::LEAD).expect("the rule");
+        let prompt = lowest(&|run| run.text == theme::glyph::PROMPT && run.ink == theme::BRAND)
+            .expect("the box");
+        let rows: Vec<_> = seen
+            .iter()
+            .filter(|run| run.text == "• house-model-1" || run.text == "house-model-2")
+            .map(|run| run.laid)
+            .collect();
+        assert_eq!(rows.len(), 2, "at {w}: both rows are on the glass");
+        for row in &rows {
+            assert!(
+                row.max.y <= rule.min.y + 1.0,
+                "at {w}: the row is above the rule"
+            );
+        }
+        let foot = rows.iter().map(|row| row.max.y).fold(0.0, f32::max);
+        assert!(foot > prompt.min.y, "at {w}: the list covers the box");
+        let hint = lowest(&|run| run.text == super::super::dropup::HINT).expect("the hint");
+        assert!(
+            hint.max.y <= rows[0].min.y + 1.0,
+            "at {w}: the keys stand over the rows"
+        );
+    }
+}

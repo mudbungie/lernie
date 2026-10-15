@@ -236,8 +236,9 @@ them around the chosen one, never a scroll — with the keys said in one
 and the chosen one wears `RAISED`.
 
 **The ask** (`ask`): the overlay's box with its frame and its name in the
-attention accent, standing between the transcript and the rule while the
-selected conversation asks: the queue row's words in the queue's own inks,
+attention accent, standing between the transcript and the prompt line
+while the selected conversation asks — the rule is under the prompt
+(DESIGN §4.45): the queue row's words in the queue's own inks,
 then its choices as numbered rows, `1.` to `6.`, the chosen one `RAISED`.
 
 **A trail** (`chat`): stems `├─` `└─` `│` in `INK_FAINT`; the fold head

@@ -1,5 +1,6 @@
-//! **The status rule**: the conversation's own line, between the transcript
-//! and the prompt (DESIGN §4.42, item 11; `docs/STYLE.md` §2).
+//! **The status rule**: the conversation's own line, under the prompt at the
+//! window's bottom edge (DESIGN §4.42, item 11; §4.45 item 3 put it under
+//! the box; `docs/STYLE.md` §2).
 //!
 //! Left to right: `— <provider> | <model> | <effort> | <priority> |
 //! <state> · <age> | <tokens> | <spend> | <context> — <name>`. The workspace
@@ -15,8 +16,9 @@
 //! **A notice too long for the line is never cut** (bl-7e3e; bl-3d0f ruled
 //! why: the half a cut sentence loses is the remedy) **and never costs a
 //! fact**: where it does not fit beside every run and the name, it stands
-//! whole on its own lines directly above the rule, wrapped, in its ink, until
-//! Esc — and the slot says what it says with no notice.
+//! whole on its own lines directly above the rule — under the box, since the
+//! rule is — wrapped, in its ink, until Esc; and the slot says what it says
+//! with no notice.
 //!
 //! **What runs out of width drops from the right** — the diagnostics, then
 //! priority, then effort — and the provider and model never drop:

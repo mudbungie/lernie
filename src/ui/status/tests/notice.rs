@@ -32,8 +32,9 @@ fn glass(model: &mut Model, w: f32, h: f32) -> Vec<crate::paint_probe::Seen> {
 }
 
 /// **At the desk and at the phone the whole sentence reaches the glass**,
-/// uncut and inside the window, its remedy included — and the rule under it
-/// still says where you are: the slot its calm word, the name at its end.
+/// uncut and inside the window, its remedy included, above the rule and
+/// under the box — and the rule under it still says where you are: the slot
+/// its calm word, the name at its end.
 #[test]
 fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
     for (w, h) in [(1400.0, 900.0), (400.0, 800.0)] {
@@ -60,6 +61,15 @@ fn a_long_notice_stands_whole_above_the_rule_at_every_width() {
             lowest <= rule.laid.min.y,
             "at {w}: the notice is above the rule"
         );
+        // And under the box (DESIGN §4.45 item 3): the rule is under the box
+        // now, and the notice is the rule's.
+        let prompt = seen
+            .iter()
+            .filter(|run| run.text == theme::glyph::PROMPT && run.ink == theme::BRAND)
+            .map(|run| run.laid.max.y)
+            .fold(0.0, f32::max);
+        let highest = said.iter().map(|run| run.laid.min.y).fold(h, f32::min);
+        assert!(prompt <= highest, "at {w}: the notice is under the box");
         // At the phone the diagnostics have dropped (item 11): the selectors
         // still say what you are talking to.
         assert!(

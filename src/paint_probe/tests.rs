@@ -2,7 +2,7 @@
 //! exists for — that it reads **painted glyphs** rather than the string that
 //! went in.
 
-use super::{collect_text, frame::Window, locate, seen_of, text_of};
+use super::{collect_text, covered, frame::Window, locate, seen_of, text_of};
 
 /// **The whole reason this module exists.** A label too wide for its container
 /// is elided by the toolkit, and `Galley::text()` would still report it whole —
@@ -189,5 +189,48 @@ fn a_filled_rect_reaches_the_fills_projection_and_a_clipped_one_does_not() {
     assert!(
         fills.iter().any(|(_, fill)| *fill != ink),
         "the panel's own ground is a fill too, and the projection carries it"
+    );
+}
+
+/// **A run under a box with words of its own is covered; a run under a bare
+/// slab is not** — the order of the walk is what answers it, and the words
+/// laid inside the later fill are what tell a box from a slab.
+#[test]
+fn a_run_is_covered_by_a_box_with_words_and_not_by_a_bare_slab() {
+    let window = Window::sized(200.0, 100.0);
+    let out = window.frame(Vec::new(), |ctx| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            let under = ui.label("under").rect;
+            let below = under.translate(egui::vec2(0.0, 30.0));
+            ui.painter()
+                .rect_filled(under.union(below).expand(2.0), 0.0, egui::Color32::BLACK);
+            ui.put(below, egui::Label::new("over"));
+            let slabbed = ui.label("slabbed").rect;
+            ui.painter()
+                .rect_filled(slabbed.expand(2.0), 0.0, egui::Color32::BLACK);
+        });
+    });
+    let bounds = |text: &str| {
+        let laid = seen_of(&out)
+            .into_iter()
+            .find(|seen| seen.text == text)
+            .expect("the run is on the glass")
+            .laid;
+        (
+            f64::from(laid.min.x),
+            f64::from(laid.min.y),
+            f64::from(laid.max.x),
+            f64::from(laid.max.y),
+        )
+    };
+    assert!(covered(&out, bounds("under")), "a box with a word over it");
+    assert!(
+        !covered(&out, bounds("over")),
+        "the box's own word is judged"
+    );
+    assert!(!covered(&out, bounds("slabbed")), "a slab carries nothing");
+    assert!(
+        !covered(&out, (0.0, 0.0, 1.0, 1.0)),
+        "nothing laid, nothing covered"
     );
 }

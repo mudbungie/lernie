@@ -33,6 +33,19 @@
 //! colour, a label whose ink and ground are the same theme token, and a control
 //! that reserved its rectangle and drew nothing in it. All four are the same
 //! defect from the operator's side: the layout is right and the glass is empty.
+//!
+//! # What it does not judge
+//!
+//! A rectangle under a box with words of its own. The box a pane floats over
+//! the conversation (`crate::ui::overlay`) is laid after the transcript and
+//! stands over its foot, so a transcript run under it is flat by design: the
+//! layout put it there AND put the box over it, and whether the box's own
+//! words are on the glass is the box's own leaves' question, which this asks.
+//! A slab is not a box: it carries no words, so a run under one stays judged
+//! and the defect above stays caught. The tree cannot tell a box from the pane
+//! under it — the toolkit lays both on one layer — so the question is put to
+//! the paint order (`crate::paint_probe::covered`), which is where *over* is
+//! decided.
 
 use crate::ui::Model;
 use egui_kittest::Harness;
@@ -127,11 +140,13 @@ pub(crate) fn complaints(at: &str, image: &RgbaImage, harness: &Harness<'_, Mode
         .filter_map(|node| {
             let label = words(&node)?;
             let bounds = node.bounding_box()?;
-            let rect = visible(
-                (bounds.x0, bounds.y0, bounds.x1, bounds.y1),
-                image.width(),
-                image.height(),
-            )?;
+            let bounds = (bounds.x0, bounds.y0, bounds.x1, bounds.y1);
+            // Named in full: the rule that confines forks to one file reads a
+            // bare `.output()` as a child's, and this is the frame's.
+            if crate::paint_probe::covered(Harness::output(harness), bounds) {
+                return None;
+            }
+            let rect = visible(bounds, image.width(), image.height())?;
             flat(image, rect).then(|| {
                 let (left, top, right, bottom) = rect;
                 format!(

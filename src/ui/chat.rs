@@ -5,13 +5,17 @@
 //! brand and its words in body ink; the model's prose carries a bar in the
 //! gutter in weak ink; a peer's, a tool's answer and the machinery's own
 //! words carry a dot. The trail — the calls the model made, their results,
-//! and its reasoning — is one group under a fold, `tool calls (3)`, each
-//! step on a stem drawn as the roster draws its threading, a call with a
-//! dot and its mark, a result folded to its head and unfolded in place. A
+//! and its reasoning — is one group under a fold, `tool calls (3)`
+//! ([`trail`]), open while the turn runs and shut once it settled. A
 //! `response` line parts a trail from the prose that follows it, and a
-//! hairline parts one turn from the next. No block wears a side rule and no
-//! block is bubbled; who spoke is the gutter glyph, and weight is still the
-//! speaker's (`theme::speaker`) on the words that name them.
+//! hairline parts one turn from the next. No block wears a side rule, and
+//! **every block stands on a bubble that says its role** (§4.45 item 7;
+//! `theme::bubble`): the operator's on the brand's tint, a trail on the
+//! ground inside a hairline, intermediate prose on the surface, the turn's
+//! final prose raised — the gutter glyph inside it, so who spoke is still
+//! the glyph, and weight is still the speaker's (`theme::speaker`) on the
+//! words that name them. Which bubble a row gets is the projection's call
+//! ([`rows`]), never this painter's.
 //!
 //! At the head of a transcript stands the conversation's panel, and where
 //! nothing is selected the seat's ([`panel`]). At its end stands each message
@@ -30,6 +34,8 @@ pub mod fold;
 /// seat's where nothing is selected.
 pub mod panel;
 pub mod rows;
+/// The trail painted: the fold's head and each step on its stem.
+mod trail;
 
 pub use fold::Fold;
 pub use rows::sent::whole;
@@ -79,7 +85,9 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                 let run = rest.iter().take_while(|row| row.kind != Kind::Said).count();
                 if run > 0 {
                     ui.add_space(theme::space::S);
-                    trail(ui, at, rest.get(..run).unwrap_or(&[]));
+                    theme::paint::bubbled(ui, theme::Bubble::Trail, |ui| {
+                        trail::trail(ui, at, rest.get(..run).unwrap_or(&[]));
+                    });
                     at += run;
                     after_trail = true;
                     continue;
@@ -93,7 +101,7 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                     response(ui);
                 }
                 ui.add_space(theme::space::S);
-                said(ui, at, row);
+                theme::paint::bubbled(ui, row.bubble, |ui| said(ui, at, row));
                 after_trail = false;
                 at += 1;
             }
@@ -158,105 +166,6 @@ fn said(ui: &mut egui::Ui, at: usize, row: &Row) {
             code::paint(ui, at, &row.said, words);
         });
     });
-}
-
-/// **A trail**: the fold's head, then each step on its stem.
-fn trail(ui: &mut egui::Ui, at: usize, steps: &[Row]) {
-    let id = ui.make_persistent_id(("trail", at));
-    let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(true);
-    // **The fold counts calls** (bl-eb4e), not the steps under it: a result
-    // stands on its call's row, and reasoning is not a call.
-    let calls = steps
-        .iter()
-        .filter(|row| matches!(row.kind, Kind::Call | Kind::Answered))
-        .count();
-    let head = format!(
-        "{} {TRAIL} ({calls})",
-        if open { glyph::OPEN } else { glyph::SHUT },
-    );
-    if ui
-        .add(
-            egui::Label::new(egui::RichText::new(head).color(theme::INK_WEAK))
-                .sense(egui::Sense::click()),
-        )
-        .clicked()
-    {
-        open = !open;
-        ui.data_mut(|d| d.insert_temp(id, open));
-    }
-    if !open {
-        return;
-    }
-    let x = ui.cursor().min.x + theme::space::S;
-    for (i, row) in steps.iter().enumerate() {
-        let top = ui.cursor().min.y;
-        ui.horizontal_top(|ui| {
-            ui.add_space(theme::space::L);
-            step(ui, at + i, row);
-        });
-        let bottom = ui.min_rect().max.y;
-        let middle = top + theme::space::S;
-        theme::paint::elbow(ui, x, top, middle, x + theme::space::S);
-        if i + 1 < steps.len() {
-            theme::paint::rail(ui, x, middle, bottom);
-        }
-    }
-}
-
-/// **One step**: its mark, its name — a call's with how it ended beside it
-/// — and what it said, folded to its head where there is more.
-fn step(ui: &mut egui::Ui, at: usize, row: &Row) {
-    let red = theme::accent(theme::State::Error);
-    let ended = |ui: &mut egui::Ui| {
-        let (mark, ink) = if row.failed {
-            (glyph::FAILED, red)
-        } else {
-            (glyph::DONE, theme::INK_WEAK)
-        };
-        ui.label(egui::RichText::new(mark).color(ink));
-    };
-    let (mark, ink) = match row.kind {
-        Kind::Call | Kind::Answered => (glyph::CALL, theme::BRAND),
-        _ => (glyph::NOTE, theme::INK_WEAK),
-    };
-    if row.kind == Kind::Result {
-        ended(ui);
-    } else {
-        ui.label(egui::RichText::new(mark).color(ink));
-    }
-    ui.vertical(|ui| {
-        let who = if row.failed { red } else { theme::INK_WEAK };
-        ui.horizontal_wrapped(|ui| {
-            ui.label(egui::RichText::new(&row.who).color(who));
-            if row.kind == Kind::Answered {
-                ended(ui);
-            }
-        });
-        match &row.fold {
-            Some(fold) => folded(ui, at, row, fold),
-            None if row.said.is_empty() => {}
-            None => {
-                theme::paint::prose(ui, &row.said, theme::INK_WEAK);
-            }
-        }
-    });
-}
-
-fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
-    let id = ui.make_persistent_id(at);
-    let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(false);
-    if ui
-        .button(if open { fold::UNFOLD } else { &fold.whole })
-        .clicked()
-    {
-        open = !open;
-        ui.data_mut(|d| d.insert_temp(id, open));
-    }
-    if open {
-        theme::paint::prose(ui, &row.said, theme::INK);
-    } else {
-        theme::paint::prose(ui, &fold.head, theme::INK_WEAK);
-    }
 }
 
 #[cfg(test)]

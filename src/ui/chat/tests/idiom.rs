@@ -1,16 +1,18 @@
-//! The idiom (DESIGN §4.42, item 4): a gutter glyph per speaker, the trail
-//! under one fold on painted stems, a `response` line after it, and a
-//! hairline between turns.
+//! The idiom (DESIGN §4.42, item 4; §4.45 items 5 and 7): a gutter glyph per
+//! speaker, the trail under one fold on painted stems — open while its turn
+//! runs, shut once it settled, a toggle remembered — a `response` line after
+//! it, and a hairline between turns. The fills under the blocks are
+//! [`super::bubble`]'s.
 
 use super::super::{RESPONSE, TRAIL};
 use crate::paint_probe::frame::Window;
-use crate::paint_probe::{fills_of, seen_of};
+use crate::paint_probe::{fills_of, frame::locate_in, seen_of};
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript, Usage};
 use crate::test_support::window::{click, said, seated};
 use crate::ui::Model;
 use crate::ui::theme::{self, glyph};
 
-fn entry(kind: EntryKind) -> Entry {
+pub(super) fn entry(kind: EntryKind) -> Entry {
     Entry {
         name: "003-model-a.json".to_owned(),
         raw: "{}".to_owned(),
@@ -19,7 +21,7 @@ fn entry(kind: EntryKind) -> Entry {
 }
 
 /// A model turn that works: some reasoning and one call.
-fn working() -> Entry {
+pub(super) fn working() -> Entry {
     entry(EntryKind::Model {
         model_id: "model-a".to_owned(),
         blocks: vec![
@@ -35,7 +37,7 @@ fn working() -> Entry {
 }
 
 /// A model turn that speaks.
-fn prose(text: &str) -> Entry {
+pub(super) fn prose(text: &str) -> Entry {
     entry(EntryKind::Model {
         model_id: "model-a".to_owned(),
         blocks: vec![Block::Text(text.to_owned())],
@@ -43,7 +45,7 @@ fn prose(text: &str) -> Entry {
     })
 }
 
-fn result(content: &str, is_error: bool) -> Entry {
+pub(super) fn result(content: &str, is_error: bool) -> Entry {
     entry(EntryKind::ToolResult {
         tool_use_id: "tu-1".to_owned(),
         content: content.to_owned(),
@@ -51,14 +53,23 @@ fn result(content: &str, is_error: bool) -> Entry {
     })
 }
 
-fn with(entries: Vec<Entry>) -> Model {
+/// The turn still open: the engine's streaming entry riding the response,
+/// with `text` said so far.
+pub(super) fn running(text: &str) -> Entry {
+    entry(EntryKind::Streaming {
+        thinking: String::new(),
+        text: text.to_owned(),
+    })
+}
+
+pub(super) fn with(entries: Vec<Entry>) -> Model {
     Model {
         transcript: Transcript { entries },
         ..seated()
     }
 }
 
-fn glass(model: &mut Model) -> egui::FullOutput {
+pub(super) fn glass(model: &mut Model) -> egui::FullOutput {
     let window = Window::sized(1400.0, 900.0);
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model));
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model))
@@ -102,10 +113,19 @@ fn the_gutter_says_who_spoke() {
     );
 }
 
-/// **The trail stands under one fold**, a call with its dot and a result
-/// with its mark, and the fold's head shuts it.
+/// The fold's head, open or shut, over one call.
+fn head(open: bool) -> String {
+    format!(
+        "{} {TRAIL} (1)",
+        if open { glyph::OPEN } else { glyph::SHUT }
+    )
+}
+
+/// **A settled trail stands shut under one fold** (§4.45 item 5), the head
+/// counting its calls; a click opens it — a call with its dot and a result
+/// with its mark — and the toggle is remembered on the next frame.
 #[test]
-fn the_trail_stands_under_one_fold_and_the_head_shuts_it() {
+fn a_settled_trail_stands_shut_and_the_head_opens_it() {
     let mut model = with(vec![
         said("op", "port it"),
         working(),
@@ -114,21 +134,62 @@ fn the_trail_stands_under_one_fold_and_the_head_shuts_it() {
     ]);
     let output = glass(&mut model);
     let seen = texts(&output);
-    // One call, met with its result on one row; the reasoning is a step
-    // and not a call (bl-eb4e).
-    let head = format!("{} {TRAIL} (1)", glyph::OPEN);
-    for word in [&head, glyph::CALL, glyph::DONE, "read(src/ui.rs)"] {
-        assert!(seen.iter().any(|t| t == word), "{word:?}: {seen:?}");
-    }
+    assert!(seen.iter().any(|t| *t == head(false)), "{seen:?}");
+    assert!(!seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
     let window = Window::sized(1400.0, 900.0);
-    click(&window, &head, |ctx| crate::ui::render(ctx, &mut model));
-    let shut = window.text(|ctx| crate::ui::render(ctx, &mut model));
-    assert!(
-        shut.contains(&format!("{} {TRAIL} (1)", glyph::SHUT)),
-        "{shut}"
-    );
-    assert!(!shut.contains("read(src/ui.rs)"), "{shut}");
-    assert!(!seen.iter().any(|t| t.contains("tu-1")), "no id: {seen:?}");
+    click(&window, &head(false), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    let opened = window.text(|ctx| crate::ui::render(ctx, &mut model));
+    assert!(opened.contains(&head(true)), "{opened}");
+    // One call, met with its result on one row; the reasoning is a step
+    // and not a call (bl-eb4e); the id never reaches the glass.
+    for word in [glyph::CALL, glyph::DONE, "read(src/ui.rs)"] {
+        assert!(opened.contains(word), "{word:?}: {opened}");
+    }
+    assert!(!opened.contains("tu-1"), "no id: {opened}");
+}
+
+/// **A running turn's trail stands open**, and shutting it is remembered
+/// against that default on the frames after.
+#[test]
+fn a_running_trail_stands_open_and_a_toggle_is_remembered() {
+    let mut model = with(vec![said("op", "port it"), working(), running("")]);
+    let seen = texts(&glass(&mut model));
+    assert!(seen.iter().any(|t| *t == head(true)), "{seen:?}");
+    assert!(seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");
+    let window = Window::sized(1400.0, 900.0);
+    click(&window, &head(true), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    for _ in 0..2 {
+        let shut = window.text(|ctx| crate::ui::render(ctx, &mut model));
+        assert!(shut.contains(&head(false)), "{shut}");
+        assert!(!shut.contains("read(src/ui.rs)"), "{shut}");
+    }
+}
+
+/// **The fold's head lights under the pointer** (§4.45 item 6): the hover
+/// wash under it, and nothing in that wash away from it.
+#[test]
+fn the_fold_s_head_lights_under_the_pointer() {
+    let mut model = with(vec![said("op", "port it"), working()]);
+    let window = Window::sized(1400.0, 900.0);
+    let at = locate_in(&window, &head(false), |ctx| {
+        crate::ui::render(ctx, &mut model);
+    })
+    .expect("the head is on the glass");
+    let washed = |output: &egui::FullOutput| {
+        fills_of(output)
+            .iter()
+            .any(|(_, ink)| *ink == theme::hover())
+    };
+    let away = window.frame(Vec::new(), |ctx| crate::ui::render(ctx, &mut model));
+    assert!(!washed(&away), "bare at rest");
+    let under = window.frame(vec![egui::Event::PointerMoved(at)], |ctx| {
+        crate::ui::render(ctx, &mut model);
+    });
+    assert!(washed(&under), "lit under the pointer");
 }
 
 /// **A `response` line parts the trail from the prose after it**, and a
@@ -171,7 +232,7 @@ fn a_response_line_and_a_hairline_part_what_follows() {
 /// stems are painted rather than typed.
 #[test]
 fn a_failed_step_wears_the_error_accent() {
-    let mut model = with(vec![working(), result("no such file", true)]);
+    let mut model = with(vec![working(), result("no such file", true), running("")]);
     let output = glass(&mut model);
     let red = theme::accent(theme::State::Error);
     assert!(
@@ -187,7 +248,7 @@ fn a_failed_step_wears_the_error_accent() {
 /// and head, no mark of how it ended and no body under it (bl-eb4e).
 #[test]
 fn a_call_in_flight_wears_no_ending() {
-    let mut model = with(vec![working()]);
+    let mut model = with(vec![working(), running("")]);
     let output = glass(&mut model);
     let seen = texts(&output);
     assert!(seen.iter().any(|t| t == "read(src/ui.rs)"), "{seen:?}");

@@ -84,7 +84,7 @@ fn scrolling_up_releases_the_follow_and_an_append_does_not_take_it_back() {
     let mut model = seated();
     model.transcript = lines(1..=60);
     glass(&window, &mut model);
-    wheel(&window, &mut model, 4000.0);
+    wheel(&window, &mut model, 8000.0);
     let glyphs = on_the_glass(&window, &mut model);
     assert!(shows(&glyphs, "line 001"), "{glyphs:?}");
     assert!(!shows(&glyphs, "line 060"), "{glyphs:?}");

@@ -34,6 +34,18 @@ fn spilling(n: usize) -> Model {
     model
 }
 
+/// **Open the trail the answer stands in** — a settled trail stands shut
+/// (§4.45 item 5), and these beats are about what is inside it.
+fn opened(window: &Window, model: &mut Model) {
+    let head = format!(
+        "{} {} (0)",
+        crate::ui::theme::glyph::SHUT,
+        crate::ui::chat::TRAIL
+    );
+    window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model));
+    click(window, &head, |ctx| crate::ui::render(ctx, model));
+}
+
 /// What one settled window has on the glass, as whole runs.
 fn glass(window: &Window, model: &mut Model) -> Vec<String> {
     window.frame(Vec::new(), |ctx| crate::ui::render(ctx, model));
@@ -58,6 +70,7 @@ const FEW: usize = 12;
 fn a_long_tool_result_stands_as_a_few_lines_and_one_control_saying_what_it_hides() {
     let mut model = spilling(LINES);
     let window = Window::sized(1400.0, 900.0);
+    opened(&window, &mut model);
     let glyphs = glass(&window, &mut model);
     let painted = glyphs.concat();
     assert!(painted.contains("line 001"), "{glyphs:?}");
@@ -74,6 +87,7 @@ fn a_long_tool_result_stands_as_a_few_lines_and_one_control_saying_what_it_hides
 fn the_control_brings_the_whole_of_it_and_the_other_one_puts_it_back() {
     let mut model = spilling(FEW);
     let window = Window::sized(1400.0, 900.0);
+    opened(&window, &mut model);
     let folded = glass(&window, &mut model).concat();
     assert!(!folded.contains("line 007"), "folded to start with");
     click(&window, &control(FEW), |ctx| {

@@ -20,18 +20,22 @@
 //! something the operator was not shown; it is something that was never said.
 
 use super::{Fold, fold};
-use crate::ui::theme::Speaker;
+use crate::ui::theme::{Bubble, Speaker};
 
 /// The turn that has not settled yet.
 mod live;
 /// A call and its result, met on one row.
 mod pair;
+/// Whose weight a row is said in, and which bubble it stands on.
+mod role;
 /// What this seat sent, as rows after the committed ones.
 pub mod sent;
 
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
 use live::{half, live_rows, streaming};
+pub(crate) use role::OPERATOR;
+use role::delivered;
 
 /// One painted row: who is speaking, and what they said.
 ///
@@ -83,6 +87,12 @@ pub struct Row {
     /// **Whether the engine has yet to acknowledge it** ([`sent`]): the one
     /// row whose words wear the pending ink rather than the body's.
     pub pending: bool,
+    /// **The fill this row stands on** (§4.45 item 7), decided here and not
+    /// by the painter — see [`role`].
+    pub bubble: Bubble,
+    /// **Whether this row belongs to the turn that has not settled** — what a
+    /// trail's fold reads for its default (§4.45 item 5).
+    pub live: bool,
 }
 
 impl Row {
@@ -100,12 +110,15 @@ impl Row {
             kind: Kind::Said,
             call: None,
             pending: false,
+            bubble: role::born(weight, Kind::Said),
+            live: false,
         }
     }
 
     /// The same row as a step of the trail.
     pub(super) fn as_(mut self, kind: Kind) -> Self {
         self.kind = kind;
+        self.bubble = role::born(self.weight, kind);
         self
     }
 
@@ -130,6 +143,8 @@ impl Row {
             kind: Kind::Result,
             call: Some(id.to_owned()),
             pending: false,
+            bubble: Bubble::Trail,
+            live: false,
         }
     }
 }
@@ -138,27 +153,6 @@ impl Row {
 /// state, so it wears the error rule and a word for what happened rather
 /// than the engine's virtual entry name.
 pub const WOUND: &str = "it stopped";
-
-/// **The senders that are the operator's own.** litany writes a deposit from
-/// the seat with `user` (`corpus/answers/transcript.json`), and `op` is the
-/// same claim written short — the form a hand-written transcript and this
-/// crate's own fixtures carry. Reading either as a peer would paint the
-/// operator's own words in a peer's weight, which is the one weight on the
-/// glass a reader is certain about.
-pub(crate) const OPERATOR: [&str; 2] = ["user", "op"];
-
-/// **Who a delivered message is, by weight**: the operator's own deposit is
-/// their act and wears the brand, a sender the engine buried has ended, and
-/// anything else that speaks here is a peer.
-fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
-    if OPERATOR.contains(&sender) {
-        Speaker::Operator
-    } else if epitaph.is_some() {
-        Speaker::Ended
-    } else {
-        Speaker::Peer
-    }
-}
 
 /// **The whole pane as data.**
 ///
@@ -182,7 +176,7 @@ fn delivered(sender: &str, epitaph: Option<&String>) -> Speaker {
 /// read has yet seen paints its tail from the next read on, one ask cadence
 /// late, rather than early.
 pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
-    pair::met(
+    let mut rows = pair::met(
         transcript
             .entries
             .iter()
@@ -191,7 +185,13 @@ pub fn rows(transcript: &Transcript, live: Option<&Stream>) -> Vec<Row> {
                 _ => entry_rows(entry),
             })
             .collect(),
-    )
+    );
+    let running = transcript
+        .entries
+        .iter()
+        .any(|entry| matches!(entry.kind, EntryKind::Streaming { .. }));
+    role::settle(&mut rows, running);
+    rows
 }
 
 /// The two words a settled call is said in, on both routes.

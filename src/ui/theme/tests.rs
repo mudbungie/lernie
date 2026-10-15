@@ -3,8 +3,9 @@
 //! soft neon, and an unknown word is unstyled.
 
 use super::{
-    GROUND, HAIRLINE, INK, INK_FAINT, INK_WEAK, NOTICE, QR_INK, QR_PAPER, RAISED, STATES, SURFACE,
-    Speaker, State, accent, speaker, state_ink, state_of, tint, tone_ink, visuals,
+    BRAND, Bubble, GROUND, HAIRLINE, INK, INK_FAINT, INK_WEAK, NOTICE, QR_INK, QR_PAPER, RAISED,
+    STATES, SURFACE, Speaker, State, accent, bubble, hover, speaker, state_ink, state_of, tint,
+    tone_ink, visuals,
 };
 use crate::reply::convs::{AgentState, Tone};
 use egui::Color32;
@@ -254,4 +255,31 @@ fn every_act_glyph_has_a_glyph_in_the_body_font() {
         }
     });
     assert_eq!(super::worded(super::glyph::STOP, "stop"), "■ stop");
+}
+
+/// **The four bubbles are the palette read as roles** (DESIGN §4.45 item 7):
+/// the operator's the brand at half a tint — fainter than the hover and the
+/// selection, so a wash over it still reads — the model's three the ground
+/// ladder climbing toward what is read, and only the lowest ringed.
+#[test]
+fn the_bubbles_are_the_palette_and_climb_toward_the_final_prose() {
+    let (operator, none) = bubble(Bubble::Operator);
+    assert_eq!(none, egui::Stroke::NONE);
+    // The brand's own hue, at a fraction: each premultiplied byte is the
+    // brand's byte at the bubble's alpha.
+    let alpha = f32::from(operator.a()) / 255.0;
+    for (b, w) in BRAND.to_array().into_iter().zip(operator.to_array()) {
+        assert!(
+            (f32::from(b) * alpha - f32::from(w)).abs() <= 1.0,
+            "{BRAND:?} vs {operator:?}"
+        );
+    }
+    assert!(operator.a() < hover().a() && hover().a() < tint(State::Working).a());
+    let (trail, ring) = bubble(Bubble::Trail);
+    assert_eq!((trail, ring.color), (GROUND, HAIRLINE));
+    let (between, _) = bubble(Bubble::Intermediate);
+    let (last, _) = bubble(Bubble::Final);
+    assert_eq!((between, last), (SURFACE, RAISED));
+    assert!(luminance(trail) < luminance(between) && luminance(between) < luminance(last));
+    assert!(contrast(INK, last) >= 7.0, "ink reads on the top rung");
 }

@@ -40,8 +40,8 @@ pub fn elbow(ui: &egui::Ui, x: f32, top: f32, middle: f32, to: f32) {
 }
 
 /// **A ruled block**: whatever `body` paints, with a [`RULE`]-wide line in
-/// `ink` standing beside it from its first line to its last. The transcript's
-/// anatomy — aligned, ruled, never bubbled.
+/// `ink` standing beside it from its first line to its last. The covering
+/// panes' anatomy — aligned and ruled; the transcript's is [`bubbled`].
 pub fn ruled(ui: &mut egui::Ui, ink: Color32, body: impl FnOnce(&mut egui::Ui)) {
     let top = ui.cursor().min;
     ui.horizontal_top(|ui| {
@@ -50,6 +50,25 @@ pub fn ruled(ui: &mut egui::Ui, ink: Color32, body: impl FnOnce(&mut egui::Ui)) 
     });
     let bottom = ui.min_rect().max.y;
     rule_at(ui, top, bottom - top.y, ink);
+}
+
+/// **A bubbled block** (DESIGN §4.45 item 7; `docs/STYLE.md` §5, *a block*):
+/// whatever `body` paints, on the fill its `role` wears at [`RADIUS`], `S` of
+/// air inside, spanning the column — so the gutter glyph stands INSIDE the
+/// fill and the four roles read as one ramp down the pane rather than as
+/// four widths of speech balloon. The stroke is the role's too, and only the
+/// trail has one.
+pub fn bubbled(ui: &mut egui::Ui, role: super::Bubble, body: impl FnOnce(&mut egui::Ui)) {
+    let (fill, stroke) = super::bubble(role);
+    egui::Frame::none()
+        .fill(fill)
+        .stroke(stroke)
+        .rounding(RADIUS)
+        .inner_margin(space::S)
+        .show(ui, |ui| {
+            ui.set_min_width(ui.available_width());
+            body(ui);
+        });
 }
 
 /// **An empty state**: one sentence in weak ink, wrapped at the width it

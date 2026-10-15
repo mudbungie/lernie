@@ -40,6 +40,15 @@ fn tool(content: &str, is_error: bool) -> Entry {
     })
 }
 
+/// The turn still open — a trail stands open while it runs (§4.45 item 5),
+/// which is where a step's weight can be read.
+fn running() -> Entry {
+    entry(EntryKind::Streaming {
+        thinking: String::new(),
+        text: String::new(),
+    })
+}
+
 /// One settled frame of the whole window over `entries`.
 fn glass(entries: Vec<Entry>) -> egui::FullOutput {
     let mut model = Model {
@@ -141,10 +150,10 @@ fn each_speaker_s_block_wears_its_own_weight() {
 #[test]
 fn a_failed_tool_result_wears_the_error_accent_and_a_returned_one_does_not() {
     let red = theme::accent(theme::State::Error);
-    let output = glass(vec![tool("no such file", true)]);
+    let output = glass(vec![tool("no such file", true), running()]);
     assert_eq!(worn(&output, "failed"), red);
     assert_eq!(body(&output, crate::ui::theme::glyph::FAILED).ink, red);
-    let returned = glass(vec![tool("done", false)]);
+    let returned = glass(vec![tool("done", false), running()]);
     assert_ne!(worn(&returned, "returned"), red);
     assert_ne!(body(&returned, crate::ui::theme::glyph::DONE).ink, red);
 }
@@ -153,7 +162,7 @@ fn a_failed_tool_result_wears_the_error_accent_and_a_returned_one_does_not() {
 /// weight of the text before anybody reads the control that says so.
 #[test]
 fn a_folded_head_stands_in_weak_ink() {
-    let output = glass(vec![tool(&numbered(700), false)]);
+    let output = glass(vec![tool(&numbered(700), false), running()]);
     let head = seen_of(&output)
         .into_iter()
         .find(|seen| seen.text.starts_with("line 001"))

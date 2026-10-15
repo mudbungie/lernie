@@ -73,6 +73,10 @@ struct Walked {
     text: Vec<(String, egui::Rect, egui::Color32, egui::FontFamily)>,
     fills: Vec<Filled>,
     strokes: Vec<Filled>,
+    /// **Both kinds in the order they were painted** — a run as its rect and
+    /// no colour, a fill as its rect and its colour — because *what is over
+    /// what* is a question only the order answers ([`covered`]).
+    laid: Vec<(egui::Rect, Option<egui::Color32>)>,
 }
 
 /// **The one walk.** Glyphs with their rect and ink, filled rectangles with
@@ -80,19 +84,24 @@ struct Walked {
 /// carries neither.
 fn descend(shape: &egui::Shape, out: &mut Walked) {
     match shape {
-        egui::Shape::Text(t) => out.text.push((
-            visible(&t.galley),
-            t.galley.rect.translate(t.pos.to_vec2()),
-            ink(t),
-            t.galley
-                .job
-                .sections
-                .first()
-                .map_or(egui::FontFamily::Proportional, |s| {
-                    s.format.font_id.family.clone()
-                }),
-        )),
+        egui::Shape::Text(t) => {
+            let laid = t.galley.rect.translate(t.pos.to_vec2());
+            out.laid.push((laid, None));
+            out.text.push((
+                visible(&t.galley),
+                laid,
+                ink(t),
+                t.galley
+                    .job
+                    .sections
+                    .first()
+                    .map_or(egui::FontFamily::Proportional, |s| {
+                        s.format.font_id.family.clone()
+                    }),
+            ));
+        }
         egui::Shape::Rect(r) => {
+            out.laid.push((r.rect, Some(r.fill)));
             out.fills.push((r.rect, r.fill));
             if r.stroke.width > 0.0 {
                 out.strokes.push((r.rect, r.stroke.color));
@@ -132,6 +141,59 @@ pub(crate) fn fills_of(output: &egui::FullOutput) -> Vec<Filled> {
         }));
     }
     out
+}
+
+/// **Whether what the layout put at `bounds` is under a box with words of its
+/// own** (`crate::snapshot::blank`): a fill that is not clear, painted later
+/// than the last run inside `bounds`, that holds the whole of it — AND that
+/// has a run laid inside it after it. The second half is the whole
+/// distinction: a box floated over the pane (`crate::ui::overlay`) is laid
+/// after the conversation and carries its own words, so a run under it is the
+/// box's to show; a slab painted over the window carries nothing, and a run
+/// under a slab is the defect the blank detector exists for. Whether the
+/// box's own words reached the glass is their own question, asked of them.
+/// Bounds arrive as four numbers because the tree they come from measures in
+/// a type this crate does not declare.
+pub(crate) fn covered(output: &egui::FullOutput, bounds: (f64, f64, f64, f64)) -> bool {
+    let (x0, y0, x1, y1) = bounds;
+    let within = |rect: &egui::Rect, (x0, y0, x1, y1): (f64, f64, f64, f64)| {
+        f64::from(rect.min.x) >= x0 - 1.0
+            && f64::from(rect.min.y) >= y0 - 1.0
+            && f64::from(rect.max.x) <= x1 + 1.0
+            && f64::from(rect.max.y) <= y1 + 1.0
+    };
+    let as_bounds = |rect: &egui::Rect| {
+        (
+            f64::from(rect.min.x),
+            f64::from(rect.min.y),
+            f64::from(rect.max.x),
+            f64::from(rect.max.y),
+        )
+    };
+    let mut laid = Vec::new();
+    for clipped in &output.shapes {
+        let mut here = Walked::default();
+        descend(&clipped.shape, &mut here);
+        laid.extend(here.laid);
+    }
+    let Some(last) = laid
+        .iter()
+        .rposition(|(rect, fill)| fill.is_none() && within(rect, bounds))
+    else {
+        return false;
+    };
+    let after = laid.get(last + 1..).unwrap_or(&[]);
+    after.iter().enumerate().any(|(i, (cover, fill))| {
+        fill.is_some_and(|fill| fill.a() > 0)
+            && f64::from(cover.min.x) <= x0 + 1.0
+            && f64::from(cover.min.y) <= y0 + 1.0
+            && f64::from(cover.max.x) >= x1 - 1.0
+            && f64::from(cover.max.y) >= y1 - 1.0
+            && after
+                .iter()
+                .skip(i + 1)
+                .any(|(rect, fill)| fill.is_none() && within(rect, as_bounds(cover)))
+    })
 }
 
 /// The colour a run reached the glass in — its layout section's, or the shape's

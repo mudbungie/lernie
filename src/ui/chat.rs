@@ -76,42 +76,53 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
         .id_salt(conversation)
         .stick_to_bottom(true)
         .auto_shrink([false, false])
+        // **Every id under the transcript is the conversation's** (bl-b83d):
+        // the scroll area's salt names only its own scroll state, and the ui
+        // it hands its content is a child of the pane's, the same whichever
+        // conversation is painted — so a fold keyed on the row's index alone
+        // (`working`, `trail`, `code`) was one memory for row N of EVERY
+        // conversation. One push here, rather than a salt at each site,
+        // is what keeps a site that forgets it impossible.
         .show(ui, |ui| {
-            panel::conversation(ui, model, conversation);
-            let all = whole(model);
-            let mut at = 0;
-            let mut turns = 0;
-            // Whether the working just painted stands open, where one does.
-            let mut opened = None;
-            while let Some(row) = all.get(at) {
-                let rest = all.get(at..).unwrap_or(&[]);
-                let run = rest
-                    .iter()
-                    .take_while(|row| matches!(row.bubble, Bubble::Trail | Bubble::Intermediate))
-                    .count();
-                if run > 0 {
-                    ui.add_space(theme::space::S);
-                    let mut open = false;
-                    theme::paint::bubbled(ui, Bubble::Trail, |ui| {
-                        open = working::working(ui, at, rest.get(..run).unwrap_or(&[]));
-                    });
-                    at += run;
-                    opened = Some(open);
-                    continue;
-                }
-                if row.weight == theme::Speaker::Operator {
-                    if turns > 0 {
-                        parting(ui);
+            ui.push_id(conversation, |ui| {
+                panel::conversation(ui, model, conversation);
+                let all = whole(model);
+                let mut at = 0;
+                let mut turns = 0;
+                // Whether the working just painted stands open, where one does.
+                let mut opened = None;
+                while let Some(row) = all.get(at) {
+                    let rest = all.get(at..).unwrap_or(&[]);
+                    let run = rest
+                        .iter()
+                        .take_while(|row| {
+                            matches!(row.bubble, Bubble::Trail | Bubble::Intermediate)
+                        })
+                        .count();
+                    if run > 0 {
+                        ui.add_space(theme::space::S);
+                        let mut open = false;
+                        theme::paint::bubbled(ui, Bubble::Trail, |ui| {
+                            open = working::working(ui, at, rest.get(..run).unwrap_or(&[]));
+                        });
+                        at += run;
+                        opened = Some(open);
+                        continue;
                     }
-                    turns += 1;
-                } else if opened == Some(true) {
-                    response(ui);
+                    if row.weight == theme::Speaker::Operator {
+                        if turns > 0 {
+                            parting(ui);
+                        }
+                        turns += 1;
+                    } else if opened == Some(true) {
+                        response(ui);
+                    }
+                    ui.add_space(theme::space::S);
+                    theme::paint::bubbled(ui, row.bubble, |ui| said(ui, at, row));
+                    opened = None;
+                    at += 1;
                 }
-                ui.add_space(theme::space::S);
-                theme::paint::bubbled(ui, row.bubble, |ui| said(ui, at, row));
-                opened = None;
-                at += 1;
-            }
+            })
         });
     false
 }

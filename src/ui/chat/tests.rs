@@ -15,6 +15,8 @@ mod idiom;
 mod live;
 /// A machine's answer on the glass: folded, and one gesture from the whole.
 mod machinery;
+/// A toggle's memory is one conversation's (§4.45 item 5; bl-b83d).
+mod memory;
 /// A message this seat sent: on the glass the frame it is sent, in the
 /// pending ink until acknowledged, and gone when the engine's row lands.
 mod sent;

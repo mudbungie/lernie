@@ -12,9 +12,11 @@
 //! the content — a few lines, and a sentence saying what is not being shown —
 //! so what the pane paints folded is a thing a test reads back rather than a
 //! screen somebody has to look at. Whether one particular row is OPEN is the
-//! toolkit's own memory, keyed on the row (`super::render`), for the reason
-//! bl-83ae's scroll anchor is: a per-row view state that no other fact can be
-//! asked for and that no gesture on the wire corresponds to.
+//! toolkit's own memory, keyed on the conversation and the row
+//! (`super::render` pushes the conversation's id over everything under it;
+//! bl-b83d), for the reason bl-83ae's scroll anchor is: a per-row view state
+//! that no other fact can be asked for and that no gesture on the wire
+//! corresponds to.
 
 /// **How much of a machine's answer stands without being asked for.**
 ///

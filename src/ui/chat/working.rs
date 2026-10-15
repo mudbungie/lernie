@@ -20,7 +20,10 @@
 //! **A toggle is remembered and the stages decide only where nobody toggled**:
 //! the working's default is open while any of its rows is live, and each
 //! step's default is its stage. Both are the toolkit's memory of a view state,
-//! which no wire gesture corresponds to. Nothing is dropped at any stage —
+//! which no wire gesture corresponds to — and a memory of ONE conversation's
+//! row: the ids here are keyed by the row's index under the conversation's id
+//! that [`super::render`] pushes (bl-b83d), so what the operator opened in one
+//! conversation says nothing about the same row of another. Nothing is dropped at any stage —
 //! every word is one or two clicks away, and the head counts what it hides.
 
 use super::{Kind, Row, trail};

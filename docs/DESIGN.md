@@ -6010,7 +6010,10 @@ changes.
      and answer. A click opens it to the compact steps; a second click on a
      step opens that step.
    An explicit toggle is remembered as before, the toolkit's memory of a
-   view state, and the stages decide only where nobody toggled. The
+   view state — of ONE step's, in the conversation it was clicked in: every
+   id under the transcript is pushed under the conversation's (bl-b83d), so
+   the same row of another conversation is in its stage until somebody
+   toggles it there — and the stages decide only where nobody toggled. The
    `response` elbow that parts the working from the prose after it stands
    only while the working is open; folded, the one line is the parting.
    Nothing is dropped at any stage: every word is one or two clicks away,

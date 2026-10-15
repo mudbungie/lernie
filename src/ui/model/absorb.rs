@@ -56,6 +56,7 @@ impl Model {
     pub fn receipt(&mut self, channel: &Channel, op: &str, read: Read) {
         self.founded(op);
         self.refused(op, &read);
+        self.acknowledged(op, &read);
         match read {
             // **The one kind whose meaning is the op and not the reply**
             // (bl-a43a): `fleet`, `disband`, `arm` and `disarm` all answer
@@ -190,7 +191,7 @@ impl Model {
             Reply::Providers(rows) => self.providers = Some(rows),
             Reply::Models(rows) => self.offered = Some(rows),
             Reply::Login(run) => self.signin = Some(run),
-            Reply::Transcript(transcript) => self.transcript = transcript,
+            Reply::Transcript(transcript) => self.carried(transcript),
             Reply::Follow(stream) => self.live = Some(stream),
             // The start family's two, whose whole product is each other: the
             // staged body composes the fire, and the fire's receipt is the
@@ -284,14 +285,13 @@ impl Model {
 /// operator's own words on the transcript, and the three role writes the
 /// rule's selectors spend repaint the segment they were picked on.
 fn witnessed(op: &str) -> bool {
-    [
-        crate::verbs::MESSAGE.word,
-        crate::verbs::INTERRUPT.word,
-        crate::verbs::MODEL.word,
-        crate::verbs::EFFORT,
-        crate::verbs::PRIORITY,
-    ]
-    .contains(&op)
+    super::sent::DEPOSITS.contains(&op)
+        || [
+            crate::verbs::MODEL.word,
+            crate::verbs::EFFORT,
+            crate::verbs::PRIORITY,
+        ]
+        .contains(&op)
 }
 
 #[cfg(test)]

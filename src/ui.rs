@@ -101,6 +101,6 @@ pub use model::{
     Aim, Armed, Asking, Authoring, Bindings, Channel, Choice, Chunk, Columns, Configuring,
     Diagnosis, Dropup, Edit, Engines, Enrolling, Fill, Fleet, Forking, Grade, Held, Hits, Listing,
     Login, Lookup, Model, Notice, Pages, Pick, Posted, PriceTable, Pricing, Proposing, Records,
-    Reload, Selector, Shown, Stand, Tab, Trail, Tuning, Unmaking, WORKER,
+    Reload, Selector, Sent, Shown, Stand, Tab, Trail, Tuning, Unmaking, WORKER,
 };
 pub use shell::render;

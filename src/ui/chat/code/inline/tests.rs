@@ -41,7 +41,7 @@ fn the_spans_and_the_headings_split_from_the_words() {
 /// on the surface, a heading at its size.
 #[test]
 fn each_run_wears_its_face() {
-    let laid = job("# Head\nsay `x`", 300.0);
+    let laid = job("# Head\nsay `x`", 300.0, crate::ui::theme::INK);
     let faces: Vec<(f32, egui::FontFamily)> = laid
         .sections
         .iter()

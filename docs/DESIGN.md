@@ -5916,13 +5916,22 @@ changes.
      box**, the start's own rule (bl-b180: *the engine's refusal retires the
      start into its own sentence with the goal back in the box*) — a refused
      message cleared from the draft and gone from the transcript would be
-     state represented nowhere. A lost reply leaves the row standing in the
-     pending ink beside the in-doubt notice, which is the honest picture: the
-     engine may have it.
+     state represented nowhere. **Ahead of whatever has been typed since**,
+     with a line break, where the start's rule gives words back only to an
+     empty box: a goal overwriting a newer draft would lose the newer of the
+     two, but a refused message was a row on the glass and the box is the
+     only place left for it, so it goes in front and neither is lost. An act
+     that never left this box (`Model::acted`, REMOTE §3's *unsent*) drops
+     the record the same way, because no receipt and no read will ever
+     retire it, and the words are the refund's (bl-e85f). A lost reply
+     leaves the row standing in the pending ink beside the in-doubt notice,
+     which is the honest picture: the engine may have it.
    The records are keyed by conversation, so a tab change keeps each with its
    own transcript, and they are per run like the tabs: a seat that reopened
    carrying yesterday's unacknowledged words would be claiming a gesture
-   nobody made today.
+   nobody made today. Both deposits go through one door (`Model::deposit`),
+   the box's Enter and the slash line's `/interrupt`, so there is no deposit
+   on this window that is not on the glass the frame it is composed.
 
 5. **A trail folds itself once its calls are done** (`chat::trail`;
    bl-d50e). The fold's default is open while any of its steps is live
@@ -6115,6 +6124,7 @@ that everything goes through one painter.
 | `src/ui/model/claim.rs` | the claim a start leaves on the selection: the row it stands in for, what is not asked about it, and the answer that spends it. | ~130 |
 | `src/ui/model/subtree.rs` | what hangs under a conversation, and whether it is on the glass: the descent fold `Model::rows` applies, and the set of what an operator has opened (§4.11). | ~85 |
 | `src/ui/model/tabs.rs` | **the tabs between frames** (§4.44 item 2): `Tab`, the strip's query, the open `Model::select` performs, the close onto a neighbour or the wall, and the two ways the engine takes one — a listing that no longer knows it, a selection it put down — plus a start's claimed name renamed to the root it resolves to. | ~125 |
+| `src/ui/model/sent.rs` | **a sent message between frames** (§4.45 item 4): `Sent`, the one door both deposits go through that records what it composed beside the act, the selected conversation's records as a query, and the three endings decided where each fact arrives — the receipt that changes the ink, the read that carries the words and retires the record, the refusal or unsent act that drops it with the words back in the box ahead of the draft. | ~170 |
 | `src/ui/roster.rs` | **the window's one list** (§4.39): the engines this seat reaches as an accordion, the open one's workspaces under it and the aimed wall's conversations under their own row — the word on the glass, the sections, what each says when it has none, and the header naming the address it dials. The strip of window-level acts split out at the design-time budget (`roster/acts.rs`), one wall's own row with it (`roster/wall.rs`), and the engine's own row and order with them (`roster/engine.rs`). | ~190 |
 | `src/ui/roster/engine.rs` | **one engine's row and the window's cursor track** (§4.39): the row an operator clicks to open one (the `+` that stood at its right edge is `+ new` under each wall, §4.42 item 7), and the three kinds of stop the walk makes — a row it only stands on (an engine's, or a begin: `+ new`, `+ new workspace`; bl-f991); a wall under the open one, which it aims; and a conversation under the aimed wall, which it selects. The track is a query off the same rows and the same order the paint draws, so a key cannot walk where a click cannot reach. | ~180 |
 | `src/ui/roster/wall.rs` | one workspace's row: the line it wears, the row this seat holds no name for, the eight per-wall controls that hang off the aimed one — the pin among them, whose word and op follow the row's own rank (§4.25) — under those, the aimed wall's conversations (§4.39), and `+ new` last under every wall (§4.42 item 7). | ~150 |
@@ -6206,6 +6216,7 @@ that everything goes through one painter.
 | `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |
 | `src/ui/chat/rows/live.rs` | the turn that has not settled — the two halves of the prose and the tool window under them, plus `half`, the rule both routes share and neither may copy. | ~105 |
+| `src/ui/chat/rows/sent.rs` | what this seat sent, as rows (§4.45 item 4): `whole`, the pane as data — the committed rows and the live fold, then one operator row per standing record for the selected conversation, pending until acknowledged — which paints what stands and retires nothing. | ~40 |
 | `src/ui/chat/code.rs` | fenced code in what was said (bl-beef): the split on fences, pure, and the block painted monospace on the surface, scrolled sideways rather than wrapped. | ~100 |
 | `src/ui/chat/code/inline.rs` | the prose between fences (bl-f5a7): code spans and heading lines split, pure, and laid as one wrapped job with each run in its face. | ~115 |
 | `src/ui/chat/fold.rs` | what a machine's answer hides when it is folded, and the two counts a reader chooses between. | ~90 |

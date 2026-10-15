@@ -67,6 +67,8 @@ pub(crate) mod pricing;
 mod queue;
 /// The records pane between frames: open or not, and what its two reads filed.
 mod records;
+/// What this seat sent and has not yet seen come back as the engine's row.
+mod sent;
 /// The spine's own state: the draft a fork is composed from.
 mod spine;
 /// A start, between its two acts.
@@ -105,6 +107,7 @@ pub use posted::Posted;
 pub use pricing::{Pricing, Table as PriceTable};
 pub use queue::{Asking, Section};
 pub use records::Records;
+pub use sent::Sent;
 pub use spine::Forking;
 pub use start::{Phase, Spread, Start};
 pub use tabs::Tab;

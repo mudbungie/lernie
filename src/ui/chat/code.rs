@@ -60,24 +60,25 @@ fn close(out: &mut Vec<Part>, held: &mut Vec<&str>, fenced: bool) {
     }
 }
 
-/// **Paint what was said**, prose as prose and each block as code. `at` is
-/// the row's place in the transcript, which salts each block's scroll so two
-/// blocks never share one.
-pub fn paint(ui: &mut egui::Ui, at: usize, words: &str) {
+/// **Paint what was said**, prose as prose and each block as code, in `ink`
+/// — the body's, or the pending ink for a message the engine has not yet
+/// acknowledged (DESIGN §4.45 item 4). `at` is the row's place in the
+/// transcript, which salts each block's scroll so two blocks never share one.
+pub fn paint(ui: &mut egui::Ui, at: usize, words: &str, ink: egui::Color32) {
     for (n, part) in parts(words).into_iter().enumerate() {
         match part {
             Part::Prose(text) => {
-                let job = inline::job(&text, ui.available_width());
+                let job = inline::job(&text, ui.available_width(), ink);
                 ui.add(egui::Label::new(job).wrap());
             }
-            Part::Code(text) => block(ui, (at, n), &text),
+            Part::Code(text) => block(ui, (at, n), &text, ink),
         }
     }
 }
 
 /// **One block**: monospace on the surface, scrolled sideways inside the
 /// column rather than wrapped or laid off the glass.
-fn block(ui: &mut egui::Ui, salt: (usize, usize), text: &str) {
+fn block(ui: &mut egui::Ui, salt: (usize, usize), text: &str, ink: egui::Color32) {
     egui::Frame::none()
         .fill(theme::SURFACE)
         .rounding(theme::RADIUS)
@@ -87,8 +88,7 @@ fn block(ui: &mut egui::Ui, salt: (usize, usize), text: &str) {
                 .id_salt(("code", salt))
                 .show(ui, |ui| {
                     ui.add(
-                        egui::Label::new(egui::RichText::new(text).monospace().color(theme::INK))
-                            .extend(),
+                        egui::Label::new(egui::RichText::new(text).monospace().color(ink)).extend(),
                     );
                 });
         });

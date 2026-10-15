@@ -58,7 +58,12 @@ fn conversation(model: &mut Model, word: &str, rest: &str) -> Option<bool> {
             model.begin_records();
             return Some(true);
         }
-        w if w == verbs::INTERRUPT.word => verbs::interrupt(address, agent, rest.to_owned()),
+        // A deposit, recorded as sent the frame it is composed (DESIGN
+        // §4.45 item 4), through the one door the box itself uses.
+        w if w == verbs::INTERRUPT.word => {
+            model.deposit(verbs::interrupt, address, agent, rest.to_owned());
+            return Some(true);
+        }
         // `children` is the one word `/stop` takes: the verb table's own
         // summary offers it, so the word typed after it is spent (bl-0740).
         w if w == verbs::STOP.word => {

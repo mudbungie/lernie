@@ -114,6 +114,7 @@ impl Model {
         if let Some(words) = said.filter(|_| !reach.crossed()) {
             self.refund(&words);
         }
+        self.unsent(op, reach);
         self.notice = Some(Notice::act(op, reach));
     }
 }

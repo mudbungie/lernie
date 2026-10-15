@@ -26,6 +26,8 @@ use crate::ui::theme::Speaker;
 mod live;
 /// A call and its result, met on one row.
 mod pair;
+/// What this seat sent, as rows after the committed ones.
+pub mod sent;
 
 use crate::reply::stream::Stream;
 use crate::reply::transcript::{Block, Entry, EntryKind, Transcript};
@@ -78,6 +80,9 @@ pub struct Row {
     /// carried for the pairing and never painted: an id is the wire's
     /// bookkeeping, not anything the operator reads.
     pub call: Option<String>,
+    /// **Whether the engine has yet to acknowledge it** ([`sent`]): the one
+    /// row whose words wear the pending ink rather than the body's.
+    pub pending: bool,
 }
 
 impl Row {
@@ -94,6 +99,7 @@ impl Row {
             fold: None,
             kind: Kind::Said,
             call: None,
+            pending: false,
         }
     }
 
@@ -123,6 +129,7 @@ impl Row {
             fold,
             kind: Kind::Result,
             call: Some(id.to_owned()),
+            pending: false,
         }
     }
 }
@@ -138,7 +145,7 @@ pub const WOUND: &str = "it stopped";
 /// crate's own fixtures carry. Reading either as a peer would paint the
 /// operator's own words in a peer's weight, which is the one weight on the
 /// glass a reader is certain about.
-const OPERATOR: [&str; 2] = ["user", "op"];
+pub(crate) const OPERATOR: [&str; 2] = ["user", "op"];
 
 /// **Who a delivered message is, by weight**: the operator's own deposit is
 /// their act and wears the brand, a sender the engine buried has ended, and

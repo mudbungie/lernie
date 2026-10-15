@@ -242,6 +242,9 @@ pub struct Model {
     /// **Which conversations are open as tabs** (`tabs`; DESIGN §4.44 item 2),
     /// on the same standing, per run and never in the place file.
     pub tabs: Vec<super::Tab>,
+    /// **What this seat sent and the transcript does not yet carry** (`sent`;
+    /// DESIGN §4.45 item 4), on the same standing: per run, by conversation.
+    pub sent: Vec<super::Sent>,
     /// What the operator has typed and not yet sent.
     pub draft: String,
     /// **The arming for the unmaking** (`crate::ui::composer::acts`): the name

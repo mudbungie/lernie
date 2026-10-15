@@ -223,7 +223,9 @@ pub(super) fn entered(ui: &egui::Ui, entry: &egui::Response) -> bool {
 /// **The door is the parameter**, so the two verbs share this body rather than
 /// branching inside it: `message` and `interrupt` take the same three named
 /// strings and differ only in the word, which is exactly what a function
-/// pointer carries.
+/// pointer carries. What is composed is recorded as sent in the same frame
+/// (`Model::deposit`; DESIGN §4.45 item 4), so the words leave the box and
+/// land on the transcript in one act.
 pub(super) fn fire(
     model: &mut Model,
     door: fn(String, String, String) -> serde_json::Value,
@@ -234,11 +236,7 @@ pub(super) fn fire(
         return;
     }
     let said = std::mem::take(&mut model.draft);
-    model.outbox.push(crate::ui::Posted::act(door(
-        workspace.to_owned(),
-        agent.to_owned(),
-        said,
-    )));
+    model.deposit(door, workspace.to_owned(), agent.to_owned(), said);
 }
 
 #[cfg(test)]

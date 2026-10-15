@@ -14,7 +14,10 @@
 //! speaker's (`theme::speaker`) on the words that name them.
 //!
 //! At the head of a transcript stands the conversation's panel, and where
-//! nothing is selected the seat's ([`panel`]).
+//! nothing is selected the seat's ([`panel`]). At its end stands each message
+//! this seat sent that the committed transcript does not yet carry, its words
+//! in the pending ink until the engine's receipt lands ([`rows::sent`];
+//! DESIGN §4.45 item 4).
 //!
 //! It is a **pure projection** of what the model holds: nothing here fires,
 //! and the one state it keeps — which folds are open — is the toolkit's
@@ -29,6 +32,7 @@ pub mod panel;
 pub mod rows;
 
 pub use fold::Fold;
+pub use rows::sent::whole;
 pub use rows::{Kind, Row, rows};
 
 use crate::ui::theme::{self, glyph};
@@ -66,7 +70,7 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
         .auto_shrink([false, false])
         .show(ui, |ui| {
             panel::conversation(ui, model, conversation);
-            let all = rows(&model.transcript, model.live.as_ref());
+            let all = whole(model);
             let mut at = 0;
             let mut turns = 0;
             let mut after_trail = false;
@@ -144,7 +148,14 @@ fn said(ui: &mut egui::Ui, at: usize, row: &Row) {
                 theme::speaker(row.weight)
             };
             ui.label(egui::RichText::new(&row.who).color(who).strong());
-            code::paint(ui, at, &row.said);
+            // **A message the engine has not acknowledged wears the pending
+            // ink** (§4.45 item 4): the ink of what is not yet settled.
+            let words = if row.pending {
+                theme::INK_WEAK
+            } else {
+                theme::INK
+            };
+            code::paint(ui, at, &row.said, words);
         });
     });
 }

@@ -80,10 +80,10 @@ fn words(out: &mut Vec<Span>, said: &str) {
 /// **The runs as one job**, so the prose wraps as one paragraph and each run
 /// wears its own face: words at the body, a span in the monospace family on
 /// the surface, a heading at its size.
-pub fn job(prose: &str, width: f32) -> egui::text::LayoutJob {
+pub fn job(prose: &str, width: f32, ink: egui::Color32) -> egui::text::LayoutJob {
     let face = |size, family| egui::TextFormat {
         font_id: egui::FontId::new(size, family),
-        color: theme::INK,
+        color: ink,
         line_height: Some(theme::type_scale::LEADING),
         ..egui::TextFormat::default()
     };

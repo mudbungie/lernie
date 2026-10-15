@@ -1,7 +1,9 @@
 //! **The bar's foot is the workspace** (DESIGN §4.44 item 1): item 11's
 //! workspace selector moved whole off the rule — the aimed wall's name with
-//! `⏶` beside it, `workspace ⏶` with nothing aimed, the first characters of
-//! it collapsed — and the dropup a click opens, standing upward from it.
+//! `⏶` beside it, `workspace ⏶` with nothing aimed, elided with `…` at the
+//! width the bar has, so a collapsed bar dragged wider shows more of it
+//! (§4.45 item 2; bl-773e) — and the dropup a click opens, standing upward
+//! from it.
 //!
 //! The run is `crate::ui::status::selectors::workspace`'s and the list is
 //! `crate::ui::status::dropup`'s: the same words, mark, rows, keys and picks
@@ -18,14 +20,14 @@ use crate::ui::{Model, Selector, theme};
 const LAYER: &str = "the workspace's dropup at the bar's foot";
 
 /// **Paint the foot**, toggle its list on a click, and answer where it
-/// stood.
-pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, open: bool) -> egui::Rect {
+/// stood. The words are cut by the rule's own cut, to the width the bar has
+/// less the mark that stands inside the door with them.
+pub(super) fn render(ui: &mut egui::Ui, model: &mut Model) -> egui::Rect {
     let run = selectors::workspace(model);
-    let words = if open {
-        run.text.clone()
-    } else {
-        super::cut(&run.text)
-    };
+    let mark = run
+        .mark
+        .map_or(0.0, |(glyph, _)| status::width(ui, &format!(" {glyph}")));
+    let words = status::elide(ui, &run.text, ui.available_width() - mark);
     let (clicked, rect) = ui.horizontal(|ui| status::paint(ui, &run, &words)).inner;
     dropup::anchor(ui, model, Selector::Workspace, rect);
     if clicked {

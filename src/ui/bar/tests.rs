@@ -82,6 +82,16 @@ pub(super) fn said(output: &egui::FullOutput) -> Vec<String> {
     bar(output).into_iter().map(|run| run.text).collect()
 }
 
+/// **Whether the bar stood open on `output`**: its head says the pin's word
+/// open and the glyph alone shut, from the first frame — the signal that
+/// waits on neither the eased width nor a font's measure of a name, now a
+/// name is elided at whatever width the bar has (bl-773e).
+pub(super) fn opened(output: &egui::FullOutput) -> bool {
+    let pin = theme::worded(theme::glyph::PIN, super::PIN);
+    let unpin = theme::worded(theme::glyph::PIN, super::UNPIN);
+    said(output).iter().any(|t| *t == pin || *t == unpin)
+}
+
 /// **The clock, as a value**: the pointer over keeps it open; leaving starts
 /// the linger, which asks for the repaint at the moment it lapses; at
 /// [`LINGER`] — 0.75 s, the number read off the ruling (DESIGN §4.45 item
@@ -111,7 +121,7 @@ fn the_linger_runs_from_when_the_pointer_left() {
 fn the_pointer_opens_it_and_it_lingers_after() {
     let ctx = egui::Context::default();
     let mut model = seated();
-    let open = |output: &egui::FullOutput| said(output).contains(&ROW.to_owned());
+    let open = opened;
     assert!(!open(&tick(&ctx, &mut model, 0.0, None)), "shut at rest");
     let over = Some(egui::pos2(10.0, 300.0));
     tick(&ctx, &mut model, 1.0, over);

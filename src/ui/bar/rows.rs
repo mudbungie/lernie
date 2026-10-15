@@ -4,8 +4,10 @@
 //! Expanded, a row is the state glyph in its state's ink, the name in body
 //! ink (the selected one's in the brand), the age at the right end and the
 //! preview beneath, both in weak ink. Collapsed, it is the glyph and the
-//! first [`super::CHARS`] characters of the name. Every word is
-//! `crate::ui::convs`' — a glyph or an age changes there for both painters.
+//! name alone, which the row elides with `…` at the width it has — so a
+//! collapsed bar dragged wider shows more of each name (§4.45 item 2;
+//! bl-773e). Every word is `crate::ui::convs`' — a glyph or an age changes
+//! there for both painters.
 
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, convs, theme};
@@ -63,11 +65,7 @@ fn one(ui: &mut egui::Ui, model: &Model, row: &ConvRow, open: bool) -> egui::Res
         .collect();
     let seat = theme::paint::Row {
         mark: (glyph, glyph_ink),
-        words: if open {
-            row.display.clone()
-        } else {
-            super::cut(&row.display)
-        },
+        words: row.display.clone(),
         ink,
         state: convs::rule(row),
         chosen: selected,

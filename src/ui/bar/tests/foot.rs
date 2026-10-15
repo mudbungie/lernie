@@ -1,5 +1,5 @@
 //! **The bar's foot is the workspace** (DESIGN §4.44): the aimed wall's name
-//! with `⏶`, its first characters collapsed, `workspace ⏶` with nothing
+//! with `⏶`, elided at the bar's width collapsed, `workspace ⏶` with nothing
 //! aimed — and the list a click opens, standing upward from it.
 
 use super::{click_bar, said, tick};
@@ -7,17 +7,35 @@ use crate::paint_probe::frame::Window;
 use crate::test_support::window::{dropped, seated};
 use crate::ui::{Model, Selector};
 
-/// **The foot's words**: the wall's name and the selector's mark open, its
-/// first three characters shut, and `workspace` with nothing aimed.
+/// **The foot's words**: the wall's name and the selector's mark, whole
+/// where the bar holds it and elided with `…` where it does not (bl-773e) —
+/// a longer name shows more of itself at twice the collapsed width — and
+/// `workspace` with nothing aimed.
 #[test]
 fn the_foot_names_the_aimed_wall_or_the_word() {
     let ctx = egui::Context::default();
     let mut model = seated();
     let shut = said(&tick(&ctx, &mut model, 0.0, None));
     assert!(
-        shut.contains(&dropped("hom")),
-        "the mark in the door: {shut:?}"
+        shut.contains(&dropped("home")),
+        "the mark in the door, a short name whole: {shut:?}"
     );
+    let long = "a workspace with a long name";
+    let foot = |model: &mut Model| {
+        let ctx = egui::Context::default();
+        said(&tick(&ctx, model, 0.0, None))
+            .into_iter()
+            .find(|t| t.starts_with("a w"))
+            .expect("the foot")
+    };
+    let mut named = seated();
+    named.aim.as_mut().expect("aimed").address = long.to_owned();
+    let cut = foot(&mut named);
+    let tail = format!("{}{}", crate::ui::theme::glyph::ELIDED, dropped(""));
+    assert!(cut.ends_with(&tail), "{cut:?}");
+    named.bar.dragged.shut = Some(super::super::SHUT * 2.0);
+    let more = foot(&mut named);
+    assert!(more.len() > cut.len(), "{more:?} shows more than {cut:?}");
     model.bar.pinned = true;
     let open = said(&tick(&ctx, &mut model, 0.0, None));
     assert!(open.contains(&dropped("home")), "{open:?}");
@@ -85,7 +103,7 @@ fn a_click_opens_the_list_above_the_foot_and_a_pick_aims() {
 fn new_workspace_on_the_list_begins_the_founding() {
     let window = Window::sized(super::DESK, 900.0);
     let mut model = seated();
-    click_bar(&window, &mut model, &dropped("hom"));
+    click_bar(&window, &mut model, &dropped("home"));
     let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
     let found = crate::ui::roster::engine::FOUND;
     crate::test_support::window::click(&window, found, &mut body);

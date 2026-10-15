@@ -34,14 +34,15 @@ pub const LINGER: f64 = 0.75;
 /// zero, so a bar that opens under the pointer slides rather than snaps.
 pub const EASE: f32 = 0.12;
 /// **The collapsed width's default**, in points — what a seat that dragged
-/// nothing gets (§4.45 item 2): the state glyph and three characters of a
-/// name at the body size, and the panel's margin either side.
+/// nothing gets (§4.45 item 2): the state glyph and a few characters of a
+/// name at the body size, and the panel's margin either side. **Dragged
+/// wider, it shows more of each name** (bl-773e): a collapsed row and the
+/// foot paint their whole words elided at the width they have, so the
+/// number is a default and not a cut.
 pub const SHUT: f32 = 80.0;
 /// **The desk size's width** (`crate::snapshot::SIZES`), whose quarter is
 /// the expanded width.
 pub const DESK: f32 = 1400.0;
-/// How many characters of a name the collapsed bar shows.
-pub const CHARS: usize = 3;
 /// The pin's two words: it stops the auto-hiding, and it takes the stop back.
 pub const PIN: &str = "pin";
 pub const UNPIN: &str = "unpin";
@@ -92,11 +93,6 @@ impl Bar {
 /// the desk size's width, and never more than the ceiling.
 pub fn open_width(window: f32) -> f32 {
     (DESK / 4.0).min(drag::ceiling(window))
-}
-
-/// **The first [`CHARS`] characters of `text`** — what a collapsed row says.
-pub fn cut(text: &str) -> String {
-    text.chars().take(CHARS).collect()
 }
 
 /// **Paint the bar** at the window's left edge, before every other panel, so
@@ -151,7 +147,7 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         )
         .show(ctx, |ui| {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-                let seat = foot::render(ui, model, open);
+                let seat = foot::render(ui, model);
                 ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
                     head(ui, model, open);
                     rows::render(ui, model, open);

@@ -5,7 +5,7 @@
 
 use super::super::drag::{HANDLE, floor};
 use super::super::{DESK, EASE, LINGER, SHUT, open_width};
-use super::{ROW, panel, said, step, tick};
+use super::{opened, panel, step, tick};
 use crate::test_support::window::seated;
 
 /// Where along the edge the pointer grabs it.
@@ -49,11 +49,6 @@ pub(super) fn drag(
         last = Some(step(ctx, model, width, now, vec![event]));
     }
     last.expect("five frames")
-}
-
-/// Whether the bar's rows stood open on `output`.
-fn opened(output: &egui::FullOutput) -> bool {
-    said(output).iter().any(|t| t == ROW)
 }
 
 /// A number within a hundredth of `want`.

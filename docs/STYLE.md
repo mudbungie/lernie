@@ -199,6 +199,12 @@ in `INK_WEAK`, the asking count in the attention accent — and that order is
 the hierarchy. Never a `Button` and never a `selectable_label`: both draw a
 box.
 
+**The bar's head** (`bar::head`): two links at `HEADING` with `S` of air
+inside each seat (`theme::paint::heading_link`; bl-bc9d) — the pin in
+`INK_WEAK` at the left, `+ new` in `INK_WEAK` at the right — the one place
+a link is larger than its word, because a target a pointer reaches for at
+the top of a column is reached for often.
+
 **A threaded row** (the conversation list): the row above at its depth, with
 the connector rails in `INK_FAINT` — the phone's L-shaped threading idiom —
 its first line in the row's tone and every line after it in `INK_WEAK`.

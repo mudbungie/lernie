@@ -5689,13 +5689,17 @@ as the keyboard's door and the whole seat's view.
    layout the operator chose and §4.39's place file is where such choices
    live. Collapsed, the head shows the pin's glyph alone, `📌`
    (`theme::glyph::PIN`, held to the body font's glyphs by the theme's
-   glyph test).
+   glyph test). **It is a door at the heading size with `S` of air inside
+   its seat** (`theme::paint::heading_link`; bl-bc9d, operator 2026-10-14:
+   *the + and pin buttons are too small*), so the head is a comfortable
+   target and stands a row taller than a body line.
 
    **`+ new`** stands at the bar's head on the right (bl-d357's `+ new`
    from under the wall, on the bar too): it puts the caret in the field in
    start mode on the aimed wall, the switcher's own door
    (`composer::start`), and stands only while a wall is aimed. Collapsed,
-   it is the bare `+`.
+   it is the bare `+`. It is the pin's door at the pin's size, heading-sized
+   with `S` of air inside the seat (bl-bc9d).
 
    **The foot is the workspace** — the one place on the glass a workspace is
    chosen. It is item 11's workspace selector moved whole: the aimed wall's

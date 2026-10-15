@@ -16,6 +16,8 @@ mod drag;
 mod ease;
 /// The workspace at the foot, and its list.
 mod foot;
+/// The head's two doors, at the heading size with air inside the seat.
+mod head;
 
 /// **One frame at `time` on the input clock**, the pointer at `at` (or gone),
 /// on a desk-sized window — what the bar's clock is steered by.

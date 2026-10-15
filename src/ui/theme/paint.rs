@@ -101,7 +101,23 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
 /// idiom at the size of a word, and never a box: a control on the rule is a
 /// fact you can open, not a button standing among the facts.
 pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
-    door(ui, egui::TextStyle::Small, &[(words, ink)], words)
+    door(ui, egui::TextStyle::Small, &[(words, ink)], words, 0.0)
+}
+
+/// **A door at the heading size with `S` of air inside its seat** (DESIGN
+/// §4.44 item 1; bl-bc9d): the bar's head's pin and `+ new`. At the rule's
+/// size they were a target the width of a word, which the operator found
+/// too small; the air is INSIDE the seat, so what a hand reaches for is the
+/// air and the words together, and the head stands a row taller than a
+/// body line for it.
+pub fn heading_link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
+    door(
+        ui,
+        egui::TextStyle::Heading,
+        &[(words, ink)],
+        words,
+        space::S,
+    )
 }
 
 /// **A link with its mark inside it** (DESIGN §4.44 item 5): `<words>
@@ -121,22 +137,25 @@ pub fn link_marked(
         egui::TextStyle::Small,
         &[(words, ink), (&mark, marked)],
         words,
+        0.0,
     )
 }
 
 /// **A tab** (DESIGN §4.44 item 2): a [`link`] at the body size.
 pub fn tab(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
-    door(ui, egui::TextStyle::Body, &[(words, ink)], words)
+    door(ui, egui::TextStyle::Body, &[(words, ink)], words, 0.0)
 }
 
 /// **The one door**: `parts` laid as one run at `style`, each in its own ink,
-/// one click seat over all of them named `name` — bare at rest, the hover
-/// wash under the pointer, the brand ring while it holds the keyboard.
+/// one click seat over all of them named `name`, `pad` of air inside the
+/// seat on every side — bare at rest, the hover wash under the pointer, the
+/// brand ring while it holds the keyboard.
 fn door(
     ui: &mut egui::Ui,
     style: egui::TextStyle,
     parts: &[(&str, Color32)],
     name: &str,
+    pad: f32,
 ) -> Response {
     let font = style.resolve(ui.style());
     let mut job = egui::text::LayoutJob::default();
@@ -144,7 +163,7 @@ fn door(
         job.append(text, 0.0, egui::TextFormat::simple(font.clone(), *ink));
     }
     let galley = ui.fonts(|fonts| fonts.layout_job(job));
-    let (rect, seat) = ui.allocate_exact_size(galley.size(), Sense::click());
+    let (rect, seat) = ui.allocate_exact_size(galley.size() + vec2(pad, pad) * 2.0, Sense::click());
     seat.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Link, ui.is_enabled(), name));
     if seat.hovered() {
         ui.painter()
@@ -157,7 +176,7 @@ fn door(
         ui.painter()
             .rect_stroke(rect.expand(space::XS), RADIUS, Stroke::new(1.0, BRAND));
     }
-    ui.painter().galley(rect.min, galley, INK);
+    ui.painter().galley(rect.min + vec2(pad, pad), galley, INK);
     seat.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 

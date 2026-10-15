@@ -159,7 +159,10 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
 }
 
 /// **The head**: the pin at the left, `+ new` at the right while a wall is
-/// aimed and the box can take the caret.
+/// aimed and the box can take the caret. **Both are doors at the heading
+/// size with `S` of air inside the seat** (bl-bc9d; operator: *the + and
+/// pin buttons are too small*), so the head is a comfortable target
+/// collapsed and open, and stands a row taller than a body line for it.
 fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
     ui.horizontal(|ui| {
         let word = if model.bar.pinned { UNPIN } else { PIN };
@@ -168,7 +171,7 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
         } else {
             theme::glyph::PIN.to_owned()
         };
-        if theme::paint::link(ui, &said, theme::INK_WEAK).clicked() {
+        if theme::paint::heading_link(ui, &said, theme::INK_WEAK).clicked() {
             model.bar.pinned = !model.bar.pinned;
         }
         let Some(aim) = model.aim.clone() else {
@@ -178,12 +181,20 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
             return;
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            // **`+ new` is clipped to the room right of the pin** — in paint
+            // and in the hit test alike, since egui interacts within the
+            // clip. The open head is wider than the collapsed column, and
+            // on the frame the ease begins the open words stand in the
+            // collapsed width (§4.44 item 1: *what it holds switches at
+            // once*): laid right-to-left in no room, `+ new` would stand
+            // over the pin and take its click.
+            ui.set_clip_rect(ui.max_rect().intersect(ui.clip_rect()));
             let said = if open {
                 crate::ui::roster::wall::NEW
             } else {
                 PLUS
             };
-            let seat = theme::paint::link(ui, said, theme::INK_WEAK);
+            let seat = theme::paint::heading_link(ui, said, theme::INK_WEAK);
             crate::ui::act::tag(&seat, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
             if seat.clicked() {
                 model.begin_at(&aim);

@@ -18,7 +18,18 @@
 //! *this session* and *always* on this wire's own words (REMOTE's scopes),
 //! then `refuse` and `hold`. `go to it` is not among them: the operator is
 //! already there. The queue pane (`/attention`) is the same rows for every
-//! conversation, and the count on the rule is its door.
+//! conversation — it reads [`choices`] too, so there is one list — and the
+//! count on the rule is its door.
+//!
+//! **Which reaches `pass` is offered at is the held row's to say** (yog
+//! bl-0da6; bl-da16). The engine refuses every reach but the call for a call
+//! it classified secret or destructive, and the seat used to offer all three
+//! regardless, so an operator who picked a wider one was refused and the call
+//! stayed parked. The classification and the reaches it permits ride the wire
+//! on the row (`Held::scopes`), because REMOTE's rule is that a seat never
+//! re-derives either from the reason's prose; a row that lists none is an
+//! older engine, and offers all three as before — the refusal still lands on
+//! the rule, and the call-scoped rows always go through.
 //!
 //! **The read stands while the conversation asks.** The queue's read used to
 //! stand only on its pane; this box is the second place it is spent, so it
@@ -64,15 +75,32 @@ impl Choice {
             Self::Verdict(..) => crate::verbs::ANSWER.word,
         }
     }
+
+    /// Whether it settles more than the one held call — the queue pane
+    /// stands these under their own line.
+    pub fn wider(self) -> bool {
+        matches!(self, Self::Verdict(_, scope) if scope != crate::verbs::capability::CALL)
+    }
 }
 
-/// **The choices a row offers**, in the order they are numbered.
+/// **The choices a row offers**, in the order they are numbered: `seen`;
+/// where a call is parked, `pass` at each reach the row lists — in
+/// `SCOPES`' order, which is the wire's, and only the reaches this build can
+/// spell, so a word a newer engine adds is not offered rather than offered
+/// unsaid — and all three where it lists none; then `refuse` and `hold` for
+/// the one call (bl-da16, the module's own doc).
 pub fn choices(row: &QueueRow) -> Vec<Choice> {
     let mut out = vec![Choice::Seen];
-    if row.held.is_some() {
-        for scope in crate::verbs::SCOPES {
-            out.push(Choice::Verdict("pass", scope));
-        }
+    if let Some(held) = &row.held {
+        let listed =
+            |scope: &&str| held.scopes.is_empty() || held.scopes.iter().any(|s| s == scope);
+        out.extend(
+            crate::verbs::SCOPES
+                .iter()
+                .copied()
+                .filter(listed)
+                .map(|scope| Choice::Verdict("pass", scope)),
+        );
         out.push(Choice::Verdict("refuse", crate::verbs::capability::CALL));
         out.push(Choice::Verdict("hold", crate::verbs::capability::CALL));
     }
@@ -102,8 +130,9 @@ pub fn row(model: &Model) -> Option<(Channel, QueueRow)> {
     })
 }
 
-/// **Answer with one choice**: the same doors the queue pane spends.
-pub fn answer(model: &mut Model, (channel, row): &(Channel, QueueRow), choice: Choice) {
+/// **Answer with one choice**: the two doors, which the queue pane spends
+/// through this same function.
+pub fn answer(model: &mut Model, channel: &Channel, row: &QueueRow, choice: Choice) {
     match choice {
         Choice::Seen => model.post_seen(channel, row),
         Choice::Verdict(verdict, scope) => model.post_answer(channel, row, verdict, scope),
@@ -134,7 +163,7 @@ pub fn confirm(ctx: &egui::Context, model: &mut Model) {
     };
     let offered = choices(&row.1);
     if let Some(choice) = offered.get(chosen(ctx, offered.len())) {
-        answer(model, &row, *choice);
+        answer(model, &row.0, &row.1, *choice);
     }
 }
 
@@ -150,7 +179,7 @@ pub fn pick(model: &mut Model, n: usize) -> bool {
     else {
         return false;
     };
-    answer(model, &row, choice);
+    answer(model, &row.0, &row.1, choice);
     true
 }
 
@@ -205,7 +234,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, asked: &(Channel, QueueRow))
             }
         });
     if let Some(choice) = taken {
-        answer(model, asked, choice);
+        answer(model, &asked.0, &asked.1, choice);
     }
 }
 

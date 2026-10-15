@@ -16,7 +16,7 @@ fn full() -> serde_json::Value {
         "says": "parked a tool invocation for your answer",
         "failure": "Unauthorized",
         "flag": {"at": "2026-01-01T00:00:00Z", "reason": "please look at this one"},
-        "held": {"tool": "Bash", "tool_use": "toolu_1", "reason": "writes"},
+        "held": {"tool": "Bash", "tool_use": "toolu_1", "reason": "writes", "scopes": ["call"]},
     })
 }
 
@@ -54,6 +54,7 @@ fn a_row_carries_the_whole_ask() {
                 tool: "Bash".to_owned(),
                 tool_use: "toolu_1".to_owned(),
                 reason: "writes".to_owned(),
+                scopes: vec!["call".to_owned()],
             }),
         }
     );
@@ -125,6 +126,30 @@ fn every_required_field_refuses_and_says_which_one() {
     frame["signals"] = json!([7]);
     let why = row(&frame).expect_err("a signal that is not a string");
     assert!(why.contains("signal"), "{why}");
+}
+
+/// **The held row's `scopes` is an absence, not a requirement** (yog
+/// bl-0da6; bl-da16): a held object without the key — every engine before it
+/// — reads as an empty list, *the engine did not say*; one that carries it
+/// reads verbatim, a word this build does not know included (rung 3, the
+/// filter is the offer's); and one of the wrong shape refuses by name (rung 1).
+#[test]
+fn the_held_row_s_scopes_are_read_where_said_and_empty_where_not() {
+    let mut frame = full();
+    frame["held"]
+        .as_object_mut()
+        .expect("the object")
+        .remove("scopes");
+    let read = row(&frame).expect("a queue row");
+    assert_eq!(read.held.expect("held").scopes, Vec::<String>::new());
+    frame["held"]["scopes"] = json!(["call", "everywhere"]);
+    let read = row(&frame).expect("a queue row");
+    assert_eq!(read.held.expect("held").scopes, ["call", "everywhere"]);
+    for wrong in [json!("call"), json!([7])] {
+        frame["held"]["scopes"] = wrong;
+        let why = row(&frame).expect_err("scopes of the wrong shape");
+        assert!(why.contains("scopes"), "{why}");
+    }
 }
 
 /// **Rung 3 on the state**, which is the conversation list's own vocabulary

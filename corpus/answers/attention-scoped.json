@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "kind": "attention",
+  "rows": [
+    {
+      "age_secs": 5,
+      "agent": "c-1",
+      "display": "Cobalt",
+      "failure": null,
+      "flag": null,
+      "held": {
+        "reason": "secret: the command line names a credential",
+        "scopes": ["call"],
+        "tool": "Bash",
+        "tool_use": "toolu_1"
+      },
+      "pending": 0,
+      "preview": "p",
+      "says": "parked a tool invocation for your answer — /answer pass|refuse",
+      "signals": ["held"],
+      "state": "stopped",
+      "uncertain": false,
+      "workspace": "ws"
+    }
+  ]
+}

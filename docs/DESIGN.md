@@ -3870,7 +3870,9 @@ question is *what is waiting on you* is the pane a parked tool call belongs to,
 and it is the one place in the window that already says what is parked. Three
 controls, one per verdict, offered on a row that is holding a call and on no
 other — the wire's own three words, painted as themselves for
-`crate::verbs::tuning::levels`'s reason.
+`crate::verbs::tuning::levels`'s reason — and, under their own line, `pass` at
+each wider reach the held row's `scopes` lists (§4.42 item 8; bl-da16): the
+pane paints the ask's own `choices`, one list for both surfaces.
 
 **Nothing names the invocation, and that is the gesture's own shape.** The
 engine reads the held `tool_use` off the conversation's hold mark at fire time,
@@ -5289,7 +5291,13 @@ parts, in its vertical order, each with what it becomes here.
    workspace · 5. refuse · 6. hold` — the three scopes being the baseline's
    *once*, *this session* and *always* in this wire's own words, §4.19's
    acts and no others; `go to it` is not among them because the operator is
-   there. **The prompt keeps the caret while it asks** (bl-1252; STYLE §1 —
+   there. **The `pass` rows are the reaches the held row lists** (`scopes`,
+   yog bl-0da6; bl-da16): a secret or destructive call lists `call` alone
+   and is offered `2. pass · 3. refuse · 4. hold`, since the engine refuses
+   every wider answer to it and the seat never re-derives the class from the
+   reason's prose; a row that lists none is an older engine and offers all
+   three; and the queue pane paints this same list (`ask::choices`), so the
+   two surfaces cannot drift. **The prompt keeps the caret while it asks** (bl-1252; STYLE §1 —
    a focus that is not where the words go is worse than none): a digit
    picks, ↑↓ walk the choices and Enter answers the chosen row **only while
    the draft is empty**, each taken out of the frame before the box reads
@@ -6190,7 +6198,7 @@ that everything goes through one painter.
 | `src/ui/model/tuning.rs` | the tuning pane between frames — a two-state enum rather than a flag beside an option — and the four acts its controls spend. | ~190 |
 | `src/ui/tuning/offers.rs` | what a provider row offers, on the tuning pane (§4.17): the error-accent mark on a row whose model its provider's listing lacks, and the offered ids under the editor, each filling the model field. Split from `tuning.rs` on the read's seam — `roles` there, `models` here. | ~55 |
 | `src/ui/model/tuning/offers.rs` | the offerings between frames (§4.17): which provider rows the pane asks, each stamped answer filed under its row, and the one fact a listing in hand supports — absence is not evidence. | ~70 |
-| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, a section an engine (bl-52d2), every line a row can carry with the flag leading, the acknowledgement, the three verdicts a held row is offered and the two wider reaches each names for itself (§4.34, PROTOCOL 18), and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
+| `src/ui/queue.rs` | the decision queue (§4.19): the union across channels, a section an engine (bl-52d2), every line a row can carry with the flag leading, the acknowledgement, the choices `ask::choices` offers a held row — the three verdicts, and `pass` at each wider reach the row permits, each naming its reach for itself (§4.34, PROTOCOL 18; bl-da16) — and the way out to the conversation. Its beats split at the cap on the subject's own seam — `tests.rs` is what the pane says, `tests/answer.rs` the one act whose subject is the invocation behind the row. | ~250 |
 | `src/ui/clear.rs` | the place a trail is cut in (§4.35): the engines the cut reaches, named; the way out first; and the act last, with no arming because the wire offers no field to arm on. | ~100 |
 | `src/ui/trail.rs` | the trail (§4.27): the union across channels, what ran and how it ended in the engine's words, and the standing that is silence for a clean run and its own word for every other. | ~150 |
 | `src/ui/records.rs` | the records pane (§4.18): the frame, the steps half and the files half, every empty state its own sentence, every line a pure function beside the paint. Its five other halves are files of their own (§4.29, §4.30). | ~275 |
@@ -6266,7 +6274,7 @@ that everything goes through one painter.
 | `src/ui/chat.rs` | the transcript read by its gutter and its bubble (§4.42, §4.45): the glyph per speaker, each block on the fill its role wears, the `response` line and the hairline between turns, and the sent row in the pending ink at the end. | ~160 |
 | `src/ui/chat/trail.rs` | the trail painted (§4.42 item 4, §4.45 item 5): the fold's head as a door, open while its turn runs and shut once it settled with a toggle remembered, and each step on its stem — a call with its mark, a result folded to its head. | ~120 |
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
-| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows, faint while its engine will not dial. | ~240 |
+| `src/ui/ask.rs` | **the ask** (§4.42): the selected conversation's queue row above the rule while it asks — its words, its choices as numbered rows (the one list the queue pane paints too; the `pass` reaches follow the held row's `scopes`, bl-da16, `tests/scopes.rs`), faint while its engine will not dial. | ~270 |
 | `src/ui/ask/keys.rs` | the digit, the arrows and Enter an empty prompt lends the ask, and the field's hint while it asks (bl-1252). | ~75 |
 | `src/ui/dock.rs` | **the live dock** (§4.42): what runs under the aimed wall, one line — a door — above the rule or a row apiece when Ctrl+T unfolds it. | ~100 |
 | `src/ui/chat/rows.rs` | one conversation as rows: every committed entry, projected, with the live fold painted in the `Streaming` entry's place and nowhere else (§4.9, bl-f6b5). | ~160 |

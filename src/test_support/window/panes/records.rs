@@ -66,6 +66,7 @@ pub(crate) fn own_row() -> crate::reply::agent::Agent {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
             reason: "unconfined".to_owned(),
+            scopes: Vec::new(),
         }),
         present: true,
         offers: vec![

@@ -22,13 +22,14 @@
 //!
 //! # One control answers a row and one leaves the pane for it
 //!
-//! [`SEEN`] crosses the boundary and carries its `act:` token; so does each of
-//! `crate::verbs::VERDICTS` on a row that is holding a call; [`GO`] aims and
-//! selects, which is a view and out of the parity contract (PARITY §2). Both
-//! stand down on a row this seat cannot address, and the row says why in the
-//! roster's own words — `crate::ui::model::queue::Model::wall` is the one place
-//! that resolution is asked, so this pane holds no opinion about how a wall is
-//! addressed.
+//! [`SEEN`] crosses the boundary and carries its `act:` token; so does each
+//! verdict on a row that is holding a call; [`GO`] aims and selects, which is
+//! a view and out of the parity contract (PARITY §2). Both stand down on a row
+//! this seat cannot address, and the row says why in the roster's own words —
+//! `crate::ui::model::queue::Model::wall` is the one place that resolution is
+//! asked, so this pane holds no opinion about how a wall is addressed. **The
+//! acts are `crate::ui::ask::choices`, read and spent here as there** (bl-da16):
+//! one list, so the reaches a held row permits are decided once.
 //!
 //! # What is painted is words, computed beside the paint
 //!
@@ -169,30 +170,26 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
         );
         return;
     }
-    let mut fired = None;
-    let mut verdict = None;
+    let offered = crate::ui::ask::choices(row);
+    let mut taken = None;
+    let mut seat = |ui: &mut egui::Ui, choice: &crate::ui::ask::Choice| {
+        let seat = ui.button(choice.word());
+        crate::ui::act::tag(&seat, &[choice.op()]);
+        if seat.clicked() {
+            taken = Some(*choice);
+        }
+    };
     // **The acts band stands in from the row it answers**, so a column of
     // rows reads as rows and the controls under one read as its own.
     ui.horizontal_wrapped(|ui| {
         ui.add_space(theme::space::L);
-        let answer = ui.button(SEEN);
-        crate::ui::act::tag(&answer, &[crate::verbs::SEEN.word]);
-        if answer.clicked() {
-            fired = Some(row.clone());
-        }
-        // **The three verdicts, offered only on a row that is holding one**
-        // (bl-bce2). `answer` is scoped to the exact call parked at the far
+        // **The verdicts are offered only on a row that is holding one**
+        // (bl-bce2): `answer` is scoped to the exact call parked at the far
         // end, so a control on a row with nothing parked would fire a gesture
         // the engine refuses by name — and this pane is the one place that
-        // already says what is parked (`parked`).
-        if row.held.is_some() {
-            for word in crate::verbs::VERDICTS {
-                let seat = ui.button(word);
-                crate::ui::act::tag(&seat, &[crate::verbs::ANSWER.word]);
-                if seat.clicked() {
-                    verdict = Some((word, crate::verbs::capability::CALL));
-                }
-            }
+        // already says what is parked (`parked`). `choices` holds that rule.
+        for choice in offered.iter().filter(|choice| !choice.wider()) {
+            seat(ui, choice);
         }
         // **No `act:` token**: aiming and selecting cross no wire, so this is a
         // view (PARITY §2) and tagging it would put a widget in a ledger whose
@@ -201,10 +198,11 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
             model.go_to(channel, row);
         }
     });
-    // **The two wider reaches, each seat saying its own reach** (PROTOCOL 18,
-    // yog bl-94a5). An answer with no scope settles one call, so an operator
-    // holding a conversation answered the same question for every call of a
-    // kind they had already decided about; these are how that stops.
+    // **The wider reaches, each seat saying its own reach** (PROTOCOL 18,
+    // yog bl-94a5) — the ones the held row permits (bl-da16). An answer with
+    // no scope settles one call, so an operator holding a conversation
+    // answered the same question for every call of a kind they had already
+    // decided about; these are how that stops.
     //
     // **Written out per scope rather than picked from a selector**, which is
     // the whole of why there is no state here: a sticky picker makes *wider*
@@ -214,25 +212,16 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
     // stale — which is also why the reach is in the LABEL and not in a heading
     // above it, since a heading is not what a screen reader reads out with the
     // button.
-    if row.held.is_some() {
+    if offered.iter().any(|choice| choice.wider()) {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), WIDER);
-        for scope in crate::verbs::SCOPES.into_iter().skip(1) {
-            ui.horizontal_wrapped(|ui| {
-                for word in crate::verbs::VERDICTS {
-                    let seat = ui.button(wider(word, scope));
-                    crate::ui::act::tag(&seat, &[crate::verbs::ANSWER.word]);
-                    if seat.clicked() {
-                        verdict = Some((word, scope));
-                    }
-                }
-            });
-        }
+        ui.horizontal_wrapped(|ui| {
+            for choice in offered.iter().filter(|choice| choice.wider()) {
+                seat(ui, choice);
+            }
+        });
     }
-    if let Some(row) = fired {
-        model.post_seen(channel, &row);
-    }
-    if let Some((word, scope)) = verdict {
-        model.post_answer(channel, row, word, scope);
+    if let Some(choice) = taken {
+        crate::ui::ask::answer(model, channel, row, choice);
     }
 }
 

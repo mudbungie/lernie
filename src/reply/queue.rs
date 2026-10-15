@@ -124,6 +124,17 @@ pub struct Held {
     pub tool: String,
     pub tool_use: String,
     pub reason: String,
+    /// **The scope words an answer may take for this hold** (yog bl-0da6;
+    /// bl-da16), in the wire's own order — `call` alone for a secret or
+    /// destructive call, which the engine answers for the call in front of
+    /// the operator and never for a class of calls to come, all three
+    /// otherwise. It rides the row because the classification does: a seat
+    /// that read the permitted reach out of `reason`'s prose would be
+    /// re-deriving at this end what the engine already decided. **Empty is
+    /// *the engine did not say*** — an older engine wrote no such key — and
+    /// the seat then offers every reach it knows and lets the refusal land on
+    /// the rule, as it did before the key existed.
+    pub scopes: Vec<String>,
 }
 
 impl QueueRow {
@@ -180,6 +191,7 @@ fn held(obj: &Map<String, Value>) -> Result<Held, String> {
         tool: fields::text(obj, "tool")?,
         tool_use: fields::text(obj, "tool_use")?,
         reason: fields::text(obj, "reason")?,
+        scopes: fields::strings(obj, "scopes")?,
     })
 }
 

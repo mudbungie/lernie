@@ -246,7 +246,8 @@ and the chosen one wears `RAISED`.
 attention accent, standing between the transcript and the prompt line
 while the selected conversation asks — the rule is under the prompt
 (DESIGN §4.45): the queue row's words in the queue's own inks,
-then its choices as numbered rows, `1.` to `6.`, the chosen one `RAISED`.
+then its choices as numbered rows, `1.` to at most `6.`, the chosen one
+`RAISED`.
 
 **A trail** (`chat`): stems `├─` `└─` `│` in `INK_FAINT`; the fold head
 `▾ tool calls (3)` in `INK_WEAK`; a call `● name("preview") ✓` with the dot in

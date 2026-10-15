@@ -63,11 +63,14 @@ fn a_verdict_composes_the_answer_and_names_no_invocation() {
     );
 }
 
-/// **The two wider reaches are rows of their own, each naming itself** (yog
+/// **The wider reaches are rows of their own, each naming itself** (yog
 /// bl-94a5). They are written out per scope rather than picked from a
 /// selector, which is what makes *wider* impossible to arrive at by accident:
 /// a sticky picker fires the next row at whatever the last one was set to, and
-/// the wire refuses a default for that same reason.
+/// the wire refuses a default for that same reason. **And they are the ask's
+/// own list** (bl-da16): every row the pane paints is a choice `ask::choices`
+/// offers the row, so a held row that lists `call` alone stands no wider row
+/// and no line for one.
 #[test]
 fn the_wider_reaches_are_offered_as_rows_that_say_what_they_settle() {
     let mut model = queued();
@@ -75,13 +78,37 @@ fn the_wider_reaches_are_offered_as_rows_that_say_what_they_settle() {
         render(ui, &mut model);
     });
     assert!(painted.contains(WIDER), "{painted}");
+    let (_, held) = crate::ui::ask::row(&crate::test_support::window::asked()).expect("a row");
+    for choice in crate::ui::ask::choices(&held) {
+        assert!(painted.contains(&choice.word()), "{choice:?}:\n{painted}");
+    }
     for scope in crate::verbs::SCOPES.into_iter().skip(1) {
-        for word in crate::verbs::VERDICTS {
+        assert!(
+            painted.contains(&wider("pass", scope)),
+            "{scope}:\n{painted}"
+        );
+        for word in ["refuse", "hold"] {
             assert!(
-                painted.contains(&wider(word, scope)),
+                !painted.contains(&wider(word, scope)),
                 "{word}/{scope}:\n{painted}"
             );
         }
+    }
+    // A row whose engine permits the one call offers no reach either — on
+    // the same list the ask reads, so the two surfaces cannot disagree.
+    let mut narrow = queued();
+    narrow.waiting[0].rows[0]
+        .held
+        .as_mut()
+        .expect("a parked call")
+        .scopes = vec!["call".to_owned()];
+    let painted = pane(|ui| {
+        render(ui, &mut narrow);
+    });
+    assert!(!painted.contains(WIDER), "{painted}");
+    assert!(!painted.contains("for this"), "{painted}");
+    for word in crate::verbs::VERDICTS {
+        assert!(painted.contains(word), "{word:?}:\n{painted}");
     }
     // A row with nothing parked offers no reach at all, on the narrow row's
     // own terms: there is no held call for one to be about.

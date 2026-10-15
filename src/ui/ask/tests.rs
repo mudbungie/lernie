@@ -1,5 +1,6 @@
 //! The ask: when it stands, what it offers, and how it is answered.
 
+mod scopes;
 use super::{Choice, HEADING, HINT, answer, choices, confirm, moved, pick, row, words};
 use crate::paint_probe::frame::{Window, press};
 use crate::test_support::window::{asked, click, painted, seated};
@@ -41,8 +42,8 @@ fn it_stands_on_the_selected_conversation_s_row_and_not_otherwise() {
 }
 
 /// **The choices are the queue's acts**: `seen` alone where nothing is
-/// parked, the three scopes of `pass` then `refuse` and `hold` where a call
-/// is — each worded as the queue pane words it, each tagged with its op.
+/// parked, the three scopes of `pass` (the row listing none; [`scopes`]) then
+/// `refuse` and `hold` where a call is — worded and tagged as the queue pane's.
 #[test]
 fn the_choices_are_the_queue_s_acts() {
     let model = asked();
@@ -201,7 +202,7 @@ fn nothing_asks_nothing_answers() {
     assert!(model.outbox.is_empty());
     assert!(!pick(&mut model, 1));
     let held = row(&asked()).expect("a row");
-    answer(&mut model, &held, Choice::Seen);
+    answer(&mut model, &held.0, &held.1, Choice::Seen);
     assert_eq!(last_op(&model), Some(json!("seen")));
 }
 

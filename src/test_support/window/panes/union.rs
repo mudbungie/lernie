@@ -54,6 +54,7 @@ pub(crate) fn queued() -> Model {
             tool: "Bash".to_owned(),
             tool_use: "toolu_1".to_owned(),
             reason: "writes".to_owned(),
+            scopes: Vec::new(),
         }),
         ..waiting("home", "20260830T051200Z-a1b2")
     };

@@ -225,6 +225,7 @@ fn held(obj: &Map<String, Value>) -> Result<Held, String> {
         tool: fields::text(obj, "tool")?,
         tool_use: fields::text(obj, "tool_use_id")?,
         reason: fields::text(obj, "reason")?,
+        scopes: optional_list(obj, "scopes")?,
     })
 }
 

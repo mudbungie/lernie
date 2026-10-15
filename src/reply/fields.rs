@@ -156,11 +156,12 @@ pub(crate) fn opt_flag(obj: &Map<String, Value>, key: &str) -> Result<Option<boo
 
 /// An **optional** list of strings, absent read as empty.
 ///
-/// The one place absence and emptiness are deliberately one reading, and it is
+/// Where absence and emptiness are deliberately one reading, and it is
 /// upstream's own shape that makes them one: a list is written only by the
 /// state that has one to write, and the state rides beside it verbatim — so
 /// *this row's state has no such list* and *this row's list is empty* are the
-/// same claim about the same row.
+/// same claim about the same row. The held row's `scopes` reads on the same
+/// terms (`super::queue::Held`): an engine that wrote none said nothing.
 pub(crate) fn strings(obj: &Map<String, Value>, key: &str) -> Result<Vec<String>, String> {
     match obj.get(key) {
         None => Ok(Vec::new()),

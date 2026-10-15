@@ -1,7 +1,8 @@
 +++
 title = "the transcript's bubbles by role, and a trail that folds itself once its calls are done"
 created = 1792034031
-updated = 1792034031
+updated = 1792034225
+claimant = "Bubbling"
 parent = "bl-4792"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

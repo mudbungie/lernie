@@ -27,9 +27,15 @@ impl Model {
     }
 
     /// **Ask before deleting `root_id`**: the confirmation stands until it
-    /// is answered (`crate::ui::bar::confirm`).
+    /// is answered (`crate::ui::bar::confirm`) — unless the `confirm` knob
+    /// is off (DESIGN §4.46 item 4), when the door deletes at once as a
+    /// Ctrl-click does.
     pub fn begin_deleting(&mut self, root_id: &str) {
-        self.deleting = Some(root_id.to_owned());
+        if self.settings.on(crate::settings::Toggle::Confirm) {
+            self.deleting = Some(root_id.to_owned());
+        } else {
+            self.post_delete(root_id);
+        }
     }
 
     /// **Spare it**: the confirmation goes and nothing is sent.

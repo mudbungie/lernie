@@ -195,6 +195,11 @@ fn window_rows(out: &mut Vec<Row>) {
         &[verbs::DOCTOR],
     ));
     out.push(Row::new(
+        crate::ui::settings::WORD,
+        crate::ui::settings::SUMMARY,
+        &[],
+    ));
+    out.push(Row::new(
         crate::ui::trail::WORD,
         crate::verbs::doors::OPS.summary,
         &[verbs::OPS],

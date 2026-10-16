@@ -38,6 +38,8 @@ pub const WORD: &str = "find";
 pub const HEADING: &str = "find text";
 /// The word on the control that spends the needle.
 pub const FIND: &str = "find";
+/// What `find` does.
+pub const FIND_HELP: &str = "asks the engine for every place the words above appear";
 /// What stands beside the control while there is nothing to search for.
 pub const NEEDS_WORDS: &str = "type what to look for and this becomes live";
 /// What the pane says before anything has been asked.
@@ -96,7 +98,7 @@ fn asking(ui: &mut egui::Ui, model: &mut Model) {
     let live = model.needled();
     let mut fired = false;
     ui.horizontal_wrapped(|ui| {
-        let act = ui.add_enabled(live, egui::Button::new(FIND));
+        let act = theme::paint::button(ui, FIND, live, FIND_HELP);
         crate::ui::act::tag(&act, &[crate::verbs::SEARCH.word]);
         fired = act.clicked();
     });

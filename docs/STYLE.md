@@ -64,7 +64,7 @@ the bottom, under the prompt, so the words typed are beside the words they
 answer. Nothing else is on the glass until it is asked for, and it is asked
 for by a slash verb or a key — and comes as a framed box floating over the
 transcript, above the prompt. A width buys wrapping and nothing else; there is
-no shape and no yield; the one dragged edge is the bar's.
+no shape and no yield; the one dragged edge is the bar's. **Every control tells** (DESIGN §4.46): rest the pointer on one for half a second and a sentence says what it does, and the chord that fires it where one is bound; the settings pane (`/settings`, Ctrl+,) tunes that delay with the rest of the seat's own knobs.
 
 **The eye lands on green.** The ask above the prompt is a green-framed box;
 a dropup's check is green for the moment its list is fresh; the prompt line
@@ -316,7 +316,7 @@ the rows and grows only from the words, never from the panel it stands in.
 `INK`; `RAISED` pressed or open; `INK_FAINT` disabled and still on the
 glass; the attention accent on an armed irreversible act. **A compact
 control** is a glyph and a word in one run — `theme::worded` — and the glyph
-is a token of the theme, asserted to have a glyph in the body font.
+is a token of the theme, asserted to have a glyph in the body font. **Every control carries its help** (DESIGN §4.46 item 2): one sentence in the operator's terms, shown as a tooltip — the overlay's `SURFACE` box, its `HAIRLINE` frame, `BODY` in `INK` — after the pointer has rested `help_delay` on it, ending ` · <chord>` where a key fires the same act. **A slider** (`theme::paint::slider`, the settings pane): `RAISED` as its trough with the selection's tint up to the handle, the handle a `RAISED` disc ringed in the brand, its number after it, arrows moving it while it holds the keyboard, and the brand ring around the whole run while it does. **A toggle** (`theme::paint::toggle`): a check box in the control's fill, the brand check.
 
 **A strip** (the window's acts, the aimed wall's acts): compact controls in
 one wrapped row, a short verb each — `refresh`, `verbs…`, `roles…`,

@@ -236,3 +236,15 @@ fn a_refusal_of_its_read_puts_the_reload_down() {
     model.receipt(&channel, crate::verbs::WORKSPACES.word, no());
     assert!(model.notice.is_some());
 }
+
+/// **Nothing drops up under the enrollment** (bl-8c80): what it holds must
+/// not be legible beside anything, and only its own gesture leaves it.
+#[test]
+fn nothing_drops_up_under_the_enrollment() {
+    let mut model = selecting();
+    model.begin_enrollment();
+    assert!(model.enroll.is_some());
+    model.drop_up(Selector::Model);
+    assert!(model.dropup.is_none(), "the chord did nothing");
+    assert!(model.enroll.is_some(), "the enrollment stands");
+}

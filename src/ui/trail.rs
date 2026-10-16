@@ -41,6 +41,10 @@ use crate::ui::{Model, theme};
 pub const WORD: &str = "trail";
 /// The word on the control that appends the operator's watermark.
 pub const ACK: &str = "acknowledge every alarm";
+/// What the acknowledge does.
+pub const ACK_HELP: &str = "marks every standing alarm seen; the trail keeps it";
+/// What `cut every trail…` does.
+pub const OPEN_HELP: &str = "opens the clearing, which asks before it cuts";
 /// The pane's own heading.
 pub const HEADING: &str = "the trail";
 /// What it says before any channel has answered.
@@ -76,7 +80,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         // and *a trail* is the one reading of these rows this seat makes: the
         // classification stays the engine's (REMOTE §9.17), so nothing here
         // asks whether an alarm is standing.
-        let seen = ui.add_enabled(!crossed_any(model), egui::Button::new(ACK));
+        let seen = theme::paint::button(ui, ACK, !crossed_any(model), ACK_HELP);
         crate::ui::act::tag(&seen, &[crate::verbs::ACK.word]);
         if seen.clicked() {
             model.post_ack();
@@ -85,7 +89,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         // it carries no `act:` token: the op is tagged on the control inside
         // that pane which actually spends it — the division `enroll a box…`
         // keeps with `mint`.
-        if ui.button(crate::ui::clear::OPEN).clicked() {
+        if theme::paint::button(ui, crate::ui::clear::OPEN, true, OPEN_HELP).clicked() {
             model.begin_clearing();
         }
     });

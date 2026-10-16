@@ -80,3 +80,16 @@ fn ctrl_t_unfolds_it_and_a_row_selects() {
         "the head folds it:\n{shut}"
     );
 }
+
+/// **The `dock` knob is the fold's first frame** (DESIGN §4.46 item 4): a
+/// window that has not toggled it stands as the knob says, and Ctrl+T
+/// toggles from there.
+#[test]
+fn the_knob_is_the_fold_until_it_is_toggled() {
+    let ctx = egui::Context::default();
+    assert!(!super::unfolded(&ctx, false));
+    assert!(super::unfolded(&ctx, true), "the knob on");
+    super::toggle(&ctx, true);
+    assert!(!super::unfolded(&ctx, true), "toggled from the knob");
+    assert!(!super::unfolded(&ctx, false), "and the knob no longer read");
+}

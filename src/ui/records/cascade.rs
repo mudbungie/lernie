@@ -51,6 +51,7 @@
 //! §4.32 records it rather than leaving it to be discovered by an operator.
 
 use crate::reply::agent::{Agent, Offer};
+use crate::ui::theme;
 
 /// **What the arming box asks for**, and it is the whole of the refusal too.
 ///
@@ -64,6 +65,9 @@ use crate::reply::agent::{Agent, Offer};
 /// §4.32). Measured, not assumed — the sentence beside the box put two nodes
 /// off the bottom of the narrow shape.
 pub const ARM: &str = "its name, to take the subtree";
+/// What the fire does.
+pub const FIRE_HELP: &str =
+    "stops this conversation and every child under it; the name above arms it";
 /// **What the arming box is worth**, in points, on
 /// `crate::ui::composer::acts::ARM_WIDTH`'s own reasoning: this pane covers
 /// the window and a box that took the rest of the line would push the control
@@ -93,10 +97,7 @@ pub fn control(ui: &mut egui::Ui, model: &mut crate::ui::Model, row: &Agent) {
             .hint_text(ARM),
     );
     let ready = armed(row, &model.cascade);
-    let fire = ui.add_enabled(
-        ready,
-        egui::Button::new(super::header::word(Offer::Children)),
-    );
+    let fire = theme::paint::button(ui, super::header::word(Offer::Children), ready, FIRE_HELP);
     crate::ui::act::tag(&fire, &[crate::verbs::STOP.word]);
     if fire.clicked() {
         model.post_cascade();

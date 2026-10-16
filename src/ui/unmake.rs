@@ -44,6 +44,9 @@ use crate::ui::{Model, theme};
 pub const WORD: &str = "unmake";
 /// The word that spends it.
 pub const CONFIRM: &str = "unmake it";
+/// What the confirm does.
+pub const CONFIRM_HELP: &str =
+    "deletes this workspace and everything in it on the engine; nothing brings it back";
 /// The pane's own heading.
 pub const HEADING: &str = "unmake this workspace";
 /// What the arming box asks for.
@@ -103,7 +106,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
         armed = held.armed();
     }
     ui.horizontal_wrapped(|ui| {
-        let spend = ui.add_enabled(armed, egui::Button::new(CONFIRM));
+        let spend = theme::paint::button(ui, CONFIRM, armed, CONFIRM_HELP);
         crate::ui::act::tag(&spend, &[crate::verbs::DELETE_WORKSPACE.word]);
         if spend.clicked() {
             model.post_unmaking();

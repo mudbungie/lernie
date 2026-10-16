@@ -33,7 +33,7 @@ fn the_foot_names_the_aimed_wall_or_the_word() {
     let cut = foot(&mut named);
     let tail = format!("{}{}", crate::ui::theme::glyph::ELIDED, dropped(""));
     assert!(cut.ends_with(&tail), "{cut:?}");
-    named.bar.dragged.shut = Some(super::super::SHUT * 2.0);
+    named.settings.bar_shut = Some(super::super::SHUT * 2.0);
     let more = foot(&mut named);
     assert!(more.len() > cut.len(), "{more:?} shows more than {cut:?}");
     model.bar.pinned = true;

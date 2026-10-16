@@ -146,3 +146,39 @@ fn a_busy_wall_at_280_points_still_says_its_state() {
         "the state is cut: {row:?}"
     );
 }
+
+/// **The founding row tells what founding does** (bl-71d0), not what
+/// `+ new` does: the pointer resting on `+ new workspace` in the switcher
+/// opens its own sentence.
+#[test]
+fn the_founding_row_tells_its_own_sentence() {
+    let mut model = seated();
+    model.switching = true;
+    // The clock here is egui's stand-in, a frame at a time: no delay.
+    model.settings.help_delay = 0.0;
+    let window = Window::new();
+    let mut body = |ctx: &egui::Context| crate::ui::render(ctx, &mut model);
+    let at = seen(&window, &mut body)
+        .into_iter()
+        .find(|run| run.text == super::super::engine::FOUND)
+        .expect("the founding row stands")
+        .shown
+        .center();
+    let mut output = window.frame(vec![egui::Event::PointerMoved(at)], &mut body);
+    for _ in 0..12 {
+        output = window.frame(Vec::new(), &mut body);
+    }
+    let said: Vec<String> = crate::paint_probe::seen_of(&output)
+        .into_iter()
+        .map(|run| run.text)
+        .collect();
+    assert!(
+        said.iter()
+            .any(|run| run == super::super::engine::FOUND_HELP),
+        "{said:?}"
+    );
+    assert!(
+        !said.iter().any(|run| run == super::super::wall::NEW_HELP),
+        "{said:?}"
+    );
+}

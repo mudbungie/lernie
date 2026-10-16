@@ -128,7 +128,12 @@ transcript and Esc puts it down. While the selected conversation is asking,
 its decision stands above the rule as numbered choices a digit picks on an
 empty prompt — words typed there are sent instead; while
 anything runs under the aimed workspace, a one-line dock above the rule says
-so and Ctrl+T unfolds it. All of it is painted from a snapshot and fires
+so and Ctrl+T unfolds it. `/settings` (Ctrl+,) is the seat's own knobs —
+how far a wheel notch scrolls, how long the bar lingers and how wide it
+stands, the scale, whether the transcript's blocks wear fills, whether a
+working folds itself, whether a delete asks — each a slider or a check over
+the sentence that says what it does, remembered in the place file only where
+set off its default (`docs/DESIGN.md` §4.46). All of it is painted from a snapshot and fires
 gestures through the same doors the command line spends. The prompt speaks to
 the conversation that is selected and **begins one** where none is, holding
 the staged body between the start's two acts — so the window can start a

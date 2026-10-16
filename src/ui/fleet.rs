@@ -69,6 +69,15 @@ pub const PROJECT_HINT: &str = "project";
 pub const MODEL_HINT: &str = "cheap model id";
 /// The word on the control that lowers the cap.
 pub const FEWER: &str = "−";
+/// What the two cap controls do.
+pub const FEWER_HELP: &str = "one fewer agent at once, never below one";
+pub const MORE_HELP: &str = "one more agent at once";
+/// What the five acts do.
+pub const RUN_HELP: &str = "runs this many agents at once on the project's ready balls";
+pub const DISBAND_HELP: &str = "stops the fleet; what is mid-ball finishes";
+pub const WATCH_HELP: &str = "has this model watch the fleet and deliver what passes";
+pub const DISARM_HELP: &str = "stops the watcher";
+pub const SCAN_HELP: &str = "reads every agent's inbox now rather than on the next beat";
 /// The word on the control that raises it.
 pub const MORE: &str = "+";
 /// The heading over the attempts.
@@ -120,18 +129,18 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
     let mut fired: Option<serde_json::Value> = None;
     let fleet = model.fleet.as_mut()?;
     ui.horizontal_wrapped(|ui| {
-        if ui.button(FEWER).clicked() {
+        if theme::paint::button(ui, FEWER, true, FEWER_HELP).clicked() {
             // **Never below one.** A cap of zero is a loop that spawns nothing
             // and still reaps, which upstream refuses to spell as a cap at all
             // — `disband` is that — so it is not a value this box can send.
             fleet.cap = fleet.cap.saturating_sub(1).max(1);
         }
         ui.label(fleet.cap.to_string());
-        if ui.button(MORE).clicked() {
+        if theme::paint::button(ui, MORE, true, MORE_HELP).clicked() {
             fleet.cap = fleet.cap.saturating_add(1);
         }
         ui.add(egui::TextEdit::singleline(&mut fleet.project).hint_text(PROJECT_HINT));
-        let run = ui.add_enabled(!fleet.project.trim().is_empty(), egui::Button::new(RUN));
+        let run = theme::paint::button(ui, RUN, !fleet.project.trim().is_empty(), RUN_HELP);
         crate::ui::act::tag(&run, &[crate::verbs::FLEET]);
         if run.clicked() {
             fired = Some(crate::verbs::fleet(
@@ -140,7 +149,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
                 fleet.cap,
             ));
         }
-        let stop = ui.button(DISBAND);
+        let stop = theme::paint::button(ui, DISBAND, true, DISBAND_HELP);
         crate::ui::act::tag(&stop, &[crate::verbs::DISBAND.word]);
         if stop.clicked() {
             fired = Some(crate::verbs::disband(wall.to_owned()));
@@ -148,7 +157,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
     });
     ui.horizontal_wrapped(|ui| {
         ui.add(egui::TextEdit::singleline(&mut fleet.model).hint_text(MODEL_HINT));
-        let watch = ui.add_enabled(!fleet.model.trim().is_empty(), egui::Button::new(WATCH));
+        let watch = theme::paint::button(ui, WATCH, !fleet.model.trim().is_empty(), WATCH_HELP);
         crate::ui::act::tag(&watch, &[crate::verbs::ARM.word]);
         if watch.clicked() {
             fired = Some(crate::verbs::arm(
@@ -156,12 +165,12 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, wall: &str) -> Option<serde_json::
                 fleet.model.trim().to_owned(),
             ));
         }
-        let drop = ui.button(DISARM);
+        let drop = theme::paint::button(ui, DISARM, true, DISARM_HELP);
         crate::ui::act::tag(&drop, &[crate::verbs::DISARM.word]);
         if drop.clicked() {
             fired = Some(crate::verbs::disarm(wall.to_owned()));
         }
-        let flush = ui.button(SCAN);
+        let flush = theme::paint::button(ui, SCAN, true, SCAN_HELP);
         crate::ui::act::tag(&flush, &[crate::verbs::SCAN.word]);
         if flush.clicked() {
             fired = Some(crate::verbs::scan(wall.to_owned()));

@@ -27,7 +27,7 @@ fn the_width_eases_between_its_two_ends() {
     tick(&ctx, &mut model, 1.1 + f64::from(EASE), over);
     assert!((panel(&ctx) - wide).abs() < 0.01, "open once eased");
     let away = Some(egui::pos2(900.0, 300.0));
-    let gone = 1.2 + LINGER + f64::from(EASE);
+    let gone = 1.2 + f64::from(LINGER) + f64::from(EASE);
     tick(&ctx, &mut model, gone, away);
     tick(&ctx, &mut model, gone + f64::from(EASE) / 2.0, away);
     let back = panel(&ctx);

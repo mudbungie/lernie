@@ -23,9 +23,9 @@ fn lifted(output: &egui::FullOutput) -> bool {
 /// Paint each pickable shape on its own line.
 fn pickables(ctx: &egui::Context, chosen: bool) {
     egui::CentralPanel::default().show(ctx, |ui| {
-        row(ui, "a row", INK, None, chosen, 0.0);
-        link(ui, "a link", INK);
-        tab(ui, "a tab", INK);
+        row(ui, "a row", INK, None, chosen, 0.0, "a row");
+        link(ui, "a link", INK, "a link");
+        tab(ui, "a tab", INK, "a tab");
     });
 }
 
@@ -67,7 +67,7 @@ fn a_chosen_row_keeps_its_raise_under_the_pointer() {
 fn the_mark_is_inside_the_link() {
     let body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            link_marked(ui, "model", INK, ("⏶", INK_FAINT));
+            link_marked(ui, "model", INK, ("⏶", INK_FAINT), "opens");
         });
     };
     let laid = under(egui::pos2(290.0, 95.0), body);
@@ -100,6 +100,7 @@ fn a_block_row_is_one_seat_over_every_line() {
                 aside: Some("2m".to_owned()),
                 beneath: vec![("beneath".to_owned(), INK_FAINT, egui::TextStyle::Small)],
                 door: None,
+                help: "a block".to_owned(),
             }
             .paint(ui);
         });
@@ -124,4 +125,59 @@ fn a_block_row_is_one_seat_over_every_line() {
         .expect("the pointer on a line beneath lifts the block")
         .0;
     assert!(block.contains(aside.center()) && block.contains(beneath.center()));
+}
+
+/// **A row's door tells its own sentence** (bl-a6b3): with the pointer
+/// resting on the door, the door's help is on the glass and the row's is
+/// not — egui would otherwise keep the row's tooltip open for as long as
+/// the pointer stays inside the row, which the door is.
+#[test]
+fn a_doored_row_tells_the_door_under_the_pointer_and_itself_elsewhere() {
+    let body = |ctx: &egui::Context| {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            super::super::Row {
+                mark: (String::new(), INK),
+                words: "head".to_owned(),
+                ink: INK,
+                state: None,
+                chosen: false,
+                indent: 0.0,
+                aside: None,
+                beneath: Vec::new(),
+                door: Some(("×", "the door's sentence")),
+                help: "the row's sentence".to_owned(),
+            }
+            .paint_doored(ui);
+        });
+    };
+    let window = Window::sized(300.0, 100.0);
+    // **No delay and no grace**: the clock here is egui's own stand-in, a
+    // frame at a time, and what is under test is which sentence shows.
+    window.ctx().style_mut(|style| {
+        style.interaction.tooltip_delay = 0.0;
+        style.interaction.tooltip_grace_time = 0.0;
+    });
+    let mut body = body;
+    let said = |output: &egui::FullOutput, words: &str| {
+        seen_of(output).into_iter().any(|run| run.text == words)
+    };
+    window.frame(Vec::new(), &mut body);
+    let on_row = egui::pos2(20.0, 15.0);
+    let mut output = window.frame(vec![egui::Event::PointerMoved(on_row)], &mut body);
+    for _ in 0..12 {
+        output = window.frame(Vec::new(), &mut body);
+    }
+    assert!(said(&output, "the row's sentence"), "the row tells");
+    let door = seen_of(&output)
+        .into_iter()
+        .find(|run| run.text == "×")
+        .expect("the door stands while the pointer is on the row")
+        .shown
+        .center();
+    output = window.frame(vec![egui::Event::PointerMoved(door)], &mut body);
+    for _ in 0..12 {
+        output = window.frame(Vec::new(), &mut body);
+    }
+    assert!(said(&output, "the door's sentence"), "the door tells");
+    assert!(!said(&output, "the row's sentence"), "the row stands down");
 }

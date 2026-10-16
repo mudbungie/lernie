@@ -25,6 +25,9 @@ pub const KEEP: &str = "keep";
 pub const DELETE: &str = "delete";
 /// The keys, said on the name line.
 pub const HINT: &str = "Enter deletes · Esc keeps";
+/// What the two answers do.
+pub const KEEP_HELP: &str = "keeps the conversation; nothing is sent";
+pub const DELETE_HELP: &str = "deletes the conversation on the engine; nothing brings it back";
 
 /// **Paint the box** for `id`, the conversation whose deletion is being
 /// asked about (the shell lays the panel only while one is), and take the
@@ -48,10 +51,10 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, id: &str) {
             ui.add(egui::Label::new(egui::RichText::new(&name).color(theme::INK)).wrap());
             ui.horizontal(|ui| {
                 // **`keep` posts nothing**, so it wears no `act:` tag.
-                if theme::paint::tab(ui, KEEP, theme::INK_WEAK).clicked() {
+                if theme::paint::tab(ui, KEEP, theme::INK_WEAK, KEEP_HELP).clicked() {
                     answered = Some(false);
                 }
-                let delete = theme::paint::tab(ui, DELETE, accent);
+                let delete = theme::paint::tab(ui, DELETE, accent, DELETE_HELP);
                 crate::ui::act::tag(&delete, &[crate::verbs::DELETE_AGENT.word]);
                 if delete.clicked() {
                     answered = Some(true);

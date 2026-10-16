@@ -17,9 +17,7 @@ use super::{
     Enrolling, Fill, Fleet, Forking, Hits, Listing, Login, Lookup, Notice, Pages, Posted, Pricing,
     Records, Start, Trail, Tuning, Unmaking,
 };
-use crate::reply::convs::ConvRow;
-use crate::reply::stream::Stream;
-use crate::reply::transcript::Transcript;
+use crate::reply::{convs::ConvRow, stream::Stream, transcript::Transcript};
 
 /// Everything the window holds between frames.
 #[derive(Debug, Clone, Default)]
@@ -218,6 +216,8 @@ pub struct Model {
     /// Enter or Space fires the same click a pointer fires. It rides here and
     /// not on `Engines`, because it is a cursor and nothing durable.
     pub standing: Option<super::Stand>,
+    /// **Everything this seat is set to** (`crate::settings`; §4.46 item 4).
+    pub settings: crate::settings::Settings,
     /// **Whether the switcher stands** (`crate::ui::switcher`; DESIGN §4.42):
     /// the one list of engines, walls and conversations, asked for by Ctrl+X
     /// and put down by a choice or Esc. A navigation the operator performed,

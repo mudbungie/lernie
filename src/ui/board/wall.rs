@@ -54,7 +54,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     // **Filing is offered whether or not the wall holds anything**, because a
     // ball that does not exist yet is not one of this wall's rows: the wall is
     // only what supplies the name it is stamped with.
-    if ui.button(acts::FILE).clicked() {
+    if theme::paint::button(ui, acts::FILE, true, acts::FILE_HELP).clicked() {
         model.begin_filing();
     }
     let Some(rows) = model.holding.clone() else {
@@ -71,7 +71,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             theme::tone_ink(&crate::reply::convs::Tone::Weak),
             super::cost(&row.spend),
         );
-        if ui.button(acts::ACT).clicked() {
+        if theme::paint::button(ui, acts::ACT, true, acts::ACT_HELP).clicked() {
             model.begin_amending(row);
         }
     }

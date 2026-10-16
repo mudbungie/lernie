@@ -31,17 +31,21 @@
 use serde_json::Value;
 
 use crate::reply::governing::Mark;
-use crate::ui::Model;
+use crate::ui::{Model, theme};
 
 /// The word on the control that deletes the mark.
 pub const CLEAR: &str = "clear workflow mark";
+/// What the clear does.
+pub const CLEAR_HELP: &str = "takes the workflow mark off this conversation";
+/// What a marking does.
+pub const MARK_HELP: &str = "marks this conversation as running that lineage's workflow";
 
 /// Paint the mark, if one governs, and the acts on it — into the governing
 /// half's own wrapped row, so the half costs no line it did not before.
 pub fn row(ui: &mut egui::Ui, model: &mut Model, mark: Option<&Mark>) {
     if let Some(mark) = mark {
         ui.label(mark.line());
-        let clear = ui.button(CLEAR);
+        let clear = theme::paint::button(ui, CLEAR, true, CLEAR_HELP);
         crate::ui::act::tag(&clear, &[crate::verbs::CLEAR_WORKFLOW.word]);
         if clear.clicked() {
             post(model, &crate::verbs::clear_workflow);
@@ -54,7 +58,7 @@ pub fn row(ui: &mut egui::Ui, model: &mut Model, mark: Option<&Mark>) {
         .map(|lineage| lineage.name.clone())
         .collect();
     for name in names {
-        let mark = ui.button(marking(&name));
+        let mark = theme::paint::button(ui, &marking(&name), true, MARK_HELP);
         crate::ui::act::tag(&mark, &[crate::verbs::WORKFLOW.word]);
         if mark.clicked() {
             post(model, &|workspace, agent| {

@@ -12,15 +12,19 @@
 //! trail it stands on.
 
 use super::{Fold, Kind, Row, code, fold};
+
+/// What the speaker's name does where it is a door: shuts the working.
+const WHO_HELP: &str = "folds the working back to one line";
 use crate::ui::theme::{self, Speaker, glyph};
 
 /// **One step, whole.** With `door`, its name is the seat that shuts it
 /// again, and the answer is whether that seat was clicked; without, the name
 /// is a label and the answer is never.
-pub(super) fn step(ui: &mut egui::Ui, at: usize, row: &Row, door: bool) -> bool {
+pub(super) fn step(ui: &mut egui::Ui, at: usize, row: &Row, door: bool, bubbles: bool) -> bool {
     if row.kind == Kind::Said {
         let mut shut = false;
-        theme::paint::bubbled(ui, theme::Bubble::Intermediate, |ui| {
+        let bubble = bubbles.then_some(theme::Bubble::Intermediate);
+        theme::paint::bubbled(ui, bubble, |ui| {
             shut = bare(ui, at, row, door);
         });
         return shut;
@@ -58,7 +62,7 @@ fn bare(ui: &mut egui::Ui, at: usize, row: &Row, door: bool) -> bool {
         };
         ui.horizontal_wrapped(|ui| {
             if door {
-                shut = theme::paint::tab(ui, &row.who, who).clicked();
+                shut = theme::paint::tab(ui, &row.who, who, WHO_HELP).clicked();
             } else {
                 ui.label(egui::RichText::new(&row.who).color(who));
             }
@@ -86,9 +90,18 @@ fn bare(ui: &mut egui::Ui, at: usize, row: &Row, door: bool) -> bool {
 fn folded(ui: &mut egui::Ui, at: usize, row: &Row, fold: &Fold) {
     let id = ui.make_persistent_id(at);
     let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(false);
-    if ui
-        .button(if open { fold::UNFOLD } else { &fold.whole })
-        .clicked()
+    let help = if open {
+        fold::FOLD_HELP
+    } else {
+        fold::UNFOLD_HELP
+    };
+    if theme::paint::button(
+        ui,
+        if open { fold::UNFOLD } else { &fold.whole },
+        true,
+        help,
+    )
+    .clicked()
     {
         open = !open;
         ui.data_mut(|d| d.insert_temp(id, open));

@@ -55,7 +55,27 @@ use crate::ui::slash::DELETE;
 
 const FLAG: &str = crate::verbs::FLAG.word;
 const RETARGET: &str = crate::verbs::RETARGET.word;
-use crate::ui::{Aim, Fill, Model};
+use crate::ui::{Aim, Fill, Model, theme};
+
+/// What `records…` does.
+pub const RECORDS_HELP: &str = "opens this conversation's own records: its steps, files and mail";
+
+/// **What a straight item does**, by the op it fires.
+fn help_of(op: &str) -> &'static str {
+    match op {
+        o if o == crate::verbs::STOP.word => "stops this conversation where it stands",
+        o if o == crate::verbs::RETARGET.word => "points this conversation at another directory",
+        _ => "marks the ask seen; the call stays parked",
+    }
+}
+
+/// **What an item that opens the box does**, by what the box will take.
+fn fill_help(fill: Fill) -> &'static str {
+    match fill {
+        Fill::Reason => "puts the box in flag mode: the words typed are the reason",
+        _ => "puts the box in delete mode: the conversation's own name arms it",
+    }
+}
 
 /// **What a word wears when the item leads somewhere rather than acting.** The
 /// ellipsis is the whole of the convention and it has one home: an item that
@@ -109,7 +129,7 @@ pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvR
     response.context_menu(|ui| {
         let mut chose = false;
         for (word, op, door) in straight(row) {
-            let item = ui.button(word);
+            let item = theme::paint::button(ui, word, true, help_of(op));
             crate::ui::act::tag(&item, &[op]);
             if item.clicked() {
                 model.outbox.push(crate::ui::Posted::act(door(
@@ -124,7 +144,8 @@ pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvR
         // composer's own control is: opening the pane is what makes this seat
         // read the conversation's steps and files, and the reads have no
         // control of their own.
-        let records = ui.button(leads_to(crate::ui::records::WORD));
+        let records =
+            theme::paint::button(ui, &leads_to(crate::ui::records::WORD), true, RECORDS_HELP);
         crate::ui::act::tag(
             &records,
             &[crate::verbs::STEPS.word, crate::verbs::FILES.word],
@@ -139,7 +160,7 @@ pub fn show(response: &egui::Response, model: &mut Model, aim: &Aim, row: &ConvR
         // its act, which is a view (§4.16) and out of the parity contract. The
         // acts themselves are tagged where they fire, on the composer.
         for (word, fill) in [(FLAG, Fill::Reason), (DELETE, Fill::Arming)] {
-            if ui.button(leads_to(word)).clicked() {
+            if theme::paint::button(ui, &leads_to(word), true, fill_help(fill)).clicked() {
                 model.fill_in(&row.root_id, fill);
                 chose = true;
             }

@@ -48,6 +48,9 @@ pub const OPEN: &str = "cut every trail…";
 pub const CLOSE: &str = "keep them";
 /// The word that spends it.
 pub const CONFIRM: &str = "cut them now";
+/// What the confirm does.
+pub const CONFIRM_HELP: &str =
+    "cuts the trail on every engine this box reaches; nothing brings it back";
 /// The pane's own heading.
 pub const HEADING: &str = "cutting every trail";
 /// What it says about what it would do, before it offers to do it.
@@ -80,7 +83,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
     }
     ui.separator();
     ui.horizontal_wrapped(|ui| {
-        let spend = ui.button(CONFIRM);
+        let spend = theme::paint::button(ui, CONFIRM, true, CONFIRM_HELP);
         crate::ui::act::tag(&spend, &[crate::verbs::CLEAR_TRAIL.word]);
         if spend.clicked() {
             model.post_clear_trail();

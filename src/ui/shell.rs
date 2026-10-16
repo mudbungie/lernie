@@ -45,7 +45,7 @@ use crate::ui::{
 /// (`crate::paint_probe`). The native boot is `src/main.rs`, which decides
 /// nothing.
 pub fn render(ctx: &egui::Context, model: &mut Model) {
-    theme::install(ctx);
+    theme::install(ctx, &model.settings);
     // **The keys come first**, so what one changed is what this frame paints.
     // Nothing here is a control of its own: every binding calls the door the
     // click beneath it calls (`crate::ui::keys`).

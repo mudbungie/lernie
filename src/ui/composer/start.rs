@@ -62,6 +62,9 @@ pub fn goal(wall: &str, plan: bool) -> String {
 /// before the operator types one. It stands in the goal's place, not after
 /// it: the goal's question is the wrong one to ask first.
 pub const UNSIGNED: &str = "no provider yet — /login or /config, then pick one on the rule";
+/// What the box does while it is the start.
+pub const START_HELP: &str =
+    "the first message of a new conversation on this workspace; Enter begins it";
 
 /// **Whether the aimed wall's worker reaches no model yet**: its provider's
 /// row in the provider table is bare (`ProviderRow::bare`). Both reads stand
@@ -91,7 +94,8 @@ fn said(ui: &mut egui::Ui, model: &mut Model, line: &str) {
     ui.horizontal(|ui| {
         for row in rows {
             let word = format!("{}{}", crate::ui::slash::LEAD, row.word);
-            let seat = crate::ui::theme::paint::link(ui, &word, crate::ui::theme::BRAND);
+            let seat =
+                crate::ui::theme::paint::link(ui, &word, crate::ui::theme::BRAND, row.summary);
             crate::ui::act::tag(&seat, row.ops);
             if seat.clicked() {
                 fired = Some(row.word);
@@ -143,6 +147,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: &Aim) {
         &mut model.draft,
         &said,
         None,
+        START_HELP,
     );
     crate::ui::act::tag(&entry, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
     // **The `+` on an engine's row lands the caret here** (§4.39): the control

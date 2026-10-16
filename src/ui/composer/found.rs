@@ -14,6 +14,9 @@ use crate::ui::{Fill, Model};
 /// **What the box asks for while founding**: the shape of the line, then
 /// the key.
 pub const HINT: &str = "new workspace: <name> <what it is for> — Enter founds it";
+/// What the box does while founding.
+pub const BOX_HELP: &str =
+    "the new workspace's name and purpose on one line; Enter founds it and begins";
 
 /// Paint the founding box and take what it was given.
 pub fn render(ui: &mut egui::Ui, model: &mut Model) {
@@ -25,6 +28,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         &mut model.draft,
         HINT,
         None,
+        BOX_HELP,
     );
     // **The start's two tokens**: the founding IS a start, whose `prepare`
     // happens to name a workspace nobody has made yet.

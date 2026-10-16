@@ -2,8 +2,8 @@
 //! growth rule.
 
 use super::{Place, at, read, write};
+use crate::settings::Settings;
 use crate::test_support::Scratch;
-use crate::ui::bar::Dragged;
 use crate::ui::{Aim, Engines};
 
 /// The wall a window was aimed at.
@@ -20,7 +20,7 @@ fn pointed() -> Place {
         aim: Some(aimed()),
         engines: Engines::default(),
         pinned: false,
-        dragged: Dragged::default(),
+        settings: Settings::default(),
     }
 }
 
@@ -54,41 +54,48 @@ fn the_accordion_comes_back_with_the_aim() {
                 .collect(),
         },
         pinned: true,
-        dragged: Dragged::default(),
+        settings: Settings::default(),
     };
     write(scratch.path(), &arranged).expect("written");
     assert_eq!(read(scratch.path()), arranged);
 }
 
-/// **The bar's dragged widths come back beside the aim** (DESIGN §4.45 item
-/// 2), each on its own and only where set: a seat that dragged one edge
-/// writes one key, and a seat that dragged nothing writes neither — so what
-/// it reads back is the policy's default and never a zero it would have to
-/// refuse.
+/// **The settings come back beside the aim** (DESIGN §4.46 item 4), each
+/// knob on its own and only where set: a seat that dragged one edge writes
+/// one key under `settings`, and a seat that touched nothing writes no
+/// object at all — so what it reads back is the table's default and never a
+/// zero it would have to refuse.
 #[test]
-fn each_dragged_width_comes_back_on_its_own_and_an_undragged_one_is_not_written() {
+fn each_setting_comes_back_on_its_own_and_an_untouched_seat_writes_no_object() {
     let scratch = Scratch::new();
     let both = Place {
-        dragged: Dragged {
-            shut: Some(64.5),
-            open: Some(420.0),
+        settings: Settings {
+            bar_shut: Some(64.5),
+            bar_open: Some(420.0),
+            linger: 2.0,
+            on: [crate::settings::Toggle::Bubbles].into(),
+            ..Settings::default()
         },
         ..pointed()
     };
     write(scratch.path(), &both).expect("written");
     assert_eq!(read(scratch.path()), both);
     let one = Place {
-        dragged: Dragged {
-            shut: None,
-            open: Some(420.0),
+        settings: Settings {
+            bar_open: Some(420.0),
+            ..Settings::default()
         },
         ..pointed()
     };
     write(scratch.path(), &one).expect("written");
     let text = std::fs::read_to_string(at(scratch.path())).expect("read");
-    assert!(text.contains(r#""bar_open":420.0"#), "{text}");
+    assert!(text.contains(r#""settings":{"bar_open":420.0}"#), "{text}");
     assert!(!text.contains("bar_shut"), "{text}");
     assert_eq!(read(scratch.path()), one);
+    write(scratch.path(), &pointed()).expect("written");
+    let text = std::fs::read_to_string(at(scratch.path())).expect("read");
+    assert!(!text.contains("settings"), "{text}");
+    assert_eq!(read(scratch.path()), pointed());
 }
 
 /// **A file that names no edge is a file with no drag** — which is the absence
@@ -202,8 +209,8 @@ fn the_place_is_a_projection_of_the_model_and_not_a_stored_copy() {
     let held = Place::of(&model);
     assert_eq!(held.aim, model.aim);
     assert_eq!(held.engines, model.engines);
-    model.bar.dragged.open = Some(420.0);
-    assert_eq!(Place::of(&model).dragged, model.bar.dragged);
+    model.settings.bar_open = Some(420.0);
+    assert_eq!(Place::of(&model).settings, model.settings);
 }
 
 /// **A write answers its refusal rather than swallowing it**: by the time it

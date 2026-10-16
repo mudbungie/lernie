@@ -56,6 +56,11 @@ pub const UNAIMED: [&str; 2] = [
 pub const HINT: &str = "say it — Enter sends";
 /// The last of the hint's parts, and the first a narrow line drops.
 pub const BREAKS: &str = "Shift+Enter breaks a line";
+/// What the box does, aimed and not.
+pub const BOX_HELP: &str =
+    "the message to send, or a slash word; Enter sends, Shift+Enter breaks a line";
+pub const UNAIMED_HELP: &str =
+    "takes a slash word; nothing is aimed, so a message has nowhere to go";
 
 /// **The hint at the width the field has**: `lead`, then each of `parts` while
 /// the line still holds one line (bl-4e55) — dropped from the right as the
@@ -120,6 +125,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             &mut model.draft,
             &hint(ui, NOWHERE, &UNAIMED),
             None,
+            UNAIMED_HELP,
         );
         return;
     };
@@ -158,6 +164,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
         &mut model.draft,
         &said,
         asking.then(|| theme::tint(theme::State::Attention)),
+        BOX_HELP,
     );
     // **The field is the control** (§4.42): there is no `send`, Enter fires
     // it, and the tag rides the field.

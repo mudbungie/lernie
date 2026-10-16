@@ -36,6 +36,19 @@ pub(crate) fn ops(door: Door) -> &'static [&'static str] {
     }
 }
 
+/// **What each selector changes** (DESIGN §4.46 item 2).
+pub(crate) fn help(selector: Selector) -> &'static str {
+    match selector {
+        Selector::Workspace => "picks the workspace the window is aimed at",
+        Selector::Provider => "picks the provider this workspace's worker runs on",
+        Selector::Model => "picks the model this workspace's worker runs on",
+        Selector::Effort => "picks how hard the worker's model thinks",
+        Selector::Priority => {
+            "puts the worker's calls on the provider's priority lane, or takes them off"
+        }
+    }
+}
+
 /// **The mark beside a selector**: its affordance at rest, and while its
 /// dropup is open the reload in the annotation accent until the read
 /// answers, then the check in the attention accent.

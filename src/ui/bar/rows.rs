@@ -103,7 +103,8 @@ fn one(
         },
         aside: open.then_some(age),
         beneath,
-        door: open.then_some(theme::glyph::TRASH),
+        door: open.then_some((theme::glyph::TRASH, convs::TRASH_HELP)),
+        help: convs::SELECT_HELP.to_owned(),
     }
     .paint_doored(ui);
     crate::ui::act::tag(

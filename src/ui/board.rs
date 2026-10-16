@@ -183,7 +183,7 @@ fn live(
         }
     }
     let gesture = model.claiming(down, row)?;
-    let claim = ui.button(acts::CLAIM);
+    let claim = theme::paint::button(ui, acts::CLAIM, true, acts::CLAIM_HELP);
     crate::ui::act::tag(&claim, &[crate::verbs::ASSIGN.word]);
     claim.clicked().then_some(gesture)
 }

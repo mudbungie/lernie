@@ -121,6 +121,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool,
         standing.then_some(theme::BRAND),
         open,
         0.0,
+        if open { CLOSE_HELP } else { OPEN_HELP },
     );
     if standing && reveal {
         seat.scroll_to_me(None);
@@ -139,6 +140,13 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, open: bool,
 /// **The row that founds a workspace** (§4.42 item 7; bl-673e), standing last
 /// under this box's own engine beside the walls' `+ new` rows.
 pub const FOUND: &str = "+ new workspace";
+/// **What founding does** (bl-71d0): its own sentence, since what the row
+/// begins is a workspace and not a conversation.
+pub const FOUND_HELP: &str =
+    "founds a workspace on this engine: the box asks for its name and what it is for, on one line";
+/// What an engine's row does, each way.
+pub const OPEN_HELP: &str = "opens this engine: its workspaces stand beneath";
+pub const CLOSE_HELP: &str = "closes this engine's list";
 
 /// **`+ new workspace`**: the box asks for `<name> <goal>`
 /// ([`Model::begin_founding`]), and the switcher closes on the way.
@@ -156,7 +164,7 @@ pub fn found(ui: &mut egui::Ui, model: &mut Model, engine: &Engine, reveal: bool
         return;
     }
     let stand = Stand::Found(channel.to_owned());
-    if super::wall::standing_row(ui, model, FOUND, stand, 0.0, reveal) {
+    if super::wall::standing_row(ui, model, (FOUND, FOUND_HELP), stand, 0.0, reveal) {
         model.begin_founding(channel);
         model.chose();
     }

@@ -82,12 +82,12 @@ fn a_collapsed_drag_sets_the_collapsed_width_and_leaves_the_expanded_one() {
     let released = drag(&ctx, &mut model, DESK, (1.0, 0.02), grip.x, 40.0);
     assert!(!opened(&released), "shut through the drag");
     assert!(
-        near(model.bar.dragged.shut, SHUT + 40.0),
+        near(model.settings.bar_shut, SHUT + 40.0),
         "{:?}",
-        model.bar.dragged
+        model.settings
     );
     assert_eq!(
-        model.bar.dragged.open, None,
+        model.settings.bar_open, None,
         "the expanded one is untouched"
     );
     assert_eq!(model.bar.drag, None, "put down on release");
@@ -126,12 +126,12 @@ fn an_expanded_drag_sets_the_expanded_width_and_leaves_the_collapsed_one() {
     );
     assert!(opened(&released), "open through the drag");
     assert!(
-        near(model.bar.dragged.open, wide + 100.0),
+        near(model.settings.bar_open, wide + 100.0),
         "{:?}",
-        model.bar.dragged
+        model.settings
     );
     assert_eq!(
-        model.bar.dragged.shut, None,
+        model.settings.bar_shut, None,
         "the collapsed one is untouched"
     );
     assert!(near(Some(panel(&ctx)), wide + 100.0));
@@ -163,7 +163,7 @@ fn a_drag_writes_the_width_it_began_on_whatever_the_pointer_does() {
         &ctx,
         &mut model,
         DESK,
-        (1.0, LINGER),
+        (1.0, f64::from(LINGER)),
         wide - HANDLE / 2.0,
         -100.0,
     );
@@ -172,14 +172,19 @@ fn a_drag_writes_the_width_it_began_on_whatever_the_pointer_does() {
         "open through a drag longer than the linger"
     );
     assert!(
-        near(model.bar.dragged.open, wide - 100.0),
+        near(model.settings.bar_open, wide - 100.0),
         "{:?}",
-        model.bar.dragged
+        model.settings
     );
-    assert_eq!(model.bar.dragged.shut, None);
+    assert_eq!(model.settings.bar_shut, None);
     let away = Some(egui::pos2(900.0, Y));
     assert!(
-        opened(&tick(&ctx, &mut model, 4.0f64.mul_add(LINGER, 1.1), away)),
+        opened(&tick(
+            &ctx,
+            &mut model,
+            4.0f64.mul_add(f64::from(LINGER), 1.1),
+            away
+        )),
         "lingering from the release"
     );
     assert!(!opened(&tick(&ctx, &mut model, 20.0, away)), "lapsed");
@@ -196,9 +201,9 @@ fn a_drag_writes_the_width_it_began_on_whatever_the_pointer_does() {
         "shut through a drag that crossed into the rows"
     );
     assert!(
-        near(model.bar.dragged.shut, floor(&ctx)),
+        near(model.settings.bar_shut, floor(&ctx)),
         "{:?}",
-        model.bar.dragged
+        model.settings
     );
-    assert!(near(model.bar.dragged.open, wide - 100.0), "untouched");
+    assert!(near(model.settings.bar_open, wide - 100.0), "untouched");
 }

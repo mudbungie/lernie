@@ -27,10 +27,15 @@
 //! every word is one or two clicks away, and the head counts what it hides.
 
 use super::{Kind, Row, trail};
+use crate::settings::{Settings, Toggle};
 use crate::ui::theme::{self, Speaker, glyph};
 
 /// The word on a settled working's one line, before its counts.
 pub const WORKED: &str = "worked";
+/// What the working's line does, each way, and what a step is.
+pub const UNFOLD_HELP: &str = "unfolds what the turn did: its calls, their results and its notes";
+pub const FOLD_HELP: &str = "folds the working back to one line";
+pub const STEP_HELP: &str = "one step of the working; its result stands elided beneath";
 
 /// **The working's one line**: `worked · N calls · M notes` — the calls it
 /// holds, and the notes, which are every row that is not a call: the reasoning
@@ -61,9 +66,12 @@ fn in_flight(row: &Row, last: bool) -> bool {
 /// each step on its stem, whole or compact by its stage. Answers whether it
 /// stands open, which is what decides whether the `response` elbow after it
 /// is painted at all.
-pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row]) -> bool {
+///
+/// **With the `fold` knob off nothing folds itself** (DESIGN §4.46 item 4):
+/// the working and each finished step stand whole until clicked shut.
+pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row], settings: &Settings) -> bool {
     let id = ui.make_persistent_id(("working", at));
-    let live = steps.iter().any(|row| row.live);
+    let live = steps.iter().any(|row| row.live) || !settings.on(Toggle::Fold);
     let mut open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(live);
     let head = format!(
         "{} {}",
@@ -72,7 +80,8 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row]) -> bool {
     );
     // **The line is a door** (§4.45 item 6): a link at the body size, so it
     // lights under the pointer as every other clickable seat does.
-    if theme::paint::tab(ui, &head, theme::INK_WEAK).clicked() {
+    let help = if open { FOLD_HELP } else { UNFOLD_HELP };
+    if theme::paint::tab(ui, &head, theme::INK_WEAK, help).clicked() {
         open = !open;
         ui.data_mut(|d| d.insert_temp(id, open));
     }
@@ -86,9 +95,9 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row]) -> bool {
         ui.horizontal_top(|ui| {
             ui.add_space(theme::space::L);
             if in_flight(row, last) {
-                trail::step(ui, at + i, row, false);
+                trail::step(ui, at + i, row, false, settings.on(Toggle::Bubbles));
             } else {
-                finished(ui, at + i, row);
+                finished(ui, at + i, row, settings);
             }
         });
         let bottom = ui.min_rect().max.y;
@@ -103,11 +112,13 @@ pub(super) fn working(ui: &mut egui::Ui, at: usize, steps: &[Row]) -> bool {
 
 /// **A finished step**: compact by default, whole once opened, and a door
 /// either way — the compact row opens it, the name on the whole step shuts it.
-fn finished(ui: &mut egui::Ui, at: usize, row: &Row) {
+fn finished(ui: &mut egui::Ui, at: usize, row: &Row, settings: &Settings) {
     let id = ui.make_persistent_id(("step", at));
-    let open = ui.data(|d| d.get_temp::<bool>(id)).unwrap_or(false);
+    let open = ui
+        .data(|d| d.get_temp::<bool>(id))
+        .unwrap_or(!settings.on(Toggle::Fold));
     let toggled = if open {
-        trail::step(ui, at, row, true)
+        trail::step(ui, at, row, true, settings.on(Toggle::Bubbles))
     } else {
         compact(ui, row).clicked()
     };
@@ -155,6 +166,7 @@ fn compact(ui: &mut egui::Ui, row: &Row) -> egui::Response {
         aside: None,
         beneath,
         door: None,
+        help: STEP_HELP.to_owned(),
     }
     .paint(ui)
 }

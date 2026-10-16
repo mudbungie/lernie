@@ -177,7 +177,16 @@ pub fn menu(ui: &mut egui::Ui, model: &mut Model) {
             ui.colored_label(theme::NOTICE, why);
         }
         for (i, row) in shown.iter().enumerate() {
-            let seat = theme::paint::row(ui, &row.line(), theme::INK, None, start + i == at, 0.0);
+            let seat = theme::paint::row(
+                ui,
+                &row.line(),
+                theme::INK,
+                None,
+                start + i == at,
+                0.0,
+                // **A row a chord also opens cites it** (§4.46 item 3).
+                &crate::ui::keys::cited_word(row.summary, row.word),
+            );
             crate::ui::act::tag(&seat, row.ops);
             if seat.clicked() {
                 chose = Some(*row);

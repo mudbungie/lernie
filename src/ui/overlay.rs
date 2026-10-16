@@ -29,6 +29,17 @@ pub const HINT: &str = "Esc closes";
 /// past this rect is reachable by scrolling, not lost
 /// (`crate::snapshot::clipped`). A view fact, held where view facts are.
 pub const BOX: &str = "the overlay's box";
+/// **The pane's first control takes the keyboard** (bl-99ed; DESIGN §4.46
+/// item 3): the flag [`stand`] raises just before a pane's body paints,
+/// while the pane stands and nothing holds the keyboard, and the first
+/// painter to end in `theme::paint::told` takes down — so Tab walks the
+/// pane before the bar, which is painted first and would otherwise lead.
+/// The twin of the prompt line taking the caret back at rest
+/// (`crate::ui::keys::boxes::rest`): where the keyboard goes when nothing
+/// holds it is decided by what stands. **The switcher is excepted**: its
+/// keys are the walk, and a focused row would be fired by the Enter that
+/// chooses the walked one.
+pub const FIRST: &str = "the overlay's first control takes the keyboard";
 /// **What a box's height may be at most**: the pane it floats over, less a
 /// margin at the top that keeps the conversation's own head on the glass.
 ///
@@ -134,10 +145,13 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
     if !model.covered() || model.enroll.is_some() {
         return;
     }
+    let first = egui::Id::new(FIRST);
+    let wants = !model.switching && ui.ctx().memory(egui::Memory::focused).is_none();
+    ui.ctx().data_mut(|d| d.insert_temp(first, wants));
     float(ui, "the overlay", ceiling(ui), |ui| {
         use crate::ui::{
             board, clear, clients, commands, config, doctor, find, fleet, login, prices, queue,
-            records, switcher, trail, tuning, unmake,
+            records, settings, switcher, trail, tuning, unmake,
         };
         let _ = switcher::render(ui, model)
             || tuning::render(ui, model)
@@ -154,8 +168,12 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
             || login::render(ui, model)
             || clients::render(ui, model)
             || config::render(ui, model)
+            || settings::render(ui, model)
             || unmake::render(ui, model);
     });
+    // A pane with no control leaves the flag standing; nothing after the
+    // overlay may take it.
+    ui.ctx().data_mut(|d| d.remove_temp::<bool>(first));
 }
 
 #[cfg(test)]

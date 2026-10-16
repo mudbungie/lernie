@@ -53,6 +53,8 @@ pub mod qr;
 pub mod render;
 pub mod reply;
 pub mod seat;
+/// The knob table: every setting that is a fact about this seat (DESIGN §4.46 item 4).
+pub mod settings;
 /// The link the frame and the threads share, and the crate's one lock.
 pub mod state;
 /// The window: the seat's face, and the paint layer that can testify about it.

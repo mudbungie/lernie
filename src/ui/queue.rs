@@ -53,8 +53,12 @@ pub const NOT_ANSWERED: &str = "waiting to hear what is asking for you";
 pub const NOTHING: &str = "nothing is waiting on you — a conversation that asks will appear here";
 /// The word on the control that answers a row's place in the queue.
 pub const SEEN: &str = "seen";
+/// What a queue row is: a fact, not a door.
+pub const ROW_HELP: &str = "the conversation that is asking; its choices stand below";
 /// The word on the control that leaves the pane for the conversation.
 pub const GO: &str = "go to it";
+/// What `go to it` does.
+pub const GO_HELP: &str = "selects this conversation and closes the queue";
 
 /// **The line the two wider rows stand under** — what makes them wider is that
 /// they settle the held call's whole CLASS, the same tool at the same reach,
@@ -131,15 +135,19 @@ fn waiting_row(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &Qu
     // conversation's row wherever it stands — `?` in the attention accent,
     // since every row here is asking — rather than a bracketed state word.
     let (mark, ink) = mark(row);
-    theme::paint::marked(
-        ui,
-        (&mark, ink),
-        &headline(row),
-        theme::INK,
-        Some(theme::accent(theme::State::Attention)),
-        false,
-        0.0,
-    );
+    theme::paint::Row {
+        mark: (mark, ink),
+        words: headline(row),
+        ink: theme::INK,
+        state: Some(theme::accent(theme::State::Attention)),
+        chosen: false,
+        indent: 0.0,
+        aside: None,
+        beneath: Vec::new(),
+        door: None,
+        help: ROW_HELP.to_owned(),
+    }
+    .paint(ui);
     // The flag first — it is the only line somebody wrote. The failure is the
     // one line that will not mend itself, so it alone is said in the error
     // accent; the flag and the parked call are notes.
@@ -173,7 +181,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
     let offered = crate::ui::ask::choices(row);
     let mut taken = None;
     let mut seat = |ui: &mut egui::Ui, choice: &crate::ui::ask::Choice| {
-        let seat = ui.button(choice.word());
+        let seat = theme::paint::button(ui, &choice.word(), true, &choice.help());
         crate::ui::act::tag(&seat, &[choice.op()]);
         if seat.clicked() {
             taken = Some(*choice);
@@ -194,7 +202,7 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, channel: &Channel, row: &QueueRow)
         // **No `act:` token**: aiming and selecting cross no wire, so this is a
         // view (PARITY §2) and tagging it would put a widget in a ledger whose
         // unit is an op.
-        if ui.button(GO).clicked() {
+        if theme::paint::button(ui, GO, true, GO_HELP).clicked() {
             model.go_to(channel, row);
         }
     });

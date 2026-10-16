@@ -19,6 +19,7 @@
 //! toggle.
 
 use crate::reply::convs::{AgentState, ConvRow};
+use crate::settings::Toggle;
 use crate::ui::{Model, theme};
 
 /// **The conversations running under the aimed wall**, in the list's order.
@@ -59,29 +60,41 @@ pub fn row_words(row: &ConvRow) -> String {
 
 /// Where the fold is kept.
 const UNFOLDED_ID: &str = "the dock's fold";
+/// What the dock's line does, each way, and what a row does.
+pub const UNFOLD_HELP: &str = "unfolds the dock: one row per conversation that is running";
+pub const FOLD_HELP: &str = "folds the dock to its one line";
+pub const ROW_HELP: &str = "shows this running conversation";
 
-/// **Whether the dock is unfolded.**
-pub fn unfolded(ctx: &egui::Context) -> bool {
+/// **Whether the dock is unfolded** — as it was last toggled, or as the
+/// `dock` knob says until it has been (DESIGN §4.46 item 4).
+pub fn unfolded(ctx: &egui::Context, at_first: bool) -> bool {
     ctx.data(|d| d.get_temp::<bool>(egui::Id::new(UNFOLDED_ID)))
-        .unwrap_or(false)
+        .unwrap_or(at_first)
 }
 
 /// **Unfold the dock, or fold it**: the one toggle Ctrl+T is.
-pub fn toggle(ctx: &egui::Context) {
-    let now = unfolded(ctx);
+pub fn toggle(ctx: &egui::Context, at_first: bool) {
+    let now = unfolded(ctx, at_first);
     ctx.data_mut(|d| d.insert_temp(egui::Id::new(UNFOLDED_ID), !now));
 }
 
 /// Paint the dock for `rows`, which the shell has found non-empty.
 pub fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[ConvRow]) {
-    let open = unfolded(ui.ctx());
+    let open = unfolded(ui.ctx(), model.settings.on(Toggle::Dock));
     // **The line is a door** (DESIGN §4.45 item 6): a label that sensed a
     // click lit nothing under the pointer, so the one toggle a click on it is
     // was a toggle the glass never offered. The same small run in the working
     // accent, through the one painter that wears the hover wash.
-    let head = theme::paint::link(ui, &line(rows, open), theme::accent(theme::State::Working));
+    let help = if open { FOLD_HELP } else { UNFOLD_HELP };
+    let help = crate::ui::keys::cited(help, &[crate::ui::keys::Act::Dock]);
+    let head = theme::paint::link(
+        ui,
+        &line(rows, open),
+        theme::accent(theme::State::Working),
+        &help,
+    );
     if head.clicked() {
-        toggle(ui.ctx());
+        toggle(ui.ctx(), model.settings.on(Toggle::Dock));
     }
     if !open {
         return;
@@ -95,6 +108,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[ConvRow]) {
             Some(theme::state_ink(&row.state)),
             model.conversation.as_deref() == Some(row.root_id.as_str()),
             theme::space::S,
+            ROW_HELP,
         );
         // **The two reads this gesture reaches**, as a row in the switcher
         // (`crate::ui::convs::row`): selecting is what makes this seat read

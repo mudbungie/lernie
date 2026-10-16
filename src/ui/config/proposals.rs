@@ -43,6 +43,10 @@ pub const GONE: &str = "no longer staged — it was settled, or its branch went"
 /// The way out of a named row. It says what it leaves: the proposal stays
 /// staged and nothing is settled.
 pub const CLOSE: &str = "leave it staged";
+/// What the controls do.
+pub const PICK_HELP: &str = "reads this proposal whole, below";
+pub const CLOSE_HELP: &str = "puts the proposal down; it stays staged on the engine";
+pub const VERDICT_HELP: &str = "settles the proposal with this verdict; the id above arms it";
 /// What the arming box asks for.
 pub const ARM: &str = "the proposal's own id";
 /// What it says while the box does not hold that id.
@@ -99,7 +103,7 @@ pub fn line(row: &Proposal) -> String {
 fn listed(ui: &mut egui::Ui, model: &mut Model, row: &Proposal, named: Option<&Proposing>) {
     ui.horizontal_wrapped(|ui| {
         let chosen = named.is_some_and(|held| held.id == row.id);
-        let control = ui.selectable_label(chosen, &row.id);
+        let control = theme::paint::seat(ui, chosen, &row.id, PICK_HELP);
         crate::ui::act::tag(&control, &[crate::verbs::PROPOSALS.word]);
         if control.clicked() {
             model.name_proposal(&row.id);
@@ -139,11 +143,11 @@ fn whole(ui: &mut egui::Ui, model: &mut Model, named: &Proposing) {
     let live = staged.is_some() && model.named_proposal().is_some_and(|held| held.armed());
     ui.horizontal_wrapped(|ui| {
         // **The way out is first**, and therefore first in the tab order too.
-        if ui.button(CLOSE).clicked() {
+        if theme::paint::button(ui, CLOSE, true, CLOSE_HELP).clicked() {
             model.unname_proposal();
         }
         for verdict in VERDICTS {
-            let spend = ui.add_enabled(live, egui::Button::new(verdict));
+            let spend = theme::paint::button(ui, verdict, live, VERDICT_HELP);
             crate::ui::act::tag(&spend, &[crate::verbs::PROPOSAL.word]);
             if spend.clicked() {
                 model.settle_proposal(verdict);

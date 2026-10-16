@@ -39,6 +39,12 @@ pub const UNPRICE: &str = "unprice";
 pub const SET: &str = "set ceiling";
 /// The act that lifts a standing bound.
 pub const LIFT: &str = "lift ceiling";
+/// What the four acts do.
+pub const PRICE_HELP: &str = "records what this model costs, so its conversations show a spend";
+pub const UNPRICE_HELP: &str = "forgets this model's price; its spend shows as unknown again";
+pub const SET_HELP: &str =
+    "caps what a conversation may spend; the engine stops one that reaches it";
+pub const LIFT_HELP: &str = "removes the ceiling";
 
 /// Paint the pane and take the clicks on it. Answers whether there was one to
 /// paint, so the shell knows whether the conversation still stands.
@@ -97,7 +103,7 @@ fn section(ui: &mut egui::Ui, model: &mut Model, table: &PriceTable) {
         let mut fired = false;
         ui.horizontal_wrapped(|ui| {
             ui.label(row.said());
-            let off = ui.button(UNPRICE);
+            let off = theme::paint::button(ui, UNPRICE, true, UNPRICE_HELP);
             crate::ui::act::tag(&off, &[crate::verbs::PRICE]);
             fired = off.clicked();
         });
@@ -115,14 +121,14 @@ fn acts(ui: &mut egui::Ui, model: &mut Model, table: &PriceTable) {
     let unbounded = model.unbounded();
     let (mut price, mut set, mut lift) = (false, false, false);
     ui.horizontal_wrapped(|ui| {
-        let act = ui.add_enabled(unpriceable.is_none(), egui::Button::new(PRICE));
+        let act = theme::paint::button(ui, PRICE, unpriceable.is_none(), PRICE_HELP);
         crate::ui::act::tag(&act, &[crate::verbs::PRICE]);
         price = act.clicked();
-        let act = ui.add_enabled(unbounded.is_none(), egui::Button::new(SET));
+        let act = theme::paint::button(ui, SET, unbounded.is_none(), SET_HELP);
         crate::ui::act::tag(&act, &[crate::verbs::CEILING]);
         set = act.clicked();
         if table.prices.ceiling.is_some() {
-            let act = ui.button(LIFT);
+            let act = theme::paint::button(ui, LIFT, true, LIFT_HELP);
             crate::ui::act::tag(&act, &[crate::verbs::CEILING]);
             lift = act.clicked();
         }

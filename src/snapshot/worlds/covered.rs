@@ -247,3 +247,14 @@ pub(super) fn dropped() -> World {
         model,
     }
 }
+
+/// **The settings pane open** (DESIGN §4.46 item 4): the one screen its
+/// sliders, its checks and `defaults` are on.
+pub(super) fn settings() -> World {
+    let mut model = crate::test_support::window::seated();
+    model.lookup = Some(crate::ui::Lookup::Settings);
+    World {
+        name: "settings",
+        model,
+    }
+}

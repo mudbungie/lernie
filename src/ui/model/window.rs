@@ -84,6 +84,9 @@ pub enum Lookup {
     /// **Whether the box is wired** (`crate::ui::doctor`; bl-9bbb) — a member
     /// on the verb table's terms, its read posted when the pane opens.
     Doctor,
+    /// **The seat's own knobs** (`crate::ui::settings`; DESIGN §4.46 item
+    /// 4) — the one pane that posts nothing, because every row is this box's.
+    Settings,
 }
 
 /// **One channel's answer to *what do you answer to***, and the channel it

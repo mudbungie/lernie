@@ -70,8 +70,13 @@ pub const NOT_ANSWERED: &str = "waiting to hear what this workspace can sign in 
 pub const NO_PROVIDERS: &str = "this workspace uses no provider — /config names one";
 /// The word on the control that starts a sign-in on a row.
 pub const SIGN_IN: &str = "sign in to this provider";
+/// What the sign-in does.
+pub const SIGN_IN_HELP: &str =
+    "starts this provider's sign-in on the engine; its progress stands below";
 /// The word on the control that asks a row what it offers.
 pub const OFFERS: &str = "what it offers…";
+/// What `what it offers…` does.
+pub const OFFERS_HELP: &str = "asks this provider which models it offers, listed below";
 /// What it says under a row that was asked and has not answered.
 pub const NOT_OFFERED: &str = "waiting to hear what this provider offers";
 /// What it says for a row that answered and offers nothing.
@@ -145,7 +150,7 @@ fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
     // **Every row wraps**, because this pane stands in the central panel and
     // the central panel is what the two side panels leave (bl-dc07).
     ui.horizontal_wrapped(|ui| {
-        let start = ui.add_enabled(row.signable(), egui::Button::new(SIGN_IN));
+        let start = theme::paint::button(ui, SIGN_IN, row.signable(), SIGN_IN_HELP);
         // **Two ops on one control** (DESIGN §4.16): the click starts the run,
         // and following it is what opens this seat's held lane on
         // `login-tail` (`crate::offframe::signin`). It is the start control's
@@ -159,7 +164,7 @@ fn provider(ui: &mut egui::Ui, model: &mut Model, row: &ProviderRow) {
         if start.clicked() {
             model.post_signin(&row.name);
         }
-        let offers = ui.button(OFFERS);
+        let offers = theme::paint::button(ui, OFFERS, true, OFFERS_HELP);
         crate::ui::act::tag(&offers, &[crate::verbs::MODELS.word]);
         if offers.clicked() {
             model.post_offering(&row.name);

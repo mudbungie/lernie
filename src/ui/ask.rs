@@ -68,6 +68,26 @@ impl Choice {
         }
     }
 
+    /// **What the choice does to the parked call**, one sentence (DESIGN
+    /// §4.46 item 2) — the scope said where it is wider than the one call.
+    pub fn help(self) -> String {
+        match self {
+            Self::Seen => "marks the ask seen; the call stays parked".to_owned(),
+            Self::Verdict(verdict, scope) => {
+                let does = match verdict {
+                    "pass" => "lets the call run",
+                    "refuse" => "refuses the call",
+                    _ => "keeps the call parked for a later answer",
+                };
+                if scope == crate::verbs::capability::CALL {
+                    does.to_owned()
+                } else {
+                    format!("{does}, and every call like it in this {scope}")
+                }
+            }
+        }
+    }
+
     /// The op the row fires, which is its tag.
     pub(crate) fn op(self) -> &'static str {
         match self {
@@ -226,6 +246,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, asked: &(Channel, QueueRow))
                     None,
                     i == at,
                     0.0,
+                    &choice.help(),
                 );
                 crate::ui::act::tag(&seat, &[choice.op()]);
                 if seat.clicked() && !down {

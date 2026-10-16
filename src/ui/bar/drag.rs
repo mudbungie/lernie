@@ -17,36 +17,31 @@
 //! panel's width is eased on egui's clock (§4.44 item 1), and a resizable
 //! panel stores a width of its own that would fight the eased value.
 
+use crate::settings::Settings;
 use crate::ui::theme;
 
 /// **How wide the drag seat at the bar's right edge is**, in points: a strip
 /// the panel keeps clear, so nothing a click takes stands under it.
 pub const HANDLE: f32 = theme::space::S;
 
-/// **The two widths the operator dragged**, in points, each `None` until they
-/// have — the defaults being [`super::SHUT`] and [`super::open_width`].
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub struct Dragged {
-    /// The collapsed width.
-    pub shut: Option<f32>,
-    /// The expanded width.
-    pub open: Option<f32>,
-}
-
-impl Dragged {
-    /// **The two widths as shown in a window `window` wide**, the glyph
-    /// column's floor being `floor`: the expanded one between the floor and
-    /// the [`ceiling`], the collapsed one between the floor and the expanded
-    /// one. Clamped here, on every frame, and written nowhere.
-    pub fn shown(self, window: f32, floor: f32) -> (f32, f32) {
-        let open = self
-            .open
-            .unwrap_or_else(|| super::open_width(window))
-            .min(ceiling(window))
-            .max(floor);
-        let shut = self.shut.unwrap_or(super::SHUT).min(open).max(floor);
-        (shut, open)
-    }
+/// **The two widths as shown in a window `window` wide**, the glyph
+/// column's floor being `floor`: the expanded one between the floor and
+/// the [`ceiling`], the collapsed one between the floor and the expanded
+/// one. The two are the settings' (`Settings::bar_shut`, `bar_open`), each
+/// `None` until dragged or set — the defaults being [`super::SHUT`] and
+/// [`super::open_width`]. Clamped here, on every frame, and written nowhere.
+pub fn shown(settings: &Settings, window: f32, floor: f32) -> (f32, f32) {
+    let open = settings
+        .bar_open
+        .unwrap_or_else(|| super::open_width(window))
+        .min(ceiling(window))
+        .max(floor);
+    let shut = settings
+        .bar_shut
+        .unwrap_or(super::SHUT)
+        .min(open)
+        .max(floor);
+    (shut, open)
 }
 
 /// **A drag in hand**: which width it writes, and where that width stood
@@ -93,7 +88,13 @@ pub fn margin() -> egui::Margin {
 /// the width the drag began on, clamped to that width's own bounds: the
 /// collapsed one to the floor and the expanded width, the expanded one to the
 /// collapsed width and the ceiling.
-pub(super) fn edge(ui: &mut egui::Ui, bar: &mut super::Bar, open: bool, width: f32) {
+pub(super) fn edge(
+    ui: &mut egui::Ui,
+    bar: &mut super::Bar,
+    settings: &mut Settings,
+    open: bool,
+    width: f32,
+) {
     let screen = ui.ctx().screen_rect();
     let strip = egui::Rect::from_min_max(
         egui::pos2(screen.left() + width - HANDLE, screen.top()),
@@ -114,7 +115,7 @@ pub(super) fn edge(ui: &mut egui::Ui, bar: &mut super::Bar, open: bool, width: f
         ui.painter().rect_filled(strip, 0.0, theme::hover());
     }
     let floor = floor(ui.ctx());
-    let (shut, wide) = bar.dragged.shown(screen.width(), floor);
+    let (shut, wide) = shown(settings, screen.width(), floor);
     if seat.drag_started() {
         let from = if open { wide } else { shut };
         bar.drag = Some(Drag { open, from });
@@ -123,9 +124,9 @@ pub(super) fn edge(ui: &mut egui::Ui, bar: &mut super::Bar, open: bool, width: f
     if let (Some(drag), Some(origin), Some(at)) = (bar.drag, origin, seat.interact_pointer_pos()) {
         let asked = drag.from + at.x - origin.x;
         if drag.open {
-            bar.dragged.open = Some(asked.min(ceiling(screen.width())).max(shut));
+            settings.bar_open = Some(asked.min(ceiling(screen.width())).max(shut));
         } else {
-            bar.dragged.shut = Some(asked.min(wide).max(floor));
+            settings.bar_shut = Some(asked.min(wide).max(floor));
         }
     }
     if seat.drag_stopped() {

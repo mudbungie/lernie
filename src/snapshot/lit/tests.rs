@@ -13,12 +13,12 @@ fn toy(bare: bool) -> egui_kittest::Harness<'static, Model> {
         .with_size(egui::Vec2::new(200.0, 100.0))
         .build_state(
             move |ctx: &egui::Context, _: &mut Model| {
-                crate::ui::theme::install(ctx);
+                crate::ui::theme::install(ctx, &crate::settings::Settings::default());
                 egui::CentralPanel::default().show(ctx, |ui| {
                     let seat = if bare {
                         ui.add(egui::Label::new("a bare seat").sense(egui::Sense::click()))
                     } else {
-                        ui.button("a lit seat")
+                        crate::ui::theme::paint::button(ui, "a lit seat", true, "lit")
                     };
                     crate::ui::act::tag(&seat, &["message"]);
                 });

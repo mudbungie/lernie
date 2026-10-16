@@ -235,3 +235,21 @@ fn a_refused_role_write_names_config_and_another_refusal_does_not() {
         "{line}"
     );
 }
+
+/// **Every selector tells what it changes** (DESIGN §4.46 item 2), each in
+/// its own words.
+#[test]
+fn every_selector_has_its_own_sentence() {
+    let said: std::collections::BTreeSet<&str> = [
+        Selector::Workspace,
+        Selector::Provider,
+        Selector::Model,
+        Selector::Effort,
+        Selector::Priority,
+    ]
+    .into_iter()
+    .map(super::super::selectors::help)
+    .collect();
+    assert_eq!(said.len(), 5, "{said:?}");
+    assert!(said.iter().all(|s| !s.is_empty()));
+}

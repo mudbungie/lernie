@@ -27,8 +27,9 @@
 //!
 //! The wall the window was aimed at, the accordion beside it (DESIGN §4.39):
 //! which engine is open, what each engine's last opening ranks as, and the
-//! wall last aimed under each — and whether the bar is pinned open (§4.44)
-//! and the two widths its edge was dragged to (§4.45 item 2).
+//! wall last aimed under each — whether the bar is pinned open (§4.44), and
+//! the settings set off their defaults (§4.46 item 4), the two widths the
+//! bar's edge was dragged to among them.
 //! **A JSON object rather than lines**, so
 //! the next fact REMOTE §7 names — a scroll, a draft — is a key beside these
 //! rather than a format. An unknown key is ignored and a missing
@@ -46,7 +47,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::{Value, json};
 
-use crate::ui::bar::Dragged;
+use crate::settings::{self, Settings};
 use crate::ui::{Aim, Engines};
 
 /// The file, under the state root. One name, so there is nothing to configure.
@@ -61,11 +62,10 @@ const OPENED: &str = "opened";
 const AIMED: &str = "aimed";
 /// Whether the bar is pinned open (DESIGN §4.44).
 const PINNED: &str = "pinned";
-/// The bar's two widths where the operator dragged them (DESIGN §4.45 item
-/// 2), one key each and flat — **written only where set**, so a seat that
-/// dragged nothing writes nothing and reads the policy's defaults.
-const BAR_SHUT: &str = "bar_shut";
-const BAR_OPEN: &str = "bar_open";
+/// **The settings set off their defaults** (DESIGN §4.46 item 4), one
+/// object — **written only where set**, so a seat that touched nothing
+/// writes nothing and reads the table's defaults (`crate::settings`).
+const SETTINGS: &str = "settings";
 
 /// **Everything the seat remembers between runs.** One value, because it is
 /// one file: read whole at boot and written whole once the event loop has
@@ -83,9 +83,9 @@ pub struct Place {
     /// **Whether the bar is pinned open** (DESIGN §4.44): where the bar
     /// stands is a layout the operator chose, so it outlives the run.
     pub pinned: bool,
-    /// **The bar's two widths, where the operator dragged them** (DESIGN
-    /// §4.45 item 2; `crate::ui::bar::Dragged`).
-    pub dragged: Dragged,
+    /// **The knobs** (DESIGN §4.46 item 4), the bar's two dragged widths
+    /// among them.
+    pub settings: Settings,
 }
 
 impl Place {
@@ -97,7 +97,7 @@ impl Place {
             aim: model.aim.clone(),
             engines: model.engines.clone(),
             pinned: model.bar.pinned,
-            dragged: model.bar.dragged,
+            settings: model.settings.clone(),
         }
     }
 }
@@ -122,22 +122,11 @@ pub fn read(root: &Path) -> Place {
             aimed: table(&held, AIMED, |held| held.as_str().map(str::to_owned)),
         },
         pinned: held.get(PINNED).and_then(Value::as_bool).unwrap_or(false),
-        // **Every number is read through serde and never through a cast** —
-        // `f64 as f32` is the one narrowing this crate's lint set denies with
-        // no home for a suppression but the manifest (`crate::mark`'s own
-        // reasoning). A key that is absent, null or some other shape entirely
-        // is absence, which is rung 4 read on this box's own file — and here
-        // absence is the policy's own answer rather than a missing number.
-        dragged: Dragged {
-            shut: width(&held, BAR_SHUT),
-            open: width(&held, BAR_OPEN),
-        },
+        // A key that is absent, null or some other shape entirely is absence
+        // per knob, which is rung 4 read on this box's own file — and there
+        // absence is the table's own default rather than a missing number.
+        settings: settings::from_json(held.get(SETTINGS).unwrap_or(&Value::Null)),
     }
-}
-
-/// One dragged width, in points, or absence.
-fn width(held: &Value, key: &str) -> Option<f32> {
-    serde_json::from_value(held.get(key)?.clone()).ok()
 }
 
 /// The aim, where the file carries a whole one. A half-written aim is no aim:
@@ -182,14 +171,9 @@ pub fn write(root: &Path, place: &Place) -> Result<(), String> {
         AIMED: place.engines.aimed,
         PINNED: place.pinned,
     });
-    let widths = [
-        (BAR_SHUT, place.dragged.shut),
-        (BAR_OPEN, place.dragged.open),
-    ]
-    .into_iter()
-    .filter_map(|(key, width)| Some((key.to_owned(), json!(width?))));
-    if let Some(keys) = body.as_object_mut() {
-        keys.extend(widths);
+    let knobs = settings::to_json(&place.settings);
+    if let Some(keys) = body.as_object_mut().filter(|_| knobs != json!({})) {
+        keys.insert(SETTINGS.to_owned(), knobs);
     }
     std::fs::create_dir_all(root).map_err(|e| format!("{}: {e}", root.display()))?;
     std::fs::write(at(root), body.to_string()).map_err(|e| format!("{}: {e}", at(root).display()))

@@ -2267,6 +2267,8 @@ intersection would be reachability asked by the wrong instrument.
 
 ### 4.17 Role tuning: the settings pane, and a standing read keyed on a pane (bl-4a2c)
 
+*The seat's own preferences are §4.46 item 4's pane (`/settings`); this one stays the wall's.*
+
 `src/ui/tuning.rs`. **The seat's second covering pane, and the first that is a
 place rather than a moment.** §4.15's enrollment covers the conversation because
 what it holds is a private key and the act is *look at this now and close it*.
@@ -5334,7 +5336,7 @@ parts, in its vertical order, each with what it becomes here.
    rather than the id the receipt carries (bl-c887) — and whether it is still
    asking — read off the remaining rows, never predicted.
 
-9. **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule —
+9. *Amended by §4.46 item 4: whether it stands unfolded when the window opens is the `dock` knob.* **The live dock** (`src/ui/dock.rs`; bl-e661) stands above the rule —
    **which §4.45 item 3 (bl-4792) puts under the box, so the dock stands
    between the rule and the box** —
    while anything runs under the aimed wall — its conversations whose
@@ -5883,11 +5885,11 @@ of which carries a line at its head saying so, and `docs/STYLE.md` §2 and
 §5, which stated the orders and the *never bubbled* rule this section
 changes.
 
-1. **The linger is 0.75 s** (`bar::LINGER`; bl-7578). The number read off
+1. *Amended by §4.46 item 4: the number is the `linger` knob's default.* **The linger is 0.75 s** (`bar::LINGER`; bl-7578). The number read off
    the ruling, in the one constant §4.44 holds it in; nothing else about the
    bar's opening and closing changes, the ease included.
 
-2. **Both of the bar's widths are dragged** (`bar::Bar`, `place.rs`;
+2. *Amended by §4.46 item 4: the two widths are the `bar_shut` and `bar_open` knobs, which a drag writes; `Place::dragged` goes.* **Both of the bar's widths are dragged** (`bar::Bar`, `place.rs`;
    bl-7578). The bar's right edge is a drag handle in both of its states:
    dragged while collapsed it sets the collapsed width, dragged while
    expanded the expanded one — which width a drag writes is which state the
@@ -6066,6 +6068,205 @@ rule is that nothing on the glass senses a click without saying so, not
 that everything goes through one painter.
 
 
+### 4.46 The interface told, keyed and tuned: the wheel, hover help on every control, every act on the keyboard, and the settings pane (bl-5369)
+
+Operator ruling 2026-10-15, verbatim: *"Sensitivity in the scroll is a
+little low. Something that we had in an earlier version of this was
+keyboard shortcuts on everything and mouseover strongs on everything. I'd
+like to bring that back. Every interface element should have a short delay
+(half second?) mouseover hover help text, which should define what the
+element does. Project lifecycle for handling any interface elements should
+include updating as necessary any strings. All actions should have keyboard
+shortcuts; the whole interface should be operable wihtout a mouse. Also,
+let's get a settings pane and knobs for pretty much everything."*
+
+**The principle under it is §4.45's, read for the hand instead of the
+eye**: what a control does is state, and the glass says it before the hand
+commits — under the pointer, as a sentence; on the keyboard, as a chord the
+sentence names. The *earlier version* is the engine era's window (yog before
+its severance, bl-7942), where every control carried a `HOVER` constant
+beside its word and the acceptance suite drove the keys; the shape returns,
+the mechanism is this seat's. Four items, each one rule applied to one
+surface.
+
+1. **The wheel step is a setting, not the toolkit's constant.** egui scrolls
+   40 points per wheel notch on native (its own *decided by consensus*
+   number, `Options::line_scroll_speed`), which on a 24-point row is under
+   two rows a notch. The seat installs the step from the settings
+   (`settings::Knob::wheel`, default **100 points** per notch, item 4) in
+   the one call that installs the style (`theme::install`), so the number
+   has one home and the pane changes it live.
+
+2. **Every control tells** (`theme::paint`; `snapshot::told`). A control is
+   painted by one of the theme's painters — a door (`link`, `tab`,
+   `heading_link`, `link_marked`), a row (`row`, `Row`), a
+   button (`button`, new: the one home of `egui::Button`), a toggle
+   (`toggle`, new: `egui::Checkbox`), a seat (`seat`, new: the former
+   `selectable_label`) and a slider (`slider`, new) — and **every painter
+   takes the control's help sentence** beside its word, so a control
+   without one does not compile. The sentence **defines what the control
+   does** in one line, in the operator's terms and never the wire's: *keeps
+   the bar open whatever the pointer does*, not *sets Place::pinned* —
+   and where a chord fires the same act, the sentence ends with it after
+   ` · ` (`keys::chord_for`, item 3), so the help is also how the keys
+   are learnt. It is shown as egui's tooltip after the pointer has rested
+   on the control for `help_delay` (default **0.5 s**, item 4), in the
+   overlay's own box and ink (STYLE §5), and never while the pointer
+   moves. **The sentence is authored at the control, beside its word**, as
+   a constant where the word is one (`bar::PIN` and `bar::PIN_HELP`) and
+   composed where the word is a name (a tab's: *shows this conversation*),
+   because a table from label to sentence is the translation table PARITY
+   §4 refuses, and it drifts the first time a word is reworded.
+
+   **Three things hold it, and none is a reviewer.** The compiler: no
+   painter without a sentence. The confinement rule
+   `rules/no-bare-control.yml`: `ui.button`, `Button::new`,
+   `selectable_label`, `checkbox`, `small_button`, `ui.link`,
+   `Slider::new` and `DragValue::new` are confined to `src/ui/theme/paint/`
+   with the other four rules' discipline — one location, an `ignores` list
+   that is the inventory, a fixture that must flag. And the instrument
+   **assertion (e), every painted control tells** (`snapshot::told`, the
+   twin of `lit`): every painter records the seat it painted in test
+   builds (the bridge `act::seat_of` reads, extended from the tagged set to
+   the painted set), the matrix puts the pointer at each seat's centre,
+   steps the clock past the delay with the pointer still, and reads back
+   whether a tooltip opened for that seat
+   (`egui::popup::was_tooltip_open_last_frame`); a seat with none is a
+   complaint, and a run that judged under the floor is a bridge gone
+   quiet. The `lit` instrument's subject widens to the same set.
+
+3. **Every act is on the keyboard, and the bindings are one table**
+   (`keys::BINDINGS`). *Operable without a mouse* is read as two halves,
+   both already partly true. **Every word is a keyboard path**: a slash
+   verb is typed, and every pane, every wire verb and every door the menu
+   lists is reached by `/` and its word (§4.42 item 5) — so a word gains no
+   chord for being a word. **Every control is a Tab stop**: egui focuses
+   every click seat in paint order, fires it with Enter or Space, and the
+   brand ring says where the keyboard is (bl-2d6b, bl-8e3e); that is reach
+   for the folds, the rule's selectors, the bar's doors and every button on
+   every pane. What chords add is **the acts that are neither a word nor a
+   stop worth tabbing to**, and the set is deliberately small and
+   conventional:
+
+   | chord | does |
+   |---|---|
+   | Ctrl+, | opens the settings pane (item 4) |
+   | Ctrl+B | pins the bar open, or unpins it |
+   | Ctrl+N | begins a conversation on the aimed workspace (`+ new`) |
+   | Ctrl+W | closes the selected tab |
+   | Ctrl+PageDown, Ctrl+PageUp | the next tab, the previous |
+   | PageDown, PageUp | scroll the transcript a page, from the box too |
+   | Ctrl+End, Ctrl+Home | the transcript's end, its head |
+   | Ctrl+=, Ctrl+-, Ctrl+0 | scale up, down, back to 1 (item 4's `scale`) |
+   | F1 | `/help` |
+
+   with the eleven that stood (Enter, Shift+Enter, `/`, Tab, ↑↓, Esc's
+   order, Ctrl+X, Ctrl+O, Ctrl+T, the ask's digits). **Two kinds of row,
+   one table**: a *fired* row is a chord and the act it fires, run from the
+   table from anywhere on the glass; a *told* row — the box's Enter, the
+   menu's Tab, the walk's arrows, the ask's digits, Esc's order — is read
+   where it is read and stands in the table so the printed list is whole.
+   PageUp and PageDown
+   reach past the box because the box does not take them: a key the draft
+   has no cursor move for is not the box's (`keys::boxes`' gate reads the
+   box, this reads the key). They scroll nothing while a pane covers the
+   transcript, which is then not what the hand is on; and the transcript's
+   scroll area is built **unstuck and uneased on the frame a key scrolls
+   it** (`chat::scroll`), because egui undoes a delta handed in from
+   outside on an area stuck to its end, and an eased scroll lands on a
+   later frame than the one that loosened the stick. The tab chords
+   saturate at the strip's ends as the walk does, and with nothing
+   selected go to the first. Ctrl+Plus fires the scale-up row for a
+   keyboard whose `=` is `+` under Shift, and is not printed. **The scale chords are the seat's, not
+   egui's**: egui binds the same chords to a zoom it keeps in its own
+   memory for the run (`Options::zoom_with_keyboard`), which would fight a
+   setting installed every frame, so that option is off and the chords
+   move the knob, which persists.
+
+   **The table is the one home.** `keys::handle` runs it, `/help` prints
+   it where it printed `commands::KEYS` (which goes), and a control bound
+   by a row cites the row in its help (item 2): a chord added without a
+   row is a chord nothing fires, and a row added is told on the glass
+   without a second edit. §4.42 item 11's key list and §4.44's are
+   superseded by the table where they differ. **A chord that opens a pane
+   opens it alone** (bl-8c80): the words the chords reach go through
+   `Model::uncover`, the one loop the switcher's and the dropup's doors
+   already spent, so §4.42 item 7's *one stands at a time* holds from under
+   anything — Ctrl+, under the switcher opened the settings pane beneath it.
+   Nothing fires under the enrollment. **A standing pane leads the Tab
+   order** (bl-99ed): the bar is painted first, so Tab under a pane walked
+   its pin, its `+ new` and every row before reaching the pane; now, while
+   a pane stands and nothing holds the keyboard, the pane's first painted
+   control takes it (`overlay::FIRST`, read down in `theme::paint::told`,
+   the one function every control passes through) — the twin of the
+   prompt line taking the caret back at rest. The switcher is excepted,
+   because its keys are the walk and a focused row would be what Enter
+   fired. A slider that holds the keyboard wears the brand ring, as a row
+   and a door do, and its trough is raised on the overlay's surface.
+
+4. **The settings pane, and the knobs are one table** (`src/settings.rs`,
+   `src/ui/settings.rs`; `/settings`, Ctrl+,). **Everything on it is a
+   fact about this seat** — REMOTE §7's *per-seat UI state*, the class the
+   tuning pane (§4.17) is deliberately not — so it crosses no boundary and
+   has no standing read: the pane paints the table and a change applies at
+   the next frame. Each knob is a row of `settings::KNOBS` — its key, its
+   label, its help sentence (item 2's, shown under the control in weak ink
+   and as its hover), its kind (a toggle, or a number with its unit, floor,
+   ceiling and step) and its default — and the pane, the place file and
+   the defaults test all read the table, so a knob added is painted,
+   remembered and judged with no second edit. The readers read typed
+   fields of `Settings`, never the table. The knobs:
+
+   | key | what it tunes | default |
+   |---|---|---|
+   | `wheel` | points scrolled per wheel notch (item 1) | 100 |
+   | `help` | whether controls tell under the pointer | on |
+   | `help_delay` | seconds the pointer rests before one tells | 0.5 |
+   | `scale` | the window's scale, text and air alike (egui's zoom factor) | 1 |
+   | `linger` | seconds the bar stays open after the pointer leaves (§4.45 item 1) | 0.75 |
+   | `ease` | seconds the bar's edge takes to travel; 0 snaps (§4.44 item 1) | 0.12 |
+   | `bar_shut` | the bar's collapsed width in points — what a drag sets (§4.45 item 2) | 80 |
+   | `bar_open` | its open width — the other drag | a quarter of the desk |
+   | `bubbles` | the fills under blocks by role (§4.45 item 7) | on |
+   | `fold` | whether a working folds itself once the answer stands (§4.45 item 5) | on |
+   | `confirm` | whether a delete asks first; off, the trashcan deletes at once (§4.44 item 1) | on |
+   | `dock` | whether the dock stands unfolded when the window opens (§4.42 item 9) | off |
+
+   and the pin, which is the same fact `bar::PIN` toggles and stays where
+   it is (`Place::pinned`), painted on the pane as a thirteenth row. **The
+   two widths move here from `Place::dragged`**: a drag writes the knob
+   and the knob paints the drag, one home, so a seat that dragged before
+   this landed reads the defaults once. A number is a slider — arrows move
+   it while it holds the keyboard, which is item 3's reach — and a toggle
+   is a check; `defaults` at the foot puts every knob back. **Persistence
+   is the place file's** (§4.13): a `settings` object beside the aim,
+   holding only the knobs set off their default, so a seat that touched
+   nothing writes nothing and a default moved in a later build reaches it
+   — the rule the dragged widths already kept. `theme::install` installs
+   what the toolkit holds (the wheel, the tooltip delay, the zoom) from
+   the settings each frame, and the bar, the chat and the delete read
+   theirs.
+
+5. **The lifecycle rule, which is what the ruling's second sentence asks
+   for.** A control is three strings declared together — its word, its
+   help and, where one is bound, its chord's row — and one painter reads
+   all three. There is no step to remember: a control added without a
+   sentence does not compile, one painted outside the painters fails the
+   rule, one whose sentence stopped opening fails the instrument, and a
+   chord without a row fires nothing. Changing a word is changing the
+   line its sentence is on.
+
+**What this does not solve, and the principle that answers it.** A
+sentence under the pointer is not a manual: it says what the control does
+and nothing about why, which is `/help`'s and the verb's `detail`. A
+knob is offered for what the seat already decided by a constant, not for
+every number in the theme: the palette, the type scale and the spacing are
+the language (STYLE §1) and a knob on each is a window with no look. The
+scale knob is the one knob over all of them. Tab reaches every stop in
+paint order, and a long list is still a long Tab; the chords and the words
+are what make the long way short, and the switcher (§4.42 item 7) is still
+the keyboard's door to a conversation.
+
 ## 5. Module map
 
 | Path | What it is | Cap band |
@@ -6080,7 +6281,9 @@ that everything goes through one painter.
 | `src/cli/verdict.rs` | what an invocation says, and with what exit code: the four constructors, the two codes, and the one-line pointer a refusal carries instead of the whole usage (§4.10, bl-b232). | ~110 |
 | `src/cli/text.rs` | what this binary says about itself: the version line, and the usage whose verb section is derived. | ~75 |
 | `src/paths.rs` | the two roots — what the operator carried here, and what the seat generates about itself — from one ladder and no knob of its own. Neither variable set is a refusal, never a guess. | ~130 |
-| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, the wall last aimed under each, the bar's pin and its two dragged widths (§4.44, §4.45). Every way the file can be wrong is absence, per field. | ~190 |
+| `src/place.rs` | where the seat was pointed and how its engines were arranged, remembered between runs (§4.13, §4.39): the aim, the open engine, what each engine's last opening ranks as, the wall last aimed under each, the bar's pin (§4.44) and the settings set off their defaults (§4.46 item 4). Every way the file can be wrong is absence, per field. | ~190 |
+| `src/settings.rs` | **the knob table** (§4.46 item 4): every seat-local setting as one row — key, label, help sentence, kind with its unit and bounds, default — the typed `Settings` the readers read, and the two projections, from the table's JSON and to it, writing only what is off its default. | ~250 |
+| `src/ui/settings.rs` | the settings pane (`/settings`, Ctrl+,): the knob table painted, a slider per number and a check per toggle, each over its sentence, and `defaults` at the foot. Paints the table; decides nothing. | ~150 |
 | `src/envelope.rs` | the gesture envelope from the seat's side: is it one, which workspace does it name, did the last reply say ok. **One table, not two** — the read answers through the write. | ~150 |
 | `src/seat.rs` | one gesture spent: routed, asked, and answered as this seat's product. | ~100 |
 | `src/seat/route.rs` | which channel a gesture goes down, what it carries there, and what this box calls the channel it chose (§4.7). | ~190 |
@@ -6181,7 +6384,7 @@ that everything goes through one painter.
 | `src/cli/prices.rs` | `price` and `ceiling` as argv spells them: a word that is not a number refused here with the door's usage, and the trailing `--on <channel>` read off. | ~75 |
 | `src/ui/prices.rs` | the prices pane (§4.41): each channel's table, its bound and spend, and the acts addressed down that channel, each disabled with its reason. | ~150 |
 | `src/ui/model/pricing.rs` | the prices pane between frames: the per-channel tables, the four draft boxes, the roster check and the four acts. | ~180 |
-| `src/ui/commands.rs` | the commands pane (§4.21): one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |
+| `src/ui/commands.rs` | the commands pane (§4.21): what this window takes first — the menu's rows and the keys read off `keys::BINDINGS` (§4.46 item 3) — then one section per channel of what that engine answers to, each row's line, sentence, page and classification. | ~110 |
 | `src/ui/find.rs` | the find pane (§4.21): the needle, the act that is disabled until there is one, the hits, and the standing sentence saying why none of them can be aimed at (yog bl-ef16). | ~150 |
 | `src/ui/model/window.rs` | the window's two panes between frames — which one stands as one field rather than two flags, the per-channel filing both share, the needle that is not spent on firing, and the roster refresh. | ~175 |
 | `src/reply/doctor.rs` | whether this box is wired (§4.21): one row per check — three required fields and the remedy, optional and verbatim — the headline both faces paint, and the count of failing rows that is the only tally. | ~75 |
@@ -6297,6 +6500,7 @@ that everything goes through one painter.
 | `src/ui/convs/menu.rs` | the conversation row's context menu (§4.23): the acts that fire on the row, the three that lead somewhere and spend nothing, and the admission test that separates them — a door taking the wall and the conversation, and nothing else. | ~150 |
 | `src/ui/model/fill.rs` | which box on the composer was asked for the cursor — the two parameter boxes a row menu names (§4.23), and the draft itself, which the engine row's `+` names (§4.39) — and the one door that goes there. Taken once, by the frame that paints the box. | ~95 |
 | `src/ui/chat.rs` | the transcript read by its gutter and its bubble (§4.42, §4.45): the glyph per speaker, each block on the fill its role wears, the turn's working gathered into one block on the trail's bubble, the `response` line while that block is open and the hairline between turns, and the sent row in the pending ink at the end. | ~180 |
+| `src/ui/chat/scroll.rs` | a scroll the keyboard asked of the transcript (§4.46 item 3): the ask held in the toolkit's memory across the frame, spent inside the area as a page or an end, the area built unstuck and uneased on that frame, and how far down it stands written back for the suite. | ~70 |
 | `src/ui/chat/working.rs` | the working in three stages (§4.45 item 5): the grouping's counted line as a door, each step whole while in flight or compact once finished — a call's line and one elided line of its output, a note one elided line — each compact step a door that opens it whole in place, the defaults from the turn's state and a toggle remembered. | ~160 |
 | `src/ui/chat/trail.rs` | one step of the working, whole (§4.42 item 4, §4.45 item 5): its mark on its stem, its name — a door that shuts it where it was opened from compact — a result folded to its head, and an intermediate prose on its own fill inside the working's. | ~100 |
 | `src/ui/chat/panel.rs` | the two cards at the head of the pane (§4.42): the conversation's facts, and the seat's — each engine with what it holds, the version, the two ways in — where nothing is selected. | ~120 |
@@ -6314,7 +6518,9 @@ that everything goes through one painter.
 | `src/ui/slash.rs` | **the slash verbs** (§4.42): the rows this seat offers right now — the conversation's, the wall's, the window's — each the word its control carried; what a typed line parses to; what firing a word does; and the completion menu over the box, a window of rows around the chosen one. | ~300 |
 | `src/ui/overlay.rs` | **the one frame every pane floats in** (§4.42): the box at the bottom of the pane it is called in, the name line with the subject and *Esc closes* on it, and the order the panes are tried in. A child region, never an `Area`. | ~135 |
 | `src/ui/composer/start.rs` | the half that begins a conversation rather than continuing one — the deposit's own field at the deposit's own rows, with `start` inside it (§4.39). | ~90 |
-| `src/ui/keys.rs` | the keyboard: the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
+| `src/ui/keys.rs` | the keyboard: the table below run first, then the one cursor track's walk, which is the selection — over three kinds of row since the fold (§4.39) — and the one binding that is not a walk, Enter on the row the cursor stands on (an engine's, or a begin), fired only while no control holds the keyboard. There is no `Pane`: one list needs no field saying which. The registry of boxes that take text split out at the cap (`keys/boxes.rs`). | ~200 |
+| `src/ui/keys/bindings.rs` | **the bindings table** (§4.46 item 3): every key the window binds as one row — a *fired* row is a chord and the act it fires, run here from anywhere; a *told* row is a key read where it is read, in the table so the printed list is whole. `run` fires the rows, `/help` prints them, and `cited` writes a chord after a control's sentence. | ~280 |
+| `src/ui/keys/acts.rs` | what each fired row does: one arm per act, each naming a door a control already fires — the tab step, the scroll ask, the scale knob moved through its own row. Split from the table at the cap. | ~110 |
 | `src/ui/keys/boxes.rs` | **every box on the glass that takes text**, by the id it wears, and the gate that asks whether one of them holds the keyboard right now — a comparison against a named list and never egui's *is anything focused at all* (§4.23). | ~100 |
 | `src/ui/shell.rs` | the layout: the bar, then one column (§4.42, §4.44, §4.45) — the transcript, the prompt directly under it, the dock and the rule under the prompt, the menu and the overlay over it, and what stands down under what. | ~60 |
 | `src/ui/bar.rs`, `bar/drag.rs`, `bar/rows.rs`, `bar/foot.rs`, `bar/confirm.rs` | **the bar** (§4.44 item 1; §4.45 items 1–2): the left panel listing the aimed workspace's conversations, a glyph column until the pointer is over it, lingering 0.75 s after it leaves, pinned by its head, `+ new` beside the pin; its two widths, each dragged at its right edge (`drag.rs`: the seat, the floor and the ceiling, which width a drag writes held from its first frame) and remembered in the place; the aimed wall's conversations as `convs::` spells them, each row's trashcan under the pointer (`rows.rs`; bl-e837) and the confirmation its click opens on the box (`confirm.rs`: `keep` and `delete`, Esc and Enter); and the workspace at its foot, with the workspace's dropup standing inside it. | ~215, ~130, ~110, ~60, ~85 |
@@ -6327,7 +6533,8 @@ that everything goes through one painter.
 | `src/ui/theme.rs` | **the visual language's tokens** (§4.38, `docs/STYLE.md`): the ground ladder, the ink scale, the six states and their accents, the wire's states read onto them, the speaker weights, and the spacing and type scales — every byte once. | ~250 |
 | `src/ui/theme/bubble.rs` | the four bubbles by role (§4.45 item 7): the operator's the brand at half a tint, the trail on the ground inside a hairline, intermediate prose on the surface, final prose raised — derived from the palette, no literal. | ~50 |
 | `src/ui/theme/glyph.rs` | the glyph an act or a gutter wears: every character a control or a transcript row spells, asserted to have a glyph in the body font. | ~60 |
-| `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule (`paint/row.rs`: one line, or a block of lines under one seat), the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label or a control, written once. | ~160 |
+| `src/ui/theme/paint/knob.rs` | the slider, the settings pane's number knob (§4.46 item 4): the one home of egui's slider, taking its help sentence; it steps on the arrows while it holds the keyboard — egui's own arrow moves a point of the run and rounds to nothing on a coarse step — and takes the keyboard on a press. | ~60 |
+| `src/ui/theme/paint.rs` | **the anatomy as paint** (§4.38, `docs/STYLE.md` §5): the row with its state rule (`paint/row.rs`: one line, or a block of lines under one seat), the rail and elbow, the ruled block, the section and the field — every shape a pane puts on the glass that is not a bare label, written once — **and every control** (§4.46 item 2): the door, the button, the toggle, the seat and the slider each take the control's help sentence beside its word, attach it as the tooltip and, in test builds, record the seat for the instruments; `rules/no-bare-control.yml` confines egui's own control constructors to this directory. | ~160 |
 | `src/ui/theme/visuals.rs` | the one adapter into egui: the tokens installed as a `Style` once per frame — which slot each fills, and the one stroke left on the glass. | ~90 |
 | `src/ui/theme/fonts.rs` | **the fallback face** (§4.43): the fixed list of system paths a CJK face is kept at, and egui's faces with the first readable one pushed last in both families. | ~110 |
 | `src/mark.rs` | the seat's own mark: the two inks, the three shapes, the two emissions — and where a desktop actually looks for one. | ~160 |
@@ -6345,12 +6552,14 @@ that everything goes through one painter.
 | `assets/lernie.desktop` | the freedesktop entry: how a Wayland compositor finds the mark at all. | config |
 | `src/paint_probe.rs` | **the one paint walk**, and its projections. `cfg(test)`. | ~160 |
 | `src/snapshot.rs` | **the seat rendered off-screen**: the matrix's sizes, where a shot lands, and the one settled frame. Every size is judged — the width gate went with bl-dfda, the policy now answering at every width. `cfg(test)`. | ~120 |
+| `src/snapshot/worlds/column.rs` | the column's own states — the ask, the dock, the tabs, the notice — split from `worlds.rs` at the cap. `cfg(test)`. | ~60 |
 | `src/snapshot/worlds/covered.rs` | the covered states, one world per pane that stands over the conversation, each answered because an unanswered pane offers no control at all and `PARITY.md` §5 reads unproven as red. `cfg(test)`. | ~175 |
 | `src/snapshot/worlds.rs` | the named world states the matrix photographs — the shapes the window takes with nothing covering it, the covered ones being `worlds/covered.rs`'s; built from the window fixtures rather than from a second set — the first-run one seeded the way `src/main.rs` seeds a roster, because an empty `Vec` of channels is a state no box reaches and no pane has a sentence for, and the accordion's one photographing a seat with one engine open and another closed, which a one-engine seat never is. The whole screen set is part of the parity instrument, which is why every pane's world is here and why each is answered. `cfg(test)`. | ~160 |
 | `src/snapshot/reach.rs` | assertion (a): the walk to each of the seat's seven covered panes and back, asked of the accessibility tree. Two legs per pane, and three in the narrow shape — the length is the bound, and the bound is a fact about the shape. `cfg(test)`. | ~175 |
 | `src/snapshot/blank.rs` | assertion (b): every rectangle the layout put content in, read off the rendered glass. `cfg(test)`. | ~145 |
 | `src/snapshot/clipped.rs` | assertion (c): no control laid out wholly off the window, and none offered without a rectangle. `cfg(test)`. | ~70 |
-| `src/snapshot/lit.rs` | assertion (d): every tagged control lights under the pointer (§4.45 item 6) — the pointer put at its centre, the fills inside its rectangle read off the one paint walk and compared with the frame at rest; what is not judged is a fact the tree or egui states. `cfg(test)`. | ~135 |
+| `src/snapshot/told.rs` | assertion (e): every painted control tells (§4.46 item 2) — the pointer put at its centre and held still past the delay, and egui asked whether that seat's tooltip opened. `cfg(test)`. | ~100 |
+| `src/snapshot/lit.rs` | assertion (d): every painted control lights under the pointer (§4.45 item 6; the subject widened from the tagged set by §4.46 item 2) — the pointer put at its centre, the fills inside its rectangle read off the one paint walk and compared with the frame at rest; what is not judged is a fact the tree or egui states. `cfg(test)`. | ~135 |
 | `src/snapshot/parity.rs` | **the interface-parity gate** (yog's `docs/PARITY.md` §5): the `act:` tags read off the same accessibility tree, and the four assertions over roster, inventory and ledger. `cfg(test)`. | ~125 |
 | `src/snapshot/parity/roster.rs` | which ops owe this seat a control, read off the vendored corpus's `reply/help` rows and decided nowhere here. `cfg(test)`. | ~80 |
 | `src/snapshot/parity/exempt.rs` | `parity.toml`, and the strict subset of TOML it is allowed to be — no crate parses it. `cfg(test)`. | ~90 |

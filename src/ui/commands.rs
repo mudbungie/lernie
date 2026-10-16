@@ -55,26 +55,6 @@ pub const HEADING: &str = "what this window takes";
 pub const WORDS: &str = "the words, typed after / in the box — the menu's own rows";
 /// The window's keys, said above the table.
 pub const KEYS_SAID: &str = "the keys";
-/// **Every key this window binds, and what it does** — DESIGN §4.42's
-/// *keyboard, whole*, as the operator reads it.
-pub const KEYS: [(&str, &str); 10] = [
-    ("Enter", "sends the box, or fires the chosen word"),
-    ("Shift+Enter", "breaks a line"),
-    ("/", "opens the words"),
-    ("Tab", "completes the chosen word into the box"),
-    ("Up, Down", "walk whatever is open"),
-    (
-        "Esc",
-        "closes a dropup, then the overlay, then the menu, then the notice",
-    ),
-    (
-        "Ctrl+X",
-        "every engine, its workspaces and their conversations",
-    ),
-    ("Ctrl+O", "changes the model this workspace runs on"),
-    ("Ctrl+T", "unfolds what is running"),
-    ("1 to 6", "answers the question it is asking, by its number"),
-];
 /// **The engines' section heading**: their op tables are a second subject —
 /// what each engine answers, in the engine's own spelling — and saying so is
 /// what keeps an operator from typing `/scan` into a box that does not take it.
@@ -125,8 +105,10 @@ fn window(ui: &mut egui::Ui, model: &Model) {
     }
     ui.add_space(theme::space::XS);
     ui.label(egui::RichText::new(KEYS_SAID).color(theme::INK_WEAK));
-    for (key, does) in KEYS {
-        ui.add(egui::Label::new(format!("{key}  {does}")).wrap());
+    // **The keys are the bindings table** (§4.46 item 3): one home, so a
+    // chord added is printed here with no second edit.
+    for row in crate::ui::keys::BINDINGS {
+        ui.add(egui::Label::new(format!("{}  {}", row.says(), row.does)).wrap());
     }
 }
 

@@ -5,6 +5,8 @@
 //! for the same reason: a galley reports the string that went in, so an
 //! assertion made against the input is blind to what the toolkit did with it.
 
+/// **The bindings table**: every fired row drives its act, and the spellings.
+mod bindings;
 /// The focused thing is visibly the focused thing, and Tab agrees with the
 /// arrows.
 mod focus;

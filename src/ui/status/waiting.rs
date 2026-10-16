@@ -24,13 +24,16 @@ pub fn waiting(model: &Model) -> u64 {
 /// **The count as the queue's door**: `N waiting` in the attention accent,
 /// tagged as `/attention` is, and nothing while none is asking. Answers
 /// whether it was clicked; the caller fires the word.
+/// What the count does.
+pub const WAITING_HELP: &str = "opens the queue of every conversation that is asking";
+
 pub fn door(ui: &mut egui::Ui, model: &Model) -> bool {
     let asking = waiting(model);
     if asking == 0 {
         return false;
     }
     let ink = theme::accent(theme::State::Attention);
-    let seat = theme::paint::link(ui, &format!("{asking} waiting"), ink);
+    let seat = theme::paint::link(ui, &format!("{asking} waiting"), ink, WAITING_HELP);
     crate::ui::act::tag(&seat, &[crate::verbs::ATTENTION.word]);
     seat.clicked()
 }

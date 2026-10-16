@@ -61,8 +61,14 @@
 
 use crate::ui::{Model, roster};
 
+/// What each fired row does.
+mod acts;
+/// **The bindings table**: every chord, what it does, the act it fires (§4.46 item 3).
+pub mod bindings;
 /// Every box on the glass that takes text, and the gate that reads them.
 mod boxes;
+
+pub use bindings::{Act, BINDINGS, Binding, Chord, Keyed, chord_for, cited, cited_word};
 
 pub use boxes::{
     BODY_ID, BOX_ID, BOXES, CONFIG_ID, DELIVER_ID, FAN_GOAL_ID, NOTE_ID, PROJECT_ID, SUMMARY_ID,
@@ -72,23 +78,6 @@ pub use boxes::{
 /// **Take this frame's keys.** Called at the top of the frame, so what a key
 /// changed is what the frame paints.
 pub fn handle(ctx: &egui::Context, model: &mut Model) {
-    // **Ctrl+X opens the switcher from anywhere**, the box included
-    // (DESIGN §4.42): a chord is not a key a box takes.
-    let chord = |wanted: egui::Key| {
-        ctx.input(|i| {
-            i.events.iter().any(|event| {
-                matches!(
-                    event,
-                    egui::Event::Key {
-                        key,
-                        pressed: true,
-                        modifiers,
-                        ..
-                    } if *key == wanted && modifiers.command
-                )
-            })
-        })
-    };
     // **Ctrl+X reaches this frame as `Event::Cut`, not as a key** (bl-8c49):
     // egui-winit turns the clipboard chords into their clipboard events and
     // drops the key, so a read of `Event::Key { X }` matches nothing on a real
@@ -100,7 +89,7 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
         i.events.retain(|event| !matches!(event, egui::Event::Cut));
         i.events.len() != before
     }) {
-        model.switch();
+        acts::fire(Act::Switch, ctx, model);
     }
     // **An open dropup takes its keys first** (§4.42, item 11), ahead of the
     // box and of the overlay's Esc: ↑↓ walk it, Enter picks, Esc closes.
@@ -109,16 +98,10 @@ pub fn handle(ctx: &egui::Context, model: &mut Model) {
     // bl-e837): a question asked a moment ago is answered before the box or
     // the ask reads either key.
     crate::ui::bar::confirm::keys(ctx, model);
-    // **Ctrl+O is `/model`** (bl-4e55; the baseline's model picker): it
-    // fires the menu's own row, so it opens the model's dropup exactly where
-    // the word and the rule's model segment would (bl-d74b).
-    if chord(egui::Key::O) {
-        crate::ui::slash::fire(model, crate::ui::tuning::MODEL, "");
-    }
-    // **Ctrl+T unfolds the dock** (§4.42, item 9), the other chord.
-    if chord(egui::Key::T) {
-        crate::ui::dock::toggle(ctx);
-    }
+    // **The table's chords fire from anywhere, the box included** (§4.46
+    // item 3): a chord is not a key a box takes, and the two plain keys in
+    // it — PageUp, PageDown, F1 — are keys the draft has no cursor move for.
+    bindings::run(ctx, model);
     // The gate is read BEFORE the caret goes back: this frame's keys were
     // pressed where the keyboard was, and the box takes the next ones.
     let typing = boxes::typing(ctx);
@@ -244,7 +227,7 @@ fn walk(model: &mut Model, step: isize) {
 /// selected anything. The ends **saturate** rather than wrap, because a wrap
 /// makes the same keypress mean *next* thirty times and *back to the top* once,
 /// with nothing on the glass to say which it will be.
-fn moved(len: usize, at: Option<usize>, step: isize) -> Option<usize> {
+pub(super) fn moved(len: usize, at: Option<usize>, step: isize) -> Option<usize> {
     if len == 0 {
         return None;
     }

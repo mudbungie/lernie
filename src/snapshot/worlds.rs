@@ -17,12 +17,15 @@ use crate::ui::{Channel, Chunk, Enrolling, Model, Unmaking};
 
 /// The bar open, and its foot's list.
 mod bar;
+/// The column's own states: the ask, the dock, the tabs, the notice.
+mod column;
 /// The covered states — one world per pane that stands over the conversation.
 mod covered;
 
+use column::{asked_world, docked, noticed, tabbed};
 use covered::{
     assigning, ball_amending, ball_filing, board, clearing_trail, clients, commands, config,
-    doctor, dropped, find, fleet, login, prices, queue, records, trail, tuning,
+    doctor, dropped, find, fleet, login, prices, queue, records, settings, trail, tuning,
 };
 
 /// One named state of the window, as the matrix files it.
@@ -158,41 +161,6 @@ fn switching() -> World {
     }
 }
 
-/// **The ask above the prompt** (DESIGN §4.42, item 8): the one screen its
-/// numbered rows and their tags are on with no pane open.
-fn asked_world() -> World {
-    World {
-        name: "asked",
-        model: crate::test_support::window::asked(),
-    }
-}
-
-/// **The dock unfolded over a conversation at work** (DESIGN §4.42, item 9).
-fn docked() -> World {
-    let mut model = seated();
-    model.convs[0].state = crate::reply::convs::AgentState::InFlight;
-    World {
-        name: "docked",
-        model,
-    }
-}
-
-/// **Two conversations open as tabs** (DESIGN §4.44, item 2): the one screen
-/// the strip and its tags are on.
-fn tabbed() -> World {
-    let mut model = seated();
-    let second = crate::test_support::window::conv("20260830T052000Z-b2c3", "tidy the rule");
-    model.convs.push(second);
-    for root in ["20260830T052000Z-b2c3", "20260830T051200Z-a1b2"] {
-        model.select(root);
-    }
-    model.transcript = seated().transcript;
-    World {
-        name: "tabbed",
-        model,
-    }
-}
-
 /// **The aimed wall pinned** (bl-7782): the only screen `unpin` is on.
 fn pinned_wall() -> World {
     World {
@@ -244,20 +212,6 @@ fn filling() -> World {
     }
 }
 
-/// **A notice longer than the rule** (bl-7e3e): it stands whole above the
-/// rule, and the rule keeps its facts and its name.
-fn noticed() -> World {
-    let mut model = seated();
-    model.notice = Some(crate::ui::Notice::InDoubt {
-        op: "message".to_owned(),
-        why: "the connection closed before the reply".to_owned(),
-    });
-    World {
-        name: "noticed",
-        model,
-    }
-}
-
 /// Every world the matrix renders, in the order it renders them.
 pub(crate) fn all() -> Vec<World> {
     vec![
@@ -282,6 +236,7 @@ pub(crate) fn all() -> Vec<World> {
         login(),
         clients(),
         config(),
+        settings(),
         accordion(),
         pinned_wall(),
         slashing(),

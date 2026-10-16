@@ -183,6 +183,23 @@ pub fn fitting(ui: &egui::Ui, runs: &[Run], kept: usize, name: f32, room: f32) -
     (shown, f32::INFINITY)
 }
 
+/// **What a door does**, one sentence (DESIGN §4.46 item 2): a menu row's
+/// is its own summary, a selector's is the selector's.
+fn help(door: Door) -> String {
+    match door {
+        Door::Row(row) => row.summary.to_owned(),
+        // **The model's selector cites Ctrl+O** (§4.46 item 3), the one
+        // selector a chord opens.
+        Door::Drop(selector) => crate::ui::keys::cited(
+            selectors::help(selector),
+            match selector {
+                crate::ui::Selector::Model => &[crate::ui::keys::Act::Model],
+                _ => &[],
+            },
+        ),
+    }
+}
+
 /// **Paint one run**, answering whether it was clicked and where it stood —
 /// on the rule, and at the bar's foot (`crate::ui::bar`).
 pub(crate) fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::Rect) {
@@ -193,8 +210,8 @@ pub(crate) fn paint(ui: &mut egui::Ui, run: &Run, words: &str) -> (bool, egui::R
     // **The mark is in the door** (DESIGN §4.44 item 5): one seat, one stop
     // in the Tab order, the mark tinting and opening with the words.
     let seat = match run.mark {
-        Some(mark) => theme::paint::link_marked(ui, words, run.ink, mark),
-        None => theme::paint::link(ui, words, run.ink),
+        Some(mark) => theme::paint::link_marked(ui, words, run.ink, mark, &help(door)),
+        None => theme::paint::link(ui, words, run.ink, &help(door)),
     };
     crate::ui::act::tag(&seat, selectors::ops(door));
     (seat.clicked(), seat.rect)

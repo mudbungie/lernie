@@ -21,8 +21,9 @@ pub fn field(
     text: &mut String,
     hint: &str,
     glow: Option<Color32>,
+    help: &str,
 ) -> Response {
-    frame(ui, id, glow, space::XS)
+    let seat = frame(ui, id, glow, space::XS)
         .show(ui, |ui| {
             ui.add(
                 egui::TextEdit::singleline(text)
@@ -32,7 +33,8 @@ pub fn field(
                     .hint_text(hint),
             )
         })
-        .inner
+        .inner;
+    super::told(seat, help)
 }
 
 /// **The composer**: `rows` lines tall — [`COMPOSER_ROWS`](super::super::COMPOSER_ROWS)
@@ -73,12 +75,13 @@ pub fn prompt(
     text: &mut String,
     hint: &str,
     glow: Option<Color32>,
+    help: &str,
 ) -> Response {
     // **A slash line keeps the caret through Tab**: the menu over the box reads
     // Tab as *complete the word* (`crate::ui::slash`), and a Tab that walked
     // the focus away would complete it into nothing.
     let lock = text.starts_with(crate::ui::slash::LEAD);
-    frame(ui, id, glow, space::S)
+    let seat = frame(ui, id, glow, space::S)
         .show(ui, |ui| {
             ui.horizontal_top(|ui| {
                 ui.label(egui::RichText::new(super::super::glyph::PROMPT).color(BRAND));
@@ -95,7 +98,8 @@ pub fn prompt(
             })
             .inner
         })
-        .inner
+        .inner;
+    super::told(seat, help)
 }
 
 fn frame(ui: &egui::Ui, id: egui::Id, glow: Option<Color32>, down: f32) -> egui::Frame {

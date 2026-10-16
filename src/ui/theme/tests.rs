@@ -93,6 +93,7 @@ fn ink_is_not_a_hue() {
     for ink in [INK, INK_WEAK, INK_FAINT] {
         assert!(saturation(ink) < least / 2.0, "{ink:?} is an ink");
     }
+    assert!(saturation(QR_INK).abs() < f64::EPSILON, "black has no hue");
 }
 
 /// **Six states, six accents, no seventh** — and no two share a hue, so a
@@ -188,31 +189,6 @@ fn the_window_is_dark_and_unboxed() {
     assert_eq!(v.extreme_bg_color, SURFACE);
 }
 
-/// **Installing the language sets the type scale**, four sizes and no fifth,
-/// on the context every frame paints through.
-#[test]
-fn install_sets_the_type_scale() {
-    let ctx = egui::Context::default();
-    super::install(&ctx);
-    let style = ctx.style();
-    let size = |ts: egui::TextStyle| style.text_styles.get(&ts).map(|f| f.size);
-    assert_eq!(size(egui::TextStyle::Body), Some(super::type_scale::BODY));
-    assert_eq!(
-        size(egui::TextStyle::Heading),
-        Some(super::type_scale::HEADING)
-    );
-    assert_eq!(size(egui::TextStyle::Small), Some(super::type_scale::SMALL));
-    assert_eq!(
-        size(egui::TextStyle::Monospace),
-        Some(super::type_scale::MONO)
-    );
-    assert!(
-        style.spacing.interact_size.y <= super::ROW,
-        "a control stands under a row"
-    );
-    assert_eq!(style.visuals.panel_fill, GROUND);
-}
-
 /// **Every glyph an act wears is in the body font** (bl-f251): a control
 /// whose icon is a tofu box is a control with no word on it, so the table is
 /// asserted against the font the window actually lays it in. **The BUNDLED
@@ -284,3 +260,6 @@ fn the_bubbles_are_the_palette_and_climb_toward_the_final_prose() {
     assert!(luminance(trail) < luminance(between) && luminance(between) < luminance(last));
     assert!(contrast(INK, last) >= 7.0, "ink reads on the top rung");
 }
+
+/// The install: the type scale, and what the toolkit holds of the settings.
+mod install;

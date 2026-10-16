@@ -63,6 +63,13 @@ pub const ASSIGN: &str = "model…";
 pub const SET: &str = "set";
 /// The word that puts one down without spending it.
 pub const CANCEL: &str = "cancel";
+/// What each control does.
+pub const EFFORT_HELP: &str =
+    "sets how hard this role's model thinks; off leaves it to the provider";
+pub const PRIORITY_HELP: &str = "puts this role's calls on the provider's priority lane";
+pub const ASSIGN_HELP: &str = "opens an editor for the provider and model this role runs on";
+pub const SET_HELP: &str = "writes the provider and model above into this workspace's settings";
+pub const CANCEL_HELP: &str = "closes the editor and changes nothing";
 /// What the two boxes ask for.
 pub const PROVIDER_HINT: &str = "provider";
 /// The second of them.
@@ -120,7 +127,12 @@ fn role(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
     ui.horizontal_wrapped(|ui| {
         for level in crate::verbs::tuning::levels() {
             let chosen = row.effort == level;
-            let seat = ui.selectable_label(chosen, crate::verbs::tuning::word(level.as_ref()));
+            let seat = theme::paint::seat(
+                ui,
+                chosen,
+                &crate::verbs::tuning::word(level.as_ref()),
+                EFFORT_HELP,
+            );
             crate::ui::act::tag(&seat, &[crate::verbs::EFFORT]);
             if seat.clicked() {
                 model.post_effort(&row.role, level.clone());
@@ -135,7 +147,7 @@ fn role(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
         // the value to send — so nothing here holds an opinion about a lane
         // between one answer and the next.
         let mut on = row.priority;
-        let lane = ui.checkbox(&mut on, PRIORITY);
+        let lane = theme::paint::toggle(ui, &mut on, PRIORITY, PRIORITY_HELP);
         crate::ui::act::tag(&lane, &[crate::verbs::PRIORITY]);
         if lane.clicked() {
             model.post_priority(&row.role, on);
@@ -162,7 +174,7 @@ pub fn unseated(row: &RoleRow) -> Option<String> {
 /// The assignment: the control that opens the editor, or the editor itself.
 fn assignment(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
     if model.editing(&row.role).is_none() {
-        if ui.button(ASSIGN).clicked() {
+        if theme::paint::button(ui, ASSIGN, true, ASSIGN_HELP).clicked() {
             model.edit_assignment(row);
         }
         return;
@@ -179,12 +191,12 @@ fn assignment(ui: &mut egui::Ui, model: &mut Model, row: &RoleRow) {
         offers::pick(ui, model, &edit);
     }
     ui.horizontal_wrapped(|ui| {
-        let set = ui.add_enabled(ready, egui::Button::new(SET));
+        let set = theme::paint::button(ui, SET, ready, SET_HELP);
         crate::ui::act::tag(&set, &[crate::verbs::MODEL.word]);
         if set.clicked() {
             model.post_assignment();
         }
-        if ui.button(CANCEL).clicked() {
+        if theme::paint::button(ui, CANCEL, true, CANCEL_HELP).clicked() {
             model.cancel_assignment();
         }
     });

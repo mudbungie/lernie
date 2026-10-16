@@ -54,6 +54,11 @@ pub const WORD: &str = "enroll";
 pub const CLOSE: &str = "done — forget it";
 /// The word that spends it.
 pub const SEND: &str = "mint";
+/// What the three controls do.
+pub const CLOSE_HELP: &str = "closes the enrollment and forgets the key it showed";
+pub const SEND_HELP: &str = "mints the new box's key on the engine and shows it once, here";
+pub const GRADE_HELP: &str = "what the new box may do: pick one";
+pub const NAME_HELP: &str = "the name the engine will know the new box by";
 /// The pane's own heading.
 pub const HEADING: &str = "enroll a box";
 /// What the name box says before anything is typed.
@@ -94,7 +99,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) -> bool {
             ),
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(CLOSE).clicked() {
+            if theme::paint::button(ui, CLOSE, true, CLOSE_HELP).clicked() {
                 model.close_enrollment();
             }
         });
@@ -135,13 +140,15 @@ fn form(ui: &mut egui::Ui, model: &mut Model) {
         &mut enrolling.name,
         NAME_HINT,
         None,
+        NAME_HELP,
     );
     // **The two grades are rows, one per line** — never a `selectable_label`,
     // which draws a box (§5, *a row*). The chosen one wears the brand rule
     // that says where the operator is standing.
     for grade in Grade::both() {
         let chosen = enrolling.grade == grade;
-        if theme::paint::row(ui, &grade.word(), theme::INK, None, chosen, 0.0).clicked() {
+        if theme::paint::row(ui, &grade.word(), theme::INK, None, chosen, 0.0, GRADE_HELP).clicked()
+        {
             enrolling.grade = grade;
         }
     }
@@ -149,7 +156,7 @@ fn form(ui: &mut egui::Ui, model: &mut Model) {
     let minting = enrolling.minting();
     ui.add_space(theme::space::S);
     ui.horizontal_wrapped(|ui| {
-        let mint = ui.add_enabled(ready, egui::Button::new(SEND));
+        let mint = theme::paint::button(ui, SEND, ready, SEND_HELP);
         crate::ui::act::tag(&mint, &[crate::verbs::ENROLL.word]);
         if mint.clicked() {
             model.post_enrollment();

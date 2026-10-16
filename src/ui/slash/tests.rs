@@ -3,6 +3,8 @@
 
 /// The menu over the box: what it shows, and what the keys and a click do.
 mod menu;
+/// One overlay at a time: a word fired from under one puts it down.
+mod uncover;
 
 use super::{DELETE, PLAN, REFRESH, fire, matching, parsed, rows, wanting};
 use crate::reply::agent::Offer;
@@ -232,6 +234,9 @@ fn every_opener_opens_what_its_word_names() {
         (crate::ui::unmake::WORD, |m: &Model| m.unmaking.is_some()),
         (crate::ui::commands::WORD, Model::commanding),
         (crate::ui::doctor::WORD, Model::doctoring),
+        (crate::ui::settings::WORD, |m: &Model| {
+            m.lookup == Some(crate::ui::Lookup::Settings)
+        }),
         (crate::ui::trail::WORD, Model::trailing),
         (crate::ui::board::WORD, Model::boarding),
         (crate::ui::prices::WORD, Model::pricing),

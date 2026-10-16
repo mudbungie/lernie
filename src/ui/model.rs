@@ -83,6 +83,8 @@ mod tabs;
 mod trail;
 /// The tuning pane between frames, and the four acts its controls spend.
 mod tuning;
+/// One overlay at a time: whatever stands is put down before another opens.
+mod uncover;
 /// An unmaking between frames: its subject, its arming, and whether it is asked.
 mod unmake;
 /// The window's own two panes: the engines' verb table, and what a needle found.

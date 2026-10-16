@@ -1,5 +1,6 @@
-//! **Assertion (d): every control lights under the pointer** (DESIGN §4.45
-//! item 6).
+//! **Assertion (d): every painted control lights under the pointer** (DESIGN
+//! §4.45 item 6; the subject widened from the tagged set to the painted set
+//! by §4.46 item 2 — every painter records its seat, `act::bridge`).
 //!
 //! The ruling is that *state should always be immediately represented*, and
 //! what the pointer is over is state the glass should show. A seat that
@@ -58,6 +59,11 @@
 //!   operator is, so a check box is judged whichever way it is set.
 //! - **A field that takes text.** Its answer to the pointer is the caret;
 //!   a wash on a text box is a box that looks like a button.
+//! - **The control that holds the keyboard** (bl-99ed). It wears the brand
+//!   ring and the active fill, which outrank the wash as the chosen row's
+//!   raise does; and since a standing pane's first control takes the
+//!   keyboard (`crate::ui::overlay::FIRST`), one control on most pane
+//!   screens is this one. egui states the fact (`Memory::focused`).
 //!
 //! **The way from a node to egui's seat is the tag's own bridge**
 //! (`crate::ui::act::seat_of`): AccessKit's id is the egui id's value, and
@@ -101,14 +107,16 @@ fn selected(role: &str, toggled: &str) -> bool {
     toggled == "Some(True)" && role != "CheckBox"
 }
 
-/// **Every tagged control**, read in one pass over the settled tree.
+/// **Every painted control**, read in one pass over the settled tree: the
+/// nodes the bridge holds a seat for, tagged or not.
 fn controls(harness: &Harness<'_, Model>) -> Vec<Control> {
+    let bridge = act::bridged(&harness.ctx);
     harness
         .query_all(by())
-        .filter(|node| !node.is_hidden())
-        .filter_map(|node| {
-            let tags = node.author_id()?.to_owned();
-            Some(Control {
+        .filter(|node| !node.is_hidden() && bridge.contains_key(&node.id().0))
+        .map(|node| {
+            let tags = node.author_id().unwrap_or_default().to_owned();
+            Control {
                 node: node.id().0,
                 tags,
                 label: node.label().or_else(|| node.value()).unwrap_or_default(),
@@ -117,7 +125,7 @@ fn controls(harness: &Harness<'_, Model>) -> Vec<Control> {
                     &format!("{:?}", node.role()),
                     &format!("{:?}", node.toggled()),
                 ),
-            })
+            }
         })
         .collect()
 }
@@ -136,7 +144,7 @@ fn settle(harness: &mut Harness<'_, Model>, event: egui::Event) {
     harness.input_mut().events.push(event);
     for _ in 0..2 {
         let input = harness.input_mut();
-        input.time = Some(input.time.unwrap_or(1_000.0) + crate::ui::bar::LINGER + 1.0);
+        input.time = Some(input.time.unwrap_or(1_000.0) + f64::from(crate::ui::bar::LINGER) + 1.0);
         harness.step();
     }
 }
@@ -185,6 +193,9 @@ pub(crate) fn complaints(at: &str, harness: &mut Harness<'_, Model>) -> (usize, 
         else {
             continue;
         };
+        if harness.ctx.memory(egui::Memory::focused) == Some(id) {
+            continue;
+        }
         judged += 1;
         let before = inside(&rest, under.rect);
         let after = inside(&fills(harness), under.rect);

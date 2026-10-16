@@ -116,9 +116,7 @@ impl Model {
         if self.enroll.is_some() {
             return;
         }
-        while self.covered() {
-            self.escape();
-        }
+        self.uncover();
         let provider = self.worker().map(|row| row.provider.clone());
         self.open_on(selector, provider);
     }

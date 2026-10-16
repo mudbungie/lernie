@@ -49,6 +49,9 @@ pub const NOT_ANSWERED_GOVERNING: &str = "waiting to hear which config governs i
 pub const NO_FILES: &str = "its tree holds no file";
 /// What the role box asks for.
 pub const ROLE_HINT: &str = "role";
+/// What the fork does.
+pub const FORK_HELP: &str =
+    "begins a child conversation from this notch, on the role and goal above";
 /// What the goal box asks for.
 pub const GOAL_HINT: &str = "what the fork is for";
 /// **Why the role is typed and not chosen.** A role resolves against the fork
@@ -141,7 +144,7 @@ fn notch(ui: &mut egui::Ui, model: &mut Model, row: &Notch) {
         // **Disabled and not absent**, for the reason the composer's `flag`
         // is: the parameters are missing, not the subject, so the control
         // stays on the glass saying what would fill it.
-        let fire = ui.add_enabled(model.forking.ready(), egui::Button::new(forking(row)));
+        let fire = theme::paint::button(ui, &forking(row), model.forking.ready(), FORK_HELP);
         crate::ui::act::tag(&fire, &[crate::verbs::spine::FORK]);
         if fire.clicked() {
             model.post_fork(commit);

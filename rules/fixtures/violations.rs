@@ -143,3 +143,10 @@ fn asserts_against_the_input_string(shape: &egui::epaint::TextShape) -> bool {
 fn spells_a_colour_by_hand() -> egui::Color32 {
     egui::Color32::from_rgb(255, 0, 0)
 }
+
+// Violation 16: a control built by egui's own constructor outside
+// `src/ui/theme/paint/` — a control on the glass with no help sentence,
+// which the painters there make impossible (DESIGN §4.46 item 2).
+fn paints_a_bare_control(ui: &mut egui::Ui) {
+    let _ = ui.button("bare");
+}

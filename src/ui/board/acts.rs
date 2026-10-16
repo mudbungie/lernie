@@ -52,11 +52,18 @@ pub const ACT: &str = "act on it…";
 /// The control that claims a ready ball for the aimed wall — on a board row
 /// rather than in the block, because the row is its subject.
 pub const CLAIM: &str = "claim it for this workspace";
+/// What the claim does.
+pub const CLAIM_HELP: &str = "binds this ball to the workspace, so its agents work it";
 /// The way out, which changes nothing. It is not the pane's own `done`,
 /// because two controls reading the same word on one screen are one control to
 /// everything that aims at a word — the operator, the accessibility tree and
 /// the harness alike.
 pub const DONE: &str = "done with this ball";
+/// What `done` does.
+pub const DONE_HELP: &str = "closes the authoring block; nothing typed in it is sent";
+/// What the two doors on the board do.
+pub const FILE_HELP: &str = "opens a block to file a new ball on this workspace's project";
+pub const ACT_HELP: &str = "opens a block to amend, release, deliver or claim this ball";
 /// What the block says it is about, with no ball.
 pub const NEW: &str = "a ball that does not exist yet";
 /// The control that files it.
@@ -67,6 +74,13 @@ pub const AMEND: &str = "amend it";
 pub const RELEASE: &str = "let it go";
 /// The control that delivers it.
 pub const DELIVER: &str = "deliver it";
+/// What each act does.
+pub const FILE_IT_HELP: &str = "files the ball on the project above with this title and body";
+pub const AMEND_HELP: &str =
+    "rewrites the ball's title or body, or appends the note to its journal";
+pub const RELEASE_HELP: &str = "unbinds the ball from this workspace; it stays on the board";
+pub const DELIVER_HELP: &str =
+    "closes the ball as delivered; its id above arms it, and it cannot be reopened";
 /// What the project box asks for.
 pub const PROJECT_HINT: &str = "project";
 /// What the title box asks for.
@@ -98,7 +112,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
     ui.separator();
     ui.label(subject(block));
     ui.horizontal_wrapped(|ui| {
-        if ui.button(DONE).clicked() {
+        if theme::paint::button(ui, DONE, true, DONE_HELP).clicked() {
             model.close_authoring();
         }
     });
@@ -157,28 +171,42 @@ fn typed(ui: &mut egui::Ui, text: &mut String, id: &str, hint: &str) {
 fn acts(ui: &mut egui::Ui, model: &Model) -> Option<serde_json::Value> {
     let block = model.authoring.as_ref()?;
     let offered = if block.filing() {
-        vec![(FILE_IT, crate::verbs::CREATE, block.filed(), UNFILEABLE)]
+        vec![(
+            FILE_IT,
+            crate::verbs::CREATE,
+            block.filed(),
+            UNFILEABLE,
+            FILE_IT_HELP,
+        )]
     } else {
         vec![
-            (AMEND, crate::verbs::UPDATE, block.amended(), UNAMENDABLE),
+            (
+                AMEND,
+                crate::verbs::UPDATE,
+                block.amended(),
+                UNAMENDABLE,
+                AMEND_HELP,
+            ),
             (
                 RELEASE,
                 crate::verbs::RELEASE.word,
                 block.released(),
                 NOTHING,
+                RELEASE_HELP,
             ),
             (
                 DELIVER,
                 crate::verbs::CLOSE.word,
                 block.delivered(),
                 UNARMED,
+                DELIVER_HELP,
             ),
         ]
     };
     let mut fired = None;
     ui.horizontal_wrapped(|ui| {
-        for (word, op, gesture, why) in offered {
-            fired = spend(ui, word, op, gesture, why).or(fired.take());
+        for (word, op, gesture, why, help) in offered {
+            fired = spend(ui, word, op, gesture, why, help).or(fired.take());
         }
     });
     fired
@@ -196,8 +224,9 @@ fn spend(
     op: &str,
     gesture: Option<serde_json::Value>,
     why: &str,
+    help: &str,
 ) -> Option<serde_json::Value> {
-    let control = ui.add_enabled(gesture.is_some(), egui::Button::new(word));
+    let control = theme::paint::button(ui, word, gesture.is_some(), help);
     crate::ui::act::tag(&control, &[op]);
     if gesture.is_none() && !why.is_empty() {
         ui.colored_label(theme::tone_ink(&crate::reply::convs::Tone::Weak), why);

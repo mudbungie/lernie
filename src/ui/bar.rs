@@ -27,41 +27,38 @@ mod foot;
 /// The conversations, one row each.
 mod rows;
 
-pub use drag::Dragged;
 pub use rows::{EMPTY, NOTHING_AIMED};
 
-/// **How long the bar stays open after the pointer leaves**, in seconds —
-/// the number read off the ruling (§4.45 item 1), held here and nowhere else.
-pub const LINGER: f64 = 0.75;
-/// **How long the bar's width takes to travel between its two ends**, in
-/// seconds (DESIGN §4.44 item 1): fast, so it is never waited on, and not
-/// zero, so a bar that opens under the pointer slides rather than snaps.
-pub const EASE: f32 = 0.12;
-/// **The collapsed width's default**, in points — what a seat that dragged
-/// nothing gets (§4.45 item 2): the state glyph and a few characters of a
-/// name at the body size, and the panel's margin either side. **Dragged
-/// wider, it shows more of each name** (bl-773e): a collapsed row and the
-/// foot paint their whole words elided at the width they have, so the
-/// number is a default and not a cut.
-pub const SHUT: f32 = 80.0;
-/// **The desk size's width** (`crate::snapshot::SIZES`), whose quarter is
-/// the expanded width.
-pub const DESK: f32 = 1400.0;
+/// **The linger, the ease, the collapsed width and the desk are the knob
+/// table's defaults** (DESIGN §4.46 item 4; `crate::settings`): how long the
+/// bar stays open after the pointer leaves (§4.45 item 1), how long its edge
+/// takes to travel (§4.44 item 1: fast, and not zero), the collapsed width a
+/// seat that dragged nothing gets (§4.45 item 2 — the state glyph and a few
+/// characters of a name, and **dragged wider it shows more of each name**,
+/// bl-773e), and the desk size's width (`crate::snapshot::SIZES`), whose
+/// quarter is the expanded width's default. What the operator set is read
+/// off `Model::settings` on every frame.
+pub use crate::settings::{BAR_SHUT as SHUT, DESK, EASE, LINGER};
 /// The pin's two words: it stops the auto-hiding, and it takes the stop back.
 pub const PIN: &str = "pin";
 pub const UNPIN: &str = "unpin";
+/// What the pin does, each way.
+pub const PIN_HELP: &str = "keeps the bar open whatever the pointer does";
+pub const UNPIN_HELP: &str = "lets the bar shut again once the pointer leaves it";
+/// What `+ new` does.
+pub const NEW_HELP: &str =
+    "begins a conversation on this workspace; the box takes its first message";
 /// The collapsed `+ new`.
 pub const PLUS: &str = "+";
 
 /// **The bar between frames**: the pin the operator chose (`Place::pinned`),
-/// the widths they dragged (`Place::dragged`), when the pointer was last over
-/// it, and the drag in hand.
+/// when the pointer was last over it, and the drag in hand. The widths it
+/// stands at are the settings' (`crate::settings::Settings::bar_shut`,
+/// `bar_open`), which a drag writes.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Bar {
     /// Pinned open, whatever the pointer does.
     pub pinned: bool,
-    /// **The two widths, where the operator dragged them** (§4.45 item 2).
-    pub dragged: Dragged,
     /// **The input-clock instant the pointer was last over the bar**, or
     /// `None` once the linger after it has lapsed.
     pub left_at: Option<f64>,
@@ -70,21 +67,22 @@ pub struct Bar {
 }
 
 impl Bar {
-    /// **Whether the bar stands open at `now`.**
-    pub fn open(&self, now: f64) -> bool {
-        self.pinned || self.left_at.is_some_and(|at| now - at < LINGER)
+    /// **Whether the bar stands open at `now`**, the linger being `linger`
+    /// seconds.
+    pub fn open(&self, now: f64, linger: f64) -> bool {
+        self.pinned || self.left_at.is_some_and(|at| now - at < linger)
     }
 
     /// **The pointer's news at `now`**: over the bar or not. Answers how long
     /// until the linger lapses, where one is running, so the frame can ask
     /// for a repaint at that moment.
-    pub fn heard(&mut self, now: f64, over: bool) -> Option<f64> {
+    pub fn heard(&mut self, now: f64, over: bool, linger: f64) -> Option<f64> {
         if over {
             self.left_at = Some(now);
             return None;
         }
         let at = self.left_at?;
-        let left = LINGER - (now - at);
+        let left = linger - (now - at);
         if left <= 0.0 {
             self.left_at = None;
             return None;
@@ -107,7 +105,8 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     }
     let now = ctx.input(|i| i.time);
     let screen = ctx.screen_rect();
-    let (shut, wide) = model.bar.dragged.shown(screen.width(), drag::floor(ctx));
+    let (shut, wide) = drag::shown(&model.settings, screen.width(), drag::floor(ctx));
+    let linger = f64::from(model.settings.linger);
     // **The pointer is over the bar it last saw**: open while the clock runs,
     // the pin holds or its foot's list stands, so a pointer resting inside an
     // open bar stays inside — and shut, the edge is not the bar, so a pointer
@@ -127,10 +126,10 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
         },
         |drag| drag.open,
     );
-    if let Some(left) = model.bar.heard(now, over) {
+    if let Some(left) = model.bar.heard(now, over, linger) {
         ctx.request_repaint_after(std::time::Duration::from_secs_f64(left));
     }
-    let open = held || model.bar.open(now);
+    let open = held || model.bar.open(now, linger);
     // **The width eases; what it holds does not**: the rows say what `open`
     // says from the first frame, and only the edge travels, on egui's own
     // clock, so a test steps it like the linger. **A dragged edge does not
@@ -139,7 +138,11 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
     let width = ctx.animate_value_with_time(
         egui::Id::new("bar width"),
         if open { wide } else { shut },
-        if model.bar.drag.is_some() { 0.0 } else { EASE },
+        if model.bar.drag.is_some() {
+            0.0
+        } else {
+            model.settings.ease
+        },
     );
     egui::SidePanel::left("bar")
         .resizable(false)
@@ -158,7 +161,7 @@ pub fn render(ctx: &egui::Context, model: &mut Model) {
                 });
                 foot::list(ui, model, seat);
             });
-            drag::edge(ui, &mut model.bar, open, width);
+            drag::edge(ui, &mut model.bar, &mut model.settings, open, width);
         });
 }
 
@@ -175,7 +178,13 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
         } else {
             theme::glyph::PIN.to_owned()
         };
-        if theme::paint::heading_link(ui, &said, theme::INK_WEAK).clicked() {
+        let help = if model.bar.pinned {
+            UNPIN_HELP
+        } else {
+            PIN_HELP
+        };
+        let help = crate::ui::keys::cited(help, &[crate::ui::keys::Act::Pin]);
+        if theme::paint::heading_link(ui, &said, theme::INK_WEAK, &help).clicked() {
             model.bar.pinned = !model.bar.pinned;
         }
         let Some(aim) = model.aim.clone() else {
@@ -198,7 +207,8 @@ fn head(ui: &mut egui::Ui, model: &mut Model, open: bool) {
             } else {
                 PLUS
             };
-            let seat = theme::paint::heading_link(ui, said, theme::INK_WEAK);
+            let help = crate::ui::keys::cited(NEW_HELP, &[crate::ui::keys::Act::New]);
+            let seat = theme::paint::heading_link(ui, said, theme::INK_WEAK, &help);
             crate::ui::act::tag(&seat, &[crate::verbs::PREPARE, crate::verbs::PROMPT]);
             if seat.clicked() {
                 model.begin_at(&aim);

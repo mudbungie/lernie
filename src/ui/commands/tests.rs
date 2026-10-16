@@ -129,11 +129,9 @@ fn the_window_s_own_words_and_keys_come_before_the_engines() {
         .collect();
     assert!(places.is_sorted(), "the menu's order:\n{painted}");
     let at = places.last().copied().unwrap_or_default();
-    for (key, does) in super::KEYS {
-        assert!(
-            painted.contains(&format!("{key}  {does}")),
-            "{key}:\n{painted}"
-        );
+    for row in crate::ui::keys::BINDINGS {
+        let line = format!("{}  {}", row.says(), row.does);
+        assert!(painted.contains(&line), "{line}:\n{painted}");
     }
     let engines = painted.find(super::ENGINES).expect("the engines' heading");
     let message = painted.find("/message <workspace>").expect("an engine row");

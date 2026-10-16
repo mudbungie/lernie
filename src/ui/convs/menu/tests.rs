@@ -270,3 +270,15 @@ fn secondary(harness: &mut Harness<'_, Model>, at: egui::Pos2) {
     }
     harness.run();
 }
+
+/// **Every item tells** (DESIGN §4.46 item 2): the straight items by their
+/// op, the two that open the box by what the box will take.
+#[test]
+fn every_menu_item_has_its_sentence() {
+    use crate::ui::Fill;
+    assert!(super::help_of(crate::verbs::STOP.word).contains("stops"));
+    assert!(super::help_of(crate::verbs::RETARGET.word).contains("directory"));
+    assert!(super::help_of(crate::verbs::SEEN.word).contains("seen"));
+    assert!(super::fill_help(Fill::Reason).contains("reason"));
+    assert!(super::fill_help(Fill::Arming).contains("name"));
+}

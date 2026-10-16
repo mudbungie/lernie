@@ -1,0 +1,23 @@
+# Every control is painted in src/ui/theme/paint/, by a painter that takes
+# the control's help sentence beside its word (DESIGN §4.46 item 2). egui's
+# own constructors — the button, the selectable label, the check box, the
+# link, the slider and the drag value — are confined there, so a pane that
+# reaches for one reaches for the painter instead, and a control cannot
+# arrive on the glass without saying what it does.
+#
+# THE LOCATION IS A DIRECTORY, not a file, because the painters are split at
+# the line cap by shape (control.rs, row.rs, field.rs, knob.rs) and all of
+# them are the one inventory. There is no test carve-out: a control painted
+# in a test is a control an instrument walks, and the snapshot matrix's toy
+# windows go through the painters too.
+id: no-bare-control
+language: rust
+severity: error
+message: "controls are painted in src/ui/theme/paint/, each with its help sentence (see rules/no-bare-control.yml)"
+ignores:
+  - "**/ui/theme/paint/**"
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '(\.button|\.small_button|\.selectable_label|\.checkbox|\.link|Button::new|Slider::new|DragValue::new)$'

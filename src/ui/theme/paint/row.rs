@@ -27,8 +27,21 @@ pub fn row(
     state: Option<Color32>,
     chosen: bool,
     indent: f32,
+    help: &str,
 ) -> Response {
-    marked(ui, ("", ink), words, ink, state, chosen, indent)
+    Row {
+        mark: (String::new(), ink),
+        words: words.to_owned(),
+        ink,
+        state,
+        chosen,
+        indent,
+        aside: None,
+        beneath: Vec::new(),
+        door: None,
+        help: help.to_owned(),
+    }
+    .paint(ui)
 }
 
 /// **The width a row needs to say `words` uncut** (bl-8d6d): the geometry
@@ -43,33 +56,6 @@ pub fn row_width(ui: &egui::Ui, words: &str) -> f32 {
             .x
     });
     RULE + space::M + said + space::S
-}
-
-/// **A row led by a mark in its own ink** — a conversation's state glyph in
-/// the switcher (DESIGN §4.42 item 7). The mark and the words are still ONE
-/// run, `<mark> <words>`, on the glass and in the accessibility tree alike, so
-/// a probe aims at what the operator reads; only the mark's ink differs.
-pub fn marked(
-    ui: &mut egui::Ui,
-    mark: (&str, Color32),
-    words: &str,
-    ink: Color32,
-    state: Option<Color32>,
-    chosen: bool,
-    indent: f32,
-) -> Response {
-    Row {
-        mark: (mark.0.to_owned(), mark.1),
-        words: words.to_owned(),
-        ink,
-        state,
-        chosen,
-        indent,
-        aside: None,
-        beneath: Vec::new(),
-        door: None,
-    }
-    .paint(ui)
 }
 
 /// **A row as a block**: [`marked`]'s head, with an aside in weak ink at its
@@ -90,8 +76,10 @@ pub struct Row {
     /// **A door at the head's right end, painted only while the pointer is
     /// over the row** (DESIGN §4.44 item 1; bl-e837): its glyph, in faint ink
     /// under a seat of its own, so its click is never the row's. The aside
-    /// steps left of it.
-    pub door: Option<&'static str>,
+    /// steps left of it. Its glyph, and its own help sentence.
+    pub door: Option<(&'static str, &'static str)>,
+    /// **What a click on the row does**, one sentence (DESIGN §4.46 item 2).
+    pub help: String,
 }
 
 impl Row {
@@ -130,7 +118,7 @@ impl Row {
             )
         });
         if !ui.is_rect_visible(rect) {
-            return (seat, None);
+            return (super::told(seat, &self.help), None);
         }
         let fill = if self.chosen {
             RAISED
@@ -154,21 +142,24 @@ impl Row {
         let left = rect.min.x + RULE + self.indent + space::M;
         let mut right = rect.max.x - space::S;
         let middle = rect.min.y + ROW / 2.0;
-        let door = self.door.filter(|_| seat.contains_pointer()).map(|glyph| {
-            let head = Rect::from_min_max(
-                Pos2::new(left, rect.min.y),
-                Pos2::new(right, rect.min.y + ROW),
-            );
-            let mut child = ui.new_child(
-                egui::UiBuilder::new()
-                    .id_salt(seat.id)
-                    .max_rect(head)
-                    .layout(egui::Layout::right_to_left(egui::Align::Center)),
-            );
-            let door = super::tab(&mut child, glyph, INK_FAINT);
-            right = door.rect.min.x - space::S;
-            door
-        });
+        let door = self
+            .door
+            .filter(|_| seat.contains_pointer())
+            .map(|(glyph, help)| {
+                let head = Rect::from_min_max(
+                    Pos2::new(left, rect.min.y),
+                    Pos2::new(right, rect.min.y + ROW),
+                );
+                let mut child = ui.new_child(
+                    egui::UiBuilder::new()
+                        .id_salt(seat.id)
+                        .max_rect(head)
+                        .layout(egui::Layout::right_to_left(egui::Align::Center)),
+                );
+                let door = super::tab(&mut child, glyph, INK_FAINT, help);
+                right = door.rect.min.x - space::S;
+                door
+            });
         if let Some(aside) = &self.aside {
             let small = egui::TextStyle::Small;
             let galley = elided(ui, aside, 0, (INK_WEAK, INK_WEAK), &small, f32::INFINITY);
@@ -196,6 +187,19 @@ impl Row {
             ui.painter().galley(Pos2::new(left, top), galley, *ink);
             top += tall(ui, style);
         }
+        // **The door's sentence is the one the pointer is on** (bl-a6b3): egui
+        // keeps a seat's tooltip open while the pointer is anywhere inside
+        // that seat, and the door stands inside the row — so a row that kept
+        // telling would speak over its own door. While the door is hovered
+        // the row attaches nothing and the door's tooltip opens on the
+        // next frame; the seat is still recorded, since the row is still a
+        // control.
+        let seat = if door.as_ref().is_some_and(Response::hovered) {
+            crate::ui::act::bridge(&seat);
+            seat
+        } else {
+            super::told(seat, &self.help)
+        };
         (seat, door)
     }
 }

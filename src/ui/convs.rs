@@ -59,6 +59,10 @@ pub const NOT_ANSWERED: &str = "waiting to hear about this workspace";
 
 /// The mark a state nothing observed wears, inside the badge it qualifies.
 pub const UNCERTAIN: &str = "?";
+/// What a conversation's row does wherever it stands (DESIGN §4.46 item 2).
+pub const SELECT_HELP: &str = "shows this conversation";
+/// What the bar row's trashcan does.
+pub const TRASH_HELP: &str = "deletes this conversation; Ctrl+click skips the question";
 
 /// **The conversations that stand under the aimed wall**, and the sentence
 /// that stands there when it holds none.

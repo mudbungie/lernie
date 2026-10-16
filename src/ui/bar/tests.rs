@@ -1,7 +1,7 @@
 //! The bar: its two widths and the clock between them, the pin, its rows,
 //! its head's `+ new`, and what it says with nothing to list.
 
-use super::{Bar, DESK, EMPTY, LINGER, NOTHING_AIMED, open_width};
+use super::{DESK, EMPTY, LINGER, NOTHING_AIMED, open_width};
 use crate::paint_probe::{Seen, frame::Window, seen_of};
 use crate::test_support::window::{conv, seated};
 use crate::ui::{Model, theme};
@@ -18,6 +18,8 @@ mod ease;
 mod foot;
 /// The head's two doors, at the heading size with air inside the seat.
 mod head;
+/// The clock as a value: the linger from when the pointer left.
+mod linger;
 /// The trashcan on a row under the pointer, and the confirmation it opens.
 mod trash;
 
@@ -96,29 +98,6 @@ pub(super) fn opened(output: &egui::FullOutput) -> bool {
     said(output).iter().any(|t| *t == pin || *t == unpin)
 }
 
-/// **The clock, as a value**: the pointer over keeps it open; leaving starts
-/// the linger, which asks for the repaint at the moment it lapses; at
-/// [`LINGER`] — 0.75 s, the number read off the ruling (DESIGN §4.45 item
-/// 1) — it shuts and forgets; and the pin holds it open with no repaint owed.
-#[test]
-fn the_linger_runs_from_when_the_pointer_left() {
-    assert!((LINGER - 0.75).abs() < f64::EPSILON, "the ruling's number");
-    let mut bar = Bar::default();
-    assert!(!bar.open(0.0), "shut at rest");
-    assert_eq!(bar.heard(0.0, false), None);
-    assert_eq!(bar.heard(1.0, true), None);
-    assert!(bar.open(1.0));
-    assert_eq!(bar.heard(1.5, false), Some(0.25), "a quarter second left");
-    assert!(bar.open(1.5), "lingering");
-    assert!(!bar.open(1.0 + LINGER));
-    assert_eq!(bar.heard(1.0 + LINGER, false), None);
-    assert_eq!(bar.left_at, None, "forgotten once lapsed");
-    bar.pinned = true;
-    assert!(bar.open(9.0), "pinned");
-    bar.left_at = Some(9.0);
-    assert_eq!(bar.heard(9.5, false), None, "a pinned bar owes no repaint");
-}
-
 /// **The pointer expands it the frame it enters, and it lingers 0.75 s after
 /// it leaves**, then shuts on the repaint it asked for.
 #[test]
@@ -141,7 +120,7 @@ fn the_pointer_opens_it_and_it_lingers_after() {
     assert!(open(&left), "lingering");
     let owed = left.viewport_output[&egui::ViewportId::ROOT].repaint_delay;
     assert!(
-        owed <= std::time::Duration::from_secs_f64(LINGER),
+        owed <= std::time::Duration::from_secs_f64(f64::from(LINGER)),
         "{owed:?}"
     );
     // Last over at 3.0, so it shuts at 3.75.

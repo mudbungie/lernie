@@ -1,6 +1,8 @@
 //! **The anatomy, as paint** (`docs/STYLE.md` §5; bl-d1ae): the row, the
 //! connector, the ruled block, the section and the field — every shape a pane
-//! puts on the glass that is not a bare label or a control, written once.
+//! puts on the glass that is not a bare label, written once — and every
+//! control, each painter taking the control's help sentence beside its word
+//! (DESIGN §4.46 item 2; [`told`]).
 //!
 //! A pane that drew its own row would be a pane with its own opinion about
 //! what a row is, and the window it replaces was that: a `selectable_label`
@@ -12,12 +14,37 @@ use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, vec2};
 
 use super::{BRAND, HAIRLINE, INK, INK_FAINT, INK_WEAK, RADIUS, RULE, space, type_scale};
 
+/// The button, the toggle seat: the one home of egui's own controls.
+mod control;
 /// The two fields that take text: the one-line box and the composer.
 mod field;
+/// The slider, the settings pane's number knob (DESIGN §4.46 item 4).
+mod knob;
 /// The list row, one line or a block of them.
 mod row;
 
-pub use row::{Row, marked, row, row_width};
+pub use control::{button, seat, toggle};
+pub use knob::slider;
+pub use row::{Row, row, row_width};
+
+/// **A control told** (DESIGN §4.46 item 2): `help` — one sentence that
+/// defines what the control does — rides the seat as its tooltip, shown
+/// after the pointer has rested on it for the style's delay, and the seat
+/// is recorded for the instruments (`crate::ui::act::bridge`). Every painter
+/// of a control ends here, which is what makes a control without a sentence
+/// a control that does not compile.
+pub fn told(response: Response, help: &str) -> Response {
+    crate::ui::act::bridge(&response);
+    // **The first control under a pane that just opened takes the keyboard**
+    // (`crate::ui::overlay::FIRST`; bl-99ed): the flag is read down here,
+    // in the one function every control passes through, so no pane has to
+    // know which of its controls is first.
+    let first = egui::Id::new(crate::ui::overlay::FIRST);
+    if response.ctx.data_mut(|d| d.remove_temp::<bool>(first)) == Some(true) {
+        response.request_focus();
+    }
+    response.on_hover_text(help)
+}
 
 /// **A state's rule**: [`RULE`] wide, `height` tall, from `top`.
 fn rule_at(ui: &egui::Ui, top: Pos2, height: f32, accent: Color32) {
@@ -57,9 +84,11 @@ pub fn ruled(ui: &mut egui::Ui, ink: Color32, body: impl FnOnce(&mut egui::Ui)) 
 /// air inside, spanning the column — so the gutter glyph stands INSIDE the
 /// fill and the four roles read as one ramp down the pane rather than as
 /// four widths of speech balloon. The stroke is the role's too, and only the
-/// trail has one.
-pub fn bubbled(ui: &mut egui::Ui, role: super::Bubble, body: impl FnOnce(&mut egui::Ui)) {
-    let (fill, stroke) = super::bubble(role);
+/// trail has one. **With no role the block stands on the ground** with the
+/// same air — the `bubbles` knob off (DESIGN §4.46 item 4) — so the layout
+/// is the same whichever way it is set.
+pub fn bubbled(ui: &mut egui::Ui, role: Option<super::Bubble>, body: impl FnOnce(&mut egui::Ui)) {
+    let (fill, stroke) = role.map_or((Color32::TRANSPARENT, Stroke::NONE), super::bubble);
     egui::Frame::none()
         .fill(fill)
         .stroke(stroke)
@@ -100,8 +129,15 @@ pub fn section(ui: &mut egui::Ui, word: &str) {
 /// [`super::hover`] under the pointer with the pointing hand — the row's own
 /// idiom at the size of a word, and never a box: a control on the rule is a
 /// fact you can open, not a button standing among the facts.
-pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
-    door(ui, egui::TextStyle::Small, &[(words, ink)], words, 0.0)
+pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Response {
+    door(
+        ui,
+        egui::TextStyle::Small,
+        &[(words, ink)],
+        words,
+        0.0,
+        help,
+    )
 }
 
 /// **A door at the heading size with `S` of air inside its seat** (DESIGN
@@ -110,13 +146,14 @@ pub fn link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
 /// too small; the air is INSIDE the seat, so what a hand reaches for is the
 /// air and the words together, and the head stands a row taller than a
 /// body line for it.
-pub fn heading_link(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
+pub fn heading_link(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Response {
     door(
         ui,
         egui::TextStyle::Heading,
         &[(words, ink)],
         words,
         space::S,
+        help,
     )
 }
 
@@ -130,6 +167,7 @@ pub fn link_marked(
     words: &str,
     ink: Color32,
     (mark, marked): (&str, Color32),
+    help: &str,
 ) -> Response {
     let mark = format!(" {mark}");
     door(
@@ -138,12 +176,13 @@ pub fn link_marked(
         &[(words, ink), (&mark, marked)],
         words,
         0.0,
+        help,
     )
 }
 
 /// **A tab** (DESIGN §4.44 item 2): a [`link`] at the body size.
-pub fn tab(ui: &mut egui::Ui, words: &str, ink: Color32) -> Response {
-    door(ui, egui::TextStyle::Body, &[(words, ink)], words, 0.0)
+pub fn tab(ui: &mut egui::Ui, words: &str, ink: Color32, help: &str) -> Response {
+    door(ui, egui::TextStyle::Body, &[(words, ink)], words, 0.0, help)
 }
 
 /// **The one door**: `parts` laid as one run at `style`, each in its own ink,
@@ -156,6 +195,7 @@ fn door(
     parts: &[(&str, Color32)],
     name: &str,
     pad: f32,
+    help: &str,
 ) -> Response {
     let font = style.resolve(ui.style());
     let mut job = egui::text::LayoutJob::default();
@@ -177,7 +217,7 @@ fn door(
             .rect_stroke(rect.expand(space::XS), RADIUS, Stroke::new(1.0, BRAND));
     }
     ui.painter().galley(rect.min + vec2(pad, pad), galley, INK);
-    seat.on_hover_cursor(egui::CursorIcon::PointingHand)
+    told(seat.on_hover_cursor(egui::CursorIcon::PointingHand), help)
 }
 
 pub use field::{field, prompt};

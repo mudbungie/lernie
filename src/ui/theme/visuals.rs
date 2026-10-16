@@ -10,18 +10,47 @@
 
 use egui::{Color32, FontFamily, FontId, Rounding, Stroke, TextStyle};
 
+use crate::settings::{Settings, Toggle};
+
 use super::{
     BRAND, GROUND, HAIRLINE, INK, RADIUS, RAISED, SURFACE, State, accent, space, tint, type_scale,
 };
 
 /// **Install the language on this context**, once per frame — the same call
 /// the native boot and every offscreen frame make, so what a test paints is
-/// what the operator sees.
-pub fn install(ctx: &egui::Context) {
+/// what the operator sees — and **what the toolkit holds of the settings**
+/// (DESIGN §4.46 items 1, 2 and 4): the wheel step, the delay before a
+/// control tells, and the scale. Installed every frame, so the pane's
+/// change is the next frame's, and from the one table, so the number has
+/// one home.
+pub fn install(ctx: &egui::Context, settings: &Settings) {
     let mut style = egui::Style {
         text_styles: text_styles(),
         ..egui::Style::default()
     };
+    // **A control tells after the pointer has rested `help_delay`** — and
+    // never, while the `help` knob is off: an infinite delay is the one
+    // spelling of *off* the toolkit reads without a second gate at every
+    // painter.
+    let interaction = &mut style.interaction;
+    if settings.on(Toggle::Help) {
+        interaction.tooltip_delay = settings.help_delay;
+    } else {
+        interaction.tooltip_delay = f32::INFINITY;
+        interaction.tooltip_grace_time = 0.0;
+    }
+    // **The wheel step is the seat's, not egui's consensus** (item 1), and
+    // **the scale chords are the seat's** (item 3): egui's own keyboard
+    // zoom keeps a factor in its memory for the run, which would fight a
+    // setting installed every frame, so it is off and the knob is the one
+    // factor.
+    ctx.options_mut(|options| {
+        options.line_scroll_speed = settings.wheel;
+        options.zoom_with_keyboard = false;
+    });
+    if (ctx.zoom_factor() - settings.scale).abs() > f32::EPSILON {
+        ctx.set_zoom_factor(settings.scale);
+    }
     // **The gaps are the scale's** (STYLE §4): the default item gap is `S`
     // across and — a desktop delta — `XXS` down, because columns of
     // single-line rows at the phone's gap is a window one third empty and a
@@ -76,6 +105,10 @@ pub fn visuals() -> egui::Visuals {
     v.panel_fill = GROUND;
     v.window_fill = SURFACE;
     v.window_stroke = Stroke::NONE;
+    // **A tooltip is the overlay's box** (DESIGN §4.46 item 2; STYLE §5): the
+    // surface, the hairline, and no shadow — a shadow is a hue the language
+    // does not have.
+    v.popup_shadow = egui::epaint::Shadow::NONE;
     v.window_rounding = Rounding::same(RADIUS);
     v.menu_rounding = Rounding::same(RADIUS);
     v.faint_bg_color = SURFACE;

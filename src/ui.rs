@@ -77,6 +77,8 @@ pub mod records;
 /// The window's one list: the engines, their walls, and the aimed wall's
 /// conversations.
 pub mod roster;
+/// The settings pane: the knob table painted (§4.46 item 4).
+pub mod settings;
 /// The layout, and the notice that stands where content would have been.
 pub mod shell;
 /// The slash verbs: the typed way into every pane and act (§4.42).

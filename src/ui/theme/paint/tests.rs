@@ -1,15 +1,17 @@
 //! The anatomy on the glass: a row's words, ink, rule and tint; a block's
 //! rule; a section's word; a field's ring and glow.
 
-use super::{elbow, empty, field, prompt, prose, rail, row, ruled, section};
+use super::{elbow, empty, prose, rail, row, ruled, section};
 use crate::paint_probe::frame::Window;
 use crate::test_support::window::{click, seen};
-use crate::ui::theme::{
-    BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, glyph, tint, type_scale,
-};
+use crate::ui::theme::{BRAND, INK, INK_WEAK, RAISED, RULE, State, accent, type_scale};
 
+/// The two fields that take text, split at the cap.
+mod field;
 /// The hover wash, and the mark inside a link.
 mod hover;
+/// The slider's trough and its ring.
+mod knob;
 
 /// Every fill that reached the glass, widest first.
 fn fills(window: &Window, body: impl FnMut(&egui::Context)) -> Vec<(egui::Rect, egui::Color32)> {
@@ -30,6 +32,7 @@ fn a_row_paints_its_words_in_its_ink_and_its_state_as_a_rule() {
                 Some(accent(State::Attention)),
                 false,
                 0.0,
+                "a row",
             );
         });
     };
@@ -50,7 +53,15 @@ fn a_chosen_row_is_raised_and_wears_the_brand() {
     let window = Window::sized(300.0, 100.0);
     let body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            row(ui, "chosen", INK, Some(accent(State::Error)), true, 0.0);
+            row(
+                ui,
+                "chosen",
+                INK,
+                Some(accent(State::Error)),
+                true,
+                0.0,
+                "chosen",
+            );
         });
     };
     let fills = fills(&window, body);
@@ -69,8 +80,8 @@ fn a_row_rings_while_it_holds_the_keyboard_and_not_otherwise() {
     let window = Window::sized(300.0, 100.0);
     let mut body = |ctx: &egui::Context| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            row(ui, "first", INK, None, false, 0.0);
-            row(ui, "second", INK, None, false, 0.0);
+            row(ui, "first", INK, None, false, 0.0, "first");
+            row(ui, "second", INK, None, false, 0.0, "second");
         });
     };
     let ringed = |output: &egui::FullOutput| {
@@ -108,7 +119,7 @@ fn a_row_takes_a_click_on_its_words() {
     let mut clicked = false;
     click(&window, "take me", |ctx| {
         egui::CentralPanel::default().show(ctx, |ui| {
-            clicked |= row(ui, "take me", INK, None, false, 0.0).clicked();
+            clicked |= row(ui, "take me", INK, None, false, 0.0, "takes").clicked();
         });
     });
     assert!(clicked);
@@ -149,83 +160,6 @@ fn a_block_is_ruled_and_a_section_is_worded() {
         .find(|run| run.text == "steps")
         .expect("the section's word");
     assert_eq!(word.ink, INK_WEAK);
-}
-
-/// **A field glows with what it was given and rings when it holds the
-/// caret**, and the words typed into it are the caller's.
-#[test]
-fn a_field_glows_and_rings() {
-    let window = Window::sized(300.0, 100.0);
-    let id = egui::Id::new("a field");
-    let mut text = String::new();
-    let glow = tint(State::Attention);
-    let body = |ctx: &egui::Context| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            field(ui, id, &mut text, "say it", Some(glow));
-        });
-    };
-    assert!(
-        fills(&window, body).iter().any(|(_, ink)| *ink == glow),
-        "glows"
-    );
-    let mut text = String::new();
-    let body = |ctx: &egui::Context| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            field(ui, id, &mut text, "say it", None);
-        });
-    };
-    click(&window, "say it", body);
-    assert_eq!(window.focused(), Some(id), "the click put the caret in it");
-}
-
-/// **The prompt wears its glyph in the brand and is as tall as its lines**
-/// (§4.42): the glyph stands inside the field's fill, the field is one line
-/// of body type tall while nothing is typed, and a shifted Enter breaks a
-/// line where a bare one leaves the text alone.
-#[test]
-fn the_prompt_wears_its_glyph_and_shift_enter_breaks_a_line() {
-    let window = Window::sized(400.0, 200.0);
-    let id = egui::Id::new("the prompt");
-    let mut text = String::new();
-    let mut body = |ctx: &egui::Context| {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            prompt(ui, id, &mut text, "say it", None);
-        });
-    };
-    let output = window.frame(Vec::new(), &mut body);
-    let lead = crate::paint_probe::seen_of(&output)
-        .into_iter()
-        .find(|run| run.text == glyph::PROMPT)
-        .expect("the glyph is on the glass");
-    assert_eq!(lead.ink, BRAND);
-    let field = crate::paint_probe::fills_of(&output)
-        .into_iter()
-        .find(|(rect, _)| {
-            rect.contains_rect(lead.laid) && rect.width() > 300.0 && rect.height() < 100.0
-        })
-        .expect("the glyph lies inside the field");
-    assert!(field.0.height() < 3.0 * type_scale::BODY, "{field:?}");
-    let at = crate::paint_probe::frame::locate_in(&window, "say it", &mut body).expect("hint");
-    crate::paint_probe::frame::click(&window, at, &mut body);
-    window.frame(
-        vec![egui::Event::Key {
-            key: egui::Key::Enter,
-            physical_key: None,
-            pressed: true,
-            repeat: false,
-            modifiers: egui::Modifiers::SHIFT,
-        }],
-        &mut body,
-    );
-    window.frame(
-        vec![crate::paint_probe::frame::press(egui::Key::Enter)],
-        &mut body,
-    );
-    window.frame(Vec::new(), &mut body);
-    assert_eq!(
-        text, "\n",
-        "one break from the shifted key and none from the bare one"
-    );
 }
 
 /// **Prose is laid at the leading** (bl-f251): a paragraph that wraps to
@@ -286,7 +220,7 @@ fn a_row_past_the_clip_paints_nothing() {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 for i in 0..30 {
-                    row(ui, &format!("row {i}"), INK, None, false, 0.0);
+                    row(ui, &format!("row {i}"), INK, None, false, 0.0, "a row");
                 }
             });
         });

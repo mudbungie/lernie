@@ -29,6 +29,9 @@ use crate::ui::{Model, theme};
 pub const OPEN: &str = "records…";
 /// The word that puts them away.
 pub const CLOSE: &str = "hide";
+/// What the door does, either way.
+pub const OPEN_HELP: &str = "reads this step's bytes, events and tool calls off the engine";
+pub const CLOSE_HELP: &str = "folds this step's records away";
 /// Said in place of a record with no bytes.
 pub const NO_BYTES: &str = "no bytes — missing, unreadable, or empty";
 /// Said for a response stream that landed nothing.
@@ -44,7 +47,7 @@ pub const ERRORED: &str = "ended in error";
 pub fn control(ui: &mut egui::Ui, model: &mut Model, seq: &str) {
     let open = model.drilled_into(seq).is_some();
     let word = if open { CLOSE } else { OPEN };
-    let control = ui.button(word);
+    let control = theme::paint::button(ui, word, true, if open { CLOSE_HELP } else { OPEN_HELP });
     crate::ui::act::tag(&control, &[crate::verbs::STEP.word]);
     if control.clicked() {
         if open {

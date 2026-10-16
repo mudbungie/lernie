@@ -14,6 +14,10 @@
 use crate::reply::convs::ConvRow;
 use crate::ui::{Model, theme};
 
+/// What a tab does, and what its `×` does.
+pub const TAB_HELP: &str = "shows this conversation";
+pub const CLOSE_HELP: &str = "closes this tab; the conversation stays";
+
 /// What a tab is called: the row's name where the seat holds the row (the
 /// listing's, or a start's claim before the listing knows it), else its id.
 fn row_of(model: &Model, root_id: &str) -> Option<ConvRow> {
@@ -51,7 +55,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
             } else {
                 theme::INK_WEAK
             };
-            let tab = theme::paint::tab(ui, &name, ink);
+            let tab = theme::paint::tab(ui, &name, ink, TAB_HELP);
             // **Selecting reads its transcript and opens its follow lane**, as
             // a switcher row's select does (`crate::ui::convs::row`).
             crate::ui::act::tag(
@@ -69,7 +73,14 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model) {
                 chosen = Some(root_id.clone());
             }
             // **The close posts nothing**, so it wears no `act:` tag.
-            let close = theme::paint::tab(ui, theme::glyph::CLOSE, theme::INK_FAINT);
+            // **The selected tab's × cites Ctrl+W** (§4.46 item 3): the chord
+            // closes the selected one, and only that × is the same act.
+            let help = if selected {
+                crate::ui::keys::cited(CLOSE_HELP, &[crate::ui::keys::Act::CloseTab])
+            } else {
+                CLOSE_HELP.to_owned()
+            };
+            let close = theme::paint::tab(ui, theme::glyph::CLOSE, theme::INK_FAINT, &help);
             if close.clicked() {
                 closed = Some(root_id.clone());
             }

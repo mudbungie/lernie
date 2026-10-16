@@ -83,11 +83,28 @@ pub fn tag(response: &egui::Response, ops: &[&str]) {
         let _ = response
             .ctx
             .accesskit_node_builder(response.id, move |node| node.set_author_id(author));
-        response.ctx.data_mut(|data| {
-            data.get_temp_mut_or_default::<Bridge>(egui::Id::new(BRIDGE))
-                .insert(response.id.value(), response.id);
-        });
     }
+    bridge(response);
+}
+
+/// **Record the seat a control is**, so an instrument can find it from the
+/// tree (DESIGN §4.46 item 2). Every painter calls it through
+/// `theme::paint::told`, and every tag through [`tag`], so the set the
+/// instruments walk is the set of controls painted — not the tagged subset.
+pub fn bridge(response: &egui::Response) {
+    let _ = response;
+    #[cfg(test)]
+    response.ctx.data_mut(|data| {
+        data.get_temp_mut_or_default::<Bridge>(egui::Id::new(BRIDGE))
+            .insert(response.id.value(), response.id);
+    });
+}
+
+/// **Every seat recorded so far**, by the tree id it answers to.
+#[cfg(test)]
+pub(crate) fn bridged(ctx: &egui::Context) -> Bridge {
+    ctx.data(|data| data.get_temp::<Bridge>(egui::Id::new(BRIDGE)))
+        .unwrap_or_default()
 }
 
 /// **The way back from a tree node to the seat egui holds for it** (DESIGN

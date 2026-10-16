@@ -54,6 +54,12 @@ impl Window {
         }
     }
 
+    /// The context the frames run on, for a reader of what a frame wrote
+    /// into its memory (`crate::ui::chat::scroll::offset`).
+    pub(crate) fn ctx(&self) -> &egui::Context {
+        &self.ctx
+    }
+
     /// A window big enough that nothing scrolls out.
     pub(crate) fn new() -> Self {
         Self::sized(1200.0, 2400.0)
@@ -111,6 +117,13 @@ fn pressed_at(
     mut body: impl FnMut(&egui::Context),
 ) {
     window.frame(vec![egui::Event::PointerMoved(pos)], &mut body);
+    // **One frame for the pointer to rest** (DESIGN §4.46 item 2): a
+    // pointer that arrives from nowhere has no velocity, so egui counts it
+    // still at once and opens the seat's tooltip on this frame — and lays
+    // that tooltip's area at the origin, over the seat, until the next
+    // frame has measured it. A press hit-tested against that frame lands on
+    // the tooltip. A real pointer rests the delay first.
+    window.frame(Vec::new(), &mut body);
     for pressed in [true, false] {
         window.frame(vec![down(button, pos, pressed)], &mut body);
     }
@@ -131,12 +144,17 @@ fn down(button: egui::PointerButton, pos: egui::Pos2, pressed: bool) -> egui::Ev
 
 /// One key press, on no modifier plane.
 pub(crate) fn press(key: egui::Key) -> egui::Event {
+    chord(key, egui::Modifiers::NONE)
+}
+
+/// One key press under `modifiers` — a chord (`crate::ui::keys::bindings`).
+pub(crate) fn chord(key: egui::Key, modifiers: egui::Modifiers) -> egui::Event {
     egui::Event::Key {
         key,
         physical_key: None,
         pressed: true,
         repeat: false,
-        modifiers: egui::Modifiers::NONE,
+        modifiers,
     }
 }
 

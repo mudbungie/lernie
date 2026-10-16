@@ -13,6 +13,8 @@ use crate::ui::{Edit, Model, theme};
 
 /// The word over the offered ids in the editor.
 pub const OFFERS: &str = "it offers:";
+/// What picking an offered id does.
+pub const PICK_HELP: &str = "puts this id in the model box";
 
 /// **Say, on the row and in the error accent, that its provider does not
 /// offer its model** — or nothing, which is also what a provider with no
@@ -36,7 +38,7 @@ pub fn pick(ui: &mut egui::Ui, model: &mut Model, edit: &Edit) {
     ui.horizontal_wrapped(|ui| {
         ui.label(OFFERS);
         for id in offered {
-            if ui.selectable_label(edit.model.trim() == id, &id).clicked() {
+            if theme::paint::seat(ui, edit.model.trim() == id, &id, PICK_HELP).clicked() {
                 picked = Some(id);
             }
         }

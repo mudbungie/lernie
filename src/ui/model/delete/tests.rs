@@ -37,3 +37,23 @@ fn the_act_is_delete_agent_armed_by_the_name_and_either_answer_puts_the_question
     assert_eq!(unaimed.deleting, None);
     assert!(unaimed.outbox.is_empty(), "no wall, no envelope");
 }
+
+/// **With the `confirm` knob off the door deletes at once** (DESIGN §4.46
+/// item 4): no confirmation stands, and the same envelope goes.
+#[test]
+fn confirm_off_deletes_at_once() {
+    let mut model = seated();
+    model.settings.set(crate::settings::Toggle::Confirm, false);
+    let id = "20260830T051200Z-a1b2";
+    model.begin_deleting(id);
+    assert_eq!(model.deleting, None, "nothing asked");
+    let sent = model.outbox.pop().expect("the delete").envelope;
+    assert_eq!(
+        sent,
+        crate::verbs::delete_agent(
+            "home".to_owned(),
+            id.to_owned(),
+            "port the paint probe".to_owned()
+        )
+    );
+}

@@ -41,6 +41,9 @@ use crate::verbs::Where;
 pub const WRITE: &str = "write";
 /// The control that puts the engine's answer back in the box.
 pub const REVERT: &str = "revert";
+/// What the two do.
+pub const WRITE_HELP: &str = "writes the box's text over this file on the engine";
+pub const REVERT_HELP: &str = "puts the file's own text back in the box";
 /// The refusal spelled beside the dark controls.
 pub const NOTHING_TO_WRITE: &str = "the box holds what the file holds";
 /// What it says when the file is neither what the box holds nor what the box
@@ -67,15 +70,12 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, at: &Where, answered:
     }
     let unwritten = draft.unwritten(answered);
     ui.horizontal_wrapped(|ui| {
-        let write = ui.add_enabled(unwritten, egui::Button::new(WRITE));
+        let write = theme::paint::button(ui, WRITE, unwritten, WRITE_HELP);
         crate::ui::act::tag(&write, &[crate::verbs::CONFIG]);
         if write.clicked() {
             model.write_config(at, draft.text.clone());
         }
-        if ui
-            .add_enabled(unwritten, egui::Button::new(REVERT))
-            .clicked()
-        {
+        if theme::paint::button(ui, REVERT, unwritten, REVERT_HELP).clicked() {
             model.revert_config(answered);
         }
         if !unwritten {

@@ -68,6 +68,9 @@ fn head(content: &str) -> String {
 /// pin's own rule (`crate::ui::roster::wall`): a control names the act it
 /// fires, so an operator never has to work out which way it will go.
 pub const UNFOLD: &str = "fold";
+/// What the control does, each way (DESIGN §4.46 item 2).
+pub const UNFOLD_HELP: &str = "shows the whole of what the machine answered";
+pub const FOLD_HELP: &str = "folds the answer back to its head";
 
 /// **The word on the control while the row is folded**: the act, and the two
 /// counts a reader is choosing between. The line count is what a scroll costs

@@ -30,6 +30,8 @@ pub const NAME: &str = "a selector's dropup";
 pub const NOTHING: &str = "nothing heard yet";
 /// The keys, said once over the rows.
 pub const HINT: &str = "arrows walk · Enter picks · Esc closes";
+/// What a dropup's row does.
+pub const PICK_HELP: &str = "sets the selector to this and closes the list";
 /// What marks the row in force.
 const CURRENT: &str = theme::glyph::CALL;
 
@@ -167,7 +169,7 @@ pub fn stand(ui: &mut egui::Ui, model: &mut Model) {
             } else {
                 choice.text.clone()
             };
-            let seat = theme::paint::row(ui, &text, theme::INK, None, at == cursor, 0.0);
+            let seat = theme::paint::row(ui, &text, theme::INK, None, at == cursor, 0.0, PICK_HELP);
             crate::ui::act::tag(&seat, ops(&choice.pick));
             if seat.clicked() {
                 picked = Some(at);

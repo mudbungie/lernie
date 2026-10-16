@@ -130,9 +130,9 @@ fn window(root: &std::path::Path) -> Verdict {
         engines: place.engines,
         bar: lernie::ui::bar::Bar {
             pinned: place.pinned,
-            dragged: place.dragged,
             ..Default::default()
         },
+        settings: place.settings,
         ..Model::default()
     };
     let link = Link::new(BEAT);

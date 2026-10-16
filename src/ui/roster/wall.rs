@@ -39,6 +39,13 @@ pub const UNPIN: &str = "unpin";
 /// the far edge of the engine's row was the one control a first-time operator
 /// did not find.
 pub const NEW: &str = "+ new";
+/// What a wall's row does, what `+ new` does, and what a nameless wall is.
+pub const AIM_HELP: &str =
+    "aims the window at this workspace: its conversations, its settings, its providers";
+pub const NEW_HELP: &str =
+    "begins a conversation on this workspace; the box takes its first message";
+pub const NO_NAME_HELP: &str =
+    "a workspace this box has no name for, so nothing here can aim at it";
 
 /// One wall: selectable when this seat can address it, a plain line when it
 /// cannot.
@@ -62,6 +69,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
             None,
             false,
             0.0,
+            NO_NAME_HELP,
         );
         return;
     };
@@ -77,7 +85,7 @@ pub fn render(ui: &mut egui::Ui, model: &mut Model, aim: Option<Aim>, row: &WsRo
     } else {
         None
     };
-    let seat = theme::paint::row(ui, &line(row), theme::INK, state, aimed, 0.0);
+    let seat = theme::paint::row(ui, &line(row), theme::INK, state, aimed, 0.0, AIM_HELP);
     // **`+ new` stands last under every wall**, under the conversations where
     // the wall is aimed and straight under its row where it is not — read
     // after the wall's own click, so the begin is where a frame that fired
@@ -131,7 +139,7 @@ fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim, reveal: boo
         return;
     }
     let stand = crate::ui::Stand::Begin(aim.clone());
-    if standing_row(ui, model, NEW, stand, convs::STEP, reveal) {
+    if standing_row(ui, model, (NEW, NEW_HELP), stand, convs::STEP, reveal) {
         model.begin_at(aim);
         model.chose();
     }
@@ -144,14 +152,14 @@ fn begin(ui: &mut egui::Ui, model: &mut Model, aim: &crate::ui::Aim, reveal: boo
 pub(super) fn standing_row(
     ui: &mut egui::Ui,
     model: &mut Model,
-    text: &str,
+    (text, help): (&str, &str),
     stand: crate::ui::Stand,
     indent: f32,
     reveal: bool,
 ) -> bool {
     let standing = model.standing.as_ref() == Some(&stand);
     let rule = standing.then_some(theme::BRAND);
-    let seat = theme::paint::row(ui, text, theme::INK_WEAK, rule, false, indent);
+    let seat = theme::paint::row(ui, text, theme::INK_WEAK, rule, false, indent, help);
     if standing && reveal {
         seat.scroll_to_me(None);
     }

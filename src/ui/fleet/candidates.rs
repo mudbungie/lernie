@@ -59,6 +59,14 @@ pub const SUMMARY_HINT: &str = "the delivery subject";
 pub const FEWER: &str = "−1";
 /// The word on the control that asks for more.
 pub const MORE: &str = "+1";
+/// What each control does.
+pub const FEWER_HELP: &str = "one candidate fewer, never below two";
+pub const MORE_HELP: &str = "one candidate more";
+pub const SPREAD_HELP: &str =
+    "starts that many candidates on this ball at once, each on the goal above";
+pub const ACCEPT_HELP: &str =
+    "delivers this candidate's work under the subject above; the rest are released";
+pub const RELEASE_HELP: &str = "discards this candidate's worktree";
 /// How wide the two boxes are.
 const WIDTH: f32 = 260.0;
 /// The fewest attempts a spread can ask for. One and zero materialize nothing
@@ -73,11 +81,11 @@ pub(super) fn render(ui: &mut egui::Ui, model: &mut Model, rows: &[Diff]) {
     if let Some(fleet) = model.fleet.as_mut() {
         wall.clone_from(&fleet.at.address);
         ui.horizontal_wrapped(|ui| {
-            if ui.button(FEWER).clicked() {
+            if theme::paint::button(ui, FEWER, true, FEWER_HELP).clicked() {
                 fleet.spread = fleet.spread.saturating_sub(1).max(LEAST);
             }
             ui.label(fleet.spread.to_string());
-            if ui.button(MORE).clicked() {
+            if theme::paint::button(ui, MORE, true, MORE_HELP).clicked() {
                 fleet.spread = fleet.spread.saturating_add(1);
             }
             ui.add(
@@ -136,7 +144,7 @@ fn candidate(
     let mut fired = None;
     ui.horizontal_wrapped(|ui| {
         let summary = fleet.summary.trim();
-        let take = ui.add_enabled(!summary.is_empty(), egui::Button::new(ACCEPT));
+        let take = theme::paint::button(ui, ACCEPT, !summary.is_empty(), ACCEPT_HELP);
         crate::ui::act::tag(&take, &[crate::verbs::DELIVER]);
         if take.clicked() {
             fired = Some(crate::verbs::deliver(
@@ -146,7 +154,7 @@ fn candidate(
                 summary.to_owned(),
             ));
         }
-        let drop = ui.button(RELEASE);
+        let drop = theme::paint::button(ui, RELEASE, true, RELEASE_HELP);
         crate::ui::act::tag(&drop, &[crate::verbs::RETIRE]);
         if drop.clicked() {
             fired = Some(crate::verbs::retire(
@@ -168,9 +176,11 @@ fn claim(
     let mut fired = None;
     ui.horizontal_wrapped(|ui| {
         let goal = fleet.goal.trim();
-        let over = ui.add_enabled(
+        let over = theme::paint::button(
+            ui,
+            &format!("{SPREAD} {}", fleet.spread),
             !goal.is_empty(),
-            egui::Button::new(format!("{SPREAD} {}", fleet.spread)),
+            SPREAD_HELP,
         );
         crate::ui::act::tag(&over, &[crate::verbs::PREPARE, crate::verbs::FAN]);
         if over.clicked() {

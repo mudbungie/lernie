@@ -39,9 +39,7 @@ impl Model {
             return;
         }
         if !self.switching {
-            while self.covered() {
-                self.escape();
-            }
+            self.uncover();
         }
         self.switching = !self.switching;
     }

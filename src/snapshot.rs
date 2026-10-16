@@ -56,6 +56,7 @@ pub(crate) mod clipped;
 pub(crate) mod lit;
 pub(crate) mod parity;
 pub(crate) mod reach;
+pub(crate) mod told;
 pub(crate) mod worlds;
 
 mod tests;

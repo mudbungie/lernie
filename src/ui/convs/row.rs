@@ -33,6 +33,9 @@ const DEEPEST: u64 = 8;
 pub const SHOW: &str = "show";
 /// And the one it wears while it is open.
 pub const HIDE: &str = "hide";
+/// What the subtree's row does.
+pub const SUBTREE_HELP: &str = "shows or hides the conversations under this one";
+use super::SELECT_HELP;
 
 /// **One row, and everything that hangs off it.**
 ///
@@ -76,6 +79,7 @@ pub(super) fn conversation(
         aside: None,
         beneath,
         door: None,
+        help: SELECT_HELP.to_owned(),
     }
     .paint(ui);
     // **Two reads hang off this one gesture** (`crate::ui::act`): selecting a
@@ -130,6 +134,7 @@ fn subtree(ui: &mut egui::Ui, model: &mut Model, row: &ConvRow) {
         None,
         false,
         indent(row.depth) + STEP,
+        SUBTREE_HELP,
     );
     if seat.clicked() {
         model.toggle_subtree(&row.root_id.clone());

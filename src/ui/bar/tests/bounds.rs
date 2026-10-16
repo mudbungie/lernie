@@ -3,10 +3,11 @@
 //! width against the other — as a value, and on the glass, where a drag past
 //! a bound stops at it and a narrower window clamps and overwrites nothing.
 
-use super::super::drag::{Dragged, HANDLE, ceiling};
+use super::super::drag::{HANDLE, ceiling, shown};
 use super::super::{DESK, SHUT, open_width};
 use super::drag::{drag, near};
 use super::{bar, panel, step, tick};
+use crate::settings::Settings;
 use crate::test_support::window::seated;
 use crate::ui::theme;
 
@@ -39,7 +40,7 @@ fn the_widths_are_a_quarter_of_the_desk_and_a_glyph_column() {
     assert_eq!(row.shown, row.laid, "the cut is on the glass, not the clip");
     assert!(row.laid.max.x <= SHUT, "inside the glyph column");
     let mut wider = seated();
-    wider.bar.dragged.shut = Some(SHUT * 2.0);
+    wider.settings.bar_shut = Some(SHUT * 2.0);
     let more = collapsed(&mut wider);
     assert!(
         more.text.chars().count() > row.text.chars().count(),
@@ -59,28 +60,29 @@ fn the_widths_are_a_quarter_of_the_desk_and_a_glyph_column() {
 fn the_bounds_clamp_a_drag_and_a_window_and_overwrite_nothing() {
     let f = 30.0;
     let wide = open_width(DESK);
-    assert_eq!(Dragged::default().shown(DESK, f), (SHUT, wide));
-    let set = Dragged {
-        shut: Some(300.0),
-        open: Some(500.0),
+    assert_eq!(shown(&Settings::default(), DESK, f), (SHUT, wide));
+    let set = Settings {
+        bar_shut: Some(300.0),
+        bar_open: Some(500.0),
+        ..Settings::default()
     };
-    assert_eq!(set.shown(DESK, f), (300.0, 500.0));
+    assert_eq!(shown(&set, DESK, f), (300.0, 500.0));
     assert_eq!(
-        set.shown(900.0, f),
+        shown(&set, 900.0, f),
         (300.0, 360.0),
         "two fifths of the window"
     );
     assert_eq!(
-        set.shown(500.0, f),
+        shown(&set, 500.0, f),
         (200.0, 200.0),
         "the column follows down"
     );
-    assert_eq!(set.shown(50.0, f), (f, f), "neither under the floor");
-    let narrow = Dragged {
-        shut: Some(10.0),
-        open: None,
+    assert_eq!(shown(&set, 50.0, f), (f, f), "neither under the floor");
+    let narrow = Settings {
+        bar_shut: Some(10.0),
+        ..Settings::default()
     };
-    assert_eq!(narrow.shown(DESK, f), (f, wide));
+    assert_eq!(shown(&narrow, DESK, f), (f, wide));
     let ctx = egui::Context::default();
     let mut model = seated();
     tick(&ctx, &mut model, 0.0, None);
@@ -93,7 +95,7 @@ fn the_bounds_clamp_a_drag_and_a_window_and_overwrite_nothing() {
         DESK,
     );
     assert!(
-        near(model.bar.dragged.shut, wide),
+        near(model.settings.bar_shut, wide),
         "no wider than the expanded width"
     );
     model.bar.pinned = true;
@@ -108,7 +110,7 @@ fn the_bounds_clamp_a_drag_and_a_window_and_overwrite_nothing() {
     );
     let cap = ceiling(DESK);
     assert!(
-        near(model.bar.dragged.open, cap),
+        near(model.settings.bar_open, cap),
         "no wider than the ceiling"
     );
     drag(
@@ -120,7 +122,7 @@ fn the_bounds_clamp_a_drag_and_a_window_and_overwrite_nothing() {
         -cap,
     );
     assert!(
-        near(model.bar.dragged.open, wide),
+        near(model.settings.bar_open, wide),
         "no narrower than the collapsed width"
     );
     for i in 0..2 {
@@ -137,11 +139,8 @@ fn the_bounds_clamp_a_drag_and_a_window_and_overwrite_nothing() {
         "the phone's ceiling"
     );
     assert_eq!(
-        model.bar.dragged,
-        Dragged {
-            shut: Some(wide),
-            open: Some(wide),
-        },
+        (model.settings.bar_shut, model.settings.bar_open),
+        (Some(wide), Some(wide)),
         "and the numbers are kept"
     );
 }

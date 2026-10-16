@@ -89,3 +89,19 @@ fn the_listed_reaches_are_offered_in_the_wire_s_order_and_only_the_known_ones() 
     assert!(!Choice::Verdict("refuse", "call").wider());
     assert!(!Choice::Seen.wider());
 }
+
+/// **Every choice says what it does to the call** (DESIGN §4.46 item 2),
+/// and a verdict wider than the call says so.
+#[test]
+fn every_choice_tells_and_a_wide_verdict_names_its_scope() {
+    let call = crate::verbs::capability::CALL;
+    assert!(Choice::Seen.help().contains("parked"));
+    assert!(Choice::Verdict("pass", call).help().contains("lets"));
+    assert!(Choice::Verdict("refuse", call).help().contains("refuses"));
+    assert!(Choice::Verdict("hold", call).help().contains("parked"));
+    let wide = Choice::Verdict("pass", "workspace").help();
+    assert!(
+        wide.contains("every call like it in this workspace"),
+        "{wide}"
+    );
+}

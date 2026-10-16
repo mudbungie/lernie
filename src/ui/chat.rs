@@ -36,6 +36,8 @@ pub mod fold;
 /// seat's where nothing is selected.
 pub mod panel;
 pub mod rows;
+/// A scroll the keyboard asked for, spent inside the area (§4.46 item 3).
+pub mod scroll;
 /// One step of the working, whole.
 mod trail;
 /// The working in three stages: which each step and the turn are in.
@@ -45,6 +47,7 @@ pub use fold::Fold;
 pub use rows::sent::whole;
 pub use rows::{Kind, Row, rows};
 
+use crate::settings::Toggle;
 use crate::ui::theme::{self, Bubble, glyph};
 
 /// The pane's word, kept for the seat panel's sentence.
@@ -72,9 +75,15 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
         theme::paint::empty(ui, said);
         return asked;
     };
-    egui::ScrollArea::vertical()
+    let shown = egui::ScrollArea::vertical()
         .id_salt(conversation)
-        .stick_to_bottom(true)
+        // **Unstuck on the frame a key scrolls it** (`scroll::asked`), and
+        // **never eased**: an eased scroll moves on a later frame, after
+        // the area has judged itself stuck to its end again, so a key's
+        // page would be undone by the stick it was meant to loosen — and a
+        // key's answer is state the glass shows the frame it is pressed.
+        .stick_to_bottom(!scroll::asked(ui.ctx()))
+        .animated(false)
         .auto_shrink([false, false])
         // **Every id under the transcript is the conversation's** (bl-b83d):
         // the scroll area's salt names only its own scroll state, and the ui
@@ -85,6 +94,7 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
         // is what keeps a site that forgets it impossible.
         .show(ui, |ui| {
             ui.push_id(conversation, |ui| {
+                scroll::apply(ui);
                 panel::conversation(ui, model, conversation);
                 let all = whole(model);
                 let mut at = 0;
@@ -102,9 +112,19 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                     if run > 0 {
                         ui.add_space(theme::space::S);
                         let mut open = false;
-                        theme::paint::bubbled(ui, Bubble::Trail, |ui| {
-                            open = working::working(ui, at, rest.get(..run).unwrap_or(&[]));
-                        });
+                        let settings = &model.settings;
+                        theme::paint::bubbled(
+                            ui,
+                            settings.on(Toggle::Bubbles).then_some(Bubble::Trail),
+                            |ui| {
+                                open = working::working(
+                                    ui,
+                                    at,
+                                    rest.get(..run).unwrap_or(&[]),
+                                    settings,
+                                );
+                            },
+                        );
                         at += run;
                         opened = Some(open);
                         continue;
@@ -118,12 +138,14 @@ pub fn render(ui: &mut egui::Ui, model: &crate::ui::Model) -> bool {
                         response(ui);
                     }
                     ui.add_space(theme::space::S);
-                    theme::paint::bubbled(ui, row.bubble, |ui| said(ui, at, row));
+                    let bubble = model.settings.on(Toggle::Bubbles).then_some(row.bubble);
+                    theme::paint::bubbled(ui, bubble, |ui| said(ui, at, row));
                     opened = None;
                     at += 1;
                 }
             })
         });
+    scroll::note(ui.ctx(), shown.state.offset.y);
     false
 }
 

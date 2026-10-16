@@ -59,6 +59,8 @@ pub const WORKFLOW: &str = "workflow";
 const NAME_WIDTH: f32 = 220.0;
 /// What it says before a file has been picked.
 pub const NOTHING_PICKED: &str = "pick a file to read";
+/// What picking a file does.
+pub const PICK_HELP: &str = "reads this settings file off the engine into the editor below";
 /// What it says for a wall nobody has been answered about yet.
 pub const NOT_ANSWERED: &str = "waiting to hear which settings this workspace holds";
 /// What it says for a wall that answered and holds no lineage — a fact about
@@ -186,7 +188,7 @@ fn lineage(ui: &mut egui::Ui, model: &mut Model, row: &Lineage, workspace: &str)
 /// make the picker change shape under a click.
 fn pick(ui: &mut egui::Ui, model: &mut Model, at: &Where) {
     let chosen = model.configured().as_ref() == Some(at);
-    let control = ui.selectable_label(chosen, at.label());
+    let control = theme::paint::seat(ui, chosen, &at.label(), PICK_HELP);
     crate::ui::act::tag(&control, &[crate::verbs::CONFIG]);
     if control.clicked() {
         model.read_config(at);

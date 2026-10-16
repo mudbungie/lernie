@@ -1,7 +1,8 @@
 +++
 title = "DESIGN 4.46: the told, keyed and tuned interface — the ruling, its readings, what it amends, and the map rows"
 created = 1792120673
-updated = 1792120673
+updated = 1792120674
+claimant = "Surveying"
 parent = "bl-5369"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

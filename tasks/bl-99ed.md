@@ -1,7 +1,8 @@
 +++
 title = "an open pane leads the Tab order, and a slider rings and shows its trough"
 created = 1792122135
-updated = 1792122135
+updated = 1792122569
+claimant = "Surveying"
 parent = "bl-5369"
 priority = 3
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

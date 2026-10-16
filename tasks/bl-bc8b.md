@@ -1,7 +1,8 @@
 +++
 title = "the settings pane and the knob table: the wheel, the delay, the scale, the bar's four, bubbles, fold, confirm, dock; the place file carries them"
 created = 1792120741
-updated = 1792120741
+updated = 1792120786
+claimant = "Surveying"
 parent = "bl-5369"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"

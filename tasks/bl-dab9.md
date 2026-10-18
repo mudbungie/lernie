@@ -1,7 +1,8 @@
 +++
 title = "sweep wall → workspace now; engine → server once yog's REMOTE §2 ruling lands"
 created = 1792036528
-updated = 1792036528
+updated = 1792304392
+claimant = "Swishes"
 priority = 2
 root_commit = "3efc0d263898c425a0ff2bb042938233e838f436"
 +++
